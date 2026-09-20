@@ -48,7 +48,8 @@ class HistorianColdArchiveServiceTest {
                 archiveProperties,
                 variableRepository,
                 queryStore,
-                sink
+                sink,
+                new HistoryParquetExportGateway()
         );
     }
 
@@ -95,7 +96,8 @@ class HistorianColdArchiveServiceTest {
                 archiveProperties,
                 variableRepository,
                 queryStore,
-                sink
+                sink,
+                new HistoryParquetExportGateway()
         );
 
         var result = service.exportEligibleDay();

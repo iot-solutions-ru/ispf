@@ -5,7 +5,7 @@ plugins {
 
 // Override Spring Boot BOM pin (4.35.1) so runtime stays >= CEL 0.14 gencode and is current.
 extra["protobuf-java.version"] = "4.36.0"
-// Align EmbeddedKafka 4.3.1 with kafka_2.13 (Boot BOM otherwise forces 4.2.1 → CompressionType CNFE).
+// Pin (ADR-0059 registry). Align EmbeddedKafka 4.3.1 with kafka_2.13 (Boot BOM otherwise forces 4.2.1 → CompressionType CNFE).
 extra["kafka.version"] = "4.3.1"
 
 configurations.all {
@@ -58,24 +58,12 @@ dependencies {
     implementation("org.apache.poi:poi-ooxml:5.5.1")
     implementation("org.apache.poi:poi:5.5.1")
 
-    implementation("org.apache.parquet:parquet-avro:1.18.1") {
-        exclude(group = "org.slf4j", module = "slf4j-reload4j")
-        exclude(group = "ch.qos.reload4j", module = "reload4j")
-    }
-    implementation("org.apache.parquet:parquet-hadoop:1.18.1") {
-        exclude(group = "org.slf4j", module = "slf4j-reload4j")
-        exclude(group = "ch.qos.reload4j", module = "reload4j")
-    }
-    implementation("org.apache.avro:avro:1.12.2")
-    implementation("org.apache.hadoop:hadoop-common:3.5.0") {
-        exclude(group = "org.slf4j", module = "slf4j-reload4j")
-        exclude(group = "ch.qos.reload4j", module = "reload4j")
-        exclude(group = "org.slf4j", module = "slf4j-log4j12")
-        exclude(group = "log4j", module = "log4j")
-    }
-
-    constraints {
-        implementation("commons-beanutils:commons-beanutils:1.11.0")
+    // Parquet export (parquet-mr + Avro + hadoop-common, ~57 MB of the bootJar) is an optional
+    // runtime module discovered via ServiceLoader (HistoryParquetExporter in ispf-core).
+    // Build a slimmer server without it: ./gradlew bootJar -Pispf.exportParquet=false
+    // -> GET .../history/export?format=parquet answers 501, cold archive reports "skipped".
+    if (findProperty("ispf.exportParquet")?.toString() != "false") {
+        runtimeOnly(project(":packages:ispf-export-parquet"))
     }
 
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
@@ -87,6 +75,7 @@ dependencies {
     testImplementation("io.github.embeddedkafka:embedded-kafka_2.13:4.3.1")
     testRuntimeOnly("org.scala-lang:scala-library:3.9.0")
     // Moquette + Paho for BL-142 MqttDriverRuntimeIntegrationTest (matches ispf-driver-mqtt).
+    // Pin (ADR-0059 registry): Moquette declares Netty 4.1.x; lift to the patched 4.2 line.
     testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.18.Final"))
     testImplementation("io.moquette:moquette-broker:0.17")
     testImplementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")

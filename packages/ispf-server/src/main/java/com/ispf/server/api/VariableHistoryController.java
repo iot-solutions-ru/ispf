@@ -4,6 +4,7 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.federation.FederationProxyService;
+import com.ispf.server.history.HistoryParquetExportGateway;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.time.PlatformCalendarRangeService;
@@ -151,13 +152,19 @@ public class VariableHistoryController {
                         .body(variableHistoryService.exportJson(
                                 canonical, name, field, range.from(), range.to(), limit
                         ));
-                case "parquet" -> ResponseEntity.ok()
+                case "parquet" -> {
+                    if (!variableHistoryService.isParquetExportAvailable()) {
+                        throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED,
+                                new HistoryParquetExportGateway.ParquetExportUnavailableException().getMessage());
+                    }
+                    yield ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, attachmentHeader(name, field, "parquet"))
                         .header("X-ISPF-Export-Format", "parquet")
                         .contentType(new MediaType("application", "vnd.apache.parquet"))
                         .body(variableHistoryService.exportParquet(
                                 canonical, name, field, range.from(), range.to(), limit
                         ));
+                }
                 default -> throw new IllegalArgumentException("Unsupported export format: " + format);
             };
         } catch (IllegalArgumentException e) {

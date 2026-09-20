@@ -1,5 +1,6 @@
-package com.ispf.server.history;
+package com.ispf.export.parquet;
 
+import com.ispf.core.export.HistoryParquetExporter;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
@@ -11,11 +12,13 @@ import org.apache.parquet.io.PositionOutputStream;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 /**
- * Writes variable history samples as Apache Parquet (BL-163 Wave 4).
+ * Writes historian rows as Apache Parquet through parquet-mr's Avro binding (BL-163 Wave 4).
+ * Registered via {@code META-INF/services}; the server discovers it with {@link java.util.ServiceLoader}.
  */
-public final class VariableHistoryParquetExporter {
+public final class AvroParquetHistoryExporter implements HistoryParquetExporter {
 
     static final Schema SCHEMA = new Schema.Parser().parse("""
             {"type":"record","name":"HistoryRow","namespace":"com.ispf.history","fields":[
@@ -29,28 +32,31 @@ public final class VariableHistoryParquetExporter {
             ]}
             """);
 
-    private VariableHistoryParquetExporter() {
-    }
-
-    public static byte[] export(VariableHistoryService.VariableHistoryResponse response) throws IOException {
+    @Override
+    public byte[] export(List<Row> rows) throws IOException {
         ByteArrayOutputFile outputFile = new ByteArrayOutputFile();
         try (ParquetWriter<GenericRecord> writer = AvroParquetWriter.<GenericRecord>builder(outputFile)
                 .withSchema(SCHEMA)
                 .withCompressionCodec(CompressionCodecName.UNCOMPRESSED)
                 .build()) {
-            for (VariableHistoryService.VariableHistorySample sample : response.samples()) {
+            for (Row sample : rows) {
                 GenericRecord row = new GenericData.Record(SCHEMA);
-                row.put("objectPath", response.objectPath());
-                row.put("variableName", response.variableName());
-                row.put("field", response.field());
-                row.put("timestamp", sample.ts() != null ? sample.ts().toString() : null);
+                row.put("objectPath", sample.objectPath());
+                row.put("variableName", sample.variableName());
+                row.put("field", sample.field());
+                row.put("timestamp", sample.timestamp());
                 row.put("value", sample.value());
                 row.put("text", sample.text());
-                row.put("ingestedAt", sample.ingestedAt() != null ? sample.ingestedAt().toString() : null);
+                row.put("ingestedAt", sample.ingestedAt());
                 writer.write(row);
             }
         }
         return outputFile.toByteArray();
+    }
+
+    @Override
+    public String providerId() {
+        return "parquet-mr/avro";
     }
 
     static final class ByteArrayOutputFile implements OutputFile {

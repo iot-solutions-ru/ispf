@@ -30,14 +30,17 @@ public class HistorianColdArchiveService {
     private final ObjectVariableRepository variableRepository;
     private final VariableHistoryQueryStore queryStore;
     private final ColdArchiveSink coldArchiveSink;
+    private final HistoryParquetExportGateway parquetExport;
 
     public HistorianColdArchiveService(
             HistorianTierProperties tierProperties,
             HistorianColdArchiveProperties archiveProperties,
             ObjectVariableRepository variableRepository,
             VariableHistoryQueryStore queryStore,
-            ColdArchiveSink coldArchiveSink
+            ColdArchiveSink coldArchiveSink,
+            HistoryParquetExportGateway parquetExport
     ) {
+        this.parquetExport = parquetExport;
         this.tierProperties = tierProperties;
         this.archiveProperties = archiveProperties;
         this.variableRepository = variableRepository;
@@ -55,6 +58,10 @@ public class HistorianColdArchiveService {
     public ColdArchiveRunResult exportEligibleDay() {
         if (!isEnabled()) {
             return ColdArchiveRunResult.skipped("cold archive disabled or sink not configured");
+        }
+        if (!parquetExport.isAvailable()) {
+            return ColdArchiveRunResult.skipped(
+                    "parquet export module (ispf-export-parquet) not deployed — cold archive needs it");
         }
         Instant warmCutoff = warmCutoff();
         Instant exportDayEnd = warmCutoff.truncatedTo(ChronoUnit.DAYS);
@@ -127,7 +134,7 @@ public class HistorianColdArchiveService {
         return Instant.now().minus(warmRetentionDays, ChronoUnit.DAYS);
     }
 
-    private static byte[] toParquet(
+    private byte[] toParquet(
             ObjectVariableEntity entity,
             String fieldName,
             List<VariableHistoryService.VariableHistorySample> samples
@@ -138,7 +145,7 @@ public class HistorianColdArchiveService {
                 fieldName,
                 samples
         );
-        return VariableHistoryParquetExporter.export(response);
+        return parquetExport.export(response);
     }
 
     private static String objectKey(String dayKey, ObjectVariableEntity entity, String fieldName) {

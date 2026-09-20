@@ -58,6 +58,7 @@ public class VariableHistoryService {
     private final HistorianQueryMetricsRecorder queryMetricsRecorder;
     private final ObjectProvider<AnalyticsOnChangeTrigger> analyticsOnChangeTrigger;
     private final ObjectProvider<HistorianRollupQueryService> rollupQueryService;
+    private final HistoryParquetExportGateway parquetExport;
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
     private final ConcurrentHashMap<String, Long> lastSampleMs = new ConcurrentHashMap<>();
@@ -81,8 +82,10 @@ public class VariableHistoryService {
             VariableHistoryQueryStore queryStore,
             HistorianQueryMetricsRecorder queryMetricsRecorder,
             ObjectProvider<AnalyticsOnChangeTrigger> analyticsOnChangeTrigger,
-            ObjectProvider<HistorianRollupQueryService> rollupQueryService
+            ObjectProvider<HistorianRollupQueryService> rollupQueryService,
+            HistoryParquetExportGateway parquetExport
     ) {
+        this.parquetExport = parquetExport;
         this.properties = properties;
         this.sampleRepository = sampleRepository;
         this.variableRepository = variableRepository;
@@ -667,7 +670,12 @@ public class VariableHistoryService {
             int limit
     ) throws IOException {
         VariableHistoryResponse response = query(objectPath, variableName, fieldName, from, to, limit);
-        return VariableHistoryParquetExporter.export(response);
+        return parquetExport.export(response);
+    }
+
+    /** {@code false} when the optional ispf-export-parquet module is not deployed. */
+    public boolean isParquetExportAvailable() {
+        return parquetExport.isAvailable();
     }
 
     public static String exportInterimBulkFormat() {

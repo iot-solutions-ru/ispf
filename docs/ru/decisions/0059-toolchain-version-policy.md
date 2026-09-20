@@ -35,9 +35,20 @@ ISPF — self-hosted промышленная SCADA: операторы ждут
 
 Каждый `force(...)`, `extra["*.version"]`, `enforcedPlatform` или npm `overrides` обязан иметь комментарий: (а) причина, (б) upstream-issue или релиз, после которого пин можно снять. Владелец пина пересматривает его на каждом миноре Spring Boot.
 
+#### Реестр пинов
+
+Единственный список живых пинов. PR, добавляющий пин, добавляет строку; PR, убирающий upstream-причину, удаляет её. Владелец — команда области, которая ревьюит Dependabot-PR по этому пакету.
+
+| Пин | Где | Зачем | Убрать, когда | Владелец | Пересмотр |
+|-----|-----|-------|---------------|----------|-----------|
+| `protobuf-java(-util,-javalite)` **4.36.1** (`force`) | корневой `build.gradle.kts` | CEL 0.14+ gencode требует runtime ≥ gencode; Micrometer/OTel транзитивно тянут 4.34.x | Micrometer OTLP и CEL в Boot BOM на одной линии protobuf | platform/core | каждый minor Spring Boot |
+| `kafka.version` **4.3.1** (`extra`) + явные `kafka-clients` / `embedded-kafka_2.13` 4.3.1 | `ispf-server`, `ispf-driver-kafka` | Boot BOM форсит 4.2.1 → `CompressionType` CNFE против EmbeddedKafka 4.3.1 | Spring Boot BOM переходит на Kafka 4.3+ | drivers/messaging | каждый minor Spring Boot |
+| `netty-bom` **4.2.17/4.2.18.Final** (`enforcedPlatform`) | `ispf-driver-opcua(-server)`, `ispf-driver-mqtt`, `ispf-driver-sparkplug-b`, тесты `ispf-server` | Milo 0.6.x и Moquette 0.17 объявляют Netty 4.1.x; bom поднимает весь граф на патченную линию 4.2 (поток CVE от Dependabot) | релизы Milo / Moquette сами объявят Netty 4.2; тогда убрать bom или свести к одной версии | drivers/OPC UA | ежеквартально |
+| `commons-beanutils` **1.11.0** (`constraints`) | `ispf-export-parquet` | hadoop-common 3.5.0 транзитивно тянет старую уязвимую линию | hadoop-common ≥ 3.5.1 объявит ≥ 1.11 | platform/historian | каждый bump hadoop |
+| `typescript` → алиас `@typescript/typescript6`; `@typescript/native` = TS 7 | `apps/web-console/package.json` | у `typescript-eslint` нет поддержки API TS 7 (§5) | typescript-eslint поддержит TS 7 | web-console | каждый major typescript-eslint |
 ### 4. Тяжёлые опциональные зависимости — в отдельные модули
 
-Зависимость, обслуживающая одну фичу и превышающая ~10 МБ транзитивных jar (Hadoop/Parquet, LibreOffice bridge, Cassandra driver, …), живёт в собственном модуле или driver pack, подключается через существующий механизм паков/плагинов и исключается из дефолтного `bootJar`. Первая цель: `ispf-export-parquet`.
+Зависимость, обслуживающая одну фичу и превышающая ~10 МБ транзитивных jar (Hadoop/Parquet, LibreOffice bridge, Cassandra driver, …), живёт в собственном модуле или driver pack, подключается через существующий механизм паков/плагинов и исключается из дефолтного `bootJar`. Сделано: **`ispf-export-parquet`** держит parquet-mr, Avro и hadoop-common. `ispf-server` видит только SPI `HistoryParquetExporter` из `ispf-core` и находит модуль через `ServiceLoader`. По умолчанию модуль включён как `runtimeOnly` (поведение не меняется); `./gradlew bootJar -Pispf.exportParquet=false` собирает сервер без него — тогда `GET …/history/export?format=parquet` отвечает **501**, а cold archive возвращает `skipped`. Следующие кандидаты: Cassandra `java-driver-core`, POI.
 
 ### 5. Разделение компилятора фронтенда
 

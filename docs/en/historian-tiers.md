@@ -30,7 +30,7 @@ When `ispf.historian.deploy-profile=three-tier` (default), the server enables **
 |------|-----------|
 | **Write** | `TierRoutingVariableHistoryWriteStore` — recent samples → JDBC hot; samples older than hot retention → ClickHouse warm; optional dual-write for hot window |
 | **Read** | `TierRoutingVariableHistoryQueryStore` — ranges spanning hot cutoff merge JDBC + ClickHouse |
-| **Cold** | Nightly `HistorianColdArchiveRunner` exports Parquet for the day leaving warm retention (when `ispf.historian.cold-archive.enabled=true`) |
+| **Cold** | Nightly `HistorianColdArchiveRunner` exports Parquet for the day leaving warm retention (when `ispf.historian.cold-archive.enabled=true`). Needs the optional `ispf-export-parquet` module (in the default `bootJar`; absent when built with `-Pispf.exportParquet=false` — the run then reports `skipped` and `format=parquet` exports answer 501) |
 
 `hot-only` profile keeps JDBC-only path (`warm.enabled=false`).
 
