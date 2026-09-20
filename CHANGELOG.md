@@ -101,6 +101,13 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
   fails on fixable CRITICAL/HIGH (full report + SBOM as artifact). First run remediated: Tomcat 11.0.26,
   Netty 4.2.18 for the Neo4j driver, Bouncy Castle 1.86, lz4-java 1.11.3, commons-configuration2 2.15.1 —
   all registered in the ADR-0059 pin registry with removal conditions.
+- **ObjectManager path-sync benchmark + `synchronized` audit (F-08)** —
+  `ObjectManagerPathSyncBenchmarkTest` replays 8 followers × 20 syncs on distinct paths against the
+  pre-F-08 instance monitor and the current RW-lock + per-path monitor: **8.2× faster** (402.9 → 49.0 ms
+  with a 2 ms simulated DB round-trip); the test asserts ≥ 2× so the split cannot silently regress. All 76
+  remaining `synchronized` sites in `ispf-server` reviewed — no other instance-wide monitor on a hot path;
+  one watch item (`RecentEventCache` read scans). Report:
+  `docs/evidence/quality/2026-09-20-synchronized-audit.md`.
 - **Web Console lint gate at zero warnings** — `npm run lint` now runs with
   `--max-warnings 0` (was 180). All `react-hooks/exhaustive-deps`,
   `@typescript-eslint/no-non-null-assertion` and `react-refresh/only-export-components`
