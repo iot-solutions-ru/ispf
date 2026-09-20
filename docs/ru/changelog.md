@@ -11,6 +11,10 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
+- Драйвер `flexible` по UDP: `exchangeUdpBytes` собирал `DatagramPacket` через
+  `InetSocketAddress.createUnresolved(...)`, который JDK отвергает (`IllegalArgumentException:
+  unresolved address`) — любой UDP-обмен падал до отправки запроса. Адрес теперь резолвится;
+  покрыто UDP-loopback в новом `FlexibleDeviceDriverTest`.
 - Marketplace install: символ/UI/analytics/bundle — только configurator; operator → 403.
 - Driver `runtime/write`: учитывает `writeRoles` переменной точки (иначе object `WRITE`).
 - Alert rules / event filters / correlators: мутации требуют object `WRITE` ACL; list/get — `READ`.
@@ -33,6 +37,14 @@ Changelog отдельных application bundles — в манифестах п�
   снятыми с прежней реализации. `widgetEditorFields.tsx` (2492 строки) → диспетчер 31 строка над
   реестрами `widgetTypeFields{Display,Chart,Data,Layout}.tsx` по типу виджета; тест проверяет,
   что реестр покрывает ровно 43 типа старого `switch`, и монтирует каждый рендерер.
+- Критерий доказательности зрелости драйверов (F-03): `DriverProductionMatrixTest` проверяет
+  каждую запись `PRODUCTION` механически (`DriverMaturityEvidence`): ≥ 100 строк кода драйвера без
+  комментариев, тест `*Driver*Test`, который гоняет сам драйвер, и проверяемый peer (fixture
+  interop-lab, эмулированный peer в тесте или драйвер без транспорта). BETA-записи, проходящие
+  критерий, должны быть перечислены в `BETA_BY_DECISION` с причиной. `icmp`, `smb`, `wmi` понижены до
+  **BETA** (156 PRODUCTION / 6 BETA); у `modbus-udp`, `flexible`, `webhook` появились настоящие
+  loopback-тесты драйвера вместо тестов парсера. `tools/driver-readiness-audit.py` даёт одинаковый
+  вывод на любой ОС (POSIX-пути, детерминированный выбор теста).
 - Lint-гейт Web Console на нуле предупреждений: `npm run lint` с `--max-warnings 0` (было 180);
   исправлены все `exhaustive-deps`, `no-non-null-assertion` и `only-export-components`
   (хуки контекстов и хелперы вынесены в соседние `.ts`-модули, `!` заменён на `required()`).

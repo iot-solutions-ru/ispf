@@ -217,9 +217,8 @@ public class FlexibleDeviceDriver implements DeviceDriver {
     private byte[] exchangeUdpBytes(byte[] request) throws IOException {
         try (DatagramSocket socket = new DatagramSocket()) {
             socket.setSoTimeout(timeoutMs);
-            DatagramPacket send = new DatagramPacket(
-                    request, request.length,
-                    InetSocketAddress.createUnresolved(host, port));
+            // Must be a resolved address: DatagramPacket rejects createUnresolved(...) outright.
+            DatagramPacket send = new DatagramPacket(request, request.length, new InetSocketAddress(host, port));
             socket.send(send);
             byte[] buffer = new byte[readMaxBytes];
             DatagramPacket receive = new DatagramPacket(buffer, buffer.length);

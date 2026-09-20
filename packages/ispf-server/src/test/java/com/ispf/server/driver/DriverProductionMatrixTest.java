@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -246,6 +249,62 @@ class DriverProductionMatrixTest {
         assertEquals(production, Long.parseLong(m.group(1)), "PRODUCTION count in docs/en/drivers.md is stale");
         assertEquals(beta, Long.parseLong(m.group(2)), "BETA count in docs/en/drivers.md is stale");
         assertEquals(stub, Long.parseLong(m.group(3)), "STUB count in docs/en/drivers.md is stale");
+    }
+
+    /**
+     * Honesty gate (code-analysis F-03): PRODUCTION is earned mechanically — enough driver code,
+     * a driver-level test, and a device (fixture / emulated peer / transport-less) on the other side.
+     * See {@link DriverMaturityEvidence}. A pack that stops meeting the criterion must be moved to
+     * BETA in the matrix (and the docs counts updated) — not exempted here.
+     */
+    @Test
+    void productionDriversMeetEvidenceCriterion() {
+        Path repoRoot = repoRoot();
+        List<String> violations = new ArrayList<>();
+        for (DriverProductionMatrix.Entry entry : DriverProductionMatrix.entries().values()) {
+            if (entry.maturity() != DriverMaturity.PRODUCTION) {
+                continue;
+            }
+            DriverMaturityEvidence.Verdict verdict = DriverMaturityEvidence.evaluate(entry, repoRoot);
+            if (!verdict.production()) {
+                violations.add(entry.driverId() + " -> " + String.join("; ", verdict.failures()));
+            }
+        }
+        assertTrue(violations.isEmpty(), () -> "PRODUCTION without evidence (downgrade to BETA):\n  "
+                + String.join("\n  ", violations));
+    }
+
+    /**
+     * The inverse direction keeps the registry current: a BETA pack that now satisfies the criterion is
+     * either promoted, or kept BETA for a reason written down in {@code BETA_BY_DECISION}.
+     */
+    @Test
+    void betaDriversFailCriterionOrAreBetaByDecision() {
+        Path repoRoot = repoRoot();
+        List<String> promotable = new ArrayList<>();
+        for (DriverProductionMatrix.Entry entry : DriverProductionMatrix.entries().values()) {
+            if (entry.maturity() != DriverMaturity.BETA || BETA_BY_DECISION.containsKey(entry.driverId())) {
+                continue;
+            }
+            DriverMaturityEvidence.Verdict verdict = DriverMaturityEvidence.evaluate(entry, repoRoot);
+            if (verdict.production()) {
+                promotable.add(entry.driverId());
+            }
+        }
+        assertTrue(promotable.isEmpty(), () -> "BETA packs that now meet the PRODUCTION criterion "
+                + "(promote, or add to BETA_BY_DECISION with a reason): " + promotable);
+    }
+
+    /** BETA although the mechanical criterion passes — the reason is the value. */
+    private static final Map<String, String> BETA_BY_DECISION = Map.of(
+            "opc-da", "connectivity shell + parser tests, not a full OPC DA (DCOM) stack (BL-191)",
+            "opc-bridge", "mapping shell over opc-da; same DCOM gap (BL-191)"
+    );
+
+    private static Path repoRoot() {
+        Path root = firstExisting(Path.of("packages"), Path.of("..", "..", "packages"));
+        assertNotNull(root, "repository root (packages/) not found from " + Path.of("").toAbsolutePath());
+        return root.toAbsolutePath().getParent();
     }
 
     private static Path resolveDeviceDriverSource(DriverProductionMatrix.Entry entry) throws IOException {

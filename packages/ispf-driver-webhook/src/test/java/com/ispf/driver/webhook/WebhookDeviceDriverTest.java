@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverException;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WebhookDeviceDriverTest {
@@ -64,6 +66,45 @@ class WebhookDeviceDriverTest {
         assertTrue(body.get().contains("high"));
         assertEquals("sent", driverObject.variables.get("out").firstRow().get("value"));
         driver.disconnect();
+    }
+
+    @Test
+    void non2xxResponseFailsTheWriteAndKeepsStatusVisible() throws Exception {
+        startHook(exchange -> {
+            byte[] body = "upstream unavailable".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(503, body.length);
+            exchange.getResponseBody().write(body);
+            exchange.close();
+        });
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "targetUrl", targetUrl,
+                "timeoutMs", "5000"
+        ));
+        WebhookDeviceDriver driver = new WebhookDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("out", "webhook"));
+
+        DriverException error = assertThrows(DriverException.class, () -> driver.writePoint("out",
+                DataRecord.single(
+                        DataSchema.builder("payload").field("eventName", FieldType.STRING).build(),
+                        Map.of("eventName", "thresholdExceeded"))));
+
+        assertTrue(error.getMessage().contains("503"), error.getMessage());
+        assertTrue(error.getMessage().contains("upstream unavailable"), error.getMessage());
+        driver.disconnect();
+    }
+
+    @Test
+    void connectRejectsNonHttpTargetAndWriteRequiresConnection() {
+        WebhookDeviceDriver driver = new WebhookDeviceDriver();
+        driver.initialize(new StubDriverObject(Map.of("targetUrl", "ftp://relay.local/hook")));
+        DriverException error = assertThrows(DriverException.class, driver::connect);
+        assertTrue(error.getMessage().contains("http(s)"), error.getMessage());
+        assertThrows(DriverException.class, () -> driver.writePoint("out", DataRecord.single(
+                DataSchema.builder("payload").field("eventName", FieldType.STRING).build(),
+                Map.of("eventName", "x"))));
     }
 
     private void startHook(com.sun.net.httpserver.HttpHandler handler) throws IOException {
