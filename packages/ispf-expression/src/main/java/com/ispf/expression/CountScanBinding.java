@@ -14,8 +14,8 @@ public final class CountScanBinding implements PlatformBinding {
     static final CountScanBinding INSTANCE = new CountScanBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "countScan\\(\\s*\"([^\"]+)\"\\s*(?:,\\s*\"((?:\\\\.|[^\"])*)\"\\s*)?\\)",
-            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+            "countScan\\(\\s*+\"([^\"]+)\"\\s*+(?:,\\s*+\"((?:\\\\.|[^\"\\\\])*)\"\\s*+)?\\)",
+            Pattern.CASE_INSENSITIVE
     );
 
     private CountScanBinding() {

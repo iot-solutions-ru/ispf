@@ -410,7 +410,11 @@ public class HaystackExportService {
         if (!trimmed.startsWith("root.")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "rootPath must start with root.");
         }
-        return trimmed.replaceAll("\\.+$", "");
+        int end = trimmed.length();
+        while (end > 0 && trimmed.charAt(end - 1) == '.') {
+            end--;
+        }
+        return trimmed.substring(0, end);
     }
 
     static boolean isUnderRoot(String path, String rootPath) {

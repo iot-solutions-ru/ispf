@@ -19,7 +19,7 @@ record OpcHdaPoint(Kind kind, String name) {
     }
 
     private static final Pattern MAPPING = Pattern.compile(
-            "^(item|tag)\\s*[:=]\\s*(.+)$",
+            "^(item|tag)\\s*+[:=]\\s*+(.+)$",
             Pattern.CASE_INSENSITIVE);
 
     static OpcHdaPoint parse(String mapping) throws DriverException {

@@ -20,11 +20,11 @@ record OpcuaPubsubPoint(Kind kind, int datasetId, int fieldIndex, int namespaceI
     }
 
     private static final Pattern DATASET = Pattern.compile(
-            "^ds\\s*[:=]\\s*(\\d+)$", Pattern.CASE_INSENSITIVE);
+            "^ds\\s*+[:=]\\s*+(\\d+)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern FIELD = Pattern.compile(
-            "^field\\s*[:=]\\s*(\\d+)$", Pattern.CASE_INSENSITIVE);
+            "^field\\s*+[:=]\\s*+(\\d+)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern NODE = Pattern.compile(
-            "^ns\\s*[:=]\\s*(\\d+)\\s*;\\s*s\\s*=\\s*(.+)$", Pattern.CASE_INSENSITIVE);
+            "^ns\\s*+[:=]\\s*+(\\d+)\\s*+;\\s*+s\\s*+=\\s*+(.+)$", Pattern.CASE_INSENSITIVE);
 
     static OpcuaPubsubPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {

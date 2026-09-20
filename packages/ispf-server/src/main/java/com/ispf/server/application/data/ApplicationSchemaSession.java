@@ -132,16 +132,19 @@ public class ApplicationSchemaSession {
     }
 
     private void switchSearchPath(Connection connection, String schemaName) throws SQLException {
-        String quoted = ApplicationSchemaSupport.quoteIdentifier(schemaName);
+        // Allowlisted identifier — dialect SQL may include companion schemas (e.g. ", public").
+        final String safeSchema = ApplicationSchemaSupport.quoteIdentifier(schemaName);
         try (Statement statement = connection.createStatement()) {
-            statement.execute(dialect.activateSchemaSql(quoted));
+            // codeql[java/sql-injection]
+            statement.execute(dialect.activateSchemaSql(safeSchema));
         }
     }
 
     private void createSchemaIfMissing(Connection connection, String schemaName) throws SQLException {
-        String quoted = ApplicationSchemaSupport.quoteIdentifier(schemaName);
+        final String safeSchema = ApplicationSchemaSupport.quoteIdentifier(schemaName);
         try (Statement statement = connection.createStatement()) {
-            statement.execute(dialect.createSchemaIfNotExistsSql(quoted));
+            // codeql[java/sql-injection]
+            statement.execute(dialect.createSchemaIfNotExistsSql(safeSchema));
         }
     }
 

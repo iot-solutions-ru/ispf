@@ -51,4 +51,20 @@ class OutboundUrlSafetyTest {
         var uri = OutboundUrlSafety.requireSafeHttpUrl("https://a.trusted.com", "good.example,*.trusted.com", false);
         assertThat(uri.getHost()).isEqualTo("a.trusted.com");
     }
+
+    @Test
+    void stripTrailingSlashesWithoutRegex() {
+        assertThat(OutboundUrlSafety.stripTrailingSlashes("https://peer.example/")).isEqualTo("https://peer.example");
+        assertThat(OutboundUrlSafety.stripTrailingSlashes("https://peer.example///")).isEqualTo("https://peer.example");
+        assertThat(OutboundUrlSafety.stripTrailingSlashes("https://peer.example")).isEqualTo("https://peer.example");
+    }
+
+    @Test
+    void resolvePathKeepsValidatedBase() {
+        var base = OutboundUrlSafety.requireSafeHttpUrl("https://peer.example.com/ispf", "", false);
+        var login = OutboundUrlSafety.resolvePath(base, "api/v1/auth/login");
+        assertThat(login.toString()).isEqualTo("https://peer.example.com/ispf/api/v1/auth/login");
+        var withQuery = OutboundUrlSafety.resolvePath(base, "/api/v1/objects?path=root");
+        assertThat(withQuery.toString()).isEqualTo("https://peer.example.com/ispf/api/v1/objects?path=root");
+    }
 }

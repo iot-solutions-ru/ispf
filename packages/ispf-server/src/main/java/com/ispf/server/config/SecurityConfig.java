@@ -41,6 +41,8 @@ public class SecurityConfig {
             TenantRlsFilter tenantRlsFilter
     ) throws Exception {
         http
+                // Stateless JWT / bearer API — no cookie session, CSRF tokens are not applicable.
+                // codeql[java/spring-disabled-csrf-protection]
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(IspfAuthorizationRules::apply)
