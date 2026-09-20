@@ -26,14 +26,14 @@ export function adaptForeignBpmn(rawXml: string): AdaptForeignBpmnResult {
     return { xml: serializeWorkflowDiagram(empty), diagram: empty, warnings };
   }
 
-  // Detect foreign namespaces before strip
-  if (xml.includes("camunda.org") || xml.includes("xmlns:camunda")) {
+  // Detect vendor prefixes / declared namespaces (not a URL-host allowlist).
+  if (hasVendorPrefix(xml, "camunda")) {
     warnings.push({
       code: "foreign.camunda",
       message: "Camunda extensions detected; mapped or dropped where possible.",
     });
   }
-  if (xml.includes("flowable.org") || xml.includes("xmlns:flowable")) {
+  if (hasVendorPrefix(xml, "flowable")) {
     warnings.push({
       code: "foreign.flowable",
       message: "Flowable extensions detected; mapped or dropped where possible.",
@@ -65,6 +65,12 @@ export function adaptForeignBpmn(rawXml: string): AdaptForeignBpmnResult {
   // Drop multi-instance leftovers if still present as unknown — already dropped in XML
   const outXml = serializeWorkflowDiagram(diagram);
   return { xml: outXml, diagram, warnings };
+}
+
+function hasVendorPrefix(xml: string, prefix: "camunda" | "flowable"): boolean {
+  const xmlnsDecl = new RegExp(`\\bxmlns:${prefix}\\s*=`, "i");
+  const prefixedName = new RegExp(`(?:^|[\\s<])${prefix}:`);
+  return xmlnsDecl.test(xml) || prefixedName.test(xml);
 }
 
 function ensureIspfNamespace(xml: string): string {
@@ -119,9 +125,13 @@ function rewriteCallActivities(xml: string, warnings: AdaptWarning[]): string {
         elementId: id,
       });
       if (full.endsWith("/>")) {
-        return full.replace(/\/>$/, ` ispf:workflowPath="${path}"/>`);
+        return `${full.slice(0, -2)} ispf:workflowPath="${path}"/>`;
       }
-      return full.replace(/>/, ` ispf:workflowPath="${path}">`);
+      const gt = full.indexOf(">");
+      if (gt < 0) {
+        return full;
+      }
+      return `${full.slice(0, gt)} ispf:workflowPath="${path}">${full.slice(gt + 1)}`;
     }
   );
 }

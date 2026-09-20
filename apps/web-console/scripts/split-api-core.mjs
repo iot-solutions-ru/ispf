@@ -58,11 +58,7 @@ function exportNames(slice) {
 const objectExports = exportNames(lines.slice(167, 714).join("\n"));
 const dashExports = exportNames(lines.slice(714, 848).join("\n"));
 
-const remaining = lines
-  .slice(848)
-  .join("\n")
-  .replaceAll('import("./types/', 'import("./types/') // keep relative from api.ts root
-  ;
+const remaining = lines.slice(848).join("\n");
 
 const apiShim = `import type { PlatformInfo } from "./types";
 import { request } from "./api/httpClient";

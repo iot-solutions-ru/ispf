@@ -420,7 +420,9 @@ export function useSpreadsheetPersist(
             }
             setPersistWarning("spreadsheet.variablePersistDenied");
             console.warn(
-              `[spreadsheet] Variable write blocked for ${valuesVarName} on ${objectPath}; using dashboard session only.`
+              "[spreadsheet] Variable write blocked for %s on %s; using dashboard session only.",
+              valuesVarName,
+              objectPath
             );
             return;
           }
@@ -429,12 +431,16 @@ export function useSpreadsheetPersist(
             if (!stillValid) {
               setPersistWarning("spreadsheet.sessionExpired");
               console.warn(
-                `[spreadsheet] Auth rejected for ${valuesVarName} on ${objectPath}; re-login required.`
+                "[spreadsheet] Auth rejected for %s on %s; re-login required.",
+                valuesVarName,
+                objectPath
               );
             } else {
               setPersistWarning("spreadsheet.persistForbidden");
               console.error(
-                `[spreadsheet] PUT forbidden for ${valuesVarName} on ${objectPath} despite valid session:`,
+                "[spreadsheet] PUT forbidden for %s on %s despite valid session:",
+                valuesVarName,
+                objectPath,
                 error
               );
             }
@@ -442,7 +448,9 @@ export function useSpreadsheetPersist(
           }
           lastVariablePayloadRef.current = "";
           console.error(
-            `[spreadsheet] Failed to persist ${valuesVarName} on ${objectPath}:`,
+            "[spreadsheet] Failed to persist %s on %s:",
+            valuesVarName,
+            objectPath,
             error
           );
         })

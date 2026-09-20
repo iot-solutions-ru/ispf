@@ -11,6 +11,9 @@ on:
     # Nightly 03:00 UTC — regression gate for automation throughput (BL-113)
     - cron: "0 3 * * *"
 
+permissions:
+  contents: read
+
 jobs:
   jvm-load-gate:
     runs-on: ubuntu-latest
