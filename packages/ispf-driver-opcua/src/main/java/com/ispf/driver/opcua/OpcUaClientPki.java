@@ -24,6 +24,7 @@ public final class OpcUaClientPki implements AutoCloseable {
     static final String P12_NAME = "identity.p12";
     static final String CER_NAME = "application.cer";
     private static final char[] PASSWORD = new char[0];
+    static final String PLACEHOLDER_COUNTRY_CODE = "ZZ";
 
     private final KeyPair keyPair;
     private final X509Certificate certificate;
@@ -70,6 +71,10 @@ public final class OpcUaClientPki implements AutoCloseable {
             certificate = new SelfSignedCertificateBuilder(keyPair)
                     .setCommonName(commonName)
                     .setOrganization("ISPF")
+                    // Milo emits every DN attribute even when unset; Bouncy Castle >= 1.86 rejects an
+                    // empty C= (must be exactly two characters), so the subject carries a placeholder
+                    // country code. ZZ is the ISO 3166-1 user-assigned "unknown" element.
+                    .setCountryCode(PLACEHOLDER_COUNTRY_CODE)
                     .setApplicationUri(applicationUri)
                     .addDnsName("localhost")
                     .addIpAddress("127.0.0.1")
