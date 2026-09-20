@@ -15,6 +15,9 @@ concurrency:
   group: ci-nightly-v2
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   push-ack:
     # Always defined so push events get at least one runnable job. On schedule/

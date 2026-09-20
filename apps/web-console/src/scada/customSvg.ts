@@ -94,7 +94,15 @@ export function parseSvgUpload(raw: string): Pick<MimicCustomSymbol, "svg" | "wi
   if (trimmed.length > SVG_UPLOAD_MAX_CHARS) {
     throw new SvgUploadTooComplexError("chars", trimmed.length, SVG_UPLOAD_MAX_CHARS);
   }
-  const doc = new DOMParser().parseFromString(trimmed, "image/svg+xml");
+  const wrappedForParse = /<svg[\s>/]/i.test(trimmed)
+    ? trimmed
+    : `<svg xmlns="http://www.w3.org/2000/svg">${trimmed}</svg>`;
+  const sanitizedForParse = DOMPurify.sanitize(wrappedForParse, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    ADD_TAGS: ["use"],
+    FORBID_TAGS: ["style"],
+  });
+  const doc = new DOMParser().parseFromString(sanitizedForParse, "image/svg+xml");
   const svgEl = doc.querySelector("svg");
   if (!svgEl) {
     const inner = sanitizeSvgMarkup(trimmed);

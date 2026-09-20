@@ -22,6 +22,15 @@ describe("stylize-svg", () => {
     expect(sanitizeSvgMarkup(raw)).not.toContain("script");
   });
 
+  it("strips nested script tags and dangerous href schemes", () => {
+    const nested = sanitizeSvgMarkup('<rect/><scri<script>pt>alert(1)</scri</script>pt>');
+    expect(nested.toLowerCase()).not.toContain("<script");
+    const dataHref = sanitizeSvgMarkup('<a href="data:text/html,<b>1</b>"><rect/></a>');
+    expect(dataHref).not.toMatch(/href\s*=/i);
+    const vbHref = sanitizeSvgMarkup('<a href="vbscript:msgbox(1)"><rect/></a>');
+    expect(vbHref).not.toMatch(/href\s*=/i);
+  });
+
   it("produces ports on all four edges", () => {
     const ports = defaultEdgePorts(64, 48);
     expect(ports.map((p) => p.id).sort()).toEqual(["e", "n", "s", "w"]);

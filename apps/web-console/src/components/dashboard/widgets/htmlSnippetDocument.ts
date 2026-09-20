@@ -55,9 +55,20 @@ function readHtmlAttribute(attrs: string, name: string): string | undefined {
   return match?.[2]?.trim();
 }
 
+/** Remove HTML comments, repeating until nested/overlapping markers are gone. */
+function stripHtmlComments(html: string): string {
+  let previous = "";
+  let next = html;
+  while (next !== previous) {
+    previous = next;
+    next = next.replace(/<!--[\s\S]*?-->/g, "");
+  }
+  return next.replace(/<!--[\s\S]*$/g, "").replace(/-->/g, "");
+}
+
 /** Snippet that is only a single external iframe — rendered with platform-controlled `src`. */
 export function parseHtmlSnippetIframeEmbed(html: string): { src: string; title?: string } | null {
-  const normalized = normalizeHtmlSnippet(html).replace(/<!--[\s\S]*?-->/g, "").trim();
+  const normalized = stripHtmlComments(normalizeHtmlSnippet(html)).trim();
   if (!normalized) return null;
 
   const tagMatch = normalized.match(IFRAME_ONLY_SNIPPET);

@@ -251,22 +251,23 @@ ispf:
   ai:
     timeout-seconds: 600
     agent-max-steps: 256
-    agent-max-tokens: 131072   # ~50% of 256k context for completion; prompt uses the rest
-    agent-parse-retries: 5
+    agent-max-tokens: 16384    # raise via env for huge sectional plans
+    agent-parse-retries: 2
     agent-max-text-inject-chars: 524288   # ~512 KB TZ/spec inline
     agent-max-attachment-bytes: 33554432  # 32 MB upload
     agent-session-ttl-hours: 24
-    agent-max-history-turns: 128
+    agent-max-history-turns: 24
+    briefing-every-turn: false
     max-tokens: 65536   # bundle generation completion cap
 ```
 
-Env: `ISPF_AI_TIMEOUT_SECONDS`, `ISPF_AI_AGENT_MAX_STEPS`, `ISPF_AI_AGENT_MAX_TOKENS`, `ISPF_AI_AGENT_MAX_TEXT_INJECT_CHARS`, `ISPF_AI_AGENT_MAX_ATTACHMENT_BYTES`, `ISPF_AI_AGENT_MAX_HISTORY_TURNS`.
+Env: `ISPF_AI_TIMEOUT_SECONDS`, `ISPF_AI_AGENT_MAX_STEPS`, `ISPF_AI_AGENT_MAX_TOKENS`, `ISPF_AI_AGENT_MAX_TEXT_INJECT_CHARS`, `ISPF_AI_AGENT_MAX_ATTACHMENT_BYTES`, `ISPF_AI_AGENT_MAX_HISTORY_TURNS`, `ISPF_AI_BRIEFING_EVERY_TURN`.
 
 `max-tokens` (default **65536**, env `ISPF_AI_MAX_TOKENS`) — **response** limit for bundle generation.
 
-`agent-max-tokens` (default **131072**, env `ISPF_AI_AGENT_MAX_TOKENS`) — **response** limit per agent turn.
+`agent-max-tokens` (default **16384**, env `ISPF_AI_AGENT_MAX_TOKENS`) — **response** limit per agent turn (raise toward 131072 for very large sectional plans).
 
-256k on Qwen/vLLM is the **context window** (prompt + completion). Defaults above assume `max-model-len=262144`: up to ~512 KB spec + system/tools/history in the prompt, up to 128k tokens for completion. Do not set `agent-max-tokens=262144` — the prompt leaves no room. vLLM on the inference host must allow `max_tokens` ≥ 131072.
+Progressive tool packs + lean prompts (playbook index, not full bodies): [0005](decisions/0005-tree-first-ai-agent.md) amendment 2026-09-20. History beyond the window is condensed into one summary pair.
 
 Sessions are **persisted in PostgreSQL** (`agent_sessions`, `agent_turns`) with TTL eviction (default 24 hours, `ispf.ai.agent-session-ttl-hours`). JVM restart keeps chat history until TTL; Web Console stores chat index in `localStorage` and reloads turns via `GET session`.
 

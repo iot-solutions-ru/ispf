@@ -256,7 +256,7 @@ function generateNpmBom() {
     }
 
     const purl = name.startsWith("@")
-      ? `pkg:npm/${name.replace("/", "%2F")}@${version}`
+      ? `pkg:npm/${name.replaceAll("/", "%2F")}@${version}`
       : `pkg:npm/${name}@${version}`;
 
     components.push({

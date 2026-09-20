@@ -188,6 +188,8 @@ export function deserializeWorkflowDiagram(xml: string): WorkflowDiagram {
   const trimmed = xml?.trim();
   if (!trimmed) return createEmptyDiagram();
 
+  // BPMN 2.0 XML is parsed into a typed editor model; it is never assigned to innerHTML.
+  // codeql[js/xss-through-dom]
   const doc = new DOMParser().parseFromString(trimmed, "application/xml");
   const parseError = doc.querySelector("parsererror");
   if (parseError) {

@@ -69,17 +69,31 @@ export function mapColorToIspf(color: string, attr: "fill" | "stroke"): string {
   return "var(--bg-elevated)";
 }
 
+function replaceUntilStable(input: string, pattern: RegExp, replacement: string | ((substring: string, ...args: string[]) => string)): string {
+  const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
+  let previous = "";
+  let next = input;
+  while (next !== previous) {
+    previous = next;
+    next = next.replace(new RegExp(pattern.source, flags), replacement as string);
+  }
+  return next;
+}
+
+function isDangerousHref(value: string): boolean {
+  const normalized = value.replace(/[\u0000-\u0020]/g, "").trim().toLowerCase();
+  return /^(?:javascript|vbscript|data):/.test(normalized);
+}
+
 export function sanitizeSvgMarkup(raw: string): string {
   let s = raw.trim();
   if (!s) return "";
-  s = s.replace(BLOCKED_TAGS, "");
-  s = s.replace(EVENT_ATTRS, (match, attr: string, val: string) => {
+  s = replaceUntilStable(s, BLOCKED_TAGS, "");
+  s = replaceUntilStable(s, EVENT_ATTRS, (match, attr: string, val: string) => {
     const lower = attr.toLowerCase();
     if (lower.startsWith("on")) return "";
-    const v = val.replace(/^['"]|['"]$/g, "").trim().toLowerCase();
-    if (lower === "href" || lower === "xlink:href") {
-      if (v.startsWith("javascript:") || v.startsWith("data:text/html")) return "";
-    }
+    const v = val.replace(/^['"]|['"]$/g, "");
+    if ((lower === "href" || lower === "xlink:href") && isDangerousHref(v)) return "";
     return match;
   });
   return s;

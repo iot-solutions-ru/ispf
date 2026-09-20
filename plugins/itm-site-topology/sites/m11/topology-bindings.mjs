@@ -162,6 +162,10 @@ const SVG_ATTRS = new Set([
   "clip-path",
 ]);
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
  * ISPF scada renderer strips <style> tags (sanitizeSvgMarkup). Inline class rules
  * so Illustrator-exported topology keeps colors, strokes, and clip-paths.
@@ -179,7 +183,12 @@ export function inlineSvgStyles(svgInner) {
     classRules[m[1]] = parseCssDeclarations(m[2]);
   }
 
-  let result = svgInner.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+  let result = svgInner;
+  let previousStyle = "";
+  while (result !== previousStyle) {
+    previousStyle = result;
+    result = result.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+  }
 
   result = result.replace(
     /<([a-zA-Z][\w:-]*)([^>]*?)\bclass="([^"]+)"([^>]*)(\/?)>/g,
@@ -197,7 +206,7 @@ export function inlineSvgStyles(svgInner) {
       for (const [prop, value] of Object.entries(merged)) {
         if (!SVG_ATTRS.has(prop)) continue;
         const attr = prop;
-        const attrRe = new RegExp(`\\b${attr.replace(/-/g, "\\-")}\\s*=`, "i");
+        const attrRe = new RegExp(`\\b${escapeRegExp(attr)}\\s*=`, "i");
         if (attrRe.test(attrs)) continue;
         additions.push(`${attr}="${value}"`);
       }

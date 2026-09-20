@@ -11,6 +11,9 @@ on:
     # Monday 06:00 UTC — skipped automatically when secrets are missing
     - cron: "0 6 * * 1"
 
+permissions:
+  contents: read
+
 jobs:
   # secrets.* is not allowed in job-level `if`; probe via env instead
   check-secrets:

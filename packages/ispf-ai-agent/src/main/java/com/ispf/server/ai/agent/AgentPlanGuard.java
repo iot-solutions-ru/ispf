@@ -22,7 +22,8 @@ final class AgentPlanGuard {
             "run_report",
             "export_application_bundle",
             "pull_application_from_tree",
-            "application_data_status"
+            "application_data_status",
+            "enable_agent_tool_pack"
     );
 
     private static final String[] COMPLEX_KEYWORDS = {

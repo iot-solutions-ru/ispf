@@ -20,8 +20,11 @@ async function fetchLocaleBundles(
   const bundles: Record<string, Record<string, string>> = {};
   for (const namespace of LOCALE_NAMESPACES) {
     const path = `../locales/${locale}/${namespace}.json`;
+    if (!Object.prototype.hasOwnProperty.call(localeModules, path)) {
+      continue;
+    }
     const loader = localeModules[path];
-    if (!loader) {
+    if (typeof loader !== "function") {
       continue;
     }
     const module = await loader();
@@ -75,7 +78,7 @@ async function initI18n(): Promise<void> {
       loadedLocales.add(initialLocale);
       activeLocale = initialLocale;
     } catch (error) {
-      console.warn(`Failed to load locale ${initialLocale}, falling back to en`, error);
+      console.warn("Failed to load locale %s, falling back to en", initialLocale, error);
     }
   }
 

@@ -61,6 +61,11 @@ describe("htmlSnippetDocument", () => {
         "<iframe src='https://ya.ru' style='width:100%;height:100%;border:none' title='Яндекс'></iframe>",
       ),
     ).toEqual({ src: "https://ya.ru", title: "Яндекс" });
+    expect(
+      parseHtmlSnippetIframeEmbed(
+        "<!--<!-- --> --><iframe src='https://ya.ru' title='nested-comment'></iframe>",
+      ),
+    ).toEqual({ src: "https://ya.ru", title: "nested-comment" });
     expect(parseHtmlSnippetIframeEmbed('<iframe src="javascript:alert(1)"></iframe>')).toBeNull();
     expect(parseHtmlSnippetIframeEmbed("<p>text</p><iframe src='https://ya.ru'></iframe>")).toBeNull();
     expect(sanitizeHtmlSnippet("<iframe src='https://ya.ru'></iframe>")).toBe("");

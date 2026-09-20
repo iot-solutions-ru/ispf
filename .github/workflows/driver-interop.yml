@@ -11,6 +11,9 @@ on:
       - "deploy/tools/driver-interop-smoke.sh"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   docker-fixtures-smoke:
     runs-on: ubuntu-latest

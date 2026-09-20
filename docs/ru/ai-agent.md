@@ -6,7 +6,13 @@
 
 Справочник для операторов и интеграторов по агенту ISPF Tree-First, набору регрессии, генератору решений и виджетам наблюдения.
 
-См. также [ai-development](ai-development.md), [agent-regression](agent-regression.md), [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md).
+См. также [ai-development](ai-development.md), [agent-regression](agent-regression.md), [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md), [0005](../en/decisions/0005-tree-first-ai-agent.md) (progressive tool packs).
+
+---
+
+## Progressive tool surface (скорость)
+
+Админ-агент AI Studio стартует с lean-набора (`core` + `discovery`) и расширяет пакеты mid-turn через `list_agent_tools` / `describe_agent_tool` / `enable_agent_tool_pack`. Неактивный инструмент → `ERROR` с подсказкой включить pack. Ask по-прежнему read-only. Промпты: индекс playbook вместо полных тел. Defaults: `agent-max-history-turns=24`, `agent-max-tokens=16384`, `briefing-every-turn=false`.
 
 ---
 

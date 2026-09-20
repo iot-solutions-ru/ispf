@@ -41,3 +41,14 @@ FW-40…43 дают one-shot генерацию bundle с validation gates. Ра
 ## Поправка (2026-07-18) — Gradle-модуль
 
 По [0048](../../en/decisions/0048-server-modularization-seams.md) Wave 3 исходники агента `com.ispf.server.ai.*` перенесены в модуль `packages/ispf-ai-agent` (пакеты без смены имён). Пути REST `/api/v1/ai/**` стабильны.
+
+## Поправка (2026-09-20) — Progressive tool surface + lean prompts
+
+Время на demostand определяли **раунды LLM** (раздутый system prompt), а не latency инструментов. Возможности **откладываются, а не удаляются**:
+
+1. **Пакеты инструментов** (`AgentToolPackCatalog`): всегда `core` + `discovery`; доменные пакеты включаются через `enable_agent_tool_pack`. Мета-инструменты `list_agent_tools` / `describe_agent_tool` всегда доступны.
+2. **Lean-промпты**: тела playbook не вставляются в каждый ход — компактный индекс + `get_automation_schema` / `search_context`. Ask может ответить из briefing/UI focus без tools.
+3. **Briefing**: статика по умолчанию только на **первом** ходе сессии (`briefing-every-turn: false`).
+4. **История**: окно **24** хода + condensed summary для более старых; `agent-max-tokens` по умолчанию **16384**.
+
+Operator и Admin Copilot без pack-gate. Native `tool_calls` по-прежнему вне scope.
