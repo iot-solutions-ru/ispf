@@ -79,7 +79,8 @@ public class ExternalDataSourceRegistry {
         HikariConfig hikari = new HikariConfig();
         hikari.setPoolName("ispf-ext-" + poolName);
         // JDBC scheme allowlisted + metadata host blocked in JdbcUrlSafety.
-        hikari.setJdbcUrl(JdbcUrlSafety.requireSafeJdbcUrl(config.jdbcUrl())); // codeql[java/ssrf]
+        // codeql[java/ssrf]
+        hikari.setJdbcUrl(JdbcUrlSafety.requireSafeJdbcUrl(config.jdbcUrl()));
         hikari.setDriverClassName(config.driverClassName());
         hikari.setUsername(config.username());
         hikari.setPassword(config.password());
