@@ -13,6 +13,7 @@ import ShellPreferences from "../ui/ShellPreferences";
 interface OperatorAppLauncherProps {
   onOpenApp: (appId: string) => void;
   onSwitchAdmin?: () => void;
+  onLogout?: () => void;
 }
 
 async function loadAppsIndex() {
@@ -24,7 +25,7 @@ function appInitial(title: string, appId: string): string {
   return (source.charAt(0) || "?").toUpperCase();
 }
 
-export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: OperatorAppLauncherProps) {
+export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin, onLogout }: OperatorAppLauncherProps) {
   const { t } = useTranslation(["operator", "common"]);
   const queryClient = useQueryClient();
   const appsQuery = useQuery({
@@ -63,6 +64,11 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
         </Space>
         <Space className="topbar-actions" wrap>
           <ShellPreferences />
+          {onLogout && (
+            <Button onClick={onLogout}>
+              {t("common:action.logout")}
+            </Button>
+          )}
           {onSwitchAdmin && (
             <Button onClick={onSwitchAdmin}>
               {t("operator:launcher.switchAdmin")}

@@ -27,6 +27,7 @@ export default function OperatorView({
       <OperatorAppLauncher
         onOpenApp={(nextAppId) => onSelectApp?.(nextAppId)}
         onSwitchAdmin={onSwitchAdmin}
+        onLogout={onLogout}
       />
     );
   }
