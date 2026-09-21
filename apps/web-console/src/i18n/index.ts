@@ -6,11 +6,46 @@ import {
   LOCALE_STORAGE_KEY,
   normalizeLocale,
   type AppLocale,
+  type LocaleNamespace,
 } from "./locales";
 
 const localeModules = import.meta.glob<{ default: Record<string, string> }>(
   "../locales/*/*.json",
 );
+
+type LocaleLoader = () => Promise<{ default: Record<string, string> }>;
+
+/** Pre-indexed by validated AppLocale — never invoke glob loaders via a user-built path key. */
+const loadersByLocale: Record<AppLocale, Partial<Record<LocaleNamespace, LocaleLoader>>> = {
+  en: {},
+  ru: {},
+  de: {},
+  zh: {},
+};
+
+for (const [path, loader] of Object.entries(localeModules)) {
+  const match = /^\.\.\/locales\/(en|ru|de|zh)\/([a-zA-Z0-9]+)\.json$/.exec(path);
+  if (!match) {
+    continue;
+  }
+  const locale = match[1] as AppLocale;
+  const namespace = match[2] as LocaleNamespace;
+  loadersByLocale[locale][namespace] = loader as LocaleLoader;
+}
+
+function loadersFor(locale: AppLocale): Partial<Record<LocaleNamespace, LocaleLoader>> {
+  switch (locale) {
+    case "ru":
+      return loadersByLocale.ru;
+    case "de":
+      return loadersByLocale.de;
+    case "zh":
+      return loadersByLocale.zh;
+    case "en":
+    default:
+      return loadersByLocale.en;
+  }
+}
 
 const loadedLocales = new Set<AppLocale>();
 
@@ -18,17 +53,12 @@ async function fetchLocaleBundles(
   locale: AppLocale,
 ): Promise<Record<string, Record<string, string>>> {
   const bundles: Record<string, Record<string, string>> = {};
+  const loaders = loadersFor(locale);
   for (const namespace of LOCALE_NAMESPACES) {
-    const path = `../locales/${locale}/${namespace}.json`;
-    if (!Object.prototype.hasOwnProperty.call(localeModules, path)) {
+    const loader = loaders[namespace];
+    if (!loader) {
       continue;
     }
-    const loader = localeModules[path];
-    if (typeof loader !== "function") {
-      continue;
-    }
-    // Path is composed only from AppLocale + LOCALE_NAMESPACES constants (see above).
-    // codeql[js/unvalidated-dynamic-method-call]
     const module = await loader();
     bundles[namespace] = module.default;
   }
