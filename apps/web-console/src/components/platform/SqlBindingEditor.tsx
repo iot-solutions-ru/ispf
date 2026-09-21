@@ -104,7 +104,7 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
   }
 
   if (bindingQuery.error) {
-    return <Alert type="error" showIcon message={String(bindingQuery.error)} />;
+    return <Alert type="error" showIcon title={String(bindingQuery.error)} />;
   }
 
   return (
@@ -231,11 +231,11 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
             })}
           </p>
         )}
-        {saveError && <Alert className="full" type="error" showIcon message={saveError} />}
-        {refreshError && <Alert className="full" type="error" showIcon message={refreshError} />}
-        {saveMutation.isSuccess && <Alert className="full" type="success" showIcon message={t("common:action.saved")} />}
+        {saveError && <Alert className="full" type="error" showIcon title={saveError} />}
+        {refreshError && <Alert className="full" type="error" showIcon title={refreshError} />}
+        {saveMutation.isSuccess && <Alert className="full" type="success" showIcon title={t("common:action.saved")} />}
         {refreshMutation.isSuccess && (
-          <Alert className="full" type="success" showIcon message={t("platform:sqlBinding.valueUpdated")} />
+          <Alert className="full" type="success" showIcon title={t("platform:sqlBinding.valueUpdated")} />
         )}
       </Form>
     </PlatformSqlEditorShell>

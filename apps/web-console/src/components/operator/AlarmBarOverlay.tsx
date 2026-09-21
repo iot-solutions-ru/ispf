@@ -160,7 +160,7 @@ export default function AlarmBarOverlay({
         <Alert
           className="operator-alarm-bar-error"
           type="error"
-          message={actionError}
+          title={actionError}
           role="status"
           closable={Boolean(clearActionError)}
           onClose={clearActionError}

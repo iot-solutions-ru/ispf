@@ -55,7 +55,7 @@ export default function YargHealthCard() {
       <Typography.Title level={3}>{t("yargHealth.title")}</Typography.Title>
       {healthQuery.isLoading && <Typography.Text type="secondary">{t("yargHealth.loading")}</Typography.Text>}
       {healthQuery.error && (
-        <Alert type="error" showIcon message={t("yargHealth.loadError")} />
+        <Alert type="error" showIcon title={t("yargHealth.loadError")} />
       )}
       {healthQuery.data && (
         <Space orientation="vertical" style={{ width: "100%" }}>
@@ -69,7 +69,7 @@ export default function YargHealthCard() {
           />
           <Typography.Paragraph type="secondary">{t("yargHealth.hint")}</Typography.Paragraph>
           {!healthQuery.data.libreOfficeAvailable && (
-            <Alert type="warning" showIcon message={healthQuery.data.pdfHint} />
+            <Alert type="warning" showIcon title={healthQuery.data.pdfHint} />
           )}
         </Space>
       )}

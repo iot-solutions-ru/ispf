@@ -85,7 +85,7 @@ export default function SecurityRolesPanel({ canManage, onSelectRole }: Security
           </Button>
         </header>
 
-        {rolesQuery.error && <Alert type="error" showIcon message={String(rolesQuery.error)} />}
+        {rolesQuery.error && <Alert type="error" showIcon title={String(rolesQuery.error)} />}
 
         <Table<SecurityRoleSummary>
           size="small"

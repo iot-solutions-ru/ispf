@@ -43,7 +43,7 @@ export default function AlarmShelfPanel({ shelves, onUnshelve }: AlarmShelfPanel
       <ul className="operator-alarm-shelf-list">
         {shelves.map((shelf) => (
           <li key={shelf.id} className="operator-alarm-shelf-item">
-            <Space className="operator-alarm-shelf-main" direction="vertical" size={2}>
+            <Space className="operator-alarm-shelf-main" orientation="vertical" size={2}>
               <Typography.Text className="operator-alarm-shelf-event">{shelf.eventName}</Typography.Text>
               <Typography.Text className="operator-alarm-shelf-path">{shelf.objectPath}</Typography.Text>
               {shelf.comment && <Typography.Text className="hint operator-alarm-shelf-comment">{shelf.comment}</Typography.Text>}

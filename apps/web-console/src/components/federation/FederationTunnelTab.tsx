@@ -178,7 +178,7 @@ export default function FederationTunnelTab({
 
   return (
     <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
-      {formError && <Alert type="error" showIcon message={formError} />}
+      {formError && <Alert type="error" showIcon title={formError} />}
 
       <section className="panel-card driver-config-form">
         <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
@@ -210,7 +210,7 @@ export default function FederationTunnelTab({
           </Button>
           {issuedRegistrationCode && (
             <Space orientation="vertical" size="small" style={{ width: "100%" }}>
-              <Alert type="success" showIcon message={t("tunnel.registrationCodeHint")} />
+              <Alert type="success" showIcon title={t("tunnel.registrationCodeHint")} />
               <pre className="mono federation-code-block">{issuedRegistrationCode}</pre>
               <Button
                 size="small"
@@ -255,7 +255,7 @@ export default function FederationTunnelTab({
                 <Alert
                   type="success"
                   showIcon
-                  message={
+                  title={
                     <>
                       {t("tunnel.secretsKeyConfigured")}
                       {secretsKeySource === "YAML" && t("tunnel.secretsKeyYaml")}
@@ -265,10 +265,10 @@ export default function FederationTunnelTab({
                   }
                 />
               ) : (
-                <Alert type="error" showIcon message={t("tunnel.secretsKeyMissing")} />
+                <Alert type="error" showIcon title={t("tunnel.secretsKeyMissing")} />
               )}
-              {secretsKeyFeedback && <Alert type="success" showIcon message={secretsKeyFeedback} />}
-              {secretsKeyError && <Alert type="error" showIcon message={secretsKeyError} />}
+              {secretsKeyFeedback && <Alert type="success" showIcon title={secretsKeyFeedback} />}
+              {secretsKeyError && <Alert type="error" showIcon title={secretsKeyError} />}
               {secretsKeyUiConfigurable && !secretsKeyConfigured && (
                 <>
                   <Form layout="vertical">

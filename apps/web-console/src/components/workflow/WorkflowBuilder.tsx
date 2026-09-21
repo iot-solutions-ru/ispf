@@ -440,7 +440,7 @@ export default function WorkflowBuilder({
           <Typography.Paragraph type="secondary">
             {t("workflow:operatorApp.hint")}
           </Typography.Paragraph>
-          <Space direction="vertical" size={4} style={{ width: "100%" }}>
+          <Space orientation="vertical" size={4} style={{ width: "100%" }}>
             <Typography.Text type="secondary">{t("workflow:operatorApp.field")}</Typography.Text>
             <Select
               value={workflow.data?.operatorAppId ?? ""}
@@ -573,7 +573,7 @@ export default function WorkflowBuilder({
               </Button>,
             ]}
           >
-            <Space direction="vertical" size="small" style={{ width: "100%" }}>
+            <Space orientation="vertical" size="small" style={{ width: "100%" }}>
               <Typography.Text type="secondary">{t("workflow:instance.cancelReason")}</Typography.Text>
               <input
                 value={cancelReason}

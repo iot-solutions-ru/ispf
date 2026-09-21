@@ -214,7 +214,7 @@ export default function SystemMetricsView({ embedded = false }: { embedded?: boo
           </div>
 
           {metricsQuery.error && (
-            <Alert type="error" showIcon message={String(metricsQuery.error)} />
+            <Alert type="error" showIcon title={String(metricsQuery.error)} />
           )}
 
           {metricsQuery.isLoading && <Typography.Text type="secondary">{t("metrics.loading")}</Typography.Text>}

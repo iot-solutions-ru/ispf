@@ -77,9 +77,9 @@ export default function PlatformBackupPanel() {
         {t("backup.title")}
       </Typography.Title>
       <Typography.Paragraph type="secondary">{t("backup.subtitle")}</Typography.Paragraph>
-      {feedback && <Alert type="success" showIcon message={feedback} style={{ marginBottom: 12 }} />}
-      {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 12 }} />}
-      {previewText && <Alert showIcon message={previewText} style={{ marginBottom: 12 }} />}
+      {feedback && <Alert type="success" showIcon title={feedback} style={{ marginBottom: 12 }} />}
+      {error && <Alert type="error" showIcon title={error} style={{ marginBottom: 12 }} />}
+      {previewText && <Alert showIcon title={previewText} style={{ marginBottom: 12 }} />}
       <Space wrap>
         <Button type="primary" loading={exportMutation.isPending} onClick={startExport}>
           {t("backup.export")}

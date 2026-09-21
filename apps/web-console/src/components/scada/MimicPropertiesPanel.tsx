@@ -272,7 +272,7 @@ export default function MimicPropertiesPanel({
           <h2 className="scada-panel-title">{t("props.title")}</h2>
         </div>
         {canvasSection}
-        <Alert className="scada-props-hint" type="info" showIcon={false} message={t("props.selectHint")} />
+        <Alert className="scada-props-hint" type="info" showIcon={false} title={t("props.selectHint")} />
       </div>
     );
   }
@@ -520,7 +520,7 @@ export default function MimicPropertiesPanel({
             className="scada-props-hint scada-props-hint-compact"
             type="info"
             showIcon={false}
-            message={t("props.formatRulesEmpty")}
+            title={t("props.formatRulesEmpty")}
           />
         ) : (
           formatRules.map((rule, index) => (

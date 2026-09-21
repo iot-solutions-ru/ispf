@@ -86,7 +86,7 @@ export default function PlatformLicenseCard() {
       <Typography.Title level={3}>{t("licenseHealth.title")}</Typography.Title>
       {licenseQuery.isLoading && <Typography.Text type="secondary">{t("licenseHealth.loading")}</Typography.Text>}
       {licenseQuery.error && (
-        <Alert type="error" showIcon message={t("licenseHealth.loadError")} />
+        <Alert type="error" showIcon title={t("licenseHealth.loadError")} />
       )}
       {licenseQuery.data && (
         <Space orientation="vertical" style={{ width: "100%" }}>
@@ -100,7 +100,7 @@ export default function PlatformLicenseCard() {
           />
           <Typography.Paragraph type="secondary">{t("licenseHealth.hint")}</Typography.Paragraph>
           {licenseQuery.data.enforce && !licenseQuery.data.valid && (
-            <Alert type="warning" showIcon message={t("licenseHealth.enforceInvalidWarning")} />
+            <Alert type="warning" showIcon title={t("licenseHealth.enforceInvalidWarning")} />
           )}
         </Space>
       )}

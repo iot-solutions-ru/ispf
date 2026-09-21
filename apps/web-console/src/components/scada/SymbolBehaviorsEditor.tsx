@@ -79,7 +79,7 @@ export default function SymbolBehaviorsEditor({
         className="scada-props-hint scada-props-hint-compact"
         type="info"
         showIcon={false}
-        message={t("props.behaviorsHint")}
+        title={t("props.behaviorsHint")}
       />
 
       {behaviors.length === 0 ? (
@@ -87,7 +87,7 @@ export default function SymbolBehaviorsEditor({
           className="scada-props-hint scada-props-hint-compact"
           type="info"
           showIcon={false}
-          message={t("props.behaviorsEmpty")}
+          title={t("props.behaviorsEmpty")}
         />
       ) : (
         behaviors.map((behavior, index) => (

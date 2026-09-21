@@ -71,7 +71,7 @@ export default function LoginView({ onLoggedIn }: LoginViewProps) {
           <Typography.Paragraph type="secondary">{t("shell:login.loadingAuthConfig")}</Typography.Paragraph>
         )}
         {authConfigQuery.error && (
-          <Alert type="error" showIcon message={String(authConfigQuery.error)} style={{ marginBottom: 12 }} />
+          <Alert type="error" showIcon title={String(authConfigQuery.error)} style={{ marginBottom: 12 }} />
         )}
 
         {showLocalLogin && (
@@ -126,7 +126,7 @@ export default function LoginView({ onLoggedIn }: LoginViewProps) {
           </>
         )}
 
-        {error && <Alert type="error" showIcon message={error} style={{ marginTop: 12 }} />}
+        {error && <Alert type="error" showIcon title={error} style={{ marginTop: 12 }} />}
       </div>
     </div>
   );

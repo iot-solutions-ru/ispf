@@ -332,9 +332,9 @@ export default function FederationBindPanel({
         </>
       )}
 
-      {error && <Alert type="error" showIcon message={error} />}
+      {error && <Alert type="error" showIcon title={error} />}
       {(bindMutation.isSuccess || rebindMutation.isSuccess || unbindMutation.isSuccess) && (
-        <Alert type="success" showIcon message={t("bind.updated")} />
+        <Alert type="success" showIcon title={t("bind.updated")} />
       )}
       {syncSubtreeOpen && mirrorPeer && mirrorRemoteSubtree && (
         <FederationCatalogSyncDialog

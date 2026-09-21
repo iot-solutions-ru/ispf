@@ -87,7 +87,7 @@ export default function SecurityUsersPanel({ canManage, onSelectUser }: Security
         </header>
 
         {usersQuery.error && (
-          <Alert type="error" showIcon message={String(usersQuery.error)} />
+          <Alert type="error" showIcon title={String(usersQuery.error)} />
         )}
 
         <Table<SecurityUserSummary>

@@ -111,7 +111,7 @@ export default function SecurityRoleInspector({
       </header>
 
       {!canManage && (
-        <Alert type="info" showIcon message={t("role.readonlyHint")} style={{ marginBottom: 12 }} />
+        <Alert type="info" showIcon title={t("role.readonlyHint")} style={{ marginBottom: 12 }} />
       )}
 
       <div className="security-user-cards">
@@ -164,7 +164,7 @@ export default function SecurityRoleInspector({
       </div>
 
       {deleteMutation.error && (
-        <Alert type="error" showIcon message={String(deleteMutation.error)} style={{ marginTop: 12 }} />
+        <Alert type="error" showIcon title={String(deleteMutation.error)} style={{ marginTop: 12 }} />
       )}
     </div>
   );

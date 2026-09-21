@@ -735,12 +735,12 @@ export default function ObjectPropertiesEditor({
         isEditing={isDirty}
       />
 
-      {saveMutation.isSuccess && <Alert type="success" message={t("common:changes.saved")} showIcon />}
+      {saveMutation.isSuccess && <Alert type="success" title={t("common:changes.saved")} showIcon />}
       {staleRemote && (
         <Alert
           type="warning"
           showIcon
-          message={t("objectEditor.staleRemote", { revision: remoteRevision })}
+          title={t("objectEditor.staleRemote", { revision: remoteRevision })}
           action={
             <>
           <Button size="small" onClick={() => void reloadFromEditor()}>
@@ -761,9 +761,9 @@ export default function ObjectPropertiesEditor({
           }
         />
       )}
-      {conflictMessage && <Alert type="error" message={conflictMessage} showIcon />}
+      {conflictMessage && <Alert type="error" title={conflictMessage} showIcon />}
       {saveMutation.error && !conflictMessage && (
-        <Alert type="error" message={(saveMutation.error as Error).message} showIcon />
+        <Alert type="error" title={(saveMutation.error as Error).message} showIcon />
       )}
 
       <div className="tabs-scroll">

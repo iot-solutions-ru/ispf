@@ -360,13 +360,13 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
         </div>
       </header>
 
-      {peersQuery.error && <Alert type="error" showIcon message={String(peersQuery.error)} />}
+      {peersQuery.error && <Alert type="error" showIcon title={String(peersQuery.error)} />}
 
       {tokenApiMissing && (
-        <Alert type="error" showIcon message={t("panel.tokenApiMissing")} />
+        <Alert type="error" showIcon title={t("panel.tokenApiMissing")} />
       )}
 
-      {syncFeedback && <Alert type="success" showIcon message={syncFeedback} />}
+      {syncFeedback && <Alert type="success" showIcon title={syncFeedback} />}
 
       <Tabs
         activeKey={activeTab}

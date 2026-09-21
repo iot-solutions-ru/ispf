@@ -29,7 +29,7 @@ export default function BundleLicenseErrorAlert({ error }: BundleLicenseErrorAle
       className="bundle-license-error"
       type="error"
       showIcon
-      message={message}
+      title={message}
       description={description}
     />
   );

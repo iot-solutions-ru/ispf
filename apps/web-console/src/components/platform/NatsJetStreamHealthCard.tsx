@@ -132,7 +132,7 @@ export default function NatsJetStreamHealthCard() {
       <Typography.Title level={3}>{t("natsHealth.title")}</Typography.Title>
       {healthQuery.isLoading && <Typography.Text type="secondary">{t("natsHealth.loading")}</Typography.Text>}
       {healthQuery.error && (
-        <Alert type="error" showIcon message={t("natsHealth.loadError")} />
+        <Alert type="error" showIcon title={t("natsHealth.loadError")} />
       )}
       {healthQuery.data && (
         <Space orientation="vertical" style={{ width: "100%" }}>
@@ -145,7 +145,7 @@ export default function NatsJetStreamHealthCard() {
             dataSource={rows}
           />
           {healthQuery.data.connectionError && (
-            <Alert type="error" showIcon message={healthQuery.data.connectionError} />
+            <Alert type="error" showIcon title={healthQuery.data.connectionError} />
           )}
           <Typography.Paragraph type="secondary">{t("natsHealth.hint")}</Typography.Paragraph>
           <Typography.Paragraph type="secondary">{t("natsHealth.publishNatsSmokeHint")}</Typography.Paragraph>

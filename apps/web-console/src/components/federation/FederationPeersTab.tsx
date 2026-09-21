@@ -188,7 +188,7 @@ export default function FederationPeersTab({
 
   return (
     <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
-      {formError && <Alert type="error" showIcon message={formError} />}
+      {formError && <Alert type="error" showIcon title={formError} />}
 
       <section className="panel-card">
         <Space orientation="vertical" size="middle" style={{ width: "100%" }}>

@@ -129,7 +129,7 @@ export default function CreateSecurityUserDialog({
         </Form.Item>
 
         {mutation.error && (
-          <Alert type="error" showIcon message={String(mutation.error)} style={{ marginBottom: 12 }} />
+          <Alert type="error" showIcon title={String(mutation.error)} style={{ marginBottom: 12 }} />
         )}
       </Form>
     </Modal>

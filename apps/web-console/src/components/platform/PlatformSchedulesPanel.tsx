@@ -148,7 +148,7 @@ export default function PlatformSchedulesPanel() {
 
       {schedulesQuery.isLoading && <Typography.Text type="secondary">{t("appSchedules.loading")}</Typography.Text>}
       {schedulesQuery.error && (
-        <Alert type="error" showIcon message={String(schedulesQuery.error)} />
+        <Alert type="error" showIcon title={String(schedulesQuery.error)} />
       )}
 
       {schedulesQuery.data && (
@@ -234,10 +234,10 @@ export default function PlatformSchedulesPanel() {
           )}
         </Space>
         {saveMutation.error && (
-          <Alert type="error" showIcon message={String(saveMutation.error)} />
+          <Alert type="error" showIcon title={String(saveMutation.error)} />
         )}
         {saveMutation.isSuccess && (
-          <Alert type="success" showIcon message={t("appSchedules.saved")} />
+          <Alert type="success" showIcon title={t("appSchedules.saved")} />
         )}
       </div>
     </section>

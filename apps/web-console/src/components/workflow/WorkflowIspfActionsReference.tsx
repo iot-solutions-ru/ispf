@@ -7,7 +7,7 @@ export default function WorkflowIspfActionsReference() {
 
   return (
     <section className="workflow-ispf-reference">
-      <Space direction="vertical" size="small" style={{ width: "100%" }}>
+      <Space orientation="vertical" size="small" style={{ width: "100%" }}>
         <Typography.Title level={4} style={{ margin: 0 }}>
           {t("ispfReference.title")}
         </Typography.Title>
@@ -16,7 +16,7 @@ export default function WorkflowIspfActionsReference() {
       <ul className="workflow-ispf-action-list">
         {WORKFLOW_ISPF_ACTIONS.map((entry) => (
           <li key={entry.action}>
-            <Space direction="vertical" size={2}>
+            <Space orientation="vertical" size={2}>
               <Space size="small" wrap>
                 <Tag color="blue">{entry.action}</Tag>
                 <Typography.Text>{entry.label}</Typography.Text>

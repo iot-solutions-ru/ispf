@@ -57,7 +57,7 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
   return (
     <div className="operator-shell operator-shell--launcher" data-testid="operator-shell">
       <header className="operator-topbar">
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Typography.Text strong>{t("operator:launcher.title")}</Typography.Text>
           <span className="brand-sub">{t("operator:launcher.subtitle")}</span>
         </Space>
@@ -72,7 +72,7 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
       </header>
       <main className="op-launcher">
         {appsQuery.isLoading && <Typography.Paragraph className="op-muted">{t("common:action.loading")}</Typography.Paragraph>}
-        {appsQuery.error && <Alert type="error" message={String(appsQuery.error)} />}
+        {appsQuery.error && <Alert type="error" title={String(appsQuery.error)} />}
         <div className="op-launcher-grid">
           {apps.map((app: OperatorAppEntry, index) => {
             const ui = uiQueries[index]?.data ?? null;
@@ -143,7 +143,7 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
                 : t("operator:launcher.installStarters")}
             </Button>
             {installMutation.error && (
-              <Alert type="error" message={String(installMutation.error)} />
+              <Alert type="error" title={String(installMutation.error)} />
             )}
           </section>
         )}

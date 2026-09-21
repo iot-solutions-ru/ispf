@@ -68,7 +68,7 @@ export default function ClusterHealthPanel({ showTitle = true }: { showTitle?: b
       {showTitle && <Typography.Title level={3}>{t("clusterHealth.title")}</Typography.Title>}
       {healthQuery.isLoading && <Typography.Text type="secondary">{t("clusterHealth.loading")}</Typography.Text>}
       {healthQuery.error && (
-        <Alert type="error" showIcon message={t("clusterHealth.loadError")} />
+        <Alert type="error" showIcon title={t("clusterHealth.loadError")} />
       )}
       {data && <ClusterHealthContent data={data} t={t} />}
     </section>

@@ -45,7 +45,7 @@ export default function BundleLicenseInfoPanel({
   }
 
   if (licenseQuery.error) {
-    return <Alert type="error" showIcon message={t("platform:bundle.license.loadError")} />;
+    return <Alert type="error" showIcon title={t("platform:bundle.license.loadError")} />;
   }
 
   const serverInstallationId = licenseQuery.data?.installationId ?? "";
@@ -136,7 +136,7 @@ export default function BundleLicenseInfoPanel({
           <Alert
             type="info"
             showIcon
-            message={t("platform:bundle.license.mismatchInstallation", {
+            title={t("platform:bundle.license.mismatchInstallation", {
               licensed: manifestLicense.installationId,
               server: serverInstallationId,
             })}

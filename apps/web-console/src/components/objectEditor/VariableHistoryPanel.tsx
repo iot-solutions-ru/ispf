@@ -151,7 +151,7 @@ export default function VariableHistoryPanel({
         </div>
       </div>
 
-      {exportError && <Alert type="error" message={exportError} showIcon className="variable-history-export-error" />}
+      {exportError && <Alert type="error" title={exportError} showIcon className="variable-history-export-error" />}
 
       <div className={isRecordSnapshot ? "variable-history-snapshots" : "variable-history-chart"}>
         {isRecordSnapshot ? (

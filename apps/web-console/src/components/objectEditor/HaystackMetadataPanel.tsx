@@ -197,7 +197,7 @@ export default function HaystackMetadataPanel({ devicePath, canManage }: Haystac
         </label>
       </div>
 
-      {formError && <Alert type="error" message={formError} showIcon />}
+      {formError && <Alert type="error" title={formError} showIcon />}
 
       {canManage && (
         <Space className="panel-toolbar">

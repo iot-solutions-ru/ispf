@@ -71,7 +71,7 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
   }
 
   if (scheduleQuery.error) {
-    return <Alert type="error" showIcon message={String(scheduleQuery.error)} />;
+    return <Alert type="error" showIcon title={String(scheduleQuery.error)} />;
   }
 
   const lastTick = scheduleQuery.data?.lastTickAt;
@@ -161,8 +161,8 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
         {lastError && (
           <p className="hint error full">{t("platform:schedule.lastError", { error: lastError })}</p>
         )}
-        {saveError && <Alert className="full" type="error" showIcon message={saveError} />}
-        {saveMutation.isSuccess && <Alert className="full" type="success" showIcon message={t("common:action.saved")} />}
+        {saveError && <Alert className="full" type="error" showIcon title={saveError} />}
+        {saveMutation.isSuccess && <Alert className="full" type="success" showIcon title={t("common:action.saved")} />}
       </Form>
     </PlatformSqlEditorShell>
   );

@@ -154,14 +154,14 @@ export default function AiStudioBundleTab({
       </Space>
 
       {generateMutation.data && !generateMutation.data.publishable && (
-        <Alert type="error" showIcon message={t("bundle.notPublishable")} />
+        <Alert type="error" showIcon title={t("bundle.notPublishable")} />
       )}
 
       {(generateMutation.error || validateMutation.error || dryRunMutation.error || publishMutation.error) && (
         <Alert
           type="error"
           showIcon
-          message={String(
+          title={String(
             generateMutation.error
               || validateMutation.error
               || dryRunMutation.error
@@ -205,7 +205,7 @@ export default function AiStudioBundleTab({
           </ul>
         )}
         {rollbackMutation.error && (
-          <Alert type="error" showIcon message={String(rollbackMutation.error)} />
+          <Alert type="error" showIcon title={String(rollbackMutation.error)} />
         )}
       </section>
 

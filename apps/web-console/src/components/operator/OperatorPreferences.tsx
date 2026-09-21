@@ -54,10 +54,10 @@ export default function OperatorPreferences() {
   };
 
   const content = (
-    <Space direction="vertical" size="middle" style={{ width: 280 }}>
+    <Space orientation="vertical" size="middle" style={{ width: 280 }}>
       <div>
         <Typography.Text strong>{t("preferences.alarmsLegend")}</Typography.Text>
-        <Space direction="vertical" size="small" style={{ width: "100%", marginTop: 8 }}>
+        <Space orientation="vertical" size="small" style={{ width: "100%", marginTop: 8 }}>
           <Space style={{ width: "100%", justifyContent: "space-between" }}>
             <Typography.Text>{t("preferences.sound")}</Typography.Text>
             <Switch checked={soundEnabled} onChange={toggleSound} size="small" />
@@ -77,7 +77,7 @@ export default function OperatorPreferences() {
             type="warning"
             showIcon
             style={{ marginTop: 8 }}
-            message={t("preferences.browserNotifyDenied")}
+            title={t("preferences.browserNotifyDenied")}
           />
         )}
         {notifyPermission === "unsupported" && (
@@ -85,7 +85,7 @@ export default function OperatorPreferences() {
             type="info"
             showIcon
             style={{ marginTop: 8 }}
-            message={t("preferences.browserNotifyUnsupported")}
+            title={t("preferences.browserNotifyUnsupported")}
           />
         )}
       </div>

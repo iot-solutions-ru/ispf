@@ -29,7 +29,7 @@ function StatusBanner({ tone, children }: { tone: "ok" | "error" | "neutral"; ch
       className={`ds-status-banner ds-status-banner--${tone}`}
       type={tone === "ok" ? "success" : tone === "error" ? "error" : "info"}
       showIcon
-      message={children}
+      title={children}
     />
   );
 }
@@ -142,7 +142,7 @@ export default function DataSourceEditor({ path, onClose, onOpenProperties }: Da
   }
 
   if (dataQuery.error) {
-    return <Alert type="error" showIcon message={String(dataQuery.error)} />;
+    return <Alert type="error" showIcon title={String(dataQuery.error)} />;
   }
 
   return (

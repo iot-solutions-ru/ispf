@@ -173,7 +173,7 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
           </div>
         )}
         {saveMutation.error && (
-          <Alert type="error" message={String(saveMutation.error)} showIcon />
+          <Alert type="error" title={String(saveMutation.error)} showIcon />
         )}
       </form>
       <ObjectFederationBindSection path={path} canManage={canManage} />

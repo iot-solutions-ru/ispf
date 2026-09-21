@@ -187,7 +187,7 @@ export default function TenantsPanel({ canManage, onSelectPath }: TenantsPanelPr
           <Typography.Title level={4} style={{ margin: 0 }}>
             {t("tenants.credentialsTitle", { tenantId: createdAdmin.tenantId })}
           </Typography.Title>
-          <Alert type="warning" showIcon message={t("tenants.credentialsWarning")} />
+          <Alert type="warning" showIcon title={t("tenants.credentialsWarning")} />
           <dl className="tenants-credentials-fields">
             <div>
               <dt>{t("tenants.field.adminUsername")}</dt>
@@ -218,7 +218,7 @@ export default function TenantsPanel({ canManage, onSelectPath }: TenantsPanelPr
         </div>
       )}
 
-      {formError && <Alert type="error" showIcon message={formError} />}
+      {formError && <Alert type="error" showIcon title={formError} />}
 
       <Table<TenantSummary>
         size="small"

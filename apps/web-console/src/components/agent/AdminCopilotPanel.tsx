@@ -283,7 +283,7 @@ export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelPr
       </div>
 
       {!providerReady && !providerLoading && (
-        <Alert type="error" showIcon message={t("ai:copilot.llmUnavailable")} />
+        <Alert type="error" showIcon title={t("ai:copilot.llmUnavailable")} />
       )}
 
       <div className="admin-copilot-mode-row">

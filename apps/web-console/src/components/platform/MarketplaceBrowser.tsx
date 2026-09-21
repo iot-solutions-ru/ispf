@@ -279,10 +279,10 @@ function MarketplaceListingCard({
           <BundleLicenseErrorAlert error={installMutation.error} />
         )}
         {uninstallMutation.error && (
-          <Alert type="error" showIcon message={String(uninstallMutation.error)} />
+          <Alert type="error" showIcon title={String(uninstallMutation.error)} />
         )}
         {activateMutation.error && (
-          <Space direction="vertical" size="small">
+          <Space orientation="vertical" size="small">
             <BundleLicenseErrorAlert error={activateMutation.error} />
             {canContactVendor && (
               <Button type="link" onClick={() => setShowContact(true)}>
@@ -450,7 +450,7 @@ export default function MarketplaceBrowser({ onInstalled }: { onInstalled: (mess
       )}
 
       {catalogQuery.error && (
-        <Alert type="error" showIcon message={String(catalogQuery.error)} />
+        <Alert type="error" showIcon title={String(catalogQuery.error)} />
       )}
       {catalogQuery.isLoading && <p className="hint">{t("solutions.loading")}</p>}
 

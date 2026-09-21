@@ -157,7 +157,7 @@ export default function CorrelatorInspector({ path, canManage = false }: Correla
           </div>
         )}
         {saveMutation.error && (
-          <Alert className="full" type="error" message={String(saveMutation.error)} showIcon />
+          <Alert className="full" type="error" title={String(saveMutation.error)} showIcon />
         )}
       </Form>
       <ObjectFederationBindSection path={path} canManage={canManage} />

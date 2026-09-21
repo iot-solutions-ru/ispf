@@ -211,13 +211,13 @@ export default function MultiPenTrendModal({
         <Typography.Paragraph type="secondary" className="multi-pen-trend-zoom-hint">
           {t("view.multiPenTrend.zoomHint")}
         </Typography.Paragraph>
-        {exportError && <Alert type="error" message={exportError} showIcon />}
+        {exportError && <Alert type="error" title={exportError} showIcon />}
 
         <div className="variable-history-chart multi-pen-trend-chart">
           {isLoading && merged.length === 0 ? (
             <Typography.Text type="secondary">{t("inspector:variables.historyPanel.loading")}</Typography.Text>
           ) : isError ? (
-            <Alert type="error" showIcon message={(error as Error).message} />
+            <Alert type="error" showIcon title={(error as Error).message} />
           ) : visibleData.length < 2 ? (
             <Typography.Text type="secondary">{t("inspector:variables.historyPanel.notEnoughPoints")}</Typography.Text>
           ) : (

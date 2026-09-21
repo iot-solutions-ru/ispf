@@ -144,7 +144,7 @@ export default function PlatformUpdateBanner() {
       }`}
       type={bannerType}
       showIcon
-      message={<Typography.Text strong>{message}</Typography.Text>}
+      title={<Typography.Text strong>{message}</Typography.Text>}
       description={description}
       action={(
         <Space className="platform-update-banner-actions" wrap size="small">

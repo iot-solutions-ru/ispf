@@ -139,7 +139,7 @@ export default function ProcessProgramInspector({ path, canManage = false }: Pro
               </Typography.Paragraph>
             )}
             {form.lastError && (
-              <Alert type="error" showIcon message={`${t("automation:processProgram.lastError")}: ${form.lastError}`} />
+              <Alert type="error" showIcon title={`${t("automation:processProgram.lastError")}: ${form.lastError}`} />
             )}
           </div>
         )}
@@ -167,7 +167,7 @@ export default function ProcessProgramInspector({ path, canManage = false }: Pro
               : validateMutation.data.error}
           </p>
         )}
-        {saveMutation.error && <Alert className="full" type="error" message={String(saveMutation.error)} showIcon />}
+        {saveMutation.error && <Alert className="full" type="error" title={String(saveMutation.error)} showIcon />}
       </Form>
       <ObjectFederationBindSection path={path} canManage={canManage} />
     </section>

@@ -81,7 +81,7 @@ export default function AnalyticsFormulasPanel() {
 
       {statusMessage && <p className="hint success">{statusMessage}</p>}
       {formulasQuery.isLoading && <p className="op-muted">{t("formulas.loading")}</p>}
-      {formulasQuery.error && <Alert type="error" showIcon message={String(formulasQuery.error)} />}
+      {formulasQuery.error && <Alert type="error" showIcon title={String(formulasQuery.error)} />}
 
       {formulasQuery.data && (
         <div className="panel-card">

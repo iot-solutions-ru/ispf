@@ -133,7 +133,7 @@ export default function TreeSubtreeExportPanel({ rootPath, canManage }: TreeSubt
       </Space>
 
       {exportMutation.error && (
-        <Alert type="error" message={String(exportMutation.error)} showIcon />
+        <Alert type="error" title={String(exportMutation.error)} showIcon />
       )}
 
       <label className="full">

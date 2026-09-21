@@ -180,7 +180,7 @@ export default function BrickMetadataPanel({ devicePath, canManage }: BrickMetad
         )}
       </section>
 
-      {formError && <Alert type="error" showIcon message={formError} />}
+      {formError && <Alert type="error" showIcon title={formError} />}
 
       {canManage && (
         <div className="panel-toolbar">

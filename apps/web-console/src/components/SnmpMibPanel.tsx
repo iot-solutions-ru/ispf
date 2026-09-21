@@ -238,8 +238,8 @@ export default function SnmpMibPanel({ devicePath, canManage, onImported }: Snmp
         </>
       )}
 
-      {message && <Alert type="success" showIcon message={message} style={{ marginTop: 8 }} />}
-      {error && <Alert type="error" showIcon message={error} style={{ marginTop: 8 }} />}
+      {message && <Alert type="success" showIcon title={message} style={{ marginTop: 8 }} />}
+      {error && <Alert type="error" showIcon title={error} style={{ marginTop: 8 }} />}
     </section>
   );
 }

@@ -58,7 +58,7 @@ export default function AutomationRulesListPanel({
       </header>
 
       {listQuery.isLoading && <p className="hint">{t("common:action.loading")}</p>}
-      {listQuery.error && <Alert type="error" showIcon message={String(listQuery.error)} />}
+      {listQuery.error && <Alert type="error" showIcon title={String(listQuery.error)} />}
 
       {!listQuery.isLoading && !listQuery.error && (listQuery.data?.length ?? 0) === 0 && (
         <p className="hint">{t(isAlertRules ? "catalog.alertRulesEmpty" : "catalog.correlatorsEmpty")}</p>

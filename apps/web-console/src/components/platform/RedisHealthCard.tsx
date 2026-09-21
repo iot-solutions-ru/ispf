@@ -110,7 +110,7 @@ export default function RedisHealthCard() {
       <Typography.Title level={3}>{t("redisHealth.title")}</Typography.Title>
       {healthQuery.isLoading && <Typography.Text type="secondary">{t("redisHealth.loading")}</Typography.Text>}
       {healthQuery.error && (
-        <Alert type="error" showIcon message={t("redisHealth.loadError")} />
+        <Alert type="error" showIcon title={t("redisHealth.loadError")} />
       )}
       {healthQuery.data && (
         <Space orientation="vertical" style={{ width: "100%" }}>
@@ -123,7 +123,7 @@ export default function RedisHealthCard() {
             dataSource={rows}
           />
           {healthQuery.data.connectionError && (
-            <Alert type="error" showIcon message={healthQuery.data.connectionError} />
+            <Alert type="error" showIcon title={healthQuery.data.connectionError} />
           )}
           <Typography.Paragraph type="secondary">{t("redisHealth.hint")}</Typography.Paragraph>
         </Space>

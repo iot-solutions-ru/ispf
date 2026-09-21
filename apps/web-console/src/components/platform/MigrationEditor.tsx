@@ -71,7 +71,7 @@ export default function MigrationEditor({ path, onClose, onOpenProperties }: Mig
   }
 
   if (migrationQuery.error) {
-    return <Alert type="error" showIcon message={String(migrationQuery.error)} />;
+    return <Alert type="error" showIcon title={String(migrationQuery.error)} />;
   }
 
   return (
@@ -151,11 +151,11 @@ export default function MigrationEditor({ path, onClose, onOpenProperties }: Mig
         {migrationQuery.data?.checksum && (
           <p className="hint full mono small">Checksum: {migrationQuery.data.checksum}</p>
         )}
-        {saveError && <Alert className="full" type="error" showIcon message={saveError} />}
-        {applyError && <Alert className="full" type="error" showIcon message={applyError} />}
-        {saveMutation.isSuccess && <Alert className="full" type="success" showIcon message={t("common:action.saved")} />}
+        {saveError && <Alert className="full" type="error" showIcon title={saveError} />}
+        {applyError && <Alert className="full" type="error" showIcon title={applyError} />}
+        {saveMutation.isSuccess && <Alert className="full" type="success" showIcon title={t("common:action.saved")} />}
         {applyMutation.isSuccess && (
-          <Alert className="full" type="success" showIcon message={t("platform:migration.appliedSuccess")} />
+          <Alert className="full" type="success" showIcon title={t("platform:migration.appliedSuccess")} />
         )}
       </Form>
     </PlatformSqlEditorShell>

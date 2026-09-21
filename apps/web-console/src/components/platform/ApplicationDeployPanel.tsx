@@ -164,7 +164,7 @@ export default function ApplicationDeployPanel({
             <p className="op-muted">{t("deploy.historyHint")}</p>
 
             {historyQuery.isLoading && <p className="op-muted">{t("deploy.loadingHistory")}</p>}
-            {historyQuery.error && <Alert type="error" showIcon message={String(historyQuery.error)} />}
+            {historyQuery.error && <Alert type="error" showIcon title={String(historyQuery.error)} />}
 
             {historyQuery.data && historyQuery.data.length === 0 && (
               <p className="op-muted">{t("deploy.emptyHistory")}</p>
@@ -199,12 +199,12 @@ export default function ApplicationDeployPanel({
               </ul>
             )}
 
-            {rollbackMutation.error && <Alert type="error" showIcon message={String(rollbackMutation.error)} />}
+            {rollbackMutation.error && <Alert type="error" showIcon title={String(rollbackMutation.error)} />}
             {rollbackMutation.isSuccess && (
               <Alert
                 type="success"
                 showIcon
-                message={
+                title={
                   <>
                 {t("deploy.rollbackSuccess")}
                 {rollbackMutation.data?.rolledBackTo
@@ -222,7 +222,7 @@ export default function ApplicationDeployPanel({
             {eventCatalogQuery.isLoading && (
               <p className="op-muted">{t("deploy.eventCatalogLoading")}</p>
             )}
-            {eventCatalogQuery.error && <Alert type="error" showIcon message={String(eventCatalogQuery.error)} />}
+            {eventCatalogQuery.error && <Alert type="error" showIcon title={String(eventCatalogQuery.error)} />}
             {eventCatalogQuery.data && eventCatalogQuery.data.length === 0 && (
               <p className="op-muted">{t("deploy.eventCatalogEmpty")}</p>
             )}
@@ -283,12 +283,12 @@ export default function ApplicationDeployPanel({
               </Space>
             )}
 
-            {lifecycleMutation?.error && <Alert type="error" showIcon message={String(lifecycleMutation.error)} />}
+            {lifecycleMutation?.error && <Alert type="error" showIcon title={String(lifecycleMutation.error)} />}
             {lifecycleMutation?.isSuccess && lifecycleMutation.data && (
               <Alert
                 type="success"
                 showIcon
-                message={
+                title={
                   <>
                 {t("deploy.bundleObjectsSuccess", {
                   action: lifecycleMutation.data.action ?? lifecycleAction ?? "",
@@ -347,7 +347,7 @@ export default function ApplicationDeployPanel({
               <p className="op-muted">{t("deploy.loadingVersions")}</p>
             )}
             {functionVersionsQuery.error && (
-              <Alert type="error" showIcon message={String(functionVersionsQuery.error)} />
+              <Alert type="error" showIcon title={String(functionVersionsQuery.error)} />
             )}
 
             {functionVersionsQuery.data && functionVersionsQuery.data.length > 0 && (
@@ -382,13 +382,13 @@ export default function ApplicationDeployPanel({
             )}
 
             {functionRollbackMutation.error && (
-              <Alert type="error" showIcon message={String(functionRollbackMutation.error)} />
+              <Alert type="error" showIcon title={String(functionRollbackMutation.error)} />
             )}
             {functionRollbackMutation.isSuccess && (
               <Alert
                 type="success"
                 showIcon
-                message={t("deploy.functionActiveVersion", { version: functionRollbackMutation.data?.version })}
+                title={t("deploy.functionActiveVersion", { version: functionRollbackMutation.data?.version })}
               />
             )}
           </section>

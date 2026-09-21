@@ -215,8 +215,8 @@ export default function SaveAnalyticsFormulaModal({
           )}
         </div>
 
-        {saveMessage && <Alert className="full" type="success" message={saveMessage} showIcon />}
-        {error && <Alert className="full" type="error" message={(error as Error).message} showIcon />}
+        {saveMessage && <Alert className="full" type="success" title={saveMessage} showIcon />}
+        {error && <Alert className="full" type="error" title={(error as Error).message} showIcon />}
       </div>
     </Modal>
   );
