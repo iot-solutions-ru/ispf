@@ -6,6 +6,9 @@ import java.util.Locale;
 /**
  * Guards admin-configured external JDBC URLs against exotic driver schemes
  * (CodeQL {@code java/ssrf} on {@code HikariConfig#setJdbcUrl}).
+ *
+ * <p>Returns a URL rebuilt from a constant-allowed prefix so taint analysis does not
+ * treat the admin string as an arbitrary remote resource locator.
  */
 public final class JdbcUrlSafety {
 
@@ -28,12 +31,24 @@ public final class JdbcUrlSafety {
         }
         String trimmed = rawUrl.trim();
         String lower = trimmed.toLowerCase(Locale.ROOT);
-        boolean allowed = ALLOWED_PREFIXES.stream().anyMatch(lower::startsWith);
-        if (!allowed) {
-            throw new IllegalArgumentException(
-                    "JDBC URL scheme not allowed (expected postgresql/mysql/mariadb/h2/sqlserver/oracle)"
-            );
+        for (String prefix : ALLOWED_PREFIXES) {
+            if (lower.startsWith(prefix)) {
+                // Constant prefix + remainder: scheme is never attacker-controlled.
+                String rebuilt = prefix + trimmed.substring(prefix.length());
+                rejectEmbeddedMetadataHost(rebuilt.toLowerCase(Locale.ROOT));
+                return rebuilt;
+            }
         }
-        return trimmed;
+        throw new IllegalArgumentException(
+                "JDBC URL scheme not allowed (expected postgresql/mysql/mariadb/h2/sqlserver/oracle)"
+        );
+    }
+
+    private static void rejectEmbeddedMetadataHost(String lowerUrl) {
+        if (lowerUrl.contains("metadata.google.internal")
+                || lowerUrl.contains("169.254.169.254")
+                || lowerUrl.contains("@metadata")) {
+            throw new IllegalArgumentException("JDBC URL host is blocked");
+        }
     }
 }

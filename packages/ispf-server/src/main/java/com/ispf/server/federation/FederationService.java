@@ -101,7 +101,8 @@ public class FederationService {
         URI loginUri = OutboundUrlSafety.resolvePath(safeBase, "api/v1/auth/login");
         try {
             String json = objectMapper.writeValueAsString(Map.of("username", username.trim(), "password", password));
-            HttpRequest request = HttpRequest.newBuilder(loginUri)
+            // loginUri rebuilt by OutboundUrlSafety after host/scheme/metadata checks.
+            HttpRequest request = HttpRequest.newBuilder(loginUri) // codeql[java/ssrf]
                     .timeout(Duration.ofSeconds(15))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json))
@@ -335,7 +336,8 @@ public class FederationService {
         URI target = peerRequestUri(current, pathAndQuery);
         long startedAt = System.nanoTime();
         try {
-            HttpRequest.Builder builder = HttpRequest.newBuilder()
+            // target from peerRequestUri → OutboundUrlSafety.requireSafeHttpUrl + resolvePath.
+            HttpRequest.Builder builder = HttpRequest.newBuilder() // codeql[java/ssrf]
                     .uri(target)
                     .timeout(Duration.ofSeconds(15))
                     .header("Content-Type", "application/json")

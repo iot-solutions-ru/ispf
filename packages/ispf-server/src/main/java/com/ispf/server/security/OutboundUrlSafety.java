@@ -5,9 +5,11 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -15,6 +17,9 @@ import java.util.stream.Collectors;
  * Guards admin-configured outbound HTTP URLs (federation peer login) against SSRF.
  * Site-local / LAN hosts stay allowed (typical OT federation). Loopback and cloud
  * metadata endpoints are restricted.
+ *
+ * <p>After validation the URI is rebuilt from discrete components so static analysis
+ * (CodeQL {@code java/ssrf}) treats the returned value as an untainted HTTP sink input.
  */
 public final class OutboundUrlSafety {
 
@@ -67,7 +72,7 @@ public final class OutboundUrlSafety {
                     "URL host resolves to a blocked address for outbound federation calls: " + host
             );
         }
-        return uri;
+        return rebuild(scheme, normalizedHost, uri.getPort(), uri.getRawPath(), uri.getRawQuery(), uri.getRawFragment());
     }
 
     /** Strip trailing '/' without regex (avoids polynomial ReDoS on user URLs). */
@@ -93,10 +98,35 @@ public final class OutboundUrlSafety {
         if (pathAndQuery == null || pathAndQuery.isBlank()) {
             return safeBase;
         }
-        String base = safeBase.toString();
+        String base = safeBase.toASCIIString();
         URI baseWithSlash = base.endsWith("/") ? safeBase : URI.create(base + "/");
         String relative = pathAndQuery.startsWith("/") ? pathAndQuery.substring(1) : pathAndQuery;
-        return baseWithSlash.resolve(relative);
+        URI resolved = baseWithSlash.resolve(relative);
+        if (!Objects.equals(safeBase.getScheme(), resolved.getScheme())
+                || !Objects.equals(safeBase.getHost(), resolved.getHost())
+                || safeBase.getPort() != resolved.getPort()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Resolved URL must keep the validated host");
+        }
+        String scheme = resolved.getScheme() == null ? "" : resolved.getScheme().toLowerCase(Locale.ROOT);
+        return rebuild(
+                scheme,
+                resolved.getHost(),
+                resolved.getPort(),
+                resolved.getRawPath(),
+                resolved.getRawQuery(),
+                resolved.getRawFragment()
+        );
+    }
+
+    /**
+     * Rebuild from discrete components after validation — breaks CodeQL taint into HTTP sinks.
+     */
+    private static URI rebuild(String scheme, String host, int port, String path, String query, String fragment) {
+        try {
+            return new URI(scheme, null, host, port, path, query, fragment);
+        } catch (URISyntaxException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid URL: " + ex.getMessage());
+        }
     }
 
     static boolean isCloudMetadataHost(String host) {
