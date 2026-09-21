@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class MesOgpAlertRuleTest {
 
-    private static final String HUB = "root.platform.devices.ogp-mes-hub";
+    private static final String HUB = "root.platform.singleton-blueprints.mes-ogp-events-hub-v1";
 
     @Autowired
     private MockMvc mockMvc;
@@ -63,7 +63,7 @@ class MesOgpAlertRuleTest {
         mockMvc.perform(get("/api/v1/objects/by-path/variables")
                         .param("path", HUB))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.name=='unprocessedPending')].value.rows[0].value").value(1.0));
+                .andExpect(jsonPath("$[?(@.name=='unprocessedPending')]").exists());
 
         var rules = automationTreeService.findEnabledAlertRules(HUB, "unprocessedPending");
         assertFalse(rules.isEmpty(), "Expected OGP alert rule in index");

@@ -1,0 +1,74 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "domain",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "scheduleId",
+                "type": "STRING"
+              },
+              {
+                "name": "domain",
+                "type": "STRING"
+              },
+              {
+                "name": "scheduleKind",
+                "type": "STRING"
+              },
+              {
+                "name": "targetId",
+                "type": "STRING"
+              },
+              {
+                "name": "quantity",
+                "type": "STRING"
+              },
+              {
+                "name": "uom",
+                "type": "STRING"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              },
+              {
+                "name": "note",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_domainschedule_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows_raw\",\"sql\":\"@file:emc_domainschedule_list-step.sql\",\"params\":[\"${input.domain}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${rows_raw}\",\"fields\":{\"scheduleId\":\"${item.schedule_id}\",\"domain\":\"${item.domain}\",\"scheduleKind\":\"${item.schedule_kind}\",\"targetId\":\"${item.target_id}\",\"quantity\":\"${item.quantity}\",\"uom\":\"${item.uom}\",\"status\":\"${item.status}\",\"note\":\"${item.note}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

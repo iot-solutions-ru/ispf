@@ -1,0 +1,49 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        },
+        {
+          "name": "signalCode",
+          "type": "STRING"
+        },
+        {
+          "name": "isAuto",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        },
+        {
+          "name": "signalCode",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_event_registerSignal",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"failIfNull\",\"var\":\"input.equipmentId\",\"error_code\":\"VALIDATION\",\"error_message\":\"equipmentId is required\"},{\"type\":\"failIfNull\",\"var\":\"input.signalCode\",\"error_code\":\"VALIDATION\",\"error_message\":\"signalCode is required\"},{\"type\":\"when\",\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO emc_machine_signal (signal_id, equipment_id, signal_code, is_auto) VALUES (gen_random_uuid(), ?, ?, true)\",\"params\":[\"${input.equipmentId}\",\"${input.signalCode}\"]}],\"var\":\"input.isAuto\",\"equals\":\"true\",\"else\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO emc_machine_signal (signal_id, equipment_id, signal_code, is_auto) VALUES (gen_random_uuid(), ?, ?, false)\",\"params\":[\"${input.equipmentId}\",\"${input.signalCode}\"]}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"equipmentId\":\"${input.equipmentId}\",\"signalCode\":\"${input.signalCode}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

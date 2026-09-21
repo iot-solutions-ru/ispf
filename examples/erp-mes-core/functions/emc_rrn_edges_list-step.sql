@@ -1,0 +1,1 @@
+SELECT rel_id, network_id, from_resource_type, from_resource_id, to_resource_type, to_resource_id, relationship_type, dependency FROM emc_resource_relationship WHERE COALESCE(NULLIF(TRIM(?), ''), network_id) = network_id ORDER BY network_id, rel_id

@@ -40,6 +40,11 @@ public class ObjectTemplateService {
 
     @Transactional
     public void applyTemplate(String objectPath, String templateId) {
+        applyTemplate(objectPath, templateId, Map.of());
+    }
+
+    @Transactional
+    public void applyTemplate(String objectPath, String templateId, Map<String, String> parameters) {
         if (templateId == null || templateId.isBlank()) {
             return;
         }
@@ -48,17 +53,21 @@ public class ObjectTemplateService {
                         HttpStatus.BAD_REQUEST,
                         "Unknown templateId: " + templateId
                 ));
-        applyResolvedModel(objectPath, model);
+        applyResolvedModel(objectPath, model, parameters);
         for (String companionName : COMPANION_MODELS_BY_NAME.getOrDefault(model.name(), List.of())) {
             BlueprintRegistry.findByName(companionName).ifPresent(companion ->
-                    applyResolvedModel(objectPath, companion)
+                    applyResolvedModel(objectPath, companion, parameters)
             );
         }
     }
 
-    private void applyResolvedModel(String objectPath, BlueprintDefinition model) {
+    private void applyResolvedModel(String objectPath, BlueprintDefinition model, Map<String, String> parameters) {
         try {
-            BlueprintApplicationService.applyBlueprintWithRules(model, objectPath, model.parameters());
+            BlueprintApplicationService.applyBlueprintWithRules(
+                    model,
+                    objectPath,
+                    parameters != null ? parameters : Map.of()
+            );
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }

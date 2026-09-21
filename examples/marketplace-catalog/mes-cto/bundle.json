@@ -15,18 +15,10 @@
       "sql": "CREATE TABLE IF NOT EXISTS mes_cto_option_family (family_code VARCHAR(32) PRIMARY KEY, display_name VARCHAR(128) NOT NULL); CREATE TABLE IF NOT EXISTS mes_cto_option (option_code VARCHAR(32) PRIMARY KEY, family_code VARCHAR(32) NOT NULL, display_name VARCHAR(128) NOT NULL); CREATE TABLE IF NOT EXISTS mes_cto_rule (rule_code VARCHAR(64) PRIMARY KEY, rule_type VARCHAR(32) NOT NULL, finish_code VARCHAR(32), sensor_code VARCHAR(32), message VARCHAR(256) NOT NULL); CREATE TABLE IF NOT EXISTS mes_cto_configuration (id UUID PRIMARY KEY, options_json TEXT NOT NULL, status VARCHAR(32) NOT NULL); INSERT INTO mes_cto_option_family (family_code, display_name) SELECT 'finish', 'Finish' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_option_family WHERE family_code = 'finish'); INSERT INTO mes_cto_option_family (family_code, display_name) SELECT 'sensor', 'Sensor' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_option_family WHERE family_code = 'sensor'); INSERT INTO mes_cto_option (option_code, family_code, display_name) SELECT 'FINISH-MATTE', 'finish', 'Matte finish' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_option WHERE option_code = 'FINISH-MATTE'); INSERT INTO mes_cto_option (option_code, family_code, display_name) SELECT 'FINISH-GLOSS', 'finish', 'Gloss finish' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_option WHERE option_code = 'FINISH-GLOSS'); INSERT INTO mes_cto_option (option_code, family_code, display_name) SELECT 'SENSOR-BASIC', 'sensor', 'Basic sensor' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_option WHERE option_code = 'SENSOR-BASIC'); INSERT INTO mes_cto_option (option_code, family_code, display_name) SELECT 'SENSOR-VISION', 'sensor', 'Vision sensor' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_option WHERE option_code = 'SENSOR-VISION'); INSERT INTO mes_cto_rule (rule_code, rule_type, finish_code, sensor_code, message) SELECT 'RULE-MATTE-VISION-INCOMPATIBLE', 'incompatible', 'FINISH-MATTE', 'SENSOR-VISION', 'Matte finish is not compatible with the vision sensor' WHERE NOT EXISTS (SELECT 1 FROM mes_cto_rule WHERE rule_code = 'RULE-MATTE-VISION-INCOMPATIBLE');"
     }
   ],
-  "objects": [
-    {
-      "parentPath": "root.platform.devices",
-      "name": "mes-cto-hub",
-      "type": "DEVICE",
-      "displayName": "MES CTO Hub",
-      "description": "Configure-to-order validation and build draft hub"
-    }
-  ],
+  "objects": [],
   "functions": [
     {
-      "objectPath": "root.platform.devices.mes-cto-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-cto-hub-v1",
       "functionName": "mes_cto_listOptions",
       "version": "1",
       "descriptor": {
@@ -79,7 +71,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-cto-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-cto-hub-v1",
       "functionName": "mes_cto_validateConfig",
       "version": "1",
       "descriptor": {
@@ -133,7 +125,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-cto-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-cto-hub-v1",
       "functionName": "mes_cto_generateBuild",
       "version": "1",
       "descriptor": {
@@ -204,17 +196,29 @@
         "title": "CTO Configurator"
       }
     ],
-    "eventJournalObjectPath": "root.platform.devices.mes-cto-hub"
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.mes-cto-hub-v1"
   },
   "dashboards": [
     {
       "path": "root.platform.dashboards.mes-cto",
       "title": "MES CTO Configurator",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"options\",\"type\":\"function\",\"title\":\"Options\",\"x\":0,\"y\":0,\"w\":28,\"h\":21,\"objectPath\":\"root.platform.devices.mes-cto-hub\",\"functionName\":\"mes_cto_listOptions\",\"buttonLabel\":\"List options\"},{\"id\":\"validate\",\"type\":\"function-form\",\"title\":\"Validate configuration\",\"x\":28,\"y\":0,\"w\":28,\"h\":28,\"objectPath\":\"root.platform.devices.mes-cto-hub\",\"functionName\":\"mes_cto_validateConfig\",\"buttonLabel\":\"Validate\",\"fieldsJson\":\"[{\\\"name\\\":\\\"finishCode\\\",\\\"label\\\":\\\"Finish\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"FINISH-GLOSS\\\"},{\\\"name\\\":\\\"sensorCode\\\",\\\"label\\\":\\\"Sensor\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"SENSOR-VISION\\\"}]\"},{\"id\":\"generate\",\"type\":\"function-form\",\"title\":\"Generate build\",\"x\":56,\"y\":0,\"w\":28,\"h\":28,\"objectPath\":\"root.platform.devices.mes-cto-hub\",\"functionName\":\"mes_cto_generateBuild\",\"buttonLabel\":\"Generate\",\"fieldsJson\":\"[{\\\"name\\\":\\\"finishCode\\\",\\\"label\\\":\\\"Finish\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"FINISH-GLOSS\\\"},{\\\"name\\\":\\\"sensorCode\\\",\\\"label\\\":\\\"Sensor\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"SENSOR-VISION\\\"}]\"},{\"id\":\"help\",\"type\":\"html-snippet\",\"title\":\"Hint\",\"x\":0,\"y\":28,\"w\":84,\"h\":14,\"htmlJson\":\"<p>Seed options: <code>FINISH-GLOSS</code>, <code>FINISH-MATTE</code>, <code>SENSOR-BASIC</code>, <code>SENSOR-VISION</code>. Incompatibility rule: matte finish with vision sensor.</p>\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"options\",\"type\":\"function\",\"title\":\"Options\",\"x\":0,\"y\":0,\"w\":28,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-cto-hub-v1\",\"functionName\":\"mes_cto_listOptions\",\"buttonLabel\":\"List options\"},{\"id\":\"validate\",\"type\":\"function-form\",\"title\":\"Validate configuration\",\"x\":28,\"y\":0,\"w\":28,\"h\":28,\"objectPath\":\"root.platform.singleton-blueprints.mes-cto-hub-v1\",\"functionName\":\"mes_cto_validateConfig\",\"buttonLabel\":\"Validate\",\"fieldsJson\":\"[{\\\"name\\\":\\\"finishCode\\\",\\\"label\\\":\\\"Finish\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"FINISH-GLOSS\\\"},{\\\"name\\\":\\\"sensorCode\\\",\\\"label\\\":\\\"Sensor\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"SENSOR-VISION\\\"}]\"},{\"id\":\"generate\",\"type\":\"function-form\",\"title\":\"Generate build\",\"x\":56,\"y\":0,\"w\":28,\"h\":28,\"objectPath\":\"root.platform.singleton-blueprints.mes-cto-hub-v1\",\"functionName\":\"mes_cto_generateBuild\",\"buttonLabel\":\"Generate\",\"fieldsJson\":\"[{\\\"name\\\":\\\"finishCode\\\",\\\"label\\\":\\\"Finish\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"FINISH-GLOSS\\\"},{\\\"name\\\":\\\"sensorCode\\\",\\\"label\\\":\\\"Sensor\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"SENSOR-VISION\\\"}]\"},{\"id\":\"help\",\"type\":\"html-snippet\",\"title\":\"Hint\",\"x\":0,\"y\":28,\"w\":84,\"h\":14,\"htmlJson\":\"<p>Seed options: <code>FINISH-GLOSS</code>, <code>FINISH-MATTE</code>, <code>SENSOR-BASIC</code>, <code>SENSOR-VISION</code>. Incompatibility rule: matte finish with vision sensor.</p>\"}]}"
     }
   ],
   "metadata": {
     "changelog": "1.0.0 — BL-223 CTO configurator pattern: options, compatibility validation, and build draft generation"
-  }
+  },
+  "blueprints": [
+    {
+      "name": "mes-cto-hub-v1",
+      "description": "MES CTO Configurator (BL-223) logic hub (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ]
 }

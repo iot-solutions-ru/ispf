@@ -1,0 +1,49 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "barcode",
+          "type": "STRING"
+        },
+        {
+          "name": "quantity",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "consumedQty",
+          "type": "STRING"
+        },
+        {
+          "name": "remainingQty",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_matlot_consume",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"lot\",\"sql\":\"@file:emc_matlot_consume-step.sql\",\"params\":[\"${input.barcode}\"]},{\"type\":\"failIfNull\",\"var\":\"lot\",\"error_code\":\"LOT_NOT_FOUND\",\"error_message\":\"Material lot not found by barcode\"},{\"type\":\"failIfNotEquals\",\"var\":\"lot.status\",\"equals\":\"ON_LINE\",\"error_code\":\"LOT_NOT_ON_LINE\",\"error_message\":\"Lot must be ON_LINE to consume\"},{\"type\":\"selectOne\",\"var\":\"resp\",\"sql\":\"@file:emc_matlot_consume-step.sql\",\"params\":[\"${lot.on_job_order_id}\"]},{\"type\":\"failIfNull\",\"var\":\"resp\",\"error_code\":\"NO_RUNNING_RESPONSE\",\"error_message\":\"No running response for the staging job order\"},{\"type\":\"exec\",\"sql\":\"@file:emc_matlot_consume-step.sql\",\"params\":[\"${resp.response_id}\",\"${lot.lot_id}\",\"${lot.definition_id}\",\"${input.quantity}\",\"${lot.base_uom}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_matlot_consume-step.sql\",\"params\":[\"${input.quantity}\",\"${input.quantity}\",\"${lot.lot_id}\"]},{\"type\":\"selectOne\",\"var\":\"after\",\"sql\":\"SELECT quantity FROM emc_material_lot WHERE lot_id = ?\",\"params\":[\"${lot.lot_id}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${lot.lot_id}\",\"consumedQty\":\"${input.quantity}\",\"remainingQty\":\"${after.quantity}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

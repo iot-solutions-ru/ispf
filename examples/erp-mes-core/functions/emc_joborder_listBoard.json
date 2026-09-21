@@ -1,0 +1,78 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "jobNo",
+                "type": "STRING"
+              },
+              {
+                "name": "dispatchStatus",
+                "type": "STRING"
+              },
+              {
+                "name": "priority",
+                "type": "STRING"
+              },
+              {
+                "name": "equipmentId",
+                "type": "STRING"
+              },
+              {
+                "name": "segmentId",
+                "type": "STRING"
+              },
+              {
+                "name": "productDefinitionId",
+                "type": "STRING"
+              },
+              {
+                "name": "quantity",
+                "type": "STRING"
+              },
+              {
+                "name": "uom",
+                "type": "STRING"
+              },
+              {
+                "name": "plannedStart",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_joborder_listBoard",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"jobs\",\"sql\":\"@file:emc_joborder_listBoard-step.sql\",\"params\":[\"${input.equipmentId}\",\"${input.equipmentId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${jobs}\",\"fields\":{\"jobNo\":\"${item.job_no}\",\"dispatchStatus\":\"${item.dispatch_status}\",\"priority\":\"${item.priority}\",\"equipmentId\":\"${item.equipment_id}\",\"segmentId\":\"${item.segment_id}\",\"productDefinitionId\":\"${item.product_definition_id}\",\"quantity\":\"${item.quantity}\",\"uom\":\"${item.uom}\",\"plannedStart\":\"${item.planned_start}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

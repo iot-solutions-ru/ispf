@@ -66,7 +66,9 @@ public class OpenAiCompatibleLlmProvider implements LlmProvider {
                 request.messages(),
                 request.maxTokens(),
                 request.temperature(),
-                request.providerOptions()
+                request.providerOptions(),
+                request.tools(),
+                request.toolChoice()
         );
         var body = LlmHttpSupport.chatCompletionBody(effective);
         String json = LlmHttpSupport.postJson(
@@ -103,6 +105,11 @@ public class OpenAiCompatibleLlmProvider implements LlmProvider {
             // fall through to live probe
         }
         return probeVisionViaChatCompletion(effectiveModel);
+    }
+
+    @Override
+    public boolean supportsToolCalling(String model) {
+        return isAvailable();
     }
 
     private boolean probeVisionViaChatCompletion(String model) throws LlmException {

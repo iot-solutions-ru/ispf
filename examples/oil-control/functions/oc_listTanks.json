@@ -1,0 +1,73 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "tank_code",
+                "type": "STRING"
+              },
+              {
+                "name": "display_name",
+                "type": "STRING"
+              },
+              {
+                "name": "site_code",
+                "type": "STRING"
+              },
+              {
+                "name": "tank_kind",
+                "type": "STRING"
+              },
+              {
+                "name": "max_level_cm",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "active",
+                "type": "BOOLEAN"
+              },
+              {
+                "name": "product_code",
+                "type": "STRING"
+              },
+              {
+                "name": "azs_code",
+                "type": "STRING"
+              },
+              {
+                "name": "tank_no",
+                "type": "INTEGER"
+              }
+            ],
+            "name": "row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_listTanks",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"@file:oc_listTanks-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

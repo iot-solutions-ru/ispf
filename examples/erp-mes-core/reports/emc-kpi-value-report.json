@@ -1,0 +1,31 @@
+{
+  "columns": [
+    {
+      "field": "kpi_code",
+      "label": "KPI"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "scope_id",
+      "label": "Scope"
+    },
+    {
+      "field": "period_label",
+      "label": "Period"
+    },
+    {
+      "field": "value_num",
+      "label": "Value"
+    },
+    {
+      "field": "calculated_at",
+      "label": "Calculated"
+    }
+  ],
+  "description": "Calculated / seeded KPI values (Part 4 Work KPI).",
+  "reportId": "emc-kpi-value-report",
+  "title": "Work KPI Values (ISO 22400)"
+}

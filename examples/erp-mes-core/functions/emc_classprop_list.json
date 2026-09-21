@@ -1,0 +1,66 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "ownerKind",
+          "type": "STRING"
+        },
+        {
+          "name": "ownerId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "ownerKind",
+                "type": "STRING"
+              },
+              {
+                "name": "ownerId",
+                "type": "STRING"
+              },
+              {
+                "name": "propKey",
+                "type": "STRING"
+              },
+              {
+                "name": "propValue",
+                "type": "STRING"
+              },
+              {
+                "name": "uom",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_classprop_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows_raw\",\"sql\":\"@file:emc_classprop_list-step.sql\",\"params\":[\"${input.ownerKind}\",\"${input.ownerKind}\",\"${input.ownerId}\",\"${input.ownerKind}\",\"${input.ownerKind}\",\"${input.ownerId}\",\"${input.ownerKind}\",\"${input.ownerKind}\",\"${input.ownerId}\",\"${input.ownerKind}\",\"${input.ownerKind}\",\"${input.ownerId}\",\"${input.ownerKind}\",\"${input.ownerKind}\",\"${input.ownerId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${rows_raw}\",\"fields\":{\"ownerKind\":\"${item.owner_kind}\",\"ownerId\":\"${item.owner_id}\",\"propKey\":\"${item.prop_key}\",\"propValue\":\"${item.prop_value}\",\"uom\":\"${item.uom}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -1,0 +1,19 @@
+{
+  "columns": [
+    {
+      "field": "work_master_id",
+      "label": "Work Master"
+    },
+    {
+      "field": "version",
+      "label": "Ver"
+    },
+    {
+      "field": "capability_id",
+      "label": "Capability"
+    }
+  ],
+  "description": "Work Master ↔ Work Capability links.",
+  "reportId": "emc-wmc-report",
+  "title": "Work Master Capability (Part 4)"
+}

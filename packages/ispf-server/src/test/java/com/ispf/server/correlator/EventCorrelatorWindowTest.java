@@ -30,7 +30,7 @@ class EventCorrelatorWindowTest {
     void windowPatternTriggersWhenAllEventsSeenWithinWindow() {
         EventCorrelator created = createAndIndex(new EventCorrelatorService.CreateCorrelatorRequest(
                 "Test window",
-                "root.platform.devices.mes-platform-hub",
+                "root.platform.singleton-blueprints.mes-platform-hub-v1",
                 CorrelatorPatternType.WINDOW,
                 "workOrderCreated",
                 "workOrderReleased,workOrderStarted",
@@ -43,13 +43,13 @@ class EventCorrelatorWindowTest {
                 true
         ));
 
-        correlatorService.processEventFired("root.platform.devices.mes-platform-hub", "workOrderCreated");
+        correlatorService.processEventFired("root.platform.singleton-blueprints.mes-platform-hub-v1", "workOrderCreated");
         assertThat(correlatorService.get(created.id()).lastTriggeredAt()).isNull();
 
-        correlatorService.processEventFired("root.platform.devices.mes-platform-hub", "workOrderReleased");
+        correlatorService.processEventFired("root.platform.singleton-blueprints.mes-platform-hub-v1", "workOrderReleased");
         assertThat(correlatorService.get(created.id()).lastTriggeredAt()).isNull();
 
-        correlatorService.processEventFired("root.platform.devices.mes-platform-hub", "workOrderStarted");
+        correlatorService.processEventFired("root.platform.singleton-blueprints.mes-platform-hub-v1", "workOrderStarted");
         assertThat(correlatorService.get(created.id()).lastTriggeredAt()).isNotNull();
     }
 }

@@ -1,0 +1,53 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "personId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        },
+        {
+          "name": "dispatchStatus",
+          "type": "STRING"
+        },
+        {
+          "name": "responseId",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_joborder_start",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"job\",\"sql\":\"@file:emc_joborder_start-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNull\",\"var\":\"job\",\"error_code\":\"JOB_NOT_FOUND\",\"error_message\":\"Job order not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"job.dispatch_status\",\"equals\":\"ALLOWED\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Job order must be ALLOWED to start\"},{\"type\":\"selectOne\",\"var\":\"conflict\",\"sql\":\"@file:emc_joborder_start-step.sql\",\"params\":[\"${job.equipment_id}\",\"${input.jobNo}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"RESOURCE_CONFLICT\",\"error_message\":\"Equipment already has a RUNNING job order: ${conflict.job_no}\",\"jobNo\":\"${input.jobNo}\",\"status\":\"\",\"dispatchStatus\":\"\",\"responseId\":\"\"}}],\"var\":\"conflict.job_no\",\"notNull\":true},{\"type\":\"selectOne\",\"var\":\"cap\",\"sql\":\"@file:emc_joborder_start-step.sql\",\"params\":[\"${job.equipment_id}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"CAPABILITY_WINDOW\",\"error_message\":\"No AVAILABLE operations capability window for equipment\",\"jobNo\":\"${input.jobNo}\",\"status\":\"\",\"dispatchStatus\":\"\",\"responseId\":\"\"}}],\"var\":\"cap.capability_id\",\"notNull\":false},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_start-step.sql\",\"params\":[\"${input.jobNo}\",\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_start-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"selectOne\",\"var\":\"resp\",\"sql\":\"@file:emc_joborder_start-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_start-step.sql\",\"params\":[\"${resp.response_id}\",\"${resp.response_id}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_start-step.sql\",\"params\":[\"${resp.response_id}\",\"${job.equipment_id}\",\"${resp.response_id}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO emc_personnel_actual (id, response_id, person_id, personnel_use) SELECT gen_random_uuid(), ?, ?, 'OPERATOR' WHERE NOT EXISTS (SELECT 1 FROM emc_personnel_actual WHERE response_id = ? AND person_id = ?)\",\"params\":[\"${resp.response_id}\",\"${input.personId}\",\"${resp.response_id}\",\"${input.personId}\"]}],\"var\":\"input.personId\",\"notNull\":true},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_start-step.sql\",\"params\":[\"${input.jobNo}\",\"${input.jobNo}\",\"${input.jobNo}\",\"${input.jobNo}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.emc-wu-a01\",\"variable\":\"status\",\"fields\":{\"value\":\"RUNNING\"}},{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.emc-wu-a01\",\"variable\":\"activeJobOrderId\",\"fields\":{\"value\":\"${job.job_no}\"}}],\"var\":\"job.equipment_id\",\"equals\":\"WU-A01\"},{\"type\":\"when\",\"then\":[{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.emc-wu-a02\",\"variable\":\"status\",\"fields\":{\"value\":\"RUNNING\"}},{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.emc-wu-a02\",\"variable\":\"activeJobOrderId\",\"fields\":{\"value\":\"${job.job_no}\"}}],\"var\":\"job.equipment_id\",\"equals\":\"WU-A02\"},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_start-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"jobNo\":\"${job.job_no}\",\"status\":\"RUNNING\",\"dispatchStatus\":\"RUNNING\",\"responseId\":\"${resp.response_id}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

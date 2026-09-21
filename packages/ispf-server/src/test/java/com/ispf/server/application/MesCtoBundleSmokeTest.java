@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class MesCtoBundleSmokeTest {
 
-    private static final String HUB_DEVICE = "root.platform.devices.mes-cto-hub";
+    private static final String HUB_DEVICE = "root.platform.singleton-blueprints.mes-cto-hub-v1";
 
     @Autowired
     private MockMvc mockMvc;

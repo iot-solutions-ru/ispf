@@ -1,0 +1,49 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "defectNo",
+          "type": "STRING"
+        },
+        {
+          "name": "by",
+          "type": "STRING"
+        },
+        {
+          "name": "note",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "defectNo",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_qa_rejectDefect",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"d\",\"sql\":\"SELECT defect_no, status FROM emc_defect_record WHERE defect_no = ?\",\"params\":[\"${input.defectNo}\"]},{\"type\":\"failIfNull\",\"var\":\"d\",\"error_code\":\"DEFECT_NOT_FOUND\",\"error_message\":\"Defect not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"d.status\",\"equals\":\"REGISTERED\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Only REGISTERED defects can be rejected\"},{\"type\":\"exec\",\"sql\":\"@file:emc_qa_rejectDefect-step.sql\",\"params\":[\"${input.defectNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_qa_rejectDefect-step.sql\",\"params\":[\"${input.defectNo}\",\"${input.by}\",\"${input.note}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"defectNo\":\"${input.defectNo}\",\"status\":\"REJECTED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

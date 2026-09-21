@@ -1,0 +1,1 @@
+SELECT tank_code, display_name, site_code, tank_kind, max_level_cm, active, COALESCE(product_code,'') AS product_code, COALESCE(azs_code,'') AS azs_code, COALESCE(tank_no,0) AS tank_no FROM oc_tank WHERE active ORDER BY COALESCE(azs_code, site_code), tank_code

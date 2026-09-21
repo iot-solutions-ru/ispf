@@ -1,0 +1,1 @@
+SELECT sublot_id, lot_id, barcode, status, COALESCE(storage_location, '') AS storage_location, quantity FROM emc_material_sublot WHERE COALESCE(NULLIF(TRIM(?), ''), lot_id) = lot_id ORDER BY sublot_id

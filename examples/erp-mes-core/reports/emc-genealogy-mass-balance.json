@@ -1,0 +1,27 @@
+{
+  "columns": [
+    {
+      "field": "material_id",
+      "label": "Material"
+    },
+    {
+      "field": "material_use",
+      "label": "Use"
+    },
+    {
+      "field": "qty",
+      "label": "Qty"
+    },
+    {
+      "field": "uom",
+      "label": "UOM"
+    },
+    {
+      "field": "rows_n",
+      "label": "Rows"
+    }
+  ],
+  "description": "Consumed vs produced quantities from material actuals (mass-balance view).",
+  "reportId": "emc-genealogy-mass-balance",
+  "title": "Genealogy Mass Balance (Actuals)"
+}

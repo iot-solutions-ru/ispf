@@ -1,0 +1,34 @@
+{
+  "columns": [
+    {
+      "field": "input_lot_id",
+      "label": "Input Lot"
+    },
+    {
+      "field": "input_material",
+      "label": "Input Material"
+    },
+    {
+      "field": "output_lot_id",
+      "label": "Output Lot"
+    },
+    {
+      "field": "output_material",
+      "label": "Output Material"
+    },
+    {
+      "field": "quantity",
+      "label": "Qty"
+    },
+    {
+      "field": "created_at",
+      "label": "Created"
+    }
+  ],
+  "description": "Lot→lot edges for the selected lot (direct incident edges).",
+  "parameters": [
+    "lotId"
+  ],
+  "reportId": "emc-genealogy-edges",
+  "title": "Lot Genealogy Edges"
+}

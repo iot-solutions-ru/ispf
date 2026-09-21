@@ -1,0 +1,49 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "shiftId",
+          "type": "STRING"
+        },
+        {
+          "name": "personId",
+          "type": "STRING"
+        },
+        {
+          "name": "handoverFromId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "shiftId",
+          "type": "STRING"
+        },
+        {
+          "name": "personId",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_calendar_assignPerson",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"s\",\"sql\":\"SELECT shift_id FROM emc_work_calendar WHERE shift_id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"s\",\"error_code\":\"SHIFT_NOT_FOUND\",\"error_message\":\"Shift not found\"},{\"type\":\"selectOne\",\"var\":\"p\",\"sql\":\"SELECT person_id FROM emc_person WHERE person_id = ?\",\"params\":[\"${input.personId}\"]},{\"type\":\"failIfNull\",\"var\":\"p\",\"error_code\":\"PERSON_NOT_FOUND\",\"error_message\":\"Person not found\"},{\"type\":\"exec\",\"sql\":\"@file:emc_calendar_assignPerson-step.sql\",\"params\":[\"${input.shiftId}\",\"${input.personId}\",\"${input.handoverFromId}\",\"${input.shiftId}\",\"${input.personId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"shiftId\":\"${input.shiftId}\",\"personId\":\"${input.personId}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

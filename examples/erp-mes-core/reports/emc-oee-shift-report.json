@@ -1,0 +1,55 @@
+{
+  "columns": [
+    {
+      "field": "equipment_id",
+      "label": "Equipment"
+    },
+    {
+      "field": "shift_label",
+      "label": "Shift"
+    },
+    {
+      "field": "planned_min",
+      "label": "Planned min"
+    },
+    {
+      "field": "availability_loss_min",
+      "label": "Avail. loss min"
+    },
+    {
+      "field": "performance_loss_min",
+      "label": "Perf. loss min"
+    },
+    {
+      "field": "produced_qty",
+      "label": "Produced"
+    },
+    {
+      "field": "good_qty",
+      "label": "Good"
+    },
+    {
+      "field": "availability_pct",
+      "label": "A %"
+    },
+    {
+      "field": "performance_pct",
+      "label": "P %"
+    },
+    {
+      "field": "quality_pct",
+      "label": "Q %"
+    },
+    {
+      "field": "oee_pct",
+      "label": "OEE %"
+    },
+    {
+      "field": "calculated_at",
+      "label": "Calculated"
+    }
+  ],
+  "description": "Availability / Performance / Quality / OEE per equipment per shift.",
+  "reportId": "emc-oee-shift-report",
+  "title": "OEE by Shift (ISO 22400 subset)"
+}

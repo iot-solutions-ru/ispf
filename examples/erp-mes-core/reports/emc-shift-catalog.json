@@ -1,0 +1,23 @@
+{
+  "columns": [
+    {
+      "field": "code",
+      "label": "Code"
+    },
+    {
+      "field": "name",
+      "label": "Shift"
+    },
+    {
+      "field": "equipment_id",
+      "label": "Equipment"
+    },
+    {
+      "field": "state",
+      "label": "State"
+    }
+  ],
+  "description": "Calendar shifts as code/name options for form dropdowns.",
+  "reportId": "emc-shift-catalog",
+  "title": "Shift Catalog"
+}

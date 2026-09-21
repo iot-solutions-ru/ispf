@@ -1,0 +1,1 @@
+INSERT INTO emc_erp_outbox (id, verb, noun, object_id, payload_json, idempotency_key, status) SELECT gen_random_uuid(), 'PROCESS', 'MATERIAL_LOT', ?, CONCAT('{"docId":"', ?, '","kind":"', ?, '"}'), CONCAT('INVDOC-SUBMIT:', ?), 'PENDING' WHERE NOT EXISTS (SELECT 1 FROM emc_erp_outbox WHERE idempotency_key = CONCAT('INVDOC-SUBMIT:', ?))

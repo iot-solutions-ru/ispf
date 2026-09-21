@@ -23,6 +23,7 @@ public class McpResourceAdapter {
     private static final List<ResourceDescriptor> DESCRIPTORS = List.of(
             new ResourceDescriptor("info", "ContextPack version and counts"),
             new ResourceDescriptor("bundle-manifest", "Bundle manifest fields and generation rules"),
+            new ResourceDescriptor("bundle-schema", "Canonical bundle.schema.json (ADR-0060)"),
             new ResourceDescriptor("script-steps", "Application function script step names"),
             new ResourceDescriptor("widget-types", "Dashboard widget type catalog"),
             new ResourceDescriptor("driver-catalog", "Driver catalog index from ContextPack"),
@@ -78,6 +79,12 @@ public class McpResourceAdapter {
         return switch (slice) {
             case "info" -> Optional.of(contextPackService.info());
             case "bundle-manifest" -> optionalPackKey(pack, "bundleManifest");
+            case "bundle-schema" -> {
+                if (pack.containsKey("bundleSchema")) {
+                    yield optionalPackKey(pack, "bundleSchema");
+                }
+                yield loadClasspathSchema();
+            }
             case "script-steps" -> optionalPackKey(pack, "scriptSteps");
             case "widget-types" -> optionalPackKey(pack, "widgetTypes");
             case "driver-catalog" -> optionalPackKey(pack, "driverCatalog");
@@ -97,6 +104,18 @@ public class McpResourceAdapter {
 
     private static Optional<Object> optionalPackKey(Map<String, Object> pack, String key) {
         return pack.containsKey(key) ? Optional.ofNullable(pack.get(key)) : Optional.empty();
+    }
+
+    private Optional<Object> loadClasspathSchema() {
+        try (var in = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream("schema/bundle.schema.json")) {
+            if (in == null) {
+                return Optional.empty();
+            }
+            return Optional.of(objectMapper.readValue(in, Object.class));
+        } catch (Exception ex) {
+            return Optional.empty();
+        }
     }
 
     private String writeJson(Object value) {

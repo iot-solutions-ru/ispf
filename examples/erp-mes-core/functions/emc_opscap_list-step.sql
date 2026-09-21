@@ -1,0 +1,1 @@
+SELECT capability_id, operations_type, COALESCE(equipment_id, '') AS equipment_id, COALESCE(segment_id, '') AS segment_id, COALESCE(reason, '') AS reason, status FROM emc_operations_capability ORDER BY capability_id

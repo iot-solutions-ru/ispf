@@ -1,0 +1,65 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "scheduleId",
+                "type": "STRING"
+              },
+              {
+                "name": "name",
+                "type": "STRING"
+              },
+              {
+                "name": "hierarchyScopeId",
+                "type": "STRING"
+              },
+              {
+                "name": "startTime",
+                "type": "STRING"
+              },
+              {
+                "name": "endTime",
+                "type": "STRING"
+              },
+              {
+                "name": "state",
+                "type": "STRING"
+              },
+              {
+                "name": "description",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_opssched_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows_raw\",\"sql\":\"@file:emc_opssched_list-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${rows_raw}\",\"fields\":{\"scheduleId\":\"${item.schedule_id}\",\"name\":\"${item.name}\",\"hierarchyScopeId\":\"${item.hierarchy_scope_id}\",\"startTime\":\"${item.start_time}\",\"endTime\":\"${item.end_time}\",\"state\":\"${item.state}\",\"description\":\"${item.description}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

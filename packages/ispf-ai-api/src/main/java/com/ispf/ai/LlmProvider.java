@@ -20,4 +20,8 @@ public interface LlmProvider {
      * Checks whether {@code model} accepts image input (provider metadata or live probe).
      */
     boolean supportsVision(String model) throws LlmException;
+
+    default boolean supportsToolCalling(String model) {
+        return false;
+    }
 }

@@ -27,7 +27,7 @@
   "batchRunnerFollowUp": {
     "description": "Advance ISA-88 phase via mes_batch_runPhase BFF on mes-platform-hub",
     "bff": {
-      "objectPath": "root.platform.devices.mes-platform-production-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-production-hub-v1",
       "functionName": "mes_batch_runPhase",
       "input": {
         "batchPath": "root.platform.mes.lots.batch-line-a01-001",

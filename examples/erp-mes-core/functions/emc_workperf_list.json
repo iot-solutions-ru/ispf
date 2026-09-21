@@ -1,0 +1,61 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "performanceId",
+                "type": "STRING"
+              },
+              {
+                "name": "jobNo",
+                "type": "STRING"
+              },
+              {
+                "name": "workMasterId",
+                "type": "STRING"
+              },
+              {
+                "name": "goodQty",
+                "type": "STRING"
+              },
+              {
+                "name": "rejectQty",
+                "type": "STRING"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_workperf_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows_raw\",\"sql\":\"@file:emc_workperf_list-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${rows_raw}\",\"fields\":{\"performanceId\":\"${item.performance_id}\",\"jobNo\":\"${item.job_no}\",\"workMasterId\":\"${item.work_master_id}\",\"goodQty\":\"${item.good_qty}\",\"rejectQty\":\"${item.reject_qty}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

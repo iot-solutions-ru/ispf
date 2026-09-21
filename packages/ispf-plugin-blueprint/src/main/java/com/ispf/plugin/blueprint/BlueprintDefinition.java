@@ -23,6 +23,8 @@ public record BlueprintDefinition(
         List<EventDescriptor> events,
         List<FunctionDescriptor> functions,
         List<BlueprintBindingRule> bindingRules,
+        List<BlueprintSqlBindingTemplate> sqlBindings,
+        List<BlueprintAlertTemplate> alertRules,
         Map<String, String> parameters,
         Instant createdAt,
         Instant updatedAt
@@ -41,6 +43,42 @@ public record BlueprintDefinition(
         events = List.copyOf(events != null ? events : List.of());
         functions = List.copyOf(functions != null ? functions : List.of());
         bindingRules = List.copyOf(bindingRules != null ? bindingRules : List.of());
+        sqlBindings = List.copyOf(sqlBindings != null ? sqlBindings : List.of());
+        alertRules = List.copyOf(alertRules != null ? alertRules : List.of());
+    }
+
+    public BlueprintDefinition(
+            String id,
+            String name,
+            String description,
+            BlueprintType type,
+            ObjectType targetObjectType,
+            String suitabilityExpression,
+            List<BlueprintVariableDefinition> variables,
+            List<EventDescriptor> events,
+            List<FunctionDescriptor> functions,
+            List<BlueprintBindingRule> bindingRules,
+            Map<String, String> parameters,
+            Instant createdAt,
+            Instant updatedAt
+    ) {
+        this(
+                id,
+                name,
+                description,
+                type,
+                targetObjectType,
+                suitabilityExpression,
+                variables,
+                events,
+                functions,
+                bindingRules,
+                List.of(),
+                List.of(),
+                parameters,
+                createdAt,
+                updatedAt
+        );
     }
 
     /** @deprecated use {@link #bindingRules()} */
@@ -90,6 +128,8 @@ public record BlueprintDefinition(
                 events,
                 functions,
                 bindingRules,
+                sqlBindings,
+                alertRules,
                 params,
                 createdAt,
                 Instant.now()
@@ -113,6 +153,8 @@ public record BlueprintDefinition(
                 events,
                 functions,
                 bindingRules,
+                sqlBindings,
+                alertRules,
                 params,
                 createdAt,
                 Instant.now()

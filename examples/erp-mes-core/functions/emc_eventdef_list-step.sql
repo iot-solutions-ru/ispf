@@ -1,0 +1,1 @@
+SELECT code, event_class, name, requires_length, requires_time, requires_comment, oee_bucket, COALESCE(six_big_loss, '') AS six_big_loss, sort_order FROM emc_operations_event_definition ORDER BY sort_order

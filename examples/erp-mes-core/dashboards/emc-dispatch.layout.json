@@ -1,0 +1,83 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "decimals": 0,
+      "h": 12,
+      "id": "kpiDowntime",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Открыто простоев",
+      "type": "value",
+      "valueField": "value",
+      "variableName": "activeDowntimeCount",
+      "w": 28,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "decimals": 0,
+      "h": 12,
+      "id": "kpiOutbox",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Сообщений ERP в outbox",
+      "type": "value",
+      "valueField": "value",
+      "variableName": "pendingOutboxCount",
+      "w": 28,
+      "x": 28,
+      "y": 0
+    },
+    {
+      "decimals": 0,
+      "h": 12,
+      "id": "kpiLowStock",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Лотов ниже минимума",
+      "type": "value",
+      "valueField": "value",
+      "variableName": "lowStockCount",
+      "w": 28,
+      "x": 56,
+      "y": 0
+    },
+    {
+      "autoSelectFirstRow": true,
+      "columnFiltersJson": "[\"dispatch_status\", \"equipment_id\"]",
+      "filterable": true,
+      "h": 49,
+      "id": "jobs",
+      "reportPath": "root.platform.reports.emc-job-board",
+      "rowParamsFromRowJson": "{\"jobNo\": \"job_no\", \"dispatchStatus\": \"dispatch_status\"}",
+      "rowSelectionKey": "job_no",
+      "selectable": true,
+      "statusDotColumnsJson": "[\"dispatch_status\"]",
+      "title": "Сменные задания",
+      "type": "report",
+      "w": 56,
+      "x": 0,
+      "y": 12
+    },
+    {
+      "buttonsJson": "[{\"label\": \"Запустить\", \"functionName\": \"emc_joborder_start\", \"inputJson\": \"{\\\"jobNo\\\": \\\"${param:jobNo}\\\", \\\"personId\\\": \\\"EMP-001\\\"}\", \"enabledWhenJson\": \"{\\\"paramKey\\\": \\\"dispatchStatus\\\", \\\"equals\\\": [\\\"ALLOWED\\\"]}\"}, {\"label\": \"Пауза\", \"functionName\": \"emc_joborder_pause\", \"inputJson\": \"{\\\"jobNo\\\": \\\"${param:jobNo}\\\"}\", \"enabledWhenJson\": \"{\\\"paramKey\\\": \\\"dispatchStatus\\\", \\\"equals\\\": [\\\"RUNNING\\\"]}\"}, {\"label\": \"Возобновить\", \"functionName\": \"emc_joborder_resume\", \"inputJson\": \"{\\\"jobNo\\\": \\\"${param:jobNo}\\\"}\", \"enabledWhenJson\": \"{\\\"paramKey\\\": \\\"dispatchStatus\\\", \\\"equals\\\": [\\\"SUSPENDED\\\"]}\"}, {\"label\": \"Завершить\", \"functionName\": \"emc_joborder_complete\", \"inputJson\": \"{\\\"jobNo\\\": \\\"${param:jobNo}\\\"}\", \"enabledWhenJson\": \"{\\\"paramKey\\\": \\\"dispatchStatus\\\", \\\"equals\\\": [\\\"RUNNING\\\"]}\", \"confirmMessage\": \"Завершить сменное задание?\"}]",
+      "h": 14,
+      "id": "jobActions",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Действия с заданием",
+      "type": "function",
+      "w": 28,
+      "x": 56,
+      "y": 12
+    },
+    {
+      "h": 30,
+      "htmlJson": "<p>Кнопки активируются статусом выбранного задания (ISA-95):</p><ul><li><b>Запустить</b> — ALLOWED</li><li><b>Пауза</b> — RUNNING</li><li><b>Возобновить</b> — SUSPENDED</li><li><b>Завершить</b> — RUNNING, без открытых дефектов</li></ul>",
+      "id": "jobActionsHint",
+      "title": "Логика статусов (ISA-95)",
+      "type": "html-snippet",
+      "w": 28,
+      "x": 56,
+      "y": 26
+    }
+  ]
+}

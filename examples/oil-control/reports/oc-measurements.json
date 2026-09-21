@@ -1,0 +1,29 @@
+{
+  "columns": [
+    {
+      "field": "tank_code",
+      "label": "Резервуар"
+    },
+    {
+      "field": "measured_at",
+      "label": "Время"
+    },
+    {
+      "field": "level_cm",
+      "label": "Уровень, см"
+    },
+    {
+      "field": "temperature_c",
+      "label": "t, °C"
+    },
+    {
+      "field": "operator_name",
+      "label": "Оператор"
+    }
+  ],
+  "description": "Последние замеры уровней",
+  "maxRows": 500,
+  "parameters": [],
+  "reportId": "oc-measurements",
+  "title": "Журнал ручных замеров"
+}

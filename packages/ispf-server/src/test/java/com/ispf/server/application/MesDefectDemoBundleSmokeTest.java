@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class MesDefectDemoBundleSmokeTest {
 
-    private static final String HUB = "root.platform.devices.mes-hub-01";
+    private static final String HUB = "root.platform.singleton-blueprints.mes-defect-demo-hub-v1";
     private static final String WORKFLOW = "root.platform.workflows.mes-defect-distribution";
 
     @Autowired

@@ -1,0 +1,1 @@
+SELECT work_master_id, version, capability_id, COALESCE(CAST(effective_from AS VARCHAR), '') AS effective_from, COALESCE(CAST(effective_to AS VARCHAR), '') AS effective_to FROM emc_work_master_capability ORDER BY work_master_id, version, capability_id

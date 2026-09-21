@@ -1,0 +1,1 @@
+UPDATE oc_incident SET status = COALESCE(NULLIF(?,''), status), assignee = COALESCE(NULLIF(?,''), assignee), closed_at = CASE WHEN ? IN ('closed','cancelled') THEN COALESCE(closed_at, NOW()) ELSE NULL END WHERE incident_no = ?

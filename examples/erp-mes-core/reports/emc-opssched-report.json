@@ -1,0 +1,27 @@
+{
+  "columns": [
+    {
+      "field": "schedule_id",
+      "label": "Schedule"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "state",
+      "label": "State"
+    },
+    {
+      "field": "description",
+      "label": "Description"
+    },
+    {
+      "field": "requests",
+      "label": "Requests"
+    }
+  ],
+  "description": "Operations Schedule + request count.",
+  "reportId": "emc-opssched-report",
+  "title": "Operations Schedules (Part 2)"
+}

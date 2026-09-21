@@ -9,40 +9,62 @@
       "sql": "CREATE TABLE IF NOT EXISTS mes_oee_shift (id UUID PRIMARY KEY, line_code VARCHAR(32) NOT NULL, shift_label VARCHAR(64) NOT NULL, planned_minutes INTEGER NOT NULL, downtime_minutes INTEGER NOT NULL, ideal_cycle_sec INTEGER NOT NULL, total_units INTEGER NOT NULL, good_units INTEGER NOT NULL); INSERT INTO mes_oee_shift (id, line_code, shift_label, planned_minutes, downtime_minutes, ideal_cycle_sec, total_units, good_units) SELECT 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'LINE-A01', 'Morning', 480, 45, 12, 2100, 2050 WHERE NOT EXISTS (SELECT 1 FROM mes_oee_shift WHERE line_code = 'LINE-A01' AND shift_label = 'Morning');"
     }
   ],
-  "objects": [
-    {
-      "parentPath": "root.platform.devices",
-      "name": "mes-oee-hub-01",
-      "type": "DEVICE",
-      "displayName": "MES OEE Hub",
-      "description": "OEE KPI hub for BL-121 reference (demo line LINE-A01)"
-    }
-  ],
+  "objects": [],
   "functions": [
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-oee-reference-hub-v1",
       "functionName": "mes_oee_listShifts",
       "version": "1",
       "descriptor": {
-        "inputSchema": { "name": "in", "fields": [] },
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
             {
               "name": "rows",
               "type": "RECORD_LIST",
               "nestedSchema": {
                 "name": "shift_row",
                 "fields": [
-                  { "name": "shiftId", "type": "STRING" },
-                  { "name": "lineCode", "type": "STRING" },
-                  { "name": "shiftLabel", "type": "STRING" },
-                  { "name": "plannedMinutes", "type": "INTEGER" },
-                  { "name": "downtimeMinutes", "type": "INTEGER" },
-                  { "name": "totalUnits", "type": "INTEGER" },
-                  { "name": "goodUnits", "type": "INTEGER" }
+                  {
+                    "name": "shiftId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "shiftLabel",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "plannedMinutes",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "downtimeMinutes",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "totalUnits",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "goodUnits",
+                    "type": "INTEGER"
+                  }
                 ]
               }
             }
@@ -55,25 +77,54 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-oee-reference-hub-v1",
       "functionName": "mes_oee_getKpi",
       "version": "1",
       "descriptor": {
         "inputSchema": {
           "name": "in",
-          "fields": [{ "name": "shiftId", "type": "STRING" }]
+          "fields": [
+            {
+              "name": "shiftId",
+              "type": "STRING"
+            }
+          ]
         },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "lineCode", "type": "STRING" },
-            { "name": "shiftLabel", "type": "STRING" },
-            { "name": "availabilityPct", "type": "INTEGER" },
-            { "name": "performancePct", "type": "INTEGER" },
-            { "name": "qualityPct", "type": "INTEGER" },
-            { "name": "oeePct", "type": "INTEGER" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "lineCode",
+              "type": "STRING"
+            },
+            {
+              "name": "shiftLabel",
+              "type": "STRING"
+            },
+            {
+              "name": "availabilityPct",
+              "type": "INTEGER"
+            },
+            {
+              "name": "performancePct",
+              "type": "INTEGER"
+            },
+            {
+              "name": "qualityPct",
+              "type": "INTEGER"
+            },
+            {
+              "name": "oeePct",
+              "type": "INTEGER"
+            }
           ]
         }
       },
@@ -83,23 +134,38 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-oee-reference-hub-v1",
       "functionName": "mes_oee_addDowntime",
       "version": "1",
       "descriptor": {
         "inputSchema": {
           "name": "in",
           "fields": [
-            { "name": "shiftId", "type": "STRING" },
-            { "name": "minutes", "type": "INTEGER" }
+            {
+              "name": "shiftId",
+              "type": "STRING"
+            },
+            {
+              "name": "minutes",
+              "type": "INTEGER"
+            }
           ]
         },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "downtimeMinutes", "type": "INTEGER" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "downtimeMinutes",
+              "type": "INTEGER"
+            }
           ]
         }
       },
@@ -115,5 +181,17 @@
     "defaultDashboard": "",
     "dashboards": [],
     "eventJournalObjectPath": "root.platform.devices.demo-sensor-01"
-  }
+  },
+  "blueprints": [
+    {
+      "name": "mes-oee-reference-hub-v1",
+      "description": "MES OEE Reference (BL-121) logic hub (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ]
 }

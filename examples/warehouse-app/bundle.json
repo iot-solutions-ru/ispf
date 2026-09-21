@@ -11,7 +11,7 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.warehouse-app-hub-v1",
       "functionName": "warehouse_listLocations",
       "version": "1",
       "descriptor": {
@@ -79,6 +79,18 @@
       "title": "Warehouse Locations",
       "refreshIntervalMs": 10000,
       "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"help\",\"type\":\"html-snippet\",\"title\":\"Warehouse\",\"x\":0,\"y\":0,\"w\":84,\"h\":10,\"htmlJson\":\"<p>Locations from <code>wh_location</code> via <code>warehouse_listLocations</code>.</p>\"},{\"id\":\"locations\",\"type\":\"function\",\"title\":\"Locations\",\"x\":0,\"y\":10,\"w\":84,\"h\":32,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"warehouse_listLocations\",\"buttonLabel\":\"List locations\"}]}"
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "warehouse-app-hub-v1",
+      "description": "Warehouse Reference App logic hub (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
     }
   ]
 }

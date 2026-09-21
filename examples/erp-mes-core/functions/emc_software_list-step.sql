@@ -1,0 +1,1 @@
+SELECT software_id, class_id, name, COALESCE(description, '') AS description, COALESCE(hierarchy_scope_id, '') AS hierarchy_scope_id, COALESCE(vendor, '') AS vendor, COALESCE(version_label, '') AS version_label, status FROM emc_software ORDER BY software_id

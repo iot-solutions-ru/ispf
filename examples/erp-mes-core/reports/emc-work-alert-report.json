@@ -1,0 +1,39 @@
+{
+  "columns": [
+    {
+      "field": "alert_id",
+      "label": "Alert"
+    },
+    {
+      "field": "alert_type",
+      "label": "Type"
+    },
+    {
+      "field": "severity",
+      "label": "Severity"
+    },
+    {
+      "field": "work_master_id",
+      "label": "Work Master"
+    },
+    {
+      "field": "message",
+      "label": "Message"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    },
+    {
+      "field": "raised_at",
+      "label": "Raised"
+    },
+    {
+      "field": "ack_by",
+      "label": "Ack By"
+    }
+  ],
+  "description": "Work Alert register.",
+  "reportId": "emc-work-alert-report",
+  "title": "Work Alerts (Part 4)"
+}

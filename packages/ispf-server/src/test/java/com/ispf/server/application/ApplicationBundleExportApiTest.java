@@ -41,6 +41,10 @@ class ApplicationBundleExportApiTest {
                 .andExpect(jsonPath("$.version").value(notNullValue()))
                 .andExpect(jsonPath("$.manifest.version").value(notNullValue()))
                 .andExpect(jsonPath("$.manifest.displayName").value(notNullValue()));
+
+        mockMvc.perform(get("/api/v1/applications/warehouse/export").param("canonical", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.manifest.version").value(notNullValue()));
     }
 
     @Test

@@ -99,7 +99,7 @@ class AgentE2eDeployIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "objectPath": "root.platform.devices.mes-platform-production-hub",
+                                  "objectPath": "root.platform.singleton-blueprints.mes-platform-production-hub-v1",
                                   "functionName": "mes_platform_listLines",
                                   "input": {
                                     "schema": { "name": "in", "fields": [] },
@@ -114,7 +114,7 @@ class AgentE2eDeployIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "objectPath": "root.platform.devices.mes-platform-production-hub",
+                                  "objectPath": "root.platform.singleton-blueprints.mes-platform-production-hub-v1",
                                   "functionName": "mes_batch_getStatus",
                                   "input": {
                                     "schema": {

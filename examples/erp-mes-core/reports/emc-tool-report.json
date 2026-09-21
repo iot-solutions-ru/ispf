@@ -1,0 +1,35 @@
+{
+  "columns": [
+    {
+      "field": "tool_id",
+      "label": "Tool"
+    },
+    {
+      "field": "class_id",
+      "label": "Class"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "description",
+      "label": "Description"
+    },
+    {
+      "field": "equipment_id",
+      "label": "Equipment"
+    },
+    {
+      "field": "calibration_due",
+      "label": "Calibration Due"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    }
+  ],
+  "description": "Tool resources linked to equipment.",
+  "reportId": "emc-tool-report",
+  "title": "Tools (Part 2 §5.6)"
+}

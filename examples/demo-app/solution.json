@@ -1,0 +1,76 @@
+{
+  "displayName": "Demo Application",
+  "metadata": {
+    "changelog": "1.0.1 — operatorUi with report screens (was reports-only / no Operator sync)",
+    "domain": "demo-app"
+  },
+  "operatorManifest": {
+    "appId": "demo",
+    "defaultScreen": "ready-items-report",
+    "screens": [
+      {
+        "description": "Отчёт ready-items: позиции со статусом ready",
+        "id": "ready-items-report",
+        "report": {
+          "emptyMessage": "Нет готовых позиций",
+          "parameters": {
+            "status": "ready"
+          },
+          "refreshIntervalMs": 30000,
+          "reportId": "ready-items"
+        },
+        "title": "Готовые позиции"
+      },
+      {
+        "description": "Отчёт items-summary без параметров",
+        "id": "items-summary-report",
+        "report": {
+          "emptyMessage": "Нет данных",
+          "refreshIntervalMs": 60000,
+          "reportId": "items-summary"
+        },
+        "title": "Сводка по статусам"
+      },
+      {
+        "description": "Отчёт items-by-category с JOIN",
+        "id": "items-by-category-report",
+        "report": {
+          "emptyMessage": "Нет позиций",
+          "reportId": "items-by-category"
+        },
+        "title": "По категориям"
+      }
+    ],
+    "title": "Demo Application",
+    "wireProfile": "ispf-operator-v1"
+  },
+  "operatorUi": {
+    "appId": "demo",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.demo-ready-items",
+        "title": "Готовые позиции"
+      }
+    ],
+    "defaultDashboard": "root.platform.dashboards.demo-ready-items",
+    "defaultReport": "root.platform.reports.ready-items",
+    "reports": [
+      {
+        "path": "root.platform.reports.ready-items",
+        "title": "Готовые позиции"
+      },
+      {
+        "path": "root.platform.reports.items-summary",
+        "title": "Сводка по статусам"
+      },
+      {
+        "path": "root.platform.reports.items-by-category",
+        "title": "По категориям"
+      }
+    ],
+    "title": "Demo Application"
+  },
+  "schemaName": "app_demo",
+  "tablePrefix": "",
+  "version": "1.0.1"
+}

@@ -1,0 +1,35 @@
+{
+  "columns": [
+    {
+      "field": "definition_id",
+      "label": "Definition"
+    },
+    {
+      "field": "version",
+      "label": "Ver"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "description",
+      "label": "Description"
+    },
+    {
+      "field": "published_flag",
+      "label": "Published"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    },
+    {
+      "field": "segments",
+      "label": "Segments"
+    }
+  ],
+  "description": "First-class Operations Definition headers.",
+  "reportId": "emc-opsdef-report",
+  "title": "Operations Definitions (Part 2)"
+}

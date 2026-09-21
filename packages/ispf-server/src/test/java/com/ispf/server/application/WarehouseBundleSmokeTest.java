@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class WarehouseBundleSmokeTest {
 
-    private static final String DEMO_DEVICE = "root.platform.devices.demo-sensor-01";
+    private static final String DEMO_DEVICE = "root.platform.singleton-blueprints.warehouse-hub-v1";
 
     @Autowired
     private MockMvc mockMvc;

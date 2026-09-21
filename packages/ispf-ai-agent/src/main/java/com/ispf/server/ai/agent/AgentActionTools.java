@@ -85,7 +85,7 @@ final class AgentActionTools {
                 }
                 String functionName = stringArg(arguments, "functionName");
                 if (objectPath.isBlank() || functionName.isBlank()) {
-                    return Map.of("status", "ERROR", "error", "objectPath and functionName are required");
+                    return AgentToolErrors.error("TOOL_ERROR", "objectPath and functionName are required", "", "");
                 }
                 invokeAccessService.requireDirectInvoke(objectPath, functionName, context.authentication());
                 String invokeObjectPath = objectPath;
@@ -139,13 +139,13 @@ final class AgentActionTools {
                 if (!ref.isBlank()) {
                     com.ispf.core.ref.PlatformRef fnRef = com.ispf.core.ref.PlatformRefParser.parse(ref);
                     if (!fnRef.isFunction()) {
-                        return Map.of("status", "ERROR", "error", "ref must be a function ref");
+                        return AgentToolErrors.error("TOOL_ERROR", "ref must be a function ref", "", "");
                     }
                     objectPath = fnRef.object();
                     functionName = fnRef.name();
                 }
                 if (objectPath.isBlank() || functionName.isBlank()) {
-                    return Map.of("status", "ERROR", "error", "objectPath and functionName are required");
+                    return AgentToolErrors.error("TOOL_ERROR", "objectPath and functionName are required", "", "");
                 }
                 invokeAccessService.requireDirectInvoke(objectPath, functionName, context.authentication());
                 String invokeObjectPath = objectPath;
@@ -192,7 +192,7 @@ final class AgentActionTools {
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
                 String query = stringArg(arguments, "query").toLowerCase(Locale.ROOT);
                 if (query.isBlank()) {
-                    return Map.of("status", "ERROR", "error", "query is required");
+                    return AgentToolErrors.error("TOOL_ERROR", "query is required", "", "");
                 }
                 String typeFilter = stringArg(arguments, "type").toUpperCase(Locale.ROOT);
                 String parentPrefix = stringArg(arguments, "parentPrefix");
@@ -256,7 +256,7 @@ final class AgentActionTools {
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
                 List<String> tags = parseTagsArg(arguments.get("tags"));
                 if (tags.isEmpty()) {
-                    return Map.of("status", "ERROR", "error", "tags is required");
+                    return AgentToolErrors.error("TOOL_ERROR", "tags is required", "", "");
                 }
                 String rootPath = stringArg(arguments, "rootPath");
                 String entityKind = stringArg(arguments, "entityKind");
@@ -379,13 +379,13 @@ final class AgentActionTools {
                 if (!ref.isBlank()) {
                     com.ispf.core.ref.PlatformRef evtRef = com.ispf.core.ref.PlatformRefParser.parse(ref);
                     if (!evtRef.isEvent()) {
-                        return Map.of("status", "ERROR", "error", "ref must be an event ref");
+                        return AgentToolErrors.error("TOOL_ERROR", "ref must be an event ref", "", "");
                     }
                     objectPath = evtRef.object();
                     eventName = evtRef.name();
                 }
                 if (objectPath.isBlank() || eventName.isBlank()) {
-                    return Map.of("status", "ERROR", "error", "objectPath and eventName are required");
+                    return AgentToolErrors.error("TOOL_ERROR", "objectPath and eventName are required", "", "");
                 }
                 objectAccessService.requireInvoke(objectPath, context.authentication());
                 ObjectEvent event = eventService.fire(

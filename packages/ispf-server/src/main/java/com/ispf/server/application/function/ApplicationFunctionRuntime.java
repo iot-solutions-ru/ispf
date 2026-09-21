@@ -53,10 +53,18 @@ public class ApplicationFunctionRuntime {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public DataRecord invoke(String objectPath, String functionName, DataRecord input) {
-        return invoke(objectPath, functionName, input, 0);
+        return invokeInternal(objectPath, functionName, input, 0);
     }
 
-    private DataRecord invoke(String objectPath, String functionName, DataRecord input, int depth) {
+    /**
+     * Same as {@link #invoke} but joins the caller's transaction (solution tests with outer rollback).
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public DataRecord invokeInCurrentTransaction(String objectPath, String functionName, DataRecord input) {
+        return invokeInternal(objectPath, functionName, input, 0);
+    }
+
+    private DataRecord invokeInternal(String objectPath, String functionName, DataRecord input, int depth) {
         if (depth > ScriptExecutionContext.MAX_CALL_DEPTH) {
             throw new IllegalStateException("Application function call depth exceeded limit of "
                     + ScriptExecutionContext.MAX_CALL_DEPTH);
@@ -81,7 +89,7 @@ public class ApplicationFunctionRuntime {
                     nestedInputSchema,
                     nestedInput != null ? nestedInput : Map.of()
             );
-            return invoke(nestedPath, nestedName, nestedRecord, nextDepth);
+            return invokeInternal(nestedPath, nestedName, nestedRecord, nextDepth);
         };
 
         try {

@@ -1,0 +1,33 @@
+{
+  "columns": [
+    {
+      "field": "sort_order",
+      "label": "№"
+    },
+    {
+      "field": "display_name",
+      "label": "Участок"
+    },
+    {
+      "field": "inflow_desc",
+      "label": "Приход"
+    },
+    {
+      "field": "outflow_desc",
+      "label": "Расход"
+    },
+    {
+      "field": "calc_period",
+      "label": "Период"
+    },
+    {
+      "field": "loss_norm_pct",
+      "label": "Норматив %"
+    }
+  ],
+  "description": "Справочник участков баланса АЗС",
+  "maxRows": 100,
+  "parameters": [],
+  "reportId": "oc-zones",
+  "title": "Участки баланса"
+}

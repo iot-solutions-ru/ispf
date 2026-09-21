@@ -4,10 +4,12 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.plugin.blueprint.BlueprintAlertTemplate;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
 import com.ispf.plugin.blueprint.BlueprintEngine;
 import com.ispf.plugin.blueprint.BlueprintException;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintSqlBindingTemplate;
 import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.server.api.dto.ObjectDto;
@@ -109,6 +111,8 @@ public class TypedBlueprintFacade {
                 request.events(),
                 request.functions(),
                 request.bindings(),
+                request.sqlBindings(),
+                request.alertRules(),
                 parameters,
                 now,
                 now
@@ -142,6 +146,8 @@ public class TypedBlueprintFacade {
                 request.events() != null ? request.events() : existing.events(),
                 request.functions() != null ? request.functions() : existing.functions(),
                 request.bindings() != null ? request.bindings() : existing.bindings(),
+                request.sqlBindings() != null ? request.sqlBindings() : existing.sqlBindings(),
+                request.alertRules() != null ? request.alertRules() : existing.alertRules(),
                 parameters,
                 existing.createdAt(),
                 Instant.now()
@@ -258,6 +264,8 @@ public class TypedBlueprintFacade {
             List<EventDescriptor> events,
             List<FunctionDescriptor> functions,
             List<com.ispf.plugin.blueprint.BlueprintBindingRule> bindings,
+            List<BlueprintSqlBindingTemplate> sqlBindings,
+            List<BlueprintAlertTemplate> alertRules,
             Map<String, String> parameters
     ) {
     }
@@ -272,6 +280,8 @@ public class TypedBlueprintFacade {
             List<EventDescriptor> events,
             List<FunctionDescriptor> functions,
             List<com.ispf.plugin.blueprint.BlueprintBindingRule> bindings,
+            List<BlueprintSqlBindingTemplate> sqlBindings,
+            List<BlueprintAlertTemplate> alertRules,
             Map<String, String> parameters
     ) {
     }

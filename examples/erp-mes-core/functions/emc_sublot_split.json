@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "sublotId",
+          "type": "STRING"
+        },
+        {
+          "name": "barcode",
+          "type": "STRING"
+        },
+        {
+          "name": "quantity",
+          "type": "STRING"
+        },
+        {
+          "name": "storageLocation",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "sublotId",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_sublot_split",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"lot\",\"sql\":\"SELECT lot_id FROM emc_material_lot WHERE lot_id = ?\",\"params\":[\"${input.lotId}\"]},{\"type\":\"failIfNull\",\"var\":\"lot\",\"error_code\":\"LOT_NOT_FOUND\",\"error_message\":\"Parent lot not found\"},{\"type\":\"exec\",\"sql\":\"@file:emc_sublot_split-step.sql\",\"params\":[\"${input.sublotId}\",\"${input.lotId}\",\"${input.barcode}\",\"${input.storageLocation}\",\"${input.quantity}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"sublotId\":\"${input.sublotId}\",\"lotId\":\"${input.lotId}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

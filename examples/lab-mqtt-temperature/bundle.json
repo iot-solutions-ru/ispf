@@ -15,6 +15,16 @@
   ],
   "blueprints": [
     {
+      "name": "lab-mqtt-temperature-hub-v1",
+      "description": "MQTT Temperature Lab logic hub (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
+    {
       "name": "mqtt-sensor-v1",
       "description": "MQTT temperature sensor with threshold monitoring (lab fixture)",
       "type": "MIXIN",
@@ -229,13 +239,6 @@
     },
     {
       "parentPath": "root.platform.devices.mqtt-lab.sensors",
-      "name": "sensor-01",
-      "type": "DEVICE",
-      "displayName": "1wire test 1",
-      "templateId": "mqtt-sensor-v1"
-    },
-    {
-      "parentPath": "root.platform.devices.mqtt-lab.sensors",
       "name": "sensor-02",
       "type": "DEVICE",
       "displayName": "1wire test 2",
@@ -258,7 +261,7 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.mqtt-lab.sensors.sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.lab-mqtt-temperature-hub-v1",
       "functionName": "listSensors",
       "version": "1",
       "descriptor": {
@@ -325,7 +328,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mqtt-lab.sensors.sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.lab-mqtt-temperature-hub-v1",
       "functionName": "getSensorDetail",
       "version": "1",
       "descriptor": {
@@ -388,7 +391,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mqtt-lab.sensors.sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.lab-mqtt-temperature-hub-v1",
       "functionName": "heartbeat",
       "version": "1",
       "descriptor": {

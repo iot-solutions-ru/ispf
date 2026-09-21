@@ -1,0 +1,1 @@
+SELECT d.doc_id, d.kind, d.status, COALESCE(d.external_doc_ref, '') AS external_doc_ref, d.created_at, (SELECT COUNT(*) FROM emc_inventory_document_line l WHERE l.doc_id = d.doc_id) AS lines FROM emc_inventory_document d WHERE (? = '' OR d.status = ?) ORDER BY d.created_at DESC

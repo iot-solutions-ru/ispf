@@ -20,26 +20,47 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-reference-hub-v1",
       "functionName": "mes_listOrders",
       "version": "1",
       "descriptor": {
-        "inputSchema": { "name": "in", "fields": [] },
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
             {
               "name": "rows",
               "type": "RECORD_LIST",
               "nestedSchema": {
                 "name": "order_row",
                 "fields": [
-                  { "name": "orderNo", "type": "STRING" },
-                  { "name": "tankCode", "type": "STRING" },
-                  { "name": "volumeLiters", "type": "INTEGER" },
-                  { "name": "status", "type": "STRING" }
+                  {
+                    "name": "orderNo",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "tankCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "volumeLiters",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
                 ]
               }
             }
@@ -52,22 +73,34 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-reference-hub-v1",
       "functionName": "mes_startFilling",
       "version": "1",
       "descriptor": {
         "inputSchema": {
           "name": "in",
           "fields": [
-            { "name": "orderNo", "type": "STRING" }
+            {
+              "name": "orderNo",
+              "type": "STRING"
+            }
           ]
         },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "status", "type": "STRING" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
           ]
         }
       },
@@ -77,22 +110,34 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-reference-hub-v1",
       "functionName": "mes_completeFilling",
       "version": "1",
       "descriptor": {
         "inputSchema": {
           "name": "in",
           "fields": [
-            { "name": "orderNo", "type": "STRING" }
+            {
+              "name": "orderNo",
+              "type": "STRING"
+            }
           ]
         },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
-            { "name": "status", "type": "STRING" }
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
           ]
         }
       },
@@ -119,11 +164,16 @@
   "events": [
     {
       "id": "mesRackOverTemp",
-      "roles": ["admin"]
+      "roles": [
+        "admin"
+      ]
     },
     {
       "id": "mesOrderUpdated",
-      "roles": ["operator", "admin"]
+      "roles": [
+        "operator",
+        "admin"
+      ]
     }
   ],
   "correlators": [
@@ -147,5 +197,17 @@
     "defaultDashboard": "",
     "dashboards": [],
     "eventJournalObjectPath": "root.platform.devices.demo-sensor-01"
-  }
+  },
+  "blueprints": [
+    {
+      "name": "mes-reference-hub-v1",
+      "description": "MES Reference (dispatch / tank / rack) logic hub (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ]
 }

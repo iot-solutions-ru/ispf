@@ -1,0 +1,78 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "batchId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "batch_id",
+                "type": "STRING"
+              },
+              {
+                "name": "certificate_no",
+                "type": "STRING"
+              },
+              {
+                "name": "conclusion",
+                "type": "STRING"
+              },
+              {
+                "name": "density_kg_m3",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "flash_point_c",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "water_ppm",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "particulate_mg_l",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "lab_name",
+                "type": "STRING"
+              },
+              {
+                "name": "tested_at",
+                "type": "STRING"
+              }
+            ],
+            "name": "row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_listQualityPassports",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"@file:oc_listQualityPassports-step.sql\",\"params\":[\"${input.batchId}\",\"${input.batchId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

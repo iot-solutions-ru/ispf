@@ -457,11 +457,14 @@ final class AgentAutomationTools {
                 if (topicLower.startsWith("recipe/")) {
                     String recipeId = topic.substring("recipe/".length()).trim();
                     if (recipeId.isBlank()) {
-                        return Map.of(
-                                "status", "ERROR",
-                                "topic", topic,
-                                "error", "recipe/{id} requires non-empty id"
-                        );
+                        Map<String, Object> err = new LinkedHashMap<>(AgentToolErrors.error(
+                                "TOOL_ERROR",
+                                "recipe/{id} requires non-empty id",
+                                "",
+                                ""
+                        ));
+                        err.put("topic", topic);
+                        return err;
                     }
                     return recipeCatalog.findById(recipeId)
                             .<Map<String, Object>>map(recipe -> Map.of(
@@ -469,11 +472,16 @@ final class AgentAutomationTools {
                                     "topic", resolvedTopic,
                                     "recipe", AgentRecipeCatalog.toDetailRow(recipe)
                             ))
-                            .orElseGet(() -> Map.of(
-                                    "status", "ERROR",
-                                    "topic", resolvedTopic,
-                                    "error", "Recipe not found: " + recipeId
-                            ));
+                            .orElseGet(() -> {
+                                Map<String, Object> err = new LinkedHashMap<>(AgentToolErrors.error(
+                                        "TOOL_ERROR",
+                                        "Recipe not found: " + recipeId,
+                                        "",
+                                        ""
+                                ));
+                                err.put("topic", resolvedTopic);
+                                return err;
+                            });
                 }
                 Map<String, Object> schema = new LinkedHashMap<>();
                 schema.put("status", "OK");
@@ -942,10 +950,11 @@ final class AgentAutomationTools {
                         try {
                             current = operatorAppUiService.getUi(appId);
                         } catch (IllegalArgumentException ex) {
-                            return Map.of(
-                                    "status", "ERROR",
-                                    "error",
-                                    "title, defaultDashboard, dashboards[] are required (app not found: " + appId + ")"
+                            return AgentToolErrors.error(
+                                    "TOOL_ERROR",
+                                    "title, defaultDashboard, dashboards[] are required (app not found: " + appId + ")",
+                                    "",
+                                    ""
                             );
                         }
                         return Map.of("status", "OK", "appId", appId, "ui", current);

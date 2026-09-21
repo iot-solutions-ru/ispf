@@ -11,7 +11,12 @@ change the generator and re-run:
 
 ```bash
 python examples/erp-mes-core/generate_bundle.py
+# refresh folder layout (remove prior unpack first — unpack refuses overwrite):
+rm -rf examples/erp-mes-core/{solution.json,sql,functions,blueprints,dashboards,reports,alerts,workflows,bindings.json,objects.json,events.json,schedules.json}
+node tools/ispf-cli/bin/ispf.mjs unpack examples/erp-mes-core/bundle.json examples/erp-mes-core
 ```
+
+After generate, re-unpack refreshes the folder layout (`solution.json`, `sql/`, `functions/`, …) used by `tools/ispf-cli` (ADR-0060). Do not hand-edit both the generator and the unpacked files without reconciling.
 
 **Live demo (presenter script):** [docs/ru/erp-mes-demo.md](../../docs/ru/erp-mes-demo.md) — stand
 [mes.iot-solutions.ru](https://mes.iot-solutions.ru/), Core + Pharma + Printing operator UI.

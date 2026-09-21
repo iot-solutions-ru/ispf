@@ -1,0 +1,39 @@
+{
+  "columns": [
+    {
+      "field": "rel_id",
+      "label": "Rel"
+    },
+    {
+      "field": "network_id",
+      "label": "Network"
+    },
+    {
+      "field": "from_resource_type",
+      "label": "From Type"
+    },
+    {
+      "field": "from_resource_id",
+      "label": "From"
+    },
+    {
+      "field": "to_resource_type",
+      "label": "To Type"
+    },
+    {
+      "field": "to_resource_id",
+      "label": "To"
+    },
+    {
+      "field": "relationship_type",
+      "label": "Type"
+    },
+    {
+      "field": "dependency",
+      "label": "Dependency"
+    }
+  ],
+  "description": "Resource relationships (equipment↔tool/container/software).",
+  "reportId": "emc-rrn-edges",
+  "title": "RRN Edges (Part 4)"
+}

@@ -1,0 +1,1 @@
+SELECT schedule_id, domain, schedule_kind, COALESCE(target_id, '') AS target_id, COALESCE(quantity, 0) AS quantity, COALESCE(uom, '') AS uom, status, COALESCE(note, '') AS note FROM emc_domain_schedule WHERE COALESCE(NULLIF(TRIM(?), ''), domain) = domain ORDER BY domain, schedule_id

@@ -1,0 +1,86 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "direction",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "direction",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "direction",
+                "type": "STRING"
+              },
+              {
+                "name": "lotId",
+                "type": "STRING"
+              },
+              {
+                "name": "linkedFromLotId",
+                "type": "STRING"
+              },
+              {
+                "name": "quantity",
+                "type": "STRING"
+              },
+              {
+                "name": "definitionId",
+                "type": "STRING"
+              },
+              {
+                "name": "depth",
+                "type": "STRING"
+              },
+              {
+                "name": "path",
+                "type": "STRING"
+              },
+              {
+                "name": "createdAt",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_track_genealogyTreeByLot",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"edges\",\"sql\":\"@file:emc_track_genealogyTreeByLot-step.sql\",\"params\":[\"${input.lotId}\",\"${input.lotId}\",\"${input.direction}\",\"${input.direction}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${edges}\",\"fields\":{\"direction\":\"${item.direction}\",\"lotId\":\"${item.lot_id}\",\"linkedFromLotId\":\"${item.linked_from_lot_id}\",\"quantity\":\"${item.quantity}\",\"definitionId\":\"${item.definition_id}\",\"depth\":\"${item.depth}\",\"path\":\"${item.path}\",\"createdAt\":\"${item.created_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${input.lotId}\",\"direction\":\"${input.direction}\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

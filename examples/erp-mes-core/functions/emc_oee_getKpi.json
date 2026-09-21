@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        },
+        {
+          "name": "shiftLabel",
+          "type": "STRING"
+        },
+        {
+          "name": "availabilityPct",
+          "type": "STRING"
+        },
+        {
+          "name": "performancePct",
+          "type": "STRING"
+        },
+        {
+          "name": "qualityPct",
+          "type": "STRING"
+        },
+        {
+          "name": "oeePct",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_oee_getKpi",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"kpi\",\"sql\":\"@file:emc_oee_getKpi-step.sql\",\"params\":[\"${input.equipmentId}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"equipmentId\":\"${input.equipmentId}\",\"shiftLabel\":\"${kpi.shift_label}\",\"availabilityPct\":\"${kpi.availability_pct}\",\"performancePct\":\"${kpi.performance_pct}\",\"qualityPct\":\"${kpi.quality_pct}\",\"oeePct\":\"${kpi.oee_pct}\"}}],\"var\":\"kpi\",\"notNull\":true,\"else\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"No OEE data calculated yet\",\"equipmentId\":\"${input.equipmentId}\",\"shiftLabel\":\"\",\"availabilityPct\":\"0\",\"performancePct\":\"0\",\"qualityPct\":\"0\",\"oeePct\":\"0\"}}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"No OEE data calculated yet\",\"equipmentId\":\"${input.equipmentId}\",\"shiftLabel\":\"\",\"availabilityPct\":\"0\",\"performancePct\":\"0\",\"qualityPct\":\"0\",\"oeePct\":\"0\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

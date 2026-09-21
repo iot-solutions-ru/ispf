@@ -1,0 +1,27 @@
+{
+  "columns": [
+    {
+      "field": "defect_count",
+      "label": "Defects"
+    },
+    {
+      "field": "confirmed_qty",
+      "label": "Confirmed Qty"
+    },
+    {
+      "field": "jobs_with_defects",
+      "label": "Jobs w/ Defects"
+    },
+    {
+      "field": "job_count",
+      "label": "Jobs"
+    },
+    {
+      "field": "defect_rate_pct",
+      "label": "Defect Rate %"
+    }
+  ],
+  "description": "Defect counts and share of jobs with defects (Part 3 performance analysis).",
+  "reportId": "emc-qa-defect-rate-report",
+  "title": "Quality Defect Rate KPI"
+}

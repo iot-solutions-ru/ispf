@@ -15,10 +15,9 @@
   ],
   "blueprints": [
     {
-      "name": "ogp-mes-hub-v1",
+      "name": "mes-ogp-events-hub-v1",
       "description": "OGP MES hub for event registration",
-      "type": "MIXIN",
-      "targetObjectType": "DEVICE",
+      "type": "SINGLETON",
       "variables": [
         {
           "name": "unprocessedPending",
@@ -486,14 +485,6 @@
   "objects": [
     {
       "parentPath": "root.platform.devices",
-      "name": "ogp-mes-hub",
-      "type": "DEVICE",
-      "displayName": "OGP MES Hub",
-      "description": "Event registration BFF hub",
-      "templateId": "ogp-mes-hub-v1"
-    },
-    {
-      "parentPath": "root.platform.devices",
       "name": "ogp-line-01",
       "type": "DEVICE",
       "displayName": "OGP Print Line 01",
@@ -503,7 +494,7 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_seedDemoStage",
       "version": "1",
       "descriptor": {
@@ -535,7 +526,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_getMachineContext",
       "version": "1",
       "descriptor": {
@@ -584,7 +575,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_getRegistrationContext",
       "version": "1",
       "descriptor": {
@@ -756,7 +747,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_simulateSignal",
       "version": "1",
       "descriptor": {
@@ -805,7 +796,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_listUnprocessedEvents",
       "version": "1",
       "descriptor": {
@@ -862,7 +853,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_deleteUnprocessedEvents",
       "version": "1",
       "descriptor": {
@@ -903,7 +894,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_validateRegistration",
       "version": "1",
       "descriptor": {
@@ -968,7 +959,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_registerEvent",
       "version": "1",
       "descriptor": {
@@ -1061,11 +1052,11 @@
       },
       "source": {
         "type": "script",
-        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"code\",\"sql\":\"SELECT code, name FROM event_code WHERE code = ?\",\"params\":[\"${input.eventCode}\"]},{\"type\":\"failIfNull\",\"var\":\"code\",\"message\":\"Unknown event code\"},{\"type\":\"selectOne\",\"var\":\"st\",\"sql\":\"SELECT id FROM stage_context WHERE is_active = true ORDER BY id LIMIT 1\"},{\"type\":\"setVar\",\"var\":\"statusVal\",\"value\":\"Удален\"},{\"type\":\"when\",\"var\":\"input.deleteNow\",\"equals\":\"false\",\"then\":[{\"type\":\"setVar\",\"var\":\"statusVal\",\"value\":\"Зарегистрирован\"}]},{\"type\":\"selectOne\",\"var\":\"footage\",\"sql\":\"SELECT GREATEST(COALESCE(?::numeric, 0) - COALESCE(?::numeric, 0), 0)::text AS v\",\"params\":[\"${input.endM}\",\"${input.startM}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO process_event (id, stage_id, event_code, event_name, delete_now, roll_id, start_m, end_m, start_at, end_at, whole_stage, side, rows_json, card1, card2, comment_text, status, footage, unprocessed_id) VALUES (gen_random_uuid(), ?, ?, ?, CASE WHEN ? IN ('true','1','yes') THEN true ELSE false END, ?, CAST(? AS numeric), CAST(? AS numeric), CASE WHEN COALESCE(?, '') = '' THEN NULL ELSE (CURRENT_DATE + CAST(? AS TIME)) END, CASE WHEN COALESCE(?, '') = '' THEN NULL ELSE (CURRENT_DATE + CAST(? AS TIME)) END, CASE WHEN ? IN ('true','1') THEN true ELSE false END, ?, ?, ?, ?, ?, ?, CAST(? AS numeric), CASE WHEN COALESCE(?, '') = '' THEN NULL ELSE CAST(? AS uuid) END)\",\"params\":[\"${st.id}\",\"${code.code}\",\"${code.name}\",\"${input.deleteNow}\",\"${input.rollId}\",\"${input.startM}\",\"${input.endM}\",\"${input.startAt}\",\"${input.startAt}\",\"${input.endAt}\",\"${input.endAt}\",\"${input.wholeStage}\",\"${input.side}\",\"${input.rows}\",\"${input.card1}\",\"${input.card2}\",\"${input.comment}\",\"${statusVal}\",\"${footage.v}\",\"${input.unprocessedId}\",\"${input.unprocessedId}\"]},{\"type\":\"selectOne\",\"var\":\"ev\",\"sql\":\"SELECT id::text AS event_id, event_code, delete_now::text AS delete_now, roll_id, start_m::text AS start_m, end_m::text AS end_m, status FROM process_event ORDER BY created_at DESC LIMIT 1\"},{\"type\":\"when\",\"var\":\"input.subcodes\",\"notEquals\":\"\",\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO process_event_subcode (id, event_id, subcode) SELECT gen_random_uuid(), CAST(? AS uuid), trim(x) FROM unnest(string_to_array(?, ',')) AS t(x) WHERE trim(x) <> ''\",\"params\":[\"${ev.event_id}\",\"${input.subcodes}\"]}]},{\"type\":\"when\",\"var\":\"ev.delete_now\",\"equals\":\"true\",\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO roll_map_interval (id, roll_id, map_type, start_m, end_m, event_id, event_code) VALUES (gen_random_uuid(), COALESCE(NULLIF(?, ''), '0'), 'grey', ?::numeric, ?::numeric, ?::uuid, ?)\",\"params\":[\"${input.rollId}\",\"${input.startM}\",\"${input.endM}\",\"${ev.event_id}\",\"${ev.event_code}\"]}],\"else\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO roll_map_interval (id, roll_id, map_type, start_m, end_m, event_id, event_code, side, rows_json) VALUES (gen_random_uuid(), ?, 'white', ?::numeric, ?::numeric, ?::uuid, ?, ?, ?)\",\"params\":[\"${input.rollId}\",\"${input.startM}\",\"${input.endM}\",\"${ev.event_id}\",\"${ev.event_code}\",\"${input.side}\",\"${input.rows}\"]}]},{\"type\":\"when\",\"var\":\"input.unprocessedId\",\"notEquals\":\"\",\"then\":[{\"type\":\"exec\",\"sql\":\"UPDATE unprocessed_event SET status = 'processed' WHERE id = CAST(? AS uuid)\",\"params\":[\"${input.unprocessedId}\"]}]},{\"type\":\"invoke_function\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_enqueue1cExport\",\"input\":{\"eventId\":\"${ev.event_id}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"eventId\":\"${ev.event_id}\",\"status\":\"${ev.status}\"}}]}"
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"code\",\"sql\":\"SELECT code, name FROM event_code WHERE code = ?\",\"params\":[\"${input.eventCode}\"]},{\"type\":\"failIfNull\",\"var\":\"code\",\"message\":\"Unknown event code\"},{\"type\":\"selectOne\",\"var\":\"st\",\"sql\":\"SELECT id FROM stage_context WHERE is_active = true ORDER BY id LIMIT 1\"},{\"type\":\"setVar\",\"var\":\"statusVal\",\"value\":\"Удален\"},{\"type\":\"when\",\"var\":\"input.deleteNow\",\"equals\":\"false\",\"then\":[{\"type\":\"setVar\",\"var\":\"statusVal\",\"value\":\"Зарегистрирован\"}]},{\"type\":\"selectOne\",\"var\":\"footage\",\"sql\":\"SELECT GREATEST(COALESCE(?::numeric, 0) - COALESCE(?::numeric, 0), 0)::text AS v\",\"params\":[\"${input.endM}\",\"${input.startM}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO process_event (id, stage_id, event_code, event_name, delete_now, roll_id, start_m, end_m, start_at, end_at, whole_stage, side, rows_json, card1, card2, comment_text, status, footage, unprocessed_id) VALUES (gen_random_uuid(), ?, ?, ?, CASE WHEN ? IN ('true','1','yes') THEN true ELSE false END, ?, CAST(? AS numeric), CAST(? AS numeric), CASE WHEN COALESCE(?, '') = '' THEN NULL ELSE (CURRENT_DATE + CAST(? AS TIME)) END, CASE WHEN COALESCE(?, '') = '' THEN NULL ELSE (CURRENT_DATE + CAST(? AS TIME)) END, CASE WHEN ? IN ('true','1') THEN true ELSE false END, ?, ?, ?, ?, ?, ?, CAST(? AS numeric), CASE WHEN COALESCE(?, '') = '' THEN NULL ELSE CAST(? AS uuid) END)\",\"params\":[\"${st.id}\",\"${code.code}\",\"${code.name}\",\"${input.deleteNow}\",\"${input.rollId}\",\"${input.startM}\",\"${input.endM}\",\"${input.startAt}\",\"${input.startAt}\",\"${input.endAt}\",\"${input.endAt}\",\"${input.wholeStage}\",\"${input.side}\",\"${input.rows}\",\"${input.card1}\",\"${input.card2}\",\"${input.comment}\",\"${statusVal}\",\"${footage.v}\",\"${input.unprocessedId}\",\"${input.unprocessedId}\"]},{\"type\":\"selectOne\",\"var\":\"ev\",\"sql\":\"SELECT id::text AS event_id, event_code, delete_now::text AS delete_now, roll_id, start_m::text AS start_m, end_m::text AS end_m, status FROM process_event ORDER BY created_at DESC LIMIT 1\"},{\"type\":\"when\",\"var\":\"input.subcodes\",\"notEquals\":\"\",\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO process_event_subcode (id, event_id, subcode) SELECT gen_random_uuid(), CAST(? AS uuid), trim(x) FROM unnest(string_to_array(?, ',')) AS t(x) WHERE trim(x) <> ''\",\"params\":[\"${ev.event_id}\",\"${input.subcodes}\"]}]},{\"type\":\"when\",\"var\":\"ev.delete_now\",\"equals\":\"true\",\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO roll_map_interval (id, roll_id, map_type, start_m, end_m, event_id, event_code) VALUES (gen_random_uuid(), COALESCE(NULLIF(?, ''), '0'), 'grey', ?::numeric, ?::numeric, ?::uuid, ?)\",\"params\":[\"${input.rollId}\",\"${input.startM}\",\"${input.endM}\",\"${ev.event_id}\",\"${ev.event_code}\"]}],\"else\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO roll_map_interval (id, roll_id, map_type, start_m, end_m, event_id, event_code, side, rows_json) VALUES (gen_random_uuid(), ?, 'white', ?::numeric, ?::numeric, ?::uuid, ?, ?, ?)\",\"params\":[\"${input.rollId}\",\"${input.startM}\",\"${input.endM}\",\"${ev.event_id}\",\"${ev.event_code}\",\"${input.side}\",\"${input.rows}\"]}]},{\"type\":\"when\",\"var\":\"input.unprocessedId\",\"notEquals\":\"\",\"then\":[{\"type\":\"exec\",\"sql\":\"UPDATE unprocessed_event SET status = 'processed' WHERE id = CAST(? AS uuid)\",\"params\":[\"${input.unprocessedId}\"]}]},{\"type\":\"invoke_function\",\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"functionName\":\"ogp_enqueue1cExport\",\"input\":{\"eventId\":\"${ev.event_id}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"eventId\":\"${ev.event_id}\",\"status\":\"${ev.status}\"}}]}"
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_listProcessJournal",
       "version": "1",
       "descriptor": {
@@ -1131,7 +1122,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_getProcessEventDetails",
       "version": "1",
       "descriptor": {
@@ -1194,7 +1185,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_updateProcessEvent",
       "version": "1",
       "descriptor": {
@@ -1243,7 +1234,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_listEventCodes",
       "version": "1",
       "descriptor": {
@@ -1308,7 +1299,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_createEventCode",
       "version": "1",
       "descriptor": {
@@ -1369,7 +1360,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_createSubcode",
       "version": "1",
       "descriptor": {
@@ -1414,7 +1405,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_getRollMap",
       "version": "1",
       "descriptor": {
@@ -1480,7 +1471,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_buildRollLabel",
       "version": "1",
       "descriptor": {
@@ -1550,7 +1541,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_stageDowntimeSummary",
       "version": "1",
       "descriptor": {
@@ -1616,7 +1607,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_enqueue1cExport",
       "version": "1",
       "descriptor": {
@@ -1657,7 +1648,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_export1cBatch",
       "version": "1",
       "descriptor": {
@@ -1706,7 +1697,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_advanceMeter",
       "version": "1",
       "descriptor": {
@@ -1736,46 +1727,46 @@
   ],
   "bindings": [
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "variable": "unprocessedPending",
       "query": "SELECT COALESCE(CAST(COUNT(*) AS DOUBLE PRECISION), 0) AS v FROM unprocessed_event WHERE status = 'pending'",
       "refresh": "on_function_success",
       "refreshIntervalMs": 500,
       "valueField": "v",
-      "triggerObjectPath": "root.platform.devices.ogp-mes-hub",
+      "triggerObjectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "triggerFunctionName": "ogp_simulateSignal,ogp_registerEvent,ogp_deleteUnprocessedEvents",
       "enabled": true
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "variable": "windingRoll",
       "query": "SELECT winding_roll AS v FROM machine_state WHERE id = 1",
       "refresh": "on_function_success",
       "refreshIntervalMs": 1000,
       "valueField": "v",
-      "triggerObjectPath": "root.platform.devices.ogp-mes-hub",
+      "triggerObjectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "triggerFunctionName": "ogp_simulateSignal,ogp_seedDemoStage",
       "enabled": true
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "variable": "speedMpm",
       "query": "SELECT speed_mpm AS v FROM machine_state WHERE id = 1",
       "refresh": "on_function_success",
       "refreshIntervalMs": 1000,
       "valueField": "v",
-      "triggerObjectPath": "root.platform.devices.ogp-mes-hub",
+      "triggerObjectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "triggerFunctionName": "ogp_simulateSignal,ogp_seedDemoStage",
       "enabled": true
     },
     {
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "variable": "meterM",
       "query": "SELECT meter_m AS v FROM machine_state WHERE id = 1",
       "refresh": "on_function_success",
       "refreshIntervalMs": 1000,
       "valueField": "v",
-      "triggerObjectPath": "root.platform.devices.ogp-mes-hub",
+      "triggerObjectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "triggerFunctionName": "ogp_simulateSignal,ogp_advanceMeter,ogp_seedDemoStage",
       "enabled": true
     },
@@ -2126,7 +2117,7 @@
   "alertRules": [
     {
       "name": "OGP unprocessed event alert",
-      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "watchVariable": "unprocessedPending",
       "conditionExpr": "self.unprocessedPending[\"value\"] > 0.0",
       "eventName": "ogpUnprocessedEvent",
@@ -2163,7 +2154,7 @@
   "workflows": [
     {
       "path": "root.platform.workflows.ogp-export-1c",
-      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n             xmlns:ispf=\"http://ispf.io/bpmn\"\n             targetNamespace=\"http://ispf.io/bpmn\">\n  <process id=\"ogp-export-1c\" name=\"OGP 1C Export\" isExecutable=\"true\">\n    <startEvent id=\"start\"/>\n    <serviceTask id=\"exportBatch\" name=\"Export to 1C outbox\"\n                 ispf:action=\"invoke_function\"\n                 ispf:objectPath=\"root.platform.devices.ogp-mes-hub\"\n                 ispf:functionName=\"ogp_export1cBatch\"/>\n    <endEvent id=\"end\"/>\n    <sequenceFlow sourceRef=\"start\" targetRef=\"exportBatch\"/>\n    <sequenceFlow sourceRef=\"exportBatch\" targetRef=\"end\"/>\n  </process>\n</definitions>",
+      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n             xmlns:ispf=\"http://ispf.io/bpmn\"\n             targetNamespace=\"http://ispf.io/bpmn\">\n  <process id=\"ogp-export-1c\" name=\"OGP 1C Export\" isExecutable=\"true\">\n    <startEvent id=\"start\"/>\n    <serviceTask id=\"exportBatch\" name=\"Export to 1C outbox\"\n                 ispf:action=\"invoke_function\"\n                 ispf:objectPath=\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\"\n                 ispf:functionName=\"ogp_export1cBatch\"/>\n    <endEvent id=\"end\"/>\n    <sequenceFlow sourceRef=\"start\" targetRef=\"exportBatch\"/>\n    <sequenceFlow sourceRef=\"exportBatch\" targetRef=\"end\"/>\n  </process>\n</definitions>",
       "status": "ACTIVE",
       "operatorAppId": "mes-ogp-events"
     }
@@ -2175,7 +2166,7 @@
       "intervalMs": 5000,
       "actionType": "invoke_function",
       "action": {
-        "objectPath": "root.platform.devices.ogp-mes-hub",
+        "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
         "functionName": "ogp_advanceMeter"
       }
     },
@@ -2185,7 +2176,7 @@
       "intervalMs": 60000,
       "actionType": "invoke_function",
       "action": {
-        "objectPath": "root.platform.devices.ogp-mes-hub",
+        "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
         "functionName": "ogp_export1cBatch"
       }
     }
@@ -2195,19 +2186,19 @@
       "path": "root.platform.dashboards.ogp-operator-hmi",
       "title": "Регистрация события",
       "refreshIntervalMs": 3000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"v-roll\",\"type\":\"value\",\"title\":\"Рулон на намотке\",\"x\":0,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"variableName\":\"windingRoll\",\"modelHintPath\":\"root.platform.devices.ogp-mes-hub\"},{\"id\":\"v-speed\",\"type\":\"value\",\"title\":\"Скорость, м/мин\",\"x\":14,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"variableName\":\"speedMpm\",\"decimals\":0,\"modelHintPath\":\"root.platform.devices.ogp-mes-hub\"},{\"id\":\"v-meter\",\"type\":\"value\",\"title\":\"Метраж, м\",\"x\":28,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"variableName\":\"meterM\",\"decimals\":1,\"modelHintPath\":\"root.platform.devices.ogp-mes-hub\"},{\"id\":\"v-event\",\"type\":\"value\",\"title\":\"Событие машины\",\"x\":42,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"variableName\":\"lastMachineEventLabel\",\"modelHintPath\":\"root.platform.devices.ogp-mes-hub\"},{\"id\":\"v-pending\",\"type\":\"value\",\"title\":\"Необработанных\",\"x\":63,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"variableName\":\"unprocessedPending\",\"decimals\":0,\"modelHintPath\":\"root.platform.devices.ogp-mes-hub\"},{\"id\":\"main-tabs\",\"type\":\"tab-panel\",\"title\":\"Регистрация событий OGP\",\"x\":0,\"y\":14,\"w\":84,\"h\":126,\"tabsJson\":\"[{\\\"id\\\":\\\"registration\\\",\\\"label\\\":\\\"Регистрация события\\\",\\\"children\\\":[{\\\"id\\\":\\\"unprocessed\\\",\\\"type\\\":\\\"report\\\",\\\"title\\\":\\\"Необработанные события\\\",\\\"reportPath\\\":\\\"root.platform.reports.ogp-unprocessed-events\\\",\\\"emptyMessage\\\":\\\"Нет необработанных\\\",\\\"selectable\\\":true,\\\"rowSelectionKey\\\":\\\"id\\\",\\\"rowParamsFromRowJson\\\":\\\"{\\\\\\\"unprocessedId\\\\\\\":\\\\\\\"id\\\\\\\",\\\\\\\"signalLabel\\\\\\\":\\\\\\\"signal_label\\\\\\\"}\\\",\\\"autoSelectFirstRow\\\":true},{\\\"id\\\":\\\"btn-register\\\",\\\"type\\\":\\\"dashboard-link\\\",\\\"title\\\":\\\"Зарегистрировать\\\",\\\"targetDashboardPath\\\":\\\"root.platform.dashboards.ogp-register-event-modal\\\",\\\"openMode\\\":\\\"modal\\\",\\\"buttonLabel\\\":\\\"Зарегистрировать\\\",\\\"modalTitle\\\":\\\"Регистрация события\\\",\\\"requireSessionParamsJson\\\":\\\"[\\\\\\\"unprocessedId\\\\\\\"]\\\"},{\\\"id\\\":\\\"btn-delete\\\",\\\"type\\\":\\\"dashboard-link\\\",\\\"title\\\":\\\"Удалить\\\",\\\"targetDashboardPath\\\":\\\"root.platform.dashboards.ogp-delete-unprocessed-modal\\\",\\\"openMode\\\":\\\"modal\\\",\\\"buttonLabel\\\":\\\"Удалить\\\",\\\"modalTitle\\\":\\\"Удалить необработанные\\\",\\\"requireSessionParamsJson\\\":\\\"[\\\\\\\"unprocessedId\\\\\\\"]\\\"}]},{\\\"id\\\":\\\"journal\\\",\\\"label\\\":\\\"Журнал процесса\\\",\\\"children\\\":[{\\\"id\\\":\\\"process-log\\\",\\\"type\\\":\\\"report\\\",\\\"title\\\":\\\"Журнал процесса\\\",\\\"reportPath\\\":\\\"root.platform.reports.ogp-process-journal\\\",\\\"emptyMessage\\\":\\\"Журнал пуст\\\"}]}]\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"v-roll\",\"type\":\"value\",\"title\":\"Рулон на намотке\",\"x\":0,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"variableName\":\"windingRoll\",\"modelHintPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\"},{\"id\":\"v-speed\",\"type\":\"value\",\"title\":\"Скорость, м/мин\",\"x\":14,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"variableName\":\"speedMpm\",\"decimals\":0,\"modelHintPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\"},{\"id\":\"v-meter\",\"type\":\"value\",\"title\":\"Метраж, м\",\"x\":28,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"variableName\":\"meterM\",\"decimals\":1,\"modelHintPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\"},{\"id\":\"v-event\",\"type\":\"value\",\"title\":\"Событие машины\",\"x\":42,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"variableName\":\"lastMachineEventLabel\",\"modelHintPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\"},{\"id\":\"v-pending\",\"type\":\"value\",\"title\":\"Необработанных\",\"x\":63,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"variableName\":\"unprocessedPending\",\"decimals\":0,\"modelHintPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\"},{\"id\":\"main-tabs\",\"type\":\"tab-panel\",\"title\":\"Регистрация событий OGP\",\"x\":0,\"y\":14,\"w\":84,\"h\":126,\"tabsJson\":\"[{\\\"id\\\":\\\"registration\\\",\\\"label\\\":\\\"Регистрация события\\\",\\\"children\\\":[{\\\"id\\\":\\\"unprocessed\\\",\\\"type\\\":\\\"report\\\",\\\"title\\\":\\\"Необработанные события\\\",\\\"reportPath\\\":\\\"root.platform.reports.ogp-unprocessed-events\\\",\\\"emptyMessage\\\":\\\"Нет необработанных\\\",\\\"selectable\\\":true,\\\"rowSelectionKey\\\":\\\"id\\\",\\\"rowParamsFromRowJson\\\":\\\"{\\\\\\\"unprocessedId\\\\\\\":\\\\\\\"id\\\\\\\",\\\\\\\"signalLabel\\\\\\\":\\\\\\\"signal_label\\\\\\\"}\\\",\\\"autoSelectFirstRow\\\":true},{\\\"id\\\":\\\"btn-register\\\",\\\"type\\\":\\\"dashboard-link\\\",\\\"title\\\":\\\"Зарегистрировать\\\",\\\"targetDashboardPath\\\":\\\"root.platform.dashboards.ogp-register-event-modal\\\",\\\"openMode\\\":\\\"modal\\\",\\\"buttonLabel\\\":\\\"Зарегистрировать\\\",\\\"modalTitle\\\":\\\"Регистрация события\\\",\\\"requireSessionParamsJson\\\":\\\"[\\\\\\\"unprocessedId\\\\\\\"]\\\"},{\\\"id\\\":\\\"btn-delete\\\",\\\"type\\\":\\\"dashboard-link\\\",\\\"title\\\":\\\"Удалить\\\",\\\"targetDashboardPath\\\":\\\"root.platform.dashboards.ogp-delete-unprocessed-modal\\\",\\\"openMode\\\":\\\"modal\\\",\\\"buttonLabel\\\":\\\"Удалить\\\",\\\"modalTitle\\\":\\\"Удалить необработанные\\\",\\\"requireSessionParamsJson\\\":\\\"[\\\\\\\"unprocessedId\\\\\\\"]\\\"}]},{\\\"id\\\":\\\"journal\\\",\\\"label\\\":\\\"Журнал процесса\\\",\\\"children\\\":[{\\\"id\\\":\\\"process-log\\\",\\\"type\\\":\\\"report\\\",\\\"title\\\":\\\"Журнал процесса\\\",\\\"reportPath\\\":\\\"root.platform.reports.ogp-process-journal\\\",\\\"emptyMessage\\\":\\\"Журнал пуст\\\"}]}]\"}]}"
     },
     {
       "path": "root.platform.dashboards.ogp-register-event-modal",
       "title": "Регистрация события",
       "refreshIntervalMs": 3000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"machine-ctx\",\"type\":\"report\",\"title\":\"Данные с машины\",\"reportPath\":\"root.platform.reports.ogp-machine-context\",\"statusDotColumnsJson\":\"[\\\"status\\\"]\",\"stylesJson\":\"{\\\"card\\\":{\\\"borderLeft\\\":\\\"4px solid #f97316\\\",\\\"boxShadow\\\":\\\"0 1px 3px rgba(0,0,0,0.08)\\\"},\\\"title\\\":{\\\"fontWeight\\\":\\\"700\\\",\\\"fontSize\\\":\\\"0.85rem\\\"}}\",\"x\":0,\"y\":0,\"w\":84,\"h\":14},{\"id\":\"register-wizard\",\"type\":\"function-form\",\"title\":\"Регистрация события\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_registerEvent\",\"validateFunctionName\":\"ogp_validateRegistration\",\"wizardStepsJson\":\"[{\\\"id\\\":\\\"1\\\",\\\"label\\\":\\\"Регистрация события\\\"},{\\\"id\\\":\\\"2\\\",\\\"label\\\":\\\"Описание события\\\"},{\\\"id\\\":\\\"3\\\",\\\"label\\\":\\\"Подтверждение регистрации\\\"}]\",\"buttonLabel\":\"Зарегистрировать\",\"confirmMessage\":\"Запись о событии будет добавлена в систему. Убедитесь, что данные введены верно.\",\"fieldsJson\":\"[{\\\"name\\\":\\\"eventCode\\\",\\\"label\\\":\\\"Код события\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"1\\\",\\\"required\\\":true,\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":2,\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-event-codes\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"name\\\"},{\\\"name\\\":\\\"deleteNow\\\",\\\"label\\\":\\\"Удаляем сразу\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"1\\\",\\\"defaultValue\\\":\\\"true\\\",\\\"colSpan\\\":1,\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"subcodes\\\",\\\"label\\\":\\\"Заезды на настройку\\\",\\\"type\\\":\\\"multiselect\\\",\\\"step\\\":\\\"1\\\",\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"120\\\\\\\"}\\\",\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-event-subcodes\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"label\\\",\\\"optionsFilterField\\\":\\\"eventCode\\\",\\\"optionsFilterColumn\\\":\\\"parent_code\\\"},{\\\"name\\\":\\\"unprocessedId\\\",\\\"label\\\":\\\"ID необработанного\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"1\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"unprocessedId\\\"},{\\\"name\\\":\\\"rollId\\\",\\\"label\\\":\\\"Рулон\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"P1\\\",\\\"colSpan\\\":1,\\\"required\\\":true,\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-rolls\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"label\\\"},{\\\"name\\\":\\\"side\\\",\\\"label\\\":\\\"Сторона\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"PM\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"PM\\\",\\\"label\\\":\\\"PM\\\"},{\\\"value\\\":\\\"Passer\\\",\\\"label\\\":\\\"Passer\\\"}]},{\\\"name\\\":\\\"startM\\\",\\\"label\\\":\\\"Начало, м\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"0\\\",\\\"colSpan\\\":1,\\\"required\\\":true},{\\\"name\\\":\\\"rows\\\",\\\"label\\\":\\\"Ряд\\\",\\\"type\\\":\\\"multiselect\\\",\\\"step\\\":\\\"2\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"1\\\",\\\"label\\\":\\\"1\\\"},{\\\"value\\\":\\\"2\\\",\\\"label\\\":\\\"2\\\"},{\\\"value\\\":\\\"3\\\",\\\"label\\\":\\\"3\\\"},{\\\"value\\\":\\\"all\\\",\\\"label\\\":\\\"Все ряды\\\"}]},{\\\"name\\\":\\\"card1\\\",\\\"label\\\":\\\"Карточка 1\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"Жёлтая\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\"},{\\\"name\\\":\\\"endM\\\",\\\"label\\\":\\\"Конец, м\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"500\\\",\\\"colSpan\\\":1,\\\"required\\\":true},{\\\"name\\\":\\\"card2\\\",\\\"label\\\":\\\"Карточка 2\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"Синяя\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\"},{\\\"name\\\":\\\"startAt\\\",\\\"label\\\":\\\"Начало, мин\\\",\\\"type\\\":\\\"time\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"10:00\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"endAt\\\",\\\"label\\\":\\\"Конец, мин\\\",\\\"type\\\":\\\"time\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"17:00\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"wholeStage\\\",\\\"label\\\":\\\"Весь этап\\\",\\\"type\\\":\\\"checkbox\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"comment\\\",\\\"label\\\":\\\"Комментарий\\\",\\\"type\\\":\\\"textarea\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":2}]\",\"paramBindingsJson\":\"{\\\"unprocessedId\\\":\\\"unprocessedId\\\"}\",\"requireSessionParamsJson\":\"[\\\"unprocessedId\\\"]\",\"syncFieldsToSessionJson\":\"{\\\"eventCode\\\":\\\"eventCode\\\"}\",\"clearSessionParamsJson\":\"[\\\"unprocessedId\\\",\\\"signalLabel\\\"]\",\"x\":0,\"y\":14,\"w\":84,\"h\":112}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"machine-ctx\",\"type\":\"report\",\"title\":\"Данные с машины\",\"reportPath\":\"root.platform.reports.ogp-machine-context\",\"statusDotColumnsJson\":\"[\\\"status\\\"]\",\"stylesJson\":\"{\\\"card\\\":{\\\"borderLeft\\\":\\\"4px solid #f97316\\\",\\\"boxShadow\\\":\\\"0 1px 3px rgba(0,0,0,0.08)\\\"},\\\"title\\\":{\\\"fontWeight\\\":\\\"700\\\",\\\"fontSize\\\":\\\"0.85rem\\\"}}\",\"x\":0,\"y\":0,\"w\":84,\"h\":14},{\"id\":\"register-wizard\",\"type\":\"function-form\",\"title\":\"Регистрация события\",\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"functionName\":\"ogp_registerEvent\",\"validateFunctionName\":\"ogp_validateRegistration\",\"wizardStepsJson\":\"[{\\\"id\\\":\\\"1\\\",\\\"label\\\":\\\"Регистрация события\\\"},{\\\"id\\\":\\\"2\\\",\\\"label\\\":\\\"Описание события\\\"},{\\\"id\\\":\\\"3\\\",\\\"label\\\":\\\"Подтверждение регистрации\\\"}]\",\"buttonLabel\":\"Зарегистрировать\",\"confirmMessage\":\"Запись о событии будет добавлена в систему. Убедитесь, что данные введены верно.\",\"fieldsJson\":\"[{\\\"name\\\":\\\"eventCode\\\",\\\"label\\\":\\\"Код события\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"1\\\",\\\"required\\\":true,\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":2,\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-event-codes\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"name\\\"},{\\\"name\\\":\\\"deleteNow\\\",\\\"label\\\":\\\"Удаляем сразу\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"1\\\",\\\"defaultValue\\\":\\\"true\\\",\\\"colSpan\\\":1,\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"subcodes\\\",\\\"label\\\":\\\"Заезды на настройку\\\",\\\"type\\\":\\\"multiselect\\\",\\\"step\\\":\\\"1\\\",\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"120\\\\\\\"}\\\",\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-event-subcodes\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"label\\\",\\\"optionsFilterField\\\":\\\"eventCode\\\",\\\"optionsFilterColumn\\\":\\\"parent_code\\\"},{\\\"name\\\":\\\"unprocessedId\\\",\\\"label\\\":\\\"ID необработанного\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"1\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"unprocessedId\\\"},{\\\"name\\\":\\\"rollId\\\",\\\"label\\\":\\\"Рулон\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"P1\\\",\\\"colSpan\\\":1,\\\"required\\\":true,\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-rolls\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"label\\\"},{\\\"name\\\":\\\"side\\\",\\\"label\\\":\\\"Сторона\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"PM\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"PM\\\",\\\"label\\\":\\\"PM\\\"},{\\\"value\\\":\\\"Passer\\\",\\\"label\\\":\\\"Passer\\\"}]},{\\\"name\\\":\\\"startM\\\",\\\"label\\\":\\\"Начало, м\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"0\\\",\\\"colSpan\\\":1,\\\"required\\\":true},{\\\"name\\\":\\\"rows\\\",\\\"label\\\":\\\"Ряд\\\",\\\"type\\\":\\\"multiselect\\\",\\\"step\\\":\\\"2\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"1\\\",\\\"label\\\":\\\"1\\\"},{\\\"value\\\":\\\"2\\\",\\\"label\\\":\\\"2\\\"},{\\\"value\\\":\\\"3\\\",\\\"label\\\":\\\"3\\\"},{\\\"value\\\":\\\"all\\\",\\\"label\\\":\\\"Все ряды\\\"}]},{\\\"name\\\":\\\"card1\\\",\\\"label\\\":\\\"Карточка 1\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"Жёлтая\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\"},{\\\"name\\\":\\\"endM\\\",\\\"label\\\":\\\"Конец, м\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"500\\\",\\\"colSpan\\\":1,\\\"required\\\":true},{\\\"name\\\":\\\"card2\\\",\\\"label\\\":\\\"Карточка 2\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"Синяя\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\"},{\\\"name\\\":\\\"startAt\\\",\\\"label\\\":\\\"Начало, мин\\\",\\\"type\\\":\\\"time\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"10:00\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"endAt\\\",\\\"label\\\":\\\"Конец, мин\\\",\\\"type\\\":\\\"time\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"17:00\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"wholeStage\\\",\\\"label\\\":\\\"Весь этап\\\",\\\"type\\\":\\\"checkbox\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"comment\\\",\\\"label\\\":\\\"Комментарий\\\",\\\"type\\\":\\\"textarea\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":2}]\",\"paramBindingsJson\":\"{\\\"unprocessedId\\\":\\\"unprocessedId\\\"}\",\"requireSessionParamsJson\":\"[\\\"unprocessedId\\\"]\",\"syncFieldsToSessionJson\":\"{\\\"eventCode\\\":\\\"eventCode\\\"}\",\"clearSessionParamsJson\":\"[\\\"unprocessedId\\\",\\\"signalLabel\\\"]\",\"x\":0,\"y\":14,\"w\":84,\"h\":112}]}"
     },
     {
       "path": "root.platform.dashboards.ogp-delete-unprocessed-modal",
       "title": "Удалить необработанные",
       "refreshIntervalMs": 3000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"delete-unprocessed\",\"type\":\"function-form\",\"title\":\"Удалить необработанные\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_deleteUnprocessedEvents\",\"buttonLabel\":\"Удалить\",\"confirmMessage\":\"Удалить необработанные события?\",\"fieldsJson\":\"[{\\\"name\\\":\\\"ids\\\",\\\"label\\\":\\\"ID\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true},{\\\"name\\\":\\\"comment\\\",\\\"label\\\":\\\"Комментарий\\\",\\\"type\\\":\\\"textarea\\\",\\\"required\\\":true}]\",\"paramBindingsJson\":\"{\\\"ids\\\":\\\"unprocessedId\\\"}\",\"clearSessionParamsJson\":\"[\\\"unprocessedId\\\",\\\"signalLabel\\\"]\",\"x\":0,\"y\":0,\"w\":84,\"h\":42}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"delete-unprocessed\",\"type\":\"function-form\",\"title\":\"Удалить необработанные\",\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"functionName\":\"ogp_deleteUnprocessedEvents\",\"buttonLabel\":\"Удалить\",\"confirmMessage\":\"Удалить необработанные события?\",\"fieldsJson\":\"[{\\\"name\\\":\\\"ids\\\",\\\"label\\\":\\\"ID\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true},{\\\"name\\\":\\\"comment\\\",\\\"label\\\":\\\"Комментарий\\\",\\\"type\\\":\\\"textarea\\\",\\\"required\\\":true}]\",\"paramBindingsJson\":\"{\\\"ids\\\":\\\"unprocessedId\\\"}\",\"clearSessionParamsJson\":\"[\\\"unprocessedId\\\",\\\"signalLabel\\\"]\",\"x\":0,\"y\":0,\"w\":84,\"h\":42}]}"
     },
     {
       "path": "root.platform.dashboards.ogp-shift-supervisor",
@@ -2219,13 +2210,13 @@
       "path": "root.platform.dashboards.ogp-edit-process-event-modal",
       "title": "Корректировка записи",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"edit-event\",\"type\":\"function-form\",\"title\":\"Корректировка записи\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_updateProcessEvent\",\"buttonLabel\":\"Сохранить\",\"fieldsJson\":\"[{\\\"name\\\":\\\"eventId\\\",\\\"label\\\":\\\"ID события\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"eventId\\\"},{\\\"name\\\":\\\"comment\\\",\\\"label\\\":\\\"Комментарий\\\",\\\"type\\\":\\\"textarea\\\"},{\\\"name\\\":\\\"startM\\\",\\\"label\\\":\\\"Начало, м\\\",\\\"type\\\":\\\"text\\\"},{\\\"name\\\":\\\"endM\\\",\\\"label\\\":\\\"Конец, м\\\",\\\"type\\\":\\\"text\\\"}]\",\"requireSessionParamsJson\":\"[\\\"eventId\\\"]\",\"clearSessionParamsJson\":\"[\\\"eventId\\\",\\\"eventLabel\\\",\\\"comment\\\",\\\"startM\\\",\\\"endM\\\"]\",\"x\":0,\"y\":0,\"w\":84,\"h\":56}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"edit-event\",\"type\":\"function-form\",\"title\":\"Корректировка записи\",\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"functionName\":\"ogp_updateProcessEvent\",\"buttonLabel\":\"Сохранить\",\"fieldsJson\":\"[{\\\"name\\\":\\\"eventId\\\",\\\"label\\\":\\\"ID события\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"eventId\\\"},{\\\"name\\\":\\\"comment\\\",\\\"label\\\":\\\"Комментарий\\\",\\\"type\\\":\\\"textarea\\\"},{\\\"name\\\":\\\"startM\\\",\\\"label\\\":\\\"Начало, м\\\",\\\"type\\\":\\\"text\\\"},{\\\"name\\\":\\\"endM\\\",\\\"label\\\":\\\"Конец, м\\\",\\\"type\\\":\\\"text\\\"}]\",\"requireSessionParamsJson\":\"[\\\"eventId\\\"]\",\"clearSessionParamsJson\":\"[\\\"eventId\\\",\\\"eventLabel\\\",\\\"comment\\\",\\\"startM\\\",\\\"endM\\\"]\",\"x\":0,\"y\":0,\"w\":84,\"h\":56}]}"
     },
     {
       "path": "root.platform.dashboards.ogp-simulator",
       "title": "Симулятор OGP",
       "refreshIntervalMs": 3000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"sim-help\",\"type\":\"html-snippet\",\"title\":\"Симулятор OGP\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>Симуляция сигналов машины: останов, удар ножа, кнопка брака. После сигнала откройте «Регистрация события».</p>\"},{\"id\":\"sim-form\",\"type\":\"function-form\",\"title\":\"Сигнал с машины\",\"x\":0,\"y\":14,\"w\":28,\"h\":28,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_simulateSignal\",\"buttonLabel\":\"Отправить сигнал\",\"fieldsJson\":\"[{\\\"name\\\":\\\"signalType\\\",\\\"label\\\":\\\"Тип сигнала\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"stop\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"stop\\\",\\\"label\\\":\\\"Останов\\\"},{\\\"value\\\":\\\"knife\\\",\\\"label\\\":\\\"Удар ножа\\\"},{\\\"value\\\":\\\"defect\\\",\\\"label\\\":\\\"Кнопка Брак\\\"},{\\\"value\\\":\\\"resume\\\",\\\"label\\\":\\\"Возобновление\\\"}]}]\"},{\"id\":\"seed\",\"type\":\"function\",\"title\":\"Демо\",\"x\":28,\"y\":14,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_seedDemoStage\",\"buttonLabel\":\"Сброс демо-этапа\"},{\"id\":\"events\",\"type\":\"event-feed\",\"title\":\"Журнал платформы\",\"x\":28,\"y\":28,\"w\":56,\"h\":28,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"eventNamesJson\":\"[\\\"ogpUnprocessedEvent\\\",\\\"ogpEventRegistered\\\"]\",\"maxItems\":20}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"sim-help\",\"type\":\"html-snippet\",\"title\":\"Симулятор OGP\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>Симуляция сигналов машины: останов, удар ножа, кнопка брака. После сигнала откройте «Регистрация события».</p>\"},{\"id\":\"sim-form\",\"type\":\"function-form\",\"title\":\"Сигнал с машины\",\"x\":0,\"y\":14,\"w\":28,\"h\":28,\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"functionName\":\"ogp_simulateSignal\",\"buttonLabel\":\"Отправить сигнал\",\"fieldsJson\":\"[{\\\"name\\\":\\\"signalType\\\",\\\"label\\\":\\\"Тип сигнала\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"stop\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"stop\\\",\\\"label\\\":\\\"Останов\\\"},{\\\"value\\\":\\\"knife\\\",\\\"label\\\":\\\"Удар ножа\\\"},{\\\"value\\\":\\\"defect\\\",\\\"label\\\":\\\"Кнопка Брак\\\"},{\\\"value\\\":\\\"resume\\\",\\\"label\\\":\\\"Возобновление\\\"}]}]\"},{\"id\":\"seed\",\"type\":\"function\",\"title\":\"Демо\",\"x\":28,\"y\":14,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"functionName\":\"ogp_seedDemoStage\",\"buttonLabel\":\"Сброс демо-этапа\"},{\"id\":\"events\",\"type\":\"event-feed\",\"title\":\"Журнал платформы\",\"x\":28,\"y\":28,\"w\":56,\"h\":28,\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"eventNamesJson\":\"[\\\"ogpUnprocessedEvent\\\",\\\"ogpEventRegistered\\\"]\",\"maxItems\":20}]}"
     },
     {
       "path": "root.platform.dashboards.ogp-admin-codes",
@@ -2237,25 +2228,25 @@
       "path": "root.platform.dashboards.ogp-add-event-code-modal",
       "title": "Добавить код",
       "refreshIntervalMs": 10000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"add-code\",\"type\":\"function-form\",\"title\":\"Добавить код\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_createEventCode\",\"buttonLabel\":\"Сохранить код\",\"fieldsJson\":\"[{\\\"name\\\":\\\"code\\\",\\\"label\\\":\\\"Код\\\",\\\"type\\\":\\\"text\\\",\\\"required\\\":true},{\\\"name\\\":\\\"name\\\",\\\"label\\\":\\\"Название\\\",\\\"type\\\":\\\"text\\\",\\\"required\\\":true},{\\\"name\\\":\\\"requiresTime\\\",\\\"label\\\":\\\"Время обяз.\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"true\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"requiresMeter\\\",\\\"label\\\":\\\"Метраж обяз.\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"true\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"requiresComment\\\",\\\"label\\\":\\\"Комментарий обяз.\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"hasSubcodes\\\",\\\"label\\\":\\\"Подкоды\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"excludeFrom1c\\\",\\\"label\\\":\\\"Исключить из 1С\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]}]\",\"x\":0,\"y\":0,\"w\":84,\"h\":70}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"add-code\",\"type\":\"function-form\",\"title\":\"Добавить код\",\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"functionName\":\"ogp_createEventCode\",\"buttonLabel\":\"Сохранить код\",\"fieldsJson\":\"[{\\\"name\\\":\\\"code\\\",\\\"label\\\":\\\"Код\\\",\\\"type\\\":\\\"text\\\",\\\"required\\\":true},{\\\"name\\\":\\\"name\\\",\\\"label\\\":\\\"Название\\\",\\\"type\\\":\\\"text\\\",\\\"required\\\":true},{\\\"name\\\":\\\"requiresTime\\\",\\\"label\\\":\\\"Время обяз.\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"true\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"requiresMeter\\\",\\\"label\\\":\\\"Метраж обяз.\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"true\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"requiresComment\\\",\\\"label\\\":\\\"Комментарий обяз.\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"hasSubcodes\\\",\\\"label\\\":\\\"Подкоды\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"excludeFrom1c\\\",\\\"label\\\":\\\"Исключить из 1С\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]}]\",\"x\":0,\"y\":0,\"w\":84,\"h\":70}]}"
     },
     {
       "path": "root.platform.dashboards.ogp-add-subcode-modal",
       "title": "Добавить подкод",
       "refreshIntervalMs": 10000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"add-subcode\",\"type\":\"function-form\",\"title\":\"Добавить подкод\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_createSubcode\",\"buttonLabel\":\"Добавить подкод\",\"fieldsJson\":\"[{\\\"name\\\":\\\"parentCode\\\",\\\"label\\\":\\\"Родительский код\\\",\\\"type\\\":\\\"select\\\",\\\"required\\\":true,\\\"defaultValue\\\":\\\"\\\",\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-event-codes\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"name\\\"},{\\\"name\\\":\\\"code\\\",\\\"label\\\":\\\"Подкод\\\",\\\"type\\\":\\\"text\\\",\\\"required\\\":true},{\\\"name\\\":\\\"label\\\",\\\"label\\\":\\\"Название\\\",\\\"type\\\":\\\"text\\\",\\\"required\\\":true}]\",\"x\":0,\"y\":0,\"w\":84,\"h\":42}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"add-subcode\",\"type\":\"function-form\",\"title\":\"Добавить подкод\",\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"functionName\":\"ogp_createSubcode\",\"buttonLabel\":\"Добавить подкод\",\"fieldsJson\":\"[{\\\"name\\\":\\\"parentCode\\\",\\\"label\\\":\\\"Родительский код\\\",\\\"type\\\":\\\"select\\\",\\\"required\\\":true,\\\"defaultValue\\\":\\\"\\\",\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-event-codes\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"name\\\"},{\\\"name\\\":\\\"code\\\",\\\"label\\\":\\\"Подкод\\\",\\\"type\\\":\\\"text\\\",\\\"required\\\":true},{\\\"name\\\":\\\"label\\\",\\\"label\\\":\\\"Название\\\",\\\"type\\\":\\\"text\\\",\\\"required\\\":true}]\",\"x\":0,\"y\":0,\"w\":84,\"h\":42}]}"
     },
     {
       "path": "root.platform.dashboards.ogp-roll-release",
       "title": "Выпуск рулона",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"roll-map\",\"type\":\"report\",\"title\":\"Карта рулона (интервалы)\",\"x\":0,\"y\":0,\"w\":56,\"h\":35,\"reportPath\":\"root.platform.reports.ogp-roll-map\",\"parametersJson\":\"{\\\"rollId\\\":\\\"P1\\\"}\",\"contextParamsJson\":\"{\\\"rollId\\\":\\\"rollId\\\"}\"},{\"id\":\"build-label\",\"type\":\"function-form\",\"title\":\"Этикетка рулона\",\"x\":56,\"y\":0,\"w\":28,\"h\":28,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_buildRollLabel\",\"buttonLabel\":\"Сформировать этикетку\",\"fieldsJson\":\"[{\\\"name\\\":\\\"rollId\\\",\\\"label\\\":\\\"Рулон\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"P1\\\"}]\"},{\"id\":\"label-report\",\"type\":\"report\",\"title\":\"Данные этикетки\",\"x\":0,\"y\":35,\"w\":84,\"h\":28,\"reportPath\":\"root.platform.reports.ogp-roll-label-data\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"roll-map\",\"type\":\"report\",\"title\":\"Карта рулона (интервалы)\",\"x\":0,\"y\":0,\"w\":56,\"h\":35,\"reportPath\":\"root.platform.reports.ogp-roll-map\",\"parametersJson\":\"{\\\"rollId\\\":\\\"P1\\\"}\",\"contextParamsJson\":\"{\\\"rollId\\\":\\\"rollId\\\"}\"},{\"id\":\"build-label\",\"type\":\"function-form\",\"title\":\"Этикетка рулона\",\"x\":56,\"y\":0,\"w\":28,\"h\":28,\"objectPath\":\"root.platform.singleton-blueprints.mes-ogp-events-hub-v1\",\"functionName\":\"ogp_buildRollLabel\",\"buttonLabel\":\"Сформировать этикетку\",\"fieldsJson\":\"[{\\\"name\\\":\\\"rollId\\\",\\\"label\\\":\\\"Рулон\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"P1\\\"}]\"},{\"id\":\"label-report\",\"type\":\"report\",\"title\":\"Данные этикетки\",\"x\":0,\"y\":35,\"w\":84,\"h\":28,\"reportPath\":\"root.platform.reports.ogp-roll-label-data\"}]}"
     }
   ],
   "operatorUi": {
     "appId": "mes-ogp-events",
     "title": "MES OGP Events",
-    "eventJournalObjectPath": "root.platform.devices.ogp-mes-hub",
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
     "defaultDashboard": "root.platform.dashboards.ogp-operator-hmi",
     "dashboards": [
       {
@@ -2290,7 +2281,7 @@
           "eventNames": [
             "ogpUnprocessedEvent"
           ],
-          "objectPathPrefix": "root.platform.devices.ogp-mes-hub",
+          "objectPathPrefix": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
           "minLevel": "WARNING",
           "title": "Требуется регистрация события",
           "fields": [
@@ -2323,7 +2314,7 @@
               "signalLabel": "signalLabel"
             },
             "enrichFromFunction": {
-              "objectPath": "root.platform.devices.ogp-mes-hub",
+              "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
               "functionName": "ogp_listUnprocessedEvents",
               "rowFields": {
                 "unprocessedId": "id",

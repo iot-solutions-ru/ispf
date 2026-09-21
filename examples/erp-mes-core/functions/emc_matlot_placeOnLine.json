@@ -1,0 +1,49 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "barcode",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_matlot_placeOnLine",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"job\",\"sql\":\"@file:emc_matlot_placeOnLine-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNull\",\"var\":\"job\",\"error_code\":\"JOB_NOT_FOUND\",\"error_message\":\"Job order not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"job.dispatch_status\",\"equals\":\"RUNNING\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Job order must be RUNNING\"},{\"type\":\"selectOne\",\"var\":\"lot\",\"sql\":\"SELECT lot_id, definition_id, status FROM emc_material_lot WHERE barcode = ?\",\"params\":[\"${input.barcode}\"]},{\"type\":\"failIfNull\",\"var\":\"lot\",\"error_code\":\"LOT_NOT_FOUND\",\"error_message\":\"Material lot not found by barcode\"},{\"type\":\"selectOne\",\"var\":\"spec\",\"sql\":\"@file:emc_matlot_placeOnLine-step.sql\",\"params\":[\"${job.segment_id}\",\"${lot.definition_id}\"]},{\"type\":\"failIfNull\",\"var\":\"spec\",\"error_code\":\"MATERIAL_NOT_IN_SEGMENT_SPEC\",\"error_message\":\"Material is not a consumed input of the job segment\"},{\"type\":\"selectOne\",\"var\":\"busy\",\"sql\":\"@file:emc_matlot_placeOnLine-step.sql\",\"params\":[\"${input.jobNo}\",\"${lot.definition_id}\",\"${lot.lot_id}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"SLOT_OCCUPIED\",\"error_message\":\"Material slot already occupied by lot ${busy.lot_id}\",\"lotId\":\"\",\"jobNo\":\"${input.jobNo}\",\"status\":\"\"}}],\"var\":\"busy.lot_id\",\"notNull\":true},{\"type\":\"exec\",\"sql\":\"@file:emc_matlot_placeOnLine-step.sql\",\"params\":[\"${job.equipment_id}\",\"${input.jobNo}\",\"${lot.lot_id}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${lot.lot_id}\",\"jobNo\":\"${input.jobNo}\",\"status\":\"ON_LINE\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

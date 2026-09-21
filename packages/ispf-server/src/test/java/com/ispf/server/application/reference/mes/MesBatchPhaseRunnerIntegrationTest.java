@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class MesBatchPhaseRunnerIntegrationTest {
 
-    private static final String HUB = "root.platform.devices.mes-platform-hub";
+    private static final String HUB = "root.platform.singleton-blueprints.mes-platform-hub-v1";
     private static final String BATCH_PATH = "root.platform.mes.lots.batch-line-a01-001";
     private static final String BATCH_DASHBOARD = "root.platform.dashboards.mes-platform-batch";
     private static final String BATCH_ID = "BATCH-LINE-A01-001";

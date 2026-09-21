@@ -1,0 +1,1 @@
+SELECT spec_id, COALESCE(person_id, '') AS person_id, COALESCE(equipment_id, '') AS equipment_id, test_name, qualification, COALESCE(criterion, '') AS criterion FROM emc_qualification_test_spec ORDER BY spec_id

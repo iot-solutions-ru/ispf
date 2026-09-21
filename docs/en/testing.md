@@ -59,6 +59,17 @@ Backend tests use modular Boot 4 starters (`spring-boot-starter-webmvc-test`, `s
 | `BlueprintControllerTest` | Blueprints API |
 | `OperatorAccessTest` | RBAC operator vs admin |
 | `ApplicationPlatformApiTest` | REQ-PF: applications, bundle deploy, BFF invoke |
+| `FunctionTestRunnerTest` | W6 solution smoke tests (rollback transaction) |
+
+### Solution tests (W6)
+
+Bundles may declare `tests[]` (`kind`: `function` | `telemetry`). Shape is validated on dry-run; runtime via:
+
+- `FunctionTestRunner` — fixture SQL + `invokeInCurrentTransaction` inside a rollback-only transaction
+- Agent tools: `test_function`, `simulate_telemetry` (setDriverTelemetry; journal retry), `assert_variable`, `run_bundle_tests`
+- Optional `deploy(..., runTests=true)` / agent `import_package` — returns `testResults`
+
+See [ai-development](ai-development.md).
 
 ### Demo stand scenarios
 

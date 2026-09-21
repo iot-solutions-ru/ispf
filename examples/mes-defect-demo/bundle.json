@@ -15,10 +15,9 @@
   ],
   "blueprints": [
     {
-      "name": "mes-defect-hub-v1",
+      "name": "mes-defect-demo-hub-v1",
       "description": "MES defect hub with SCADA bindings and workflow events",
-      "type": "MIXIN",
-      "targetObjectType": "DEVICE",
+      "type": "SINGLETON",
       "variables": [
         {
           "name": "defectPending",
@@ -145,14 +144,6 @@
   "objects": [
     {
       "parentPath": "root.platform.devices",
-      "name": "mes-hub-01",
-      "type": "DEVICE",
-      "displayName": "MES Demo Hub",
-      "description": "Fictional MES hub for defect distribution demo",
-      "templateId": "mes-defect-hub-v1"
-    },
-    {
-      "parentPath": "root.platform.devices",
       "name": "mes-line-A01",
       "type": "DEVICE",
       "displayName": "Demo Line A01",
@@ -175,7 +166,7 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.mes-hub-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_simulateDefect",
       "version": "1",
       "descriptor": {
@@ -228,7 +219,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-hub-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_receiveDefect",
       "version": "1",
       "descriptor": {
@@ -272,7 +263,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-hub-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_resolveOrder",
       "version": "1",
       "descriptor": {
@@ -321,7 +312,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-hub-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_calculateRoute",
       "version": "1",
       "descriptor": {
@@ -374,7 +365,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-hub-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_confirmRoute",
       "version": "1",
       "descriptor": {
@@ -410,7 +401,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-hub-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_finalizeDefect",
       "version": "1",
       "descriptor": {
@@ -451,7 +442,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-hub-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_listLines",
       "version": "1",
       "descriptor": {
@@ -526,35 +517,35 @@
   ],
   "bindings": [
     {
-      "objectPath": "root.platform.devices.mes-hub-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "variable": "defectPending",
       "query": "SELECT COALESCE(CAST(COUNT(*) AS DOUBLE), 0) AS v FROM mes_defect_event WHERE status = 'pending'",
       "refresh": "on_function_success",
       "refreshIntervalMs": 500,
       "valueField": "v",
-      "triggerObjectPath": "root.platform.devices.mes-hub-01",
+      "triggerObjectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "triggerFunctionName": "mes_simulateDefect,mes_receiveDefect,mes_finalizeDefect",
       "enabled": true
     },
     {
-      "objectPath": "root.platform.devices.mes-hub-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "variable": "lineTypeCode",
       "query": "SELECT COALESCE((SELECT CASE line_type WHEN 'A' THEN 1.0 WHEN 'B' THEN 2.0 ELSE 3.0 END FROM mes_hub_context WHERE id = 1), 0.0) AS v",
       "refresh": "on_function_success",
       "refreshIntervalMs": 1000,
       "valueField": "v",
-      "triggerObjectPath": "root.platform.devices.mes-hub-01",
+      "triggerObjectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "triggerFunctionName": "mes_resolveOrder",
       "enabled": true
     },
     {
-      "objectPath": "root.platform.devices.mes-hub-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "variable": "isTransitionalFlag",
       "query": "SELECT CASE WHEN COALESCE(is_transitional, false) THEN 1 ELSE 0 END AS v FROM mes_hub_context WHERE id = 1",
       "refresh": "on_function_success",
       "refreshIntervalMs": 1000,
       "valueField": "v",
-      "triggerObjectPath": "root.platform.devices.mes-hub-01",
+      "triggerObjectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "triggerFunctionName": "mes_resolveOrder",
       "enabled": true
     }
@@ -662,7 +653,7 @@
   "alertRules": [
     {
       "name": "MES defect pending alert",
-      "objectPath": "root.platform.devices.mes-hub-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "watchVariable": "defectPending",
       "conditionExpr": "self.defectPending[\"value\"] > 0",
       "eventName": "mesDefectDetected",
@@ -692,7 +683,7 @@
   "correlators": [
     {
       "name": "MES defect distribution workflow",
-      "objectPath": "root.platform.devices.mes-hub-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "patternType": "COUNT",
       "eventName": "mesDefectDetected",
       "windowSeconds": 0,
@@ -707,7 +698,7 @@
   "workflows": [
     {
       "path": "root.platform.workflows.mes-defect-distribution",
-      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\r\n<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\r\r\n             xmlns:ispf=\"http://ispf.io/bpmn\"\r\r\n             targetNamespace=\"http://ispf.io/bpmn\">\r\r\n  <process id=\"mes-defect-distribution\" name=\"MES Defect Distribution\" isExecutable=\"true\">\r\r\n    <startEvent id=\"start\" name=\"Start\"/>\r\r\n    <serviceTask id=\"receiveDefect\" name=\"Receive defect event\"\r\r\n                 ispf:action=\"invoke_function\"\r\r\n                 ispf:objectPath=\"root.platform.devices.mes-hub-01\"\r\r\n                 ispf:functionName=\"mes_receiveDefect\"\r\r\n                 ispf:outputMap=\"eventId=eventId,lineCode=lineCode\"/>\r\r\n    <serviceTask id=\"resolveOrder\" name=\"Resolve order binding\"\r\r\n                 ispf:action=\"invoke_function\"\r\r\n                 ispf:objectPath=\"root.platform.devices.mes-hub-01\"\r\r\n                 ispf:functionName=\"mes_resolveOrder\"\r\r\n                 ispf:inputMap=\"eventId=${eventId}\"\r\r\n                 ispf:outputMap=\"orderNo=orderNo\"/>\r\r\n    <exclusiveGateway id=\"gwTransitional\" name=\"Transitional remainder?\"/>\r\r\n    <serviceTask id=\"markTransitional\" name=\"Account transitional remainder\"\r\r\n                 ispf:action=\"log\"\r\r\n                 ispf:message=\"mes-defect: transitional remainder accounted\"/>\r\r\n    <serviceTask id=\"markCurrentOrder\" name=\"Bind to current order\"\r\r\n                 ispf:action=\"log\"\r\r\n                 ispf:message=\"mes-defect: bound to current order\"/>\r\r\n    <exclusiveGateway id=\"gwJoinOrder\" name=\"Join order branch\"/>\r\r\n    <serviceTask id=\"calcRoute\" name=\"Forecast route\"\r\r\n                 ispf:action=\"invoke_function\"\r\r\n                 ispf:objectPath=\"root.platform.devices.mes-hub-01\"\r\r\n                 ispf:functionName=\"mes_calculateRoute\"\r\r\n                 ispf:inputMap=\"eventId=${eventId}\"/>\r\r\n    <exclusiveGateway id=\"gwUserTask\" name=\"Operator task by line type\"/>\r\r\n    <userTask id=\"confirmTypeA\" name=\"Confirm type A route\"\r\r\n              ispf:title=\"Подтвердите маршрут переработки (тип A)\"\r\r\n              ispf:instructions=\"Проверьте рекомендацию и подтвердите переработку на линии или перенос на соседнюю линию\"\r\r\n              ispf:assigneeRole=\"operator\"\r\r\n              ispf:targetObject=\"root.platform.devices.mes-hub-01\"\r\r\n              ispf:function=\"mes_confirmRoute\"/>\r\r\n    <userTask id=\"confirmTypeB\" name=\"Confirm type B route\"\r\r\n              ispf:title=\"Подтвердите маршрут подачи (тип B)\"\r\r\n              ispf:instructions=\"Проверьте рекомендацию и подтвердите подачу или постановку в очередь\"\r\r\n              ispf:assigneeRole=\"operator\"\r\r\n              ispf:targetObject=\"root.platform.devices.mes-hub-01\"\r\r\n              ispf:function=\"mes_confirmRoute\"/>\r\r\n    <userTask id=\"confirmTypeD\" name=\"Confirm type D route\"\r\r\n              ispf:title=\"Подтвердите транспортный маршрут (тип D)\"\r\r\n              ispf:instructions=\"Проверьте маршрут доставки и подтвердите транспортную задачу\"\r\r\n              ispf:assigneeRole=\"operator\"\r\r\n              ispf:targetObject=\"root.platform.devices.mes-hub-01\"\r\r\n              ispf:function=\"mes_confirmRoute\"/>\r\r\n    <exclusiveGateway id=\"gwJoinConfirm\" name=\"Join confirm branch\"/>\r\r\n    <serviceTask id=\"finalizeDefect\" name=\"Finalize distribution\"\r\r\n                 ispf:action=\"invoke_function\"\r\r\n                 ispf:objectPath=\"root.platform.devices.mes-hub-01\"\r\r\n                 ispf:functionName=\"mes_finalizeDefect\"\r\r\n                 ispf:inputMap=\"eventId=${eventId}\"/>\r\r\n    <serviceTask id=\"notifyRouted\" name=\"Notify MES routed\"\r\r\n                 ispf:action=\"fire_event\"\r\r\n                 ispf:objectPath=\"root.platform.devices.mes-hub-01\"\r\r\n                 ispf:eventName=\"mesDefectRouted\"/>\r\r\n    <endEvent id=\"end\" name=\"End\"/>\r\r\n    <sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"receiveDefect\"/>\r\r\n    <sequenceFlow id=\"f2\" sourceRef=\"receiveDefect\" targetRef=\"resolveOrder\"/>\r\r\n    <sequenceFlow id=\"f3\" sourceRef=\"resolveOrder\" targetRef=\"gwTransitional\"/>\r\r\n    <sequenceFlow id=\"f4\" sourceRef=\"gwTransitional\" targetRef=\"markTransitional\"\r\r\n                  ispf:condition=\"self.isTransitionalFlag[&quot;value&quot;] &gt; 0.0\"/>\r\r\n    <sequenceFlow id=\"f5\" sourceRef=\"gwTransitional\" targetRef=\"markCurrentOrder\" ispf:default=\"true\"/>\r\r\n    <sequenceFlow id=\"f6\" sourceRef=\"markTransitional\" targetRef=\"gwJoinOrder\"/>\r\r\n    <sequenceFlow id=\"f7\" sourceRef=\"markCurrentOrder\" targetRef=\"gwJoinOrder\"/>\r\r\n    <sequenceFlow id=\"f8\" sourceRef=\"gwJoinOrder\" targetRef=\"calcRoute\"/>\r\r\n    <sequenceFlow id=\"f9\" sourceRef=\"calcRoute\" targetRef=\"gwUserTask\"/>\r\r\n    <sequenceFlow id=\"f10\" sourceRef=\"gwUserTask\" targetRef=\"confirmTypeA\"\r\r\n                  ispf:condition=\"self.lineTypeCode[&quot;value&quot;] &gt;= 1.0 &amp;&amp; self.lineTypeCode[&quot;value&quot;] &lt; 2.0\"/>\r\r\n    <sequenceFlow id=\"f11\" sourceRef=\"gwUserTask\" targetRef=\"confirmTypeB\"\r\r\n                  ispf:condition=\"self.lineTypeCode[&quot;value&quot;] &gt;= 2.0 &amp;&amp; self.lineTypeCode[&quot;value&quot;] &lt; 3.0\"/>\r\r\n    <sequenceFlow id=\"f12\" sourceRef=\"gwUserTask\" targetRef=\"confirmTypeD\" ispf:default=\"true\"/>\r\r\n    <sequenceFlow id=\"f13\" sourceRef=\"confirmTypeA\" targetRef=\"gwJoinConfirm\"/>\r\r\n    <sequenceFlow id=\"f14\" sourceRef=\"confirmTypeB\" targetRef=\"gwJoinConfirm\"/>\r\r\n    <sequenceFlow id=\"f15\" sourceRef=\"confirmTypeD\" targetRef=\"gwJoinConfirm\"/>\r\r\n    <sequenceFlow id=\"f16\" sourceRef=\"gwJoinConfirm\" targetRef=\"finalizeDefect\"/>\r\r\n    <sequenceFlow id=\"f17\" sourceRef=\"finalizeDefect\" targetRef=\"notifyRouted\"/>\r\r\n    <sequenceFlow id=\"f18\" sourceRef=\"notifyRouted\" targetRef=\"end\"/>\r\r\n  </process>\r\r\n</definitions>\r\r\n",
+      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\r\n<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\r\r\n             xmlns:ispf=\"http://ispf.io/bpmn\"\r\r\n             targetNamespace=\"http://ispf.io/bpmn\">\r\r\n  <process id=\"mes-defect-distribution\" name=\"MES Defect Distribution\" isExecutable=\"true\">\r\r\n    <startEvent id=\"start\" name=\"Start\"/>\r\r\n    <serviceTask id=\"receiveDefect\" name=\"Receive defect event\"\r\r\n                 ispf:action=\"invoke_function\"\r\r\n                 ispf:objectPath=\"root.platform.singleton-blueprints.mes-defect-demo-hub-v1\"\r\r\n                 ispf:functionName=\"mes_receiveDefect\"\r\r\n                 ispf:outputMap=\"eventId=eventId,lineCode=lineCode\"/>\r\r\n    <serviceTask id=\"resolveOrder\" name=\"Resolve order binding\"\r\r\n                 ispf:action=\"invoke_function\"\r\r\n                 ispf:objectPath=\"root.platform.singleton-blueprints.mes-defect-demo-hub-v1\"\r\r\n                 ispf:functionName=\"mes_resolveOrder\"\r\r\n                 ispf:inputMap=\"eventId=${eventId}\"\r\r\n                 ispf:outputMap=\"orderNo=orderNo\"/>\r\r\n    <exclusiveGateway id=\"gwTransitional\" name=\"Transitional remainder?\"/>\r\r\n    <serviceTask id=\"markTransitional\" name=\"Account transitional remainder\"\r\r\n                 ispf:action=\"log\"\r\r\n                 ispf:message=\"mes-defect: transitional remainder accounted\"/>\r\r\n    <serviceTask id=\"markCurrentOrder\" name=\"Bind to current order\"\r\r\n                 ispf:action=\"log\"\r\r\n                 ispf:message=\"mes-defect: bound to current order\"/>\r\r\n    <exclusiveGateway id=\"gwJoinOrder\" name=\"Join order branch\"/>\r\r\n    <serviceTask id=\"calcRoute\" name=\"Forecast route\"\r\r\n                 ispf:action=\"invoke_function\"\r\r\n                 ispf:objectPath=\"root.platform.singleton-blueprints.mes-defect-demo-hub-v1\"\r\r\n                 ispf:functionName=\"mes_calculateRoute\"\r\r\n                 ispf:inputMap=\"eventId=${eventId}\"/>\r\r\n    <exclusiveGateway id=\"gwUserTask\" name=\"Operator task by line type\"/>\r\r\n    <userTask id=\"confirmTypeA\" name=\"Confirm type A route\"\r\r\n              ispf:title=\"Подтвердите маршрут переработки (тип A)\"\r\r\n              ispf:instructions=\"Проверьте рекомендацию и подтвердите переработку на линии или перенос на соседнюю линию\"\r\r\n              ispf:assigneeRole=\"operator\"\r\r\n              ispf:targetObject=\"root.platform.singleton-blueprints.mes-defect-demo-hub-v1\"\r\r\n              ispf:function=\"mes_confirmRoute\"/>\r\r\n    <userTask id=\"confirmTypeB\" name=\"Confirm type B route\"\r\r\n              ispf:title=\"Подтвердите маршрут подачи (тип B)\"\r\r\n              ispf:instructions=\"Проверьте рекомендацию и подтвердите подачу или постановку в очередь\"\r\r\n              ispf:assigneeRole=\"operator\"\r\r\n              ispf:targetObject=\"root.platform.singleton-blueprints.mes-defect-demo-hub-v1\"\r\r\n              ispf:function=\"mes_confirmRoute\"/>\r\r\n    <userTask id=\"confirmTypeD\" name=\"Confirm type D route\"\r\r\n              ispf:title=\"Подтвердите транспортный маршрут (тип D)\"\r\r\n              ispf:instructions=\"Проверьте маршрут доставки и подтвердите транспортную задачу\"\r\r\n              ispf:assigneeRole=\"operator\"\r\r\n              ispf:targetObject=\"root.platform.singleton-blueprints.mes-defect-demo-hub-v1\"\r\r\n              ispf:function=\"mes_confirmRoute\"/>\r\r\n    <exclusiveGateway id=\"gwJoinConfirm\" name=\"Join confirm branch\"/>\r\r\n    <serviceTask id=\"finalizeDefect\" name=\"Finalize distribution\"\r\r\n                 ispf:action=\"invoke_function\"\r\r\n                 ispf:objectPath=\"root.platform.singleton-blueprints.mes-defect-demo-hub-v1\"\r\r\n                 ispf:functionName=\"mes_finalizeDefect\"\r\r\n                 ispf:inputMap=\"eventId=${eventId}\"/>\r\r\n    <serviceTask id=\"notifyRouted\" name=\"Notify MES routed\"\r\r\n                 ispf:action=\"fire_event\"\r\r\n                 ispf:objectPath=\"root.platform.singleton-blueprints.mes-defect-demo-hub-v1\"\r\r\n                 ispf:eventName=\"mesDefectRouted\"/>\r\r\n    <endEvent id=\"end\" name=\"End\"/>\r\r\n    <sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"receiveDefect\"/>\r\r\n    <sequenceFlow id=\"f2\" sourceRef=\"receiveDefect\" targetRef=\"resolveOrder\"/>\r\r\n    <sequenceFlow id=\"f3\" sourceRef=\"resolveOrder\" targetRef=\"gwTransitional\"/>\r\r\n    <sequenceFlow id=\"f4\" sourceRef=\"gwTransitional\" targetRef=\"markTransitional\"\r\r\n                  ispf:condition=\"self.isTransitionalFlag[&quot;value&quot;] &gt; 0.0\"/>\r\r\n    <sequenceFlow id=\"f5\" sourceRef=\"gwTransitional\" targetRef=\"markCurrentOrder\" ispf:default=\"true\"/>\r\r\n    <sequenceFlow id=\"f6\" sourceRef=\"markTransitional\" targetRef=\"gwJoinOrder\"/>\r\r\n    <sequenceFlow id=\"f7\" sourceRef=\"markCurrentOrder\" targetRef=\"gwJoinOrder\"/>\r\r\n    <sequenceFlow id=\"f8\" sourceRef=\"gwJoinOrder\" targetRef=\"calcRoute\"/>\r\r\n    <sequenceFlow id=\"f9\" sourceRef=\"calcRoute\" targetRef=\"gwUserTask\"/>\r\r\n    <sequenceFlow id=\"f10\" sourceRef=\"gwUserTask\" targetRef=\"confirmTypeA\"\r\r\n                  ispf:condition=\"self.lineTypeCode[&quot;value&quot;] &gt;= 1.0 &amp;&amp; self.lineTypeCode[&quot;value&quot;] &lt; 2.0\"/>\r\r\n    <sequenceFlow id=\"f11\" sourceRef=\"gwUserTask\" targetRef=\"confirmTypeB\"\r\r\n                  ispf:condition=\"self.lineTypeCode[&quot;value&quot;] &gt;= 2.0 &amp;&amp; self.lineTypeCode[&quot;value&quot;] &lt; 3.0\"/>\r\r\n    <sequenceFlow id=\"f12\" sourceRef=\"gwUserTask\" targetRef=\"confirmTypeD\" ispf:default=\"true\"/>\r\r\n    <sequenceFlow id=\"f13\" sourceRef=\"confirmTypeA\" targetRef=\"gwJoinConfirm\"/>\r\r\n    <sequenceFlow id=\"f14\" sourceRef=\"confirmTypeB\" targetRef=\"gwJoinConfirm\"/>\r\r\n    <sequenceFlow id=\"f15\" sourceRef=\"confirmTypeD\" targetRef=\"gwJoinConfirm\"/>\r\r\n    <sequenceFlow id=\"f16\" sourceRef=\"gwJoinConfirm\" targetRef=\"finalizeDefect\"/>\r\r\n    <sequenceFlow id=\"f17\" sourceRef=\"finalizeDefect\" targetRef=\"notifyRouted\"/>\r\r\n    <sequenceFlow id=\"f18\" sourceRef=\"notifyRouted\" targetRef=\"end\"/>\r\r\n  </process>\r\r\n</definitions>\r\r\n",
       "status": "ACTIVE",
       "operatorAppId": "mes-defect-demo"
     }
@@ -723,7 +714,7 @@
       "path": "root.platform.dashboards.mes-defect-simulator",
       "title": "SCADA Simulator",
       "refreshIntervalMs": 3000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"sim-help\",\"type\":\"html-snippet\",\"title\":\"Как это работает\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p><strong>Два шага для оператора</strong></p><ol style='margin:0.5rem 0 0 1.1rem;padding:0;font-size:0.9em'><li><strong>Шаг 1</strong> — отправьте сообщение о браке с линии (имитация SCADA).</li><li><strong>Шаг 2</strong> — нажмите «Запустить распределение». Задача диспетчера появится на вкладке «Сводка».</li></ol><ul style='margin:0.5rem 0 0 1.1rem;padding:0;font-size:0.9em'><li><strong>Объём</strong> — масса брака в кг (например 12)</li><li><strong>Особый тип брака</strong> — только для линии D (демо-флаг)</li><li><strong>Сценарий</strong> — активный ордер или закрывающий</li></ul>\"},{\"id\":\"sim-form\",\"type\":\"function-form\",\"title\":\"Сообщение о браке\",\"x\":0,\"y\":14,\"w\":35,\"h\":42,\"objectPath\":\"root.platform.devices.mes-hub-01\",\"functionName\":\"mes_simulateDefect\",\"buttonLabel\":\"Отправить в SCADA\",\"fieldsJson\":\"[{\\\"name\\\":\\\"lineCode\\\",\\\"label\\\":\\\"Производственная линия\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"LINE-A01\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"LINE-A01\\\",\\\"label\\\":\\\"A01 — тип A (переработка + подача)\\\"},{\\\"value\\\":\\\"LINE-B01\\\",\\\"label\\\":\\\"B01 — тип B (подача)\\\"},{\\\"value\\\":\\\"LINE-D01\\\",\\\"label\\\":\\\"D01 — тип D (источник)\\\"}]},{\\\"name\\\":\\\"volumeKg\\\",\\\"label\\\":\\\"Объём брака (кг)\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"12\\\",\\\"hint\\\":\\\"Число, например 12\\\"},{\\\"name\\\":\\\"isSpecialScrap\\\",\\\"label\\\":\\\"Особый тип брака\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"0\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"0\\\",\\\"label\\\":\\\"Нет\\\"},{\\\"value\\\":\\\"1\\\",\\\"label\\\":\\\"Да (только линия D)\\\"}],\\\"hint\\\":\\\"Демо-флаг для альтернативного маршрута на линии D\\\"},{\\\"name\\\":\\\"orderScenario\\\",\\\"label\\\":\\\"Сценарий ордера\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"active\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"active\\\",\\\"label\\\":\\\"Активный ордер\\\"},{\\\"value\\\":\\\"closing\\\",\\\"label\\\":\\\"Закрывающий ордер\\\"}]}]\"},{\"id\":\"start-distribution\",\"type\":\"function\",\"title\":\"Распределение брака\",\"x\":0,\"y\":56,\"w\":35,\"h\":14,\"objectPath\":\"root.platform.devices.mes-hub-01\",\"workflowPath\":\"root.platform.workflows.mes-defect-distribution\",\"buttonLabel\":\"Запустить распределение\",\"confirmMessage\":\"Запустить процесс распределения для ожидающего брака?\"},{\"id\":\"events-feed\",\"type\":\"event-feed\",\"title\":\"Журнал событий\",\"x\":35,\"y\":14,\"w\":49,\"h\":42,\"objectPath\":\"root.platform.devices.mes-hub-01\",\"eventNamesJson\":\"[\\\"mesDefectDetected\\\",\\\"mesDefectRouted\\\"]\",\"maxItems\":30}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"sim-help\",\"type\":\"html-snippet\",\"title\":\"Как это работает\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p><strong>Два шага для оператора</strong></p><ol style='margin:0.5rem 0 0 1.1rem;padding:0;font-size:0.9em'><li><strong>Шаг 1</strong> — отправьте сообщение о браке с линии (имитация SCADA).</li><li><strong>Шаг 2</strong> — нажмите «Запустить распределение». Задача диспетчера появится на вкладке «Сводка».</li></ol><ul style='margin:0.5rem 0 0 1.1rem;padding:0;font-size:0.9em'><li><strong>Объём</strong> — масса брака в кг (например 12)</li><li><strong>Особый тип брака</strong> — только для линии D (демо-флаг)</li><li><strong>Сценарий</strong> — активный ордер или закрывающий</li></ul>\"},{\"id\":\"sim-form\",\"type\":\"function-form\",\"title\":\"Сообщение о браке\",\"x\":0,\"y\":14,\"w\":35,\"h\":42,\"objectPath\":\"root.platform.singleton-blueprints.mes-defect-demo-hub-v1\",\"functionName\":\"mes_simulateDefect\",\"buttonLabel\":\"Отправить в SCADA\",\"fieldsJson\":\"[{\\\"name\\\":\\\"lineCode\\\",\\\"label\\\":\\\"Производственная линия\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"LINE-A01\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"LINE-A01\\\",\\\"label\\\":\\\"A01 — тип A (переработка + подача)\\\"},{\\\"value\\\":\\\"LINE-B01\\\",\\\"label\\\":\\\"B01 — тип B (подача)\\\"},{\\\"value\\\":\\\"LINE-D01\\\",\\\"label\\\":\\\"D01 — тип D (источник)\\\"}]},{\\\"name\\\":\\\"volumeKg\\\",\\\"label\\\":\\\"Объём брака (кг)\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"12\\\",\\\"hint\\\":\\\"Число, например 12\\\"},{\\\"name\\\":\\\"isSpecialScrap\\\",\\\"label\\\":\\\"Особый тип брака\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"0\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"0\\\",\\\"label\\\":\\\"Нет\\\"},{\\\"value\\\":\\\"1\\\",\\\"label\\\":\\\"Да (только линия D)\\\"}],\\\"hint\\\":\\\"Демо-флаг для альтернативного маршрута на линии D\\\"},{\\\"name\\\":\\\"orderScenario\\\",\\\"label\\\":\\\"Сценарий ордера\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"active\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"active\\\",\\\"label\\\":\\\"Активный ордер\\\"},{\\\"value\\\":\\\"closing\\\",\\\"label\\\":\\\"Закрывающий ордер\\\"}]}]\"},{\"id\":\"start-distribution\",\"type\":\"function\",\"title\":\"Распределение брака\",\"x\":0,\"y\":56,\"w\":35,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.mes-defect-demo-hub-v1\",\"workflowPath\":\"root.platform.workflows.mes-defect-distribution\",\"buttonLabel\":\"Запустить распределение\",\"confirmMessage\":\"Запустить процесс распределения для ожидающего брака?\"},{\"id\":\"events-feed\",\"type\":\"event-feed\",\"title\":\"Журнал событий\",\"x\":35,\"y\":14,\"w\":49,\"h\":42,\"objectPath\":\"root.platform.singleton-blueprints.mes-defect-demo-hub-v1\",\"eventNamesJson\":\"[\\\"mesDefectDetected\\\",\\\"mesDefectRouted\\\"]\",\"maxItems\":30}]}"
     },
     {
       "path": "root.platform.dashboards.mes-defect-orders",
@@ -750,6 +741,6 @@
         "title": "Ордера"
       }
     ],
-    "eventJournalObjectPath": "root.platform.devices.mes-hub-01"
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1"
   }
 }

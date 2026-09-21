@@ -1,0 +1,77 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "alertId",
+                "type": "STRING"
+              },
+              {
+                "name": "alertType",
+                "type": "STRING"
+              },
+              {
+                "name": "severity",
+                "type": "STRING"
+              },
+              {
+                "name": "workMasterId",
+                "type": "STRING"
+              },
+              {
+                "name": "jobOrderId",
+                "type": "STRING"
+              },
+              {
+                "name": "message",
+                "type": "STRING"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              },
+              {
+                "name": "raisedAt",
+                "type": "STRING"
+              },
+              {
+                "name": "ackBy",
+                "type": "STRING"
+              },
+              {
+                "name": "ackAt",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_work_alert_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows_raw\",\"sql\":\"@file:emc_work_alert_list-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${rows_raw}\",\"fields\":{\"alertId\":\"${item.alert_id}\",\"alertType\":\"${item.alert_type}\",\"severity\":\"${item.severity}\",\"workMasterId\":\"${item.work_master_id}\",\"jobOrderId\":\"${item.job_order_id}\",\"message\":\"${item.message}\",\"status\":\"${item.status}\",\"raisedAt\":\"${item.raised_at}\",\"ackBy\":\"${item.ack_by}\",\"ackAt\":\"${item.ack_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -1,0 +1,86 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "azsCode",
+          "type": "STRING"
+        },
+        {
+          "name": "tankNo",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "azs_code",
+                "type": "STRING"
+              },
+              {
+                "name": "tank_no",
+                "type": "INTEGER"
+              },
+              {
+                "name": "calibrated_at",
+                "type": "STRING"
+              },
+              {
+                "name": "ok_levels",
+                "type": "INTEGER"
+              },
+              {
+                "name": "total_levels",
+                "type": "INTEGER"
+              },
+              {
+                "name": "level_cm",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "viis_l",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "vtoir_l",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "dev_l",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "dev_pct",
+                "type": "DOUBLE"
+              }
+            ],
+            "name": "row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_getCalibrationProfile",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"@file:oc_getCalibrationProfile-step.sql\",\"params\":[\"${input.azsCode}\",\"${input.tankNo}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -20,7 +20,7 @@
 3. Smoke:
    - `https://<ispf-host>/apps/farmtwin/`
    - Operator `/?mode=operator&app=farmtwin` → **Open app UI**
-   - `POST /api/v1/bff/invoke` → `ft_listSites` on hub `root.platform.devices.farmtwin.hub`
+   - `POST /api/v1/bff/invoke` → `ft_listSites` on hub `root.platform.singleton-blueprints.farmtwin-hub-v1`
 
 ## Build (this repo)
 

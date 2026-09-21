@@ -1,0 +1,27 @@
+{
+  "columns": [
+    {
+      "field": "capability_id",
+      "label": "Capability"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "description",
+      "label": "Description"
+    },
+    {
+      "field": "hierarchy_scope_id",
+      "label": "Scope"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    }
+  ],
+  "description": "Work Capability headers (distinct from Operations Capability).",
+  "reportId": "emc-workcap-report",
+  "title": "Work Capability (Part 4)"
+}

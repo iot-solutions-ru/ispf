@@ -1,0 +1,27 @@
+{
+  "columns": [
+    {
+      "field": "domain",
+      "label": "Domain"
+    },
+    {
+      "field": "activity",
+      "label": "Activity"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    },
+    {
+      "field": "note",
+      "label": "Note"
+    },
+    {
+      "field": "ui_link",
+      "label": "UI"
+    }
+  ],
+  "description": "Part 3 4×8 activity coverage: Production/Quality/Inventory/Maintenance × 8 activities.",
+  "reportId": "emc-mom-activity-matrix",
+  "title": "MOM Activity Matrix (IEC 62264-3)"
+}

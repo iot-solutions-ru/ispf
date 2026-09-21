@@ -1,0 +1,65 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "resultId",
+                "type": "STRING"
+              },
+              {
+                "name": "specId",
+                "type": "STRING"
+              },
+              {
+                "name": "testName",
+                "type": "STRING"
+              },
+              {
+                "name": "measuredValue",
+                "type": "STRING"
+              },
+              {
+                "name": "result",
+                "type": "STRING"
+              },
+              {
+                "name": "testedAt",
+                "type": "STRING"
+              },
+              {
+                "name": "testedBy",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_capability_listResults",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows_raw\",\"sql\":\"@file:emc_capability_listResults-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${rows_raw}\",\"fields\":{\"resultId\":\"${item.result_id}\",\"specId\":\"${item.spec_id}\",\"testName\":\"${item.test_name}\",\"measuredValue\":\"${item.measured_value}\",\"result\":\"${item.result}\",\"testedAt\":\"${item.tested_at}\",\"testedBy\":\"${item.tested_by}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

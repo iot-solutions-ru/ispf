@@ -1,0 +1,228 @@
+{
+  "displayName": "Ойл Контроль",
+  "metadata": {
+    "changelog": "v0.5.0 — SPA nav/i18n parity: assets vs incidents split; renamed modules (dispensing imbalance, tank assessment, receipt, supply monitoring, tank trucks, quality control); work orders = ТОиР/ППР/MI verification; top tabs Monitoring + Key Indicators; collapsible filters; EN measuring system availability",
+    "customer": "Сеть АЗС",
+    "deployNote": "Prod requires signed license for import_package; skeleton deployed stepwise. installationId=9466af4766a35acd780a0b85e682d215fce6576cbf1c023ccd22bdb0996b5d79",
+    "domain": "oil-control",
+    "modules": [
+      "azs",
+      "balance",
+      "monitor",
+      "stocks",
+      "imbalance",
+      "rgs-trk",
+      "calibration",
+      "measurement",
+      "discharge",
+      "logistics",
+      "quality",
+      "assets",
+      "incidents",
+      "mgmt",
+      "b2b"
+    ],
+    "product": "ОЙЛ КОНТРОЛЬ",
+    "productTitle": "Ойл Контроль",
+    "sourcePresentation": "ОЙЛ КОНТРОЛЬ · АЗС"
+  },
+  "operatorUi": {
+    "appId": "oil-control",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.oil-control-overview",
+        "title": "Остатки АЗС"
+      },
+      {
+        "path": "root.platform.dashboards.oil-control-mgmt",
+        "title": "Ключевые показатели"
+      },
+      {
+        "path": "root.platform.dashboards.oil-control-quality",
+        "title": "Контроль качества"
+      },
+      {
+        "path": "root.platform.dashboards.oil-control-logistics",
+        "title": "Состояние автоцистерн"
+      },
+      {
+        "path": "root.platform.dashboards.oil-control-assets",
+        "title": "Управление активами"
+      },
+      {
+        "path": "root.platform.dashboards.oil-control-mobile",
+        "title": "Ручной замер"
+      },
+      {
+        "path": "root.platform.dashboards.oil-control-b2b",
+        "title": "B2B"
+      }
+    ],
+    "defaultDashboard": "root.platform.dashboards.oil-control-overview",
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+    "externalSpaUrl": "http://82.146.32.188/",
+    "spaNav": [
+      {
+        "bff": [
+          "oc_listRegions",
+          "oc_listRegionFuels",
+          "oc_listImbalances",
+          "oc_calcBalance",
+          "oc_listBalanceTrend",
+          "oc_listImbalanceByAzs"
+        ],
+        "group": "АЗС",
+        "label": "Баланс Ойл Контроль",
+        "to": "/balance"
+      },
+      {
+        "bff": [
+          "oc_listStations",
+          "oc_listMonitorEvents"
+        ],
+        "group": "АЗС",
+        "label": "Центр мониторинга",
+        "to": "/map"
+      },
+      {
+        "bff": [
+          "oc_listTankStocks",
+          "oc_listRegionFuels",
+          "oc_listStockForecast"
+        ],
+        "group": "АЗС",
+        "label": "Остатки в резервуарах АЗС",
+        "to": "/stocks"
+      },
+      {
+        "bff": [
+          "oc_listImbalances"
+        ],
+        "group": "АЗС",
+        "label": "Мониторинг дебалансов",
+        "to": "/imbalance"
+      },
+      {
+        "bff": [
+          "oc_listRgsTrk",
+          "oc_listRgsTrkSeries"
+        ],
+        "group": "АЗС",
+        "label": "Дебаланс системы отпуска",
+        "to": "/rgs-trk"
+      },
+      {
+        "bff": [
+          "oc_listCalibrations",
+          "oc_importCalibration",
+          "oc_getCalibrationProfile"
+        ],
+        "group": "АЗС",
+        "label": "Оценка состояния резервуаров",
+        "to": "/calibration"
+      },
+      {
+        "bff": [
+          "oc_listTanks",
+          "oc_submitMeasurement",
+          "oc_resolveVolume"
+        ],
+        "group": "АЗС",
+        "label": "Ручной замер",
+        "to": "/measurement"
+      },
+      {
+        "bff": [
+          "oc_listDischargeSessions",
+          "oc_listDischargeTanks"
+        ],
+        "group": "Эксплуатация",
+        "label": "Приём нефтепродуктов",
+        "to": "/discharge"
+      },
+      {
+        "bff": [
+          "oc_listWagonTrips"
+        ],
+        "group": "Первичная логистика",
+        "label": "Мониторинг поставок",
+        "to": "/dislocation"
+      },
+      {
+        "bff": [
+          "oc_listVehicles"
+        ],
+        "group": "Вторичная логистика",
+        "label": "Состояние автоцистерн",
+        "to": "/logistics"
+      },
+      {
+        "bff": [
+          "oc_listBatches",
+          "oc_listLabSamples",
+          "oc_listQualityPassports",
+          "oc_createLabSample",
+          "oc_updateLabSampleStatus"
+        ],
+        "group": "Качество",
+        "label": "Контроль качества",
+        "to": "/quality"
+      },
+      {
+        "bff": [
+          "oc_listAssets",
+          "oc_listWorkOrders",
+          "oc_createWorkOrder",
+          "oc_updateWorkOrderStatus",
+          "oc_updateAssetStatus",
+          "oc_listIncidents"
+        ],
+        "group": "Активы и инциденты",
+        "label": "Управление активами",
+        "to": "/assets"
+      },
+      {
+        "bff": [
+          "oc_listIncidents",
+          "oc_createIncident",
+          "oc_updateIncidentStatus"
+        ],
+        "group": "Активы и инциденты",
+        "label": "Управление инцидентами",
+        "to": "/incidents"
+      },
+      {
+        "bff": [
+          "oc_listKpiCards",
+          "oc_listKpiIncidentSummary",
+          "oc_listKpiReports",
+          "oc_listAnomalies",
+          "oc_listB2BOrders"
+        ],
+        "group": "Менеджмент",
+        "label": "Ключевые показатели",
+        "to": "/mgmt"
+      },
+      {
+        "bff": [
+          "oc_getStation",
+          "oc_listStationTanks",
+          "oc_listStationPumps",
+          "oc_listStationJournal"
+        ],
+        "group": "АЗС",
+        "label": "Карточка АЗС",
+        "to": "/station/:code"
+      }
+    ],
+    "title": "Ойл Контроль",
+    "uiPack": {
+      "entry": "index.html",
+      "packId": "oil-control-ui",
+      "version": "0.5.0"
+    }
+  },
+  "schemaName": "app_oil_control",
+  "tablePrefix": "oc_",
+  "version": "0.5.0"
+}

@@ -1,0 +1,73 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "code",
+                "type": "STRING"
+              },
+              {
+                "name": "eventClass",
+                "type": "STRING"
+              },
+              {
+                "name": "name",
+                "type": "STRING"
+              },
+              {
+                "name": "requiresLength",
+                "type": "STRING"
+              },
+              {
+                "name": "requiresTime",
+                "type": "STRING"
+              },
+              {
+                "name": "requiresComment",
+                "type": "STRING"
+              },
+              {
+                "name": "oeeBucket",
+                "type": "STRING"
+              },
+              {
+                "name": "sixBigLoss",
+                "type": "STRING"
+              },
+              {
+                "name": "sortOrder",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_eventdef_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"defs\",\"sql\":\"@file:emc_eventdef_list-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${defs}\",\"fields\":{\"code\":\"${item.code}\",\"eventClass\":\"${item.event_class}\",\"name\":\"${item.name}\",\"requiresLength\":\"${item.requires_length}\",\"requiresTime\":\"${item.requires_time}\",\"requiresComment\":\"${item.requires_comment}\",\"oeeBucket\":\"${item.oee_bucket}\",\"sixBigLoss\":\"${item.six_big_loss}\",\"sortOrder\":\"${item.sort_order}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

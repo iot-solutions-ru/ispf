@@ -1,0 +1,1 @@
+UPDATE emc_material_lot SET quantity = GREATEST(quantity - ?, 0), weight_kg = CASE WHEN base_uom = 'kg' THEN GREATEST(COALESCE(weight_kg, 0) - ?, 0) ELSE weight_kg END, version_no = version_no + 1 WHERE lot_id = ?

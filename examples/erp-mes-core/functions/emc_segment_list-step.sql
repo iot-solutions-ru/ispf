@@ -1,0 +1,1 @@
+SELECT s.segment_id, s.name, s.operations_type, COALESCE(s.parent_id, '') AS parent_id, (SELECT COUNT(*) FROM emc_segment_material_spec ms WHERE ms.segment_id = s.segment_id) AS material_specs, (SELECT COUNT(*) FROM emc_segment_equipment_spec es WHERE es.segment_id = s.segment_id) AS equipment_specs FROM emc_process_segment s ORDER BY s.segment_id

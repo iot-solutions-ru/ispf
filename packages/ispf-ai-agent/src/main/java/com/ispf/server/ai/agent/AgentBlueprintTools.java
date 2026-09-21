@@ -190,9 +190,11 @@ final class AgentBlueprintTools {
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
                 Optional<BlueprintDefinition> model = resolveBlueprint(blueprintRegistry, arguments);
                 if (model.isEmpty()) {
-                    return Map.of(
-                            "status", "ERROR",
-                            "error", "blueprintName or blueprintId required; use list_mixin_blueprints or list_object_blueprints"
+                    return AgentToolErrors.error(
+                            "TOOL_ERROR",
+                            "blueprintName or blueprintId required; use list_mixin_blueprints or list_object_blueprints",
+                            "",
+                            ""
                     );
                 }
                 return Map.of("status", "OK", "model", blueprintDetail(model.get()));
@@ -237,10 +239,12 @@ final class AgentBlueprintTools {
                 }
                 BlueprintDefinition model = modelOpt.get();
                 if (model.type() != BlueprintType.MIXIN) {
-                    return Map.of(
-                            "status", "ERROR",
-                            "error", model.name() + " is " + model.type() + ", not MIXIN. "
-                                    + "Use instantiate_instance_type for INSTANCE or ensure_singleton_instance for SINGLETON."
+                    return AgentToolErrors.error(
+                            "TOOL_ERROR",
+                            model.name() + " is " + model.type() + ", not MIXIN. "
+                                    + "Use instantiate_instance_type for INSTANCE or ensure_singleton_instance for SINGLETON.",
+                            "",
+                            ""
                     );
                 }
                 if (SystemIntrinsicBlueprints.isIntrinsic(model)) {
@@ -253,10 +257,12 @@ final class AgentBlueprintTools {
                 objectAccessService.requireWrite(objectPath, auth);
                 PlatformObject target = ObjectTreePort.require(objectPath);
                 if (model.targetObjectType() != null && target.type() != model.targetObjectType()) {
-                    return Map.of(
-                            "status", "ERROR",
-                            "error", "Model target " + model.targetObjectType()
-                                    + " does not match object type " + target.type()
+                    return AgentToolErrors.error(
+                            "TOOL_ERROR",
+                            "Model target " + model.targetObjectType()
+                                    + " does not match object type " + target.type(),
+                            "",
+                            ""
                     );
                 }
                 try {
@@ -308,7 +314,8 @@ final class AgentBlueprintTools {
             @Override
             public String description() {
                 return "Create a new object from an INSTANCE model blueprint. "
-                        + "Args: parentPath (required), instanceName (required), blueprintName or blueprintId. "
+                        + "Args: parentPath (required), instanceName (required), blueprintName or blueprintId, "
+                        + "optional parameters (string map for ${key} substitution in bindingRules/sqlBindings/alertRules). "
                         + "Equivalent to create_object with templateId. After DEVICE: configure_driver + list_variables.";
             }
 
@@ -331,10 +338,12 @@ final class AgentBlueprintTools {
                 }
                 BlueprintDefinition model = modelOpt.get();
                 if (model.type() != BlueprintType.INSTANCE) {
-                    return Map.of(
-                            "status", "ERROR",
-                            "error", model.name() + " is " + model.type()
-                                    + ". Use apply_mixin_blueprint for MIXIN or ensure_singleton_instance for SINGLETON."
+                    return AgentToolErrors.error(
+                            "TOOL_ERROR",
+                            model.name() + " is " + model.type()
+                                    + ". Use apply_mixin_blueprint for MIXIN or ensure_singleton_instance for SINGLETON.",
+                            "",
+                            ""
                     );
                 }
                 var auth = context.authentication();
@@ -342,12 +351,13 @@ final class AgentBlueprintTools {
                     return Map.of("status", "ERROR", "error", "Tenant scope denied for " + parentPath);
                 }
                 objectAccessService.requireWrite(parentPath, auth);
+                Map<String, String> parameters = stringMapArg(arguments, "parameters");
                 try {
                     BlueprintApplyResult result = blueprintApplicationService.instantiateWithRules(
                             model.id(),
                             parentPath,
                             instanceName,
-                            Map.of()
+                            parameters
                     );
                     String fullPath = ObjectTreePort.tree().resolveChildPath(parentPath, instanceName);
                     PlatformObject instance = ObjectTreePort.require(fullPath);
@@ -403,10 +413,12 @@ final class AgentBlueprintTools {
                 }
                 BlueprintDefinition model = modelOpt.get();
                 if (model.type() != BlueprintType.SINGLETON) {
-                    return Map.of(
-                            "status", "ERROR",
-                            "error", model.name() + " is " + model.type()
-                                    + ". ensure_singleton_instance requires SINGLETON model."
+                    return AgentToolErrors.error(
+                            "TOOL_ERROR",
+                            model.name() + " is " + model.type()
+                                    + ". ensure_singleton_instance requires SINGLETON model.",
+                            "",
+                            ""
                     );
                 }
                 String instancePath = BlueprintEngine.singletonInstancePath(model);
@@ -490,5 +502,19 @@ final class AgentBlueprintTools {
     private static String stringArg(Map<String, Object> args, String key) {
         Object value = args.get(key);
         return value == null ? "" : String.valueOf(value).trim();
+    }
+
+    private static Map<String, String> stringMapArg(Map<String, Object> args, String key) {
+        Object raw = args.get(key);
+        if (!(raw instanceof Map<?, ?> map) || map.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, String> out = new LinkedHashMap<>();
+        map.forEach((k, v) -> {
+            if (k != null && v != null) {
+                out.put(String.valueOf(k), String.valueOf(v));
+            }
+        });
+        return out;
     }
 }

@@ -1,0 +1,81 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "buttonLabel": "Зарегистрировать",
+      "fieldsJson": "[{\"name\": \"definitionCode\", \"label\": \"Код события\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-eventdef-catalog\", \"optionsValueField\": \"code\", \"optionsLabelField\": \"name\", \"required\": true}, {\"name\": \"jobNo\", \"label\": \"Сменное задание\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-job-board\", \"optionsValueField\": \"job_no\", \"optionsLabelField\": \"dispatch_status\"}, {\"name\": \"equipmentId\", \"label\": \"Оборудование\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-equipment-catalog\", \"optionsValueField\": \"code\", \"optionsLabelField\": \"name\"}, {\"name\": \"timeMin\", \"label\": \"Длительность, мин\", \"type\": \"number\", \"defaultValue\": \"\"}, {\"name\": \"lengthM\", \"label\": \"Метраж, м\", \"type\": \"number\", \"defaultValue\": \"\"}, {\"name\": \"comment\", \"label\": \"Комментарий\", \"type\": \"textarea\", \"defaultValue\": \"\"}, {\"name\": \"by\", \"label\": \"Кем\", \"type\": \"text\", \"defaultValue\": \"operator\"}]",
+      "functionName": "emc_event_register",
+      "h": 42,
+      "id": "registerEvent",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Зарегистрировать событие/простой",
+      "type": "function-form",
+      "w": 28,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "buttonLabel": "Закрыть",
+      "fieldsJson": "[{\"name\": \"eventId\", \"label\": \"Событие\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-event-journal\", \"optionsValueField\": \"id\", \"optionsLabelField\": \"name\", \"required\": true}, {\"name\": \"by\", \"label\": \"Кем\", \"type\": \"text\", \"defaultValue\": \"operator\"}]",
+      "functionName": "emc_event_close",
+      "h": 21,
+      "id": "closeEvent",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Закрыть событие",
+      "type": "function-form",
+      "w": 28,
+      "x": 0,
+      "y": 42
+    },
+    {
+      "buttonLabel": "Рассчитать",
+      "fieldsJson": "[{\"name\": \"equipmentId\", \"label\": \"Оборудование\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-equipment-catalog\", \"optionsValueField\": \"code\", \"optionsLabelField\": \"name\", \"required\": true}, {\"name\": \"shiftLabel\", \"label\": \"Смена\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-shift-catalog\", \"optionsValueField\": \"code\", \"required\": true}, {\"name\": \"plannedMinutes\", \"label\": \"Плановые минуты\", \"type\": \"number\", \"defaultValue\": \"480\"}]",
+      "functionName": "emc_oee_calcShift",
+      "h": 28,
+      "id": "calc",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Рассчитать OEE смены",
+      "type": "function-form",
+      "w": 28,
+      "x": 28,
+      "y": 0
+    },
+    {
+      "decimals": 0,
+      "h": 12,
+      "id": "kpiDowntime",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Открыто простоев",
+      "type": "value",
+      "valueField": "value",
+      "variableName": "activeDowntimeCount",
+      "w": 28,
+      "x": 56,
+      "y": 0
+    },
+    {
+      "columnFiltersJson": "[\"status\", \"oee_bucket\", \"equipment_id\"]",
+      "filterable": true,
+      "h": 30,
+      "id": "journal",
+      "reportPath": "root.platform.reports.emc-event-journal",
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "Журнал событий",
+      "type": "report",
+      "w": 56,
+      "x": 28,
+      "y": 28
+    },
+    {
+      "h": 20,
+      "id": "shifts",
+      "reportPath": "root.platform.reports.emc-oee-shift-report",
+      "title": "KPI смен (OEE)",
+      "type": "report",
+      "w": 84,
+      "x": 0,
+      "y": 63
+    }
+  ]
+}

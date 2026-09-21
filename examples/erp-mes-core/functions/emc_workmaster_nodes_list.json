@@ -1,0 +1,66 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "workMasterId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "nodeId",
+                "type": "STRING"
+              },
+              {
+                "name": "workMasterId",
+                "type": "STRING"
+              },
+              {
+                "name": "version",
+                "type": "STRING"
+              },
+              {
+                "name": "segmentId",
+                "type": "STRING"
+              },
+              {
+                "name": "sequenceNo",
+                "type": "STRING"
+              },
+              {
+                "name": "nodeKind",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_workmaster_nodes_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows_raw\",\"sql\":\"@file:emc_workmaster_nodes_list-step.sql\",\"params\":[\"${input.workMasterId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${rows_raw}\",\"fields\":{\"nodeId\":\"${item.node_id}\",\"workMasterId\":\"${item.work_master_id}\",\"version\":\"${item.version}\",\"segmentId\":\"${item.segment_id}\",\"sequenceNo\":\"${item.sequence_no}\",\"nodeKind\":\"${item.node_kind}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

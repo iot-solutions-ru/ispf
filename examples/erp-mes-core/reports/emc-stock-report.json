@@ -1,0 +1,39 @@
+{
+  "columns": [
+    {
+      "field": "lot_id",
+      "label": "Lot ID"
+    },
+    {
+      "field": "barcode",
+      "label": "Barcode"
+    },
+    {
+      "field": "material_id",
+      "label": "Material"
+    },
+    {
+      "field": "class_id",
+      "label": "Class"
+    },
+    {
+      "field": "quantity",
+      "label": "Qty"
+    },
+    {
+      "field": "uom",
+      "label": "UOM"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    },
+    {
+      "field": "storage_location",
+      "label": "Location"
+    }
+  ],
+  "description": "Material lots with quantity, status and location (Part 2 material lot).",
+  "reportId": "emc-stock-report",
+  "title": "Inventory Stock (Material Lots)"
+}

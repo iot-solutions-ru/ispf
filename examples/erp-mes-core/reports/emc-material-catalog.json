@@ -1,0 +1,27 @@
+{
+  "columns": [
+    {
+      "field": "code",
+      "label": "Code"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "class_id",
+      "label": "Class"
+    },
+    {
+      "field": "kind",
+      "label": "Kind"
+    },
+    {
+      "field": "base_uom",
+      "label": "UOM"
+    }
+  ],
+  "description": "Material definitions as code/name options for form dropdowns.",
+  "reportId": "emc-material-catalog",
+  "title": "Material Catalog"
+}

@@ -1,0 +1,41 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "tankCode",
+          "type": "STRING"
+        },
+        {
+          "name": "levelCm",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "volume_l",
+          "type": "DOUBLE"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_resolveVolume",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"vol\",\"sql\":\"@file:oc_resolveVolume-step.sql\",\"params\":[\"${input.levelCm}\",\"${input.levelCm}\",\"${input.levelCm}\",\"${input.tankCode}\",\"${input.levelCm}\",\"${input.tankCode}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"volume_l\":\"${vol.volume_l}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

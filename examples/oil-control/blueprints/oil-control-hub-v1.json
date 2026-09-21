@@ -1,0 +1,10 @@
+{
+  "bindings": [],
+  "description": "Ойл Контроль logic hub (SINGLETON)",
+  "events": [],
+  "functions": [],
+  "name": "oil-control-hub-v1",
+  "parameters": {},
+  "type": "SINGLETON",
+  "variables": []
+}

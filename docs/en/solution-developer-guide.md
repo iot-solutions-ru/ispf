@@ -314,18 +314,45 @@ See [workflows](workflows.md).
 
 ---
 
+## Repository layout (solution-as-repo)
+
+Author solutions as a **folder** and compile to monolithic `bundle.json` for deploy (ADR-0060 W4). CLI: `tools/ispf-cli` (`ispf pack|unpack|validate|diff|deploy`).
+
+| Path | Bundle section |
+|------|----------------|
+| `solution.json` | `version`, `displayName`, `tablePrefix`, `schemaName`, `operatorUi`, `metadata`, `license`, `requires` |
+| `sql/V*__*.sql` | `migrations[]` (`id` = suffix after `V{n}__`) |
+| `functions/<name>.json` | `functions[]` (SQL steps may use `@file:step.sql` beside the JSON) |
+| `blueprints/*.json` | `blueprints[]` |
+| `objects.json` | `objects[]` |
+| `dashboards/*.layout.json` + optional `*.meta.json` | `dashboards[]` |
+| `reports/<id>.sql` + `<id>.json` | `reports[]` |
+| `alerts/*.json`, `correlators/*.json` | `alertRules[]`, `correlators[]` |
+| `events.json` | `events[]` |
+| `workflows/*.bpmn` + `*.meta.json` | `workflows[]` |
+
+```bash
+cd tools/ispf-cli && npm install
+node bin/ispf.mjs pack ../../examples/demo-app -o ../../examples/demo-app/bundle.json
+node bin/ispf.mjs validate ../../examples/demo-app --local
+node bin/ispf.mjs deploy ../../examples/demo-app --app demo   # ISPF_API_TOKEN, ISPF_BASE_URL
+```
+
+Compare repo to the active server bundle: `ispf diff <dir> --app <id>` (uses `GET …/export?canonical=true`).
+
 ## Example structure
 
 ```
 examples/demo-app/
-├── bundle.json                 # or fragment files composed into POST …/deploy JSON
-├── functions/
-│   └── demo_listItems.script.json
-└── sql/
-    └── V1__demo.sql
+├── solution.json
+├── bundle.json                 # `ispf pack` output (committed ship artifact)
+├── sql/V1__schema_and_seed.sql
+├── reports/
+├── dashboards/
+└── functions/                  # optional
 ```
 
-Run demo: register app, then `POST …/deploy` JSON (or stepwise migrate + function deploy) per [applications](applications.md).
+Run demo: register app, then `POST …/deploy` JSON (or `ispf deploy`) per [applications](applications.md).
 
 ---
 

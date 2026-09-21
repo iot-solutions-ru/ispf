@@ -5,7 +5,9 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.ObjectType;
+import com.ispf.plugin.blueprint.BlueprintAlertTemplate;
 import com.ispf.plugin.blueprint.BlueprintBindingRule;
+import com.ispf.plugin.blueprint.BlueprintSqlBindingTemplate;
 import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.core.model.DataSchema;
@@ -20,6 +22,7 @@ import com.ispf.server.report.ReportService;
 import com.ispf.server.operator.OperatorAppObjectTreeService;
 import com.ispf.server.license.CommercialBundleLicenseVerifier;
 import com.ispf.server.application.uipack.HostedUiPackLinkEnricher;
+import com.ispf.server.application.test.FunctionTestRunner;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -43,6 +46,7 @@ public class ApplicationBundleDeployService {
     private final BundleTreeArtifactsApplier treeArtifacts;
     private final BundleOperatorUiSync operatorUiSync;
     private final HostedUiPackLinkEnricher hostedUiPackLinkEnricher;
+    private final FunctionTestRunner functionTestRunner;
 
     public ApplicationBundleDeployService(
             ApplicationDataService dataService,
@@ -57,7 +61,8 @@ public class ApplicationBundleDeployService {
             BundleVisualGroupService bundleVisualGroupService,
             BundleTreeArtifactsApplier treeArtifacts,
             BundleOperatorUiSync operatorUiSync,
-            HostedUiPackLinkEnricher hostedUiPackLinkEnricher
+            HostedUiPackLinkEnricher hostedUiPackLinkEnricher,
+            FunctionTestRunner functionTestRunner
     ) {
         this.dataService = dataService;
         this.objectTreeService = objectTreeService;
@@ -72,6 +77,7 @@ public class ApplicationBundleDeployService {
         this.treeArtifacts = treeArtifacts;
         this.operatorUiSync = operatorUiSync;
         this.hostedUiPackLinkEnricher = hostedUiPackLinkEnricher;
+        this.functionTestRunner = functionTestRunner;
     }
 
     public Map<String, Object> deploy(String appId, BundleManifest manifest) {
@@ -91,6 +97,16 @@ public class ApplicationBundleDeployService {
             BundleManifest manifest,
             boolean trustedMarketplaceFreeInstall,
             boolean verifyLicense
+    ) {
+        return deploy(appId, manifest, trustedMarketplaceFreeInstall, verifyLicense, false);
+    }
+
+    public Map<String, Object> deploy(
+            String appId,
+            BundleManifest manifest,
+            boolean trustedMarketplaceFreeInstall,
+            boolean verifyLicense,
+            boolean runTests
     ) {
         BundleSemverSupport.requireValid(manifest.version());
         if (verifyLicense) {
@@ -155,6 +171,18 @@ public class ApplicationBundleDeployService {
         // so a post-activate sync failure cannot leave a bad deploy as findActive().
         syncApplicationTree(appId, displayName, manifest, applied, errors, response);
 
+        if (runTests) {
+            List<FunctionTestRunner.TestResult> testResults = runTests(appId, manifest);
+            response.put("testResults", testResults);
+            List<String> failedTests = testResults.stream()
+                    .filter(result -> !"PASS".equals(result.status()))
+                    .map(FunctionTestRunner.TestResult::id)
+                    .toList();
+            if (!failedTests.isEmpty()) {
+                errors.add("tests: failed " + String.join(", ", failedTests));
+            }
+        }
+
         try {
             String manifestJson = objectMapper.writeValueAsString(manifest);
             String operatorManifestJson = manifest.operatorManifest() != null
@@ -189,6 +217,52 @@ public class ApplicationBundleDeployService {
         }
 
         return response;
+    }
+
+    public List<FunctionTestRunner.TestResult> runTests(String appId) {
+        try {
+            BundleManifest manifest = objectMapper.readValue(
+                    snapshotStore.findActive(appId)
+                            .orElseThrow(() -> new IllegalArgumentException("No active bundle for app: " + appId))
+                            .manifestJson(),
+                    BundleManifest.class
+            );
+            return runTests(appId, manifest);
+        } catch (Exception ex) {
+            return List.of(new FunctionTestRunner.TestResult(
+                    "bundle",
+                    "bundle",
+                    "FAIL",
+                    List.of(ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName()),
+                    Map.of("appId", appId)
+            ));
+        }
+    }
+
+    private List<FunctionTestRunner.TestResult> runTests(String appId, BundleManifest manifest) {
+        if (manifest.tests() == null || manifest.tests().isEmpty()) {
+            return List.of();
+        }
+        List<FunctionTestRunner.TestResult> results = new ArrayList<>();
+        for (BundleTest test : manifest.tests()) {
+            results.add(functionTestRunner.run(toTestSpec(appId, test)));
+        }
+        return List.copyOf(results);
+    }
+
+    private FunctionTestRunner.TestSpec toTestSpec(String appId, BundleTest test) {
+        return new FunctionTestRunner.TestSpec(
+                test.id() != null && !test.id().isBlank() ? test.id() : appId + "-test",
+                test.kind(),
+                test.objectPath(),
+                test.functionName(),
+                test.variable(),
+                test.input(),
+                test.fixtureSql(),
+                test.fields(),
+                test.expect(),
+                test.rollback() == null || test.rollback()
+        );
     }
 
     /**
@@ -419,8 +493,19 @@ public class ApplicationBundleDeployService {
     }
 
     public Map<String, Object> exportActiveBundle(String appId, String bundleVersion) throws Exception {
+        return exportActiveBundle(appId, bundleVersion, false);
+    }
+
+    public Map<String, Object> exportActiveBundle(String appId, String bundleVersion, boolean canonical)
+            throws Exception {
         ApplicationBundleSnapshotStore.BundleSnapshot snapshot = resolveExportSnapshot(appId, bundleVersion);
         Object manifest = objectMapper.readValue(snapshot.manifestJson(), Object.class);
+        if (canonical && manifest instanceof Map<?, ?> manifestMap) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> sorted =
+                    com.ispf.server.license.BundleManifestCanonicalizer.sortManifest((Map<String, Object>) manifestMap);
+            manifest = sorted;
+        }
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("appId", appId);
         response.put("version", snapshot.bundleVersion());
@@ -492,6 +577,7 @@ public class ApplicationBundleDeployService {
             List<BundleSchedule> schedules,
             List<BundleAnalyticsFormula> analyticsFormulas,
             List<BundleEvent> events,
+            List<BundleTest> tests,
             List<BundleDependency> requires,
             Map<String, Object> license,
             Map<String, Object> metadata,
@@ -506,7 +592,8 @@ public class ApplicationBundleDeployService {
             String type,
             String displayName,
             String description,
-            String templateId
+            String templateId,
+            Map<String, String> parameters
     ) {
     }
 
@@ -542,6 +629,8 @@ public class ApplicationBundleDeployService {
             List<EventDescriptor> events,
             List<FunctionDescriptor> functions,
             List<BlueprintBindingRule> bindings,
+            List<BlueprintSqlBindingTemplate> sqlBindings,
+            List<BlueprintAlertTemplate> alertRules,
             Map<String, String> parameters
     ) {
     }
@@ -663,6 +752,20 @@ public class ApplicationBundleDeployService {
             String id,
             List<String> roles,
             Object payloadSchema
+    ) {
+    }
+
+    public record BundleTest(
+            String id,
+            String kind,
+            String objectPath,
+            String functionName,
+            String variable,
+            Map<String, Object> input,
+            List<String> fixtureSql,
+            Map<String, Object> fields,
+            Map<String, Object> expect,
+            Boolean rollback
     ) {
     }
 

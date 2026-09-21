@@ -4,6 +4,7 @@ import com.ispf.ai.LlmContentPart;
 import com.ispf.ai.LlmMessage;
 import com.ispf.ai.LlmRequest;
 import com.ispf.ai.LlmResponse;
+import com.ispf.ai.LlmToolSpec;
 import com.ispf.server.ai.audit.AgentAuditMetrics;
 import com.ispf.server.ai.audit.AiToolAuditService;
 import com.ispf.server.ai.context.ContextPackService;
@@ -26,6 +27,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -352,7 +354,7 @@ public class TreeFirstAgentService {
                         objectMapper,
                         llmProviderRegistry,
                         messages,
-                        this::buildAgentLlmRequest,
+                        requestMessages -> buildAgentLlmRequest(requestMessages, session.runState(), profile),
                         aiProperties.getAgentParseRetries(),
                         profile == AgentProfile.OPERATOR,
                         new AgentLlmActionResolver.ResolveContext(
@@ -921,7 +923,6 @@ public class TreeFirstAgentService {
                         profile
                 );
 
-                messages.add(new LlmMessage("assistant", response.content()));
                 Map<String, Object> llmToolResult = AgentToolResultCompactor.compactForLlm(executedTool, toolResult);
                 String toolResultJson = writeJson(llmToolResult);
                 if (toolResultJson.length() > 14_000) {
@@ -936,11 +937,23 @@ public class TreeFirstAgentService {
                                         AgentLoopGuard.continuationHint(executedTool, steps, maxStepsTotal)
                                 )
                         );
-                messages.add(new LlmMessage(
-                        "user",
-                        "Tool result for " + executedTool + ":\n" + toolResultJson
-                                + "\n\n" + continuation
-                ));
+                if (parsed.toolCallId() != null && !parsed.toolCallId().isBlank()) {
+                    messages.add(new LlmMessage("assistant", response.content(), null, response.toolCalls(), null));
+                    messages.add(new LlmMessage(
+                            "tool",
+                            toolResultJson + "\n\n" + continuation,
+                            null,
+                            List.of(),
+                            parsed.toolCallId()
+                    ));
+                } else {
+                    messages.add(new LlmMessage("assistant", response.content()));
+                    messages.add(new LlmMessage(
+                            "user",
+                            "Tool result for " + executedTool + ":\n" + toolResultJson
+                                    + "\n\n" + continuation
+                    ));
+                }
             }
 
             if (finishSummary == null && !AgentTurnStatus.CANCELLED.equals(finalStatus)) {
@@ -1236,17 +1249,81 @@ public class TreeFirstAgentService {
         return result;
     }
 
-    private LlmRequest buildAgentLlmRequest(List<LlmMessage> messages) {
+    private LlmRequest buildAgentLlmRequest(
+            List<LlmMessage> messages,
+            AgentRunState runState,
+            AgentProfile profile
+    ) {
         Map<String, Object> providerOptions = aiProperties.isAgentDisableThinking()
                 ? Map.of("chat_template_kwargs", Map.of("enable_thinking", false))
                 : Map.of();
+        List<LlmToolSpec> tools = nativeToolCallingEnabled()
+                ? nativeToolSpecs(
+                        AgentToolSurface.filterCatalog(
+                                toolRegistry.toolCatalog(profile),
+                                runState,
+                                false
+                        )
+                )
+                : List.of();
         return new LlmRequest(
                 aiProperties.getModel(),
                 messages,
                 aiProperties.getAgentMaxTokens(),
                 aiProperties.getTemperature(),
-                providerOptions
+                providerOptions,
+                tools,
+                tools.isEmpty() ? null : "auto"
         );
+    }
+
+    private boolean nativeToolCallingEnabled() {
+        String mode = aiProperties.getAgentNativeTools();
+        String normalized = mode == null ? "auto" : mode.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "off", "false", "disabled" -> false;
+            case "on", "true", "enabled" -> true;
+            default -> llmProviderRegistry.supportsToolCalling();
+        };
+    }
+
+    private static List<LlmToolSpec> nativeToolSpecs(List<Map<String, Object>> catalog) {
+        List<LlmToolSpec> specs = new ArrayList<>();
+        if (catalog != null) {
+            for (Map<String, Object> row : catalog) {
+                Object name = row.get("name");
+                if (name == null || String.valueOf(name).isBlank()) {
+                    continue;
+                }
+                specs.add(new LlmToolSpec(
+                        String.valueOf(name),
+                        String.valueOf(row.getOrDefault("description", "")),
+                        schemaMap(row.get("inputSchema"))
+                ));
+            }
+        }
+        specs.add(new LlmToolSpec(
+                "finish",
+                "Finish the agent turn. Args: summary (string), result (object).",
+                Map.of(
+                        "type", "object",
+                        "additionalProperties", false,
+                        "properties", Map.of(
+                                "summary", Map.of("type", "string"),
+                                "result", Map.of("type", "object")
+                        ),
+                        "required", List.of("summary", "result")
+                )
+        ));
+        return List.copyOf(specs);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> schemaMap(Object raw) {
+        if (raw instanceof Map<?, ?> map) {
+            return (Map<String, Object>) map;
+        }
+        return Map.of("type", "object", "additionalProperties", true);
     }
 
     private List<LlmMessage> buildMessagesWithHistory(

@@ -1,0 +1,81 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "wagon_no",
+                "type": "STRING"
+              },
+              {
+                "name": "product_code",
+                "type": "STRING"
+              },
+              {
+                "name": "from_station",
+                "type": "STRING"
+              },
+              {
+                "name": "to_station",
+                "type": "STRING"
+              },
+              {
+                "name": "waybill",
+                "type": "STRING"
+              },
+              {
+                "name": "shipped_at",
+                "type": "STRING"
+              },
+              {
+                "name": "current_station",
+                "type": "STRING"
+              },
+              {
+                "name": "operation",
+                "type": "STRING"
+              },
+              {
+                "name": "op_at",
+                "type": "STRING"
+              },
+              {
+                "name": "km_left",
+                "type": "INTEGER"
+              },
+              {
+                "name": "delay_bucket",
+                "type": "STRING"
+              }
+            ],
+            "name": "row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_listWagonTrips",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"@file:oc_listWagonTrips-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

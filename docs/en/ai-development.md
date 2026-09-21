@@ -226,9 +226,16 @@ Platform tools (Java handlers, ACL-aware):
 | `driver_control` | start / stop / poll / status |
 | `validate_bundle` | 0004 gate (no DB writes) |
 | `dry_run_deploy` | Validate + `wouldApply` |
-| `import_package` | Deploy bundle (requires prior validate/dry-run OK in same run) |
+| `import_package` | Deploy bundle (requires prior validate/dry-run OK in same run); optional `runTests` |
+| `test_function` | Solution function smoke (rollback txn via `invokeInCurrentTransaction`) |
+| `simulate_telemetry` | Inject via `setDriverTelemetry` (virtual driver is read-only); returns `firedEvents` |
+| `assert_variable` | Assert variable field (`eq`/`gt`/…) |
+| `run_bundle_tests` | Run deployed app `tests[]`; FAIL → consider `rollback_application_deploy` |
+
+For `APPLICATION_BUNDLE` assignments, the pre-finish judge requires ≥1 **PASS** from `test_function` / `run_bundle_tests`; any **FAIL** → **REWORK**.
 
 LLM replies with one JSON object per turn: `{"type":"tool","name":"...","arguments":{...}}` or `{"type":"finish","summary":"...","result":{...}}`.
+When `ispf.ai.agent-native-tools=auto` (default), providers that advertise native tool calling receive the active tool catalog as OpenAI-style function tools plus a synthetic `finish` tool. Tool results are appended as `role=tool` messages; the JSON text protocol remains the fallback.
 
 ### Agent reliability (failure modes)
 
@@ -257,6 +264,7 @@ ispf:
     agent-max-attachment-bytes: 33554432  # 32 MB upload
     agent-session-ttl-hours: 24
     agent-max-history-turns: 24
+    agent-native-tools: auto      # auto | on | off
     briefing-every-turn: false
     max-tokens: 65536   # bundle generation completion cap
 ```
@@ -351,6 +359,7 @@ ispf:
     temperature: 0.2
     agent-max-concurrent-turns-per-user: 2
     agent-max-turns-per-hour-per-user: 120
+    agent-native-tools: auto             # auto | on | off
     agent-require-approval-for-mutate: true   # BL-106; set false in dev profile
 ```
 

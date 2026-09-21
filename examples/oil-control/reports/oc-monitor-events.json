@@ -1,0 +1,29 @@
+{
+  "columns": [
+    {
+      "field": "severity",
+      "label": "Уровень"
+    },
+    {
+      "field": "started_at",
+      "label": "Начало"
+    },
+    {
+      "field": "azs_code",
+      "label": "АЗС"
+    },
+    {
+      "field": "event_text",
+      "label": "Событие"
+    },
+    {
+      "field": "source_name",
+      "label": "Источник"
+    }
+  ],
+  "description": "Карта / журнал событий АЗС",
+  "maxRows": 500,
+  "parameters": [],
+  "reportId": "oc-monitor-events",
+  "title": "События мониторинга"
+}

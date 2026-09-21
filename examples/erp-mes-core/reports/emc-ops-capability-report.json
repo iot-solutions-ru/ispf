@@ -1,0 +1,31 @@
+{
+  "columns": [
+    {
+      "field": "capability_id",
+      "label": "Capability"
+    },
+    {
+      "field": "operations_type",
+      "label": "Type"
+    },
+    {
+      "field": "equipment_id",
+      "label": "Equipment"
+    },
+    {
+      "field": "segment_id",
+      "label": "Segment"
+    },
+    {
+      "field": "reason",
+      "label": "Reason"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    }
+  ],
+  "description": "What each work unit is capable of running.",
+  "reportId": "emc-ops-capability-report",
+  "title": "Operations Capability (Part 4)"
+}

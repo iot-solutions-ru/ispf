@@ -1,0 +1,69 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "barcode",
+          "type": "STRING"
+        },
+        {
+          "name": "definitionId",
+          "type": "STRING"
+        },
+        {
+          "name": "storageLocation",
+          "type": "STRING"
+        },
+        {
+          "name": "quantity",
+          "type": "STRING"
+        },
+        {
+          "name": "weightKg",
+          "type": "STRING"
+        },
+        {
+          "name": "lengthM",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "barcode",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_matlot_register",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"failIfNull\",\"var\":\"input.lotId\",\"error_code\":\"VALIDATION\",\"error_message\":\"lotId is required\"},{\"type\":\"failIfNull\",\"var\":\"input.barcode\",\"error_code\":\"VALIDATION\",\"error_message\":\"barcode is required\"},{\"type\":\"selectOne\",\"var\":\"def\",\"sql\":\"@file:emc_matlot_register-step.sql\",\"params\":[\"${input.definitionId}\"]},{\"type\":\"failIfNull\",\"var\":\"def\",\"error_code\":\"DEFINITION_NOT_FOUND\",\"error_message\":\"Material definition not found\"},{\"type\":\"selectOne\",\"var\":\"loc\",\"sql\":\"@file:emc_matlot_register-step.sql\",\"params\":[\"${input.storageLocation}\"]},{\"type\":\"failIfNull\",\"var\":\"loc\",\"error_code\":\"LOCATION_NOT_FOUND\",\"error_message\":\"Storage location not found in equipment hierarchy\"},{\"type\":\"exec\",\"sql\":\"@file:emc_matlot_register-step.sql\",\"params\":[\"${input.lotId}\",\"${input.barcode}\",\"${input.definitionId}\",\"${input.storageLocation}\",\"${input.quantity}\",\"${def.base_uom}\",\"${input.weightKg}\",\"${input.lengthM}\",\"${input.barcode}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${input.lotId}\",\"barcode\":\"${input.barcode}\",\"status\":\"STOCK\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

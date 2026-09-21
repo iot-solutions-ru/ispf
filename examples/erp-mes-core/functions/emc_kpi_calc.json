@@ -1,0 +1,41 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "scopeId",
+          "type": "STRING"
+        },
+        {
+          "name": "periodLabel",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "calculated",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_kpi_calc",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"oee\",\"sql\":\"@file:emc_kpi_calc-step.sql\"},{\"type\":\"exec\",\"sql\":\"@file:emc_kpi_calc-step.sql\",\"params\":[\"${input.periodLabel}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_kpi_calc-step.sql\",\"params\":[\"${input.scopeId}\",\"${input.periodLabel}\",\"${oee.v}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_kpi_calc-step.sql\",\"params\":[\"${input.scopeId}\",\"${input.periodLabel}\",\"${oee.a}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_kpi_calc-step.sql\",\"params\":[\"${input.scopeId}\",\"${input.periodLabel}\",\"${oee.p}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_kpi_calc-step.sql\",\"params\":[\"${input.scopeId}\",\"${input.periodLabel}\",\"${oee.q}\"]},{\"type\":\"selectOne\",\"var\":\"setup\",\"sql\":\"@file:emc_kpi_calc-step.sql\"},{\"type\":\"exec\",\"sql\":\"@file:emc_kpi_calc-step.sql\",\"params\":[\"${input.scopeId}\",\"${input.periodLabel}\",\"${setup.v}\"]},{\"type\":\"selectOne\",\"var\":\"scrap\",\"sql\":\"@file:emc_kpi_calc-step.sql\"},{\"type\":\"exec\",\"sql\":\"@file:emc_kpi_calc-step.sql\",\"params\":[\"${input.scopeId}\",\"${input.periodLabel}\",\"${scrap.v}\"]},{\"type\":\"selectOne\",\"var\":\"def\",\"sql\":\"@file:emc_kpi_calc-step.sql\"},{\"type\":\"exec\",\"sql\":\"@file:emc_kpi_calc-step.sql\",\"params\":[\"${input.scopeId}\",\"${input.periodLabel}\",\"${def.v}\"]},{\"type\":\"selectOne\",\"var\":\"turns\",\"sql\":\"@file:emc_kpi_calc-step.sql\"},{\"type\":\"exec\",\"sql\":\"@file:emc_kpi_calc-step.sql\",\"params\":[\"${input.scopeId}\",\"${input.periodLabel}\",\"${turns.v}\"]},{\"type\":\"selectOne\",\"var\":\"mt\",\"sql\":\"@file:emc_kpi_calc-step.sql\"},{\"type\":\"exec\",\"sql\":\"@file:emc_kpi_calc-step.sql\",\"params\":[\"${input.scopeId}\",\"${input.periodLabel}\",\"${mt.mttr}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_kpi_calc-step.sql\",\"params\":[\"${input.scopeId}\",\"${input.periodLabel}\",\"${mt.mtbf}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"calculated\":\"10\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

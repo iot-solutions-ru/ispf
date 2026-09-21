@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class MesOeeAnalyticsDashboardIntegrationTest {
 
-    private static final String HUB = "root.platform.devices.mes-platform-hub";
+    private static final String HUB = "root.platform.singleton-blueprints.mes-platform-hub-v1";
     private static final String OEE_DASHBOARD = "root.platform.dashboards.mes-platform-oee";
     private static final String SEED_SHIFT_ID = "dddddddd-dddd-dddd-dddd-dddddddddddd";
 

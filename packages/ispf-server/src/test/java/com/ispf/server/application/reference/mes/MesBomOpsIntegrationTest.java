@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class MesBomOpsIntegrationTest {
 
-    private static final String HUB = "root.platform.devices.mes-platform-hub";
+    private static final String HUB = "root.platform.singleton-blueprints.mes-platform-hub-v1";
     private static final String BOM_OPS_DASHBOARD = "root.platform.dashboards.mes-platform-bom-ops";
     private static final String MATERIAL = "MAT-WIDGET-A01";
     private static final String WORK_ORDER = "WO-LINE-A01-001";

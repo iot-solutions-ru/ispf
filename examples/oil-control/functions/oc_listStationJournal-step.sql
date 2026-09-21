@@ -1,0 +1,1 @@
+SELECT journal_type, entry_at::text AS entry_at, entry_no, description, status FROM oc_station_journal WHERE azs_code = COALESCE(NULLIF(?, ''), '005') AND (NULLIF(?, '') IS NULL OR journal_type = ?) ORDER BY entry_at DESC

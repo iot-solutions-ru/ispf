@@ -123,5 +123,53 @@
         }
       }
     ]
-  }
+  },
+  "blueprints": [
+    {
+      "name": "demo-app-hub-v1",
+      "description": "Demo application orchestrator (W6 test host)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.singleton-blueprints.demo-app-hub-v1",
+      "functionName": "demo_ping",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": { "name": "in", "fields": [] },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\"}}]}"
+      }
+    }
+  ],
+  "tests": [
+    {
+      "id": "demo-ping",
+      "kind": "function",
+      "objectPath": "root.platform.singleton-blueprints.demo-app-hub-v1",
+      "functionName": "demo_ping",
+      "input": {},
+      "expect": {
+        "errorCode": "OK",
+        "rowCount": 1,
+        "fields": { "error_code": "OK" }
+      },
+      "rollback": true
+    }
+  ]
 }

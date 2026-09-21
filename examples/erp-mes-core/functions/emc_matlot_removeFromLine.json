@@ -1,0 +1,45 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "barcode",
+          "type": "STRING"
+        },
+        {
+          "name": "storageLocation",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_matlot_removeFromLine",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"lot\",\"sql\":\"SELECT lot_id, status FROM emc_material_lot WHERE barcode = ?\",\"params\":[\"${input.barcode}\"]},{\"type\":\"failIfNull\",\"var\":\"lot\",\"error_code\":\"LOT_NOT_FOUND\",\"error_message\":\"Material lot not found by barcode\"},{\"type\":\"failIfNotEquals\",\"var\":\"lot.status\",\"equals\":\"ON_LINE\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Lot is not on line\"},{\"type\":\"failIfNull\",\"var\":\"input.storageLocation\",\"error_code\":\"VALIDATION\",\"error_message\":\"storageLocation is required\"},{\"type\":\"exec\",\"sql\":\"@file:emc_matlot_removeFromLine-step.sql\",\"params\":[\"${input.storageLocation}\",\"${lot.lot_id}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${lot.lot_id}\",\"status\":\"STOCK\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

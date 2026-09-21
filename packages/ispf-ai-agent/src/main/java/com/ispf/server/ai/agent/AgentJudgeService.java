@@ -63,7 +63,9 @@ public final class AgentJudgeService {
         }
 
         AgentAssignmentType assignmentType = resolveAssignmentType(finishResult, storedPlan, userMessage);
-        if (AgentConformanceCatalog.requiresSmokeCases(assignmentType)) {
+        if (assignmentType == AgentAssignmentType.APPLICATION_BUNDLE) {
+            issues.addAll(verifyApplicationBundleTests(steps));
+        } else if (AgentConformanceCatalog.requiresSmokeCases(assignmentType)) {
             Object conformance = storedPlan.get("conformance");
             if (conformance == null && finishResult != null) {
                 conformance = finishResult.get("conformance");
@@ -130,6 +132,37 @@ public final class AgentJudgeService {
 
     private static boolean hasBlockingErrorSteps(List<Map<String, Object>> steps) {
         return AgentTurnToolErrors.hasUnresolvedErrors(steps);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> verifyApplicationBundleTests(List<Map<String, Object>> steps) {
+        List<String> issues = new ArrayList<>();
+        boolean hasPass = false;
+        if (steps != null) {
+            for (Map<String, Object> step : steps) {
+                if (!"tool".equals(String.valueOf(step.get("type")))) {
+                    continue;
+                }
+                String tool = String.valueOf(step.get("tool")).toLowerCase(Locale.ROOT);
+                if (!"test_function".equals(tool) && !"run_bundle_tests".equals(tool)) {
+                    continue;
+                }
+                Map<String, Object> result = step.get("result") instanceof Map<?, ?> map
+                        ? (Map<String, Object>) map
+                        : Map.of();
+                String status = String.valueOf(result.get("status")).toUpperCase(Locale.ROOT);
+                if ("PASS".equals(status)) {
+                    hasPass = true;
+                }
+                if ("FAIL".equals(status) || "ERROR".equals(status)) {
+                    issues.add(tool + " returned " + status);
+                }
+            }
+        }
+        if (!hasPass && issues.isEmpty()) {
+            issues.add("APPLICATION_BUNDLE requires PASS from test_function or run_bundle_tests");
+        }
+        return issues;
     }
 
     private static boolean hasErrorSteps(List<Map<String, Object>> steps) {

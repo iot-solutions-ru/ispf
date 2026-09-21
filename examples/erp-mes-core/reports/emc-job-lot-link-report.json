@@ -1,0 +1,31 @@
+{
+  "columns": [
+    {
+      "field": "job_no",
+      "label": "Job"
+    },
+    {
+      "field": "lot_id",
+      "label": "Lot"
+    },
+    {
+      "field": "link_role",
+      "label": "Role"
+    },
+    {
+      "field": "material_id",
+      "label": "Material"
+    },
+    {
+      "field": "lot_status",
+      "label": "Lot Status"
+    },
+    {
+      "field": "dispatch_status",
+      "label": "Job Status"
+    }
+  ],
+  "description": "Produced FG lots per job (select job → sets lotId for genealogy).",
+  "reportId": "emc-job-lot-link-report",
+  "title": "Job ↔ Lot Links"
+}

@@ -1,0 +1,37 @@
+{
+  "columns": [
+    {
+      "field": "azs_code",
+      "label": "АЗС"
+    },
+    {
+      "field": "tank_no",
+      "label": "РГС"
+    },
+    {
+      "field": "product_code",
+      "label": "НП"
+    },
+    {
+      "field": "delta_l",
+      "label": "Δ л"
+    },
+    {
+      "field": "delta_kg",
+      "label": "Δ кг"
+    },
+    {
+      "field": "detected_at",
+      "label": "Обнаружен"
+    },
+    {
+      "field": "cause",
+      "label": "Причина"
+    }
+  ],
+  "description": "Журнал дебалансов по резервуарам",
+  "maxRows": 500,
+  "parameters": [],
+  "reportId": "oc-imbalances",
+  "title": "Дебалансы АЗС"
+}

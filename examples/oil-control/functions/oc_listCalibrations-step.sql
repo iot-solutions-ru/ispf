@@ -1,0 +1,1 @@
+SELECT c.id::text AS id, c.tank_code, c.version_no, c.status, c.source_name, c.valid_from::text AS valid_from, c.valid_to::text AS valid_to, (SELECT COUNT(*) FROM oc_calibration_row r WHERE r.calibration_id=c.id) AS points FROM oc_calibration c ORDER BY c.tank_code, c.version_no DESC

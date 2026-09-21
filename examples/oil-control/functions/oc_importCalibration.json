@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "tankCode",
+          "type": "STRING"
+        },
+        {
+          "name": "sourceName",
+          "type": "STRING"
+        },
+        {
+          "name": "calibrationId",
+          "type": "STRING"
+        },
+        {
+          "name": "rowsJson",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        },
+        {
+          "name": "points",
+          "type": "INTEGER"
+        },
+        {
+          "name": "version_no",
+          "type": "INTEGER"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_importCalibration",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"tank\",\"sql\":\"SELECT tank_code FROM oc_tank WHERE tank_code = ?\",\"params\":[\"${input.tankCode}\"]},{\"type\":\"failIfNull\",\"var\":\"tank\",\"message\":\"Tank not found\"},{\"type\":\"selectOne\",\"var\":\"ver\",\"sql\":\"@file:oc_importCalibration-step.sql\",\"params\":[\"${input.tankCode}\"]},{\"type\":\"exec\",\"sql\":\"@file:oc_importCalibration-step.sql\",\"params\":[\"${input.tankCode}\"]},{\"type\":\"exec\",\"sql\":\"@file:oc_importCalibration-step.sql\",\"params\":[\"${input.calibrationId}\",\"${input.tankCode}\",\"${ver.version_no}\",\"${input.sourceName}\"]},{\"type\":\"exec\",\"sql\":\"@file:oc_importCalibration-step.sql\",\"params\":[\"${input.calibrationId}\",\"${input.rowsJson}\"]},{\"type\":\"selectOne\",\"var\":\"cnt\",\"sql\":\"@file:oc_importCalibration-step.sql\",\"params\":[\"${input.calibrationId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"imported\",\"points\":\"${cnt.points}\",\"version_no\":\"${ver.version_no}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

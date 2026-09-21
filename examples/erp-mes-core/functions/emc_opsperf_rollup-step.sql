@@ -1,0 +1,1 @@
+INSERT INTO emc_operations_performance (performance_id, operations_type, equipment_id, shift_id, good_qty, reject_qty, run_min, downtime_min, note) SELECT CAST(gen_random_uuid() AS VARCHAR(64)), 'PRODUCTION', ?, ?, ?, ?, 0, ?, 'Rollup from actuals/events'

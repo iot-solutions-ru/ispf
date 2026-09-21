@@ -1,0 +1,1 @@
+INSERT INTO oc_incident (id, incident_no, module, severity, title, description, status) VALUES (gen_random_uuid(), 'INC-' || to_char(NOW(),'YYYYMMDD-HH24MISS'), COALESCE(NULLIF(?,''),'azs'), COALESCE(NULLIF(?,''),'yellow'), ?, COALESCE(NULLIF(?,''), ''), 'new')

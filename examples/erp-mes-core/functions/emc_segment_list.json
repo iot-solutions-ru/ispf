@@ -1,0 +1,61 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "segmentId",
+                "type": "STRING"
+              },
+              {
+                "name": "name",
+                "type": "STRING"
+              },
+              {
+                "name": "operationsType",
+                "type": "STRING"
+              },
+              {
+                "name": "parentId",
+                "type": "STRING"
+              },
+              {
+                "name": "materialSpecs",
+                "type": "STRING"
+              },
+              {
+                "name": "equipmentSpecs",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_segment_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"segments\",\"sql\":\"@file:emc_segment_list-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${segments}\",\"fields\":{\"segmentId\":\"${item.segment_id}\",\"name\":\"${item.name}\",\"operationsType\":\"${item.operations_type}\",\"parentId\":\"${item.parent_id}\",\"materialSpecs\":\"${item.material_specs}\",\"equipmentSpecs\":\"${item.equipment_specs}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

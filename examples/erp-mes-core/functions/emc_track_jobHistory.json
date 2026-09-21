@@ -1,0 +1,70 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "dispatchStatus",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "dataKind",
+                "type": "STRING"
+              },
+              {
+                "name": "paramKey",
+                "type": "STRING"
+              },
+              {
+                "name": "paramValue",
+                "type": "STRING"
+              },
+              {
+                "name": "startedAt",
+                "type": "STRING"
+              },
+              {
+                "name": "endedAt",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_track_jobHistory",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"job\",\"sql\":\"SELECT dispatch_status FROM emc_job_order WHERE job_no = ?\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNull\",\"var\":\"job\",\"error_code\":\"JOB_NOT_FOUND\",\"error_message\":\"Job order not found\"},{\"type\":\"selectMany\",\"var\":\"data\",\"sql\":\"@file:emc_track_jobHistory-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${data}\",\"fields\":{\"dataKind\":\"${item.data_kind}\",\"paramKey\":\"${item.param_key}\",\"paramValue\":\"${item.param_value}\",\"startedAt\":\"${item.started_at}\",\"endedAt\":\"${item.ended_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"jobNo\":\"${input.jobNo}\",\"dispatchStatus\":\"${job.dispatch_status}\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

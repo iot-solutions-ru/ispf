@@ -1,0 +1,19 @@
+{
+  "columns": [
+    {
+      "field": "code",
+      "label": "Code"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "personnel_class_id",
+      "label": "Class"
+    }
+  ],
+  "description": "Persons as code/name options for form dropdowns.",
+  "reportId": "emc-person-catalog",
+  "title": "Personnel Catalog"
+}

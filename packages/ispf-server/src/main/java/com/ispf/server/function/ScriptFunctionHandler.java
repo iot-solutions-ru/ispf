@@ -61,6 +61,15 @@ public class ScriptFunctionHandler implements FunctionHandler {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public DataRecord invoke(String objectPath, String functionName, DataRecord input) {
+        return invokeInternal(objectPath, functionName, input);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public DataRecord invokeInCurrentTransaction(String objectPath, String functionName, DataRecord input) {
+        return invokeInternal(objectPath, functionName, input);
+    }
+
+    private DataRecord invokeInternal(String objectPath, String functionName, DataRecord input) {
         FunctionDescriptor descriptor = schemaSession.callWithPlatformCatalog(() -> {
             PlatformObject node = objectManager.require(objectPath);
             FunctionDescriptor fn = node.functions().get(functionName);
@@ -81,8 +90,6 @@ public class ScriptFunctionHandler implements FunctionHandler {
             tenantLocalDataAccessGuard.requireAllowedDataSourcePath(dataSourcePath);
             dataSourceSqlSession.runWithDataSource(dataSourcePath, ignored -> execute.run());
         } else {
-            // Blank dataSourcePath falls through to the platform catalog — forbid for tenants.
-            // Descriptor/object-tree loads above via callWithPlatformCatalog remain allowed.
             tenantLocalDataAccessGuard.requireExternalDataAccess();
             schemaSession.runWithPlatformCatalog(execute);
         }

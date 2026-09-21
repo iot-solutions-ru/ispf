@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class MesOeeReferenceBundleSmokeTest {
 
-    private static final String HUB_DEVICE = "root.platform.devices.demo-sensor-01";
+    private static final String HUB_DEVICE = "root.platform.singleton-blueprints.mes-oee-reference-hub-v1";
     private static final String SEED_SHIFT_ID = "dddddddd-dddd-dddd-dddd-dddddddddddd";
 
     @Autowired

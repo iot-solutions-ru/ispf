@@ -23,19 +23,22 @@ public class BlueprintBindingRulesMerger {
     private final BindingRuleEngine bindingRuleEngine;
     private final BindingFormulaResolver bindingFormulaResolver;
     private final BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport;
+    private final BlueprintParameterResolver parameterResolver;
 
     public BlueprintBindingRulesMerger(
             BindingRulesService bindingRulesService,
             BindingDependencyIndex dependencyIndex,
             BindingRuleEngine bindingRuleEngine,
             BindingFormulaResolver bindingFormulaResolver,
-            BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport
+            BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport,
+            BlueprintParameterResolver parameterResolver
     ) {
         this.bindingRulesService = bindingRulesService;
         this.dependencyIndex = dependencyIndex;
         this.bindingRuleEngine = bindingRuleEngine;
         this.bindingFormulaResolver = bindingFormulaResolver;
         this.blueprintAnalyticsFormulaSupport = blueprintAnalyticsFormulaSupport;
+        this.parameterResolver = parameterResolver;
     }
 
     public void mergeBlueprintRules(String objectPath, BlueprintDefinition model, Map<String, String> parameters) {
@@ -59,7 +62,7 @@ public class BlueprintBindingRulesMerger {
             byId.put(existing.id(), existing);
         }
         for (BlueprintBindingRule modelRule : model.bindingRules()) {
-            BindingRule resolved = bindingFormulaResolver.resolve(resolve(modelRule, resolvedParams));
+            BindingRule resolved = bindingFormulaResolver.resolve(resolve(modelRule, resolvedParams, parameterResolver));
             byId.put(resolved.id(), resolved);
         }
         bindingRulesService.saveRules(objectPath, new ArrayList<>(byId.values()));
@@ -85,19 +88,17 @@ public class BlueprintBindingRulesMerger {
         bindingRuleEngine.runRulesForObject(objectPath);
     }
 
-    private static BindingRule resolve(BlueprintBindingRule modelRule, Map<String, String> parameters) {
-        String expression = resolveParameters(modelRule.expression(), parameters);
-        String condition = resolveParameters(modelRule.condition(), parameters);
+    private static BindingRule resolve(
+            BlueprintBindingRule modelRule,
+            Map<String, String> parameters,
+            BlueprintParameterResolver parameterResolver
+    ) {
+        String expression = parameterResolver.resolve(modelRule.expression(), parameters);
+        String condition = parameterResolver.resolve(modelRule.condition(), parameters);
         Map<String, String> formulaParams = modelRule.formulaParams();
         Map<String, String> mergedFormulaParams = formulaParams == null || formulaParams.isEmpty()
                 ? Map.of()
-                : new LinkedHashMap<>(formulaParams);
-        if (!mergedFormulaParams.isEmpty() && parameters != null) {
-            for (Map.Entry<String, String> entry : parameters.entrySet()) {
-                mergedFormulaParams.replaceAll((key, value) ->
-                        value != null ? value.replace("${" + entry.getKey() + "}", entry.getValue()) : value);
-            }
-        }
+                : parameterResolver.resolveValues(formulaParams, parameters);
         BindingRule base = modelRule.toBindingRule();
         return new BindingRule(
                 base.id(),
@@ -116,16 +117,5 @@ public class BlueprintBindingRulesMerger {
                 base.formulaScope(),
                 base.formulaAppId()
         );
-    }
-
-    private static String resolveParameters(String expression, Map<String, String> parameters) {
-        if (expression == null || parameters == null || parameters.isEmpty()) {
-            return expression;
-        }
-        String resolved = expression;
-        for (Map.Entry<String, String> entry : parameters.entrySet()) {
-            resolved = resolved.replace("${" + entry.getKey() + "}", entry.getValue());
-        }
-        return resolved;
     }
 }

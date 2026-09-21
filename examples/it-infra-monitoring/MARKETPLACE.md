@@ -16,7 +16,7 @@
 
 | Role | Path | Notes |
 |------|------|--------|
-| Logic hub | `root.platform.devices.itm.hub` | **CUSTOM** + blueprint `INSTANCE`/`CUSTOM` (not DEVICE) |
+| Logic hub | `root.platform.singleton-blueprints.itm-hub-v1` | **CUSTOM** + blueprint `INSTANCE`/`CUSTOM` (not DEVICE) |
 | Email / SMS / webhook | `…itm.notify-*` | DEVICE gateways; schedules use `write_point` |
 | SSH config | `…itm.ssh-config-jump` | `writeEnabled` + `writeCommandAllowlist` |
 | CMS | `…itm.cms-opcua` | `driverId=opcua` (Classic DA = BETA shell) |

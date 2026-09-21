@@ -1,0 +1,53 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "paramKey",
+          "type": "STRING"
+        },
+        {
+          "name": "paramValue",
+          "type": "STRING"
+        },
+        {
+          "name": "uom",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "paramKey",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_dc_recordQuantity",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"failIfNull\",\"var\":\"input.paramKey\",\"error_code\":\"VALIDATION\",\"error_message\":\"paramKey is required\"},{\"type\":\"selectOne\",\"var\":\"resp\",\"sql\":\"@file:emc_dc_recordQuantity-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNull\",\"var\":\"resp\",\"error_code\":\"NO_RUNNING_RESPONSE\",\"error_message\":\"No running response for job order\"},{\"type\":\"exec\",\"sql\":\"@file:emc_dc_recordQuantity-step.sql\",\"params\":[\"${resp.response_id}\",\"${input.paramKey}\",\"${input.paramValue}\",\"${input.uom}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"jobNo\":\"${input.jobNo}\",\"paramKey\":\"${input.paramKey}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

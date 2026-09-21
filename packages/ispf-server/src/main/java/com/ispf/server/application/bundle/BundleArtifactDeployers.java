@@ -206,6 +206,8 @@ public class BundleArtifactDeployers {
                         blueprint.events() != null ? blueprint.events() : existing.events(),
                         blueprint.functions() != null ? blueprint.functions() : existing.functions(),
                         blueprint.bindings() != null ? blueprint.bindings() : existing.bindings(),
+                        blueprint.sqlBindings() != null ? blueprint.sqlBindings() : existing.sqlBindings(),
+                        blueprint.alertRules() != null ? blueprint.alertRules() : existing.alertRules(),
                         blueprint.parameters() != null ? blueprint.parameters() : existing.parameters(),
                         createdAt,
                         now
@@ -221,6 +223,8 @@ public class BundleArtifactDeployers {
                         blueprint.events() != null ? blueprint.events() : List.of(),
                         blueprint.functions() != null ? blueprint.functions() : List.of(),
                         blueprint.bindings() != null ? blueprint.bindings() : List.of(),
+                        blueprint.sqlBindings() != null ? blueprint.sqlBindings() : List.of(),
+                        blueprint.alertRules() != null ? blueprint.alertRules() : List.of(),
                         blueprint.parameters() != null ? blueprint.parameters() : Map.of(),
                         createdAt,
                         now

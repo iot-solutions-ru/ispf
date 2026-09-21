@@ -1,0 +1,1 @@
+INSERT INTO oc_work_order (id, wo_no, incident_id, title, assignee, priority, status, due_at) VALUES (gen_random_uuid(), 'WO-' || to_char(NOW(),'YYYYMMDD-HH24MISS'), (SELECT id FROM oc_incident WHERE incident_no = NULLIF(?, '') LIMIT 1), ?, NULLIF(?, ''), COALESCE(NULLIF(?,''),'normal'), 'open', NOW() + INTERVAL '1 day')

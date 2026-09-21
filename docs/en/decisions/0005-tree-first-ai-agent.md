@@ -49,4 +49,6 @@ Wall time on demostand was dominated by **LLM rounds** (large system prompts), n
 3. **Briefing**: static knowledge defaults to **first session turn only** (`ispf.ai.briefing-every-turn: false`); live overlay unchanged.
 4. **History**: default window **24** turns; older turns condensed into one synthetic summary pair (goal / paths / plan phase). Default `agent-max-tokens` **16384**, parse retries **2** (raise via env for huge sectional plans).
 
-Native OpenAI `tool_calls` remain out of scope (portability). Operator and Admin Copilot keep their existing surfaces (no pack gate).
+Native OpenAI/Ollama `tool_calls` are now available behind `ispf.ai.agent-native-tools=auto|on|off`
+(default `auto`). The JSON ReAct protocol remains the fallback for providers without native tool calling or
+responses without `tool_calls`. Operator and Admin Copilot keep their existing surfaces (no pack gate).

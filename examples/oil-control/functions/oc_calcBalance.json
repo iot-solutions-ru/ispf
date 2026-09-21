@@ -1,0 +1,69 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "zone_code",
+                "type": "STRING"
+              },
+              {
+                "name": "display_name",
+                "type": "STRING"
+              },
+              {
+                "name": "loss_norm_pct",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "imbalance_pct",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "imbalance_l",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "stock_end_l",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              },
+              {
+                "name": "note",
+                "type": "STRING"
+              }
+            ],
+            "name": "row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_calcBalance",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"@file:oc_calcBalance-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

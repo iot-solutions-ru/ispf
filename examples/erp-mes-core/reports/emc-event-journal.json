@@ -1,0 +1,47 @@
+{
+  "columns": [
+    {
+      "field": "id",
+      "label": "ID"
+    },
+    {
+      "field": "definition_code",
+      "label": "Code"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "oee_bucket",
+      "label": "OEE Bucket"
+    },
+    {
+      "field": "job_no",
+      "label": "Job #"
+    },
+    {
+      "field": "equipment_id",
+      "label": "Equipment"
+    },
+    {
+      "field": "time_min",
+      "label": "Time min"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    },
+    {
+      "field": "started_at",
+      "label": "Started"
+    },
+    {
+      "field": "ended_at",
+      "label": "Ended"
+    }
+  ],
+  "description": "Registered operations events with definition names and OEE buckets.",
+  "reportId": "emc-event-journal",
+  "title": "Operations Event Journal"
+}

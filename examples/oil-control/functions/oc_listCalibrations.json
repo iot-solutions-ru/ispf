@@ -1,0 +1,69 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "id",
+                "type": "STRING"
+              },
+              {
+                "name": "tank_code",
+                "type": "STRING"
+              },
+              {
+                "name": "version_no",
+                "type": "INTEGER"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              },
+              {
+                "name": "source_name",
+                "type": "STRING"
+              },
+              {
+                "name": "valid_from",
+                "type": "STRING"
+              },
+              {
+                "name": "valid_to",
+                "type": "STRING"
+              },
+              {
+                "name": "points",
+                "type": "INTEGER"
+              }
+            ],
+            "name": "row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_listCalibrations",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"@file:oc_listCalibrations-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

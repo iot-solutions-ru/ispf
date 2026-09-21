@@ -1,0 +1,1 @@
+INSERT INTO emc_domain_schedule (schedule_id, domain, schedule_kind, target_id, quantity, uom, status, note) SELECT ?, ?, ?, ?, CAST(? AS NUMERIC), ?, 'PLANNED', ? WHERE NOT EXISTS (SELECT 1 FROM emc_domain_schedule WHERE schedule_id = ?)

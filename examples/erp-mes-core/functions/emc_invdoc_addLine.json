@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "docId",
+          "type": "STRING"
+        },
+        {
+          "name": "definitionId",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "quantity",
+          "type": "STRING"
+        },
+        {
+          "name": "sourceLocation",
+          "type": "STRING"
+        },
+        {
+          "name": "destLocation",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "docId",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_invdoc_addLine",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"doc\",\"sql\":\"SELECT doc_id, status FROM emc_inventory_document WHERE doc_id = ?\",\"params\":[\"${input.docId}\"]},{\"type\":\"failIfNull\",\"var\":\"doc\",\"error_code\":\"DOC_NOT_FOUND\",\"error_message\":\"Inventory document not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"doc.status\",\"equals\":\"DRAFT\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Lines can be added only to DRAFT documents\"},{\"type\":\"exec\",\"sql\":\"@file:emc_invdoc_addLine-step.sql\",\"params\":[\"${input.docId}\",\"${input.definitionId}\",\"${input.lotId}\",\"${input.quantity}\",\"${input.sourceLocation}\",\"${input.destLocation}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"docId\":\"${input.docId}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

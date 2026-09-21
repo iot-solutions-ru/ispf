@@ -1,0 +1,127 @@
+{
+  "objects": [
+    {
+      "description": "Ойл Контроль — сеть АЗС · баланс · РГС–ТРК · качество",
+      "displayName": "Ойл Контроль",
+      "name": "oil-control",
+      "parentPath": "root.platform.devices",
+      "type": "CUSTOM"
+    },
+    {
+      "displayName": "Резервуары",
+      "name": "tanks",
+      "parentPath": "root.platform.devices.oil-control",
+      "type": "CUSTOM"
+    },
+    {
+      "displayName": "РВС-1",
+      "name": "rvs-1",
+      "parameters": {
+        "code": "RVS-1"
+      },
+      "parentPath": "root.platform.devices.oil-control.tanks",
+      "templateId": "oil-control-tank-v1",
+      "type": "DEVICE"
+    },
+    {
+      "displayName": "РВС-2",
+      "name": "rvs-2",
+      "parameters": {
+        "code": "RVS-2"
+      },
+      "parentPath": "root.platform.devices.oil-control.tanks",
+      "templateId": "oil-control-tank-v1",
+      "type": "DEVICE"
+    },
+    {
+      "displayName": "РВС-3",
+      "name": "rvs-3",
+      "parameters": {
+        "code": "RVS-3"
+      },
+      "parentPath": "root.platform.devices.oil-control.tanks",
+      "templateId": "oil-control-tank-v1",
+      "type": "DEVICE"
+    },
+    {
+      "displayName": "РВС-4",
+      "name": "rvs-4",
+      "parameters": {
+        "code": "RVS-4"
+      },
+      "parentPath": "root.platform.devices.oil-control.tanks",
+      "templateId": "oil-control-tank-v1",
+      "type": "DEVICE"
+    },
+    {
+      "displayName": "РВС-5",
+      "name": "rvs-5",
+      "parameters": {
+        "code": "RVS-5"
+      },
+      "parentPath": "root.platform.devices.oil-control.tanks",
+      "templateId": "oil-control-tank-v1",
+      "type": "DEVICE"
+    },
+    {
+      "displayName": "РГС-1А",
+      "name": "rgs-1a",
+      "parameters": {
+        "code": "RGS-1A"
+      },
+      "parentPath": "root.platform.devices.oil-control.tanks",
+      "templateId": "oil-control-tank-v1",
+      "type": "DEVICE"
+    },
+    {
+      "displayName": "РГС-2А",
+      "name": "rgs-2a",
+      "parameters": {
+        "code": "RGS-2A"
+      },
+      "parentPath": "root.platform.devices.oil-control.tanks",
+      "templateId": "oil-control-tank-v1",
+      "type": "DEVICE"
+    },
+    {
+      "displayName": "РГС-1 · АЗС 014",
+      "name": "azs-014-1",
+      "parameters": {
+        "code": "AZS-014-1"
+      },
+      "parentPath": "root.platform.devices.oil-control.tanks",
+      "templateId": "oil-control-tank-v1",
+      "type": "DEVICE"
+    },
+    {
+      "displayName": "РГС-2 · АЗС 014",
+      "name": "azs-014-2",
+      "parameters": {
+        "code": "AZS-014-2"
+      },
+      "parentPath": "root.platform.devices.oil-control.tanks",
+      "templateId": "oil-control-tank-v1",
+      "type": "DEVICE"
+    },
+    {
+      "displayName": "РГС-3 · АЗС 005",
+      "name": "azs-005-3",
+      "parameters": {
+        "code": "AZS-005-3"
+      },
+      "parentPath": "root.platform.devices.oil-control.tanks",
+      "templateId": "oil-control-tank-v1",
+      "type": "DEVICE"
+    },
+    {
+      "displayName": "РГС-5 · АЗС 103",
+      "name": "azs-103-5",
+      "parameters": {
+        "code": "AZS-103-5"
+      },
+      "parentPath": "root.platform.devices.oil-control.tanks",
+      "templateId": "oil-control-tank-v1",
+      "type": "DEVICE"
+    }
+  ]
+}

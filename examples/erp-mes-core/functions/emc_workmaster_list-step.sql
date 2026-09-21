@@ -1,0 +1,1 @@
+SELECT wm.work_master_id, wm.version, wm.segment_id, s.name AS segment_name, wm.duration_min, COALESCE(wm.description, '') AS description FROM emc_work_master wm LEFT JOIN emc_process_segment s ON s.segment_id = wm.segment_id ORDER BY wm.work_master_id, wm.version

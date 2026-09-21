@@ -1,0 +1,53 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "docId",
+          "type": "STRING"
+        },
+        {
+          "name": "kind",
+          "type": "STRING"
+        },
+        {
+          "name": "operatorPersonId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "docId",
+          "type": "STRING"
+        },
+        {
+          "name": "kind",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_invdoc_create",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"failIfNull\",\"var\":\"input.docId\",\"error_code\":\"VALIDATION\",\"error_message\":\"docId is required\"},{\"type\":\"selectOne\",\"var\":\"kind_ok\",\"sql\":\"@file:emc_invdoc_create-step.sql\",\"params\":[\"${input.kind}\"]},{\"type\":\"failIfNotEquals\",\"var\":\"kind_ok.cnt\",\"equals\":\"1\",\"error_code\":\"INVALID_KIND\",\"error_message\":\"Unknown inventory document kind\"},{\"type\":\"exec\",\"sql\":\"@file:emc_invdoc_create-step.sql\",\"params\":[\"${input.docId}\",\"${input.kind}\",\"${input.operatorPersonId}\",\"${input.docId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"docId\":\"${input.docId}\",\"kind\":\"${input.kind}\",\"status\":\"DRAFT\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

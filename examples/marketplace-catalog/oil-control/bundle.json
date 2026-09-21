@@ -73,6 +73,16 @@
   ],
   "blueprints": [
     {
+      "name": "oil-control-hub-v1",
+      "description": "Ойл Контроль logic hub (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
+    {
       "name": "oil-control-tank-v1",
       "description": "Резервуар НП (РГС/РВС) · Ойл Контроль",
       "type": "INSTANCE",
@@ -206,7 +216,23 @@
       "events": [],
       "functions": [],
       "bindings": [],
-      "parameters": {}
+      "parameters": {},
+      "sqlBindings": [
+        {
+          "variable": "levelCm",
+          "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='${code}' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
+          "dataSourcePath": "root.platform.data-sources.oil-control",
+          "refreshIntervalMs": 5000,
+          "valueField": "value"
+        },
+        {
+          "variable": "temperatureC",
+          "query": "SELECT COALESCE((SELECT temperature_c FROM oc_measurement WHERE tank_code='${code}' ORDER BY measured_at DESC LIMIT 1), 0) AS value, '°C' AS unit",
+          "dataSourcePath": "root.platform.data-sources.oil-control",
+          "refreshIntervalMs": 5000,
+          "valueField": "value"
+        }
+      ]
     }
   ],
   "objects": [
@@ -219,13 +245,6 @@
     },
     {
       "parentPath": "root.platform.devices.oil-control",
-      "name": "hub",
-      "type": "DEVICE",
-      "displayName": "Ойл Контроль — Hub",
-      "description": "BFF functions host"
-    },
-    {
-      "parentPath": "root.platform.devices.oil-control",
       "name": "tanks",
       "type": "CUSTOM",
       "displayName": "Резервуары"
@@ -235,82 +254,115 @@
       "name": "rvs-1",
       "type": "DEVICE",
       "displayName": "РВС-1",
-      "templateId": "oil-control-tank-v1"
+      "templateId": "oil-control-tank-v1",
+      "parameters": {
+        "code": "RVS-1"
+      }
     },
     {
       "parentPath": "root.platform.devices.oil-control.tanks",
       "name": "rvs-2",
       "type": "DEVICE",
       "displayName": "РВС-2",
-      "templateId": "oil-control-tank-v1"
+      "templateId": "oil-control-tank-v1",
+      "parameters": {
+        "code": "RVS-2"
+      }
     },
     {
       "parentPath": "root.platform.devices.oil-control.tanks",
       "name": "rvs-3",
       "type": "DEVICE",
       "displayName": "РВС-3",
-      "templateId": "oil-control-tank-v1"
+      "templateId": "oil-control-tank-v1",
+      "parameters": {
+        "code": "RVS-3"
+      }
     },
     {
       "parentPath": "root.platform.devices.oil-control.tanks",
       "name": "rvs-4",
       "type": "DEVICE",
       "displayName": "РВС-4",
-      "templateId": "oil-control-tank-v1"
+      "templateId": "oil-control-tank-v1",
+      "parameters": {
+        "code": "RVS-4"
+      }
     },
     {
       "parentPath": "root.platform.devices.oil-control.tanks",
       "name": "rvs-5",
       "type": "DEVICE",
       "displayName": "РВС-5",
-      "templateId": "oil-control-tank-v1"
+      "templateId": "oil-control-tank-v1",
+      "parameters": {
+        "code": "RVS-5"
+      }
     },
     {
       "parentPath": "root.platform.devices.oil-control.tanks",
       "name": "rgs-1a",
       "type": "DEVICE",
       "displayName": "РГС-1А",
-      "templateId": "oil-control-tank-v1"
+      "templateId": "oil-control-tank-v1",
+      "parameters": {
+        "code": "RGS-1A"
+      }
     },
     {
       "parentPath": "root.platform.devices.oil-control.tanks",
       "name": "rgs-2a",
       "type": "DEVICE",
       "displayName": "РГС-2А",
-      "templateId": "oil-control-tank-v1"
+      "templateId": "oil-control-tank-v1",
+      "parameters": {
+        "code": "RGS-2A"
+      }
     },
     {
       "parentPath": "root.platform.devices.oil-control.tanks",
       "name": "azs-014-1",
       "type": "DEVICE",
       "displayName": "РГС-1 · АЗС 014",
-      "templateId": "oil-control-tank-v1"
+      "templateId": "oil-control-tank-v1",
+      "parameters": {
+        "code": "AZS-014-1"
+      }
     },
     {
       "parentPath": "root.platform.devices.oil-control.tanks",
       "name": "azs-014-2",
       "type": "DEVICE",
       "displayName": "РГС-2 · АЗС 014",
-      "templateId": "oil-control-tank-v1"
+      "templateId": "oil-control-tank-v1",
+      "parameters": {
+        "code": "AZS-014-2"
+      }
     },
     {
       "parentPath": "root.platform.devices.oil-control.tanks",
       "name": "azs-005-3",
       "type": "DEVICE",
       "displayName": "РГС-3 · АЗС 005",
-      "templateId": "oil-control-tank-v1"
+      "templateId": "oil-control-tank-v1",
+      "parameters": {
+        "code": "AZS-005-3"
+      }
     },
     {
       "parentPath": "root.platform.devices.oil-control.tanks",
       "name": "azs-103-5",
       "type": "DEVICE",
       "displayName": "РГС-5 · АЗС 103",
-      "templateId": "oil-control-tank-v1"
+      "templateId": "oil-control-tank-v1",
+      "parameters": {
+        "code": "AZS-103-5"
+      }
     }
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listTanks",
       "version": "1",
       "descriptor": {
@@ -383,7 +435,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listZones",
       "version": "1",
       "descriptor": {
@@ -448,7 +500,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listMeasurements",
       "version": "1",
       "descriptor": {
@@ -513,7 +565,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_calcBalance",
       "version": "1",
       "descriptor": {
@@ -582,7 +634,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_submitMeasurement",
       "version": "1",
       "descriptor": {
@@ -651,7 +703,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_resolveVolume",
       "version": "1",
       "descriptor": {
@@ -692,7 +744,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listIncidents",
       "version": "1",
       "descriptor": {
@@ -773,7 +825,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listAnomalies",
       "version": "1",
       "descriptor": {
@@ -842,7 +894,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listBatches",
       "version": "1",
       "descriptor": {
@@ -907,7 +959,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listLabSamples",
       "version": "1",
       "descriptor": {
@@ -992,7 +1044,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listQualityPassports",
       "version": "1",
       "descriptor": {
@@ -1070,7 +1122,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_createLabSample",
       "version": "1",
       "descriptor": {
@@ -1143,7 +1195,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_updateLabSampleStatus",
       "version": "1",
       "descriptor": {
@@ -1184,7 +1236,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listVehicles",
       "version": "1",
       "descriptor": {
@@ -1241,7 +1293,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listAssets",
       "version": "1",
       "descriptor": {
@@ -1314,7 +1366,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listWorkOrders",
       "version": "1",
       "descriptor": {
@@ -1383,7 +1435,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listB2BOrders",
       "version": "1",
       "descriptor": {
@@ -1444,7 +1496,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_createIncident",
       "version": "1",
       "descriptor": {
@@ -1493,7 +1545,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_createWorkOrder",
       "version": "1",
       "descriptor": {
@@ -1542,7 +1594,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_updateIncidentStatus",
       "version": "1",
       "descriptor": {
@@ -1587,7 +1639,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_updateWorkOrderStatus",
       "version": "1",
       "descriptor": {
@@ -1632,7 +1684,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_updateAssetStatus",
       "version": "1",
       "descriptor": {
@@ -1673,7 +1725,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listCalibrations",
       "version": "1",
       "descriptor": {
@@ -1742,7 +1794,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_importCalibration",
       "version": "1",
       "descriptor": {
@@ -1799,7 +1851,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listRegions",
       "version": "1",
       "descriptor": {
@@ -1856,7 +1908,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listStations",
       "version": "1",
       "descriptor": {
@@ -1933,7 +1985,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listImbalances",
       "version": "1",
       "descriptor": {
@@ -2010,7 +2062,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listMonitorEvents",
       "version": "1",
       "descriptor": {
@@ -2091,7 +2143,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listRgsTrk",
       "version": "1",
       "descriptor": {
@@ -2164,7 +2216,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listKpiReports",
       "version": "1",
       "descriptor": {
@@ -2241,7 +2293,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listWagonTrips",
       "version": "1",
       "descriptor": {
@@ -2322,7 +2374,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listTankStocks",
       "version": "1",
       "descriptor": {
@@ -2399,7 +2451,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listRegionFuels",
       "version": "1",
       "descriptor": {
@@ -2452,7 +2504,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listBalanceTrend",
       "version": "1",
       "descriptor": {
@@ -2509,7 +2561,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listImbalanceByAzs",
       "version": "1",
       "descriptor": {
@@ -2562,7 +2614,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listStockForecast",
       "version": "1",
       "descriptor": {
@@ -2619,7 +2671,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listRgsTrkSeries",
       "version": "1",
       "descriptor": {
@@ -2672,7 +2724,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listKpiCards",
       "version": "1",
       "descriptor": {
@@ -2733,7 +2785,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listKpiIncidentSummary",
       "version": "1",
       "descriptor": {
@@ -2798,7 +2850,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listStationTanks",
       "version": "1",
       "descriptor": {
@@ -2876,7 +2928,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listStationPumps",
       "version": "1",
       "descriptor": {
@@ -2950,7 +3002,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listStationJournal",
       "version": "1",
       "descriptor": {
@@ -3016,7 +3068,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listDischargeSessions",
       "version": "1",
       "descriptor": {
@@ -3077,7 +3129,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_listDischargeTanks",
       "version": "1",
       "descriptor": {
@@ -3171,7 +3223,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_getCalibrationProfile",
       "version": "1",
       "descriptor": {
@@ -3257,7 +3309,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.oil-control.hub",
+      "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
       "functionName": "oc_getStation",
       "version": "1",
       "descriptor": {
@@ -3330,162 +3382,7 @@
       }
     }
   ],
-  "bindings": [
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rvs-1",
-      "variable": "levelCm",
-      "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='RVS-1' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rvs-1",
-      "variable": "temperatureC",
-      "query": "SELECT COALESCE((SELECT temperature_c FROM oc_measurement WHERE tank_code='RVS-1' ORDER BY measured_at DESC LIMIT 1), 0) AS value, '°C' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rvs-2",
-      "variable": "levelCm",
-      "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='RVS-2' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rvs-2",
-      "variable": "temperatureC",
-      "query": "SELECT COALESCE((SELECT temperature_c FROM oc_measurement WHERE tank_code='RVS-2' ORDER BY measured_at DESC LIMIT 1), 0) AS value, '°C' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rvs-3",
-      "variable": "levelCm",
-      "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='RVS-3' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rvs-3",
-      "variable": "temperatureC",
-      "query": "SELECT COALESCE((SELECT temperature_c FROM oc_measurement WHERE tank_code='RVS-3' ORDER BY measured_at DESC LIMIT 1), 0) AS value, '°C' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rvs-4",
-      "variable": "levelCm",
-      "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='RVS-4' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rvs-4",
-      "variable": "temperatureC",
-      "query": "SELECT COALESCE((SELECT temperature_c FROM oc_measurement WHERE tank_code='RVS-4' ORDER BY measured_at DESC LIMIT 1), 0) AS value, '°C' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rvs-5",
-      "variable": "levelCm",
-      "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='RVS-5' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rvs-5",
-      "variable": "temperatureC",
-      "query": "SELECT COALESCE((SELECT temperature_c FROM oc_measurement WHERE tank_code='RVS-5' ORDER BY measured_at DESC LIMIT 1), 0) AS value, '°C' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rgs-1a",
-      "variable": "levelCm",
-      "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='RGS-1A' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rgs-1a",
-      "variable": "temperatureC",
-      "query": "SELECT COALESCE((SELECT temperature_c FROM oc_measurement WHERE tank_code='RGS-1A' ORDER BY measured_at DESC LIMIT 1), 0) AS value, '°C' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rgs-2a",
-      "variable": "levelCm",
-      "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='RGS-2A' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.rgs-2a",
-      "variable": "temperatureC",
-      "query": "SELECT COALESCE((SELECT temperature_c FROM oc_measurement WHERE tank_code='RGS-2A' ORDER BY measured_at DESC LIMIT 1), 0) AS value, '°C' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.azs-014-1",
-      "variable": "levelCm",
-      "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='AZS-014-1' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.azs-014-1",
-      "variable": "temperatureC",
-      "query": "SELECT COALESCE((SELECT temperature_c FROM oc_measurement WHERE tank_code='AZS-014-1' ORDER BY measured_at DESC LIMIT 1), 0) AS value, '°C' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.azs-014-2",
-      "variable": "levelCm",
-      "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='AZS-014-2' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.azs-014-2",
-      "variable": "temperatureC",
-      "query": "SELECT COALESCE((SELECT temperature_c FROM oc_measurement WHERE tank_code='AZS-014-2' ORDER BY measured_at DESC LIMIT 1), 0) AS value, '°C' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.azs-005-3",
-      "variable": "levelCm",
-      "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='AZS-005-3' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.azs-005-3",
-      "variable": "temperatureC",
-      "query": "SELECT COALESCE((SELECT temperature_c FROM oc_measurement WHERE tank_code='AZS-005-3' ORDER BY measured_at DESC LIMIT 1), 0) AS value, '°C' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.azs-103-5",
-      "variable": "levelCm",
-      "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='AZS-103-5' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    },
-    {
-      "objectPath": "root.platform.devices.oil-control.tanks.azs-103-5",
-      "variable": "temperatureC",
-      "query": "SELECT COALESCE((SELECT temperature_c FROM oc_measurement WHERE tank_code='AZS-103-5' ORDER BY measured_at DESC LIMIT 1), 0) AS value, '°C' AS unit",
-      "refreshIntervalMs": 5000,
-      "enabled": true
-    }
-  ],
+  "bindings": [],
   "dashboards": [
     {
       "path": "root.platform.dashboards.oil-control-overview",
@@ -3700,7 +3597,7 @@
         "title": "B2B"
       }
     ],
-    "eventJournalObjectPath": "root.platform.devices.oil-control.hub",
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
     "spaNav": [
       {
         "to": "/balance",

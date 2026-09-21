@@ -1,0 +1,5 @@
+{
+  "path": "root.platform.dashboards.demo-ready-items",
+  "refreshIntervalMs": 15000,
+  "title": "Готовые позиции"
+}

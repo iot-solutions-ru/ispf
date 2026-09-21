@@ -1,0 +1,31 @@
+{
+  "columns": [
+    {
+      "field": "software_id",
+      "label": "Software"
+    },
+    {
+      "field": "class_id",
+      "label": "Class"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "vendor",
+      "label": "Vendor"
+    },
+    {
+      "field": "version_label",
+      "label": "Version"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    }
+  ],
+  "description": "Software resources (MES agents / control software).",
+  "reportId": "emc-software-report",
+  "title": "Software (Part 2 §5.6)"
+}

@@ -1,0 +1,18 @@
+{
+  "events": [
+    {
+      "id": "lowStockAlert",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "criticalDowntime",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "objects": [
+    {
+      "description": "Assembly work unit A01 (ISA-95 equipment WU-A01).",
+      "displayName": "Work Unit A01 (Assembly)",
+      "name": "emc-wu-a01",
+      "parentPath": "root.platform.devices",
+      "templateId": "emc-work-unit-v1",
+      "type": "DEVICE"
+    },
+    {
+      "description": "Packing work unit A02 (ISA-95 equipment WU-A02).",
+      "displayName": "Work Unit A02 (Packing)",
+      "name": "emc-wu-a02",
+      "parentPath": "root.platform.devices",
+      "templateId": "emc-work-unit-v1",
+      "type": "DEVICE"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "columns": [
+    {
+      "field": "request_id",
+      "label": "Request"
+    },
+    {
+      "field": "equipment_id",
+      "label": "Equipment"
+    },
+    {
+      "field": "description",
+      "label": "Description"
+    },
+    {
+      "field": "priority",
+      "label": "Priority"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    },
+    {
+      "field": "wo_id",
+      "label": "WO"
+    },
+    {
+      "field": "created_at",
+      "label": "Created"
+    }
+  ],
+  "description": "Maintenance requests and linked work orders.",
+  "reportId": "emc-maint-request-report",
+  "title": "Maintenance Requests"
+}

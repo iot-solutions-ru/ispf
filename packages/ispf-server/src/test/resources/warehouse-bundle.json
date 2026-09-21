@@ -11,24 +11,39 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.warehouse-hub-v1",
       "functionName": "warehouse_listLocations",
       "version": "1",
       "descriptor": {
-        "inputSchema": { "name": "in", "fields": [] },
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
             {
               "name": "rows",
               "type": "RECORD_LIST",
               "nestedSchema": {
                 "name": "location_row",
                 "fields": [
-                  { "name": "code", "type": "STRING" },
-                  { "name": "state", "type": "STRING" }
+                  {
+                    "name": "code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "state",
+                    "type": "STRING"
+                  }
                 ]
               }
             }
@@ -47,5 +62,17 @@
     "defaultDashboard": "",
     "dashboards": [],
     "eventJournalObjectPath": "root.platform.devices.demo-sensor-01"
-  }
+  },
+  "blueprints": [
+    {
+      "name": "warehouse-hub-v1",
+      "description": "Warehouse Reference App logic hub (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ]
 }

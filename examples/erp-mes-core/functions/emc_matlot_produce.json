@@ -1,0 +1,65 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "barcode",
+          "type": "STRING"
+        },
+        {
+          "name": "definitionId",
+          "type": "STRING"
+        },
+        {
+          "name": "quantity",
+          "type": "STRING"
+        },
+        {
+          "name": "storageLocation",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "producedQty",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_matlot_produce",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"job\",\"sql\":\"@file:emc_matlot_produce-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNull\",\"var\":\"job\",\"error_code\":\"JOB_NOT_FOUND\",\"error_message\":\"Job order not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"job.dispatch_status\",\"equals\":\"RUNNING\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Job order must be RUNNING\"},{\"type\":\"selectOne\",\"var\":\"spec\",\"sql\":\"@file:emc_matlot_produce-step.sql\",\"params\":[\"${job.segment_id}\",\"${input.definitionId}\"]},{\"type\":\"failIfNull\",\"var\":\"spec\",\"error_code\":\"MATERIAL_NOT_IN_SEGMENT_SPEC\",\"error_message\":\"Material is not a produced output of the job segment\"},{\"type\":\"failIfNull\",\"var\":\"input.lotId\",\"error_code\":\"VALIDATION\",\"error_message\":\"lotId is required\"},{\"type\":\"failIfNull\",\"var\":\"input.barcode\",\"error_code\":\"VALIDATION\",\"error_message\":\"barcode is required\"},{\"type\":\"selectOne\",\"var\":\"def\",\"sql\":\"SELECT base_uom FROM emc_material_definition WHERE definition_id = ?\",\"params\":[\"${input.definitionId}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_matlot_produce-step.sql\",\"params\":[\"${input.lotId}\",\"${input.barcode}\",\"${input.definitionId}\",\"${input.storageLocation}\",\"${input.quantity}\",\"${def.base_uom}\",\"${input.barcode}\"]},{\"type\":\"selectOne\",\"var\":\"resp\",\"sql\":\"@file:emc_matlot_produce-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNull\",\"var\":\"resp\",\"error_code\":\"NO_RUNNING_RESPONSE\",\"error_message\":\"No running response for job order\"},{\"type\":\"exec\",\"sql\":\"@file:emc_matlot_produce-step.sql\",\"params\":[\"${resp.response_id}\",\"${input.lotId}\",\"${input.definitionId}\",\"${input.quantity}\",\"${def.base_uom}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_matlot_produce-step.sql\",\"params\":[\"${input.lotId}\",\"${resp.response_id}\",\"${input.lotId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${input.lotId}\",\"jobNo\":\"${input.jobNo}\",\"producedQty\":\"${input.quantity}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

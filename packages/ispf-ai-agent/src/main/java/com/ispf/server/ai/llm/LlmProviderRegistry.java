@@ -153,6 +153,13 @@ public class LlmProviderRegistry {
         return provider.complete(request);
     }
 
+    public boolean supportsToolCalling() {
+        if (!isGenerationAvailable()) {
+            return false;
+        }
+        return activeProvider().supportsToolCalling(properties.getModel());
+    }
+
     private LlmProvider createProvider(String providerId) {
         if (providerId == null || providerId.isBlank() || "noop".equalsIgnoreCase(providerId)) {
             return noopProvider;

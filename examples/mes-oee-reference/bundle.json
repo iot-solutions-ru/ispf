@@ -9,18 +9,10 @@
       "sql": "CREATE TABLE IF NOT EXISTS mes_oee_shift (id UUID PRIMARY KEY, line_code VARCHAR(32) NOT NULL, shift_label VARCHAR(64) NOT NULL, planned_minutes INTEGER NOT NULL, downtime_minutes INTEGER NOT NULL, ideal_cycle_sec INTEGER NOT NULL, total_units INTEGER NOT NULL, good_units INTEGER NOT NULL); INSERT INTO mes_oee_shift (id, line_code, shift_label, planned_minutes, downtime_minutes, ideal_cycle_sec, total_units, good_units) SELECT 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'LINE-A01', 'Morning', 480, 45, 12, 2100, 2050 WHERE NOT EXISTS (SELECT 1 FROM mes_oee_shift WHERE line_code = 'LINE-A01' AND shift_label = 'Morning');"
     }
   ],
-  "objects": [
-    {
-      "parentPath": "root.platform.devices",
-      "name": "mes-oee-hub-01",
-      "type": "DEVICE",
-      "displayName": "MES OEE Hub",
-      "description": "OEE KPI hub for BL-121 reference (demo line LINE-A01)"
-    }
-  ],
+  "objects": [],
   "functions": [
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-oee-reference-hub-v1",
       "functionName": "mes_oee_listShifts",
       "version": "1",
       "descriptor": {
@@ -85,7 +77,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-oee-reference-hub-v1",
       "functionName": "mes_oee_getKpi",
       "version": "1",
       "descriptor": {
@@ -142,7 +134,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-oee-reference-hub-v1",
       "functionName": "mes_oee_addDowntime",
       "version": "1",
       "descriptor": {
@@ -204,6 +196,18 @@
       "title": "MES OEE Reference",
       "refreshIntervalMs": 5000,
       "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"shifts\",\"type\":\"function\",\"title\":\"Shifts\",\"x\":0,\"y\":0,\"w\":28,\"h\":21,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_oee_listShifts\",\"buttonLabel\":\"List shifts\"},{\"id\":\"kpi\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":28,\"y\":0,\"w\":56,\"h\":21,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Morning shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"},{\"id\":\"downtime\",\"type\":\"function\",\"title\":\"Add downtime\",\"x\":0,\"y\":21,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_oee_addDowntime\",\"buttonLabel\":\"Add 5 min\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\",\\\"minutes\\\":5}\"},{\"id\":\"help\",\"type\":\"html-snippet\",\"title\":\"Hint\",\"x\":42,\"y\":21,\"w\":42,\"h\":21,\"htmlJson\":\"<p>Seed shift <code>LINE-A01 / Morning</code>. Use Add downtime then reload KPI.</p>\"}]}"
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "mes-oee-reference-hub-v1",
+      "description": "MES OEE Reference (BL-121) logic hub (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
     }
   ]
 }

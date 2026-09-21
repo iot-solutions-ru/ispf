@@ -20,7 +20,7 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-reference-hub-v1",
       "functionName": "mes_listOrders",
       "version": "1",
       "descriptor": {
@@ -73,7 +73,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-reference-hub-v1",
       "functionName": "mes_startFilling",
       "version": "1",
       "descriptor": {
@@ -110,7 +110,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.mes-reference-hub-v1",
       "functionName": "mes_completeFilling",
       "version": "1",
       "descriptor": {
@@ -212,6 +212,18 @@
       "title": "MES Reference Dispatch",
       "refreshIntervalMs": 5000,
       "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"help\",\"type\":\"html-snippet\",\"title\":\"Dispatch\",\"x\":0,\"y\":0,\"w\":84,\"h\":10,\"htmlJson\":\"<p>Dispatch orders from <code>mes_dispatch_order</code>. List → start filling (DO-1001) → complete.</p>\"},{\"id\":\"list\",\"type\":\"function\",\"title\":\"Orders\",\"x\":0,\"y\":10,\"w\":42,\"h\":28,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_listOrders\",\"buttonLabel\":\"List orders\"},{\"id\":\"start\",\"type\":\"function\",\"title\":\"Start filling\",\"x\":42,\"y\":10,\"w\":42,\"h\":14,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_startFilling\",\"buttonLabel\":\"Start DO-1001\",\"inputMapJson\":\"{\\\"orderNo\\\":\\\"DO-1001\\\"}\"},{\"id\":\"complete\",\"type\":\"function\",\"title\":\"Complete filling\",\"x\":42,\"y\":24,\"w\":42,\"h\":14,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_completeFilling\",\"buttonLabel\":\"Complete DO-1001\",\"inputMapJson\":\"{\\\"orderNo\\\":\\\"DO-1001\\\"}\"}]}"
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "mes-reference-hub-v1",
+      "description": "MES Reference (dispatch / tank / rack) logic hub (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
     }
   ]
 }

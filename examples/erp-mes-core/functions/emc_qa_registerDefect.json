@@ -1,0 +1,69 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "defectNo",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "defectTypeId",
+          "type": "STRING"
+        },
+        {
+          "name": "reasonCode",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "qtyDeclared",
+          "type": "STRING"
+        },
+        {
+          "name": "severity",
+          "type": "STRING"
+        },
+        {
+          "name": "createdBy",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "defectNo",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_qa_registerDefect",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"job\",\"sql\":\"SELECT job_no FROM emc_job_order WHERE job_no = ?\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNull\",\"var\":\"job\",\"error_code\":\"JOB_NOT_FOUND\",\"error_message\":\"Job order not found\"},{\"type\":\"selectOne\",\"var\":\"dt\",\"sql\":\"SELECT defect_type_id FROM emc_defect_type WHERE defect_type_id = ?\",\"params\":[\"${input.defectTypeId}\"]},{\"type\":\"failIfNull\",\"var\":\"dt\",\"error_code\":\"DEFECT_TYPE_UNKNOWN\",\"error_message\":\"Defect type not found\"},{\"type\":\"selectOne\",\"var\":\"dup\",\"sql\":\"SELECT defect_no FROM emc_defect_record WHERE defect_no = ?\",\"params\":[\"${input.defectNo}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"DUPLICATE_DEFECT\",\"error_message\":\"Defect number already registered\",\"defectNo\":\"${input.defectNo}\",\"status\":\"\"}}],\"var\":\"dup\",\"notNull\":true},{\"type\":\"exec\",\"sql\":\"@file:emc_qa_registerDefect-step.sql\",\"params\":[\"${input.defectNo}\",\"${input.jobNo}\",\"${input.lotId}\",\"${input.defectTypeId}\",\"${input.reasonCode}\",\"${input.severity}\",\"${input.qtyDeclared}\",\"${input.createdBy}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_qa_registerDefect-step.sql\",\"params\":[\"${input.defectNo}\",\"${input.createdBy}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"exec\",\"sql\":\"UPDATE emc_material_lot SET status = 'BLOCKED_QC' WHERE lot_id = NULLIF(?, '') AND status = 'STOCK'\",\"params\":[\"${input.lotId}\"]}],\"var\":\"input.severity\",\"equals\":\"CRITICAL\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"defectNo\":\"${input.defectNo}\",\"status\":\"REGISTERED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

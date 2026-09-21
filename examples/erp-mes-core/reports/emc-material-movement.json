@@ -1,0 +1,35 @@
+{
+  "columns": [
+    {
+      "field": "recorded_at",
+      "label": "Time"
+    },
+    {
+      "field": "job_no",
+      "label": "Job #"
+    },
+    {
+      "field": "material_use",
+      "label": "Use"
+    },
+    {
+      "field": "lot_id",
+      "label": "Lot"
+    },
+    {
+      "field": "material_id",
+      "label": "Material"
+    },
+    {
+      "field": "quantity",
+      "label": "Qty"
+    },
+    {
+      "field": "uom",
+      "label": "UOM"
+    }
+  ],
+  "description": "Consumed / produced / moved / scrapped material actuals per job order (Part 4).",
+  "reportId": "emc-material-movement",
+  "title": "Material Movement (Material Actual)"
+}

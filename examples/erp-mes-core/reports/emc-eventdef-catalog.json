@@ -1,0 +1,23 @@
+{
+  "columns": [
+    {
+      "field": "code",
+      "label": "Code"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "event_class",
+      "label": "Class"
+    },
+    {
+      "field": "oee_bucket",
+      "label": "OEE Bucket"
+    }
+  ],
+  "description": "Operations event definitions as code/name options for form dropdowns.",
+  "reportId": "emc-eventdef-catalog",
+  "title": "Event Definition Catalog"
+}

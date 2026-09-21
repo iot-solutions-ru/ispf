@@ -1,0 +1,17 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "h": 42,
+      "id": "ready-report",
+      "reportParamsJson": "{\"status\":\"ready\"}",
+      "reportPath": "root.platform.reports.ready-items",
+      "title": "Готовые позиции",
+      "type": "report",
+      "w": 84,
+      "x": 0,
+      "y": 0
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "role": "backend-for-ui",
-  "hubPath": "root.platform.devices.predictive.hub",
+  "hubPath": "root.platform.singleton-blueprints.predictive-hub-v1",
   "dataSourcePath": "root.platform.data-sources.predictive",
   "uiPack": {
     "packId": "predictive-ui",

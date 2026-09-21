@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "testName",
+          "type": "STRING"
+        },
+        {
+          "name": "result",
+          "type": "STRING"
+        },
+        {
+          "name": "measurementsJson",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "testName",
+          "type": "STRING"
+        },
+        {
+          "name": "result",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_qa_recordTestResult",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"failIfNull\",\"var\":\"input.testName\",\"error_code\":\"VALIDATION\",\"error_message\":\"testName is required\"},{\"type\":\"when\",\"then\":[{\"type\":\"when\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"VALIDATION\",\"error_message\":\"result must be PASS or FAIL\",\"testName\":\"${input.testName}\",\"result\":\"\"}}],\"var\":\"input.result\",\"notEquals\":\"FAIL\"}],\"var\":\"input.result\",\"notEquals\":\"PASS\"},{\"type\":\"exec\",\"sql\":\"@file:emc_qa_recordTestResult-step.sql\",\"params\":[\"${input.jobNo}\",\"${input.lotId}\",\"${input.testName}\",\"${input.result}\",\"${input.measurementsJson}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"testName\":\"${input.testName}\",\"result\":\"${input.result}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -1,0 +1,1 @@
+SELECT equipment_id, COALESCE(class_id, '') AS class_id, equipment_level, COALESCE(parent_id, '') AS parent_id, COALESCE(hierarchy_path, '') AS hierarchy_path, COALESCE(description, '') AS description FROM emc_equipment WHERE (? = '' OR equipment_level = ?) ORDER BY hierarchy_path

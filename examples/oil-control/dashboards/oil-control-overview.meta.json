@@ -1,0 +1,5 @@
+{
+  "path": "root.platform.dashboards.oil-control-overview",
+  "refreshIntervalMs": 5000,
+  "title": "Ойл Контроль — остатки АЗС"
+}

@@ -1,0 +1,44 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "closedEvents",
+          "type": "STRING"
+        },
+        {
+          "name": "totalDowntimeMin",
+          "type": "STRING"
+        },
+        {
+          "name": "mttrMin",
+          "type": "STRING"
+        },
+        {
+          "name": "mtbfMin",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_maint_mttrMtbf",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"kpi\",\"sql\":\"@file:emc_maint_mttrMtbf-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"closedEvents\":\"${kpi.closed_events}\",\"totalDowntimeMin\":\"${kpi.total_downtime_min}\",\"mttrMin\":\"${kpi.mttr_min}\",\"mtbfMin\":\"${kpi.mtbf_min}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

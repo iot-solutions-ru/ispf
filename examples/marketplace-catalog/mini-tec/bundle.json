@@ -2213,8 +2213,7 @@
     {
       "name": "mini-tec-station-hub-v1",
       "description": "Station hub / simulation scheduler host",
-      "type": "INSTANCE",
-      "targetObjectType": "DEVICE",
+      "type": "SINGLETON",
       "variables": [
         {
           "name": "driverId",
@@ -2375,18 +2374,11 @@
       "type": "DEVICE",
       "displayName": "Нагрузка",
       "templateId": "mini-tec-load-module-v1"
-    },
-    {
-      "parentPath": "root.platform.devices.mini-tec-plant",
-      "name": "station-hub",
-      "type": "DEVICE",
-      "displayName": "Станционный hub",
-      "templateId": "mini-tec-station-hub-v1"
     }
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.mini-tec-plant.station-hub",
+      "objectPath": "root.platform.singleton-blueprints.mini-tec-station-hub-v1",
       "functionName": "mini_tec_sim_tick",
       "version": "1",
       "descriptor": {

@@ -133,6 +133,44 @@ class AgentBlueprintToolsTest {
     }
 
     @Test
+    void instantiateInstanceTypePassesParameters() throws Exception {
+        String parent = "root.platform.devices.tanks";
+        String name = "rvs-1";
+        String fullPath = parent + "." + name;
+        BlueprintDefinition model = sampleModel("oil-control-tank-v1", BlueprintType.INSTANCE);
+        PlatformObject instance = new PlatformObject("1", fullPath, ObjectType.DEVICE, name, "", "oil-control-tank-v1");
+        Map<String, String> parameters = Map.of("code", "RVS-1");
+
+        when(BlueprintRegistry.findByName("oil-control-tank-v1")).thenReturn(Optional.of(model));
+        when(tenantScopeService.isPathVisible(parent, context.authentication())).thenReturn(true);
+        when(ObjectTreePort.tree()).thenReturn(new com.ispf.core.object.ObjectTree());
+        when(ObjectTreePort.require(fullPath)).thenReturn(instance);
+        when(BlueprintApplicationService.instantiateWithRules(model.id(), parent, name, parameters))
+                .thenReturn(new BlueprintApplyResult(
+                        new BlueprintAttachment("att-1", model.id(), model.name(), BlueprintType.INSTANCE, fullPath, Instant.now()),
+                        List.of()
+                ));
+
+        PlatformAgentTool tool = tools.stream()
+                .filter(t -> "instantiate_instance_type".equals(t.name()))
+                .findFirst()
+                .orElseThrow();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(
+                Map.of(
+                        "parentPath", parent,
+                        "instanceName", name,
+                        "blueprintName", "oil-control-tank-v1",
+                        "parameters", Map.of("code", "RVS-1")
+                ),
+                context
+        );
+
+        assertEquals("OK", result.get("status"));
+        verify(BlueprintApplicationService).instantiateWithRules(model.id(), parent, name, parameters);
+    }
+
+    @Test
     void applyMixinBlueprintMergesStructure() throws Exception {
         String path = "root.platform.devices.pump-01";
         BlueprintDefinition model = sampleModel("virtual-lab-v1", BlueprintType.MIXIN);

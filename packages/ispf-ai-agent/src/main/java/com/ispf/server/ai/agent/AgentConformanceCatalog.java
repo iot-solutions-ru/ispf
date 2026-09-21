@@ -67,8 +67,8 @@ public final class AgentConformanceCatalog {
                     new SmokeCase("S3", "get_dashboard_layout widgetCount>0", "OK")
             );
             case APPLICATION_BUNDLE -> List.of(
-                    new SmokeCase("S1", "validate_bundle status OK", "OK"),
-                    new SmokeCase("S2", "dry_run_deploy status OK", "OK")
+                    new SmokeCase("S1", "test_function or run_bundle_tests PASS", "PASS"),
+                    new SmokeCase("S2", "validate_bundle status OK", "OK")
             );
             case AUTOMATION_RULES -> List.of(
                     new SmokeCase("S1", "configure_alert succeeds", "OK"),
@@ -82,7 +82,6 @@ public final class AgentConformanceCatalog {
 
     public static boolean requiresSmokeCases(AgentAssignmentType type) {
         return type == AgentAssignmentType.AUTOMATION_RULES
-                || type == AgentAssignmentType.APPLICATION_BUNDLE
                 || type == AgentAssignmentType.INDUSTRIAL_FACILITY
                 || type == AgentAssignmentType.SCADA_HMI;
     }

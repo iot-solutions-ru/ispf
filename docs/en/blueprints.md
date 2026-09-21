@@ -108,7 +108,68 @@ See [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-an
 - Events (`EventDescriptor`)
 - Functions (`FunctionDescriptor`)
 - Binding rules (`ModelBindingRule`) — see [bindings](bindings.md)
+- **SQL binding templates** (`sqlBindings`) — materialized per instance (see below)
+- **Alert rule templates** (`alertRules`) — materialized under automation with absolute `targetObjectPath`
 - Metadata: name, description, `ObjectType`, `BlueprintType`
+
+## Parametrized SHAPE (`sqlBindings` / `alertRules`)
+
+INSTANCE/SINGLETON/MIXIN blueprints can contribute **parametrized** SQL bindings and alert rules. On apply / instantiate, `BlueprintParameterResolver` substitutes `${key}` in template strings.
+
+**Seeded keys** (always available when a target object exists):
+
+| Key | Value |
+|-----|--------|
+| `self.path` | Absolute object path |
+| `self.name` | Leaf name |
+| `self.displayName` | Display name |
+
+**Explicit parameters** come from:
+
+- blueprint `parameters` map
+- bundle `objects[].parameters` (passed on `templateId` apply)
+- API / agent `instantiate_instance_type` `parameters` argument
+
+Example (tank INSTANCE — one template, many tanks):
+
+```json
+{
+  "name": "oil-control-tank-v1",
+  "type": "INSTANCE",
+  "sqlBindings": [
+    {
+      "variable": "levelCm",
+      "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='${code}' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
+      "dataSourcePath": "root.platform.data-sources.oil-control",
+      "refreshIntervalMs": 5000,
+      "valueField": "value"
+    }
+  ],
+  "alertRules": [
+    {
+      "name": "tank-${code}-high",
+      "watchVariable": "levelCm",
+      "conditionExpr": "self.levelCm.value > 1000",
+      "eventName": "levelHigh",
+      "enabled": true
+    }
+  ]
+}
+```
+
+Bundle object:
+
+```json
+{
+  "parentPath": "root.platform.devices.oil-control.tanks",
+  "name": "rvs-1",
+  "type": "DEVICE",
+  "templateId": "oil-control-tank-v1",
+  "parameters": { "code": "RVS-1" }
+}
+```
+
+Deploy order: `blueprints[]` before `objects[]`. Prefer blueprint `sqlBindings` over duplicated top-level `bindings[]` rows per instance.
 
 ## Engine
 

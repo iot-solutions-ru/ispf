@@ -1,0 +1,19 @@
+{
+  "tests": [
+    {
+      "expect": {
+        "errorCode": "OK",
+        "fields": {
+          "error_code": "OK"
+        },
+        "rowCount": 1
+      },
+      "functionName": "demo_ping",
+      "id": "demo-ping",
+      "input": {},
+      "kind": "function",
+      "objectPath": "root.platform.singleton-blueprints.demo-app-hub-v1",
+      "rollback": true
+    }
+  ]
+}

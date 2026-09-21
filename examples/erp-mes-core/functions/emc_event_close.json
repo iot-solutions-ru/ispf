@@ -1,0 +1,45 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "eventId",
+          "type": "STRING"
+        },
+        {
+          "name": "by",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "eventId",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_event_close",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"ev\",\"sql\":\"SELECT event_id, status FROM emc_operations_event WHERE event_id = ?\",\"params\":[\"${input.eventId}\"]},{\"type\":\"failIfNull\",\"var\":\"ev\",\"error_code\":\"EVENT_NOT_FOUND\",\"error_message\":\"Operations event not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"ev.status\",\"equals\":\"OPEN\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Only OPEN events can be closed\"},{\"type\":\"exec\",\"sql\":\"@file:emc_event_close-step.sql\",\"params\":[\"${input.eventId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"eventId\":\"${input.eventId}\",\"status\":\"CLOSED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

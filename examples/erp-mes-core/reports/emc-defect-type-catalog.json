@@ -1,0 +1,19 @@
+{
+  "columns": [
+    {
+      "field": "code",
+      "label": "Code"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "category",
+      "label": "Category"
+    }
+  ],
+  "description": "Defect types as code/name options for form dropdowns.",
+  "reportId": "emc-defect-type-catalog",
+  "title": "Defect Type Catalog"
+}

@@ -1,0 +1,1 @@
+SELECT s.azs_code, s.display_name, s.region_code, r.display_name AS region_name, s.address, s.connected, s.lat, s.lon, s.map_x, s.map_y FROM oc_station s LEFT JOIN oc_region r ON r.region_code=s.region_code ORDER BY s.azs_code

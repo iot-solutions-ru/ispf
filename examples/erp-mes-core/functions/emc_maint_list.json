@@ -1,0 +1,65 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "requestId",
+                "type": "STRING"
+              },
+              {
+                "name": "equipmentId",
+                "type": "STRING"
+              },
+              {
+                "name": "description",
+                "type": "STRING"
+              },
+              {
+                "name": "priority",
+                "type": "STRING"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              },
+              {
+                "name": "workOrders",
+                "type": "STRING"
+              },
+              {
+                "name": "createdAt",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_maint_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"reqs\",\"sql\":\"@file:emc_maint_list-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${reqs}\",\"fields\":{\"requestId\":\"${item.request_id}\",\"equipmentId\":\"${item.equipment_id}\",\"description\":\"${item.description}\",\"priority\":\"${item.priority}\",\"status\":\"${item.status}\",\"workOrders\":\"${item.work_orders}\",\"createdAt\":\"${item.created_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}
