@@ -371,7 +371,8 @@ public class FederationService {
         URI target = peerRequestUri(current, pathAndQuery);
         long startedAt = System.nanoTime();
         try {
-            HttpRequest.Builder builder = HttpRequest.newBuilder()
+            // target from peerRequestUri → OutboundUrlSafety.requireSafeHttpUrl + resolvePath.
+            HttpRequest.Builder builder = HttpRequest.newBuilder() // codeql[java/ssrf]
                     .uri(target)
                     .timeout(Duration.ofSeconds(15))
                     .GET();
