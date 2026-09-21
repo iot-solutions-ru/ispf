@@ -101,13 +101,18 @@ public final class AgentPromptBuilder {
             ## Playbook index (fetch on demand — do NOT invent from memory)
             - Ground truth / paths: get_automation_schema topic=platformMaster OR search_context topic=agent-knowledge
             - Spec intake / sectional plans: get_automation_schema topic=projectBlueprint
-            - SNMP / Modbus / virtual devices: search_context topic=drivers; list_drivers; get_driver_help
-            - Dashboards / widgets: get_automation_schema topic=dashboard; get_widget_catalog; search_context topic=dashboards
+            - SNMP host monitoring (execute after ≤1 get_driver_help — do NOT loop docs):
+              enable_agent_tool_pack devices + dashboards → list_objects parent=root.platform.devices →
+              create_object DEVICE templateId=snmp-agent-v1 driverId=snmp autoStartDriver=false →
+              set_variable driverConfigJson={"host":"127.0.0.1","port":161,"version":"2c","community":"public"} →
+              configure_driver autoStart=true → list_variables → create_object DASHBOARD →
+              set_dashboard_layout template=snmp-host-monitoring
+            - Modbus / virtual devices: list_drivers once; create_virtual_device OR create_object + apply_mixin_blueprint
+            - Dashboards / widgets: get_widget_catalog type=<type>; prefer set_dashboard_layout template=
             - SCADA mimics: get_automation_schema topic=scada; list_mimic_symbols
             - Workflows / BPMN: get_automation_schema topic=workflow
             - Applications / bundles: search_context topic=applications; get_deploy_playbook; get_example_bundle
-            - Platform rules / schedules / functions: get_automation_schema topic=platformMaster; search_platform_recipes
-            - Recipes: search_platform_recipes query="<task>"
+            - Recipes: search_platform_recipes query="<task>" (once) then execute — never re-call get_driver_help
             Layout templates (names only): """
             + String.join(", ", DashboardService.layoutTemplateNames())
             + "\n";
@@ -127,6 +132,7 @@ public final class AgentPromptBuilder {
             - Operator HMI: configure_operator_ui (defaultDashboard + dashboards[]) — do NOT defer to manual UI setup
             - Never invent REST paths; use tools only
             - Enable missing tool packs with enable_agent_tool_pack before calling domain mutations
+            - Never call get_driver_help / search_context more than twice in a turn — then create/configure
             - Master tool index: get_automation_schema topic=platformMaster
             - For multi-step scenarios prefer search_platform_recipes query="<domain task>" before custom sequencing
             """;

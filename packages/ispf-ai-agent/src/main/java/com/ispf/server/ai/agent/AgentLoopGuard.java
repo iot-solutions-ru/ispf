@@ -5,11 +5,26 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 final class AgentLoopGuard {
 
     private static final int RECENT_WINDOW = 5;
     private static final int REPEAT_THRESHOLD = 3;
+    /** After this many prior calls of the same discovery tool, the next call is hard-blocked. */
+    private static final int DISCOVERY_HARD_BLOCK = 2;
+
+    private static final Set<String> DISCOVERY_LOOP_TOOLS = Set.of(
+            "get_driver_help",
+            "search_context",
+            "list_drivers",
+            "get_automation_schema",
+            "search_platform_recipes",
+            "list_examples",
+            "get_example_bundle",
+            "get_widget_catalog",
+            "get_deploy_playbook"
+    );
 
     private AgentLoopGuard() {
     }
@@ -49,6 +64,9 @@ final class AgentLoopGuard {
             return """
                     Report data received. Prefer finish with a summary if the goal is met; \
                     otherwise continue with one more targeted read tool.""";
+        }
+        if ("get_driver_help".equals(lastTool) || "list_drivers".equals(lastTool)) {
+            return snmpOrDriverExecuteHint();
         }
         if ("create_object".equals(lastTool)) {
             String typeHint = createObjectTypeHint(steps);
@@ -90,7 +108,9 @@ final class AgentLoopGuard {
             return """
                     Recipe/schema loaded — this is a pattern, not live tree state. \
                     Next: list_objects on the real parent folder, list_mixin_blueprints / list_virtual_profiles, \
-                    then create using paths and modelName from those tool results only.""";
+                    then create using paths and modelName from those tool results only. \
+                    For SNMP monitoring: stop more get_driver_help — enable_agent_tool_pack devices+dashboards, \
+                    then create_object DEVICE templateId=snmp-agent-v1 driverId=snmp.""";
         }
         if ("create_virtual_device".equals(lastTool)) {
             return """
@@ -105,6 +125,9 @@ final class AgentLoopGuard {
                     Re-calling get_example_bundle is unnecessary unless the user asks for another appId/sections.""";
         }
         if (isRepeatedTool(lastTool, steps)) {
+            if (DISCOVERY_LOOP_TOOLS.contains(normalize(lastTool))) {
+                return snmpOrDriverExecuteHint();
+            }
             return """
                     You called the same tool repeatedly. Change strategy or emit {"type":"finish",...}. \
                     If the user's intent is unclear, prefer finish with a short question and result.suggestions \
@@ -114,17 +137,30 @@ final class AgentLoopGuard {
                     never set_variable name=widgets. get_widget_catalog type=<type> for exact widget fields. \
                     For SCADA mimics: save_mimic_diagram or add_mimic_elements with non-empty elements[]; \
                     list_mimic_symbols for symbolId; get_mimic_diagram to verify elementCount; never set_variable name=diagram. \
-                    For platform docs: list_drivers, get_driver_help, get_example_bundle, get_automation_schema instead of search_context loops. \
+                    For platform docs: use prior search_context / get_driver_help results — do NOT re-call them. \
                     Before invoke_bff: use list_functions and get_function instead of guessing function names.""";
         }
         long recentSearch = recentToolCount(steps, "search_context");
         if (recentSearch >= REPEAT_THRESHOLD) {
             return """
-                    Stop search_context loops. Use list_drivers, get_driver_help, list_examples, \
-                    get_example_bundle, or concrete tree tools (set_variable, configure_driver). \
+                    Stop search_context loops. Use concrete tree tools: enable_agent_tool_pack, create_object, \
+                    set_variable, configure_driver, set_dashboard_layout. \
                     Finish with {"type":"finish",...} when done.""";
         }
         return defaultHint(steps, maxStepsTotal);
+    }
+
+    private static String snmpOrDriverExecuteHint() {
+        return """
+                Driver/docs discovery is enough — STOP get_driver_help / search_context loops. \
+                Execute SNMP demo NOW: enable_agent_tool_pack pack=devices then pack=dashboards; \
+                list_objects parent=root.platform.devices; \
+                create_object parentPath=root.platform.devices name=demo-snmp type=DEVICE \
+                displayName="Demo SNMP" templateId=snmp-agent-v1 driverId=snmp autoStartDriver=false; \
+                set_variable path=<device> name=driverConfigJson value={"host":"127.0.0.1","port":161,"version":"2c","community":"public"}; \
+                configure_driver devicePath=<device> driverId=snmp autoStart=true; list_variables path=<device>; \
+                create_object DASHBOARD under root.platform.dashboards; \
+                set_dashboard_layout template=snmp-host-monitoring (or empty + widgets bound to list_variables).""";
     }
 
     private static String defaultHint(List<Map<String, Object>> steps, int maxStepsTotal) {
@@ -147,6 +183,16 @@ final class AgentLoopGuard {
                     "Hard block: same ground-truth error repeated for " + toolName,
                     "Mandatory: list_objects parent=" + parent
                             + " — use exact paths from result, then retry. Problem Brief: do not replan — fix grounding."
+            ));
+        }
+        String normalized = normalize(toolName);
+        if (DISCOVERY_LOOP_TOOLS.contains(normalized)
+                && totalToolCount(steps, normalized) >= DISCOVERY_HARD_BLOCK) {
+            return Optional.of(new BlockDecision(
+                    "Hard block: discovery tool '" + normalized + "' called "
+                            + totalToolCount(steps, normalized)
+                            + " times this turn — stop looping",
+                    snmpOrDriverExecuteHint()
             ));
         }
         return Optional.empty();
@@ -187,15 +233,37 @@ final class AgentLoopGuard {
     }
 
     private static long recentToolCount(List<Map<String, Object>> steps, String toolName) {
+        if (steps == null || toolName == null) {
+            return 0;
+        }
+        String normalized = normalize(toolName);
         int start = Math.max(0, steps.size() - RECENT_WINDOW);
         return steps.stream()
                 .skip(start)
                 .filter(step -> "tool".equals(String.valueOf(step.get("type"))))
                 .map(step -> step.get("tool"))
                 .filter(Objects::nonNull)
-                .map(tool -> String.valueOf(tool).toLowerCase(Locale.ROOT))
-                .filter(tool -> tool.equals(toolName.toLowerCase(Locale.ROOT)))
+                .map(tool -> normalize(String.valueOf(tool)))
+                .filter(tool -> tool.equals(normalized))
                 .count();
+    }
+
+    private static long totalToolCount(List<Map<String, Object>> steps, String toolName) {
+        if (steps == null || toolName == null) {
+            return 0;
+        }
+        String normalized = normalize(toolName);
+        return steps.stream()
+                .filter(step -> "tool".equals(String.valueOf(step.get("type"))))
+                .map(step -> step.get("tool"))
+                .filter(Objects::nonNull)
+                .map(tool -> normalize(String.valueOf(tool)))
+                .filter(tool -> tool.equals(normalized))
+                .count();
+    }
+
+    private static String normalize(String toolName) {
+        return toolName == null ? "" : toolName.trim().toLowerCase(Locale.ROOT);
     }
 
     private static boolean lastStepGroundTruthBlocked(List<Map<String, Object>> steps) {
