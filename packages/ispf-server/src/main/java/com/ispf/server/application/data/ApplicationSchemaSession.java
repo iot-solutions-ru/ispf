@@ -135,6 +135,7 @@ public class ApplicationSchemaSession {
         // Allowlisted identifier — dialect SQL may include companion schemas (e.g. ", public").
         final String safeSchema = ApplicationSchemaSupport.quoteIdentifier(schemaName);
         try (Statement statement = connection.createStatement()) {
+            // Schema name is allowlisted in quoteIdentifier (^[A-Za-z_][A-Za-z0-9_]*$).
             // codeql[java/sql-injection]
             statement.execute(dialect.activateSchemaSql(safeSchema));
         }
@@ -143,6 +144,7 @@ public class ApplicationSchemaSession {
     private void createSchemaIfMissing(Connection connection, String schemaName) throws SQLException {
         final String safeSchema = ApplicationSchemaSupport.quoteIdentifier(schemaName);
         try (Statement statement = connection.createStatement()) {
+            // Schema name is allowlisted in quoteIdentifier (^[A-Za-z_][A-Za-z0-9_]*$).
             // codeql[java/sql-injection]
             statement.execute(dialect.createSchemaIfNotExistsSql(safeSchema));
         }
