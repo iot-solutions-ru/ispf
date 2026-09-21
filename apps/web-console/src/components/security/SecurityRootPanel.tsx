@@ -87,7 +87,7 @@ export default function SecurityRootPanel({ canManage, onSelectPath }: SecurityR
       <Typography.Paragraph type="secondary">{t("roleTemplates.subtitle")}</Typography.Paragraph>
       {!canManage && <Typography.Paragraph type="secondary">{t("roles.adminOnly")}</Typography.Paragraph>}
       {canManage && rolesQuery.error && (
-        <Alert type="error" showIcon message={String(rolesQuery.error)} style={{ marginBottom: 12 }} />
+        <Alert type="error" showIcon title={String(rolesQuery.error)} style={{ marginBottom: 12 }} />
       )}
       {canManage && (
         <Table<SecurityRoleSummary>

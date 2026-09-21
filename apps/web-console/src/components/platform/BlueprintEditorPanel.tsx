@@ -416,7 +416,7 @@ function ModelDetail({
           {!isBuiltin && definitionDirty && (
             <p className="hint">{t("inspector:blueprint.definitionChanged")}</p>
           )}
-          {saveMutation.error && <Alert type="error" showIcon message={String(saveMutation.error)} />}
+          {saveMutation.error && <Alert type="error" showIcon title={String(saveMutation.error)} />}
         </form>
       )}
 
@@ -721,7 +721,7 @@ function ModelDetail({
               </Button>
             </div>
             {applyMutation.error && (
-              <Alert type="error" showIcon message={String(applyMutation.error)} />
+              <Alert type="error" showIcon title={String(applyMutation.error)} />
             )}
           </div>
 
@@ -805,7 +805,7 @@ function ModelDetail({
               </Button>
             </div>
             {(upgradeOneMutation.error || upgradeAllMutation.error) && (
-              <Alert type="error" showIcon message={String(upgradeOneMutation.error ?? upgradeAllMutation.error)} />
+              <Alert type="error" showIcon title={String(upgradeOneMutation.error ?? upgradeAllMutation.error)} />
             )}
             {upgradeAllMutation.data && (
               <p className="hint">
@@ -839,7 +839,7 @@ function ModelDetail({
                 </Button>
               </div>
               {instantiateMutation.error && (
-                <Alert type="error" showIcon message={String(instantiateMutation.error)} />
+                <Alert type="error" showIcon title={String(instantiateMutation.error)} />
               )}
             </div>
           )}
@@ -861,7 +861,7 @@ function ModelDetail({
                 {t("inspector:blueprint.openSingleton")}
               </Button>
               {absoluteSingletonMutation.error && (
-                <Alert type="error" showIcon message={String(absoluteSingletonMutation.error)} />
+                <Alert type="error" showIcon title={String(absoluteSingletonMutation.error)} />
               )}
             </div>
           )}
@@ -961,7 +961,7 @@ function ModelsCatalog({
         {t("inspector:blueprint.listHint")}
       </p>
       {modelsQuery.error && (
-        <Alert type="error" showIcon message={String(modelsQuery.error)} />
+        <Alert type="error" showIcon title={String(modelsQuery.error)} />
       )}
       <table className="data-table">
         <thead>
@@ -1040,10 +1040,10 @@ function ModelsCatalog({
               </Button>
             </div>
             {invalidEmptyModelName && (
-              <Alert type="error" showIcon message={t("common:error.invalidNamedIdentifier")} />
+              <Alert type="error" showIcon title={t("common:error.invalidNamedIdentifier")} />
             )}
             {createMutation.error && (
-              <Alert type="error" showIcon message={String(createMutation.error)} />
+              <Alert type="error" showIcon title={String(createMutation.error)} />
             )}
           </form>
 
@@ -1104,10 +1104,10 @@ function ModelsCatalog({
               </Button>
             </div>
             {invalidExportModelName && (
-              <Alert type="error" showIcon message={t("common:error.invalidNamedIdentifier")} />
+              <Alert type="error" showIcon title={t("common:error.invalidNamedIdentifier")} />
             )}
             {fromObjectMutation.error && (
-              <Alert type="error" showIcon message={String(fromObjectMutation.error)} />
+              <Alert type="error" showIcon title={String(fromObjectMutation.error)} />
             )}
           </form>
         </>
@@ -1177,7 +1177,7 @@ export default function BlueprintEditorPanel({
               <Alert
                 type="error"
                 showIcon
-                message={t("inspector:blueprint.notFound")}
+                title={t("inspector:blueprint.notFound")}
                 description={String(modelQuery.error)}
               />
             )}

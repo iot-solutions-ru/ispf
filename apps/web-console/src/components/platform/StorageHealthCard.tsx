@@ -102,7 +102,7 @@ function StorageBackendPanel({
           className="storage-health-panel-error"
           type="error"
           showIcon
-          message={backend.connectionError}
+          title={backend.connectionError}
         />
       )}
     </article>
@@ -135,7 +135,7 @@ export default function StorageHealthCard() {
       <Typography.Title level={3}>{t("storageHealth.title")}</Typography.Title>
       {healthQuery.isLoading && <Typography.Text type="secondary">{t("storageHealth.loading")}</Typography.Text>}
       {healthQuery.error && (
-        <Alert type="error" showIcon message={t("storageHealth.loadError")} />
+        <Alert type="error" showIcon title={t("storageHealth.loadError")} />
       )}
       {healthQuery.data && (
         <Space orientation="vertical" style={{ width: "100%" }}>

@@ -105,7 +105,7 @@ export default function CreateAlertRuleDialog({ onClose, onCreated }: CreateAler
             }}
           />
           {createMutation.error && (
-            <Alert type="error" showIcon message={(createMutation.error as Error).message} />
+            <Alert type="error" showIcon title={(createMutation.error as Error).message} />
           )}
           <Space>
             <Button onClick={onClose}>

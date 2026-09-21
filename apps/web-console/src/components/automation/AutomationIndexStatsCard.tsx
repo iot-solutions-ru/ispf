@@ -18,7 +18,7 @@ export default function AutomationIndexStatsCard() {
       <h3>{t("automationIndex.title")}</h3>
       {statsQuery.isLoading && <p className="hint">{t("automationIndex.loading")}</p>}
       {statsQuery.error && (
-        <Alert type="error" message={t("automationIndex.loadError")} showIcon />
+        <Alert type="error" title={t("automationIndex.loadError")} showIcon />
       )}
       {statsQuery.data && (
         <div className="automation-index-stats">

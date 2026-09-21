@@ -188,7 +188,7 @@ export default function CreateCorrelatorDialog({ onClose, onCreated }: CreateCor
             />
           </Form.Item>
           {mutation.error && (
-            <Alert type="error" showIcon message={(mutation.error as Error).message} />
+            <Alert type="error" showIcon title={(mutation.error as Error).message} />
           )}
           <Space>
             <Button onClick={onClose}>{t("common:action.cancel")}</Button>

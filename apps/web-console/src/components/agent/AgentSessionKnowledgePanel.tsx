@@ -88,7 +88,7 @@ export default function AgentSessionKnowledgePanel({ sessionId }: { sessionId: s
         />
         {uploadMutation.isPending && <span className="op-muted">{t("agent.documents.uploading")}</span>}
       </div>
-      {uploadError && <Alert type="warning" showIcon message={uploadError} />}
+      {uploadError && <Alert type="warning" showIcon title={uploadError} />}
       {documents.length === 0 ? (
         <p className="op-muted">{t("agent.documents.empty")}</p>
       ) : (

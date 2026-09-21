@@ -367,7 +367,7 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
           className="driver-last-error"
           type="error"
           showIcon
-          message={t("inspector:driver.lastError", { message: lastError })}
+          title={t("inspector:driver.lastError", { message: lastError })}
         />
       )}
 
@@ -376,7 +376,7 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
           className="driver-hint-box"
           type="warning"
           showIcon
-          message={t("inspector:driver.noDriverId")}
+          title={t("inspector:driver.noDriverId")}
         />
       )}
 
@@ -570,7 +570,7 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                 {t("inspector:driver.saveAndStart")}
               </Button>
             </div>
-            {formError && <Alert type="error" showIcon message={formError} />}
+            {formError && <Alert type="error" showIcon title={formError} />}
           </form>
           {driverId === "snmp" && (
             <SnmpMibPanel
@@ -588,7 +588,7 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
       )}
 
       {actionError && (
-        <Alert type="error" showIcon message={(actionError as Error).message} />
+        <Alert type="error" showIcon title={(actionError as Error).message} />
       )}
 
       <DriverWriteForm

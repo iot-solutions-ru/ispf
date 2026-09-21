@@ -93,7 +93,7 @@ export default function FireEventDialog({ objectPath, event, onClose, onFired }:
         <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
           {t("runtime:fireEvent.payloadHint")}
         </Typography.Paragraph>
-        {error && <Alert type="error" showIcon message={error} />}
+        {error && <Alert type="error" showIcon title={error} />}
       </Space>
     </Modal>
   );

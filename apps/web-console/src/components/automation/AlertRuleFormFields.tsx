@@ -169,7 +169,7 @@ export default function AlertRuleFormFields({
               required
               readOnly={!canManage}
             />
-            {exprError && <Alert type="error" showIcon message={exprError} style={{ marginTop: 8 }} />}
+            {exprError && <Alert type="error" showIcon title={exprError} style={{ marginTop: 8 }} />}
             {canManage && onValidateCel && (
               <Space style={{ marginTop: 8 }}>
                 <Button size="small" onClick={onValidateCel}>

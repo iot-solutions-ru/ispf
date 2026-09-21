@@ -146,11 +146,11 @@ export default function AiAgentChat() {
   return (
     <div className="ai-agent-chat">
       {agentApiBanner && (
-        <Alert type="error" showIcon message={agentApiBanner} />
+        <Alert type="error" showIcon title={agentApiBanner} />
       )}
 
       {!providerReady && !agentApiBanner && (
-        <Alert type="error" showIcon message={t("agent.llmNotConfigured")} />
+        <Alert type="error" showIcon title={t("agent.llmNotConfigured")} />
       )}
 
       <div className="ai-agent-toolbar" role="toolbar" aria-label={t("agent.toolbarAria")}>
@@ -367,7 +367,7 @@ export default function AiAgentChat() {
               type="warning"
               showIcon
               className="ai-agent-attach-reject"
-              message={attachmentRejectHint}
+              title={attachmentRejectHint}
               action={
                 <Button type="link" size="small" onClick={clearAttachmentRejectHint}>
                   {t("agent.attachments.dismiss")}

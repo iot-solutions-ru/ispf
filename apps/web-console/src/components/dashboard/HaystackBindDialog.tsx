@@ -207,7 +207,7 @@ export default function HaystackBindDialog({ layout, onApply, onClose }: Haystac
       </div>
 
       {searchMutation.isError && (
-        <Alert type="error" message={t("haystackBind.error")} />
+        <Alert type="error" title={t("haystackBind.error")} />
       )}
 
       {matches.length > 0 && (

@@ -187,7 +187,7 @@ export default function PlatformChangeSetsPanel() {
       {listQuery.isLoading ? (
         <Typography.Text type="secondary">{t("changeSets.loading")}</Typography.Text>
       ) : listQuery.isError ? (
-        <Alert type="error" showIcon message={t("changeSets.loadError")} />
+        <Alert type="error" showIcon title={t("changeSets.loadError")} />
       ) : (
         <div className="platform-change-sets-layout">
           <div className="platform-change-sets-list">
@@ -229,7 +229,7 @@ export default function PlatformChangeSetsPanel() {
                 />
               </Form.Item>
             </Form>
-            {createError && <Alert type="error" showIcon message={createError} />}
+            {createError && <Alert type="error" showIcon title={createError} />}
             <Button
               type="primary"
               disabled={!createTitle.trim() || createMutation.isPending}
@@ -307,9 +307,9 @@ export default function PlatformChangeSetsPanel() {
                     )}
                   </div>
                 )}
-                {actionError && <Alert type="error" showIcon message={actionError} />}
+                {actionError && <Alert type="error" showIcon title={actionError} />}
                 {applyMutation.isSuccess && (
-                  <Alert type="success" showIcon message={t("changeSets.appliedSuccess")} />
+                  <Alert type="success" showIcon title={t("changeSets.appliedSuccess")} />
                 )}
               </>
             )}

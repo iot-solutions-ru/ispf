@@ -338,10 +338,10 @@ export default function EditVariableDialog({
           <Typography.Paragraph type="secondary">{t("variables.noActions")}</Typography.Paragraph>
         )}
 
-        {parseError && <Alert type="error" showIcon message={parseError} />}
-        {mutation.error && <Alert type="error" showIcon message={(mutation.error as Error).message} />}
+        {parseError && <Alert type="error" showIcon title={parseError} />}
+        {mutation.error && <Alert type="error" showIcon title={(mutation.error as Error).message} />}
         {deleteMutation.error && (
-          <Alert type="error" showIcon message={(deleteMutation.error as Error).message} />
+          <Alert type="error" showIcon title={(deleteMutation.error as Error).message} />
         )}
       </Space>
     </Modal>

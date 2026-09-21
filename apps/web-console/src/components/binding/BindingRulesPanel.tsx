@@ -542,7 +542,7 @@ export default function BindingRulesPanel({
                 type="error"
                 showIcon
                 style={{ marginTop: 12 }}
-                message={(saveMutation.error as Error).message}
+                title={(saveMutation.error as Error).message}
               />
             )}
           </>

@@ -376,7 +376,7 @@ export default function WidgetPalette({ onAdd, layout }: WidgetPaletteProps) {
         className="dashboard-widget-palette-hint"
         type="info"
         showIcon
-        message={t("palette.dragHint")}
+        title={t("palette.dragHint")}
       />
 
       <div className="dashboard-widget-palette-groups">

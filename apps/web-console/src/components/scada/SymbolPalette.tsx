@@ -181,7 +181,7 @@ export default function SymbolPalette({
               className="scada-palette-empty"
               type="info"
               showIcon={false}
-              message={category === "custom" ? t("palette.customEmpty") : t("palette.empty")}
+              title={category === "custom" ? t("palette.customEmpty") : t("palette.empty")}
             />
           ) : (
             <div

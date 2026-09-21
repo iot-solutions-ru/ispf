@@ -172,14 +172,14 @@ export default function SolutionCatalogPanel() {
         </Button>
       </header>
 
-      {catalogQuery.error && <Alert type="error" showIcon message={String(catalogQuery.error)} />}
-      {uninstallAppMutation.error && <Alert type="error" showIcon message={String(uninstallAppMutation.error)} />}
-      {uninstallPackMutation.error && <Alert type="error" showIcon message={String(uninstallPackMutation.error)} />}
+      {catalogQuery.error && <Alert type="error" showIcon title={String(catalogQuery.error)} />}
+      {uninstallAppMutation.error && <Alert type="error" showIcon title={String(uninstallAppMutation.error)} />}
+      {uninstallPackMutation.error && <Alert type="error" showIcon title={String(uninstallPackMutation.error)} />}
       {(uninstallAppMutation.isSuccess || uninstallPackMutation.isSuccess) && (
-        <Alert type="success" showIcon message={t("solutions.uninstallOk")} />
+        <Alert type="success" showIcon title={t("solutions.uninstallOk")} />
       )}
       {marketplaceMessage && (
-        <Alert type="success" showIcon message={marketplaceMessage} />
+        <Alert type="success" showIcon title={marketplaceMessage} />
       )}
 
       <section className="solution-catalog-section">

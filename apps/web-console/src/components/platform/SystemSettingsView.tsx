@@ -423,9 +423,9 @@ export default function SystemSettingsView() {
         </Typography.Paragraph>
       )}
 
-      {feedback && <Alert showIcon message={feedback} />}
+      {feedback && <Alert showIcon title={feedback} />}
       {settingsQuery.error && (
-        <Alert type="error" showIcon message={String(settingsQuery.error)} />
+        <Alert type="error" showIcon title={String(settingsQuery.error)} />
       )}
       {settingsQuery.isLoading && <Typography.Text type="secondary">{t("settings.loading")}</Typography.Text>}
 

@@ -430,7 +430,7 @@ export default function CreateObjectDialog({
                   : t("dialog.virtClusterInstall")}
               </Button>
               {virtClusterMutation.error && (
-                <Alert type="error" showIcon message={(virtClusterMutation.error as Error).message} />
+                <Alert type="error" showIcon title={(virtClusterMutation.error as Error).message} />
               )}
             </Space>
           )}
@@ -760,7 +760,7 @@ export default function CreateObjectDialog({
               </Form.Item>
             )}
             {mutation.error && (
-              <Alert className="full" type="error" showIcon message={(mutation.error as Error).message} />
+              <Alert className="full" type="error" showIcon title={(mutation.error as Error).message} />
             )}
             <Space className="full">
               <Button onClick={onClose}>

@@ -104,9 +104,9 @@ export default function SecurityMfaPanel() {
 
       {statusQuery.isLoading && <Typography.Paragraph type="secondary">{t("common:action.loading")}</Typography.Paragraph>}
       {statusQuery.error && (
-        <Alert type="error" showIcon message={String(statusQuery.error)} style={{ marginBottom: 12 }} />
+        <Alert type="error" showIcon title={String(statusQuery.error)} style={{ marginBottom: 12 }} />
       )}
-      {feedback && <Alert showIcon message={feedback} style={{ marginBottom: 12 }} />}
+      {feedback && <Alert showIcon title={feedback} style={{ marginBottom: 12 }} />}
 
       {status && !status.enabled && (
         <Typography.Paragraph type="secondary">{t("mfa.disabledOnServer")}</Typography.Paragraph>

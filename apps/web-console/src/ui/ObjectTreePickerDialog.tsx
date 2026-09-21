@@ -161,9 +161,9 @@ export default function ObjectTreePickerDialog({
         <Typography.Paragraph type="secondary" className="object-tree-picker-hint" style={{ marginBottom: 0 }}>
           {t("objectPath.searchHint")}
         </Typography.Paragraph>
-        {treeLoadError && <Alert type="error" showIcon message={treeLoadError} />}
+        {treeLoadError && <Alert type="error" showIcon title={treeLoadError} />}
         {fullTreeSearch && objectSearch.isError && (
-          <Alert type="warning" showIcon message={t("objectPath.searchHint")} />
+          <Alert type="warning" showIcon title={t("objectPath.searchHint")} />
         )}
         <div className="object-tree-picker-body">
           <ObjectTree

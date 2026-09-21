@@ -204,7 +204,7 @@ export default function ApplicationBundlePanel({
           className="application-bundle-status"
           type="info"
           showIcon
-          message={t("bundle.noDeployYet")}
+          title={t("bundle.noDeployYet")}
         />
       )}
 

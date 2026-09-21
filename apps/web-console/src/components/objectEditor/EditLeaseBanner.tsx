@@ -88,7 +88,7 @@ export default function EditLeaseBanner({
         className="edit-lease-banner"
         type="error"
         showIcon
-        message={t("objectEditor.leaseBlocked", {
+        title={t("objectEditor.leaseBlocked", {
           holder: blockingLease.holder,
           until: formatDate(blockingLease.expiresAt),
           prefix: blockingLease.pathPrefix,
@@ -103,7 +103,7 @@ export default function EditLeaseBanner({
         className="edit-lease-banner"
         type="success"
         showIcon
-        message={
+        title={
           <Space>
             <span>
               {t("objectEditor.leaseHeld", {
@@ -125,7 +125,7 @@ export default function EditLeaseBanner({
         className="edit-lease-banner"
         type={acquireMutation.isError ? "error" : "info"}
         showIcon
-        message={
+        title={
           <Space wrap>
             <span>{t("objectEditor.leaseHint")}</span>
             <Button size="small" loading={acquireMutation.isPending} onClick={() => acquireMutation.mutate()}>

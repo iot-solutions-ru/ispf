@@ -350,7 +350,7 @@ export default function DiagnosticsPressureCard() {
       )}
 
       {diagnosticsQuery.error && (
-        <Alert type="error" showIcon message={String(diagnosticsQuery.error)} />
+        <Alert type="error" showIcon title={String(diagnosticsQuery.error)} />
       )}
 
       {diagnosticsQuery.isLoading && <Typography.Text type="secondary">{t("diagnostics.loading")}</Typography.Text>}

@@ -125,7 +125,7 @@ export default function ApplyAnalyticsFormulaModal({
           </label>
         ))}
         {expandMutation.isError && (
-          <Alert type="error" message={(expandMutation.error as Error).message} showIcon />
+          <Alert type="error" title={(expandMutation.error as Error).message} showIcon />
         )}
       </div>
     </Modal>

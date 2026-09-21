@@ -109,7 +109,7 @@ export default function DriverWriteForm({
   }
 
   if (!supportsWrite) {
-    return <Alert type="warning" showIcon message={t("inspector:driver.write.readOnlyDriver")} />;
+    return <Alert type="warning" showIcon title={t("inspector:driver.write.readOnlyDriver")} />;
   }
 
   return (
@@ -135,7 +135,7 @@ export default function DriverWriteForm({
       </div>
 
       {mappingEntries.length === 0 ? (
-        <Alert type="warning" showIcon message={t("inspector:driver.write.noMappings")} />
+        <Alert type="warning" showIcon title={t("inspector:driver.write.noMappings")} />
       ) : (
         <Form
           layout="vertical"
@@ -188,13 +188,13 @@ export default function DriverWriteForm({
             <Button htmlType="submit" type="primary" disabled={isBusy} loading={writeMutation.isPending}>
               {writeMutation.isPending ? t("inspector:driver.write.writing") : t("inspector:driver.write.submit")}
             </Button>
-            {formError && <Alert type="error" showIcon message={formError} />}
+            {formError && <Alert type="error" showIcon title={formError} />}
           </Space>
         </Form>
       )}
 
       {actionError && (
-        <Alert type="error" showIcon message={(actionError as Error).message} />
+        <Alert type="error" showIcon title={(actionError as Error).message} />
       )}
     </Space>
   );

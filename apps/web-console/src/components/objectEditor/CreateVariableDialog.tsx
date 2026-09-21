@@ -189,7 +189,7 @@ export default function CreateVariableDialog({
         )}
 
         {mutation.error && (
-          <Alert type="error" showIcon message={(mutation.error as Error).message} />
+          <Alert type="error" showIcon title={(mutation.error as Error).message} />
         )}
       </Space>
     </Modal>

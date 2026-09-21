@@ -127,7 +127,7 @@ export default function EventFilterInspector({ path, canManage = false }: EventF
             {validateMutation.data.valid ? t("automation:eventFilter.celOk") : validateMutation.data.error}
           </p>
         )}
-        {saveMutation.error && <Alert className="full" type="error" message={String(saveMutation.error)} showIcon />}
+        {saveMutation.error && <Alert className="full" type="error" title={String(saveMutation.error)} showIcon />}
       </Form>
       <ObjectFederationBindSection path={path} canManage={canManage} />
     </section>

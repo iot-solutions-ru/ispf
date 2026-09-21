@@ -147,7 +147,7 @@ export default function ApplicationLifecyclePanel({
       <section className="lifecycle-section panel-card">
         <h4>{t("lifecycle.dataTitle")}</h4>
         {dataStatusQuery.isLoading && <p className="op-muted">{t("lifecycle.loading")}</p>}
-        {dataStatusQuery.error && <Alert type="error" showIcon message={String(dataStatusQuery.error)} />}
+        {dataStatusQuery.error && <Alert type="error" showIcon title={String(dataStatusQuery.error)} />}
         {dataStatusQuery.data && (
           <dl className="lifecycle-dl">
             {dataStatusQuery.data.schemaName && (
@@ -203,16 +203,16 @@ export default function ApplicationLifecyclePanel({
           </>
         )}
         {migrateMutation.error && (
-          <Alert type="error" showIcon message={String(migrateMutation.error)} />
+          <Alert type="error" showIcon title={String(migrateMutation.error)} />
         )}
         {seedMutation.error && (
-          <Alert type="error" showIcon message={String(seedMutation.error)} />
+          <Alert type="error" showIcon title={String(seedMutation.error)} />
         )}
         {migrateMutation.isSuccess && (
-          <Alert type="success" showIcon message={t("lifecycle.migrateSuccess")} />
+          <Alert type="success" showIcon title={t("lifecycle.migrateSuccess")} />
         )}
         {seedMutation.isSuccess && (
-          <Alert type="success" showIcon message={t("lifecycle.seedSuccess")} />
+          <Alert type="success" showIcon title={t("lifecycle.seedSuccess")} />
         )}
       </section>
 
@@ -313,7 +313,7 @@ export default function ApplicationLifecyclePanel({
           </Form>
         )}
         {deployBindingMutation.error && (
-          <Alert type="error" showIcon message={String(deployBindingMutation.error)} />
+          <Alert type="error" showIcon title={String(deployBindingMutation.error)} />
         )}
       </section>
 
@@ -353,7 +353,7 @@ export default function ApplicationLifecyclePanel({
           </>
         )}
         {deployReportMutation.error && (
-          <Alert type="error" showIcon message={String(deployReportMutation.error)} />
+          <Alert type="error" showIcon title={String(deployReportMutation.error)} />
         )}
       </section>
 
@@ -377,10 +377,10 @@ export default function ApplicationLifecyclePanel({
             {deployFunctionMutation.isPending ? t("lifecycle.deploying") : t("lifecycle.deployFunction")}
           </Button>
           {deployFunctionMutation.error && (
-            <Alert type="error" showIcon message={String(deployFunctionMutation.error)} />
+            <Alert type="error" showIcon title={String(deployFunctionMutation.error)} />
           )}
           {deployFunctionMutation.isSuccess && (
-            <Alert type="success" showIcon message={t("lifecycle.functionSuccess")} />
+            <Alert type="success" showIcon title={t("lifecycle.functionSuccess")} />
           )}
         </section>
       )}

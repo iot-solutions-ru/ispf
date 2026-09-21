@@ -139,7 +139,7 @@ export default function ObjectAclPanel({ objectPath, canManage }: ObjectAclPanel
       </header>
 
       {aclQuery.isLoading && <Typography.Text type="secondary">{t("common:action.loading")}</Typography.Text>}
-      {aclQuery.error && <Alert type="error" showIcon message={String(aclQuery.error)} />}
+      {aclQuery.error && <Alert type="error" showIcon title={String(aclQuery.error)} />}
 
       {entries.length === 0 && !aclQuery.isLoading && (
         <Typography.Text type="secondary">{t("acl.empty")}</Typography.Text>
@@ -165,7 +165,7 @@ export default function ObjectAclPanel({ objectPath, canManage }: ObjectAclPanel
           >
             {saveMutation.isPending ? t("common:action.saving") : t("acl.save")}
           </Button>
-          {saveMutation.error && <Alert type="error" showIcon message={String(saveMutation.error)} />}
+          {saveMutation.error && <Alert type="error" showIcon title={String(saveMutation.error)} />}
         </Space>
       )}
       </Space>

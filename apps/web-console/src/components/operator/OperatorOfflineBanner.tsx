@@ -31,7 +31,7 @@ export default function OperatorOfflineBanner({
       data-testid="operator-offline-banner"
       role="status"
       type="info"
-      message={message}
+      title={message}
     />
   );
 }

@@ -496,7 +496,7 @@ function OperatorDashboardChrome({
   return (
     <>
       <header className="operator-topbar">
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Typography.Text strong>{ui.title}</Typography.Text>
           <OperatorOfflineBadge visible={Boolean(offline)} />
           <span className="brand-sub">

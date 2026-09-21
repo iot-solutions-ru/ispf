@@ -61,7 +61,7 @@ export default function McpHealthCard() {
       <Typography.Title level={3}>{t("mcpHealth.title")}</Typography.Title>
       {healthQuery.isLoading && <Typography.Text type="secondary">{t("mcpHealth.loading")}</Typography.Text>}
       {healthQuery.error && (
-        <Alert type="error" showIcon message={t("mcpHealth.loadError")} />
+        <Alert type="error" showIcon title={t("mcpHealth.loadError")} />
       )}
       {healthQuery.data && (
         <Space orientation="vertical" style={{ width: "100%" }}>

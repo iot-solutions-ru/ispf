@@ -282,7 +282,7 @@ export default function SystemFolderListPanel({
 
       {childrenQuery.isLoading && <Typography.Text type="secondary">{t("common:action.loading")}</Typography.Text>}
       {childrenQuery.error && (
-        <Alert type="error" showIcon message={String(childrenQuery.error)} />
+        <Alert type="error" showIcon title={String(childrenQuery.error)} />
       )}
 
       {!childrenQuery.isLoading && !childrenQuery.error && (childrenQuery.data?.length ?? 0) === 0 && (

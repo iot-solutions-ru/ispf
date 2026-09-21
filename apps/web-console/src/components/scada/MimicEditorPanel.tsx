@@ -77,11 +77,11 @@ export default function MimicEditorPanel({ path, title, onClose }: MimicEditorPa
   usePublishAdminFocus(`mimic-editor:${path}`, mimicFocus, Boolean(path));
 
   if (mimicQuery.isLoading) {
-    return <Alert className="loading" type="info" showIcon message={t("editor.loading")} />;
+    return <Alert className="loading" type="info" showIcon title={t("editor.loading")} />;
   }
 
   if (mimicQuery.isError) {
-    return <Alert className="error" type="error" showIcon message={(mimicQuery.error as Error).message} />;
+    return <Alert className="error" type="error" showIcon title={(mimicQuery.error as Error).message} />;
   }
 
   const displayTitle = title ?? mimicQuery.data?.title ?? path;

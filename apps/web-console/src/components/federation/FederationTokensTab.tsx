@@ -98,8 +98,8 @@ export default function FederationTokensTab({
           )}
         </Space>
         {issuedTokenMeta && <Typography.Text type="secondary">{issuedTokenMeta}</Typography.Text>}
-        {tokenCopyFeedback && <Alert type="success" showIcon message={tokenCopyFeedback} />}
-        {tokenPanelError && <Alert type="error" showIcon message={tokenPanelError} />}
+        {tokenCopyFeedback && <Alert type="success" showIcon title={tokenCopyFeedback} />}
+        {tokenPanelError && <Alert type="error" showIcon title={tokenPanelError} />}
         {issuedToken && (
           <pre className="mono federation-code-block">{issuedToken}</pre>
         )}

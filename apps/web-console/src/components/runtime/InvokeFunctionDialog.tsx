@@ -154,8 +154,8 @@ export default function InvokeFunctionDialog({
             {t("descriptor.emptyInputSchema")}
           </Typography.Paragraph>
         )}
-        {!hasImplementation && <Alert type="error" showIcon message={t("descriptor.notInvocable")} />}
-        {error && <Alert type="error" showIcon message={error} />}
+        {!hasImplementation && <Alert type="error" showIcon title={t("descriptor.notInvocable")} />}
+        {error && <Alert type="error" showIcon title={error} />}
         {resultJson && (
           <Form layout="vertical">
             <Form.Item label={t("runtime:invokeFunction.result")} style={{ marginBottom: 0 }}>

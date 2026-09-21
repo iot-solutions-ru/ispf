@@ -104,9 +104,9 @@ export default function SemanticExportPanel() {
         </Space>
       </Space>
 
-      {error && <Alert type="error" showIcon message={String(error)} />}
+      {error && <Alert type="error" showIcon title={String(error)} />}
       {(haystackMutation.isSuccess || brickJsonMutation.isSuccess || brickTurtleMutation.isSuccess) && (
-        <Alert type="success" showIcon message={t("semanticExport.downloadStarted")} />
+        <Alert type="success" showIcon title={t("semanticExport.downloadStarted")} />
       )}
 
       {preview && (

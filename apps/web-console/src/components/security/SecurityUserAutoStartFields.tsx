@@ -87,8 +87,8 @@ export default function SecurityUserAutoStartFields({
         />
       </div>
 
-      {!serverReady && <Alert type="info" showIcon message={t("autostart.serverNotReady")} />}
-      {mutation.error && <Alert type="error" showIcon message={String(mutation.error)} />}
+      {!serverReady && <Alert type="info" showIcon title={t("autostart.serverNotReady")} />}
+      {mutation.error && <Alert type="error" showIcon title={String(mutation.error)} />}
     </Space>
   );
 }

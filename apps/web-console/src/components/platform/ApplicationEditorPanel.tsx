@@ -36,7 +36,7 @@ export default function ApplicationEditorPanel({
   }
 
   if (editorQuery.error) {
-    return <Alert type="error" showIcon message={String(editorQuery.error)} />;
+    return <Alert type="error" showIcon title={String(editorQuery.error)} />;
   }
 
   return (
