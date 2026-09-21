@@ -20,11 +20,11 @@ class OperatorLaunchExtrasTest {
         ui.put("title", "ignored");
 
         Map<String, Object> extras = new LinkedHashMap<>();
-        ApplicationBundleDeployService.putOperatorLaunchExtra(ui, extras, "externalSpaUrl");
-        ApplicationBundleDeployService.putOperatorLaunchExtra(ui, extras, "spaNav");
-        ApplicationBundleDeployService.putOperatorLaunchExtra(ui, extras, "uiPack");
-        ApplicationBundleDeployService.putOperatorLaunchExtra(ui, extras, "eventJournalObjectPath");
-        ApplicationBundleDeployService.putOperatorLaunchExtra(ui, extras, "missing");
+        BundleOperatorUiSync.putOperatorLaunchExtra(ui, extras, "externalSpaUrl");
+        BundleOperatorUiSync.putOperatorLaunchExtra(ui, extras, "spaNav");
+        BundleOperatorUiSync.putOperatorLaunchExtra(ui, extras, "uiPack");
+        BundleOperatorUiSync.putOperatorLaunchExtra(ui, extras, "eventJournalObjectPath");
+        BundleOperatorUiSync.putOperatorLaunchExtra(ui, extras, "missing");
 
         assertThat(extras)
                 .containsOnlyKeys("externalSpaUrl", "spaNav", "uiPack", "eventJournalObjectPath")
@@ -36,26 +36,26 @@ class OperatorLaunchExtrasTest {
     void putOperatorLaunchExtraIgnoresNulls() {
         Map<String, Object> extras = new LinkedHashMap<>();
         extras.put("externalSpaUrl", "keep-me");
-        ApplicationBundleDeployService.putOperatorLaunchExtra(Map.of(), extras, "externalSpaUrl");
+        BundleOperatorUiSync.putOperatorLaunchExtra(Map.of(), extras, "externalSpaUrl");
         assertThat(extras).containsEntry("externalSpaUrl", "keep-me");
     }
 
     @Test
     void putOperatorLaunchExtraSkipsUnsafeExternalSpaUrl() {
         Map<String, Object> extras = new LinkedHashMap<>();
-        ApplicationBundleDeployService.putOperatorLaunchExtra(
+        BundleOperatorUiSync.putOperatorLaunchExtra(
                 Map.of("externalSpaUrl", "javascript:alert(1)"),
                 extras,
                 "externalSpaUrl"
         );
-        ApplicationBundleDeployService.putOperatorLaunchExtra(
+        BundleOperatorUiSync.putOperatorLaunchExtra(
                 Map.of("externalSpaUrl", "/api/v1/info"),
                 extras,
                 "externalSpaUrl"
         );
         assertThat(extras).isEmpty();
 
-        ApplicationBundleDeployService.putOperatorLaunchExtra(
+        BundleOperatorUiSync.putOperatorLaunchExtra(
                 Map.of("externalSpaUrl", "/apps/storetwin/"),
                 extras,
                 "externalSpaUrl"

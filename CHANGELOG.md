@@ -108,6 +108,17 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
   remaining `synchronized` sites in `ispf-server` reviewed — no other instance-wide monitor on a hot path;
   one watch item (`RecentEventCache` read scans). Report:
   `docs/evidence/quality/2026-09-20-synchronized-audit.md`.
+- **Large server services split into focused collaborators** (no API change):
+  `ApplicationBundleDeployService` 1459 → 674 lines — tree artifacts loop in
+  `BundleTreeArtifactsApplier` (+ `BundleApplyLog`), single-artifact upserts in
+  `BundleArtifactDeployers`, operator-UI derivation/persistence in `BundleOperatorUiSync`;
+  `WorkflowService` 1329 → 996 — BPMN node execution in `WorkflowTaskExecutor`, instance
+  snapshot/event projection in `WorkflowInstanceStatePublisher`, and the five copies of
+  the "load waiting instance → engine step → save/publish/fail/notify parent" sequence
+  collapsed into `resumeWaitingInstance` / `finishStep`; `ReportService` 1183 → 830 —
+  `ReportSqlQuery` (SELECT guard, placeholder binding), `ReportTableExport`
+  (CSV/HTML/XLSX/XLS, one workbook writer), `TreeVariablesReportRows`. New unit tests:
+  `WorkflowTaskExecutorTest`, `ReportTableExportTest`.
 - **Web Console lint gate at zero warnings** — `npm run lint` now runs with
   `--max-warnings 0` (was 180). All `react-hooks/exhaustive-deps`,
   `@typescript-eslint/no-non-null-assertion` and `react-refresh/only-export-components`

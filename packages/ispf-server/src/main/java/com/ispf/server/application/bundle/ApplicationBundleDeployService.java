@@ -6,133 +6,71 @@ import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.ObjectType;
 import com.ispf.plugin.blueprint.BlueprintBindingRule;
-import com.ispf.plugin.blueprint.BlueprintDefinition;
-import com.ispf.plugin.blueprint.BlueprintEngine;
-import com.ispf.plugin.blueprint.BlueprintException;
-import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.core.model.DataSchema;
-import com.ispf.server.automation.AutomationTreeService;
-import com.ispf.server.correlator.CorrelatorActionType;
-import com.ispf.server.correlator.CorrelatorPatternType;
-import com.ispf.server.application.binding.ApplicationSqlBindingService;
 import com.ispf.server.application.api.ApplicationController;
+import com.ispf.server.application.bundle.BundleTreeArtifactsApplier.BundleApplyLog;
 import com.ispf.server.application.data.ApplicationDataService;
-import com.ispf.server.application.data.ApplicationSchemaSupport;
-import com.ispf.server.application.function.ApplicationFunctionHandler;
-import com.ispf.server.application.function.ApplicationFunctionStore;
-import com.ispf.server.application.report.ApplicationReportService;
-import com.ispf.server.application.schedule.PlatformSchedulerService;
 import com.ispf.server.application.tree.ApplicationObjectTreeService;
-import com.ispf.server.binding.SqlBindingObjectService;
 import com.ispf.server.datasource.DataSourceObjectService;
 import com.ispf.server.migration.MigrationObjectService;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.platform.analytics.formula.AnalyticsFormula;
-import com.ispf.server.platform.analytics.formula.AnalyticsFormulaParameter;
-import com.ispf.server.platform.analytics.formula.AnalyticsFormulaService;
 import com.ispf.server.report.ReportService;
-import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.operator.OperatorAppObjectTreeService;
-import com.ispf.server.operator.OperatorAppUiService;
-import com.ispf.server.operator.OperatorAppUiStore;
-import com.ispf.server.application.catalog.ApplicationEventCatalogService;
 import com.ispf.server.license.CommercialBundleLicenseVerifier;
-import com.ispf.server.plugin.blueprint.BlueprintPersistenceService;
 import com.ispf.server.application.uipack.HostedUiPackLinkEnricher;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 public class ApplicationBundleDeployService {
 
     private final ApplicationDataService dataService;
-    private final ApplicationFunctionStore functionStore;
-    private final ApplicationBundleMetadataService metadataService;
-    private final PlatformSchedulerService schedulerService;
-    private final ApplicationSqlBindingService sqlBindingService;
-    private final ApplicationReportService reportService;
     private final ApplicationObjectTreeService objectTreeService;
     private final ApplicationBundleSnapshotStore snapshotStore;
-    private final BlueprintEngine blueprintEngine;
-    private final BlueprintRegistry blueprintRegistry;
-    private final BlueprintPersistenceService blueprintPersistence;
     private final ObjectMapper objectMapper;
     private final DataSourceObjectService dataSourceObjectService;
-    private final ScheduleObjectService scheduleObjectService;
-    private final SqlBindingObjectService sqlBindingObjectService;
     private final MigrationObjectService migrationObjectService;
     private final ObjectManager objectManager;
-    private final AutomationTreeService automationTreeService;
-    private final OperatorAppUiStore operatorAppUiStore;
-    private final OperatorAppObjectTreeService operatorAppObjectTreeService;
     private final CommercialBundleLicenseVerifier licenseVerifier;
     private final BundleDependencyVerifier dependencyVerifier;
-    private final ApplicationEventCatalogService eventCatalogService;
     private final BundleVisualGroupService bundleVisualGroupService;
-    private final AnalyticsFormulaService analyticsFormulaService;
+    private final BundleTreeArtifactsApplier treeArtifacts;
+    private final BundleOperatorUiSync operatorUiSync;
     private final HostedUiPackLinkEnricher hostedUiPackLinkEnricher;
 
     public ApplicationBundleDeployService(
             ApplicationDataService dataService,
-            ApplicationFunctionStore functionStore,
-            ApplicationBundleMetadataService metadataService,
-            PlatformSchedulerService schedulerService,
-            ApplicationSqlBindingService sqlBindingService,
-            ApplicationReportService reportService,
             ApplicationObjectTreeService objectTreeService,
             ApplicationBundleSnapshotStore snapshotStore,
-            BlueprintEngine blueprintEngine,
-            BlueprintRegistry blueprintRegistry,
-            BlueprintPersistenceService blueprintPersistence,
             ObjectMapper objectMapper,
             DataSourceObjectService dataSourceObjectService,
-            ScheduleObjectService scheduleObjectService,
-            SqlBindingObjectService sqlBindingObjectService,
             MigrationObjectService migrationObjectService,
             ObjectManager objectManager,
-            AutomationTreeService automationTreeService,
-            OperatorAppUiStore operatorAppUiStore,
-            OperatorAppObjectTreeService operatorAppObjectTreeService,
             CommercialBundleLicenseVerifier licenseVerifier,
             BundleDependencyVerifier dependencyVerifier,
-            ApplicationEventCatalogService eventCatalogService,
             BundleVisualGroupService bundleVisualGroupService,
-            AnalyticsFormulaService analyticsFormulaService,
+            BundleTreeArtifactsApplier treeArtifacts,
+            BundleOperatorUiSync operatorUiSync,
             HostedUiPackLinkEnricher hostedUiPackLinkEnricher
     ) {
         this.dataService = dataService;
-        this.functionStore = functionStore;
-        this.metadataService = metadataService;
-        this.schedulerService = schedulerService;
-        this.sqlBindingService = sqlBindingService;
-        this.reportService = reportService;
         this.objectTreeService = objectTreeService;
         this.snapshotStore = snapshotStore;
-        this.blueprintEngine = blueprintEngine;
-        this.blueprintRegistry = blueprintRegistry;
-        this.blueprintPersistence = blueprintPersistence;
         this.objectMapper = objectMapper;
         this.dataSourceObjectService = dataSourceObjectService;
-        this.scheduleObjectService = scheduleObjectService;
-        this.sqlBindingObjectService = sqlBindingObjectService;
         this.migrationObjectService = migrationObjectService;
         this.objectManager = objectManager;
-        this.automationTreeService = automationTreeService;
-        this.operatorAppUiStore = operatorAppUiStore;
-        this.operatorAppObjectTreeService = operatorAppObjectTreeService;
         this.licenseVerifier = licenseVerifier;
         this.dependencyVerifier = dependencyVerifier;
-        this.eventCatalogService = eventCatalogService;
         this.bundleVisualGroupService = bundleVisualGroupService;
-        this.analyticsFormulaService = analyticsFormulaService;
+        this.treeArtifacts = treeArtifacts;
+        this.operatorUiSync = operatorUiSync;
         this.hostedUiPackLinkEnricher = hostedUiPackLinkEnricher;
     }
 
@@ -179,7 +117,7 @@ public class ApplicationBundleDeployService {
         }
 
         String dataSourcePath = dataSourceObjectService.pathForNodeName(appId);
-        applyTreeArtifacts(appId, manifest, false, dataSourcePath, applied, skipped, errors);
+        treeArtifacts.apply(appId, manifest, false, dataSourcePath, new BundleApplyLog(applied, skipped, errors));
 
         if (manifest.migrations() != null && !manifest.migrations().isEmpty()) {
             try {
@@ -403,7 +341,13 @@ public class ApplicationBundleDeployService {
             errors.add("register: " + ex.getMessage());
         }
 
-        applyTreeArtifacts(appId, manifest, createMissingOnly, dataSourcePath, applied, skipped, errors);
+        treeArtifacts.apply(
+                appId,
+                manifest,
+                createMissingOnly,
+                dataSourcePath,
+                new BundleApplyLog(applied, skipped, errors)
+        );
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("appId", appId);
@@ -430,7 +374,7 @@ public class ApplicationBundleDeployService {
         try {
             objectTreeService.syncApplication(appId);
             applied.add("applicationTree:" + applicationTreePath(appId));
-            syncOperatorAppUi(appId, manifest);
+            operatorUiSync.sync(appId, manifest);
             applied.add("operatorApp:" + operatorAppTreePath(appId));
             List<String> visualGroupPaths = bundleVisualGroupService.syncBundle(
                     appId,
@@ -448,463 +392,6 @@ public class ApplicationBundleDeployService {
             response.put("failedSteps", List.copyOf(errors));
             response.put("applied", applied);
         }
-    }
-
-    private void applyTreeArtifacts(
-            String appId,
-            BundleManifest manifest,
-            boolean createMissingOnly,
-            String dataSourcePath,
-            List<String> applied,
-            List<String> skipped,
-            List<String> errors
-    ) {
-        try {
-            String schema = resolvePackageSchemaName(appId, manifest);
-            dataSourceObjectService.ensureDataSource(
-                    appId,
-                    manifest.displayName() != null ? manifest.displayName() : appId,
-                    schema,
-                    "Package import data source"
-            );
-            applied.add("dataSource:" + dataSourcePath);
-        } catch (Exception ex) {
-            errors.add("dataSource: " + ex.getMessage());
-        }
-
-        if (manifest.blueprints() != null) {
-            for (BundleBlueprint blueprint : manifest.blueprints()) {
-                try {
-                    if (createMissingOnly && blueprintRegistry.findByName(blueprint.name()).isPresent()) {
-                        skipped.add("blueprint:" + blueprint.name());
-                        continue;
-                    }
-                    deployBlueprint(blueprint);
-                    applied.add("blueprint:" + blueprint.name());
-                } catch (Exception ex) {
-                    errors.add("blueprint:" + blueprint.name() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.objects() != null) {
-            for (BundleObject object : manifest.objects()) {
-                try {
-                    String objectPath = objectManager.tree().resolveChildPath(object.parentPath(), object.name());
-                    if (createMissingOnly && objectManager.tree().findByPath(objectPath).isPresent()) {
-                        skipped.add("object:" + object.name());
-                        continue;
-                    }
-                    ApplicationBundleMetadataService.DeployOutcome outcome = metadataService.deployObject(object);
-                    if (outcome == ApplicationBundleMetadataService.DeployOutcome.APPLIED
-                            || outcome == ApplicationBundleMetadataService.DeployOutcome.UPDATED) {
-                        applied.add("object:" + object.name());
-                    } else {
-                        skipped.add("object:" + object.name());
-                    }
-                } catch (Exception ex) {
-                    errors.add("object:" + object.name() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.dashboards() != null) {
-            for (BundleDashboard dashboard : manifest.dashboards()) {
-                try {
-                    if (createMissingOnly && treePathExists(dashboard.path())) {
-                        skipped.add("dashboard:" + dashboard.path());
-                        continue;
-                    }
-                    metadataService.deployDashboard(dashboard);
-                    applied.add("dashboard:" + dashboard.path());
-                } catch (Exception ex) {
-                    errors.add("dashboard:" + dashboard.path() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.workflows() != null) {
-            for (BundleWorkflow workflow : manifest.workflows()) {
-                try {
-                    if (createMissingOnly && treePathExists(workflow.path())) {
-                        skipped.add("workflow:" + workflow.path());
-                        continue;
-                    }
-                    metadataService.deployWorkflow(workflow);
-                    applied.add("workflow:" + workflow.path());
-                } catch (Exception ex) {
-                    errors.add("workflow:" + workflow.path() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.functions() != null) {
-            for (BundleFunction function : manifest.functions()) {
-                try {
-                    if (createMissingOnly
-                            && !functionStore.listVersions(appId, function.objectPath(), function.functionName())
-                                    .isEmpty()) {
-                        skipped.add("function:" + function.functionName());
-                        continue;
-                    }
-                    deployFunction(appId, dataSourcePath, function);
-                    applied.add("function:" + function.functionName());
-                } catch (Exception ex) {
-                    errors.add("function:" + function.functionName() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.bindings() != null) {
-            for (BundleSqlBinding binding : manifest.bindings()) {
-                try {
-                    String bindingPath = bindingTreePath(binding);
-                    if (createMissingOnly && treePathExists(bindingPath)) {
-                        skipped.add("binding:" + binding.variable());
-                        continue;
-                    }
-                    String bindingId = binding.objectPath().replace('.', '-') + "-" + binding.variable();
-                    sqlBindingObjectService.upsert(new SqlBindingObjectService.BindingDefinition(
-                            "",
-                            bindingId,
-                            binding.objectPath(),
-                            binding.variable(),
-                            dataSourcePath,
-                            binding.query(),
-                            binding.valueField(),
-                            binding.refresh() != null ? binding.refresh() : "manual",
-                            binding.refreshIntervalMs() != null ? binding.refreshIntervalMs() : 30_000L,
-                            binding.triggerObjectPath() != null ? binding.triggerObjectPath() : "",
-                            binding.triggerFunctionName() != null ? binding.triggerFunctionName() : "",
-                            binding.enabled() == null || binding.enabled(),
-                            null
-                    ));
-                    applied.add("binding:" + binding.variable());
-                } catch (Exception ex) {
-                    errors.add("binding:" + binding.variable() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.reports() != null) {
-            for (BundleReport report : manifest.reports()) {
-                try {
-                    String reportPath = ReportService.reportPath(report.reportId());
-                    if (createMissingOnly && treePathExists(reportPath)) {
-                        skipped.add("report:" + report.reportId());
-                        continue;
-                    }
-                    reportService.deploy(appId, new ApplicationReportService.DeployReportRequest(
-                            report.reportId(),
-                            report.title(),
-                            report.description(),
-                            report.reportType(),
-                            report.devicePathPattern(),
-                            report.variableName(),
-                            report.query(),
-                            report.parameters(),
-                            report.columns() == null
-                                    ? List.of()
-                                    : report.columns().stream()
-                                            .map(col -> new ApplicationReportService.ReportColumn(col.field(), col.label()))
-                                            .toList(),
-                            report.maxRows()
-                    ));
-                    applied.add("report:" + report.reportId());
-                } catch (Exception ex) {
-                    errors.add("report:" + report.reportId() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.alertRules() != null) {
-            for (BundleAlertRule rule : manifest.alertRules()) {
-                try {
-                    String rulePath = AutomationTreeService.rulePathForName(rule.name());
-                    if (createMissingOnly && treePathExists(rulePath)) {
-                        skipped.add("alertRule:" + rule.name());
-                        continue;
-                    }
-                    deployAlertRule(rule);
-                    applied.add("alertRule:" + rule.name());
-                } catch (Exception ex) {
-                    errors.add("alertRule:" + rule.name() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.correlators() != null) {
-            for (BundleCorrelator correlator : manifest.correlators()) {
-                try {
-                    String correlatorPath = AutomationTreeService.correlatorPathForName(correlator.name());
-                    if (createMissingOnly && treePathExists(correlatorPath)) {
-                        skipped.add("correlator:" + correlator.name());
-                        continue;
-                    }
-                    deployCorrelator(correlator);
-                    applied.add("correlator:" + correlator.name());
-                } catch (Exception ex) {
-                    errors.add("correlator:" + correlator.name() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.schedules() != null) {
-            for (BundleSchedule schedule : manifest.schedules()) {
-                try {
-                    String schedulePath = scheduleTreePath(schedule);
-                    if (createMissingOnly && treePathExists(schedulePath)) {
-                        skipped.add("schedule:" + schedule.scheduleId());
-                        continue;
-                    }
-                    String actionJson = objectMapper.writeValueAsString(schedule.action());
-                    scheduleObjectService.upsert(new ScheduleObjectService.ScheduleDefinition(
-                            "",
-                            schedule.scheduleId(),
-                            schedule.enabled(),
-                            schedule.intervalMs(),
-                            schedule.cronExpression() != null ? schedule.cronExpression() : "",
-                            schedule.timeZone() != null && !schedule.timeZone().isBlank() ? schedule.timeZone() : "UTC",
-                            schedule.actionType(),
-                            actionJson,
-                            null,
-                            null
-                    ));
-                    applied.add("schedule:" + schedule.scheduleId());
-                } catch (Exception ex) {
-                    errors.add("schedule:" + schedule.scheduleId() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.analyticsFormulas() != null && !manifest.analyticsFormulas().isEmpty()) {
-            try {
-                analyticsFormulaService.mergeAppBundleFormulas(appId, manifest.analyticsFormulas().stream()
-                        .map(formula -> toAnalyticsFormula(appId, formula))
-                        .toList());
-                applied.add("analyticsFormulas:" + manifest.analyticsFormulas().size());
-            } catch (Exception ex) {
-                errors.add("analyticsFormulas: " + ex.getMessage());
-            }
-        }
-
-        if (manifest.events() != null) {
-            try {
-                if (createMissingOnly && !eventCatalogService.listEvents(appId).isEmpty()) {
-                    skipped.add("events:" + manifest.events().size());
-                } else {
-                    eventCatalogService.replaceFromBundle(appId, manifest.events().stream()
-                            .map(event -> new ApplicationEventCatalogService.BundleEventDefinition(
-                                    event.id(),
-                                    event.roles(),
-                                    event.payloadSchema()
-                            ))
-                            .toList());
-                    applied.add("events:" + manifest.events().size());
-                }
-            } catch (Exception ex) {
-                errors.add("events: " + ex.getMessage());
-            }
-        }
-    }
-
-    private boolean treePathExists(String path) {
-        return path != null && !path.isBlank() && objectManager.tree().findByPath(path).isPresent();
-    }
-
-    private static String bindingTreePath(BundleSqlBinding binding) {
-        String bindingId = binding.objectPath().replace('.', '-') + "-" + binding.variable();
-        return SqlBindingObjectService.BINDINGS_ROOT + "."
-                + SqlBindingObjectService.sanitizeNodeName(bindingId);
-    }
-
-    private static String scheduleTreePath(BundleSchedule schedule) {
-        return ScheduleObjectService.SCHEDULES_ROOT + "."
-                + ApplicationObjectTreeService.sanitizeNodeName(schedule.scheduleId());
-    }
-
-    private void syncOperatorAppUi(String appId, BundleManifest manifest) throws Exception {
-        if (!hasOperatorUiManifest(manifest)) {
-            return;
-        }
-        Map<String, Object> ui = resolveOperatorUiForSync(appId, manifest);
-        String title = ui.get("title") != null ? String.valueOf(ui.get("title")) : appId;
-        String defaultDashboard = ui.get("defaultDashboard") != null
-                ? String.valueOf(ui.get("defaultDashboard"))
-                : "";
-        List<?> dashboardEntries = ui.get("dashboards") instanceof List<?> list ? list : List.of();
-        List<?> reportEntries = ui.get("reports") instanceof List<?> list ? list : List.of();
-        boolean hasDashboards = !dashboardEntries.isEmpty();
-        boolean hasReports = !reportEntries.isEmpty();
-        // Hollow operatorUi { dashboards: [] } used to skip sync and leave Operator on "UI not found".
-        if (!hasDashboards && !hasReports) {
-            return;
-        }
-        List<Map<String, String>> dashboards = new ArrayList<>();
-        if (hasDashboards) {
-            for (Object rawEntry : dashboardEntries) {
-                Map<String, String> item = normalizeDashboardEntry(rawEntry);
-                if (item != null) {
-                    dashboards.add(item);
-                }
-            }
-            if (dashboards.isEmpty() && !hasReports) {
-                return;
-            }
-            if (!dashboards.isEmpty() && defaultDashboard.isBlank()) {
-                defaultDashboard = dashboards.get(0).get("path");
-            }
-        }
-        Map<String, Object> alarmBar = null;
-        if (ui.get("alarmBar") instanceof Map<?, ?> alarmBarMap) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> typed = (Map<String, Object>) alarmBarMap;
-            alarmBar = typed;
-        }
-        // Preserve prior extras (e.g. manually set bridge URL), then overlay bundle fields.
-        Map<String, Object> extras = new LinkedHashMap<>();
-        operatorAppUiStore.findByAppId(appId).ifPresent(existing -> {
-            try {
-                if (existing.uiExtrasJson() != null && !existing.uiExtrasJson().isBlank()) {
-                    extras.putAll(objectMapper.readValue(existing.uiExtrasJson(), new TypeReference<>() {
-                    }));
-                }
-            } catch (Exception ignored) {
-                // Corrupt extras must not block operatorUi sync.
-            }
-        });
-        if (alarmBar != null && !alarmBar.isEmpty()) {
-            extras.put("alarmBar", alarmBar);
-        }
-        if (hasReports) {
-            List<Map<String, String>> reports = new ArrayList<>();
-            for (Object rawEntry : reportEntries) {
-                Map<String, String> item = normalizeDashboardEntry(rawEntry);
-                if (item != null) {
-                    reports.add(item);
-                }
-            }
-            if (!reports.isEmpty()) {
-                extras.put("reports", reports);
-                if (ui.get("defaultReport") != null) {
-                    extras.put("defaultReport", String.valueOf(ui.get("defaultReport")));
-                } else {
-                    extras.put("defaultReport", reports.get(0).get("path"));
-                }
-            }
-        }
-        if (Boolean.TRUE.equals(ui.get("hideTasksAndEvents"))) {
-            extras.put("hideTasksAndEvents", true);
-        }
-        if (Boolean.TRUE.equals(ui.get("hideDashboardNav"))) {
-            extras.put("hideDashboardNav", true);
-        }
-        // ADR-0054 launch contract: persist so Open app UI / spaNav survive deploy.
-        putOperatorLaunchExtra(ui, extras, "externalSpaUrl");
-        putOperatorLaunchExtra(ui, extras, "spaNav");
-        putOperatorLaunchExtra(ui, extras, "uiPack");
-        putOperatorLaunchExtra(ui, extras, "eventJournalObjectPath");
-        String uiExtrasJson = extras.isEmpty() ? null : objectMapper.writeValueAsString(extras);
-        operatorAppUiStore.upsert(new OperatorAppUiStore.OperatorAppUiRecord(
-                appId,
-                title,
-                defaultDashboard,
-                objectMapper.writeValueAsString(dashboards),
-                uiExtrasJson,
-                Instant.now()
-        ));
-        operatorAppObjectTreeService.syncAll();
-    }
-
-    /** Copy ADR-0054 / spa launch fields from bundle operatorUi into persisted extras. */
-    static void putOperatorLaunchExtra(Map<String, Object> operatorUi, Map<String, Object> extras, String key) {
-        if (operatorUi == null || extras == null || key == null) {
-            return;
-        }
-        Object value = operatorUi.get(key);
-        if (value == null) {
-            return;
-        }
-        if ("externalSpaUrl".equals(key)) {
-            if (!(value instanceof String spa) || !OperatorAppUiService.isSafeOperatorLaunchUrl(spa)) {
-                return;
-            }
-            extras.put(key, spa.trim());
-            return;
-        }
-        extras.put(key, value);
-    }
-
-    /**
-     * Prefer a usable operatorUi / operatorManifest; never keep an empty dashboards[] shell
-     * when the bundle already defines dashboards, reports, or operatorManifest screens.
-     */
-    private Map<String, Object> resolveOperatorUiForSync(String appId, BundleManifest manifest) {
-        if (hasUsableOperatorDashboards(manifest.operatorUi())) {
-            return manifest.operatorUi();
-        }
-        if (hasUsableOperatorDashboards(manifest.operatorManifest())
-                || hasUsableOperatorReports(manifest.operatorManifest())) {
-            return normalizeOperatorManifestUi(appId, manifest);
-        }
-        return buildOperatorUiFromBundle(appId, manifest);
-    }
-
-    private Map<String, Object> normalizeOperatorManifestUi(String appId, BundleManifest manifest) {
-        Map<String, Object> source = manifest.operatorManifest() != null
-                ? new LinkedHashMap<>(manifest.operatorManifest())
-                : new LinkedHashMap<>();
-        if (hasUsableOperatorDashboards(source) || hasUsableOperatorReports(source)) {
-            if (!source.containsKey("appId")) {
-                source.put("appId", appId);
-            }
-            if (!source.containsKey("title")) {
-                source.put("title", manifest.displayName() != null ? manifest.displayName() : appId);
-            }
-            return source;
-        }
-        return buildOperatorUiFromBundle(appId, manifest);
-    }
-
-    private static boolean hasUsableOperatorDashboards(Map<String, Object> ui) {
-        if (ui == null || ui.isEmpty()) {
-            return false;
-        }
-        Object dashboards = ui.get("dashboards");
-        return dashboards instanceof List<?> list && !list.isEmpty();
-    }
-
-    private static boolean hasUsableOperatorReports(Map<String, Object> ui) {
-        if (ui == null || ui.isEmpty()) {
-            return false;
-        }
-        Object reports = ui.get("reports");
-        return reports instanceof List<?> list && !list.isEmpty();
-    }
-
-    /** Accept `{path,title}` maps or bare path strings (legacy tank-farm style). */
-    private static Map<String, String> normalizeDashboardEntry(Object rawEntry) {
-        if (rawEntry == null) {
-            return null;
-        }
-        if (rawEntry instanceof String path && !path.isBlank()) {
-            Map<String, String> item = new LinkedHashMap<>();
-            item.put("path", path.trim());
-            item.put("title", path.trim());
-            return item;
-        }
-        if (rawEntry instanceof Map<?, ?> map) {
-            Object path = map.get("path");
-            if (path == null || String.valueOf(path).isBlank()) {
-                return null;
-            }
-            Map<String, String> item = new LinkedHashMap<>();
-            item.put("path", String.valueOf(path));
-            Object title = map.get("title");
-            item.put("title", title != null ? String.valueOf(title) : String.valueOf(path));
-            return item;
-        }
-        return null;
     }
 
     public static String applicationTreePath(String appId) {
@@ -972,7 +459,7 @@ public class ApplicationBundleDeployService {
                 .map(snapshot -> {
                     try {
                         BundleManifest manifest = objectMapper.readValue(snapshot.manifestJson(), BundleManifest.class);
-                        return hasOperatorUiManifest(manifest);
+                        return BundleOperatorUiSync.hasOperatorUiManifest(manifest);
                     } catch (Exception ex) {
                         return false;
                     }
@@ -980,283 +467,11 @@ public class ApplicationBundleDeployService {
                 .orElse(false);
     }
 
-    public static boolean hasOperatorUiManifest(BundleManifest manifest) {
-        // A non-empty operatorUi map with dashboards:[] is NOT operator-ready (catalog stubs).
-        return hasUsableOperatorDashboards(manifest.operatorUi())
-                || hasUsableOperatorReports(manifest.operatorUi())
-                || hasUsableOperatorDashboards(manifest.operatorManifest())
-                || hasUsableOperatorReports(manifest.operatorManifest())
-                || (manifest.dashboards() != null && !manifest.dashboards().isEmpty())
-                || (manifest.reports() != null && !manifest.reports().isEmpty());
-    }
-
     public Map<String, Object> operatorUi(String appId) throws Exception {
         ApplicationBundleSnapshotStore.BundleSnapshot snapshot = snapshotStore.findActive(appId)
                 .orElseThrow(() -> new IllegalArgumentException("No active bundle deployment for app: " + appId));
         BundleManifest manifest = objectMapper.readValue(snapshot.manifestJson(), BundleManifest.class);
-        Map<String, Object> ui;
-        if (manifest.operatorUi() != null && !manifest.operatorUi().isEmpty()) {
-            ui = manifest.operatorUi();
-        } else if (manifest.dashboards() != null && !manifest.dashboards().isEmpty()) {
-            ui = buildOperatorUiFromBundle(appId, manifest);
-        } else if (manifest.reports() != null && !manifest.reports().isEmpty()) {
-            ui = buildOperatorUiFromBundle(appId, manifest);
-        } else {
-            throw new IllegalArgumentException(
-                    "Operator UI not defined: set operatorUi or dashboards[] in bundle for app: " + appId
-            );
-        }
-        return hostedUiPackLinkEnricher.enrich(appId, ui);
-    }
-
-    private Map<String, Object> buildOperatorUiFromBundle(String appId, BundleManifest manifest) {
-        List<Map<String, Object>> dashboards = new ArrayList<>();
-        String defaultDashboard = null;
-        if (manifest.dashboards() != null) {
-            for (BundleDashboard dashboard : manifest.dashboards()) {
-                Map<String, Object> entry = new LinkedHashMap<>();
-                entry.put("path", dashboard.path());
-                entry.put("title", dashboard.title() != null ? dashboard.title() : dashboard.path());
-                dashboards.add(entry);
-                if (defaultDashboard == null) {
-                    defaultDashboard = dashboard.path();
-                }
-            }
-        }
-
-        List<Map<String, Object>> reports = new ArrayList<>();
-        String defaultReport = null;
-        if (manifest.reports() != null) {
-            for (BundleReport report : manifest.reports()) {
-                Map<String, Object> entry = new LinkedHashMap<>();
-                String path = ReportService.reportPath(report.reportId());
-                entry.put("path", path);
-                entry.put("title", report.title() != null ? report.title() : report.reportId());
-                reports.add(entry);
-                if (defaultReport == null) {
-                    defaultReport = path;
-                }
-            }
-        }
-
-        Map<String, Object> ui = new LinkedHashMap<>();
-        ui.put("appId", appId);
-        ui.put("title", manifest.displayName() != null ? manifest.displayName() : appId);
-        ui.put("defaultDashboard", defaultDashboard != null ? defaultDashboard : "");
-        ui.put("dashboards", dashboards);
-        if (!reports.isEmpty()) {
-            ui.put("reports", reports);
-            ui.put("defaultReport", defaultReport);
-        }
-        if (manifest.operatorManifest() != null && manifest.operatorManifest().get("alarmBar") != null) {
-            ui.put("alarmBar", manifest.operatorManifest().get("alarmBar"));
-        }
-        return ui;
-    }
-
-    private Map<String, Object> buildOperatorUiFromDashboards(String appId, BundleManifest manifest) {
-        return buildOperatorUiFromBundle(appId, manifest);
-    }
-
-    private static String resolvePackageSchemaName(String appId, BundleManifest manifest) {
-        if (manifest.schemaName() != null && !manifest.schemaName().isBlank()) {
-            return manifest.schemaName();
-        }
-        return ApplicationSchemaSupport.defaultSchemaName(appId);
-    }
-
-    private static AnalyticsFormula toAnalyticsFormula(String appId, BundleAnalyticsFormula formula) {
-        List<AnalyticsFormulaParameter> parameters = formula.parameters() == null
-                ? List.of()
-                : formula.parameters().stream()
-                        .map(param -> new AnalyticsFormulaParameter(
-                                param.name(),
-                                param.type(),
-                                param.required(),
-                                param.description(),
-                                param.defaultValue()
-                        ))
-                        .toList();
-        return new AnalyticsFormula(
-                formula.id(),
-                formula.displayName(),
-                formula.kind(),
-                formula.expression(),
-                parameters,
-                formula.createdBy(),
-                formula.version() != null ? formula.version() : 1,
-                AnalyticsFormula.SCOPE_APP,
-                appId
-        );
-    }
-
-    private void deployAlertRule(BundleAlertRule rule) {
-        String path = AutomationTreeService.rulePathForName(rule.name());
-        if (objectManager.tree().findByPath(path).isPresent()) {
-            automationTreeService.updateAlertRule(
-                    path,
-                    rule.name(),
-                    rule.objectPath(),
-                    rule.watchVariable(),
-                    rule.conditionExpr(),
-                    rule.eventName(),
-                    rule.payloadVariable(),
-                    rule.enabled(),
-                    rule.edgeTrigger(),
-                    rule.delaySeconds(),
-                    rule.sustainWhileTrue(),
-                    "HIGH",
-                    false,
-                    null,
-                    null,
-                    null,
-                    null
-            );
-            automationTreeService.resetAlertRuleRuntimeState(path);
-            return;
-        }
-        automationTreeService.createAlertRule(
-                rule.name(),
-                rule.objectPath(),
-                rule.watchVariable(),
-                rule.conditionExpr(),
-                rule.eventName(),
-                rule.payloadVariable(),
-                rule.enabled() == null || rule.enabled(),
-                rule.edgeTrigger() == null || rule.edgeTrigger(),
-                rule.delaySeconds() != null ? rule.delaySeconds() : 0,
-                rule.sustainWhileTrue() != null && rule.sustainWhileTrue(),
-                "HIGH",
-                false,
-                null,
-                null,
-                null
-        );
-        automationTreeService.resetAlertRuleRuntimeState(path);
-    }
-
-    private void deployCorrelator(BundleCorrelator correlator) {
-        String path = AutomationTreeService.correlatorPathForName(correlator.name());
-        CorrelatorPatternType patternType = CorrelatorPatternType.valueOf(
-                correlator.patternType() != null ? correlator.patternType() : "COUNT"
-        );
-        CorrelatorActionType actionType = CorrelatorActionType.valueOf(
-                correlator.actionType() != null ? correlator.actionType() : "RUN_WORKFLOW"
-        );
-        if (objectManager.tree().findByPath(path).isPresent()) {
-            automationTreeService.updateCorrelator(
-                    path,
-                    correlator.name(),
-                    correlator.objectPath(),
-                    patternType,
-                    correlator.eventName(),
-                    correlator.secondEventName(),
-                    correlator.windowSeconds(),
-                    correlator.minOccurrences(),
-                    correlator.cooldownSeconds(),
-                    correlator.sequenceGapSeconds(),
-                    actionType,
-                    correlator.actionTarget(),
-                    correlator.payloadFilterExpr(),
-                    correlator.enabled()
-            );
-            return;
-        }
-        automationTreeService.createCorrelator(
-                correlator.name(),
-                correlator.objectPath(),
-                patternType,
-                correlator.eventName(),
-                correlator.secondEventName(),
-                correlator.windowSeconds() != null ? correlator.windowSeconds() : 0,
-                correlator.minOccurrences() != null ? correlator.minOccurrences() : 1,
-                correlator.cooldownSeconds() != null ? correlator.cooldownSeconds() : 120,
-                correlator.sequenceGapSeconds() != null ? correlator.sequenceGapSeconds() : 0,
-                actionType,
-                correlator.actionTarget(),
-                correlator.payloadFilterExpr(),
-                correlator.enabled() == null || correlator.enabled()
-        );
-    }
-
-    private void deployFunction(String appId, String dataSourcePath, BundleFunction function) throws Exception {
-        String version = function.version() != null ? function.version() : "1";
-        String inputSchemaJson = objectMapper.writeValueAsString(function.descriptor().inputSchema());
-        String outputSchemaJson = objectMapper.writeValueAsString(function.descriptor().outputSchema());
-
-        ApplicationFunctionHandler.DeployedFunction deployed = new ApplicationFunctionHandler.DeployedFunction(
-                UUID.randomUUID(),
-                appId,
-                function.objectPath(),
-                function.functionName(),
-                version,
-                function.source().type(),
-                function.source().body(),
-                inputSchemaJson,
-                outputSchemaJson
-        );
-        functionStore.deploy(deployed);
-
-        FunctionDescriptor treeFunction = new FunctionDescriptor(
-                function.functionName(),
-                "Script function " + function.functionName(),
-                function.descriptor().inputSchema(),
-                function.descriptor().outputSchema(),
-                function.source().type(),
-                function.source().body(),
-                dataSourcePath,
-                version
-        );
-        objectManager.upsertFunction(function.objectPath(), treeFunction);
-    }
-
-    private void deployBlueprint(BundleBlueprint blueprint) throws BlueprintException {
-        Instant now = Instant.now();
-        var existingReg = blueprintRegistry.findByName(blueprint.name());
-        // Reuse DB id when a stale builtin row remains after mes-catalog was disabled
-        // (UNIQUE name would otherwise fail INSERT with a fresh UUID).
-        String id = existingReg.map(BlueprintDefinition::id)
-                .or(() -> blueprintPersistence.findIdByName(blueprint.name()))
-                .orElseGet(() -> UUID.randomUUID().toString());
-        Instant createdAt = existingReg.map(BlueprintDefinition::createdAt).orElse(now);
-        BlueprintDefinition definition = existingReg
-                .map(existing -> new BlueprintDefinition(
-                        id,
-                        blueprint.name(),
-                        blueprint.description(),
-                        blueprint.type() != null ? blueprint.type() : existing.type(),
-                        blueprint.targetObjectType() != null ? blueprint.targetObjectType() : existing.targetObjectType(),
-                        blueprint.suitabilityExpression() != null
-                                ? blueprint.suitabilityExpression()
-                                : existing.suitabilityExpression(),
-                        blueprint.variables() != null ? blueprint.variables() : existing.variables(),
-                        blueprint.events() != null ? blueprint.events() : existing.events(),
-                        blueprint.functions() != null ? blueprint.functions() : existing.functions(),
-                        blueprint.bindings() != null ? blueprint.bindings() : existing.bindings(),
-                        blueprint.parameters() != null ? blueprint.parameters() : existing.parameters(),
-                        createdAt,
-                        now
-                ))
-                .orElseGet(() -> new BlueprintDefinition(
-                        id,
-                        blueprint.name(),
-                        blueprint.description(),
-                        blueprint.type(),
-                        blueprint.targetObjectType(),
-                        blueprint.suitabilityExpression(),
-                        blueprint.variables() != null ? blueprint.variables() : List.of(),
-                        blueprint.events() != null ? blueprint.events() : List.of(),
-                        blueprint.functions() != null ? blueprint.functions() : List.of(),
-                        blueprint.bindings() != null ? blueprint.bindings() : List.of(),
-                        blueprint.parameters() != null ? blueprint.parameters() : Map.of(),
-                        createdAt,
-                        now
-                ));
-
-        BlueprintDefinition saved = existingReg.isPresent()
-                ? blueprintEngine.updateBlueprint(definition)
-                : blueprintEngine.createBlueprint(definition);
-        blueprintPersistence.persist(saved, false);
+        return hostedUiPackLinkEnricher.enrich(appId, BundleOperatorUiSync.resolveOperatorUi(appId, manifest));
     }
 
     public record BundleManifest(

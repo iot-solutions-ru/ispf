@@ -7,7 +7,6 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
-import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
 import com.ispf.plugin.blueprint.BlueprintEngine;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
@@ -20,27 +19,16 @@ import com.ispf.server.datasource.DataSourceSqlSession;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.time.PlatformCalendarParameterEnricher;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
-import com.ispf.server.security.acl.VariableAclRequestContext;
-import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 @Service
 public class ReportService {
@@ -52,11 +40,6 @@ public class ReportService {
             new ReportColumn("devicepath", "Device path"),
             new ReportColumn("int", "Int"),
             new ReportColumn("string", "String")
-    );
-
-    private static final Pattern FORBIDDEN_SQL = Pattern.compile(
-            "\\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|MERGE|CALL|EXEC|GRANT|REVOKE)\\b",
-            Pattern.CASE_INSENSITIVE
     );
 
     private static final DataSchema STRING_SCHEMA = DataSchema.builder("stringValue")
@@ -81,7 +64,7 @@ public class ReportService {
     private final ObjectMapper objectMapper;
     private final PlatformCalendarParameterEnricher calendarParameterEnricher;
     private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
-    private final VariableMemberAccessService variableMemberAccessService;
+    private final TreeVariablesReportRows treeVariablesReportRows;
 
     public ReportService(
             ObjectManager objectManager,
@@ -98,7 +81,7 @@ public class ReportService {
             ObjectMapper objectMapper,
             PlatformCalendarParameterEnricher calendarParameterEnricher,
             TenantLocalDataAccessGuard tenantLocalDataAccessGuard,
-            VariableMemberAccessService variableMemberAccessService
+            TreeVariablesReportRows treeVariablesReportRows
     ) {
         this.objectManager = objectManager;
         this.BlueprintRegistry = BlueprintRegistry;
@@ -114,7 +97,7 @@ public class ReportService {
         this.objectMapper = objectMapper;
         this.calendarParameterEnricher = calendarParameterEnricher;
         this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
-        this.variableMemberAccessService = variableMemberAccessService;
+        this.treeVariablesReportRows = treeVariablesReportRows;
     }
 
     public static String reportPath(String reportId) {
@@ -221,7 +204,7 @@ public class ReportService {
             Map<String, Object> defaultParameters
     ) {
         validateDataSourcePath(dataSourcePath);
-        validateSelectQuery(query);
+        ReportSqlQuery.validateSelectQuery(query);
         ensureReportsCatalogInternal();
         String path = reportPath(reportId);
         ensureReportNode(path, title, description, "report-v1");
@@ -301,7 +284,7 @@ public class ReportService {
         if (node.type() != ObjectType.REPORT) {
             throw new IllegalArgumentException("Not a report object: " + resolved);
         }
-        validateSelectQuery(request.query());
+        ReportSqlQuery.validateSelectQuery(request.query());
         ReportView current = toView(resolved, node);
         String dataSourcePath = resolveDataSourcePathForSave(request, current);
         validateDataSourcePath(dataSourcePath);
@@ -385,25 +368,25 @@ public class ReportService {
     @Transactional(readOnly = true)
     public byte[] exportCsv(String path, Map<String, Object> parameters) {
         Map<String, Object> result = run(path, parameters);
-        return toCsv(result);
+        return ReportTableExport.toCsv(result);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportHtmlTable(String path, Map<String, Object> parameters) {
         Map<String, Object> result = run(path, parameters);
-        return toHtmlTable(result);
+        return ReportTableExport.toHtmlTable(result);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportXlsxTable(String path, Map<String, Object> parameters) {
         Map<String, Object> result = run(path, parameters);
-        return toXlsxTable(result);
+        return ReportTableExport.toXlsxTable(result);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportXlsTable(String path, Map<String, Object> parameters) {
         Map<String, Object> result = run(path, parameters);
-        return toXlsTable(result);
+        return ReportTableExport.toXlsTable(result);
     }
 
     @Transactional(readOnly = true)
@@ -416,7 +399,7 @@ public class ReportService {
     @Transactional(readOnly = true)
     public byte[] exportCsvByApp(String appId, String reportId, Map<String, Object> parameters) {
         Map<String, Object> result = runByApp(appId, reportId, parameters);
-        return toCsv(result);
+        return ReportTableExport.toCsv(result);
     }
 
     @Transactional
@@ -475,14 +458,14 @@ public class ReportService {
             return runTreeVariablesDefinition(report);
         }
 
-        Map<String, Object> effective = effectiveParameters(
+        Map<String, Object> effective = ReportSqlQuery.effectiveParameters(
                 report.parameters(),
                 report.defaultParameters(),
                 calendarParameterEnricher.enrich(parameters)
         );
-        List<Object> paramValues = bindQueryParameters(report.query(), report.parameters(), effective);
+        List<Object> paramValues = ReportSqlQuery.bindQueryParameters(report.query(), report.parameters(), effective);
 
-        validateSelectQuery(report.query());
+        ReportSqlQuery.validateSelectQuery(report.query());
         validateDataSourcePath(report.dataSourcePath());
         List<Map<String, Object>>[] result = new List[1];
         if (report.dataSourcePath() != null && !report.dataSourcePath().isBlank()
@@ -504,7 +487,7 @@ public class ReportService {
         if (truncated) {
             rows = new ArrayList<>(rows.subList(0, report.maxRows()));
         }
-        rows = normalizeRowKeys(rows);
+        rows = ReportSqlQuery.normalizeRowKeys(rows);
         return Map.of(
                 "path", report.path(),
                 "reportId", reportIdFromPath(report.path()),
@@ -521,15 +504,15 @@ public class ReportService {
         ApplicationReportStore.DeployedReport report = reportStore.find(appId, reportId)
                 .orElseThrow(() -> new IllegalArgumentException("Report not found: " + reportId));
         List<String> paramNames = deserializeStringList(report.parametersJson());
-        Map<String, Object> effective = effectiveParameters(
+        Map<String, Object> effective = ReportSqlQuery.effectiveParameters(
                 paramNames,
                 Map.of(),
                 calendarParameterEnricher.enrich(parameters)
         );
-        List<Object> paramValues = bindQueryParameters(report.querySql(), paramNames, effective);
+        List<Object> paramValues = ReportSqlQuery.bindQueryParameters(report.querySql(), paramNames, effective);
         String schemaName = dataSourcePathResolver.resolveSchemaForReport(null, appId);
 
-        validateSelectQuery(report.querySql());
+        ReportSqlQuery.validateSelectQuery(report.querySql());
         List<Map<String, Object>>[] result = new List[1];
         schemaSession.runInSchema(schemaName, () ->
                 result[0] = jdbcTemplate.queryForList(report.querySql(), paramValues.toArray())
@@ -541,7 +524,7 @@ public class ReportService {
             rows = new ArrayList<>(rows.subList(0, report.maxRows()));
         }
         List<Map<String, String>> columns = deserializeColumns(report.columnsJson());
-        rows = normalizeRowKeys(rows);
+        rows = ReportSqlQuery.normalizeRowKeys(rows);
         return Map.of(
                 "reportId", report.reportId(),
                 "title", report.title(),
@@ -553,44 +536,12 @@ public class ReportService {
     }
 
     private Map<String, Object> runTreeVariablesDefinition(ReportView report) {
-        String pattern = report.devicePathPattern();
-        String variableName = report.variableName();
-        if (pattern == null || pattern.isBlank()) {
-            throw new IllegalArgumentException("Report devicePathPattern is required for tree-variables reports");
-        }
-        if (variableName == null || variableName.isBlank()) {
-            throw new IllegalArgumentException("Report variableName is required for tree-variables reports");
-        }
-
-        Authentication memberAuthentication = null;
-        if (VariableAclRequestContext.isMemberEnforced()) {
-            memberAuthentication = VariableAclRequestContext.requireAuthentication();
-        }
-
-        List<Map<String, Object>> rows = new ArrayList<>();
-        for (PlatformObject node : objectManager.tree().all()) {
-            if (node.type() != ObjectType.DEVICE) {
-                continue;
-            }
-            if (!matchesDevicePathPattern(node.path(), pattern)) {
-                continue;
-            }
-            // BL-154: interactive MEMBER runs omit devices/variables the caller cannot read.
-            if (memberAuthentication != null
-                    && !variableMemberAccessService.canRead(node.path(), variableName, memberAuthentication)) {
-                continue;
-            }
-            Optional<DataRecord> record = node.getVariable(variableName).flatMap(Variable::value);
-            if (record.isPresent()) {
-                flattenVariableToRows(node.path(), record.get(), rows);
-            }
-        }
-
+        List<Map<String, Object>> rows = treeVariablesReportRows.collect(report.devicePathPattern(), report.variableName());
         boolean truncated = rows.size() > report.maxRows();
         if (truncated) {
             rows = new ArrayList<>(rows.subList(0, report.maxRows()));
         }
-        rows = normalizeRowKeys(rows);
+        rows = ReportSqlQuery.normalizeRowKeys(rows);
         return Map.of(
                 "path", report.path(),
                 "reportId", reportIdFromPath(report.path()),
@@ -601,53 +552,6 @@ public class ReportService {
                 "rowCount", rows.size(),
                 "truncated", truncated
         );
-    }
-
-    static boolean matchesDevicePathPattern(String path, String pattern) {
-        if (path == null || pattern == null || pattern.isBlank()) {
-            return false;
-        }
-        if (pattern.contains("*")) {
-            String regex = "^" + pattern.replace(".", "\\.").replace("*", ".*") + "$";
-            return Pattern.compile(regex).matcher(path).matches();
-        }
-        return path.equals(pattern) || path.startsWith(pattern);
-    }
-
-    private static void flattenVariableToRows(
-            String devicePath,
-            DataRecord record,
-            List<Map<String, Object>> rows
-    ) {
-        Optional<String> listField = record.schema().fields().stream()
-                .filter(field -> field.type() == FieldType.RECORD_LIST)
-                .map(FieldDefinition::name)
-                .findFirst();
-        if (listField.isPresent() && record.rowCount() > 0) {
-            Object tableRowsObject = record.firstRow().get(listField.get());
-            if (tableRowsObject instanceof List<?> tableRows) {
-                for (Object rowObject : tableRows) {
-                    if (rowObject instanceof Map<?, ?> row) {
-                        rows.add(treeVariableRow(devicePath, row));
-                    }
-                }
-                return;
-            }
-        }
-        for (Map<String, Object> row : record.rows()) {
-            rows.add(treeVariableRow(devicePath, row));
-        }
-    }
-
-    private static Map<String, Object> treeVariableRow(String devicePath, Map<?, ?> row) {
-        Map<String, Object> mapped = new LinkedHashMap<>();
-        mapped.put("devicepath", devicePath);
-        for (Map.Entry<?, ?> entry : row.entrySet()) {
-            if (entry.getKey() != null) {
-                mapped.put(entry.getKey().toString(), entry.getValue());
-            }
-        }
-        return mapped;
     }
 
     private void ensureReportNode(String path, String title, String description, String templateId) {
@@ -781,145 +685,6 @@ public class ReportService {
                 .toList();
     }
 
-    private byte[] toCsv(Map<String, Object> result) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, String>> columns = (List<Map<String, String>>) result.get("columns");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> rows = (List<Map<String, Object>>) result.get("rows");
-
-        StringBuilder csv = new StringBuilder();
-        List<String> fields = columns.stream().map(col -> col.get("field")).toList();
-        csv.append(columns.stream().map(col -> escapeCsv(col.get("label"))).reduce((a, b) -> a + "," + b).orElse(""));
-        csv.append('\n');
-        for (Map<String, Object> row : rows) {
-            for (int i = 0; i < fields.size(); i++) {
-                if (i > 0) {
-                    csv.append(',');
-                }
-                Object value = row.get(fields.get(i));
-                csv.append(escapeCsv(value == null ? "" : value.toString()));
-            }
-            csv.append('\n');
-        }
-        return csv.toString().getBytes(StandardCharsets.UTF_8);
-    }
-
-    private byte[] toHtmlTable(Map<String, Object> result) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, String>> columns = (List<Map<String, String>>) result.get("columns");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> rows = (List<Map<String, Object>>) result.get("rows");
-        String title = String.valueOf(result.getOrDefault("title", "Report"));
-        boolean truncated = Boolean.TRUE.equals(result.get("truncated"));
-        int rowCount = result.get("rowCount") instanceof Number number ? number.intValue() : rows.size();
-
-        StringBuilder html = new StringBuilder();
-        html.append("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>");
-        html.append(escapeHtml(title));
-        html.append("</title><style>");
-        html.append("body{font-family:system-ui,sans-serif;margin:1.5rem;color:#111}");
-        html.append("table{border-collapse:collapse;width:100%;font-size:14px}");
-        html.append("th,td{border:1px solid #ccc;padding:0.45rem 0.65rem;text-align:left}");
-        html.append("th{background:#f3f4f6}.note{color:#666;font-size:13px;margin:0 0 1rem}");
-        html.append("</style></head><body><h1>");
-        html.append(escapeHtml(title));
-        html.append("</h1>");
-        if (truncated) {
-            html.append("<p class=\"note\">Показаны первые ");
-            html.append(rowCount);
-            html.append(" строк (truncated).</p>");
-        }
-        html.append("<table><thead><tr>");
-        List<String> fields = columns.stream().map(col -> col.get("field")).toList();
-        for (Map<String, String> column : columns) {
-            html.append("<th>").append(escapeHtml(column.get("label"))).append("</th>");
-        }
-        html.append("</tr></thead><tbody>");
-        for (Map<String, Object> row : rows) {
-            html.append("<tr>");
-            for (String field : fields) {
-                Object value = row.get(field);
-                html.append("<td>").append(escapeHtml(value == null ? "" : value.toString())).append("</td>");
-            }
-            html.append("</tr>");
-        }
-        html.append("</tbody></table></body></html>");
-        return html.toString().getBytes(StandardCharsets.UTF_8);
-    }
-
-    private byte[] toXlsxTable(Map<String, Object> result) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, String>> columns = (List<Map<String, String>>) result.get("columns");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> rows = (List<Map<String, Object>>) result.get("rows");
-        List<String> fields = columns.stream().map(col -> col.get("field")).toList();
-
-        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("Report");
-            Row header = sheet.createRow(0);
-            for (int columnIndex = 0; columnIndex < columns.size(); columnIndex++) {
-                header.createCell(columnIndex).setCellValue(columns.get(columnIndex).get("label"));
-            }
-            for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
-                Row row = sheet.createRow(rowIndex + 1);
-                Map<String, Object> values = rows.get(rowIndex);
-                for (int columnIndex = 0; columnIndex < fields.size(); columnIndex++) {
-                    Object value = values.get(fields.get(columnIndex));
-                    row.createCell(columnIndex).setCellValue(value == null ? "" : String.valueOf(value));
-                }
-            }
-            for (int columnIndex = 0; columnIndex < columns.size(); columnIndex++) {
-                sheet.autoSizeColumn(columnIndex);
-            }
-            workbook.write(out);
-            return out.toByteArray();
-        } catch (Exception ex) {
-            throw new IllegalStateException("XLSX table export failed: " + ex.getMessage(), ex);
-        }
-    }
-
-    private byte[] toXlsTable(Map<String, Object> result) {
-        @SuppressWarnings("unchecked")
-        List<Map<String, String>> columns = (List<Map<String, String>>) result.get("columns");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> rows = (List<Map<String, Object>>) result.get("rows");
-        List<String> fields = columns.stream().map(col -> col.get("field")).toList();
-
-        try (Workbook workbook = new HSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Sheet sheet = workbook.createSheet("Report");
-            Row header = sheet.createRow(0);
-            for (int columnIndex = 0; columnIndex < columns.size(); columnIndex++) {
-                header.createCell(columnIndex).setCellValue(columns.get(columnIndex).get("label"));
-            }
-            for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
-                Row row = sheet.createRow(rowIndex + 1);
-                Map<String, Object> values = rows.get(rowIndex);
-                for (int columnIndex = 0; columnIndex < fields.size(); columnIndex++) {
-                    Object value = values.get(fields.get(columnIndex));
-                    row.createCell(columnIndex).setCellValue(value == null ? "" : String.valueOf(value));
-                }
-            }
-            for (int columnIndex = 0; columnIndex < columns.size(); columnIndex++) {
-                sheet.autoSizeColumn(columnIndex);
-            }
-            workbook.write(out);
-            return out.toByteArray();
-        } catch (Exception ex) {
-            throw new IllegalStateException("XLS table export failed: " + ex.getMessage(), ex);
-        }
-    }
-
-    private static String escapeHtml(String value) {
-        if (value == null || value.isEmpty()) {
-            return "";
-        }
-        return value
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;");
-    }
-
     private void setString(String path, String variable, String value) {
         objectManager.setVariableValue(
                 path,
@@ -934,105 +699,6 @@ public class ReportService {
                 variable,
                 DataRecord.single(INTEGER_SCHEMA, Map.of("value", value))
         );
-    }
-
-    static void validateSelectQuery(String query) {
-        if (query == null || query.isBlank()) {
-            throw new IllegalArgumentException("Report query is required");
-        }
-        String trimmed = query.trim();
-        if (!trimmed.regionMatches(true, 0, "SELECT", 0, 6)
-                && !trimmed.regionMatches(true, 0, "WITH", 0, 4)) {
-            throw new IllegalArgumentException("Report query must start with SELECT or WITH");
-        }
-        if (FORBIDDEN_SQL.matcher(trimmed).find()) {
-            throw new IllegalArgumentException("Report query contains forbidden SQL keyword");
-        }
-    }
-
-    private static Map<String, Object> effectiveParameters(
-            List<String> paramNames,
-            Map<String, Object> defaultParameters,
-            Map<String, Object> parameters
-    ) {
-        Map<String, Object> merged = new LinkedHashMap<>();
-        if (defaultParameters != null) {
-            merged.putAll(defaultParameters);
-        }
-        if (parameters != null) {
-            merged.putAll(parameters);
-        }
-        if (paramNames != null) {
-            for (String name : paramNames) {
-                merged.putIfAbsent(name, "");
-            }
-        }
-        return merged;
-    }
-
-    private static List<Object> resolveParameterValues(
-            List<String> paramNames,
-            Map<String, Object> parameters
-    ) {
-        if (paramNames == null || paramNames.isEmpty()) {
-            return List.of();
-        }
-        Map<String, Object> values = parameters != null ? parameters : Map.of();
-        List<Object> resolved = new ArrayList<>();
-        for (String name : paramNames) {
-            if (!values.containsKey(name)) {
-                throw new IllegalArgumentException("Missing report parameter: " + name);
-            }
-            resolved.add(values.get(name));
-        }
-        return resolved;
-    }
-
-    static List<Object> bindQueryParameters(
-            String query,
-            List<String> paramNames,
-            Map<String, Object> parameters
-    ) {
-        List<Object> resolved = resolveParameterValues(paramNames, parameters);
-        int placeholderCount = countSqlPlaceholders(query);
-        if (placeholderCount == resolved.size()) {
-            return resolved;
-        }
-        if (placeholderCount > resolved.size() && paramNames != null && paramNames.size() == 1) {
-            Object value = resolved.getFirst();
-            List<Object> expanded = new ArrayList<>(placeholderCount);
-            for (int i = 0; i < placeholderCount; i++) {
-                expanded.add(value);
-            }
-            return expanded;
-        }
-        throw new IllegalArgumentException(
-                "Report query has " + placeholderCount + " SQL placeholder(s) but "
-                        + resolved.size() + " bound parameter value(s)"
-        );
-    }
-
-    static int countSqlPlaceholders(String query) {
-        if (query == null || query.isBlank()) {
-            return 0;
-        }
-        int count = 0;
-        boolean inSingleQuote = false;
-        for (int i = 0; i < query.length(); i++) {
-            char ch = query.charAt(i);
-            if (ch == '\'') {
-                if (inSingleQuote && i + 1 < query.length() && query.charAt(i + 1) == '\'') {
-                    i++;
-                    continue;
-                }
-                inSingleQuote = !inSingleQuote;
-                continue;
-            }
-            if (!inSingleQuote && ch == '?') {
-                count++;
-            }
-        }
-        return count;
     }
 
     private String serialize(Object value) {
@@ -1081,25 +747,6 @@ public class ReportService {
         } catch (Exception ex) {
             throw new IllegalStateException("Invalid defaultParameters JSON", ex);
         }
-    }
-
-    private static List<Map<String, Object>> normalizeRowKeys(List<Map<String, Object>> rows) {
-        List<Map<String, Object>> normalized = new ArrayList<>(rows.size());
-        for (Map<String, Object> row : rows) {
-            Map<String, Object> mapped = new LinkedHashMap<>();
-            for (Map.Entry<String, Object> entry : row.entrySet()) {
-                mapped.put(entry.getKey().toLowerCase(), entry.getValue());
-            }
-            normalized.add(mapped);
-        }
-        return normalized;
-    }
-
-    private static String escapeCsv(String value) {
-        if (value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
-            return "\"" + value.replace("\"", "\"\"") + "\"";
-        }
-        return value;
     }
 
     private static Optional<String> readString(PlatformObject node, String variableName) {

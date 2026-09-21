@@ -8,11 +8,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.plugin.workflow.WorkflowEngine;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
-import com.ispf.server.binding.BindingRefreshAfterCommit;
-import com.ispf.server.cluster.NatsEventBridge;
-import com.ispf.server.event.EventService;
 import com.ispf.server.expression.ExpressionFormalVerificationService;
-import com.ispf.server.function.FunctionService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.platform.AutomationMetricsRecorder;
@@ -51,21 +47,15 @@ class WorkflowTriggerSoftFailTest {
     @Mock
     private WorkflowEngine workflowEngine;
     @Mock
-    private NatsEventBridge natsEventBridge;
-    @Mock
     private WorkflowInstanceStore instanceStore;
     @Mock
     private WorkflowConditionFactory conditionFactory;
     @Mock
-    private FunctionService functionService;
+    private WorkflowTaskExecutor taskExecutor;
     @Mock
-    private EventService eventService;
-    @Mock
-    private WorkQueueService workQueueService;
+    private WorkflowInstanceStatePublisher statePublisher;
     @Mock
     private WorkflowInstanceRepository instanceRepository;
-    @Mock
-    private BindingRefreshAfterCommit bindingRefreshAfterCommit;
     @Mock
     private WorkflowEventTriggerIndex eventTriggerIndex;
     @Mock
@@ -74,8 +64,6 @@ class WorkflowTriggerSoftFailTest {
     private WorkflowTriggerIndexRefresh triggerIndexRefresh;
     @Mock
     private ObjectProvider<WorkflowService> self;
-    @Mock
-    private WorkflowAiActionService workflowAiActionService;
     @Mock
     private WorkflowDeadLetterService deadLetterService;
     @Mock
@@ -94,20 +82,16 @@ class WorkflowTriggerSoftFailTest {
                 objectManager,
                 structureService,
                 workflowEngine,
-                natsEventBridge,
                 objectMapper,
                 instanceStore,
                 conditionFactory,
-                functionService,
-                eventService,
-                workQueueService,
+                taskExecutor,
+                statePublisher,
                 instanceRepository,
-                bindingRefreshAfterCommit,
                 eventTriggerIndex,
                 automationMetricsRecorder,
                 triggerIndexRefresh,
                 self,
-                workflowAiActionService,
                 deadLetterService,
                 webhookIndex,
                 retryService,
