@@ -40,7 +40,7 @@ public class ApplicationBundleMetadataService {
                 objectManager.updateInfo(path, object.displayName(), object.description() != null ? object.description() : node.description());
             }
             if (object.templateId() != null && !object.templateId().isBlank()) {
-                objectTemplateService.applyTemplate(path, object.templateId());
+                objectTemplateService.applyTemplate(path, object.templateId(), object.parameters());
             }
             return DeployOutcome.UPDATED;
         }
@@ -60,7 +60,7 @@ public class ApplicationBundleMetadataService {
             workflowService.ensureWorkflowStructure(node.path());
         }
         if (object.templateId() != null && !object.templateId().isBlank()) {
-            objectTemplateService.applyTemplate(path, object.templateId());
+            objectTemplateService.applyTemplate(path, object.templateId(), object.parameters());
         }
         return DeployOutcome.APPLIED;
     }

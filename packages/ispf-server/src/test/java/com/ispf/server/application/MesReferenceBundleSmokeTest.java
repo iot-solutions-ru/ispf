@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class MesReferenceBundleSmokeTest {
 
-    private static final String RACK_DEVICE = "root.platform.devices.demo-sensor-01";
+    private static final String RACK_DEVICE = "root.platform.singleton-blueprints.mes-reference-hub-v1";
 
     @Autowired
     private MockMvc mockMvc;

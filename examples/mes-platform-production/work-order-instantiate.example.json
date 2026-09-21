@@ -28,7 +28,7 @@
   "dispatchFollowUp": {
     "description": "Fire workOrderDispatched on mes-platform-hub (or enable correlator) to start BPMN user task",
     "event": {
-      "objectPath": "root.platform.devices.mes-platform-production-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-production-hub-v1",
       "eventName": "workOrderDispatched",
       "payload": {
         "workOrderPath": "root.platform.mes.work-orders.wo-line-a01-001",

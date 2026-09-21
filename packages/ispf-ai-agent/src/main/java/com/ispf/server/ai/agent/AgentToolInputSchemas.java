@@ -587,11 +587,14 @@ public final class AgentToolInputSchemas {
         catalog.put("instantiate_instance_type", objectSchema(
                 props(
                         "parentPath", stringProp("Parent folder path"),
-                        "typeId", stringProp("Instance type id"),
-                        "name", stringProp("Node or resource name"),
-                        "displayName", stringProp("Display name")
+                        "path", stringProp("Parent folder path (alias for parentPath)"),
+                        "instanceName", stringProp("New instance name"),
+                        "name", stringProp("New instance name (alias for instanceName)"),
+                        "blueprintName", stringProp("INSTANCE blueprint name"),
+                        "blueprintId", stringProp("INSTANCE blueprint id"),
+                        "parameters", objectProp("Optional instantiation parameters")
                 ),
-                req("parentPath", "typeId", "name"),
+                List.of(),
                 true
         ));
         catalog.put("invoke_bff", objectSchema(
@@ -944,6 +947,54 @@ public final class AgentToolInputSchemas {
                         "summary", stringProp("Server summary payload")
                 ),
                 List.of(),
+                true
+        ));
+        catalog.put("test_function", objectSchema(
+                props(
+                        "objectPath", stringProp("Object tree path hosting the function"),
+                        "path", stringProp("Alias for objectPath"),
+                        "functionName", stringProp("Function name"),
+                        "id", stringProp("Optional test id"),
+                        "input", objectProp("Function input fields"),
+                        "fixtureSql", arrayProp("SQL statements before invoke"),
+                        "expect", objectProp("Expectations: errorCode, rowCount, fields"),
+                        "rollback", booleanProp("Mark transaction rollback-only (default true)")
+                ),
+                req("functionName"),
+                true
+        ));
+        catalog.put("simulate_telemetry", objectSchema(
+                props(
+                        "objectPath", stringProp("Device or object path"),
+                        "path", stringProp("Alias for objectPath"),
+                        "variable", stringProp("Variable name"),
+                        "name", stringProp("Alias for variable"),
+                        "fields", objectProp("Telemetry fields (e.g. value, unit)"),
+                        "series", arrayProp("Sequence of field maps"),
+                        "eventName", stringProp("Optional event name to poll from journal")
+                ),
+                req("variable"),
+                true
+        ));
+        catalog.put("assert_variable", objectSchema(
+                props(
+                        "objectPath", stringProp("Object tree path"),
+                        "path", stringProp("Alias for objectPath"),
+                        "variable", stringProp("Variable name"),
+                        "name", stringProp("Alias for variable"),
+                        "field", stringProp("Field name inside the variable record"),
+                        "op", enumProp("Comparison", List.of("eq", "neq", "gt", "gte", "lt", "lte", "contains")),
+                        "expected", objectProp("Expected value")
+                ),
+                req("variable", "field", "expected"),
+                true
+        ));
+        catalog.put("run_bundle_tests", objectSchema(
+                props(
+                        "appId", stringProp("Application id"),
+                        "packageId", stringProp("Alias for appId")
+                ),
+                req("appId"),
                 true
         ));
         catalog.put("update_workflow_status", objectSchema(

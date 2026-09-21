@@ -1,0 +1,19 @@
+{
+  "name": "@ispf/cli",
+  "version": "0.1.0",
+  "description": "ISPF solution-as-repo CLI (pack, unpack, validate, diff, deploy)",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "ispf": "./bin/ispf.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/roundtrip.test.mjs"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

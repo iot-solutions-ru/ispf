@@ -26,7 +26,7 @@ Operator UI: `?mode=operator&app=mes-ogp-events`
 
 ## Hub object
 
-BFF functions: `root.platform.devices.ogp-mes-hub`
+BFF functions: `root.platform.singleton-blueprints.mes-ogp-events-hub-v1`
 
 Simulated line: `root.platform.devices.ogp-line-01` (SQL `machine_state` + schedule `ogp-meter-tick` / SQL bindings — no virtual driver profiles)
 

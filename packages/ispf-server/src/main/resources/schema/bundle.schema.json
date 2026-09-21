@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ispf.local/schema/bundle.schema.json",
+  "title": "ISPF Application Bundle Manifest",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "tablePrefix": {
+      "type": "string"
+    },
+    "schemaName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "parentPath",
+          "name",
+          "type"
+        ],
+        "properties": {
+          "parentPath": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "templateId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "blueprints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "MIXIN",
+              "INSTANCE",
+              "SINGLETON"
+            ]
+          },
+          "targetObjectType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "suitabilityExpression": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "variables": {
+            "type": "array"
+          },
+          "events": {
+            "type": "array"
+          },
+          "functions": {
+            "type": "array"
+          },
+          "bindings": {
+            "type": "array"
+          },
+          "sqlBindings": {
+            "type": "array"
+          },
+          "alertRules": {
+            "type": "array"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "dashboards": {
+      "type": "array"
+    },
+    "workflows": {
+      "type": "array"
+    },
+    "migrations": {
+      "type": "array"
+    },
+    "functions": {
+      "type": "array"
+    },
+    "bindings": {
+      "type": "array"
+    },
+    "reports": {
+      "type": "array"
+    },
+    "alertRules": {
+      "type": "array"
+    },
+    "correlators": {
+      "type": "array"
+    },
+    "schedules": {
+      "type": "array"
+    },
+    "analyticsFormulas": {
+      "type": "array"
+    },
+    "events": {
+      "type": "array"
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "id",
+          "kind"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "function",
+              "telemetry"
+            ]
+          }
+        }
+      }
+    },
+    "requires": {
+      "type": "array"
+    },
+    "license": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "metadata": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "operatorUi": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "operatorManifest": {
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "version",
+    "displayName",
+    "schemaName"
+  ]
+}

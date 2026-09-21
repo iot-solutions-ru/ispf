@@ -60,7 +60,9 @@ public class OllamaLlmProvider implements LlmProvider {
                 request.messages(),
                 request.maxTokens(),
                 request.temperature(),
-                request.providerOptions()
+                request.providerOptions(),
+                request.tools(),
+                request.toolChoice()
         );
         var body = LlmHttpSupport.ollamaChatBody(effective);
         String json = LlmHttpSupport.postJson(
@@ -91,6 +93,11 @@ public class OllamaLlmProvider implements LlmProvider {
                 body
         );
         return LlmHttpSupport.parseOllamaShowVision(json);
+    }
+
+    @Override
+    public boolean supportsToolCalling(String model) {
+        return isAvailable();
     }
 
     private static String trimTrailingSlash(String url) {

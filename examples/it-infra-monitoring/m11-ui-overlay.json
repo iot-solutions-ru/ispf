@@ -266,7 +266,7 @@
       "timeZone": "Europe/Moscow",
       "actionType": "invoke_function",
       "action": {
-        "objectPath": "root.platform.devices.itm.hub",
+        "objectPath": "root.platform.singleton-blueprints.itm-hub-v1",
         "functionName": "itm_refreshKpis"
       }
     },
@@ -293,7 +293,7 @@
       "timeZone": "Europe/Moscow",
       "actionType": "invoke_function",
       "action": {
-        "objectPath": "root.platform.devices.itm.hub",
+        "objectPath": "root.platform.singleton-blueprints.itm-hub-v1",
         "functionName": "itm_runDiscovery"
       }
     },
@@ -303,7 +303,7 @@
       "intervalMs": 30000,
       "actionType": "invoke_function",
       "action": {
-        "objectPath": "root.platform.devices.itm.hub",
+        "objectPath": "root.platform.singleton-blueprints.itm-hub-v1",
         "functionName": "itm_publishOpcSignals"
       }
     },
@@ -565,7 +565,7 @@
   "correlators": [
     {
       "name": "itm-escalate-email",
-      "objectPath": "root.platform.devices.itm.hub",
+      "objectPath": "root.platform.singleton-blueprints.itm-hub-v1",
       "patternType": "COUNT",
       "eventName": "itmDeviceDown",
       "windowSeconds": 60,
@@ -577,7 +577,7 @@
     },
     {
       "name": "itm-escalate-sms",
-      "objectPath": "root.platform.devices.itm.hub",
+      "objectPath": "root.platform.singleton-blueprints.itm-hub-v1",
       "patternType": "COUNT",
       "eventName": "itmDeviceDown",
       "windowSeconds": 60,

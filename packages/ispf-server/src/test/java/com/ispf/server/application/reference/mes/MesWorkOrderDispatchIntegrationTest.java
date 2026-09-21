@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class MesWorkOrderDispatchIntegrationTest {
 
-    private static final String HUB = "root.platform.devices.mes-platform-hub";
+    private static final String HUB = "root.platform.singleton-blueprints.mes-platform-hub-v1";
     private static final String WORKFLOW = "root.platform.workflows.mes-work-order-dispatch";
     private static final String OPERATOR_APP = "mes-platform";
 

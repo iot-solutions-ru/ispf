@@ -5,7 +5,7 @@
   "schemaName": "app_farmtwin",
   "metadata": {
     "purpose": "FarmTwin — цифровой двойник свинокомплекса: площадки, секции, алармы, тренды, кормление, здоровье, видео, роботы, прослеживаемость, задания, СППР, интеграции",
-    "ui": "React SPA ui-pack farmtwin-ui · /apps/farmtwin/ · BFF hub root.platform.devices.farmtwin.hub",
+    "ui": "React SPA ui-pack farmtwin-ui · /apps/farmtwin/ · BFF hub root.platform.singleton-blueprints.farmtwin-hub-v1",
     "changelog": "1.1.0 — Marketplace package: app listing + ui-pack companion; remove operator SPA iframe tab; Open app UI via hosted ui-pack.",
     "deployNote": "Deploy application bundle + install ui-pack (marketplace uiPackSlug or drop-in ISPF_UI_PACKS_DIR/farmtwin). Tree scripts MUST set dataSourcePath=root.platform.data-sources.farmtwin.",
     "previewAssets": "https://ispf.ai/apps/farmtwin/",
@@ -25,7 +25,7 @@
     {
       "name": "farmtwin-hub-v1",
       "description": "Application logic hub (BFF) — INSTANCE blueprint with targetObjectType CUSTOM; not a driver DEVICE",
-      "type": "INSTANCE",
+      "type": "SINGLETON",
       "targetObjectType": "CUSTOM",
       "variables": []
     }
@@ -37,19 +37,11 @@
       "type": "CUSTOM",
       "displayName": "FarmTwin",
       "description": "Цифровой двойник фермы"
-    },
-    {
-      "parentPath": "root.platform.devices.farmtwin",
-      "name": "hub",
-      "type": "CUSTOM",
-        "templateId": "farmtwin-hub-v1",
-      "displayName": "FarmTwin — Hub",
-      "description": "BFF functions host"
     }
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listSites",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -82,7 +74,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listSections",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -115,7 +107,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listSectionsBySite",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -153,7 +145,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_getKpi",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -186,7 +178,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listAlarms",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -219,7 +211,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_ackAlarm",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -257,7 +249,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_clearAlarm",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -295,7 +287,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listTrendParams",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -328,7 +320,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listTrendPoints",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -361,7 +353,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listTasks",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -394,7 +386,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_setTaskStatus",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -436,7 +428,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_createTask",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -498,7 +490,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listDecisions",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -531,7 +523,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_acceptDecision",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -573,7 +565,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_rejectDecision",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -615,7 +607,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listIntegrations",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -648,7 +640,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_testIntegration",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -694,7 +686,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listHealthCases",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -727,7 +719,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listCameras",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -760,7 +752,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listVideoEvents",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -793,7 +785,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listDetectors",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -826,7 +818,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listRobots",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -859,7 +851,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listMissions",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -892,7 +884,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_assignRobotJob",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -946,7 +938,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listAnimals",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -979,7 +971,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listScans",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -1012,7 +1004,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_bindAnimal",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -1054,7 +1046,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listUsers",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -1087,7 +1079,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_listSpprConfig",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -1120,7 +1112,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_setSpprConfig",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -1162,7 +1154,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.farmtwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
       "functionName": "ft_twinOverview",
       "version": "ui1",
       "dataSourcePath": "root.platform.data-sources.farmtwin",
@@ -1600,7 +1592,7 @@
         "title": "Прослеживаемость"
       }
     ],
-    "eventJournalObjectPath": "root.platform.devices.farmtwin.hub",
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.farmtwin-hub-v1",
     "spaNav": [
       {
         "to": "/",

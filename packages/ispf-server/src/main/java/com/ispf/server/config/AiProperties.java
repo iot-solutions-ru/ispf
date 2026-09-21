@@ -23,6 +23,8 @@ public class AiProperties {
     private int agentSessionTtlHours = 24;
     private int agentMaxHistoryTurns = 24;
     private boolean agentDisableThinking = true;
+    /** Native tool calling mode: auto, on, or off. */
+    private String agentNativeTools = "auto";
     private int agentParseRetries = 2;
     private int briefingMaxChars = 32_768;
     private boolean briefingEveryTurn = false;
@@ -156,6 +158,14 @@ public class AiProperties {
 
     public void setAgentDisableThinking(boolean agentDisableThinking) {
         this.agentDisableThinking = agentDisableThinking;
+    }
+
+    public String getAgentNativeTools() {
+        return agentNativeTools;
+    }
+
+    public void setAgentNativeTools(String agentNativeTools) {
+        this.agentNativeTools = agentNativeTools;
     }
 
     public int getAgentParseRetries() {

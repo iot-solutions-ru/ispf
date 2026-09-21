@@ -404,17 +404,19 @@ final class AgentApplicationTools {
                 String sourceBody = stringArg(arguments, "sourceBody");
                 if (appId.isBlank() || objectPath.isBlank() || functionName.isBlank()
                         || sourceType.isBlank() || sourceBody.isBlank()) {
-                    return Map.of(
-                            "status", "ERROR",
-                            "error",
-                            "appId, objectPath, functionName, sourceType=script, sourceBody are required"
+                    return AgentToolErrors.error(
+                            "TOOL_ERROR",
+                            "appId, objectPath, functionName, sourceType=script, sourceBody are required",
+                            "",
+                            ""
                     );
                 }
                 if (!"script".equals(sourceType)) {
-                    return Map.of(
-                            "status", "ERROR",
-                            "error",
-                            "Application functions support sourceType=script only; use deploy_tree_function for java"
+                    return AgentToolErrors.error(
+                            "TOOL_ERROR",
+                            "Application functions support sourceType=script only; use deploy_tree_function for java",
+                            "",
+                            ""
                     );
                 }
                 try {

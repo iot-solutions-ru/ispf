@@ -580,8 +580,9 @@ Use `search_context` with `topic` or keywords from this table.
 2. `search_context topic=application-principles` + `topic=agent-knowledge`; use `get_example_bundle` if similar to MES/lab
 3. Register app (or include in bundle) -> migrations -> functions -> objects/dashboards
 4. `validate_bundle` -> `dry_run_deploy` -> `import_package`
-5. Run `configure_operator_ui` if not defined in manifest
-6. `finish` with `?mode=operator&app=...` and dashboard paths
+5. `run_bundle_tests` / `test_function` (or deploy with `runTests=true`) — judge needs PASS
+6. Run `configure_operator_ui` if not defined in manifest
+7. `finish` with `?mode=operator&app=...` and dashboard paths
 
 ### "Create monitoring / SNMP / dashboard" (without app schema)
 

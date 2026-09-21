@@ -262,6 +262,8 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 
 **Hard rule:** the object that holds application / orchestration / twin logic must **not** be `ObjectType.DEVICE`. DEVICE is for drivers and telemetry only.
 
+**Enforced (ADR-0060):** `BundleManifestValidator` rejects `functions[]` hosted on DEVICE (`LOGIC_HOST_DEVICE`). Prefer `root.platform.singleton-blueprints.{name}` via a SINGLETON blueprint.
+
 | Need | Blueprint kind | Typical placement | Notes |
 |------|----------------|-------------------|-------|
 | One orchestrator for the solution/cluster | **SINGLETON** | Prefer `root.platform.singleton-blueprints.{name}` | Unique live hub; `ensure_singleton_instance` |

@@ -95,10 +95,13 @@ my-app-web/                      ← Cursor workspace for UI
   package.json                   ← pack:ui
 
 ispf/  or sibling checkout       ← bundle + pack zip only
-  examples/my-app/bundle.json
+  examples/my-app/solution.json   ← solution-as-repo folder (see solution-developer-guide)
+  examples/my-app/bundle.json     ← `ispf pack` output
   examples/my-app-ui/ui-pack.json
   examples/my-app-ui/my-app-ui-x.y.z.zip
 ```
+
+Solution folder layout and `tools/ispf-cli` (`ispf pack|validate|deploy`): [solution-developer-guide](solution-developer-guide.md) § Repository layout.
 
 SPA git history does not belong in `ispf-server`. Marketplace copies under `examples/marketplace-catalog/` are listings + zip, not Vite source.
 

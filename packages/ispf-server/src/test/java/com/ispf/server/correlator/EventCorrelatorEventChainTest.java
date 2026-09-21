@@ -24,7 +24,7 @@ class EventCorrelatorEventChainTest {
     void eventChainTriggersOnlyInOrderWithinWindow() {
         EventCorrelator created = correlatorService.create(new EventCorrelatorService.CreateCorrelatorRequest(
                 "Test event chain",
-                "root.platform.devices.mes-platform-hub",
+                "root.platform.singleton-blueprints.mes-platform-hub-v1",
                 CorrelatorPatternType.EVENT_CHAIN,
                 "stepA",
                 "stepB,stepC",
@@ -38,16 +38,16 @@ class EventCorrelatorEventChainTest {
         ));
         ruleIndex.addCorrelator(created);
 
-        correlatorService.processEventFired("root.platform.devices.mes-platform-hub", "stepA");
+        correlatorService.processEventFired("root.platform.singleton-blueprints.mes-platform-hub-v1", "stepA");
         assertThat(correlatorService.get(created.id()).lastTriggeredAt()).isNull();
 
-        correlatorService.processEventFired("root.platform.devices.mes-platform-hub", "stepC");
+        correlatorService.processEventFired("root.platform.singleton-blueprints.mes-platform-hub-v1", "stepC");
         assertThat(correlatorService.get(created.id()).lastTriggeredAt()).isNull();
 
-        correlatorService.processEventFired("root.platform.devices.mes-platform-hub", "stepB");
+        correlatorService.processEventFired("root.platform.singleton-blueprints.mes-platform-hub-v1", "stepB");
         assertThat(correlatorService.get(created.id()).lastTriggeredAt()).isNull();
 
-        correlatorService.processEventFired("root.platform.devices.mes-platform-hub", "stepC");
+        correlatorService.processEventFired("root.platform.singleton-blueprints.mes-platform-hub-v1", "stepC");
         assertThat(correlatorService.get(created.id()).lastTriggeredAt()).isNotNull();
     }
 }

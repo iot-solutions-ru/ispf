@@ -3,11 +3,14 @@ package com.ispf.server.ai.agent;
 import com.ispf.ai.LlmMessage;
 import com.ispf.ai.LlmRequest;
 import com.ispf.ai.LlmResponse;
+import com.ispf.ai.LlmToolCall;
 import com.ispf.server.ai.llm.LlmProviderRegistry;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -62,10 +65,21 @@ final class AgentLlmActionResolver {
             AgentJsonProtocol.AgentAction action,
             boolean failed,
             String error,
-            long llmLatencyMs
+            long llmLatencyMs,
+            String toolCallId
     ) {
         ParseAttempt(LlmResponse response, AgentJsonProtocol.AgentAction action, boolean failed, String error) {
-            this(response, action, failed, error, 0L);
+            this(response, action, failed, error, 0L, null);
+        }
+
+        ParseAttempt(
+                LlmResponse response,
+                AgentJsonProtocol.AgentAction action,
+                boolean failed,
+                String error,
+                long llmLatencyMs
+        ) {
+            this(response, action, failed, error, llmLatencyMs, null);
         }
     }
 
@@ -120,6 +134,10 @@ final class AgentLlmActionResolver {
             lastResponse = llmProviderRegistry.complete(requestFactory.apply(messages));
             totalLlmLatencyMs += (System.nanoTime() - llmStart) / 1_000_000L;
             try {
+                Optional<ParseAttempt> nativeAction = parseNativeToolCall(objectMapper, lastResponse, totalLlmLatencyMs);
+                if (nativeAction.isPresent()) {
+                    return nativeAction.get();
+                }
                 AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, lastResponse.content());
                 return new ParseAttempt(lastResponse, action, false, null, totalLlmLatencyMs);
             } catch (Exception ex) {
@@ -146,6 +164,57 @@ final class AgentLlmActionResolver {
             }
         }
         return new ParseAttempt(lastResponse, null, true, lastError, totalLlmLatencyMs);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Optional<ParseAttempt> parseNativeToolCall(
+            ObjectMapper objectMapper,
+            LlmResponse response,
+            long totalLlmLatencyMs
+    ) throws Exception {
+        if (response == null || response.toolCalls() == null || response.toolCalls().isEmpty()) {
+            return Optional.empty();
+        }
+        LlmToolCall call = response.toolCalls().get(0);
+        Map<String, Object> args = parseArguments(objectMapper, call.argumentsJson());
+        if ("finish".equals(call.name())) {
+            Object result = args.get("result");
+            Map<String, Object> resultMap = result instanceof Map<?, ?> map
+                    ? (Map<String, Object>) map
+                    : Map.of();
+            AgentJsonProtocol.AgentAction action = new AgentJsonProtocol.AgentAction(
+                    "finish",
+                    null,
+                    null,
+                    stringValue(args.get("summary")),
+                    resultMap
+            );
+            return Optional.of(new ParseAttempt(response, action, false, null, totalLlmLatencyMs, call.id()));
+        }
+        AgentJsonProtocol.AgentAction action = new AgentJsonProtocol.AgentAction(
+                "tool",
+                call.name(),
+                args,
+                null,
+                null
+        );
+        return Optional.of(new ParseAttempt(response, action, false, null, totalLlmLatencyMs, call.id()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> parseArguments(ObjectMapper objectMapper, String argumentsJson) throws Exception {
+        if (argumentsJson == null || argumentsJson.isBlank()) {
+            return Map.of();
+        }
+        JsonNode node = objectMapper.readTree(argumentsJson);
+        if (!node.isObject()) {
+            return Map.of();
+        }
+        return objectMapper.convertValue(node, Map.class);
+    }
+
+    private static String stringValue(Object value) {
+        return value == null ? null : String.valueOf(value);
     }
 
     private static String nudgeForRetry(LlmResponse response, ResolveContext context, int attemptIndex) {

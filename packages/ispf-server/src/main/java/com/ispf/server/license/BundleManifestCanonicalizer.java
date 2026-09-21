@@ -39,6 +39,12 @@ public final class BundleManifestCanonicalizer {
         }
     }
 
+    /** Recursively sort map keys for stable export/diff (lists are not reordered). */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> sortManifest(Map<String, Object> manifest) {
+        return sortRecursively(stripNulls(manifest));
+    }
+
     @SuppressWarnings("unchecked")
     private static Map<String, Object> stripNulls(Map<String, Object> source) {
         Map<String, Object> cleaned = new LinkedHashMap<>();

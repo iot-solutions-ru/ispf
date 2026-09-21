@@ -82,6 +82,8 @@ public class BlueprintPersistenceService {
                         model.events(),
                         model.functions(),
                         model.bindingRules(),
+                        model.sqlBindings(),
+                        model.alertRules(),
                         model.parameters(),
                         model.createdAt(),
                         model.updatedAt()
@@ -140,6 +142,8 @@ public class BlueprintPersistenceService {
                         dto.events(),
                         dto.functions(),
                         dto.bindings(),
+                        dto.sqlBindings(),
+                        dto.alertRules(),
                         dto.parameters(),
                         dto.createdAt(),
                         dto.updatedAt()

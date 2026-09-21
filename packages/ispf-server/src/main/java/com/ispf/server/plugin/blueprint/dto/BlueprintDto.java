@@ -4,9 +4,11 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.plugin.blueprint.BlueprintAttachment;
+import com.ispf.plugin.blueprint.BlueprintAlertTemplate;
 import com.ispf.plugin.blueprint.BlueprintBindingRule;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
 import com.ispf.plugin.blueprint.BlueprintReevaluation;
+import com.ispf.plugin.blueprint.BlueprintSqlBindingTemplate;
 import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.plugin.blueprint.MixinReevaluationTrigger;
@@ -28,6 +30,8 @@ public record BlueprintDto(
         List<EventDescriptor> events,
         List<FunctionDescriptor> functions,
         List<BlueprintBindingRule> bindings,
+        List<BlueprintSqlBindingTemplate> sqlBindings,
+        List<BlueprintAlertTemplate> alertRules,
         Map<String, String> parameters,
         Instant createdAt,
         Instant updatedAt
@@ -46,6 +50,8 @@ public record BlueprintDto(
                 model.events(),
                 model.functions(),
                 model.bindingRules(),
+                model.sqlBindings(),
+                model.alertRules(),
                 model.parameters(),
                 model.createdAt(),
                 model.updatedAt()

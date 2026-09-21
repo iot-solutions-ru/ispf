@@ -55,6 +55,7 @@ class BundleVisualGroupServiceTest {
                         "DEVICE",
                         "Demo Device",
                         "",
+                        null,
                         null
                 )),
                 List.of(new ApplicationBundleDeployService.BundleDashboard(
@@ -150,6 +151,7 @@ class BundleVisualGroupServiceTest {
                         List.of("operator"),
                         null
                 )),
+                null,
                 null,
                 null,
                 null,

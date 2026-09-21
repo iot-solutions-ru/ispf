@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class MesGenealogyLiteIntegrationTest {
 
-    private static final String HUB = "root.platform.devices.mes-platform-hub";
+    private static final String HUB = "root.platform.singleton-blueprints.mes-platform-hub-v1";
     private static final String GENEALOGY_DASHBOARD = "root.platform.dashboards.mes-platform-genealogy";
     private static final String SEED_LOT = "BATCH-LINE-A01-001";
 

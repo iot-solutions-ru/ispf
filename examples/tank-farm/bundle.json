@@ -281,8 +281,7 @@
     {
       "name": "tank-farm-hub-v1",
       "description": "Manifold hub (marketplace)",
-      "type": "INSTANCE",
-      "targetObjectType": "DEVICE",
+      "type": "SINGLETON",
       "suitabilityExpression": "",
       "variables": [
         {
@@ -603,13 +602,6 @@
     },
     {
       "parentPath": "root.platform.devices.tank-farm-demo",
-      "name": "hub",
-      "type": "DEVICE",
-      "displayName": "Manifold hub",
-      "templateId": "tank-farm-hub-v1"
-    },
-    {
-      "parentPath": "root.platform.devices.tank-farm-demo",
       "name": "tank-11",
       "type": "DEVICE",
       "displayName": "РВС-11",
@@ -674,7 +666,7 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.tank-farm-demo.hub",
+      "objectPath": "root.platform.singleton-blueprints.tank-farm-hub-v1",
       "functionName": "tank_farm_tick",
       "version": "1",
       "descriptor": {

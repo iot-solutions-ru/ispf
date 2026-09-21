@@ -6,7 +6,13 @@
   "metadata": {
     "changelog": "Initial release: floor zones, comfort setpoints, Haystack tag examples",
     "domain": "building-hvac",
-    "haystackTags": ["site", "equip", "ahu", "zone", "temp"]
+    "haystackTags": [
+      "site",
+      "equip",
+      "ahu",
+      "zone",
+      "temp"
+    ]
   },
   "migrations": [
     {
@@ -16,26 +22,47 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.demo-sensor-01",
+      "objectPath": "root.platform.singleton-blueprints.building-hvac-hub-v1",
       "functionName": "hvac_listZones",
       "version": "1",
       "descriptor": {
-        "inputSchema": { "name": "in", "fields": [] },
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
             {
               "name": "rows",
               "type": "RECORD_LIST",
               "nestedSchema": {
                 "name": "zone_row",
                 "fields": [
-                  { "name": "zone", "type": "STRING" },
-                  { "name": "spaceTempC", "type": "DOUBLE" },
-                  { "name": "setpointC", "type": "DOUBLE" },
-                  { "name": "mode", "type": "STRING" }
+                  {
+                    "name": "zone",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "spaceTempC",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "setpointC",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "mode",
+                    "type": "STRING"
+                  }
                 ]
               }
             }
@@ -54,5 +81,17 @@
     "defaultDashboard": "",
     "dashboards": [],
     "eventJournalObjectPath": "root.platform.devices.demo-sensor-01"
-  }
+  },
+  "blueprints": [
+    {
+      "name": "building-hvac-hub-v1",
+      "description": "Building HVAC Reference logic hub (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ]
 }

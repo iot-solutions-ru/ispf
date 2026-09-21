@@ -13,19 +13,23 @@ import com.ispf.server.application.bundle.BundleValidationResult;
 import com.ispf.server.platform.McpToolCatalogPort;
 import com.ispf.server.security.OperatorAgentToolAllowlist;
 import com.ispf.server.api.dto.ObjectDto;
+import com.ispf.server.alert.AlertRuleService;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
 import com.ispf.server.application.bundle.ApplicationBundleSnapshotStore;
+import com.ispf.server.application.bundle.BundleManifestJsonSupport;
 import com.ispf.server.application.data.ApplicationDataStore;
+import com.ispf.server.application.script.PlatformScriptBridge;
+import com.ispf.server.application.test.FunctionTestRunner;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 import com.ispf.server.application.catalog.ApplicationEventCatalogService;
 import com.ispf.server.application.function.ApplicationFunctionStore;
-import com.ispf.server.application.bundle.BundleManifestJsonSupport;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.dashboard.DashboardWidgetNormalizer;
 import com.ispf.server.driver.DeviceProvisioningService;
 import com.ispf.server.driver.DriverCatalog;
+import com.ispf.server.event.EventJournalStore;
 import com.ispf.server.event.EventService;
 import com.ispf.server.federation.FederationBindService;
 import com.ispf.server.function.FunctionInvokeAccessService;
@@ -142,7 +146,11 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
             com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService analyticsTagCatalogService,
             com.ispf.server.platform.analytics.AnalyticsQueryService analyticsQueryService,
             com.ispf.server.platform.analytics.AnalyticsExpressionService analyticsExpressionService,
-            com.ispf.server.expression.ExpressionFormalVerificationService formalVerificationService
+            com.ispf.server.expression.ExpressionFormalVerificationService formalVerificationService,
+            FunctionTestRunner functionTestRunner,
+            PlatformScriptBridge platformScriptBridge,
+            AlertRuleService alertRuleService,
+            EventJournalStore eventJournalStore
     ) {
         this.objectMapper = objectMapper;
         this.operatorAgentToolPolicy = operatorAgentToolPolicy;
@@ -254,6 +262,14 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 BlueprintRegistry,
                 haystackExportService,
                 objectMapper
+        ));
+        tools.addAll(AgentTestTools.all(
+                functionTestRunner,
+                bundleDeployService,
+                platformScriptBridge,
+                alertRuleService,
+                eventJournalStore,
+                ObjectTreePort
         ));
         tools.addAll(AgentAutomationTools.all(
                 automationTreeService,
@@ -379,10 +395,11 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
     }
 
     public Map<String, Object> unknownToolResult(String toolName) {
-        return Map.of(
-                "status", "ERROR",
-                "error", "Unknown tool: " + toolName,
-                "hint", "Use exact snake_case tool names from the catalog. "
+        return AgentToolErrors.error(
+                "UNKNOWN_TOOL",
+                "Unknown tool: " + toolName,
+                "",
+                "Use exact snake_case tool names from the catalog. "
                         + "For workflows: create_object (type=WORKFLOW), save_workflow_bpmn, run_workflow. "
                         + "Never invent display names or Russian labels as tool names."
         );
@@ -408,7 +425,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
         }
         PlatformAgentTool tool = toolsByName.get(toolName);
         if (tool == null) {
-            throw new IllegalArgumentException("Unknown tool: " + toolName);
+            return unknownToolResult(toolName);
         }
         Map<String, Object> args = arguments != null ? arguments : Map.of();
         var schemaViolation = AgentToolSchemaValidator.validate(tool.inputSchema(), args);
@@ -1217,7 +1234,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
 
             @Override
             public String description() {
-                return "Deploy bundle to platform (mutates DB). Args: packageId, manifest. "
+                return "Deploy bundle to platform (mutates DB). Args: packageId, manifest, optional runTests (default true). "
                         + "Requires prior validate_bundle or dry_run_deploy OK for same packageId in this run.";
             }
 
@@ -1241,8 +1258,25 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 }
                 var parsed = BundleManifestJsonSupport.parse(objectMapper, (Map<String, Object>) manifestMap);
                 try {
-                    Map<String, Object> deployed = bundleDeployService.deploy(packageId, parsed);
-                    deployed.put("status", "OK");
+                    boolean runTests = !Boolean.FALSE.equals(arguments.get("runTests"));
+                    Map<String, Object> deployed = bundleDeployService.deploy(
+                            packageId,
+                            parsed,
+                            false,
+                            true,
+                            runTests
+                    );
+                    if ("OK".equals(String.valueOf(deployed.get("status")))) {
+                        deployed.put("status", "OK");
+                    } else {
+                        deployed.putIfAbsent("status", "ERROR");
+                        if (deployed.get("testResults") != null) {
+                            deployed.putIfAbsent(
+                                    "hint",
+                                    "Deploy tests failed — consider rollback_application_deploy for " + packageId
+                            );
+                        }
+                    }
                     return deployed;
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());

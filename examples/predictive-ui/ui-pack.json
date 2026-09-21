@@ -9,5 +9,5 @@
   "minIspfVersion": "0.9.30",
   "role": "ui-frontend",
   "backendAppId": "predictive",
-  "hubPath": "root.platform.devices.predictive.hub"
+  "hubPath": "root.platform.singleton-blueprints.predictive-hub-v1"
 }

@@ -52,7 +52,7 @@ Invoke validation with discrete fields:
 ```bash
 curl -X POST http://localhost:8080/api/v1/bff/invoke \
   -H "Content-Type: application/json" \
-  -d '{"objectPath":"root.platform.devices.mes-cto-hub","functionName":"mes_cto_validateConfig","input":{"schema":{"name":"in","fields":[{"name":"finishCode","type":"STRING"},{"name":"sensorCode","type":"STRING"}]},"rows":[{"finishCode":"FINISH-MATTE","sensorCode":"SENSOR-VISION"}]}}'
+  -d '{"objectPath":"root.platform.singleton-blueprints.mes-cto-hub-v1","functionName":"mes_cto_validateConfig","input":{"schema":{"name":"in","fields":[{"name":"finishCode","type":"STRING"},{"name":"sensorCode","type":"STRING"}]},"rows":[{"finishCode":"FINISH-MATTE","sensorCode":"SENSOR-VISION"}]}}'
 ```
 
 The validation and generate functions also accept `optionsJson` with `finishCode` and `sensorCode`.

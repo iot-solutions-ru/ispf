@@ -37,7 +37,7 @@ curl -s -X POST http://localhost:8080/api/v1/applications/mes-platform-productio
 | 8 | Advance batch phase | BFF `mes_batch_runPhase` |
 | 9 | ERP outbox | BFF `mes_erp_enqueueOutbox` then `mes_erp_pollOutbox` |
 
-Hub: `root.platform.devices.mes-platform-production-hub`
+Hub: `root.platform.singleton-blueprints.mes-platform-production-hub-v1`
 
 Operator UI: `?mode=operator&app=mes-platform-production`
 

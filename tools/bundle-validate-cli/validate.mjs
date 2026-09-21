@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /**
+ * @deprecated Use `tools/ispf-cli` — `ispf validate <bundle.json> --app <id>` (local schema + remote API).
  * Thin wrapper: validate + dry-run deploy against ISPF API (BL-98).
  * Usage: node validate.mjs <bundle.json> <appId>
  */

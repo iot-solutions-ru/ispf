@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class MesPlatformProductionBundleSmokeTest {
 
-    private static final String HUB_DEVICE = "root.platform.devices.mes-platform-production-hub";
+    private static final String HUB_DEVICE = "root.platform.singleton-blueprints.mes-platform-production-hub-v1";
     private static final String SEED_SHIFT_ID = "dddddddd-dddd-dddd-dddd-dddddddddddd";
     private static final String SEED_BATCH_PATH = "root.platform.mes.lots.batch-line-a01-001";
 

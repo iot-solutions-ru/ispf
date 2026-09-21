@@ -201,5 +201,5 @@ For **variable** or **event** targets: choose **Effect type**, then either a loc
 
 ## Not to be confused with
 
-- **SQL bindings** (`ApplicationSqlBindingService`) — separate scheduler, not object binding rules
-- **Alert rules**, correlators, workflows — separate subsystems
+- **SQL bindings** (`SqlBindingObjectService` / bundle `bindings[]`) — separate scheduler, not object binding rules. Prefer **blueprint `sqlBindings`** with `${code}` / `${self.path}` parameters when many instances share one query shape (see [blueprints](blueprints.md) § Parametrized SHAPE).
+- **Alert rules**, correlators, workflows — separate subsystems; blueprint `alertRules` templates materialize alert nodes with an absolute target object path.

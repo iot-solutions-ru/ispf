@@ -1,20 +1,24 @@
 package com.ispf.server.application.bundle;
 
-import com.ispf.server.application.bundle.ApplicationBundleDeployService;
-import com.ispf.server.application.bundle.BundleDependencyException;
-import com.ispf.server.application.bundle.BundleDependencyVerifier;
-import com.ispf.server.application.bundle.ApplicationBundleSnapshotStore;
-import com.ispf.server.application.bundle.BundleSemverSupport;
+import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.PlatformObject;
+import com.ispf.plugin.blueprint.BlueprintCatalogRoots;
+import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.license.CommercialBundleLicenseVerifier;
 import com.ispf.server.license.CommercialLicenseException;
+import com.ispf.server.object.ObjectManager;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -37,19 +41,25 @@ public class BundleManifestValidator {
     private final CommercialBundleLicenseVerifier licenseVerifier;
     private final ApplicationBundleSnapshotStore snapshotStore;
     private final ObjectMapper objectMapper;
+    private final ObjectProvider<ObjectManager> objectManagerProvider;
+    private final ObjectProvider<BundleSchemaValidator> schemaValidatorProvider;
 
     public BundleManifestValidator(
             FunctionScriptValidator scriptValidator,
             BundleDependencyVerifier dependencyVerifier,
             CommercialBundleLicenseVerifier licenseVerifier,
             ApplicationBundleSnapshotStore snapshotStore,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            ObjectProvider<ObjectManager> objectManagerProvider,
+            ObjectProvider<BundleSchemaValidator> schemaValidatorProvider
     ) {
         this.scriptValidator = scriptValidator;
         this.dependencyVerifier = dependencyVerifier;
         this.licenseVerifier = licenseVerifier;
         this.snapshotStore = snapshotStore;
         this.objectMapper = objectMapper;
+        this.objectManagerProvider = objectManagerProvider;
+        this.schemaValidatorProvider = schemaValidatorProvider;
     }
 
     public BundleValidationResult validate(String appId, ApplicationBundleDeployService.BundleManifest manifest) {
@@ -66,6 +76,11 @@ public class BundleManifestValidator {
             boolean dryRun
     ) {
         BundleValidationResult.Builder builder = BundleValidationResult.builder();
+
+        BundleSchemaValidator schemaValidator = schemaValidatorProvider.getIfAvailable();
+        if (schemaValidator != null) {
+            schemaValidator.validate(manifest, builder);
+        }
 
         if (appId == null || appId.isBlank()) {
             builder.addError("appId is required");
@@ -90,9 +105,12 @@ public class BundleManifestValidator {
         String tablePrefix = manifest.tablePrefix() != null ? manifest.tablePrefix() : "";
         validateMigrations(manifest, tablePrefix, builder);
         validateFunctions(manifest, builder);
+        validateBindings(manifest, builder);
         validateEvents(manifest, builder);
+        validateTests(manifest, builder);
         validateDashboards(manifest, builder);
         validateObjects(manifest, builder);
+        validateLogicHosts(manifest, builder);
         validateReports(manifest, builder);
         validateDependencies(appId, manifest, builder);
         validateLicense(appId, manifest, builder);
@@ -208,6 +226,173 @@ public class BundleManifestValidator {
                     builder.addError("event " + event.id() + ": payloadSchema must be JSON-serializable");
                 }
             }
+        }
+    }
+
+    private void validateTests(
+            ApplicationBundleDeployService.BundleManifest manifest,
+            BundleValidationResult.Builder builder
+    ) {
+        if (manifest.tests() == null) {
+            return;
+        }
+        int index = 0;
+        for (ApplicationBundleDeployService.BundleTest test : manifest.tests()) {
+            String path = "tests[" + index + "]";
+            if (test.id() == null || test.id().isBlank()) {
+                builder.addError(path + ": id is required");
+            }
+            String kind = test.kind() != null ? test.kind().trim().toLowerCase(java.util.Locale.ROOT) : "";
+            if (!"function".equals(kind) && !"telemetry".equals(kind)) {
+                builder.addError(path + ": kind must be function or telemetry");
+            }
+            if ("function".equals(kind)
+                    && (isBlank(test.objectPath()) || isBlank(test.functionName()))) {
+                builder.addError(path + ": function tests require objectPath and functionName");
+            }
+            if ("telemetry".equals(kind)
+                    && (isBlank(test.objectPath()) || isBlank(test.variable()))) {
+                builder.addError(path + ": telemetry tests require objectPath and variable");
+            }
+            index++;
+        }
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private void validateBindings(
+            ApplicationBundleDeployService.BundleManifest manifest,
+            BundleValidationResult.Builder builder
+    ) {
+        if (manifest.bindings() == null) {
+            return;
+        }
+        int index = 0;
+        for (ApplicationBundleDeployService.BundleSqlBinding binding : manifest.bindings()) {
+            String path = "bindings[" + index + "]";
+            if (isBlank(binding.objectPath())) {
+                builder.addIssue(BundleValidationIssue.error(
+                        "BINDING_OBJECT_PATH_REQUIRED", path, "objectPath is required",
+                        "Set bindings[].objectPath to the target object.", BundleValidationIssue.DOC_BUNDLE));
+            }
+            if (isBlank(binding.variable())) {
+                builder.addIssue(BundleValidationIssue.error(
+                        "BINDING_VARIABLE_REQUIRED", path, "variable is required",
+                        "Set bindings[].variable.", BundleValidationIssue.DOC_BUNDLE));
+            }
+            if (isBlank(binding.query())) {
+                builder.addIssue(BundleValidationIssue.error(
+                        "BINDING_QUERY_REQUIRED", path, "query is required",
+                        "Set bindings[].query to a SELECT.", BundleValidationIssue.DOC_BUNDLE));
+            }
+            index++;
+        }
+    }
+
+    /**
+     * ADR-0060: script functions and blueprint-hosted functions must not live on DEVICE.
+     * SQL bindings[] on DEVICE telemetry remain allowed.
+     */
+    private void validateLogicHosts(
+            ApplicationBundleDeployService.BundleManifest manifest,
+            BundleValidationResult.Builder builder
+    ) {
+        Map<String, String> pathTypes = buildPathTypeMap(manifest);
+        if (manifest.functions() != null) {
+            int index = 0;
+            for (ApplicationBundleDeployService.BundleFunction function : manifest.functions()) {
+                String objectPath = function.objectPath();
+                String issuePath = "functions[" + index + "].objectPath";
+                if (!isBlank(objectPath)) {
+                    Optional<String> resolved = resolveType(objectPath, pathTypes);
+                    if (resolved.isEmpty()) {
+                        builder.addIssue(BundleValidationIssue.warning(
+                                "LOGIC_HOST_UNKNOWN",
+                                issuePath,
+                                "Function host path '" + objectPath + "' is not declared in objects[]/blueprints[] "
+                                        + "and was not found in the live tree",
+                                "Declare a SINGLETON hub blueprint or objects[] entry for the host.",
+                                BundleValidationIssue.DOC_LOGIC_HOST
+                        ));
+                    } else if (ObjectType.DEVICE.name().equalsIgnoreCase(resolved.get())) {
+                        builder.addIssue(BundleValidationIssue.error(
+                                "LOGIC_HOST_DEVICE",
+                                issuePath,
+                                "Function '" + function.functionName() + "' is hosted on DEVICE path '" + objectPath + "'",
+                                "Move functions to root.platform.singleton-blueprints.{name} (SINGLETON) "
+                                        + "or an INSTANCE twin — never ObjectType.DEVICE.",
+                                BundleValidationIssue.DOC_LOGIC_HOST
+                        ));
+                    }
+                }
+                index++;
+            }
+        }
+        if (manifest.blueprints() != null) {
+            int index = 0;
+            for (ApplicationBundleDeployService.BundleBlueprint blueprint : manifest.blueprints()) {
+                // SINGLETON hubs must not materialize as DEVICE (application-principles hard rule).
+                if (blueprint.type() == BlueprintType.SINGLETON
+                        && blueprint.targetObjectType() == ObjectType.DEVICE) {
+                    builder.addIssue(BundleValidationIssue.error(
+                            "LOGIC_HOST_DEVICE",
+                            "blueprints[" + index + "].targetObjectType",
+                            "SINGLETON blueprint '" + blueprint.name() + "' must not use targetObjectType=DEVICE",
+                            "Omit targetObjectType (defaults to CUSTOM) or set CUSTOM/APPLICATION.",
+                            BundleValidationIssue.DOC_LOGIC_HOST
+                    ));
+                }
+                index++;
+            }
+        }
+    }
+
+    private Map<String, String> buildPathTypeMap(ApplicationBundleDeployService.BundleManifest manifest) {
+        Map<String, String> pathTypes = new HashMap<>();
+        if (manifest.objects() != null) {
+            for (ApplicationBundleDeployService.BundleObject object : manifest.objects()) {
+                if (isBlank(object.parentPath()) || isBlank(object.name()) || isBlank(object.type())) {
+                    continue;
+                }
+                pathTypes.put(object.parentPath() + "." + object.name(), object.type().trim().toUpperCase(Locale.ROOT));
+            }
+        }
+        if (manifest.blueprints() != null) {
+            for (ApplicationBundleDeployService.BundleBlueprint blueprint : manifest.blueprints()) {
+                if (blueprint.type() != BlueprintType.SINGLETON || isBlank(blueprint.name())) {
+                    continue;
+                }
+                String singletonPath = BlueprintCatalogRoots.SINGLETON + "." + blueprint.name();
+                ObjectType target = blueprint.targetObjectType() != null ? blueprint.targetObjectType() : ObjectType.CUSTOM;
+                pathTypes.putIfAbsent(singletonPath, target.name());
+            }
+        }
+        return pathTypes;
+    }
+
+    private Optional<String> resolveType(String objectPath, Map<String, String> pathTypes) {
+        // Catalog placement under singleton-blueprints.* is a logic hub by definition (ADR-0060).
+        if (objectPath.startsWith(BlueprintCatalogRoots.SINGLETON + ".")) {
+            String mapped = pathTypes.get(objectPath);
+            if (mapped != null && !ObjectType.DEVICE.name().equalsIgnoreCase(mapped)) {
+                return Optional.of(mapped);
+            }
+            return Optional.of(ObjectType.CUSTOM.name());
+        }
+        String fromManifest = pathTypes.get(objectPath);
+        if (fromManifest != null) {
+            return Optional.of(fromManifest);
+        }
+        ObjectManager objectManager = objectManagerProvider.getIfAvailable();
+        if (objectManager == null) {
+            return Optional.empty();
+        }
+        try {
+            return objectManager.tree().findByPath(objectPath).map(PlatformObject::type).map(Enum::name);
+        } catch (Exception ignored) {
+            return Optional.empty();
         }
     }
 

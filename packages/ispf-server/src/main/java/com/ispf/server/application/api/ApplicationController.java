@@ -122,10 +122,11 @@ public class ApplicationController {
     @GetMapping("/{appId}/export")
     public Map<String, Object> exportBundle(
             @PathVariable String appId,
-            @RequestParam(required = false) String version
+            @RequestParam(required = false) String version,
+            @RequestParam(defaultValue = "false") boolean canonical
     ) {
         try {
-            return bundleDeployService.exportActiveBundle(appId, version);
+            return bundleDeployService.exportActiveBundle(appId, version, canonical);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
         } catch (Exception ex) {

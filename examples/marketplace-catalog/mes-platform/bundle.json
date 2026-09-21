@@ -76,14 +76,6 @@
       "description": "MES plant instances"
     },
     {
-      "parentPath": "root.platform.devices",
-      "name": "mes-platform-hub",
-      "type": "DEVICE",
-      "displayName": "MES Platform Hub",
-      "description": "OEE + MES BFF hub for mes-platform certification bundle",
-      "templateId": "mes-platform-hub-v1"
-    },
-    {
       "parentPath": "root.platform.mes.work-orders",
       "name": "wo-line-a01-001",
       "type": "WORK_ORDER",
@@ -159,7 +151,7 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_oee_listShifts",
       "version": "1",
       "descriptor": {
@@ -224,7 +216,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_oee_getKpi",
       "version": "1",
       "descriptor": {
@@ -281,7 +273,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_oee_addDowntime",
       "version": "1",
       "descriptor": {
@@ -322,7 +314,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_platform_listLines",
       "version": "1",
       "descriptor": {
@@ -371,7 +363,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_dispatch_confirmWorkOrder",
       "version": "1",
       "descriptor": {
@@ -416,7 +408,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_quality_listSpcSamples",
       "version": "1",
       "descriptor": {
@@ -469,7 +461,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_genealogy_listGraph",
       "version": "1",
       "descriptor": {
@@ -558,7 +550,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_genealogy_queryByLot",
       "version": "1",
       "descriptor": {
@@ -656,7 +648,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_genealogy_queryDagByLot",
       "version": "1",
       "descriptor": {
@@ -750,7 +742,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_genealogy_listDagEdges",
       "version": "1",
       "descriptor": {
@@ -835,7 +827,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_batch_runPhase",
       "version": "1",
       "descriptor": {
@@ -888,7 +880,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_batch_getStatus",
       "version": "1",
       "descriptor": {
@@ -937,7 +929,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_erp_enqueueOutbox",
       "version": "1",
       "descriptor": {
@@ -986,7 +978,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_erp_pollOutbox",
       "version": "1",
       "descriptor": {
@@ -1043,7 +1035,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_bom_explode",
       "version": "1",
       "descriptor": {
@@ -1178,7 +1170,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_bom_whereUsed",
       "version": "1",
       "descriptor": {
@@ -1256,7 +1248,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_ops_listReady",
       "version": "1",
       "descriptor": {
@@ -1330,7 +1322,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_ops_complete",
       "version": "1",
       "descriptor": {
@@ -1656,8 +1648,7 @@
     {
       "name": "mes-platform-hub-v1",
       "description": "MES platform hub — SPC telemetry and control limits (BL-167)",
-      "type": "MIXIN",
-      "targetObjectType": "DEVICE",
+      "type": "SINGLETON",
       "variables": [
         {
           "name": "spcMeasurement",
@@ -1939,7 +1930,7 @@
   "workflows": [
     {
       "path": "root.platform.workflows.mes-work-order-dispatch",
-      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:ispf=\"http://ispf.io/bpmn\" targetNamespace=\"http://ispf.io/bpmn\"><process id=\"mes-work-order-dispatch\" name=\"MES Work Order Dispatch\" isExecutable=\"true\"><startEvent id=\"start\" name=\"Start\"/><serviceTask id=\"notifyDispatch\" name=\"Log dispatch\" ispf:action=\"log\" ispf:message=\"mes-platform: work order dispatched\"/><userTask id=\"confirmStart\" name=\"Confirm work order start\" ispf:title=\"Confirm work order start\" ispf:instructions=\"Review the dispatched work order and confirm operator acceptance\" ispf:assigneeRole=\"operator\" ispf:targetObject=\"root.platform.devices.mes-platform-hub\" ispf:function=\"mes_dispatch_confirmWorkOrder\"/><endEvent id=\"end\" name=\"End\"/><sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"notifyDispatch\"/><sequenceFlow id=\"f2\" sourceRef=\"notifyDispatch\" targetRef=\"confirmStart\"/><sequenceFlow id=\"f3\" sourceRef=\"confirmStart\" targetRef=\"end\"/></process></definitions>",
+      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:ispf=\"http://ispf.io/bpmn\" targetNamespace=\"http://ispf.io/bpmn\"><process id=\"mes-work-order-dispatch\" name=\"MES Work Order Dispatch\" isExecutable=\"true\"><startEvent id=\"start\" name=\"Start\"/><serviceTask id=\"notifyDispatch\" name=\"Log dispatch\" ispf:action=\"log\" ispf:message=\"mes-platform: work order dispatched\"/><userTask id=\"confirmStart\" name=\"Confirm work order start\" ispf:title=\"Confirm work order start\" ispf:instructions=\"Review the dispatched work order and confirm operator acceptance\" ispf:assigneeRole=\"operator\" ispf:targetObject=\"root.platform.singleton-blueprints.mes-platform-hub-v1\" ispf:function=\"mes_dispatch_confirmWorkOrder\"/><endEvent id=\"end\" name=\"End\"/><sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"notifyDispatch\"/><sequenceFlow id=\"f2\" sourceRef=\"notifyDispatch\" targetRef=\"confirmStart\"/><sequenceFlow id=\"f3\" sourceRef=\"confirmStart\" targetRef=\"end\"/></process></definitions>",
       "status": "ACTIVE",
       "operatorAppId": "mes-platform"
     }
@@ -1947,7 +1938,7 @@
   "correlators": [
     {
       "name": "MES work order dispatch",
-      "objectPath": "root.platform.devices.mes-platform-hub",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "patternType": "COUNT",
       "eventName": "workOrderDispatched",
       "windowSeconds": 0,
@@ -1973,37 +1964,37 @@
       "path": "root.platform.dashboards.mes-platform-dispatch",
       "title": "MES Dispatch",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"dispatch-queue\",\"type\":\"work-queue\",\"title\":\"Work orders\",\"x\":0,\"y\":0,\"w\":35,\"h\":42,\"operatorId\":\"operator\",\"operatorAppId\":\"mes-platform\",\"maxItems\":10},{\"id\":\"dispatch-help\",\"type\":\"html-snippet\",\"title\":\"Dispatch\",\"x\":35,\"y\":0,\"w\":49,\"h\":21,\"htmlJson\":\"<p>Work order dispatch workflow + operator work-queue (BL-166). Fire <code>workOrderDispatched</code> on the hub to start the BPMN user task.</p>\"},{\"id\":\"oee-shift\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":35,\"y\":21,\"w\":49,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Load seed shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"dispatch-queue\",\"type\":\"work-queue\",\"title\":\"Work orders\",\"x\":0,\"y\":0,\"w\":35,\"h\":42,\"operatorId\":\"operator\",\"operatorAppId\":\"mes-platform\",\"maxItems\":10},{\"id\":\"dispatch-help\",\"type\":\"html-snippet\",\"title\":\"Dispatch\",\"x\":35,\"y\":0,\"w\":49,\"h\":21,\"htmlJson\":\"<p>Work order dispatch workflow + operator work-queue (BL-166). Fire <code>workOrderDispatched</code> on the hub to start the BPMN user task.</p>\"},{\"id\":\"oee-shift\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":35,\"y\":21,\"w\":49,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Load seed shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"}]}"
     },
     {
       "path": "root.platform.dashboards.mes-platform-oee",
       "title": "MES OEE",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"oee-shifts\",\"type\":\"function\",\"title\":\"Shifts\",\"x\":0,\"y\":0,\"w\":28,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_oee_listShifts\",\"buttonLabel\":\"List shifts\"},{\"id\":\"oee-kpi\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":28,\"y\":0,\"w\":56,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Morning shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"},{\"id\":\"oee-lines\",\"type\":\"function\",\"title\":\"ISA-95 lines\",\"x\":0,\"y\":21,\"w\":84,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_platform_listLines\",\"buttonLabel\":\"List lines\"},{\"id\":\"oee-analytics-chart\",\"type\":\"chart\",\"title\":\"OEE trend (BL-160)\",\"x\":0,\"y\":42,\"w\":56,\"h\":28,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"oeePct\",\"valueField\":\"value\",\"historyRange\":\"24h\",\"chartStyle\":\"area\",\"decimals\":0,\"unit\":\"%\",\"analyticsTemplateId\":\"oee\",\"analyticsBindingExpression\":\"oee('oeePct', '8h')\"},{\"id\":\"oee-analytics-help\",\"type\":\"html-snippet\",\"title\":\"Asset analytics\",\"x\":56,\"y\":42,\"w\":28,\"h\":28,\"htmlJson\":\"<p>BL-160: chart uses platform <code>oee</code> analytics template with 8h historian rollup on <code>oeePct</code>. Catalog: <code>GET /api/v1/platform/analytics/templates</code>.</p>\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"oee-shifts\",\"type\":\"function\",\"title\":\"Shifts\",\"x\":0,\"y\":0,\"w\":28,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_oee_listShifts\",\"buttonLabel\":\"List shifts\"},{\"id\":\"oee-kpi\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":28,\"y\":0,\"w\":56,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Morning shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"},{\"id\":\"oee-lines\",\"type\":\"function\",\"title\":\"ISA-95 lines\",\"x\":0,\"y\":21,\"w\":84,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_platform_listLines\",\"buttonLabel\":\"List lines\"},{\"id\":\"oee-analytics-chart\",\"type\":\"chart\",\"title\":\"OEE trend (BL-160)\",\"x\":0,\"y\":42,\"w\":56,\"h\":28,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"variableName\":\"oeePct\",\"valueField\":\"value\",\"historyRange\":\"24h\",\"chartStyle\":\"area\",\"decimals\":0,\"unit\":\"%\",\"analyticsTemplateId\":\"oee\",\"analyticsBindingExpression\":\"oee('oeePct', '8h')\"},{\"id\":\"oee-analytics-help\",\"type\":\"html-snippet\",\"title\":\"Asset analytics\",\"x\":56,\"y\":42,\"w\":28,\"h\":28,\"htmlJson\":\"<p>BL-160: chart uses platform <code>oee</code> analytics template with 8h historian rollup on <code>oeePct</code>. Catalog: <code>GET /api/v1/platform/analytics/templates</code>.</p>\"}]}"
     },
     {
       "path": "root.platform.dashboards.mes-platform-quality",
       "title": "MES Quality / SPC",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"spc-chart\",\"type\":\"chart\",\"title\":\"SPC — critical dimension\",\"x\":0,\"y\":0,\"w\":56,\"h\":28,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcMeasurement\",\"historyRange\":\"24h\",\"chartStyle\":\"line\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-ucl\",\"type\":\"value\",\"title\":\"UCL\",\"x\":56,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcUcl\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-target\",\"type\":\"value\",\"title\":\"Target\",\"x\":70,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcTarget\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-lcl\",\"type\":\"value\",\"title\":\"LCL\",\"x\":56,\"y\":14,\"w\":28,\"h\":14,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"variableName\":\"spcLcl\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-samples\",\"type\":\"function\",\"title\":\"SPC samples\",\"x\":0,\"y\":28,\"w\":42,\"h\":14,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_quality_listSpcSamples\",\"buttonLabel\":\"List SPC samples\"},{\"id\":\"spc-help\",\"type\":\"html-snippet\",\"title\":\"Quality module\",\"x\":42,\"y\":28,\"w\":42,\"h\":14,\"htmlJson\":\"<p>BL-167: <code>chart</code> widget on <code>spcMeasurement</code> with UCL/LCL reference values. Apply <code>quality-record-v1</code> to <code>QUALITY_RECORD</code> nodes for defect traceability.</p>\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"spc-chart\",\"type\":\"chart\",\"title\":\"SPC — critical dimension\",\"x\":0,\"y\":0,\"w\":56,\"h\":28,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"variableName\":\"spcMeasurement\",\"historyRange\":\"24h\",\"chartStyle\":\"line\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-ucl\",\"type\":\"value\",\"title\":\"UCL\",\"x\":56,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"variableName\":\"spcUcl\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-target\",\"type\":\"value\",\"title\":\"Target\",\"x\":70,\"y\":0,\"w\":14,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"variableName\":\"spcTarget\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-lcl\",\"type\":\"value\",\"title\":\"LCL\",\"x\":56,\"y\":14,\"w\":28,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"variableName\":\"spcLcl\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-samples\",\"type\":\"function\",\"title\":\"SPC samples\",\"x\":0,\"y\":28,\"w\":42,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_quality_listSpcSamples\",\"buttonLabel\":\"List SPC samples\"},{\"id\":\"spc-help\",\"type\":\"html-snippet\",\"title\":\"Quality module\",\"x\":42,\"y\":28,\"w\":42,\"h\":14,\"htmlJson\":\"<p>BL-167: <code>chart</code> widget on <code>spcMeasurement</code> with UCL/LCL reference values. Apply <code>quality-record-v1</code> to <code>QUALITY_RECORD</code> nodes for defect traceability.</p>\"}]}"
     },
     {
       "path": "root.platform.dashboards.mes-platform-genealogy",
       "title": "MES Genealogy",
       "refreshIntervalMs": 10000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"genealogy-help\",\"type\":\"html-snippet\",\"title\":\"Genealogy DAG\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>BL-193 keeps lot/material/WO/quality links. BL-221 adds DAG traceability with seed hops <code>ENT-RAW-A01</code> → <code>ENT-WIP-B01</code> → <code>ENT-FG-A01</code> for lot <code>BATCH-LINE-A01-001</code>.</p>\"},{\"id\":\"genealogy-by-lot\",\"type\":\"function\",\"title\":\"Query by lot\",\"x\":0,\"y\":14,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_genealogy_queryByLot\",\"buttonLabel\":\"Trace seed lot\",\"inputMapJson\":\"{\\\"lotId\\\":\\\"BATCH-LINE-A01-001\\\"}\"},{\"id\":\"genealogy-dag-by-lot\",\"type\":\"function\",\"title\":\"DAG by lot\",\"x\":42,\"y\":14,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_genealogy_queryDagByLot\",\"buttonLabel\":\"Trace DAG seed lot\",\"inputMapJson\":\"{\\\"lotId\\\":\\\"BATCH-LINE-A01-001\\\"}\"},{\"id\":\"genealogy-graph\",\"type\":\"function\",\"title\":\"Full graph\",\"x\":0,\"y\":32,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_genealogy_listGraph\",\"buttonLabel\":\"List genealogy links\"},{\"id\":\"genealogy-dag-edges\",\"type\":\"function\",\"title\":\"DAG edges\",\"x\":42,\"y\":32,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_genealogy_listDagEdges\",\"buttonLabel\":\"List DAG edges\"},{\"id\":\"genealogy-report\",\"type\":\"report\",\"title\":\"Genealogy report\",\"x\":0,\"y\":50,\"w\":42,\"h\":28,\"reportPath\":\"root.platform.reports.mes-genealogy\"},{\"id\":\"genealogy-dag-report\",\"type\":\"report\",\"title\":\"DAG report\",\"x\":42,\"y\":50,\"w\":42,\"h\":28,\"reportPath\":\"root.platform.reports.mes-genealogy-dag\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"genealogy-help\",\"type\":\"html-snippet\",\"title\":\"Genealogy DAG\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>BL-193 keeps lot/material/WO/quality links. BL-221 adds DAG traceability with seed hops <code>ENT-RAW-A01</code> → <code>ENT-WIP-B01</code> → <code>ENT-FG-A01</code> for lot <code>BATCH-LINE-A01-001</code>.</p>\"},{\"id\":\"genealogy-by-lot\",\"type\":\"function\",\"title\":\"Query by lot\",\"x\":0,\"y\":14,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_genealogy_queryByLot\",\"buttonLabel\":\"Trace seed lot\",\"inputMapJson\":\"{\\\"lotId\\\":\\\"BATCH-LINE-A01-001\\\"}\"},{\"id\":\"genealogy-dag-by-lot\",\"type\":\"function\",\"title\":\"DAG by lot\",\"x\":42,\"y\":14,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_genealogy_queryDagByLot\",\"buttonLabel\":\"Trace DAG seed lot\",\"inputMapJson\":\"{\\\"lotId\\\":\\\"BATCH-LINE-A01-001\\\"}\"},{\"id\":\"genealogy-graph\",\"type\":\"function\",\"title\":\"Full graph\",\"x\":0,\"y\":32,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_genealogy_listGraph\",\"buttonLabel\":\"List genealogy links\"},{\"id\":\"genealogy-dag-edges\",\"type\":\"function\",\"title\":\"DAG edges\",\"x\":42,\"y\":32,\"w\":42,\"h\":18,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_genealogy_listDagEdges\",\"buttonLabel\":\"List DAG edges\"},{\"id\":\"genealogy-report\",\"type\":\"report\",\"title\":\"Genealogy report\",\"x\":0,\"y\":50,\"w\":42,\"h\":28,\"reportPath\":\"root.platform.reports.mes-genealogy\"},{\"id\":\"genealogy-dag-report\",\"type\":\"report\",\"title\":\"DAG report\",\"x\":42,\"y\":50,\"w\":42,\"h\":28,\"reportPath\":\"root.platform.reports.mes-genealogy-dag\"}]}"
     },
     {
       "path": "root.platform.dashboards.mes-platform-batch",
       "title": "MES Batch (ISA-88)",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"batch-help\",\"type\":\"html-snippet\",\"title\":\"ISA-88 batch lite\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>BL-168: seed LOT <code>batch-line-a01-001</code> / recipe <code>recipe-standard-a</code>. Advance phases with <code>mes_batch_runPhase</code> (charge → react → discharge).</p>\"},{\"id\":\"batch-status\",\"type\":\"function\",\"title\":\"Batch status\",\"x\":0,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_batch_getStatus\",\"buttonLabel\":\"Get seed batch status\",\"inputMapJson\":\"{\\\"batchPath\\\":\\\"root.platform.mes.lots.batch-line-a01-001\\\"}\"},{\"id\":\"batch-run-react\",\"type\":\"function\",\"title\":\"Run phase → react\",\"x\":42,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_batch_runPhase\",\"buttonLabel\":\"Advance to react\",\"inputMapJson\":\"{\\\"batchPath\\\":\\\"root.platform.mes.lots.batch-line-a01-001\\\",\\\"batchId\\\":\\\"BATCH-LINE-A01-001\\\",\\\"recipe\\\":\\\"recipe-standard-a\\\",\\\"phase\\\":\\\"react\\\"}\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"batch-help\",\"type\":\"html-snippet\",\"title\":\"ISA-88 batch lite\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>BL-168: seed LOT <code>batch-line-a01-001</code> / recipe <code>recipe-standard-a</code>. Advance phases with <code>mes_batch_runPhase</code> (charge → react → discharge).</p>\"},{\"id\":\"batch-status\",\"type\":\"function\",\"title\":\"Batch status\",\"x\":0,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_batch_getStatus\",\"buttonLabel\":\"Get seed batch status\",\"inputMapJson\":\"{\\\"batchPath\\\":\\\"root.platform.mes.lots.batch-line-a01-001\\\"}\"},{\"id\":\"batch-run-react\",\"type\":\"function\",\"title\":\"Run phase → react\",\"x\":42,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_batch_runPhase\",\"buttonLabel\":\"Advance to react\",\"inputMapJson\":\"{\\\"batchPath\\\":\\\"root.platform.mes.lots.batch-line-a01-001\\\",\\\"batchId\\\":\\\"BATCH-LINE-A01-001\\\",\\\"recipe\\\":\\\"recipe-standard-a\\\",\\\"phase\\\":\\\"react\\\"}\"}]}"
     },
     {
       "path": "root.platform.dashboards.mes-platform-bom-ops",
       "title": "MES BoM + Operations",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"bom-ops-help\",\"type\":\"html-snippet\",\"title\":\"Nested BoM + operations graph\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>BL-222: explode seed material <code>MAT-WIDGET-A01</code> and release routing <code>RT-WIDGET-A01</code> operations when predecessors are complete.</p>\"},{\"id\":\"bom-explode\",\"type\":\"function\",\"title\":\"BoM explosion\",\"x\":0,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_bom_explode\",\"buttonLabel\":\"Explode MAT-WIDGET-A01\",\"inputMapJson\":\"{\\\"materialCode\\\":\\\"MAT-WIDGET-A01\\\"}\"},{\"id\":\"bom-where-used\",\"type\":\"function\",\"title\":\"Where used\",\"x\":42,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_bom_whereUsed\",\"buttonLabel\":\"Where used MAT-WIP-A01\",\"inputMapJson\":\"{\\\"componentMaterialCode\\\":\\\"MAT-WIP-A01\\\"}\"},{\"id\":\"ops-ready\",\"type\":\"function\",\"title\":\"Ready operations\",\"x\":0,\"y\":35,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_ops_listReady\",\"buttonLabel\":\"List ready operations\",\"inputMapJson\":\"{\\\"workOrderNumber\\\":\\\"WO-LINE-A01-001\\\"}\"},{\"id\":\"ops-complete\",\"type\":\"function\",\"title\":\"Complete OP-ASSEMBLE\",\"x\":42,\"y\":35,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_ops_complete\",\"buttonLabel\":\"Complete and release successors\",\"inputMapJson\":\"{\\\"workOrderNumber\\\":\\\"WO-LINE-A01-001\\\",\\\"operationId\\\":\\\"OP-ASSEMBLE\\\"}\"}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"bom-ops-help\",\"type\":\"html-snippet\",\"title\":\"Nested BoM + operations graph\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>BL-222: explode seed material <code>MAT-WIDGET-A01</code> and release routing <code>RT-WIDGET-A01</code> operations when predecessors are complete.</p>\"},{\"id\":\"bom-explode\",\"type\":\"function\",\"title\":\"BoM explosion\",\"x\":0,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_bom_explode\",\"buttonLabel\":\"Explode MAT-WIDGET-A01\",\"inputMapJson\":\"{\\\"materialCode\\\":\\\"MAT-WIDGET-A01\\\"}\"},{\"id\":\"bom-where-used\",\"type\":\"function\",\"title\":\"Where used\",\"x\":42,\"y\":14,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_bom_whereUsed\",\"buttonLabel\":\"Where used MAT-WIP-A01\",\"inputMapJson\":\"{\\\"componentMaterialCode\\\":\\\"MAT-WIP-A01\\\"}\"},{\"id\":\"ops-ready\",\"type\":\"function\",\"title\":\"Ready operations\",\"x\":0,\"y\":35,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_ops_listReady\",\"buttonLabel\":\"List ready operations\",\"inputMapJson\":\"{\\\"workOrderNumber\\\":\\\"WO-LINE-A01-001\\\"}\"},{\"id\":\"ops-complete\",\"type\":\"function\",\"title\":\"Complete OP-ASSEMBLE\",\"x\":42,\"y\":35,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"functionName\":\"mes_ops_complete\",\"buttonLabel\":\"Complete and release successors\",\"inputMapJson\":\"{\\\"workOrderNumber\\\":\\\"WO-LINE-A01-001\\\",\\\"operationId\\\":\\\"OP-ASSEMBLE\\\"}\"}]}"
     }
   ],
   "schedules": [
@@ -2013,7 +2004,7 @@
       "intervalMs": 5000,
       "actionType": "invoke_function",
       "action": {
-        "objectPath": "root.platform.devices.mes-platform-hub",
+        "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
         "functionName": "mes_erp_pollOutbox"
       }
     }
@@ -2048,7 +2039,7 @@
         "title": "BoM + Ops"
       }
     ],
-    "eventJournalObjectPath": "root.platform.devices.mes-platform-hub",
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
     "reports": [
       {
         "path": "root.platform.reports.mes-genealogy",

@@ -6,7 +6,13 @@
   "metadata": {
     "changelog": "1.1.0 — operator-ready: zone devices, comfort dashboard, high-temp alert (was catalog stub)",
     "domain": "building-hvac",
-    "haystackTags": ["site", "equip", "ahu", "zone", "temp"]
+    "haystackTags": [
+      "site",
+      "equip",
+      "ahu",
+      "zone",
+      "temp"
+    ]
   },
   "migrations": [
     {
@@ -15,6 +21,16 @@
     }
   ],
   "blueprints": [
+    {
+      "name": "building-hvac-app-hub-v1",
+      "description": "Building HVAC Reference logic hub (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
     {
       "name": "hvac-zone-v1",
       "description": "HVAC comfort zone with space temperature and setpoint",
@@ -28,8 +44,14 @@
           "schema": {
             "name": "deviceStatus",
             "fields": [
-              { "name": "online", "type": "BOOLEAN" },
-              { "name": "lastSeen", "type": "STRING" }
+              {
+                "name": "online",
+                "type": "BOOLEAN"
+              },
+              {
+                "name": "lastSeen",
+                "type": "STRING"
+              }
             ]
           },
           "readable": true,
@@ -38,11 +60,22 @@
             "schema": {
               "name": "deviceStatus",
               "fields": [
-                { "name": "online", "type": "BOOLEAN" },
-                { "name": "lastSeen", "type": "STRING" }
+                {
+                  "name": "online",
+                  "type": "BOOLEAN"
+                },
+                {
+                  "name": "lastSeen",
+                  "type": "STRING"
+                }
               ]
             },
-            "rows": [{ "online": true, "lastSeen": "init" }]
+            "rows": [
+              {
+                "online": true,
+                "lastSeen": "init"
+              }
+            ]
           }
         },
         {
@@ -52,8 +85,14 @@
           "schema": {
             "name": "measurement",
             "fields": [
-              { "name": "value", "type": "DOUBLE" },
-              { "name": "unit", "type": "STRING" }
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
             ]
           },
           "readable": true,
@@ -63,11 +102,22 @@
             "schema": {
               "name": "measurement",
               "fields": [
-                { "name": "value", "type": "DOUBLE" },
-                { "name": "unit", "type": "STRING" }
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
               ]
             },
-            "rows": [{ "value": 22.4, "unit": "C" }]
+            "rows": [
+              {
+                "value": 22.4,
+                "unit": "C"
+              }
+            ]
           }
         },
         {
@@ -77,8 +127,14 @@
           "schema": {
             "name": "measurement",
             "fields": [
-              { "name": "value", "type": "DOUBLE" },
-              { "name": "unit", "type": "STRING" }
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "unit",
+                "type": "STRING"
+              }
             ]
           },
           "readable": true,
@@ -87,11 +143,22 @@
             "schema": {
               "name": "measurement",
               "fields": [
-                { "name": "value", "type": "DOUBLE" },
-                { "name": "unit", "type": "STRING" }
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING"
+                }
               ]
             },
-            "rows": [{ "value": 22.0, "unit": "C" }]
+            "rows": [
+              {
+                "value": 22,
+                "unit": "C"
+              }
+            ]
           }
         }
       ],
@@ -104,13 +171,6 @@
   "objects": [
     {
       "parentPath": "root.platform.devices",
-      "name": "hvac-zone-l1-open",
-      "type": "DEVICE",
-      "displayName": "Zone L1 Open Office",
-      "templateId": "hvac-zone-v1"
-    },
-    {
-      "parentPath": "root.platform.devices",
       "name": "hvac-zone-l2-meet",
       "type": "DEVICE",
       "displayName": "Zone L2 Meeting",
@@ -119,26 +179,47 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.hvac-zone-l1-open",
+      "objectPath": "root.platform.singleton-blueprints.building-hvac-app-hub-v1",
       "functionName": "hvac_listZones",
       "version": "1",
       "descriptor": {
-        "inputSchema": { "name": "in", "fields": [] },
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
         "outputSchema": {
           "name": "out",
           "fields": [
-            { "name": "error_code", "type": "STRING" },
-            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
             {
               "name": "rows",
               "type": "RECORD_LIST",
               "nestedSchema": {
                 "name": "zone_row",
                 "fields": [
-                  { "name": "zone", "type": "STRING" },
-                  { "name": "spaceTempC", "type": "DOUBLE" },
-                  { "name": "setpointC", "type": "DOUBLE" },
-                  { "name": "mode", "type": "STRING" }
+                  {
+                    "name": "zone",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "spaceTempC",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "setpointC",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "mode",
+                    "type": "STRING"
+                  }
                 ]
               }
             }
@@ -176,7 +257,10 @@
   "events": [
     {
       "id": "hvacZoneHighTemp",
-      "roles": ["admin", "operator"]
+      "roles": [
+        "admin",
+        "operator"
+      ]
     }
   ],
   "operatorUi": {

@@ -237,6 +237,9 @@ public final class AgentToolPackCatalog {
         map.put("invoke_tree_function", AUTOMATION);
         map.put("deploy_tree_function", AUTOMATION);
         map.put("deploy_app_function", AUTOMATION);
+        map.put("test_function", AUTOMATION);
+        map.put("simulate_telemetry", AUTOMATION);
+        map.put("assert_variable", AUTOMATION);
         map.put("run_workflow", AUTOMATION);
         map.put("save_workflow_bpmn", AUTOMATION);
         map.put("update_workflow_status", AUTOMATION);
@@ -246,6 +249,7 @@ public final class AgentToolPackCatalog {
 
         // bundles / app lifecycle
         map.put("import_package", BUNDLES);
+        map.put("run_bundle_tests", BUNDLES);
         map.put("register_application", BUNDLES);
         map.put("application_data_migrate", BUNDLES);
         map.put("application_data_seed", BUNDLES);

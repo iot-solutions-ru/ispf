@@ -72,7 +72,7 @@ components:
       properties:
         objectPath:
           type: string
-          enum: [root.platform.devices.oil-control.hub]
+          enum: [root.platform.singleton-blueprints.oil-control-hub-v1]
         functionName:
           type: string
           enum:

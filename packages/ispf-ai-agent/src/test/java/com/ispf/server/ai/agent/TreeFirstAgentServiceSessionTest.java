@@ -4,6 +4,7 @@ import com.ispf.ai.LlmMessage;
 import com.ispf.ai.LlmProvider;
 import com.ispf.ai.LlmRequest;
 import com.ispf.ai.LlmResponse;
+import com.ispf.ai.LlmToolCall;
 import com.ispf.ai.LlmUsage;
 import com.ispf.server.ai.audit.AiToolAuditService;
 import com.ispf.server.ai.context.ContextPackService;
@@ -331,5 +332,56 @@ class TreeFirstAgentServiceSessionTest {
         List<Map<String, Object>> steps = (List<Map<String, Object>>) result.get("steps");
         assertThat(steps.stream().filter(step -> "guard".equals(step.get("type")))).isEmpty();
         verify(llmProviderRegistry, org.mockito.Mockito.times(1)).complete(any());
+    }
+
+    @Test
+    void nativeToolCallsUseToolRoleContinuation() throws Exception {
+        aiProperties.setAgentNativeTools("on");
+        when(llmProviderRegistry.supportsToolCalling()).thenReturn(true);
+        when(toolRegistry.toolCatalog(org.mockito.ArgumentMatchers.any())).thenReturn(List.of(
+                Map.of(
+                        "name", "list_objects",
+                        "description", "List children.",
+                        "inputSchema", Map.of("type", "object")
+                )
+        ));
+        when(toolRegistry.isKnownTool("list_objects")).thenReturn(true);
+        when(toolRegistry.execute(anyString(), any(), any())).thenReturn(Map.of("status", "OK", "count", 0));
+        when(llmProviderRegistry.complete(any()))
+                .thenReturn(new LlmResponse(
+                        "",
+                        "test-model",
+                        new LlmUsage(1, 1, 2),
+                        "tool_calls",
+                        List.of(new LlmToolCall("call-1", "list_objects", "{\"parent\":\"root\"}"))
+                ))
+                .thenReturn(new LlmResponse(
+                        "",
+                        "test-model",
+                        new LlmUsage(1, 1, 2),
+                        "tool_calls",
+                        List.of(new LlmToolCall(
+                                "call-2",
+                                "finish",
+                                "{\"summary\":\"done\",\"result\":{}}"
+                        ))
+                ));
+
+        AgentSession session = AgentSession.create("admin", "root");
+        var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
+        Map<String, Object> result = agentService.runTurn(session, "list root", auth, "admin");
+
+        assertEquals("OK", result.get("status"));
+        ArgumentCaptor<LlmRequest> captor = ArgumentCaptor.forClass(LlmRequest.class);
+        verify(llmProviderRegistry, org.mockito.Mockito.times(2)).complete(captor.capture());
+        LlmRequest firstRequest = captor.getAllValues().get(0);
+        assertThat(firstRequest.tools()).extracting("name").contains("list_objects", "finish");
+
+        LlmRequest secondRequest = captor.getAllValues().get(1);
+        assertThat(secondRequest.messages()).anySatisfy(message -> {
+            assertEquals("tool", message.role());
+            assertEquals("call-1", message.toolCallId());
+            assertThat(message.content()).contains("\"status\":\"OK\"");
+        });
     }
 }

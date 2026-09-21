@@ -10,6 +10,8 @@ import com.ispf.ai.LlmMessage;
 import com.ispf.ai.LlmModelInfo;
 import com.ispf.ai.LlmRequest;
 import com.ispf.ai.LlmResponse;
+import com.ispf.ai.LlmToolCall;
+import com.ispf.ai.LlmToolSpec;
 import com.ispf.ai.LlmUsage;
 
 import java.net.URI;
@@ -112,8 +114,45 @@ public final class LlmHttpSupport {
         root.put("model", request.model() != null ? request.model() : "");
         ArrayNode messages = root.putArray("messages");
         for (LlmMessage message : request.messages()) {
-            ObjectNode item = messages.addObject();
-            item.put("role", message.role());
+            ObjectNode item = chatMessageNode(message, false);
+            messages.add(item);
+        }
+        addTools(root, request, false);
+        if (request.maxTokens() != null) {
+            root.put("max_tokens", request.maxTokens());
+        }
+        if (request.temperature() != null) {
+            root.put("temperature", request.temperature());
+        }
+        if (request.providerOptions() != null && !request.providerOptions().isEmpty()) {
+            mergeProviderOptions(root, request.providerOptions());
+        }
+        return root;
+    }
+
+    private static ObjectNode chatMessageNode(LlmMessage message, boolean ollamaArgumentsAsObject) {
+        ObjectNode item = MAPPER.createObjectNode();
+        item.put("role", message.role());
+        if ("tool".equals(message.role()) && message.toolCallId() != null && !message.toolCallId().isBlank()) {
+            item.put("tool_call_id", message.toolCallId());
+        }
+        if (message.hasToolCalls()) {
+            ArrayNode toolCalls = item.putArray("tool_calls");
+            for (LlmToolCall toolCall : message.toolCalls()) {
+                ObjectNode call = toolCalls.addObject();
+                if (toolCall.id() != null && !toolCall.id().isBlank()) {
+                    call.put("id", toolCall.id());
+                }
+                call.put("type", "function");
+                ObjectNode function = call.putObject("function");
+                function.put("name", toolCall.name() != null ? toolCall.name() : "");
+                if (ollamaArgumentsAsObject) {
+                    function.set("arguments", parseJsonOrText(toolCall.argumentsJson()));
+                } else {
+                    function.put("arguments", toolCall.argumentsJson() != null ? toolCall.argumentsJson() : "{}");
+                }
+            }
+        }
             if (message.hasMultimodalParts()) {
                 ArrayNode contentParts = item.putArray("content");
                 for (LlmContentPart part : message.parts()) {
@@ -131,17 +170,28 @@ public final class LlmHttpSupport {
             } else {
                 item.put("content", message.content() != null ? message.content() : "");
             }
+        return item;
+    }
+
+    private static void addTools(ObjectNode root, LlmRequest request, boolean ollama) {
+        if (request.tools() == null || request.tools().isEmpty()) {
+            return;
         }
-        if (request.maxTokens() != null) {
-            root.put("max_tokens", request.maxTokens());
+        ArrayNode tools = root.putArray("tools");
+        for (LlmToolSpec tool : request.tools()) {
+            ObjectNode item = tools.addObject();
+            item.put("type", "function");
+            ObjectNode function = item.putObject("function");
+            function.put("name", tool.name() != null ? tool.name() : "");
+            function.put("description", tool.description() != null ? tool.description() : "");
+            function.set("parameters", MAPPER.valueToTree(tool.parameters()));
         }
-        if (request.temperature() != null) {
-            root.put("temperature", request.temperature());
+        if (!ollama && request.toolChoice() != null && !request.toolChoice().isBlank()) {
+            root.put("tool_choice", request.toolChoice());
         }
-        if (request.providerOptions() != null && !request.providerOptions().isEmpty()) {
-            mergeProviderOptions(root, request.providerOptions());
+        if (ollama && request.toolChoice() != null && !request.toolChoice().isBlank()) {
+            root.put("tool_choice", request.toolChoice());
         }
-        return root;
     }
 
     private static void mergeProviderOptions(ObjectNode root, Map<String, Object> providerOptions) {
@@ -172,6 +222,12 @@ public final class LlmHttpSupport {
 
     public static ObjectNode ollamaChatBody(LlmRequest request) {
         ObjectNode root = chatCompletionBody(request);
+        if (request.tools() != null && !request.tools().isEmpty()) {
+            ArrayNode messages = root.putArray("messages");
+            for (LlmMessage message : request.messages()) {
+                messages.add(chatMessageNode(message, true));
+            }
+        }
         root.put("stream", false);
         return root;
     }
@@ -190,7 +246,8 @@ public final class LlmHttpSupport {
             if (finishReason != null && finishReason.isBlank()) {
                 finishReason = null;
             }
-            return new LlmResponse(content, model, parseUsage(root.path("usage")), finishReason);
+            List<LlmToolCall> toolCalls = parseToolCalls(firstChoice.path("message").path("tool_calls"));
+            return new LlmResponse(content, model, parseUsage(root.path("usage")), finishReason, toolCalls);
         } catch (LlmException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -202,7 +259,8 @@ public final class LlmHttpSupport {
         try {
             JsonNode root = MAPPER.readTree(json);
             String content = root.path("message").path("content").asText("");
-            return new LlmResponse(content, fallbackModel, null);
+            List<LlmToolCall> toolCalls = parseToolCalls(root.path("message").path("tool_calls"));
+            return new LlmResponse(content, fallbackModel, null, null, toolCalls);
         } catch (Exception ex) {
             throw new LlmException("Failed to parse Ollama response: " + ex.getMessage(), ex);
         }
@@ -387,6 +445,55 @@ public final class LlmHttpSupport {
 
     private static Integer intOrNull(JsonNode node) {
         return node.isMissingNode() || node.isNull() ? null : node.asInt();
+    }
+
+    private static List<LlmToolCall> parseToolCalls(JsonNode node) throws Exception {
+        if (!node.isArray() || node.isEmpty()) {
+            return List.of();
+        }
+        List<LlmToolCall> calls = new ArrayList<>();
+        int index = 0;
+        for (JsonNode item : node) {
+            JsonNode function = item.path("function");
+            String name = function.path("name").asText("");
+            if (name.isBlank()) {
+                name = item.path("name").asText("");
+            }
+            if (name.isBlank()) {
+                continue;
+            }
+            String id = item.path("id").asText("");
+            if (id.isBlank()) {
+                id = "tool_call_" + index;
+            }
+            JsonNode argsNode = function.has("arguments") ? function.get("arguments") : item.get("arguments");
+            String argumentsJson = argumentsJson(argsNode);
+            calls.add(new LlmToolCall(id, name, argumentsJson));
+            index++;
+        }
+        return List.copyOf(calls);
+    }
+
+    private static String argumentsJson(JsonNode node) throws Exception {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return "{}";
+        }
+        if (node.isTextual()) {
+            String text = node.asText();
+            return text == null || text.isBlank() ? "{}" : text;
+        }
+        return MAPPER.writeValueAsString(node);
+    }
+
+    private static JsonNode parseJsonOrText(String json) {
+        if (json == null || json.isBlank()) {
+            return MAPPER.createObjectNode();
+        }
+        try {
+            return MAPPER.readTree(json);
+        } catch (Exception ignored) {
+            return MAPPER.getNodeFactory().textNode(json);
+        }
     }
 
     private static String truncate(String body) {

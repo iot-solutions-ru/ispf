@@ -47,16 +47,16 @@ public final class AgentToolSurface {
 
     public static Map<String, Object> inactiveToolResult(String toolName, AgentRunState runState) {
         String pack = AgentToolPackCatalog.packFor(toolName);
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("status", "ERROR");
-        result.put("error", "Tool '" + toolName + "' is not in the active tool surface for this turn");
+        Map<String, Object> result = new LinkedHashMap<>(AgentToolErrors.error(
+                "TOOL_PACK_INACTIVE",
+                "Tool '" + toolName + "' is not in the active tool surface for this turn",
+                "",
+                "Call enable_agent_tool_pack with pack=\"" + pack + "\" (or list_agent_tools), "
+                        + "then retry. Capability is deferred, not removed.",
+                AgentToolErrors.DOC_REF_0060
+        ));
         result.put("pack", pack);
         result.put("activePacks", runState == null ? List.of() : List.copyOf(runState.activeToolPacks()));
-        result.put(
-                "hint",
-                "Call enable_agent_tool_pack with pack=\"" + pack + "\" (or list_agent_tools), "
-                        + "then retry. Capability is deferred, not removed."
-        );
         return result;
     }
 

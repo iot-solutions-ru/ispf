@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class MesOgpEventsBundleSmokeTest {
 
-    private static final String HUB = "root.platform.devices.ogp-mes-hub";
+    private static final String HUB = "root.platform.singleton-blueprints.mes-ogp-events-hub-v1";
 
     @Autowired
     private MockMvc mockMvc;

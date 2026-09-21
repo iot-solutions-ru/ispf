@@ -358,6 +358,7 @@ public class ApplicationBundlePullFromTreeService {
                 pick(sections.contains("schedules"), schedules, base.schedules()),
                 base.analyticsFormulas(),
                 pick(sections.contains("events"), events, base.events()),
+                base.tests(),
                 base.requires(),
                 base.license(),
                 base.metadata(),
@@ -434,6 +435,7 @@ public class ApplicationBundlePullFromTreeService {
                 null,
                 List.of(),
                 List.of(),
+                List.of(),
                 null,
                 null,
                 null,
@@ -475,7 +477,8 @@ public class ApplicationBundlePullFromTreeService {
                 node.type().name(),
                 node.displayName(),
                 node.description(),
-                node.templateId().orElse(null)
+                node.templateId().orElse(null),
+                null
         );
     }
 

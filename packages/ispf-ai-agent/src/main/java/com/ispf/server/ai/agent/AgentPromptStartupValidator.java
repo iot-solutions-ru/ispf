@@ -28,6 +28,14 @@ class AgentPromptStartupValidator {
     @PostConstruct
     void validatePromptAssembly() {
         List<Map<String, Object>> catalog = toolRegistry.toolCatalog();
+        for (Map<String, Object> row : catalog) {
+            String toolName = String.valueOf(row.get("name"));
+            if (!AgentToolInputSchemas.hasCatalogEntry(toolName)) {
+                throw new IllegalStateException(
+                        "Registered tool '" + toolName + "' lacks AgentToolInputSchemas catalog entry (ADR-0051)"
+                );
+            }
+        }
         String prompt = AgentPromptBuilder.build("root", catalog, "");
         if (prompt.isBlank()) {
             throw new IllegalStateException("Agent system prompt is empty");

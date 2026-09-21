@@ -8,7 +8,7 @@
     "role": "backend-for-ui",
     "uiBackend": {
       "role": "backend-for-ui",
-      "hubPath": "root.platform.devices.predictive.hub",
+      "hubPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "dataSourcePath": "root.platform.data-sources.predictive",
       "uiPack": {
         "packId": "predictive-ui",
@@ -103,7 +103,7 @@
       ]
     },
     "changelog": "1.2.0 — Bundle structured as UI backend contract (screens → hub functions). 1.1.0 — Period-aware alarms/KPI, trend, compare, search, events. 1.0.0 — Initial package.",
-    "deployNote": "Primary UX = ui-pack /apps/predictive/. Hub=root.platform.devices.predictive.hub. dataSourcePath=root.platform.data-sources.predictive.",
+    "deployNote": "Primary UX = ui-pack /apps/predictive/. Hub=root.platform.singleton-blueprints.predictive-hub-v1. dataSourcePath=root.platform.data-sources.predictive.",
     "appId": "predictive",
     "treeRoot": "root.platform.devices.predictive",
     "marketplace": {
@@ -122,7 +122,7 @@
     {
       "name": "predictive-hub-v1",
       "description": "Application logic hub (BFF) — INSTANCE blueprint with targetObjectType CUSTOM; not a driver DEVICE",
-      "type": "INSTANCE",
+      "type": "SINGLETON",
       "targetObjectType": "CUSTOM",
       "variables": []
     }
@@ -137,14 +137,6 @@
     },
     {
       "parentPath": "root.platform.devices.predictive",
-      "name": "hub",
-      "type": "CUSTOM",
-        "templateId": "predictive-hub-v1",
-      "displayName": "Система предиктивной аналитики — UI hub",
-      "description": "Hub functions invoked by React UI"
-    },
-    {
-      "parentPath": "root.platform.devices.predictive",
       "name": "zone-a",
       "type": "DEVICE",
       "displayName": "Зона A",
@@ -153,7 +145,7 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_listAssets",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -186,7 +178,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_listAggregates",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -219,7 +211,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_listChildren",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -257,7 +249,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_getAsset",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -295,7 +287,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_searchAssets",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -333,7 +325,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_listAlarms",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -371,7 +363,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_kpiSummary",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -409,7 +401,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_getSnapshot",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -451,7 +443,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_listSnapshotParams",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -493,7 +485,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_listParams",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -531,7 +523,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_listDefect",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -569,7 +561,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_listSnapshotTrend",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -611,7 +603,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_compareStatuses",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -657,7 +649,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_listEvents",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -690,7 +682,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_ackAlarm",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -732,7 +724,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_createWorkOrder",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",
@@ -774,7 +766,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.predictive.hub",
+      "objectPath": "root.platform.singleton-blueprints.predictive-hub-v1",
       "functionName": "spa_startDiagnostics",
       "version": "ui3",
       "dataSourcePath": "root.platform.data-sources.predictive",

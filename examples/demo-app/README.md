@@ -14,6 +14,8 @@
 
 ## Deploy
 
+Folder layout: `solution.json`, `sql/`, `reports/`, `dashboards/` — см. `tools/ispf-cli` (`ispf pack` → `bundle.json`).
+
 ```powershell
 # из корня репозитория, сервер на localhost:8080
 $body = Get-Content -Raw examples/demo-app/bundle.json
