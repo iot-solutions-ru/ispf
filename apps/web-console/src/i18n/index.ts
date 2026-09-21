@@ -27,6 +27,8 @@ async function fetchLocaleBundles(
     if (typeof loader !== "function") {
       continue;
     }
+    // Path is composed only from AppLocale + LOCALE_NAMESPACES constants (see above).
+    // codeql[js/unvalidated-dynamic-method-call]
     const module = await loader();
     bundles[namespace] = module.default;
   }

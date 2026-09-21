@@ -55,15 +55,15 @@ function readHtmlAttribute(attrs: string, name: string): string | undefined {
   return match?.[2]?.trim();
 }
 
-/** Remove HTML comments, repeating until nested/overlapping markers are gone. */
+/** Remove HTML comments, including the `--!>` end form CodeQL flags as bypassable. */
 function stripHtmlComments(html: string): string {
   let previous = "";
   let next = html;
   while (next !== previous) {
     previous = next;
-    next = next.replace(/<!--[\s\S]*?-->/g, "");
+    next = next.replace(/<!--[\s\S]*?--!?>/g, "");
   }
-  return next.replace(/<!--[\s\S]*$/g, "").replace(/-->/g, "");
+  return next.replace(/<!--[\s\S]*$/g, "").replace(/--!?>/g, "");
 }
 
 /** Snippet that is only a single external iframe — rendered with platform-controlled `src`. */

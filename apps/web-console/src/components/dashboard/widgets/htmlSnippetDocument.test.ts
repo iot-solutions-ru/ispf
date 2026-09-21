@@ -66,6 +66,11 @@ describe("htmlSnippetDocument", () => {
         "<!--<!-- --> --><iframe src='https://ya.ru' title='nested-comment'></iframe>",
       ),
     ).toEqual({ src: "https://ya.ru", title: "nested-comment" });
+    expect(
+      parseHtmlSnippetIframeEmbed(
+        "<!-- hide --!><iframe src='https://ya.ru' title='bang-end'></iframe>",
+      ),
+    ).toEqual({ src: "https://ya.ru", title: "bang-end" });
     expect(parseHtmlSnippetIframeEmbed('<iframe src="javascript:alert(1)"></iframe>')).toBeNull();
     expect(parseHtmlSnippetIframeEmbed("<p>text</p><iframe src='https://ya.ru'></iframe>")).toBeNull();
     expect(sanitizeHtmlSnippet("<iframe src='https://ya.ru'></iframe>")).toBe("");
