@@ -110,6 +110,7 @@ BUNDLE_MANIFEST_FIELDS = [
     "metadata",
     "operatorUi",
     "operatorManifest",
+    "tests",
 ]
 
 EXAMPLE_PURPOSES = {
@@ -554,6 +555,22 @@ def build_doc_catalog() -> list[dict]:
     return catalog
 
 
+def load_bundle_schema() -> dict:
+    schema_path = (
+        ROOT
+        / "packages"
+        / "ispf-server"
+        / "src"
+        / "main"
+        / "resources"
+        / "schema"
+        / "bundle.schema.json"
+    )
+    if not schema_path.exists():
+        return {"$id": "bundle.schema.json", "missing": True}
+    return json.loads(schema_path.read_text(encoding="utf-8"))
+
+
 def build_pack() -> dict:
     version = platform_version()
     examples = load_examples()
@@ -571,8 +588,10 @@ def build_pack() -> dict:
                 "Use operatorUi and dashboards[] for new operator screens.",
                 "App SQL via migrations[]; never platform Flyway.",
                 "Optional metadata may include generatedBy, promptId, contextPackVersion.",
+                "Logic hosts must be SINGLETON or INSTANCE (ADR-0060); never DEVICE.",
             ],
         },
+        "bundleSchema": load_bundle_schema(),
         "scriptSteps": SCRIPT_STEPS,
         "widgetTypes": WIDGET_TYPES,
         "featureIndex": FEATURE_INDEX,
@@ -610,6 +629,7 @@ def build_pack() -> dict:
                 "reports",
                 "blueprints",
                 "workflows",
+                "tests",
             ],
             "forbidden": [
                 "java in ispf-server",

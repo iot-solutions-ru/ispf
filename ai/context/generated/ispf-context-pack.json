@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.208",
-  "generatedAt": "2026-09-21T09:29:23.985822+00:00",
+  "generatedAt": "2026-09-21T09:31:45.261861+00:00",
   "platformVersion": "0.9.208",
   "bundleManifest": {
     "fields": [
@@ -24,13 +24,240 @@
       "license",
       "metadata",
       "operatorUi",
-      "operatorManifest"
+      "operatorManifest",
+      "tests"
     ],
     "rules": [
       "Output declarative bundle JSON only; no Java or React in platform main.",
       "Use operatorUi and dashboards[] for new operator screens.",
       "App SQL via migrations[]; never platform Flyway.",
-      "Optional metadata may include generatedBy, promptId, contextPackVersion."
+      "Optional metadata may include generatedBy, promptId, contextPackVersion.",
+      "Logic hosts must be SINGLETON or INSTANCE (ADR-0060); never DEVICE."
+    ]
+  },
+  "bundleSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://ispf.local/schema/bundle.schema.json",
+    "title": "ISPF Application Bundle Manifest",
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+      "version": {
+        "type": "string"
+      },
+      "displayName": {
+        "type": "string"
+      },
+      "tablePrefix": {
+        "type": "string"
+      },
+      "schemaName": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "objects": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "parentPath",
+            "name",
+            "type"
+          ],
+          "properties": {
+            "parentPath": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "displayName": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "templateId": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "blueprints": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "MIXIN",
+                "INSTANCE",
+                "SINGLETON"
+              ]
+            },
+            "targetObjectType": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "suitabilityExpression": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "variables": {
+              "type": "array"
+            },
+            "events": {
+              "type": "array"
+            },
+            "functions": {
+              "type": "array"
+            },
+            "bindings": {
+              "type": "array"
+            },
+            "sqlBindings": {
+              "type": "array"
+            },
+            "alertRules": {
+              "type": "array"
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "dashboards": {
+        "type": "array"
+      },
+      "workflows": {
+        "type": "array"
+      },
+      "migrations": {
+        "type": "array"
+      },
+      "functions": {
+        "type": "array"
+      },
+      "bindings": {
+        "type": "array"
+      },
+      "reports": {
+        "type": "array"
+      },
+      "alertRules": {
+        "type": "array"
+      },
+      "correlators": {
+        "type": "array"
+      },
+      "schedules": {
+        "type": "array"
+      },
+      "analyticsFormulas": {
+        "type": "array"
+      },
+      "events": {
+        "type": "array"
+      },
+      "tests": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "id",
+            "kind"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "function",
+                "telemetry"
+              ]
+            }
+          }
+        }
+      },
+      "requires": {
+        "type": "array"
+      },
+      "license": {
+        "type": [
+          "object",
+          "null"
+        ]
+      },
+      "metadata": {
+        "type": [
+          "object",
+          "null"
+        ]
+      },
+      "operatorUi": {
+        "type": [
+          "object",
+          "null"
+        ]
+      },
+      "operatorManifest": {
+        "type": [
+          "object",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "version",
+      "displayName",
+      "schemaName"
     ]
   },
   "scriptSteps": [
@@ -38156,7 +38383,8 @@
       "events",
       "reports",
       "blueprints",
-      "workflows"
+      "workflows",
+      "tests"
     ],
     "forbidden": [
       "java in ispf-server",
@@ -38165,5 +38393,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "20ac2fffadbb92635fc28fe27ff2cf65de12d471ea1d4bcd03fa2c9960f45d68"
+  "contentSha256": "2076f8774f35cb9b16565af440fac74dae44260b8890ac4377c67b4070f3bfaf"
 }
