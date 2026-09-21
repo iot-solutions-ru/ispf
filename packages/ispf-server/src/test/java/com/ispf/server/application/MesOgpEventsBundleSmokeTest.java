@@ -32,12 +32,19 @@ class MesOgpEventsBundleSmokeTest {
     void deploysSimulatesAndRegistersEvent() throws Exception {
         deployBundle();
 
+        // SINGLETON hub lives under catalog root, not the devices visual group.
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/objects")
+                        .param("parent", "root.platform.singleton-blueprints")
+                        .param("lite", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.path == '" + HUB + "')]").isNotEmpty());
+
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/objects")
                         .param("parent", BundleVisualGroupService.groupPathForCatalogAndApp(
                                 "root.platform.devices", "mes-ogp-events"))
                         .param("lite", "true"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.path == '" + HUB + "')].groupRef").value(true));
+                .andExpect(jsonPath("$[?(@.path == 'root.platform.devices.ogp-line-01')].groupRef").value(true));
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/objects")
                         .param("parent", "root.platform.devices")

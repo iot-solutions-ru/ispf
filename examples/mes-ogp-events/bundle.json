@@ -15,7 +15,7 @@
   ],
   "blueprints": [
     {
-      "name": "ogp-mes-hub-v1",
+      "name": "mes-ogp-events-hub-v1",
       "description": "OGP MES hub for event registration",
       "type": "SINGLETON",
       "variables": [
@@ -494,7 +494,7 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_seedDemoStage",
       "version": "1",
       "descriptor": {
@@ -526,7 +526,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_getMachineContext",
       "version": "1",
       "descriptor": {
@@ -575,7 +575,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_getRegistrationContext",
       "version": "1",
       "descriptor": {
@@ -747,7 +747,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_simulateSignal",
       "version": "1",
       "descriptor": {
@@ -796,7 +796,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_listUnprocessedEvents",
       "version": "1",
       "descriptor": {
@@ -853,7 +853,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_deleteUnprocessedEvents",
       "version": "1",
       "descriptor": {
@@ -894,7 +894,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_validateRegistration",
       "version": "1",
       "descriptor": {
@@ -959,7 +959,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_registerEvent",
       "version": "1",
       "descriptor": {
@@ -1056,7 +1056,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_listProcessJournal",
       "version": "1",
       "descriptor": {
@@ -1122,7 +1122,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_getProcessEventDetails",
       "version": "1",
       "descriptor": {
@@ -1185,7 +1185,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_updateProcessEvent",
       "version": "1",
       "descriptor": {
@@ -1234,7 +1234,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_listEventCodes",
       "version": "1",
       "descriptor": {
@@ -1299,7 +1299,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_createEventCode",
       "version": "1",
       "descriptor": {
@@ -1360,7 +1360,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_createSubcode",
       "version": "1",
       "descriptor": {
@@ -1405,7 +1405,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_getRollMap",
       "version": "1",
       "descriptor": {
@@ -1471,7 +1471,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_buildRollLabel",
       "version": "1",
       "descriptor": {
@@ -1541,7 +1541,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_stageDowntimeSummary",
       "version": "1",
       "descriptor": {
@@ -1607,7 +1607,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_enqueue1cExport",
       "version": "1",
       "descriptor": {
@@ -1648,7 +1648,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_export1cBatch",
       "version": "1",
       "descriptor": {
@@ -1697,7 +1697,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
       "functionName": "ogp_advanceMeter",
       "version": "1",
       "descriptor": {

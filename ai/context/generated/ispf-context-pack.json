@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.208",
-  "generatedAt": "2026-09-21T09:31:45.261861+00:00",
+  "generatedAt": "2026-09-21T11:16:56.478331+00:00",
   "platformVersion": "0.9.208",
   "bundleManifest": {
     "fields": [
@@ -20707,7 +20707,7 @@
         ],
         "blueprints": [
           {
-            "name": "mes-defect-hub-v1",
+            "name": "mes-defect-demo-hub-v1",
             "description": "MES defect hub with SCADA bindings and workflow events",
             "type": "SINGLETON",
             "variables": [
@@ -20858,7 +20858,7 @@
         ],
         "functions": [
           {
-            "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
             "functionName": "mes_simulateDefect",
             "version": "1",
             "descriptor": {
@@ -20911,7 +20911,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
             "functionName": "mes_receiveDefect",
             "version": "1",
             "descriptor": {
@@ -20955,7 +20955,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
             "functionName": "mes_resolveOrder",
             "version": "1",
             "descriptor": {
@@ -21004,7 +21004,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
             "functionName": "mes_calculateRoute",
             "version": "1",
             "descriptor": {
@@ -21057,7 +21057,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
             "functionName": "mes_confirmRoute",
             "version": "1",
             "descriptor": {
@@ -21093,7 +21093,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
             "functionName": "mes_finalizeDefect",
             "version": "1",
             "descriptor": {
@@ -21134,7 +21134,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
             "functionName": "mes_listLines",
             "version": "1",
             "descriptor": {
@@ -22112,7 +22112,7 @@
         ],
         "blueprints": [
           {
-            "name": "ogp-mes-hub-v1",
+            "name": "mes-ogp-events-hub-v1",
             "description": "OGP MES hub for event registration",
             "type": "SINGLETON",
             "variables": [
@@ -22591,7 +22591,7 @@
         ],
         "functions": [
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_seedDemoStage",
             "version": "1",
             "descriptor": {
@@ -22623,7 +22623,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_getMachineContext",
             "version": "1",
             "descriptor": {
@@ -22672,7 +22672,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_getRegistrationContext",
             "version": "1",
             "descriptor": {
@@ -22844,7 +22844,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_simulateSignal",
             "version": "1",
             "descriptor": {
@@ -22893,7 +22893,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_listUnprocessedEvents",
             "version": "1",
             "descriptor": {
@@ -22950,7 +22950,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_deleteUnprocessedEvents",
             "version": "1",
             "descriptor": {
@@ -22991,7 +22991,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_validateRegistration",
             "version": "1",
             "descriptor": {
@@ -23056,7 +23056,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_registerEvent",
             "version": "1",
             "descriptor": {
@@ -23153,7 +23153,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_listProcessJournal",
             "version": "1",
             "descriptor": {
@@ -23219,7 +23219,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_getProcessEventDetails",
             "version": "1",
             "descriptor": {
@@ -23282,7 +23282,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_updateProcessEvent",
             "version": "1",
             "descriptor": {
@@ -23331,7 +23331,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_listEventCodes",
             "version": "1",
             "descriptor": {
@@ -23396,7 +23396,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_createEventCode",
             "version": "1",
             "descriptor": {
@@ -23457,7 +23457,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_createSubcode",
             "version": "1",
             "descriptor": {
@@ -23502,7 +23502,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_getRollMap",
             "version": "1",
             "descriptor": {
@@ -23568,7 +23568,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_buildRollLabel",
             "version": "1",
             "descriptor": {
@@ -23638,7 +23638,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_stageDowntimeSummary",
             "version": "1",
             "descriptor": {
@@ -23704,7 +23704,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_enqueue1cExport",
             "version": "1",
             "descriptor": {
@@ -23745,7 +23745,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_export1cBatch",
             "version": "1",
             "descriptor": {
@@ -23794,7 +23794,7 @@
             }
           },
           {
-            "objectPath": "root.platform.singleton-blueprints.ogp-mes-hub-v1",
+            "objectPath": "root.platform.singleton-blueprints.mes-ogp-events-hub-v1",
             "functionName": "ogp_advanceMeter",
             "version": "1",
             "descriptor": {
@@ -38393,5 +38393,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "2076f8774f35cb9b16565af440fac74dae44260b8890ac4377c67b4070f3bfaf"
+  "contentSha256": "cdf3452b11fabced9db5991e2cf82be5de70c9d14b3d92e0c8f3d65713101d10"
 }

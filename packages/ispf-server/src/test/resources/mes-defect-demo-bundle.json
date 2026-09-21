@@ -15,7 +15,7 @@
   ],
   "blueprints": [
     {
-      "name": "mes-defect-hub-v1",
+      "name": "mes-defect-demo-hub-v1",
       "description": "MES defect hub with SCADA bindings and workflow events",
       "type": "SINGLETON",
       "variables": [
@@ -166,7 +166,7 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_simulateDefect",
       "version": "1",
       "descriptor": {
@@ -219,7 +219,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_receiveDefect",
       "version": "1",
       "descriptor": {
@@ -263,7 +263,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_resolveOrder",
       "version": "1",
       "descriptor": {
@@ -312,7 +312,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_calculateRoute",
       "version": "1",
       "descriptor": {
@@ -365,7 +365,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_confirmRoute",
       "version": "1",
       "descriptor": {
@@ -401,7 +401,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_finalizeDefect",
       "version": "1",
       "descriptor": {
@@ -442,7 +442,7 @@
       }
     },
     {
-      "objectPath": "root.platform.singleton-blueprints.mes-defect-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.mes-defect-demo-hub-v1",
       "functionName": "mes_listLines",
       "version": "1",
       "descriptor": {

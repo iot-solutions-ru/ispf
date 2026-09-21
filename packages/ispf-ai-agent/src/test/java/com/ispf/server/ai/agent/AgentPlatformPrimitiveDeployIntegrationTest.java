@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AgentPlatformPrimitiveDeployIntegrationTest {
 
     private static final String APP_ID = "platform-primitive";
-    private static final String HUB_PATH = "root.platform.devices.platform-primitive-hub";
+    private static final String HUB_PATH = "root.platform.singleton-blueprints.platform-primitive-hub-v1";
     private static final String DASHBOARD_PATH = "root.platform.dashboards.platform-primitive-overview";
 
     @Autowired

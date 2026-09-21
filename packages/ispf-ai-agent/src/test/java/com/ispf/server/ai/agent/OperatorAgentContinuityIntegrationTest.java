@@ -52,12 +52,12 @@ class OperatorAgentContinuityIntegrationTest {
                 APP_ID,
                 "Platform Primitive",
                 List.of(
-                        "root.platform.devices.platform-primitive-hub",
+                        "root.platform.singleton-blueprints.platform-primitive-hub-v1",
                         "root.platform.dashboards.platform-primitive-overview",
                         "root.platform.applications." + APP_ID,
                         "root.platform.operator-apps." + APP_ID
                 ),
-                "root.platform.devices.platform-primitive-hub"
+                "root.platform.singleton-blueprints.platform-primitive-hub-v1"
         );
 
         var supervisorAuth = new UsernamePasswordAuthenticationToken(
