@@ -118,7 +118,12 @@ public class ObjectEditLeaseService {
         if (pathPrefix == null || pathPrefix.isBlank()) {
             throw new IllegalArgumentException("pathPrefix is required");
         }
-        return pathPrefix.trim().replaceAll("\\.+$", "");
+        String trimmed = pathPrefix.trim();
+        int end = trimmed.length();
+        while (end > 0 && trimmed.charAt(end - 1) == '.') {
+            end--;
+        }
+        return trimmed.substring(0, end);
     }
 
     private static EditLease mapRow(java.sql.ResultSet rs) throws java.sql.SQLException {

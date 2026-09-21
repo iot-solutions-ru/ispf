@@ -4,11 +4,34 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentLoopGuardTest {
+
+    @Test
+    void hardBlocksRepeatedGetDriverHelp() {
+        // Two prior get_driver_help calls → third is hard-blocked.
+        List<Map<String, Object>> steps = List.of(
+                step("get_driver_help"),
+                step("get_driver_help")
+        );
+        var block = AgentLoopGuard.checkHardBlock("get_driver_help", steps);
+        assertTrue(block.isPresent());
+        assertTrue(block.get().blocked());
+        assertTrue(block.get().error().contains("stop looping"));
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("create_object"));
+        assertTrue(block.get().hint().contains("snmp-agent-v1"));
+    }
+
+    @Test
+    void hintsExecuteAfterSingleGetDriverHelp() {
+        String hint = AgentLoopGuard.continuationHint("get_driver_help", List.of(step("get_driver_help")), 96);
+        assertTrue(hint.toLowerCase(Locale.ROOT).contains("stop"));
+        assertTrue(hint.contains("snmp-agent-v1"));
+    }
 
     @Test
     void warnsOnRepeatedSearchContext() {
@@ -18,7 +41,7 @@ class AgentLoopGuardTest {
                 step("search_context")
         );
         String hint = AgentLoopGuard.continuationHint("search_context", steps, 96);
-        assertTrue(hint.toLowerCase().contains("search_context"));
+        assertTrue(hint.toLowerCase(Locale.ROOT).contains("search_context"));
     }
 
     @Test

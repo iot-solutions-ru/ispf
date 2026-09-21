@@ -101,8 +101,12 @@ public class DropInUiPackLoader {
 
     public synchronized Map<String, Object> installPackDirectory(Path sourceDir, String expectedAppId)
             throws IOException {
-        Path manifestPath = sourceDir.resolve(MANIFEST_FILE);
-        if (!Files.isRegularFile(manifestPath)) {
+        if (sourceDir == null) {
+            throw new IllegalArgumentException("ui pack directory is required");
+        }
+        Path sourceRoot = sourceDir.toAbsolutePath().normalize();
+        Path manifestPath = sourceRoot.resolve(MANIFEST_FILE).normalize();
+        if (!manifestPath.startsWith(sourceRoot) || !Files.isRegularFile(manifestPath)) {
             throw new IllegalArgumentException("ui pack directory missing ui-pack.json");
         }
         @SuppressWarnings("unchecked")
@@ -125,7 +129,8 @@ public class DropInUiPackLoader {
         if (entry.contains("..") || entry.startsWith("/") || entry.startsWith("\\")) {
             throw new IllegalArgumentException("ui-pack entry must be a relative file path");
         }
-        if (!Files.isRegularFile(sourceDir.resolve(entry))) {
+        Path entryPath = sourceRoot.resolve(entry).normalize();
+        if (!entryPath.startsWith(sourceRoot) || !Files.isRegularFile(entryPath)) {
             throw new IllegalArgumentException("ui-pack entry file missing: " + entry);
         }
 
@@ -137,7 +142,7 @@ public class DropInUiPackLoader {
             deleteRecursively(targetDir);
         }
         Files.createDirectories(targetDir);
-        copyTree(sourceDir, targetDir);
+        copyTree(sourceRoot, targetDir);
         // Rewrite manifest with normalized fields for serving.
         Map<String, Object> stored = new LinkedHashMap<>(manifest);
         stored.put("appId", appId);

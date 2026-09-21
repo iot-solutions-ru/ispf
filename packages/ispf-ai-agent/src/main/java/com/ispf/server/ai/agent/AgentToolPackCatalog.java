@@ -88,7 +88,7 @@ public final class AgentToolPackCatalog {
         }
         if (containsAny(text,
                 "device", "устройств", "driver", "snmp", "modbus", "mqtt", "virtual", "sensor",
-                "plc", "create_object", "create_virtual")) {
+                "plc", "create_object", "create_virtual", "создай", "создать", "добавь", "настрой")) {
             packs.add(DEVICES);
         }
         if (containsAny(text,

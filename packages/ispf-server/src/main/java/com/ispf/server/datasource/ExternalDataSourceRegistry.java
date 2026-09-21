@@ -1,5 +1,6 @@
 package com.ispf.server.datasource;
 
+import com.ispf.server.security.JdbcUrlSafety;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -77,7 +78,7 @@ public class ExternalDataSourceRegistry {
     private static HikariDataSource createPool(String poolName, ExternalJdbcConfig config) {
         HikariConfig hikari = new HikariConfig();
         hikari.setPoolName("ispf-ext-" + poolName);
-        hikari.setJdbcUrl(config.jdbcUrl());
+        hikari.setJdbcUrl(JdbcUrlSafety.requireSafeJdbcUrl(config.jdbcUrl()));
         hikari.setDriverClassName(config.driverClassName());
         hikari.setUsername(config.username());
         hikari.setPassword(config.password());

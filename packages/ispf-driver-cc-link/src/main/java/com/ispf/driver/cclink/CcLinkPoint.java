@@ -14,9 +14,9 @@ import java.util.regex.Pattern;
 record CcLinkPoint(String deviceCode, int address) {
 
     private static final Pattern DEV_PREFIX = Pattern.compile(
-            "^dev\\s*[:=]\\s*(.+)$", Pattern.CASE_INSENSITIVE);
+            "^dev\\s*+[:=]\\s*+(.+)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern DEVICE = Pattern.compile(
-            "^([DRWdrw])\\s*[:=]?\\s*(\\d+)$");
+            "^([DRWdrw])\\s*+[:=]?\\s*+(\\d+)$");
 
     static CcLinkPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {

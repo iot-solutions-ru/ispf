@@ -83,14 +83,18 @@ public class MarketplaceUiPackLocalService {
         if (packId == null || packId.isBlank()) {
             throw new IllegalArgumentException("pack id is required");
         }
-        Path source = findSourceDir(packId.trim());
+        String safePackId = packId.trim();
+        if (!isSafePackId(safePackId)) {
+            throw new IllegalArgumentException("Invalid local UI pack id: " + packId);
+        }
+        Path source = findSourceDir(safePackId);
         if (source == null) {
             throw new IllegalArgumentException("Local UI pack not found: " + packId);
         }
         @SuppressWarnings("unchecked")
         Map<String, Object> listing =
                 objectMapper.readValue(Files.readString(source.resolve("listing.manifest.json")), Map.class);
-        String appId = firstNonBlank(stringValue(listing.get("appId")), stringValue(listing.get("packId")), packId);
+        String appId = firstNonBlank(stringValue(listing.get("appId")), stringValue(listing.get("packId")), safePackId);
         Map<String, Object> installed = uiPackLoader.installPackDirectory(source, appId);
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "OK");
@@ -124,11 +128,15 @@ public class MarketplaceUiPackLocalService {
             if (!Files.isDirectory(root)) {
                 continue;
             }
-            Path direct = root.resolve(packId);
+            Path rootNorm = root.toAbsolutePath().normalize();
+            Path direct = rootNorm.resolve(packId).normalize();
+            if (!direct.startsWith(rootNorm)) {
+                continue;
+            }
             if (Files.isRegularFile(direct.resolve(DropInUiPackLoader.MANIFEST_FILE))) {
                 return direct;
             }
-            try (var entries = Files.list(root)) {
+            try (var entries = Files.list(rootNorm)) {
                 for (Path child : entries.filter(Files::isDirectory).toList()) {
                     Path listing = child.resolve("listing.manifest.json");
                     if (!Files.isRegularFile(listing)) {
@@ -156,6 +164,19 @@ public class MarketplaceUiPackLocalService {
         Path cwd = Paths.get(".").toAbsolutePath().normalize();
         roots.add(cwd.resolve("examples"));
         return roots;
+    }
+
+    private static boolean isSafePackId(String packId) {
+        if (packId == null || packId.isBlank() || packId.length() > 64) {
+            return false;
+        }
+        for (int i = 0; i < packId.length(); i++) {
+            char c = packId.charAt(i);
+            if (!(Character.isLetterOrDigit(c) || c == '-' || c == '_' || c == '.')) {
+                return false;
+            }
+        }
+        return !packId.contains("..");
     }
 
     private static String firstNonBlank(String... values) {

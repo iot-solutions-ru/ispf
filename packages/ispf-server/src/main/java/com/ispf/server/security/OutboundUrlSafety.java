@@ -70,6 +70,35 @@ public final class OutboundUrlSafety {
         return uri;
     }
 
+    /** Strip trailing '/' without regex (avoids polynomial ReDoS on user URLs). */
+    public static String stripTrailingSlashes(String url) {
+        if (url == null || url.isEmpty()) {
+            return url;
+        }
+        int end = url.length();
+        while (end > 0 && url.charAt(end - 1) == '/') {
+            end--;
+        }
+        return url.substring(0, end);
+    }
+
+    /**
+     * Resolve a path/query against an already-validated base URI so HTTP sinks use the
+     * validated {@link URI} object rather than a re-parsed string concat.
+     */
+    public static URI resolvePath(URI safeBase, String pathAndQuery) {
+        if (safeBase == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "URL is required");
+        }
+        if (pathAndQuery == null || pathAndQuery.isBlank()) {
+            return safeBase;
+        }
+        String base = safeBase.toString();
+        URI baseWithSlash = base.endsWith("/") ? safeBase : URI.create(base + "/");
+        String relative = pathAndQuery.startsWith("/") ? pathAndQuery.substring(1) : pathAndQuery;
+        return baseWithSlash.resolve(relative);
+    }
+
     static boolean isCloudMetadataHost(String host) {
         return "metadata.google.internal".equals(host)
                 || "metadata".equals(host)

@@ -29,7 +29,7 @@ final class JavaFunctionCompileClasspath {
     private static final Path CACHE_DIR = Path.of(
             System.getProperty("java.io.tmpdir"),
             "ispf-java-function-cp"
-    );
+    ).toAbsolutePath().normalize();
 
     private static volatile String cachedClasspath;
 
@@ -191,15 +191,32 @@ final class JavaFunctionCompileClasspath {
     }
 
     private static Path extractFromOuterJar(Path outerJar, String entryPath) throws IOException {
+        if (entryPath == null
+                || !entryPath.startsWith("BOOT-INF/lib/")
+                || entryPath.contains("..")
+                || entryPath.contains("\\")
+                || !entryPath.endsWith(".jar")) {
+            throw new IOException("Refusing nested jar path outside BOOT-INF/lib: " + entryPath);
+        }
+        Path entryName = Path.of(entryPath).getFileName();
+        if (entryName == null || entryName.toString().isBlank() || entryName.toString().contains("..")) {
+            throw new IOException("Invalid nested jar file name: " + entryPath);
+        }
         Files.createDirectories(CACHE_DIR);
         String cacheName = Integer.toHexString((outerJar.toString() + "!" + entryPath).hashCode())
                 + "-"
-                + Path.of(entryPath).getFileName();
-        Path cached = CACHE_DIR.resolve(cacheName);
+                + entryName;
+        Path cached = CACHE_DIR.resolve(cacheName).normalize();
+        if (!cached.startsWith(CACHE_DIR)) {
+            throw new IOException("Refusing cache path escape for " + entryPath);
+        }
         if (Files.exists(cached) && Files.size(cached) > 0) {
             return cached;
         }
-        Path tmp = CACHE_DIR.resolve(cacheName + ".part");
+        Path tmp = CACHE_DIR.resolve(cacheName + ".part").normalize();
+        if (!tmp.startsWith(CACHE_DIR)) {
+            throw new IOException("Refusing temp path escape for " + entryPath);
+        }
         try (JarFile jar = new JarFile(outerJar.toFile())) {
             JarEntry entry = jar.getJarEntry(entryPath);
             if (entry == null) {

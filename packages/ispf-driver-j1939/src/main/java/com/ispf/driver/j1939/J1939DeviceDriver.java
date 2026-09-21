@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
 public class J1939DeviceDriver implements DeviceDriver {
 
     private static final Pattern PGN_MAPPING = Pattern.compile(
-            "^(?:PGN[:\\s-]*)?(?:0x)?([0-9A-Fa-f]+)$",
+            "^(?:PGN[:\\s-]++)?(?:0x)?([0-9A-Fa-f]++)$",
             Pattern.CASE_INSENSITIVE);
 
     private static final Pattern FRAME_LINE = Pattern.compile(
@@ -234,13 +234,26 @@ public class J1939DeviceDriver implements DeviceDriver {
             throw new IllegalArgumentException("Unsupported J1939 mapping (expected PGN:61444 or 0xF004): " + mapping);
         }
         String digits = matcher.group(1);
-        int pgn = digits.matches("(?i)0*[0-9A-F]*[A-F][0-9A-F]*") || trimmed.toLowerCase(Locale.ROOT).contains("0x")
+        int pgn = looksLikeHexPgn(digits, trimmed)
                 ? Integer.parseInt(digits, 16)
                 : Integer.parseInt(digits, 10);
         if (pgn < 0 || pgn > 0x3FFFF) {
             throw new IllegalArgumentException("J1939 PGN out of range: " + pgn);
         }
         return pgn;
+    }
+
+    private static boolean looksLikeHexPgn(String digits, String trimmed) {
+        if (trimmed.toLowerCase(Locale.ROOT).contains("0x")) {
+            return true;
+        }
+        for (int i = 0; i < digits.length(); i++) {
+            char c = digits.charAt(i);
+            if ((c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static Frame parseFrameLine(String line) {

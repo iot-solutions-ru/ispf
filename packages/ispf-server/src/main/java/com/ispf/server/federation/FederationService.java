@@ -94,14 +94,14 @@ public class FederationService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "password is required");
         }
         URI safeBase = OutboundUrlSafety.requireSafeHttpUrl(
-                baseUrl.trim().replaceAll("/+$", ""),
+                OutboundUrlSafety.stripTrailingSlashes(baseUrl.trim()),
                 federationSecurityProperties.getOutboundUrlAllowlist(),
                 federationSecurityProperties.isBlockLoopbackHosts()
         );
-        String url = safeBase.toString().replaceAll("/+$", "") + "/api/v1/auth/login";
+        URI loginUri = OutboundUrlSafety.resolvePath(safeBase, "api/v1/auth/login");
         try {
             String json = objectMapper.writeValueAsString(Map.of("username", username.trim(), "password", password));
-            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+            HttpRequest request = HttpRequest.newBuilder(loginUri)
                     .timeout(Duration.ofSeconds(15))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json))
@@ -304,7 +304,7 @@ public class FederationService {
     static String localMirrorPath(FederationPeer peer, String objectPath) {
         String prefix = peer.pathPrefix() == null || peer.pathPrefix().isBlank()
                 ? "root.platform"
-                : peer.pathPrefix().trim().replaceAll("\\.+$", "");
+                : stripTrailingDots(peer.pathPrefix().trim());
         String remotePath = resolveRemotePath(prefix, objectPath);
         String suffix = remotePath.equals(prefix) ? "" : remotePath.substring(prefix.length());
         return FederationPaths.peerCatalogRoot(peer.name()) + suffix;
@@ -332,11 +332,11 @@ public class FederationService {
 
     private JsonNode sendJsonHttp(FederationPeer peer, String method, String pathAndQuery, String body, boolean allowRefresh) {
         FederationPeer current = peerStore.findById(peer.id()).orElse(peer);
-        String url = current.baseUrl() + pathAndQuery;
+        URI target = peerRequestUri(current, pathAndQuery);
         long startedAt = System.nanoTime();
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
+                    .uri(target)
                     .timeout(Duration.ofSeconds(15))
                     .header("Content-Type", "application/json")
                     .method(method, HttpRequest.BodyPublishers.ofString(body != null ? body : "{}"));
@@ -366,11 +366,11 @@ public class FederationService {
 
     private JsonNode sendGetHttp(FederationPeer peer, String pathAndQuery, boolean allowRefresh) {
         FederationPeer current = peerStore.findById(peer.id()).orElse(peer);
-        String url = current.baseUrl() + pathAndQuery;
+        URI target = peerRequestUri(current, pathAndQuery);
         long startedAt = System.nanoTime();
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
+                    .uri(target)
                     .timeout(Duration.ofSeconds(15))
                     .GET();
             applyChannelAuth(builder, current);
@@ -466,11 +466,31 @@ public class FederationService {
         }
         if (draft.connectionMode() != FederationConnectionMode.TUNNEL_INBOUND) {
             OutboundUrlSafety.requireSafeHttpUrl(
-                    draft.baseUrl(),
+                    OutboundUrlSafety.stripTrailingSlashes(draft.baseUrl().trim()),
                     federationSecurityProperties.getOutboundUrlAllowlist(),
                     federationSecurityProperties.isBlockLoopbackHosts()
             );
         }
+    }
+
+    private URI peerRequestUri(FederationPeer peer, String pathAndQuery) {
+        URI safeBase = OutboundUrlSafety.requireSafeHttpUrl(
+                OutboundUrlSafety.stripTrailingSlashes(peer.baseUrl().trim()),
+                federationSecurityProperties.getOutboundUrlAllowlist(),
+                federationSecurityProperties.isBlockLoopbackHosts()
+        );
+        return OutboundUrlSafety.resolvePath(safeBase, pathAndQuery);
+    }
+
+    static String stripTrailingDots(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+        int end = value.length();
+        while (end > 0 && value.charAt(end - 1) == '.') {
+            end--;
+        }
+        return value.substring(0, end);
     }
 }
 

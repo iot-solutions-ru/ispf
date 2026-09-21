@@ -28,6 +28,8 @@ public class LocalSecurityConfig {
             TenantRlsFilter tenantRlsFilter
     ) throws Exception {
         http
+                // Stateless bearer / local role headers — no cookie session, CSRF tokens are not applicable.
+                // codeql[java/spring-disabled-csrf-protection]
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 

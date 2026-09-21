@@ -20,7 +20,7 @@ record OpcAePoint(Kind kind, String id) {
     }
 
     private static final Pattern MAPPING = Pattern.compile(
-            "^(alarm|source|area)\\s*[:=]\\s*(.+)$",
+            "^(alarm|source|area)\\s*+[:=]\\s*+(.+)$",
             Pattern.CASE_INSENSITIVE);
 
     static OpcAePoint parse(String mapping) throws DriverException {

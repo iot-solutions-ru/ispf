@@ -14,8 +14,8 @@ public final class SumScanBinding implements PlatformBinding {
     static final SumScanBinding INSTANCE = new SumScanBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "sumScan\\(\\s*\"([^\"]+)\"\\s*,\\s*\"([^\"]+)\"\\s*(?:,\\s*\"((?:\\\\.|[^\"])*)\"\\s*)?\\)",
-            Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+            "sumScan\\(\\s*+\"([^\"]+)\"\\s*+,\\s*+\"([^\"]+)\"\\s*+(?:,\\s*+\"((?:\\\\.|[^\"\\\\])*)\"\\s*+)?\\)",
+            Pattern.CASE_INSENSITIVE
     );
 
     private SumScanBinding() {
