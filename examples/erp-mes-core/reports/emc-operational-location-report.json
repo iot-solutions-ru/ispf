@@ -1,0 +1,31 @@
+{
+  "columns": [
+    {
+      "field": "location_id",
+      "label": "Location"
+    },
+    {
+      "field": "description",
+      "label": "Description"
+    },
+    {
+      "field": "location_kind",
+      "label": "Kind"
+    },
+    {
+      "field": "equipment_id",
+      "label": "Equipment"
+    },
+    {
+      "field": "parent_location_id",
+      "label": "Parent"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    }
+  ],
+  "description": "Operational locations linked to equipment / storage hierarchy.",
+  "reportId": "emc-operational-location-report",
+  "title": "Operational Locations (Part 2)"
+}

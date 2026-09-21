@@ -1,0 +1,11 @@
+{
+  "conditionExpr": "self.lowStockCount[\"value\"] > 0",
+  "delaySeconds": 0,
+  "edgeTrigger": true,
+  "enabled": true,
+  "eventName": "lowStockAlert",
+  "name": "emc-low-stock",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "sustainWhileTrue": false,
+  "watchVariable": "lowStockCount"
+}

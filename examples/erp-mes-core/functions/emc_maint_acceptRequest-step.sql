@@ -1,0 +1,1 @@
+INSERT INTO emc_maintenance_work_order (wo_id, request_id, equipment_id, status, planned_start, planned_end) SELECT ?, ?, ?, 'PLANNED', NULLIF(?, ''), NULLIF(?, '') WHERE NOT EXISTS (SELECT 1 FROM emc_maintenance_work_order WHERE wo_id = ?)

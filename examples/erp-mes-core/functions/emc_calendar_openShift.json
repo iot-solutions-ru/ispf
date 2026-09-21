@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "shiftId",
+          "type": "STRING"
+        },
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        },
+        {
+          "name": "shiftLabel",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedMinutes",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedStart",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "shiftId",
+          "type": "STRING"
+        },
+        {
+          "name": "state",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_calendar_openShift",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"eq\",\"sql\":\"SELECT equipment_id FROM emc_equipment WHERE equipment_id = ?\",\"params\":[\"${input.equipmentId}\"]},{\"type\":\"failIfNull\",\"var\":\"eq\",\"error_code\":\"EQUIPMENT_NOT_FOUND\",\"error_message\":\"Equipment not found\"},{\"type\":\"exec\",\"sql\":\"@file:emc_calendar_openShift-step.sql\",\"params\":[\"${input.shiftId}\",\"${input.equipmentId}\",\"${input.shiftLabel}\",\"${input.plannedMinutes}\",\"${input.plannedStart}\",\"${input.shiftId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"shiftId\":\"${input.shiftId}\",\"state\":\"OPEN\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

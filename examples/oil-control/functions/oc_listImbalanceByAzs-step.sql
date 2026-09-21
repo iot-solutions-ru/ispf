@@ -1,0 +1,1 @@
+WITH tot AS (SELECT COALESCE(SUM(ABS(delta_l)),0) AS s FROM oc_imbalance) SELECT azs_code, COUNT(*)::int AS cnt, SUM(ABS(delta_l))::float AS imbalance_l, ROUND((SUM(ABS(delta_l)) / NULLIF((SELECT s FROM tot),0) * 100)::numeric, 1)::float AS share_pct FROM oc_imbalance GROUP BY azs_code ORDER BY imbalance_l DESC

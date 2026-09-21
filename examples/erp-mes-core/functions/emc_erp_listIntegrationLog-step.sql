@@ -1,0 +1,1 @@
+SELECT direction, COALESCE(verb, '') AS verb, COALESCE(noun, '') AS noun, CASE WHEN success THEN 'true' ELSE 'false' END AS success, COALESCE(code, '') AS code, COALESCE(message, '') AS message FROM emc_integration_log ORDER BY id DESC

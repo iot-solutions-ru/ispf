@@ -1,0 +1,88 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "autoSelectFirstRow": true,
+      "columnFiltersJson": "[\"status\", \"severity\", \"defect_type_id\"]",
+      "filterable": true,
+      "h": 67,
+      "id": "defects",
+      "reportPath": "root.platform.reports.emc-defect-report",
+      "rowParamsFromRowJson": "{\"defectNo\": \"defect_no\"}",
+      "rowSelectionKey": "defect_no",
+      "selectable": true,
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "Дефекты",
+      "type": "report",
+      "w": 56,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "buttonLabel": "Зарегистрировать",
+      "fieldsJson": "[{\"name\": \"defectNo\", \"label\": \"Дефект №\", \"type\": \"text\", \"required\": true}, {\"name\": \"jobNo\", \"label\": \"Сменное задание\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-job-board\", \"optionsValueField\": \"job_no\", \"optionsLabelField\": \"dispatch_status\", \"required\": true}, {\"name\": \"defectTypeId\", \"label\": \"Тип дефекта\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-defect-type-catalog\", \"optionsValueField\": \"code\", \"optionsLabelField\": \"name\", \"required\": true}, {\"name\": \"reasonCode\", \"label\": \"Код причины\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-reason-code-catalog\", \"optionsValueField\": \"code\", \"optionsLabelField\": \"name\"}, {\"name\": \"severity\", \"label\": \"Критичность\", \"type\": \"select\", \"staticOptions\": [\"MINOR\", \"MAJOR\", \"CRITICAL\"], \"defaultValue\": \"MINOR\"}, {\"name\": \"qtyDeclared\", \"label\": \"Количество\", \"type\": \"number\", \"defaultValue\": \"1\"}, {\"name\": \"createdBy\", \"label\": \"Сотрудник\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-person-catalog\", \"optionsValueField\": \"code\", \"optionsLabelField\": \"name\", \"defaultValue\": \"EMP-001\"}]",
+      "functionName": "emc_qa_registerDefect",
+      "h": 47,
+      "id": "register",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Зарегистрировать дефект",
+      "type": "function-form",
+      "w": 28,
+      "x": 56,
+      "y": 0
+    },
+    {
+      "buttonLabel": "Подтвердить",
+      "fieldsJson": "[{\"name\": \"defectNo\", \"label\": \"Дефект №\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-defect-report\", \"optionsValueField\": \"defect_no\", \"optionsLabelField\": \"status\", \"required\": true}, {\"name\": \"by\", \"label\": \"Кем\", \"type\": \"text\", \"defaultValue\": \"qa\"}, {\"name\": \"reasonCode\", \"label\": \"Код причины\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-reason-code-catalog\", \"optionsValueField\": \"code\", \"optionsLabelField\": \"name\"}]",
+      "functionName": "emc_qa_confirmDefect",
+      "h": 26,
+      "id": "confirm",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Подтвердить дефект",
+      "type": "function-form",
+      "w": 28,
+      "x": 56,
+      "y": 47
+    },
+    {
+      "buttonLabel": "Закрыть",
+      "fieldsJson": "[{\"name\": \"defectNo\", \"label\": \"Дефект №\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-defect-report\", \"optionsValueField\": \"defect_no\", \"optionsLabelField\": \"status\", \"required\": true}, {\"name\": \"by\", \"label\": \"Кем\", \"type\": \"text\", \"defaultValue\": \"qa\"}]",
+      "functionName": "emc_qa_closeDefect",
+      "h": 21,
+      "id": "close",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Закрыть дефект",
+      "type": "function-form",
+      "w": 28,
+      "x": 56,
+      "y": 73
+    },
+    {
+      "columnFiltersJson": "[\"result\", \"test_name\"]",
+      "filterable": true,
+      "h": 18,
+      "id": "qaTests",
+      "reportPath": "root.platform.reports.emc-qa-test-report",
+      "statusDotColumnsJson": "[\"result\"]",
+      "title": "QA Test Results",
+      "type": "report",
+      "w": 56,
+      "x": 0,
+      "y": 67
+    },
+    {
+      "buttonLabel": "Записать",
+      "fieldsJson": "[{\"name\": \"jobNo\", \"label\": \"Job\", \"type\": \"text\", \"defaultValue\": \"\"}, {\"name\": \"lotId\", \"label\": \"Lot\", \"type\": \"text\", \"defaultValue\": \"LOT-FG-0001\"}, {\"name\": \"testName\", \"label\": \"Test\", \"type\": \"text\", \"defaultValue\": \"Dimensional check\", \"required\": true}, {\"name\": \"result\", \"label\": \"Result\", \"type\": \"select\", \"staticOptions\": [\"PASS\", \"FAIL\"], \"defaultValue\": \"PASS\"}, {\"name\": \"measurementsJson\", \"label\": \"JSON\", \"type\": \"text\", \"defaultValue\": \"{}\"}]",
+      "functionName": "emc_qa_recordTestResult",
+      "h": 18,
+      "id": "recordQa",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Записать QA-тест",
+      "type": "function-form",
+      "w": 28,
+      "x": 56,
+      "y": 94
+    }
+  ]
+}

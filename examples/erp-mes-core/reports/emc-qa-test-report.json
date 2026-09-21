@@ -1,0 +1,35 @@
+{
+  "columns": [
+    {
+      "field": "id",
+      "label": "ID"
+    },
+    {
+      "field": "job_no",
+      "label": "Job"
+    },
+    {
+      "field": "lot_id",
+      "label": "Lot"
+    },
+    {
+      "field": "test_name",
+      "label": "Test"
+    },
+    {
+      "field": "result",
+      "label": "Result"
+    },
+    {
+      "field": "measurements_json",
+      "label": "Measurements"
+    },
+    {
+      "field": "created_at",
+      "label": "Created"
+    }
+  ],
+  "description": "Quality test results (Part 3 Quality).",
+  "reportId": "emc-qa-test-report",
+  "title": "QA Test Results"
+}

@@ -1,0 +1,23 @@
+{
+  "columns": [
+    {
+      "field": "code",
+      "label": "Code"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "equipment_level",
+      "label": "Level"
+    },
+    {
+      "field": "parent_id",
+      "label": "Parent"
+    }
+  ],
+  "description": "Equipment hierarchy as code/name options for form dropdowns.",
+  "reportId": "emc-equipment-catalog",
+  "title": "Equipment Catalog"
+}

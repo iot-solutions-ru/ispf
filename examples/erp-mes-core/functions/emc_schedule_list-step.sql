@@ -1,0 +1,1 @@
+SELECT s.schedule_id, COALESCE(s.external_ref, '') AS external_ref, s.schedule_state, (SELECT COUNT(*) FROM emc_work_request r WHERE r.schedule_id = s.schedule_id) AS requests, (SELECT COUNT(*) FROM emc_job_order j JOIN emc_work_request r2 ON r2.request_id = j.request_id  WHERE r2.schedule_id = s.schedule_id) AS job_orders FROM emc_work_schedule s ORDER BY s.created_at DESC

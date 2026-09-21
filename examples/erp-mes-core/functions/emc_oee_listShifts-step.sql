@@ -1,0 +1,1 @@
+SELECT equipment_id, shift_label, planned_min, availability_loss_min, performance_loss_min, produced_qty, good_qty, availability_pct, performance_pct, quality_pct, oee_pct, calculated_at FROM emc_oee_shift WHERE (? = '' OR equipment_id = ?) ORDER BY calculated_at DESC

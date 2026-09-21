@@ -1,0 +1,65 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "verb",
+                "type": "STRING"
+              },
+              {
+                "name": "noun",
+                "type": "STRING"
+              },
+              {
+                "name": "objectId",
+                "type": "STRING"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              },
+              {
+                "name": "ackCode",
+                "type": "STRING"
+              },
+              {
+                "name": "idempotencyKey",
+                "type": "STRING"
+              },
+              {
+                "name": "createdAt",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_erp_listOutbox",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"msgs\",\"sql\":\"@file:emc_erp_listOutbox-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${msgs}\",\"fields\":{\"verb\":\"${item.verb}\",\"noun\":\"${item.noun}\",\"objectId\":\"${item.object_id}\",\"status\":\"${item.status}\",\"ackCode\":\"${item.ack_code}\",\"idempotencyKey\":\"${item.idempotency_key}\",\"createdAt\":\"${item.created_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

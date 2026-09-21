@@ -1,0 +1,90 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "defectNo",
+                "type": "STRING"
+              },
+              {
+                "name": "jobNo",
+                "type": "STRING"
+              },
+              {
+                "name": "lotId",
+                "type": "STRING"
+              },
+              {
+                "name": "defectTypeId",
+                "type": "STRING"
+              },
+              {
+                "name": "reasonCode",
+                "type": "STRING"
+              },
+              {
+                "name": "severity",
+                "type": "STRING"
+              },
+              {
+                "name": "qtyDeclared",
+                "type": "STRING"
+              },
+              {
+                "name": "qtyConfirmed",
+                "type": "STRING"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              },
+              {
+                "name": "createdBy",
+                "type": "STRING"
+              },
+              {
+                "name": "createdAt",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_qa_listDefects",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"defects\",\"sql\":\"@file:emc_qa_listDefects-step.sql\",\"params\":[\"${input.jobNo}\",\"${input.jobNo}\",\"${input.status}\",\"${input.status}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${defects}\",\"fields\":{\"defectNo\":\"${item.defect_no}\",\"jobNo\":\"${item.job_no}\",\"lotId\":\"${item.lot_id}\",\"defectTypeId\":\"${item.defect_type_id}\",\"reasonCode\":\"${item.reason_code}\",\"severity\":\"${item.severity}\",\"qtyDeclared\":\"${item.qty_declared}\",\"qtyConfirmed\":\"${item.qty_confirmed}\",\"status\":\"${item.status}\",\"createdBy\":\"${item.created_by}\",\"createdAt\":\"${item.created_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

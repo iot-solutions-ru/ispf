@@ -1,0 +1,49 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "entityType",
+          "type": "STRING"
+        },
+        {
+          "name": "externalId",
+          "type": "STRING"
+        },
+        {
+          "name": "payloadJson",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "entityType",
+          "type": "STRING"
+        },
+        {
+          "name": "externalId",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_erp_syncMasterData",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"failIfNull\",\"var\":\"input.entityType\",\"error_code\":\"VALIDATION\",\"error_message\":\"entityType is required\"},{\"type\":\"failIfNull\",\"var\":\"input.externalId\",\"error_code\":\"VALIDATION\",\"error_message\":\"externalId is required\"},{\"type\":\"exec\",\"sql\":\"@file:emc_erp_syncMasterData-step.sql\",\"params\":[\"${input.payloadJson}\",\"${input.entityType}\",\"${input.externalId}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_erp_syncMasterData-step.sql\",\"params\":[\"${input.entityType}\",\"${input.externalId}\",\"${input.payloadJson}\",\"${input.entityType}\",\"${input.externalId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"entityType\":\"${input.entityType}\",\"externalId\":\"${input.externalId}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

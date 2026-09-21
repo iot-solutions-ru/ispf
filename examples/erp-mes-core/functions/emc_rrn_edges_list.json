@@ -1,0 +1,74 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "networkId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "relId",
+                "type": "STRING"
+              },
+              {
+                "name": "networkId",
+                "type": "STRING"
+              },
+              {
+                "name": "fromType",
+                "type": "STRING"
+              },
+              {
+                "name": "fromId",
+                "type": "STRING"
+              },
+              {
+                "name": "toType",
+                "type": "STRING"
+              },
+              {
+                "name": "toId",
+                "type": "STRING"
+              },
+              {
+                "name": "relationshipType",
+                "type": "STRING"
+              },
+              {
+                "name": "dependency",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_rrn_edges_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows_raw\",\"sql\":\"@file:emc_rrn_edges_list-step.sql\",\"params\":[\"${input.networkId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${rows_raw}\",\"fields\":{\"relId\":\"${item.rel_id}\",\"networkId\":\"${item.network_id}\",\"fromType\":\"${item.from_resource_type}\",\"fromId\":\"${item.from_resource_id}\",\"toType\":\"${item.to_resource_type}\",\"toId\":\"${item.to_resource_id}\",\"relationshipType\":\"${item.relationship_type}\",\"dependency\":\"${item.dependency}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

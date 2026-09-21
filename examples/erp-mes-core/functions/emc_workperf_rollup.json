@@ -1,0 +1,45 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "performanceId",
+          "type": "STRING"
+        },
+        {
+          "name": "goodQty",
+          "type": "STRING"
+        },
+        {
+          "name": "rejectQty",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_workperf_rollup",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"agg\",\"sql\":\"@file:emc_workperf_rollup-step.sql\",\"params\":[\"${input.jobNo}\",\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_workperf_rollup-step.sql\",\"params\":[\"${agg.good_qty}\",\"${agg.reject_qty}\",\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_workperf_rollup-step.sql\",\"params\":[\"${input.jobNo}\",\"${input.jobNo}\",\"${agg.good_qty}\",\"${agg.reject_qty}\",\"${input.jobNo}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"performanceId\":\"${input.jobNo}\",\"goodQty\":\"${agg.good_qty}\",\"rejectQty\":\"${agg.reject_qty}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

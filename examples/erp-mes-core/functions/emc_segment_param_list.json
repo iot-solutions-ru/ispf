@@ -1,0 +1,70 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "segmentId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "specId",
+                "type": "STRING"
+              },
+              {
+                "name": "segmentId",
+                "type": "STRING"
+              },
+              {
+                "name": "paramKey",
+                "type": "STRING"
+              },
+              {
+                "name": "paramName",
+                "type": "STRING"
+              },
+              {
+                "name": "defaultValue",
+                "type": "STRING"
+              },
+              {
+                "name": "uom",
+                "type": "STRING"
+              },
+              {
+                "name": "requiredFlag",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_segment_param_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows_raw\",\"sql\":\"@file:emc_segment_param_list-step.sql\",\"params\":[\"${input.segmentId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${rows_raw}\",\"fields\":{\"specId\":\"${item.spec_id}\",\"segmentId\":\"${item.segment_id}\",\"paramKey\":\"${item.param_key}\",\"paramName\":\"${item.param_name}\",\"defaultValue\":\"${item.default_value}\",\"uom\":\"${item.uom}\",\"requiredFlag\":\"${item.required_flag}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

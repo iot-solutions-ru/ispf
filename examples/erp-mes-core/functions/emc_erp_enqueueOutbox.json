@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "verb",
+          "type": "STRING"
+        },
+        {
+          "name": "noun",
+          "type": "STRING"
+        },
+        {
+          "name": "objectId",
+          "type": "STRING"
+        },
+        {
+          "name": "payloadJson",
+          "type": "STRING"
+        },
+        {
+          "name": "idempotencyKey",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "idempotencyKey",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_erp_enqueueOutbox",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"failIfNull\",\"var\":\"input.verb\",\"error_code\":\"VALIDATION\",\"error_message\":\"verb is required\"},{\"type\":\"failIfNull\",\"var\":\"input.noun\",\"error_code\":\"VALIDATION\",\"error_message\":\"noun is required\"},{\"type\":\"failIfNull\",\"var\":\"input.idempotencyKey\",\"error_code\":\"VALIDATION\",\"error_message\":\"idempotencyKey is required\"},{\"type\":\"exec\",\"sql\":\"@file:emc_erp_enqueueOutbox-step.sql\",\"params\":[\"${input.verb}\",\"${input.noun}\",\"${input.objectId}\",\"${input.payloadJson}\",\"${input.idempotencyKey}\",\"${input.idempotencyKey}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"idempotencyKey\":\"${input.idempotencyKey}\",\"status\":\"PENDING\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

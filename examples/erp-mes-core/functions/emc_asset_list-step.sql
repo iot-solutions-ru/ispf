@@ -1,0 +1,1 @@
+SELECT asset_id, COALESCE(class_id, '') AS class_id, COALESCE(equipment_id, '') AS equipment_id, COALESCE(serial_no, '') AS serial_no, COALESCE(manufacturer, '') AS manufacturer, COALESCE(description, '') AS description, status FROM emc_physical_asset ORDER BY asset_id

@@ -1,0 +1,82 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "status",
+          "type": "STRING"
+        },
+        {
+          "name": "storageLocation",
+          "type": "STRING"
+        },
+        {
+          "name": "definitionId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "lotId",
+                "type": "STRING"
+              },
+              {
+                "name": "barcode",
+                "type": "STRING"
+              },
+              {
+                "name": "definitionId",
+                "type": "STRING"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              },
+              {
+                "name": "storageLocation",
+                "type": "STRING"
+              },
+              {
+                "name": "quantity",
+                "type": "STRING"
+              },
+              {
+                "name": "baseUom",
+                "type": "STRING"
+              },
+              {
+                "name": "onJobNo",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_matlot_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"lots\",\"sql\":\"@file:emc_matlot_list-step.sql\",\"params\":[\"${input.status}\",\"${input.status}\",\"${input.storageLocation}\",\"${input.storageLocation}\",\"${input.definitionId}\",\"${input.definitionId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${lots}\",\"fields\":{\"lotId\":\"${item.lot_id}\",\"barcode\":\"${item.barcode}\",\"definitionId\":\"${item.definition_id}\",\"status\":\"${item.status}\",\"storageLocation\":\"${item.storage_location}\",\"quantity\":\"${item.quantity}\",\"baseUom\":\"${item.base_uom}\",\"onJobNo\":\"${item.on_job_no}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

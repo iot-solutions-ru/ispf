@@ -1,0 +1,44 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "defectCount",
+          "type": "STRING"
+        },
+        {
+          "name": "confirmedQty",
+          "type": "STRING"
+        },
+        {
+          "name": "jobsWithDefects",
+          "type": "STRING"
+        },
+        {
+          "name": "defectRatePct",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_qa_defectRateKpi",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"kpi\",\"sql\":\"@file:emc_qa_defectRateKpi-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"defectCount\":\"${kpi.defect_count}\",\"confirmedQty\":\"${kpi.confirmed_qty}\",\"jobsWithDefects\":\"${kpi.jobs_with_defects}\",\"defectRatePct\":\"${kpi.defect_rate_pct}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

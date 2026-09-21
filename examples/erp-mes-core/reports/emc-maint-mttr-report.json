@@ -1,0 +1,23 @@
+{
+  "columns": [
+    {
+      "field": "closed_events",
+      "label": "Closed Events"
+    },
+    {
+      "field": "total_downtime_min",
+      "label": "Downtime Min"
+    },
+    {
+      "field": "mttr_min",
+      "label": "MTTR Min"
+    },
+    {
+      "field": "mtbf_min",
+      "label": "MTBF Min ≈"
+    }
+  ],
+  "description": "MTTR from closed downtime events; MTBF heuristic from shift calendar.",
+  "reportId": "emc-maint-mttr-report",
+  "title": "Maintenance MTTR / MTBF"
+}

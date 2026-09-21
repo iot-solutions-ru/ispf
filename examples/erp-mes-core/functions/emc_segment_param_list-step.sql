@@ -1,0 +1,1 @@
+SELECT spec_id, segment_id, param_key, COALESCE(param_name, '') AS param_name, COALESCE(default_value, '') AS default_value, COALESCE(uom, '') AS uom, required_flag FROM emc_segment_parameter_spec WHERE COALESCE(NULLIF(TRIM(?), ''), segment_id) = segment_id ORDER BY segment_id, param_key

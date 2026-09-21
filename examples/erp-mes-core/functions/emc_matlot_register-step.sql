@@ -1,0 +1,1 @@
+INSERT INTO emc_material_lot (lot_id, barcode, definition_id, status, storage_location, quantity, base_uom, weight_kg, length_m) SELECT ?, ?, ?, 'STOCK', ?, COALESCE(NULLIF(?, ''), '0'), ?, NULLIF(?, ''), NULLIF(?, '') WHERE NOT EXISTS (SELECT 1 FROM emc_material_lot WHERE barcode = ?)

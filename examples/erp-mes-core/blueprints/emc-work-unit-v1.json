@@ -1,0 +1,104 @@
+{
+  "description": "Work Unit (ISA-95 equipment): machine state mirrored from job-order lifecycle.",
+  "name": "emc-work-unit-v1",
+  "targetObjectType": "DEVICE",
+  "type": "MIXIN",
+  "variables": [
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": "IDLE"
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "STRING"
+            }
+          ],
+          "name": "stringValue"
+        }
+      },
+      "description": "Machine status (IDLE/RUNNING/PAUSED)",
+      "group": "runtime",
+      "name": "status",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "STRING"
+          }
+        ],
+        "name": "stringValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": "0"
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "STRING"
+            }
+          ],
+          "name": "stringValue"
+        }
+      },
+      "description": "Last reported speed / rate",
+      "group": "runtime",
+      "name": "speed",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "STRING"
+          }
+        ],
+        "name": "stringValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": ""
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "STRING"
+            }
+          ],
+          "name": "stringValue"
+        }
+      },
+      "description": "Job order currently dispatched to this unit",
+      "group": "runtime",
+      "name": "activeJobOrderId",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "STRING"
+          }
+        ],
+        "name": "stringValue"
+      },
+      "writable": true
+    }
+  ]
+}

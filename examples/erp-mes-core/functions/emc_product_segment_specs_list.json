@@ -1,0 +1,74 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "productId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "kind",
+                "type": "STRING"
+              },
+              {
+                "name": "specId",
+                "type": "STRING"
+              },
+              {
+                "name": "productId",
+                "type": "STRING"
+              },
+              {
+                "name": "segmentId",
+                "type": "STRING"
+              },
+              {
+                "name": "refId",
+                "type": "STRING"
+              },
+              {
+                "name": "useOrKey",
+                "type": "STRING"
+              },
+              {
+                "name": "quantity",
+                "type": "STRING"
+              },
+              {
+                "name": "uom",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_product_segment_specs_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows_raw\",\"sql\":\"@file:emc_product_segment_specs_list-step.sql\",\"params\":[\"${input.productId}\",\"${input.productId}\",\"${input.productId}\",\"${input.productId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${rows_raw}\",\"fields\":{\"kind\":\"${item.kind}\",\"specId\":\"${item.spec_id}\",\"productId\":\"${item.product_id}\",\"segmentId\":\"${item.segment_id}\",\"refId\":\"${item.ref_id}\",\"useOrKey\":\"${item.use_or_key}\",\"quantity\":\"${item.quantity}\",\"uom\":\"${item.uom}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

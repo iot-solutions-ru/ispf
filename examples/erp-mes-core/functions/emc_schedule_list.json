@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "scheduleId",
+                "type": "STRING"
+              },
+              {
+                "name": "externalRef",
+                "type": "STRING"
+              },
+              {
+                "name": "scheduleState",
+                "type": "STRING"
+              },
+              {
+                "name": "requests",
+                "type": "STRING"
+              },
+              {
+                "name": "jobOrders",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_schedule_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"schedules\",\"sql\":\"@file:emc_schedule_list-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${schedules}\",\"fields\":{\"scheduleId\":\"${item.schedule_id}\",\"externalRef\":\"${item.external_ref}\",\"scheduleState\":\"${item.schedule_state}\",\"requests\":\"${item.requests}\",\"jobOrders\":\"${item.job_orders}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

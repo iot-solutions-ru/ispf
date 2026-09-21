@@ -1,0 +1,1 @@
+SELECT lot_id, barcode, definition_id, status, COALESCE(storage_location, '') AS storage_location, quantity, base_uom, COALESCE(on_job_order_id, '') AS on_job_no FROM emc_material_lot WHERE (? = '' OR status = ?) AND (? = '' OR storage_location = ?) AND (? = '' OR definition_id = ?) ORDER BY lot_id

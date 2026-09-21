@@ -1,0 +1,35 @@
+{
+  "columns": [
+    {
+      "field": "lot_id",
+      "label": "Lot"
+    },
+    {
+      "field": "barcode",
+      "label": "Barcode"
+    },
+    {
+      "field": "material_id",
+      "label": "Material"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    },
+    {
+      "field": "storage_location",
+      "label": "Location"
+    },
+    {
+      "field": "quantity",
+      "label": "Qty"
+    },
+    {
+      "field": "base_uom",
+      "label": "UOM"
+    }
+  ],
+  "description": "Selectable demo lots for genealogy (FG / WIP / RAW).",
+  "reportId": "emc-genealogy-lot-catalog",
+  "title": "Genealogy Lot Catalog"
+}

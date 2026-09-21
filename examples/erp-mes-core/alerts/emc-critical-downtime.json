@@ -1,0 +1,11 @@
+{
+  "conditionExpr": "self.activeDowntimeCount[\"value\"] >= 2",
+  "delaySeconds": 0,
+  "edgeTrigger": true,
+  "enabled": true,
+  "eventName": "criticalDowntime",
+  "name": "emc-critical-downtime",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "sustainWhileTrue": false,
+  "watchVariable": "activeDowntimeCount"
+}

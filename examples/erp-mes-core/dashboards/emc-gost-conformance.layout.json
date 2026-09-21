@@ -1,0 +1,166 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "h": 10,
+      "htmlJson": "<p><b>Ручная приёмка только через UI</b>. Проверьте таблицы ниже (seed-данные) и формы действий. Part 4 в РФ = <b>ПНСТ 172—2016</b>.</p>",
+      "id": "help",
+      "title": "Приёмка demostand",
+      "type": "html-snippet",
+      "w": 84,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "h": 18,
+      "id": "rrn",
+      "reportPath": "root.platform.reports.emc-rrn-networks",
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "RRN Networks",
+      "type": "report",
+      "w": 42,
+      "x": 0,
+      "y": 10
+    },
+    {
+      "columnFiltersJson": "[\"from_resource_type\", \"to_resource_type\"]",
+      "filterable": true,
+      "h": 18,
+      "id": "edges",
+      "reportPath": "root.platform.reports.emc-rrn-edges",
+      "title": "RRN Edges",
+      "type": "report",
+      "w": 42,
+      "x": 42,
+      "y": 10
+    },
+    {
+      "h": 18,
+      "id": "ctr",
+      "reportPath": "root.platform.reports.emc-container-report",
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "Containers",
+      "type": "report",
+      "w": 28,
+      "x": 0,
+      "y": 28
+    },
+    {
+      "h": 18,
+      "id": "tool",
+      "reportPath": "root.platform.reports.emc-tool-report",
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "Tools",
+      "type": "report",
+      "w": 28,
+      "x": 28,
+      "y": 28
+    },
+    {
+      "h": 18,
+      "id": "sw",
+      "reportPath": "root.platform.reports.emc-software-report",
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "Software",
+      "type": "report",
+      "w": 28,
+      "x": 56,
+      "y": 28
+    },
+    {
+      "h": 18,
+      "id": "opsdef",
+      "reportPath": "root.platform.reports.emc-opsdef-report",
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "Operations Definitions",
+      "type": "report",
+      "w": 42,
+      "x": 0,
+      "y": 46
+    },
+    {
+      "h": 18,
+      "id": "opssched",
+      "reportPath": "root.platform.reports.emc-opssched-report",
+      "statusDotColumnsJson": "[\"state\"]",
+      "title": "Operations Schedules",
+      "type": "report",
+      "w": 42,
+      "x": 42,
+      "y": 46
+    },
+    {
+      "h": 16,
+      "id": "wcap",
+      "reportPath": "root.platform.reports.emc-workcap-report",
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "Work Capability",
+      "type": "report",
+      "w": 28,
+      "x": 0,
+      "y": 64
+    },
+    {
+      "h": 16,
+      "id": "wmc",
+      "reportPath": "root.platform.reports.emc-wmc-report",
+      "title": "Work Master Capability",
+      "type": "report",
+      "w": 28,
+      "x": 28,
+      "y": 64
+    },
+    {
+      "h": 16,
+      "id": "kpi",
+      "reportPath": "root.platform.reports.emc-kpi-value-report",
+      "title": "Work KPI",
+      "type": "report",
+      "w": 28,
+      "x": 56,
+      "y": 64
+    },
+    {
+      "autoSelectFirstRow": true,
+      "h": 20,
+      "id": "alerts",
+      "reportPath": "root.platform.reports.emc-work-alert-report",
+      "rowParamsFromRowJson": "{\"alertId\": \"alert_id\"}",
+      "rowSelectionKey": "alert_id",
+      "selectable": true,
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "Work Alerts",
+      "type": "report",
+      "w": 56,
+      "x": 0,
+      "y": 80
+    },
+    {
+      "buttonLabel": "Подтвердить",
+      "fieldsJson": "[{\"name\": \"alertId\", \"label\": \"Alert ID\", \"type\": \"text\", \"defaultValue\": \"WA-DEMO-001\", \"required\": true}, {\"name\": \"ackBy\", \"label\": \"Кем\", \"type\": \"text\", \"defaultValue\": \"EMP-001\", \"required\": true}]",
+      "functionName": "emc_work_alert_ack",
+      "h": 20,
+      "id": "ackAlert",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Acknowledge Work Alert",
+      "type": "function-form",
+      "w": 28,
+      "x": 56,
+      "y": 80
+    },
+    {
+      "buttonLabel": "Сохранить",
+      "fieldsJson": "[{\"name\": \"definitionId\", \"label\": \"Definition ID\", \"type\": \"text\", \"defaultValue\": \"OD-ASSEMBLY-01\", \"required\": true}, {\"name\": \"version\", \"label\": \"Version\", \"type\": \"text\", \"defaultValue\": \"1\"}, {\"name\": \"name\", \"label\": \"Name\", \"type\": \"text\", \"defaultValue\": \"Assembly operations definition\", \"required\": true}, {\"name\": \"description\", \"label\": \"Description\", \"type\": \"text\", \"defaultValue\": \"Updated from demostand UI\"}, {\"name\": \"hierarchyScopeId\", \"label\": \"Scope\", \"type\": \"text\", \"defaultValue\": \"SCOPE-SITE-01\"}, {\"name\": \"publishedFlag\", \"label\": \"Published\", \"type\": \"select\", \"staticOptions\": [\"true\", \"false\"], \"defaultValue\": \"true\"}]",
+      "functionName": "emc_opsdef_upsert",
+      "h": 22,
+      "id": "upsertOd",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Ops Definition upsert",
+      "type": "function-form",
+      "w": 84,
+      "x": 0,
+      "y": 100
+    }
+  ]
+}

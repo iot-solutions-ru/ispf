@@ -1,0 +1,1 @@
+SELECT id::text AS id, severity, started_at::text AS started_at, ended_at::text AS ended_at, azs_code, address, event_text, source_name, map_x, map_y, status FROM oc_monitor_event ORDER BY started_at DESC

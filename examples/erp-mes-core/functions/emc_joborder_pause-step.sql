@@ -1,0 +1,1 @@
+INSERT INTO emc_job_response_data (id, response_id, data_kind, started_at) SELECT gen_random_uuid(), response_id, 'PAUSE_INTERVAL', CURRENT_TIMESTAMP FROM emc_job_response WHERE job_no = ? AND job_state = 'RUNNING'

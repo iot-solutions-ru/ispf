@@ -1,0 +1,45 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "personId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_joborder_confirmStart",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"invoke_function\",\"objectPath\":\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\",\"functionName\":\"emc_joborder_start\",\"var\":\"started\",\"input\":{\"jobNo\":\"${input.jobNo}\",\"personId\":\"${input.personId}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"jobNo\":\"${started.jobNo}\",\"status\":\"${started.status}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "requestId",
+          "type": "STRING"
+        },
+        {
+          "name": "woId",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedStart",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedEnd",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "requestId",
+          "type": "STRING"
+        },
+        {
+          "name": "woId",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_maint_acceptRequest",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"r\",\"sql\":\"@file:emc_maint_acceptRequest-step.sql\",\"params\":[\"${input.requestId}\"]},{\"type\":\"failIfNull\",\"var\":\"r\",\"error_code\":\"REQUEST_NOT_FOUND\",\"error_message\":\"Maintenance request not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"r.status\",\"equals\":\"NEW\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Only NEW requests can be accepted\"},{\"type\":\"exec\",\"sql\":\"UPDATE emc_maintenance_request SET status = 'ACCEPTED' WHERE request_id = ?\",\"params\":[\"${input.requestId}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_maint_acceptRequest-step.sql\",\"params\":[\"${input.woId}\",\"${input.requestId}\",\"${r.equipment_id}\",\"${input.plannedStart}\",\"${input.plannedEnd}\",\"${input.woId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"requestId\":\"${input.requestId}\",\"woId\":\"${input.woId}\",\"status\":\"PLANNED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

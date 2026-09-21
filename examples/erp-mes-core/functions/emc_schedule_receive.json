@@ -1,0 +1,93 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "externalRef",
+          "type": "STRING"
+        },
+        {
+          "name": "requestId",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "workMasterId",
+          "type": "STRING"
+        },
+        {
+          "name": "workMasterVersion",
+          "type": "STRING"
+        },
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        },
+        {
+          "name": "productDefinitionId",
+          "type": "STRING"
+        },
+        {
+          "name": "quantity",
+          "type": "STRING"
+        },
+        {
+          "name": "uom",
+          "type": "STRING"
+        },
+        {
+          "name": "priority",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedStart",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedEnd",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "scheduleId",
+          "type": "STRING"
+        },
+        {
+          "name": "requestId",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "dispatchStatus",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_schedule_receive",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"failIfNull\",\"var\":\"input.externalRef\",\"error_code\":\"VALIDATION\",\"error_message\":\"externalRef is required\"},{\"type\":\"failIfNull\",\"var\":\"input.requestId\",\"error_code\":\"VALIDATION\",\"error_message\":\"requestId is required\"},{\"type\":\"failIfNull\",\"var\":\"input.jobNo\",\"error_code\":\"VALIDATION\",\"error_message\":\"jobNo is required\"},{\"type\":\"failIfNull\",\"var\":\"input.workMasterId\",\"error_code\":\"VALIDATION\",\"error_message\":\"workMasterId is required\"},{\"type\":\"failIfNull\",\"var\":\"input.equipmentId\",\"error_code\":\"VALIDATION\",\"error_message\":\"equipmentId is required\"},{\"type\":\"selectOne\",\"var\":\"wm\",\"sql\":\"@file:emc_schedule_receive-step.sql\",\"params\":[\"${input.workMasterId}\",\"${input.workMasterVersion}\"]},{\"type\":\"failIfNull\",\"var\":\"wm\",\"error_code\":\"WORK_MASTER_NOT_FOUND\",\"error_message\":\"Work master not found\"},{\"type\":\"selectOne\",\"var\":\"eq\",\"sql\":\"SELECT equipment_id FROM emc_equipment WHERE equipment_id = ?\",\"params\":[\"${input.equipmentId}\"]},{\"type\":\"failIfNull\",\"var\":\"eq\",\"error_code\":\"EQUIPMENT_NOT_FOUND\",\"error_message\":\"Equipment not found\"},{\"type\":\"exec\",\"sql\":\"@file:emc_schedule_receive-step.sql\",\"params\":[\"${input.externalRef}\",\"${input.externalRef}\",\"${input.externalRef}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_schedule_receive-step.sql\",\"params\":[\"${input.requestId}\",\"${input.externalRef}\",\"${input.priority}\",\"${input.productDefinitionId}\",\"${input.quantity}\",\"${input.uom}\",\"${input.plannedStart}\",\"${input.plannedEnd}\",\"${input.requestId}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_schedule_receive-step.sql\",\"params\":[\"${input.jobNo}\",\"${input.requestId}\",\"${input.workMasterId}\",\"${input.workMasterVersion}\",\"${wm.segment_id}\",\"${input.equipmentId}\",\"${input.priority}\",\"${input.plannedStart}\",\"${input.plannedEnd}\",\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_schedule_receive-step.sql\",\"params\":[\"${input.jobNo}\",\"${wm.segment_id}\",\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_schedule_receive-step.sql\",\"params\":[\"${input.jobNo}\",\"${wm.segment_id}\",\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_schedule_receive-step.sql\",\"params\":[\"${input.jobNo}\",\"${wm.segment_id}\",\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_schedule_receive-step.sql\",\"params\":[\"${input.jobNo}\",\"${input.externalRef}\"]},{\"type\":\"selectOne\",\"var\":\"job\",\"sql\":\"SELECT job_no, dispatch_status FROM emc_job_order WHERE job_no = ?\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"scheduleId\":\"${input.externalRef}\",\"requestId\":\"${input.requestId}\",\"jobNo\":\"${job.job_no}\",\"dispatchStatus\":\"${job.dispatch_status}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

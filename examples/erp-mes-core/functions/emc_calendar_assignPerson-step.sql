@@ -1,0 +1,1 @@
+INSERT INTO emc_shift_assignment (id, shift_id, person_id, handover_from_id) SELECT gen_random_uuid(), ?, ?, NULLIF(?, '') WHERE NOT EXISTS (SELECT 1 FROM emc_shift_assignment WHERE shift_id = ? AND person_id = ?)

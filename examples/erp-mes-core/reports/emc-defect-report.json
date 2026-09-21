@@ -1,0 +1,43 @@
+{
+  "columns": [
+    {
+      "field": "defect_no",
+      "label": "Defect #"
+    },
+    {
+      "field": "job_no",
+      "label": "Job #"
+    },
+    {
+      "field": "defect_type_id",
+      "label": "Type"
+    },
+    {
+      "field": "qty_declared",
+      "label": "Qty"
+    },
+    {
+      "field": "severity",
+      "label": "Severity"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    },
+    {
+      "field": "reason_code",
+      "label": "Reason"
+    },
+    {
+      "field": "created_by",
+      "label": "By"
+    },
+    {
+      "field": "created_at",
+      "label": "Created"
+    }
+  ],
+  "description": "Defect log with QA workflow status (Part 3 quality operations).",
+  "reportId": "emc-defect-report",
+  "title": "Quality Defects"
+}

@@ -1,0 +1,65 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "scheduleId",
+          "type": "STRING"
+        },
+        {
+          "name": "domain",
+          "type": "STRING"
+        },
+        {
+          "name": "scheduleKind",
+          "type": "STRING"
+        },
+        {
+          "name": "targetId",
+          "type": "STRING"
+        },
+        {
+          "name": "quantity",
+          "type": "STRING"
+        },
+        {
+          "name": "uom",
+          "type": "STRING"
+        },
+        {
+          "name": "note",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "scheduleId",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_domainschedule_upsert",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"@file:emc_domainschedule_upsert-step.sql\",\"params\":[\"${input.domain}\",\"${input.scheduleKind}\",\"${input.targetId}\",\"${input.quantity}\",\"${input.uom}\",\"${input.note}\",\"${input.scheduleId}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_domainschedule_upsert-step.sql\",\"params\":[\"${input.scheduleId}\",\"${input.domain}\",\"${input.scheduleKind}\",\"${input.targetId}\",\"${input.quantity}\",\"${input.uom}\",\"${input.note}\",\"${input.scheduleId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"scheduleId\":\"${input.scheduleId}\",\"status\":\"PLANNED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

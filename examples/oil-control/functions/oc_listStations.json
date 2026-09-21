@@ -1,0 +1,77 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "azs_code",
+                "type": "STRING"
+              },
+              {
+                "name": "display_name",
+                "type": "STRING"
+              },
+              {
+                "name": "region_code",
+                "type": "STRING"
+              },
+              {
+                "name": "region_name",
+                "type": "STRING"
+              },
+              {
+                "name": "address",
+                "type": "STRING"
+              },
+              {
+                "name": "connected",
+                "type": "BOOLEAN"
+              },
+              {
+                "name": "lat",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "lon",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "map_x",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "map_y",
+                "type": "DOUBLE"
+              }
+            ],
+            "name": "row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_listStations",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"@file:oc_listStations-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

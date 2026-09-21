@@ -1,0 +1,1 @@
+SELECT assembly_id, parent_definition_id, COALESCE(child_definition_id, '') AS child_definition_id, quantity, COALESCE(uom, '') AS uom, assembly_type, sequence_no FROM emc_material_assembled_from WHERE COALESCE(NULLIF(TRIM(?), ''), parent_definition_id) = parent_definition_id ORDER BY parent_definition_id, sequence_no

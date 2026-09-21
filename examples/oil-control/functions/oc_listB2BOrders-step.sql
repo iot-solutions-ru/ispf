@@ -1,0 +1,1 @@
+SELECT o.order_no, p.display_name AS partner_name, o.product_code, o.volume_l, o.status, o.requested_at::text AS requested_at FROM oc_b2b_order o LEFT JOIN oc_partner p ON p.partner_code=o.partner_code ORDER BY o.requested_at DESC

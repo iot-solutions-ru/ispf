@@ -1,0 +1,1 @@
+SELECT wagon_no, product_code, from_station, to_station, waybill, shipped_at::text AS shipped_at, current_station, operation, op_at::text AS op_at, km_left, delay_bucket FROM oc_wagon_trip ORDER BY shipped_at DESC

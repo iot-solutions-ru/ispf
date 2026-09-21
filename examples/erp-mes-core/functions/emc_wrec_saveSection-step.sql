@@ -1,0 +1,1 @@
+INSERT INTO emc_work_record_section (record_id, section_key, title, content_json) SELECT ?, ?, NULLIF(?, ''), NULLIF(?, '') WHERE NOT EXISTS (SELECT 1 FROM emc_work_record_section WHERE record_id = ? AND section_key = ?)

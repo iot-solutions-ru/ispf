@@ -1,0 +1,53 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "specId",
+          "type": "STRING"
+        },
+        {
+          "name": "measuredValue",
+          "type": "STRING"
+        },
+        {
+          "name": "result",
+          "type": "STRING"
+        },
+        {
+          "name": "testedBy",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "specId",
+          "type": "STRING"
+        },
+        {
+          "name": "result",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_capability_recordResult",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"spec\",\"sql\":\"SELECT spec_id FROM emc_capability_test_spec WHERE spec_id = ?\",\"params\":[\"${input.specId}\"]},{\"type\":\"failIfNull\",\"var\":\"spec\",\"error_code\":\"SPEC_NOT_FOUND\",\"error_message\":\"Capability test spec not found\"},{\"type\":\"exec\",\"sql\":\"@file:emc_capability_recordResult-step.sql\",\"params\":[\"${input.specId}\",\"${input.measuredValue}\",\"${input.result}\",\"${input.testedBy}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"specId\":\"${input.specId}\",\"result\":\"${input.result}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

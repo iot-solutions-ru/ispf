@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "workMasterId",
+          "type": "STRING"
+        },
+        {
+          "name": "version",
+          "type": "STRING"
+        },
+        {
+          "name": "segmentId",
+          "type": "STRING"
+        },
+        {
+          "name": "durationMin",
+          "type": "STRING"
+        },
+        {
+          "name": "description",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "workMasterId",
+          "type": "STRING"
+        },
+        {
+          "name": "version",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_workmaster_upsert",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"seg\",\"sql\":\"SELECT segment_id FROM emc_process_segment WHERE segment_id = ?\",\"params\":[\"${input.segmentId}\"]},{\"type\":\"failIfNull\",\"var\":\"seg\",\"error_code\":\"SEGMENT_NOT_FOUND\",\"error_message\":\"Process segment not found\"},{\"type\":\"exec\",\"sql\":\"@file:emc_workmaster_upsert-step.sql\",\"params\":[\"${input.segmentId}\",\"${input.durationMin}\",\"${input.description}\",\"${input.workMasterId}\",\"${input.version}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_workmaster_upsert-step.sql\",\"params\":[\"${input.workMasterId}\",\"${input.version}\",\"${input.segmentId}\",\"${input.durationMin}\",\"${input.description}\",\"${input.workMasterId}\",\"${input.version}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"workMasterId\":\"${input.workMasterId}\",\"version\":\"${input.version}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

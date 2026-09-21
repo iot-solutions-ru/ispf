@@ -1,0 +1,61 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "assemblyId",
+          "type": "STRING"
+        },
+        {
+          "name": "parentDefinitionId",
+          "type": "STRING"
+        },
+        {
+          "name": "childDefinitionId",
+          "type": "STRING"
+        },
+        {
+          "name": "quantity",
+          "type": "STRING"
+        },
+        {
+          "name": "uom",
+          "type": "STRING"
+        },
+        {
+          "name": "assemblyType",
+          "type": "STRING"
+        },
+        {
+          "name": "sequenceNo",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "assemblyId",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_assembledfrom_upsert",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"@file:emc_assembledfrom_upsert-step.sql\",\"params\":[\"${input.parentDefinitionId}\",\"${input.childDefinitionId}\",\"${input.quantity}\",\"${input.uom}\",\"${input.assemblyType}\",\"${input.sequenceNo}\",\"${input.assemblyId}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_assembledfrom_upsert-step.sql\",\"params\":[\"${input.assemblyId}\",\"${input.parentDefinitionId}\",\"${input.childDefinitionId}\",\"${input.quantity}\",\"${input.uom}\",\"${input.assemblyType}\",\"${input.sequenceNo}\",\"${input.assemblyId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"assemblyId\":\"${input.assemblyId}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

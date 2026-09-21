@@ -1,0 +1,24 @@
+{
+  "schedules": [
+    {
+      "action": {
+        "functionName": "emc_erp_pollOutbox",
+        "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1"
+      },
+      "actionType": "invoke_function",
+      "enabled": false,
+      "intervalMs": 60000,
+      "scheduleId": "emc-erp-outbox-poll"
+    },
+    {
+      "action": {
+        "functionName": "emc_oee_calcShift",
+        "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1"
+      },
+      "actionType": "invoke_function",
+      "enabled": false,
+      "intervalMs": 300000,
+      "scheduleId": "emc-oee-shift-rollup"
+    }
+  ]
+}

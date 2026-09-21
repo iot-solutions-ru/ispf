@@ -1,0 +1,1 @@
+SELECT CAST(r.result_id AS VARCHAR(64)) AS result_id, r.spec_id, s.test_name, COALESCE(r.measured_value, '') AS measured_value, r.result, r.tested_at, COALESCE(r.tested_by, '') AS tested_by FROM emc_capability_test_result r JOIN emc_capability_test_spec s ON s.spec_id = r.spec_id ORDER BY r.tested_at DESC

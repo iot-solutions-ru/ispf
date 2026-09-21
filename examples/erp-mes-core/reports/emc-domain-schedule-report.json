@@ -1,0 +1,39 @@
+{
+  "columns": [
+    {
+      "field": "schedule_id",
+      "label": "Schedule"
+    },
+    {
+      "field": "domain",
+      "label": "Domain"
+    },
+    {
+      "field": "schedule_kind",
+      "label": "Kind"
+    },
+    {
+      "field": "target_id",
+      "label": "Target"
+    },
+    {
+      "field": "quantity",
+      "label": "Qty"
+    },
+    {
+      "field": "uom",
+      "label": "UOM"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    },
+    {
+      "field": "note",
+      "label": "Note"
+    }
+  ],
+  "description": "Detailed scheduling across Production / Quality / Inventory / Maintenance.",
+  "reportId": "emc-domain-schedule-report",
+  "title": "Domain Schedules (Part 3)"
+}

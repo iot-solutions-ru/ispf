@@ -1,0 +1,41 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "shiftId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "shiftId",
+          "type": "STRING"
+        },
+        {
+          "name": "state",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_calendar_closeShift",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"s\",\"sql\":\"SELECT shift_id, state FROM emc_work_calendar WHERE shift_id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"s\",\"error_code\":\"SHIFT_NOT_FOUND\",\"error_message\":\"Shift not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"s.state\",\"equals\":\"OPEN\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Only OPEN shifts can be closed\"},{\"type\":\"exec\",\"sql\":\"@file:emc_calendar_closeShift-step.sql\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"shiftId\":\"${input.shiftId}\",\"state\":\"CLOSED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

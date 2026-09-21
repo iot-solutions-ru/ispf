@@ -1,0 +1,61 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "newJobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "reasonCode",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedStart",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedEnd",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "newJobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "dispatchStatus",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_joborder_replan",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"job\",\"sql\":\"SELECT job_no, dispatch_status FROM emc_job_order WHERE job_no = ?\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNull\",\"var\":\"job\",\"error_code\":\"JOB_NOT_FOUND\",\"error_message\":\"Job order not found\"},{\"type\":\"failIfNull\",\"var\":\"input.newJobNo\",\"error_code\":\"VALIDATION\",\"error_message\":\"newJobNo is required\"},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_replan-step.sql\",\"params\":[\"${input.newJobNo}\",\"${input.plannedStart}\",\"${input.plannedEnd}\",\"${input.jobNo}\",\"${input.newJobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_replan-step.sql\",\"params\":[\"${input.newJobNo}\",\"${input.reasonCode}\",\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_replan-step.sql\",\"params\":[\"${input.newJobNo}\",\"${input.jobNo}\",\"${input.newJobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_replan-step.sql\",\"params\":[\"${input.jobNo}\",\"${input.newJobNo}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"jobNo\":\"${input.jobNo}\",\"newJobNo\":\"${input.newJobNo}\",\"dispatchStatus\":\"NOT_ALLOWED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

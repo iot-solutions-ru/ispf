@@ -1,0 +1,65 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        },
+        {
+          "name": "shiftLabel",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedMinutes",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        },
+        {
+          "name": "shiftLabel",
+          "type": "STRING"
+        },
+        {
+          "name": "availabilityPct",
+          "type": "STRING"
+        },
+        {
+          "name": "performancePct",
+          "type": "STRING"
+        },
+        {
+          "name": "qualityPct",
+          "type": "STRING"
+        },
+        {
+          "name": "oeePct",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_oee_calcShift",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"failIfNull\",\"var\":\"input.equipmentId\",\"error_code\":\"VALIDATION\",\"error_message\":\"equipmentId is required\"},{\"type\":\"failIfNull\",\"var\":\"input.shiftLabel\",\"error_code\":\"VALIDATION\",\"error_message\":\"shiftLabel is required\"},{\"type\":\"selectOne\",\"var\":\"av\",\"sql\":\"@file:emc_oee_calcShift-step.sql\",\"params\":[\"${input.equipmentId}\"]},{\"type\":\"selectOne\",\"var\":\"pf\",\"sql\":\"@file:emc_oee_calcShift-step.sql\",\"params\":[\"${input.equipmentId}\"]},{\"type\":\"selectOne\",\"var\":\"pr\",\"sql\":\"@file:emc_oee_calcShift-step.sql\",\"params\":[\"${input.equipmentId}\"]},{\"type\":\"selectOne\",\"var\":\"df\",\"sql\":\"@file:emc_oee_calcShift-step.sql\",\"params\":[\"${input.equipmentId}\"]},{\"type\":\"exec\",\"sql\":\"DELETE FROM emc_oee_shift WHERE equipment_id = ? AND shift_label = ?\",\"params\":[\"${input.equipmentId}\",\"${input.shiftLabel}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_oee_calcShift-step.sql\",\"params\":[\"${input.equipmentId}\",\"${input.shiftLabel}\",\"${input.plannedMinutes}\",\"${av.v}\",\"${pf.v}\",\"${pr.v}\",\"${df.v}\"]},{\"type\":\"selectOne\",\"var\":\"kpi\",\"sql\":\"@file:emc_oee_calcShift-step.sql\",\"params\":[\"${input.equipmentId}\",\"${input.shiftLabel}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"equipmentId\":\"${input.equipmentId}\",\"shiftLabel\":\"${input.shiftLabel}\",\"availabilityPct\":\"${kpi.availability_pct}\",\"performancePct\":\"${kpi.performance_pct}\",\"qualityPct\":\"${kpi.quality_pct}\",\"oeePct\":\"${kpi.oee_pct}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

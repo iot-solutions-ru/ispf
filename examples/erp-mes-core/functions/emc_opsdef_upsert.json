@@ -1,0 +1,61 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "definitionId",
+          "type": "STRING"
+        },
+        {
+          "name": "version",
+          "type": "STRING"
+        },
+        {
+          "name": "name",
+          "type": "STRING"
+        },
+        {
+          "name": "description",
+          "type": "STRING"
+        },
+        {
+          "name": "hierarchyScopeId",
+          "type": "STRING"
+        },
+        {
+          "name": "publishedFlag",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "definitionId",
+          "type": "STRING"
+        },
+        {
+          "name": "version",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_opsdef_upsert",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"failIfNull\",\"var\":\"input.definitionId\",\"error_code\":\"VALIDATION\",\"error_message\":\"definitionId is required\"},{\"type\":\"failIfNull\",\"var\":\"input.name\",\"error_code\":\"VALIDATION\",\"error_message\":\"name is required\"},{\"type\":\"exec\",\"sql\":\"@file:emc_opsdef_upsert-step.sql\",\"params\":[\"${input.name}\",\"${input.description}\",\"${input.hierarchyScopeId}\",\"${input.publishedFlag}\",\"${input.definitionId}\",\"${input.version}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_opsdef_upsert-step.sql\",\"params\":[\"${input.definitionId}\",\"${input.version}\",\"${input.name}\",\"${input.description}\",\"${input.hierarchyScopeId}\",\"${input.publishedFlag}\",\"${input.definitionId}\",\"${input.version}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"definitionId\":\"${input.definitionId}\",\"version\":\"${input.version}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

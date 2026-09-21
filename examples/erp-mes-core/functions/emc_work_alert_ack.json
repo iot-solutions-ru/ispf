@@ -1,0 +1,45 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "alertId",
+          "type": "STRING"
+        },
+        {
+          "name": "ackBy",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "alertId",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_work_alert_ack",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"a\",\"sql\":\"SELECT alert_id, status FROM emc_work_alert WHERE alert_id = ?\",\"params\":[\"${input.alertId}\"]},{\"type\":\"failIfNull\",\"var\":\"a\",\"error_code\":\"ALERT_NOT_FOUND\",\"error_message\":\"Work alert not found\"},{\"type\":\"exec\",\"sql\":\"@file:emc_work_alert_ack-step.sql\",\"params\":[\"${input.ackBy}\",\"${input.alertId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"alertId\":\"${input.alertId}\",\"status\":\"ACKNOWLEDGED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

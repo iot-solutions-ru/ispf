@@ -1,0 +1,150 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "h": 12,
+      "htmlJson": "<p><b>Part 3</b> — модель деятельности MOM (4×8). Статусы ячеек: <code>COVERED</code>. Detailed Scheduling — <code>emc_domain_schedule</code>; Performance — defect rate / turns / MTTR.</p><p><b>Part 2</b> — Physical Asset, Product Definition, Capability Test, Operational Location. <b>Part 4</b> — Operations Capability / Performance.</p>",
+      "id": "help",
+      "title": "ГОСТ Р МЭК 62264 / IEC 62264-3",
+      "type": "html-snippet",
+      "w": 84,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "columnFiltersJson": "[\"domain\", \"activity\", \"status\"]",
+      "filterable": true,
+      "h": 30,
+      "id": "matrix",
+      "reportPath": "root.platform.reports.emc-mom-activity-matrix",
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "Матрица 4×8",
+      "type": "report",
+      "w": 84,
+      "x": 0,
+      "y": 12
+    },
+    {
+      "columnFiltersJson": "[\"domain\", \"status\"]",
+      "filterable": true,
+      "h": 22,
+      "id": "sched",
+      "reportPath": "root.platform.reports.emc-domain-schedule-report",
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "Domain Schedules",
+      "type": "report",
+      "w": 42,
+      "x": 0,
+      "y": 42
+    },
+    {
+      "h": 22,
+      "id": "locs",
+      "reportPath": "root.platform.reports.emc-operational-location-report",
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "Operational Locations",
+      "type": "report",
+      "w": 42,
+      "x": 42,
+      "y": 42
+    },
+    {
+      "h": 16,
+      "id": "qaKpi",
+      "reportPath": "root.platform.reports.emc-qa-defect-rate-report",
+      "title": "QA Defect Rate",
+      "type": "report",
+      "w": 28,
+      "x": 0,
+      "y": 64
+    },
+    {
+      "h": 16,
+      "id": "invKpi",
+      "reportPath": "root.platform.reports.emc-inv-turns-report",
+      "title": "Inventory Turns",
+      "type": "report",
+      "w": 28,
+      "x": 28,
+      "y": 64
+    },
+    {
+      "h": 16,
+      "id": "mntKpi",
+      "reportPath": "root.platform.reports.emc-maint-mttr-report",
+      "title": "MTTR / MTBF",
+      "type": "report",
+      "w": 28,
+      "x": 56,
+      "y": 64
+    },
+    {
+      "h": 18,
+      "id": "assets",
+      "reportPath": "root.platform.reports.emc-physical-asset-report",
+      "title": "Physical Assets",
+      "type": "report",
+      "w": 42,
+      "x": 0,
+      "y": 80
+    },
+    {
+      "h": 18,
+      "id": "products",
+      "reportPath": "root.platform.reports.emc-product-definition-report",
+      "title": "Product Definitions",
+      "type": "report",
+      "w": 42,
+      "x": 42,
+      "y": 80
+    },
+    {
+      "h": 18,
+      "id": "capab",
+      "reportPath": "root.platform.reports.emc-ops-capability-report",
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "Operations Capability",
+      "type": "report",
+      "w": 42,
+      "x": 0,
+      "y": 98
+    },
+    {
+      "h": 18,
+      "id": "tests",
+      "reportPath": "root.platform.reports.emc-capability-test-report",
+      "title": "Capability Tests",
+      "type": "report",
+      "w": 42,
+      "x": 42,
+      "y": 98
+    },
+    {
+      "buttonLabel": "Сохранить",
+      "fieldsJson": "[{\"name\": \"scheduleId\", \"label\": \"Schedule ID\", \"type\": \"text\", \"defaultValue\": \"DS-QA-SAMPLE-002\", \"required\": true}, {\"name\": \"domain\", \"label\": \"Domain\", \"type\": \"select\", \"staticOptions\": [\"PRODUCTION\", \"QUALITY\", \"INVENTORY\", \"MAINTENANCE\"], \"defaultValue\": \"QUALITY\"}, {\"name\": \"scheduleKind\", \"label\": \"Kind\", \"type\": \"select\", \"staticOptions\": [\"SAMPLE_PLAN\", \"REPLENISHMENT\", \"PM_CALENDAR\", \"FIRM_SCHEDULE\"], \"defaultValue\": \"SAMPLE_PLAN\"}, {\"name\": \"targetId\", \"label\": \"Target\", \"type\": \"text\", \"defaultValue\": \"LOT-FG-0001\"}, {\"name\": \"quantity\", \"label\": \"Qty\", \"type\": \"number\", \"defaultValue\": \"5\"}, {\"name\": \"uom\", \"label\": \"UOM\", \"type\": \"text\", \"defaultValue\": \"pcs\"}, {\"name\": \"note\", \"label\": \"Note\", \"type\": \"text\", \"defaultValue\": \"Operator-added sample plan\"}]",
+      "functionName": "emc_domainschedule_upsert",
+      "h": 24,
+      "id": "upsertSched",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Domain schedule upsert",
+      "type": "function-form",
+      "w": 42,
+      "x": 0,
+      "y": 116
+    },
+    {
+      "buttonLabel": "Записать",
+      "fieldsJson": "[{\"name\": \"specId\", \"label\": \"Spec ID\", \"type\": \"text\", \"defaultValue\": \"CTS-WU-A01-SPEED\", \"required\": true}, {\"name\": \"measuredValue\", \"label\": \"Измерение\", \"type\": \"text\", \"defaultValue\": \"95\"}, {\"name\": \"result\", \"label\": \"Результат\", \"type\": \"select\", \"staticOptions\": [\"PASS\", \"FAIL\"], \"defaultValue\": \"PASS\"}, {\"name\": \"testedBy\", \"label\": \"Кто\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-person-catalog\", \"optionsValueField\": \"code\", \"optionsLabelField\": \"name\", \"defaultValue\": \"EMP-001\"}]",
+      "functionName": "emc_capability_recordResult",
+      "h": 24,
+      "id": "recordTest",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Capability test result",
+      "type": "function-form",
+      "w": 42,
+      "x": 42,
+      "y": 116
+    }
+  ]
+}

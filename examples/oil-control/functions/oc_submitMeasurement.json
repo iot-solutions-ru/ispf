@@ -1,0 +1,69 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "tankCode",
+          "type": "STRING"
+        },
+        {
+          "name": "levelCm",
+          "type": "STRING"
+        },
+        {
+          "name": "temperatureC",
+          "type": "STRING"
+        },
+        {
+          "name": "operatorName",
+          "type": "STRING"
+        },
+        {
+          "name": "measuredAt",
+          "type": "STRING"
+        },
+        {
+          "name": "lat",
+          "type": "STRING"
+        },
+        {
+          "name": "lon",
+          "type": "STRING"
+        },
+        {
+          "name": "note",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        },
+        {
+          "name": "volume_l",
+          "type": "DOUBLE"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_submitMeasurement",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"tank\",\"sql\":\"SELECT tank_code FROM oc_tank WHERE tank_code = ?\",\"params\":[\"${input.tankCode}\"]},{\"type\":\"failIfNull\",\"var\":\"tank\",\"message\":\"Tank not found\"},{\"type\":\"selectOne\",\"var\":\"vol\",\"sql\":\"@file:oc_submitMeasurement-step.sql\",\"params\":[\"${input.levelCm}\",\"${input.levelCm}\",\"${input.tankCode}\"]},{\"type\":\"exec\",\"sql\":\"@file:oc_submitMeasurement-step.sql\",\"params\":[\"${input.tankCode}\",\"${input.measuredAt}\",\"${input.levelCm}\",\"${input.temperatureC}\",\"${vol.volume_l}\",\"${input.operatorName}\",\"${input.lat}\",\"${input.lon}\",\"${input.note}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"accepted\",\"volume_l\":\"${vol.volume_l}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

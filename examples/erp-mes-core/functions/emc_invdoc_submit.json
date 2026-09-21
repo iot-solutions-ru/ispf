@@ -1,0 +1,41 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "docId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "docId",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_invdoc_submit",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"doc\",\"sql\":\"SELECT doc_id, kind, status FROM emc_inventory_document WHERE doc_id = ?\",\"params\":[\"${input.docId}\"]},{\"type\":\"failIfNull\",\"var\":\"doc\",\"error_code\":\"DOC_NOT_FOUND\",\"error_message\":\"Inventory document not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"doc.status\",\"equals\":\"DRAFT\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Only DRAFT documents can be submitted\"},{\"type\":\"exec\",\"sql\":\"@file:emc_invdoc_submit-step.sql\",\"params\":[\"${input.docId}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_invdoc_submit-step.sql\",\"params\":[\"${input.docId}\",\"${input.docId}\",\"${doc.kind}\",\"${input.docId}\",\"${input.docId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"docId\":\"${input.docId}\",\"status\":\"SUBMITTED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

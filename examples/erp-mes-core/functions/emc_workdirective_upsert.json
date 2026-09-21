@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "directiveId",
+          "type": "STRING"
+        },
+        {
+          "name": "workMasterId",
+          "type": "STRING"
+        },
+        {
+          "name": "version",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "title",
+          "type": "STRING"
+        },
+        {
+          "name": "bodyText",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "directiveId",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_workdirective_upsert",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"@file:emc_workdirective_upsert-step.sql\",\"params\":[\"${input.workMasterId}\",\"${input.version}\",\"${input.jobNo}\",\"${input.title}\",\"${input.bodyText}\",\"${input.directiveId}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_workdirective_upsert-step.sql\",\"params\":[\"${input.directiveId}\",\"${input.workMasterId}\",\"${input.version}\",\"${input.jobNo}\",\"${input.title}\",\"${input.bodyText}\",\"${input.directiveId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"directiveId\":\"${input.directiveId}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

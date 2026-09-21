@@ -1,0 +1,69 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "definitionCode",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "lengthM",
+          "type": "STRING"
+        },
+        {
+          "name": "timeMin",
+          "type": "STRING"
+        },
+        {
+          "name": "comment",
+          "type": "STRING"
+        },
+        {
+          "name": "by",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "definitionCode",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_event_register",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"def\",\"sql\":\"@file:emc_event_register-step.sql\",\"params\":[\"${input.definitionCode}\"]},{\"type\":\"failIfNull\",\"var\":\"def\",\"error_code\":\"EVENT_DEF_UNKNOWN\",\"error_message\":\"Operations event definition not found\"},{\"type\":\"when\",\"then\":[{\"type\":\"when\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"COMMENT_REQUIRED\",\"error_message\":\"This event definition requires a comment\",\"definitionCode\":\"${input.definitionCode}\",\"status\":\"\"}}],\"var\":\"input.comment\",\"equals\":\"\"}],\"var\":\"def.requires_comment\",\"equals\":\"true\"},{\"type\":\"exec\",\"sql\":\"@file:emc_event_register-step.sql\",\"params\":[\"${input.definitionCode}\",\"${input.jobNo}\",\"${input.equipmentId}\",\"${input.lotId}\",\"${input.lengthM}\",\"${input.timeMin}\",\"${input.comment}\",\"${def.oee_bucket}\",\"${input.by}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"definitionCode\":\"${input.definitionCode}\",\"status\":\"REGISTERED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

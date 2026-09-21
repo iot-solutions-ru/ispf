@@ -1,0 +1,1 @@
+SELECT batch_id, COALESCE(certificate_no,'') AS certificate_no, conclusion, density_kg_m3, flash_point_c, water_ppm, particulate_mg_l, COALESCE(lab_name,'') AS lab_name, tested_at::text AS tested_at FROM oc_quality_passport WHERE (NULLIF(?, '') IS NULL OR batch_id = ?) ORDER BY tested_at DESC NULLS LAST

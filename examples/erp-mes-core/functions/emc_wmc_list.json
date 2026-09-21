@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "workMasterId",
+                "type": "STRING"
+              },
+              {
+                "name": "version",
+                "type": "STRING"
+              },
+              {
+                "name": "capabilityId",
+                "type": "STRING"
+              },
+              {
+                "name": "effectiveFrom",
+                "type": "STRING"
+              },
+              {
+                "name": "effectiveTo",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_wmc_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows_raw\",\"sql\":\"@file:emc_wmc_list-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${rows_raw}\",\"fields\":{\"workMasterId\":\"${item.work_master_id}\",\"version\":\"${item.version}\",\"capabilityId\":\"${item.capability_id}\",\"effectiveFrom\":\"${item.effective_from}\",\"effectiveTo\":\"${item.effective_to}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -1,0 +1,66 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "recordId",
+          "type": "STRING"
+        },
+        {
+          "name": "recordNo",
+          "type": "STRING"
+        },
+        {
+          "name": "sections",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "sectionKey",
+                "type": "STRING"
+              },
+              {
+                "name": "title",
+                "type": "STRING"
+              },
+              {
+                "name": "contentJson",
+                "type": "STRING"
+              },
+              {
+                "name": "updatedAt",
+                "type": "STRING"
+              }
+            ],
+            "name": "sections_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_wrec_get",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"rec\",\"sql\":\"SELECT record_id, record_no FROM emc_work_record WHERE job_no = ?\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNull\",\"var\":\"rec\",\"error_code\":\"WORK_RECORD_NOT_FOUND\",\"error_message\":\"No work record for job order\"},{\"type\":\"selectMany\",\"var\":\"sec\",\"sql\":\"@file:emc_wrec_get-step.sql\",\"params\":[\"${rec.record_id}\"]},{\"type\":\"map\",\"var\":\"sections\",\"source\":\"${sec}\",\"fields\":{\"sectionKey\":\"${item.section_key}\",\"title\":\"${item.title}\",\"contentJson\":\"${item.content_json}\",\"updatedAt\":\"${item.updated_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"recordId\":\"${rec.record_id}\",\"recordNo\":\"${rec.record_no}\",\"sections\":\"${sections}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

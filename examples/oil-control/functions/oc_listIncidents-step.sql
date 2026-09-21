@@ -1,0 +1,1 @@
+SELECT incident_no, module, severity, title, COALESCE(description,'') AS description, status, COALESCE(assignee,'') AS assignee, COALESCE(asset_code,'') AS asset_code, COALESCE(zone_code,'') AS zone_code, opened_at::text AS opened_at, COALESCE(closed_at::text,'') AS closed_at FROM oc_incident ORDER BY opened_at DESC

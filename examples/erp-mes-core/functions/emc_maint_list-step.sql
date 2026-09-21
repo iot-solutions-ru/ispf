@@ -1,0 +1,1 @@
+SELECT r.request_id, r.equipment_id, COALESCE(r.description, '') AS description, r.priority, r.status, (SELECT COUNT(*) FROM emc_maintenance_work_order w WHERE w.request_id = r.request_id) AS work_orders, r.created_at FROM emc_maintenance_request r ORDER BY r.created_at DESC

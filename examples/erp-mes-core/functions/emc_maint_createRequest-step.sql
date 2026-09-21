@@ -1,0 +1,1 @@
+INSERT INTO emc_maintenance_request (request_id, equipment_id, description, priority, status) SELECT ?, ?, NULLIF(?, ''), COALESCE(NULLIF(?, ''), '5'), 'NEW' WHERE NOT EXISTS (SELECT 1 FROM emc_maintenance_request WHERE request_id = ?)

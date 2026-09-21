@@ -1,0 +1,72 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "autoSelectFirstRow": true,
+      "columnFiltersJson": "[\"status\", \"equipment_id\"]",
+      "filterable": true,
+      "h": 40,
+      "id": "reqs",
+      "reportPath": "root.platform.reports.emc-maint-request-report",
+      "rowParamsFromRowJson": "{\"requestId\": \"request_id\", \"woId\": \"wo_id\"}",
+      "rowSelectionKey": "request_id",
+      "selectable": true,
+      "statusDotColumnsJson": "[\"status\"]",
+      "title": "Заявки ТОиР",
+      "type": "report",
+      "w": 56,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "buttonLabel": "Создать",
+      "fieldsJson": "[{\"name\": \"requestId\", \"label\": \"Request ID\", \"type\": \"text\", \"defaultValue\": \"MR-UI-001\", \"required\": true}, {\"name\": \"equipmentId\", \"label\": \"Оборудование\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-equipment-catalog\", \"optionsValueField\": \"code\", \"optionsLabelField\": \"name\", \"defaultValue\": \"WU-A01\", \"required\": true}, {\"name\": \"description\", \"label\": \"Описание\", \"type\": \"text\", \"defaultValue\": \"UI demostand request\"}, {\"name\": \"priority\", \"label\": \"Приоритет\", \"type\": \"number\", \"defaultValue\": \"3\"}]",
+      "functionName": "emc_maint_createRequest",
+      "h": 28,
+      "id": "createReq",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Создать заявку",
+      "type": "function-form",
+      "w": 28,
+      "x": 56,
+      "y": 0
+    },
+    {
+      "buttonLabel": "Принять",
+      "fieldsJson": "[{\"name\": \"requestId\", \"label\": \"Request ID\", \"type\": \"text\", \"defaultValue\": \"MR-UI-001\", \"required\": true}, {\"name\": \"woId\", \"label\": \"WO ID\", \"type\": \"text\", \"defaultValue\": \"MWO-UI-001\", \"required\": true}, {\"name\": \"plannedStart\", \"label\": \"План старт\", \"type\": \"text\", \"defaultValue\": \"\"}, {\"name\": \"plannedEnd\", \"label\": \"План конец\", \"type\": \"text\", \"defaultValue\": \"\"}]",
+      "functionName": "emc_maint_acceptRequest",
+      "h": 22,
+      "id": "acceptReq",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Принять → WO",
+      "type": "function-form",
+      "w": 28,
+      "x": 56,
+      "y": 28
+    },
+    {
+      "buttonLabel": "Завершить",
+      "fieldsJson": "[{\"name\": \"woId\", \"label\": \"WO ID\", \"type\": \"text\", \"defaultValue\": \"MWO-DEMO-001\", \"required\": true}]",
+      "functionName": "emc_maint_completeWorkOrder",
+      "h": 16,
+      "id": "completeWo",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Завершить WO",
+      "type": "function-form",
+      "w": 42,
+      "x": 0,
+      "y": 40
+    },
+    {
+      "h": 16,
+      "id": "mttr",
+      "reportPath": "root.platform.reports.emc-maint-mttr-report",
+      "title": "MTTR / MTBF",
+      "type": "report",
+      "w": 42,
+      "x": 42,
+      "y": 50
+    }
+  ]
+}

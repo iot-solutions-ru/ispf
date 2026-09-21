@@ -1,0 +1,1 @@
+SELECT p.azs_code, p.tank_no, p.calibrated_at::text AS calibrated_at, p.ok_levels, p.total_levels, r.level_cm, r.viis_l, r.vtoir_l, r.dev_l, r.dev_pct FROM oc_calibration_profile p JOIN oc_calibration_profile_row r ON r.profile_id=p.id WHERE p.azs_code = ? AND p.tank_no = ? ORDER BY r.level_cm

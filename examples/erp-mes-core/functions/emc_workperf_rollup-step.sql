@@ -1,0 +1,1 @@
+INSERT INTO emc_work_performance (performance_id, job_no, good_qty, reject_qty, status, note) SELECT CONCAT('WP-', ?), ?, ?, ?, 'OPEN', 'Rollup' WHERE NOT EXISTS (SELECT 1 FROM emc_work_performance WHERE job_no = ?)

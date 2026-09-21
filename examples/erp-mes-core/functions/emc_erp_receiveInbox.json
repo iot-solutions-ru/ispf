@@ -1,0 +1,53 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "verb",
+          "type": "STRING"
+        },
+        {
+          "name": "noun",
+          "type": "STRING"
+        },
+        {
+          "name": "payloadJson",
+          "type": "STRING"
+        },
+        {
+          "name": "idempotencyKey",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "idempotencyKey",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_erp_receiveInbox",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"failIfNull\",\"var\":\"input.idempotencyKey\",\"error_code\":\"VALIDATION\",\"error_message\":\"idempotencyKey is required\"},{\"type\":\"selectOne\",\"var\":\"dup\",\"sql\":\"SELECT id FROM emc_erp_inbox WHERE idempotency_key = ?\",\"params\":[\"${input.idempotencyKey}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"DUPLICATE\",\"error_message\":\"Message with this idempotency key already received\",\"idempotencyKey\":\"${input.idempotencyKey}\",\"status\":\"DUPLICATE\"}}],\"var\":\"dup\",\"notNull\":true},{\"type\":\"exec\",\"sql\":\"@file:emc_erp_receiveInbox-step.sql\",\"params\":[\"${input.verb}\",\"${input.noun}\",\"${input.payloadJson}\",\"${input.idempotencyKey}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"jsonParse\",\"var\":\"p\",\"source\":\"${input.payloadJson}\",\"fields\":[\"externalRef\",\"requestId\",\"jobNo\",\"workMasterId\",\"workMasterVersion\",\"equipmentId\",\"productDefinitionId\",\"quantity\",\"uom\",\"priority\",\"plannedStart\",\"plannedEnd\"]},{\"type\":\"invoke_function\",\"objectPath\":\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\",\"functionName\":\"emc_schedule_receive\",\"var\":\"sched\",\"input\":{\"externalRef\":\"${p.externalRef}\",\"requestId\":\"${p.requestId}\",\"jobNo\":\"${p.jobNo}\",\"workMasterId\":\"${p.workMasterId}\",\"workMasterVersion\":\"${p.workMasterVersion}\",\"equipmentId\":\"${p.equipmentId}\",\"productDefinitionId\":\"${p.productDefinitionId}\",\"quantity\":\"${p.quantity}\",\"uom\":\"${p.uom}\",\"priority\":\"${p.priority}\",\"plannedStart\":\"${p.plannedStart}\",\"plannedEnd\":\"${p.plannedEnd}\"}}],\"var\":\"input.noun\",\"equals\":\"OPERATIONS_SCHEDULE\"},{\"type\":\"when\",\"then\":[{\"type\":\"jsonParse\",\"var\":\"m\",\"source\":\"${input.payloadJson}\",\"fields\":[\"entityType\",\"externalId\"]},{\"type\":\"invoke_function\",\"objectPath\":\"root.platform.singleton-blueprints.erp-mes-core-hub-v1\",\"functionName\":\"emc_erp_syncMasterData\",\"var\":\"md\",\"input\":{\"entityType\":\"${m.entityType}\",\"externalId\":\"${m.externalId}\",\"payloadJson\":\"${input.payloadJson}\"}}],\"var\":\"input.noun\",\"equals\":\"MASTER_DATA\"},{\"type\":\"when\",\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO emc_integration_log (id, direction, verb, noun, success, code, message) VALUES (gen_random_uuid(), 'IN', ?, ?, true, 'OK', 'Capability query acknowledged')\",\"params\":[\"${input.verb}\",\"${input.noun}\"]}],\"var\":\"input.noun\",\"equals\":\"OPERATIONS_CAPABILITY\"},{\"type\":\"when\",\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO emc_integration_log (id, direction, verb, noun, success, code, message) VALUES (gen_random_uuid(), 'IN', ?, ?, true, 'OK', 'Operations definition show acknowledged')\",\"params\":[\"${input.verb}\",\"${input.noun}\"]}],\"var\":\"input.noun\",\"equals\":\"OPERATIONS_DEFINITION\"},{\"type\":\"when\",\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO emc_integration_log (id, direction, verb, noun, success, code, message) VALUES (gen_random_uuid(), 'IN', ?, ?, true, 'OK', 'Product definition show acknowledged')\",\"params\":[\"${input.verb}\",\"${input.noun}\"]}],\"var\":\"input.noun\",\"equals\":\"PRODUCT_DEFINITION\"},{\"type\":\"exec\",\"sql\":\"@file:emc_erp_receiveInbox-step.sql\",\"params\":[\"${input.idempotencyKey}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"idempotencyKey\":\"${input.idempotencyKey}\",\"status\":\"PROCESSED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

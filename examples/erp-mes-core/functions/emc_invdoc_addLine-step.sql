@@ -1,0 +1,1 @@
+INSERT INTO emc_inventory_document_line (line_id, doc_id, definition_id, lot_id, quantity, source_location, dest_location) VALUES (gen_random_uuid(), ?, ?, NULLIF(?, ''), COALESCE(NULLIF(?, ''), '0'), NULLIF(?, ''), NULLIF(?, ''))

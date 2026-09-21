@@ -1,0 +1,1 @@
+SELECT definition_id, version, name, COALESCE(description, '') AS description, COALESCE(hierarchy_scope_id, '') AS hierarchy_scope_id, published_flag, status FROM emc_operations_definition ORDER BY definition_id, version

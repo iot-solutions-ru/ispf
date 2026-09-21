@@ -1,0 +1,1 @@
+SELECT defect_no, job_no, COALESCE(lot_id, '') AS lot_id, defect_type_id, COALESCE(reason_code, '') AS reason_code, severity, qty_declared, qty_confirmed, status, COALESCE(created_by, '') AS created_by, created_at FROM emc_defect_record WHERE (? = '' OR job_no = ?) AND (? = '' OR status = ?) ORDER BY created_at DESC

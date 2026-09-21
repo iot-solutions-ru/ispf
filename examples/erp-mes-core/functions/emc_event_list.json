@@ -1,0 +1,86 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "eventId",
+                "type": "STRING"
+              },
+              {
+                "name": "definitionCode",
+                "type": "STRING"
+              },
+              {
+                "name": "name",
+                "type": "STRING"
+              },
+              {
+                "name": "oeeBucket",
+                "type": "STRING"
+              },
+              {
+                "name": "jobNo",
+                "type": "STRING"
+              },
+              {
+                "name": "equipmentId",
+                "type": "STRING"
+              },
+              {
+                "name": "timeMin",
+                "type": "STRING"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              },
+              {
+                "name": "startedAt",
+                "type": "STRING"
+              },
+              {
+                "name": "endedAt",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_event_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"events\",\"sql\":\"@file:emc_event_list-step.sql\",\"params\":[\"${input.equipmentId}\",\"${input.equipmentId}\",\"${input.status}\",\"${input.status}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${events}\",\"fields\":{\"eventId\":\"${item.event_id}\",\"definitionCode\":\"${item.definition_code}\",\"name\":\"${item.name}\",\"oeeBucket\":\"${item.oee_bucket}\",\"jobNo\":\"${item.job_no}\",\"equipmentId\":\"${item.equipment_id}\",\"timeMin\":\"${item.time_min}\",\"status\":\"${item.status}\",\"startedAt\":\"${item.started_at}\",\"endedAt\":\"${item.ended_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

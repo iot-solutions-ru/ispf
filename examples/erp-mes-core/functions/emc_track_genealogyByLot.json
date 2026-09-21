@@ -1,0 +1,66 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "lotId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "direction",
+                "type": "STRING"
+              },
+              {
+                "name": "lotId",
+                "type": "STRING"
+              },
+              {
+                "name": "quantity",
+                "type": "STRING"
+              },
+              {
+                "name": "definitionId",
+                "type": "STRING"
+              },
+              {
+                "name": "createdAt",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_track_genealogyByLot",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"edges\",\"sql\":\"@file:emc_track_genealogyByLot-step.sql\",\"params\":[\"${input.lotId}\",\"${input.lotId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${edges}\",\"fields\":{\"direction\":\"${item.direction}\",\"lotId\":\"${item.lot_id}\",\"quantity\":\"${item.quantity}\",\"definitionId\":\"${item.definition_id}\",\"createdAt\":\"${item.created_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${input.lotId}\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

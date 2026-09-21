@@ -1,0 +1,1 @@
+SELECT alert_id, alert_type, severity, COALESCE(work_master_id, '') AS work_master_id, COALESCE(job_order_id, '') AS job_order_id, message, status, CAST(raised_at AS VARCHAR) AS raised_at, COALESCE(ack_by, '') AS ack_by, COALESCE(CAST(ack_at AS VARCHAR), '') AS ack_at FROM emc_work_alert ORDER BY raised_at DESC

@@ -1,0 +1,1 @@
+SELECT request_id, schedule_id, COALESCE(definition_id, '') AS definition_id, COALESCE(definition_version, '') AS definition_version, priority, state, COALESCE(description, '') AS description FROM emc_operations_request ORDER BY request_id

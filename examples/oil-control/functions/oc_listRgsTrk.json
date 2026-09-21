@@ -1,0 +1,73 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "azs_code",
+                "type": "STRING"
+              },
+              {
+                "name": "site_type",
+                "type": "STRING"
+              },
+              {
+                "name": "tank_no",
+                "type": "INTEGER"
+              },
+              {
+                "name": "product_code",
+                "type": "STRING"
+              },
+              {
+                "name": "detected_at",
+                "type": "STRING"
+              },
+              {
+                "name": "rgs_l",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "trk_l",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "abs_dev_l",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "rel_dev_pct",
+                "type": "DOUBLE"
+              }
+            ],
+            "name": "row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_listRgsTrk",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"@file:oc_listRgsTrk-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

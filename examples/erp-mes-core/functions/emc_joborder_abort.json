@@ -1,0 +1,45 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "reason",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_joborder_abort",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"job\",\"sql\":\"SELECT job_no, dispatch_status, equipment_id FROM emc_job_order WHERE job_no = ?\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNull\",\"var\":\"job\",\"error_code\":\"JOB_NOT_FOUND\",\"error_message\":\"Job order not found\"},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_abort-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"selectOne\",\"var\":\"after\",\"sql\":\"SELECT dispatch_status FROM emc_job_order WHERE job_no = ?\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNotEquals\",\"var\":\"after.dispatch_status\",\"equals\":\"ABORTED\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Only RUNNING or SUSPENDED job orders can be aborted\"},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_abort-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_abort-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.emc-wu-a01\",\"variable\":\"status\",\"fields\":{\"value\":\"IDLE\"}},{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.emc-wu-a01\",\"variable\":\"activeJobOrderId\",\"fields\":{\"value\":\"\"}}],\"var\":\"job.equipment_id\",\"equals\":\"WU-A01\"},{\"type\":\"when\",\"then\":[{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.emc-wu-a02\",\"variable\":\"status\",\"fields\":{\"value\":\"IDLE\"}},{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.emc-wu-a02\",\"variable\":\"activeJobOrderId\",\"fields\":{\"value\":\"\"}}],\"var\":\"job.equipment_id\",\"equals\":\"WU-A02\"},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_abort-step.sql\",\"params\":[\"${input.jobNo}\",\"${input.reason}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"jobNo\":\"${job.job_no}\",\"status\":\"ABORTED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

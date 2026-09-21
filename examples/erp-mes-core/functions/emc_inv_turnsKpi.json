@@ -1,0 +1,44 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "stockQty",
+          "type": "STRING"
+        },
+        {
+          "name": "consumedQty",
+          "type": "STRING"
+        },
+        {
+          "name": "producedQty",
+          "type": "STRING"
+        },
+        {
+          "name": "turnsApprox",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_inv_turnsKpi",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"kpi\",\"sql\":\"@file:emc_inv_turnsKpi-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"stockQty\":\"${kpi.stock_qty}\",\"consumedQty\":\"${kpi.consumed_qty}\",\"producedQty\":\"${kpi.produced_qty}\",\"turnsApprox\":\"${kpi.turns_approx}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

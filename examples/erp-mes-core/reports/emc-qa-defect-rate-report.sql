@@ -1,0 +1,9 @@
+
+SELECT COUNT(*) AS defect_count,
+       COALESCE(SUM(COALESCE(qty_confirmed, qty_declared)), 0) AS confirmed_qty,
+       COUNT(DISTINCT job_no) AS jobs_with_defects,
+       (SELECT COUNT(*) FROM emc_job_order) AS job_count,
+       CASE WHEN (SELECT COUNT(*) FROM emc_job_order) = 0 THEN 0
+            ELSE ROUND(100.0 * COUNT(DISTINCT job_no) / (SELECT COUNT(*) FROM emc_job_order), 2)
+       END AS defect_rate_pct
+FROM emc_defect_record

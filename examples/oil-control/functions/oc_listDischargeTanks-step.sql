@@ -1,0 +1,1 @@
+SELECT t.sections, t.tank_no, t.product_code, t.received_kg, t.plan_kg, t.timer_label, t.volume_l, t.fill_pct, t.temp_c, t.density, t.density_15, s.azs_code, s.ttn_no FROM oc_discharge_tank t JOIN oc_discharge_session s ON s.id=t.session_id WHERE s.status = 'active' AND (NULLIF(?, '') IS NULL OR s.azs_code = ?) ORDER BY t.tank_no

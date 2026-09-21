@@ -1,0 +1,27 @@
+{
+  "columns": [
+    {
+      "field": "product_id",
+      "label": "Product"
+    },
+    {
+      "field": "description",
+      "label": "Description"
+    },
+    {
+      "field": "fg_definition_id",
+      "label": "FG Material"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    },
+    {
+      "field": "segments",
+      "label": "Segments"
+    }
+  ],
+  "description": "Product definitions with FG material and process segments.",
+  "reportId": "emc-product-definition-report",
+  "title": "Product Definitions (Part 2)"
+}

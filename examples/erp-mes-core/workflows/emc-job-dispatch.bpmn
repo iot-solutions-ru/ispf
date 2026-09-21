@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:isfp="http://ispf.io/bpmn"
+                  id="emc-job-dispatch-defs" targetNamespace="http://ispf.io/erp-mes-core">
+  <bpmn:process id="emc-job-dispatch" isExecutable="true">
+    <bpmn:startEvent id="start" name="Job dispatched"/>
+    <bpmn:serviceTask id="log" name="Log dispatch" isfp:action="log"
+                      isfp:message="Job order dispatched for execution"/>
+    <bpmn:userTask id="confirm" name="Confirm job start" isfp:title="Confirm job start"
+                   isfp:instructions="Verify line clearance and materials, then confirm start."
+                   isfp:assigneeRole="operator"
+                   isfp:targetObject="root.platform.singleton-blueprints.erp-mes-core-hub-v1"
+                   isfp:function="emc_joborder_confirmStart"/>
+    <bpmn:endEvent id="end" name="Done"/>
+    <bpmn:sequenceFlow id="f1" sourceRef="start" targetRef="log"/>
+    <bpmn:sequenceFlow id="f2" sourceRef="log" targetRef="confirm"/>
+    <bpmn:sequenceFlow id="f3" sourceRef="confirm" targetRef="end"/>
+  </bpmn:process>
+</bpmn:definitions>

@@ -1,0 +1,66 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "equipmentLevel",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "equipmentId",
+                "type": "STRING"
+              },
+              {
+                "name": "classId",
+                "type": "STRING"
+              },
+              {
+                "name": "equipmentLevel",
+                "type": "STRING"
+              },
+              {
+                "name": "parentId",
+                "type": "STRING"
+              },
+              {
+                "name": "hierarchyPath",
+                "type": "STRING"
+              },
+              {
+                "name": "description",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_equipment_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"equipment\",\"sql\":\"@file:emc_equipment_list-step.sql\",\"params\":[\"${input.equipmentLevel}\",\"${input.equipmentLevel}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${equipment}\",\"fields\":{\"equipmentId\":\"${item.equipment_id}\",\"classId\":\"${item.class_id}\",\"equipmentLevel\":\"${item.equipment_level}\",\"parentId\":\"${item.parent_id}\",\"hierarchyPath\":\"${item.hierarchy_path}\",\"description\":\"${item.description}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

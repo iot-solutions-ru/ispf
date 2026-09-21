@@ -1,0 +1,90 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "equipmentId",
+                "type": "STRING"
+              },
+              {
+                "name": "shiftLabel",
+                "type": "STRING"
+              },
+              {
+                "name": "plannedMin",
+                "type": "STRING"
+              },
+              {
+                "name": "availabilityLossMin",
+                "type": "STRING"
+              },
+              {
+                "name": "performanceLossMin",
+                "type": "STRING"
+              },
+              {
+                "name": "producedQty",
+                "type": "STRING"
+              },
+              {
+                "name": "goodQty",
+                "type": "STRING"
+              },
+              {
+                "name": "availabilityPct",
+                "type": "STRING"
+              },
+              {
+                "name": "performancePct",
+                "type": "STRING"
+              },
+              {
+                "name": "qualityPct",
+                "type": "STRING"
+              },
+              {
+                "name": "oeePct",
+                "type": "STRING"
+              },
+              {
+                "name": "calculatedAt",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_oee_listShifts",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"shifts\",\"sql\":\"@file:emc_oee_listShifts-step.sql\",\"params\":[\"${input.equipmentId}\",\"${input.equipmentId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${shifts}\",\"fields\":{\"equipmentId\":\"${item.equipment_id}\",\"shiftLabel\":\"${item.shift_label}\",\"plannedMin\":\"${item.planned_min}\",\"availabilityLossMin\":\"${item.availability_loss_min}\",\"performanceLossMin\":\"${item.performance_loss_min}\",\"producedQty\":\"${item.produced_qty}\",\"goodQty\":\"${item.good_qty}\",\"availabilityPct\":\"${item.availability_pct}\",\"performancePct\":\"${item.performance_pct}\",\"qualityPct\":\"${item.quality_pct}\",\"oeePct\":\"${item.oee_pct}\",\"calculatedAt\":\"${item.calculated_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

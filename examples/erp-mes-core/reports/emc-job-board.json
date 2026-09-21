@@ -1,0 +1,55 @@
+{
+  "columns": [
+    {
+      "field": "id",
+      "label": "ID"
+    },
+    {
+      "field": "job_no",
+      "label": "Job #"
+    },
+    {
+      "field": "external_ref",
+      "label": "ERP Ref"
+    },
+    {
+      "field": "command",
+      "label": "Cmd"
+    },
+    {
+      "field": "dispatch_status",
+      "label": "Status"
+    },
+    {
+      "field": "equipment_id",
+      "label": "Equipment"
+    },
+    {
+      "field": "product_definition_id",
+      "label": "Product"
+    },
+    {
+      "field": "quantity",
+      "label": "Qty"
+    },
+    {
+      "field": "uom",
+      "label": "UOM"
+    },
+    {
+      "field": "planned_start",
+      "label": "Planned Start"
+    },
+    {
+      "field": "planned_end",
+      "label": "Planned End"
+    },
+    {
+      "field": "created_at",
+      "label": "Created"
+    }
+  ],
+  "description": "Active job orders with dispatch status (Part 4 job list).",
+  "reportId": "emc-job-board",
+  "title": "Job Board (ISA-95 Job Orders)"
+}

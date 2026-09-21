@@ -1,0 +1,103 @@
+{
+  "description": "ERP-MES Core Hub (ISA-95): KPI counters, alert rules, schedules and BFF functions.",
+  "name": "erp-mes-core-hub-v1",
+  "type": "SINGLETON",
+  "variables": [
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": 0
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "LONG"
+            }
+          ],
+          "name": "longValue"
+        }
+      },
+      "description": "Pending ERP outbox messages",
+      "group": "integration",
+      "name": "pendingOutboxCount",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "LONG"
+          }
+        ],
+        "name": "longValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": 0
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "LONG"
+            }
+          ],
+          "name": "longValue"
+        }
+      },
+      "description": "Open availability (downtime) events",
+      "group": "oee",
+      "name": "activeDowntimeCount",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "LONG"
+          }
+        ],
+        "name": "longValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": 0
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "LONG"
+            }
+          ],
+          "name": "longValue"
+        }
+      },
+      "description": "Stock lots below minimum quantity",
+      "group": "inventory",
+      "name": "lowStockCount",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "LONG"
+          }
+        ],
+        "name": "longValue"
+      },
+      "writable": true
+    }
+  ]
+}

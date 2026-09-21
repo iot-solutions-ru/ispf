@@ -1,0 +1,1 @@
+INSERT INTO emc_material_assembled_from (assembly_id, parent_definition_id, child_definition_id, quantity, uom, assembly_type, sequence_no) SELECT ?, ?, ?, CAST(? AS NUMERIC), ?, ?, CAST(? AS INTEGER) WHERE NOT EXISTS (SELECT 1 FROM emc_material_assembled_from WHERE assembly_id = ?)

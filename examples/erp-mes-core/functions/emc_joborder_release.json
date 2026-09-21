@@ -1,0 +1,41 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "dispatchStatus",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_joborder_release",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"job\",\"sql\":\"SELECT job_no, dispatch_status FROM emc_job_order WHERE job_no = ?\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNull\",\"var\":\"job\",\"error_code\":\"JOB_NOT_FOUND\",\"error_message\":\"Job order not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"job.dispatch_status\",\"equals\":\"NOT_ALLOWED\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Only NOT_ALLOWED job orders can be released\"},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_release-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_release-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"jobNo\":\"${input.jobNo}\",\"dispatchStatus\":\"ALLOWED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

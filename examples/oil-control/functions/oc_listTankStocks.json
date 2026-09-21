@@ -1,0 +1,77 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "azs_code",
+                "type": "STRING"
+              },
+              {
+                "name": "address",
+                "type": "STRING"
+              },
+              {
+                "name": "tank_no",
+                "type": "INTEGER"
+              },
+              {
+                "name": "product_code",
+                "type": "STRING"
+              },
+              {
+                "name": "density_kg_m3",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "stock_l",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "fill_pct",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "free_l",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "dead_l",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "measured_at",
+                "type": "STRING"
+              }
+            ],
+            "name": "row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_listTankStocks",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"@file:oc_listTankStocks-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

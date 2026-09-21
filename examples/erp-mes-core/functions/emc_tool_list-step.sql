@@ -1,0 +1,1 @@
+SELECT tool_id, class_id, name, COALESCE(description, '') AS description, COALESCE(hierarchy_scope_id, '') AS hierarchy_scope_id, COALESCE(equipment_id, '') AS equipment_id, COALESCE(CAST(calibration_due AS VARCHAR), '') AS calibration_due, status FROM emc_tool ORDER BY tool_id

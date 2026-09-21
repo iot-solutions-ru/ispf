@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "barcode",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "definitionId",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        },
+        {
+          "name": "storageLocation",
+          "type": "STRING"
+        },
+        {
+          "name": "quantity",
+          "type": "STRING"
+        },
+        {
+          "name": "baseUom",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_matlot_get",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"lot\",\"sql\":\"@file:emc_matlot_get-step.sql\",\"params\":[\"${input.barcode}\"]},{\"type\":\"failIfNull\",\"var\":\"lot\",\"error_code\":\"LOT_NOT_FOUND\",\"error_message\":\"Material lot not found by barcode\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${lot.lot_id}\",\"definitionId\":\"${lot.definition_id}\",\"status\":\"${lot.status}\",\"storageLocation\":\"${lot.storage_location}\",\"quantity\":\"${lot.quantity}\",\"baseUom\":\"${lot.base_uom}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

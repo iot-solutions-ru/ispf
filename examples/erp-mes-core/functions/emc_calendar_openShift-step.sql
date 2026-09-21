@@ -1,0 +1,1 @@
+INSERT INTO emc_work_calendar (shift_id, equipment_id, shift_label, planned_minutes, state, planned_start, actual_start) SELECT ?, ?, ?, COALESCE(NULLIF(?, ''), '480'), 'OPEN', NULLIF(?, ''), CURRENT_TIMESTAMP WHERE NOT EXISTS (SELECT 1 FROM emc_work_calendar WHERE shift_id = ?)

@@ -1,0 +1,61 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "locationId",
+                "type": "STRING"
+              },
+              {
+                "name": "description",
+                "type": "STRING"
+              },
+              {
+                "name": "locationKind",
+                "type": "STRING"
+              },
+              {
+                "name": "equipmentId",
+                "type": "STRING"
+              },
+              {
+                "name": "parentLocationId",
+                "type": "STRING"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              }
+            ],
+            "name": "rows_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_location_list",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows_raw\",\"sql\":\"@file:emc_location_list-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${rows_raw}\",\"fields\":{\"locationId\":\"${item.location_id}\",\"description\":\"${item.description}\",\"locationKind\":\"${item.location_kind}\",\"equipmentId\":\"${item.equipment_id}\",\"parentLocationId\":\"${item.parent_location_id}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

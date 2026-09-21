@@ -1,0 +1,1 @@
+SELECT asset_code, asset_type, display_name, COALESCE(manufacturer,'') AS manufacturer, COALESCE(serial_no,'') AS serial_no, COALESCE(metrology_class,'') AS metrology_class, next_verification::text AS next_verification, COALESCE(site_code,'') AS site_code, status FROM oc_asset ORDER BY next_verification NULLS LAST

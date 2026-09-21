@@ -1,0 +1,69 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "id",
+                "type": "STRING"
+              },
+              {
+                "name": "anomaly_type",
+                "type": "STRING"
+              },
+              {
+                "name": "severity",
+                "type": "STRING"
+              },
+              {
+                "name": "title",
+                "type": "STRING"
+              },
+              {
+                "name": "zone_code",
+                "type": "STRING"
+              },
+              {
+                "name": "tank_code",
+                "type": "STRING"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              },
+              {
+                "name": "detected_at",
+                "type": "STRING"
+              }
+            ],
+            "name": "row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_listAnomalies",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"@file:oc_listAnomalies-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -1,0 +1,81 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "id",
+                "type": "STRING"
+              },
+              {
+                "name": "severity",
+                "type": "STRING"
+              },
+              {
+                "name": "started_at",
+                "type": "STRING"
+              },
+              {
+                "name": "ended_at",
+                "type": "STRING"
+              },
+              {
+                "name": "azs_code",
+                "type": "STRING"
+              },
+              {
+                "name": "address",
+                "type": "STRING"
+              },
+              {
+                "name": "event_text",
+                "type": "STRING"
+              },
+              {
+                "name": "source_name",
+                "type": "STRING"
+              },
+              {
+                "name": "map_x",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "map_y",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              }
+            ],
+            "name": "row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_listMonitorEvents",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"@file:oc_listMonitorEvents-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

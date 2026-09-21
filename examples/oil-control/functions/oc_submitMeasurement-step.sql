@@ -1,0 +1,1 @@
+INSERT INTO oc_measurement (id, tank_code, measured_at, level_cm, temperature_c, volume_l, operator_name, lat, lon, note) VALUES (gen_random_uuid(), ?, COALESCE(NULLIF(?, '')::timestamptz, NOW()), CAST(? AS DOUBLE PRECISION), CAST(? AS DOUBLE PRECISION), CAST(? AS DOUBLE PRECISION), ?, NULLIF(?, '')::float, NULLIF(?, '')::float, NULLIF(?, ''))

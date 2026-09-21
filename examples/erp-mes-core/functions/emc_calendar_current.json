@@ -1,0 +1,58 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "shiftId",
+          "type": "STRING"
+        },
+        {
+          "name": "shiftLabel",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedMinutes",
+          "type": "STRING"
+        },
+        {
+          "name": "crew",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "personId",
+                "type": "STRING"
+              }
+            ],
+            "name": "crew_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_calendar_current",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"shift\",\"sql\":\"@file:emc_calendar_current-step.sql\",\"params\":[\"${input.equipmentId}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"selectMany\",\"var\":\"crew_rows\",\"sql\":\"SELECT person_id FROM emc_shift_assignment WHERE shift_id = ? ORDER BY assigned_at\",\"params\":[\"${shift.shift_id}\"]},{\"type\":\"map\",\"var\":\"crew\",\"source\":\"${crew_rows}\",\"fields\":{\"personId\":\"${item.person_id}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"shiftId\":\"${shift.shift_id}\",\"shiftLabel\":\"${shift.shift_label}\",\"plannedMinutes\":\"${shift.planned_minutes}\",\"crew\":\"${crew}\"}}],\"var\":\"shift\",\"notNull\":true,\"else\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"NO_OPEN_SHIFT\",\"error_message\":\"No open shift for equipment\",\"shiftId\":\"\",\"shiftLabel\":\"\",\"plannedMinutes\":\"\",\"crew\":\"\"}}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"NO_OPEN_SHIFT\",\"error_message\":\"No open shift for equipment\",\"shiftId\":\"\",\"shiftLabel\":\"\",\"plannedMinutes\":\"\",\"crew\":\"\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -1,0 +1,1 @@
+SELECT j.job_no, j.lot_id, j.link_role, COALESCE(l.definition_id, '') AS definition_id, COALESCE(l.status, '') AS status FROM emc_job_lot_link j LEFT JOIN emc_material_lot l ON l.lot_id = j.lot_id WHERE COALESCE(NULLIF(TRIM(?), ''), j.job_no) = j.job_no ORDER BY j.job_no, j.link_role, j.lot_id

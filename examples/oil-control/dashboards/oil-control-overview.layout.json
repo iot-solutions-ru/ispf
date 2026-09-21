@@ -1,0 +1,54 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "decimals": 0,
+      "h": 14,
+      "id": "t1",
+      "objectPath": "root.platform.devices.oil-control.tanks.azs-014-1",
+      "title": "АЗС 014 · РГС-1, см",
+      "type": "value",
+      "variableName": "levelCm",
+      "w": 21,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "decimals": 0,
+      "h": 14,
+      "id": "t2",
+      "objectPath": "root.platform.devices.oil-control.tanks.azs-014-2",
+      "title": "АЗС 014 · РГС-2, см",
+      "type": "value",
+      "variableName": "levelCm",
+      "w": 21,
+      "x": 21,
+      "y": 0
+    },
+    {
+      "decimals": 0,
+      "h": 14,
+      "id": "t3",
+      "objectPath": "root.platform.devices.oil-control.tanks.azs-005-3",
+      "title": "АЗС 005 · РГС-3, см",
+      "type": "value",
+      "variableName": "levelCm",
+      "w": 21,
+      "x": 42,
+      "y": 0
+    },
+    {
+      "decimals": 1,
+      "h": 14,
+      "id": "t4",
+      "objectPath": "root.platform.devices.oil-control.tanks.azs-014-1",
+      "title": "АЗС 014 · t°C",
+      "type": "value",
+      "variableName": "temperatureC",
+      "w": 21,
+      "x": 63,
+      "y": 0
+    }
+  ]
+}

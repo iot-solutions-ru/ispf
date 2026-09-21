@@ -1,0 +1,1 @@
+SELECT job_no, param_key, COALESCE(param_value, '') AS param_value, COALESCE(uom, '') AS uom FROM emc_job_order_parameter_req WHERE COALESCE(NULLIF(TRIM(?), ''), job_no) = job_no ORDER BY job_no, param_key

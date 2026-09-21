@@ -1,0 +1,1 @@
+INSERT INTO emc_work_master (work_master_id, version, segment_id, duration_min, description) SELECT ?, ?, ?, NULLIF(?, ''), ? WHERE NOT EXISTS (SELECT 1 FROM emc_work_master WHERE work_master_id = ? AND version = ?)

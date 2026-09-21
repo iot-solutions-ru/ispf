@@ -1,0 +1,1 @@
+INSERT INTO emc_work_directive (directive_id, work_master_id, version, job_no, title, body_text, status) SELECT ?, ?, ?, ?, ?, ?, 'ACTIVE' WHERE NOT EXISTS (SELECT 1 FROM emc_work_directive WHERE directive_id = ?)

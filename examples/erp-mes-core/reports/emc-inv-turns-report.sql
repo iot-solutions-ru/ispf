@@ -1,0 +1,8 @@
+
+SELECT COALESCE((SELECT SUM(quantity) FROM emc_material_lot WHERE status = 'STOCK'), 0) AS stock_qty,
+       COALESCE((SELECT SUM(quantity) FROM emc_material_actual WHERE material_use = 'CONSUMED'), 0) AS consumed_qty,
+       COALESCE((SELECT SUM(quantity) FROM emc_material_actual WHERE material_use = 'PRODUCED'), 0) AS produced_qty,
+       CASE WHEN COALESCE((SELECT SUM(quantity) FROM emc_material_lot WHERE status = 'STOCK'), 0) = 0 THEN 0
+            ELSE ROUND(COALESCE((SELECT SUM(quantity) FROM emc_material_actual WHERE material_use = 'CONSUMED'), 0)
+                 / (SELECT SUM(quantity) FROM emc_material_lot WHERE status = 'STOCK'), 3)
+       END AS turns_approx

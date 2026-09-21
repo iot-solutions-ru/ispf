@@ -1,0 +1,1 @@
+INSERT INTO emc_operations_definition (definition_id, version, name, description, hierarchy_scope_id, published_flag) SELECT ?, COALESCE(NULLIF(?, ''), '1'), ?, NULLIF(?, ''), NULLIF(?, ''), COALESCE(NULLIF(?, ''), 'false') WHERE NOT EXISTS (SELECT 1 FROM emc_operations_definition WHERE definition_id = ? AND version = COALESCE(NULLIF(?, ''), '1'))

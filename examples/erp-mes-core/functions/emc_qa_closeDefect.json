@@ -1,0 +1,45 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "defectNo",
+          "type": "STRING"
+        },
+        {
+          "name": "by",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "defectNo",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_qa_closeDefect",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"d\",\"sql\":\"SELECT defect_no, status, lot_id FROM emc_defect_record WHERE defect_no = ?\",\"params\":[\"${input.defectNo}\"]},{\"type\":\"failIfNull\",\"var\":\"d\",\"error_code\":\"DEFECT_NOT_FOUND\",\"error_message\":\"Defect not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"d.status\",\"equals\":\"CONFIRMED\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Only CONFIRMED defects can be closed\"},{\"type\":\"exec\",\"sql\":\"@file:emc_qa_closeDefect-step.sql\",\"params\":[\"${input.defectNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_qa_closeDefect-step.sql\",\"params\":[\"${input.defectNo}\",\"${input.by}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_qa_closeDefect-step.sql\",\"params\":[\"${d.lot_id}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"defectNo\":\"${input.defectNo}\",\"status\":\"CLOSED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

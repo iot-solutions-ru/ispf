@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "equipmentId",
+          "type": "STRING"
+        },
+        {
+          "name": "shiftId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "performanceId",
+          "type": "STRING"
+        },
+        {
+          "name": "goodQty",
+          "type": "STRING"
+        },
+        {
+          "name": "rejectQty",
+          "type": "STRING"
+        },
+        {
+          "name": "runMin",
+          "type": "STRING"
+        },
+        {
+          "name": "downtimeMin",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_opsperf_rollup",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"agg\",\"sql\":\"@file:emc_opsperf_rollup-step.sql\",\"params\":[\"${input.equipmentId}\",\"${input.equipmentId}\",\"${input.equipmentId}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_opsperf_rollup-step.sql\",\"params\":[\"${input.equipmentId}\",\"${input.shiftId}\",\"${agg.good_qty}\",\"${agg.reject_qty}\",\"${agg.downtime_min}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"performanceId\":\"${input.shiftId}\",\"goodQty\":\"${agg.good_qty}\",\"rejectQty\":\"${agg.reject_qty}\",\"runMin\":\"0\",\"downtimeMin\":\"${agg.downtime_min}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

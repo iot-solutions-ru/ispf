@@ -1,0 +1,81 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "incident_no",
+                "type": "STRING"
+              },
+              {
+                "name": "module",
+                "type": "STRING"
+              },
+              {
+                "name": "severity",
+                "type": "STRING"
+              },
+              {
+                "name": "title",
+                "type": "STRING"
+              },
+              {
+                "name": "description",
+                "type": "STRING"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              },
+              {
+                "name": "assignee",
+                "type": "STRING"
+              },
+              {
+                "name": "asset_code",
+                "type": "STRING"
+              },
+              {
+                "name": "zone_code",
+                "type": "STRING"
+              },
+              {
+                "name": "opened_at",
+                "type": "STRING"
+              },
+              {
+                "name": "closed_at",
+                "type": "STRING"
+              }
+            ],
+            "name": "row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_listIncidents",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"@file:oc_listIncidents-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -1,0 +1,39 @@
+{
+  "columns": [
+    {
+      "field": "spec_id",
+      "label": "Spec"
+    },
+    {
+      "field": "target_kind",
+      "label": "Target Kind"
+    },
+    {
+      "field": "target_id",
+      "label": "Target"
+    },
+    {
+      "field": "test_name",
+      "label": "Test"
+    },
+    {
+      "field": "criterion",
+      "label": "Criterion"
+    },
+    {
+      "field": "measured_value",
+      "label": "Measured"
+    },
+    {
+      "field": "result",
+      "label": "Result"
+    },
+    {
+      "field": "tested_at",
+      "label": "Tested At"
+    }
+  ],
+  "description": "Capability test specs and latest results.",
+  "reportId": "emc-capability-test-report",
+  "title": "Capability Test Results (Part 2)"
+}

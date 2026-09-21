@@ -1,0 +1,31 @@
+{
+  "columns": [
+    {
+      "field": "doc_id",
+      "label": "Doc"
+    },
+    {
+      "field": "kind",
+      "label": "Kind"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    },
+    {
+      "field": "lines",
+      "label": "Lines"
+    },
+    {
+      "field": "operator_person_id",
+      "label": "Operator"
+    },
+    {
+      "field": "created_at",
+      "label": "Created"
+    }
+  ],
+  "description": "Inventory movement documents (Part 3 Inventory).",
+  "reportId": "emc-invdoc-report",
+  "title": "Inventory Documents"
+}

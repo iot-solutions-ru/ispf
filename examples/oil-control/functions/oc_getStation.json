@@ -1,0 +1,73 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "azsCode",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "azs_code",
+          "type": "STRING"
+        },
+        {
+          "name": "display_name",
+          "type": "STRING"
+        },
+        {
+          "name": "region_code",
+          "type": "STRING"
+        },
+        {
+          "name": "region_name",
+          "type": "STRING"
+        },
+        {
+          "name": "address",
+          "type": "STRING"
+        },
+        {
+          "name": "connected",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "lat",
+          "type": "DOUBLE"
+        },
+        {
+          "name": "lon",
+          "type": "DOUBLE"
+        },
+        {
+          "name": "map_x",
+          "type": "DOUBLE"
+        },
+        {
+          "name": "map_y",
+          "type": "DOUBLE"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_getStation",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"st\",\"sql\":\"@file:oc_getStation-step.sql\",\"params\":[\"${input.azsCode}\"]},{\"type\":\"failIfNull\",\"var\":\"st\",\"message\":\"Station not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"azs_code\":\"${st.azs_code}\",\"display_name\":\"${st.display_name}\",\"region_code\":\"${st.region_code}\",\"region_name\":\"${st.region_name}\",\"address\":\"${st.address}\",\"connected\":\"${st.connected}\",\"lat\":\"${st.lat}\",\"lon\":\"${st.lon}\",\"map_x\":\"${st.map_x}\",\"map_y\":\"${st.map_y}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

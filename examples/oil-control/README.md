@@ -12,6 +12,15 @@ Self-contained ISPF application for fuel quantity & quality control on a petrol-
 | **Web UI pack** | `../oil-control-ui/` (`artifactKind: ui-pack`, slug `oil-control-ui`) |
 | **BFF contract** | `api/openapi.yaml` |
 
+## Authoring layout
+
+Folder layout (`solution.json`, `sql/`, `functions/`, `blueprints/`, …) mirrors `tools/ispf-cli` (ADR-0060). `bundle.json` remains the SHIP artifact:
+
+```bash
+node tools/ispf-cli/bin/ispf.mjs pack examples/oil-control -o examples/oil-control/bundle.json
+node tools/ispf-cli/bin/ispf.mjs validate examples/oil-control --local
+```
+
 ## Install
 
 ```bash

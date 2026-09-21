@@ -1,0 +1,1 @@
+SELECT w.wo_no, w.title, COALESCE(w.assignee,'') AS assignee, w.priority, w.status, w.due_at::text AS due_at, w.created_at::text AS created_at, COALESCE(i.incident_no,'') AS incident_no FROM oc_work_order w LEFT JOIN oc_incident i ON i.id = w.incident_id ORDER BY w.created_at DESC

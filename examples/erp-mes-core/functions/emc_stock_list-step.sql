@@ -1,0 +1,1 @@
+SELECT definition_id, COALESCE(storage_location, '') AS storage_location, COUNT(*) AS lots, SUM(quantity) AS total_qty, base_uom FROM emc_material_lot WHERE status = 'STOCK' GROUP BY definition_id, storage_location, base_uom ORDER BY definition_id, storage_location

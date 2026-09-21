@@ -1,0 +1,23 @@
+{
+  "columns": [
+    {
+      "field": "stock_qty",
+      "label": "Stock Qty"
+    },
+    {
+      "field": "consumed_qty",
+      "label": "Consumed"
+    },
+    {
+      "field": "produced_qty",
+      "label": "Produced"
+    },
+    {
+      "field": "turns_approx",
+      "label": "Turns ≈"
+    }
+  ],
+  "description": "Approx inventory turns from stock vs consumed actuals.",
+  "reportId": "emc-inv-turns-report",
+  "title": "Inventory Turns KPI"
+}

@@ -1,0 +1,39 @@
+{
+  "columns": [
+    {
+      "field": "container_id",
+      "label": "Container"
+    },
+    {
+      "field": "class_id",
+      "label": "Class"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "description",
+      "label": "Description"
+    },
+    {
+      "field": "hierarchy_scope_id",
+      "label": "Scope"
+    },
+    {
+      "field": "capacity",
+      "label": "Capacity"
+    },
+    {
+      "field": "capacity_uom",
+      "label": "UOM"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    }
+  ],
+  "description": "Container resources (GOST R IEC 62264-2).",
+  "reportId": "emc-container-report",
+  "title": "Containers (Part 2 §5.6)"
+}

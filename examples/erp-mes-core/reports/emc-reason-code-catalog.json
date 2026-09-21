@@ -1,0 +1,15 @@
+{
+  "columns": [
+    {
+      "field": "code",
+      "label": "Code"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    }
+  ],
+  "description": "Reason codes as code/name options for form dropdowns.",
+  "reportId": "emc-reason-code-catalog",
+  "title": "Reason Code Catalog"
+}

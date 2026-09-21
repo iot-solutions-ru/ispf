@@ -1,0 +1,6 @@
+{
+  "operatorAppId": "erp-mes-core",
+  "path": "root.platform.workflows.emc-job-dispatch",
+  "status": "ACTIVE",
+  "title": "Job Dispatch Confirmation"
+}

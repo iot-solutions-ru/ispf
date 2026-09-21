@@ -1,0 +1,1 @@
+SELECT p.person_id, p.person_name, COALESCE(p.personnel_class_id, '') AS personnel_class_id, COALESCE(c.description, '') AS class_description FROM emc_person p LEFT JOIN emc_personnel_class c ON c.class_id = p.personnel_class_id ORDER BY p.person_id

@@ -1,0 +1,41 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_joborder_complete",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"job\",\"sql\":\"SELECT job_no, dispatch_status, equipment_id FROM emc_job_order WHERE job_no = ?\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNull\",\"var\":\"job\",\"error_code\":\"JOB_NOT_FOUND\",\"error_message\":\"Job order not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"job.dispatch_status\",\"equals\":\"RUNNING\",\"error_code\":\"INVALID_STATE\",\"error_message\":\"Only RUNNING job orders can be completed\"},{\"type\":\"selectOne\",\"var\":\"open_defects\",\"sql\":\"@file:emc_joborder_complete-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"QC_GATE_BLOCKED\",\"error_message\":\"Confirmed defects must be closed before completion\",\"jobNo\":\"${input.jobNo}\",\"status\":\"\"}}],\"var\":\"open_defects.cnt\",\"gt\":\"0\"},{\"type\":\"selectOne\",\"var\":\"produced\",\"sql\":\"@file:emc_joborder_complete-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"NO_OUTPUT_REGISTERED\",\"error_message\":\"No produced material registered for this job order\",\"jobNo\":\"${input.jobNo}\",\"status\":\"\"}}],\"var\":\"produced.qty\",\"lte\":\"0\"},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_complete-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_complete-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_complete-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_complete-step.sql\",\"params\":[\"${input.jobNo}\",\"${input.jobNo}\",\"${input.jobNo}\",\"${input.jobNo}\"]},{\"type\":\"when\",\"then\":[{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.emc-wu-a01\",\"variable\":\"status\",\"fields\":{\"value\":\"IDLE\"}},{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.emc-wu-a01\",\"variable\":\"activeJobOrderId\",\"fields\":{\"value\":\"\"}}],\"var\":\"job.equipment_id\",\"equals\":\"WU-A01\"},{\"type\":\"when\",\"then\":[{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.emc-wu-a02\",\"variable\":\"status\",\"fields\":{\"value\":\"IDLE\"}},{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.emc-wu-a02\",\"variable\":\"activeJobOrderId\",\"fields\":{\"value\":\"\"}}],\"var\":\"job.equipment_id\",\"equals\":\"WU-A02\"},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_complete-step.sql\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"jobNo\":\"${job.job_no}\",\"status\":\"ENDED\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

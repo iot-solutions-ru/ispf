@@ -1,0 +1,139 @@
+{
+  "displayName": "ERP-MES Core (ISA-95)",
+  "metadata": {
+    "changelog": "2.2.1 rich demostand seeds (3+ examples/process) + job↔lot genealogy links; 2.2.0 GOST M5; 2.1.0 Part 5 UML + KPI + APS-lite",
+    "delivery": "marketplace",
+    "product": "erp-mes-core",
+    "publisher": "IoT Solutions"
+  },
+  "operatorUi": {
+    "appId": "erp-mes-core",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.emc-dispatch",
+        "title": "Диспетчер"
+      },
+      {
+        "path": "root.platform.dashboards.emc-execution",
+        "title": "Исполнение"
+      },
+      {
+        "path": "root.platform.dashboards.emc-inventory",
+        "title": "Склад"
+      },
+      {
+        "path": "root.platform.dashboards.emc-quality",
+        "title": "Качество"
+      },
+      {
+        "path": "root.platform.dashboards.emc-oee",
+        "title": "OEE и простои"
+      },
+      {
+        "path": "root.platform.dashboards.emc-genealogy",
+        "title": "Генеалогия партии"
+      },
+      {
+        "path": "root.platform.dashboards.emc-mom-matrix",
+        "title": "MOM 62264-3"
+      },
+      {
+        "path": "root.platform.dashboards.emc-gost-conformance",
+        "title": "ГОСТ 62264"
+      },
+      {
+        "path": "root.platform.dashboards.emc-maint",
+        "title": "ТОиР"
+      }
+    ],
+    "defaultDashboard": "root.platform.dashboards.emc-dispatch",
+    "defaultReport": "root.platform.reports.emc-job-board",
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+    "reports": [
+      {
+        "path": "root.platform.reports.emc-job-board",
+        "title": "Job Board"
+      },
+      {
+        "path": "root.platform.reports.emc-stock-report",
+        "title": "Stock"
+      },
+      {
+        "path": "root.platform.reports.emc-material-movement",
+        "title": "Material Movement"
+      },
+      {
+        "path": "root.platform.reports.emc-defect-report",
+        "title": "Defects"
+      },
+      {
+        "path": "root.platform.reports.emc-oee-shift-report",
+        "title": "OEE by Shift"
+      },
+      {
+        "path": "root.platform.reports.emc-genealogy-edges",
+        "title": "Genealogy Edges"
+      },
+      {
+        "path": "root.platform.reports.emc-genealogy-upstream-fg",
+        "title": "Reverse Trace FG"
+      },
+      {
+        "path": "root.platform.reports.emc-genealogy-downstream-raw",
+        "title": "Forward Trace Raw"
+      },
+      {
+        "path": "root.platform.reports.emc-mom-activity-matrix",
+        "title": "MOM 4x8 Matrix"
+      },
+      {
+        "path": "root.platform.reports.emc-physical-asset-report",
+        "title": "Physical Assets"
+      },
+      {
+        "path": "root.platform.reports.emc-ops-capability-report",
+        "title": "Ops Capability"
+      },
+      {
+        "path": "root.platform.reports.emc-domain-schedule-report",
+        "title": "Domain Schedules"
+      },
+      {
+        "path": "root.platform.reports.emc-operational-location-report",
+        "title": "Locations"
+      },
+      {
+        "path": "root.platform.reports.emc-rrn-edges",
+        "title": "RRN Edges"
+      },
+      {
+        "path": "root.platform.reports.emc-container-report",
+        "title": "Containers"
+      },
+      {
+        "path": "root.platform.reports.emc-tool-report",
+        "title": "Tools"
+      },
+      {
+        "path": "root.platform.reports.emc-software-report",
+        "title": "Software"
+      },
+      {
+        "path": "root.platform.reports.emc-opsdef-report",
+        "title": "Ops Definitions"
+      },
+      {
+        "path": "root.platform.reports.emc-maint-request-report",
+        "title": "Maint Requests"
+      },
+      {
+        "path": "root.platform.reports.emc-invdoc-report",
+        "title": "Inventory Docs"
+      }
+    ],
+    "title": "ERP-MES Core (ISA-95)"
+  },
+  "schemaName": "app_erp_mes_core",
+  "tablePrefix": "emc_",
+  "version": "2.2.2"
+}

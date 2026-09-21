@@ -1,0 +1,1 @@
+SELECT schedule_id, name, COALESCE(hierarchy_scope_id, '') AS hierarchy_scope_id, COALESCE(CAST(start_time AS VARCHAR), '') AS start_time, COALESCE(CAST(end_time AS VARCHAR), '') AS end_time, state, COALESCE(description, '') AS description FROM emc_operations_schedule ORDER BY schedule_id

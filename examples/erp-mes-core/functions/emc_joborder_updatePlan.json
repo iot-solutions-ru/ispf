@@ -1,0 +1,53 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedStart",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedEnd",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedStart",
+          "type": "STRING"
+        },
+        {
+          "name": "plannedEnd",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_joborder_updatePlan",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"job\",\"sql\":\"SELECT job_no, dispatch_status FROM emc_job_order WHERE job_no = ?\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"failIfNull\",\"var\":\"job\",\"error_code\":\"JOB_NOT_FOUND\",\"error_message\":\"Job order not found\"},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_updatePlan-step.sql\",\"params\":[\"${input.plannedStart}\",\"${input.plannedEnd}\",\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_joborder_updatePlan-step.sql\",\"params\":[\"${input.jobNo}\",\"${input.plannedStart}\",\"${input.plannedEnd}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"jobNo\":\"${input.jobNo}\",\"plannedStart\":\"${input.plannedStart}\",\"plannedEnd\":\"${input.plannedEnd}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

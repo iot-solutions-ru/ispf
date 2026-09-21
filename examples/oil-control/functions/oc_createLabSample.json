@@ -1,0 +1,73 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "batchId",
+          "type": "STRING"
+        },
+        {
+          "name": "azsCode",
+          "type": "STRING"
+        },
+        {
+          "name": "tankCode",
+          "type": "STRING"
+        },
+        {
+          "name": "productCode",
+          "type": "STRING"
+        },
+        {
+          "name": "samplePoint",
+          "type": "STRING"
+        },
+        {
+          "name": "operatorName",
+          "type": "STRING"
+        },
+        {
+          "name": "volumeMl",
+          "type": "STRING"
+        },
+        {
+          "name": "sealNo",
+          "type": "STRING"
+        },
+        {
+          "name": "note",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        },
+        {
+          "name": "act_no",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "oc_createLabSample",
+  "objectPath": "root.platform.singleton-blueprints.oil-control-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"@file:oc_createLabSample-step.sql\",\"params\":[\"${input.batchId}\",\"${input.azsCode}\",\"${input.tankCode}\",\"${input.productCode}\",\"${input.samplePoint}\",\"${input.operatorName}\",\"${input.volumeMl}\",\"${input.volumeMl}\",\"${input.sealNo}\",\"${input.note}\"]},{\"type\":\"selectOne\",\"var\":\"created\",\"sql\":\"SELECT act_no FROM oc_lab_sample ORDER BY sampled_at DESC LIMIT 1\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"created\",\"act_no\":\"${created.act_no}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

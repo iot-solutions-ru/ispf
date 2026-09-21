@@ -1,0 +1,37 @@
+{
+  "columns": [
+    {
+      "field": "azs_code",
+      "label": "АЗС"
+    },
+    {
+      "field": "tank_no",
+      "label": "РГС"
+    },
+    {
+      "field": "product_code",
+      "label": "НП"
+    },
+    {
+      "field": "rgs_l",
+      "label": "РГС, л"
+    },
+    {
+      "field": "trk_l",
+      "label": "ТРК, л"
+    },
+    {
+      "field": "abs_dev_l",
+      "label": "Δ л"
+    },
+    {
+      "field": "rel_dev_pct",
+      "label": "Δ %"
+    }
+  ],
+  "description": "Сверка объёмов РГС и ТРК",
+  "maxRows": 500,
+  "parameters": [],
+  "reportId": "oc-rgs-trk",
+  "title": "Отклонения РГС–ТРК"
+}

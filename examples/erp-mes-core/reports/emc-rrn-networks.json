@@ -1,0 +1,27 @@
+{
+  "columns": [
+    {
+      "field": "network_id",
+      "label": "Network"
+    },
+    {
+      "field": "name",
+      "label": "Name"
+    },
+    {
+      "field": "description",
+      "label": "Description"
+    },
+    {
+      "field": "hierarchy_scope_id",
+      "label": "Scope"
+    },
+    {
+      "field": "status",
+      "label": "Status"
+    }
+  ],
+  "description": "GOST / IEC 62264-4 Resource Relationship Network headers.",
+  "reportId": "emc-rrn-networks",
+  "title": "Resource Relationship Networks (Part 4)"
+}

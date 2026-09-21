@@ -1,0 +1,53 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "jobNo",
+          "type": "STRING"
+        },
+        {
+          "name": "sectionKey",
+          "type": "STRING"
+        },
+        {
+          "name": "title",
+          "type": "STRING"
+        },
+        {
+          "name": "contentJson",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "recordId",
+          "type": "STRING"
+        },
+        {
+          "name": "sectionKey",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_wrec_saveSection",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"failIfNull\",\"var\":\"input.sectionKey\",\"error_code\":\"VALIDATION\",\"error_message\":\"sectionKey is required\"},{\"type\":\"exec\",\"sql\":\"@file:emc_wrec_saveSection-step.sql\",\"params\":[\"${input.jobNo}\",\"${input.jobNo}\",\"${input.jobNo}\",\"${input.jobNo}\"]},{\"type\":\"selectOne\",\"var\":\"rec\",\"sql\":\"SELECT record_id FROM emc_work_record WHERE job_no = ?\",\"params\":[\"${input.jobNo}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_wrec_saveSection-step.sql\",\"params\":[\"${input.title}\",\"${input.contentJson}\",\"${rec.record_id}\",\"${input.sectionKey}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_wrec_saveSection-step.sql\",\"params\":[\"${rec.record_id}\",\"${input.sectionKey}\",\"${input.title}\",\"${input.contentJson}\",\"${rec.record_id}\",\"${input.sectionKey}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"recordId\":\"${rec.record_id}\",\"sectionKey\":\"${input.sectionKey}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

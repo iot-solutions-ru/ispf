@@ -1,0 +1,70 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "buttonLabel": "Списать",
+      "fieldsJson": "[{\"name\": \"barcode\", \"label\": \"Штрихкод лота\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-stock-report\", \"optionsValueField\": \"barcode\", \"optionsLabelField\": \"material_id\", \"required\": true}, {\"name\": \"quantity\", \"label\": \"Количество\", \"type\": \"number\", \"defaultValue\": \"1\"}]",
+      "functionName": "emc_matlot_consume",
+      "h": 21,
+      "id": "consume",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Списать материал",
+      "type": "function-form",
+      "w": 28,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "buttonLabel": "Поставить",
+      "fieldsJson": "[{\"name\": \"barcode\", \"label\": \"Штрихкод лота\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-stock-report\", \"optionsValueField\": \"barcode\", \"optionsLabelField\": \"material_id\", \"required\": true}, {\"name\": \"jobNo\", \"label\": \"Сменное задание\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-job-board\", \"optionsValueField\": \"job_no\", \"optionsLabelField\": \"dispatch_status\", \"required\": true}]",
+      "functionName": "emc_matlot_placeOnLine",
+      "h": 23,
+      "id": "place",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Поставить лот на линию",
+      "type": "function-form",
+      "w": 28,
+      "x": 0,
+      "y": 21
+    },
+    {
+      "buttonLabel": "Произвести",
+      "fieldsJson": "[{\"name\": \"jobNo\", \"label\": \"Сменное задание\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-job-board\", \"optionsValueField\": \"job_no\", \"optionsLabelField\": \"dispatch_status\", \"required\": true}, {\"name\": \"lotId\", \"label\": \"Новый лот (ID)\", \"type\": \"text\", \"required\": true}, {\"name\": \"barcode\", \"label\": \"Штрихкод\", \"type\": \"text\", \"required\": true}, {\"name\": \"definitionId\", \"label\": \"Материал\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-material-catalog\", \"optionsValueField\": \"code\", \"optionsLabelField\": \"name\", \"required\": true}, {\"name\": \"quantity\", \"label\": \"Количество\", \"type\": \"number\", \"defaultValue\": \"1\"}, {\"name\": \"storageLocation\", \"label\": \"Склад\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-equipment-catalog\", \"optionsValueField\": \"code\", \"optionsLabelField\": \"name\"}]",
+      "functionName": "emc_matlot_produce",
+      "h": 44,
+      "id": "produce",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Произвести материал",
+      "type": "function-form",
+      "w": 28,
+      "x": 28,
+      "y": 0
+    },
+    {
+      "buttonLabel": "Записать",
+      "fieldsJson": "[{\"name\": \"jobNo\", \"label\": \"Сменное задание\", \"type\": \"select\", \"optionsFromReport\": \"root.platform.reports.emc-job-board\", \"optionsValueField\": \"job_no\", \"optionsLabelField\": \"dispatch_status\", \"required\": true}, {\"name\": \"paramKey\", \"label\": \"Параметр\", \"type\": \"select\", \"staticOptions\": [\"GOOD_QTY\", \"REJECT_QTY\", \"RATE\", \"SPEED\"], \"defaultValue\": \"GOOD_QTY\"}, {\"name\": \"paramValue\", \"label\": \"Значение\", \"type\": \"text\", \"defaultValue\": \"0\"}, {\"name\": \"uom\", \"label\": \"Единица\", \"type\": \"select\", \"staticOptions\": [\"pcs\", \"kg\", \"m\", \"m2\"], \"defaultValue\": \"pcs\"}]",
+      "functionName": "emc_dc_recordQuantity",
+      "h": 30,
+      "id": "dc",
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "title": "Сбор данных (OPC 10031-4)",
+      "type": "function-form",
+      "w": 28,
+      "x": 56,
+      "y": 0
+    },
+    {
+      "columnFiltersJson": "[\"material_use\", \"job_no\"]",
+      "filterable": true,
+      "h": 26,
+      "id": "moves",
+      "reportPath": "root.platform.reports.emc-material-movement",
+      "title": "Движение материалов",
+      "type": "report",
+      "w": 84,
+      "x": 0,
+      "y": 44
+    }
+  ]
+}

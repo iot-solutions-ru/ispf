@@ -1,0 +1,1 @@
+SELECT node_id, work_master_id, version, segment_id, sequence_no, node_kind FROM emc_work_master_node WHERE COALESCE(NULLIF(TRIM(?), ''), work_master_id) = work_master_id ORDER BY work_master_id, sequence_no

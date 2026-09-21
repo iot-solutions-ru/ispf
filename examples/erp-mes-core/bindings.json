@@ -1,0 +1,31 @@
+{
+  "bindings": [
+    {
+      "enabled": true,
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "query": "SELECT COUNT(*) AS v FROM emc_erp_outbox WHERE status = 'PENDING'",
+      "refresh": "on_schedule",
+      "refreshIntervalMs": 30000,
+      "valueField": "v",
+      "variable": "pendingOutboxCount"
+    },
+    {
+      "enabled": true,
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "query": "SELECT COUNT(*) AS v FROM emc_operations_event e JOIN emc_operations_event_definition d ON d.code = e.definition_code WHERE e.status = 'OPEN' AND d.oee_bucket = 'AVAILABILITY'",
+      "refresh": "on_schedule",
+      "refreshIntervalMs": 30000,
+      "valueField": "v",
+      "variable": "activeDowntimeCount"
+    },
+    {
+      "enabled": true,
+      "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+      "query": "SELECT COUNT(*) AS v FROM emc_material_lot WHERE status = 'STOCK' AND quantity < 10",
+      "refresh": "on_schedule",
+      "refreshIntervalMs": 30000,
+      "valueField": "v",
+      "variable": "lowStockCount"
+    }
+  ]
+}

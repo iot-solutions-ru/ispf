@@ -1,0 +1,37 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "simulate",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "transported",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_erp_pollOutbox",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"when\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"CONNECTOR_NOT_CONFIGURED\",\"error_message\":\"No ERP connector configured (set simulate=true for the built-in simulator)\",\"transported\":\"0\"}}],\"var\":\"input.simulate\",\"equals\":\"false\"},{\"type\":\"exec\",\"sql\":\"UPDATE emc_erp_outbox SET status = 'IN_FLIGHT' WHERE status = 'PENDING'\"},{\"type\":\"selectOne\",\"var\":\"cnt\",\"sql\":\"SELECT COUNT(*) AS cnt FROM emc_erp_outbox WHERE status = 'IN_FLIGHT'\"},{\"type\":\"exec\",\"sql\":\"@file:emc_erp_pollOutbox-step.sql\"},{\"type\":\"exec\",\"sql\":\"@file:emc_erp_pollOutbox-step.sql\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"transported\":\"${cnt.cnt}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -1,0 +1,41 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "woId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "woId",
+          "type": "STRING"
+        },
+        {
+          "name": "status",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "emc_maint_completeWorkOrder",
+  "objectPath": "root.platform.singleton-blueprints.erp-mes-core-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"wo\",\"sql\":\"SELECT wo_id, status FROM emc_maintenance_work_order WHERE wo_id = ?\",\"params\":[\"${input.woId}\"]},{\"type\":\"failIfNull\",\"var\":\"wo\",\"error_code\":\"WO_NOT_FOUND\",\"error_message\":\"Maintenance work order not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"wo.status\",\"equals\":\"DONE\",\"error_code\":\"ALREADY_DONE\",\"error_message\":\"Work order is already done\"},{\"type\":\"exec\",\"sql\":\"@file:emc_maint_completeWorkOrder-step.sql\",\"params\":[\"${input.woId}\"]},{\"type\":\"exec\",\"sql\":\"@file:emc_maint_completeWorkOrder-step.sql\",\"params\":[\"${input.woId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"woId\":\"${input.woId}\",\"status\":\"DONE\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -1,0 +1,1 @@
+SELECT d.data_kind, COALESCE(d.param_key, '') AS param_key, COALESCE(d.param_value, '') AS param_value, d.started_at, d.ended_at FROM emc_job_response_data d JOIN emc_job_response r ON r.response_id = d.response_id WHERE r.job_no = ? ORDER BY d.created_at
