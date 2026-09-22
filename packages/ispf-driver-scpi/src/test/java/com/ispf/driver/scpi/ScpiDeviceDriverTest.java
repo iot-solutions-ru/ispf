@@ -10,6 +10,7 @@ import com.ispf.driver.DriverException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,7 +27,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -34,6 +37,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Loopback tests for {@link ScpiDeviceDriver} against an in-process fake SCPI instrument.
  */
 class ScpiDeviceDriverTest {
+
+    /** Handwritten IEEE 488.2 *IDN? plus LF terminator (2A 49 44 4E 3F 0A). */
+    private static final byte[] IDN_QUERY = new byte[] {
+            0x2A, 0x49, 0x44, 0x4E, 0x3F, 0x0A
+    };
+
+    /** Exact peer identity body; FakeScpiInstrument appends LF on the wire. */
+    private static final String IDN_REPLY = "ISPF,MODEL,0,1.0";
 
     private ScpiDeviceDriver driver;
     private FakeScpiInstrument instrument;
@@ -48,6 +59,41 @@ class ScpiDeviceDriverTest {
             instrument.close();
             instrument = null;
         }
+    }
+
+    @Test
+    void idnQueryOctetsAreHandwritten() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ScpiDeviceDriver.writeLine(out, "*IDN?");
+        assertArrayEquals(IDN_QUERY, out.toByteArray());
+    }
+
+    @Test
+    void metadataDescriptionOmitsLab() {
+        String description = new ScpiDeviceDriver().metadata().description();
+        assertFalse(description.toLowerCase(Locale.ROOT).contains("lab"));
+    }
+
+    @Test
+    void idnViaLoopbackWritesHandwrittenQuery() throws Exception {
+        instrument = new FakeScpiInstrument();
+        instrument.setIdnReply(IDN_REPLY);
+        instrument.start();
+
+        StubDriverObject object = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(instrument.port()),
+                "timeoutMs", "2000"
+        ));
+        driver = new ScpiDeviceDriver();
+        driver.initialize(object);
+        driver.connect();
+        assertTrue(driver.isConnected());
+
+        driver.readPoints(Map.of("idn", "*IDN?"));
+        assertArrayEquals(IDN_QUERY, instrument.lastCommandBytes());
+        assertEquals(IDN_REPLY, object.variables.get("idn").firstRow().get("value"));
+        assertEquals("*IDN?", object.variables.get("idn").firstRow().get("command"));
     }
 
     @Test
@@ -173,6 +219,9 @@ class ScpiDeviceDriverTest {
         });
         private final AtomicReference<String> voltage = new AtomicReference<>("0.0");
         private final AtomicReference<String> lastCommand = new AtomicReference<>("");
+        private final AtomicReference<byte[]> lastCommandBytes = new AtomicReference<>(new byte[0]);
+        private final AtomicReference<String> idnReply =
+                new AtomicReference<>("ISPF,FakeInstrument,1.0,SCPI");
 
         FakeScpiInstrument() throws IOException {
             serverSocket = new ServerSocket();
@@ -187,12 +236,20 @@ class ScpiDeviceDriverTest {
             voltage.set(Double.toString(volts));
         }
 
+        void setIdnReply(String reply) {
+            idnReply.set(reply);
+        }
+
         String voltage() {
             return voltage.get();
         }
 
         String lastCommand() {
             return lastCommand.get();
+        }
+
+        byte[] lastCommandBytes() {
+            return lastCommandBytes.get();
         }
 
         void start() {
@@ -219,9 +276,10 @@ class ScpiDeviceDriverTest {
                 while (true) {
                     String command = ScpiDeviceDriver.readLine(in);
                     lastCommand.set(command);
+                    lastCommandBytes.set((command + "\n").getBytes(StandardCharsets.US_ASCII));
                     String upper = command.toUpperCase(Locale.ROOT);
                     if (upper.equals("*IDN?")) {
-                        write(out, "ISPF,FakeInstrument,1.0,SCPI");
+                        write(out, idnReply.get());
                     } else if (upper.equals("MEAS:VOLT:DC?") || upper.equals("MEAS:VOLT?")) {
                         write(out, voltage.get());
                     } else if (upper.startsWith("VOLT ") || upper.startsWith("SOUR:VOLT ")) {

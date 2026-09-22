@@ -36,7 +36,7 @@ class DlmsDeviceDriverTest {
     }
 
     @Test
-    void readsRegisterViaAssociation() throws Exception {
+    void readsRegisterViaTcpWrapper() throws Exception {
         server = new DlmsLoopbackServer(CLIENT_ADDRESS);
         StubDriverObject driverObject = driverConfig(server.port());
         DlmsDeviceDriver driver = new DlmsDeviceDriver();

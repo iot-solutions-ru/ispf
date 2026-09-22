@@ -9,21 +9,19 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Minimal ISPF-owned DLMS WRAPPER meter for integration tests.
+ * In-process DLMS peer: IEC 62056-47 TCP WRAPPER with Get-Request-Normal / Set-Request-Normal.
  */
 final class DlmsLoopbackServer implements AutoCloseable {
 
     static final String ENERGY_OBIS = "1.0.1.8.0.255";
     static final String DEVICE_NAME_OBIS = "0.0.42.0.0.255";
 
-    private final int clientSap;
     private final ServerSocket serverSocket;
     private final Thread serverThread;
     private final Map<String, Object> values = new ConcurrentHashMap<>();
     private volatile boolean running = true;
 
-    DlmsLoopbackServer(int clientSap) throws Exception {
-        this.clientSap = clientSap;
+    DlmsLoopbackServer(int ignoredClientSap) throws Exception {
         values.put(key(DlmsObjectType.DATA, DEVICE_NAME_OBIS, 2), "ISPF-TEST");
         values.put(key(DlmsObjectType.REGISTER, ENERGY_OBIS, 2), 42.0);
         serverSocket = new ServerSocket(0);
@@ -57,18 +55,12 @@ final class DlmsLoopbackServer implements AutoCloseable {
 
     private void handleClient(Socket socket) {
         try (socket) {
-            boolean associated = false;
             while (!socket.isClosed()) {
                 DlmsTcpWrapperCodec.Frame frame = DlmsTcpWrapperCodec.readFrame(socket.getInputStream());
                 byte[] request = frame.payload();
                 int command = Byte.toUnsignedInt(request[0]);
                 byte[] response;
-                if (command == DlmsTcpWrapperCodec.CMD_ASSOCIATE_REQUEST) {
-                    associated = frame.sourceWPort() == clientSap;
-                    response = DlmsTcpWrapperCodec.associateResponse(associated);
-                } else if (!associated) {
-                    response = DlmsTcpWrapperCodec.associateResponse(false);
-                } else if (command == DlmsTcpWrapperCodec.CMD_GET_REQUEST) {
+                if (command == DlmsTcpWrapperCodec.CMD_GET_REQUEST) {
                     DlmsTcpWrapperCodec.GetRequest get = DlmsTcpWrapperCodec.parseGetRequest(request);
                     Object value = values.get(key(get.objectType(), get.obis(), get.attributeIndex()));
                     response = DlmsTcpWrapperCodec.getResponse(value == null ? 1 : 0, value);

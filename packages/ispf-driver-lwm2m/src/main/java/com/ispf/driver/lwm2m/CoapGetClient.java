@@ -9,7 +9,6 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Clean-room CoAP CON GET client subset (RFC 7252) for LwM2M resource paths.
@@ -24,10 +23,32 @@ final class CoapGetClient {
     static final int TYPE_ACK = 2;
     static final int OPT_URI_PATH = 11;
 
+    /** Locked message id for production wire (CON GET / ACK). */
+    static final int WIRE_MESSAGE_ID = 1;
+
     private CoapGetClient() {
     }
 
     record Response(int code, String payload, int messageId) {
+    }
+
+    /**
+     * CON GET for LwM2M Device object Manufacturer {@code /3/0/0}:
+     * header {@code 40 01 00 01}, Uri-Path options {@code B1 33 01 30 01 30}.
+     */
+    static byte[] encodeConGetDevice300() {
+        return buildGet(WIRE_MESSAGE_ID, List.of("3", "0", "0"));
+    }
+
+    /**
+     * ACK 2.05 Content, no token, MID 1, payload marker + ASCII {@code OK}:
+     * {@code 60 45 00 01 FF 4F 4B}.
+     */
+    static byte[] encodeAckContentOkMid1() {
+        return new byte[]{
+                0x60, 0x45, 0x00, 0x01,
+                (byte) 0xFF, 0x4F, 0x4B
+        };
     }
 
     static Response get(String host, int port, String path, int timeoutMs) throws IOException {
@@ -36,9 +57,7 @@ final class CoapGetClient {
         try (DatagramSocket socket = new DatagramSocket()) {
             socket.setSoTimeout(timeoutMs);
             InetAddress address = InetAddress.getByName(host);
-            int messageId = ThreadLocalRandom.current().nextInt(1, 0xFFFF);
-            byte[] token = new byte[]{(byte) ThreadLocalRandom.current().nextInt(256)};
-            byte[] request = buildGet(messageId, token, segments);
+            byte[] request = buildGet(WIRE_MESSAGE_ID, segments);
             socket.send(new DatagramPacket(request, request.length, new InetSocketAddress(address, port)));
 
             byte[] buf = new byte[1024];
@@ -50,7 +69,7 @@ final class CoapGetClient {
             }
             byte[] data = new byte[packet.getLength()];
             System.arraycopy(packet.getData(), packet.getOffset(), data, 0, packet.getLength());
-            return parseResponse(data, messageId, token);
+            return parseResponse(data, WIRE_MESSAGE_ID);
         }
     }
 
@@ -76,16 +95,26 @@ final class CoapGetClient {
         if ("/".equals(trimmed)) {
             return segments;
         }
-        for (String part : trimmed.substring(1).split("/")) {
-            if (!part.isEmpty()) {
-                segments.add(part);
+        int start = 1;
+        while (start < trimmed.length()) {
+            int slash = trimmed.indexOf('/', start);
+            if (slash < 0) {
+                String part = trimmed.substring(start);
+                if (!part.isEmpty()) {
+                    segments.add(part);
+                }
+                break;
             }
+            if (slash > start) {
+                segments.add(trimmed.substring(start, slash));
+            }
+            start = slash + 1;
         }
         return segments;
     }
 
-    static byte[] buildGet(int messageId, byte[] token, List<String> segments) {
-        int tkl = token.length & 0x0F;
+    /** CON GET with empty token and Uri-Path options for each segment. */
+    static byte[] buildGet(int messageId, List<String> segments) {
         List<byte[]> options = new ArrayList<>();
         int lastOption = 0;
         for (String segment : segments) {
@@ -95,14 +124,13 @@ final class CoapGetClient {
             options.add(encodeOption(delta, value));
         }
         int optionBytes = options.stream().mapToInt(o -> o.length).sum();
-        byte[] frame = new byte[4 + tkl + optionBytes];
-        // Ver(2)=1 | Type(2)=CON | TKL(4)
-        frame[0] = (byte) ((1 << 6) | (TYPE_CON << 4) | tkl);
+        byte[] frame = new byte[4 + optionBytes];
+        // Ver(2)=1 | Type(2)=CON | TKL(4)=0
+        frame[0] = (byte) ((1 << 6) | (TYPE_CON << 4) | 0);
         frame[1] = (byte) CODE_GET;
         frame[2] = (byte) ((messageId >> 8) & 0xFF);
         frame[3] = (byte) (messageId & 0xFF);
-        System.arraycopy(token, 0, frame, 4, tkl);
-        int offset = 4 + tkl;
+        int offset = 4;
         for (byte[] option : options) {
             System.arraycopy(option, 0, frame, offset, option.length);
             offset += option.length;
@@ -122,7 +150,7 @@ final class CoapGetClient {
         return out;
     }
 
-    static Response parseResponse(byte[] frame, int expectedMessageId, byte[] expectedToken) throws IOException {
+    static Response parseResponse(byte[] frame, int expectedMessageId) throws IOException {
         if (frame.length < 4) {
             throw new IOException("Short CoAP response");
         }
@@ -132,20 +160,15 @@ final class CoapGetClient {
         if (ver != 1) {
             throw new IOException("Unsupported CoAP version " + ver);
         }
+        if (tkl != 0) {
+            throw new IOException("Expected empty CoAP token, tkl=" + tkl);
+        }
         int code = frame[1] & 0xFF;
         int messageId = ((frame[2] & 0xFF) << 8) | (frame[3] & 0xFF);
         if (messageId != expectedMessageId) {
             throw new IOException("CoAP message id mismatch");
         }
-        if (frame.length < 4 + tkl) {
-            throw new IOException("Truncated CoAP token");
-        }
-        for (int i = 0; i < tkl && i < expectedToken.length; i++) {
-            if (frame[4 + i] != expectedToken[i]) {
-                throw new IOException("CoAP token mismatch");
-            }
-        }
-        int offset = 4 + tkl;
+        int offset = 4;
         // skip options until payload marker
         while (offset < frame.length && (frame[offset] & 0xFF) != 0xFF) {
             int opt = frame[offset] & 0xFF;
@@ -182,21 +205,6 @@ final class CoapGetClient {
         return new Response(code, payload, messageId);
     }
 
-    /** Builds a 2.05 Content ACK for the fake LwM2M/CoAP server used in tests. */
-    static byte[] buildContentAck(int messageId, byte[] token, String payload) {
-        int tkl = token.length & 0x0F;
-        byte[] body = payload.getBytes(StandardCharsets.UTF_8);
-        byte[] frame = new byte[4 + tkl + 1 + body.length];
-        frame[0] = (byte) ((1 << 6) | (TYPE_ACK << 4) | tkl);
-        frame[1] = (byte) CODE_CONTENT;
-        frame[2] = (byte) ((messageId >> 8) & 0xFF);
-        frame[3] = (byte) (messageId & 0xFF);
-        System.arraycopy(token, 0, frame, 4, tkl);
-        frame[4 + tkl] = (byte) 0xFF;
-        System.arraycopy(body, 0, frame, 5 + tkl, body.length);
-        return frame;
-    }
-
     static ParsedRequest parseRequest(byte[] frame) throws IOException {
         if (frame.length < 4) {
             throw new IOException("Short CoAP request");
@@ -204,8 +212,6 @@ final class CoapGetClient {
         int tkl = frame[0] & 0x0F;
         int code = frame[1] & 0xFF;
         int messageId = ((frame[2] & 0xFF) << 8) | (frame[3] & 0xFF);
-        byte[] token = new byte[tkl];
-        System.arraycopy(frame, 4, token, 0, tkl);
         int offset = 4 + tkl;
         int lastOpt = 0;
         List<String> segments = new ArrayList<>();
@@ -222,13 +228,10 @@ final class CoapGetClient {
                 segments.add(new String(value, StandardCharsets.UTF_8));
             }
         }
-        String path = "/" + String.join("/", segments);
-        if (segments.isEmpty()) {
-            path = "/";
-        }
-        return new ParsedRequest(code, messageId, token, path);
+        String path = segments.isEmpty() ? "/" : "/" + String.join("/", segments);
+        return new ParsedRequest(code, messageId, path);
     }
 
-    record ParsedRequest(int code, int messageId, byte[] token, String path) {
+    record ParsedRequest(int code, int messageId, String path) {
     }
 }
