@@ -5,12 +5,11 @@ export interface YargHealth {
   configuredPath: string | null;
   resolvedPath: string | null;
   timeoutSeconds: number;
-  ports: number[];
   pdfHint: string;
 }
 
 export function fetchYargHealth(): Promise<YargHealth> {
-  return fetch("/api/v1/platform/reports/yarg/health", {
+  return fetch("/api/v1/platform/reports/health", {
     headers: getAuthHeaders(),
   }).then(async (response) => {
     if (!response.ok) {
