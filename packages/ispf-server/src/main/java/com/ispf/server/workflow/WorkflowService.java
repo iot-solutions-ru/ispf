@@ -23,7 +23,6 @@ import jakarta.annotation.PostConstruct;
 import com.ispf.server.expression.ExpressionFormalVerificationService;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowDeadLetterEntity;
-import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
 import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +64,7 @@ public class WorkflowService {
     private final WorkflowWebhookIndex webhookIndex;
     private final WorkflowRetryService retryService;
     private final ExpressionFormalVerificationService formalVerificationService;
+    private final WorkflowInstanceControl instanceControl;
 
     public WorkflowService(
             ObjectManager objectManager,
@@ -102,6 +102,15 @@ public class WorkflowService {
         this.webhookIndex = webhookIndex;
         this.retryService = retryService;
         this.formalVerificationService = formalVerificationService;
+        this.instanceControl = new WorkflowInstanceControl(
+                this,
+                objectManager,
+                workflowEngine,
+                instanceStore,
+                taskExecutor,
+                conditionFactory,
+                instanceRepository
+        );
     }
 
     @PostConstruct
@@ -554,15 +563,7 @@ public class WorkflowService {
 
     @Transactional
     public void claimInstance(String instanceId, String operatorId) throws WorkflowException {
-        WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(instanceId);
-        stored.instance().claim(operatorId);
-        String bpmnXml = readString(objectManager.require(stored.instance().workflowPath()), "bpmnXml")
-                .orElseThrow(() -> new WorkflowException("BPMN missing"));
-        BpmnProcess process = workflowEngine.parse(bpmnXml);
-        UserTaskDefinition pendingTask = stored.instance().pendingUserTaskId()
-                .map(id -> process.userTasks().get(id))
-                .orElse(null);
-        instanceStore.save(stored.instance(), process, stored.triggerObjectPath(), pendingTask);
+        instanceControl.claimInstance(instanceId, operatorId);
     }
 
     @Transactional
@@ -572,174 +573,36 @@ public class WorkflowService {
 
     @Transactional
     public WorkflowView completeUserTask(String instanceId, String taskNodeId, String operatorId) throws WorkflowException {
-        WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(instanceId);
-        WorkflowInstance instance = stored.instance();
-        if (instance.status() != InstanceStatus.WAITING) {
-            throw new WorkflowException("Instance is not waiting: " + instanceId);
-        }
-
-        String workflowPath = instance.workflowPath();
-        BpmnProcess process = parseProcess(workflowPath);
-
-        String userTaskId = taskNodeId != null && !taskNodeId.isBlank()
-                ? taskNodeId
-                : instance.pendingUserTaskId()
-                        .orElseThrow(() -> new WorkflowException("No pending user task"));
-        UserTaskDefinition userTask = process.userTasks().get(userTaskId);
-        if (userTask != null) {
-            taskExecutor.executeUserTaskAction(userTask, stored.triggerObjectPath());
-        }
-
-        instance.claim(operatorId);
-        WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(stored.triggerObjectPath());
-        workflowEngine.completeUserTask(
-                instance,
-                process,
-                userTaskId,
-                taskExecutor::executeServiceTask,
-                taskExecutor::executeMessageTask,
-                evaluator
-        );
-        finishStep(stored.triggerObjectPath(), instance, process, instance.variables());
-        return getWorkflow(workflowPath);
+        return instanceControl.completeUserTask(instanceId, taskNodeId, operatorId);
     }
 
     @Transactional
     public Map<String, Object> deliverSignal(String instanceId, String signalName, String operatorId)
             throws WorkflowException {
-        if (signalName == null || signalName.isBlank()) {
-            throw new WorkflowException("Signal name is required");
-        }
-        WorkflowInstance instance = resumeWaitingInstance(
-                instanceId,
-                operatorId,
-                waiting -> {
-                    if (!waiting.pendingSignalNames().contains(signalName)) {
-                        throw new WorkflowException("Instance is not waiting for signal: " + signalName);
-                    }
-                },
-                (waiting, process, evaluator) -> workflowEngine.deliverSignal(
-                        waiting,
-                        process,
-                        signalName,
-                        taskExecutor::executeServiceTask,
-                        taskExecutor::executeMessageTask,
-                        evaluator
-                )
-        );
-        return Map.of(
-                "instanceId", instanceId,
-                "signal", signalName,
-                "status", instance.status().name()
-        );
+        return instanceControl.deliverSignal(instanceId, signalName, operatorId);
     }
 
     @Transactional
     public Map<String, Object> deliverMessage(String instanceId, String messageName, String operatorId)
             throws WorkflowException {
-        if (messageName == null || messageName.isBlank()) {
-            throw new WorkflowException("Message name is required");
-        }
-        WorkflowInstance instance = resumeWaitingInstance(
-                instanceId,
-                operatorId,
-                waiting -> {
-                    if (!waiting.pendingMessageNames().contains(messageName)) {
-                        throw new WorkflowException("Instance is not waiting for message: " + messageName);
-                    }
-                },
-                (waiting, process, evaluator) -> workflowEngine.deliverMessage(
-                        waiting,
-                        process,
-                        messageName,
-                        taskExecutor::executeServiceTask,
-                        taskExecutor::executeMessageTask,
-                        evaluator
-                )
-        );
-        return Map.of(
-                "instanceId", instanceId,
-                "message", messageName,
-                "status", instance.status().name()
-        );
+        return instanceControl.deliverMessage(instanceId, messageName, operatorId);
     }
 
     @Transactional
     public Map<String, Object> fireDueTimers(String instanceId, String operatorId) throws WorkflowException {
-        WorkflowInstance instance = resumeWaitingInstance(
-                instanceId,
-                operatorId,
-                waiting -> {
-                    if (!waiting.hasDueTimers(System.currentTimeMillis())) {
-                        throw new WorkflowException("No due timers for instance: " + instanceId);
-                    }
-                },
-                (waiting, process, evaluator) -> workflowEngine.fireDueTimers(
-                        waiting,
-                        process,
-                        taskExecutor::executeServiceTask,
-                        taskExecutor::executeMessageTask,
-                        evaluator
-                )
-        );
-        return Map.of(
-                "instanceId", instanceId,
-                "status", instance.status().name()
-        );
+        return instanceControl.fireDueTimers(instanceId, operatorId);
     }
 
     @Transactional
     public Map<String, Object> deliverSignalByWorkflowPath(String workflowPath, String signalName, String operatorId)
             throws WorkflowException {
-        if (signalName == null || signalName.isBlank()) {
-            throw new WorkflowException("Signal name is required");
-        }
-        List<WorkflowInstanceEntity> waiting = instanceRepository.findByWorkflowPathAndStatus(
-                workflowPath,
-                InstanceStatus.WAITING.name()
-        );
-        List<String> signaled = new ArrayList<>();
-        for (WorkflowInstanceEntity entity : waiting) {
-            WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(entity.getId());
-            if (!stored.instance().pendingSignalNames().contains(signalName)) {
-                continue;
-            }
-            deliverSignal(entity.getId(), signalName, operatorId);
-            signaled.add(entity.getId());
-        }
-        return Map.of(
-                "workflowPath", workflowPath,
-                "signal", signalName,
-                "signaledCount", signaled.size(),
-                "instanceIds", signaled
-        );
+        return instanceControl.deliverSignalByWorkflowPath(workflowPath, signalName, operatorId);
     }
 
     @Transactional
     public Map<String, Object> deliverMessageByWorkflowPath(String workflowPath, String messageName, String operatorId)
             throws WorkflowException {
-        if (messageName == null || messageName.isBlank()) {
-            throw new WorkflowException("Message name is required");
-        }
-        List<WorkflowInstanceEntity> waiting = instanceRepository.findByWorkflowPathAndStatus(
-                workflowPath,
-                InstanceStatus.WAITING.name()
-        );
-        List<String> delivered = new ArrayList<>();
-        for (WorkflowInstanceEntity entity : waiting) {
-            WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(entity.getId());
-            if (!stored.instance().pendingMessageNames().contains(messageName)) {
-                continue;
-            }
-            deliverMessage(entity.getId(), messageName, operatorId);
-            delivered.add(entity.getId());
-        }
-        return Map.of(
-                "workflowPath", workflowPath,
-                "message", messageName,
-                "deliveredCount", delivered.size(),
-                "instanceIds", delivered
-        );
+        return instanceControl.deliverMessageByWorkflowPath(workflowPath, messageName, operatorId);
     }
 
     @Transactional
@@ -833,53 +696,7 @@ public class WorkflowService {
             String childFailedMessage,
             Map<String, String> childVariables
     ) throws WorkflowException {
-        WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(parentInstanceId);
-        WorkflowInstance parent = stored.instance();
-        if (parent.status() != InstanceStatus.WAITING) {
-            return;
-        }
-        boolean waitingOnChild = parent.waitingTokens().stream()
-                .anyMatch(token -> childInstanceId.equals(token.pendingCallChildInstanceId()));
-        if (!waitingOnChild) {
-            return;
-        }
-
-        BpmnProcess process = parseProcess(parent.workflowPath());
-        WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(stored.triggerObjectPath());
-        workflowEngine.resumeAfterCallActivityChild(
-                parent,
-                process,
-                childInstanceId,
-                childVariables,
-                childFailedMessage,
-                taskExecutor::executeServiceTask,
-                taskExecutor::executeMessageTask,
-                evaluator
-        );
-        finishStep(stored.triggerObjectPath(), parent, process, parent.variables());
-    }
-
-    /** One engine step on a WAITING instance (signal / message / timer): load, guard, claim, run, commit. */
-    private WorkflowInstance resumeWaitingInstance(
-            String instanceId,
-            String operatorId,
-            WaitingInstanceGuard guard,
-            EngineStep step
-    ) throws WorkflowException {
-        WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(instanceId);
-        WorkflowInstance instance = stored.instance();
-        if (instance.status() != InstanceStatus.WAITING) {
-            throw new WorkflowException("Instance is not waiting: " + instanceId);
-        }
-        guard.check(instance);
-
-        BpmnProcess process = parseProcess(instance.workflowPath());
-        if (operatorId != null && !operatorId.isBlank()) {
-            instance.claim(operatorId);
-        }
-        step.run(instance, process, conditionFactory.forTriggerObjectPath(stored.triggerObjectPath()));
-        finishStep(stored.triggerObjectPath(), instance, process, instance.variables());
-        return instance;
+        instanceControl.resumeParentCallActivity(parentInstanceId, childInstanceId, childFailedMessage, childVariables);
     }
 
     /**
@@ -887,7 +704,7 @@ public class WorkflowService {
      * state, project it onto the WORKFLOW object, publish the transition, route failures to
      * retry / dead-letter, and wake a parent callActivity that may be waiting on this instance.
      */
-    private void finishStep(
+    void finishStep(
             String triggerObjectPath,
             WorkflowInstance instance,
             BpmnProcess process,
@@ -905,22 +722,11 @@ public class WorkflowService {
         notifyCallActivityParents(instance);
     }
 
-    private BpmnProcess parseProcess(String workflowPath) throws WorkflowException {
+    BpmnProcess parseProcess(String workflowPath) throws WorkflowException {
         return workflowEngine.parse(
                 readString(objectManager.require(workflowPath), "bpmnXml")
                         .orElseThrow(() -> new WorkflowException("BPMN missing"))
         );
-    }
-
-    @FunctionalInterface
-    private interface WaitingInstanceGuard {
-        void check(WorkflowInstance instance) throws WorkflowException;
-    }
-
-    @FunctionalInterface
-    private interface EngineStep {
-        void run(WorkflowInstance instance, BpmnProcess process, WorkflowConditionEvaluator evaluator)
-                throws WorkflowException;
     }
 
     private boolean isTriggerConditionMet(PlatformObject workflow, String objectPath, String variableName) {
@@ -960,7 +766,7 @@ public class WorkflowService {
                 .orElse(WorkflowLifecycleStatus.DRAFT);
     }
 
-    private static Optional<String> readString(PlatformObject node, String variableName) {
+    static Optional<String> readString(PlatformObject node, String variableName) {
         return node.getVariable(variableName)
                 .flatMap(Variable::value)
                 .map(record -> record.firstRow().get("value"))
