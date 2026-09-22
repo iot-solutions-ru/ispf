@@ -1,6 +1,5 @@
 package com.ispf.server.platform.analytics.frames;
 
-import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
@@ -34,10 +33,7 @@ public class EventFrameVariableChangeListener {
             return;
         }
         PlatformObject node = objectManager.tree().findByPath(event.path()).orElse(null);
-        if (node == null || node.type() != ObjectType.LOT) {
-            return;
-        }
-        if (!isBatchLot(node)) {
+        if (node == null || !isBatchLot(node)) {
             return;
         }
         String phase = readString(node, "phase");

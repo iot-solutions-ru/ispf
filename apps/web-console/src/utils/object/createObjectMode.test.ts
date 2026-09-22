@@ -14,15 +14,15 @@ describe("canCreateChildAt — platform catalogs", () => {
   });
 
   it("allows create in MES catalog folders", () => {
-    expect(canCreateChildAt("root.platform.mes.work-orders", "WORK_ORDERS")).toBe(true);
-    expect(canCreateChildAt("root.platform.mes.lots", "LOTS")).toBe(true);
-    expect(canCreateChildAt("root.platform.mes.quality-records", "QUALITY_RECORDS")).toBe(true);
-    expect(canCreateChildAt("root.platform.mes.instances", "MES_INSTANCES")).toBe(true);
+    expect(canCreateChildAt("root.platform.mes.work-orders", "CUSTOM")).toBe(true);
+    expect(canCreateChildAt("root.platform.mes.lots", "CUSTOM")).toBe(true);
+    expect(canCreateChildAt("root.platform.mes.quality-records", "CUSTOM")).toBe(true);
+    expect(canCreateChildAt("root.platform.mes.instances", "CUSTOM")).toBe(true);
   });
 
   it("blocks create on instance leaves", () => {
     expect(canCreateChildAt("root.platform.queries.device-scan", "CUSTOM")).toBe(false);
-    expect(canCreateChildAt("root.platform.mes.work-orders.wo-1", "WORK_ORDER")).toBe(false);
+    expect(canCreateChildAt("root.platform.mes.work-orders.wo-1", "CUSTOM")).toBe(false);
   });
 });
 
@@ -39,15 +39,15 @@ describe("defaultObjectTypeForParent", () => {
     expect(defaultObjectTypeForParent("root.platform.queries")).toBe("CUSTOM");
     expect(defaultObjectTypeForParent("root.platform.event-filters")).toBe("EVENT_FILTER");
     expect(defaultObjectTypeForParent("root.platform.process-programs")).toBe("PROCESS_PROGRAM");
-    expect(defaultObjectTypeForParent("root.platform.mes.work-orders")).toBe("WORK_ORDER");
-    expect(defaultObjectTypeForParent("root.platform.mes.lots")).toBe("LOT");
+    expect(defaultObjectTypeForParent("root.platform.mes.work-orders")).toBe("CUSTOM");
+    expect(defaultObjectTypeForParent("root.platform.mes.lots")).toBe("CUSTOM");
   });
 });
 
 describe("instanceTypeFilterForParent", () => {
   it("filters instance blueprints for MES parents", () => {
-    expect(instanceTypeFilterForParent("root.platform.mes.work-orders")).toBe("WORK_ORDER");
-    expect(instanceTypeFilterForParent("root.platform.mes.lots")).toBe("LOT");
+    expect(instanceTypeFilterForParent("root.platform.mes.work-orders")).toBe("CUSTOM");
+    expect(instanceTypeFilterForParent("root.platform.mes.lots")).toBe("CUSTOM");
     expect(instanceTypeFilterForParent("root.platform.queries")).toBeUndefined();
   });
 });

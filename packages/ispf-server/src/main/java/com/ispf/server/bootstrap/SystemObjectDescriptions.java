@@ -105,18 +105,18 @@ public final class SystemObjectDescriptions {
                 quality records, and optional site/area/line instance hierarchy. \
                 Use with application bundles (mes-platform, mes-oee-reference) and BFF functions for OEE and dispatch."""));
         map.put(MesPaths.WORK_ORDERS, new Entry("Work Orders", """
-                Work order catalog. Each WORK_ORDER child represents a manufacturing order or dispatch unit. \
+                Work order catalog. Each child is a CUSTOM object for a manufacturing order or dispatch unit. \
                 Link to workflows for operator confirmation and to app SQL schemas for ERP sync."""));
         map.put(MesPaths.OPERATIONS, new Entry("Operations", """
-                Routing operation catalog. OPERATION nodes describe steps on a work order or line — \
+                Routing operation catalog. Children describe steps on a work order or line — \
                 ideal cycle time, status, and BFF hooks for MES KPI."""));
         map.put(MesPaths.LOTS, new Entry("Lots", """
-                Material lot / batch catalog. LOT nodes track batch IDs, genealogy, and traceability to quality records."""));
+                Material lot / batch catalog. Children track batch IDs, genealogy, and traceability to quality records."""));
         map.put(MesPaths.SHIFTS, new Entry("Shifts", """
-                Production shift catalog. SHIFT nodes align with OEE time buckets (planned time, downtime, output). \
+                Production shift catalog. Children align with OEE time buckets (planned time, downtime, output). \
                 See mes_oee_* BFF functions in mes-oee-reference / mes-platform bundles."""));
         map.put(MesPaths.QUALITY_RECORDS, new Entry("Quality Records", """
-                Quality inspection and defect catalog. QUALITY_RECORD nodes store SPC samples, holds, and disposition."""));
+                Quality inspection and defect catalog. Children store SPC samples, holds, and disposition."""));
         map.put(MesPaths.INSTANCES, new Entry("MES Instances", """
                 ISA-95 equipment hierarchy (site → area → line → unit). \
                 Model paths per ISA95_CATALOG.md; bind Level 1 devices under units for SCADA + MES convergence."""));

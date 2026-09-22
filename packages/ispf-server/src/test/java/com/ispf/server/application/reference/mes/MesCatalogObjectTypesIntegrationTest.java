@@ -34,33 +34,33 @@ class MesCatalogObjectTypesIntegrationTest {
 
         mockMvc.perform(get("/api/v1/objects/by-path").param("path", "root.platform.mes"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.type").value("MES"));
+                .andExpect(jsonPath("$.type").value("CUSTOM"));
 
         mockMvc.perform(get("/api/v1/objects/by-path")
                         .param("path", "root.platform.mes.work-orders.wo-line-a01-001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.type").value("WORK_ORDER"))
+                .andExpect(jsonPath("$.type").value("CUSTOM"))
                 .andExpect(jsonPath("$.displayName").value("WO-LINE-A01-001"));
 
         mockMvc.perform(get("/api/v1/objects/by-path")
                         .param("path", "root.platform.mes.operations.op-assemble-a01"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.type").value("OPERATION"));
+                .andExpect(jsonPath("$.type").value("CUSTOM"));
 
         mockMvc.perform(get("/api/v1/objects/by-path")
                         .param("path", "root.platform.mes.lots.batch-line-a01-001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.type").value("LOT"));
+                .andExpect(jsonPath("$.type").value("CUSTOM"));
 
         mockMvc.perform(get("/api/v1/objects/by-path")
                         .param("path", "root.platform.mes.shifts.shift-morning-a01"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.type").value("SHIFT"));
+                .andExpect(jsonPath("$.type").value("CUSTOM"));
 
         mockMvc.perform(get("/api/v1/objects/by-path")
                         .param("path", "root.platform.mes.quality-records.qr-line-a01-001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.type").value("QUALITY_RECORD"));
+                .andExpect(jsonPath("$.type").value("CUSTOM"));
 
         mockMvc.perform(get("/api/v1/objects/by-path")
                         .param("path", "root.platform.mes.instances.plant-a.areas.assembly.lines.line-a01"))

@@ -109,7 +109,7 @@ class EventFrameIntegrationTest {
             objectManager.create(
                     "root.platform.mes.lots",
                     "batch-line-a01-001",
-                    ObjectType.LOT,
+                    ObjectType.CUSTOM,
                     "Batch line A01-001",
                     "",
                     MesBlueprintBootstrap.BATCH_MODEL

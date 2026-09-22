@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.208",
-  "generatedAt": "2026-09-22T12:31:32.168436+00:00",
+  "generatedAt": "2026-09-22T14:24:58.147559+00:00",
   "platformVersion": "0.9.208",
   "bundleManifest": {
     "fields": [
@@ -24478,56 +24478,56 @@
           {
             "parentPath": "root.platform",
             "name": "mes",
-            "type": "MES",
+            "type": "CUSTOM",
             "displayName": "MES",
             "description": "Manufacturing operations catalog (IoT Solutions MES product)"
           },
           {
             "parentPath": "root.platform.mes",
             "name": "work-orders",
-            "type": "WORK_ORDERS",
+            "type": "CUSTOM",
             "displayName": "Work Orders",
             "description": "MES work orders"
           },
           {
             "parentPath": "root.platform.mes",
             "name": "operations",
-            "type": "OPERATIONS",
+            "type": "CUSTOM",
             "displayName": "Operations",
             "description": "MES operations"
           },
           {
             "parentPath": "root.platform.mes",
             "name": "lots",
-            "type": "LOTS",
+            "type": "CUSTOM",
             "displayName": "Lots",
             "description": "MES lots / batches"
           },
           {
             "parentPath": "root.platform.mes",
             "name": "shifts",
-            "type": "SHIFTS",
+            "type": "CUSTOM",
             "displayName": "Shifts",
             "description": "MES shifts"
           },
           {
             "parentPath": "root.platform.mes",
             "name": "quality-records",
-            "type": "QUALITY_RECORDS",
+            "type": "CUSTOM",
             "displayName": "Quality Records",
             "description": "MES quality records"
           },
           {
             "parentPath": "root.platform.mes",
             "name": "instances",
-            "type": "MES_INSTANCES",
+            "type": "CUSTOM",
             "displayName": "MES Instances",
             "description": "MES plant instances"
           },
           {
             "parentPath": "root.platform.mes.work-orders",
             "name": "wo-line-a01-001",
-            "type": "WORK_ORDER",
+            "type": "CUSTOM",
             "displayName": "WO-LINE-A01-001",
             "description": "Seed work order for LINE-A01 (BL-164 / BL-166)",
             "templateId": "work-order-v1"
@@ -24535,14 +24535,14 @@
           {
             "parentPath": "root.platform.mes.operations",
             "name": "op-assemble-a01",
-            "type": "OPERATION",
+            "type": "CUSTOM",
             "displayName": "Assemble A01",
             "description": "Seed routing operation for LINE-A01 (BL-164)"
           },
           {
             "parentPath": "root.platform.mes.lots",
             "name": "batch-line-a01-001",
-            "type": "LOT",
+            "type": "CUSTOM",
             "displayName": "BATCH-LINE-A01-001",
             "description": "Seed ISA-88 batch / lot (BL-164 / BL-168)",
             "templateId": "batch-v1"
@@ -24550,14 +24550,14 @@
           {
             "parentPath": "root.platform.mes.shifts",
             "name": "shift-morning-a01",
-            "type": "SHIFT",
+            "type": "CUSTOM",
             "displayName": "Morning LINE-A01",
             "description": "Seed production shift (BL-164 / BL-165)"
           },
           {
             "parentPath": "root.platform.mes.quality-records",
             "name": "qr-line-a01-001",
-            "type": "QUALITY_RECORD",
+            "type": "CUSTOM",
             "displayName": "QR-LINE-A01-001",
             "description": "Seed quality / defect record (BL-164 / BL-167)",
             "templateId": "quality-record-v1"
@@ -25858,7 +25858,7 @@
             "name": "work-order-v1",
             "description": "Manufacturing work order instance — dispatch, line, status (BL-164 / BL-166)",
             "type": "INSTANCE",
-            "targetObjectType": "WORK_ORDER",
+            "targetObjectType": "CUSTOM",
             "variables": [
               {
                 "name": "orderNumber",
@@ -25994,7 +25994,7 @@
             "name": "batch-v1",
             "description": "ISA-88 batch instance — recipe, phase, batch identity (BL-168)",
             "type": "INSTANCE",
-            "targetObjectType": "LOT",
+            "targetObjectType": "CUSTOM",
             "variables": [
               {
                 "name": "batchId",
@@ -26271,7 +26271,7 @@
             "name": "quality-record-v1",
             "description": "Quality inspection record with defect traceability (BL-167)",
             "type": "MIXIN",
-            "targetObjectType": "QUALITY_RECORD",
+            "targetObjectType": "CUSTOM",
             "variables": [
               {
                 "name": "defectCode",
@@ -26711,49 +26711,49 @@
           {
             "parentPath": "root.platform",
             "name": "mes",
-            "type": "MES",
+            "type": "CUSTOM",
             "displayName": "MES",
             "description": "Manufacturing operations catalog (IoT Solutions MES product)"
           },
           {
             "parentPath": "root.platform.mes",
             "name": "work-orders",
-            "type": "WORK_ORDERS",
+            "type": "CUSTOM",
             "displayName": "Work Orders",
             "description": "MES work orders"
           },
           {
             "parentPath": "root.platform.mes",
             "name": "operations",
-            "type": "OPERATIONS",
+            "type": "CUSTOM",
             "displayName": "Operations",
             "description": "MES operations"
           },
           {
             "parentPath": "root.platform.mes",
             "name": "lots",
-            "type": "LOTS",
+            "type": "CUSTOM",
             "displayName": "Lots",
             "description": "MES lots / batches"
           },
           {
             "parentPath": "root.platform.mes",
             "name": "shifts",
-            "type": "SHIFTS",
+            "type": "CUSTOM",
             "displayName": "Shifts",
             "description": "MES shifts"
           },
           {
             "parentPath": "root.platform.mes",
             "name": "quality-records",
-            "type": "QUALITY_RECORDS",
+            "type": "CUSTOM",
             "displayName": "Quality Records",
             "description": "MES quality records"
           },
           {
             "parentPath": "root.platform.mes",
             "name": "instances",
-            "type": "MES_INSTANCES",
+            "type": "CUSTOM",
             "displayName": "MES Instances",
             "description": "MES plant instances"
           }
@@ -27283,7 +27283,7 @@
             "name": "work-order-v1",
             "description": "Manufacturing work order instance — dispatch, line, status (BL-164 / BL-166)",
             "type": "INSTANCE",
-            "targetObjectType": "WORK_ORDER",
+            "targetObjectType": "CUSTOM",
             "variables": [
               {
                 "name": "orderNumber",
@@ -27419,7 +27419,7 @@
             "name": "batch-v1",
             "description": "ISA-88 batch instance — recipe, phase, batch identity (BL-168)",
             "type": "INSTANCE",
-            "targetObjectType": "LOT",
+            "targetObjectType": "CUSTOM",
             "variables": [
               {
                 "name": "batchId",
@@ -27696,7 +27696,7 @@
             "name": "quality-record-v1",
             "description": "Quality inspection record with defect traceability (BL-167)",
             "type": "MIXIN",
-            "targetObjectType": "QUALITY_RECORD",
+            "targetObjectType": "CUSTOM",
             "variables": [
               {
                 "name": "defectCode",
@@ -38393,5 +38393,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "efe2f034b70ecf809281ba71fc4556f45558655d4fe27b9116dca129c0fab37d"
+  "contentSha256": "0ce8a192bcc468158fd882bd76d7db71c7b0dde168c44668cc39562da605ec64"
 }

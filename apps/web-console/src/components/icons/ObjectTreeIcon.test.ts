@@ -28,18 +28,18 @@ describe("resolveTreeIconKind", () => {
     expect(resolveTreeIconKind("root.platform.analytics.oee-kpi", "ANALYTICS_TEMPLATE")).toBe(
       "analytics",
     );
-    expect(resolveTreeIconKind("root.platform.mes", "MES")).toBe("mes");
-    expect(resolveTreeIconKind("root.platform.mes.work-orders", "WORK_ORDERS")).toBe("work-orders");
-    expect(resolveTreeIconKind("root.platform.mes.work-orders.wo-1", "WORK_ORDER")).toBe(
+    expect(resolveTreeIconKind("root.platform.mes", "CUSTOM")).toBe("mes");
+    expect(resolveTreeIconKind("root.platform.mes.work-orders", "CUSTOM")).toBe("work-orders");
+    expect(resolveTreeIconKind("root.platform.mes.work-orders.wo-1", "CUSTOM")).toBe(
       "work-orders",
     );
-    expect(resolveTreeIconKind("root.platform.mes.operations", "OPERATIONS")).toBe("gear");
-    expect(resolveTreeIconKind("root.platform.mes.lots", "LOTS")).toBe("box");
-    expect(resolveTreeIconKind("root.platform.mes.shifts", "SHIFTS")).toBe("schedules");
-    expect(resolveTreeIconKind("root.platform.mes.quality-records", "QUALITY_RECORDS")).toBe(
+    expect(resolveTreeIconKind("root.platform.mes.operations", "CUSTOM")).toBe("gear");
+    expect(resolveTreeIconKind("root.platform.mes.lots", "CUSTOM")).toBe("box");
+    expect(resolveTreeIconKind("root.platform.mes.shifts", "CUSTOM")).toBe("schedules");
+    expect(resolveTreeIconKind("root.platform.mes.quality-records", "CUSTOM")).toBe(
       "quality",
     );
-    expect(resolveTreeIconKind("root.platform.mes.instances", "MES_INSTANCES")).toBe("layers");
+    expect(resolveTreeIconKind("root.platform.mes.instances", "CUSTOM")).toBe("layers");
   });
 
   it("uses filter icon for event filter catalog", () => {

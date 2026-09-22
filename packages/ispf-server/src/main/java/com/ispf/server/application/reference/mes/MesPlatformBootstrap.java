@@ -47,12 +47,12 @@ public class MesPlatformBootstrap {
 
     /** Creates MES catalog folders (also invoked by marketplace bundle install path when needed). */
     public void ensureCatalog() {
-        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.MES_ROOT, ObjectType.MES, null);
-        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.WORK_ORDERS, ObjectType.WORK_ORDERS, null);
-        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.OPERATIONS, ObjectType.OPERATIONS, null);
-        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.LOTS, ObjectType.LOTS, null);
-        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.SHIFTS, ObjectType.SHIFTS, null);
-        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.QUALITY_RECORDS, ObjectType.QUALITY_RECORDS, null);
-        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.INSTANCES, ObjectType.MES_INSTANCES, null);
+        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.MES_ROOT, ObjectType.CUSTOM, null);
+        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.WORK_ORDERS, ObjectType.CUSTOM, null);
+        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.OPERATIONS, ObjectType.CUSTOM, null);
+        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.LOTS, ObjectType.CUSTOM, null);
+        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.SHIFTS, ObjectType.CUSTOM, null);
+        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.QUALITY_RECORDS, ObjectType.CUSTOM, null);
+        SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.INSTANCES, ObjectType.CUSTOM, null);
     }
 }
