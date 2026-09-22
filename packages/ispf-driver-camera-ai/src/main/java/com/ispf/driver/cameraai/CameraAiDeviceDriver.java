@@ -20,15 +20,15 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Camera AI edge driver — HTTP/1.1 lab client for an on-prem inference endpoint.
+ * Camera AI edge driver — plain HTTP/1.1 client for an on-prem inference endpoint (no TLS).
  * <p>
  * Point mapping is an inference route (for example {@code /infer}, {@code detect}, or
  * {@code POST /v1/detect}). {@code readPoints} issues {@code GET} (or mapped method) and stores
  * the response body in {@code value} plus {@code status}/{@code path}. {@code writePoint} issues
- * {@code POST} with the record {@code value} as the request body (JSON/text lab payload).
+ * {@code POST} with the record {@code value} as the request body.
  * <p>
- * Clean-room ISPF lab codec, Apache-2.0 — JDK sockets only. Not OpenCV/ONNX/vendor camera SDKs;
- * not a full HTTP client stack (no TLS/chunked/redirects in this lab dialect).
+ * Clean-room ISPF code, Apache-2.0 — JDK sockets only. Not a vision SDK; not a full HTTP client
+ * stack (no TLS/chunked/redirects).
  */
 public class CameraAiDeviceDriver implements DeviceDriver {
 
@@ -43,7 +43,7 @@ public class CameraAiDeviceDriver implements DeviceDriver {
             "camera-ai",
             "Camera AI edge Driver",
             "0.1.0",
-            "HTTP/1.1 lab client for edge vision/AI inference endpoints (GET read / POST write)",
+            "HTTP/1.1 client for edge vision/AI inference endpoints (GET read / POST write; no TLS)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -87,7 +87,7 @@ public class CameraAiDeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         connected = true;
-        driverObject.log(DriverLogLevel.INFO, "Camera AI HTTP lab ready for " + host + ":" + port);
+        driverObject.log(DriverLogLevel.INFO, "Camera AI HTTP/1.1 ready for " + host + ":" + port);
     }
 
     @Override
@@ -109,7 +109,10 @@ public class CameraAiDeviceDriver implements DeviceDriver {
             String mapping = entry.getValue() == null || entry.getValue().isBlank() ? "/infer" : entry.getValue().trim();
             routes.put(pointId, mapping);
             ParsedRoute route = ParsedRoute.parse(mapping, "GET");
-            HttpResponse response = exchange(route.method(), route.path(), null);
+            String request = "GET".equals(route.method()) && "/infer".equals(route.path())
+                    ? buildInferGetRequest(host)
+                    : buildRequest(route.method(), route.path(), null);
+            HttpResponse response = exchange(request, null, route.path());
             driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
                     "value", response.body(),
                     "status", Integer.toString(response.status()),
@@ -125,7 +128,8 @@ public class CameraAiDeviceDriver implements DeviceDriver {
         String mapping = routes.getOrDefault(pointId, pointId);
         ParsedRoute route = ParsedRoute.parse(mapping, "POST");
         String body = extractValue(value);
-        HttpResponse response = exchange("POST", route.path(), body);
+        String request = buildRequest("POST", route.path(), body);
+        HttpResponse response = exchange(request, body, route.path());
         driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
                 "value", response.body().isBlank() ? body : response.body(),
                 "status", Integer.toString(response.status()),
@@ -134,25 +138,40 @@ public class CameraAiDeviceDriver implements DeviceDriver {
         )));
     }
 
-    private HttpResponse exchange(String method, String path, String body) throws DriverException {
+    /**
+     * Exact HTTP/1.1 {@code GET /infer} used on the wire (Host without port).
+     */
+    static String buildInferGetRequest(String hostHeader) {
+        return "GET /infer HTTP/1.1\r\n"
+                + "Host: " + hostHeader + "\r\n"
+                + "Connection: close\r\n"
+                + "\r\n";
+    }
+
+    private String buildRequest(String method, String path, String body) {
+        StringBuilder req = new StringBuilder();
+        req.append(method).append(' ').append(path).append(" HTTP/1.1\r\n");
+        req.append("Host: ").append(host).append("\r\n");
+        req.append("Connection: close\r\n");
+        if (body != null) {
+            byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+            req.append("Content-Type: application/json\r\n");
+            req.append("Content-Length: ").append(bytes.length).append("\r\n\r\n");
+        } else {
+            req.append("\r\n");
+        }
+        return req.toString();
+    }
+
+    private HttpResponse exchange(String request, String body, String path) throws DriverException {
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(host, port), timeoutMs);
             socket.setSoTimeout(timeoutMs);
             OutputStream out = socket.getOutputStream();
             InputStream in = socket.getInputStream();
-            StringBuilder req = new StringBuilder();
-            req.append(method).append(' ').append(path).append(" HTTP/1.1\r\n");
-            req.append("Host: ").append(host).append(':').append(port).append("\r\n");
-            req.append("Connection: close\r\n");
+            out.write(request.getBytes(StandardCharsets.US_ASCII));
             if (body != null) {
-                byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-                req.append("Content-Type: application/json\r\n");
-                req.append("Content-Length: ").append(bytes.length).append("\r\n\r\n");
-                out.write(req.toString().getBytes(StandardCharsets.US_ASCII));
-                out.write(bytes);
-            } else {
-                req.append("\r\n");
-                out.write(req.toString().getBytes(StandardCharsets.US_ASCII));
+                out.write(body.getBytes(StandardCharsets.UTF_8));
             }
             out.flush();
             return HttpResponse.parse(readAll(in));

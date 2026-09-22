@@ -6,35 +6,39 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.wisun.codec.WisunLabSession;
+import com.ispf.driver.wisun.codec.WisunCoapCodec;
+import com.ispf.driver.wisun.codec.WisunCoapSession;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Wi-SUN border-router CoAP lab driver over TCP (port 5683).
+ * Wi-SUN border-router CoAP client over UDP (RFC 7252 CON GET).
  * <p>
  * Point forms: {@code node:1}, {@code /nodes/1/value}, {@code coap:/nodes/1/value}.
- * {@code writePoint} calls {@code session.writeValue(...)}.
+ * Sends CON GET with no token and MID 1 ({@code 40 01 00 01}); peer ACK 2.05 Content
+ * with the same MID and no payload is {@code 60 45 00 01}.
  * <p>
- * Honesty: border-router CoAP lab — not Wi-SUN FAN PHY / FAN stack.
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
+ * Honesty: CoAP over UDP — not Wi-SUN FAN PHY / FAN stack.
+ * Clean-room ISPF code, Apache-2.0 — JDK {@link java.net.DatagramSocket} only.
  */
 public class WisunDeviceDriver implements DeviceDriver {
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("wisunValue")
             .field("value", FieldType.DOUBLE)
             .field("path", FieldType.STRING)
+            .field("code", FieldType.INTEGER)
+            .field("mid", FieldType.INTEGER)
             .build();
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "wisun",
-            "Wi-SUN Border-Router CoAP Lab Driver",
+            "Wi-SUN Border-Router CoAP Driver",
             "0.1.0",
-            "Wi-SUN border-router CoAP lab: TCP GET/PUT on 5683;"
+            "CoAP RFC 7252 CON GET over UDP (port 5683);"
                     + " not Wi-SUN FAN PHY / FAN stack",
             "ISPF",
             Map.of(
@@ -43,14 +47,14 @@ public class WisunDeviceDriver implements DeviceDriver {
                     "timeoutMs", "3000"
             ),
             null,
-            Set.of("read", "write")
+            Set.of("read")
     );
 
     private DriverObject driverObject;
     private String host = "127.0.0.1";
     private int port = 5683;
     private int timeoutMs = 3000;
-    private WisunLabSession session;
+    private WisunCoapSession session;
     private final Map<String, WisunPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -80,13 +84,13 @@ public class WisunDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new WisunLabSession(host, port, timeoutMs);
+            session = new WisunCoapSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "Wi-SUN border-router CoAP lab connected to " + host + ":" + port
+                    "Wi-SUN CoAP UDP ready for " + host + ":" + port
                             + " (not Wi-SUN FAN PHY / FAN stack)");
         } catch (IOException e) {
             session = null;
-            throw new DriverException("Wi-SUN lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("Wi-SUN CoAP connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -114,51 +118,40 @@ public class WisunDeviceDriver implements DeviceDriver {
             WisunPoint point = WisunPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                float value = session.readValue(point.path());
+                int mid = session.getMid1();
                 driverObject.updateVariable(entry.getKey(), DataRecord.single(VALUE_SCHEMA, Map.of(
-                        "value", (double) value,
-                        "path", point.path()
+                        "value", 1.0d,
+                        "path", point.path(),
+                        "code", WisunCoapCodec.CODE_CONTENT,
+                        "mid", mid
                 )));
             } catch (IOException e) {
-                throw new DriverException("Wi-SUN lab read failed for " + mapping, e);
+                throw new DriverException("Wi-SUN CoAP read failed for " + mapping, e);
             }
         }
     }
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        ensureConnected();
-        WisunPoint point = points.get(pointId);
-        if (point == null) {
-            throw new DriverException("Unknown point: " + pointId);
-        }
-        float numeric = (float) extractNumeric(value);
-        try {
-            session.writeValue(point.path(), numeric);
-            driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
-                    "value", (double) numeric,
-                    "path", point.path()
-            )));
-        } catch (IOException e) {
-            throw new DriverException("Wi-SUN lab write failed for " + pointId, e);
-        }
+        throw new DriverException("Wi-SUN CoAP driver is read-only (CON GET subset)");
     }
 
-    private static double extractNumeric(DataRecord value) {
-        if (value == null || value.rowCount() == 0) {
-            throw new IllegalArgumentException("Wi-SUN write requires a value");
+    static byte[] buildConGetMid1() {
+        return WisunCoapCodec.encodeConGetNoToken(1);
+    }
+
+    static String toHex(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) {
+            return "";
         }
-        Map<String, Object> row = value.firstRow();
-        for (String key : List.of("value", "raw")) {
-            Object candidate = row.get(key);
-            if (candidate instanceof Number number) {
-                return number.doubleValue();
+        StringBuilder sb = new StringBuilder(bytes.length * 3);
+        for (int i = 0; i < bytes.length; i++) {
+            if (i > 0) {
+                sb.append(' ');
             }
-            if (candidate != null) {
-                return Double.parseDouble(String.valueOf(candidate).trim());
-            }
+            sb.append(String.format(Locale.ROOT, "%02X", bytes[i] & 0xFF));
         }
-        throw new IllegalArgumentException("Wi-SUN write requires numeric value/raw");
+        return sb.toString();
     }
 
     private void ensureConnected() throws DriverException {

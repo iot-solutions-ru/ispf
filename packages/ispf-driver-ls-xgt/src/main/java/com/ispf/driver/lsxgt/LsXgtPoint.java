@@ -5,39 +5,34 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Point mapping for XGT-lab device memory.
+ * Point mapping for XGT dedicated-protocol device memory.
  * <p>
  * Accepted forms: {@code %DW100}, {@code DW100}, {@code %DW100:2}, {@code %MW10}, {@code MW10},
  * {@code %MX0}, {@code MX0}. Optional {@code :count} applies to word devices (DW/MW).
- * Bit device MX is always count 1 (0/1 word value in the lab framing).
+ * Bit device MX is always count 1.
  */
 public record LsXgtPoint(DeviceType deviceType, int address, int count) {
 
     private static final Pattern COMPACT = Pattern.compile("^%?([DdMm][WwXx])(\\d+)(?::(\\d+))?$");
 
     public enum DeviceType {
-        DW((byte) 0x01),
-        MW((byte) 0x02),
-        MX((byte) 0x03);
-
-        private final byte code;
-
-        DeviceType(byte code) {
-            this.code = code;
-        }
-
-        public byte code() {
-            return code;
-        }
+        DW,
+        MW,
+        MX;
 
         static DeviceType fromToken(String token) {
             return switch (token.toUpperCase(Locale.ROOT)) {
                 case "DW" -> DW;
                 case "MW" -> MW;
                 case "MX" -> MX;
-                default -> throw new IllegalArgumentException("LS XGT lab supports DW/MW/MX only, got: " + token);
+                default -> throw new IllegalArgumentException("LS XGT supports DW/MW/MX only, got: " + token);
             };
         }
+    }
+
+    /** ASCII variable name as used in the dedicated instruction body, e.g. {@code %DW0}. */
+    public String variableName(int offset) {
+        return "%" + deviceType.name() + (address + offset);
     }
 
     public static LsXgtPoint parse(String raw) {
@@ -54,7 +49,7 @@ public record LsXgtPoint(DeviceType deviceType, int address, int count) {
         int address = Integer.parseInt(matcher.group(2));
         int count = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 1;
         if (type == DeviceType.MX && count != 1) {
-            throw new IllegalArgumentException("LS XGT lab MX points are single-bit (count must be 1)");
+            throw new IllegalArgumentException("LS XGT MX points are single-bit (count must be 1)");
         }
         return new LsXgtPoint(type, address, requirePositive(count));
     }

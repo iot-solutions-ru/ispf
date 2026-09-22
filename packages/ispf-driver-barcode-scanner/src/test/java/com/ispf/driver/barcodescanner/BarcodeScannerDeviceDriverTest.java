@@ -10,6 +10,8 @@ import com.ispf.driver.DriverMaturity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -17,6 +19,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -26,10 +29,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BarcodeScannerDeviceDriverTest {
+
+    /** Handwritten ABC123 CR LF wire bytes (41 42 43 31 32 33 0D 0A). */
+    private static final byte[] SCAN_LINE_LITERAL = new byte[] {
+            0x41, 0x42, 0x43, 0x31, 0x32, 0x33, 0x0D, 0x0A
+    };
 
     private BarcodeScannerDeviceDriver driver;
     private FakeScanner scanner;
@@ -47,15 +57,29 @@ class BarcodeScannerDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionReadWrite() {
+    void scanLineLiteralIsAbc123CrLf() throws IOException {
+        assertArrayEquals(new byte[] {
+                0x41, 0x42, 0x43, 0x31, 0x32, 0x33, 0x0D, 0x0A
+        }, SCAN_LINE_LITERAL);
+        assertEquals("ABC123", BarcodeScannerDeviceDriver.readLine(
+                new ByteArrayInputStream(SCAN_LINE_LITERAL)));
+    }
+
+    @Test
+    void metadataIsProductionReadWriteWithoutLab() {
         driver = new BarcodeScannerDeviceDriver();
         assertEquals("barcode-scanner", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("newline-terminated") || description.contains("scan stream"));
+        assertFalse(description.contains("lab"));
+        assertFalse(description.contains("trigger"));
+        assertFalse(description.contains("beep"));
     }
 
     @Test
-    void scanAndTriggerLoopback() throws Exception {
+    void scanAndWriteLoopback() throws Exception {
         scanner = new FakeScanner();
         scanner.start();
 
@@ -70,14 +94,17 @@ class BarcodeScannerDeviceDriverTest {
         assertTrue(driver.isConnected());
 
         driver.readPoints(Map.of("code", "last"));
-        scanner.emit("01ABCDEF999");
-        awaitScan(object, "code", "01ABCDEF999");
+        scanner.emit(SCAN_LINE_LITERAL);
+        awaitScan(object, "code", "ABC123");
 
         driver.writePoint("code", DataRecord.single(
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
-                Map.of("value", "TRIGGER")
+                Map.of("value", "ACK")
         ));
-        assertTrue(awaitCondition(() -> "TRIGGER".equals(scanner.lastCommand()), 2000));
+        assertTrue(awaitCondition(() -> "ACK".equals(scanner.lastLine()), 2000));
+        assertArrayEquals(
+                "ACK\r\n".getBytes(StandardCharsets.US_ASCII),
+                scanner.lastRawWrite());
     }
 
     private static void awaitScan(StubDriverObject object, String point, String expected) throws InterruptedException {
@@ -111,7 +138,8 @@ class BarcodeScannerDeviceDriverTest {
             return t;
         });
         private final AtomicReference<OutputStream> clientOut = new AtomicReference<>();
-        private final AtomicReference<String> lastCommand = new AtomicReference<>("");
+        private final AtomicReference<String> lastLine = new AtomicReference<>("");
+        private final AtomicReference<byte[]> lastRawWrite = new AtomicReference<>(new byte[0]);
 
         FakeScanner() throws IOException {
             serverSocket = new ServerSocket();
@@ -122,15 +150,19 @@ class BarcodeScannerDeviceDriverTest {
             return serverSocket.getLocalPort();
         }
 
-        String lastCommand() {
-            return lastCommand.get();
+        String lastLine() {
+            return lastLine.get();
+        }
+
+        byte[] lastRawWrite() {
+            return lastRawWrite.get();
         }
 
         void start() {
             executor.submit(this::acceptLoop);
         }
 
-        void emit(String barcode) throws IOException, InterruptedException {
+        void emit(byte[] frame) throws IOException, InterruptedException {
             long deadline = System.currentTimeMillis() + 2000;
             while (clientOut.get() == null && System.currentTimeMillis() < deadline) {
                 Thread.sleep(20);
@@ -140,7 +172,7 @@ class BarcodeScannerDeviceDriverTest {
                 throw new IOException("no client connected");
             }
             synchronized (out) {
-                out.write((barcode + "\r\n").getBytes(StandardCharsets.US_ASCII));
+                out.write(frame);
                 out.flush();
             }
         }
@@ -161,17 +193,42 @@ class BarcodeScannerDeviceDriverTest {
                 clientOut.set(socket.getOutputStream());
                 InputStream in = socket.getInputStream();
                 while (true) {
-                    String command = BarcodeScannerDeviceDriver.readLine(in);
-                    if (command == null) {
+                    byte[] raw = readRawLine(in);
+                    if (raw == null) {
                         break;
                     }
-                    lastCommand.set(command.trim());
+                    lastRawWrite.set(raw);
+                    String line = new String(raw, StandardCharsets.US_ASCII);
+                    if (line.endsWith("\r\n")) {
+                        line = line.substring(0, line.length() - 2);
+                    } else if (line.endsWith("\n")) {
+                        line = line.substring(0, line.length() - 1);
+                    }
+                    lastLine.set(line.trim());
                 }
             } catch (IOException ignored) {
                 // client closed
             } finally {
                 clientOut.set(null);
             }
+        }
+
+        private static byte[] readRawLine(InputStream in) throws IOException {
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            while (true) {
+                int b = in.read();
+                if (b < 0) {
+                    if (buf.size() == 0) {
+                        return null;
+                    }
+                    break;
+                }
+                buf.write(b);
+                if (b == '\n') {
+                    break;
+                }
+            }
+            return buf.toByteArray();
         }
 
         @Override

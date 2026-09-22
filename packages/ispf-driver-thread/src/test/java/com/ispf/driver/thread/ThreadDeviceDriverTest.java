@@ -1,48 +1,44 @@
 package com.ispf.driver.thread;
 
 import com.ispf.core.model.DataRecord;
-import com.ispf.core.model.DataSchema;
-import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.thread.codec.SpinelHdlcCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake TCP loopback tests for the Thread Border Router gateway lab.
- * Certifies the lab dialect only — not Thread radio / RCP.
+ * ServerSocket peer tests for OpenThread Spinel HDLC over TCP (not 802.15.4).
  */
 class ThreadDeviceDriverTest {
 
     private ThreadDeviceDriver driver;
-    private FakeThreadGateway gateway;
+    private FakeSpinelPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -50,45 +46,72 @@ class ThreadDeviceDriverTest {
             driver.disconnect();
             driver = null;
         }
-        if (gateway != null) {
-            gateway.close();
-            gateway = null;
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
     }
 
     @Test
-    void metadataIsProductionBrGatewayLab() {
+    void cmdResetFrameIsLiteral7E800102927E() {
+        // Handwritten Spinel CMD_RESET HDLC frame (not produced by the encoder for expected)
+        byte[] expected = new byte[]{0x7E, (byte) 0x80, 0x01, 0x02, (byte) 0x92, 0x7E};
+        assertArrayEquals(expected, SpinelHdlcCodec.encodeCmdReset());
+        assertArrayEquals(expected, ThreadDeviceDriver.buildCmdResetFrame());
+    }
+
+    @Test
+    void cmdResetCrcMatchesIndependentBitLoop() {
+        // Independent CRC-16/ISO-HDLC bit loop (not a production lookup table copy)
+        byte[] payload = new byte[]{(byte) 0x80, 0x01};
+        int crc = 0xFFFF;
+        for (byte value : payload) {
+            crc ^= (value & 0xFF);
+            for (int bit = 0; bit < 8; bit++) {
+                if ((crc & 1) != 0) {
+                    crc = (crc >>> 1) ^ 0x8408;
+                } else {
+                    crc >>>= 1;
+                }
+                crc &= 0xFFFF;
+            }
+        }
+        crc = (crc ^ 0xFFFF) & 0xFFFF;
+        assertEquals(0x9202, crc);
+        assertEquals(0x02, crc & 0xFF);
+        assertEquals(0x92, (crc >> 8) & 0xFF);
+        assertEquals(0x9202, SpinelHdlcCodec.crc16IsoHdlc(payload));
+    }
+
+    @Test
+    void metadataDescribesSpinelWithoutLab() {
         driver = new ThreadDeviceDriver();
         assertEquals("thread", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
-        assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
+        assertEquals(Set.of("read"), driver.metadata().capabilities());
         assertEquals("8081", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("gateway") || description.contains("br"));
+        assertTrue(description.contains("spinel"));
         assertTrue(description.contains("not"));
+        assertFalse(description.contains("lab"));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
     }
 
     @Test
-    void pointParserAcceptsIpUdpChild() throws Exception {
-        assertEquals(ThreadPoint.Kind.IP, ThreadPoint.parse("ip:fd00::1").kind());
-        assertEquals("fd00::1", ThreadPoint.parse("ip:fd00::1").ip());
-        assertEquals(61631, ThreadPoint.parse("udp:61631").portOrChild());
-        assertEquals(ThreadPoint.Kind.CHILD, ThreadPoint.parse("child:1").kind());
+    void pointParserAcceptsResetForms() throws Exception {
+        assertEquals("reset", ThreadPoint.parse("reset").display());
+        assertEquals("reset", ThreadPoint.parse("cmd:reset").display());
     }
 
     @Test
-    void readIpUdpChildWriteIpUdpLoopback() throws Exception {
-        gateway = new FakeThreadGateway();
-        gateway.put("ip:fd00::1", 1);
-        gateway.put("udp:61631", 0);
-        gateway.put("child:1", 1);
-        gateway.start();
-        assertTrue(gateway.awaitReady(2, TimeUnit.SECONDS));
+    void cmdResetLoopbackOverTcp() throws Exception {
+        peer = new FakeSpinelPeer();
+        peer.start();
+        assertTrue(peer.awaitReady(2, TimeUnit.SECONDS));
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new ThreadDeviceDriver();
@@ -96,50 +119,17 @@ class ThreadDeviceDriverTest {
         driver.connect();
         assertTrue(driver.isConnected());
 
-        driver.readPoints(Map.of(
-                "mesh", "ip:fd00::1",
-                "svc", "udp:61631",
-                "c1", "child:1"
-        ));
-        assertEquals(1.0, (Double) object.variables.get("mesh").firstRow().get("value"), 0.001);
-        assertEquals(0.0, (Double) object.variables.get("svc").firstRow().get("value"), 0.001);
-        assertEquals(1.0, (Double) object.variables.get("c1").firstRow().get("value"), 0.001);
+        driver.readPoints(Map.of("rcp", "reset"));
+        assertEquals(1.0, (Double) object.variables.get("rcp").firstRow().get("value"), 0.001);
+        assertEquals("reset", object.variables.get("rcp").firstRow().get("kind"));
+        assertTrue(peer.awaitFrame(2, TimeUnit.SECONDS));
+        assertArrayEquals(
+                new byte[]{0x7E, (byte) 0x80, 0x01, 0x02, (byte) 0x92, 0x7E},
+                peer.lastFrame()
+        );
 
-        driver.writePoint("mesh", DataRecord.single(
-                DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
-                Map.of("value", 0.0)
-        ));
-        assertEquals(0.0, gateway.value("ip:fd00::1"), 0.001);
-
-        driver.writePoint("svc", DataRecord.single(
-                DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
-                Map.of("value", 1.0)
-        ));
-        assertEquals(1.0, gateway.value("udp:61631"), 0.001);
-    }
-
-    @Test
-    void writeChildRejected() throws Exception {
-        gateway = new FakeThreadGateway();
-        gateway.put("child:1", 1);
-        gateway.start();
-        assertTrue(gateway.awaitReady(2, TimeUnit.SECONDS));
-
-        StubDriverObject object = new StubDriverObject(Map.of(
-                "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
-                "timeoutMs", "2000"
-        ));
-        driver = new ThreadDeviceDriver();
-        driver.initialize(object);
-        driver.connect();
-        driver.readPoints(Map.of("c1", "child:1"));
-        DriverException error = assertThrows(DriverException.class, () ->
-                driver.writePoint("c1", DataRecord.single(
-                        DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
-                        Map.of("value", 0.0)
-                )));
-        assertTrue(error.getMessage().toLowerCase(Locale.ROOT).contains("child"));
+        assertThrows(DriverException.class, () ->
+                driver.writePoint("rcp", object.variables.get("rcp")));
     }
 
     @Test
@@ -147,26 +137,23 @@ class ThreadDeviceDriverTest {
         driver = new ThreadDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of()));
         DriverException error = assertThrows(DriverException.class, () ->
-                driver.readPoints(Map.of("x", "ip:fd00::1")));
+                driver.readPoints(Map.of("x", "reset")));
         assertTrue(error.getMessage().contains("Not connected"));
     }
 
-    private static final class FakeThreadGateway implements AutoCloseable {
-
-        private static final Pattern OP = Pattern.compile("\"op\"\\s*:\\s*\"([^\"]+)\"");
-        private static final Pattern POINT = Pattern.compile("\"point\"\\s*:\\s*\"([^\"]+)\"");
-        private static final Pattern VALUE = Pattern.compile("\"value\"\\s*:\\s*(-?[0-9.]+)");
+    private static final class FakeSpinelPeer implements AutoCloseable {
 
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
-            Thread thread = new Thread(runnable, "fake-thread-br");
+            Thread thread = new Thread(runnable, "fake-spinel");
             thread.setDaemon(true);
             return thread;
         });
-        private final Map<String, Double> values = new ConcurrentHashMap<>();
         private final CountDownLatch ready = new CountDownLatch(1);
+        private final CountDownLatch frameSeen = new CountDownLatch(1);
+        private final AtomicReference<byte[]> lastFrame = new AtomicReference<>(new byte[0]);
 
-        FakeThreadGateway() throws IOException {
+        FakeSpinelPeer() throws IOException {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
@@ -175,16 +162,12 @@ class ThreadDeviceDriverTest {
             return serverSocket.getLocalPort();
         }
 
-        void put(String point, double value) {
-            values.put(point.toLowerCase(Locale.ROOT), value);
-        }
-
-        double value(String point) {
-            return values.getOrDefault(point.toLowerCase(Locale.ROOT), 0.0);
+        byte[] lastFrame() {
+            return lastFrame.get();
         }
 
         void start() {
-            executor.submit(this::acceptLoop);
+            var _ = executor.submit(this::acceptOnce);
             ready.countDown();
         }
 
@@ -192,89 +175,31 @@ class ThreadDeviceDriverTest {
             return ready.await(timeout, unit);
         }
 
-        private void acceptLoop() {
-            while (!serverSocket.isClosed()) {
-                try {
-                    Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
-                } catch (IOException e) {
-                    if (serverSocket.isClosed()) {
-                        return;
-                    }
-                }
-            }
+        boolean awaitFrame(long timeout, TimeUnit unit) throws InterruptedException {
+            return frameSeen.await(timeout, unit);
         }
 
-        private void handle(Socket socket) {
-            try (socket) {
+        private void acceptOnce() {
+            try (Socket socket = serverSocket.accept()) {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
-                while (true) {
-                    String line = readLine(in);
-                    if (line == null) {
+                byte[] frame = new byte[6];
+                int offset = 0;
+                while (offset < frame.length) {
+                    int n = in.read(frame, offset, frame.length - offset);
+                    if (n < 0) {
                         return;
                     }
-                    writeLine(out, handleLine(line));
+                    offset += n;
                 }
+                lastFrame.set(frame);
+                frameSeen.countDown();
+                // Peer acknowledges by echoing the same CMD_RESET frame (no separate reply published)
+                out.write(frame);
+                out.flush();
             } catch (IOException ignored) {
-                // client closed
+                // closed
             }
-        }
-
-        private String handleLine(String line) {
-            Matcher opMatcher = OP.matcher(line);
-            Matcher pointMatcher = POINT.matcher(line);
-            if (!opMatcher.find() || !pointMatcher.find()) {
-                return "{\"ok\":false,\"error\":\"bad request\"}";
-            }
-            String op = opMatcher.group(1).toLowerCase(Locale.ROOT);
-            String point = pointMatcher.group(1).toLowerCase(Locale.ROOT);
-            if ("get".equals(op)) {
-                double value = values.getOrDefault(point, 0.0);
-                return "{\"ok\":true,\"value\":" + format(value) + "}";
-            }
-            if ("set".equals(op)) {
-                Matcher valueMatcher = VALUE.matcher(line);
-                if (!valueMatcher.find()) {
-                    return "{\"ok\":false,\"error\":\"missing value\"}";
-                }
-                double value = Double.parseDouble(valueMatcher.group(1));
-                values.put(point, value);
-                return "{\"ok\":true,\"value\":" + format(value) + "}";
-            }
-            return "{\"ok\":false,\"error\":\"unknown op\"}";
-        }
-
-        private static String format(double value) {
-            if (value == Math.rint(value)) {
-                return Long.toString(Math.round(value));
-            }
-            return Double.toString(value);
-        }
-
-        private static void writeLine(OutputStream out, String line) throws IOException {
-            out.write((line + "\n").getBytes(StandardCharsets.US_ASCII));
-            out.flush();
-        }
-
-        private static String readLine(InputStream in) throws IOException {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            while (true) {
-                int ch = in.read();
-                if (ch < 0) {
-                    if (buf.size() == 0) {
-                        return null;
-                    }
-                    break;
-                }
-                if (ch == '\n') {
-                    break;
-                }
-                if (ch != '\r') {
-                    buf.write(ch);
-                }
-            }
-            return buf.toString(StandardCharsets.US_ASCII);
         }
 
         @Override
@@ -288,7 +213,7 @@ class ThreadDeviceDriverTest {
     private static final class StubDriverObject implements DeviceDriver.DriverObject {
 
         private final Map<String, String> configuration;
-        private final Map<String, DataRecord> variables = new ConcurrentHashMap<>();
+        private final Map<String, DataRecord> variables = new java.util.concurrent.ConcurrentHashMap<>();
 
         StubDriverObject(Map<String, String> configuration) {
             this.configuration = configuration;

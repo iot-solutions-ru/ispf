@@ -7,11 +7,10 @@ import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -26,8 +25,8 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * OCPP 1.6 JSON Charge Point client — BootNotification, Heartbeat, StatusNotification subset.
  * <p>
- * Transport is <strong>newline-delimited OCPP-J CALL/CALLRESULT</strong> over TCP (lab-friendly
- * stand-in for the OCPP 1.6 WebSocket subprotocol). Point mapping:
+ * Transport is <strong>RFC 6455 WebSocket</strong> with {@code Sec-WebSocket-Protocol: ocpp1.6}
+ * and OCPP 1.6 JSON CALL/CALLRESULT text frames. Point mapping:
  * {@code boot} / {@code BootNotification}, {@code heartbeat} / {@code Heartbeat},
  * {@code status} / {@code StatusNotification}, or {@code status:&lt;ConnectorId&gt;}.
  * Write updates connector status and sends StatusNotification.
@@ -36,6 +35,10 @@ import java.util.concurrent.atomic.AtomicLong;
  * JDK sockets only; no third-party OCPP stack.
  */
 public class OcppDeviceDriver implements DeviceDriver {
+
+    private static final String WS_KEY = "dGhlIHNhbXBsZSBub25jZQ==";
+    private static final String WS_ACCEPT = "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=";
+    private static final String WS_PATH = "/ocpp";
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("ocppValue")
             .field("value", FieldType.STRING)
@@ -49,14 +52,14 @@ public class OcppDeviceDriver implements DeviceDriver {
             "ocpp",
             "OCPP Driver",
             "0.1.0",
-            "OCPP 1.6 JSON Charge Point subset (BootNotification/Heartbeat/StatusNotification) over TCP JSON lines",
+            "OCPP 1.6 JSON Charge Point subset (BootNotification/Heartbeat/StatusNotification) over WebSocket",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "9000",
                     "timeoutMs", "3000",
                     "chargePointVendor", "ISPF",
-                    "chargePointModel", "LabCP",
+                    "chargePointModel", "ISPF-CP",
                     "chargePointSerialNumber", "CP-001",
                     "connectorId", "1",
                     "connectorStatus", "Available",
@@ -71,7 +74,7 @@ public class OcppDeviceDriver implements DeviceDriver {
     private int port = 9000;
     private int timeoutMs = 3000;
     private String chargePointVendor = "ISPF";
-    private String chargePointModel = "LabCP";
+    private String chargePointModel = "ISPF-CP";
     private String chargePointSerialNumber = "CP-001";
     private int connectorId = 1;
     private String connectorStatus = "Available";
@@ -79,8 +82,8 @@ public class OcppDeviceDriver implements DeviceDriver {
     private final AtomicLong nextUniqueId = new AtomicLong(1);
     private volatile boolean connected;
     private Socket socket;
-    private BufferedReader reader;
-    private BufferedWriter writer;
+    private InputStream in;
+    private OutputStream out;
     private String bootStatus = "";
     private String lastCurrentTime = "";
 
@@ -118,11 +121,7 @@ public class OcppDeviceDriver implements DeviceDriver {
             return;
         }
         try {
-            socket = new Socket();
-            socket.connect(new InetSocketAddress(host, port), timeoutMs);
-            socket.setSoTimeout(timeoutMs);
-            reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-            writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+            openWebSocket();
             Map<String, String> boot = exchange("BootNotification", Map.of(
                     "chargePointVendor", chargePointVendor,
                     "chargePointModel", chargePointModel,
@@ -135,7 +134,7 @@ public class OcppDeviceDriver implements DeviceDriver {
             }
             connected = true;
             driverObject.log(DriverLogLevel.INFO,
-                    "OCPP 1.6 JSON-lines Charge Point ready for " + host + ":" + port
+                    "OCPP 1.6 WebSocket Charge Point ready for " + host + ":" + port
                             + " (boot=" + bootStatus + ")");
         } catch (DriverException e) {
             closeQuietly();
@@ -143,6 +142,59 @@ public class OcppDeviceDriver implements DeviceDriver {
         } catch (IOException e) {
             closeQuietly();
             throw new DriverException("OCPP connect failed for " + host + ":" + port, e);
+        }
+    }
+
+    /** Same-package tests: mark transport ready after {@link #openWebSocket()} without BootNotification. */
+    synchronized void connectedForTest() {
+        connected = true;
+    }
+
+    /**
+     * Opens the TCP socket and completes the RFC 6455 client handshake (no OCPP CALL yet).
+     * Same-package tests use this to send a first CALL with uniqueId {@code "1"}.
+     */
+    synchronized void openWebSocket() throws IOException {
+        socket = new Socket();
+        socket.connect(new InetSocketAddress(host, port), timeoutMs);
+        socket.setSoTimeout(timeoutMs);
+        socket.setTcpNoDelay(true);
+        in = socket.getInputStream();
+        out = socket.getOutputStream();
+
+        String upgrade =
+                "GET " + WS_PATH + " HTTP/1.1\r\n"
+                        + "Host: " + host + "\r\n"
+                        + "Upgrade: websocket\r\n"
+                        + "Connection: Upgrade\r\n"
+                        + "Sec-WebSocket-Key: " + WS_KEY + "\r\n"
+                        + "Sec-WebSocket-Version: 13\r\n"
+                        + "Sec-WebSocket-Protocol: ocpp1.6\r\n"
+                        + "\r\n";
+        out.write(upgrade.getBytes(StandardCharsets.US_ASCII));
+        out.flush();
+
+        String statusLine = readHttpLine(in);
+        if (statusLine == null || !statusLine.toUpperCase(Locale.ROOT).contains("101")) {
+            throw new IOException("WebSocket handshake failed: " + statusLine);
+        }
+        String acceptHeader = null;
+        while (true) {
+            String line = readHttpLine(in);
+            if (line == null || line.isEmpty()) {
+                break;
+            }
+            int colon = line.indexOf(':');
+            if (colon > 0) {
+                String name = line.substring(0, colon).trim();
+                String value = line.substring(colon + 1).trim();
+                if ("Sec-WebSocket-Accept".equalsIgnoreCase(name)) {
+                    acceptHeader = value;
+                }
+            }
+        }
+        if (!WS_ACCEPT.equals(acceptHeader)) {
+            throw new IOException("Invalid Sec-WebSocket-Accept: " + acceptHeader);
         }
     }
 
@@ -266,16 +318,11 @@ public class OcppDeviceDriver implements DeviceDriver {
 
     private Map<String, String> exchange(String action, Map<String, ?> payload) throws DriverException {
         String uniqueId = Long.toString(nextUniqueId.getAndIncrement());
-        String line = OcppJson.call(uniqueId, action, payload);
+        String call = OcppJson.call(uniqueId, action, payload);
         try {
-            writer.write(line);
-            writer.write('\n');
-            writer.flush();
-            String responseLine = reader.readLine();
-            if (responseLine == null) {
-                throw new IOException("CSMS closed connection");
-            }
-            OcppJson.ParsedMessage parsed = OcppJson.parse(responseLine);
+            writeMaskedText(call);
+            String responseText = readTextFrame();
+            OcppJson.ParsedMessage parsed = OcppJson.parse(responseText);
             if (parsed.type() == 4) {
                 throw new DriverException("OCPP CallError for " + action + ": "
                         + parsed.payload().getOrDefault("errorCode", "?")
@@ -295,16 +342,131 @@ public class OcppDeviceDriver implements DeviceDriver {
         }
     }
 
+    private void writeMaskedText(String text) throws IOException {
+        byte[] payload = text.getBytes(StandardCharsets.UTF_8);
+        if (payload.length > 125) {
+            throw new IOException("OCPP WebSocket text frame too large: " + payload.length);
+        }
+        ByteArrayOutputStream buf = new ByteArrayOutputStream(6 + payload.length);
+        buf.write(0x81);
+        buf.write(0x80 | payload.length);
+        buf.write(0);
+        buf.write(0);
+        buf.write(0);
+        buf.write(0);
+        buf.write(payload);
+        out.write(buf.toByteArray());
+        out.flush();
+    }
+
+    private String readTextFrame() throws IOException {
+        while (true) {
+            int b0 = in.read();
+            if (b0 < 0) {
+                throw new IOException("CSMS closed connection");
+            }
+            int opcode = b0 & 0x0F;
+            int b1 = in.read();
+            if (b1 < 0) {
+                throw new IOException("EOF reading WebSocket length");
+            }
+            boolean masked = (b1 & 0x80) != 0;
+            long len = b1 & 0x7F;
+            if (len == 126) {
+                int hi = in.read();
+                int lo = in.read();
+                if (hi < 0 || lo < 0) {
+                    throw new IOException("EOF reading extended length");
+                }
+                len = ((hi & 0xFF) << 8) | (lo & 0xFF);
+            } else if (len == 127) {
+                len = 0;
+                for (int i = 0; i < 8; i++) {
+                    int b = in.read();
+                    if (b < 0) {
+                        throw new IOException("EOF reading 64-bit length");
+                    }
+                    len = (len << 8) | (b & 0xFF);
+                }
+            }
+            if (len > 1_000_000) {
+                throw new IOException("WebSocket frame too large");
+            }
+            byte[] mask = null;
+            if (masked) {
+                mask = in.readNBytes(4);
+                if (mask.length != 4) {
+                    throw new IOException("EOF reading mask");
+                }
+            }
+            byte[] payload = in.readNBytes((int) len);
+            if (payload.length != len) {
+                throw new IOException("Truncated WebSocket payload");
+            }
+            if (mask != null) {
+                for (int i = 0; i < payload.length; i++) {
+                    payload[i] = (byte) (payload[i] ^ mask[i % 4]);
+                }
+            }
+            switch (opcode) {
+                case 0x1 -> {
+                    return new String(payload, StandardCharsets.UTF_8);
+                }
+                case 0x8 -> throw new IOException("WebSocket closed by peer");
+                case 0x9 -> writeMaskedControl(0xA, payload);
+                case 0xA -> { }
+                default -> throw new IOException("Unsupported WebSocket opcode: " + opcode);
+            }
+        }
+    }
+
+    private void writeMaskedControl(int opcode, byte[] payload) throws IOException {
+        if (payload.length > 125) {
+            throw new IOException("Control frame too large");
+        }
+        ByteArrayOutputStream buf = new ByteArrayOutputStream(6 + payload.length);
+        buf.write(0x80 | (opcode & 0x0F));
+        buf.write(0x80 | payload.length);
+        buf.write(0);
+        buf.write(0);
+        buf.write(0);
+        buf.write(0);
+        buf.write(payload);
+        out.write(buf.toByteArray());
+        out.flush();
+    }
+
+    private static String readHttpLine(InputStream input) throws IOException {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream(128);
+        int prev = -1;
+        while (true) {
+            int b = input.read();
+            if (b < 0) {
+                if (buf.size() == 0) {
+                    return null;
+                }
+                break;
+            }
+            if (prev == '\r' && b == '\n') {
+                byte[] raw = buf.toByteArray();
+                return new String(raw, 0, raw.length - 1, StandardCharsets.US_ASCII);
+            }
+            buf.write(b);
+            prev = b;
+        }
+        return buf.toString(StandardCharsets.US_ASCII);
+    }
+
     private void closeQuietly() {
         try {
-            if (writer != null) {
-                writer.close();
+            if (out != null) {
+                out.close();
             }
         } catch (IOException ignored) {
         }
         try {
-            if (reader != null) {
-                reader.close();
+            if (in != null) {
+                in.close();
             }
         } catch (IOException ignored) {
         }
@@ -314,8 +476,8 @@ public class OcppDeviceDriver implements DeviceDriver {
             }
         } catch (IOException ignored) {
         }
-        writer = null;
-        reader = null;
+        out = null;
+        in = null;
         socket = null;
     }
 

@@ -6,37 +6,39 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.bluetoothle.codec.BluetoothLeLabSession;
+import com.ispf.driver.bluetoothle.codec.BluetoothLeH4Session;
+import com.ispf.driver.bluetoothle.codec.H4HciCodec;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Bluetooth LE GATT TCP gateway lab driver — newline JSON over TCP (default port {@code 9999}).
+ * Bluetooth H4 HCI command driver over TCP (default port {@code 9999}).
  * <p>
- * Point forms: {@code mac:AA:BB:CC:DD:EE:FF:svc:180f:char:2a19}, {@code device:1:rssi}.
- * Characteristic points support write via {@link BluetoothLeLabSession#writeValue}; RSSI is read-only.
+ * Connect sends HCI_Reset ({@code 01 03 0C 00}) and expects Command Complete
+ * {@code 04 0E 04 01 03 0C 00}. Point {@code bd_addr} / {@code hci:bd_addr} reads via
+ * HCI_Read_BD_ADDR ({@code 01 09 10 00}).
  * <p>
- * Honesty: GATT TCP gateway lab — not BLE radio / SoftDevice / HCI silicon.
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only. Lab ≠ RF.
+ * Not a BLE radio and not a full GATT client. Clean-room ISPF code, Apache-2.0 —
+ * JDK sockets only.
  */
 public class BluetoothLeDeviceDriver implements DeviceDriver {
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("bluetoothLeValue")
-            .field("value", FieldType.DOUBLE)
+            .field("value", FieldType.STRING)
             .field("kind", FieldType.STRING)
             .field("point", FieldType.STRING)
             .build();
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "bluetooth-le",
-            "Bluetooth LE GATT Gateway Lab Driver",
+            "Bluetooth H4 HCI Driver",
             "0.1.0",
-            "GATT TCP gateway lab — not BLE radio / SoftDevice / HCI;"
-                    + " newline JSON char read/write and device RSSI over TCP",
+            "H4 HCI commands over TCP; not a BLE radio and not a full GATT client;"
+                    + " HCI_Reset and HCI_Read_BD_ADDR",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -44,15 +46,25 @@ public class BluetoothLeDeviceDriver implements DeviceDriver {
                     "timeoutMs", "3000"
             ),
             null,
-            Set.of("read", "write")
+            Set.of("read")
     );
 
     private DriverObject driverObject;
     private String host = "127.0.0.1";
     private int port = 9999;
     private int timeoutMs = 3000;
-    private BluetoothLeLabSession session;
+    private BluetoothLeH4Session session;
     private final Map<String, BluetoothLePoint> points = new ConcurrentHashMap<>();
+
+    /** Handwritten H4 HCI_Reset: {@code 01 03 0C 00}. */
+    public static byte[] encodeResetCommand() {
+        return H4HciCodec.encodeReset();
+    }
+
+    /** Handwritten H4 HCI_Read_BD_ADDR: {@code 01 09 10 00}. */
+    public static byte[] encodeReadBdAddrCommand() {
+        return H4HciCodec.encodeReadBdAddr();
+    }
 
     @Override
     public DriverMetadata metadata() {
@@ -81,14 +93,18 @@ public class BluetoothLeDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new BluetoothLeLabSession(host, port, timeoutMs);
+            session = new BluetoothLeH4Session(host, port, timeoutMs);
+            session.reset();
             driverObject.log(DriverLogLevel.INFO,
-                    "Bluetooth LE GATT gateway lab connected to " + host + ":" + port
-                            + " (not BLE radio / SoftDevice / HCI)");
+                    "Bluetooth H4 HCI connected to " + host + ":" + port
+                            + " (not a BLE radio / not a full GATT client)");
         } catch (IOException e) {
-            session = null;
+            if (session != null) {
+                session.close();
+                session = null;
+            }
             throw new DriverException(
-                    "Bluetooth LE GATT gateway lab connect failed for " + host + ":" + port, e);
+                    "Bluetooth H4 HCI connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -116,10 +132,11 @@ public class BluetoothLeDeviceDriver implements DeviceDriver {
             BluetoothLePoint point = BluetoothLePoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                double value = session.readValue(point.wireToken());
-                driverObject.updateVariable(entry.getKey(), toRecord(point, value));
+                String bdAddr = session.readBdAddr();
+                driverObject.updateVariable(entry.getKey(), toRecord(point, bdAddr));
             } catch (IOException e) {
-                throw new DriverException("Bluetooth LE GATT gateway lab read failed for " + mapping, e);
+                throw new DriverException(
+                        "Bluetooth H4 HCI read failed for " + mapping, e);
             }
         }
     }
@@ -128,45 +145,17 @@ public class BluetoothLeDeviceDriver implements DeviceDriver {
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         ensureConnected();
         BluetoothLePoint point = points.get(pointId);
-        if (point == null) {
-            throw new DriverException("Unknown point: " + pointId + " (read it first)");
-        }
-        if (!point.writable()) {
-            throw new DriverException(
-                    "Bluetooth LE GATT gateway lab rejects writes for RSSI point: " + point.display());
-        }
-        double numeric = extractNumeric(value);
-        try {
-            session.writeValue(point.wireToken(), numeric);
-            driverObject.updateVariable(pointId, toRecord(point, numeric));
-        } catch (IOException e) {
-            throw new DriverException("Bluetooth LE GATT gateway lab write failed for " + pointId, e);
-        }
+        String display = point != null ? point.display() : pointId;
+        throw new DriverException(
+                "Bluetooth H4 HCI rejects writes (not a full GATT client): " + display);
     }
 
-    private static DataRecord toRecord(BluetoothLePoint point, double value) {
+    private static DataRecord toRecord(BluetoothLePoint point, String bdAddr) {
         return DataRecord.single(VALUE_SCHEMA, Map.of(
-                "value", value,
-                "kind", point.kind() == BluetoothLePoint.Kind.GATT_CHAR ? "char" : "rssi",
+                "value", bdAddr.toUpperCase(Locale.ROOT),
+                "kind", "bd_addr",
                 "point", point.display()
         ));
-    }
-
-    private static double extractNumeric(DataRecord value) {
-        if (value == null || value.rowCount() == 0) {
-            throw new IllegalArgumentException("Bluetooth LE write requires a value");
-        }
-        Map<String, Object> row = value.firstRow();
-        for (String key : List.of("value", "raw", "char")) {
-            Object candidate = row.get(key);
-            if (candidate instanceof Number number) {
-                return number.doubleValue();
-            }
-            if (candidate != null) {
-                return Double.parseDouble(String.valueOf(candidate).trim());
-            }
-        }
-        throw new IllegalArgumentException("Bluetooth LE write requires numeric value/raw/char");
     }
 
     private void ensureConnected() throws DriverException {

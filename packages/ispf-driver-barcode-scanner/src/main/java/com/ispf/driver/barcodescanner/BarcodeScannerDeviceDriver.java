@@ -14,19 +14,17 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Barcode / QR scanner driver — newline-delimited ASCII scans over a raw TCP socket.
+ * Barcode / QR scanner driver — newline-terminated scan stream over a raw TCP socket.
  * <p>
  * Point mapping is a logical channel name ({@code last}, {@code scan}, or any id).
  * {@code readPoints} returns the most recent complete scan line for each point.
- * {@code writePoint} sends a lab trigger / ACK command built from the mapping
- * ({@code TRIGGER}, {@code BEEP}) or the record {@code value} field when present.
+ * {@code writePoint} sends the record {@code value} followed by {@code \r\n}.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only; not a vendor SDK wrapper.
  */
@@ -41,7 +39,7 @@ public class BarcodeScannerDeviceDriver implements DeviceDriver {
             "barcode-scanner",
             "Barcode scanner Driver",
             "0.1.0",
-            "TCP newline barcode/QR scanner: last-scan reads, TRIGGER/BEEP writes",
+            "TCP newline-terminated scan stream: last-scan reads, value+CRLF writes",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -157,27 +155,22 @@ public class BarcodeScannerDeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         ensureConnected();
-        String channel = channels.getOrDefault(pointId, pointId);
-        String command = resolveWriteCommand(channel, value);
+        String payload = extractValue(value);
         synchronized (writeLock) {
             try {
-                writeLine(out, command);
+                writeLine(out, payload);
             } catch (IOException e) {
-                throw new DriverException("Barcode scanner write failed (" + command + ")", e);
+                throw new DriverException("Barcode scanner write failed", e);
             }
         }
     }
 
-    private static String resolveWriteCommand(String channel, DataRecord value) {
-        Object raw = value == null ? null : value.firstRow().get("value");
-        if (raw != null && !String.valueOf(raw).isBlank()) {
-            return String.valueOf(raw).trim();
+    private static String extractValue(DataRecord value) {
+        if (value == null || value.rowCount() == 0) {
+            return "";
         }
-        String upper = channel.toUpperCase(Locale.ROOT);
-        if (upper.contains("BEEP")) {
-            return "BEEP";
-        }
-        return "TRIGGER";
+        Object raw = value.firstRow().get("value");
+        return raw == null ? "" : String.valueOf(raw);
     }
 
     private void readLoop() {

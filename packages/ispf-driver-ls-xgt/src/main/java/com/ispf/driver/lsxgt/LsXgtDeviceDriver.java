@@ -23,32 +23,30 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * LS Electric XGT FEnet <strong>lab subset</strong> driver — binary framing over TCP (default port 2004).
+ * LS Electric XGT dedicated protocol driver — binary framing over TCP (default port 2004).
  * <p>
- * This is an honest <strong>XGT-lab</strong> codec, not a certified LS FEnet stack. Frames use the
- * publicly known company-header magic {@code LSIS-XGT\0} plus a simplified application body
- * (invoke id, command, device type, address, count, optional payload). Proprietary FEnet command
- * layouts beyond this subset are intentionally omitted.
+ * This is an XGT dedicated read over TCP, not a certified FEnet stack. Frames use the company
+ * header {@code LSIS-XGT} plus two zero bytes, then PLC/CPU info, source-of-frame, invoke id,
+ * instruction length, slot, and BCC (sum of header bytes 0..18 modulo 256).
  * <p>
- * Frame (little-endian multi-byte fields):
- * <pre>
- *   0..9   magic "LSIS-XGT\0" (10 bytes)
- *   10..11 invokeId (uint16 LE)
- *   12     command: 0x01 READ, 0x02 WRITE
- *   13     deviceType: 0x01 DW, 0x02 MW, 0x03 MX
- *   14..17 address (uint32 LE)
- *   18..19 count (uint16 LE) — number of 16-bit words (MX always 1)
- *   20..   WRITE request / READ response: count × uint16 LE word values
- * </pre>
+ * Read instruction (little-endian): command {@code 0x0054}, data type word {@code 0x0002}
+ * (bit {@code 0x0000} for MX), reserved 0, block count, then per block variable length + ASCII
+ * name ({@code %DW0}, {@code %MW10}, {@code %MX0}). Write uses command {@code 0x0058} with the
+ * same variable naming and a trailing data-size + payload.
+ * <p>
  * Point mapping: {@code %DW100}, {@code DW100}, {@code %MW10}, {@code %MX0} — see {@link LsXgtPoint}.
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only; no PLC4X, no vendor SDK, no GPL.
  */
 public class LsXgtDeviceDriver implements DeviceDriver {
 
-    static final byte[] MAGIC = "LSIS-XGT\0\0".getBytes(StandardCharsets.US_ASCII); // 10-byte company header
+    static final byte[] COMPANY_ID = "LSIS-XGT\0\0".getBytes(StandardCharsets.US_ASCII);
     static final int HEADER_LEN = 20;
-    static final byte CMD_READ = 0x01;
-    static final byte CMD_WRITE = 0x02;
+    static final int CMD_READ = 0x0054;
+    static final int CMD_WRITE = 0x0058;
+    static final int DATA_TYPE_BIT = 0x0000;
+    static final int DATA_TYPE_WORD = 0x0002;
+    static final byte SOF_REQUEST = 0x33;
+    static final byte SOF_RESPONSE = 0x11;
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("lsXgtValue")
             .field("value", FieldType.STRING)
@@ -61,7 +59,7 @@ public class LsXgtDeviceDriver implements DeviceDriver {
             "ls-xgt",
             "LS XGT Driver",
             "0.1.0",
-            "XGT-lab binary read/write for %DW/%MW/%MX over TCP (not certified FEnet)",
+            "XGT dedicated read over TCP (not a certified FEnet stack)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -106,7 +104,7 @@ public class LsXgtDeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         connected = true;
-        driverObject.log(DriverLogLevel.INFO, "LS XGT-lab ready for " + host + ":" + port);
+        driverObject.log(DriverLogLevel.INFO, "LS XGT dedicated ready for " + host + ":" + port);
     }
 
     @Override
@@ -153,19 +151,15 @@ public class LsXgtDeviceDriver implements DeviceDriver {
     }
 
     private DataRecord readDevice(LsXgtPoint point) throws DriverException {
-        byte[] request = buildHeader(CMD_READ, point, invokeId.incrementAndGet() & 0xFFFF);
+        byte[] request = encodeRead(point, invokeId.incrementAndGet() & 0xFFFF);
         byte[] response = transact(request);
-        validateHeader(response, CMD_READ, point);
-        if (response.length < HEADER_LEN + point.count() * 2) {
-            throw new DriverException("Truncated XGT-lab read payload");
-        }
+        short[] words = decodeReadResponse(response, point);
         StringBuilder sb = new StringBuilder();
-        ByteBuffer data = ByteBuffer.wrap(response, HEADER_LEN, point.count() * 2).order(ByteOrder.LITTLE_ENDIAN);
-        for (int i = 0; i < point.count(); i++) {
+        for (int i = 0; i < words.length; i++) {
             if (i > 0) {
                 sb.append(',');
             }
-            sb.append(data.getShort() & 0xFFFF);
+            sb.append(words[i] & 0xFFFF);
         }
         return DataRecord.single(VALUE_SCHEMA, Map.of(
                 "value", sb.toString(),
@@ -177,37 +171,139 @@ public class LsXgtDeviceDriver implements DeviceDriver {
 
     private void writeDevice(LsXgtPoint point, int word) throws DriverException {
         LsXgtPoint single = new LsXgtPoint(point.deviceType(), point.address(), 1);
-        ByteBuffer request = ByteBuffer.allocate(HEADER_LEN + 2).order(ByteOrder.LITTLE_ENDIAN);
-        request.put(buildHeader(CMD_WRITE, single, invokeId.incrementAndGet() & 0xFFFF));
-        request.putShort((short) (word & 0xFFFF));
-        byte[] response = transact(request.array());
-        validateHeader(response, CMD_WRITE, single);
+        byte[] request = encodeWrite(single, invokeId.incrementAndGet() & 0xFFFF, word);
+        byte[] response = transact(request);
+        decodeWriteResponse(response);
     }
 
-    static byte[] buildHeader(byte command, LsXgtPoint point, int invoke) {
-        ByteBuffer buf = ByteBuffer.allocate(HEADER_LEN).order(ByteOrder.LITTLE_ENDIAN);
-        buf.put(MAGIC);
+    /**
+     * Encodes an XGT dedicated individual read for the given point and invoke id.
+     */
+    static byte[] encodeRead(LsXgtPoint point, int invoke) {
+        int dataType = point.deviceType() == LsXgtPoint.DeviceType.MX ? DATA_TYPE_BIT : DATA_TYPE_WORD;
+        int blocks = point.count();
+        int instrLen = 8; // command + type + reserved + block count
+        byte[][] names = new byte[blocks][];
+        for (int i = 0; i < blocks; i++) {
+            names[i] = point.variableName(i).getBytes(StandardCharsets.US_ASCII);
+            instrLen += 2 + names[i].length;
+        }
+        ByteBuffer instr = ByteBuffer.allocate(instrLen).order(ByteOrder.LITTLE_ENDIAN);
+        instr.putShort((short) CMD_READ);
+        instr.putShort((short) dataType);
+        instr.putShort((short) 0);
+        instr.putShort((short) blocks);
+        for (byte[] name : names) {
+            instr.putShort((short) name.length);
+            instr.put(name);
+        }
+        return wrapFrame(instr.array(), invoke);
+    }
+
+    /**
+     * Encodes an XGT dedicated individual write (one word/bit) for the given point.
+     */
+    static byte[] encodeWrite(LsXgtPoint point, int invoke, int word) {
+        int dataType = point.deviceType() == LsXgtPoint.DeviceType.MX ? DATA_TYPE_BIT : DATA_TYPE_WORD;
+        byte[] name = point.variableName(0).getBytes(StandardCharsets.US_ASCII);
+        int dataBytes = dataType == DATA_TYPE_BIT ? 1 : 2;
+        int instrLen = 8 + 2 + name.length + 2 + dataBytes;
+        ByteBuffer instr = ByteBuffer.allocate(instrLen).order(ByteOrder.LITTLE_ENDIAN);
+        instr.putShort((short) CMD_WRITE);
+        instr.putShort((short) dataType);
+        instr.putShort((short) 0);
+        instr.putShort((short) 1);
+        instr.putShort((short) name.length);
+        instr.put(name);
+        instr.putShort((short) dataBytes);
+        if (dataType == DATA_TYPE_BIT) {
+            instr.put((byte) (word & 0x01));
+        } else {
+            instr.putShort((short) (word & 0xFFFF));
+        }
+        return wrapFrame(instr.array(), invoke);
+    }
+
+    static byte[] wrapFrame(byte[] instruction, int invoke) {
+        ByteBuffer buf = ByteBuffer.allocate(HEADER_LEN + instruction.length).order(ByteOrder.LITTLE_ENDIAN);
+        buf.put(COMPANY_ID);
+        buf.putShort((short) 0); // PLC info
+        buf.put((byte) 0); // CPU info
+        buf.put(SOF_REQUEST);
         buf.putShort((short) (invoke & 0xFFFF));
-        buf.put(command);
-        buf.put(point.deviceType().code());
-        buf.putInt(point.address());
-        buf.putShort((short) point.count());
+        buf.putShort((short) instruction.length);
+        buf.put((byte) 0); // slot
+        int bcc = 0;
+        byte[] soFar = buf.array();
+        for (int i = 0; i < 19; i++) {
+            bcc = (bcc + (soFar[i] & 0xFF)) & 0xFF;
+        }
+        buf.put((byte) bcc);
+        buf.put(instruction);
         return buf.array();
     }
 
-    private void validateHeader(byte[] frame, byte expectedCommand, LsXgtPoint point) throws DriverException {
+    static short[] decodeReadResponse(byte[] frame, LsXgtPoint point) throws DriverException {
+        ByteBuffer body = instructionBody(frame, CMD_READ);
+        int dataType = body.getShort() & 0xFFFF;
+        int error = body.getShort() & 0xFFFF;
+        if (error != 0) {
+            throw new DriverException("XGT dedicated read error status " + error);
+        }
+        int blocks = body.getShort() & 0xFFFF;
+        if (blocks != point.count()) {
+            throw new DriverException("XGT dedicated read block count mismatch");
+        }
+        short[] words = new short[blocks];
+        for (int i = 0; i < blocks; i++) {
+            int dataSize = body.getShort() & 0xFFFF;
+            if (dataType == DATA_TYPE_BIT) {
+                if (dataSize < 1 || body.remaining() < dataSize) {
+                    throw new DriverException("Truncated XGT dedicated bit payload");
+                }
+                words[i] = (short) (body.get() & 0x01);
+                for (int skip = 1; skip < dataSize; skip++) {
+                    body.get();
+                }
+            } else {
+                if (dataSize < 2 || body.remaining() < dataSize) {
+                    throw new DriverException("Truncated XGT dedicated word payload");
+                }
+                words[i] = body.getShort();
+                for (int skip = 2; skip < dataSize; skip++) {
+                    body.get();
+                }
+            }
+        }
+        return words;
+    }
+
+    static void decodeWriteResponse(byte[] frame) throws DriverException {
+        ByteBuffer body = instructionBody(frame, CMD_WRITE);
+        body.getShort(); // data type
+        int error = body.getShort() & 0xFFFF;
+        if (error != 0) {
+            throw new DriverException("XGT dedicated write error status " + error);
+        }
+    }
+
+    private static ByteBuffer instructionBody(byte[] frame, int expectedCommand) throws DriverException {
         if (frame.length < HEADER_LEN) {
-            throw new DriverException("Truncated XGT-lab header");
+            throw new DriverException("Truncated XGT dedicated header");
         }
-        if (!Arrays.equals(Arrays.copyOf(frame, MAGIC.length), MAGIC)) {
-            throw new DriverException("Invalid XGT-lab magic");
+        if (!Arrays.equals(Arrays.copyOf(frame, COMPANY_ID.length), COMPANY_ID)) {
+            throw new DriverException("Invalid XGT dedicated company id");
         }
-        if (frame[12] != expectedCommand) {
-            throw new DriverException("Unexpected XGT-lab command in response");
+        int instrLen = (frame[16] & 0xFF) | ((frame[17] & 0xFF) << 8);
+        if (frame.length < HEADER_LEN + instrLen) {
+            throw new DriverException("Truncated XGT dedicated instruction");
         }
-        if (frame[13] != point.deviceType().code()) {
-            throw new DriverException("Unexpected XGT-lab device type in response");
+        ByteBuffer body = ByteBuffer.wrap(frame, HEADER_LEN, instrLen).order(ByteOrder.LITTLE_ENDIAN);
+        int command = body.getShort() & 0xFFFF;
+        if (command != expectedCommand) {
+            throw new DriverException("Unexpected XGT dedicated command in response");
         }
+        return body;
     }
 
     private byte[] transact(byte[] request) throws DriverException {
@@ -221,21 +317,19 @@ public class LsXgtDeviceDriver implements DeviceDriver {
 
             byte[] header = in.readNBytes(HEADER_LEN);
             if (header.length < HEADER_LEN) {
-                throw new IOException("Incomplete XGT-lab header");
+                throw new IOException("Incomplete XGT dedicated header");
             }
-            int count = (header[18] & 0xFF) | ((header[19] & 0xFF) << 8);
-            byte command = header[12];
-            int payloadLen = command == CMD_READ ? count * 2 : 0;
-            byte[] payload = payloadLen > 0 ? in.readNBytes(payloadLen) : new byte[0];
-            if (payload.length < payloadLen) {
-                throw new IOException("Truncated XGT-lab payload");
+            int instrLen = (header[16] & 0xFF) | ((header[17] & 0xFF) << 8);
+            byte[] instruction = instrLen > 0 ? in.readNBytes(instrLen) : new byte[0];
+            if (instruction.length < instrLen) {
+                throw new IOException("Truncated XGT dedicated instruction");
             }
-            byte[] response = new byte[HEADER_LEN + payload.length];
+            byte[] response = new byte[HEADER_LEN + instruction.length];
             System.arraycopy(header, 0, response, 0, HEADER_LEN);
-            System.arraycopy(payload, 0, response, HEADER_LEN, payload.length);
+            System.arraycopy(instruction, 0, response, HEADER_LEN, instruction.length);
             return response;
         } catch (IOException e) {
-            throw new DriverException("LS XGT-lab I/O failed for " + host + ":" + port, e);
+            throw new DriverException("LS XGT dedicated I/O failed for " + host + ":" + port, e);
         }
     }
 

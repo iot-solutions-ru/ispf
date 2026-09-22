@@ -18,6 +18,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -28,9 +29,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CameraAiDeviceDriverTest {
+
+    /** Handwritten exact /infer GET (not produced by calling an encoder helper as the source of truth). */
+    private static final String INFER_GET_LITERAL =
+            "GET /infer HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n";
 
     private CameraAiDeviceDriver driver;
     private FakeInferenceServer server;
@@ -48,11 +54,19 @@ class CameraAiDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionReadWrite() {
+    void inferGetRequestMatchesHandwrittenLiteral() {
+        assertEquals(INFER_GET_LITERAL, CameraAiDeviceDriver.buildInferGetRequest("127.0.0.1"));
+    }
+
+    @Test
+    void metadataIsProductionReadWriteWithoutLab() {
         driver = new CameraAiDeviceDriver();
         assertEquals("camera-ai", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("http/1.1"));
+        assertFalse(description.contains("lab"));
     }
 
     @Test
@@ -71,6 +85,7 @@ class CameraAiDeviceDriverTest {
         assertTrue(driver.isConnected());
 
         driver.readPoints(Map.of("det", "/infer"));
+        assertEquals(INFER_GET_LITERAL, server.lastRawRequest());
         assertEquals("{\"label\":\"box\",\"score\":0.91}", object.variables.get("det").firstRow().get("value"));
         assertEquals("200", object.variables.get("det").firstRow().get("status"));
 
@@ -91,6 +106,7 @@ class CameraAiDeviceDriverTest {
         });
         private final AtomicReference<String> lastMethod = new AtomicReference<>("");
         private final AtomicReference<String> lastBody = new AtomicReference<>("");
+        private final AtomicReference<String> lastRawRequest = new AtomicReference<>("");
 
         FakeInferenceServer() throws IOException {
             serverSocket = new ServerSocket();
@@ -107,6 +123,10 @@ class CameraAiDeviceDriverTest {
 
         String lastBody() {
             return lastBody.get();
+        }
+
+        String lastRawRequest() {
+            return lastRawRequest.get();
         }
 
         void start() {
@@ -129,12 +149,15 @@ class CameraAiDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 String raw = readRequest(in);
+                lastRawRequest.set(raw.contains("\r\n\r\n")
+                        ? raw.substring(0, raw.indexOf("\r\n\r\n") + 4)
+                        : raw);
                 String[] lines = raw.split("\r\n");
                 String[] requestLine = lines[0].split("\\s+");
                 lastMethod.set(requestLine[0]);
                 int contentLength = 0;
                 for (String line : lines) {
-                    if (line.toLowerCase().startsWith("content-length:")) {
+                    if (line.toLowerCase(Locale.ROOT).startsWith("content-length:")) {
                         contentLength = Integer.parseInt(line.substring(15).trim());
                     }
                 }
@@ -143,7 +166,7 @@ class CameraAiDeviceDriverTest {
                         ? raw.substring(headerEnd + 4)
                         : "";
                 if (body.length() < contentLength) {
-                    // already included in readRequest for lab sizes
+                    // body already drained in readRequest for typical sizes
                 }
                 lastBody.set(body.trim());
                 String responseBody = "GET".equals(requestLine[0])
@@ -162,7 +185,6 @@ class CameraAiDeviceDriverTest {
         private static String readRequest(InputStream in) throws IOException {
             ByteArrayOutputStream buf = new ByteArrayOutputStream();
             byte[] tmp = new byte[512];
-            // read until headers end or timeout via available/read
             while (true) {
                 int n = in.read(tmp);
                 if (n < 0) {
@@ -174,7 +196,7 @@ class CameraAiDeviceDriverTest {
                 if (headerEnd >= 0) {
                     int contentLength = 0;
                     for (String line : soFar.substring(0, headerEnd).split("\r\n")) {
-                        if (line.toLowerCase().startsWith("content-length:")) {
+                        if (line.toLowerCase(Locale.ROOT).startsWith("content-length:")) {
                             contentLength = Integer.parseInt(line.substring(15).trim());
                         }
                     }
