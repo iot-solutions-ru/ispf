@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.ethercat.codec.EthercatCodec;
 import com.ispf.driver.ethercat.codec.EthercatSession;
@@ -44,7 +45,7 @@ public class EthercatDeviceDriver implements DeviceDriver {
                     "port", "34980",
                     "timeoutMs", "3000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

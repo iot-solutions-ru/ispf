@@ -48,7 +48,7 @@ class ControlnetDeviceDriverTest {
     void metadataDescribesCipOverTcp() {
         driver = new ControlnetDeviceDriver();
         assertEquals("controlnet", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
         assertTrue(description.contains("cip") || description.contains("get_attribute"));
         assertFalse(description.contains("lab"));

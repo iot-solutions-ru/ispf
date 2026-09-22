@@ -23,7 +23,7 @@
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-В `DriverProductionMatrix` — **138** драйверов **PRODUCTION** (OT Trust Waves 1–11: clean-room lab-кодеки, у каждого in-process loopback-тест; включая `cwmp` и notification-паки `email`/`sms`/`webhook` вне top-20), **24** **BETA** (`opc-da`, `opc-bridge`, `corba`, а также `icmp`, `smb`, `wmi` — понижены механическим критерием доказательности, см. ниже; плюс 18 lab-подмножеств, оставленных BETA по решению: `matter`, `isa100`, `lonworks`, `opc-ae`, `opc-hda`, `opcua-pubsub`, `codesys`, `fanuc-focas`, `ge-srtp`, `rockwell-csp`, `ansi-c12`, `eebus`, `pulsar`, `grpc`, `plcnext`, `hitachi-hidic`, `fuji-sph`, `toshiba-t-series`), каталожных **STUB**-пакетов не осталось (`protocol-stub-ids.json` пуст; `ispf-driver-stub-kit` — шаблон для новых протоколов). Многие lab-кодеки небольшие (часть паков < 300 строк вместе с тестом): метка **PRODUCTION** в реестре означает «lab-кодек + loopback-тест + документация», а не проверку в поле — см. колонку **`STUB_LAB`** в [driver-readiness](../evidence/ot-trust/driver-readiness.md). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Цифры сверяются тестом `DriverProductionMatrixTest.docsMaturityCountsMatchMatrix` по маркеру в английской версии.
+В `DriverProductionMatrix` — **114** драйверов **PRODUCTION** (OT Trust Waves 1–11: clean-room lab-кодеки, у каждого in-process loopback-тест; включая `cwmp` и notification-паки `email`/`sms`/`webhook` вне top-20), **48** **BETA** (`opc-da`, `opc-bridge`, `corba`, а также `icmp`, `smb`, `wmi` — понижены механическим критерием доказательности, см. ниже; плюс 18 lab-подмножеств и 24 TCP-шлюза полевой шины, оставленных BETA по решению, среди них `profinet`, `ethercat`, `iec61850`, `profibus`, `canopen`, `zigbee`, `bluetooth-le`), каталожных **STUB**-пакетов не осталось (`protocol-stub-ids.json` пуст; `ispf-driver-stub-kit` — шаблон для новых протоколов). Многие lab-кодеки небольшие (часть паков < 300 строк вместе с тестом): метка **PRODUCTION** в реестре означает «lab-кодек + loopback-тест + документация», а не проверку в поле — см. колонку **`STUB_LAB`** в [driver-readiness](../evidence/ot-trust/driver-readiness.md). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Цифры сверяются тестом `DriverProductionMatrixTest.docsMaturityCountsMatchMatrix` по маркеру в английской версии.
 
 > **Честность (BL-191):** оболочки и неполные стеки в реестре — **BETA**: `opc-da` / `opc-bridge` (оболочка + тесты парсера), `corba`. Бывшие каталожные заглушки (`iec61850`, `profinet`, `visa`, `scpi`, …) продвинуты в Waves 1–11 только на основании lab-кодеков и loopback-тестов и сохраняют аудит-метку **`STUB_LAB`** до полевого пилота. Метка **PRODUCTION** всё ещё ≠ ready-for-field; продвижение через [driver-promotion](driver-promotion.md). См. OT-измерение [competitive-scorecard](competitive-scorecard.md).
 
@@ -509,43 +509,43 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `amqp` | `ispf-driver-amqp` | STUB | Apache-2.0 | AMQP: AMQP 0-9-1 / 1.0 broker stub (stub TCP-доступности; codec пока не реализован) |
 | `ansi-c12` | `ispf-driver-ansi-c12` | BETA | Apache-2.0 | ANSI C12: lab subset, не полный C12.18/C12.22 |
 | `application` | `ispf-driver-application` | PRODUCTION | Apache-2.0 | Локальные shell/скрипты → переменные ISPF |
-| `as-interface` | `ispf-driver-as-interface` | STUB | Apache-2.0 | AS-Interface: AS-Interface master/gateway stub (stub TCP-доступности; codec пока не реализован) |
+| `as-interface` | `ispf-driver-as-interface` | BETA | Apache-2.0 | AS-Interface: AS-Interface master/gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `asterisk` | `ispf-driver-asterisk` | PRODUCTION | Apache-2.0 | Asterisk Manager Interface (AMI) |
 | `aws-iot-core` | `ispf-driver-aws-iot-core` | STUB | Apache-2.0 | AWS IoT Core: AWS IoT Core MQTT/HTTP stub (stub TCP-доступности; codec пока не реализован) |
 | `azure-iot-hub` | `ispf-driver-azure-iot-hub` | STUB | Apache-2.0 | Azure IoT Hub: Azure IoT Hub device/service stub (stub TCP-доступности; codec пока не реализован) |
 | `bacnet` | `ispf-driver-bacnet` | PRODUCTION | Apache-2.0 | BACnet/IP клиент (clean-room codec) |
-| `bacnet-mstp` | `ispf-driver-bacnet-mstp` | STUB | Apache-2.0 | BACnet MS/TP: BACnet MS/TP serial stub (BACnet/IP pack is separate) (stub TCP-доступности; codec пока не реализован) |
+| `bacnet-mstp` | `ispf-driver-bacnet-mstp` | BETA | Apache-2.0 | BACnet MS/TP: BACnet MS/TP serial stub (BACnet/IP pack is separate) (stub TCP-доступности; codec пока не реализован) |
 | `barcode-scanner` | `ispf-driver-barcode-scanner` | STUB | Apache-2.0 | Barcode scanner: Barcode/QR TCP/serial scanner stub (stub TCP-доступности; codec пока не реализован) |
 | `beckhoff-ads` | `ispf-driver-beckhoff-ads` | STUB | Apache-2.0 | Beckhoff ADS: Beckhoff TwinCAT ADS/AMS stub (stub TCP-доступности; codec пока не реализован) |
-| `bluetooth-le` | `ispf-driver-bluetooth-le` | STUB | Apache-2.0 | Bluetooth LE: Bluetooth Low Energy gateway stub (stub TCP-доступности; codec пока не реализован) |
+| `bluetooth-le` | `ispf-driver-bluetooth-le` | BETA | Apache-2.0 | Bluetooth LE: Bluetooth Low Energy gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `camera-ai` | `ispf-driver-camera-ai` | STUB | Apache-2.0 | Camera AI edge: Edge vision/AI inference endpoint stub (stub TCP-доступности; codec пока не реализован) |
-| `canbus-gateway` | `ispf-driver-canbus-gateway` | STUB | Apache-2.0 | CAN bus gateway: Generic CAN/CAN-FD TCP gateway stub (stub TCP-доступности; codec пока не реализован) |
-| `canopen` | `ispf-driver-canopen` | STUB | Apache-2.0 | CANopen: CANopen / CAN gateway stub (stub TCP-доступности; codec пока не реализован) |
-| `cc-link` | `ispf-driver-cc-link` | STUB | Apache-2.0 | CC-Link: Mitsubishi CC-Link field network stub (stub TCP-доступности; codec пока не реализован) |
-| `cc-link-ie` | `ispf-driver-cc-link-ie` | STUB | Apache-2.0 | CC-Link IE: Mitsubishi CC-Link IE Field/Control stub (stub TCP-доступности; codec пока не реализован) |
+| `canbus-gateway` | `ispf-driver-canbus-gateway` | BETA | Apache-2.0 | CAN bus gateway: Generic CAN/CAN-FD TCP gateway stub (stub TCP-доступности; codec пока не реализован) |
+| `canopen` | `ispf-driver-canopen` | BETA | Apache-2.0 | CANopen: CANopen / CAN gateway stub (stub TCP-доступности; codec пока не реализован) |
+| `cc-link` | `ispf-driver-cc-link` | BETA | Apache-2.0 | CC-Link: Mitsubishi CC-Link field network stub (stub TCP-доступности; codec пока не реализован) |
+| `cc-link-ie` | `ispf-driver-cc-link-ie` | BETA | Apache-2.0 | CC-Link IE: Mitsubishi CC-Link IE Field/Control stub (stub TCP-доступности; codec пока не реализован) |
 | `coap` | `ispf-driver-coap` | PRODUCTION | Apache-2.0 | CoAP GET клиент (только чтение) |
 | `codesys` | `ispf-driver-codesys` | BETA | Apache-2.0 | CODESYS Gateway: lab subset, не сетевой протокол CODESYS |
-| `controlnet` | `ispf-driver-controlnet` | STUB | Apache-2.0 | ControlNet: ODVA ControlNet gateway stub (stub TCP-доступности; codec пока не реализован) |
+| `controlnet` | `ispf-driver-controlnet` | BETA | Apache-2.0 | ControlNet: ODVA ControlNet gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `corba` | `ispf-driver-corba` | BETA | Apache-2.0 | CORBA IIOP TCP shell (без ORB в современном JDK) |
 | `cwmp` | `ispf-driver-cwmp` | PRODUCTION | Apache-2.0 | TR-069/CWMP Inform + Get/SetParameterValues |
-| `dali` | `ispf-driver-dali` | STUB | Apache-2.0 | DALI: DALI lighting gateway stub (stub TCP-доступности; codec пока не реализован) |
+| `dali` | `ispf-driver-dali` | BETA | Apache-2.0 | DALI: DALI lighting gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `delta-dvp` | `ispf-driver-delta-dvp` | STUB | Apache-2.0 | Delta DVP: Delta DVP / AS series PLC stub (stub TCP-доступности; codec пока не реализован) |
-| `device-net` | `ispf-driver-device-net` | STUB | Apache-2.0 | DeviceNet: ODVA DeviceNet gateway stub (stub TCP-доступности; codec пока не реализован) |
+| `device-net` | `ispf-driver-device-net` | BETA | Apache-2.0 | DeviceNet: ODVA DeviceNet gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `dhcp` | `ispf-driver-dhcp` | PRODUCTION | Apache-2.0 | DHCP discover probe |
 | `dlms` | `ispf-driver-dlms` | PRODUCTION | Apache-2.0 | DLMS/COSEM master счётчиков (TCP WRAPPER) |
 | `dnp3` | `ispf-driver-dnp3` | PRODUCTION | Apache-2.0 | DNP3 TCP master — class poll/read (запись не реализована) |
 | `eebus` | `ispf-driver-eebus` | BETA | Apache-2.0 | EEBUS: lab subset, не SHIP/SPINE |
 | `email` | `ispf-driver-email` | PRODUCTION | Apache-2.0 | Исходящая почта через HTTP relay |
 | `enocean` | `ispf-driver-enocean` | STUB | Apache-2.0 | EnOcean: EnOcean ESP3 / USB gateway stub (stub TCP-доступности; codec пока не реализован) |
-| `ethercat` | `ispf-driver-ethercat` | STUB | Apache-2.0 | EtherCAT: EtherCAT master/gateway stub (stub TCP-доступности; codec пока не реализован) |
+| `ethercat` | `ispf-driver-ethercat` | BETA | Apache-2.0 | EtherCAT: EtherCAT master/gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `ethernet-ip` | `ispf-driver-ethernet-ip` | PRODUCTION | Apache-2.0 | EtherNet/IP CIP UCMM Read/Write Tag (класс Allen-Bradley) |
-| `ethernet-powerlink` | `ispf-driver-ethernet-powerlink` | STUB | Apache-2.0 | Ethernet POWERLINK: Ethernet POWERLINK stub (stub TCP-доступности; codec пока не реализован) |
+| `ethernet-powerlink` | `ispf-driver-ethernet-powerlink` | BETA | Apache-2.0 | Ethernet POWERLINK: Ethernet POWERLINK stub (stub TCP-доступности; codec пока не реализован) |
 | `fanuc-focas` | `ispf-driver-fanuc-focas` | BETA | Apache-2.0 | Fanuc FOCAS: lab subset, не библиотека FOCAS |
 | `fatek` | `ispf-driver-fatek` | STUB | Apache-2.0 | Fatek FACON: Fatek FACON protocol stub (stub TCP-доступности; codec пока не реализован) |
 | `file` | `ispf-driver-file` | PRODUCTION | Apache-2.0 | Опрос локального файла (метаданные/содержимое) |
 | `flexible` | `ispf-driver-flexible` | PRODUCTION | Apache-2.0 | Гибкий TCP/UDP poller с настраиваемым framing |
 | `folder` | `ispf-driver-folder` | PRODUCTION | Apache-2.0 | Опрос содержимого локальной директории |
-| `foundation-fieldbus` | `ispf-driver-foundation-fieldbus` | STUB | Apache-2.0 | Foundation Fieldbus: Foundation Fieldbus H1/HSE stub (stub TCP-доступности; codec пока не реализован) |
+| `foundation-fieldbus` | `ispf-driver-foundation-fieldbus` | BETA | Apache-2.0 | Foundation Fieldbus: Foundation Fieldbus H1/HSE stub (stub TCP-доступности; codec пока не реализован) |
 | `fuji-sph` | `ispf-driver-fuji-sph` | BETA | Apache-2.0 | Fuji SPH: lab subset, не MICREX-SX |
 | `ge-srtp` | `ispf-driver-ge-srtp` | BETA | Apache-2.0 | GE SRTP: lab subset, не полный SRTP |
 | `genicam` | `ispf-driver-genicam` | STUB | Apache-2.0 | GenICam: GenICam / GigE Vision stub (stub TCP-доступности; codec пока не реализован) |
@@ -565,21 +565,21 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `iec103` | `ispf-driver-iec103` | STUB | Apache-2.0 | IEC 60870-5-103: IEC 60870-5-103 protection stub (stub TCP-доступности; codec пока не реализован) |
 | `iec104` | `ispf-driver-iec104` | PRODUCTION | Apache-2.0 | IEC 60870-5-104 клиент (телемеханика) |
 | `iec104-server` | `ispf-driver-iec104-server` | PRODUCTION | Apache-2.0 | IEC 60870-5-104 сервер/slave |
-| `iec61850` | `ispf-driver-iec61850` | STUB | Apache-2.0 | IEC 61850 MMS: IEC 61850 MMS client stub (stub TCP-доступности; codec пока не реализован) |
-| `iec61850-goose` | `ispf-driver-iec61850-goose` | STUB | Apache-2.0 | IEC 61850 GOOSE: IEC 61850 GOOSE subscriber stub (stub TCP-доступности; codec пока не реализован) |
-| `iec61850-sv` | `ispf-driver-iec61850-sv` | STUB | Apache-2.0 | IEC 61850 Sampled Values: IEC 61850 Sampled Values stub (stub TCP-доступности; codec пока не реализован) |
+| `iec61850` | `ispf-driver-iec61850` | BETA | Apache-2.0 | IEC 61850 MMS: IEC 61850 MMS client stub (stub TCP-доступности; codec пока не реализован) |
+| `iec61850-goose` | `ispf-driver-iec61850-goose` | BETA | Apache-2.0 | IEC 61850 GOOSE: IEC 61850 GOOSE subscriber stub (stub TCP-доступности; codec пока не реализован) |
+| `iec61850-sv` | `ispf-driver-iec61850-sv` | BETA | Apache-2.0 | IEC 61850 Sampled Values: IEC 61850 Sampled Values stub (stub TCP-доступности; codec пока не реализован) |
 | `iec62056` | `ispf-driver-iec62056` | STUB | Apache-2.0 | IEC 62056: IEC 62056 DLMS companion / push stub (beyond existing DLMS pack) (stub TCP-доступности; codec пока не реализован) |
 | `ieee2030-5` | `ispf-driver-ieee2030-5` | STUB | Apache-2.0 | IEEE 2030.5: IEEE 2030.5 (SEP2) stub (stub TCP-доступности; codec пока не реализован) |
 | `imap` | `ispf-driver-imap` | PRODUCTION | Apache-2.0 | Опрос IMAP почтового ящика |
 | `ingress-sflow` | `ispf-driver-ingress-sflow` | PRODUCTION | Apache-2.0 | sFlow v5 UDP listener (сырой ingress) |
 | `ingress-snmp-trap` | `ispf-driver-ingress-snmp-trap` | PRODUCTION | Apache-2.0 | SNMP trap UDP listener (сырой ingress) |
 | `ingress-syslog` | `ispf-driver-ingress-syslog` | PRODUCTION | Apache-2.0 | Syslog UDP listener (сырой ingress) |
-| `interbus` | `ispf-driver-interbus` | STUB | Apache-2.0 | INTERBUS: INTERBUS fieldbus gateway stub (stub TCP-доступности; codec пока не реализован) |
-| `io-link` | `ispf-driver-io-link` | STUB | Apache-2.0 | IO-Link: IO-Link master REST/MQTT bridge stub (stub TCP-доступности; codec пока не реализован) |
+| `interbus` | `ispf-driver-interbus` | BETA | Apache-2.0 | INTERBUS: INTERBUS fieldbus gateway stub (stub TCP-доступности; codec пока не реализован) |
+| `io-link` | `ispf-driver-io-link` | BETA | Apache-2.0 | IO-Link: IO-Link master REST/MQTT bridge stub (stub TCP-доступности; codec пока не реализован) |
 | `ip-host` | `ispf-driver-ip-host` | PRODUCTION | Apache-2.0 | Мультипроверка хоста (PING/HTTP/TCP/DNS/SMTP/FTP) |
 | `ipmi` | `ispf-driver-ipmi` | PRODUCTION | Apache-2.0 | IPMI LAN BMC probe |
 | `isa100` | `ispf-driver-isa100` | BETA | Apache-2.0 | ISA100: lab gateway, не ISA100.11a |
-| `j1939` | `ispf-driver-j1939` | STUB | Apache-2.0 | SAE J1939: SAE J1939 vehicle network stub (stub TCP-доступности; codec пока не реализован) |
+| `j1939` | `ispf-driver-j1939` | BETA | Apache-2.0 | SAE J1939: SAE J1939 vehicle network stub (stub TCP-доступности; codec пока не реализован) |
 | `jdbc` | `ispf-driver-jdbc` | PRODUCTION | Apache-2.0 | SQL JDBC SELECT poll |
 | `jms` | `ispf-driver-jms` | PRODUCTION | Apache-2.0 | JMS клиент (класс ActiveMQ) |
 | `jmx` | `ispf-driver-jmx` | PRODUCTION | Apache-2.0 | JMX poll атрибутов MBean (local/remote) |
@@ -622,9 +622,9 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `panasonic-mewto` | `ispf-driver-panasonic-mewto` | STUB | Apache-2.0 | Panasonic MEWTOCOL: Panasonic MEWTOCOL-COM/DAT stub (stub TCP-доступности; codec пока не реализован) |
 | `plcnext` | `ispf-driver-plcnext` | BETA | Apache-2.0 | PLCnext: lab subset, не RSC/gRPC |
 | `pop3` | `ispf-driver-pop3` | PRODUCTION | Apache-2.0 | Опрос POP3 почтового ящика |
-| `profibus` | `ispf-driver-profibus` | STUB | Apache-2.0 | PROFIBUS: PROFIBUS DP/PA gateway stub (serial/fieldbus bridge required) (stub TCP-доступности; codec пока не реализован) |
-| `profibus-pa` | `ispf-driver-profibus-pa` | STUB | Apache-2.0 | PROFIBUS PA: PROFIBUS PA instrument network stub (stub TCP-доступности; codec пока не реализован) |
-| `profinet` | `ispf-driver-profinet` | STUB | Apache-2.0 | PROFINET IO: PROFINET IO controller/device stub (DCP/RPC not implemented) (stub TCP-доступности; codec пока не реализован) |
+| `profibus` | `ispf-driver-profibus` | BETA | Apache-2.0 | PROFIBUS: PROFIBUS DP/PA gateway stub (serial/fieldbus bridge required) (stub TCP-доступности; codec пока не реализован) |
+| `profibus-pa` | `ispf-driver-profibus-pa` | BETA | Apache-2.0 | PROFIBUS PA: PROFIBUS PA instrument network stub (stub TCP-доступности; codec пока не реализован) |
+| `profinet` | `ispf-driver-profinet` | BETA | Apache-2.0 | PROFINET IO: PROFINET DCP Identify over TCP; not RT/IRT (stub TCP-доступности; codec пока не реализован) |
 | `pulsar` | `ispf-driver-pulsar` | BETA | Apache-2.0 | Apache Pulsar: lab subset бинарного заголовка |
 | `radius` | `ispf-driver-radius` | PRODUCTION | Apache-2.0 | Проверка RADIUS authentication |
 | `redis` | `ispf-driver-redis` | STUB | Apache-2.0 | Redis: Redis key/stream telemetry stub (stub TCP-доступности; codec пока не реализован) |
@@ -660,13 +660,13 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `webhook` | `ispf-driver-webhook` | PRODUCTION | Apache-2.0 | Исходящие webhook POST JSON уведомления |
 | `websocket` | `ispf-driver-websocket` | STUB | Apache-2.0 | WebSocket: Generic WebSocket telemetry stub (stub TCP-доступности; codec пока не реализован) |
 | `weighbridge` | `ispf-driver-weighbridge` | STUB | Apache-2.0 | Weighbridge: Truck scale / weighbridge protocol stub (stub TCP-доступности; codec пока не реализован) |
-| `wirelesshart` | `ispf-driver-wirelesshart` | STUB | Apache-2.0 | WirelessHART: WirelessHART gateway stub (stub TCP-доступности; codec пока не реализован) |
+| `wirelesshart` | `ispf-driver-wirelesshart` | BETA | Apache-2.0 | WirelessHART: WirelessHART gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `wisun` | `ispf-driver-wisun` | STUB | Apache-2.0 | Wi-SUN: Wi-SUN FAN border router stub (stub TCP-доступности; codec пока не реализован) |
 | `wmbus` | `ispf-driver-wmbus` | STUB | Apache-2.0 | Wireless M-Bus: Wireless M-Bus (OMS) stub (stub TCP-доступности; codec пока не реализован) |
 | `wmi` | `ispf-driver-wmi` | BETA | Apache-2.0 | Windows WMI через PowerShell (только Windows) |
 | `xmpp` | `ispf-driver-xmpp` | PRODUCTION | Apache-2.0 | XMPP клиент (Smack) |
 | `yaskawa-memobus` | `ispf-driver-yaskawa-memobus` | STUB | Apache-2.0 | Yaskawa Memobus: Yaskawa Memobus/Modbus-family PLC stub (stub TCP-доступности; codec пока не реализован) |
-| `zigbee` | `ispf-driver-zigbee` | STUB | Apache-2.0 | Zigbee: Zigbee coordinator / ZCL stub (stub TCP-доступности; codec пока не реализован) |
+| `zigbee` | `ispf-driver-zigbee` | BETA | Apache-2.0 | Zigbee: Zigbee coordinator / ZCL stub (stub TCP-доступности; codec пока не реализован) |
 | `zwave` | `ispf-driver-zwave` | STUB | Apache-2.0 | Z-Wave: Z-Wave controller stub (stub TCP-доступности; codec пока не реализован) |
 
 Подробные конфиги базовых драйверов — в разделах ниже. Остальные следуют тому же шаблону: `driverConfigJson` + `driverPointMappingsJson`, см. `DriverMetadata` в модуле.

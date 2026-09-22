@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.zigbee.codec.AshCodec;
 import com.ispf.driver.zigbee.codec.AshSession;
@@ -43,7 +44,7 @@ public class ZigbeeDeviceDriver implements DeviceDriver {
                     "port", "17754",
                     "timeoutMs", "3000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read")
     );
 

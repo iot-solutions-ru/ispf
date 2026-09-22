@@ -23,11 +23,11 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-<!-- maturity-counts: production=138 beta=24 stub=0 -->
+<!-- maturity-counts: production=114 beta=48 stub=0 -->
 <!-- The numbers above are asserted by DriverProductionMatrixTest.docsMaturityCountsMatchMatrix; update both the marker and the sentence together. -->
-In `DriverProductionMatrix` — **138** drivers at **PRODUCTION** (OT Trust Waves 1–11 clean-room lab codecs, each with an in-process loopback test; includes `cwmp` / notification packs `email`/`sms`/`webhook` outside top-20), **24** at **BETA** (`opc-da`, `opc-bridge`, `corba`, plus `icmp`, `smb`, `wmi` — demoted by the mechanical evidence criterion, see below; plus 18 lab subsets kept BETA by decision: `matter`, `isa100`, `lonworks`, `opc-ae`, `opc-hda`, `opcua-pubsub`, `codesys`, `fanuc-focas`, `ge-srtp`, `rockwell-csp`, `ansi-c12`, `eebus`, `pulsar`, `grpc`, `plcnext`, `hitachi-hidic`, `fuji-sph`, `toshiba-t-series`), **0** catalog **STUB** packs left (`protocol-stub-ids.json` is empty; `ispf-driver-stub-kit` remains the template for new protocols). Many lab codecs are small (some packs < 300 LOC including the test) — registry **PRODUCTION** means "lab codec + loopback test + docs", **not** field-proven; see the audit **`STUB_LAB`** column in [driver-readiness](../evidence/ot-trust/driver-readiness.md) and the ready-for-field process below. Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Full 162-pack audit: [driver-readiness](../evidence/ot-trust/driver-readiness.md).
+In `DriverProductionMatrix` — **114** drivers at **PRODUCTION** (OT Trust Waves 1–11 clean-room lab codecs, each with an in-process loopback test; includes `cwmp` / notification packs `email`/`sms`/`webhook` outside top-20), **48** at **BETA** (`opc-da`, `opc-bridge`, `corba`, plus `icmp`, `smb`, `wmi` — demoted by the mechanical evidence criterion, see below; plus 18 lab subsets and 24 field-PHY TCP gateways kept BETA by decision, including `profinet`, `ethercat`, `iec61850`, `profibus`, `canopen`, `zigbee`, `bluetooth-le`), **0** catalog **STUB** packs left (`protocol-stub-ids.json` is empty; `ispf-driver-stub-kit` remains the template for new protocols). Many lab codecs are small (some packs < 300 LOC including the test) — registry **PRODUCTION** means "lab codec + loopback test + docs", **not** field-proven; see the audit **`STUB_LAB`** column in [driver-readiness](../evidence/ot-trust/driver-readiness.md) and the ready-for-field process below. Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Full 162-pack audit: [driver-readiness](../evidence/ot-trust/driver-readiness.md).
 
-> **Honesty (BL-191):** shells and incomplete stacks are **BETA** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests), `corba`, and `icmp` / `smb` / `wmi` (fail the evidence criterion). Eighteen further packs stay **BETA** by decision because the implementation is a lab subset of the published protocol, not the full stack.
+> **Honesty (BL-191):** shells and incomplete stacks are **BETA** in the registry — `opc-da` / `opc-bridge` (connectivity shell + parser tests), `corba`, and `icmp` / `smb` / `wmi` (fail the evidence criterion). Eighteen packs stay **BETA** because they are a lab subset. Twenty-four more stay **BETA** because the code carries a published frame over TCP and is not the field PHY (PROFINET RT/IRT, EtherCAT master, RS-485, CAN, 802.15.4).
 >
 > **Evidence criterion (mechanical, enforced by `DriverProductionMatrixTest.productionDriversMeetEvidenceCriterion`):** a PRODUCTION entry must have (1) ≥ 100 non-comment lines of driver main code, (2) a `*Driver*Test` class exercising the driver itself (not only a point parser), and (3) a verifiable peer — an interop-lab fixture in `deploy/driver-interop/docker-compose.yml`, an in-process emulated peer in the tests (loopback socket / mock server / embedded broker), or a transport-less driver (`virtual`, `file`, `folder`, `application`, `jdbc`, `odbc`, `flexible`). A BETA entry that satisfies the criterion must be listed in `DriverProductionMatrixTest.BETA_BY_DECISION` with a reason, otherwise the test asks for promotion. Rules live in `DriverMaturityEvidence`. Former catalog stubs (`iec61850`, `profinet`, `visa`, `scpi`, …) were promoted in OT Trust Waves 1–11 on the strength of lab codecs + loopback tests only; they keep the audit label **`STUB_LAB`** until a field pilot. Registry **PRODUCTION** still ≠ ready-for-field; promote via [driver-promotion](driver-promotion.md). See [competitive-scorecard](competitive-scorecard.md) OT dimension.
 
@@ -555,43 +555,43 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `amqp` | `ispf-driver-amqp` | STUB | Apache-2.0 | AMQP 0-9-1 / 1.0 broker stub |
 | `ansi-c12` | `ispf-driver-ansi-c12` | BETA | Apache-2.0 | ANSI C12.18/C12.22 meter lab subset |
 | `application` | `ispf-driver-application` | PRODUCTION | Apache-2.0 | Local shell/script execution mapped to variables |
-| `as-interface` | `ispf-driver-as-interface` | STUB | Apache-2.0 | AS-Interface master/gateway stub |
+| `as-interface` | `ispf-driver-as-interface` | BETA | Apache-2.0 | AS-Interface master/gateway stub |
 | `asterisk` | `ispf-driver-asterisk` | PRODUCTION | Apache-2.0 | Asterisk Manager Interface (AMI) commands |
 | `aws-iot-core` | `ispf-driver-aws-iot-core` | STUB | Apache-2.0 | AWS IoT Core MQTT/HTTP stub |
 | `azure-iot-hub` | `ispf-driver-azure-iot-hub` | STUB | Apache-2.0 | Azure IoT Hub device/service stub |
 | `bacnet` | `ispf-driver-bacnet` | PRODUCTION | Apache-2.0 | BACnet/IP client (clean-room codec) |
-| `bacnet-mstp` | `ispf-driver-bacnet-mstp` | STUB | Apache-2.0 | BACnet MS/TP serial stub (BACnet/IP pack is separate) |
+| `bacnet-mstp` | `ispf-driver-bacnet-mstp` | BETA | Apache-2.0 | BACnet MS/TP serial stub (BACnet/IP pack is separate) |
 | `barcode-scanner` | `ispf-driver-barcode-scanner` | STUB | Apache-2.0 | Barcode/QR TCP/serial scanner stub |
 | `beckhoff-ads` | `ispf-driver-beckhoff-ads` | STUB | Apache-2.0 | Beckhoff TwinCAT ADS/AMS stub |
-| `bluetooth-le` | `ispf-driver-bluetooth-le` | STUB | Apache-2.0 | Bluetooth Low Energy gateway stub |
+| `bluetooth-le` | `ispf-driver-bluetooth-le` | BETA | Apache-2.0 | Bluetooth Low Energy gateway stub |
 | `camera-ai` | `ispf-driver-camera-ai` | STUB | Apache-2.0 | Edge vision/AI inference endpoint stub |
-| `canbus-gateway` | `ispf-driver-canbus-gateway` | STUB | Apache-2.0 | Generic CAN/CAN-FD TCP gateway stub |
-| `canopen` | `ispf-driver-canopen` | STUB | Apache-2.0 | CANopen / CAN gateway stub |
-| `cc-link` | `ispf-driver-cc-link` | STUB | Apache-2.0 | Mitsubishi CC-Link field network stub |
-| `cc-link-ie` | `ispf-driver-cc-link-ie` | STUB | Apache-2.0 | Mitsubishi CC-Link IE Field/Control stub |
+| `canbus-gateway` | `ispf-driver-canbus-gateway` | BETA | Apache-2.0 | Generic CAN/CAN-FD TCP gateway stub |
+| `canopen` | `ispf-driver-canopen` | BETA | Apache-2.0 | CANopen / CAN gateway stub |
+| `cc-link` | `ispf-driver-cc-link` | BETA | Apache-2.0 | Mitsubishi CC-Link field network stub |
+| `cc-link-ie` | `ispf-driver-cc-link-ie` | BETA | Apache-2.0 | Mitsubishi CC-Link IE Field/Control stub |
 | `coap` | `ispf-driver-coap` | PRODUCTION | Apache-2.0 | CoAP GET client (read-only) |
 | `codesys` | `ispf-driver-codesys` | BETA | Apache-2.0 | CODESYS gateway / PLCHandler lab subset |
-| `controlnet` | `ispf-driver-controlnet` | STUB | Apache-2.0 | ODVA ControlNet gateway stub |
+| `controlnet` | `ispf-driver-controlnet` | BETA | Apache-2.0 | ODVA ControlNet gateway stub |
 | `corba` | `ispf-driver-corba` | BETA | Apache-2.0 | CORBA IIOP TCP reachability shell (no ORB in modern JDK) |
 | `cwmp` | `ispf-driver-cwmp` | PRODUCTION | Apache-2.0 | TR-069/CWMP Inform + Get/SetParameterValues |
-| `dali` | `ispf-driver-dali` | STUB | Apache-2.0 | DALI lighting gateway stub |
+| `dali` | `ispf-driver-dali` | BETA | Apache-2.0 | DALI lighting gateway stub |
 | `delta-dvp` | `ispf-driver-delta-dvp` | STUB | Apache-2.0 | Delta DVP / AS series PLC stub |
-| `device-net` | `ispf-driver-device-net` | STUB | Apache-2.0 | ODVA DeviceNet gateway stub |
+| `device-net` | `ispf-driver-device-net` | BETA | Apache-2.0 | ODVA DeviceNet gateway stub |
 | `dhcp` | `ispf-driver-dhcp` | PRODUCTION | Apache-2.0 | DHCP discover probe |
 | `dlms` | `ispf-driver-dlms` | PRODUCTION | Apache-2.0 | DLMS/COSEM meter master (TCP WRAPPER) |
 | `dnp3` | `ispf-driver-dnp3` | PRODUCTION | Apache-2.0 | DNP3 TCP master — class poll/read (write not implemented) |
 | `eebus` | `ispf-driver-eebus` | BETA | Apache-2.0 | EEBUS / SHIP energy management lab subset |
 | `email` | `ispf-driver-email` | PRODUCTION | Apache-2.0 | Outbound email via HTTP relay gateway |
 | `enocean` | `ispf-driver-enocean` | STUB | Apache-2.0 | EnOcean ESP3 / USB gateway stub |
-| `ethercat` | `ispf-driver-ethercat` | STUB | Apache-2.0 | EtherCAT master/gateway stub |
+| `ethercat` | `ispf-driver-ethercat` | BETA | Apache-2.0 | EtherCAT master/gateway stub |
 | `ethernet-ip` | `ispf-driver-ethernet-ip` | PRODUCTION | Apache-2.0 | EtherNet/IP CIP UCMM Read/Write Tag (Allen-Bradley class) |
-| `ethernet-powerlink` | `ispf-driver-ethernet-powerlink` | STUB | Apache-2.0 | Ethernet POWERLINK stub |
+| `ethernet-powerlink` | `ispf-driver-ethernet-powerlink` | BETA | Apache-2.0 | Ethernet POWERLINK stub |
 | `fanuc-focas` | `ispf-driver-fanuc-focas` | BETA | Apache-2.0 | Fanuc FOCAS CNC lab subset |
 | `fatek` | `ispf-driver-fatek` | STUB | Apache-2.0 | Fatek FACON protocol stub |
 | `file` | `ispf-driver-file` | PRODUCTION | Apache-2.0 | Local file metadata/content poll |
 | `flexible` | `ispf-driver-flexible` | PRODUCTION | Apache-2.0 | Flexible TCP/UDP custom framing poller |
 | `folder` | `ispf-driver-folder` | PRODUCTION | Apache-2.0 | Local directory listing poll |
-| `foundation-fieldbus` | `ispf-driver-foundation-fieldbus` | STUB | Apache-2.0 | Foundation Fieldbus H1/HSE stub |
+| `foundation-fieldbus` | `ispf-driver-foundation-fieldbus` | BETA | Apache-2.0 | Foundation Fieldbus H1/HSE stub |
 | `fuji-sph` | `ispf-driver-fuji-sph` | BETA | Apache-2.0 | Fuji Electric SPH / MICREX lab subset |
 | `ge-srtp` | `ispf-driver-ge-srtp` | BETA | Apache-2.0 | Emerson/GE Fanuc SRTP lab subset |
 | `genicam` | `ispf-driver-genicam` | STUB | Apache-2.0 | GenICam / GigE Vision stub |
@@ -611,21 +611,21 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `iec103` | `ispf-driver-iec103` | STUB | Apache-2.0 | IEC 60870-5-103 protection stub |
 | `iec104` | `ispf-driver-iec104` | PRODUCTION | Apache-2.0 | IEC 60870-5-104 client (telecontrol) |
 | `iec104-server` | `ispf-driver-iec104-server` | PRODUCTION | Apache-2.0 | IEC 60870-5-104 server/slave |
-| `iec61850` | `ispf-driver-iec61850` | STUB | Apache-2.0 | IEC 61850 MMS client stub |
-| `iec61850-goose` | `ispf-driver-iec61850-goose` | STUB | Apache-2.0 | IEC 61850 GOOSE subscriber stub |
-| `iec61850-sv` | `ispf-driver-iec61850-sv` | STUB | Apache-2.0 | IEC 61850 Sampled Values stub |
+| `iec61850` | `ispf-driver-iec61850` | BETA | Apache-2.0 | IEC 61850 MMS client stub |
+| `iec61850-goose` | `ispf-driver-iec61850-goose` | BETA | Apache-2.0 | IEC 61850 GOOSE subscriber stub |
+| `iec61850-sv` | `ispf-driver-iec61850-sv` | BETA | Apache-2.0 | IEC 61850 Sampled Values stub |
 | `iec62056` | `ispf-driver-iec62056` | STUB | Apache-2.0 | IEC 62056 DLMS companion / push stub (beyond existing DLMS pack) |
 | `ieee2030-5` | `ispf-driver-ieee2030-5` | STUB | Apache-2.0 | IEEE 2030.5 (SEP2) stub |
 | `imap` | `ispf-driver-imap` | PRODUCTION | Apache-2.0 | IMAP mailbox poll |
 | `ingress-sflow` | `ispf-driver-ingress-sflow` | PRODUCTION | Apache-2.0 | sFlow v5 UDP listener (raw capture ingress) |
 | `ingress-snmp-trap` | `ispf-driver-ingress-snmp-trap` | PRODUCTION | Apache-2.0 | SNMP trap UDP listener (raw capture ingress) |
 | `ingress-syslog` | `ispf-driver-ingress-syslog` | PRODUCTION | Apache-2.0 | Syslog UDP listener (raw capture ingress) |
-| `interbus` | `ispf-driver-interbus` | STUB | Apache-2.0 | INTERBUS fieldbus gateway stub |
-| `io-link` | `ispf-driver-io-link` | STUB | Apache-2.0 | IO-Link master REST/MQTT bridge stub |
+| `interbus` | `ispf-driver-interbus` | BETA | Apache-2.0 | INTERBUS fieldbus gateway stub |
+| `io-link` | `ispf-driver-io-link` | BETA | Apache-2.0 | IO-Link master REST/MQTT bridge stub |
 | `ip-host` | `ispf-driver-ip-host` | PRODUCTION | Apache-2.0 | Multi-check host probe (PING/HTTP/TCP/DNS/SMTP/FTP) |
 | `ipmi` | `ispf-driver-ipmi` | PRODUCTION | Apache-2.0 | IPMI LAN BMC probe |
 | `isa100` | `ispf-driver-isa100` | BETA | Apache-2.0 | ISA100 wireless gateway lab subset |
-| `j1939` | `ispf-driver-j1939` | STUB | Apache-2.0 | SAE J1939 vehicle network stub |
+| `j1939` | `ispf-driver-j1939` | BETA | Apache-2.0 | SAE J1939 vehicle network stub |
 | `jdbc` | `ispf-driver-jdbc` | PRODUCTION | Apache-2.0 | SQL JDBC SELECT poll |
 | `jms` | `ispf-driver-jms` | PRODUCTION | Apache-2.0 | JMS client (ActiveMQ-class) |
 | `jmx` | `ispf-driver-jmx` | PRODUCTION | Apache-2.0 | JMX local/remote MBean attribute poll |
@@ -668,9 +668,9 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `panasonic-mewto` | `ispf-driver-panasonic-mewto` | STUB | Apache-2.0 | Panasonic MEWTOCOL-COM/DAT stub |
 | `plcnext` | `ispf-driver-plcnext` | BETA | Apache-2.0 | Phoenix Contact PLCnext Engineer/RSC lab subset |
 | `pop3` | `ispf-driver-pop3` | PRODUCTION | Apache-2.0 | POP3 mailbox poll |
-| `profibus` | `ispf-driver-profibus` | STUB | Apache-2.0 | PROFIBUS DP/PA gateway stub (serial/fieldbus bridge required) |
-| `profibus-pa` | `ispf-driver-profibus-pa` | STUB | Apache-2.0 | PROFIBUS PA instrument network stub |
-| `profinet` | `ispf-driver-profinet` | STUB | Apache-2.0 | PROFINET IO controller/device stub (DCP/RPC not implemented) |
+| `profibus` | `ispf-driver-profibus` | BETA | Apache-2.0 | PROFIBUS DP/PA gateway stub (serial/fieldbus bridge required) |
+| `profibus-pa` | `ispf-driver-profibus-pa` | BETA | Apache-2.0 | PROFIBUS PA instrument network stub |
+| `profinet` | `ispf-driver-profinet` | BETA | Apache-2.0 | PROFINET DCP Identify over TCP; not RT/IRT |
 | `pulsar` | `ispf-driver-pulsar` | BETA | Apache-2.0 | Apache Pulsar client lab subset |
 | `radius` | `ispf-driver-radius` | PRODUCTION | Apache-2.0 | RADIUS authentication check |
 | `redis` | `ispf-driver-redis` | PRODUCTION | Apache-2.0 | Redis RESP GET/SET key/value telemetry |
@@ -706,13 +706,13 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `webhook` | `ispf-driver-webhook` | PRODUCTION | Apache-2.0 | Outbound webhook POST JSON notifications |
 | `websocket` | `ispf-driver-websocket` | STUB | Apache-2.0 | Generic WebSocket telemetry stub |
 | `weighbridge` | `ispf-driver-weighbridge` | STUB | Apache-2.0 | Truck scale / weighbridge protocol stub |
-| `wirelesshart` | `ispf-driver-wirelesshart` | STUB | Apache-2.0 | WirelessHART gateway stub |
+| `wirelesshart` | `ispf-driver-wirelesshart` | BETA | Apache-2.0 | WirelessHART gateway stub |
 | `wisun` | `ispf-driver-wisun` | STUB | Apache-2.0 | Wi-SUN FAN border router stub |
 | `wmbus` | `ispf-driver-wmbus` | STUB | Apache-2.0 | Wireless M-Bus (OMS) stub |
 | `wmi` | `ispf-driver-wmi` | BETA | Apache-2.0 | Windows WMI via PowerShell (Windows only) |
 | `xmpp` | `ispf-driver-xmpp` | PRODUCTION | Apache-2.0 | XMPP messaging client (Smack) |
 | `yaskawa-memobus` | `ispf-driver-yaskawa-memobus` | PRODUCTION | Apache-2.0 | Memobus Modbus-TCP FC3/FC6 holding registers (`HR:100` / `100`) |
-| `zigbee` | `ispf-driver-zigbee` | STUB | Apache-2.0 | Zigbee coordinator / ZCL stub |
+| `zigbee` | `ispf-driver-zigbee` | BETA | Apache-2.0 | Zigbee coordinator / ZCL stub |
 | `zwave` | `ispf-driver-zwave` | STUB | Apache-2.0 | Z-Wave controller stub |
 
 Detailed configs for base drivers — in the sections below. Others follow the same pattern: `driverConfigJson` + `driverPointMappingsJson`, see `DriverMetadata` in the module.

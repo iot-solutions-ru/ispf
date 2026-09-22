@@ -54,7 +54,7 @@ class EthernetPowerlinkDeviceDriverTest {
     void metadataDescribesPowerlinkTcpGateway() {
         driver = new EthernetPowerlinkDeviceDriver();
         assertEquals("ethernet-powerlink", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
         assertTrue(description.contains("powerlink"));
         assertTrue(description.contains("tcp"));

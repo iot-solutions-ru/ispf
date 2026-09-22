@@ -47,7 +47,7 @@ class AsInterfaceDeviceDriverTest {
     void metadataDescribesMasterCallGateway() {
         driver = new AsInterfaceDeviceDriver();
         assertEquals("as-interface", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
         assertTrue(description.contains("tcp") || description.contains("gateway"));

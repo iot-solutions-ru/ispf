@@ -69,7 +69,7 @@ class ZigbeeDeviceDriverTest {
     void metadataIsProductionAshOverTcp() {
         driver = new ZigbeeDeviceDriver();
         assertEquals("zigbee", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read"), driver.metadata().capabilities());
         assertEquals("17754", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);

@@ -316,7 +316,31 @@ class DriverProductionMatrixTest {
             Map.entry("eebus", "lab EEBus gateway; not SHIP TLS or SPINE"),
             Map.entry("isa100", "lab ISA100 gateway; not ISA100.11a"),
             Map.entry("fanuc-focas", "lab FANUC gateway; not the FOCAS library"),
-            Map.entry("matter", "lab Matter gateway; not a CSA Matter operational session")
+            Map.entry("matter", "lab Matter gateway; not a CSA Matter operational session"),
+            Map.entry("profinet", "DCP Identify over TCP; not PROFINET RT/IRT"),
+            Map.entry("ethercat", "LRD/LWR datagram over TCP; not an IgH or SOEM master"),
+            Map.entry("iec61850", "TPKT/COTP MMS subset; not a full SCL / 61850-8-1 stack"),
+            Map.entry("iec61850-goose", "GOOSE header over TCP; not a native Ethernet publisher"),
+            Map.entry("iec61850-sv", "SV header over TCP; not a native Ethernet publisher"),
+            Map.entry("profibus", "FDL SD1/SD2 over TCP; not RS-485"),
+            Map.entry("profibus-pa", "FDL over TCP; not PA PHY or a DP-PA coupler"),
+            Map.entry("ethernet-powerlink", "POWERLINK frame over TCP; not a hard MN"),
+            Map.entry("io-link", "ISDU over a TCP gateway; not the IO-Link PHY"),
+            Map.entry("cc-link", "gateway frame; not the CC-Link RS-485 ASIC"),
+            Map.entry("cc-link-ie", "gateway frame; not a CC-Link IE Field ASIC"),
+            Map.entry("canopen", "SLCAN over TCP; not SocketCAN or a full CiA 301 stack"),
+            Map.entry("zigbee", "ASH reset over TCP; not 802.15.4 or ZCL"),
+            Map.entry("bluetooth-le", "H4 HCI over TCP; not a BLE radio or a full GATT client"),
+            Map.entry("dali", "DALI forward frame over TCP; not the Manchester PHY"),
+            Map.entry("bacnet-mstp", "MS/TP frame over TCP; not an RS-485 master"),
+            Map.entry("as-interface", "AS-i master call over TCP; not the AS-i PHY"),
+            Map.entry("interbus", "process image over TCP; not the Phoenix ASIC"),
+            Map.entry("foundation-fieldbus", "length-prefixed probe over TCP; not H1 and not an FDA session"),
+            Map.entry("controlnet", "CIP Get_Attribute_Single over TCP; not ControlNet coax"),
+            Map.entry("wirelesshart", "HART-IP path; not an 802.15.4 WirelessHART radio"),
+            Map.entry("device-net", "CIP Get_Attribute_Single over TCP; not the DeviceNet CAN PHY"),
+            Map.entry("j1939", "J1939 frame over TCP; not SocketCAN"),
+            Map.entry("canbus-gateway", "CAN frame over TCP; not SocketCAN")
     );
 
     private static Path repoRoot() {

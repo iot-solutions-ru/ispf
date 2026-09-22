@@ -48,7 +48,7 @@ class FoundationFieldbusDeviceDriverTest {
     void metadataDescribesHseOverTcp() {
         driver = new FoundationFieldbusDeviceDriver();
         assertEquals("foundation-fieldbus", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
         assertTrue(description.contains("hse"));
         assertTrue(description.contains("tcp"));
