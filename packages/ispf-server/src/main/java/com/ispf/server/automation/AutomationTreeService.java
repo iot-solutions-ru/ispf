@@ -58,15 +58,16 @@ public class AutomationTreeService {
             .field("value", FieldType.INTEGER)
             .build();
 
-    private final ObjectManager objectManager;
+    final ObjectManager objectManager;
     private final SystemObjectStructureService structureService;
     private final AlertRuleRepository legacyAlertRuleRepository;
     private final EventCorrelatorRepository legacyCorrelatorRepository;
-    private final CorrelatorWindowStore correlatorWindowStore;
-    private final AutomationRuleIndex ruleIndex;
-    private final AutomationIndexRefresh indexRefresh;
+    final CorrelatorWindowStore correlatorWindowStore;
+    final AutomationRuleIndex ruleIndex;
+    final AutomationIndexRefresh indexRefresh;
     private final AlertRuleRuntimeStore alertRuleRuntimeStore;
     private final AlertRuleRuntimeFlusher alertRuleRuntimeFlusher;
+    private final AutomationCorrelatorCatalog correlators;
 
     public AutomationTreeService(
             ObjectManager objectManager,
@@ -88,6 +89,7 @@ public class AutomationTreeService {
         this.indexRefresh = indexRefresh;
         this.alertRuleRuntimeStore = alertRuleRuntimeStore;
         this.alertRuleRuntimeFlusher = alertRuleRuntimeFlusher;
+        this.correlators = new AutomationCorrelatorCatalog(this);
     }
 
     @Transactional
@@ -118,7 +120,7 @@ public class AutomationTreeService {
         ensureCorrelatorStructureInternal(path);
     }
 
-    private void ensureCorrelatorStructureInternal(String path) {
+    void ensureCorrelatorStructureInternal(String path) {
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.CORRELATOR) {
             throw new IllegalArgumentException("Not a correlator object: " + path);
@@ -146,7 +148,7 @@ public class AutomationTreeService {
             String path = correlatorPathForName(entity.getName());
             correlatorIdMap.put(entity.getId(), path);
             if (objectManager.tree().findByPath(path).isEmpty()) {
-                createCorrelatorNode(path, entity.getName(), entity.getObjectPath(),
+                correlators.createCorrelatorNode(path, entity.getName(), entity.getObjectPath(),
                         CorrelatorPatternType.valueOf(entity.getPatternType()),
                         entity.getEventName(), entity.getSecondEventName(),
                         entity.getWindowSeconds(), entity.getMinOccurrences(), entity.getCooldownSeconds(),
@@ -431,22 +433,16 @@ public class AutomationTreeService {
     }
 
     public List<EventCorrelator> listCorrelators() {
-        List<EventCorrelator> correlators = new ArrayList<>();
-        for (PlatformObject node : objectManager.tree().all()) {
-            if (node.type() == ObjectType.CORRELATOR && node.path().startsWith(CORRELATORS_ROOT + ".")) {
-                correlators.add(toCorrelator(node));
-            }
-        }
-        return correlators;
+        return correlators.listCorrelators();
     }
 
     @Transactional(readOnly = true)
     public EventCorrelator getCorrelator(String path) {
-        return toCorrelator(requireCorrelator(path));
+        return correlators.getCorrelator(path);
     }
 
     public List<EventCorrelator> findEnabledCorrelatorsForEvent(String eventName) {
-        return ruleIndex.findCorrelatorsForEvent(eventName);
+        return correlators.findEnabledCorrelatorsForEvent(eventName);
     }
 
     @Transactional
@@ -465,13 +461,21 @@ public class AutomationTreeService {
             String payloadFilterExpr,
             boolean enabled
     ) {
-        String path = uniqueCorrelatorPath(name);
-        createCorrelatorNode(path, name, targetObjectPath, patternType, eventName, secondEventName,
-                windowSeconds, minOccurrences, cooldownSeconds, sequenceGapSeconds, actionType, actionTarget,
-                payloadFilterExpr, enabled, null);
-        EventCorrelator correlator = getCorrelator(path);
-        indexRefresh.afterCorrelatorCreated(correlator);
-        return correlator;
+        return correlators.createCorrelator(
+                name,
+                targetObjectPath,
+                patternType,
+                eventName,
+                secondEventName,
+                windowSeconds,
+                minOccurrences,
+                cooldownSeconds,
+                sequenceGapSeconds,
+                actionType,
+                actionTarget,
+                payloadFilterExpr,
+                enabled
+        );
     }
 
     @Transactional
@@ -491,57 +495,27 @@ public class AutomationTreeService {
             String payloadFilterExpr,
             Boolean enabled
     ) {
-        EventCorrelator previous = getCorrelator(path);
-        PlatformObject node = requireCorrelator(path);
-        if (name != null && !name.isBlank()) {
-            objectManager.updateInfo(path, name, node.description());
-        }
-        if (targetObjectPath != null) {
-            setString(path, "targetObjectPath", targetObjectPath);
-        }
-        if (patternType != null) {
-            setString(path, "patternType", patternType.name());
-        }
-        if (eventName != null) {
-            setString(path, "eventName", eventName);
-        }
-        if (secondEventName != null) {
-            setString(path, "secondEventName", secondEventName);
-        }
-        if (windowSeconds != null) {
-            setInteger(path, "windowSeconds", windowSeconds);
-        }
-        if (minOccurrences != null) {
-            setInteger(path, "minOccurrences", minOccurrences);
-        }
-        if (cooldownSeconds != null) {
-            setInteger(path, "cooldownSeconds", cooldownSeconds);
-        }
-        if (sequenceGapSeconds != null) {
-            setInteger(path, "sequenceGapSeconds", sequenceGapSeconds);
-        }
-        if (actionType != null) {
-            setString(path, "actionType", actionType.name());
-        }
-        if (actionTarget != null) {
-            setString(path, "actionTarget", actionTarget);
-        }
-        if (payloadFilterExpr != null) {
-            setString(path, "payloadFilterExpr", payloadFilterExpr);
-        }
-        if (enabled != null) {
-            setBoolean(path, "enabled", enabled);
-        }
-        objectManager.persistNodeTree(path);
-        EventCorrelator correlator = getCorrelator(path);
-        indexRefresh.afterCorrelatorUpdated(previous, correlator);
-        return correlator;
+        return correlators.updateCorrelator(
+                path,
+                name,
+                targetObjectPath,
+                patternType,
+                eventName,
+                secondEventName,
+                windowSeconds,
+                minOccurrences,
+                cooldownSeconds,
+                sequenceGapSeconds,
+                actionType,
+                actionTarget,
+                payloadFilterExpr,
+                enabled
+        );
     }
 
     @Transactional
     public void setCorrelatorLastTriggeredAt(String path, Instant triggeredAt) {
-        setRuntimeString(path, "lastTriggeredAt", triggeredAt != null ? triggeredAt.toString() : "");
-        objectManager.persistNodeTree(path);
+        correlators.setCorrelatorLastTriggeredAt(path, triggeredAt);
     }
 
     @Transactional
@@ -554,10 +528,7 @@ public class AutomationTreeService {
 
     @Transactional
     public void deleteCorrelator(String path) {
-        EventCorrelator correlator = getCorrelator(path);
-        correlatorWindowStore.clearCorrelator(path);
-        objectManager.delete(path);
-        indexRefresh.afterCorrelatorDeleted(correlator);
+        correlators.deleteCorrelator(path);
     }
 
     @Transactional
@@ -587,63 +558,12 @@ public class AutomationTreeService {
 
     @Transactional
     public void ensureDemoCorrelators() {
-        ensureEscalationCorrelator();
-        if (objectManager.tree().findByPath(correlatorPathForName("Alarm handler on threshold event")).isPresent()) {
-            return;
-        }
-        createCorrelator(
-                "Alarm handler on threshold event",
-                "root.platform.devices.demo-sensor-01",
-                CorrelatorPatternType.COUNT,
-                "thresholdExceeded",
-                null,
-                0,
-                1,
-                120,
-                0,
-                CorrelatorActionType.RUN_WORKFLOW,
-                "root.platform.workflows.demo-alarm-handler",
-                "",
-                true
-        );
-        createCorrelator(
-                "Threshold then alarm active (sequence demo)",
-                "root.platform.devices.demo-sensor-01",
-                CorrelatorPatternType.SEQUENCE,
-                "thresholdExceeded",
-                "alarmActive",
-                300,
-                1,
-                120,
-                0,
-                CorrelatorActionType.RUN_WORKFLOW,
-                "root.platform.workflows.demo-alarm-handler",
-                "",
-                false
-        );
+        correlators.ensureDemoCorrelators();
     }
 
     @Transactional
     public void ensureEscalationCorrelator() {
-        String path = correlatorPathForName("Recurring threshold escalation");
-        if (objectManager.tree().findByPath(path).isPresent()) {
-            return;
-        }
-        createCorrelator(
-                "Recurring threshold escalation",
-                "root.platform.devices.demo-sensor-01",
-                CorrelatorPatternType.COUNT,
-                "thresholdExceeded",
-                null,
-                300,
-                3,
-                120,
-                0,
-                CorrelatorActionType.RUN_WORKFLOW,
-                "root.platform.workflows.demo-alarm-handler",
-                "",
-                true
-        );
+        correlators.ensureEscalationCorrelator();
     }
 
     private void createAlertRuleNode(
@@ -738,46 +658,6 @@ public class AutomationTreeService {
         }
     }
 
-    private void createCorrelatorNode(
-            String path,
-            String displayName,
-            String targetObjectPath,
-            CorrelatorPatternType patternType,
-            String eventName,
-            String secondEventName,
-            int windowSeconds,
-            int minOccurrences,
-            int cooldownSeconds,
-            int sequenceGapSeconds,
-            CorrelatorActionType actionType,
-            String actionTarget,
-            String payloadFilterExpr,
-            boolean enabled,
-            Instant lastTriggeredAt
-    ) {
-        ensureParent(path);
-        String name = leafName(path);
-        objectManager.create(parentPath(path), name, ObjectType.CORRELATOR, displayName,
-                "Event correlator", "correlator-v1");
-        ensureCorrelatorStructureInternal(path);
-        setString(path, "targetObjectPath", targetObjectPath != null ? targetObjectPath : "");
-        setString(path, "patternType", patternType.name());
-        setString(path, "eventName", eventName);
-        setString(path, "secondEventName", secondEventName != null ? secondEventName : "");
-        setInteger(path, "windowSeconds", windowSeconds);
-        setInteger(path, "minOccurrences", minOccurrences);
-        setInteger(path, "cooldownSeconds", cooldownSeconds);
-        setInteger(path, "sequenceGapSeconds", sequenceGapSeconds);
-        setString(path, "actionType", actionType.name());
-        setString(path, "actionTarget", actionTarget);
-        setString(path, "payloadFilterExpr", payloadFilterExpr != null ? payloadFilterExpr : "");
-        setBoolean(path, "enabled", enabled);
-        if (lastTriggeredAt != null) {
-            setRuntimeString(path, "lastTriggeredAt", lastTriggeredAt.toString());
-        }
-        objectManager.persistNodeTree(path);
-    }
-
     private AlertRule toAlertRule(PlatformObject node) {
         Instant createdAt = node.createdAt() != null ? node.createdAt() : Instant.now();
         AlertRuleRuntimeState runtime = alertRuleRuntimeStore.snapshot(node.path(), node);
@@ -814,33 +694,6 @@ public class AutomationTreeService {
         );
     }
 
-    private EventCorrelator toCorrelator(PlatformObject node) {
-        Instant createdAt = node.createdAt() != null ? node.createdAt() : Instant.now();
-        String patternRaw = readString(node, "patternType").orElse("COUNT");
-        String actionRaw = readString(node, "actionType").orElse("RUN_WORKFLOW");
-        String lastTriggeredRaw = readString(node, "lastTriggeredAt").orElse("");
-        Instant lastTriggered = lastTriggeredRaw.isBlank() ? null : Instant.parse(lastTriggeredRaw);
-        return new EventCorrelator(
-                node.path(),
-                node.displayName(),
-                blankToNull(readString(node, "targetObjectPath").orElse(null)),
-                CorrelatorPatternType.valueOf(patternRaw),
-                readString(node, "eventName").orElse(""),
-                blankToNull(readString(node, "secondEventName").orElse(null)),
-                readInteger(node, "windowSeconds").orElse(0),
-                readInteger(node, "minOccurrences").orElse(1),
-                readInteger(node, "cooldownSeconds").orElse(120),
-                readInteger(node, "sequenceGapSeconds").orElse(0),
-                CorrelatorActionType.valueOf(actionRaw),
-                readString(node, "actionTarget").orElse(""),
-                blankToNull(readString(node, "payloadFilterExpr").orElse(null)),
-                readBoolean(node, "enabled").orElse(true),
-                lastTriggered,
-                createdAt,
-                createdAt
-        );
-    }
-
     private PlatformObject requireAlertRule(String path) {
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.ALERT) {
@@ -849,28 +702,8 @@ public class AutomationTreeService {
         return node;
     }
 
-    private PlatformObject requireCorrelator(String path) {
-        PlatformObject node = objectManager.require(path);
-        if (node.type() != ObjectType.CORRELATOR) {
-            throw new IllegalArgumentException("Not a correlator object: " + path);
-        }
-        return node;
-    }
-
     private String uniqueRulePath(String name) {
         String base = rulePathForName(name);
-        if (objectManager.tree().findByPath(base).isEmpty()) {
-            return base;
-        }
-        int suffix = 2;
-        while (objectManager.tree().findByPath(base + "-" + suffix).isPresent()) {
-            suffix++;
-        }
-        return base + "-" + suffix;
-    }
-
-    private String uniqueCorrelatorPath(String name) {
-        String base = correlatorPathForName(name);
         if (objectManager.tree().findByPath(base).isEmpty()) {
             return base;
         }
@@ -914,7 +747,7 @@ public class AutomationTreeService {
         objectManager.create(parentPath(path), leafName(path), type, displayName, description, null);
     }
 
-    private void ensureParent(String path) {
+    void ensureParent(String path) {
         String parent = parentPath(path);
         if (parent.equals(ALERT_RULES_ROOT)) {
             ensurePlatformFoldersInternal();
@@ -923,24 +756,24 @@ public class AutomationTreeService {
         }
     }
 
-    private static String parentPath(String path) {
+    static String parentPath(String path) {
         int lastDot = path.lastIndexOf('.');
         return path.substring(0, lastDot);
     }
 
-    private static String leafName(String path) {
+    static String leafName(String path) {
         return path.substring(path.lastIndexOf('.') + 1);
     }
 
-    private void setString(String path, String variable, String value) {
+    void setString(String path, String variable, String value) {
         objectManager.setVariableValue(path, variable, DataRecord.single(STRING_VALUE, Map.of("value", value != null ? value : "")));
     }
 
-    private void setBoolean(String path, String variable, boolean value) {
+    void setBoolean(String path, String variable, boolean value) {
         objectManager.setVariableValue(path, variable, DataRecord.single(BOOLEAN_VALUE, Map.of("value", value)));
     }
 
-    private void setInteger(String path, String variable, int value) {
+    void setInteger(String path, String variable, int value) {
         objectManager.setVariableValue(path, variable, DataRecord.single(INTEGER_VALUE, Map.of("value", value)));
     }
 
@@ -948,7 +781,7 @@ public class AutomationTreeService {
         objectManager.setSystemVariableValue(path, variable, DataRecord.single(BOOLEAN_VALUE, Map.of("value", value)));
     }
 
-    private void setRuntimeString(String path, String variable, String value) {
+    void setRuntimeString(String path, String variable, String value) {
         objectManager.upsertSystemVariable(
                 path,
                 variable,
@@ -957,28 +790,28 @@ public class AutomationTreeService {
         );
     }
 
-    private static Optional<String> readString(PlatformObject node, String variable) {
+    static Optional<String> readString(PlatformObject node, String variable) {
         return node.getVariable(variable)
                 .flatMap(v -> v.value())
                 .map(record -> record.firstRow().get("value"))
                 .map(Object::toString);
     }
 
-    private static Optional<Boolean> readBoolean(PlatformObject node, String variable) {
+    static Optional<Boolean> readBoolean(PlatformObject node, String variable) {
         return node.getVariable(variable)
                 .flatMap(v -> v.value())
                 .map(record -> record.firstRow().get("value"))
                 .map(value -> value instanceof Boolean bool ? bool : Boolean.parseBoolean(String.valueOf(value)));
     }
 
-    private static Optional<Integer> readInteger(PlatformObject node, String variable) {
+    static Optional<Integer> readInteger(PlatformObject node, String variable) {
         return node.getVariable(variable)
                 .flatMap(v -> v.value())
                 .map(record -> record.firstRow().get("value"))
                 .map(value -> ((Number) value).intValue());
     }
 
-    private static String blankToNull(String value) {
+    static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value;
     }
 }
