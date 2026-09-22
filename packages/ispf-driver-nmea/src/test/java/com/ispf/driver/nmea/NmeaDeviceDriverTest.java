@@ -38,9 +38,9 @@ class NmeaDeviceDriverTest {
     private static final String GGA_1 =
             "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47";
     private static final String RMC =
-            "$GPRMC,123520,A,4807.100,N,01131.100,E,022.4,084.4,230394,003.1,W*6A";
+            "$GPRMC,123520,A,4807.100,N,01131.100,E,022.4,084.4,230394,003.1,W*6B";
     private static final String GGA_2 =
-            "$GPGGA,123521,4807.050,N,01131.010,E,1,07,1.0,550.0,M,46.9,M,,*41";
+            "$GPGGA,123521,4807.050,N,01131.010,E,1,07,1.0,550.0,M,46.9,M,,*44";
 
     private static final List<String> SENTENCES = List.of(GGA_1, RMC, GGA_2);
 

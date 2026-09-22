@@ -23,15 +23,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * CANopen driver — TCP gateway ASCII/binary lab (default port {@code 11898}).
+ * CANopen driver — LAWICEL SLCAN over TCP (default port {@code 11898}).
  * <p>
- * Honesty boundary: this talks to an ISPF CANopen-over-TCP gateway lab, not SocketCAN,
- * not a CiA 301 stack on the wire, and not Vector/Peak/ETAS SDKs.
- * Lab line dialect:
- * <pre>
- *   SDO GET &lt;index&gt;:&lt;sub&gt;{@code \\n}  →  VALUE{@code \\n}
- *   SDO SET &lt;index&gt;:&lt;sub&gt; VALUE{@code \\n} →  OK{@code \\n}
- * </pre>
+ * Standard frames use {@code t} + 3 hex id + 1 hex DLC + data hex + CR.
+ * SDO upload request is id {@code 0x600+node}, DLC 8, command byte {@code 0x40},
+ * index little-endian, subindex, four zero bytes. This is the USB-CAN adapter
+ * protocol over TCP, not SocketCAN and not a full CiA 301 stack.
  * Point mappings accept {@code 0x2000:01}, {@code 2000:1}, or {@code index:sub}.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
@@ -41,6 +38,9 @@ public class CanopenDeviceDriver implements DeviceDriver {
     private static final Pattern OD_MAPPING = Pattern.compile(
             "^(?:OD[:\\s-]*)?(?:0x)?([0-9A-Fa-f]+)\\s*[:.]\\s*(?:0x)?([0-9A-Fa-f]+)$",
             Pattern.CASE_INSENSITIVE);
+
+    private static final Pattern SLCAN_STD = Pattern.compile(
+            "^t([0-9A-Fa-f]{3})([0-9A-Fa-f])([0-9A-Fa-f]*)$");
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("canopenSdoValue")
             .field("value", FieldType.STRING)
@@ -52,12 +52,14 @@ public class CanopenDeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "canopen",
             "CANopen Driver",
-            "0.1.0",
-            "CANopen over TCP gateway lab (SDO GET/SET ASCII) — not SocketCAN / CiA stack",
+            "1.0.0",
+            "CANopen SDO via LAWICEL SLCAN over TCP (standard t frames);"
+                    + " not SocketCAN / CiA stack / Vector-Peak SDK",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "11898",
+                    "nodeId", "1",
                     "timeoutMs", "3000",
                     "pollIntervalMs", "5000"
             ),
@@ -68,6 +70,7 @@ public class CanopenDeviceDriver implements DeviceDriver {
     private DriverObject driverObject;
     private String host = "127.0.0.1";
     private int port = 11898;
+    private int nodeId = 1;
     private int timeoutMs = 3000;
     private Socket socket;
     private final Map<String, String> points = new ConcurrentHashMap<>();
@@ -91,6 +94,7 @@ public class CanopenDeviceDriver implements DeviceDriver {
         switch (key) {
             case "host" -> host = value.trim();
             case "port" -> port = Integer.parseInt(value.trim());
+            case "nodeId", "node" -> nodeId = Integer.parseInt(value.trim());
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
             default -> { }
         }
@@ -106,11 +110,11 @@ public class CanopenDeviceDriver implements DeviceDriver {
             socket = next;
             connected = true;
             driverObject.log(DriverLogLevel.INFO,
-                    "CANopen TCP gateway lab connected to " + host + ":" + port
+                    "CANopen SLCAN connected to " + host + ":" + port
                             + " (not SocketCAN / CiA stack)");
         } catch (IOException e) {
             closeSocket();
-            throw new DriverException("CANopen TCP gateway connect failed for " + host + ":" + port, e);
+            throw new DriverException("CANopen SLCAN connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -139,7 +143,7 @@ public class CanopenDeviceDriver implements DeviceDriver {
                     : entry.getValue().trim();
             points.put(pointId, mapping);
             OdAddress address = parseOdMapping(mapping);
-            String value = sdoGet(address);
+            String value = sdoUpload(address);
             driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
                     "value", value,
                     "index", formatIndex(address.index),
@@ -157,7 +161,7 @@ public class CanopenDeviceDriver implements DeviceDriver {
         String mapping = points.getOrDefault(pointId, pointId);
         OdAddress address = parseOdMapping(mapping);
         String payload = extractValue(value);
-        sdoSet(address, payload);
+        sdoDownload(address, payload);
         driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
                 "value", payload,
                 "index", formatIndex(address.index),
@@ -166,35 +170,29 @@ public class CanopenDeviceDriver implements DeviceDriver {
         )));
     }
 
-    private String sdoGet(OdAddress address) throws DriverException {
-        String response = transact("SDO GET " + formatOd(address));
-        String trimmed = response.trim();
-        if (trimmed.regionMatches(true, 0, "ERR", 0, 3)) {
-            throw new DriverException("CANopen SDO GET rejected: " + response);
-        }
-        if (trimmed.regionMatches(true, 0, "OK", 0, 2) && trimmed.length() > 2) {
-            trimmed = trimmed.substring(2).trim();
-        }
-        if (trimmed.regionMatches(true, 0, "VALUE", 0, 5) && trimmed.length() > 5) {
-            trimmed = trimmed.substring(5).trim();
-        }
-        return trimmed;
+    private String sdoUpload(OdAddress address) throws DriverException {
+        String request = formatSdoUploadRequest(nodeId, address.index, address.sub);
+        String response = transact(request);
+        return parseSdoUploadResponse(response, address);
     }
 
-    private void sdoSet(OdAddress address, String value) throws DriverException {
-        String response = transact("SDO SET " + formatOd(address) + " " + value);
-        if (!response.trim().toUpperCase(Locale.ROOT).startsWith("OK")) {
-            throw new DriverException("CANopen SDO SET rejected: " + response);
+    private void sdoDownload(OdAddress address, String value) throws DriverException {
+        long numeric = parseNumericValue(value);
+        String request = formatSdoDownloadRequest(nodeId, address.index, address.sub, numeric);
+        String response = transact(request);
+        String trimmed = response.trim();
+        if (!(trimmed.equalsIgnoreCase("z") || tryParseSlcanStandard(trimmed) != null)) {
+            throw new DriverException("CANopen SDO download rejected: " + response);
         }
     }
 
     private synchronized String transact(String command) throws DriverException {
         try {
-            writeLine(socket.getOutputStream(), command);
-            return readLine(socket.getInputStream());
+            writeAscii(socket.getOutputStream(), command);
+            return readUntilCr(socket.getInputStream());
         } catch (IOException e) {
             throw new DriverException(
-                    "CANopen TCP gateway I/O failed for " + host + ":" + port + " (" + command + ")", e);
+                    "CANopen SLCAN I/O failed for " + host + ":" + port, e);
         }
     }
 
@@ -210,6 +208,99 @@ public class CanopenDeviceDriver implements DeviceDriver {
         }
     }
 
+    /**
+     * SDO upload request for node 1, index 0x2000, sub 0:
+     * {@code t6018400020000000000000\r}
+     */
+    static String formatSdoUploadRequest(int nodeId, int index, int sub) {
+        int canId = 0x600 + (nodeId & 0x7F);
+        String data = String.format(Locale.ROOT, "40%02X%02X%02X00000000",
+                index & 0xFF, (index >> 8) & 0xFF, sub & 0xFF);
+        return formatStandardFrame(canId, data);
+    }
+
+    static String formatSdoDownloadRequest(int nodeId, int index, int sub, long value) {
+        int canId = 0x600 + (nodeId & 0x7F);
+        // Expedited 4-byte download: command 0x23
+        String data = String.format(Locale.ROOT, "23%02X%02X%02X%02X%02X%02X%02X",
+                index & 0xFF, (index >> 8) & 0xFF, sub & 0xFF,
+                (int) (value & 0xFF),
+                (int) ((value >> 8) & 0xFF),
+                (int) ((value >> 16) & 0xFF),
+                (int) ((value >> 24) & 0xFF));
+        return formatStandardFrame(canId, data);
+    }
+
+    static String formatStandardFrame(int canId, String dataHex) {
+        String data = normalizeHex(dataHex);
+        int dlc = data.length() / 2;
+        if (dlc > 8) {
+            throw new IllegalArgumentException("CANopen DLC exceeds 8: " + dlc);
+        }
+        return "t"
+                + String.format(Locale.ROOT, "%03X", canId & 0x7FF)
+                + Integer.toHexString(dlc).toUpperCase(Locale.ROOT)
+                + data
+                + "\r";
+    }
+
+    static String parseSdoUploadResponse(String line, OdAddress expected) {
+        SlcanFrame frame = tryParseSlcanStandard(line);
+        if (frame == null) {
+            throw new IllegalArgumentException("Invalid SLCAN SDO response: " + line);
+        }
+        String data = frame.dataHex();
+        if (data.length() < 8) {
+            throw new IllegalArgumentException("SDO response too short: " + line);
+        }
+        int cmd = Integer.parseInt(data.substring(0, 2), 16);
+        int index = Integer.parseInt(data.substring(2, 4), 16)
+                | (Integer.parseInt(data.substring(4, 6), 16) << 8);
+        int sub = Integer.parseInt(data.substring(6, 8), 16);
+        if (index != expected.index || sub != expected.sub) {
+            throw new IllegalArgumentException("SDO response OD mismatch: " + line);
+        }
+        int n = switch (cmd) {
+            case 0x4F -> 1;
+            case 0x4B -> 2;
+            case 0x47 -> 3;
+            case 0x43 -> 4;
+            default -> 4;
+        };
+        String payload = data.substring(8);
+        if (payload.length() < n * 2) {
+            return Long.toString(Long.parseLong(payload.isEmpty() ? "0" : payload, 16));
+        }
+        // little-endian numeric
+        long value = 0;
+        for (int i = 0; i < n; i++) {
+            int b = Integer.parseInt(payload.substring(i * 2, i * 2 + 2), 16);
+            value |= ((long) b) << (8 * i);
+        }
+        return Long.toString(value);
+    }
+
+    static SlcanFrame tryParseSlcanStandard(String line) {
+        if (line == null) {
+            return null;
+        }
+        String trimmed = line.trim();
+        if (trimmed.endsWith("\r")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        Matcher matcher = SLCAN_STD.matcher(trimmed);
+        if (!matcher.matches()) {
+            return null;
+        }
+        int canId = Integer.parseInt(matcher.group(1), 16);
+        int dlc = Integer.parseInt(matcher.group(2), 16);
+        String data = normalizeHex(matcher.group(3));
+        if (data.length() != dlc * 2) {
+            return null;
+        }
+        return new SlcanFrame(canId, data);
+    }
+
     static OdAddress parseOdMapping(String mapping) {
         if (mapping == null || mapping.isBlank()) {
             throw new IllegalArgumentException("Blank CANopen OD mapping");
@@ -219,7 +310,6 @@ public class CanopenDeviceDriver implements DeviceDriver {
             throw new IllegalArgumentException(
                     "Unsupported CANopen mapping (expected 0x2000:01 or index:sub): " + mapping);
         }
-        // CANopen OD addresses are conventionally hexadecimal (even without a 0x prefix).
         int index = Integer.parseInt(matcher.group(1), 16);
         int sub = Integer.parseInt(matcher.group(2), 16);
         if (index < 0 || index > 0xFFFF) {
@@ -260,25 +350,44 @@ public class CanopenDeviceDriver implements DeviceDriver {
         throw new IllegalArgumentException("CANopen write requires a value field");
     }
 
-    static void writeLine(OutputStream out, String line) throws IOException {
-        out.write((line + "\n").getBytes(StandardCharsets.US_ASCII));
+    static long parseNumericValue(String text) {
+        String raw = text == null ? "0" : text.trim();
+        if (raw.regionMatches(true, 0, "0x", 0, 2)) {
+            return Long.parseLong(raw.substring(2), 16);
+        }
+        return Long.parseLong(raw);
+    }
+
+    static String normalizeHex(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "";
+        }
+        String hex = raw.trim().replace(" ", "").toUpperCase(Locale.ROOT);
+        if (!hex.matches("[0-9A-F]*") || (hex.length() % 2) != 0) {
+            throw new IllegalArgumentException("Hex must be even-length: " + raw);
+        }
+        return hex;
+    }
+
+    static void writeAscii(OutputStream out, String line) throws IOException {
+        out.write(line.getBytes(StandardCharsets.US_ASCII));
         out.flush();
     }
 
-    static String readLine(InputStream in) throws IOException {
+    static String readUntilCr(InputStream in) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         while (true) {
             int ch = in.read();
             if (ch < 0) {
                 if (buf.size() == 0) {
-                    throw new IOException("EOF reading CANopen gateway line");
+                    throw new IOException("EOF reading SLCAN line");
                 }
                 break;
             }
-            if (ch == '\n') {
+            if (ch == '\r') {
                 break;
             }
-            if (ch != '\r') {
+            if (ch != '\n') {
                 buf.write(ch);
             }
         }
@@ -286,5 +395,8 @@ public class CanopenDeviceDriver implements DeviceDriver {
     }
 
     record OdAddress(int index, int sub) {
+    }
+
+    record SlcanFrame(int canId, String dataHex) {
     }
 }

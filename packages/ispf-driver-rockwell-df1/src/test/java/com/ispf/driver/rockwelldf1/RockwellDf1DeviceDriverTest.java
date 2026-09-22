@@ -19,6 +19,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -27,12 +28,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link RockwellDf1DeviceDriver} against a fake DF1 TCP-bridge server.
+ * Loopback tests for {@link RockwellDf1DeviceDriver} against an in-process DF1 peer.
  */
 class RockwellDf1DeviceDriverTest {
 
@@ -57,6 +59,49 @@ class RockwellDf1DeviceDriverTest {
         assertEquals("rockwell-df1", underTest.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, underTest.metadata().maturity());
         assertEquals(Set.of("read", "write"), underTest.metadata().capabilities());
+        assertTrue(!underTest.metadata().description().toLowerCase(Locale.ROOT).contains("lab"));
+    }
+
+    @Test
+    void frameStartsWithDleStxAndStuffsPayloadDle() {
+        // Unstuffed PDU: DST=1 SRC=0 CMD=0x0F STS=0 TNS=1, one data byte 0x10
+        byte[] pdu = new byte[]{0x01, 0x00, 0x0F, 0x00, 0x01, 0x00, 0x10};
+        byte[] frame = RockwellDf1Frame.wrapPdu(pdu);
+
+        assertEquals(0x10, frame[0] & 0xFF);
+        assertEquals(0x02, frame[1] & 0xFF);
+
+        // After header (DLE STX) and six address/control bytes, 0x10 must appear as 10 10
+        assertEquals(0x10, frame[8] & 0xFF);
+        assertEquals(0x10, frame[9] & 0xFF);
+        assertEquals(0x10, frame[10] & 0xFF); // DLE before ETX
+        assertEquals(0x03, frame[11] & 0xFF);
+
+        // Hand-calculated CRC-16 (poly 0xA001, init 0x0000) over
+        // 01 00 0F 00 01 00 10 03 → 0x0E8D, transmitted lo/hi
+        assertEquals(0x8D, frame[12] & 0xFF);
+        assertEquals(0x0E, frame[13] & 0xFF);
+        assertArrayEquals(new byte[]{
+                0x10, 0x02,
+                0x01, 0x00, 0x0F, 0x00, 0x01, 0x00,
+                0x10, 0x10,
+                0x10, 0x03,
+                (byte) 0x8D, 0x0E
+        }, frame);
+    }
+
+    @Test
+    void knownCrcMatchesHandCalculatedLiteralFrame() {
+        // Hand vector: DST..data = 01 00 0F 00 01 00 (no app data), then ETX 03.
+        // Bitwise CRC-16 (0xA001 / init 0): 0x0055 → CRC bytes 55 00.
+        byte[] pdu = new byte[]{0x01, 0x00, 0x0F, 0x00, 0x01, 0x00};
+        assertEquals(0x0055, RockwellDf1Frame.crc16OverPduAndEtx(pdu));
+        assertArrayEquals(new byte[]{
+                0x10, 0x02,
+                0x01, 0x00, 0x0F, 0x00, 0x01, 0x00,
+                0x10, 0x03,
+                0x55, 0x00
+        }, RockwellDf1Frame.wrapPdu(pdu));
     }
 
     @Test
@@ -225,7 +270,6 @@ class RockwellDf1DeviceDriverTest {
         }
 
         private static String storageKey(RockwellDf1Point point) {
-            // Store whole elements; bit addressing is display-only for B reads
             return point.fileType().token() + point.fileNumber() + ":" + point.element();
         }
 

@@ -5,7 +5,7 @@ import com.ispf.driver.DriverException;
 import java.util.Locale;
 
 /**
- * Parsed Wi-SUN border-router CoAP lab point.
+ * Parsed Wi-SUN border-router CoAP path.
  * <p>
  * Accepted forms: {@code node:1}, {@code /nodes/1/value}, {@code coap:/nodes/1/value}.
  */
@@ -13,7 +13,7 @@ record WisunPoint(String path) {
 
     static WisunPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("Wi-SUN lab point mapping is blank");
+            throw new DriverException("Wi-SUN CoAP point mapping is blank");
         }
         String normalized = mapping.trim();
         String lower = normalized.toLowerCase(Locale.ROOT);
@@ -27,7 +27,7 @@ record WisunPoint(String path) {
         if (lower.startsWith("node:")) {
             String id = normalized.substring("node:".length()).trim();
             if (id.isEmpty()) {
-                throw new DriverException("Wi-SUN lab node mapping requires id: " + mapping);
+                throw new DriverException("Wi-SUN CoAP node mapping requires id: " + mapping);
             }
             return new WisunPoint("/nodes/" + id + "/value");
         }

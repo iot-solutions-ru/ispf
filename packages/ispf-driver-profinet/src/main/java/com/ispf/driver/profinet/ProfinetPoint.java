@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * PROFINET IO gateway lab point.
+ * PROFINET point addressing for DCP Identify follow-up blocks.
  * <p>
  * Forms: {@code slot:1:subslot:1}, {@code device:1:api:0:slot:1}.
  */
@@ -27,7 +27,7 @@ record ProfinetPoint(Kind kind, int device, int api, int slot, int subslot) {
 
     static ProfinetPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("PROFINET lab point mapping is blank");
+            throw new DriverException("PROFINET point mapping is blank");
         }
         String trimmed = mapping.trim();
         Matcher slotSub = SLOT_SUBSLOT.matcher(trimmed);
@@ -44,23 +44,23 @@ record ProfinetPoint(Kind kind, int device, int api, int slot, int subslot) {
             return create(Kind.DEVICE_API_SLOT, device, api, slot, 0);
         }
         throw new DriverException(
-                "Unsupported PROFINET lab mapping"
+                "Unsupported PROFINET mapping"
                         + " (expected slot:1:subslot:1 or device:1:api:0:slot:1): " + mapping);
     }
 
     private static ProfinetPoint create(Kind kind, int device, int api, int slot, int subslot)
             throws DriverException {
         if (device < 0 || device > 255) {
-            throw new DriverException("PROFINET lab device out of range: " + device);
+            throw new DriverException("PROFINET device out of range: " + device);
         }
         if (api < 0 || api > 65535) {
-            throw new DriverException("PROFINET lab api out of range: " + api);
+            throw new DriverException("PROFINET api out of range: " + api);
         }
         if (slot < 0 || slot > 255) {
-            throw new DriverException("PROFINET lab slot out of range: " + slot);
+            throw new DriverException("PROFINET slot out of range: " + slot);
         }
         if (subslot < 0 || subslot > 255) {
-            throw new DriverException("PROFINET lab subslot out of range: " + subslot);
+            throw new DriverException("PROFINET subslot out of range: " + subslot);
         }
         return new ProfinetPoint(kind, device, api, slot, subslot);
     }

@@ -13,22 +13,27 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Locale;
 
 /**
- * Clean-room TCP WRAPPER framing plus a compact xDLMS subset used by this driver.
+ * IEC 62056-47 TCP WRAPPER framing plus Get-Request-Normal / Set-Request-Normal APDUs.
  * <p>
- * The APDUs intentionally cover only no-security association, logical-name GET,
- * and logical-name SET for Data/Register-style values.
+ * This codec does not implement an ACSE AARQ association stack. Reads use
+ * Get-Request-Normal (and matching Get-Response-Normal) inside the TCP WRAPPER;
+ * writes use Set-Request-Normal with the same Cosem-Attribute-Descriptor layout.
  */
 public final class DlmsTcpWrapperCodec {
 
     public static final int VERSION = 1;
-    public static final int CMD_ASSOCIATE_REQUEST = 0x60;
-    public static final int CMD_ASSOCIATE_RESPONSE = 0x61;
     public static final int CMD_GET_REQUEST = 0xC0;
     public static final int CMD_GET_RESPONSE = 0xC4;
     public static final int CMD_SET_REQUEST = 0xC1;
     public static final int CMD_SET_RESPONSE = 0xC5;
+    public static final int CHOICE_NORMAL = 0x01;
+    public static final int INVOKE_ID_AND_PRIORITY = 0x01;
+    public static final int ACCESS_SELECTION_ABSENT = 0x00;
+    public static final int GET_DATA_RESULT_DATA = 0x00;
+    public static final int GET_DATA_RESULT_ERROR = 0x01;
     public static final int TAG_NULL = 0;
     public static final int TAG_BOOLEAN = 3;
     public static final int TAG_DOUBLE = 17;
@@ -38,63 +43,87 @@ public final class DlmsTcpWrapperCodec {
     private DlmsTcpWrapperCodec() {
     }
 
-    public static byte[] associateRequest(int clientAddress, int logicalDevice) {
-        ByteBuffer body = ByteBuffer.allocate(5).order(ByteOrder.BIG_ENDIAN);
-        body.put((byte) CMD_ASSOCIATE_REQUEST);
-        body.putShort((short) clientAddress);
-        body.putShort((short) logicalDevice);
-        return body.array();
-    }
-
-    public static byte[] associateResponse(boolean accepted) {
-        return new byte[] {(byte) CMD_ASSOCIATE_RESPONSE, (byte) (accepted ? 0 : 1)};
-    }
-
+    /**
+     * Get-Request-Normal APDU: tag, choice, invoke-id-and-priority, Cosem-Attribute-Descriptor,
+     * access-selection absent.
+     */
     public static byte[] getRequest(DlmsObjectType objectType, String obis, int attributeIndex) throws DriverException {
         byte[] obisBytes = encodeObis(obis);
-        ByteBuffer body = ByteBuffer.allocate(1 + 2 + 6 + 1).order(ByteOrder.BIG_ENDIAN);
+        ByteBuffer body = ByteBuffer.allocate(1 + 1 + 1 + 2 + 6 + 1 + 1).order(ByteOrder.BIG_ENDIAN);
         body.put((byte) CMD_GET_REQUEST);
+        body.put((byte) CHOICE_NORMAL);
+        body.put((byte) INVOKE_ID_AND_PRIORITY);
         body.putShort((short) objectType.classId());
         body.put(obisBytes);
         body.put((byte) attributeIndex);
+        body.put((byte) ACCESS_SELECTION_ABSENT);
         return body.array();
     }
 
     public static byte[] getResponse(int result, Object value) {
+        if (result != 0) {
+            return new byte[] {
+                    (byte) CMD_GET_RESPONSE,
+                    (byte) CHOICE_NORMAL,
+                    (byte) INVOKE_ID_AND_PRIORITY,
+                    (byte) GET_DATA_RESULT_ERROR,
+                    (byte) result
+            };
+        }
         byte[] encoded = encodeValue(value);
-        ByteBuffer body = ByteBuffer.allocate(2 + encoded.length).order(ByteOrder.BIG_ENDIAN);
+        ByteBuffer body = ByteBuffer.allocate(4 + encoded.length).order(ByteOrder.BIG_ENDIAN);
         body.put((byte) CMD_GET_RESPONSE);
-        body.put((byte) result);
+        body.put((byte) CHOICE_NORMAL);
+        body.put((byte) INVOKE_ID_AND_PRIORITY);
+        body.put((byte) GET_DATA_RESULT_DATA);
         body.put(encoded);
         return body.array();
     }
 
+    /**
+     * Set-Request-Normal APDU with the same Cosem-Attribute-Descriptor layout as Get-Request-Normal,
+     * then the encoded value.
+     */
     public static byte[] setRequest(DlmsObjectType objectType, String obis, int attributeIndex, Object value)
             throws DriverException {
         byte[] obisBytes = encodeObis(obis);
         byte[] encoded = encodeValue(value);
-        ByteBuffer body = ByteBuffer.allocate(1 + 2 + 6 + 1 + encoded.length).order(ByteOrder.BIG_ENDIAN);
+        ByteBuffer body = ByteBuffer.allocate(1 + 1 + 1 + 2 + 6 + 1 + 1 + encoded.length).order(ByteOrder.BIG_ENDIAN);
         body.put((byte) CMD_SET_REQUEST);
+        body.put((byte) CHOICE_NORMAL);
+        body.put((byte) INVOKE_ID_AND_PRIORITY);
         body.putShort((short) objectType.classId());
         body.put(obisBytes);
         body.put((byte) attributeIndex);
+        body.put((byte) ACCESS_SELECTION_ABSENT);
         body.put(encoded);
         return body.array();
     }
 
     public static byte[] setResponse(int result) {
-        return new byte[] {(byte) CMD_SET_RESPONSE, (byte) result};
+        return new byte[] {
+                (byte) CMD_SET_RESPONSE,
+                (byte) CHOICE_NORMAL,
+                (byte) INVOKE_ID_AND_PRIORITY,
+                (byte) result
+        };
     }
 
-    public static void writeFrame(OutputStream out, int sourceWPort, int destinationWPort, byte[] payload)
-            throws IOException {
-        ByteBuffer header = ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN);
+    /** Builds an IEC 62056-47 TCP WRAPPER frame around an APDU. */
+    public static byte[] wrapperFrame(int sourceWPort, int destinationWPort, byte[] apdu) {
+        byte[] payload = apdu == null ? new byte[0] : apdu;
+        ByteBuffer header = ByteBuffer.allocate(8 + payload.length).order(ByteOrder.BIG_ENDIAN);
         header.putShort((short) VERSION);
         header.putShort((short) sourceWPort);
         header.putShort((short) destinationWPort);
         header.putShort((short) payload.length);
-        out.write(header.array());
-        out.write(payload);
+        header.put(payload);
+        return header.array();
+    }
+
+    public static void writeFrame(OutputStream out, int sourceWPort, int destinationWPort, byte[] payload)
+            throws IOException {
+        out.write(wrapperFrame(sourceWPort, destinationWPort, payload));
         out.flush();
     }
 
@@ -114,26 +143,41 @@ public final class DlmsTcpWrapperCodec {
     public static GetRequest parseGetRequest(byte[] payload) throws DriverException {
         ByteBuffer buffer = ByteBuffer.wrap(payload).order(ByteOrder.BIG_ENDIAN);
         expectCommand(buffer, CMD_GET_REQUEST);
-        return new GetRequest(objectTypeForClass(Short.toUnsignedInt(buffer.getShort())), decodeObis(buffer), Byte.toUnsignedInt(buffer.get()));
+        expectChoiceNormal(buffer);
+        expectInvokeId(buffer);
+        DlmsObjectType objectType = objectTypeForClass(Short.toUnsignedInt(buffer.getShort()));
+        String obis = decodeObis(buffer);
+        int attributeIndex = Byte.toUnsignedInt(buffer.get());
+        expectAccessSelectionAbsent(buffer);
+        return new GetRequest(objectType, obis, attributeIndex);
     }
 
     public static SetRequest parseSetRequest(byte[] payload) throws DriverException {
         ByteBuffer buffer = ByteBuffer.wrap(payload).order(ByteOrder.BIG_ENDIAN);
         expectCommand(buffer, CMD_SET_REQUEST);
+        expectChoiceNormal(buffer);
+        expectInvokeId(buffer);
         return new SetRequest(
                 objectTypeForClass(Short.toUnsignedInt(buffer.getShort())),
                 decodeObis(buffer),
                 Byte.toUnsignedInt(buffer.get()),
-                decodeValue(buffer)
+                readAccessSelectionThenValue(buffer)
         );
     }
 
     public static Object parseGetResponse(byte[] payload) throws DriverException {
         ByteBuffer buffer = ByteBuffer.wrap(payload).order(ByteOrder.BIG_ENDIAN);
         expectCommand(buffer, CMD_GET_RESPONSE);
-        int result = Byte.toUnsignedInt(buffer.get());
-        if (result != 0) {
+        expectChoiceNormal(buffer);
+        expectInvokeId(buffer);
+        int dataResult = Byte.toUnsignedInt(buffer.get());
+        if (dataResult == GET_DATA_RESULT_ERROR) {
+            int result = Byte.toUnsignedInt(buffer.get());
             throw new DriverPermanentException("DLMS GET rejected with result " + result);
+        }
+        if (dataResult != GET_DATA_RESULT_DATA) {
+            throw new DriverPermanentException("Unexpected DLMS Get-Data-Result 0x"
+                    + Integer.toHexString(dataResult).toUpperCase(Locale.ROOT));
         }
         return decodeValue(buffer);
     }
@@ -141,16 +185,12 @@ public final class DlmsTcpWrapperCodec {
     public static void parseSetResponse(byte[] payload) throws DriverException {
         ByteBuffer buffer = ByteBuffer.wrap(payload).order(ByteOrder.BIG_ENDIAN);
         expectCommand(buffer, CMD_SET_RESPONSE);
+        expectChoiceNormal(buffer);
+        expectInvokeId(buffer);
         int result = Byte.toUnsignedInt(buffer.get());
         if (result != 0) {
             throw new DriverPermanentException("DLMS SET rejected with result " + result);
         }
-    }
-
-    public static boolean parseAssociateResponse(byte[] payload) throws DriverException {
-        ByteBuffer buffer = ByteBuffer.wrap(payload).order(ByteOrder.BIG_ENDIAN);
-        expectCommand(buffer, CMD_ASSOCIATE_RESPONSE);
-        return Byte.toUnsignedInt(buffer.get()) == 0;
     }
 
     public static byte[] encodeObis(String obis) throws DriverException {
@@ -215,6 +255,11 @@ public final class DlmsTcpWrapperCodec {
         };
     }
 
+    private static Object readAccessSelectionThenValue(ByteBuffer buffer) throws DriverException {
+        expectAccessSelectionAbsent(buffer);
+        return decodeValue(buffer);
+    }
+
     private static byte[] sizedBytes(ByteBuffer buffer) {
         int length = Short.toUnsignedInt(buffer.getShort());
         byte[] bytes = new byte[length];
@@ -225,7 +270,31 @@ public final class DlmsTcpWrapperCodec {
     private static void expectCommand(ByteBuffer buffer, int expected) throws DriverException {
         int actual = Byte.toUnsignedInt(buffer.get());
         if (actual != expected) {
-            throw new DriverPermanentException("Unexpected DLMS command 0x" + Integer.toHexString(actual));
+            throw new DriverPermanentException("Unexpected DLMS command 0x"
+                    + Integer.toHexString(actual).toUpperCase(Locale.ROOT));
+        }
+    }
+
+    private static void expectChoiceNormal(ByteBuffer buffer) throws DriverException {
+        int choice = Byte.toUnsignedInt(buffer.get());
+        if (choice != CHOICE_NORMAL) {
+            throw new DriverPermanentException("Unexpected DLMS request choice 0x"
+                    + Integer.toHexString(choice).toUpperCase(Locale.ROOT));
+        }
+    }
+
+    private static void expectInvokeId(ByteBuffer buffer) throws DriverException {
+        int invokeId = Byte.toUnsignedInt(buffer.get());
+        if (invokeId != INVOKE_ID_AND_PRIORITY) {
+            throw new DriverPermanentException("Unexpected DLMS invoke-id-and-priority 0x"
+                    + Integer.toHexString(invokeId).toUpperCase(Locale.ROOT));
+        }
+    }
+
+    private static void expectAccessSelectionAbsent(ByteBuffer buffer) throws DriverException {
+        int selection = Byte.toUnsignedInt(buffer.get());
+        if (selection != ACCESS_SELECTION_ABSENT) {
+            throw new DriverUnsupportedOperationException("DLMS access-selection is not supported");
         }
     }
 
@@ -249,7 +318,28 @@ public final class DlmsTcpWrapperCodec {
         return data;
     }
 
-    public record Frame(int sourceWPort, int destinationWPort, byte[] payload) {
+    public static final class Frame {
+        private final int sourceWPort;
+        private final int destinationWPort;
+        private final byte[] payload;
+
+        Frame(int sourceWPort, int destinationWPort, byte[] payload) {
+            this.sourceWPort = sourceWPort;
+            this.destinationWPort = destinationWPort;
+            this.payload = payload == null ? new byte[0] : payload.clone();
+        }
+
+        public int sourceWPort() {
+            return sourceWPort;
+        }
+
+        public int destinationWPort() {
+            return destinationWPort;
+        }
+
+        public byte[] payload() {
+            return payload.clone();
+        }
     }
 
     public record GetRequest(DlmsObjectType objectType, String obis, int attributeIndex) {

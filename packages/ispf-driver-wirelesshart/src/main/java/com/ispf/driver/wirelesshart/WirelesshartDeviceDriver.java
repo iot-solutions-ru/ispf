@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.wirelesshart.codec.WirelesshartLabSession;
+import com.ispf.driver.wirelesshart.codec.WirelesshartSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,12 +15,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * WirelessHART gateway TCP lab driver — cmd/PV style on port 5094.
+ * WirelessHART gateway driver over HART-IP TCP (8-byte header) on port 5094.
  * <p>
  * Point mapping: {@code pv}, {@code cmd:1}, {@code device:0}, {@code device:0:cmd:1}.
- * {@code writePoint} calls {@code session.writeValue(...)}.
+ * {@code writePoint} sends a HART short-frame write via pass-through (message id 3).
  * <p>
- * Honesty: gateway TCP lab — not 802.15.4 WirelessHART radio / HCF stack.
+ * Production IP path is HART-IP to a gateway — not an 802.15.4 WirelessHART radio / HCF stack.
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class WirelesshartDeviceDriver implements DeviceDriver {
@@ -34,9 +34,9 @@ public class WirelesshartDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "wirelesshart",
-            "WirelessHART Gateway Lab Driver",
+            "WirelessHART Gateway Driver",
             "0.1.0",
-            "WirelessHART gateway TCP lab: cmd/PV GET/SET on 5094;"
+            "WirelessHART gateway via HART-IP TCP (8-byte header, pass-through);"
                     + " not 802.15.4 WirelessHART radio / HCF stack",
             "ISPF",
             Map.of(
@@ -52,7 +52,7 @@ public class WirelesshartDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 5094;
     private int timeoutMs = 3000;
-    private WirelesshartLabSession session;
+    private WirelesshartSession session;
     private final Map<String, WirelesshartPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -82,13 +82,13 @@ public class WirelesshartDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new WirelesshartLabSession(host, port, timeoutMs);
+            session = new WirelesshartSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "WirelessHART gateway lab connected to " + host + ":" + port
+                    "WirelessHART gateway connected via HART-IP to " + host + ":" + port
                             + " (not 802.15.4 radio / HCF stack)");
         } catch (IOException e) {
             session = null;
-            throw new DriverException("WirelessHART lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("WirelessHART connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -121,10 +121,10 @@ public class WirelesshartDeviceDriver implements DeviceDriver {
                         "value", (double) pv,
                         "command", (long) point.command(),
                         "device", (long) point.deviceAddress(),
-                        "unit", "lab"
+                        "unit", "PV"
                 )));
             } catch (IOException e) {
-                throw new DriverException("WirelessHART lab read failed for " + mapping, e);
+                throw new DriverException("WirelessHART read failed for " + mapping, e);
             }
         }
     }
@@ -143,10 +143,10 @@ public class WirelesshartDeviceDriver implements DeviceDriver {
                     "value", (double) numeric,
                     "command", (long) point.command(),
                     "device", (long) point.deviceAddress(),
-                    "unit", "lab"
+                    "unit", "PV"
             )));
         } catch (IOException e) {
-            throw new DriverException("WirelessHART lab write failed for " + pointId, e);
+            throw new DriverException("WirelessHART write failed for " + pointId, e);
         }
     }
 

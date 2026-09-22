@@ -5,10 +5,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Point mapping for Schneider Modicon/Unity Modbus-TCP-compatible holding registers.
+ * Point mapping for Schneider Modicon/Unity Modbus TCP holding registers.
  * <p>
  * Accepted forms: {@code HR:100}, {@code HR:100:2}, {@code 100}, {@code MW100}, {@code MW:100},
- * {@code MW:100:2}. Lab mapping is 1:1 — the numeric suffix is the Modbus holding-register address.
+ * {@code MW:100:2}. Mapping is 1:1 — the numeric suffix is the Modbus holding-register address.
  * {@code MW100} and {@code HR:100} both address register 100.
  */
 public record SchneiderUmacPoint(int address, int count) {

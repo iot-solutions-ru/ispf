@@ -22,19 +22,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Weighbridge / truck-scale driver — ASCII continuous or polled weight lines over TCP.
+ * Weighbridge / truck-scale driver — Mettler Toledo MT-SICS level 0 over TCP.
  * <p>
  * Point mapping selects the channel ({@code weight}, {@code gross}, {@code net}).
- * {@code readPoints} sends {@code W} (print/poll) and parses a scale line such as
- * {@code ST,GS,+000123.4kg} or {@code 123.4 kg} into record fields {@code value},
- * {@code unit}, {@code status}, {@code raw}.
- * {@code writePoint} sends lab commands {@code ZERO}, {@code TARE}, or the record {@code value}.
+ * {@code readPoints} sends {@code S} (stable weight) and parses a reply such as
+ * {@code S S      0.00 kg} into record fields {@code value}, {@code unit},
+ * {@code status}, {@code raw}.
+ * {@code writePoint} sends MT-SICS {@code Z} (zero) or {@code T} (tare).
  * <p>
- * Clean-room ISPF lab dialect, Apache-2.0 — JDK sockets only; not a vendor scale SDK.
+ * MT-SICS level 0 only — not every truck-scale dialect. Apache-2.0, JDK sockets only.
  */
 public class WeighbridgeDeviceDriver implements DeviceDriver {
 
     private static final Pattern SIGNED_WEIGHT = Pattern.compile("([+-]?\\d+(?:\\.\\d+)?)\\s*([a-zA-Z]+)?");
+    private static final Pattern MT_SICS_STATUS = Pattern.compile("^S\\s+([A-Za-z])");
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("weighbridgeValue")
             .field("value", FieldType.STRING)
@@ -48,7 +49,7 @@ public class WeighbridgeDeviceDriver implements DeviceDriver {
             "weighbridge",
             "Weighbridge Driver",
             "0.1.0",
-            "TCP ASCII weighbridge: W poll for weight, ZERO/TARE writes",
+            "TCP MT-SICS level 0 (S/Z/T); not every truck-scale dialect",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -152,7 +153,7 @@ public class WeighbridgeDeviceDriver implements DeviceDriver {
                     socket.setSoTimeout(Math.min(500, timeoutMs));
                     readLine(socket.getInputStream());
                 } catch (IOException ignored) {
-                    // no ACK is fine for ZERO/TARE lab dialect
+                    // no ACK is fine for MT-SICS Z/T
                 } finally {
                     socket.setSoTimeout(timeoutMs);
                 }
@@ -164,7 +165,7 @@ public class WeighbridgeDeviceDriver implements DeviceDriver {
 
     private synchronized String pollWeight() throws DriverException {
         try {
-            writeLine(socket.getOutputStream(), "W");
+            writeLine(socket.getOutputStream(), "S");
             String line = readLine(socket.getInputStream());
             if (line == null) {
                 throw new IOException("EOF while reading weight");
@@ -177,17 +178,19 @@ public class WeighbridgeDeviceDriver implements DeviceDriver {
 
     private static String resolveCommand(String channel, DataRecord value) {
         Object raw = value == null ? null : value.firstRow().get("value");
+        String token;
         if (raw != null && !String.valueOf(raw).isBlank()) {
-            return String.valueOf(raw).trim().toUpperCase(Locale.ROOT);
+            token = String.valueOf(raw).trim().toUpperCase(Locale.ROOT);
+        } else {
+            token = channel.toUpperCase(Locale.ROOT);
         }
-        String upper = channel.toUpperCase(Locale.ROOT);
-        if (upper.contains("TARE")) {
-            return "TARE";
+        if ("T".equals(token) || token.contains("TARE")) {
+            return "T";
         }
-        if (upper.contains("ZERO")) {
-            return "ZERO";
+        if ("Z".equals(token) || token.contains("ZERO")) {
+            return "Z";
         }
-        return "ZERO";
+        return "Z";
     }
 
     static ParsedWeight parseWeight(String raw) {
@@ -196,7 +199,10 @@ public class WeighbridgeDeviceDriver implements DeviceDriver {
         }
         String status = "";
         String upper = raw.toUpperCase(Locale.ROOT);
-        if (upper.startsWith("ST")) {
+        Matcher mtStatus = MT_SICS_STATUS.matcher(raw.trim());
+        if (mtStatus.find()) {
+            status = mtStatus.group(1).toUpperCase(Locale.ROOT);
+        } else if (upper.startsWith("ST")) {
             status = "ST";
         } else if (upper.startsWith("US")) {
             status = "US";

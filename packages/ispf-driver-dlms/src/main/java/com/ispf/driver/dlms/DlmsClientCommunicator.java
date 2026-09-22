@@ -2,7 +2,6 @@ package com.ispf.driver.dlms;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.driver.DriverException;
-import com.ispf.driver.DriverPermanentException;
 import com.ispf.driver.DriverTransientException;
 import com.ispf.driver.dlms.codec.DlmsTcpWrapperCodec;
 
@@ -10,15 +9,13 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 /**
- * Clean-room DLMS/COSEM client session over TCP WRAPPER.
+ * DLMS/COSEM client session over IEC 62056-47 TCP WRAPPER (no ACSE AARQ).
  */
 final class DlmsClientCommunicator implements AutoCloseable {
 
     private final Socket socket;
     private final int clientAddress;
     private final int logicalDevice;
-    private final int timeoutMs;
-    private boolean associated;
 
     DlmsClientCommunicator(
             String host,
@@ -29,15 +26,10 @@ final class DlmsClientCommunicator implements AutoCloseable {
     ) throws DriverException {
         this.clientAddress = clientAddress;
         this.logicalDevice = logicalDevice;
-        this.timeoutMs = timeoutMs;
         socket = new Socket();
         try {
             socket.connect(new InetSocketAddress(host, port), timeoutMs);
             socket.setSoTimeout(timeoutMs);
-            associate();
-        } catch (DriverException ex) {
-            closeQuietly();
-            throw ex;
         } catch (Exception ex) {
             closeQuietly();
             throw new DriverTransientException("DLMS connect failed", ex);
@@ -45,7 +37,7 @@ final class DlmsClientCommunicator implements AutoCloseable {
     }
 
     boolean isOpen() {
-        return socket != null && socket.isConnected() && !socket.isClosed() && associated;
+        return socket != null && socket.isConnected() && !socket.isClosed();
     }
 
     Object readAttribute(DlmsPoint point) throws DriverException {
@@ -70,14 +62,6 @@ final class DlmsClientCommunicator implements AutoCloseable {
         }
     }
 
-    private void associate() throws Exception {
-        byte[] response = exchange(DlmsTcpWrapperCodec.associateRequest(clientAddress, logicalDevice));
-        if (!DlmsTcpWrapperCodec.parseAssociateResponse(response)) {
-            throw new DriverPermanentException("DLMS association rejected");
-        }
-        associated = true;
-    }
-
     private byte[] exchange(byte[] payload) throws Exception {
         synchronized (socket) {
             DlmsTcpWrapperCodec.writeFrame(socket.getOutputStream(), clientAddress, logicalDevice, payload);
@@ -96,7 +80,6 @@ final class DlmsClientCommunicator implements AutoCloseable {
 
     @Override
     public void close() {
-        associated = false;
         if (socket != null && !socket.isClosed()) {
             try {
                 socket.close();

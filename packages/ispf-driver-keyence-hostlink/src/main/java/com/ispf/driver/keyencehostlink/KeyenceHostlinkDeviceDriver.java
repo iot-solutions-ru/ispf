@@ -23,24 +23,25 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Keyence Host Link driver — ASCII Host Link / KV-style commands over a raw TCP socket.
+ * Keyence Host Link driver — ASCII Host Link / KV COMMUNICATION PROTOCOL commands over TCP.
  * <p>
- * Point mapping (lab subset):
+ * Point mapping:
  * <ul>
- *   <li>{@code DM100}, {@code R0}, {@code EM10} — expanded to {@code RDS &lt;device&gt;&lt;addr&gt; 1}</li>
- *   <li>{@code RDS DM100 1} — sent as-is (read)</li>
+ *   <li>{@code DM100}, {@code R0}, {@code EM10} — expanded to {@code RDS &lt;device&gt;&lt;addr&gt;.U 1}
+ *       (unsigned word format)</li>
+ *   <li>{@code RDS DM100.U 1} — sent as-is (read)</li>
  *   <li>Writes use {@code WR &lt;device&gt;&lt;addr&gt; &lt;value&gt;} from the mapped register and record
  *       field {@code value} (also accepts {@code payload}/{@code data})</li>
  * </ul>
- * Default TCP port {@code 8501}. Frames are CR-terminated. This is a clean-room lab subset of
- * public Host Link ASCII shapes (RDS/WR/WRS) — not a full KV Studio / proprietary stack.
+ * Default TCP port {@code 8501}. Frames are CR-terminated. Example read of DM100 unsigned count 1:
+ * {@code RDS DM100.U 1} then CR. Responses are parsed as numeric Host Link values.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only; no proprietary SDKs / PLC4X.
  */
 public class KeyenceHostlinkDeviceDriver implements DeviceDriver {
 
     private static final Pattern REGISTER = Pattern.compile(
-            "^(?<dev>CTH|CTC|CR|MR|LR|DM|EM|FM|ZF|W|R|B|T|C)(?<addr>\\d+)$",
+            "^(?<dev>CTH|CTC|CR|MR|LR|DM|EM|FM|ZF|W|R|B|T|C)(?<addr>\\d+)(?:\\.(?<fmt>[USHDB]))?$",
             Pattern.CASE_INSENSITIVE);
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("keyenceHostlinkValue")
@@ -166,6 +167,10 @@ public class KeyenceHostlinkDeviceDriver implements DeviceDriver {
         )));
     }
 
+    /**
+     * Builds a Host Link read command. Compact registers expand to unsigned RDS,
+     * e.g. {@code DM100} → {@code RDS DM100.U 1}.
+     */
     static String buildReadCommand(String mapping) {
         String map = mapping == null ? "" : mapping.trim();
         if (map.isBlank()) {
@@ -179,7 +184,9 @@ public class KeyenceHostlinkDeviceDriver implements DeviceDriver {
         if (matcher.matches()) {
             String device = matcher.group("dev").toUpperCase(Locale.ROOT);
             String addr = matcher.group("addr");
-            return "RDS " + device + addr + " 1";
+            String fmt = matcher.group("fmt");
+            String format = fmt == null ? "U" : fmt.toUpperCase(Locale.ROOT);
+            return "RDS " + device + addr + "." + format + " 1";
         }
         return map;
     }
@@ -207,10 +214,10 @@ public class KeyenceHostlinkDeviceDriver implements DeviceDriver {
             String rest = map.substring(4).trim();
             String[] parts = rest.split("\\s+");
             if (parts.length >= 1) {
-                return "WR " + parts[0] + " " + body;
+                return "WR " + stripFormatSuffix(parts[0]) + " " + body;
             }
         }
-        return "WR " + map + " " + body;
+        return "WR " + stripFormatSuffix(map) + " " + body;
     }
 
     static String registerFromMapping(String mapping) {
@@ -223,12 +230,16 @@ public class KeyenceHostlinkDeviceDriver implements DeviceDriver {
         if (upper.startsWith("RDS ") || upper.startsWith("RD ") || upper.startsWith("WRS ") || upper.startsWith("WR ")) {
             String[] parts = map.split("\\s+");
             if (parts.length >= 2) {
-                return parts[1].toUpperCase(Locale.ROOT);
+                return stripFormatSuffix(parts[1]).toUpperCase(Locale.ROOT);
             }
         }
-        return map.toUpperCase(Locale.ROOT);
+        return stripFormatSuffix(map).toUpperCase(Locale.ROOT);
     }
 
+    /**
+     * Parses a Host Link numeric read response (single or space-separated values).
+     * Returns the first numeric token when present.
+     */
     static String parseReadValue(String response) {
         if (response == null) {
             return "";
@@ -241,8 +252,13 @@ public class KeyenceHostlinkDeviceDriver implements DeviceDriver {
             return trimmed;
         }
         String[] parts = trimmed.split("\\s+");
-        if (parts.length >= 2 && REGISTER.matcher(parts[0]).matches()) {
-            return parts[1];
+        for (String part : parts) {
+            if (REGISTER.matcher(part).matches()) {
+                continue;
+            }
+            if (part.matches("[+-]?\\d+(\\.\\d+)?")) {
+                return part;
+            }
         }
         return parts[parts.length - 1];
     }
@@ -253,6 +269,20 @@ public class KeyenceHostlinkDeviceDriver implements DeviceDriver {
         }
         String t = response.trim().toUpperCase(Locale.ROOT);
         return t.startsWith("E") && t.length() <= 4 && t.chars().skip(1).allMatch(Character::isDigit);
+    }
+
+    static String stripFormatSuffix(String token) {
+        if (token == null) {
+            return "";
+        }
+        int dot = token.lastIndexOf('.');
+        if (dot > 0 && dot == token.length() - 2) {
+            char fmt = Character.toUpperCase(token.charAt(dot + 1));
+            if (fmt == 'U' || fmt == 'S' || fmt == 'H' || fmt == 'D' || fmt == 'B') {
+                return token.substring(0, dot);
+            }
+        }
+        return token;
     }
 
     private synchronized String transact(String command) throws DriverException {

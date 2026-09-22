@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.hartserial.codec.HartSerialLabSession;
+import com.ispf.driver.hartserial.codec.HartSerialSession;
 
 import java.io.IOException;
 import java.util.Map;
@@ -14,11 +14,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * HART serial-gateway lab driver — TCP length-prefixed HART PDU subset (not FSK modem / HART FSK PHY).
+ * HART serial-gateway driver — TCP byte stream of preamble plus short-frame PV reads (commands 1 and 3).
  * <p>
  * Point mapping: {@code pv}, {@code cmd:1}, {@code device:0}, {@code device:0:cmd:1}.
- * Speaks to a TCP serial gateway lab on {@code host:port} (default 5094). This is a gateway lab
- * subset, not a full HCF stack and not an FSK modem. Clean-room ISPF code, Apache-2.0 — JDK sockets only.
+ * Speaks to a TCP serial gateway on {@code host:port} (default 5094). Not a full HCF stack and not an
+ * FSK modem. Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class HartSerialDeviceDriver implements DeviceDriver {
 
@@ -31,10 +31,10 @@ public class HartSerialDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "hart-serial",
-            "HART Serial Gateway Lab Driver",
+            "HART Serial Gateway Driver",
             "0.1.0",
-            "HART serial TCP gateway lab: length-prefixed short-frame PV read (cmd 1/3);"
-                    + " not FSK modem, not full HCF stack",
+            "HART short-frame over TCP serial gateway: preamble plus command 1/3 PV read;"
+                    + " not an FSK modem, not a full HCF stack",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -49,7 +49,7 @@ public class HartSerialDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 5094;
     private int timeoutMs = 3000;
-    private HartSerialLabSession session;
+    private HartSerialSession session;
     private final Map<String, HartSerialPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -79,9 +79,9 @@ public class HartSerialDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new HartSerialLabSession(host, port, timeoutMs);
+            session = new HartSerialSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "HART serial-gateway lab connected to " + host + ":" + port);
+                    "HART serial-gateway connected to " + host + ":" + port);
         } catch (IOException e) {
             session = null;
             throw new DriverException("HART serial-gateway connect failed for " + host + ":" + port, e);
@@ -117,7 +117,7 @@ public class HartSerialDeviceDriver implements DeviceDriver {
                         "value", (double) pv,
                         "command", (long) point.command(),
                         "device", (long) point.deviceAddress(),
-                        "unit", "lab"
+                        "unit", "PV"
                 )));
             } catch (IOException e) {
                 throw new DriverException("HART serial-gateway read failed for " + mapping, e);
@@ -128,7 +128,7 @@ public class HartSerialDeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         throw new DriverException(
-                "HART serial-gateway lab: write not supported (PV / universal command pass-through only)");
+                "HART serial-gateway rejects writes (PV / universal command read only)");
     }
 
     private void ensureConnected() throws DriverException {

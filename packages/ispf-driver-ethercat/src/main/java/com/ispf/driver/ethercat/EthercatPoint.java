@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * EtherCAT gateway lab point.
+ * EtherCAT logical-access point mapped onto LRD/LWR ADP/ADO fields.
  * <p>
  * Forms: {@code slave:1}, {@code slave:1:pdo:0}, {@code 0x6000:01}.
  */
@@ -31,7 +31,7 @@ record EthercatPoint(Kind kind, int slave, int pdo, int objectIndex, int subInde
 
     static EthercatPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("EtherCAT lab point mapping is blank");
+            throw new DriverException("EtherCAT point mapping is blank");
         }
         String trimmed = mapping.trim();
         Matcher slavePdo = SLAVE_PDO.matcher(trimmed);
@@ -51,25 +51,42 @@ record EthercatPoint(Kind kind, int slave, int pdo, int objectIndex, int subInde
             return create(Kind.OBJECT, 0, 0, index, sub);
         }
         throw new DriverException(
-                "Unsupported EtherCAT lab mapping"
+                "Unsupported EtherCAT mapping"
                         + " (expected slave:1, slave:1:pdo:0, or 0x6000:01): " + mapping);
     }
 
     private static EthercatPoint create(Kind kind, int slave, int pdo, int objectIndex, int subIndex)
             throws DriverException {
         if (slave < 0 || slave > 65535) {
-            throw new DriverException("EtherCAT lab slave out of range: " + slave);
+            throw new DriverException("EtherCAT slave out of range: " + slave);
         }
         if (pdo < 0 || pdo > 255) {
-            throw new DriverException("EtherCAT lab PDO out of range: " + pdo);
+            throw new DriverException("EtherCAT PDO out of range: " + pdo);
         }
         if (objectIndex < 0 || objectIndex > 0xFFFF) {
-            throw new DriverException("EtherCAT lab object index out of range: " + objectIndex);
+            throw new DriverException("EtherCAT object index out of range: " + objectIndex);
         }
         if (subIndex < 0 || subIndex > 0xFF) {
-            throw new DriverException("EtherCAT lab sub-index out of range: " + subIndex);
+            throw new DriverException("EtherCAT sub-index out of range: " + subIndex);
         }
         return new EthercatPoint(kind, slave, pdo, objectIndex, subIndex);
+    }
+
+    /** Datagram index octet. */
+    int idx() {
+        return switch (kind) {
+            case SLAVE, SLAVE_PDO -> Math.max(1, slave & 0xFF);
+            case OBJECT -> 1;
+        };
+    }
+
+    /** Logical ADO for LRD/LWR. */
+    int ado() {
+        return switch (kind) {
+            case SLAVE -> 0x1000;
+            case SLAVE_PDO -> 0x2000 | (pdo & 0xFF);
+            case OBJECT -> objectIndex & 0xFFFF;
+        };
     }
 
     String wireToken() {

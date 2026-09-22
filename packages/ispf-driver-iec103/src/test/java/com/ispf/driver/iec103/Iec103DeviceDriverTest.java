@@ -8,12 +8,12 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
-import com.ispf.driver.iec103.codec.Iec103LabCodec;
-import com.ispf.driver.iec103.codec.Iec103LabTypes;
+import com.ispf.driver.iec103.codec.Iec103Codec;
+import com.ispf.driver.iec103.codec.Iec103Frame;
+import com.ispf.driver.iec103.codec.Iec103Types;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -21,6 +21,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -28,19 +29,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake TCP loopback tests for the IEC103-lab codec.
+ * In-process FT1.2 outstation loopback tests for IEC 60870-5-103.
  */
 class Iec103DeviceDriverTest {
 
     private Iec103DeviceDriver driver;
-    private FakeIec103LabServer server;
+    private FakeIec103Outstation server;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -55,13 +56,15 @@ class Iec103DeviceDriverTest {
     }
 
     @Test
-    void metadataDescribesLabNotStub() {
+    void metadataDescribesFt12NotLab() {
         driver = new Iec103DeviceDriver();
         assertEquals("iec103", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
-        assertTrue(driver.metadata().description().toLowerCase().contains("lab"));
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("ft1.2"));
         assertTrue(driver.metadata().description().contains("FUN/INF"));
+        assertFalse(description.contains("lab"));
     }
 
     @Test
@@ -77,7 +80,7 @@ class Iec103DeviceDriverTest {
 
     @Test
     void interrogationReadsMeasuredAndStatus() throws Exception {
-        server = new FakeIec103LabServer(1);
+        server = new FakeIec103Outstation(1);
         server.putFloat(1, 40, 48.5f);
         server.putStatus(2, 16, true);
         server.start();
@@ -85,6 +88,7 @@ class Iec103DeviceDriverTest {
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
                 "port", String.valueOf(server.port()),
+                "linkAddress", "1",
                 "commonAddress", "1",
                 "timeoutMs", "2000"
         ));
@@ -111,8 +115,8 @@ class Iec103DeviceDriverTest {
     }
 
     @Test
-    void writeGeneralCommandUpdatesLabOutstation() throws Exception {
-        server = new FakeIec103LabServer(1);
+    void writeGeneralCommandUpdatesOutstation() throws Exception {
+        server = new FakeIec103Outstation(1);
         server.putStatus(2, 16, false);
         server.start();
 
@@ -145,25 +149,22 @@ class Iec103DeviceDriverTest {
     }
 
     /**
-     * Minimal IEC103-lab outstation: STARTDT_CON + GI responses + command acks.
+     * FT1.2 outstation: ACK on reset-link, monitored points on GI, ACTCON on general command.
      */
-    private static final class FakeIec103LabServer implements AutoCloseable {
-
-        private static final byte[] STARTDT_CON = { 0x0B, 0x00, 0x00, 0x00 };
+    private static final class FakeIec103Outstation implements AutoCloseable {
 
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
-            Thread thread = new Thread(runnable, "fake-iec103-lab");
+            Thread thread = new Thread(runnable, "fake-iec103");
             thread.setDaemon(true);
             return thread;
         });
-        private final int commonAddress;
+        private final int asduAddress;
         private final Map<Integer, Float> floats = new ConcurrentHashMap<>();
         private final Map<Integer, Boolean> status = new ConcurrentHashMap<>();
-        private final AtomicInteger sendSeq = new AtomicInteger();
 
-        FakeIec103LabServer(int commonAddress) throws IOException {
-            this.commonAddress = commonAddress;
+        FakeIec103Outstation(int asduAddress) throws IOException {
+            this.asduAddress = asduAddress;
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
@@ -209,35 +210,33 @@ class Iec103DeviceDriverTest {
             try (socket) {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
-                int recvSeq = 0;
                 while (!socket.isClosed()) {
-                    byte[] frame = readApdu(in);
-                    Iec103LabCodec.ParsedApdu parsed = Iec103LabCodec.parseApdu(frame);
-                    if (parsed.kind() == Iec103LabCodec.ApduKind.U) {
-                        out.write(Iec103LabCodec.encodeUFrame(STARTDT_CON));
+                    Iec103Frame frame = Iec103Codec.readFrame(in);
+                    if (frame.kind() == Iec103Frame.Kind.FIXED
+                            && Iec103Codec.functionCode(frame.control()) == Iec103Types.FC_RESET_REMOTE_LINK) {
+                        out.write(Iec103Codec.encodeFixed(Iec103Types.FC_ACK, frame.linkAddress()));
                         out.flush();
                         continue;
                     }
-                    if (parsed.kind() != Iec103LabCodec.ApduKind.I) {
+                    if (frame.kind() != Iec103Frame.Kind.VARIABLE) {
                         continue;
                     }
-                    recvSeq = (recvSeq + 1) & 0x7FFF;
-                    byte[] asdu = parsed.asdu();
-                    int typeId = Iec103LabCodec.asduTypeId(asdu);
-                    if (typeId == Iec103LabTypes.ASDU_GI) {
-                        respondInterrogation(out, recvSeq);
-                    } else if (typeId == Iec103LabTypes.ASDU_GENERAL_COMMAND) {
-                        for (var value : parsed.values()) {
+                    byte[] asdu = frame.asdu();
+                    int typeId = Iec103Codec.asduTypeId(asdu);
+                    if (typeId == Iec103Types.ASDU_GI) {
+                        respondInterrogation(out, frame.linkAddress());
+                    } else if (typeId == Iec103Types.ASDU_GENERAL_COMMAND) {
+                        for (var value : Iec103Codec.decodeAsdu(asdu)) {
                             status.put(pack(value.fun(), value.inf()), value.bool());
-                            byte[] ack = Iec103LabCodec.encodeAsdu(
-                                    Iec103LabTypes.ASDU_GENERAL_COMMAND,
-                                    Iec103LabTypes.COT_ACTIVATION_CON,
-                                    commonAddress,
+                            byte[] ack = Iec103Codec.encodeAsdu(
+                                    Iec103Types.ASDU_GENERAL_COMMAND,
+                                    Iec103Types.COT_COMMAND_ACK,
+                                    asduAddress,
                                     value.fun(),
                                     value.inf(),
                                     new byte[] { (byte) (value.bool() ? 2 : 1) }
                             );
-                            writeI(out, recvSeq, ack);
+                            writeVariable(out, frame.linkAddress(), ack);
                         }
                     }
                 }
@@ -245,53 +244,32 @@ class Iec103DeviceDriverTest {
             }
         }
 
-        private void respondInterrogation(OutputStream out, int recvSeq) throws IOException {
+        private void respondInterrogation(OutputStream out, int linkAddress) throws IOException {
             for (Map.Entry<Integer, Float> entry : new LinkedHashMap<>(floats).entrySet()) {
                 int fun = (entry.getKey() >>> 8) & 0xFF;
                 int inf = entry.getKey() & 0xFF;
-                writeI(out, recvSeq, Iec103LabCodec.encodeLabMeasFloat(
-                        commonAddress, Iec103LabTypes.COT_INTERROGATED, fun, inf, entry.getValue(), 0));
+                writeVariable(out, linkAddress, Iec103Codec.encodeMeasFloat(
+                        asduAddress, Iec103Types.COT_GENERAL_INTERROGATION, fun, inf, entry.getValue(), 0));
             }
             for (Map.Entry<Integer, Boolean> entry : new LinkedHashMap<>(status).entrySet()) {
                 int fun = (entry.getKey() >>> 8) & 0xFF;
                 int inf = entry.getKey() & 0xFF;
-                writeI(out, recvSeq, Iec103LabCodec.encodeStatus(
-                        commonAddress, Iec103LabTypes.COT_INTERROGATED, fun, inf, entry.getValue(), 0));
+                writeVariable(out, linkAddress, Iec103Codec.encodeStatus(
+                        asduAddress, Iec103Types.COT_GENERAL_INTERROGATION, fun, inf, entry.getValue(), 0));
             }
-            writeI(out, recvSeq, Iec103LabCodec.encodeAsdu(
-                    Iec103LabTypes.ASDU_GI_TERMINATION,
-                    Iec103LabTypes.COT_ACTIVATION_CON,
-                    commonAddress,
+            writeVariable(out, linkAddress, Iec103Codec.encodeAsdu(
+                    Iec103Types.ASDU_GI_TERMINATION,
+                    Iec103Types.COT_GI_TERMINATION,
+                    asduAddress,
                     0,
                     0,
                     new byte[] { 0 }
             ));
         }
 
-        private void writeI(OutputStream out, int recvSeq, byte[] asdu) throws IOException {
-            int seq = sendSeq.getAndIncrement() & 0x7FFF;
-            out.write(Iec103LabCodec.encodeIFrame(seq, recvSeq, asdu));
+        private static void writeVariable(OutputStream out, int linkAddress, byte[] asdu) throws IOException {
+            out.write(Iec103Codec.encodeVariable(Iec103Types.FC_RESPOND_USER_DATA, linkAddress, asdu));
             out.flush();
-        }
-
-        private static byte[] readApdu(InputStream in) throws IOException {
-            int start = in.read();
-            if (start < 0) {
-                throw new EOFException();
-            }
-            int length = in.read();
-            if (length < 0) {
-                throw new EOFException();
-            }
-            byte[] body = in.readNBytes(length);
-            if (body.length != length) {
-                throw new EOFException();
-            }
-            byte[] frame = new byte[2 + length];
-            frame[0] = (byte) start;
-            frame[1] = (byte) length;
-            System.arraycopy(body, 0, frame, 2, length);
-            return frame;
         }
 
         @Override

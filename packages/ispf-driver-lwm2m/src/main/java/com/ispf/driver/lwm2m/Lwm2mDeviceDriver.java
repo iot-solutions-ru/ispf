@@ -14,10 +14,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * OMA LwM2M client subset — resource read via clean-room CoAP GET (RFC 7252 CON/ACK).
  * <p>
- * Point mapping is an LwM2M path such as {@code /1/0/0} (Object/Instance/Resource) or
+ * Point mapping is an LwM2M path such as {@code /3/0/0} (Object/Instance/Resource) or
  * {@code /rd} (registration interface probe). This is <strong>not</strong> a full LwM2M
  * bootstrap/registration/observe stack: only synchronous CoAP GET of Uri-Path resources
  * over UDP. Public OMA LwM2M / IETF CoAP specs only.
+ * <p>
+ * Standard Device Manufacturer path {@code /3/0/0} is locked as CON GET MID 1, no token:
+ * {@code 40 01 00 01 B1 33 01 30 01 30}. Peer ACK 2.05 with payload OK is
+ * {@code 60 45 00 01 FF 4F 4B}.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — no Eclipse Californium (avoids EPL/GPL dependency).
  */
@@ -33,7 +37,8 @@ public class Lwm2mDeviceDriver implements DeviceDriver {
             "lwm2m",
             "LwM2M Driver",
             "0.1.0",
-            "OMA LwM2M resource-read subset via clean-room CoAP GET (/object/instance/resource)",
+            "OMA LwM2M resource read via CoAP GET (RFC 7252);"
+                    + " not a full bootstrap/observe stack",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -54,6 +59,11 @@ public class Lwm2mDeviceDriver implements DeviceDriver {
     private final Map<String, String> points = new ConcurrentHashMap<>();
     private volatile boolean connected;
     private String registerProbe = "";
+
+    /** Locked CON GET for LwM2M Device path {@code /3/0/0} (MID 1, no token). */
+    public static byte[] buildDevice300Get() {
+        return CoapGetClient.encodeConGetDevice300();
+    }
 
     @Override
     public DriverMetadata metadata() {
@@ -98,7 +108,7 @@ public class Lwm2mDeviceDriver implements DeviceDriver {
         connected = true;
         driverObject.log(DriverLogLevel.INFO,
                 "LwM2M CoAP GET client ready for " + host + ":" + port
-                        + " (subset: resource read only; rdProbe=" + registerProbe + ")");
+                        + " (not a full bootstrap/observe stack; rdProbe=" + registerProbe + ")");
     }
 
     @Override
@@ -145,5 +155,10 @@ public class Lwm2mDeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         throw new DriverException("LwM2M driver is read-only in v0.1 (CoAP GET subset only)");
+    }
+
+    /** Package-visible helper for path segment encoding checks. */
+    static byte[] encodePathGet(String path) {
+        return CoapGetClient.buildGet(CoapGetClient.WIRE_MESSAGE_ID, CoapGetClient.pathSegments(path));
     }
 }

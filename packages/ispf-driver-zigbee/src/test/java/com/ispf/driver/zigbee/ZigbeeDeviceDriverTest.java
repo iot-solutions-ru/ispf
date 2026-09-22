@@ -1,51 +1,43 @@
 package com.ispf.driver.zigbee;
 
 import com.ispf.core.model.DataRecord;
-import com.ispf.core.model.DataSchema;
-import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.zigbee.codec.AshCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake TCP loopback tests for the Zigbee ZCL coordinator gateway lab.
- * Certifies the lab dialect only — not 802.15.4 radio / NCP.
+ * In-process ASH (EZSP UART) over TCP peer tests — not 802.15.4 / not ZCL.
  */
 class ZigbeeDeviceDriverTest {
 
-    private static final String TEMP =
-            "nwk:0x1234:ep:1:cluster:0x0402:attr:0";
-
     private ZigbeeDeviceDriver driver;
-    private FakeZclGateway gateway;
+    private FakeAshPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -53,48 +45,56 @@ class ZigbeeDeviceDriverTest {
             driver.disconnect();
             driver = null;
         }
-        if (gateway != null) {
-            gateway.close();
-            gateway = null;
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
     }
 
     @Test
-    void metadataIsProductionZclGatewayLab() {
+    void hostResetFrameAndHalCommonCrc16() {
+        // CRC via the bit function — not a copied table.
+        assertEquals(0x38BC, AshCodec.crc16(new byte[] {(byte) 0xC0}));
+        assertEquals(0x9B7B, AshCodec.crc16(new byte[] {(byte) 0xC1, 0x02, 0x02}));
+
+        // Handwritten host RST octets — not built by copying encoder output into the expected array.
+        byte[] expectedReset = new byte[] {
+                0x1A, (byte) 0xC0, 0x38, (byte) 0xBC, 0x7E
+        };
+        assertArrayEquals(expectedReset, AshCodec.encodeHostReset());
+        assertArrayEquals(expectedReset, ZigbeeDeviceDriver.hostResetFrame());
+    }
+
+    @Test
+    void metadataIsProductionAshOverTcp() {
         driver = new ZigbeeDeviceDriver();
         assertEquals("zigbee", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
-        assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
+        assertEquals(Set.of("read"), driver.metadata().capabilities());
         assertEquals("17754", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("zcl") || description.contains("gateway"));
-        assertTrue(description.contains("not"));
+        assertTrue(description.contains("ash"));
+        assertFalse(description.contains("lab"));
+        assertTrue(description.contains("not") && description.contains("802.15.4"));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
     }
 
     @Test
-    void pointParserAcceptsNwkAttrAndIeee() throws Exception {
-        ZigbeePoint attr = ZigbeePoint.parse(TEMP);
-        assertEquals(ZigbeePoint.Kind.ZCL_ATTR, attr.kind());
-        assertEquals(0x1234, attr.nwk());
-        assertEquals(1, attr.endpoint());
-        assertEquals(0x0402, attr.cluster());
-        assertEquals(0, attr.attr());
-        assertEquals("00124b0001234567", ZigbeePoint.parse("ieee:00124b0001234567").ieee());
+    void pointParserAcceptsVersionAndReason() throws Exception {
+        assertEquals(ZigbeePoint.Kind.VERSION, ZigbeePoint.parse("version").kind());
+        assertEquals(ZigbeePoint.Kind.REASON, ZigbeePoint.parse("reason").kind());
+        assertEquals("rstack:version", ZigbeePoint.parse("rstack:version").display());
+        assertEquals("rstack:reason", ZigbeePoint.parse("rstack:reason").display());
     }
 
     @Test
-    void readAttrAndIeeeWriteAttrLoopback() throws Exception {
-        String wireTemp = ZigbeePoint.parse(TEMP).display();
-        gateway = new FakeZclGateway();
-        gateway.put(wireTemp, 25.5);
-        gateway.put("ieee:00124b0001234567", 1);
-        gateway.start();
-        assertTrue(gateway.awaitReady(2, TimeUnit.SECONDS));
+    void connectRstAndReadRstackVersionReasonLoopback() throws Exception {
+        peer = new FakeAshPeer();
+        peer.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new ZigbeeDeviceDriver();
@@ -103,42 +103,36 @@ class ZigbeeDeviceDriverTest {
         assertTrue(driver.isConnected());
 
         driver.readPoints(Map.of(
-                "temp", TEMP,
-                "addr", "ieee:00124b0001234567"
+                "ver", "version",
+                "why", "reason"
         ));
-        assertEquals(25.5, (Double) object.variables.get("temp").firstRow().get("value"), 0.001);
-        assertEquals(1.0, (Double) object.variables.get("addr").firstRow().get("value"), 0.001);
-
-        driver.writePoint("temp", DataRecord.single(
-                DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
-                Map.of("value", 21.0)
-        ));
-        assertEquals(21.0, gateway.value(wireTemp), 0.001);
-        assertEquals(21.0, (Double) object.variables.get("temp").firstRow().get("value"), 0.001);
+        assertEquals(2.0, (Double) object.variables.get("ver").firstRow().get("value"), 0.001);
+        assertEquals(2.0, (Double) object.variables.get("why").firstRow().get("value"), 0.001);
     }
 
     @Test
-    void writeIeeeRejected() throws Exception {
-        gateway = new FakeZclGateway();
-        gateway.put("ieee:00124b0001234567", 1);
-        gateway.start();
-        assertTrue(gateway.awaitReady(2, TimeUnit.SECONDS));
+    void writeRejectedReadOnly() throws Exception {
+        peer = new FakeAshPeer();
+        peer.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new ZigbeeDeviceDriver();
         driver.initialize(object);
         driver.connect();
-        driver.readPoints(Map.of("addr", "ieee:00124b0001234567"));
+        driver.readPoints(Map.of("ver", "version"));
         DriverException error = assertThrows(DriverException.class, () ->
-                driver.writePoint("addr", DataRecord.single(
-                        DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
+                driver.writePoint("ver", DataRecord.single(
+                        com.ispf.core.model.DataSchema.builder("v")
+                                .field("value", com.ispf.core.model.FieldType.DOUBLE)
+                                .build(),
                         Map.of("value", 0.0)
                 )));
-        assertTrue(error.getMessage().toLowerCase(Locale.ROOT).contains("ieee"));
+        assertTrue(error.getMessage().toLowerCase(Locale.ROOT).contains("read-only")
+                || error.getMessage().toLowerCase(Locale.ROOT).contains("ash"));
     }
 
     @Test
@@ -146,26 +140,33 @@ class ZigbeeDeviceDriverTest {
         driver = new ZigbeeDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of()));
         DriverException error = assertThrows(DriverException.class, () ->
-                driver.readPoints(Map.of("x", TEMP)));
+                driver.readPoints(Map.of("x", "version")));
         assertTrue(error.getMessage().contains("Not connected"));
     }
 
-    private static final class FakeZclGateway implements AutoCloseable {
+    /**
+     * In-process ASH peer: on host RST {@code 1A C0 38 BC 7E}, replies
+     * RSTACK {@code C1 02 02 9B 7B 7E} (CRC verified in production codec before trust).
+     */
+    private static final class FakeAshPeer implements AutoCloseable {
 
-        private static final Pattern OP = Pattern.compile("\"op\"\\s*:\\s*\"([^\"]+)\"");
-        private static final Pattern POINT = Pattern.compile("\"point\"\\s*:\\s*\"([^\"]+)\"");
-        private static final Pattern VALUE = Pattern.compile("\"value\"\\s*:\\s*(-?[0-9.]+)");
+        private static final byte[] HOST_RST = {
+                0x1A, (byte) 0xC0, 0x38, (byte) 0xBC, 0x7E
+        };
+        private static final byte[] RSTACK = {
+                (byte) 0xC1, 0x02, 0x02, (byte) 0x9B, 0x7B, 0x7E
+        };
 
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
-            Thread thread = new Thread(runnable, "fake-zigbee-zcl");
+            Thread thread = new Thread(runnable, "fake-zigbee-ash");
             thread.setDaemon(true);
             return thread;
         });
-        private final Map<String, Double> values = new ConcurrentHashMap<>();
-        private final CountDownLatch ready = new CountDownLatch(1);
 
-        FakeZclGateway() throws IOException {
+        FakeAshPeer() throws IOException {
+            // Trust RSTACK CRC with the same bit function before serving it.
+            assertEquals(0x9B7B, AshCodec.crc16(new byte[] {(byte) 0xC1, 0x02, 0x02}));
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
@@ -174,28 +175,15 @@ class ZigbeeDeviceDriverTest {
             return serverSocket.getLocalPort();
         }
 
-        void put(String point, double value) {
-            values.put(point.toLowerCase(Locale.ROOT), value);
-        }
-
-        double value(String point) {
-            return values.getOrDefault(point.toLowerCase(Locale.ROOT), 0.0);
-        }
-
         void start() {
-            executor.submit(this::acceptLoop);
-            ready.countDown();
-        }
-
-        boolean awaitReady(long timeout, TimeUnit unit) throws InterruptedException {
-            return ready.await(timeout, unit);
+            var _ = executor.submit(this::acceptLoop);
         }
 
         private void acceptLoop() {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
+                    var _ = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (serverSocket.isClosed()) {
                         return;
@@ -209,71 +197,22 @@ class ZigbeeDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    String line = readLine(in);
-                    if (line == null) {
-                        return;
+                    byte[] request = new byte[HOST_RST.length];
+                    int offset = 0;
+                    while (offset < request.length) {
+                        int n = in.read(request, offset, request.length - offset);
+                        if (n < 0) {
+                            return;
+                        }
+                        offset += n;
                     }
-                    writeLine(out, handleLine(line));
+                    assertArrayEquals(HOST_RST, request);
+                    out.write(RSTACK);
+                    out.flush();
                 }
             } catch (IOException ignored) {
                 // client closed
             }
-        }
-
-        private String handleLine(String line) {
-            Matcher opMatcher = OP.matcher(line);
-            Matcher pointMatcher = POINT.matcher(line);
-            if (!opMatcher.find() || !pointMatcher.find()) {
-                return "{\"ok\":false,\"error\":\"bad request\"}";
-            }
-            String op = opMatcher.group(1).toLowerCase(Locale.ROOT);
-            String point = pointMatcher.group(1).toLowerCase(Locale.ROOT);
-            if ("get".equals(op)) {
-                double value = values.getOrDefault(point, 0.0);
-                return "{\"ok\":true,\"value\":" + format(value) + "}";
-            }
-            if ("set".equals(op)) {
-                Matcher valueMatcher = VALUE.matcher(line);
-                if (!valueMatcher.find()) {
-                    return "{\"ok\":false,\"error\":\"missing value\"}";
-                }
-                double value = Double.parseDouble(valueMatcher.group(1));
-                values.put(point, value);
-                return "{\"ok\":true,\"value\":" + format(value) + "}";
-            }
-            return "{\"ok\":false,\"error\":\"unknown op\"}";
-        }
-
-        private static String format(double value) {
-            if (value == Math.rint(value)) {
-                return Long.toString(Math.round(value));
-            }
-            return Double.toString(value);
-        }
-
-        private static void writeLine(OutputStream out, String line) throws IOException {
-            out.write((line + "\n").getBytes(StandardCharsets.US_ASCII));
-            out.flush();
-        }
-
-        private static String readLine(InputStream in) throws IOException {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            while (true) {
-                int ch = in.read();
-                if (ch < 0) {
-                    if (buf.size() == 0) {
-                        return null;
-                    }
-                    break;
-                }
-                if (ch == '\n') {
-                    break;
-                }
-                if (ch != '\r') {
-                    buf.write(ch);
-                }
-            }
-            return buf.toString(StandardCharsets.US_ASCII);
         }
 
         @Override

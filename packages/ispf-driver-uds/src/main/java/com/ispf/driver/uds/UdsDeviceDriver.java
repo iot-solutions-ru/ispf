@@ -8,11 +8,8 @@ import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -24,27 +21,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * UDS (ISO 14229) driver — DoIP-lab TCP subset (default port {@code 13400}).
+ * UDS (ISO 14229) driver over DoIP (ISO 13400-2) TCP (default port {@code 13400}).
  * <p>
- * Honesty boundary: this is an ISPF DoIP/UDS lab codec, not a full ISO 13400 stack,
- * not a complete ISO-TP multi-frame transport, and not Vector/Peak/ETAS tooling.
- * Lab framing is DoIP-like over a single TCP stream:
- * <pre>
- *   [ver][~ver][payloadType u16][length u32][payload…]
- * </pre>
- * On connect the driver performs a lab routing-activation handshake then
- * {@code DiagnosticSessionControl (0x10)}. Point reads use {@code ReadDataByIdentifier (0x22)};
- * writes use {@code WriteDataByIdentifier (0x2E)}.
- * Point mappings accept {@code 0xF190}, {@code DID:F190}, or {@code F190}.
+ * On connect the driver sends a routing-activation request (payload type
+ * {@code 0x0005}) then {@code DiagnosticSessionControl (0x10)}. Diagnostic
+ * messages use payload type {@code 0x8001} (source/target address + UDS bytes).
+ * Point reads use {@code ReadDataByIdentifier (0x22)}; writes use
+ * {@code WriteDataByIdentifier (0x2E)}. Point mappings accept {@code 0xF190},
+ * {@code DID:F190}, or {@code F190}.
  * <p>
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
+ * Clean-room ISPF code, Apache-2.0 — JDK sockets only. Not a complete ISO-TP
+ * multi-frame transport and not Vector/Peak/ETAS tooling.
  */
 public class UdsDeviceDriver implements DeviceDriver {
-
-    static final byte DOIP_VERSION = 0x02;
-    static final int PAYLOAD_ROUTING_ACTIVATION_REQUEST = 0x0005;
-    static final int PAYLOAD_ROUTING_ACTIVATION_RESPONSE = 0x0006;
-    static final int PAYLOAD_DIAGNOSTIC_MESSAGE = 0x8001;
 
     static final int SID_DIAGNOSTIC_SESSION_CONTROL = 0x10;
     static final int SID_READ_DATA_BY_IDENTIFIER = 0x22;
@@ -65,7 +54,7 @@ public class UdsDeviceDriver implements DeviceDriver {
             "uds",
             "UDS (ISO 14229) Driver",
             "0.1.0",
-            "DoIP/UDS lab subset over TCP (0x10/0x22/0x2E) — not full ISO-TP / ISO 13400 stack",
+            "DoIP/UDS subset over TCP (0x10/0x22/0x2E) — not full ISO-TP / ISO 13400 stack",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -129,11 +118,11 @@ public class UdsDeviceDriver implements DeviceDriver {
             diagnosticSessionControl(sessionType);
             connected = true;
             driverObject.log(DriverLogLevel.INFO,
-                    "UDS DoIP-lab connected to " + host + ":" + port
-                            + " (lab subset — not full ISO-TP / ISO 13400)");
+                    "UDS DoIP connected to " + host + ":" + port
+                            + " (subset — not full ISO-TP / ISO 13400)");
         } catch (IOException e) {
             closeSocket();
-            throw new DriverException("UDS DoIP-lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("UDS DoIP connect failed for " + host + ":" + port, e);
         } catch (DriverException e) {
             closeSocket();
             throw e;
@@ -197,18 +186,17 @@ public class UdsDeviceDriver implements DeviceDriver {
     }
 
     private void activateRouting() throws DriverException, IOException {
-        byte[] requestPayload = new byte[11];
-        requestPayload[0] = (byte) ((sourceAddress >> 8) & 0xFF);
-        requestPayload[1] = (byte) (sourceAddress & 0xFF);
-        requestPayload[2] = 0x00; // default activation
-        writeDoip(PAYLOAD_ROUTING_ACTIVATION_REQUEST, requestPayload);
-        DoipMessage response = readDoip();
-        if (response.payloadType != PAYLOAD_ROUTING_ACTIVATION_RESPONSE) {
-            throw new DriverException("UDS DoIP-lab expected routing activation response, got 0x"
-                    + Integer.toHexString(response.payloadType));
+        byte[] request = DoipCodec.buildRoutingActivationRequest(sourceAddress);
+        socket.getOutputStream().write(request);
+        socket.getOutputStream().flush();
+        DoipCodec.DoipMessage response = DoipCodec.readFrame(socket.getInputStream());
+        if (response.payloadType() != DoipCodec.PAYLOAD_ROUTING_ACTIVATION_RESPONSE) {
+            throw new DriverException("UDS DoIP expected routing activation response, got 0x"
+                    + Integer.toHexString(response.payloadType()));
         }
-        if (response.payload.length < 5 || (response.payload[4] & 0xFF) != 0x10) {
-            throw new DriverException("UDS DoIP-lab routing activation rejected");
+        byte[] payload = response.payload();
+        if (payload.length < 5 || (payload[4] & 0xFF) != 0x10) {
+            throw new DriverException("UDS DoIP routing activation rejected");
         }
     }
 
@@ -262,24 +250,17 @@ public class UdsDeviceDriver implements DeviceDriver {
         payload[2] = (byte) ((targetAddress >> 8) & 0xFF);
         payload[3] = (byte) (targetAddress & 0xFF);
         System.arraycopy(udsRequest, 0, payload, 4, udsRequest.length);
-        writeDoip(PAYLOAD_DIAGNOSTIC_MESSAGE, payload);
-        DoipMessage response = readDoip();
-        if (response.payloadType != PAYLOAD_DIAGNOSTIC_MESSAGE) {
-            throw new DriverException("UDS DoIP-lab expected diagnostic message, got 0x"
-                    + Integer.toHexString(response.payloadType));
+        DoipCodec.writeFrame(socket.getOutputStream(), DoipCodec.PAYLOAD_DIAGNOSTIC_MESSAGE, payload);
+        DoipCodec.DoipMessage response = DoipCodec.readFrame(socket.getInputStream());
+        if (response.payloadType() != DoipCodec.PAYLOAD_DIAGNOSTIC_MESSAGE) {
+            throw new DriverException("UDS DoIP expected diagnostic message, got 0x"
+                    + Integer.toHexString(response.payloadType()));
         }
-        if (response.payload.length < 5) {
-            throw new DriverException("UDS DoIP-lab diagnostic payload too short");
+        byte[] responsePayload = response.payload();
+        if (responsePayload.length < 5) {
+            throw new DriverException("UDS DoIP diagnostic payload too short");
         }
-        return Arrays.copyOfRange(response.payload, 4, response.payload.length);
-    }
-
-    private synchronized void writeDoip(int payloadType, byte[] payload) throws IOException {
-        writeDoipFrame(socket.getOutputStream(), payloadType, payload);
-    }
-
-    private synchronized DoipMessage readDoip() throws IOException {
-        return readDoipFrame(socket.getInputStream());
+        return Arrays.copyOfRange(responsePayload, 4, responsePayload.length);
     }
 
     private void closeSocket() {
@@ -399,48 +380,5 @@ public class UdsDeviceDriver implements DeviceDriver {
             return Integer.parseInt(text, 16);
         }
         return Integer.parseInt(text, 10);
-    }
-
-    static void writeDoipFrame(OutputStream out, int payloadType, byte[] payload) throws IOException {
-        ByteBuffer header = ByteBuffer.allocate(8 + payload.length);
-        header.put(DOIP_VERSION);
-        header.put((byte) (~DOIP_VERSION));
-        header.putShort((short) payloadType);
-        header.putInt(payload.length);
-        header.put(payload);
-        out.write(header.array());
-        out.flush();
-    }
-
-    static DoipMessage readDoipFrame(InputStream in) throws IOException {
-        byte[] header = readFully(in, 8);
-        int version = header[0] & 0xFF;
-        int inverse = header[1] & 0xFF;
-        if (version != (DOIP_VERSION & 0xFF) || inverse != ((~DOIP_VERSION) & 0xFF)) {
-            throw new IOException("Invalid DoIP-lab version header");
-        }
-        int payloadType = ((header[2] & 0xFF) << 8) | (header[3] & 0xFF);
-        int length = ByteBuffer.wrap(header, 4, 4).getInt();
-        if (length < 0 || length > 65536) {
-            throw new IOException("Invalid DoIP-lab payload length: " + length);
-        }
-        byte[] payload = readFully(in, length);
-        return new DoipMessage(payloadType, payload);
-    }
-
-    static byte[] readFully(InputStream in, int length) throws IOException {
-        byte[] buf = new byte[length];
-        int offset = 0;
-        while (offset < length) {
-            int n = in.read(buf, offset, length - offset);
-            if (n < 0) {
-                throw new IOException("EOF reading DoIP-lab frame");
-            }
-            offset += n;
-        }
-        return buf;
-    }
-
-    record DoipMessage(int payloadType, byte[] payload) {
     }
 }

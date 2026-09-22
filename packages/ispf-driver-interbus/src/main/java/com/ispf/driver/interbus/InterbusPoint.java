@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * INTERBUS gateway lab point.
+ * INTERBUS process-image point addressing.
  * <p>
  * Forms: {@code slot:1}, {@code word:0}, {@code slot:1:word:0}.
  */

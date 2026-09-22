@@ -6,8 +6,8 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.wmbus.codec.WmbusLabCodec;
-import com.ispf.driver.wmbus.codec.WmbusLabSession;
+import com.ispf.driver.wmbus.codec.WmbusCodec;
+import com.ispf.driver.wmbus.codec.WmbusSession;
 
 import java.io.IOException;
 import java.util.Map;
@@ -15,13 +15,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Wireless M-Bus (OMS) TCP gateway lab driver — not an RF PHY.
+ * Wireless M-Bus (OMS) driver over a TCP serial-server ({@code wmbus}).
  * <p>
- * Polls a TCP gateway for telegram hex / OMS short frames and parses a minimal CI-field
- * lab payload to a numeric value. Points: {@code meter:1}, {@code id:HEX}.
+ * Speaks EN 13757-4 Format-A link frames with CRC-16/EN-13757 and CI {@code 0x7A}
+ * application payloads. Not an RF PHY. Points: {@code meter:1}, {@code id:HEX}.
  * Read-only: writes throw a clear exception.
  * <p>
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only; not a vendor RF stack.
+ * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class WmbusDeviceDriver implements DeviceDriver {
 
@@ -34,10 +34,10 @@ public class WmbusDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "wmbus",
-            "Wireless M-Bus Gateway Lab Driver",
-            "0.1.0",
-            "Wireless M-Bus TCP gateway lab: POLL telegram hex / OMS short-frame CI payload;"
-                    + " not RF PHY",
+            "Wireless M-Bus TCP Driver",
+            "1.0.0",
+            "Wireless M-Bus EN 13757-4 Format-A over TCP serial-server: CRC-16/EN-13757,"
+                    + " CI 0x7A; not RF PHY",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -52,7 +52,7 @@ public class WmbusDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 10000;
     private int timeoutMs = 3000;
-    private WmbusLabSession session;
+    private WmbusSession session;
     private final Map<String, WmbusPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -82,8 +82,8 @@ public class WmbusDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new WmbusLabSession(host, port, timeoutMs);
-            driverObject.log(DriverLogLevel.INFO, "wM-Bus gateway lab connected to " + host + ":" + port);
+            session = new WmbusSession(host, port, timeoutMs);
+            driverObject.log(DriverLogLevel.INFO, "wM-Bus connected to " + host + ":" + port);
         } catch (IOException e) {
             session = null;
             throw new DriverException("wM-Bus connect failed for " + host + ":" + port, e);
@@ -114,8 +114,11 @@ public class WmbusDeviceDriver implements DeviceDriver {
             WmbusPoint point = WmbusPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                WmbusLabCodec.ParsedTelegram telegram = session.poll(point.pollToken());
-                byte[] raw = WmbusLabCodec.encodeShortFrame(
+                WmbusCodec.ParsedTelegram telegram = switch (point.kind()) {
+                    case METER_INDEX -> session.pollMeter(Integer.parseInt(point.key()));
+                    case DEVICE_ID -> session.pollDeviceId(point.key());
+                };
+                byte[] raw = WmbusCodec.encodeTelegram(
                         telegram.manufacturer(),
                         telegram.deviceId(),
                         telegram.version(),
@@ -124,9 +127,9 @@ public class WmbusDeviceDriver implements DeviceDriver {
                 );
                 driverObject.updateVariable(entry.getKey(), DataRecord.single(VALUE_SCHEMA, Map.of(
                         "value", (double) telegram.value(),
-                        "deviceId", WmbusLabCodec.deviceIdHex(telegram.deviceId()),
+                        "deviceId", WmbusCodec.deviceIdHex(telegram.deviceId()),
                         "ci", (long) telegram.ci(),
-                        "telegram", WmbusLabCodec.toHex(raw)
+                        "telegram", WmbusCodec.toHex(raw)
                 )));
             } catch (IOException e) {
                 throw new DriverException("wM-Bus read failed for " + mapping, e);
@@ -136,7 +139,7 @@ public class WmbusDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("Wireless M-Bus gateway lab is read-only (telegram ingest only)");
+        throw new DriverException("Wireless M-Bus is read-only (telegram ingest only)");
     }
 
     private void ensureConnected() throws DriverException {

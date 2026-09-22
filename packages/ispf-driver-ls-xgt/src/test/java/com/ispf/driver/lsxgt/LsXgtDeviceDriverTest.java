@@ -19,25 +19,30 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link LsXgtDeviceDriver} against a fake XGT-lab TCP server.
+ * Loopback tests for {@link LsXgtDeviceDriver} against an in-process XGT dedicated TCP peer.
  */
 class LsXgtDeviceDriverTest {
 
     private LsXgtDeviceDriver driver;
-    private FakeXgtLabServer xgtServer;
+    private FakeXgtPeer xgtServer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -52,8 +57,21 @@ class LsXgtDeviceDriverTest {
     }
 
     @Test
+    void dw0ReadIsLiteralDedicatedFrame() {
+        // Handwritten XGT dedicated read of %DW0, invoke id 1 (header then instruction).
+        byte[] expected = new byte[] {
+                0x4C, 0x53, 0x49, 0x53, 0x2D, 0x58, 0x47, 0x54, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x33, 0x01, 0x00, 0x0E, 0x00, 0x00, (byte) 0x9D,
+                0x54, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x04, 0x00,
+                0x25, 0x44, 0x57, 0x30
+        };
+        byte[] actual = LsXgtDeviceDriver.encodeRead(LsXgtPoint.parse("%DW0"), 1);
+        assertArrayEquals(expected, actual);
+    }
+
+    @Test
     void readsAndWritesDeviceMemoryViaLoopback() throws Exception {
-        xgtServer = new FakeXgtLabServer();
+        xgtServer = new FakeXgtPeer();
         xgtServer.put(LsXgtPoint.DeviceType.DW, 100, 0x1234);
         xgtServer.put(LsXgtPoint.DeviceType.DW, 101, 0x00AB);
         xgtServer.put(LsXgtPoint.DeviceType.MW, 10, 7);
@@ -69,6 +87,8 @@ class LsXgtDeviceDriverTest {
         driver.connect();
         assertTrue(driver.isConnected());
         assertEquals("ls-xgt", driver.metadata().id());
+        assertTrue(driver.metadata().description().toLowerCase(Locale.ROOT).contains("dedicated"));
+        assertTrue(!driver.metadata().description().toLowerCase(Locale.ROOT).contains("lab"));
 
         driver.readPoints(Map.of(
                 "pair", "%DW100:2",
@@ -118,17 +138,19 @@ class LsXgtDeviceDriverTest {
         assertTrue(error.getMessage().contains("Not connected"));
     }
 
-    private static final class FakeXgtLabServer implements AutoCloseable {
+    private static final class FakeXgtPeer implements AutoCloseable {
+
+        private static final Pattern VAR = Pattern.compile("^%([DM][WX])(\\d+)$");
 
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
-            Thread thread = new Thread(runnable, "fake-xgt-lab-server");
+            Thread thread = new Thread(runnable, "fake-xgt-dedicated-peer");
             thread.setDaemon(true);
             return thread;
         });
         private final Map<String, Integer> memory = new ConcurrentHashMap<>();
 
-        FakeXgtLabServer() throws IOException {
+        FakeXgtPeer() throws IOException {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
@@ -147,15 +169,6 @@ class LsXgtDeviceDriverTest {
 
         private static String key(LsXgtPoint.DeviceType type, int address) {
             return type.name() + ":" + address;
-        }
-
-        private static LsXgtPoint.DeviceType typeFromCode(byte code) {
-            return switch (code) {
-                case 0x01 -> LsXgtPoint.DeviceType.DW;
-                case 0x02 -> LsXgtPoint.DeviceType.MW;
-                case 0x03 -> LsXgtPoint.DeviceType.MX;
-                default -> throw new IllegalArgumentException("Unknown device type " + code);
-            };
         }
 
         void start() {
@@ -182,37 +195,119 @@ class LsXgtDeviceDriverTest {
                 while (true) {
                     byte[] header = new byte[LsXgtDeviceDriver.HEADER_LEN];
                     in.readFully(header);
-                    if (!Arrays.equals(Arrays.copyOf(header, LsXgtDeviceDriver.MAGIC.length), LsXgtDeviceDriver.MAGIC)) {
+                    if (!Arrays.equals(
+                            Arrays.copyOf(header, LsXgtDeviceDriver.COMPANY_ID.length),
+                            LsXgtDeviceDriver.COMPANY_ID)) {
                         return;
                     }
-                    byte command = header[12];
-                    LsXgtPoint.DeviceType type = typeFromCode(header[13]);
-                    int address = ByteBuffer.wrap(header, 14, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
-                    int count = ByteBuffer.wrap(header, 18, 2).order(ByteOrder.LITTLE_ENDIAN).getShort() & 0xFFFF;
+                    int instrLen = (header[16] & 0xFF) | ((header[17] & 0xFF) << 8);
+                    int invoke = (header[14] & 0xFF) | ((header[15] & 0xFF) << 8);
+                    byte[] instruction = new byte[instrLen];
+                    in.readFully(instruction);
+                    ByteBuffer body = ByteBuffer.wrap(instruction).order(ByteOrder.LITTLE_ENDIAN);
+                    int command = body.getShort() & 0xFFFF;
+                    int dataType = body.getShort() & 0xFFFF;
+                    body.getShort(); // reserved
+                    int blocks = body.getShort() & 0xFFFF;
 
                     if (command == LsXgtDeviceDriver.CMD_WRITE) {
-                        byte[] payload = new byte[count * 2];
-                        in.readFully(payload);
-                        ByteBuffer words = ByteBuffer.wrap(payload).order(ByteOrder.LITTLE_ENDIAN);
-                        for (int i = 0; i < count; i++) {
-                            put(type, address + i, words.getShort() & 0xFFFF);
+                        String varName = readVarName(body);
+                        int dataSize = body.getShort() & 0xFFFF;
+                        int value;
+                        if (dataType == LsXgtDeviceDriver.DATA_TYPE_BIT) {
+                            value = body.get() & 0x01;
+                            for (int s = 1; s < dataSize; s++) {
+                                body.get();
+                            }
+                        } else {
+                            value = body.getShort() & 0xFFFF;
+                            for (int s = 2; s < dataSize; s++) {
+                                body.get();
+                            }
                         }
-                        out.write(header);
+                        applyVar(varName, value);
+                        out.write(responseHeader(invoke, 6));
+                        ByteBuffer resp = ByteBuffer.allocate(6).order(ByteOrder.LITTLE_ENDIAN);
+                        resp.putShort((short) LsXgtDeviceDriver.CMD_WRITE);
+                        resp.putShort((short) dataType);
+                        resp.putShort((short) 0); // error
+                        out.write(resp.array());
                         out.flush();
                     } else if (command == LsXgtDeviceDriver.CMD_READ) {
-                        ByteBuffer response = ByteBuffer.allocate(LsXgtDeviceDriver.HEADER_LEN + count * 2)
-                                .order(ByteOrder.LITTLE_ENDIAN);
-                        response.put(header);
-                        for (int i = 0; i < count; i++) {
-                            response.putShort((short) get(type, address + i));
+                        String[] names = new String[blocks];
+                        for (int i = 0; i < blocks; i++) {
+                            names[i] = readVarName(body);
                         }
-                        out.write(response.array());
+                        int payload = 8; // cmd+type+error+blocks
+                        for (int i = 0; i < blocks; i++) {
+                            payload += 2 + (dataType == LsXgtDeviceDriver.DATA_TYPE_BIT ? 1 : 2);
+                        }
+                        out.write(responseHeader(invoke, payload));
+                        ByteBuffer resp = ByteBuffer.allocate(payload).order(ByteOrder.LITTLE_ENDIAN);
+                        resp.putShort((short) LsXgtDeviceDriver.CMD_READ);
+                        resp.putShort((short) dataType);
+                        resp.putShort((short) 0);
+                        resp.putShort((short) blocks);
+                        for (String name : names) {
+                            int value = lookupVar(name);
+                            if (dataType == LsXgtDeviceDriver.DATA_TYPE_BIT) {
+                                resp.putShort((short) 1);
+                                resp.put((byte) (value & 0x01));
+                            } else {
+                                resp.putShort((short) 2);
+                                resp.putShort((short) (value & 0xFFFF));
+                            }
+                        }
+                        out.write(resp.array());
                         out.flush();
                     }
                 }
             } catch (EOFException ignored) {
             } catch (IOException | RuntimeException ignored) {
             }
+        }
+
+        private static String readVarName(ByteBuffer body) {
+            int len = body.getShort() & 0xFFFF;
+            byte[] raw = new byte[len];
+            body.get(raw);
+            return new String(raw, StandardCharsets.US_ASCII);
+        }
+
+        private void applyVar(String varName, int value) {
+            Matcher matcher = VAR.matcher(varName.toUpperCase(Locale.ROOT));
+            if (!matcher.matches()) {
+                throw new IllegalArgumentException("Bad var " + varName);
+            }
+            LsXgtPoint.DeviceType type = LsXgtPoint.DeviceType.valueOf(matcher.group(1));
+            put(type, Integer.parseInt(matcher.group(2)), value);
+        }
+
+        private int lookupVar(String varName) {
+            Matcher matcher = VAR.matcher(varName.toUpperCase(Locale.ROOT));
+            if (!matcher.matches()) {
+                return 0;
+            }
+            LsXgtPoint.DeviceType type = LsXgtPoint.DeviceType.valueOf(matcher.group(1));
+            return get(type, Integer.parseInt(matcher.group(2)));
+        }
+
+        private static byte[] responseHeader(int invoke, int instrLen) {
+            ByteBuffer buf = ByteBuffer.allocate(LsXgtDeviceDriver.HEADER_LEN).order(ByteOrder.LITTLE_ENDIAN);
+            buf.put(LsXgtDeviceDriver.COMPANY_ID);
+            buf.putShort((short) 0);
+            buf.put((byte) 0);
+            buf.put(LsXgtDeviceDriver.SOF_RESPONSE);
+            buf.putShort((short) (invoke & 0xFFFF));
+            buf.putShort((short) instrLen);
+            buf.put((byte) 0);
+            int bcc = 0;
+            byte[] arr = buf.array();
+            for (int i = 0; i < 19; i++) {
+                bcc = (bcc + (arr[i] & 0xFF)) & 0xFF;
+            }
+            buf.put((byte) bcc);
+            return buf.array();
         }
 
         @Override

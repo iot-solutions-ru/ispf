@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.iolink.codec.IoLinkLabSession;
+import com.ispf.driver.iolink.codec.IoLinkSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,14 +15,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * IO-Link master driver — JSON-over-TCP lab bridge (default port {@code 8080}).
+ * IO-Link ISDU driver over a TCP master gateway ({@code io-link}).
  * <p>
- * Honesty boundary: this talks to an ISPF IO-Link master REST/JSON-over-TCP lab bridge,
- * not the IO-Link PHY and not a vendor ISDU stack. Lab dialect is newline JSON
- * {@code {"op":"get|set","port":N,...}} for points {@code port:1}, {@code port:1:pdin},
- * {@code port:1:pdout}.
+ * Binary request: port {@code uint8}, index {@code uint16} BE, subindex {@code uint8}.
+ * Not the IO-Link PHY.
  * <p>
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
+ * Point forms: {@code port:1}, {@code port:1:pdin}, {@code port:1:pdout}.
  */
 public class IoLinkDeviceDriver implements DeviceDriver {
 
@@ -35,10 +33,9 @@ public class IoLinkDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "io-link",
-            "IO-Link Master Lab Driver",
-            "0.1.0",
-            "IO-Link master JSON-over-TCP lab bridge (get/set port process data);"
-                    + " not IO-Link PHY / ISDU vendor stack",
+            "IO-Link ISDU Driver",
+            "1.0.0",
+            "IO-Link ISDU over TCP master gateway; not the PHY",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -53,7 +50,7 @@ public class IoLinkDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 8080;
     private int timeoutMs = 3000;
-    private IoLinkLabSession session;
+    private IoLinkSession session;
     private final Map<String, IoLinkPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -83,13 +80,12 @@ public class IoLinkDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new IoLinkLabSession(host, port, timeoutMs);
+            session = new IoLinkSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "IO-Link master lab bridge connected to " + host + ":" + port
-                            + " (not IO-Link PHY / ISDU)");
+                    "IO-Link ISDU connected to " + host + ":" + port + " (TCP master gateway)");
         } catch (IOException e) {
             session = null;
-            throw new DriverException("IO-Link lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("IO-Link connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -117,15 +113,10 @@ public class IoLinkDeviceDriver implements DeviceDriver {
             IoLinkPoint point = IoLinkPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                String channel = switch (point.channel()) {
-                    case PORT -> "pdin";
-                    case PDIN -> "pdin";
-                    case PDOUT -> "pdout";
-                };
-                double value = session.readValue(point.port(), channel);
+                double value = session.readValue(point.port(), point.isduIndex(), point.subindex());
                 driverObject.updateVariable(entry.getKey(), toRecord(point, value));
             } catch (IOException e) {
-                throw new DriverException("IO-Link lab read failed for " + mapping, e);
+                throw new DriverException("IO-Link read failed for " + mapping, e);
             }
         }
     }
@@ -138,14 +129,14 @@ public class IoLinkDeviceDriver implements DeviceDriver {
             throw new DriverException("Unknown point: " + pointId + " (read it first)");
         }
         if (!point.writable()) {
-            throw new DriverException("IO-Link lab rejects writes for pdin point: " + point.display());
+            throw new DriverException("IO-Link rejects writes for pdin point: " + point.display());
         }
         double numeric = extractNumeric(value);
         try {
-            session.writeValue(point.port(), "pdout", numeric);
+            session.writeValue(point.port(), point.isduIndex(), point.subindex(), numeric);
             driverObject.updateVariable(pointId, toRecord(point, numeric));
         } catch (IOException e) {
-            throw new DriverException("IO-Link lab write failed for " + pointId, e);
+            throw new DriverException("IO-Link write failed for " + pointId, e);
         }
     }
 

@@ -8,13 +8,14 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
-import com.ispf.driver.iec101.codec.Iec101LabCodec;
-import com.ispf.driver.iec101.codec.Iec101LabTypes;
+import com.ispf.driver.iec101.codec.Iec101Codec;
+import com.ispf.driver.iec101.codec.Iec101Frame;
+import com.ispf.driver.iec101.codec.Iec101Types;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.EOFException;
 import java.io.IOException;
+import java.util.Locale;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -28,19 +29,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Fake TCP loopback tests for the IEC101-lab codec.
- */
 class Iec101DeviceDriverTest {
 
     private Iec101DeviceDriver driver;
-    private FakeIec101LabServer server;
+    private FakeIec101Outstation server;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -55,13 +53,15 @@ class Iec101DeviceDriverTest {
     }
 
     @Test
-    void metadataDescribesLabNotStub() {
+    void metadataDescribesFt12Profile() {
         driver = new Iec101DeviceDriver();
         assertEquals("iec101", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
-        assertTrue(driver.metadata().description().toLowerCase().contains("lab"));
-        assertTrue(driver.metadata().description().contains("C_IC_NA_1"));
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("ft1.2"));
+        assertTrue(description.contains("c_ic_na_1"));
+        assertFalse(description.contains("lab"));
     }
 
     @Test
@@ -75,7 +75,7 @@ class Iec101DeviceDriverTest {
 
     @Test
     void interrogationReadsMeasuredAndSinglePoint() throws Exception {
-        server = new FakeIec101LabServer(1);
+        server = new FakeIec101Outstation(1);
         server.putFloat(1001, 230.5f);
         server.putBool(42, true);
         server.start();
@@ -83,6 +83,7 @@ class Iec101DeviceDriverTest {
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
                 "port", String.valueOf(server.port()),
+                "linkAddress", "1",
                 "commonAddress", "1",
                 "timeoutMs", "2000"
         ));
@@ -107,8 +108,8 @@ class Iec101DeviceDriverTest {
     }
 
     @Test
-    void writeSingleCommandUpdatesLabOutstation() throws Exception {
-        server = new FakeIec101LabServer(1);
+    void writeSingleCommandUpdatesOutstation() throws Exception {
+        server = new FakeIec101Outstation(1);
         server.putBool(42, false);
         server.start();
 
@@ -141,24 +142,21 @@ class Iec101DeviceDriverTest {
     }
 
     /**
-     * Minimal IEC101-lab outstation: STARTDT_CON + interrogation responses + command acks.
+     * Unbalanced outstation: ACK on reset-link, monitored points on interrogation, ACTCON on commands.
      */
-    private static final class FakeIec101LabServer implements AutoCloseable {
-
-        private static final byte[] STARTDT_CON = { 0x0B, 0x00, 0x00, 0x00 };
+    private static final class FakeIec101Outstation implements AutoCloseable {
 
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
-            Thread thread = new Thread(runnable, "fake-iec101-lab");
+            Thread thread = new Thread(runnable, "fake-iec101");
             thread.setDaemon(true);
             return thread;
         });
         private final int commonAddress;
         private final Map<Integer, Float> floats = new ConcurrentHashMap<>();
         private final Map<Integer, Boolean> bools = new ConcurrentHashMap<>();
-        private final AtomicInteger sendSeq = new AtomicInteger();
 
-        FakeIec101LabServer(int commonAddress) throws IOException {
+        FakeIec101Outstation(int commonAddress) throws IOException {
             this.commonAddress = commonAddress;
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
@@ -201,48 +199,44 @@ class Iec101DeviceDriverTest {
             try (socket) {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
-                int recvSeq = 0;
                 while (!socket.isClosed()) {
-                    byte[] frame = readApdu(in);
-                    Iec101LabCodec.ParsedApdu parsed = Iec101LabCodec.parseApdu(frame);
-                    if (parsed.kind() == Iec101LabCodec.ApduKind.U) {
-                        out.write(Iec101LabCodec.encodeUFrame(STARTDT_CON));
+                    Iec101Frame frame = Iec101Codec.readFrame(in);
+                    if (frame.kind() == Iec101Frame.Kind.FIXED
+                            && Iec101Codec.functionCode(frame.control()) == Iec101Types.FC_RESET_REMOTE_LINK) {
+                        out.write(Iec101Codec.encodeFixed(Iec101Types.FC_ACK, frame.linkAddress()));
                         out.flush();
                         continue;
                     }
-                    if (parsed.kind() != Iec101LabCodec.ApduKind.I) {
+                    if (frame.kind() != Iec101Frame.Kind.VARIABLE) {
                         continue;
                     }
-                    recvSeq = (recvSeq + 1) & 0x7FFF;
-                    byte[] asdu = parsed.asdu();
-                    int typeId = Iec101LabCodec.asduTypeId(asdu);
-                    if (typeId == Iec101LabTypes.C_IC_NA_1) {
-                        respondInterrogation(out, recvSeq);
-                    } else if (typeId == Iec101LabTypes.C_SC_NA_1) {
-                        for (var value : parsed.values()) {
+                    byte[] asdu = frame.asdu();
+                    int typeId = Iec101Codec.asduTypeId(asdu);
+                    if (typeId == Iec101Types.C_IC_NA_1) {
+                        respondInterrogation(out, frame.linkAddress());
+                    } else if (typeId == Iec101Types.C_SC_NA_1) {
+                        for (var value : Iec101Codec.decodeAsdu(asdu)) {
                             bools.put(value.ioa(), value.bool());
-                            byte[] ack = Iec101LabCodec.encodeAsdu(
-                                    Iec101LabTypes.C_SC_NA_1,
-                                    Iec101LabTypes.COT_ACTIVATION_CON,
+                            byte[] ack = Iec101Codec.encodeAsdu(
+                                    Iec101Types.C_SC_NA_1,
+                                    Iec101Types.COT_ACTIVATION_CON,
                                     commonAddress,
                                     value.ioa(),
                                     new byte[] { (byte) (value.bool() ? 1 : 0) }
                             );
-                            writeI(out, recvSeq, ack);
+                            writeVariable(out, frame.linkAddress(), ack);
                         }
-                    } else if (typeId == Iec101LabTypes.C_SE_NC_1) {
-                        for (var value : parsed.values()) {
+                    } else if (typeId == Iec101Types.C_SE_NC_1) {
+                        for (var value : Iec101Codec.decodeAsdu(asdu)) {
                             floats.put(value.ioa(), (float) value.numeric());
-                            byte[] ack = Iec101LabCodec.encodeSetpointFloat(
-                                    commonAddress, value.ioa(), (float) value.numeric());
-                            // overwrite COT by re-encoding activation con style via measured path
-                            writeI(out, recvSeq, Iec101LabCodec.encodeAsdu(
-                                    Iec101LabTypes.C_SE_NC_1,
-                                    Iec101LabTypes.COT_ACTIVATION_CON,
+                            byte[] ack = Iec101Codec.encodeAsdu(
+                                    Iec101Types.C_SE_NC_1,
+                                    Iec101Types.COT_ACTIVATION_CON,
                                     commonAddress,
                                     value.ioa(),
                                     floatInfo((float) value.numeric())
-                            ));
+                            );
+                            writeVariable(out, frame.linkAddress(), ack);
                         }
                     }
                 }
@@ -250,58 +244,35 @@ class Iec101DeviceDriverTest {
             }
         }
 
-        private void respondInterrogation(OutputStream out, int recvSeq) throws IOException {
+        private void respondInterrogation(OutputStream out, int linkAddress) throws IOException {
             for (Map.Entry<Integer, Float> entry : new LinkedHashMap<>(floats).entrySet()) {
-                writeI(out, recvSeq, Iec101LabCodec.encodeMeasuredFloat(
-                        commonAddress, Iec101LabTypes.COT_INTERROGATED, entry.getKey(), entry.getValue(), 0));
+                writeVariable(out, linkAddress, Iec101Codec.encodeMeasuredFloat(
+                        commonAddress, Iec101Types.COT_INTERROGATED, entry.getKey(), entry.getValue(), 0));
             }
             for (Map.Entry<Integer, Boolean> entry : new LinkedHashMap<>(bools).entrySet()) {
-                writeI(out, recvSeq, Iec101LabCodec.encodeSinglePoint(
-                        commonAddress, Iec101LabTypes.COT_INTERROGATED, entry.getKey(), entry.getValue(), 0));
+                writeVariable(out, linkAddress, Iec101Codec.encodeSinglePoint(
+                        commonAddress, Iec101Types.COT_INTERROGATED, entry.getKey(), entry.getValue(), 0));
             }
-            writeI(out, recvSeq, Iec101LabCodec.encodeAsdu(
-                    Iec101LabTypes.C_IC_NA_1,
-                    Iec101LabTypes.COT_ACTIVATION_CON,
+            writeVariable(out, linkAddress, Iec101Codec.encodeAsdu(
+                    Iec101Types.C_IC_NA_1,
+                    Iec101Types.COT_ACTIVATION_TERMINATION,
                     commonAddress,
                     0,
-                    new byte[] { 20 }
+                    new byte[] { (byte) Iec101Types.QOI_STATION }
             ));
         }
 
-        private void writeI(OutputStream out, int recvSeq, byte[] asdu) throws IOException {
-            int seq = sendSeq.getAndIncrement() & 0x7FFF;
-            out.write(Iec101LabCodec.encodeIFrame(seq, recvSeq, asdu));
+        private static void writeVariable(OutputStream out, int linkAddress, byte[] asdu) throws IOException {
+            int control = Iec101Types.FC_RESPOND_USER_DATA;
+            out.write(Iec101Codec.encodeVariable(control, linkAddress, asdu));
             out.flush();
         }
 
-        private static byte[] floatInfo(float value) throws IOException {
-            java.io.ByteArrayOutputStream info = new java.io.ByteArrayOutputStream();
-            java.nio.ByteBuffer buffer = java.nio.ByteBuffer.allocate(4)
-                    .order(java.nio.ByteOrder.LITTLE_ENDIAN);
+        private static byte[] floatInfo(float value) {
+            java.nio.ByteBuffer buffer = java.nio.ByteBuffer.allocate(5).order(java.nio.ByteOrder.LITTLE_ENDIAN);
             buffer.putFloat(value);
-            info.write(buffer.array());
-            info.write(0);
-            return info.toByteArray();
-        }
-
-        private static byte[] readApdu(InputStream in) throws IOException {
-            int start = in.read();
-            if (start < 0) {
-                throw new EOFException();
-            }
-            int length = in.read();
-            if (length < 0) {
-                throw new EOFException();
-            }
-            byte[] body = in.readNBytes(length);
-            if (body.length != length) {
-                throw new EOFException();
-            }
-            byte[] frame = new byte[2 + length];
-            frame[0] = (byte) start;
-            frame[1] = (byte) length;
-            System.arraycopy(body, 0, frame, 2, length);
-            return frame;
+            buffer.put((byte) 0);
+            return buffer.array();
         }
 
         @Override

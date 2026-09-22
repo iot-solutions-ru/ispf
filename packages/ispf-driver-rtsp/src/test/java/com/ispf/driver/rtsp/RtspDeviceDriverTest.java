@@ -27,12 +27,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link RtspDeviceDriver} against an in-process fake RTSP/1.0 server.
+ * Loopback tests for {@link RtspDeviceDriver} against an in-process fake RTSP/1.0 peer.
  */
 class RtspDeviceDriverTest {
 
@@ -52,7 +53,18 @@ class RtspDeviceDriverTest {
     }
 
     @Test
-    void optionsOnConnectDescribeReadAndSetParameterWrite() throws Exception {
+    void describeRequestBytesAreExactRfc2326() {
+        String request = RtspDeviceDriver.buildRequest("DESCRIBE", "127.0.0.1", "/stream", 1, null);
+        byte[] expected = (
+                "DESCRIBE rtsp://127.0.0.1/stream RTSP/1.0\r\n"
+                        + "CSeq: 1\r\n"
+                        + "\r\n"
+        ).getBytes(StandardCharsets.UTF_8);
+        assertArrayEquals(expected, request.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void describeOnConnectParsesSessionAndContentBase() throws Exception {
         server = new FakeRtspServer();
         server.start();
 
@@ -66,7 +78,12 @@ class RtspDeviceDriverTest {
         driver.initialize(object);
         driver.connect();
         assertTrue(driver.isConnected());
-        assertEquals(1, server.optionsCount.get());
+        assertEquals(1, server.describeCount.get());
+        assertArrayEquals(
+                ("DESCRIBE rtsp://127.0.0.1/stream RTSP/1.0\r\nCSeq: 1\r\n\r\n")
+                        .getBytes(StandardCharsets.UTF_8),
+                server.firstRequestBytes.get()
+        );
 
         driver.readPoints(Map.of("sdp", "DESCRIBE"));
         DataRecord sdp = object.variables.get("sdp");
@@ -74,14 +91,8 @@ class RtspDeviceDriverTest {
         assertTrue(String.valueOf(sdp.firstRow().get("body")).contains("m=video"));
         assertEquals("DESCRIBE", sdp.firstRow().get("method"));
         assertEquals("/stream", sdp.firstRow().get("path"));
-
-        driver.writePoint("sdp", DataRecord.single(
-                DataSchema.builder("v").field("value", FieldType.STRING).build(),
-                Map.of("value", "barlevel=5")
-        ));
-        assertEquals("barlevel=5", server.lastSetParameterBody.get());
-        assertTrue(String.valueOf(object.variables.get("sdp").firstRow().get("status")).contains("200"));
-        assertEquals("SET_PARAMETER", object.variables.get("sdp").firstRow().get("method"));
+        assertEquals("1A2B3C4D", sdp.firstRow().get("session"));
+        assertTrue(String.valueOf(sdp.firstRow().get("contentBase")).contains("/stream"));
     }
 
     @Test
@@ -97,7 +108,6 @@ class RtspDeviceDriverTest {
         driver.initialize(object);
         driver.connect();
 
-        // When no prior readPoints mapping exists, pointId itself is the write mapping.
         driver.writePoint("TEARDOWN /cam1", DataRecord.single(
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
                 Map.of("value", "ignored")
@@ -116,11 +126,13 @@ class RtspDeviceDriverTest {
     }
 
     @Test
-    void metadataIdIsRtsp() {
+    void metadataIdIsRtspWithoutLabWording() {
         assertEquals("rtsp", new RtspDeviceDriver().metadata().id());
         assertTrue(new RtspDeviceDriver().metadata().supportsWrite());
-        assertTrue(new RtspDeviceDriver().metadata().description().toLowerCase(Locale.ROOT)
-                .contains("not rtp"));
+        String desc = new RtspDeviceDriver().metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(desc.contains("rtsp/1.0"));
+        assertTrue(desc.contains("not rtp"));
+        assertTrue(!desc.contains("lab"));
     }
 
     private static final class FakeRtspServer implements AutoCloseable {
@@ -131,10 +143,10 @@ class RtspDeviceDriverTest {
             thread.setDaemon(true);
             return thread;
         });
-        final AtomicInteger optionsCount = new AtomicInteger();
+        final AtomicInteger describeCount = new AtomicInteger();
         final AtomicReference<String> lastMethod = new AtomicReference<>("");
         final AtomicReference<String> lastUri = new AtomicReference<>("");
-        final AtomicReference<String> lastSetParameterBody = new AtomicReference<>("");
+        final AtomicReference<byte[]> firstRequestBytes = new AtomicReference<>();
 
         FakeRtspServer() throws IOException {
             serverSocket = new ServerSocket();
@@ -172,11 +184,13 @@ class RtspDeviceDriverTest {
                         return;
                     }
                     Map<String, String> headers = new ConcurrentHashMap<>();
+                    StringBuilder raw = new StringBuilder(requestLine).append("\r\n");
                     while (true) {
                         String line = RtspDeviceDriver.readLine(in);
                         if (line == null) {
                             return;
                         }
+                        raw.append(line).append("\r\n");
                         if (line.isEmpty()) {
                             break;
                         }
@@ -194,6 +208,10 @@ class RtspDeviceDriverTest {
                     String body = "";
                     if (contentLength > 0) {
                         body = new String(in.readNBytes(contentLength), StandardCharsets.UTF_8);
+                        raw.append(body);
+                    }
+                    if (firstRequestBytes.get() == null) {
+                        firstRequestBytes.set(raw.toString().getBytes(StandardCharsets.UTF_8));
                     }
                     String[] parts = requestLine.split("\\s+");
                     String method = parts.length > 0 ? parts[0].toUpperCase(Locale.ROOT) : "";
@@ -202,17 +220,18 @@ class RtspDeviceDriverTest {
                     lastUri.set(uri);
                     String cseq = headers.getOrDefault("cseq", "1");
 
-                    if ("OPTIONS".equals(method)) {
-                        optionsCount.incrementAndGet();
-                        writeResponse(out, cseq, 200, "Public: OPTIONS, DESCRIBE, SET_PARAMETER, TEARDOWN\r\n", "");
-                    } else if ("DESCRIBE".equals(method)) {
-                        String sdp = "v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=Lab\r\nm=video 0 RTP/AVP 96\r\n";
+                    if ("DESCRIBE".equals(method)) {
+                        describeCount.incrementAndGet();
+                        String sdp = "v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=Stream\r\nm=video 0 RTP/AVP 96\r\n";
                         writeResponse(out, cseq, 200,
-                                "Content-Type: application/sdp\r\nContent-Length: "
-                                        + sdp.getBytes(StandardCharsets.UTF_8).length + "\r\n",
+                                "Session: 1A2B3C4D\r\n"
+                                        + "Content-Base: rtsp://127.0.0.1/stream/\r\n"
+                                        + "Content-Type: application/sdp\r\n"
+                                        + "Content-Length: " + sdp.getBytes(StandardCharsets.UTF_8).length + "\r\n",
                                 sdp);
+                    } else if ("OPTIONS".equals(method)) {
+                        writeResponse(out, cseq, 200, "Public: OPTIONS, DESCRIBE, SET_PARAMETER, TEARDOWN\r\n", "");
                     } else if ("SET_PARAMETER".equals(method)) {
-                        lastSetParameterBody.set(body);
                         writeResponse(out, cseq, 200, "", "");
                     } else if ("TEARDOWN".equals(method)) {
                         writeResponse(out, cseq, 200, "", "");

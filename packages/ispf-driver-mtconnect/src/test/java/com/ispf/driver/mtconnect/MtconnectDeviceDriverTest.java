@@ -7,19 +7,23 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,7 +39,7 @@ class MtconnectDeviceDriverTest {
     private FakeMtconnectAgent agent;
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws Exception {
         if (driver != null) {
             driver.disconnect();
             driver = null;
@@ -44,6 +48,14 @@ class MtconnectDeviceDriverTest {
             agent.close();
             agent = null;
         }
+    }
+
+    @Test
+    void httpGetRequestStartsWithGetAndHttp11() {
+        String request = MtconnectDeviceDriver.buildGetRequest("/current", "127.0.0.1:5000");
+        assertTrue(request.startsWith("GET "));
+        assertTrue(request.contains("HTTP/1.1"));
+        assertTrue(request.startsWith("GET /current HTTP/1.1\r\n"));
     }
 
     @Test
@@ -67,6 +79,10 @@ class MtconnectDeviceDriverTest {
                 "exec", "name:Execution",
                 "mode", "id:mode"
         ));
+
+        String captured = agent.lastRawRequest();
+        assertTrue(captured.startsWith("GET "));
+        assertTrue(captured.contains("HTTP/1.1"));
 
         assertEquals("125.5", object.variables.get("xpos").firstRow().get("value"));
         assertEquals("x_pos", object.variables.get("xpos").firstRow().get("dataItemId"));
@@ -155,6 +171,13 @@ class MtconnectDeviceDriverTest {
         assertEquals("xact", MtconnectPoint.parse("Xact").key());
     }
 
+    @Test
+    void metadataHasNoLabWording() {
+        String desc = new MtconnectDeviceDriver().metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(desc.contains("http/1.1"));
+        assertTrue(!desc.contains("lab"));
+    }
+
     private static String sampleCurrentXml() {
         return """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -193,19 +216,20 @@ class MtconnectDeviceDriverTest {
 
     private static final class FakeMtconnectAgent implements AutoCloseable {
 
-        private final HttpServer server;
+        private final ServerSocket serverSocket;
+        private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
+            Thread thread = new Thread(runnable, "fake-mtconnect-agent");
+            thread.setDaemon(true);
+            return thread;
+        });
         private final AtomicReference<String> currentXml = new AtomicReference<>("");
         private final AtomicReference<String> sampleXml = new AtomicReference<>("");
         private final AtomicReference<String> lastPath = new AtomicReference<>("");
+        private final AtomicReference<String> lastRawRequest = new AtomicReference<>("");
 
         FakeMtconnectAgent() throws IOException {
-            server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-            server.createContext("/", this::handle);
-            server.setExecutor(Executors.newCachedThreadPool(runnable -> {
-                Thread thread = new Thread(runnable, "fake-mtconnect-agent");
-                thread.setDaemon(true);
-                return thread;
-            }));
+            serverSocket = new ServerSocket();
+            serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
 
         void setCurrentXml(String xml) {
@@ -218,41 +242,90 @@ class MtconnectDeviceDriverTest {
         }
 
         String baseUrl() {
-            return "http://127.0.0.1:" + server.getAddress().getPort();
+            return "http://127.0.0.1:" + serverSocket.getLocalPort();
         }
 
         String lastPath() {
             return lastPath.get();
         }
 
-        void start() {
-            server.start();
+        String lastRawRequest() {
+            return lastRawRequest.get();
         }
 
-        private void handle(HttpExchange exchange) throws IOException {
-            String path = exchange.getRequestURI().getPath();
-            lastPath.set(path);
-            String body;
-            if ("/current".equals(path)) {
-                body = currentXml.get();
-            } else if ("/sample".equals(path)) {
-                body = sampleXml.get();
-            } else {
-                exchange.sendResponseHeaders(404, -1);
-                exchange.close();
-                return;
+        void start() {
+            executor.submit(this::acceptLoop);
+        }
+
+        private void acceptLoop() {
+            while (!serverSocket.isClosed()) {
+                try {
+                    Socket socket = serverSocket.accept();
+                    executor.submit(() -> handle(socket));
+                } catch (IOException e) {
+                    if (serverSocket.isClosed()) {
+                        return;
+                    }
+                }
             }
+        }
+
+        private void handle(Socket socket) {
+            try (socket) {
+                InputStream in = socket.getInputStream();
+                OutputStream out = socket.getOutputStream();
+                String requestLine = MtconnectDeviceDriver.readLine(in);
+                if (requestLine == null) {
+                    return;
+                }
+                StringBuilder raw = new StringBuilder(requestLine).append("\r\n");
+                while (true) {
+                    String line = MtconnectDeviceDriver.readLine(in);
+                    if (line == null) {
+                        return;
+                    }
+                    raw.append(line).append("\r\n");
+                    if (line.isEmpty()) {
+                        break;
+                    }
+                }
+                lastRawRequest.set(raw.toString());
+                String[] parts = requestLine.split("\\s+");
+                String path = parts.length > 1 ? parts[1] : "/";
+                lastPath.set(path);
+                String body;
+                if ("/current".equals(path)) {
+                    body = currentXml.get();
+                } else if ("/sample".equals(path)) {
+                    body = sampleXml.get();
+                } else {
+                    writeResponse(out, 404, "text/plain", "not found");
+                    return;
+                }
+                writeResponse(out, 200, "application/xml; charset=utf-8", body);
+            } catch (IOException ignored) {
+            }
+        }
+
+        private static void writeResponse(OutputStream out, int code, String contentType, String body)
+                throws IOException {
             byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-            exchange.getResponseHeaders().add("Content-Type", "application/xml; charset=utf-8");
-            exchange.sendResponseHeaders(200, bytes.length);
-            try (OutputStream out = exchange.getResponseBody()) {
-                out.write(bytes);
-            }
+            StringBuilder resp = new StringBuilder();
+            resp.append("HTTP/1.1 ").append(code).append(code == 200 ? " OK" : " Error").append("\r\n");
+            resp.append("Content-Type: ").append(contentType).append("\r\n");
+            resp.append("Content-Length: ").append(bytes.length).append("\r\n");
+            resp.append("Connection: close\r\n");
+            resp.append("\r\n");
+            out.write(resp.toString().getBytes(StandardCharsets.US_ASCII));
+            out.write(bytes);
+            out.flush();
         }
 
         @Override
-        public void close() {
-            server.stop(0);
+        public void close() throws Exception {
+            serverSocket.close();
+            executor.shutdownNow();
+            executor.awaitTermination(2, TimeUnit.SECONDS);
         }
     }
 

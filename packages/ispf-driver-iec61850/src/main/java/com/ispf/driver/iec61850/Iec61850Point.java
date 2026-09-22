@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * IEC 61850 MMS-lab point (object-reference shaped).
+ * IEC 61850 MMS object-reference point.
  * <p>
  * Forms: {@code LD0/MMXU1.TotW.mag.f}, {@code IED1/LLN0.Mod.stVal}.
  */
@@ -18,13 +18,13 @@ record Iec61850Point(String reference) {
 
     static Iec61850Point parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("IEC 61850 MMS-lab point mapping is blank");
+            throw new DriverException("IEC 61850 MMS point mapping is blank");
         }
         String trimmed = mapping.trim();
         Matcher matcher = REF.matcher(trimmed);
         if (!matcher.matches()) {
             throw new DriverException(
-                    "Unsupported IEC 61850 MMS-lab mapping"
+                    "Unsupported IEC 61850 MMS mapping"
                             + " (expected LD0/MMXU1.TotW.mag.f or IED1/LLN0.Mod.stVal): "
                             + mapping);
         }

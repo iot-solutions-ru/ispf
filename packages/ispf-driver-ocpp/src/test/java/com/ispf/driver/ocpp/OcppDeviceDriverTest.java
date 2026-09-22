@@ -10,33 +10,43 @@ import com.ispf.driver.DriverException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Loopback tests for {@link OcppDeviceDriver} against an in-process fake CSMS
- * (newline-delimited OCPP 1.6 JSON CALL/CALLRESULT).
+ * (RFC 6455 WebSocket + OCPP 1.6 JSON CALL/CALLRESULT).
  */
 class OcppDeviceDriverTest {
+
+    /**
+     * Locked RFC 6455 example nonce upgrade — must stay a handwritten literal (not encoder-built).
+     */
+    private static final String RFC6455_UPGRADE =
+            "GET /ocpp HTTP/1.1\r\nHost: 127.0.0.1\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Protocol: ocpp1.6\r\n\r\n";
 
     private OcppDeviceDriver driver;
     private FakeCsms csms;
@@ -54,6 +64,76 @@ class OcppDeviceDriverTest {
     }
 
     @Test
+    void websocketHandshakeAndMaskedHeartbeatFrame() throws Exception {
+        CountDownLatch handshakeDone = new CountDownLatch(1);
+        AtomicReference<String> capturedUpgrade = new AtomicReference<>();
+        AtomicReference<byte[]> capturedHeartbeatFrame = new AtomicReference<>();
+        ServerSocket serverSocket = new ServerSocket();
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+        ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "ocpp-ws-peer");
+            thread.setDaemon(true);
+            return thread;
+        });
+        try {
+            executor.submit(() -> {
+                try (Socket socket = serverSocket.accept()) {
+                    InputStream in = socket.getInputStream();
+                    OutputStream out = socket.getOutputStream();
+                    String upgrade = readHttpRequest(in);
+                    capturedUpgrade.set(upgrade);
+                    out.write(("HTTP/1.1 101 Switching Protocols\r\n"
+                            + "Upgrade: websocket\r\n"
+                            + "Connection: Upgrade\r\n"
+                            + "Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n"
+                            + "Sec-WebSocket-Protocol: ocpp1.6\r\n"
+                            + "\r\n").getBytes(StandardCharsets.US_ASCII));
+                    out.flush();
+                    handshakeDone.countDown();
+                    byte[] frame = readMaskedClientFrame(in);
+                    capturedHeartbeatFrame.set(frame);
+                    String payload = unmaskTextPayload(frame);
+                    OcppJson.ParsedMessage call = OcppJson.parse(payload);
+                    writeUnmaskedText(out, OcppJson.callResult(call.uniqueId(), Map.of(
+                            "currentTime", Instant.parse("2026-09-05T12:00:00Z").toString()
+                    )));
+                } catch (IOException ignored) {
+                }
+            });
+
+            StubDriverObject object = new StubDriverObject(Map.of(
+                    "host", "127.0.0.1",
+                    "port", String.valueOf(serverSocket.getLocalPort()),
+                    "timeoutMs", "2000"
+            ));
+            driver = new OcppDeviceDriver();
+            driver.initialize(object);
+            driver.openWebSocket();
+            assertTrue(handshakeDone.await(2, TimeUnit.SECONDS));
+            assertEquals(RFC6455_UPGRADE, capturedUpgrade.get());
+
+            driver.connectedForTest();
+            driver.readPoints(Map.of("hb", "heartbeat"));
+
+            byte[] expectedPayload = "[2,\"1\",\"Heartbeat\",{}]".getBytes(StandardCharsets.US_ASCII);
+            assertEquals(22, expectedPayload.length);
+            byte[] expectedFrame = new byte[6 + 22];
+            expectedFrame[0] = (byte) 0x81;
+            expectedFrame[1] = (byte) 0x96;
+            expectedFrame[2] = 0x00;
+            expectedFrame[3] = 0x00;
+            expectedFrame[4] = 0x00;
+            expectedFrame[5] = 0x00;
+            System.arraycopy(expectedPayload, 0, expectedFrame, 6, 22);
+            assertArrayEquals(expectedFrame, capturedHeartbeatFrame.get());
+            assertEquals("Heartbeat", object.variables.get("hb").firstRow().get("action"));
+        } finally {
+            serverSocket.close();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
     void bootHeartbeatStatusViaLoopback() throws Exception {
         csms = new FakeCsms();
         csms.start();
@@ -63,7 +143,7 @@ class OcppDeviceDriverTest {
                 "port", String.valueOf(csms.port()),
                 "timeoutMs", "2000",
                 "chargePointVendor", "ISPF",
-                "chargePointModel", "LabCP",
+                "chargePointModel", "ISPF-CP",
                 "connectorStatus", "Available"
         ));
         driver = new OcppDeviceDriver();
@@ -71,6 +151,7 @@ class OcppDeviceDriverTest {
         driver.connect();
         assertTrue(driver.isConnected());
         assertEquals(1, csms.bootCount());
+        assertEquals(RFC6455_UPGRADE, csms.upgradeRequest());
 
         driver.readPoints(Map.of(
                 "hb", "heartbeat",
@@ -132,6 +213,69 @@ class OcppDeviceDriverTest {
         assertEquals("2026-09-05T00:00:00Z", parsed.payload().get("currentTime"));
     }
 
+    private static String readHttpRequest(InputStream in) throws IOException {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream(256);
+        int state = 0;
+        while (state < 4) {
+            int b = in.read();
+            if (b < 0) {
+                break;
+            }
+            buf.write(b);
+            if (state == 0 && b == '\r') {
+                state = 1;
+            } else if (state == 1 && b == '\n') {
+                state = 2;
+            } else if (state == 2 && b == '\r') {
+                state = 3;
+            } else if (state == 3 && b == '\n') {
+                state = 4;
+            } else {
+                state = b == '\r' ? 1 : 0;
+            }
+        }
+        return buf.toString(StandardCharsets.US_ASCII);
+    }
+
+    private static byte[] readMaskedClientFrame(InputStream in) throws IOException {
+        int b0 = in.read();
+        int b1 = in.read();
+        if (b0 < 0 || b1 < 0) {
+            throw new IOException("EOF reading client frame header");
+        }
+        int len = b1 & 0x7F;
+        ByteArrayOutputStream buf = new ByteArrayOutputStream(6 + len);
+        buf.write(b0);
+        buf.write(b1);
+        byte[] rest = in.readNBytes(4 + len);
+        if (rest.length != 4 + len) {
+            throw new IOException("EOF reading client frame body");
+        }
+        buf.write(rest);
+        return buf.toByteArray();
+    }
+
+    private static String unmaskTextPayload(byte[] frame) {
+        int len = frame[1] & 0x7F;
+        byte[] mask = Arrays.copyOfRange(frame, 2, 6);
+        byte[] payload = Arrays.copyOfRange(frame, 6, 6 + len);
+        for (int i = 0; i < payload.length; i++) {
+            payload[i] = (byte) (payload[i] ^ mask[i % 4]);
+        }
+        return new String(payload, StandardCharsets.UTF_8);
+    }
+
+    private static void writeUnmaskedText(OutputStream out, String text) throws IOException {
+        byte[] payload = text.getBytes(StandardCharsets.UTF_8);
+        if (payload.length > 125) {
+            throw new IOException("frame too large");
+        }
+        out.write(0x81);
+        out.write(payload.length);
+        out.write(payload);
+        out.flush();
+    }
+
     private static final class FakeCsms implements AutoCloseable {
 
         private final ServerSocket serverSocket;
@@ -144,6 +288,7 @@ class OcppDeviceDriverTest {
         private final AtomicInteger heartbeatCount = new AtomicInteger();
         private final AtomicInteger statusCount = new AtomicInteger();
         private volatile String lastConnectorStatus = "";
+        private volatile String upgradeRequest = "";
 
         FakeCsms() throws IOException {
             serverSocket = new ServerSocket();
@@ -170,6 +315,10 @@ class OcppDeviceDriverTest {
             return lastConnectorStatus;
         }
 
+        String upgradeRequest() {
+            return upgradeRequest;
+        }
+
         void start() {
             executor.submit(this::acceptLoop);
         }
@@ -188,11 +337,20 @@ class OcppDeviceDriverTest {
         }
 
         private void handle(Socket socket) {
-            try (socket;
-                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-                 BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = in.readLine()) != null) {
+            try (socket) {
+                InputStream in = socket.getInputStream();
+                OutputStream out = socket.getOutputStream();
+                upgradeRequest = readHttpRequest(in);
+                out.write(("HTTP/1.1 101 Switching Protocols\r\n"
+                        + "Upgrade: websocket\r\n"
+                        + "Connection: Upgrade\r\n"
+                        + "Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n"
+                        + "Sec-WebSocket-Protocol: ocpp1.6\r\n"
+                        + "\r\n").getBytes(StandardCharsets.US_ASCII));
+                out.flush();
+                while (true) {
+                    byte[] frame = readMaskedClientFrame(in);
+                    String line = unmaskTextPayload(frame);
                     OcppJson.ParsedMessage call = OcppJson.parse(line);
                     if (call.type() != 2) {
                         continue;
@@ -215,15 +373,11 @@ class OcppDeviceDriverTest {
                             lastConnectorStatus = call.payload().getOrDefault("status", "");
                         }
                         default -> {
-                            out.write(OcppJson.callResult(call.uniqueId(), Map.of()));
-                            out.write('\n');
-                            out.flush();
+                            writeUnmaskedText(out, OcppJson.callResult(call.uniqueId(), Map.of()));
                             continue;
                         }
                     }
-                    out.write(OcppJson.callResult(call.uniqueId(), payload));
-                    out.write('\n');
-                    out.flush();
+                    writeUnmaskedText(out, OcppJson.callResult(call.uniqueId(), payload));
                 }
             } catch (IOException | RuntimeException ignored) {
             }

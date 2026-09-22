@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.profinet.codec.ProfinetLabSession;
+import com.ispf.driver.profinet.codec.ProfinetSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,13 +15,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * PROFINET IO device gateway lab driver — ASCII/JSON IO R/W over TCP
- * (default port {@code 34964}; {@code 34962} also valid via config).
+ * PROFINET DCP Identify over a TCP gateway ({@code profinet}).
  * <p>
- * Honesty boundary: PN IO gateway lab only — not PROFINET RT/IRT, not DCP/RPC, and not a PI
- * stack. Point forms: {@code slot:1:subslot:1}, {@code device:1:api:0:slot:1}. Lab ≠ field.
+ * Wire format is the Ethernet DCP Identify Request (FrameID {@code 0xFEFE}) carried on TCP.
+ * Optional DCP blocks carry slot/subslot from the point mapping. Not PROFINET RT/IRT.
  * <p>
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
+ * Point forms: {@code slot:1:subslot:1}, {@code device:1:api:0:slot:1}.
  */
 public class ProfinetDeviceDriver implements DeviceDriver {
 
@@ -33,10 +32,9 @@ public class ProfinetDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "profinet",
-            "PROFINET IO Gateway Lab Driver",
-            "0.1.0",
-            "PROFINET PN IO device gateway lab over TCP (ASCII R/W slot/subslot);"
-                    + " not PROFINET RT/IRT / DCP/RPC / PI stack",
+            "PROFINET DCP Driver",
+            "1.0.0",
+            "PROFINET DCP Identify over TCP gateway; not PROFINET RT/IRT",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -51,7 +49,7 @@ public class ProfinetDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 34964;
     private int timeoutMs = 3000;
-    private ProfinetLabSession session;
+    private ProfinetSession session;
     private final Map<String, ProfinetPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -81,13 +79,12 @@ public class ProfinetDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new ProfinetLabSession(host, port, timeoutMs);
+            session = new ProfinetSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "PROFINET PN IO gateway lab connected to " + host + ":" + port
-                            + " (not PROFINET RT/IRT / DCP/RPC / PI stack)");
+                    "PROFINET DCP connected to " + host + ":" + port + " (not RT/IRT)");
         } catch (IOException e) {
             session = null;
-            throw new DriverException("PROFINET lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("PROFINET connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -115,10 +112,10 @@ public class ProfinetDeviceDriver implements DeviceDriver {
             ProfinetPoint point = ProfinetPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                double value = session.readValue(point.wireToken());
+                double value = session.readValue(point.slot(), point.subslot());
                 driverObject.updateVariable(entry.getKey(), toRecord(point, value));
             } catch (IOException e) {
-                throw new DriverException("PROFINET lab read failed for " + mapping, e);
+                throw new DriverException("PROFINET read failed for " + mapping, e);
             }
         }
     }
@@ -132,10 +129,10 @@ public class ProfinetDeviceDriver implements DeviceDriver {
         }
         double numeric = extractNumeric(value);
         try {
-            session.writeValue(point.wireToken(), numeric);
+            session.writeValue(point.slot(), point.subslot(), numeric);
             driverObject.updateVariable(pointId, toRecord(point, numeric));
         } catch (IOException e) {
-            throw new DriverException("PROFINET lab write failed for " + pointId, e);
+            throw new DriverException("PROFINET write failed for " + pointId, e);
         }
     }
 

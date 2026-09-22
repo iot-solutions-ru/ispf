@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.devicenet.codec.DeviceNetLabSession;
+import com.ispf.driver.devicenet.codec.DeviceNetSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -16,13 +16,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * DeviceNet CIP gateway driver — ASCII lab over TCP (default port {@code 44818}).
+ * DeviceNet CIP explicit-message driver over TCP ({@code device-net}).
+ * <p>
+ * Uses Get_Attribute_Single ({@code 0x0E}) with class/instance/attribute from the point.
+ * Not the DeviceNet CAN PHY.
  * <p>
  * Point forms: {@code node:1}, {@code node:1:attr:1}, {@code class:4:inst:1:attr:3}.
- * Reads/writes via {@link DeviceNetLabSession#readValue} / {@link DeviceNetLabSession#writeValue}.
- * <p>
- * Honesty: TCP CIP/DeviceNet gateway lab — not DeviceNet CAN PHY / ODVA stack. Lab ≠ field.
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class DeviceNetDeviceDriver implements DeviceDriver {
 
@@ -34,10 +33,9 @@ public class DeviceNetDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "device-net",
-            "DeviceNet CIP Gateway Lab Driver",
-            "0.1.0",
-            "CIP/DeviceNet gateway ASCII lab over TCP (GET/SET node/class path);"
-                    + " not DeviceNet CAN PHY / ODVA stack",
+            "DeviceNet CIP Driver",
+            "1.0.0",
+            "DeviceNet CIP Get_Attribute_Single over TCP gateway; not DeviceNet CAN PHY",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -52,7 +50,7 @@ public class DeviceNetDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 44818;
     private int timeoutMs = 3000;
-    private DeviceNetLabSession session;
+    private DeviceNetSession session;
     private final Map<String, DeviceNetPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -82,13 +80,12 @@ public class DeviceNetDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new DeviceNetLabSession(host, port, timeoutMs);
+            session = new DeviceNetSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "DeviceNet CIP gateway lab connected to " + host + ":" + port
-                            + " (not DeviceNet CAN PHY / ODVA stack)");
+                    "DeviceNet CIP connected to " + host + ":" + port);
         } catch (IOException e) {
             session = null;
-            throw new DriverException("DeviceNet lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("DeviceNet connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -116,10 +113,10 @@ public class DeviceNetDeviceDriver implements DeviceDriver {
             DeviceNetPoint point = DeviceNetPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                double value = session.readValue(point.wireToken());
+                double value = session.readValue(point.cipClass(), point.instance(), point.attribute());
                 driverObject.updateVariable(entry.getKey(), toRecord(point, value));
             } catch (IOException e) {
-                throw new DriverException("DeviceNet lab read failed for " + mapping, e);
+                throw new DriverException("DeviceNet read failed for " + mapping, e);
             }
         }
     }
@@ -133,10 +130,10 @@ public class DeviceNetDeviceDriver implements DeviceDriver {
         }
         double numeric = extractNumeric(value);
         try {
-            session.writeValue(point.wireToken(), numeric);
+            session.writeValue(point.cipClass(), point.instance(), point.attribute(), numeric);
             driverObject.updateVariable(pointId, toRecord(point, numeric));
         } catch (IOException e) {
-            throw new DriverException("DeviceNet lab write failed for " + pointId, e);
+            throw new DriverException("DeviceNet write failed for " + pointId, e);
         }
     }
 

@@ -23,28 +23,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * RTSP/1.0 lab client over TCP — clean-room ISPF codec, Apache-2.0.
+ * RTSP/1.0 DESCRIBE client over TCP — clean-room ISPF codec, Apache-2.0.
  * <p>
- * This is a <strong>lab subset</strong> for CI and twin work: OPTIONS / DESCRIBE / SET_PARAMETER /
- * TEARDOWN over a single TCP session (default port 554). It is not an RTP/RTCP media player, not
- * interleaved binary framing, and not a full RFC 2326 / RFC 7826 stack — no AUTH beyond passthrough
- * headers, no SETUP/PLAY session state machine.
- * <p>
- * On {@link #connect()} the driver opens TCP and sends {@code OPTIONS} for the configured stream
- * path (default {@code /stream}), storing the status line for diagnostics.
+ * On connect the driver opens TCP and issues an RFC 2326 {@code DESCRIBE} for the configured
+ * stream path (default {@code /stream}). Session and Content-Base response headers are retained
+ * for diagnostics. This is not an RTP/RTCP media player and not interleaved binary framing.
  * <p>
  * Point mapping (read):
  * <ul>
- *   <li>{@code OPTIONS}, {@code DESCRIBE} — method against the default stream path</li>
- *   <li>{@code OPTIONS /path}, {@code DESCRIBE /path} — method + path</li>
- *   <li>{@code /path} or {@code rtsp://host/path} — DESCRIBE that path (SDP-oriented lab read)</li>
+ *   <li>{@code DESCRIBE}, {@code OPTIONS} — method against the default stream path</li>
+ *   <li>{@code DESCRIBE /path}, {@code OPTIONS /path} — method + path</li>
+ *   <li>{@code /path} or {@code rtsp://host/path} — DESCRIBE that path</li>
  * </ul>
- * Record fields: {@code status}, {@code cseq}, {@code body} (SDP/header excerpt), {@code value}
- * (same as body for convenience), {@code method}, {@code path}.
+ * Record fields: {@code status}, {@code cseq}, {@code body}, {@code value}, {@code method},
+ * {@code path}, {@code session}, {@code contentBase}.
  * <p>
- * Point mapping (write): {@code TEARDOWN} / {@code SET_PARAMETER} (optional path). Record
- * {@code value} is sent as SET_PARAMETER body text; TEARDOWN ignores body. Media PLAY/RECORD is
- * intentionally out of scope.
+ * Point mapping (write): {@code TEARDOWN} / {@code SET_PARAMETER} (optional path).
  */
 public class RtspDeviceDriver implements DeviceDriver {
 
@@ -55,21 +49,22 @@ public class RtspDeviceDriver implements DeviceDriver {
             .field("cseq", FieldType.STRING)
             .field("method", FieldType.STRING)
             .field("path", FieldType.STRING)
+            .field("session", FieldType.STRING)
+            .field("contentBase", FieldType.STRING)
             .build();
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "rtsp",
-            "RTSP Lab Driver",
+            "RTSP Driver",
             "0.1.0",
-            "RTSP/1.0 TCP lab client: OPTIONS/DESCRIBE read, SET_PARAMETER/TEARDOWN write "
+            "RTSP/1.0 TCP DESCRIBE client with Session/Content-Base parsing "
                     + "(not RTP media, not full session stack)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "554",
                     "timeoutMs", "3000",
-                    "streamPath", "/stream",
-                    "userAgent", "ISPF-RTSP/0.1"
+                    "streamPath", "/stream"
             ),
             null,
             Set.of("read", "write")
@@ -80,13 +75,14 @@ public class RtspDeviceDriver implements DeviceDriver {
     private int port = 554;
     private int timeoutMs = 3000;
     private String streamPath = "/stream";
-    private String userAgent = "ISPF-RTSP/0.1";
 
     private Socket socket;
     private InputStream in;
     private OutputStream out;
     private final AtomicInteger nextCseq = new AtomicInteger(1);
     private final Map<String, String> points = new ConcurrentHashMap<>();
+    private volatile String session = "";
+    private volatile String contentBase = "";
     private volatile boolean connected;
 
     @Override
@@ -109,7 +105,6 @@ public class RtspDeviceDriver implements DeviceDriver {
             case "port" -> port = Integer.parseInt(value.trim());
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
             case "streamPath", "path" -> streamPath = normalizePath(value.trim());
-            case "userAgent" -> userAgent = value.trim();
             default -> { }
         }
     }
@@ -124,13 +119,14 @@ public class RtspDeviceDriver implements DeviceDriver {
             socket.setSoTimeout(timeoutMs);
             in = socket.getInputStream();
             out = socket.getOutputStream();
-            RtspResponse options = exchange("OPTIONS", streamPath, null);
-            if (options.statusCode < 200 || options.statusCode >= 300) {
-                throw new DriverException("RTSP OPTIONS failed: " + options.statusLine);
+            RtspResponse describe = exchange("DESCRIBE", streamPath, null);
+            if (describe.statusCode < 200 || describe.statusCode >= 300) {
+                throw new DriverException("RTSP DESCRIBE failed: " + describe.statusLine);
             }
+            rememberHeaders(describe);
             connected = true;
             driverObject.log(DriverLogLevel.INFO,
-                    "RTSP connected to " + host + ":" + port + " (" + options.statusLine + ")");
+                    "RTSP connected to " + host + ":" + port + " (" + describe.statusLine + ")");
         } catch (IOException e) {
             disconnect();
             throw new DriverException("RTSP connect failed for " + host + ":" + port, e);
@@ -141,6 +137,8 @@ public class RtspDeviceDriver implements DeviceDriver {
     public void disconnect() {
         connected = false;
         points.clear();
+        session = "";
+        contentBase = "";
         closeQuietly(socket);
         socket = null;
         in = null;
@@ -163,6 +161,7 @@ public class RtspDeviceDriver implements DeviceDriver {
             points.put(pointId, mapping);
             MethodPath mp = parseReadMapping(mapping);
             RtspResponse response = exchange(mp.method, mp.path, null);
+            rememberHeaders(response);
             String body = truncate(response.body, 2048);
             driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
                     "value", body,
@@ -170,7 +169,9 @@ public class RtspDeviceDriver implements DeviceDriver {
                     "status", response.statusLine,
                     "cseq", String.valueOf(response.cseq),
                     "method", mp.method,
-                    "path", mp.path
+                    "path", mp.path,
+                    "session", session,
+                    "contentBase", contentBase
             )));
         }
     }
@@ -182,6 +183,7 @@ public class RtspDeviceDriver implements DeviceDriver {
         MethodPath mp = parseWriteMapping(mapping);
         String body = extractValue(value);
         RtspResponse response = exchange(mp.method, mp.path, "SET_PARAMETER".equals(mp.method) ? body : null);
+        rememberHeaders(response);
         String excerpt = truncate(response.body.isEmpty() ? body : response.body, 2048);
         driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
                 "value", excerpt,
@@ -189,7 +191,9 @@ public class RtspDeviceDriver implements DeviceDriver {
                 "status", response.statusLine,
                 "cseq", String.valueOf(response.cseq),
                 "method", mp.method,
-                "path", mp.path
+                "path", mp.path,
+                "session", session,
+                "contentBase", contentBase
         )));
         if (response.statusCode < 200 || response.statusCode >= 300) {
             throw new DriverException("RTSP " + mp.method + " failed: " + response.statusLine);
@@ -225,17 +229,19 @@ public class RtspDeviceDriver implements DeviceDriver {
             return new MethodPath(mapping.substring(0, space).trim().toUpperCase(Locale.ROOT),
                     normalizePath(mapping.substring(space + 1).trim()));
         }
-        // Path-only write defaults to SET_PARAMETER (lab control), not media PLAY.
         return new MethodPath("SET_PARAMETER", normalizePath(mapping));
     }
 
-    private RtspResponse exchange(String method, String path, String body) throws DriverException {
-        int cseq = nextCseq.getAndIncrement();
-        String requestUri = "rtsp://" + host + ":" + port + path;
+    /**
+     * Builds an RTSP/1.0 request without port in the URI and without extra headers.
+     * Default DESCRIBE for {@code 127.0.0.1/stream} with CSeq 1 is exactly:
+     * {@code DESCRIBE rtsp://127.0.0.1/stream RTSP/1.0\r\nCSeq: 1\r\n\r\n}.
+     */
+    static String buildRequest(String method, String host, String path, int cseq, String body) {
+        String requestUri = "rtsp://" + host + path;
         StringBuilder req = new StringBuilder();
         req.append(method).append(' ').append(requestUri).append(" RTSP/1.0\r\n");
         req.append("CSeq: ").append(cseq).append("\r\n");
-        req.append("User-Agent: ").append(userAgent).append("\r\n");
         if (body != null) {
             byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
             req.append("Content-Type: text/parameters\r\n");
@@ -245,13 +251,31 @@ public class RtspDeviceDriver implements DeviceDriver {
         } else {
             req.append("\r\n");
         }
+        return req.toString();
+    }
+
+    private RtspResponse exchange(String method, String path, String body) throws DriverException {
+        int cseq = nextCseq.getAndIncrement();
+        String request = buildRequest(method, host, path, cseq, body);
         try {
-            out.write(req.toString().getBytes(StandardCharsets.UTF_8));
+            out.write(request.getBytes(StandardCharsets.UTF_8));
             out.flush();
             return readResponse(cseq);
         } catch (IOException e) {
             connected = false;
             throw new DriverException("RTSP I/O failed for " + method + " " + path, e);
+        }
+    }
+
+    private void rememberHeaders(RtspResponse response) {
+        String sess = response.headers.get("session");
+        if (sess != null && !sess.isBlank()) {
+            int semi = sess.indexOf(';');
+            session = semi >= 0 ? sess.substring(0, semi).trim() : sess.trim();
+        }
+        String base = response.headers.get("content-base");
+        if (base != null && !base.isBlank()) {
+            contentBase = base.trim();
         }
     }
 
@@ -382,12 +406,19 @@ public class RtspDeviceDriver implements DeviceDriver {
     private record MethodPath(String method, String path) {
     }
 
-    private record RtspResponse(
-            String statusLine,
-            int statusCode,
-            int cseq,
-            Map<String, String> headers,
-            String body
-    ) {
+    private static final class RtspResponse {
+        final String statusLine;
+        final int statusCode;
+        final int cseq;
+        final Map<String, String> headers;
+        final String body;
+
+        RtspResponse(String statusLine, int statusCode, int cseq, Map<String, String> headers, String body) {
+            this.statusLine = statusLine;
+            this.statusCode = statusCode;
+            this.cseq = cseq;
+            this.headers = headers;
+            this.body = body;
+        }
     }
 }

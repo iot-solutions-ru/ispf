@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Z-Wave controller gateway lab point.
+ * Z-Wave Serial API point mapping.
  * <p>
  * Forms: {@code node:3}, {@code node:3:cmd:37}.
  */
@@ -49,13 +49,5 @@ record ZwavePoint(Kind kind, String display, int node, int commandClass) {
             return Integer.parseInt(t.substring(2), 16);
         }
         return Integer.parseInt(t);
-    }
-
-    boolean writable() {
-        return true;
-    }
-
-    String wireToken() {
-        return display;
     }
 }

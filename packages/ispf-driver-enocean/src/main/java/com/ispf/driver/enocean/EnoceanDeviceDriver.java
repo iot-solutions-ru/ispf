@@ -6,28 +6,25 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.enocean.codec.Esp3Codec;
+import com.ispf.driver.enocean.codec.Esp3Packet;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * EnOcean ESP3 gateway driver — ASCII ESP3-lab telegrams over TCP.
+ * EnOcean ESP3 gateway driver — ESP3 framing over TCP (default port {@code 54321}).
  * <p>
- * Lab dialect (not USB CDC / radio PHY): newline commands
- * {@code GET &lt;idHex&gt;} and {@code TX &lt;idHex&gt; &lt;dataHex&gt;}.
- * Point mapping is a device id ({@code AABBCCDD}). Reads return last payload;
- * writes transmit {@code value} as data hex.
+ * Point mapping is a 4-byte device id ({@code AABBCCDD}). Reads poll with an ESP3 RADIO
+ * telegram (device id, empty payload); writes send RADIO with device id + data hex.
+ * Locked COMMON_COMMAND {@code CO_RD_VERSION} request literal starts with sync {@code 0x55}.
  * <p>
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only. Not EnOcean Alliance SDK / TCM radio.
+ * Clean-room ISPF code, Apache-2.0 — JDK sockets only. Not EnOcean Alliance SDK / TCM radio PHY.
  */
 public class EnoceanDeviceDriver implements DeviceDriver {
 
@@ -40,8 +37,9 @@ public class EnoceanDeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "enocean",
             "EnOcean Driver",
-            "0.1.0",
-            "EnOcean ESP3 TCP gateway ASCII lab: GET/TX (not radio PHY / Alliance SDK)",
+            "1.0.0",
+            "EnOcean ESP3 serial-over-TCP (sync 0x55, CRC8 poly 0x07);"
+                    + " not Alliance SDK / TCM radio PHY",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -57,7 +55,7 @@ public class EnoceanDeviceDriver implements DeviceDriver {
     private int port = 54321;
     private int timeoutMs = 3000;
     private Socket socket;
-    private final Map<String, String> deviceIds = new ConcurrentHashMap<>();
+    private final Map<String, byte[]> deviceIds = new ConcurrentHashMap<>();
     private volatile boolean connected;
 
     @Override
@@ -92,7 +90,9 @@ public class EnoceanDeviceDriver implements DeviceDriver {
             next.setTcpNoDelay(true);
             socket = next;
             connected = true;
-            driverObject.log(DriverLogLevel.INFO, "EnOcean ESP3-lab gateway connected to " + host + ":" + port);
+            driverObject.log(DriverLogLevel.INFO,
+                    "EnOcean ESP3 connected to " + host + ":" + port
+                            + " (not Alliance SDK / TCM radio PHY)");
         } catch (IOException e) {
             closeSocket();
             throw new DriverException("EnOcean connect failed for " + host + ":" + port, e);
@@ -116,15 +116,21 @@ public class EnoceanDeviceDriver implements DeviceDriver {
         ensureConnected();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             String pointId = entry.getKey();
-            String deviceId = normalizeId(entry.getValue() == null || entry.getValue().isBlank()
+            byte[] deviceId = parseDeviceId(entry.getValue() == null || entry.getValue().isBlank()
                     ? pointId : entry.getValue());
             deviceIds.put(pointId, deviceId);
-            String raw = transact("GET " + deviceId);
-            String data = extractData(raw);
+            byte[] request = Esp3Codec.encodeRadio(deviceId, new byte[0]);
+            Esp3Packet reply = exchange(request);
+            if (reply.packetType() != Esp3Codec.TYPE_RADIO) {
+                throw new DriverException("Unexpected ESP3 type 0x"
+                        + Integer.toHexString(reply.packetType()));
+            }
+            String data = toHex(reply.payload());
             driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
                     "value", data,
-                    "deviceId", deviceId,
-                    "raw", raw
+                    "deviceId", toHex(deviceId),
+                    "raw", toHex(request) + "/" + toHex(Esp3Codec.encode(
+                            reply.packetType(), reply.data(), reply.optional()))
             )));
         }
     }
@@ -132,55 +138,83 @@ public class EnoceanDeviceDriver implements DeviceDriver {
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         ensureConnected();
-        String deviceId = deviceIds.getOrDefault(pointId, normalizeId(pointId));
-        String data = extractValue(value).toUpperCase(Locale.ROOT).replace(" ", "");
-        String raw = transact("TX " + deviceId + " " + data);
+        byte[] deviceId = deviceIds.get(pointId);
+        if (deviceId == null) {
+            deviceId = parseDeviceId(pointId);
+        }
+        byte[] payload = parseHex(extractValue(value));
+        byte[] request = Esp3Codec.encodeRadio(deviceId, payload);
+        Esp3Packet reply = exchange(request);
+        if (reply.packetType() != Esp3Codec.TYPE_RESPONSE
+                || reply.data().length < 1
+                || (reply.data()[0] & 0xFF) != Esp3Codec.RET_OK) {
+            throw new DriverException("EnOcean ESP3 write rejected");
+        }
         driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
-                "value", data,
-                "deviceId", deviceId,
-                "raw", raw
+                "value", toHex(payload),
+                "deviceId", toHex(deviceId),
+                "raw", toHex(request)
         )));
     }
 
-    private synchronized String transact(String command) throws DriverException {
+    private synchronized Esp3Packet exchange(byte[] request) throws DriverException {
         try {
-            writeLine(socket.getOutputStream(), command);
-            String line = readLine(socket.getInputStream());
-            if (line == null) {
-                throw new IOException("EOF from EnOcean gateway");
-            }
-            return line.trim();
+            Esp3Codec.writePacket(socket.getOutputStream(), request);
+            return Esp3Codec.readPacket(socket.getInputStream());
         } catch (IOException e) {
             throw new DriverException("EnOcean I/O failed for " + host + ":" + port, e);
         }
     }
 
-    static String normalizeId(String mapping) {
-        String t = mapping.trim().toUpperCase(Locale.ROOT);
+    /** Handwritten {@code CO_RD_VERSION} ESP3 request (first byte {@code 0x55}). */
+    public static byte[] coRdVersionRequestLiteral() {
+        return Esp3Codec.coRdVersionRequestLiteral();
+    }
+
+    static byte[] parseDeviceId(String mapping) {
+        String hex = normalizeHex(mapping);
+        if (hex.length() != 8) {
+            throw new IllegalArgumentException(
+                    "EnOcean device id must be 4 bytes hex (e.g. AABBCCDD): " + mapping);
+        }
+        return parseHex(hex);
+    }
+
+    static byte[] parseHex(String raw) {
+        String hex = normalizeHex(raw);
+        if ((hex.length() % 2) != 0) {
+            throw new IllegalArgumentException("Hex must be even-length: " + raw);
+        }
+        byte[] out = new byte[hex.length() / 2];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = (byte) Integer.parseInt(hex.substring(i * 2, i * 2 + 2), 16);
+        }
+        return out;
+    }
+
+    static String normalizeHex(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String t = raw.trim().toUpperCase(Locale.ROOT).replace(" ", "");
         if (t.startsWith("0X")) {
             t = t.substring(2);
         }
-        if (t.startsWith("GET ") || t.startsWith("TX ")) {
-            t = t.substring(t.indexOf(' ') + 1).trim().split("\\s+")[0];
-            if (t.startsWith("0X")) {
-                t = t.substring(2);
-            }
+        if (!t.matches("[0-9A-F]*")) {
+            throw new IllegalArgumentException("Invalid hex: " + raw);
         }
         return t;
     }
 
-    static String extractData(String raw) {
-        if (raw == null || raw.isBlank()) {
+    static String toHex(byte[] data) {
+        if (data == null || data.length == 0) {
             return "";
         }
-        String[] parts = raw.trim().split("\\s+");
-        if (parts.length >= 3 && (parts[0].equalsIgnoreCase("RX") || parts[0].equalsIgnoreCase("OK"))) {
-            return parts[2].toUpperCase(Locale.ROOT);
+        StringBuilder sb = new StringBuilder(data.length * 2);
+        for (byte value : data) {
+            sb.append(String.format(Locale.ROOT, "%02X", value & 0xFF));
         }
-        if (parts.length >= 2 && parts[0].equalsIgnoreCase("DATA")) {
-            return parts[1].toUpperCase(Locale.ROOT);
-        }
-        return raw.trim();
+        return sb.toString();
     }
 
     private static String extractValue(DataRecord value) {
@@ -207,30 +241,5 @@ public class EnoceanDeviceDriver implements DeviceDriver {
                 // best-effort
             }
         }
-    }
-
-    static void writeLine(OutputStream out, String line) throws IOException {
-        out.write((line + "\r\n").getBytes(StandardCharsets.US_ASCII));
-        out.flush();
-    }
-
-    static String readLine(InputStream in) throws IOException {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        while (true) {
-            int b = in.read();
-            if (b < 0) {
-                if (buf.size() == 0) {
-                    return null;
-                }
-                break;
-            }
-            if (b == '\n') {
-                break;
-            }
-            if (b != '\r') {
-                buf.write(b);
-            }
-        }
-        return buf.toString(StandardCharsets.US_ASCII);
     }
 }

@@ -1,44 +1,41 @@
 package com.ispf.driver.wisun;
 
 import com.ispf.core.model.DataRecord;
-import com.ispf.core.model.DataSchema;
-import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.wisun.codec.WisunCoapCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake TCP CoAP border-router loopback tests for the Wi-SUN lab.
- * Certifies lab dialect only — not Wi-SUN FAN PHY / FAN stack.
+ * DatagramSocket peer tests for Wi-SUN CoAP RFC 7252 (not Wi-SUN FAN PHY).
  */
 class WisunDeviceDriverTest {
 
     private WisunDeviceDriver driver;
-    private FakeWisunBorderRouter gateway;
+    private FakeCoapPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -46,22 +43,38 @@ class WisunDeviceDriverTest {
             driver.disconnect();
             driver = null;
         }
-        if (gateway != null) {
-            gateway.close();
-            gateway = null;
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
     }
 
     @Test
-    void metadataDescribesBorderRouterCoapLabNotFanPhy() {
+    void conGetMid1IsLiteral40010001() {
+        // Handwritten CON GET, no token, MID 1 (not produced by calling the encoder for expected)
+        byte[] expected = new byte[]{0x40, 0x01, 0x00, 0x01};
+        assertArrayEquals(expected, WisunCoapCodec.encodeConGetNoToken(1));
+        assertArrayEquals(expected, WisunDeviceDriver.buildConGetMid1());
+    }
+
+    @Test
+    void ackContentMid1IsLiteral60450001() {
+        // Handwritten ACK 2.05 Content, no token, MID 1, no payload
+        byte[] expected = new byte[]{0x60, 0x45, 0x00, 0x01};
+        assertArrayEquals(expected, WisunCoapCodec.encodeAckContentNoToken(1));
+    }
+
+    @Test
+    void metadataDescribesCoapNotFanPhyWithoutLab() {
         driver = new WisunDeviceDriver();
         assertEquals("wisun", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
-        assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
+        assertEquals(Set.of("read"), driver.metadata().capabilities());
         assertEquals("5683", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("coap") || description.contains("border"));
+        assertTrue(description.contains("coap"));
         assertTrue(description.contains("not") && (description.contains("fan") || description.contains("phy")));
+        assertFalse(description.contains("lab"));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
     }
 
@@ -73,15 +86,13 @@ class WisunDeviceDriverTest {
     }
 
     @Test
-    void getAndPutLoopback() throws Exception {
-        gateway = new FakeWisunBorderRouter();
-        gateway.put("/nodes/1/value", 18.25f);
-        gateway.start();
-        assertTrue(gateway.awaitReady(2, TimeUnit.SECONDS));
+    void conGetLoopbackReceivesAck205() throws Exception {
+        peer = new FakeCoapPeer();
+        peer.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new WisunDeviceDriver();
@@ -90,129 +101,68 @@ class WisunDeviceDriverTest {
         assertTrue(driver.isConnected());
 
         driver.readPoints(Map.of("n1", "node:1"));
-        assertEquals(18.25, (Double) object.variables.get("n1").firstRow().get("value"), 0.001);
+        assertEquals(1.0, (Double) object.variables.get("n1").firstRow().get("value"), 0.001);
         assertEquals("/nodes/1/value", object.variables.get("n1").firstRow().get("path"));
+        assertEquals(69, object.variables.get("n1").firstRow().get("code"));
+        assertEquals(1, object.variables.get("n1").firstRow().get("mid"));
 
-        driver.writePoint("n1", DataRecord.single(
-                DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
-                Map.of("value", 27.5)
-        ));
-        assertEquals(27.5f, gateway.get("/nodes/1/value"), 0.001f);
-        assertTrue(gateway.writeLatchAwait(2, TimeUnit.SECONDS));
+        assertArrayEquals(new byte[]{0x40, 0x01, 0x00, 0x01}, peer.lastRequest());
+        assertArrayEquals(new byte[]{0x60, 0x45, 0x00, 0x01}, peer.lastReply());
+
+        assertThrows(DriverException.class, () ->
+                driver.writePoint("n1", object.variables.get("n1")));
     }
 
-    private static final class FakeWisunBorderRouter implements AutoCloseable {
-        private final ServerSocket serverSocket;
-        private final ExecutorService executor = Executors.newCachedThreadPool(r -> {
-            Thread t = new Thread(r, "fake-wisun");
+    private static final class FakeCoapPeer implements AutoCloseable {
+        private final DatagramSocket socket;
+        private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "fake-wisun-coap");
             t.setDaemon(true);
             return t;
         });
-        private final Map<String, Float> values = new ConcurrentHashMap<>();
-        private final CountDownLatch ready = new CountDownLatch(1);
-        private final CountDownLatch writeSeen = new CountDownLatch(1);
+        private final AtomicReference<byte[]> lastRequest = new AtomicReference<>(new byte[0]);
+        private final AtomicReference<byte[]> lastReply = new AtomicReference<>(new byte[0]);
 
-        FakeWisunBorderRouter() throws IOException {
-            serverSocket = new ServerSocket();
-            serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+        FakeCoapPeer() throws Exception {
+            socket = new DatagramSocket(new InetSocketAddress("127.0.0.1", 0));
+            socket.setSoTimeout(5000);
         }
 
         int port() {
-            return serverSocket.getLocalPort();
+            return socket.getLocalPort();
         }
 
-        void put(String path, float value) {
-            values.put(path, value);
+        byte[] lastRequest() {
+            return lastRequest.get();
         }
 
-        float get(String path) {
-            return values.getOrDefault(path, 0f);
+        byte[] lastReply() {
+            return lastReply.get();
         }
 
         void start() {
-            executor.submit(this::acceptLoop);
-            ready.countDown();
+            var _ = executor.submit(this::serve);
         }
 
-        boolean awaitReady(long timeout, TimeUnit unit) throws InterruptedException {
-            return ready.await(timeout, unit);
-        }
-
-        boolean writeLatchAwait(long timeout, TimeUnit unit) throws InterruptedException {
-            return writeSeen.await(timeout, unit);
-        }
-
-        private void acceptLoop() {
-            while (!serverSocket.isClosed()) {
-                try {
-                    Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
-                } catch (IOException e) {
-                    return;
-                }
-            }
-        }
-
-        private void handle(Socket socket) {
-            try (socket) {
-                InputStream in = socket.getInputStream();
-                OutputStream out = socket.getOutputStream();
-                while (true) {
-                    String line = readLine(in);
-                    if (line == null) {
-                        return;
-                    }
-                    String trimmed = line.trim();
-                    String upper = trimmed.toUpperCase(Locale.ROOT);
-                    if (upper.startsWith("GET ")) {
-                        String path = trimmed.substring(4).trim();
-                        float value = values.getOrDefault(path, 0f);
-                        writeLine(out, "2.05 Content " + value);
-                    } else if (upper.startsWith("PUT ")) {
-                        String rest = trimmed.substring(4).trim();
-                        int space = rest.lastIndexOf(' ');
-                        String path = space < 0 ? rest : rest.substring(0, space).trim();
-                        float value = space < 0 ? 0f : Float.parseFloat(rest.substring(space + 1).trim());
-                        values.put(path, value);
-                        writeSeen.countDown();
-                        writeLine(out, "2.04 Changed");
-                    } else {
-                        writeLine(out, "4.00 Bad Request");
-                    }
-                }
-            } catch (IOException ignored) {
+        private void serve() {
+            try {
+                byte[] buffer = new byte[1500];
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet);
+                byte[] request = Arrays.copyOf(packet.getData(), packet.getLength());
+                lastRequest.set(request);
+                // Handwritten ACK 2.05 Content MID 1, no payload
+                byte[] reply = new byte[]{0x60, 0x45, 0x00, 0x01};
+                lastReply.set(reply);
+                socket.send(new DatagramPacket(reply, reply.length, packet.getSocketAddress()));
+            } catch (Exception ignored) {
                 // closed
             }
         }
 
-        private static void writeLine(OutputStream out, String line) throws IOException {
-            out.write((line + "\r\n").getBytes(StandardCharsets.US_ASCII));
-            out.flush();
-        }
-
-        private static String readLine(InputStream in) throws IOException {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            while (true) {
-                int b = in.read();
-                if (b < 0) {
-                    if (buf.size() == 0) {
-                        return null;
-                    }
-                    break;
-                }
-                if (b == '\n') {
-                    break;
-                }
-                if (b != '\r') {
-                    buf.write(b);
-                }
-            }
-            return buf.toString(StandardCharsets.US_ASCII);
-        }
-
         @Override
         public void close() throws Exception {
-            serverSocket.close();
+            socket.close();
             executor.shutdownNow();
             executor.awaitTermination(2, TimeUnit.SECONDS);
         }
@@ -220,7 +170,7 @@ class WisunDeviceDriverTest {
 
     private static final class StubDriverObject implements DeviceDriver.DriverObject {
         private final Map<String, String> configuration;
-        final Map<String, DataRecord> variables = new ConcurrentHashMap<>();
+        final Map<String, DataRecord> variables = new java.util.concurrent.ConcurrentHashMap<>();
 
         StubDriverObject(Map<String, String> configuration) {
             this.configuration = configuration;

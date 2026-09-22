@@ -23,18 +23,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Fatek FACON driver — ASCII FACON-style station frames over a raw TCP socket.
+ * Fatek FACON ASCII driver over a raw TCP socket (default port {@code 500}).
  * <p>
- * Point mapping (lab subset):
+ * Published FACON framing (Fatek Communication Protocol Appendix):
  * <ul>
- *   <li>{@code D100}, {@code R0}, {@code M10} — expanded to STX + {@code &lt;station&gt;R&lt;reg&gt;} + LRC + ETX</li>
- *   <li>Writes use STX + {@code &lt;station&gt;W&lt;reg&gt;=&lt;value&gt;} + LRC + ETX with record field {@code value}</li>
- *   <li>Full STX…ETX frames are accepted as explicit mappings</li>
+ *   <li>{@code STX} (02h) + station(2 hex ASCII) + command(2) + data + LRC(2 hex ASCII) + {@code ETX} (03h)</li>
+ *   <li>LRC = low byte of the sum of ASCII codes of columns c～f (STX through data), as two hex digits</li>
+ *   <li>Command {@code 46}: read continuous 16-bit registers — data {@code 01} + 6-char address
+ *       (e.g. {@code R0} → {@code R00000})</li>
+ *   <li>Command {@code 47}: write continuous 16-bit registers — data {@code 01} + address + 4-digit hex value</li>
+ *   <li>Success response embeds error code {@code 0} immediately after the command code</li>
  * </ul>
- * Default TCP port {@code 500}, station {@code 01}. LRC is the low byte of the sum of ASCII codes from
- * station through payload (FACON additive checksum shape). Lab dialect uses {@code R}/{@code W}
- * command letters rather than the full numeric FACON command set — consistent between driver and
- * fake loopback; not WinProladder / proprietary.
+ * Point mapping: {@code R0}, {@code D100}, {@code M10} (16-bit register form). Full STX…ETX frames are
+ * accepted as explicit mappings.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only; no proprietary SDKs / PLC4X.
  */
@@ -57,7 +58,7 @@ public class FatekDeviceDriver implements DeviceDriver {
             "fatek",
             "Fatek FACON Driver",
             "0.1.0",
-            "Reads/writes Fatek FACON ASCII R/D/M registers over TCP",
+            "Fatek FACON ASCII command 46/47 register read-write over TCP",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -145,6 +146,9 @@ public class FatekDeviceDriver implements DeviceDriver {
             points.put(pointId, mapping);
             String command = buildReadCommand(station, mapping);
             String response = transact(command);
+            if (isErrorResponse(response)) {
+                throw new DriverException("Fatek FACON read rejected: " + printable(response));
+            }
             String value = parseReadValue(response);
             driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
                     "value", value,
@@ -181,18 +185,12 @@ public class FatekDeviceDriver implements DeviceDriver {
         if (map.indexOf(STX) >= 0) {
             return ensureFrame(map);
         }
-        // Allow "01RD100" / "01R D100" style shorthand
-        Matcher shorthand = Pattern.compile("^(\\d{2})\\s*R\\s*([RDMXY]\\d+)$", Pattern.CASE_INSENSITIVE)
-                .matcher(map);
-        if (shorthand.matches()) {
-            return frame(shorthand.group(1), "R" + shorthand.group(2).toUpperCase(Locale.ROOT));
-        }
         Matcher matcher = REGISTER.matcher(map);
         if (matcher.matches()) {
-            String reg = matcher.group("dev").toUpperCase(Locale.ROOT) + matcher.group("addr");
-            return frame(station, "R" + reg);
+            String address = formatRegisterAddress(matcher.group("dev"), matcher.group("addr"));
+            return frame(station, "46" + "01" + address);
         }
-        return frame(station, "R" + map.toUpperCase(Locale.ROOT));
+        throw new IllegalArgumentException("Unsupported Fatek point mapping: " + mapping);
     }
 
     static String buildWriteCommand(String station, String mapping, String payload) {
@@ -204,48 +202,53 @@ public class FatekDeviceDriver implements DeviceDriver {
         if (map.indexOf(STX) >= 0) {
             return ensureFrame(map);
         }
-        Matcher shorthand = Pattern.compile("^(\\d{2})\\s*W\\s*([RDMXY]\\d+)(?:=(.*))?$", Pattern.CASE_INSENSITIVE)
-                .matcher(map);
-        if (shorthand.matches()) {
-            String value = shorthand.group(3) != null ? shorthand.group(3) : bodyValue;
-            return frame(shorthand.group(1), "W" + shorthand.group(2).toUpperCase(Locale.ROOT) + "=" + value);
-        }
         Matcher matcher = REGISTER.matcher(map);
         if (matcher.matches()) {
-            String reg = matcher.group("dev").toUpperCase(Locale.ROOT) + matcher.group("addr");
-            return frame(station, "W" + reg + "=" + bodyValue);
+            String address = formatRegisterAddress(matcher.group("dev"), matcher.group("addr"));
+            String data = normalizeWriteHex(bodyValue);
+            return frame(station, "47" + "01" + address + data);
         }
-        String reg = registerFromMapping(map);
-        return frame(station, "W" + reg + "=" + bodyValue);
+        throw new IllegalArgumentException("Unsupported Fatek write mapping: " + mapping);
     }
 
     static String registerFromMapping(String mapping) {
         String map = mapping == null ? "" : mapping.trim();
         Matcher matcher = REGISTER.matcher(map);
         if (matcher.matches()) {
-            return matcher.group("dev").toUpperCase(Locale.ROOT) + matcher.group("addr");
+            return matcher.group("dev").toUpperCase(Locale.ROOT) + Integer.parseInt(matcher.group("addr"));
         }
         Matcher embedded = Pattern.compile("([RDMXY]\\d+)", Pattern.CASE_INSENSITIVE).matcher(map);
         if (embedded.find()) {
-            return embedded.group(1).toUpperCase(Locale.ROOT);
+            String token = embedded.group(1).toUpperCase(Locale.ROOT);
+            Matcher parts = REGISTER.matcher(token);
+            if (parts.matches()) {
+                return parts.group("dev").toUpperCase(Locale.ROOT) + Integer.parseInt(parts.group("addr"));
+            }
+            return token;
         }
         return map.toUpperCase(Locale.ROOT).replace(String.valueOf(STX), "").replace(String.valueOf(ETX), "");
     }
 
     /**
-     * Parses success response {@code STX&lt;st&gt;0&lt;value&gt;LRC ETX} (error code {@code 0}).
+     * Parses success response {@code STX&lt;st&gt;46 0 &lt;hhhh&gt;… LRC ETX} into a decimal string.
      */
     static String parseReadValue(String response) {
         if (response == null || response.isEmpty()) {
             return "";
         }
         String inner = stripStxEtx(response);
-        if (inner.length() < 3) {
+        if (inner.length() < 7) {
             return inner;
         }
-        // station(2) + error(1) + value + lrc(2)
-        if (inner.length() >= 5 && inner.charAt(2) == '0') {
-            return inner.substring(3, inner.length() - 2);
+        String body = inner.substring(0, inner.length() - 2);
+        // station(2) + command(2) + error(1) + data…
+        if (body.length() >= 5 && body.charAt(4) == '0') {
+            String data = body.substring(5);
+            if (data.length() >= 4 && data.matches("(?i)[0-9A-F]+")) {
+                String firstWord = data.substring(0, 4);
+                return String.valueOf(Integer.parseInt(firstWord, 16));
+            }
+            return data;
         }
         return inner;
     }
@@ -255,14 +258,20 @@ public class FatekDeviceDriver implements DeviceDriver {
             return true;
         }
         String inner = stripStxEtx(response);
-        return inner.length() < 3 || inner.charAt(2) != '0';
+        if (inner.length() < 7) {
+            return true;
+        }
+        String body = inner.substring(0, inner.length() - 2);
+        return body.length() < 5 || body.charAt(4) != '0';
     }
 
-    /** Additive LRC (low byte of sum) over station+payload, as 2 ASCII hex digits. */
-    static String lrc(String stationAndPayload) {
-        int sum = 0;
-        for (int i = 0; i < stationAndPayload.length(); i++) {
-            sum += stationAndPayload.charAt(i);
+    /**
+     * Additive LRC over STX + station + command + data (Fatek columns c～f), as 2 ASCII hex digits.
+     */
+    static String lrc(String stationCommandAndData) {
+        int sum = STX;
+        for (int i = 0; i < stationCommandAndData.length(); i++) {
+            sum += stationCommandAndData.charAt(i);
         }
         return String.format(Locale.ROOT, "%02X", sum & 0xFF);
     }
@@ -282,7 +291,7 @@ public class FatekDeviceDriver implements DeviceDriver {
             String maybeBody = inner.substring(0, inner.length() - 2);
             String maybeLrc = inner.substring(inner.length() - 2);
             if (maybeLrc.matches("[0-9A-Fa-f]{2}") && lrc(maybeBody).equalsIgnoreCase(maybeLrc)) {
-                return STX + maybeBody + maybeLrc + ETX;
+                return STX + maybeBody + maybeLrc.toUpperCase(Locale.ROOT) + ETX;
             }
         }
         return STX + inner + lrc(inner) + ETX;
@@ -314,6 +323,33 @@ public class FatekDeviceDriver implements DeviceDriver {
             return s.toUpperCase(Locale.ROOT);
         }
         throw new IllegalArgumentException("Fatek station must be 2 hex/decimal digits: " + station);
+    }
+
+    /** 16-bit FACON address: letter + 5 zero-padded digits ({@code R00000}, {@code D00100}). */
+    static String formatRegisterAddress(String device, String addrDigits) {
+        String letter = device.toUpperCase(Locale.ROOT);
+        int addr = Integer.parseInt(addrDigits);
+        return letter + String.format(Locale.ROOT, "%05d", addr);
+    }
+
+    static String normalizeWriteHex(String value) {
+        if (value == null || value.isBlank()) {
+            return "0000";
+        }
+        String v = value.trim();
+        if (v.matches("(?i)0x[0-9a-f]+")) {
+            int n = Integer.parseInt(v.substring(2), 16);
+            return String.format(Locale.ROOT, "%04X", n & 0xFFFF);
+        }
+        if (v.matches("\\d+")) {
+            int n = Integer.parseInt(v);
+            return String.format(Locale.ROOT, "%04X", n & 0xFFFF);
+        }
+        if (v.matches("(?i)[0-9a-f]{1,4}")) {
+            int n = Integer.parseInt(v, 16);
+            return String.format(Locale.ROOT, "%04X", n & 0xFFFF);
+        }
+        throw new IllegalArgumentException("Fatek write value must be numeric: " + value);
     }
 
     private synchronized String transact(String command) throws DriverException {

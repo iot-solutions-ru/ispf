@@ -6,13 +6,13 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.schneiderumac.codec.ModbusTcpCodec;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,24 +20,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Modbus-TCP-compatible lab driver for Schneider Modicon/Unity devices — holding register read
- * (FC3) and single-register write (FC6). Default TCP port {@code 502}.
+ * Schneider Modicon/Unity Modbus TCP driver — holding register read (FC3) and single-register
+ * write (FC6) over MBAP on default TCP port {@code 502}.
  * <p>
  * Catalog id {@code schneider-umac} historically referred to Unity/Modicon advanced services
- * beyond Modbus. This pack intentionally speaks <strong>standard Modbus TCP only</strong> (same
- * dialect as the WAGO / Delta Modbus-lab packs) so Modicon/Unity devices that expose holding
- * registers remain reachable without proprietary reverse-engineering.
+ * beyond Modbus. This pack speaks <strong>standard Modbus TCP only</strong> so Modicon/Unity
+ * devices that expose holding registers remain reachable without proprietary reverse-engineering.
  * <p>
- * <strong>Honesty:</strong> this is a Modbus-compatible lab for Modicon/Unity devices —
- * <strong>not</strong> UMAS / Unity Pro proprietary protocol, and <strong>not</strong> a full
- * Schneider advanced-services stack. Point mapping: {@code HR:100}, {@code 100}, or {@code MW100}
- * — see {@link SchneiderUmacPoint}. Clean-room ISPF code, Apache-2.0 — JDK sockets only; no
- * PLC4X, no vendor SDK.
+ * This is <strong>not</strong> UMAS / Unity Pro proprietary protocol, and <strong>not</strong> a
+ * full Schneider advanced-services stack. Point mapping: {@code HR:100}, {@code 100}, or
+ * {@code MW100} — see {@link SchneiderUmacPoint}. Clean-room ISPF code, Apache-2.0 — JDK sockets
+ * only; no PLC4X, no vendor SDK.
  */
 public class SchneiderUmacDeviceDriver implements DeviceDriver {
-
-    private static final byte FC_READ_HOLDING = 3;
-    private static final byte FC_WRITE_SINGLE = 6;
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("schneiderUmacValue")
             .field("value", FieldType.STRING)
@@ -49,8 +44,7 @@ public class SchneiderUmacDeviceDriver implements DeviceDriver {
             "schneider-umac",
             "Schneider Unity/Modicon Driver",
             "0.1.0",
-            "Modbus-TCP-compatible FC3/FC6 lab for Modicon/Unity holding registers"
-                    + " (not UMAS/Unity Pro proprietary)",
+            "Modbus TCP FC3/FC6 for Modicon/Unity holding registers (not UMAS/Unity Pro proprietary)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -70,6 +64,11 @@ public class SchneiderUmacDeviceDriver implements DeviceDriver {
     private final AtomicInteger transactionId = new AtomicInteger();
     private final Map<String, SchneiderUmacPoint> points = new ConcurrentHashMap<>();
     private volatile boolean connected;
+
+    /** Reference MBAP FC3 frame (tid 1, unit 1, address 0, quantity 1). */
+    public static byte[] buildReadHoldingRegister0Frame() {
+        return ModbusTcpCodec.buildReadHoldingRegister0Reference();
+    }
 
     @Override
     public DriverMetadata metadata() {
@@ -99,8 +98,8 @@ public class SchneiderUmacDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         connected = true;
         driverObject.log(DriverLogLevel.INFO,
-                "Schneider Modbus-TCP lab ready for " + host + ":" + port
-                        + " (Modbus-compatible for Modicon/Unity — not UMAS/Unity Pro proprietary)");
+                "Schneider Modbus TCP ready for " + host + ":" + port
+                        + " (Modicon/Unity — not UMAS/Unity Pro proprietary)");
     }
 
     @Override
@@ -146,12 +145,10 @@ public class SchneiderUmacDeviceDriver implements DeviceDriver {
     }
 
     private DataRecord readHolding(SchneiderUmacPoint point) throws DriverException {
-        ByteBuffer pdu = ByteBuffer.allocate(5);
-        pdu.put(FC_READ_HOLDING);
-        pdu.putShort((short) point.address());
-        pdu.putShort((short) point.count());
-        byte[] response = transact(pdu.array());
-        if (response.length < 2 || response[0] != FC_READ_HOLDING) {
+        int txId = transactionId.incrementAndGet() & 0xFFFF;
+        byte[] request = ModbusTcpCodec.encodeReadHoldingRegisters(txId, unitId, point.address(), point.count());
+        byte[] response = transact(request);
+        if (response.length < 2 || response[0] != ModbusTcpCodec.FC_READ_HOLDING) {
             throw new DriverException("Unexpected Schneider FC3 response");
         }
         int byteCount = response[1] & 0xFF;
@@ -175,31 +172,21 @@ public class SchneiderUmacDeviceDriver implements DeviceDriver {
     }
 
     private void writeSingle(int address, int word) throws DriverException {
-        ByteBuffer pdu = ByteBuffer.allocate(5);
-        pdu.put(FC_WRITE_SINGLE);
-        pdu.putShort((short) address);
-        pdu.putShort((short) (word & 0xFFFF));
-        byte[] response = transact(pdu.array());
-        if (response.length < 5 || response[0] != FC_WRITE_SINGLE) {
+        int txId = transactionId.incrementAndGet() & 0xFFFF;
+        byte[] request = ModbusTcpCodec.encodeWriteSingleRegister(txId, unitId, address, word);
+        byte[] response = transact(request);
+        if (response.length < 5 || response[0] != ModbusTcpCodec.FC_WRITE_SINGLE) {
             throw new DriverException("Unexpected Schneider FC6 response");
         }
     }
 
-    private byte[] transact(byte[] pdu) throws DriverException {
-        int txId = transactionId.incrementAndGet() & 0xFFFF;
-        ByteBuffer request = ByteBuffer.allocate(7 + pdu.length);
-        request.putShort((short) txId);
-        request.putShort((short) 0); // protocol id
-        request.putShort((short) (1 + pdu.length));
-        request.put((byte) (unitId & 0xFF));
-        request.put(pdu);
-
+    private byte[] transact(byte[] request) throws DriverException {
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(host, port), timeoutMs);
             socket.setSoTimeout(timeoutMs);
             OutputStream out = socket.getOutputStream();
             InputStream in = socket.getInputStream();
-            out.write(request.array());
+            out.write(request);
             out.flush();
 
             byte[] header = in.readNBytes(7);

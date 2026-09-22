@@ -10,12 +10,14 @@ import com.ispf.driver.DriverMaturity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -26,10 +28,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WeighbridgeDeviceDriverTest {
+
+    /** Handwritten MT-SICS S CR LF (53 0D 0A). */
+    private static final byte[] CMD_S = new byte[] { 0x53, 0x0D, 0x0A };
+    /** Handwritten MT-SICS Z CR LF (5A 0D 0A). */
+    private static final byte[] CMD_Z = new byte[] { 0x5A, 0x0D, 0x0A };
+    /** Handwritten MT-SICS T CR LF (54 0D 0A). */
+    private static final byte[] CMD_T = new byte[] { 0x54, 0x0D, 0x0A };
+
+    /** Exact stable-weight reply line written for the peer (not built by the encoder). */
+    private static final String STABLE_REPLY = "S S      0.00 kg\r\n";
 
     private WeighbridgeDeviceDriver driver;
     private FakeScale scale;
@@ -47,17 +61,36 @@ class WeighbridgeDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionReadWrite() {
+    void mtSicsCommandOctetsAreHandwritten() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        WeighbridgeDeviceDriver.writeLine(out, "S");
+        assertArrayEquals(new byte[] { 0x53, 0x0D, 0x0A }, out.toByteArray());
+
+        out.reset();
+        WeighbridgeDeviceDriver.writeLine(out, "Z");
+        assertArrayEquals(new byte[] { 0x5A, 0x0D, 0x0A }, out.toByteArray());
+
+        out.reset();
+        WeighbridgeDeviceDriver.writeLine(out, "T");
+        assertArrayEquals(new byte[] { 0x54, 0x0D, 0x0A }, out.toByteArray());
+    }
+
+    @Test
+    void metadataIsProductionReadWriteMtSics() {
         driver = new WeighbridgeDeviceDriver();
         assertEquals("weighbridge", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
+        String description = driver.metadata().description();
+        String lower = description.toLowerCase(Locale.ROOT);
+        assertTrue(lower.contains("mt-sics"));
+        assertTrue(lower.contains("not every truck-scale dialect"));
+        assertFalse(lower.contains("lab"));
     }
 
     @Test
-    void pollWeightAndZeroLoopback() throws Exception {
+    void pollWeightZeroAndTareLoopback() throws Exception {
         scale = new FakeScale();
-        scale.setWeight(123.4);
         scale.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
@@ -71,19 +104,38 @@ class WeighbridgeDeviceDriverTest {
         assertTrue(driver.isConnected());
 
         driver.readPoints(Map.of("gross", "weight"));
-        assertEquals("123.4", object.variables.get("gross").firstRow().get("value"));
+        assertArrayEquals(CMD_S, scale.lastCommandBytes());
+        assertEquals("0.00", object.variables.get("gross").firstRow().get("value"));
         assertEquals("kg", object.variables.get("gross").firstRow().get("unit"));
-        assertEquals("ST", object.variables.get("gross").firstRow().get("status"));
+        assertEquals("S", object.variables.get("gross").firstRow().get("status"));
 
         driver.writePoint("gross", DataRecord.single(
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
                 Map.of("value", "ZERO")
         ));
-        assertEquals("0.0", scale.weight());
-        assertEquals("ZERO", scale.lastCommand());
+        assertArrayEquals(CMD_Z, scale.lastCommandBytes());
+        assertEquals("Z", scale.lastCommand());
+
+        driver.writePoint("gross", DataRecord.single(
+                DataSchema.builder("v").field("value", FieldType.STRING).build(),
+                Map.of("value", "TARE")
+        ));
+        assertArrayEquals(CMD_T, scale.lastCommandBytes());
+        assertEquals("T", scale.lastCommand());
 
         driver.readPoints(Map.of("gross", "weight"));
-        assertEquals("0.0", object.variables.get("gross").firstRow().get("value"));
+        assertArrayEquals(CMD_S, scale.lastCommandBytes());
+        assertEquals("0.00", object.variables.get("gross").firstRow().get("value"));
+        assertEquals("kg", object.variables.get("gross").firstRow().get("unit"));
+    }
+
+    @Test
+    void parseMtSicsStableWeightLine() {
+        WeighbridgeDeviceDriver.ParsedWeight parsed =
+                WeighbridgeDeviceDriver.parseWeight("S S      0.00 kg");
+        assertEquals("0.00", parsed.value());
+        assertEquals("kg", parsed.unit());
+        assertEquals("S", parsed.status());
     }
 
     @Test
@@ -102,8 +154,8 @@ class WeighbridgeDeviceDriverTest {
             t.setDaemon(true);
             return t;
         });
-        private final AtomicReference<String> weight = new AtomicReference<>("0.0");
         private final AtomicReference<String> lastCommand = new AtomicReference<>("");
+        private final AtomicReference<byte[]> lastCommandBytes = new AtomicReference<>(new byte[0]);
 
         FakeScale() throws IOException {
             serverSocket = new ServerSocket();
@@ -114,16 +166,12 @@ class WeighbridgeDeviceDriverTest {
             return serverSocket.getLocalPort();
         }
 
-        void setWeight(double kg) {
-            weight.set(Double.toString(kg));
-        }
-
-        String weight() {
-            return weight.get();
-        }
-
         String lastCommand() {
             return lastCommand.get();
+        }
+
+        byte[] lastCommandBytes() {
+            return lastCommandBytes.get();
         }
 
         void start() {
@@ -146,26 +194,49 @@ class WeighbridgeDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    String command = WeighbridgeDeviceDriver.readLine(in);
-                    if (command == null) {
+                    byte[] frame = readFrame(in);
+                    if (frame == null) {
                         break;
                     }
-                    String upper = command.trim().toUpperCase(Locale.ROOT);
+                    lastCommandBytes.set(frame);
+                    String command = new String(frame, StandardCharsets.US_ASCII)
+                            .replace("\r", "")
+                            .replace("\n", "")
+                            .trim();
+                    String upper = command.toUpperCase(Locale.ROOT);
                     lastCommand.set(upper);
-                    if ("W".equals(upper)) {
-                        WeighbridgeDeviceDriver.writeLine(out, "ST,GS,+" + weight.get() + "kg");
-                    } else if ("ZERO".equals(upper)) {
-                        weight.set("0.0");
-                        WeighbridgeDeviceDriver.writeLine(out, "OK");
-                    } else if ("TARE".equals(upper)) {
-                        WeighbridgeDeviceDriver.writeLine(out, "OK");
+                    if ("S".equals(upper)) {
+                        out.write(STABLE_REPLY.getBytes(StandardCharsets.US_ASCII));
+                        out.flush();
+                    } else if ("Z".equals(upper) || "T".equals(upper)) {
+                        out.write("OK\r\n".getBytes(StandardCharsets.US_ASCII));
+                        out.flush();
                     } else {
-                        WeighbridgeDeviceDriver.writeLine(out, "ERR");
+                        out.write("ES\r\n".getBytes(StandardCharsets.US_ASCII));
+                        out.flush();
                     }
                 }
             } catch (IOException ignored) {
                 // closed
             }
+        }
+
+        private static byte[] readFrame(InputStream in) throws IOException {
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            while (true) {
+                int b = in.read();
+                if (b < 0) {
+                    if (buf.size() == 0) {
+                        return null;
+                    }
+                    break;
+                }
+                buf.write(b);
+                if (b == '\n') {
+                    break;
+                }
+            }
+            return buf.toByteArray();
         }
 
         @Override

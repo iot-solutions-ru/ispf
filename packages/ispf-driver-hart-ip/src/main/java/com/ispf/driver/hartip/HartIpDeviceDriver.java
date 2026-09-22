@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.hartip.codec.HartIpLabSession;
+import com.ispf.driver.hartip.codec.HartIpSession;
 
 import java.io.IOException;
 import java.util.Map;
@@ -14,11 +14,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * HART-IP driver — TCP lab subset (session + pass-through PV / universal command 1 or 3).
+ * HART-IP driver — TCP session initiate and pass-through of short-frame PV reads (commands 1 and 3).
  * <p>
  * Point mapping: {@code pv}, {@code cmd:1}, {@code device:0}, {@code device:0:cmd:1}.
- * This is a HART-IP lab subset, not a full HCF stack and not an FSK modem.
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
+ * Not a full HCF stack and not an FSK modem. Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class HartIpDeviceDriver implements DeviceDriver {
 
@@ -31,9 +30,10 @@ public class HartIpDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "hart-ip",
-            "HART-IP Lab Driver",
+            "HART-IP Driver",
             "0.1.0",
-            "HART-IP TCP lab subset: session + pass-through read PV (cmd 1/3); not full HCF stack, not FSK modem",
+            "HART-IP over TCP: session initiate and pass-through short-frame PV read (commands 1 and 3);"
+                    + " not a full HCF stack, not an FSK modem",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -48,7 +48,7 @@ public class HartIpDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 5094;
     private int timeoutMs = 3000;
-    private HartIpLabSession session;
+    private HartIpSession session;
     private final Map<String, HartIpPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -78,8 +78,8 @@ public class HartIpDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new HartIpLabSession(host, port, timeoutMs);
-            driverObject.log(DriverLogLevel.INFO, "HART-IP lab connected to " + host + ":" + port);
+            session = new HartIpSession(host, port, timeoutMs);
+            driverObject.log(DriverLogLevel.INFO, "HART-IP connected to " + host + ":" + port);
         } catch (IOException e) {
             session = null;
             throw new DriverException("HART-IP connect failed for " + host + ":" + port, e);
@@ -115,7 +115,7 @@ public class HartIpDeviceDriver implements DeviceDriver {
                         "value", (double) pv,
                         "command", (long) point.command(),
                         "device", (long) point.deviceAddress(),
-                        "unit", "lab"
+                        "unit", "PV"
                 )));
             } catch (IOException e) {
                 throw new DriverException("HART-IP read failed for " + mapping, e);
@@ -125,7 +125,7 @@ public class HartIpDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("HART-IP lab driver is read-only (PV / universal command pass-through)");
+        throw new DriverException("HART-IP driver is read-only (PV / universal command pass-through)");
     }
 
     private void ensureConnected() throws DriverException {

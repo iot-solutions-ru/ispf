@@ -7,17 +7,18 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.wirelesshart.codec.WirelesshartCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -28,12 +29,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake TCP gateway loopback tests for the WirelessHART lab.
- * Certifies lab dialect only — not 802.15.4 radio / HCF stack.
+ * Fake HART-IP gateway loopback tests for WirelessHART.
+ * Certifies HART-IP framing — not 802.15.4 radio / HCF stack.
  */
 class WirelesshartDeviceDriverTest {
 
@@ -53,16 +56,23 @@ class WirelesshartDeviceDriverTest {
     }
 
     @Test
-    void metadataDescribesGatewayTcpLabNotRadioStack() {
+    void metadataDescribesGatewayHartIpNotRadioStack() {
         driver = new WirelesshartDeviceDriver();
         assertEquals("wirelesshart", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("5094", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("lab") || description.contains("gateway"));
+        assertFalse(description.contains("lab"));
+        assertTrue(description.contains("hart-ip") || description.contains("gateway"));
         assertTrue(description.contains("not") && (description.contains("802.15.4") || description.contains("hcf")));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
+    }
+
+    @Test
+    void sessionInitiateSequence1IsLiteral() {
+        assertArrayEquals(WirelesshartCodec.sessionInitiateSeq1(), WirelesshartCodec.encodeSessionInitiate(1));
+        assertArrayEquals(WirelesshartCodec.hartCmd1Addr0(), WirelesshartCodec.encodeHartCommand(0, 1));
     }
 
     @Test
@@ -167,25 +177,32 @@ class WirelesshartDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    String line = readLine(in);
-                    if (line == null) {
+                    byte[] frame = readFrame(in);
+                    if (frame == null) {
                         return;
                     }
-                    String trimmed = line.trim();
-                    String upper = trimmed.toUpperCase(Locale.ROOT);
-                    if (upper.startsWith("GET ")) {
-                        int device = parseDevice(trimmed.substring(4).trim());
-                        writeLine(out, "OK " + values.getOrDefault(device, 0f));
-                    } else if (upper.startsWith("SET ")) {
-                        String rest = trimmed.substring(4).trim();
-                        int space = rest.lastIndexOf(' ');
-                        int device = parseDevice(space < 0 ? rest : rest.substring(0, space).trim());
-                        float value = space < 0 ? 0f : Float.parseFloat(rest.substring(space + 1).trim());
-                        values.put(device, value);
-                        writeSeen.countDown();
-                        writeLine(out, "OK");
-                    } else {
-                        writeLine(out, "ERR");
+                    WirelesshartCodec.Message msg = WirelesshartCodec.decode(frame);
+                    if (msg.messageId() == WirelesshartCodec.ID_SESSION_INITIATE) {
+                        out.write(WirelesshartCodec.encodeSessionInitiateResponse(msg.sequence()));
+                        out.flush();
+                        continue;
+                    }
+                    if (msg.messageId() == WirelesshartCodec.ID_PASS_THROUGH) {
+                        WirelesshartCodec.HartCommand cmd = WirelesshartCodec.parseHartCommand(msg.body());
+                        if (cmd.byteCount() >= 4 && !Float.isNaN(cmd.writeValue())) {
+                            values.put(cmd.address(), cmd.writeValue());
+                            writeSeen.countDown();
+                            byte[] ack = WirelesshartCodec.encodeHartPvResponse(
+                                    cmd.address(), cmd.command(), cmd.writeValue());
+                            out.write(WirelesshartCodec.encodePassThroughResponse(msg.sequence(), ack));
+                            out.flush();
+                        } else {
+                            float pv = values.getOrDefault(cmd.address(), 0f);
+                            byte[] response = WirelesshartCodec.encodeHartPvResponse(
+                                    cmd.address(), cmd.command(), pv);
+                            out.write(WirelesshartCodec.encodePassThroughResponse(msg.sequence(), response));
+                            out.flush();
+                        }
                     }
                 }
             } catch (IOException ignored) {
@@ -193,40 +210,32 @@ class WirelesshartDeviceDriverTest {
             }
         }
 
-        private static int parseDevice(String token) {
-            String lower = token.toLowerCase(Locale.ROOT);
-            if (lower.startsWith("device:")) {
-                String rest = lower.substring(7);
-                int colon = rest.indexOf(':');
-                String devicePart = colon < 0 ? rest : rest.substring(0, colon);
-                return Integer.parseInt(devicePart.trim());
-            }
-            return 0;
-        }
-
-        private static void writeLine(OutputStream out, String line) throws IOException {
-            out.write((line + "\r\n").getBytes(StandardCharsets.US_ASCII));
-            out.flush();
-        }
-
-        private static String readLine(InputStream in) throws IOException {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            while (true) {
-                int b = in.read();
-                if (b < 0) {
-                    if (buf.size() == 0) {
+        private static byte[] readFrame(InputStream in) throws IOException {
+            byte[] header = new byte[WirelesshartCodec.HEADER_LENGTH];
+            int offset = 0;
+            while (offset < header.length) {
+                int read = in.read(header, offset, header.length - offset);
+                if (read < 0) {
+                    if (offset == 0) {
                         return null;
                     }
-                    break;
+                    throw new EOFException("EOF reading HART-IP header");
                 }
-                if (b == '\n') {
-                    break;
-                }
-                if (b != '\r') {
-                    buf.write(b);
-                }
+                offset += read;
             }
-            return buf.toString(StandardCharsets.US_ASCII);
+            int byteCount = ((header[6] & 0xFF) << 8) | (header[7] & 0xFF);
+            byte[] body = byteCount == 0 ? new byte[0] : new byte[byteCount];
+            offset = 0;
+            while (offset < body.length) {
+                int read = in.read(body, offset, body.length - offset);
+                if (read < 0) {
+                    throw new EOFException("EOF reading HART-IP body");
+                }
+                offset += read;
+            }
+            byte[] frame = Arrays.copyOf(header, header.length + body.length);
+            System.arraycopy(body, 0, frame, header.length, body.length);
+            return frame;
         }
 
         @Override

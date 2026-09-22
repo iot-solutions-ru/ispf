@@ -15,7 +15,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * DLMS/COSEM meter driver with ISPF-owned TCP WRAPPER codec.
+ * DLMS/COSEM meter driver over IEC 62056-47 TCP WRAPPER and Get-Request-Normal
+ * (Set-Request-Normal for writes). Does not implement an ACSE AARQ stack.
  * <p>
  * Point mapping: {@code logicalDevice:obis[:objectType[:attribute]]}.
  */
@@ -25,7 +26,7 @@ public class DlmsDeviceDriver implements DeviceDriver {
             "dlms",
             "DLMS/COSEM Driver",
             "0.2.0",
-            "DLMS/COSEM smart meters over TCP WRAPPER (ISPF clean-room codec)",
+            "DLMS/COSEM over IEC 62056-47 TCP WRAPPER with Get-Request-Normal (no ACSE AARQ)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -92,7 +93,7 @@ public class DlmsDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         communicator = new DlmsClientCommunicator(host, port, clientAddress, logicalDevice, timeoutMs);
-        driverObject.log(DriverLogLevel.INFO, "DLMS associated with " + host + ":" + port);
+        driverObject.log(DriverLogLevel.INFO, "DLMS TCP WRAPPER connected to " + host + ":" + port);
     }
 
     @Override

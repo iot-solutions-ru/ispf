@@ -23,13 +23,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * IDEC MicroSmart Host Link ASCII lab driver over a raw TCP socket (default port {@code 10000}).
+ * IDEC MicroSmart Host Link ASCII driver over a raw TCP socket (default port {@code 10000}).
  * <p>
- * <strong>Lab dialect</strong> (Host Link–shaped, not a full WindLDR / proprietary stack):
+ * Host Link frames (station + command body + XOR FCS):
  * <ul>
  *   <li>Frames: {@code @}{@station(2)}{@body}{@FCS(2 hex)}{@code *} + CR</li>
- *   <li>FCS = XOR of ASCII bytes of station+body (standard Host Link shape)</li>
- *   <li>Read D: body {@code RDD} + 5-digit address → e.g. {@code D100} → {@code @00RDD00100XX*}</li>
+ *   <li>FCS = XOR of ASCII bytes of station+body</li>
+ *   <li>Read D: body {@code RDD} + 5-digit address → e.g. {@code D100} → {@code @00RDD0010063*}</li>
  *   <li>Write D: body {@code WDD} + 5-digit address + 4-digit hex value</li>
  *   <li>Read M/R: body {@code RDM}/{@code RDR} + 5-digit address</li>
  *   <li>Write M/R: body {@code WDM}/{@code WDR} + 5-digit address + {@code 0000}/{@code 0001}</li>
@@ -56,7 +56,7 @@ public class IdecMicrosmartDeviceDriver implements DeviceDriver {
             "idec-microsmart",
             "IDEC MicroSmart Driver",
             "0.1.0",
-            "IDEC MicroSmart Host Link ASCII lab (D/M/R read-write) over TCP — not full WindLDR",
+            "IDEC MicroSmart Host Link ASCII (D/M/R read-write) over TCP",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",

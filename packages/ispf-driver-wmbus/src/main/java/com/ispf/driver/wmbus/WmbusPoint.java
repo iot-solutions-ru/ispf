@@ -5,7 +5,7 @@ import com.ispf.driver.DriverException;
 import java.util.Locale;
 
 /**
- * Wireless M-Bus TCP gateway lab point: {@code meter:1} or {@code id:HEX}.
+ * Wireless M-Bus point: {@code meter:1} or {@code id:HEX}.
  */
 record WmbusPoint(Kind kind, String key) {
 
@@ -32,7 +32,6 @@ record WmbusPoint(Kind kind, String key) {
                 }
                 return new WmbusPoint(Kind.DEVICE_ID, hex);
             }
-            // bare decimal meter index
             if (normalized.matches("\\d+")) {
                 return new WmbusPoint(Kind.METER_INDEX, normalized);
             }
@@ -40,9 +39,5 @@ record WmbusPoint(Kind kind, String key) {
         } catch (NumberFormatException e) {
             throw new DriverException("Invalid wM-Bus mapping: " + mapping, e);
         }
-    }
-
-    String pollToken() {
-        return kind == Kind.METER_INDEX ? "meter:" + key : "id:" + key;
     }
 }

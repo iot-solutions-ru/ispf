@@ -16,6 +16,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -25,13 +26,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CanbusGatewayDeviceDriverTest {
 
     private CanbusGatewayDeviceDriver driver;
-    private FakeCanGateway gateway;
+    private FakeSlcanPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -39,29 +42,43 @@ class CanbusGatewayDeviceDriverTest {
             driver.disconnect();
             driver = null;
         }
-        if (gateway != null) {
-            gateway.close();
-            gateway = null;
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
     }
 
     @Test
-    void metadataIsProductionReadWrite() {
+    void standardFrameId001Dlc2Data1122IsExactLiteral() {
+        byte[] expected = "t00121122\r".getBytes(StandardCharsets.US_ASCII);
+        assertArrayEquals(expected, CanbusGatewayDeviceDriver.formatId001Dlc2Data1122Literal()
+                .getBytes(StandardCharsets.US_ASCII));
+        assertEquals("t00121122\r", CanbusGatewayDeviceDriver.formatStandardFrame(0x001, "1122"));
+        assertArrayEquals(expected,
+                CanbusGatewayDeviceDriver.formatStandardFrame(0x001, "11 22")
+                        .getBytes(StandardCharsets.US_ASCII));
+    }
+
+    @Test
+    void metadataIsProductionSlcan() {
         driver = new CanbusGatewayDeviceDriver();
         assertEquals("canbus-gateway", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("slcan"));
+        assertFalse(description.contains("lab"));
     }
 
     @Test
-    void getAndTxLoopback() throws Exception {
-        gateway = new FakeCanGateway();
-        gateway.put("18FF50E5", "AABBCCDD");
-        gateway.start();
+    void readWriteLoopback() throws Exception {
+        peer = new FakeSlcanPeer();
+        peer.put(0x001, "1122");
+        peer.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new CanbusGatewayDeviceDriver();
@@ -69,26 +86,28 @@ class CanbusGatewayDeviceDriverTest {
         driver.connect();
         assertTrue(driver.isConnected());
 
-        driver.readPoints(Map.of("engine", "0x18FF50E5"));
-        assertEquals("AABBCCDD", object.variables.get("engine").firstRow().get("value"));
+        driver.readPoints(Map.of("frame", "0x001"));
+        assertEquals("1122", object.variables.get("frame").firstRow().get("value"));
 
-        driver.writePoint("engine", DataRecord.single(
+        driver.writePoint("frame", DataRecord.single(
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
-                Map.of("value", "01020304")
+                Map.of("value", "AABB")
         ));
-        assertEquals("01020304", gateway.get("18FF50E5"));
+        assertEquals("AABB", peer.get(0x001));
+        assertEquals("t00121122\r",
+                CanbusGatewayDeviceDriver.formatStandardFrame(0x001, "1122"));
     }
 
-    private static final class FakeCanGateway implements AutoCloseable {
+    private static final class FakeSlcanPeer implements AutoCloseable {
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(r -> {
-            Thread t = new Thread(r, "fake-can-gw");
+            Thread t = new Thread(r, "fake-can-slcan");
             t.setDaemon(true);
             return t;
         });
-        private final Map<String, String> frames = new ConcurrentHashMap<>();
+        private final Map<Integer, String> frames = new ConcurrentHashMap<>();
 
-        FakeCanGateway() throws IOException {
+        FakeSlcanPeer() throws IOException {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
@@ -97,12 +116,12 @@ class CanbusGatewayDeviceDriverTest {
             return serverSocket.getLocalPort();
         }
 
-        void put(String canId, String data) {
-            frames.put(canId.toUpperCase(Locale.ROOT), data.toUpperCase(Locale.ROOT));
+        void put(int canId, String data) {
+            frames.put(canId & 0x7FF, CanbusGatewayDeviceDriver.normalizeHex(data));
         }
 
-        String get(String canId) {
-            return frames.get(canId.toUpperCase(Locale.ROOT));
+        String get(int canId) {
+            return frames.get(canId & 0x7FF);
         }
 
         void start() {
@@ -125,26 +144,19 @@ class CanbusGatewayDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    String command = CanbusGatewayDeviceDriver.readLine(in);
-                    if (command == null) {
-                        return;
-                    }
-                    String upper = command.trim().toUpperCase(Locale.ROOT);
-                    if (upper.startsWith("GET ")) {
-                        String id = upper.substring(4).trim();
-                        String data = frames.getOrDefault(id, "");
-                        CanbusGatewayDeviceDriver.writeLine(out, "RX " + id + " " + data);
-                    } else if (upper.startsWith("TX ")) {
-                        String[] parts = upper.substring(3).trim().split("\\s+");
-                        String id = parts[0];
-                        String data = parts.length > 1 ? parts[1] : "";
-                        frames.put(id, data);
-                        CanbusGatewayDeviceDriver.writeLine(out, "OK " + id + " " + data);
+                    String line = CanbusGatewayDeviceDriver.readUntilCr(in);
+                    CanbusGatewayDeviceDriver.SlcanFrame frame =
+                            CanbusGatewayDeviceDriver.parseSlcanStandard(line);
+                    if (frame.dataHex().isEmpty()) {
+                        String data = frames.getOrDefault(frame.canId(), "");
+                        CanbusGatewayDeviceDriver.writeAscii(out,
+                                CanbusGatewayDeviceDriver.formatStandardFrame(frame.canId(), data));
                     } else {
-                        CanbusGatewayDeviceDriver.writeLine(out, "ERR");
+                        frames.put(frame.canId(), frame.dataHex());
+                        CanbusGatewayDeviceDriver.writeAscii(out, "z\r");
                     }
                 }
-            } catch (IOException ignored) {
+            } catch (IOException | RuntimeException ignored) {
                 // closed
             }
         }
@@ -167,7 +179,8 @@ class CanbusGatewayDeviceDriverTest {
 
         @Override
         public PlatformObject deviceObject() {
-            return new PlatformObject("test-can", "root.platform.devices.test", ObjectType.DEVICE, "Test", "", null);
+            return new PlatformObject(
+                    "test-can", "root.platform.devices.test", ObjectType.DEVICE, "Test", "", null);
         }
 
         @Override

@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.foundationfieldbus.codec.FoundationFieldbusLabSession;
+import com.ispf.driver.foundationfieldbus.codec.FoundationFieldbusSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,13 +15,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Foundation Fieldbus HSE/TCP gateway lab driver — ASCII RD/WR over TCP (default port {@code 1089}).
+ * Foundation Fieldbus length-prefixed probe over TCP ({@code foundation-fieldbus}).
  * <p>
- * Honesty boundary: FF HSE/TCP gateway lab only — not native H1 modem, not LAS, and not a
- * Fieldbus Foundation protocol stack. Point forms: {@code ai:1}, {@code ao:2},
- * {@code device:0:pv}, {@code ff:1}.
+ * The four-byte header is version {@code 0x01}, options {@code 0x00}, and a big-endian
+ * length. It is not an HSE FDA session and not native H1.
  * <p>
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
+ * Point forms: {@code ai:1}, {@code ao:2}, {@code device:0:pv}, {@code ff:1}.
  */
 public class FoundationFieldbusDeviceDriver implements DeviceDriver {
 
@@ -34,10 +33,9 @@ public class FoundationFieldbusDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "foundation-fieldbus",
-            "Foundation Fieldbus HSE/TCP Gateway Lab Driver",
-            "0.1.0",
-            "FF HSE/TCP gateway lab — ASCII RD/WR for ai/ao/device PV/ff points;"
-                    + " not native H1 / LAS / Fieldbus Foundation stack",
+            "Foundation Fieldbus HSE Driver",
+            "1.0.0",
+            "Foundation Fieldbus length-prefixed HSE-style probe over TCP; not an FDA session and not native H1",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -52,7 +50,7 @@ public class FoundationFieldbusDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 1089;
     private int timeoutMs = 3000;
-    private FoundationFieldbusLabSession session;
+    private FoundationFieldbusSession session;
     private final Map<String, FoundationFieldbusPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -82,14 +80,13 @@ public class FoundationFieldbusDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new FoundationFieldbusLabSession(host, port, timeoutMs);
+            session = new FoundationFieldbusSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "Foundation Fieldbus HSE/TCP gateway lab connected to " + host + ":" + port
-                            + " (not native H1 / LAS / Fieldbus Foundation stack)");
+                    "Foundation Fieldbus HSE connected to " + host + ":" + port);
         } catch (IOException e) {
             session = null;
             throw new DriverException(
-                    "Foundation Fieldbus lab connect failed for " + host + ":" + port, e);
+                    "Foundation Fieldbus connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -117,10 +114,10 @@ public class FoundationFieldbusDeviceDriver implements DeviceDriver {
             FoundationFieldbusPoint point = FoundationFieldbusPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                double value = session.readValue(point.wireToken());
+                double value = session.readValue(point.kindCode(), point.index());
                 driverObject.updateVariable(entry.getKey(), toRecord(point, value));
             } catch (IOException e) {
-                throw new DriverException("Foundation Fieldbus lab read failed for " + mapping, e);
+                throw new DriverException("Foundation Fieldbus read failed for " + mapping, e);
             }
         }
     }
@@ -134,10 +131,10 @@ public class FoundationFieldbusDeviceDriver implements DeviceDriver {
         }
         double numeric = extractNumeric(value);
         try {
-            session.writeValue(point.wireToken(), numeric);
+            session.writeValue(point.kindCode(), point.index(), numeric);
             driverObject.updateVariable(pointId, toRecord(point, numeric));
         } catch (IOException e) {
-            throw new DriverException("Foundation Fieldbus lab write failed for " + pointId, e);
+            throw new DriverException("Foundation Fieldbus write failed for " + pointId, e);
         }
     }
 

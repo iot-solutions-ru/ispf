@@ -6,8 +6,8 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.lorawan.codec.LorawanLabCodec;
-import com.ispf.driver.lorawan.codec.LorawanLabSession;
+import com.ispf.driver.lorawan.codec.LorawanSemtechCodec;
+import com.ispf.driver.lorawan.codec.LorawanSemtechSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -16,14 +16,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * LoRaWAN NS/AS (or packet-forwarder–shaped) TCP gateway lab driver.
+ * LoRaWAN network-server driver using the Semtech UDP packet-forwarder protocol ({@code lorawan}).
  * <p>
- * Point mapping is a DevEUI ({@code AABBCCDDEEFF0011}, {@code deveui:…}).
- * {@code readPoints} polls last uplink JSON; {@code writePoint} sends a downlink via
- * {@code session.writeValue(...)}.
- * <p>
- * Honesty: NS/AS or packet-forwarder gateway lab — not LoRa PHY / Semtech HAL.
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
+ * Binds a {@link java.net.DatagramSocket} and consumes {@code PUSH_DATA} uplinks (JSON fields
+ * {@code deveui}, {@code value}/{@code data}, {@code rssi}, {@code freq}). Downlinks are
+ * {@code PULL_RESP} to the last gateway that sent {@code PULL_DATA}. Point mapping is a DevEUI
+ * ({@code AABBCCDDEEFF0011}, {@code deveui:…}).
  */
 public class LorawanDeviceDriver implements DeviceDriver {
 
@@ -31,15 +29,17 @@ public class LorawanDeviceDriver implements DeviceDriver {
             .field("value", FieldType.DOUBLE)
             .field("deveui", FieldType.STRING)
             .field("rssi", FieldType.DOUBLE)
+            .field("freq", FieldType.DOUBLE)
+            .field("data", FieldType.STRING)
             .field("raw", FieldType.STRING)
             .build();
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "lorawan",
-            "LoRaWAN NS/AS Gateway Lab Driver",
-            "0.1.0",
-            "LoRaWAN NS/AS or packet-forwarder gateway lab: TCP JSON GET uplink / TX downlink on 1700;"
-                    + " not LoRa PHY / Semtech HAL",
+            "LoRaWAN Semtech UDP Driver",
+            "1.0.0",
+            "Semtech UDP packet-forwarder network server: PUSH_DATA/PUSH_ACK and PULL_DATA/PULL_ACK"
+                    + " / PULL_RESP on UDP 1700; DevEUI point mapping.",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -54,7 +54,7 @@ public class LorawanDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 1700;
     private int timeoutMs = 3000;
-    private LorawanLabSession session;
+    private LorawanSemtechSession session;
     private final Map<String, LorawanPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -84,13 +84,12 @@ public class LorawanDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new LorawanLabSession(host, port, timeoutMs);
+            session = new LorawanSemtechSession(host, port == 0 ? 0 : port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "LoRaWAN NS/AS gateway lab connected to " + host + ":" + port
-                            + " (not LoRa PHY / Semtech HAL)");
+                    "LoRaWAN Semtech UDP bound on " + host + ":" + session.localPort());
         } catch (IOException e) {
             session = null;
-            throw new DriverException("LoRaWAN lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("LoRaWAN Semtech connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -118,16 +117,18 @@ public class LorawanDeviceDriver implements DeviceDriver {
             LorawanPoint point = LorawanPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                LorawanLabCodec.Uplink uplink = session.readUplink(point.deveui());
+                LorawanSemtechCodec.Uplink uplink = session.readUplink(point.deveui());
                 String deveui = uplink.deveui().isBlank() ? point.deveui() : uplink.deveui();
                 driverObject.updateVariable(entry.getKey(), DataRecord.single(VALUE_SCHEMA, Map.of(
                         "value", (double) uplink.value(),
                         "deveui", deveui,
                         "rssi", uplink.rssi(),
+                        "freq", uplink.freq(),
+                        "data", uplink.data(),
                         "raw", uplink.raw()
                 )));
             } catch (IOException e) {
-                throw new DriverException("LoRaWAN lab read failed for " + mapping, e);
+                throw new DriverException("LoRaWAN Semtech read failed for " + mapping, e);
             }
         }
     }
@@ -146,10 +147,12 @@ public class LorawanDeviceDriver implements DeviceDriver {
                     "value", (double) numeric,
                     "deveui", point.deveui(),
                     "rssi", 0.0,
-                    "raw", "TX"
+                    "freq", 0.0,
+                    "data", "",
+                    "raw", "PULL_RESP"
             )));
         } catch (IOException e) {
-            throw new DriverException("LoRaWAN lab write failed for " + pointId, e);
+            throw new DriverException("LoRaWAN Semtech write failed for " + pointId, e);
         }
     }
 
@@ -158,7 +161,7 @@ public class LorawanDeviceDriver implements DeviceDriver {
             throw new IllegalArgumentException("LoRaWAN write requires a value");
         }
         Map<String, Object> row = value.firstRow();
-        for (String key : List.of("value", "raw")) {
+        for (String key : List.of("value", "data", "raw")) {
             Object candidate = row.get(key);
             if (candidate instanceof Number number) {
                 return number.doubleValue();
@@ -167,7 +170,7 @@ public class LorawanDeviceDriver implements DeviceDriver {
                 return Double.parseDouble(String.valueOf(candidate).trim());
             }
         }
-        throw new IllegalArgumentException("LoRaWAN write requires numeric value/raw");
+        throw new IllegalArgumentException("LoRaWAN write requires numeric value/data/raw");
     }
 
     private void ensureConnected() throws DriverException {

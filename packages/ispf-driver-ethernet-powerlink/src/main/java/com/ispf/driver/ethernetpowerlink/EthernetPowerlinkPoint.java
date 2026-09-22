@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Ethernet POWERLINK MN/CN lab point.
+ * Ethernet POWERLINK point addressing for PReq destination selection.
  * <p>
  * Forms: {@code node:1:obj:0x6000:01}, {@code pdo:1}.
  */
@@ -27,7 +27,7 @@ record EthernetPowerlinkPoint(Kind kind, int node, int objectIndex, int subIndex
 
     static EthernetPowerlinkPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("Ethernet POWERLINK lab point mapping is blank");
+            throw new DriverException("POWERLINK point mapping is blank");
         }
         String trimmed = mapping.trim();
         Matcher object = OBJECT.matcher(trimmed);
@@ -36,27 +36,31 @@ record EthernetPowerlinkPoint(Kind kind, int node, int objectIndex, int subIndex
             int index = Integer.parseInt(object.group(2), 16);
             int sub = Integer.parseInt(object.group(3), 16);
             if (node < 0 || node > 239) {
-                throw new DriverException("Ethernet POWERLINK lab node out of range: " + node);
+                throw new DriverException("POWERLINK node out of range: " + node);
             }
             if (index < 0 || index > 0xFFFF) {
-                throw new DriverException("Ethernet POWERLINK lab object index out of range: " + index);
+                throw new DriverException("POWERLINK object index out of range: " + index);
             }
             if (sub < 0 || sub > 0xFF) {
-                throw new DriverException("Ethernet POWERLINK lab sub-index out of range: " + sub);
+                throw new DriverException("POWERLINK sub-index out of range: " + sub);
             }
             return new EthernetPowerlinkPoint(Kind.OBJECT, node, index, sub, 0);
         }
         Matcher pdo = PDO.matcher(trimmed);
         if (pdo.matches()) {
             int pdoId = Integer.parseInt(pdo.group(1));
-            if (pdoId < 0 || pdoId > 0xFFFF) {
-                throw new DriverException("Ethernet POWERLINK lab PDO id out of range: " + pdoId);
+            if (pdoId < 0 || pdoId > 0xFF) {
+                throw new DriverException("POWERLINK PDO id out of range: " + pdoId);
             }
             return new EthernetPowerlinkPoint(Kind.PDO, 0, 0, 0, pdoId);
         }
         throw new DriverException(
-                "Unsupported Ethernet POWERLINK lab mapping"
+                "Unsupported POWERLINK mapping"
                         + " (expected node:1:obj:0x6000:01 or pdo:1): " + mapping);
+    }
+
+    int destinationNode() {
+        return kind == Kind.OBJECT ? node : pdo;
     }
 
     String wireToken() {

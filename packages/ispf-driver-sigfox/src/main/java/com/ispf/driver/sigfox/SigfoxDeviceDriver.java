@@ -20,13 +20,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Sigfox backend callback driver — HTTP/1.1 lab client for device uplink/downlink callbacks.
+ * Sigfox backend callback driver — plain HTTP/1.1 GET {@code /uplink} (no TLS).
  * <p>
- * Point mapping is a device id or path ({@code DEVICE123}, {@code /devices/DEVICE123/messages}).
- * {@code readPoints} GETs the last uplink payload; {@code writePoint} POSTs a downlink body from
- * record {@code value}.
+ * Point mapping is a device id label (for example {@code DEVICE123}). Reads issue a fixed
+ * uplink GET; writes POST a downlink body from record {@code value} to {@code /downlink}.
  * <p>
- * Clean-room ISPF lab, Apache-2.0 — JDK sockets only. Not Sigfox Backend API SDK; no TLS in lab.
+ * Clean-room ISPF code, Apache-2.0 — JDK sockets only. Not a Sigfox Backend API SDK.
  */
 public class SigfoxDeviceDriver implements DeviceDriver {
 
@@ -41,7 +40,7 @@ public class SigfoxDeviceDriver implements DeviceDriver {
             "sigfox",
             "Sigfox Driver",
             "0.1.0",
-            "Sigfox backend callback HTTP/1.1 lab: GET uplink / POST downlink (not Backend SDK / TLS)",
+            "Sigfox backend callback over plain HTTP/1.1 GET /uplink (no TLS; not Backend SDK)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -85,7 +84,7 @@ public class SigfoxDeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         connected = true;
-        driverObject.log(DriverLogLevel.INFO, "Sigfox HTTP lab ready for " + host + ":" + port);
+        driverObject.log(DriverLogLevel.INFO, "Sigfox HTTP/1.1 ready for " + host + ":" + port);
     }
 
     @Override
@@ -104,16 +103,16 @@ public class SigfoxDeviceDriver implements DeviceDriver {
         ensureConnected();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             String pointId = entry.getKey();
-            String mapping = entry.getValue() == null || entry.getValue().isBlank() ? pointId : entry.getValue().trim();
+            String mapping = entry.getValue() == null || entry.getValue().isBlank()
+                    ? pointId : entry.getValue().trim();
             routes.put(pointId, mapping);
             String deviceId = deviceIdOf(mapping);
-            String path = pathOf(mapping);
-            HttpResponse response = exchange("GET", path, null);
+            HttpResponse response = exchange(buildUplinkGetRequest(host), "/uplink");
             driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
                     "value", response.body(),
                     "status", Integer.toString(response.status()),
                     "deviceId", deviceId,
-                    "path", path
+                    "path", "/uplink"
             )));
         }
     }
@@ -123,59 +122,70 @@ public class SigfoxDeviceDriver implements DeviceDriver {
         ensureConnected();
         String mapping = routes.getOrDefault(pointId, pointId);
         String deviceId = deviceIdOf(mapping);
-        String path = pathOf(mapping);
         String body = extractValue(value);
-        HttpResponse response = exchange("POST", path, body);
+        String request = "POST /downlink HTTP/1.1\r\n"
+                + "Host: " + host + "\r\n"
+                + "Connection: close\r\n"
+                + "Content-Type: application/json\r\n"
+                + "Content-Length: " + body.getBytes(StandardCharsets.UTF_8).length + "\r\n"
+                + "\r\n";
+        HttpResponse response = exchangeWithBody(request, body, "/downlink");
         driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
                 "value", response.body().isBlank() ? body : response.body(),
                 "status", Integer.toString(response.status()),
                 "deviceId", deviceId,
-                "path", path
+                "path", "/downlink"
         )));
+    }
+
+    /**
+     * Exact HTTP/1.1 uplink GET used on the wire (Host without port).
+     */
+    static String buildUplinkGetRequest(String hostHeader) {
+        return "GET /uplink HTTP/1.1\r\n"
+                + "Host: " + hostHeader + "\r\n"
+                + "Connection: close\r\n"
+                + "\r\n";
     }
 
     static String deviceIdOf(String mapping) {
         String t = mapping.trim();
-        if (t.contains("/")) {
-            String[] parts = t.split("/");
-            for (int i = parts.length - 1; i >= 0; i--) {
-                if (!parts[i].isBlank() && !parts[i].equalsIgnoreCase("messages")
-                        && !parts[i].equalsIgnoreCase("devices")) {
-                    return parts[i];
-                }
+        int slash = t.lastIndexOf('/');
+        if (slash >= 0) {
+            String last = t.substring(slash + 1).trim();
+            if (!last.isBlank()
+                    && !last.equalsIgnoreCase("messages")
+                    && !last.equalsIgnoreCase("devices")
+                    && !last.equalsIgnoreCase("uplink")
+                    && !last.equalsIgnoreCase("downlink")) {
+                return last;
             }
         }
         return t.toUpperCase(Locale.ROOT);
     }
 
-    static String pathOf(String mapping) {
-        String t = mapping.trim();
-        if (t.startsWith("/")) {
-            return t;
-        }
-        return "/devices/" + t + "/messages";
-    }
-
-    private HttpResponse exchange(String method, String path, String body) throws DriverException {
+    private HttpResponse exchange(String request, String path) throws DriverException {
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(host, port), timeoutMs);
             socket.setSoTimeout(timeoutMs);
             OutputStream out = socket.getOutputStream();
             InputStream in = socket.getInputStream();
-            StringBuilder req = new StringBuilder();
-            req.append(method).append(' ').append(path).append(" HTTP/1.1\r\n");
-            req.append("Host: ").append(host).append(':').append(port).append("\r\n");
-            req.append("Connection: close\r\n");
-            if (body != null) {
-                byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-                req.append("Content-Type: application/json\r\n");
-                req.append("Content-Length: ").append(bytes.length).append("\r\n\r\n");
-                out.write(req.toString().getBytes(StandardCharsets.US_ASCII));
-                out.write(bytes);
-            } else {
-                req.append("\r\n");
-                out.write(req.toString().getBytes(StandardCharsets.US_ASCII));
-            }
+            out.write(request.getBytes(StandardCharsets.US_ASCII));
+            out.flush();
+            return HttpResponse.parse(readAll(in));
+        } catch (IOException e) {
+            throw new DriverException("Sigfox HTTP exchange failed for " + host + ":" + port + path, e);
+        }
+    }
+
+    private HttpResponse exchangeWithBody(String headers, String body, String path) throws DriverException {
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(host, port), timeoutMs);
+            socket.setSoTimeout(timeoutMs);
+            OutputStream out = socket.getOutputStream();
+            InputStream in = socket.getInputStream();
+            out.write(headers.getBytes(StandardCharsets.US_ASCII));
+            out.write(body.getBytes(StandardCharsets.UTF_8));
             out.flush();
             return HttpResponse.parse(readAll(in));
         } catch (IOException e) {
@@ -207,7 +217,23 @@ public class SigfoxDeviceDriver implements DeviceDriver {
         return buf.toString(StandardCharsets.UTF_8);
     }
 
-    record HttpResponse(int status, String body) {
+    static final class HttpResponse {
+        private final int status;
+        private final String body;
+
+        HttpResponse(int status, String body) {
+            this.status = status;
+            this.body = body;
+        }
+
+        int status() {
+            return status;
+        }
+
+        String body() {
+            return body;
+        }
+
         static HttpResponse parse(String raw) {
             if (raw == null || raw.isBlank()) {
                 return new HttpResponse(0, "");
@@ -220,10 +246,11 @@ public class SigfoxDeviceDriver implements DeviceDriver {
             String body = split < 0 ? "" : raw.substring(split).replaceFirst("^\r?\n\r?\n", "");
             int status = 0;
             String first = head.lines().findFirst().orElse("");
-            String[] parts = first.split("\\s+");
-            if (parts.length >= 2) {
+            int firstSpace = first.indexOf(' ');
+            int secondSpace = firstSpace < 0 ? -1 : first.indexOf(' ', firstSpace + 1);
+            if (firstSpace >= 0 && secondSpace > firstSpace) {
                 try {
-                    status = Integer.parseInt(parts[1]);
+                    status = Integer.parseInt(first.substring(firstSpace + 1, secondSpace));
                 } catch (NumberFormatException ignored) {
                     status = 0;
                 }

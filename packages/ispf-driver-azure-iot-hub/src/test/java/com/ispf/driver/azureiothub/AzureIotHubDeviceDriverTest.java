@@ -20,6 +20,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -30,12 +31,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link AzureIotHubDeviceDriver} against an in-process MQTT 3.1.1 lab broker.
+ * Loopback tests for {@link AzureIotHubDeviceDriver} against an in-process MQTT 3.1.1 broker.
  */
 class AzureIotHubDeviceDriverTest {
 
@@ -60,7 +63,23 @@ class AzureIotHubDeviceDriverTest {
         assertEquals("azure-iot-hub", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
-        assertTrue(driver.metadata().description().toLowerCase().contains("lab"));
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertFalse(description.contains("lab"));
+        assertTrue(description.contains("mqtt"));
+    }
+
+    @Test
+    void connectPacketContainsMqttProtocolAndClientIdA() {
+        byte[] packet = Mqtt311Client.encodeConnect("a");
+        assertEquals(0x10, packet[0] & 0xFF);
+        byte[] needle = new byte[]{0x00, 0x04, 0x4D, 0x51, 0x54, 0x54, 0x04};
+        assertTrue(indexOf(packet, needle) >= 0);
+        assertEquals(0x00, packet[packet.length - 3] & 0xFF);
+        assertEquals(0x01, packet[packet.length - 2] & 0xFF);
+        assertEquals(0x61, packet[packet.length - 1] & 0xFF);
+        assertArrayEquals(Mqtt311Client.CONNACK_SUCCESS, Mqtt311Client.encodeConnack(0));
+        byte[] qos0 = Mqtt311Client.encodePublish("t", new byte[]{'x'}, 0, 0);
+        assertEquals(0x30, qos0[0] & 0xFF);
     }
 
     @Test
@@ -138,6 +157,19 @@ class AzureIotHubDeviceDriverTest {
         assertTrue(error.getMessage().contains("connect failed"));
     }
 
+    private static int indexOf(byte[] haystack, byte[] needle) {
+        outer:
+        for (int i = 0; i <= haystack.length - needle.length; i++) {
+            for (int j = 0; j < needle.length; j++) {
+                if (haystack[i + j] != needle[j]) {
+                    continue outer;
+                }
+            }
+            return i;
+        }
+        return -1;
+    }
+
     private static final class FakeMqttBroker implements AutoCloseable {
 
         private final ServerSocket serverSocket;
@@ -192,7 +224,7 @@ class AzureIotHubDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (running) {
-                    Mqtt311Lab.FixedHeader header = Mqtt311Lab.readFixedHeader(in);
+                    Mqtt311Client.FixedHeader header = Mqtt311Client.readFixedHeader(in);
                     if (header == null) {
                         return;
                     }
@@ -201,37 +233,36 @@ class AzureIotHubDeviceDriverTest {
                         return;
                     }
                     switch (header.type()) {
-                        case Mqtt311Lab.TYPE_CONNECT -> {
-                            out.write(Mqtt311Lab.encodeConnack(0));
+                        case Mqtt311Client.TYPE_CONNECT -> {
+                            out.write(Mqtt311Client.encodeConnack(0));
                             out.flush();
                         }
-                        case Mqtt311Lab.TYPE_SUBSCRIBE -> {
-                            int packetId = Mqtt311Lab.parsePacketId(body);
-                            String filter = Mqtt311Lab.parseSubscribeTopic(body);
+                        case Mqtt311Client.TYPE_SUBSCRIBE -> {
+                            int packetId = Mqtt311Client.parsePacketId(body);
+                            String filter = Mqtt311Client.parseSubscribeTopic(body);
                             session.filters.add(filter);
                             subs.computeIfAbsent(filter, f -> new CopyOnWriteArrayList<>()).add(session);
-                            out.write(Mqtt311Lab.encodeSuback(packetId, 1));
+                            out.write(Mqtt311Client.encodeSuback(packetId, 1));
                             out.flush();
                             deliverRetained(session, filter);
                         }
-                        case Mqtt311Lab.TYPE_PUBLISH -> {
-                            Mqtt311Lab.ParsedPublish pub = Mqtt311Lab.parsePublish(header.flags(), body);
-                            String text = new String(pub.payload(), StandardCharsets.UTF_8);
-                            store.put(pub.topic(), text);
+                        case Mqtt311Client.TYPE_PUBLISH -> {
+                            Mqtt311Client.ParsedPublish pub = Mqtt311Client.parsePublish(header.flags(), body);
+                            store.put(pub.topic(), pub.payloadText());
                             if (pub.qos() == 1) {
-                                out.write(Mqtt311Lab.encodePuback(pub.packetId()));
+                                out.write(Mqtt311Client.encodePuback(pub.packetId()));
                                 out.flush();
                             }
-                            fanout(pub.topic(), text);
+                            fanout(pub.topic(), pub.payloadText());
                         }
-                        case Mqtt311Lab.TYPE_PUBACK -> {
+                        case Mqtt311Client.TYPE_PUBACK -> {
                             // ignore
                         }
-                        case Mqtt311Lab.TYPE_PINGREQ -> {
-                            out.write(Mqtt311Lab.encodeSimple(Mqtt311Lab.TYPE_PINGRESP, 0));
+                        case Mqtt311Client.TYPE_PINGREQ -> {
+                            out.write(Mqtt311Client.encodeSimple(Mqtt311Client.TYPE_PINGRESP, 0));
                             out.flush();
                         }
-                        case Mqtt311Lab.TYPE_DISCONNECT -> {
+                        case Mqtt311Client.TYPE_DISCONNECT -> {
                             return;
                         }
                         default -> {
@@ -268,7 +299,7 @@ class AzureIotHubDeviceDriverTest {
 
         private void publishTo(ClientSession session, String topic, String payload) throws IOException {
             int packetId = nextPacketId.getAndIncrement() & 0xFFFF;
-            byte[] packet = Mqtt311Lab.encodePublish(
+            byte[] packet = Mqtt311Client.encodePublish(
                     topic, payload.getBytes(StandardCharsets.UTF_8), packetId, 1);
             synchronized (session.socket) {
                 OutputStream out = session.socket.getOutputStream();
@@ -282,7 +313,7 @@ class AzureIotHubDeviceDriverTest {
                 return true;
             }
             if (filter.endsWith("/#")) {
-                String prefix = filter.substring(0, filter.length() - 1); // keep trailing /
+                String prefix = filter.substring(0, filter.length() - 1);
                 String base = filter.substring(0, filter.length() - 2);
                 return topic.equals(base) || topic.startsWith(prefix);
             }

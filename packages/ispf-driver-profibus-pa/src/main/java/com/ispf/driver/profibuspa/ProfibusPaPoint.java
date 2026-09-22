@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * PROFIBUS PA instrument gateway lab point.
+ * PROFIBUS PA point addressing for FDL SD2 PDUs.
  * <p>
  * Forms: {@code slot:1}, {@code slot:1:pv}, {@code addr:12}, {@code pa:1}.
  */

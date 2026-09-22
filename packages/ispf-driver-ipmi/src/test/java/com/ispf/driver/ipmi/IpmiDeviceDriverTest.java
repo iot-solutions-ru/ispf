@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,6 +32,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Loopback tests against in-test UDP peers answering RMCP pings and minimal IPMI LAN commands.
  */
 class IpmiDeviceDriverTest {
+
+    @Test
+    void authCapabilitiesRequestMatchesPublishedPreSessionPacket() {
+        // Octets written out explicitly — not copied from the encoder under test.
+        assertArrayEquals(new byte[] {
+                0x06, 0x00, (byte) 0xFF, 0x07,
+                0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00,
+                0x00, 0x09, 0x20, 0x18,
+                (byte) 0xC8, (byte) 0x81, 0x00, 0x38,
+                (byte) 0x8E, 0x04, (byte) 0xB5
+        }, RmcpPingClient.buildAuthCapabilitiesRequest());
+    }
 
     @Test
     void rmcpPingLoopbackReportsReachable() throws Exception {
@@ -221,8 +235,7 @@ class IpmiDeviceDriverTest {
 
     /**
      * In-test UDP peer answering the RMCP Get Channel Authentication Capabilities request
-     * with a same-framing response (class 0x07 first byte, completion code 0) — the exact
-     * shape {@link RmcpPingClient} parses.
+     * with an RMCP-framed reply (version 0x06 first byte) — the shape {@link RmcpPingClient} accepts.
      */
     private static final class RmcpPeer implements AutoCloseable {
 
@@ -260,7 +273,7 @@ class IpmiDeviceDriverTest {
                         continue;
                     }
                     requestCount.incrementAndGet();
-                    byte[] response = authCapabilitiesResponse(buffer, request.getLength());
+                    byte[] response = authCapabilitiesResponse();
                     socket.send(new DatagramPacket(response, response.length,
                             request.getAddress(), request.getPort()));
                 } catch (Exception e) {
@@ -271,22 +284,21 @@ class IpmiDeviceDriverTest {
             }
         }
 
-        private static byte[] authCapabilitiesResponse(byte[] request, int length) {
-            byte seq = length > 2 ? request[2] : 0;
+        private static byte[] authCapabilitiesResponse() {
             return new byte[] {
-                    0x07,                           // RMCP class: IPMI (what the client checks)
-                    0x00,                           // no ACK
-                    seq,                            // echoed sequence
-                    0x00,
-                    0x07, 0x00, 0x00, 0x00,         // IPMI session header (mirrors request framing)
-                    0x00, 0x00, 0x00, 0x00,
-                    0x00, (byte) 0x81, 0x00, 0x00,
-                    0x00, 0x08,
-                    0x38,                           // command: Get Channel Authentication Capabilities
+                    0x06,                           // RMCP version
+                    0x00,                           // reserved
+                    (byte) 0xFF,                    // sequence
+                    0x07,                           // class: IPMI
+                    0x00,                           // auth type none
+                    0x00, 0x00, 0x00, 0x00,         // session sequence
+                    0x00, 0x00, 0x00, 0x00,         // session id
+                    0x0A,                           // payload length
+                    0x20, 0x1C, (byte) 0xC4,        // rsAddr, netFn/LUN, checksum
+                    (byte) 0x81, 0x00, 0x38,        // rqAddr, rqSeq, command
                     0x00,                           // completion code: OK
                     0x0E,                           // channel number
-                    0x16,                           // auth types: MD5 + straight password
-                    0x00, 0x00, 0x00
+                    0x16                            // auth types: MD5 + straight password
             };
         }
 
@@ -343,8 +355,10 @@ class IpmiDeviceDriverTest {
         }
 
         private byte[] response(byte[] request, int length) {
-            if (length > 18 && Byte.toUnsignedInt(request[18]) == 0x38) {
-                return RmcpPeer.authCapabilitiesResponse(request, length);
+            // Pre-session Get Channel Authentication Capabilities: command 0x38 at IPMI offset.
+            if (length > 19 && Byte.toUnsignedInt(request[0]) == 0x06
+                    && Byte.toUnsignedInt(request[19]) == 0x38) {
+                return RmcpPeer.authCapabilitiesResponse();
             }
             int seq = Byte.toUnsignedInt(request[1]);
             int command = Byte.toUnsignedInt(request[2]);

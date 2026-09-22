@@ -6,23 +6,23 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.thread.codec.ThreadLabSession;
+import com.ispf.driver.thread.codec.SpinelHdlcCodec;
+import com.ispf.driver.thread.codec.SpinelHdlcSession;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Thread Border Router TCP gateway lab driver — newline JSON over TCP (default port {@code 8081}).
+ * Thread NCP/RCP driver — OpenThread Spinel HDLC over TCP (not 802.15.4 RF).
  * <p>
- * Point forms: {@code ip:fd00::1}, {@code udp:61631}, {@code child:1}.
- * IP and UDP points support write via {@link ThreadLabSession#writeValue}; child table is read-only.
+ * Point forms: {@code reset}, {@code cmd:reset}. {@code readPoints} sends Spinel
+ * {@code CMD_RESET} framed as {@code 7E 80 01 02 92 7E}.
  * <p>
- * Honesty: Thread BR TCP gateway lab — not 802.15.4 Thread radio / RCP silicon
- * (and not a live CoAP/5683 stack; lab dials TCP 8081).
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only. Lab ≠ RF.
+ * Honesty: Spinel HDLC host bridge — not 802.15.4 Thread radio / RCP silicon.
+ * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class ThreadDeviceDriver implements DeviceDriver {
 
@@ -30,14 +30,15 @@ public class ThreadDeviceDriver implements DeviceDriver {
             .field("value", FieldType.DOUBLE)
             .field("kind", FieldType.STRING)
             .field("point", FieldType.STRING)
+            .field("raw", FieldType.STRING)
             .build();
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "thread",
-            "Thread Border Router Gateway Lab Driver",
+            "Thread Spinel HDLC Driver",
             "0.1.0",
-            "Thread BR TCP gateway lab — not 802.15.4 Thread radio / RCP;"
-                    + " newline JSON ip/udp/child get/set over TCP 8081 (not CoAP/5683 silicon)",
+            "OpenThread Spinel HDLC over TCP (CMD_RESET 7E 80 01 02 92 7E);"
+                    + " not 802.15.4 Thread radio / RCP silicon",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -45,14 +46,14 @@ public class ThreadDeviceDriver implements DeviceDriver {
                     "timeoutMs", "3000"
             ),
             null,
-            Set.of("read", "write")
+            Set.of("read")
     );
 
     private DriverObject driverObject;
     private String host = "127.0.0.1";
     private int port = 8081;
     private int timeoutMs = 3000;
-    private ThreadLabSession session;
+    private SpinelHdlcSession session;
     private final Map<String, ThreadPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -82,14 +83,14 @@ public class ThreadDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new ThreadLabSession(host, port, timeoutMs);
+            session = new SpinelHdlcSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "Thread BR gateway lab connected to " + host + ":" + port
-                            + " (not Thread radio / RCP)");
+                    "Thread Spinel HDLC connected to " + host + ":" + port
+                            + " (not 802.15.4 Thread radio / RCP)");
         } catch (IOException e) {
             session = null;
             throw new DriverException(
-                    "Thread BR gateway lab connect failed for " + host + ":" + port, e);
+                    "Thread Spinel connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -117,57 +118,40 @@ public class ThreadDeviceDriver implements DeviceDriver {
             ThreadPoint point = ThreadPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                double value = session.readValue(point.wireToken());
-                driverObject.updateVariable(entry.getKey(), toRecord(point, value));
+                byte[] frame = session.sendCmdReset();
+                driverObject.updateVariable(entry.getKey(), DataRecord.single(VALUE_SCHEMA, Map.of(
+                        "value", 1.0d,
+                        "kind", point.kindToken(),
+                        "point", point.display(),
+                        "raw", toHex(frame)
+                )));
             } catch (IOException e) {
-                throw new DriverException("Thread BR gateway lab read failed for " + mapping, e);
+                throw new DriverException("Thread Spinel read failed for " + mapping, e);
             }
         }
     }
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        ensureConnected();
-        ThreadPoint point = points.get(pointId);
-        if (point == null) {
-            throw new DriverException("Unknown point: " + pointId + " (read it first)");
-        }
-        if (!point.writable()) {
-            throw new DriverException(
-                    "Thread BR gateway lab rejects writes for child point: " + point.display());
-        }
-        double numeric = extractNumeric(value);
-        try {
-            session.writeValue(point.wireToken(), numeric);
-            driverObject.updateVariable(pointId, toRecord(point, numeric));
-        } catch (IOException e) {
-            throw new DriverException("Thread BR gateway lab write failed for " + pointId, e);
-        }
+        throw new DriverException("Thread Spinel driver is read-only (CMD_RESET subset)");
     }
 
-    private static DataRecord toRecord(ThreadPoint point, double value) {
-        return DataRecord.single(VALUE_SCHEMA, Map.of(
-                "value", value,
-                "kind", point.kindToken(),
-                "point", point.display()
-        ));
+    static byte[] buildCmdResetFrame() {
+        return SpinelHdlcCodec.encodeCmdReset();
     }
 
-    private static double extractNumeric(DataRecord value) {
-        if (value == null || value.rowCount() == 0) {
-            throw new IllegalArgumentException("Thread write requires a value");
+    static String toHex(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) {
+            return "";
         }
-        Map<String, Object> row = value.firstRow();
-        for (String key : List.of("value", "raw", "udp")) {
-            Object candidate = row.get(key);
-            if (candidate instanceof Number number) {
-                return number.doubleValue();
+        StringBuilder sb = new StringBuilder(bytes.length * 3);
+        for (int i = 0; i < bytes.length; i++) {
+            if (i > 0) {
+                sb.append(' ');
             }
-            if (candidate != null) {
-                return Double.parseDouble(String.valueOf(candidate).trim());
-            }
+            sb.append(String.format(Locale.ROOT, "%02X", bytes[i] & 0xFF));
         }
-        throw new IllegalArgumentException("Thread write requires numeric value/raw/udp");
+        return sb.toString();
     }
 
     private void ensureConnected() throws DriverException {

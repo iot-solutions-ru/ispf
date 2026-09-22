@@ -8,17 +8,18 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.ethercat.codec.EthercatCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -29,18 +30,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake TCP loopback tests for the EtherCAT mailbox/PDO gateway lab.
- * Certifies the lab dialect only — not hard RT master / IgH / SOEM.
+ * In-process peer tests for EtherCAT datagrams over TCP.
  */
 class EthercatDeviceDriverTest {
 
     private EthercatDeviceDriver driver;
-    private FakeEthercatGateway gateway;
+    private FakeEthercatPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -48,24 +50,38 @@ class EthercatDeviceDriverTest {
             driver.disconnect();
             driver = null;
         }
-        if (gateway != null) {
-            gateway.close();
-            gateway = null;
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
     }
 
     @Test
-    void metadataIsProductionReadWriteMailboxPdoGatewayLab() {
+    void lrdReferenceMatchesDatagramLiteral() {
+        byte[] frame = EthercatCodec.buildLrdReference();
+        assertArrayEquals(new byte[] {
+                0x0A, 0x01, 0x00, 0x00, 0x00, 0x10, 0x02, 0x00, 0x00, 0x00
+        }, Arrays.copyOf(frame, 10));
+        assertEquals(14, frame.length);
+        assertEquals(0, frame[10] & 0xFF);
+        assertEquals(0, frame[11] & 0xFF);
+        assertEquals(0, frame[12] & 0xFF);
+        assertEquals(0, frame[13] & 0xFF);
+        assertArrayEquals(frame, EthercatDeviceDriver.buildLrdReferenceFrame());
+    }
+
+    @Test
+    void metadataIsProductionReadWriteDatagram() {
         driver = new EthercatDeviceDriver();
         assertEquals("ethercat", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("34980", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("gateway") || description.contains("mailbox")
-                || description.contains("pdo") || description.contains("tcp"));
-        assertTrue(description.contains("lab") || description.contains("not"));
+        assertTrue(description.contains("datagram") || description.contains("ethercat"));
+        assertTrue(description.contains("tcp"));
         assertTrue(description.contains("not"));
+        assertFalse(description.contains("lab"));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
     }
 
@@ -74,6 +90,7 @@ class EthercatDeviceDriverTest {
         EthercatPoint slave = EthercatPoint.parse("slave:1");
         assertEquals("slave:1", slave.wireToken());
         assertEquals(EthercatPoint.Kind.SLAVE, slave.kind());
+        assertEquals(0x1000, slave.ado());
 
         EthercatPoint pdo = EthercatPoint.parse("slave:1:pdo:0");
         assertEquals("slave:1:pdo:0", pdo.wireToken());
@@ -82,20 +99,21 @@ class EthercatDeviceDriverTest {
         EthercatPoint object = EthercatPoint.parse("0x6000:01");
         assertEquals("0x6000:01", object.wireToken());
         assertEquals(EthercatPoint.Kind.OBJECT, object.kind());
+        assertEquals(0x6000, object.ado());
     }
 
     @Test
-    void readAndWriteMailboxPdoGatewayPoints() throws Exception {
-        gateway = new FakeEthercatGateway();
-        gateway.put("slave:1", 1.0);
-        gateway.put("slave:1:pdo:0", 12.5);
-        gateway.put("0x6000:01", 21.0);
-        gateway.start();
-        assertTrue(gateway.awaitReady(2, TimeUnit.SECONDS));
+    void readAndWriteLogicalDatagramPoints() throws Exception {
+        peer = new FakeEthercatPeer();
+        peer.put(0x1000, 1);
+        peer.put(0x2000, 12);
+        peer.put(0x6000, 21);
+        peer.start();
+        assertTrue(peer.awaitReady(2, TimeUnit.SECONDS));
 
         TestDriverObject object = new TestDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new EthercatDeviceDriver();
@@ -109,15 +127,15 @@ class EthercatDeviceDriverTest {
                 "obj", "0x6000:01"
         ));
         assertEquals(1.0, (Double) object.variables.get("s1").firstRow().get("value"), 0.001);
-        assertEquals(12.5, (Double) object.variables.get("pdo").firstRow().get("value"), 0.001);
+        assertEquals(12.0, (Double) object.variables.get("pdo").firstRow().get("value"), 0.001);
         assertEquals(21.0, (Double) object.variables.get("obj").firstRow().get("value"), 0.001);
 
         driver.writePoint("pdo", DataRecord.single(
                 DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
-                Map.of("value", 33.25)
+                Map.of("value", 33.0)
         ));
-        assertEquals(33.25, gateway.get("slave:1:pdo:0"), 0.001);
-        assertEquals(33.25, (Double) object.variables.get("pdo").firstRow().get("value"), 0.001);
+        assertEquals(33, peer.get(0x2000));
+        assertEquals(33.0, (Double) object.variables.get("pdo").firstRow().get("value"), 0.001);
     }
 
     @Test
@@ -129,7 +147,7 @@ class EthercatDeviceDriverTest {
         assertTrue(error.getMessage().contains("Not connected"));
     }
 
-    private static final class FakeEthercatGateway implements AutoCloseable {
+    private static final class FakeEthercatPeer implements AutoCloseable {
 
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
@@ -137,10 +155,10 @@ class EthercatDeviceDriverTest {
             thread.setDaemon(true);
             return thread;
         });
-        private final Map<String, Double> values = new ConcurrentHashMap<>();
+        private final Map<Integer, Integer> values = new ConcurrentHashMap<>();
         private final CountDownLatch ready = new CountDownLatch(1);
 
-        FakeEthercatGateway() throws IOException {
+        FakeEthercatPeer() throws IOException {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
@@ -149,12 +167,12 @@ class EthercatDeviceDriverTest {
             return serverSocket.getLocalPort();
         }
 
-        void put(String token, double value) {
-            values.put(normalize(token), value);
+        void put(int ado, int value) {
+            values.put(ado, value & 0xFFFF);
         }
 
-        double get(String token) {
-            return values.getOrDefault(normalize(token), 0.0);
+        int get(int ado) {
+            return values.getOrDefault(ado, 0);
         }
 
         void start() {
@@ -184,75 +202,52 @@ class EthercatDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    String line = readLine(in);
-                    if (line == null) {
-                        return;
-                    }
-                    String trimmed = line.trim();
-                    String upper = trimmed.toUpperCase(Locale.ROOT);
-                    if (upper.startsWith("RD ")) {
-                        String token = normalize(trimmed.substring(3).trim());
-                        Double value = values.get(token);
-                        if (value == null) {
-                            writeLine(out, "VALUE 0");
-                        } else {
-                            writeLine(out, "VALUE " + value);
-                        }
-                    } else if (upper.startsWith("WR ")) {
-                        String rest = trimmed.substring(3).trim();
-                        int space = rest.lastIndexOf(' ');
-                        if (space < 0) {
-                            writeLine(out, "ERR");
-                            continue;
-                        }
-                        String token = normalize(rest.substring(0, space).trim());
-                        double value = Double.parseDouble(rest.substring(space + 1).trim());
-                        values.put(token, value);
-                        writeLine(out, "OK");
-                    } else {
-                        writeLine(out, "ERR");
-                    }
+                    byte[] header = readFully(in, 10);
+                    int lengthField = (header[6] & 0xFF) | ((header[7] & 0xFF) << 8);
+                    int dataLen = lengthField & 0x7FF;
+                    byte[] dataAndWkc = readFully(in, dataLen + 2);
+                    byte[] frame = new byte[10 + dataAndWkc.length];
+                    System.arraycopy(header, 0, frame, 0, 10);
+                    System.arraycopy(dataAndWkc, 0, frame, 10, dataAndWkc.length);
+                    out.write(respond(frame));
+                    out.flush();
                 }
+            } catch (EOFException ignored) {
             } catch (IOException ignored) {
-                // client closed
             }
         }
 
-        private static String normalize(String token) {
-            String t = token.trim().toLowerCase(Locale.ROOT).replace('=', ':');
-            // Canonicalize object form 0x6000:1 → 0x6000:01 for lookup when needed
-            if (t.matches("0x[0-9a-f]+:[0-9a-f]+")) {
-                String[] parts = t.split(":");
-                int index = Integer.parseInt(parts[0].substring(2), 16);
-                int sub = Integer.parseInt(parts[1], 16);
-                return String.format(Locale.ROOT, "0x%04x:%02x", index, sub);
+        private byte[] respond(byte[] request) {
+            EthercatCodec.ParsedDatagram parsed = EthercatCodec.parse(request);
+            int[] data = new int[parsed.dataLength()];
+            if (parsed.cmd() == EthercatCodec.CMD_LRD) {
+                int value = values.getOrDefault(parsed.ado(), 0);
+                int[] words = EthercatCodec.uint16LeBytes(value);
+                for (int i = 0; i < data.length && i < words.length; i++) {
+                    data[i] = words[i];
+                }
+            } else if (parsed.cmd() == EthercatCodec.CMD_LWR) {
+                values.put(parsed.ado(), EthercatCodec.readUint16Le(parsed.data()));
+                System.arraycopy(parsed.data(), 0, data, 0, Math.min(data.length, parsed.data().length));
+            } else {
+                System.arraycopy(parsed.data(), 0, data, 0, Math.min(data.length, parsed.data().length));
             }
-            return t;
+            return EthercatCodec.buildDatagram(
+                    parsed.cmd(), parsed.idx(), parsed.adp(), parsed.ado(),
+                    false, parsed.irq(), data, 1);
         }
 
-        private static void writeLine(OutputStream out, String line) throws IOException {
-            out.write((line + "\n").getBytes(StandardCharsets.US_ASCII));
-            out.flush();
-        }
-
-        private static String readLine(InputStream in) throws IOException {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            while (true) {
-                int ch = in.read();
-                if (ch < 0) {
-                    if (buf.size() == 0) {
-                        return null;
-                    }
-                    break;
+        private static byte[] readFully(InputStream in, int length) throws IOException {
+            byte[] buf = new byte[length];
+            int off = 0;
+            while (off < length) {
+                int n = in.read(buf, off, length - off);
+                if (n < 0) {
+                    throw new EOFException();
                 }
-                if (ch == '\n') {
-                    break;
-                }
-                if (ch != '\r') {
-                    buf.write(ch);
-                }
+                off += n;
             }
-            return buf.toString(StandardCharsets.US_ASCII);
+            return buf;
         }
 
         @Override

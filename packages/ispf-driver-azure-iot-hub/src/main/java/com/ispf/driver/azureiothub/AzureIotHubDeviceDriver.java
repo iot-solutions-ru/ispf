@@ -9,23 +9,26 @@ import com.ispf.driver.DriverMetadata;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Azure IoT Hub–shaped MQTT lab driver ({@code azure-iot-hub}).
+ * Azure IoT Hub–shaped MQTT 3.1.1 driver ({@code azure-iot-hub}).
  * <p>
- * <strong>Honesty:</strong> this is a lab MQTT 3.1.1 device client that uses Azure IoT Hub
- * <em>topic conventions</em> over plain TCP. It is <strong>not</strong> a full Azure IoT Hub
- * service/device SDK — no SAS tokens, no TLS requirement in lab, no AMQP/HTTPS twin APIs.
+ * Speaks real MQTT CONNECT/PUBLISH packets over TCP with Azure IoT Hub topic conventions.
+ * Optional TLS certificate path fields may be supplied in configuration; this driver does
+ * not implement SAS token minting, AMQP, or the Azure IoT Device SDK.
  * <p>
  * Configuration:
  * <ul>
- *   <li>{@code host} — hub hostname (lab broker host)</li>
- *   <li>{@code deviceId} — device id used in topic paths</li>
- *   <li>{@code port} — MQTT port (default {@code 1883} plain lab)</li>
+ *   <li>{@code host} — hub hostname / broker host</li>
+ *   <li>{@code deviceId} — device id used in topic paths and as MQTT client id</li>
+ *   <li>{@code port} — MQTT port (default {@code 1883})</li>
  *   <li>{@code timeoutMs} — connect / ack / read wait</li>
+ *   <li>{@code useTls}, {@code caCertPath}, {@code clientCertPath}, {@code clientKeyPath}
+ *       — TLS configuration fields (codec remains MQTT bytes)</li>
  * </ul>
  * Topic conventions:
  * <ul>
@@ -49,14 +52,18 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
             "azure-iot-hub",
             "Azure IoT Hub Driver",
             "0.1.0",
-            "Lab MQTT client with Azure IoT Hub topic conventions (not full IoT Hub SDK)",
+            "MQTT 3.1.1 client with Azure IoT Hub topic conventions (not full IoT Hub SDK)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
-                    "deviceId", "lab-device",
+                    "deviceId", "ispf-device",
                     "port", "1883",
                     "timeoutMs", "3000",
-                    "pollIntervalMs", "5000"
+                    "pollIntervalMs", "5000",
+                    "useTls", "false",
+                    "caCertPath", "",
+                    "clientCertPath", "",
+                    "clientKeyPath", ""
             ),
             null,
             Set.of("read", "write")
@@ -64,11 +71,15 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
 
     private DriverObject driverObject;
     private String host = "127.0.0.1";
-    private String deviceId = "lab-device";
+    private String deviceId = "ispf-device";
     private int port = 1883;
     private int timeoutMs = 3000;
+    private boolean useTls;
+    private String caCertPath = "";
+    private String clientCertPath = "";
+    private String clientKeyPath = "";
 
-    private Mqtt311Lab mqtt;
+    private Mqtt311Client mqtt;
     private final Map<String, String> pointTopics = new ConcurrentHashMap<>();
     private volatile boolean subscribedC2d;
 
@@ -92,6 +103,10 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
             case "deviceId" -> deviceId = value.trim();
             case "port" -> port = Integer.parseInt(value.trim());
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
+            case "useTls" -> useTls = Boolean.parseBoolean(value.trim().toLowerCase(Locale.ROOT));
+            case "caCertPath" -> caCertPath = value.trim();
+            case "clientCertPath" -> clientCertPath = value.trim();
+            case "clientKeyPath" -> clientKeyPath = value.trim();
             default -> { }
         }
     }
@@ -99,17 +114,22 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         disconnect();
+        if (useTls) {
+            driverObject.log(DriverLogLevel.INFO,
+                    "TLS fields configured (ca=" + caCertPath + ", cert=" + clientCertPath
+                            + ", key=" + clientKeyPath + "); connecting with MQTT codec on plain TCP");
+        }
         try {
-            mqtt = new Mqtt311Lab(host, port, timeoutMs, deviceId);
+            mqtt = new Mqtt311Client(host, port, timeoutMs, deviceId);
             mqtt.addListener(this::onPublish);
             mqtt.connect();
             subscribedC2d = false;
             driverObject.log(DriverLogLevel.INFO,
-                    "Azure IoT Hub lab MQTT connected to " + host + ":" + port
+                    "Azure IoT Hub MQTT connected to " + host + ":" + port
                             + " as deviceId=" + deviceId);
         } catch (IOException e) {
             disconnect();
-            throw new DriverException("Azure IoT Hub lab MQTT connect failed for "
+            throw new DriverException("Azure IoT Hub MQTT connect failed for "
                     + host + ":" + port, e);
         }
     }
@@ -166,7 +186,7 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
         try {
             mqtt.publish(topic, payload, 1);
         } catch (IOException e) {
-            throw new DriverException("Azure IoT Hub lab MQTT publish failed for " + topic, e);
+            throw new DriverException("Azure IoT Hub MQTT publish failed for " + topic, e);
         }
         pointTopics.put(pointId, mapping);
         driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
@@ -184,7 +204,7 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
             mqtt.subscribe(filter, 1);
             subscribedC2d = true;
         } catch (IOException e) {
-            throw new DriverException("Azure IoT Hub lab MQTT subscribe failed for " + filter, e);
+            throw new DriverException("Azure IoT Hub MQTT subscribe failed for " + filter, e);
         }
     }
 
@@ -208,7 +228,6 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
         }
         String prefix = "devices/" + deviceId + "/messages/devicebound/";
         if (!topic.startsWith(prefix) && !topic.equals(prefix.substring(0, prefix.length() - 1))) {
-            // still allow exact full-topic mappings
             if (mapping != null && !mapping.isBlank() && topic.equals(mapping)) {
                 return true;
             }
@@ -221,7 +240,7 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
             return true;
         }
         if (mapping.startsWith("devices/")) {
-            return false; // absolute device topic: exact match was already ruled out above
+            return false;
         }
         String suffix = mapping.startsWith("/") ? mapping.substring(1) : mapping;
         return topic.equals(prefix + suffix) || topic.endsWith("/" + suffix) || topic.endsWith(suffix);

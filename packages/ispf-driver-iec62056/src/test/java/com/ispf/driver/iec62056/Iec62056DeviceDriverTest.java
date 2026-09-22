@@ -18,6 +18,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -25,7 +26,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,13 +54,20 @@ class Iec62056DeviceDriverTest {
     }
 
     @Test
-    void metadataDescribesModeCCompanionNotStub() {
+    void metadataDescribesModeCCompanion() {
         driver = new Iec62056DeviceDriver();
         assertEquals("iec62056", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read"), driver.metadata().capabilities());
         assertTrue(driver.metadata().description().contains("62056-21"));
-        assertTrue(driver.metadata().description().toLowerCase().contains("mode c"));
+        assertTrue(driver.metadata().description().toLowerCase(Locale.ROOT).contains("mode c"));
+        assertTrue(!driver.metadata().description().toLowerCase(Locale.ROOT).contains("lab"));
+    }
+
+    @Test
+    void modeCOpeningAndAckAreExactBytes() {
+        assertArrayEquals(new byte[] { 0x2F, 0x3F, 0x21, 0x0D, 0x0A }, Iec62056DeviceDriver.MODE_C_OPENING);
+        assertArrayEquals(new byte[] { 0x06, 0x30, 0x35, 0x30, 0x0D, 0x0A }, Iec62056DeviceDriver.MODE_C_ACK_050);
     }
 
     @Test
@@ -83,6 +93,9 @@ class Iec62056DeviceDriverTest {
                 "energy", "1.8.0",
                 "tariff1", "1.8.1"
         ));
+
+        assertArrayEquals(Iec62056DeviceDriver.MODE_C_OPENING, meter.lastSignOnBytes.get());
+        assertArrayEquals(Iec62056DeviceDriver.MODE_C_ACK_050, meter.lastAckBytes.get());
 
         DataRecord energy = object.variables.get("energy");
         assertEquals("001234.56", energy.firstRow().get("value"));
@@ -128,7 +141,7 @@ class Iec62056DeviceDriverTest {
 
         DriverException error = assertThrows(DriverException.class, () ->
                 driver.writePoint("energy", object.variables.get("energy")));
-        assertTrue(error.getMessage().toLowerCase().contains("readout-only"));
+        assertTrue(error.getMessage().toLowerCase(Locale.ROOT).contains("readout-only"));
     }
 
     private static final class FakeModeCMeterServer implements AutoCloseable {
@@ -146,6 +159,8 @@ class Iec62056DeviceDriverTest {
             return thread;
         });
         private final Map<String, String> registers;
+        final AtomicReference<byte[]> lastSignOnBytes = new AtomicReference<>();
+        final AtomicReference<byte[]> lastAckBytes = new AtomicReference<>();
 
         FakeModeCMeterServer(Map<String, String> registers) throws IOException {
             this.registers = new LinkedHashMap<>(registers);
@@ -179,7 +194,9 @@ class Iec62056DeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
 
-                String signOn = readLine(in);
+                byte[] signOnBytes = readLineBytes(in);
+                lastSignOnBytes.set(signOnBytes);
+                String signOn = new String(signOnBytes, 0, Math.max(0, signOnBytes.length - 2), StandardCharsets.US_ASCII);
                 if (!signOn.startsWith("/?") || !signOn.endsWith("!")) {
                     return;
                 }
@@ -188,6 +205,7 @@ class Iec62056DeviceDriverTest {
                 out.flush();
 
                 byte[] ack = in.readNBytes(6);
+                lastAckBytes.set(ack);
                 if (ack.length < 6 || ack[0] != ACK) {
                     return;
                 }
@@ -220,20 +238,18 @@ class Iec62056DeviceDriverTest {
             return frame.toByteArray();
         }
 
-        private static String readLine(InputStream in) throws IOException {
+        private static byte[] readLineBytes(InputStream in) throws IOException {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             int prev = -1;
             int b;
             while ((b = in.read()) >= 0) {
+                buffer.write(b);
                 if (b == LF && prev == CR) {
                     break;
                 }
-                if (b != CR && b != LF) {
-                    buffer.write(b);
-                }
                 prev = b;
             }
-            return buffer.toString(StandardCharsets.US_ASCII);
+            return buffer.toByteArray();
         }
 
         @Override

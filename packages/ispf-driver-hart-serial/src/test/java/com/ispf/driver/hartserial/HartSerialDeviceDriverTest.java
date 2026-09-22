@@ -8,11 +8,10 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
-import com.ispf.driver.hartserial.codec.HartSerialLabCodec;
+import com.ispf.driver.hartserial.codec.HartSerialCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,11 +29,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake TCP loopback tests for the HART serial-gateway lab codec.
+ * In-process ServerSocket peer tests for the HART serial-gateway driver.
  */
 class HartSerialDeviceDriverTest {
 
@@ -54,15 +54,16 @@ class HartSerialDeviceDriverTest {
     }
 
     @Test
-    void metadataDescribesLabGatewayNotFskModem() {
+    void metadataDescribesGatewayNotLab() {
         driver = new HartSerialDeviceDriver();
         assertEquals("hart-serial", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read"), driver.metadata().capabilities());
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("lab") || description.contains("gateway"));
-        assertTrue(description.contains("not fsk") || description.contains("not full"));
-        assertTrue(!description.contains("stub") && !description.contains("placeholder"));
+        assertFalse(description.contains("lab"));
+        assertFalse(description.contains("stub"));
+        assertFalse(description.contains("placeholder"));
+        assertTrue(description.contains("not fsk") || description.contains("not a full"));
     }
 
     @Test
@@ -185,41 +186,15 @@ class HartSerialDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    byte[] frame = readFrame(in);
-                    byte[] pdu = HartSerialLabCodec.unwrapPdu(frame);
-                    HartSerialLabCodec.HartCommand command = HartSerialLabCodec.parseHartCommand(pdu);
+                    byte[] pdu = HartSerialCodec.readHartPdu(in);
+                    HartSerialCodec.HartCommand command = HartSerialCodec.parseHartCommand(pdu);
                     float pv = values.getOrDefault(command.address(), 0f);
-                    byte[] hart = HartSerialLabCodec.encodeHartPvResponse(
-                            command.address(), command.command(), pv);
-                    out.write(HartSerialLabCodec.wrapPdu(hart));
+                    out.write(HartSerialCodec.encodeResponse(command.address(), command.command(), pv));
                     out.flush();
                 }
             } catch (IOException ignored) {
                 // closed
             }
-        }
-
-        private static byte[] readFrame(InputStream in) throws IOException {
-            byte[] header = readFully(in, 2);
-            int length = ((header[0] & 0xFF) << 8) | (header[1] & 0xFF);
-            byte[] payload = length == 0 ? new byte[0] : readFully(in, length);
-            byte[] frame = new byte[2 + payload.length];
-            System.arraycopy(header, 0, frame, 0, 2);
-            System.arraycopy(payload, 0, frame, 2, payload.length);
-            return frame;
-        }
-
-        private static byte[] readFully(InputStream in, int length) throws IOException {
-            byte[] buffer = new byte[length];
-            int offset = 0;
-            while (offset < length) {
-                int read = in.read(buffer, offset, length - offset);
-                if (read < 0) {
-                    throw new EOFException();
-                }
-                offset += read;
-            }
-            return buffer;
         }
 
         @Override

@@ -3,7 +3,7 @@ package com.ispf.driver.iec101;
 import java.util.Locale;
 
 /**
- * Point mapping for the IEC101-lab codec.
+ * Point mapping for the IEC 60870-5-101 driver.
  * <p>
  * Accepted forms:
  * <ul>

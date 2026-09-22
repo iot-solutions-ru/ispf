@@ -27,12 +27,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link FatekDeviceDriver} against an in-process fake FACON station.
+ * In-process ServerSocket peer tests for Fatek FACON ASCII (command 46/47).
  */
 class FatekDeviceDriverTest {
 
@@ -52,9 +53,39 @@ class FatekDeviceDriverTest {
     }
 
     @Test
-    void readDRegisterViaExpandedMapping() throws Exception {
+    void r0ReadIsLiteralFaconBytes() {
+        // Fatek Appendix cmd 46: station 01, N=01, start R00000.
+        // LRC = low byte of sum(STX + "014601R00000") = 0x70 (published span c～f).
+        // Octets written here — not derived from FatekDeviceDriver.lrc / frame.
+        byte[] expected = new byte[] {
+                0x02,
+                0x30, 0x31,
+                0x34, 0x36,
+                0x30, 0x31,
+                0x52, 0x30, 0x30, 0x30, 0x30, 0x30,
+                0x37, 0x30,
+                0x03
+        };
+        String command = FatekDeviceDriver.buildReadCommand("01", "R0");
+        assertArrayEquals(expected, command.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    @Test
+    void publishedR12ExampleLrcMatchesManual() {
+        // Manual example: STX 014603R00012 75 ETX
+        assertEquals("75", FatekDeviceDriver.lrc("014603R00012"));
+        String frame = FatekDeviceDriver.frame("01", "4603R00012");
+        assertEquals(
+                "\u0002014603R0001275\u0003",
+                frame
+        );
+    }
+
+    @Test
+    void readR0AndD100ViaLoopback() throws Exception {
         plc = new FakeFatekPlc();
-        plc.setRegister("D100", "1234");
+        plc.setRegister("R0", 0x04D2);
+        plc.setRegister("D100", 0x1234);
         plc.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
@@ -68,16 +99,20 @@ class FatekDeviceDriverTest {
         driver.connect();
         assertTrue(driver.isConnected());
 
-        driver.readPoints(Map.of("level", "D100"));
-        assertEquals("1234", object.variables.get("level").firstRow().get("value"));
-        assertEquals("D100", object.variables.get("level").firstRow().get("register"));
-        assertTrue(object.variables.get("level").firstRow().get("command").toString().contains("RD100"));
+        driver.readPoints(Map.of(
+                "relay", "R0",
+                "level", "D100"
+        ));
+        assertEquals("1234", object.variables.get("relay").firstRow().get("value"));
+        assertEquals("4660", object.variables.get("level").firstRow().get("value"));
+        assertEquals("R0", object.variables.get("relay").firstRow().get("register"));
+        assertTrue(object.variables.get("relay").firstRow().get("command").toString().contains("4601R00000"));
     }
 
     @Test
     void writeThenReadViaLoopback() throws Exception {
         plc = new FakeFatekPlc();
-        plc.setRegister("D200", "1");
+        plc.setRegister("D200", 1);
         plc.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
@@ -97,31 +132,7 @@ class FatekDeviceDriverTest {
 
         driver.readPoints(Map.of("sp", "D200"));
         assertEquals("88", object.variables.get("sp").firstRow().get("value"));
-        assertEquals("88", plc.register("D200"));
-    }
-
-    @Test
-    void shorthand01RAndHelpers() throws Exception {
-        plc = new FakeFatekPlc();
-        plc.setRegister("R0", "1");
-        plc.start();
-
-        StubDriverObject object = new StubDriverObject(Map.of(
-                "host", "127.0.0.1",
-                "port", String.valueOf(plc.port())
-        ));
-        driver = new FatekDeviceDriver();
-        driver.initialize(object);
-        driver.connect();
-
-        driver.readPoints(Map.of("relay", "01R R0"));
-        assertEquals("1", object.variables.get("relay").firstRow().get("value"));
-
-        String frame = FatekDeviceDriver.buildReadCommand("01", "D100");
-        assertTrue(frame.charAt(0) == FatekDeviceDriver.STX);
-        assertTrue(frame.charAt(frame.length() - 1) == FatekDeviceDriver.ETX);
-        assertEquals("1234", FatekDeviceDriver.parseReadValue(
-                FatekDeviceDriver.frame("01", "01234")));
+        assertEquals(88, plc.register("D200"));
     }
 
     @Test
@@ -155,8 +166,11 @@ class FatekDeviceDriverTest {
 
     private static final class FakeFatekPlc implements AutoCloseable {
 
-        private static final Pattern CMD = Pattern.compile(
-                "^(?<st>\\d{2})(?<op>[RW])(?<reg>[RDMXY]\\d+)(?:=(?<val>.*))?$",
+        private static final Pattern CMD46 = Pattern.compile(
+                "^(?<st>[0-9A-Fa-f]{2})46(?<n>[0-9A-Fa-f]{2})(?<reg>[RDMXY][0-9]{5})$",
+                Pattern.CASE_INSENSITIVE);
+        private static final Pattern CMD47 = Pattern.compile(
+                "^(?<st>[0-9A-Fa-f]{2})47(?<n>[0-9A-Fa-f]{2})(?<reg>[RDMXY][0-9]{5})(?<val>[0-9A-Fa-f]{4})$",
                 Pattern.CASE_INSENSITIVE);
 
         private final ServerSocket serverSocket;
@@ -165,7 +179,7 @@ class FatekDeviceDriverTest {
             thread.setDaemon(true);
             return thread;
         });
-        private final Map<String, String> registers = new ConcurrentHashMap<>();
+        private final Map<String, Integer> registers = new ConcurrentHashMap<>();
 
         FakeFatekPlc() throws IOException {
             serverSocket = new ServerSocket();
@@ -176,23 +190,23 @@ class FatekDeviceDriverTest {
             return serverSocket.getLocalPort();
         }
 
-        void setRegister(String name, String value) {
-            registers.put(name.toUpperCase(Locale.ROOT), value);
+        void setRegister(String name, int value) {
+            registers.put(canonical(name), value & 0xFFFF);
         }
 
-        String register(String name) {
-            return registers.get(name.toUpperCase(Locale.ROOT));
+        int register(String name) {
+            return registers.getOrDefault(canonical(name), 0);
         }
 
         void start() {
-            executor.submit(this::acceptLoop);
+            var _ = executor.submit(this::acceptLoop);
         }
 
         private void acceptLoop() {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
+                    var _ = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (serverSocket.isClosed()) {
                         return;
@@ -209,39 +223,50 @@ class FatekDeviceDriverTest {
                     String command = FatekDeviceDriver.readFrame(in);
                     String inner = FatekDeviceDriver.stripStxEtx(command);
                     if (inner.length() < 5) {
-                        writeError(out, "01");
+                        writeError(out, "01", "46");
                         continue;
                     }
                     String body = inner.substring(0, inner.length() - 2);
                     String chk = inner.substring(inner.length() - 2);
                     if (!FatekDeviceDriver.lrc(body).equalsIgnoreCase(chk)) {
-                        writeError(out, body.substring(0, 2));
+                        writeError(out, body.substring(0, 2), body.substring(2, 4));
                         continue;
                     }
-                    Matcher matcher = CMD.matcher(body);
-                    if (!matcher.matches()) {
-                        writeError(out, body.substring(0, 2));
+                    Matcher read = CMD46.matcher(body);
+                    if (read.matches()) {
+                        String st = read.group("st").toUpperCase(Locale.ROOT);
+                        String reg = canonical(read.group("reg"));
+                        int value = registers.getOrDefault(reg, 0);
+                        String data = String.format(Locale.ROOT, "%04X", value & 0xFFFF);
+                        write(out, FatekDeviceDriver.frame(st, "46" + "0" + data));
                         continue;
                     }
-                    String st = matcher.group("st");
-                    String op = matcher.group("op").toUpperCase(Locale.ROOT);
-                    String reg = matcher.group("reg").toUpperCase(Locale.ROOT);
-                    if ("R".equals(op)) {
-                        String value = registers.getOrDefault(reg, "0");
-                        write(out, FatekDeviceDriver.frame(st, "0" + value));
-                    } else {
-                        String val = matcher.group("val");
-                        registers.put(reg, val == null ? "" : val);
-                        write(out, FatekDeviceDriver.frame(st, "0"));
+                    Matcher write = CMD47.matcher(body);
+                    if (write.matches()) {
+                        String st = write.group("st").toUpperCase(Locale.ROOT);
+                        String reg = canonical(write.group("reg"));
+                        int value = Integer.parseInt(write.group("val"), 16);
+                        registers.put(reg, value & 0xFFFF);
+                        write(out, FatekDeviceDriver.frame(st, "47" + "0"));
+                        continue;
                     }
+                    writeError(out, body.substring(0, 2), body.length() >= 4 ? body.substring(2, 4) : "46");
                 }
             } catch (IOException ignored) {
                 // client closed / reset
             }
         }
 
-        private static void writeError(OutputStream out, String st) throws IOException {
-            write(out, FatekDeviceDriver.frame(st, "1"));
+        private static String canonical(String name) {
+            Matcher matcher = Pattern.compile("^([RDMXY])0*(\\d+)$", Pattern.CASE_INSENSITIVE).matcher(name.trim());
+            if (matcher.matches()) {
+                return matcher.group(1).toUpperCase(Locale.ROOT) + Integer.parseInt(matcher.group(2));
+            }
+            return name.toUpperCase(Locale.ROOT);
+        }
+
+        private static void writeError(OutputStream out, String st, String cmd) throws IOException {
+            write(out, FatekDeviceDriver.frame(st, cmd + "2"));
         }
 
         private static void write(OutputStream out, String frame) throws IOException {

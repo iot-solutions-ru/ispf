@@ -25,22 +25,23 @@ import java.util.regex.Pattern;
 /**
  * Panasonic MEWTOCOL-COM driver — ASCII MEWTOCOL frames over a raw TCP socket.
  * <p>
- * Point mapping (lab subset):
+ * Point mapping:
  * <ul>
- *   <li>{@code D100}, {@code R0} — expanded to {@code %&lt;station&gt;#RDD…}/{@code #RCC…} with BCC + CR</li>
+ *   <li>{@code D0}/{@code DT0}, {@code R0} — expanded to {@code %&lt;station&gt;#RDD…}/{@code #RCC…}
+ *       with BCC + CR</li>
  *   <li>Full frames starting with {@code %} — sent as-is (BCC recomputed when the body lacks a trailing
  *       2-hex BCC before CR)</li>
  *   <li>Writes use {@code #WDD}/{@code #WCC} with record field {@code value}</li>
  * </ul>
- * Default TCP port {@code 9094}, station {@code 01}. BCC is XOR of ASCII bytes from station through
- * command body (standard MEWTOCOL-COM shape). This is a clean-room lab subset — not FPWIN / proprietary.
+ * Default TCP port {@code 9094}, station {@code 01}. BCC is XOR of every ASCII byte after {@code %}
+ * up to (but not including) the BCC, formatted as two uppercase hex digits (MEWTOCOL-COM).
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only; no proprietary SDKs / PLC4X.
  */
 public class PanasonicMewtoDeviceDriver implements DeviceDriver {
 
     private static final Pattern REGISTER = Pattern.compile(
-            "^(?<dev>[DR])(?<addr>\\d+)$",
+            "^(?:DT|D|R)(?<addr>\\d+)$",
             Pattern.CASE_INSENSITIVE);
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("panasonicMewtoValue")
@@ -179,10 +180,11 @@ public class PanasonicMewtoDeviceDriver implements DeviceDriver {
         }
         Matcher matcher = REGISTER.matcher(map);
         if (matcher.matches()) {
-            String device = matcher.group("dev").toUpperCase(Locale.ROOT);
+            String upper = map.toUpperCase(Locale.ROOT);
+            boolean contact = upper.startsWith("R");
             int addr = Integer.parseInt(matcher.group("addr"));
             String padded = String.format(Locale.ROOT, "%05d", addr);
-            String body = station + "#" + ("D".equals(device) ? "RDD" : "RCC") + padded + padded;
+            String body = station + "#" + (contact ? "RCC" : "RDD") + padded + padded;
             return "%" + body + bcc(body);
         }
         return ensureBccFrame("%" + station + map);
@@ -199,15 +201,15 @@ public class PanasonicMewtoDeviceDriver implements DeviceDriver {
         }
         Matcher matcher = REGISTER.matcher(map);
         if (matcher.matches()) {
-            String device = matcher.group("dev").toUpperCase(Locale.ROOT);
+            String upper = map.toUpperCase(Locale.ROOT);
+            boolean contact = upper.startsWith("R");
             int addr = Integer.parseInt(matcher.group("addr"));
             String padded = String.format(Locale.ROOT, "%05d", addr);
-            String data = normalizeWriteData(device, bodyValue);
-            String body = station + "#" + ("D".equals(device) ? "WDD" : "WCC") + padded + padded + data;
+            String data = normalizeWriteData(contact, bodyValue);
+            String body = station + "#" + (contact ? "WCC" : "WDD") + padded + padded + data;
             return "%" + body + bcc(body);
         }
-        // Expand short register embedded in a prior read-style mapping
-        Matcher embedded = Pattern.compile("([DR]\\d+)", Pattern.CASE_INSENSITIVE).matcher(map);
+        Matcher embedded = Pattern.compile("((?:DT|D|R)\\d+)", Pattern.CASE_INSENSITIVE).matcher(map);
         if (embedded.find()) {
             return buildWriteCommand(station, embedded.group(1), bodyValue);
         }
@@ -219,11 +221,15 @@ public class PanasonicMewtoDeviceDriver implements DeviceDriver {
         String map = mapping == null ? "" : mapping.trim();
         Matcher matcher = REGISTER.matcher(map);
         if (matcher.matches()) {
-            return matcher.group("dev").toUpperCase(Locale.ROOT) + Integer.parseInt(matcher.group("addr"));
+            String upper = map.toUpperCase(Locale.ROOT);
+            String prefix = upper.startsWith("R") ? "R" : "D";
+            return prefix + Integer.parseInt(matcher.group("addr"));
         }
-        Matcher embedded = Pattern.compile("([DR])(\\d{1,5})", Pattern.CASE_INSENSITIVE).matcher(map);
+        Matcher embedded = Pattern.compile("(DT|D|R)(\\d{1,5})", Pattern.CASE_INSENSITIVE).matcher(map);
         if (embedded.find()) {
-            return embedded.group(1).toUpperCase(Locale.ROOT) + Integer.parseInt(embedded.group(2));
+            String kind = embedded.group(1).toUpperCase(Locale.ROOT);
+            String prefix = kind.startsWith("R") ? "R" : "D";
+            return prefix + Integer.parseInt(embedded.group(2));
         }
         Matcher addr = Pattern.compile("#R[DC]{2}(\\d{5})", Pattern.CASE_INSENSITIVE).matcher(map);
         if (addr.find()) {
@@ -233,8 +239,8 @@ public class PanasonicMewtoDeviceDriver implements DeviceDriver {
     }
 
     /**
-     * Parses {@code %01$RD…value…BB} / {@code %01$RC…} success frames into a numeric/string value.
-     * Trailing 2-hex BCC is always stripped when present (lab dialect).
+     * Parses {@code %01$RD…} / {@code %01$RC…} success frames. Trailing 2-hex BCC is stripped;
+     * data-register payloads are four hex digits per word (low byte first).
      */
     static String parseReadValue(String response) {
         if (response == null) {
@@ -245,15 +251,26 @@ public class PanasonicMewtoDeviceDriver implements DeviceDriver {
             return trimmed;
         }
         Matcher matcher = Pattern.compile(
-                "^%\\d{2}\\$(RD|RC)(=?)(.*)$",
+                "^%\\d{2}\\$(RD|RC)(.*)$",
                 Pattern.CASE_INSENSITIVE).matcher(trimmed);
         if (matcher.matches()) {
-            String dataAndBcc = matcher.group(3);
+            String code = matcher.group(1).toUpperCase(Locale.ROOT);
+            String dataAndBcc = matcher.group(2);
             if (dataAndBcc.length() >= 2
                     && dataAndBcc.substring(dataAndBcc.length() - 2).matches("[0-9A-Fa-f]{2}")) {
-                return dataAndBcc.substring(0, dataAndBcc.length() - 2);
+                dataAndBcc = dataAndBcc.substring(0, dataAndBcc.length() - 2);
             }
-            return dataAndBcc.isEmpty() ? "0" : dataAndBcc;
+            if (dataAndBcc.isEmpty()) {
+                return "0";
+            }
+            if ("RD".equals(code) && dataAndBcc.length() >= 4
+                    && dataAndBcc.substring(0, 4).matches("(?i)[0-9A-F]{4}")) {
+                String word = dataAndBcc.substring(0, 4);
+                int low = Integer.parseInt(word.substring(0, 2), 16);
+                int high = Integer.parseInt(word.substring(2, 4), 16);
+                return String.valueOf((high << 8) | low);
+            }
+            return dataAndBcc;
         }
         return trimmed;
     }
@@ -266,7 +283,7 @@ public class PanasonicMewtoDeviceDriver implements DeviceDriver {
         return t.contains("!UE") || t.contains("!ER") || t.matches("%\\d{2}!.*");
     }
 
-    /** XOR BCC over station+command body (characters after {@code %}, before BCC). */
+    /** XOR BCC over every byte after {@code %}, before the BCC. */
     static String bcc(String bodyWithoutPercentAndBcc) {
         int xor = 0;
         for (int i = 0; i < bodyWithoutPercentAndBcc.length(); i++) {
@@ -284,14 +301,12 @@ public class PanasonicMewtoDeviceDriver implements DeviceDriver {
             throw new IllegalArgumentException("MEWTOCOL frame must start with %: " + frame);
         }
         String withoutPercent = trimmed.substring(1);
-        // If already looks complete with BCC (body + 2 hex), recompute from body without last 2
         if (withoutPercent.length() >= 3) {
             String maybeBody = withoutPercent.substring(0, withoutPercent.length() - 2);
             String maybeBcc = withoutPercent.substring(withoutPercent.length() - 2);
             if (maybeBcc.matches("[0-9A-Fa-f]{2}") && bcc(maybeBody).equalsIgnoreCase(maybeBcc)) {
                 return "%" + maybeBody + maybeBcc;
             }
-            // Trailing ** often used as placeholder BCC in docs — replace with real BCC
             if (maybeBcc.equals("**")) {
                 return "%" + maybeBody + bcc(maybeBody);
             }
@@ -310,15 +325,24 @@ public class PanasonicMewtoDeviceDriver implements DeviceDriver {
         throw new IllegalArgumentException("MEWTOCOL station must be 2 decimal digits: " + station);
     }
 
-    private static String normalizeWriteData(String device, String value) {
-        if ("R".equals(device) || "C".equals(device)) {
+    private static String normalizeWriteData(boolean contact, String value) {
+        if (contact) {
             return value.isEmpty() ? "0" : value;
         }
-        // D-area lab dialect: decimal digits as ASCII payload (fake accepts this consistently)
-        if (value.matches("\\d+")) {
-            return value;
+        int n;
+        if (value.matches("(?i)0x[0-9a-f]+")) {
+            n = Integer.parseInt(value.substring(2), 16);
+        } else if (value.matches("\\d+")) {
+            n = Integer.parseInt(value);
+        } else if (value.matches("(?i)[0-9a-f]{1,4}")) {
+            n = Integer.parseInt(value, 16);
+        } else {
+            throw new IllegalArgumentException("MEWTOCOL write value must be numeric: " + value);
         }
-        return value;
+        int word = n & 0xFFFF;
+        int low = word & 0xFF;
+        int high = (word >> 8) & 0xFF;
+        return String.format(Locale.ROOT, "%02X%02X", low, high);
     }
 
     private synchronized String transact(String command) throws DriverException {

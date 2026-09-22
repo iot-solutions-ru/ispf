@@ -6,7 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * IEC 61850 Sampled Values lab point.
+ * IEC 61850 Sampled Values point mapped onto an ASDU value.
  * <p>
  * Forms: {@code svID:MU1}, {@code sv:1:smp:0}.
  */
@@ -25,7 +25,7 @@ record Iec61850SvPoint(Kind kind, String svId, int appId, int sampleIndex) {
 
     static Iec61850SvPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("IEC 61850 SV-lab point mapping is blank");
+            throw new DriverException("IEC 61850 SV point mapping is blank");
         }
         String trimmed = mapping.trim();
         Matcher id = SV_ID.matcher(trimmed);
@@ -37,15 +37,15 @@ record Iec61850SvPoint(Kind kind, String svId, int appId, int sampleIndex) {
             int appId = Integer.parseInt(sample.group(1));
             int smp = Integer.parseInt(sample.group(2));
             if (appId < 0 || appId > 0xFFFF) {
-                throw new DriverException("IEC 61850 SV-lab appId out of range: " + appId);
+                throw new DriverException("IEC 61850 SV appId out of range: " + appId);
             }
             if (smp < 0 || smp > 0xFFFF) {
-                throw new DriverException("IEC 61850 SV-lab sample index out of range: " + smp);
+                throw new DriverException("IEC 61850 SV sample index out of range: " + smp);
             }
             return new Iec61850SvPoint(Kind.SAMPLE, null, appId, smp);
         }
         throw new DriverException(
-                "Unsupported IEC 61850 SV-lab mapping"
+                "Unsupported IEC 61850 SV mapping"
                         + " (expected svID:MU1 or sv:1:smp:0): " + mapping);
     }
 

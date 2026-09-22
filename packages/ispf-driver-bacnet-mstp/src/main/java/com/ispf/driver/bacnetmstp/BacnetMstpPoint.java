@@ -5,7 +5,7 @@ import com.ispf.driver.DriverException;
 import java.util.Locale;
 
 /**
- * BACnet MS/TP gateway lab point: object + instance (+ optional property).
+ * BACnet MS/TP point: object + instance (+ optional property).
  * <p>
  * Forms: {@code analog-input,1}, {@code AI:1}, {@code AO:2}, {@code AV:3},
  * {@code analog-value:1:present-value}.

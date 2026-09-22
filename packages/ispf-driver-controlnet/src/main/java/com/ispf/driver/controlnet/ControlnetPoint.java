@@ -7,11 +7,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * ControlNet CIP gateway lab point.
+ * ControlNet CIP point addressing mapped to class/instance/attribute.
  * <p>
  * Forms: {@code slot:0}, {@code slot:0:ch:1}, {@code node:2}.
  */
-record ControlnetPoint(Kind kind, int slot, int channel, int node) {
+record ControlnetPoint(Kind kind, int slot, int channel, int node, int cipClass, int instance, int attribute) {
 
     enum Kind {
         SLOT,
@@ -29,7 +29,7 @@ record ControlnetPoint(Kind kind, int slot, int channel, int node) {
 
     static ControlnetPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("ControlNet lab point mapping is blank");
+            throw new DriverException("ControlNet point mapping is blank");
         }
         String trimmed = mapping.trim();
         Matcher slotChannel = SLOT_CHANNEL.matcher(trimmed);
@@ -38,32 +38,32 @@ record ControlnetPoint(Kind kind, int slot, int channel, int node) {
             int channel = Integer.parseInt(slotChannel.group(2));
             validateSlot(slot);
             if (channel < 0 || channel > 255) {
-                throw new DriverException("ControlNet lab channel out of range: " + channel);
+                throw new DriverException("ControlNet channel out of range: " + channel);
             }
-            return new ControlnetPoint(Kind.SLOT_CHANNEL, slot, channel, 0);
+            return new ControlnetPoint(Kind.SLOT_CHANNEL, slot, channel, 0, 1, slot, channel);
         }
         Matcher slotOnly = SLOT_ONLY.matcher(trimmed);
         if (slotOnly.matches()) {
             int slot = Integer.parseInt(slotOnly.group(1));
             validateSlot(slot);
-            return new ControlnetPoint(Kind.SLOT, slot, 0, 0);
+            return new ControlnetPoint(Kind.SLOT, slot, 0, 0, 1, slot, 1);
         }
         Matcher nodeOnly = NODE_ONLY.matcher(trimmed);
         if (nodeOnly.matches()) {
             int node = Integer.parseInt(nodeOnly.group(1));
             if (node < 0 || node > 99) {
-                throw new DriverException("ControlNet lab node out of range: " + node);
+                throw new DriverException("ControlNet node out of range: " + node);
             }
-            return new ControlnetPoint(Kind.NODE, 0, 0, node);
+            return new ControlnetPoint(Kind.NODE, 0, 0, node, 1, node, 1);
         }
         throw new DriverException(
-                "Unsupported ControlNet lab mapping (expected slot:0, slot:0:ch:1, or node:2): "
+                "Unsupported ControlNet mapping (expected slot:0, slot:0:ch:1, or node:2): "
                         + mapping);
     }
 
     private static void validateSlot(int slot) throws DriverException {
         if (slot < 0 || slot > 16) {
-            throw new DriverException("ControlNet lab slot out of range: " + slot);
+            throw new DriverException("ControlNet slot out of range: " + slot);
         }
     }
 

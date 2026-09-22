@@ -23,12 +23,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * ONVIF Device service client — clean-room SOAP/HTTP subset for lab and CI.
+ * ONVIF Device service client — SOAP 1.2 over HTTP POST to the device service URL.
  * <p>
  * Supports {@code GetDeviceInformation}, {@code GetCapabilities}, {@code GetHostname},
- * and {@code SetHostname} against a device service URL. This is not a full ONVIF Profile S/T
- * stack and does not use a proprietary ONVIF SDK — JDK {@link HttpClient} plus XML text only.
- * Clean-room ISPF code, Apache-2.0.
+ * and {@code SetHostname}. This is not a full ONVIF Profile S/T stack and does not use a
+ * proprietary ONVIF SDK — JDK {@link HttpClient} plus XML text only. Clean-room ISPF code,
+ * Apache-2.0.
  */
 public class OnvifDeviceDriver implements DeviceDriver {
 
@@ -228,7 +228,10 @@ public class OnvifDeviceDriver implements DeviceDriver {
         post(body, "http://www.onvif.org/ver10/device/wsdl/SetHostname");
     }
 
-    private String soap(String operation, String innerXml) {
+    /**
+     * SOAP 1.2 envelope for a device-service operation (for example {@code tds:GetDeviceInformation}).
+     */
+    static String soapEnvelope(String operation, String innerXml) {
         return """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <s:Envelope xmlns:s="%s" xmlns:tds="%s" xmlns:tt="%s">
@@ -237,6 +240,10 @@ public class OnvifDeviceDriver implements DeviceDriver {
                   </s:Body>
                 </s:Envelope>
                 """.formatted(SOAP_NS, TDS_NS, TT_NS, operation, innerXml, operation);
+    }
+
+    private String soap(String operation, String innerXml) {
+        return soapEnvelope(operation, innerXml);
     }
 
     private String post(String soapBody, String action) throws DriverException {

@@ -8,17 +8,17 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.bluetoothle.codec.H4HciCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -28,24 +28,22 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake TCP loopback tests for the Bluetooth LE GATT gateway lab.
- * Certifies the lab dialect only — not BLE radio / SoftDevice / HCI.
+ * Fake TCP loopback tests for Bluetooth H4 HCI over TCP.
+ * Certifies HCI Command framing only — not a BLE radio and not a full GATT client.
  */
 class BluetoothLeDeviceDriverTest {
 
-    private static final String BATT =
-            "mac:AA:BB:CC:DD:EE:FF:svc:180f:char:2a19";
-
     private BluetoothLeDeviceDriver driver;
-    private FakeGattGateway gateway;
+    private FakeH4HciPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -53,91 +51,96 @@ class BluetoothLeDeviceDriverTest {
             driver.disconnect();
             driver = null;
         }
-        if (gateway != null) {
-            gateway.close();
-            gateway = null;
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
     }
 
     @Test
-    void metadataIsProductionGattGatewayLab() {
+    void hciResetAndReadBdAddrAreHandwrittenH4Literals() {
+        // Handwritten published H4 HCI_Reset: packet type 0x01, opcode 0x0C03 LE, length 0.
+        byte[] resetExpected = new byte[] { 0x01, 0x03, 0x0C, 0x00 };
+        // Handwritten published H4 HCI_Read_BD_ADDR: opcode 0x1009 LE.
+        byte[] readBdExpected = new byte[] { 0x01, 0x09, 0x10, 0x00 };
+
+        assertArrayEquals(resetExpected, H4HciCodec.encodeReset());
+        assertArrayEquals(resetExpected, BluetoothLeDeviceDriver.encodeResetCommand());
+        assertArrayEquals(readBdExpected, H4HciCodec.encodeReadBdAddr());
+        assertArrayEquals(readBdExpected, BluetoothLeDeviceDriver.encodeReadBdAddrCommand());
+    }
+
+    @Test
+    void metadataIsProductionH4Hci() {
         driver = new BluetoothLeDeviceDriver();
         assertEquals("bluetooth-le", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
-        assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
+        assertEquals(Set.of("read"), driver.metadata().capabilities());
         assertEquals("9999", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("gatt") || description.contains("gateway"));
-        assertTrue(description.contains("not"));
+        assertTrue(description.contains("h4") || description.contains("hci"));
+        assertTrue(description.contains("not") && description.contains("ble radio"));
+        assertTrue(description.contains("not") && description.contains("gatt"));
+        assertFalse(description.contains("lab"));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
     }
 
     @Test
-    void pointParserAcceptsMacCharAndDeviceRssi() throws Exception {
-        BluetoothLePoint charPoint = BluetoothLePoint.parse(BATT);
-        assertEquals(BluetoothLePoint.Kind.GATT_CHAR, charPoint.kind());
-        assertEquals("AA:BB:CC:DD:EE:FF", charPoint.mac());
-        assertEquals("180f", charPoint.service());
-        assertEquals("2a19", charPoint.characteristic());
-        assertEquals(BluetoothLePoint.Kind.DEVICE_RSSI, BluetoothLePoint.parse("device:1:rssi").kind());
-        assertEquals(1, BluetoothLePoint.parse("device:1:rssi").deviceIndex());
+    void pointParserAcceptsBdAddr() throws Exception {
+        BluetoothLePoint point = BluetoothLePoint.parse("hci:bd_addr");
+        assertEquals(BluetoothLePoint.Kind.BD_ADDR, point.kind());
+        assertEquals("bd_addr", point.display());
+        assertFalse(point.writable());
+        assertEquals(BluetoothLePoint.Kind.BD_ADDR, BluetoothLePoint.parse("bd_addr").kind());
     }
 
     @Test
-    void readCharAndRssiWriteCharLoopback() throws Exception {
-        gateway = new FakeGattGateway();
-        gateway.put(BATT, 85);
-        gateway.put("device:1:rssi", -62);
-        gateway.start();
-        assertTrue(gateway.awaitReady(2, TimeUnit.SECONDS));
+    void connectResetAndReadBdAddrLoopback() throws Exception {
+        peer = new FakeH4HciPeer(new byte[] {
+                0x11, 0x22, 0x33, 0x44, 0x55, 0x66
+        });
+        peer.start();
+        assertTrue(peer.awaitReady(2, TimeUnit.SECONDS));
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new BluetoothLeDeviceDriver();
         driver.initialize(object);
         driver.connect();
         assertTrue(driver.isConnected());
+        assertArrayEquals(new byte[] { 0x01, 0x03, 0x0C, 0x00 }, peer.lastResetCommand());
 
-        driver.readPoints(Map.of(
-                "batt", BATT,
-                "rssi", "device:1:rssi"
-        ));
-        assertEquals(85.0, (Double) object.variables.get("batt").firstRow().get("value"), 0.001);
-        assertEquals(-62.0, (Double) object.variables.get("rssi").firstRow().get("value"), 0.001);
-
-        driver.writePoint("batt", DataRecord.single(
-                DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
-                Map.of("value", 42.0)
-        ));
-        assertEquals(42.0, gateway.value(BATT), 0.001);
-        assertEquals(42.0, (Double) object.variables.get("batt").firstRow().get("value"), 0.001);
+        driver.readPoints(Map.of("addr", "bd_addr"));
+        assertEquals("66:55:44:33:22:11", object.variables.get("addr").firstRow().get("value"));
+        assertArrayEquals(new byte[] { 0x01, 0x09, 0x10, 0x00 }, peer.lastReadBdCommand());
     }
 
     @Test
-    void writeRssiRejected() throws Exception {
-        gateway = new FakeGattGateway();
-        gateway.put("device:1:rssi", -50);
-        gateway.start();
-        assertTrue(gateway.awaitReady(2, TimeUnit.SECONDS));
+    void writeRejectedNotGattClient() throws Exception {
+        peer = new FakeH4HciPeer(new byte[] {
+                (byte) 0xAA, (byte) 0xBB, (byte) 0xCC, (byte) 0xDD, (byte) 0xEE, (byte) 0xFF
+        });
+        peer.start();
+        assertTrue(peer.awaitReady(2, TimeUnit.SECONDS));
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new BluetoothLeDeviceDriver();
         driver.initialize(object);
         driver.connect();
-        driver.readPoints(Map.of("rssi", "device:1:rssi"));
+        driver.readPoints(Map.of("addr", "bd_addr"));
         DriverException error = assertThrows(DriverException.class, () ->
-                driver.writePoint("rssi", DataRecord.single(
-                        DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
-                        Map.of("value", -40.0)
+                driver.writePoint("addr", DataRecord.single(
+                        DataSchema.builder("v").field("value", FieldType.STRING).build(),
+                        Map.of("value", "00:11:22:33:44:55")
                 )));
-        assertTrue(error.getMessage().toLowerCase(Locale.ROOT).contains("rssi"));
+        assertTrue(error.getMessage().toLowerCase(Locale.ROOT).contains("gatt"));
     }
 
     @Test
@@ -145,26 +148,38 @@ class BluetoothLeDeviceDriverTest {
         driver = new BluetoothLeDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of()));
         DriverException error = assertThrows(DriverException.class, () ->
-                driver.readPoints(Map.of("x", BATT)));
+                driver.readPoints(Map.of("addr", "bd_addr")));
         assertTrue(error.getMessage().contains("Not connected"));
     }
 
-    private static final class FakeGattGateway implements AutoCloseable {
+    /**
+     * In-process H4 HCI peer: replies to Reset with Command Complete
+     * {@code 04 0E 04 01 03 0C 00}, and to Read_BD_ADDR with status 0 + BD_ADDR.
+     */
+    private static final class FakeH4HciPeer implements AutoCloseable {
 
-        private static final Pattern OP = Pattern.compile("\"op\"\\s*:\\s*\"([^\"]+)\"");
-        private static final Pattern POINT = Pattern.compile("\"point\"\\s*:\\s*\"([^\"]+)\"");
-        private static final Pattern VALUE = Pattern.compile("\"value\"\\s*:\\s*(-?[0-9.]+)");
+        private static final byte[] RESET_CMD = new byte[] { 0x01, 0x03, 0x0C, 0x00 };
+        private static final byte[] READ_BD_CMD = new byte[] { 0x01, 0x09, 0x10, 0x00 };
+        private static final byte[] RESET_COMPLETE = new byte[] {
+                0x04, 0x0E, 0x04, 0x01, 0x03, 0x0C, 0x00
+        };
 
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
-            Thread thread = new Thread(runnable, "fake-ble-gatt");
+            Thread thread = new Thread(runnable, "fake-h4-hci");
             thread.setDaemon(true);
             return thread;
         });
-        private final Map<String, Double> values = new ConcurrentHashMap<>();
+        private final byte[] bdAddrControllerOrder;
         private final CountDownLatch ready = new CountDownLatch(1);
+        private final AtomicReference<byte[]> lastReset = new AtomicReference<>();
+        private final AtomicReference<byte[]> lastReadBd = new AtomicReference<>();
 
-        FakeGattGateway() throws IOException {
+        FakeH4HciPeer(byte[] bdAddrControllerOrder) throws IOException {
+            if (bdAddrControllerOrder == null || bdAddrControllerOrder.length != 6) {
+                throw new IllegalArgumentException("BD_ADDR must be 6 octets");
+            }
+            this.bdAddrControllerOrder = bdAddrControllerOrder.clone();
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
@@ -173,16 +188,16 @@ class BluetoothLeDeviceDriverTest {
             return serverSocket.getLocalPort();
         }
 
-        void put(String point, double value) {
-            values.put(point.toLowerCase(Locale.ROOT), value);
+        byte[] lastResetCommand() {
+            return lastReset.get();
         }
 
-        double value(String point) {
-            return values.getOrDefault(point.toLowerCase(Locale.ROOT), 0.0);
+        byte[] lastReadBdCommand() {
+            return lastReadBd.get();
         }
 
         void start() {
-            executor.submit(this::acceptLoop);
+            var unusedAccept = executor.submit(this::acceptLoop);
             ready.countDown();
         }
 
@@ -194,7 +209,7 @@ class BluetoothLeDeviceDriverTest {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
+                    var unusedHandle = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (serverSocket.isClosed()) {
                         return;
@@ -208,71 +223,65 @@ class BluetoothLeDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    String line = readLine(in);
-                    if (line == null) {
+                    byte[] command = readCommand(in);
+                    if (command == null) {
                         return;
                     }
-                    writeLine(out, handleLine(line));
+                    if (Arrays.equals(command, RESET_CMD)) {
+                        lastReset.set(command.clone());
+                        out.write(RESET_COMPLETE);
+                        out.flush();
+                    } else if (Arrays.equals(command, READ_BD_CMD)) {
+                        lastReadBd.set(command.clone());
+                        out.write(readBdAddrComplete());
+                        out.flush();
+                    }
                 }
             } catch (IOException ignored) {
                 // client closed
             }
         }
 
-        private String handleLine(String line) {
-            Matcher opMatcher = OP.matcher(line);
-            Matcher pointMatcher = POINT.matcher(line);
-            if (!opMatcher.find() || !pointMatcher.find()) {
-                return "{\"ok\":false,\"error\":\"bad request\"}";
-            }
-            String op = opMatcher.group(1).toLowerCase(Locale.ROOT);
-            String point = pointMatcher.group(1).toLowerCase(Locale.ROOT);
-            if ("get".equals(op)) {
-                double value = values.getOrDefault(point, 0.0);
-                return "{\"ok\":true,\"value\":" + format(value) + "}";
-            }
-            if ("set".equals(op)) {
-                Matcher valueMatcher = VALUE.matcher(line);
-                if (!valueMatcher.find()) {
-                    return "{\"ok\":false,\"error\":\"missing value\"}";
-                }
-                double value = Double.parseDouble(valueMatcher.group(1));
-                values.put(point, value);
-                return "{\"ok\":true,\"value\":" + format(value) + "}";
-            }
-            return "{\"ok\":false,\"error\":\"unknown op\"}";
+        private byte[] readBdAddrComplete() {
+            byte[] event = new byte[13];
+            event[0] = 0x04;
+            event[1] = 0x0E;
+            event[2] = 0x0A;
+            event[3] = 0x01;
+            event[4] = 0x09;
+            event[5] = 0x10;
+            event[6] = 0x00;
+            System.arraycopy(bdAddrControllerOrder, 0, event, 7, 6);
+            return event;
         }
 
-        private static String format(double value) {
-            if (value == Math.rint(value)) {
-                return Long.toString(Math.round(value));
+        private static byte[] readCommand(InputStream in) throws IOException {
+            int type = in.read();
+            if (type < 0) {
+                return null;
             }
-            return Double.toString(value);
-        }
-
-        private static void writeLine(OutputStream out, String line) throws IOException {
-            out.write((line + "\n").getBytes(StandardCharsets.US_ASCII));
-            out.flush();
-        }
-
-        private static String readLine(InputStream in) throws IOException {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            while (true) {
-                int ch = in.read();
-                if (ch < 0) {
-                    if (buf.size() == 0) {
-                        return null;
-                    }
-                    break;
-                }
-                if (ch == '\n') {
-                    break;
-                }
-                if (ch != '\r') {
-                    buf.write(ch);
-                }
+            int opLo = in.read();
+            int opHi = in.read();
+            int length = in.read();
+            if (opLo < 0 || opHi < 0 || length < 0) {
+                return null;
             }
-            return buf.toString(StandardCharsets.US_ASCII);
+            byte[] params = new byte[length];
+            int offset = 0;
+            while (offset < length) {
+                int n = in.read(params, offset, length - offset);
+                if (n < 0) {
+                    return null;
+                }
+                offset += n;
+            }
+            byte[] command = new byte[4 + length];
+            command[0] = (byte) type;
+            command[1] = (byte) opLo;
+            command[2] = (byte) opHi;
+            command[3] = (byte) length;
+            System.arraycopy(params, 0, command, 4, length);
+            return command;
         }
 
         @Override

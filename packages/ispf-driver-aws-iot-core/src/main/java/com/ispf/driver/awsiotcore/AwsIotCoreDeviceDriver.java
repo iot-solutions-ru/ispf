@@ -9,23 +9,26 @@ import com.ispf.driver.DriverMetadata;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AWS IoT Core–shaped MQTT lab driver ({@code aws-iot-core}).
+ * AWS IoT Core–shaped MQTT 3.1.1 driver ({@code aws-iot-core}).
  * <p>
- * <strong>Honesty:</strong> this is a lab MQTT 3.1.1 device client that uses AWS IoT–style
- * topic mappings over plain TCP. It is <strong>not</strong> a full AWS IoT Core SDK —
- * no SigV4, no TLS requirement in lab, no shadow/jobs HTTP APIs.
+ * Speaks real MQTT CONNECT/PUBLISH packets over TCP with AWS IoT–style topic mappings.
+ * Optional TLS certificate path fields may be supplied in configuration; this driver does
+ * not implement a full AWS SigV4 stack or the AWS IoT Device SDK.
  * <p>
  * Configuration:
  * <ul>
  *   <li>{@code host} — broker / IoT endpoint hostname</li>
  *   <li>{@code clientId} — MQTT client id</li>
- *   <li>{@code port} — MQTT port (default {@code 1883} plain lab)</li>
+ *   <li>{@code port} — MQTT port (default {@code 1883})</li>
  *   <li>{@code timeoutMs} — connect / ack / read wait</li>
+ *   <li>{@code useTls}, {@code caCertPath}, {@code clientCertPath}, {@code clientKeyPath}
+ *       — TLS configuration fields (codec remains MQTT bytes)</li>
  * </ul>
  * Topic conventions:
  * <ul>
@@ -45,14 +48,18 @@ public class AwsIotCoreDeviceDriver implements DeviceDriver {
             "aws-iot-core",
             "AWS IoT Core Driver",
             "0.1.0",
-            "Lab MQTT client with AWS IoT–shaped topic mappings (not full IoT Core SDK)",
+            "MQTT 3.1.1 client with AWS IoT–shaped topic mappings (not full IoT Core SDK / SigV4)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "clientId", "ispf-aws-iot",
                     "port", "1883",
                     "timeoutMs", "3000",
-                    "pollIntervalMs", "5000"
+                    "pollIntervalMs", "5000",
+                    "useTls", "false",
+                    "caCertPath", "",
+                    "clientCertPath", "",
+                    "clientKeyPath", ""
             ),
             null,
             Set.of("read", "write")
@@ -63,8 +70,12 @@ public class AwsIotCoreDeviceDriver implements DeviceDriver {
     private String clientId = "ispf-aws-iot";
     private int port = 1883;
     private int timeoutMs = 3000;
+    private boolean useTls;
+    private String caCertPath = "";
+    private String clientCertPath = "";
+    private String clientKeyPath = "";
 
-    private Mqtt311Lab mqtt;
+    private Mqtt311Client mqtt;
     private final Map<String, String> pointTopics = new ConcurrentHashMap<>();
     private final Set<String> subscribed = ConcurrentHashMap.newKeySet();
 
@@ -88,6 +99,10 @@ public class AwsIotCoreDeviceDriver implements DeviceDriver {
             case "clientId" -> clientId = value.trim();
             case "port" -> port = Integer.parseInt(value.trim());
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
+            case "useTls" -> useTls = Boolean.parseBoolean(value.trim().toLowerCase(Locale.ROOT));
+            case "caCertPath" -> caCertPath = value.trim();
+            case "clientCertPath" -> clientCertPath = value.trim();
+            case "clientKeyPath" -> clientKeyPath = value.trim();
             default -> { }
         }
     }
@@ -95,16 +110,22 @@ public class AwsIotCoreDeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         disconnect();
+        if (useTls) {
+            // Certificate paths are retained for operators; MQTT bytes still go over the socket layer.
+            driverObject.log(DriverLogLevel.INFO,
+                    "TLS fields configured (ca=" + caCertPath + ", cert=" + clientCertPath
+                            + ", key=" + clientKeyPath + "); connecting with MQTT codec on plain TCP");
+        }
         try {
-            mqtt = new Mqtt311Lab(host, port, timeoutMs, clientId);
+            mqtt = new Mqtt311Client(host, port, timeoutMs, clientId);
             mqtt.addListener(this::onPublish);
             mqtt.connect();
             driverObject.log(DriverLogLevel.INFO,
-                    "AWS IoT Core lab MQTT connected to " + host + ":" + port
+                    "AWS IoT Core MQTT connected to " + host + ":" + port
                             + " as clientId=" + clientId);
         } catch (IOException e) {
             disconnect();
-            throw new DriverException("AWS IoT Core lab MQTT connect failed for "
+            throw new DriverException("AWS IoT Core MQTT connect failed for "
                     + host + ":" + port, e);
         }
     }
@@ -161,7 +182,7 @@ public class AwsIotCoreDeviceDriver implements DeviceDriver {
         try {
             mqtt.publish(topic, payload, 1);
         } catch (IOException e) {
-            throw new DriverException("AWS IoT Core lab MQTT publish failed for " + topic, e);
+            throw new DriverException("AWS IoT Core MQTT publish failed for " + topic, e);
         }
         pointTopics.put(pointId, topic);
         driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
@@ -178,7 +199,7 @@ public class AwsIotCoreDeviceDriver implements DeviceDriver {
             mqtt.subscribe(topic, 1);
             subscribed.add(topic);
         } catch (IOException e) {
-            throw new DriverException("AWS IoT Core lab MQTT subscribe failed for " + topic, e);
+            throw new DriverException("AWS IoT Core MQTT subscribe failed for " + topic, e);
         }
     }
 

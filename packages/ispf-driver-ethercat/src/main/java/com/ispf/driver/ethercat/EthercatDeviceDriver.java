@@ -6,7 +6,8 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.ethercat.codec.EthercatLabSession;
+import com.ispf.driver.ethercat.codec.EthercatCodec;
+import com.ispf.driver.ethercat.codec.EthercatSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,11 +16,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * EtherCAT gateway lab driver — mailbox/PDO-ish TCP request lab
- * (default port {@code 34980}; {@code 5555} also valid via config).
+ * EtherCAT driver — EtherCAT datagrams over TCP (default port {@code 34980}).
  * <p>
- * Honesty boundary: EtherCAT gateway lab only — not a hard RT master, not IgH, and not SOEM.
- * Point forms: {@code slave:1}, {@code slave:1:pdo:0}, {@code 0x6000:01}. Lab ≠ field.
+ * Carries LRD/LWR datagrams to a serial/raw EtherCAT TCP gateway. This is not an IgH or
+ * SOEM master and not a hard real-time fieldbus stack. Point forms: {@code slave:1},
+ * {@code slave:1:pdo:0}, {@code 0x6000:01}.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
@@ -33,10 +34,10 @@ public class EthercatDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "ethercat",
-            "EtherCAT Gateway Lab Driver",
-            "0.1.0",
-            "EtherCAT mailbox/PDO gateway lab over TCP (slave/pdo/object R/W);"
-                    + " not hard RT master / IgH / SOEM",
+            "EtherCAT Datagram Driver",
+            "1.0.0",
+            "EtherCAT datagram over TCP (LRD/LWR logical access);"
+                    + " not IgH / SOEM / hard RT master",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -51,7 +52,7 @@ public class EthercatDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 34980;
     private int timeoutMs = 3000;
-    private EthercatLabSession session;
+    private EthercatSession session;
     private final Map<String, EthercatPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -81,13 +82,13 @@ public class EthercatDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new EthercatLabSession(host, port, timeoutMs);
+            session = new EthercatSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "EtherCAT gateway lab connected to " + host + ":" + port
-                            + " (not hard RT master / IgH / SOEM)");
+                    "EtherCAT datagram TCP connected to " + host + ":" + port
+                            + " (not IgH / SOEM / hard RT master)");
         } catch (IOException e) {
             session = null;
-            throw new DriverException("EtherCAT lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("EtherCAT connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -115,10 +116,10 @@ public class EthercatDeviceDriver implements DeviceDriver {
             EthercatPoint point = EthercatPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                double value = session.readValue(point.wireToken());
+                int value = session.readLogicalUint16(point.idx(), point.ado());
                 driverObject.updateVariable(entry.getKey(), toRecord(point, value));
             } catch (IOException e) {
-                throw new DriverException("EtherCAT lab read failed for " + mapping, e);
+                throw new DriverException("EtherCAT read failed for " + mapping, e);
             }
         }
     }
@@ -130,18 +131,18 @@ public class EthercatDeviceDriver implements DeviceDriver {
         if (point == null) {
             throw new DriverException("Unknown point: " + pointId + " (read it first)");
         }
-        double numeric = extractNumeric(value);
+        int word = (int) Math.round(extractNumeric(value)) & 0xFFFF;
         try {
-            session.writeValue(point.wireToken(), numeric);
-            driverObject.updateVariable(pointId, toRecord(point, numeric));
+            session.writeLogicalUint16(point.idx(), point.ado(), word);
+            driverObject.updateVariable(pointId, toRecord(point, word));
         } catch (IOException e) {
-            throw new DriverException("EtherCAT lab write failed for " + pointId, e);
+            throw new DriverException("EtherCAT write failed for " + pointId, e);
         }
     }
 
-    private static DataRecord toRecord(EthercatPoint point, double value) {
+    private static DataRecord toRecord(EthercatPoint point, int value) {
         return DataRecord.single(VALUE_SCHEMA, Map.of(
-                "value", value,
+                "value", (double) value,
                 "kind", point.kindName(),
                 "point", point.display()
         ));
@@ -168,5 +169,9 @@ public class EthercatDeviceDriver implements DeviceDriver {
         if (!isConnected()) {
             throw new DriverException("Not connected");
         }
+    }
+
+    public static byte[] buildLrdReferenceFrame() {
+        return EthercatCodec.buildLrdReference();
     }
 }

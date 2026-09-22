@@ -6,6 +6,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.weatherstation.codec.WeatherStationCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +16,8 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -23,12 +26,25 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WeatherStationDeviceDriverTest {
+
+    /** Handwritten Davis Vantage LOOP command: LOOP\\n */
+    private static final byte[] LOOP_LITERAL = new byte[] { 0x4C, 0x4F, 0x4F, 0x50, 0x0A };
+
+    /**
+     * Truncated LOOP ack body after 0x06 — not the full 99-byte Vantage packet.
+     * Starts with ASCII {@code LOO} as on a real console reply prefix.
+     */
+    private static final byte[] TRUNCATED_LOOP_ACK_PAYLOAD =
+            new byte[] { 'L', 'O', 'O', 0x00, 0x15 };
 
     private WeatherStationDeviceDriver driver;
     private FakeStation station;
@@ -46,15 +62,26 @@ class WeatherStationDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionReadOnly() {
+    void loopCommandMatchesHandwrittenLiteral() {
+        assertArrayEquals(LOOP_LITERAL, WeatherStationDeviceDriver.buildLoopCommand());
+        assertArrayEquals(LOOP_LITERAL, WeatherStationCodec.encodeLoopCommand());
+    }
+
+    @Test
+    void metadataDescribesLoopOverTcpWithoutLab() {
         driver = new WeatherStationDeviceDriver();
         assertEquals("weather-station", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read"), driver.metadata().capabilities());
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("loop"));
+        assertTrue(description.contains("tcp"));
+        assertTrue(description.contains("not a vaisala") || description.contains("not vaisala"));
+        assertFalse(description.contains("lab"));
     }
 
     @Test
-    void getFieldsLoopback() throws Exception {
+    void loopAckLoopback() throws Exception {
         station = new FakeStation();
         station.start();
 
@@ -68,17 +95,14 @@ class WeatherStationDeviceDriverTest {
         driver.connect();
         assertTrue(driver.isConnected());
 
-        driver.readPoints(Map.of(
-                "temp", "TEMP",
-                "hum", "HUM",
-                "all", "ALL"
-        ));
-        assertEquals("21.5", object.variables.get("temp").firstRow().get("value"));
-        assertEquals("55", object.variables.get("hum").firstRow().get("value"));
-        assertTrue(String.valueOf(object.variables.get("all").firstRow().get("value")).contains("TEMP=21.5"));
+        driver.readPoints(Map.of("loop", "LOOP"));
+        assertArrayEquals(LOOP_LITERAL, station.lastCommand());
+        String value = String.valueOf(object.variables.get("loop").firstRow().get("value"));
+        assertTrue(value.startsWith("LOO"));
+        assertEquals(new String(TRUNCATED_LOOP_ACK_PAYLOAD, StandardCharsets.US_ASCII), value);
 
         DriverException error = assertThrows(DriverException.class, () ->
-                driver.writePoint("temp", object.variables.get("temp")));
+                driver.writePoint("loop", object.variables.get("loop")));
         assertTrue(error.getMessage().toLowerCase(Locale.ROOT).contains("read-only"));
     }
 
@@ -89,12 +113,7 @@ class WeatherStationDeviceDriverTest {
             t.setDaemon(true);
             return t;
         });
-        private final Map<String, String> values = new ConcurrentHashMap<>(Map.of(
-                "TEMP", "21.5",
-                "HUM", "55",
-                "PRESS", "1013.2",
-                "WIND", "3.2"
-        ));
+        private final AtomicReference<byte[]> lastCommand = new AtomicReference<>(new byte[0]);
 
         FakeStation() throws IOException {
             serverSocket = new ServerSocket();
@@ -103,6 +122,10 @@ class WeatherStationDeviceDriverTest {
 
         int port() {
             return serverSocket.getLocalPort();
+        }
+
+        byte[] lastCommand() {
+            return lastCommand.get();
         }
 
         void start() {
@@ -125,27 +148,25 @@ class WeatherStationDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    String command = WeatherStationDeviceDriver.readLine(in);
-                    if (command == null) {
-                        break;
+                    byte[] command = new byte[5];
+                    int offset = 0;
+                    while (offset < command.length) {
+                        int n = in.read(command, offset, command.length - offset);
+                        if (n < 0) {
+                            return;
+                        }
+                        offset += n;
                     }
-                    String upper = command.trim().toUpperCase(Locale.ROOT);
-                    if (upper.equals("GET ALL") || upper.equals("GET *")) {
-                        StringBuilder line = new StringBuilder();
-                        values.forEach((k, v) -> {
-                            if (!line.isEmpty()) {
-                                line.append(' ');
-                            }
-                            line.append(k).append('=').append(v);
-                        });
-                        WeatherStationDeviceDriver.writeLine(out, line.toString());
-                    } else if (upper.startsWith("GET ")) {
-                        String field = upper.substring(4).trim();
-                        String value = values.getOrDefault(field, "");
-                        WeatherStationDeviceDriver.writeLine(out, field + "=" + value);
-                    } else {
-                        WeatherStationDeviceDriver.writeLine(out, "ERR");
+                    lastCommand.set(Arrays.copyOf(command, command.length));
+                    if (!Arrays.equals(command, LOOP_LITERAL)) {
+                        out.write(0x21); // '!' failure style
+                        out.flush();
+                        continue;
                     }
+                    // ACK then truncated LOOP payload (documented short stand-in for the 99-byte packet)
+                    out.write(WeatherStationCodec.ACK);
+                    out.write(TRUNCATED_LOOP_ACK_PAYLOAD);
+                    out.flush();
                 }
             } catch (IOException ignored) {
                 // closed

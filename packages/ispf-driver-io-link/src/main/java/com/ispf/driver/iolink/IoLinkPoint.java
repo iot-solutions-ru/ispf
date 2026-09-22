@@ -1,15 +1,17 @@
 package com.ispf.driver.iolink;
 
 import com.ispf.driver.DriverException;
+import com.ispf.driver.iolink.codec.IoLinkCodec;
 
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * IO-Link master lab point.
+ * IO-Link ISDU point addressing.
  * <p>
  * Forms: {@code port:1}, {@code port:1:pdin}, {@code port:1:pdout}.
+ * Process-data channels map to ISDU index {@code 0x0010}, subindex {@code 0}.
  */
 record IoLinkPoint(int port, Channel channel) {
 
@@ -41,6 +43,14 @@ record IoLinkPoint(int port, Channel channel) {
         }
         Channel channel = "pdout".equalsIgnoreCase(matcher.group(2)) ? Channel.PDOUT : Channel.PDIN;
         return new IoLinkPoint(port, channel);
+    }
+
+    int isduIndex() {
+        return IoLinkCodec.DEFAULT_INDEX;
+    }
+
+    int subindex() {
+        return 0;
     }
 
     boolean writable() {

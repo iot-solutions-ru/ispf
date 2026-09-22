@@ -8,7 +8,8 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
-import com.ispf.driver.hartip.codec.HartIpLabCodec;
+import com.ispf.driver.hartip.codec.HartIpCodec;
+import com.ispf.driver.hartip.codec.HartIpMessage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -19,6 +20,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -28,11 +30,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake TCP loopback tests for the HART-IP lab codec.
+ * In-process ServerSocket peer tests for the HART-IP driver.
  */
 class HartIpDeviceDriverTest {
 
@@ -52,13 +55,16 @@ class HartIpDeviceDriverTest {
     }
 
     @Test
-    void metadataDescribesLabNotStub() {
+    void metadataDescribesHartIpNotLab() {
         driver = new HartIpDeviceDriver();
         assertEquals("hart-ip", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read"), driver.metadata().capabilities());
-        assertTrue(driver.metadata().description().toLowerCase().contains("lab"));
-        assertTrue(driver.metadata().description().toLowerCase().contains("not full"));
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertFalse(description.contains("lab"));
+        assertFalse(description.contains("stub"));
+        assertFalse(description.contains("placeholder"));
+        assertTrue(description.contains("not") && (description.contains("full") || description.contains("fsk")));
     }
 
     @Test
@@ -126,7 +132,7 @@ class HartIpDeviceDriverTest {
                         DataSchema.builder("v").field("value", FieldType.STRING).build(),
                         Map.of("value", "x")
                 )));
-        assertTrue(error.getMessage().toLowerCase().contains("read-only"));
+        assertTrue(error.getMessage().toLowerCase(Locale.ROOT).contains("read-only"));
     }
 
     private static final class FakeHartIpServer implements AutoCloseable {
@@ -172,23 +178,23 @@ class HartIpDeviceDriverTest {
                 OutputStream out = socket.getOutputStream();
                 while (true) {
                     byte[] frame = readFrame(in);
-                    HartIpLabCodec.HartIpMessage message = HartIpLabCodec.decode(frame);
-                    if (message.messageId() == HartIpLabCodec.ID_SESSION_INITIATE) {
-                        out.write(HartIpLabCodec.encodeSessionInitiateResponse(message.sequence()));
+                    HartIpMessage message = HartIpCodec.decode(frame);
+                    if (message.messageId() == HartIpCodec.ID_SESSION_INITIATE) {
+                        out.write(HartIpCodec.encodeSessionInitiateResponse(message.sequence()));
                         out.flush();
                         continue;
                     }
-                    if (message.messageId() == HartIpLabCodec.ID_PASS_THROUGH) {
-                        HartIpLabCodec.HartCommand command = HartIpLabCodec.parseHartCommand(message.payload());
+                    if (message.messageId() == HartIpCodec.ID_PASS_THROUGH) {
+                        HartIpCodec.HartCommand command = HartIpCodec.parseHartCommand(message.payload());
                         float pv = values.getOrDefault(command.address(), 0f);
-                        byte[] hart = HartIpLabCodec.encodeHartPvResponse(
+                        byte[] hart = HartIpCodec.encodeHartPvResponse(
                                 command.address(), command.command(), pv);
-                        out.write(HartIpLabCodec.encodePassThroughResponse(message.sequence(), hart));
+                        out.write(HartIpCodec.encodePassThroughResponse(message.sequence(), hart));
                         out.flush();
                         continue;
                     }
-                    out.write(HartIpLabCodec.encodeMessage(
-                            HartIpLabCodec.MSG_NAK, message.messageId(), 1, message.sequence(), new byte[0]));
+                    out.write(HartIpCodec.encodeMessage(
+                            HartIpCodec.MSG_NAK, message.messageId(), 1, message.sequence(), new byte[0]));
                     out.flush();
                 }
             } catch (IOException ignored) {
@@ -197,12 +203,12 @@ class HartIpDeviceDriverTest {
         }
 
         private static byte[] readFrame(InputStream in) throws IOException {
-            byte[] header = readFully(in, 10);
-            int byteCount = ((header[8] & 0xFF) << 8) | (header[9] & 0xFF);
+            byte[] header = readFully(in, HartIpCodec.HEADER_LENGTH);
+            int byteCount = ((header[6] & 0xFF) << 8) | (header[7] & 0xFF);
             byte[] payload = byteCount == 0 ? new byte[0] : readFully(in, byteCount);
-            byte[] frame = new byte[10 + payload.length];
-            System.arraycopy(header, 0, frame, 0, 10);
-            System.arraycopy(payload, 0, frame, 10, payload.length);
+            byte[] frame = new byte[HartIpCodec.HEADER_LENGTH + payload.length];
+            System.arraycopy(header, 0, frame, 0, HartIpCodec.HEADER_LENGTH);
+            System.arraycopy(payload, 0, frame, HartIpCodec.HEADER_LENGTH, payload.length);
             return frame;
         }
 

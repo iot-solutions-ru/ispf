@@ -7,26 +7,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Bluetooth LE GATT gateway lab point.
+ * Bluetooth H4 HCI point mapping.
  * <p>
- * Forms: {@code mac:AA:BB:CC:DD:EE:FF:svc:180f:char:2a19}, {@code device:1:rssi}.
+ * Form: {@code bd_addr} or {@code hci:bd_addr} — reads the controller address via
+ * HCI_Read_BD_ADDR. This driver is not a full GATT client.
  */
-record BluetoothLePoint(Kind kind, String display, String mac, String service, String characteristic,
-                        int deviceIndex) {
+record BluetoothLePoint(Kind kind, String display) {
 
     enum Kind {
-        GATT_CHAR,
-        DEVICE_RSSI
+        BD_ADDR
     }
 
-    private static final Pattern GATT = Pattern.compile(
-            "^mac\\s*[:=]\\s*([0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5})"
-                    + "\\s*[:=]\\s*svc\\s*[:=]\\s*([0-9A-Fa-f]+)"
-                    + "\\s*[:=]\\s*char\\s*[:=]\\s*([0-9A-Fa-f]+)$",
-            Pattern.CASE_INSENSITIVE);
-
-    private static final Pattern RSSI = Pattern.compile(
-            "^device\\s*[:=]\\s*(\\d+)\\s*[:=]\\s*rssi$",
+    private static final Pattern BD_ADDR = Pattern.compile(
+            "^(?:hci\\s*[:=]\\s*)?bd[_-]?addr$",
             Pattern.CASE_INSENSITIVE);
 
     static BluetoothLePoint parse(String mapping) throws DriverException {
@@ -34,33 +27,20 @@ record BluetoothLePoint(Kind kind, String display, String mac, String service, S
             throw new DriverException("Bluetooth LE point mapping is blank");
         }
         String trimmed = mapping.trim();
-        Matcher gatt = GATT.matcher(trimmed);
-        if (gatt.matches()) {
-            String mac = gatt.group(1).toUpperCase(Locale.ROOT);
-            String svc = gatt.group(2).toLowerCase(Locale.ROOT);
-            String ch = gatt.group(3).toLowerCase(Locale.ROOT);
-            String display = "mac:" + mac + ":svc:" + svc + ":char:" + ch;
-            return new BluetoothLePoint(Kind.GATT_CHAR, display, mac, svc, ch, -1);
-        }
-        Matcher rssi = RSSI.matcher(trimmed);
-        if (rssi.matches()) {
-            int device = Integer.parseInt(rssi.group(1));
-            if (device < 1) {
-                throw new DriverException("Bluetooth LE device index out of range: " + device);
-            }
-            String display = "device:" + device + ":rssi";
-            return new BluetoothLePoint(Kind.DEVICE_RSSI, display, null, null, null, device);
+        Matcher matcher = BD_ADDR.matcher(trimmed);
+        if (matcher.matches()) {
+            return new BluetoothLePoint(Kind.BD_ADDR, "bd_addr");
         }
         throw new DriverException(
-                "Unsupported Bluetooth LE mapping (expected mac:AA:BB:CC:DD:EE:FF:svc:180f:char:2a19"
-                        + " or device:1:rssi): " + mapping);
+                "Unsupported Bluetooth H4 HCI mapping (expected bd_addr or hci:bd_addr): "
+                        + mapping);
     }
 
     boolean writable() {
-        return kind == Kind.GATT_CHAR;
+        return false;
     }
 
     String wireToken() {
-        return display;
+        return display.toLowerCase(Locale.ROOT);
     }
 }

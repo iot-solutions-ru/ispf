@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * PROFIBUS DP gateway lab point.
+ * PROFIBUS DP point addressing for FDL SD2 PDUs.
  * <p>
  * Forms: {@code slave:3}, {@code slave:3:byte:0}.
  */
@@ -22,7 +22,7 @@ record ProfibusPoint(int slave, int byteOffset) {
 
     static ProfibusPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("PROFIBUS lab point mapping is blank");
+            throw new DriverException("PROFIBUS point mapping is blank");
         }
         String trimmed = mapping.trim();
         Matcher slaveByte = SLAVE_BYTE.matcher(trimmed);
@@ -34,15 +34,15 @@ record ProfibusPoint(int slave, int byteOffset) {
             return create(Integer.parseInt(slaveOnly.group(1)), 0);
         }
         throw new DriverException(
-                "Unsupported PROFIBUS lab mapping (expected slave:3 or slave:3:byte:0): " + mapping);
+                "Unsupported PROFIBUS mapping (expected slave:3 or slave:3:byte:0): " + mapping);
     }
 
     private static ProfibusPoint create(int slave, int byteOffset) throws DriverException {
         if (slave < 0 || slave > 126) {
-            throw new DriverException("PROFIBUS lab slave out of range: " + slave);
+            throw new DriverException("PROFIBUS slave out of range: " + slave);
         }
         if (byteOffset < 0 || byteOffset > 255) {
-            throw new DriverException("PROFIBUS lab byte offset out of range: " + byteOffset);
+            throw new DriverException("PROFIBUS byte offset out of range: " + byteOffset);
         }
         return new ProfibusPoint(slave, byteOffset);
     }

@@ -6,23 +6,24 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.bacnetmstp.codec.BacnetMstpLabSession;
+import com.ispf.driver.bacnetmstp.codec.BacnetMstpSession;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * BACnet MS/TP gateway lab driver — BVLC-less APDU over TCP (not native RS-485 MS/TP master).
+ * BACnet MS/TP driver over a TCP serial-server ({@code bacnet-mstp}).
  * <p>
- * Speaks a framed NPDU+APDU subset to an MS/TP-over-TCP bridge / gateway lab on
- * {@code host:port} (default 47808). Point forms: {@code analog-input,1}, {@code AI:1},
- * {@code AO:2}, {@code AV:3}. Reads present-value; writes allowed for AO/AV.
+ * Speaks ASHRAE 135 clause-9 frames (preamble {@code 55 FF}, header CRC-8, data CRC-16)
+ * carrying confirmed ReadProperty / WriteProperty APDUs. Not a native RS-485 MS/TP
+ * token-passing master. Point forms: {@code analog-input,1}, {@code AI:1}, {@code AO:2},
+ * {@code AV:3}. Reads present-value; writes allowed for AO/AV.
  * <p>
- * Honesty: MS/TP gateway lab only — not a native RS-485 MS/TP token-passing master and not
- * a proprietary BACnet stack. Clean-room ISPF code, Apache-2.0 — JDK sockets only.
+ * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class BacnetMstpDeviceDriver implements DeviceDriver {
 
@@ -35,14 +36,16 @@ public class BacnetMstpDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "bacnet-mstp",
-            "BACnet MS/TP Gateway Lab Driver",
-            "0.1.0",
-            "BACnet MS/TP-over-TCP gateway lab: BVLC-less framed APDU Read/WriteProperty;"
+            "BACnet MS/TP TCP Driver",
+            "1.0.0",
+            "BACnet MS/TP clause-9 over TCP serial-server: frame type 5 Read/WriteProperty;"
                     + " not native RS-485 MS/TP master",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "47808",
+                    "localMac", "0",
+                    "remoteMac", "1",
                     "timeoutMs", "3000"
             ),
             null,
@@ -52,8 +55,10 @@ public class BacnetMstpDeviceDriver implements DeviceDriver {
     private DriverObject driverObject;
     private String host = "127.0.0.1";
     private int port = 47808;
+    private int localMac = 0;
+    private int remoteMac = 1;
     private int timeoutMs = 3000;
-    private BacnetMstpLabSession session;
+    private BacnetMstpSession session;
     private final Map<String, BacnetMstpPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -74,6 +79,8 @@ public class BacnetMstpDeviceDriver implements DeviceDriver {
         switch (key) {
             case "host" -> host = value.trim();
             case "port" -> port = Integer.parseInt(value.trim());
+            case "localMac" -> localMac = Integer.parseInt(value.trim());
+            case "remoteMac" -> remoteMac = Integer.parseInt(value.trim());
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
             default -> { }
         }
@@ -83,12 +90,12 @@ public class BacnetMstpDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new BacnetMstpLabSession(host, port, timeoutMs);
+            session = new BacnetMstpSession(host, port, localMac, remoteMac, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "BACnet MS/TP gateway lab connected to " + host + ":" + port);
+                    "BACnet MS/TP connected to " + host + ":" + port);
         } catch (IOException e) {
             session = null;
-            throw new DriverException("BACnet MS/TP lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("BACnet MS/TP connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -119,7 +126,7 @@ public class BacnetMstpDeviceDriver implements DeviceDriver {
                 float value = session.readPresentValue(point.encodedObjectId());
                 driverObject.updateVariable(entry.getKey(), toRecord(point, value));
             } catch (IOException e) {
-                throw new DriverException("BACnet MS/TP lab read failed for " + mapping, e);
+                throw new DriverException("BACnet MS/TP read failed for " + mapping, e);
             }
         }
     }
@@ -133,21 +140,21 @@ public class BacnetMstpDeviceDriver implements DeviceDriver {
         }
         if (!point.objectType().writable) {
             throw new DriverException(
-                    "BACnet MS/TP lab rejects writes for object type: " + point.objectType());
+                    "BACnet MS/TP rejects writes for object type: " + point.objectType());
         }
         float numeric = (float) extractNumeric(value);
         try {
             session.writeValue(point.encodedObjectId(), numeric);
             driverObject.updateVariable(pointId, toRecord(point, numeric));
         } catch (IOException e) {
-            throw new DriverException("BACnet MS/TP lab write failed for " + pointId, e);
+            throw new DriverException("BACnet MS/TP write failed for " + pointId, e);
         }
     }
 
     private static DataRecord toRecord(BacnetMstpPoint point, float value) {
         return DataRecord.single(VALUE_SCHEMA, Map.of(
                 "value", (double) value,
-                "objectType", point.objectType().name().toLowerCase().replace('_', '-'),
+                "objectType", point.objectType().name().toLowerCase(Locale.ROOT).replace('_', '-'),
                 "instance", (long) point.instance(),
                 "property", "present-value"
         ));

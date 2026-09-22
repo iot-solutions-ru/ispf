@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.iec61850goose.codec.Iec61850GooseLabSession;
+import com.ispf.driver.iec61850goose.codec.Iec61850GooseSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,13 +15,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * IEC 61850 GOOSE subscribe/publish lab driver — UDP dataset frames
- * (default port {@code 8502}; {@code 102} also valid via config).
+ * IEC 61850 GOOSE subscribe/publish driver — IEC 61850-8-1 GOOSE header over UDP
+ * (default port {@code 8502}).
  * <p>
- * Honesty boundary: GOOSE UDP lab only — not VLAN/priority tagging / full ASN.1
- * GOOSE stack. Point forms: {@code goose:gcb1}, {@code goID:MyGo}.
- * Read returns last dataset value; write may republish a lab frame.
- * Lab ≠ substation field.
+ * Wire format is APPID/Length/Reserved1/Reserved2 then APDU; not VLAN tagging /
+ * full ASN.1 GOOSE stack. Point forms: {@code goose:gcb1}, {@code goID:MyGo}.
+ * Read returns the float carried in the APDU; write publishes an updated APDU value.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
@@ -36,10 +35,10 @@ public class Iec61850GooseDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "iec61850-goose",
-            "IEC 61850 GOOSE Lab Driver",
-            "0.1.0",
-            "IEC 61850 GOOSE UDP subscribe/publish lab (last dataset + optional republish);"
-                    + " not VLAN/priority tagging / full ASN.1 GOOSE stack",
+            "IEC 61850 GOOSE Driver",
+            "1.0.0",
+            "IEC 61850-8-1 GOOSE header (APPID/Length/Reserved) over UDP;"
+                    + " not VLAN tagging / full ASN.1 GOOSE stack",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -54,7 +53,7 @@ public class Iec61850GooseDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 8502;
     private int timeoutMs = 3000;
-    private Iec61850GooseLabSession session;
+    private Iec61850GooseSession session;
     private final Map<String, Iec61850GoosePoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -84,14 +83,14 @@ public class Iec61850GooseDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new Iec61850GooseLabSession(host, port, timeoutMs);
+            session = new Iec61850GooseSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "IEC 61850 GOOSE-lab connected to " + host + ":" + port
-                            + " (UDP lab — not VLAN/priority / full ASN.1 GOOSE stack)");
+                    "IEC 61850 GOOSE connected to " + host + ":" + port
+                            + " (GOOSE header — not VLAN tagging / full ASN.1 stack)");
         } catch (IOException e) {
             session = null;
             throw new DriverException(
-                    "IEC 61850 GOOSE-lab connect failed for " + host + ":" + port, e);
+                    "IEC 61850 GOOSE connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -122,7 +121,7 @@ public class Iec61850GooseDeviceDriver implements DeviceDriver {
                 double value = session.readValue(point.wireToken());
                 driverObject.updateVariable(entry.getKey(), toRecord(point, value, "good"));
             } catch (IOException e) {
-                throw new DriverException("IEC 61850 GOOSE-lab read failed for " + mapping, e);
+                throw new DriverException("IEC 61850 GOOSE read failed for " + mapping, e);
             }
         }
     }
@@ -139,7 +138,7 @@ public class Iec61850GooseDeviceDriver implements DeviceDriver {
             session.writeValue(point.wireToken(), numeric);
             driverObject.updateVariable(pointId, toRecord(point, numeric, "good"));
         } catch (IOException e) {
-            throw new DriverException("IEC 61850 GOOSE-lab write failed for " + pointId, e);
+            throw new DriverException("IEC 61850 GOOSE write failed for " + pointId, e);
         }
     }
 
@@ -154,7 +153,7 @@ public class Iec61850GooseDeviceDriver implements DeviceDriver {
 
     private static double extractNumeric(DataRecord value) {
         if (value == null || value.rowCount() == 0) {
-            throw new IllegalArgumentException("IEC 61850 GOOSE-lab write requires a value");
+            throw new IllegalArgumentException("IEC 61850 GOOSE write requires a value");
         }
         Map<String, Object> row = value.firstRow();
         for (String key : List.of("value", "raw")) {
@@ -166,7 +165,7 @@ public class Iec61850GooseDeviceDriver implements DeviceDriver {
                 return Double.parseDouble(String.valueOf(candidate).trim());
             }
         }
-        throw new IllegalArgumentException("IEC 61850 GOOSE-lab write requires numeric value/raw");
+        throw new IllegalArgumentException("IEC 61850 GOOSE write requires numeric value/raw");
     }
 
     private void ensureConnected() throws DriverException {

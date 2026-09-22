@@ -5,7 +5,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Allen-Bradley DF1 data-table point for the TCP-bridge lab subset.
+ * Allen-Bradley DF1 data-table point address.
  * <p>
  * Accepted forms: {@code N7:0}, {@code F8:1}, {@code B3:0/0} (file type + file number
  * + element, optional bit for binary files).

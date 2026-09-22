@@ -8,18 +8,17 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
-import com.ispf.driver.wmbus.codec.WmbusLabCodec;
+import com.ispf.driver.wmbus.codec.WmbusCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -30,16 +29,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Fake TCP gateway loopback tests for the Wireless M-Bus lab codec.
- */
 class WmbusDeviceDriverTest {
 
     private WmbusDeviceDriver driver;
-    private FakeWmbusGateway gateway;
+    private FakeWmbusPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -47,21 +44,22 @@ class WmbusDeviceDriverTest {
             driver.disconnect();
             driver = null;
         }
-        if (gateway != null) {
-            gateway.close();
-            gateway = null;
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
     }
 
     @Test
-    void metadataDescribesTcpGatewayLabNotRfPhy() {
+    void metadataDescribesTcpFormatANotRfPhy() {
         driver = new WmbusDeviceDriver();
         assertEquals("wmbus", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read"), driver.metadata().capabilities());
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("lab") || description.contains("gateway"));
+        assertTrue(description.contains("en 13757") || description.contains("format-a") || description.contains("crc"));
         assertTrue(description.contains("not rf") || description.contains("not an rf"));
+        assertFalse(description.contains("lab"));
     }
 
     @Test
@@ -72,15 +70,24 @@ class WmbusDeviceDriverTest {
     }
 
     @Test
+    void crc16MatchesCatalogCheckAndIndependentMsb() {
+        byte[] check = "123456789".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        assertEquals(0xC2B7, WmbusCodec.crc16(check));
+        assertEquals(0xC2B7, independentCrc16(check));
+        byte[] sample = new byte[] { 0x01, 0x02 };
+        assertEquals(independentCrc16(sample), WmbusCodec.crc16(sample));
+    }
+
+    @Test
     void pollMeterAndIdReturnsParsedCiValue() throws Exception {
-        gateway = new FakeWmbusGateway();
-        gateway.putMeter(1, WmbusLabCodec.encodeShortFrame(0x1B2C, 0xAABBCCDDL, 1, 7, 12.5f));
-        gateway.putId("AABBCCDD", WmbusLabCodec.encodeShortFrame(0x1B2C, 0xAABBCCDDL, 1, 7, 12.5f));
-        gateway.start();
+        peer = new FakeWmbusPeer();
+        peer.putMeter(1, WmbusCodec.encodeTelegram(0x1B2C, 0xAABBCCDDL, 1, 7, 12.5f));
+        peer.putId("AABBCCDD", WmbusCodec.encodeTelegram(0x1B2C, 0xAABBCCDDL, 1, 7, 12.5f));
+        peer.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new WmbusDeviceDriver();
@@ -94,7 +101,7 @@ class WmbusDeviceDriverTest {
         ));
         assertEquals(12.5, (Double) object.variables.get("m1").firstRow().get("value"), 0.001);
         assertEquals("AABBCCDD", object.variables.get("m1").firstRow().get("deviceId"));
-        assertEquals(0x78L, object.variables.get("m1").firstRow().get("ci"));
+        assertEquals(0x7AL, object.variables.get("m1").firstRow().get("ci"));
         assertEquals(12.5, (Double) object.variables.get("byId").firstRow().get("value"), 0.001);
     }
 
@@ -110,7 +117,26 @@ class WmbusDeviceDriverTest {
         assertTrue(error.getMessage().toLowerCase(Locale.ROOT).contains("read-only"));
     }
 
-    private static final class FakeWmbusGateway implements AutoCloseable {
+    /**
+     * Independent CRC-16/EN-13757, MSB first, xorout 0xFFFF.
+     * Must not call {@link WmbusCodec#crc16(byte[])}.
+     */
+    private static int independentCrc16(byte[] data) {
+        int crc = 0x0000;
+        for (byte value : data) {
+            crc ^= (value & 0xFF) << 8;
+            for (int bit = 0; bit < 8; bit++) {
+                if ((crc & 0x8000) != 0) {
+                    crc = ((crc << 1) ^ 0x3D65) & 0xFFFF;
+                } else {
+                    crc = (crc << 1) & 0xFFFF;
+                }
+            }
+        }
+        return (crc ^ 0xFFFF) & 0xFFFF;
+    }
+
+    private static final class FakeWmbusPeer implements AutoCloseable {
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(r -> {
             Thread t = new Thread(r, "fake-wmbus");
@@ -119,7 +145,7 @@ class WmbusDeviceDriverTest {
         });
         private final Map<String, byte[]> byToken = new ConcurrentHashMap<>();
 
-        FakeWmbusGateway() throws IOException {
+        FakeWmbusPeer() throws IOException {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
@@ -156,54 +182,24 @@ class WmbusDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    String command = readLine(in);
-                    if (command == null) {
-                        return;
-                    }
-                    String upper = command.trim();
-                    if (upper.regionMatches(true, 0, "POLL ", 0, 5)) {
-                        String token = upper.substring(5).trim().toLowerCase(Locale.ROOT);
-                        if (token.startsWith("id:")) {
-                            token = "id:" + token.substring(3).toUpperCase(Locale.ROOT);
-                        }
-                        byte[] frame = byToken.get(token);
-                        if (frame == null) {
-                            writeLine(out, "ERR unknown");
-                        } else {
-                            writeLine(out, "TELEGRAM " + WmbusLabCodec.toHex(frame));
-                        }
+                    byte[] request = WmbusCodec.readFrame(in);
+                    WmbusCodec.ParsedTelegram parsed = WmbusCodec.parse(request);
+                    String token;
+                    if (parsed.manufacturer() == 0) {
+                        token = "meter:" + parsed.deviceId();
                     } else {
-                        writeLine(out, "ERR");
+                        token = "id:" + WmbusCodec.deviceIdHex(parsed.deviceId());
                     }
+                    byte[] response = byToken.get(token);
+                    if (response == null) {
+                        throw new EOFException("unknown token " + token);
+                    }
+                    out.write(response);
+                    out.flush();
                 }
             } catch (IOException ignored) {
                 // closed
             }
-        }
-
-        private static void writeLine(OutputStream out, String line) throws IOException {
-            out.write((line + "\r\n").getBytes(StandardCharsets.US_ASCII));
-            out.flush();
-        }
-
-        private static String readLine(InputStream in) throws IOException {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            while (true) {
-                int b = in.read();
-                if (b < 0) {
-                    if (buf.size() == 0) {
-                        return null;
-                    }
-                    break;
-                }
-                if (b == '\n') {
-                    break;
-                }
-                if (b != '\r') {
-                    buf.write(b);
-                }
-            }
-            return buf.toString(StandardCharsets.US_ASCII);
         }
 
         @Override

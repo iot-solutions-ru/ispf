@@ -10,6 +10,7 @@ import com.ispf.driver.DriverException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,6 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,6 +53,19 @@ class KeyenceHostlinkDeviceDriverTest {
     }
 
     @Test
+    void dm100UnsignedReadIsLiteralHostLinkBytes() throws Exception {
+        // Keyence Host Link: RDS DM100.U 1\r — unsigned DM100, count 1
+        byte[] expected = new byte[] {
+                0x52, 0x44, 0x53, 0x20, 0x44, 0x4D, 0x31, 0x30, 0x30, 0x2E, 0x55, 0x20, 0x31, 0x0D
+        };
+        assertEquals("RDS DM100.U 1", KeyenceHostlinkDeviceDriver.buildReadCommand("DM100"));
+
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        KeyenceHostlinkDeviceDriver.writeFrame(captured, KeyenceHostlinkDeviceDriver.buildReadCommand("DM100"));
+        assertArrayEquals(expected, captured.toByteArray());
+    }
+
+    @Test
     void readDmViaExpandedMapping() throws Exception {
         plc = new FakeKeyencePlc();
         plc.setRegister("DM100", "1234");
@@ -69,7 +84,17 @@ class KeyenceHostlinkDeviceDriverTest {
         driver.readPoints(Map.of("level", "DM100"));
         assertEquals("1234", object.variables.get("level").firstRow().get("value"));
         assertEquals("DM100", object.variables.get("level").firstRow().get("register"));
-        assertEquals("RDS DM100 1", object.variables.get("level").firstRow().get("command"));
+        assertEquals("RDS DM100.U 1", object.variables.get("level").firstRow().get("command"));
+        assertEquals(
+                "RDS DM100.U 1",
+                plc.lastCommand());
+    }
+
+    @Test
+    void parseNumericHostLinkResponse() {
+        assertEquals("1234", KeyenceHostlinkDeviceDriver.parseReadValue("1234"));
+        assertEquals("55", KeyenceHostlinkDeviceDriver.parseReadValue("DM100 55"));
+        assertEquals("100", KeyenceHostlinkDeviceDriver.parseReadValue("100 200"));
     }
 
     @Test
@@ -112,10 +137,10 @@ class KeyenceHostlinkDeviceDriverTest {
         driver.initialize(object);
         driver.connect();
 
-        driver.readPoints(Map.of("relay", "RDS R0 1"));
+        driver.readPoints(Map.of("relay", "RDS R0.U 1"));
         assertEquals("1", object.variables.get("relay").firstRow().get("value"));
 
-        assertEquals("RDS DM100 1", KeyenceHostlinkDeviceDriver.buildReadCommand("DM100"));
+        assertEquals("RDS DM100.U 1", KeyenceHostlinkDeviceDriver.buildReadCommand("DM100"));
         assertEquals("WR DM100 9", KeyenceHostlinkDeviceDriver.buildWriteCommand("DM100", "9"));
         assertEquals("1234", KeyenceHostlinkDeviceDriver.parseReadValue("DM100 1234"));
     }
@@ -177,6 +202,10 @@ class KeyenceHostlinkDeviceDriverTest {
             return registers.get(name.toUpperCase(Locale.ROOT));
         }
 
+        String lastCommand() {
+            return lastCommand.get();
+        }
+
         void start() {
             executor.submit(this::acceptLoop);
         }
@@ -205,16 +234,18 @@ class KeyenceHostlinkDeviceDriverTest {
                     if (upper.startsWith("RDS ") || upper.startsWith("RD ")) {
                         String[] parts = command.split("\\s+");
                         if (parts.length >= 2) {
-                            String reg = parts[1].toUpperCase(Locale.ROOT);
+                            String reg = KeyenceHostlinkDeviceDriver.stripFormatSuffix(parts[1])
+                                    .toUpperCase(Locale.ROOT);
                             String value = registers.getOrDefault(reg, "0");
-                            write(out, reg + " " + value);
+                            write(out, value);
                         } else {
                             write(out, "E1");
                         }
                     } else if (upper.startsWith("WRS ") || upper.startsWith("WR ")) {
                         String[] parts = command.split("\\s+");
                         if (parts.length >= 3) {
-                            String reg = parts[1].toUpperCase(Locale.ROOT);
+                            String reg = KeyenceHostlinkDeviceDriver.stripFormatSuffix(parts[1])
+                                    .toUpperCase(Locale.ROOT);
                             String value = parts[parts.length - 1];
                             registers.put(reg, value);
                             write(out, "OK");

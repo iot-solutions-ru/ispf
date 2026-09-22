@@ -7,17 +7,15 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.lorawan.codec.LorawanSemtechCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -27,18 +25,19 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake TCP NS/AS loopback tests for the LoRaWAN gateway lab.
- * Certifies lab dialect only — not LoRa PHY / Semtech HAL.
+ * DatagramSocket peer tests for the Semtech UDP packet-forwarder network-server driver.
  */
 class LorawanDeviceDriverTest {
 
     private LorawanDeviceDriver driver;
-    private FakeLorawanNs gateway;
+    private FakeSemtechGateway gateway;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -53,15 +52,24 @@ class LorawanDeviceDriverTest {
     }
 
     @Test
-    void metadataDescribesNsAsGatewayLabNotLoRaPhy() {
+    void pushAckForToken1234IsLiteralSemtechFrame() {
+        assertArrayEquals(
+                new byte[]{0x02, 0x12, 0x34, 0x01},
+                LorawanSemtechCodec.encodePushAck(0x1234)
+        );
+    }
+
+    @Test
+    void metadataDescribesSemtechUdpNotStub() {
         driver = new LorawanDeviceDriver();
         assertEquals("lorawan", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("1700", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("lab") || description.contains("gateway"));
-        assertTrue(description.contains("not lora phy") || description.contains("semtech hal"));
+        assertTrue(description.contains("semtech") || description.contains("packet-forwarder"));
+        assertTrue(description.contains("push_data") || description.contains("udp"));
+        assertTrue(!description.contains("lab"));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
     }
 
@@ -72,150 +80,136 @@ class LorawanDeviceDriverTest {
     }
 
     @Test
-    void getUplinkAndTxDownlink() throws Exception {
-        gateway = new FakeLorawanNs();
-        gateway.put("AABBCCDDEEFF0011", 21.5f, -87.0);
-        gateway.start();
-        assertTrue(gateway.awaitReady(2, TimeUnit.SECONDS));
-
+    void pushDataUplinkAndPullRespDownlink() throws Exception {
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
-                "timeoutMs", "2000"
+                "port", "0",
+                "timeoutMs", "3000"
         ));
         driver = new LorawanDeviceDriver();
         driver.initialize(object);
         driver.connect();
         assertTrue(driver.isConnected());
+        int listenPort = object.lastBoundPort();
+        assertTrue(listenPort > 0);
+
+        gateway = new FakeSemtechGateway();
+        gateway.attach(listenPort);
+        gateway.startPushThenAwaitDownlink(
+                "B827EBFFFE000001",
+                "AABBCCDDEEFF0011",
+                21.5f,
+                -87.0,
+                868.1
+        );
 
         driver.readPoints(Map.of("dev", "deveui:AABBCCDDEEFF0011"));
+        assertTrue(gateway.awaitPushAck(2, TimeUnit.SECONDS));
+        assertArrayEquals(new byte[]{0x02, 0x12, 0x34, 0x01}, gateway.lastPushAck());
         assertEquals(21.5, (Double) object.variables.get("dev").firstRow().get("value"), 0.001);
         assertEquals("AABBCCDDEEFF0011", object.variables.get("dev").firstRow().get("deveui"));
         assertEquals(-87.0, (Double) object.variables.get("dev").firstRow().get("rssi"), 0.001);
+        assertEquals(868.1, (Double) object.variables.get("dev").firstRow().get("freq"), 0.001);
 
         driver.writePoint("dev", DataRecord.single(
                 DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
                 Map.of("value", 42.0)
         ));
-        assertEquals(42.0f, gateway.get("AABBCCDDEEFF0011"), 0.001f);
-        assertTrue(gateway.writeLatchAwait(2, TimeUnit.SECONDS));
+        assertTrue(gateway.awaitPullResp(2, TimeUnit.SECONDS));
+        assertEquals(42.0f, gateway.lastDownlinkValue(), 0.001f);
     }
 
-    private static final class FakeLorawanNs implements AutoCloseable {
-        private final ServerSocket serverSocket;
+    private static final class FakeSemtechGateway implements AutoCloseable {
+        private final DatagramSocket socket;
         private final ExecutorService executor = Executors.newCachedThreadPool(r -> {
-            Thread t = new Thread(r, "fake-lorawan");
+            Thread t = new Thread(r, "fake-semtech-gw");
             t.setDaemon(true);
             return t;
         });
-        private final Map<String, Float> values = new ConcurrentHashMap<>();
-        private final Map<String, Double> rssi = new ConcurrentHashMap<>();
-        private final CountDownLatch ready = new CountDownLatch(1);
-        private final CountDownLatch writeSeen = new CountDownLatch(1);
+        private final CountDownLatch pushAckSeen = new CountDownLatch(1);
+        private final CountDownLatch pullRespSeen = new CountDownLatch(1);
+        private final AtomicReference<byte[]> lastPushAck = new AtomicReference<>();
+        private final AtomicReference<Float> lastDownlink = new AtomicReference<>();
+        private int nsPort;
 
-        FakeLorawanNs() throws IOException {
-            serverSocket = new ServerSocket();
-            serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+        FakeSemtechGateway() throws IOException {
+            socket = new DatagramSocket(new InetSocketAddress("127.0.0.1", 0));
+            socket.setSoTimeout(5000);
         }
 
-        int port() {
-            return serverSocket.getLocalPort();
+        void attach(int networkServerPort) {
+            this.nsPort = networkServerPort;
         }
 
-        void put(String deveui, float value, double rssiDb) {
-            values.put(deveui.toUpperCase(Locale.ROOT), value);
-            rssi.put(deveui.toUpperCase(Locale.ROOT), rssiDb);
-        }
-
-        float get(String deveui) {
-            return values.getOrDefault(deveui.toUpperCase(Locale.ROOT), 0f);
-        }
-
-        void start() {
-            executor.submit(this::acceptLoop);
-            ready.countDown();
-        }
-
-        boolean awaitReady(long timeout, TimeUnit unit) throws InterruptedException {
-            return ready.await(timeout, unit);
-        }
-
-        boolean writeLatchAwait(long timeout, TimeUnit unit) throws InterruptedException {
-            return writeSeen.await(timeout, unit);
-        }
-
-        private void acceptLoop() {
-            while (!serverSocket.isClosed()) {
+        void startPushThenAwaitDownlink(
+                String gatewayEui,
+                String deveui,
+                float value,
+                double rssi,
+                double freq
+        ) {
+            var _ = executor.submit(() -> {
                 try {
-                    Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
-                } catch (IOException e) {
-                    return;
+                    InetSocketAddress ns = new InetSocketAddress("127.0.0.1", nsPort);
+                    byte[] eui = LorawanSemtechCodec.euiFromHex(gatewayEui);
+                    String json = "{\"deveui\":\"" + deveui + "\",\"value\":" + value
+                            + ",\"rssi\":" + rssi + ",\"freq\":" + freq
+                            + ",\"data\":\"" + value + "\"}";
+                    byte[] push = LorawanSemtechCodec.encodePushData(0x1234, eui, json);
+                    socket.send(new DatagramPacket(push, push.length, ns));
+
+                    byte[] buf = new byte[2048];
+                    DatagramPacket reply = new DatagramPacket(buf, buf.length);
+                    socket.receive(reply);
+                    byte[] ack = Arrays.copyOf(reply.getData(), reply.getLength());
+                    lastPushAck.set(ack);
+                    pushAckSeen.countDown();
+
+                    socket.receive(reply);
+                    byte[] pullResp = Arrays.copyOf(reply.getData(), reply.getLength());
+                    LorawanSemtechCodec.SemtechPacket parsed = LorawanSemtechCodec.decode(pullResp);
+                    if (parsed.identifier() == LorawanSemtechCodec.PULL_RESP) {
+                        String body = parsed.json();
+                        int idx = body.indexOf("\"value\":");
+                        if (idx >= 0) {
+                            String rest = body.substring(idx + 8).trim();
+                            int end = 0;
+                            while (end < rest.length()
+                                    && (Character.isDigit(rest.charAt(end))
+                                    || rest.charAt(end) == '.'
+                                    || rest.charAt(end) == '-')) {
+                                end++;
+                            }
+                            lastDownlink.set(Float.parseFloat(rest.substring(0, end)));
+                        }
+                        pullRespSeen.countDown();
+                    }
+                } catch (Exception ignored) {
+                    // closed / timeout
                 }
-            }
+            });
         }
 
-        private void handle(Socket socket) {
-            try (socket) {
-                InputStream in = socket.getInputStream();
-                OutputStream out = socket.getOutputStream();
-                while (true) {
-                    String line = readLine(in);
-                    if (line == null) {
-                        return;
-                    }
-                    String upper = line.trim().toUpperCase(Locale.ROOT);
-                    if (upper.startsWith("GET ")) {
-                        String deveui = upper.substring(4).trim();
-                        float value = values.getOrDefault(deveui, 0f);
-                        double r = rssi.getOrDefault(deveui, -90.0);
-                        String json = "{\"deveui\":\"" + deveui + "\",\"value\":" + value
-                                + ",\"rssi\":" + r + "}";
-                        writeLine(out, json);
-                    } else if (upper.startsWith("TX ")) {
-                        String[] parts = upper.substring(3).trim().split("\\s+");
-                        String deveui = parts[0];
-                        float value = parts.length > 1 ? Float.parseFloat(parts[1]) : 0f;
-                        values.put(deveui, value);
-                        writeSeen.countDown();
-                        writeLine(out, "{\"ok\":true,\"deveui\":\"" + deveui + "\",\"value\":" + value + "}");
-                    } else {
-                        writeLine(out, "ERR");
-                    }
-                }
-            } catch (IOException ignored) {
-                // closed
-            }
+        boolean awaitPushAck(long timeout, TimeUnit unit) throws InterruptedException {
+            return pushAckSeen.await(timeout, unit);
         }
 
-        private static void writeLine(OutputStream out, String line) throws IOException {
-            out.write((line + "\r\n").getBytes(StandardCharsets.US_ASCII));
-            out.flush();
+        boolean awaitPullResp(long timeout, TimeUnit unit) throws InterruptedException {
+            return pullRespSeen.await(timeout, unit);
         }
 
-        private static String readLine(InputStream in) throws IOException {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            while (true) {
-                int b = in.read();
-                if (b < 0) {
-                    if (buf.size() == 0) {
-                        return null;
-                    }
-                    break;
-                }
-                if (b == '\n') {
-                    break;
-                }
-                if (b != '\r') {
-                    buf.write(b);
-                }
-            }
-            return buf.toString(StandardCharsets.US_ASCII);
+        byte[] lastPushAck() {
+            return lastPushAck.get();
+        }
+
+        float lastDownlinkValue() {
+            Float v = lastDownlink.get();
+            return v == null ? 0f : v;
         }
 
         @Override
         public void close() throws Exception {
-            serverSocket.close();
+            socket.close();
             executor.shutdownNow();
             executor.awaitTermination(2, TimeUnit.SECONDS);
         }
@@ -224,14 +218,26 @@ class LorawanDeviceDriverTest {
     private static final class StubDriverObject implements DeviceDriver.DriverObject {
         private final Map<String, String> configuration;
         final Map<String, DataRecord> variables = new ConcurrentHashMap<>();
+        private volatile int boundPort;
 
         StubDriverObject(Map<String, String> configuration) {
             this.configuration = configuration;
         }
 
+        int lastBoundPort() {
+            return boundPort;
+        }
+
         @Override
         public PlatformObject deviceObject() {
-            return new PlatformObject("test-lorawan", "root.platform.devices.test", ObjectType.DEVICE, "Test", "", null);
+            return new PlatformObject(
+                    "test-lorawan",
+                    "root.platform.devices.test",
+                    ObjectType.DEVICE,
+                    "Test",
+                    "",
+                    null
+            );
         }
 
         @Override
@@ -246,6 +252,16 @@ class LorawanDeviceDriverTest {
 
         @Override
         public void log(DeviceDriver.DriverLogLevel level, String message) {
+            if (message != null && message.contains("bound on ")) {
+                int colon = message.lastIndexOf(':');
+                if (colon > 0) {
+                    try {
+                        boundPort = Integer.parseInt(message.substring(colon + 1).trim());
+                    } catch (NumberFormatException ignored) {
+                        // leave previous
+                    }
+                }
+            }
         }
 
         @Override

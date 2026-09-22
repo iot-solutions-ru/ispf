@@ -6,13 +6,13 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.wago.codec.ModbusTcpCodec;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,23 +20,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Modbus-TCP-compatible lab driver for WAGO PFC controllers — holding register read (FC3)
- * and single-register write (FC6). Default TCP port {@code 502} (standard Modbus TCP).
- * Catalog YAML may list {@code 2455}; override {@code port} when a non-standard
- * listener is used. Both ports are valid configuration — this pack defaults to 502.
+ * WAGO PFC Modbus TCP driver — holding register read (FC3) and single-register write (FC6)
+ * over MBAP on default TCP port {@code 502}.
  * <p>
  * This is <strong>not</strong> a CODESYS proprietary / e!COCKPIT binary stack. Many WAGO PFC
- * Ethernet interfaces expose standard Modbus TCP; this pack speaks that dialect only.
+ * Ethernet interfaces expose standard Modbus TCP; this pack speaks that protocol only.
  * <p>
  * Point mapping: {@code HR:100}, {@code 100}, or {@code MW100} — see {@link WagoPoint}.
- * Lab mapping is 1:1 (HR/MW numeric address → Modbus holding register). Write uses FC6 for a
+ * Mapping is 1:1 (HR/MW numeric address → Modbus holding register). Write uses FC6 for a
  * single register ({@code value}/{@code raw}). Clean-room ISPF code, Apache-2.0 — JDK sockets
  * only; no PLC4X, no vendor SDK.
  */
 public class WagoDeviceDriver implements DeviceDriver {
-
-    private static final byte FC_READ_HOLDING = 3;
-    private static final byte FC_WRITE_SINGLE = 6;
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("wagoValue")
             .field("value", FieldType.STRING)
@@ -48,7 +43,7 @@ public class WagoDeviceDriver implements DeviceDriver {
             "wago",
             "WAGO Driver",
             "0.1.0",
-            "Modbus-TCP-compatible FC3/FC6 lab driver for WAGO PFC holding registers (not CODESYS proprietary)",
+            "Modbus TCP FC3/FC6 for WAGO PFC holding registers (not CODESYS proprietary)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -68,6 +63,11 @@ public class WagoDeviceDriver implements DeviceDriver {
     private final AtomicInteger transactionId = new AtomicInteger();
     private final Map<String, WagoPoint> points = new ConcurrentHashMap<>();
     private volatile boolean connected;
+
+    /** Reference MBAP FC3 frame (tid 1, unit 1, address 0, quantity 1). */
+    public static byte[] buildReadHoldingRegister0Frame() {
+        return ModbusTcpCodec.buildReadHoldingRegister0Reference();
+    }
 
     @Override
     public DriverMetadata metadata() {
@@ -142,12 +142,10 @@ public class WagoDeviceDriver implements DeviceDriver {
     }
 
     private DataRecord readHolding(WagoPoint point) throws DriverException {
-        ByteBuffer pdu = ByteBuffer.allocate(5);
-        pdu.put(FC_READ_HOLDING);
-        pdu.putShort((short) point.address());
-        pdu.putShort((short) point.count());
-        byte[] response = transact(pdu.array());
-        if (response.length < 2 || response[0] != FC_READ_HOLDING) {
+        int txId = transactionId.incrementAndGet() & 0xFFFF;
+        byte[] request = ModbusTcpCodec.encodeReadHoldingRegisters(txId, unitId, point.address(), point.count());
+        byte[] response = transact(request);
+        if (response.length < 2 || response[0] != ModbusTcpCodec.FC_READ_HOLDING) {
             throw new DriverException("Unexpected WAGO FC3 response");
         }
         int byteCount = response[1] & 0xFF;
@@ -171,31 +169,21 @@ public class WagoDeviceDriver implements DeviceDriver {
     }
 
     private void writeSingle(int address, int word) throws DriverException {
-        ByteBuffer pdu = ByteBuffer.allocate(5);
-        pdu.put(FC_WRITE_SINGLE);
-        pdu.putShort((short) address);
-        pdu.putShort((short) (word & 0xFFFF));
-        byte[] response = transact(pdu.array());
-        if (response.length < 5 || response[0] != FC_WRITE_SINGLE) {
+        int txId = transactionId.incrementAndGet() & 0xFFFF;
+        byte[] request = ModbusTcpCodec.encodeWriteSingleRegister(txId, unitId, address, word);
+        byte[] response = transact(request);
+        if (response.length < 5 || response[0] != ModbusTcpCodec.FC_WRITE_SINGLE) {
             throw new DriverException("Unexpected WAGO FC6 response");
         }
     }
 
-    private byte[] transact(byte[] pdu) throws DriverException {
-        int txId = transactionId.incrementAndGet() & 0xFFFF;
-        ByteBuffer request = ByteBuffer.allocate(7 + pdu.length);
-        request.putShort((short) txId);
-        request.putShort((short) 0); // protocol id
-        request.putShort((short) (1 + pdu.length));
-        request.put((byte) (unitId & 0xFF));
-        request.put(pdu);
-
+    private byte[] transact(byte[] request) throws DriverException {
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(host, port), timeoutMs);
             socket.setSoTimeout(timeoutMs);
             OutputStream out = socket.getOutputStream();
             InputStream in = socket.getInputStream();
-            out.write(request.array());
+            out.write(request);
             out.flush();
 
             byte[] header = in.readNBytes(7);
