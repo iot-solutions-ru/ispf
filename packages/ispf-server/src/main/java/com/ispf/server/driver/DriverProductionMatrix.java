@@ -546,7 +546,7 @@ final class DriverProductionMatrix {
             entry("bluetooth-le", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-bluetooth-le", "com.ispf.driver.bluetoothle.BluetoothLeDeviceDriverTest"),
                     "ispf-driver-bluetooth-le"),
-            entry("zigbee", DriverMaturity.PRODUCTION, POLL_WRITE,
+            entry("zigbee", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-zigbee", "com.ispf.driver.zigbee.ZigbeeDeviceDriverTest"),
                     "ispf-driver-zigbee"),
             entry("zwave", DriverMaturity.PRODUCTION, POLL_WRITE,
