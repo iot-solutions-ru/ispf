@@ -10,7 +10,7 @@ export interface YargHealth {
 }
 
 export function fetchYargHealth(): Promise<YargHealth> {
-  return fetch("/api/v1/platform/reports/yarg/health", {
+  return fetch("/api/v1/platform/reports/health", {
     headers: getAuthHeaders(),
   }).then(async (response) => {
     if (!response.ok) {

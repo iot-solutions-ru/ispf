@@ -433,11 +433,13 @@ export async function mockAuthenticatedApi(
           consumerPending: null,
           connectionError: null,
         });
-      case "/api/v1/platform/reports/yarg/health":
+      case "/api/v1/platform/reports/health":
         return json(route, {
-          available: false,
-          libreOfficePath: null,
-          message: "e2e mock",
+          libreOfficeAvailable: false,
+          configuredPath: null,
+          resolvedPath: null,
+          timeoutSeconds: 60,
+          pdfHint: "e2e mock",
         });
       case "/api/v1/platform/mcp/health":
         return json(route, {
