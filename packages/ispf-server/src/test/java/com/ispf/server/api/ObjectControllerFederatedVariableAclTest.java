@@ -8,9 +8,11 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.api.dto.VariableDto;
+import com.ispf.server.audit.AuditEventService;
 import com.ispf.server.federation.FederationProxyService;
 import com.ispf.server.object.ObjectEditLeaseService;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantScopeService;
@@ -75,11 +77,15 @@ class ObjectControllerFederatedVariableAclTest {
     private FederationProxyService federationProxyService;
     @Mock
     private ObjectEditLeaseService editLeaseService;
+    @Mock
+    private PlatformUserService platformUserService;
+    @Mock
+    private AuditEventService auditEventService;
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @InjectMocks
-    private ObjectController controller;
+    private ObjectVariableController controller;
 
     private PlatformObject localNode;
 
