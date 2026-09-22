@@ -4,6 +4,7 @@ import { formatAdminFocusChip } from "../../context/adminFocusUtils";
 import { useAdminFocusOptional } from "../../context/useAdminFocus";
 import ModalPortal from "../../ui/ModalPortal";
 import AdminCopilotPanel from "./AdminCopilotPanel";
+import { installCopilotFocusGuard } from "./copilotFocusGuard";
 
 export default function AdminCopilotFab() {
   const { t } = useTranslation("ai");
@@ -18,6 +19,13 @@ export default function AdminCopilotFab() {
       setOpen(true);
     }
   }, [openRequestToken]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    return installCopilotFocusGuard();
+  }, [open]);
 
   const chip = formatAdminFocusChip(focusRegistry?.focus ?? null, focusRegistry?.focusTrail);
 
