@@ -252,6 +252,27 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
       if (path.includes(".queries.")) {
         return "queries";
       }
+      if (path.includes(".quality-records")) {
+        return "quality";
+      }
+      if (path.includes(".work-orders")) {
+        return "work-orders";
+      }
+      if (path.includes(".operations")) {
+        return "gear";
+      }
+      if (path.includes(".lots")) {
+        return "box";
+      }
+      if (path.includes(".shifts")) {
+        return "schedules";
+      }
+      if (path.includes(".mes.instances") || (path.endsWith(".instances") && path.includes(".mes."))) {
+        return "layers";
+      }
+      if (path === "root.platform.mes" || path.endsWith(".mes")) {
+        return "mes";
+      }
       return "custom";
     case "ANALYTICS":
     case "ANALYTICS_TEMPLATE":
@@ -259,25 +280,6 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
     case "EVENT_FILTERS":
     case "EVENT_FILTER":
       return "filter";
-    case "MES":
-      return "mes";
-    case "WORK_ORDERS":
-    case "WORK_ORDER":
-      return "work-orders";
-    case "OPERATIONS":
-    case "OPERATION":
-      return "gear";
-    case "LOTS":
-    case "LOT":
-      return "box";
-    case "SHIFTS":
-    case "SHIFT":
-      return "schedules";
-    case "QUALITY_RECORDS":
-    case "QUALITY_RECORD":
-      return "quality";
-    case "MES_INSTANCES":
-      return "layers";
     case "MIGRATIONS":
     case "MIGRATION":
       return "database";

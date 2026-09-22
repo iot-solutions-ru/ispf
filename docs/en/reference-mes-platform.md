@@ -24,13 +24,13 @@ Created when the **mes-platform** (or production) marketplace bundle is installe
 
 | Path | ObjectType | Purpose |
 |------|------------|---------|
-| `root.platform.mes` | `MES` | MES root catalog |
-| `...mes.work-orders` | `WORK_ORDERS` | Work order folder |
-| `...mes.work-orders.wo-line-a01-001` | `WORK_ORDER` | Seed WO (`work-order-v1`) |
-| `...mes.operations.op-assemble-a01` | `OPERATION` | Seed routing step |
-| `...mes.lots.batch-line-a01-001` | `LOT` | Seed ISA-88 batch (`batch-v1`) |
-| `...mes.shifts.shift-morning-a01` | `SHIFT` | Seed shift |
-| `...mes.quality-records.qr-line-a01-001` | `QUALITY_RECORD` | Seed defect record (`quality-record-v1`) |
+| `root.platform.mes` | `CUSTOM` | MES root catalog |
+| `...mes.work-orders` | `CUSTOM` | Work order folder |
+| `...mes.work-orders.wo-line-a01-001` | `CUSTOM` | Seed WO (`work-order-v1`) |
+| `...mes.operations.op-assemble-a01` | `CUSTOM` | Seed routing step |
+| `...mes.lots.batch-line-a01-001` | `CUSTOM` | Seed ISA-88 batch (`batch-v1`) |
+| `...mes.shifts.shift-morning-a01` | `CUSTOM` | Seed shift |
+| `...mes.quality-records.qr-line-a01-001` | `CUSTOM` | Seed defect record (`quality-record-v1`) |
 | `...mes.instances.plant-a…line-a01` | `DEVICE` | ISA-95 site/area/line path |
 
 Instance types `batch-v1` and `work-order-v1` are registered under `root.platform.instance-types` by the same bundle (`blueprints[]`). Test: `MesCatalogObjectTypesIntegrationTest`.
@@ -55,12 +55,12 @@ Fire `workOrderDispatched` on the hub (or enable correlator) to create an operat
 
 | Artifact | Purpose |
 |----------|---------|
-| MIXIN `quality-record-v1` | `defectCode`, `severity`, `lotId` on `QUALITY_RECORD` nodes |
+| MIXIN `quality-record-v1` | `defectCode`, `severity`, `lotId` on quality-record nodes |
 | MIXIN `mes-platform-hub-v1` | `spcMeasurement` (history-enabled), `spcUcl`, `spcLcl`, `spcTarget` |
 | Dashboard `mes-platform-quality` | `chart` widget on `spcMeasurement` + UCL/LCL value widgets |
 | BFF `mes_quality_listSpcSamples` | Seed rows from `mes_spc_sample` table |
 
-Create a `QUALITY_RECORD` under `root.platform.mes.quality-records` and apply `quality-record-v1` for defect traceability.
+Create a CUSTOM node under `root.platform.mes.quality-records` and apply `quality-record-v1` for defect traceability.
 
 ---
 
@@ -210,7 +210,7 @@ Seed shift UUID: `dddddddd-dddd-dddd-dddd-dddddddddddd` → OEE ≈ **85%** for 
 
 ## Certification checklist (≤ 30 min) — complete
 
-- [x] Bundle deploy seeds typed `WORK_ORDER` / `OPERATION` / `LOT` / `SHIFT` / `QUALITY_RECORD` (BL-164)
+- [x] Bundle deploy seeds `CUSTOM` work-order, operation, lot, shift, and quality-record nodes (BL-164)
 - [x] Bundle deploy succeeds (`schemaName` = `app_mes_platform` or `app_mes_platform_production`)
 - [x] `mes_platform_listLines` returns `LINE-A01` (ISA-95 path present)
 - [x] `mes_oee_getKpi` returns `oeePct` > 80 for seed shift (BL-165)

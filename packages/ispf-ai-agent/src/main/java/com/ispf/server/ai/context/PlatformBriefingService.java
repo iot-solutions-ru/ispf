@@ -46,9 +46,6 @@ public class PlatformBriefingService {
             ObjectType.CUSTOM,
             ObjectType.FUNCTION,
             ObjectType.REPORT,
-            ObjectType.WORK_ORDER,
-            ObjectType.OPERATION,
-            ObjectType.LOT,
             ObjectType.APPLICATION
     );
 

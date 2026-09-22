@@ -28,15 +28,17 @@ Operator UI: `?mode=operator&app=mes-platform`
 | **Batch** | Статус seed batch; фаза → `react` |
 | **Genealogy** | Трассировка lot `BATCH-LINE-A01-001` |
 
-## Seed-типы (БЛ-164)
+## Seed-объекты (БЛ-164)
 
-| Type | Path |
-|------|------|
-| `WORK_ORDER` | `root.platform.mes.work-orders.wo-line-a01-001` |
-| `OPERATION` | `root.platform.mes.operations.op-assemble-a01` |
-| `LOT` | `root.platform.mes.lots.batch-line-a01-001` |
-| `SHIFT` | `root.platform.mes.shifts.shift-morning-a01` |
-| `QUALITY_RECORD` | `root.platform.mes.quality-records.qr-line-a01-001` |
+Тип платформы — `CUSTOM`. Вид записи задаёт путь каталога.
+
+| Path | ObjectType |
+|------|------------|
+| `root.platform.mes.work-orders.wo-line-a01-001` | `CUSTOM` |
+| `root.platform.mes.operations.op-assemble-a01` | `CUSTOM` |
+| `root.platform.mes.lots.batch-line-a01-001` | `CUSTOM` |
+| `root.platform.mes.shifts.shift-morning-a01` | `CUSTOM` |
+| `root.platform.mes.quality-records.qr-line-a01-001` | `CUSTOM` |
 
 ## Genealogy lite (БЛ-193)
 

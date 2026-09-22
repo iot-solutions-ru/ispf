@@ -463,7 +463,7 @@ public class ObjectManager {
         ensureBootstrapNode("root.platform.queries", ObjectType.QUERIES, null);
         ensureBootstrapNode("root.platform.event-filters", ObjectType.EVENT_FILTERS, null);
         if (bootstrapProperties.isMesCatalogEnabled()) {
-            ensureBootstrapNode("root.platform.mes", ObjectType.MES, null);
+            ensureBootstrapNode("root.platform.mes", ObjectType.CUSTOM, null);
         }
         ensureBootstrapNode(FederationPaths.FEDERATION_ROOT, ObjectType.AGENT, null);
         ensureBootstrapNode("root.tenant", ObjectType.TENANT, null);

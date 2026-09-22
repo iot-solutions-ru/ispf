@@ -33,7 +33,7 @@ class MesPlatformBootstrapTest {
     void ensureCatalog_createsMesFolders() {
         mesPlatformBootstrap.ensureCatalog();
         assertThat(objectManager.tree().findByPath(MesPaths.MES_ROOT)).isPresent();
-        assertThat(objectManager.tree().findByPath(MesPaths.MES_ROOT).orElseThrow().type()).isEqualTo(ObjectType.MES);
+        assertThat(objectManager.tree().findByPath(MesPaths.MES_ROOT).orElseThrow().type()).isEqualTo(ObjectType.CUSTOM);
         assertThat(objectManager.tree().findByPath(MesPaths.WORK_ORDERS)).isPresent();
         assertThat(objectManager.tree().findByPath(MesPaths.LOTS)).isPresent();
         assertThat(objectManager.tree().findByPath(MesPaths.INSTANCES)).isPresent();

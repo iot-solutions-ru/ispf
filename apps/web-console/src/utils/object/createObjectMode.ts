@@ -85,6 +85,21 @@ export function resolveCreateLabelKind(parentPath: string): string {
   if (mode !== "object") {
     return mode;
   }
+  if (parentPath.endsWith(".work-orders")) {
+    return "work-order";
+  }
+  if (parentPath.endsWith(".operations")) {
+    return "operation";
+  }
+  if (parentPath.endsWith(".lots")) {
+    return "lot";
+  }
+  if (parentPath.endsWith(".shifts")) {
+    return "shift";
+  }
+  if (parentPath.endsWith(".quality-records")) {
+    return "quality-record";
+  }
   switch (defaultObjectTypeForParent(parentPath)) {
     case "DEVICE":
       return "device";
@@ -98,16 +113,6 @@ export function resolveCreateLabelKind(parentPath: string): string {
       return "workflow";
     case "BLUEPRINT":
       return "blueprint";
-    case "WORK_ORDER":
-      return "work-order";
-    case "OPERATION":
-      return "operation";
-    case "LOT":
-      return "lot";
-    case "SHIFT":
-      return "shift";
-    case "QUALITY_RECORD":
-      return "quality-record";
     default:
       if (parentPath.endsWith(".instances")) {
         return "instance";
@@ -184,13 +189,6 @@ const CONTAINER_OBJECT_TYPES: ObjectType[] = [
   "APPLICATIONS",
   "OPERATOR_APPS",
   "MIMICS",
-  "MES",
-  "WORK_ORDERS",
-  "OPERATIONS",
-  "LOTS",
-  "SHIFTS",
-  "QUALITY_RECORDS",
-  "MES_INSTANCES",
   "BLUEPRINT",
   "CUSTOM",
 ];
@@ -234,6 +232,9 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
   if (isPlatformCatalogContainer(path)) {
     return true;
   }
+  if (path.startsWith("root.platform.mes.")) {
+    return false;
+  }
 
   if (!objectType || !CONTAINER_OBJECT_TYPES.includes(objectType)) {
     return false;
@@ -275,20 +276,16 @@ export function defaultObjectTypeForParent(parentPath: string): ObjectType {
   if (parentPath.endsWith(".process-programs")) {
     return "PROCESS_PROGRAM";
   }
-  if (parentPath.endsWith(".work-orders")) {
-    return "WORK_ORDER";
-  }
-  if (parentPath.endsWith(".operations")) {
-    return "OPERATION";
-  }
-  if (parentPath.endsWith(".lots")) {
-    return "LOT";
-  }
-  if (parentPath.endsWith(".shifts")) {
-    return "SHIFT";
-  }
-  if (parentPath.endsWith(".quality-records")) {
-    return "QUALITY_RECORD";
+  if (
+    parentPath.endsWith(".work-orders")
+    || parentPath.endsWith(".operations")
+    || parentPath.endsWith(".lots")
+    || parentPath.endsWith(".shifts")
+    || parentPath.endsWith(".quality-records")
+    || parentPath === "root.platform.mes"
+    || (parentPath.endsWith(".instances") && parentPath.includes(".mes."))
+  ) {
+    return "CUSTOM";
   }
   if (
     parentPath.endsWith(".mixin-blueprints")
@@ -317,20 +314,14 @@ export function instanceTypeFilterForParent(parentPath: string): ObjectType | un
   if (parentPath.endsWith(".workflows")) {
     return "WORKFLOW";
   }
-  if (parentPath.endsWith(".work-orders")) {
-    return "WORK_ORDER";
-  }
-  if (parentPath.endsWith(".operations")) {
-    return "OPERATION";
-  }
-  if (parentPath.endsWith(".lots")) {
-    return "LOT";
-  }
-  if (parentPath.endsWith(".shifts")) {
-    return "SHIFT";
-  }
-  if (parentPath.endsWith(".quality-records")) {
-    return "QUALITY_RECORD";
+  if (
+    parentPath.endsWith(".work-orders")
+    || parentPath.endsWith(".operations")
+    || parentPath.endsWith(".lots")
+    || parentPath.endsWith(".shifts")
+    || parentPath.endsWith(".quality-records")
+  ) {
+    return "CUSTOM";
   }
   return undefined;
 }

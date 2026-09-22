@@ -35,11 +35,11 @@ Operator UI: `?mode=operator&app=mes-platform`
 
 | Path | Type |
 |------|------|
-| `root.platform.mes.work-orders.wo-line-a01-001` | `WORK_ORDER` |
-| `root.platform.mes.operations.op-assemble-a01` | `OPERATION` |
-| `root.platform.mes.lots.batch-line-a01-001` | `LOT` |
-| `root.platform.mes.shifts.shift-morning-a01` | `SHIFT` |
-| `root.platform.mes.quality-records.qr-line-a01-001` | `QUALITY_RECORD` |
+| `root.platform.mes.work-orders.wo-line-a01-001` | `CUSTOM` |
+| `root.platform.mes.operations.op-assemble-a01` | `CUSTOM` |
+| `root.platform.mes.lots.batch-line-a01-001` | `CUSTOM` |
+| `root.platform.mes.shifts.shift-morning-a01` | `CUSTOM` |
+| `root.platform.mes.quality-records.qr-line-a01-001` | `CUSTOM` |
 | `...mes.instances.plant-a.areas.assembly.lines.line-a01` | ISA-95 line |
 
 ## Operator dashboards

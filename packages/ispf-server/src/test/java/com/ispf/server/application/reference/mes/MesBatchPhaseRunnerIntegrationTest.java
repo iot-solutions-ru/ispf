@@ -43,7 +43,7 @@ class MesBatchPhaseRunnerIntegrationTest {
 
         mockMvc.perform(get("/api/v1/objects/by-path").param("path", BATCH_PATH))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.type").value("LOT"));
+                .andExpect(jsonPath("$.type").value("CUSTOM"));
 
         mockMvc.perform(get("/api/v1/dashboards/by-path").param("path", BATCH_DASHBOARD))
                 .andExpect(status().isOk())
