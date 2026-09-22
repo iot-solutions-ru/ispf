@@ -6,26 +6,26 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.zigbee.codec.ZigbeeLabSession;
+import com.ispf.driver.zigbee.codec.AshCodec;
+import com.ispf.driver.zigbee.codec.AshSession;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Zigbee ZCL coordinator TCP gateway lab driver — newline JSON over TCP (default port {@code 17754}).
+ * Silicon Labs ASH (EZSP UART) driver over TCP (default port {@code 17754}).
  * <p>
- * Point forms: {@code nwk:0x1234:ep:1:cluster:0x0402:attr:0}, {@code ieee:00124b0001234567}.
- * ZCL attribute points support write via {@link ZigbeeLabSession#writeValue}; IEEE address is read-only.
+ * Not 802.15.4 and not a ZCL stack. Connect sends host RST {@code 1A C0 38 BC 7E};
+ * peer replies with RSTACK. Point forms: {@code version}, {@code reason}.
  * <p>
- * Honesty: ZCL coordinator TCP gateway lab — not 802.15.4 radio / NCP silicon.
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only. Lab ≠ RF.
+ * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class ZigbeeDeviceDriver implements DeviceDriver {
 
-    private static final DataSchema VALUE_SCHEMA = DataSchema.builder("zigbeeValue")
+    private static final DataSchema VALUE_SCHEMA = DataSchema.builder("zigbeeAshValue")
             .field("value", FieldType.DOUBLE)
             .field("kind", FieldType.STRING)
             .field("point", FieldType.STRING)
@@ -33,10 +33,10 @@ public class ZigbeeDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "zigbee",
-            "Zigbee ZCL Coordinator Gateway Lab Driver",
-            "0.1.0",
-            "ZCL coordinator TCP gateway lab — not 802.15.4 radio / NCP;"
-                    + " newline JSON attribute get/set and IEEE poll over TCP",
+            "Zigbee ASH EZSP UART Driver",
+            "1.0.0",
+            "ASH (EZSP UART) over TCP;"
+                    + " not 802.15.4 and not a ZCL stack",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -44,19 +44,24 @@ public class ZigbeeDeviceDriver implements DeviceDriver {
                     "timeoutMs", "3000"
             ),
             null,
-            Set.of("read", "write")
+            Set.of("read")
     );
 
     private DriverObject driverObject;
     private String host = "127.0.0.1";
     private int port = 17754;
     private int timeoutMs = 3000;
-    private ZigbeeLabSession session;
+    private AshSession session;
     private final Map<String, ZigbeePoint> points = new ConcurrentHashMap<>();
 
     @Override
     public DriverMetadata metadata() {
         return METADATA;
+    }
+
+    /** Host RST frame produced by {@link AshCodec#encodeHostReset()}. */
+    public static byte[] hostResetFrame() {
+        return AshCodec.encodeHostReset();
     }
 
     @Override
@@ -81,14 +86,14 @@ public class ZigbeeDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new ZigbeeLabSession(host, port, timeoutMs);
+            session = new AshSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "Zigbee ZCL coordinator gateway lab connected to " + host + ":" + port
-                            + " (not 802.15.4 radio / NCP)");
+                    "Zigbee ASH (EZSP UART) connected to " + host + ":" + port
+                            + " (not 802.15.4 / not ZCL)");
         } catch (IOException e) {
             session = null;
             throw new DriverException(
-                    "Zigbee ZCL gateway lab connect failed for " + host + ":" + port, e);
+                    "Zigbee ASH connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -110,63 +115,37 @@ public class ZigbeeDeviceDriver implements DeviceDriver {
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
         ensureConnected();
         points.clear();
+        AshCodec.AshRstack rstack;
+        try {
+            rstack = session.reset();
+        } catch (IOException e) {
+            throw new DriverException("Zigbee ASH RSTACK read failed", e);
+        }
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             String mapping = entry.getValue() == null || entry.getValue().isBlank()
                     ? entry.getKey() : entry.getValue();
             ZigbeePoint point = ZigbeePoint.parse(mapping);
             points.put(entry.getKey(), point);
-            try {
-                double value = session.readValue(point.wireToken());
-                driverObject.updateVariable(entry.getKey(), toRecord(point, value));
-            } catch (IOException e) {
-                throw new DriverException("Zigbee ZCL gateway lab read failed for " + mapping, e);
-            }
+            double value = point.kind() == ZigbeePoint.Kind.VERSION
+                    ? rstack.version()
+                    : rstack.reason();
+            driverObject.updateVariable(entry.getKey(), toRecord(point, value));
         }
     }
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        ensureConnected();
-        ZigbeePoint point = points.get(pointId);
-        if (point == null) {
-            throw new DriverException("Unknown point: " + pointId + " (read it first)");
-        }
-        if (!point.writable()) {
-            throw new DriverException(
-                    "Zigbee ZCL gateway lab rejects writes for ieee point: " + point.display());
-        }
-        double numeric = extractNumeric(value);
-        try {
-            session.writeValue(point.wireToken(), numeric);
-            driverObject.updateVariable(pointId, toRecord(point, numeric));
-        } catch (IOException e) {
-            throw new DriverException("Zigbee ZCL gateway lab write failed for " + pointId, e);
-        }
+        throw new DriverException(
+                "Zigbee ASH (EZSP UART) is read-only (RSTACK version/reason); point="
+                        + pointId.toLowerCase(Locale.ROOT));
     }
 
     private static DataRecord toRecord(ZigbeePoint point, double value) {
         return DataRecord.single(VALUE_SCHEMA, Map.of(
                 "value", value,
-                "kind", point.kind() == ZigbeePoint.Kind.ZCL_ATTR ? "attr" : "ieee",
+                "kind", point.kind() == ZigbeePoint.Kind.VERSION ? "version" : "reason",
                 "point", point.display()
         ));
-    }
-
-    private static double extractNumeric(DataRecord value) {
-        if (value == null || value.rowCount() == 0) {
-            throw new IllegalArgumentException("Zigbee write requires a value");
-        }
-        Map<String, Object> row = value.firstRow();
-        for (String key : List.of("value", "attr", "raw")) {
-            Object candidate = row.get(key);
-            if (candidate instanceof Number number) {
-                return number.doubleValue();
-            }
-            if (candidate != null) {
-                return Double.parseDouble(String.valueOf(candidate).trim());
-            }
-        }
-        throw new IllegalArgumentException("Zigbee write requires numeric value/attr/raw");
     }
 
     private void ensureConnected() throws DriverException {

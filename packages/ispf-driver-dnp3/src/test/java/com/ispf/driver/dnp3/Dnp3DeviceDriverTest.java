@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -93,7 +94,7 @@ class Dnp3DeviceDriverTest {
                         Map.of("value", 1.0)
                 ))
         );
-        assertTrue(ex.getMessage().toLowerCase().contains("not implemented"));
+        assertTrue(ex.getMessage().toLowerCase(Locale.ROOT).contains("not implemented"));
     }
 
     private static final class StubDriverObject implements DeviceDriver.DriverObject {

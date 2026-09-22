@@ -3,7 +3,7 @@ package com.ispf.driver.openadr;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Minimal OpenADR 2.0b distribute-event subset parser (XML or JSON). Clean-room. */
+/** Minimal OpenADR 2.0b distribute-event subset parser (XML). Clean-room. */
 final class OpenadrEventPayload {
 
     private static final Pattern EVENT_ID = Pattern.compile(
@@ -12,12 +12,6 @@ final class OpenadrEventPayload {
             "<(?:[\\w.-]+:)?signalName>([^<]*)</(?:[\\w.-]+:)?signalName>", Pattern.CASE_INSENSITIVE);
     private static final Pattern CURRENT_VALUE = Pattern.compile(
             "<(?:[\\w.-]+:)?currentValue>([^<]*)</(?:[\\w.-]+:)?currentValue>", Pattern.CASE_INSENSITIVE);
-    private static final Pattern JSON_EVENT_ID = Pattern.compile(
-            "\"eventID\"\\s*:\\s*\"([^\"]*)\"", Pattern.CASE_INSENSITIVE);
-    private static final Pattern JSON_SIGNAL_NAME = Pattern.compile(
-            "\"signalName\"\\s*:\\s*\"([^\"]*)\"", Pattern.CASE_INSENSITIVE);
-    private static final Pattern JSON_CURRENT_VALUE = Pattern.compile(
-            "\"currentValue\"\\s*:\\s*\"?([^,\"}\\s]+)\"?", Pattern.CASE_INSENSITIVE);
 
     final String eventId;
     final String signalName;
@@ -38,9 +32,6 @@ final class OpenadrEventPayload {
         if (raw.isEmpty()) {
             return new OpenadrEventPayload("", "", "", "", false);
         }
-        if (raw.startsWith("{") || raw.startsWith("[")) {
-            return parseJson(raw);
-        }
         return parseXml(raw);
     }
 
@@ -48,14 +39,6 @@ final class OpenadrEventPayload {
         String eventId = first(EVENT_ID, raw);
         String signalName = first(SIGNAL_NAME, raw);
         String signalLevel = first(CURRENT_VALUE, raw);
-        boolean active = !eventId.isEmpty();
-        return new OpenadrEventPayload(eventId, signalName, signalLevel, raw, active);
-    }
-
-    private static OpenadrEventPayload parseJson(String raw) {
-        String eventId = first(JSON_EVENT_ID, raw);
-        String signalName = first(JSON_SIGNAL_NAME, raw);
-        String signalLevel = first(JSON_CURRENT_VALUE, raw);
         boolean active = !eventId.isEmpty();
         return new OpenadrEventPayload(eventId, signalName, signalLevel, raw, active);
     }
