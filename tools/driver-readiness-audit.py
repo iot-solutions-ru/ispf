@@ -54,8 +54,8 @@ WRITE_IMPL_RE = re.compile(
     re.IGNORECASE,
 )
 WRITE_STUB_MSG_RE = re.compile(
-    r"not implemented|unsupported operation|write not supported|"
-    r"\bis read-only\b|read-only driver|driver is read-only|read-only in v\d|"
+    r"not implemented|unsupported operation|write not supported|rejects writes|"
+    r"\bis read-only\b|\bread only\b|read-only driver|driver is read-only|read-only in v\d|"
     r"read-only stub|readout-only|get-only|poll-only|writepoint is not supported",
     re.IGNORECASE,
 )
@@ -205,7 +205,10 @@ def detect_write_stub(window: str) -> bool:
         return False
     if WRITE_IMPL_RE.search(window):
         return False
-    for msg in re.findall(r'DriverException\(\s*"([^"]*)"', window):
+    for msg in re.findall(
+        r"(?:DriverException|DriverUnsupportedOperationException)\(\s*\"([^\"]*)\"",
+        window,
+    ):
         if WRITE_STUB_MSG_RE.search(msg):
             return True
     if re.search(r"throw new UnsupportedOperationException", window):
