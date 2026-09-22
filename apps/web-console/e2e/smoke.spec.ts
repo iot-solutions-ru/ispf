@@ -233,18 +233,32 @@ test.describe("operator deep link", () => {
 });
 
 test.describe("system metrics", () => {
-  test("shows platform license card on System → Metrics", async ({ page }) => {
+  test("shows platform license and report export health on System → Metrics", async ({ page }) => {
     await mockAuthenticatedApi(page);
     await seedAuthSession(page);
     await page.goto("/?mode=admin");
 
+    const reportHealth = page.waitForResponse(
+      (response) => response.url().includes("/api/v1/platform/reports/health") && response.ok(),
+      { timeout: 15_000 },
+    );
     await openSystemMetricsTab(page);
+    const healthResponse = await reportHealth;
+    expect(new URL(healthResponse.url()).pathname).toBe("/api/v1/platform/reports/health");
+
     await expect(page.getByRole("heading", { name: "Platform license" })).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByText("e2e-installation-id")).toBeVisible();
     await expect(page.getByRole("cell", { name: "community", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Runtime" })).toBeVisible();
+
+    const reportCard = page.locator(".yarg-health-card");
+    await expect(reportCard.getByRole("heading", { name: "Report templates & LibreOffice" })).toBeVisible();
+    await expect(reportCard.getByText("Failed to load report export health")).toHaveCount(0);
+    await expect(reportCard.getByText("Not found", { exact: true })).toBeVisible();
+    await expect(reportCard.getByRole("cell", { name: "60", exact: true })).toBeVisible();
+    await expect(reportCard.getByText("e2e mock", { exact: true })).toBeVisible();
   });
 });
 

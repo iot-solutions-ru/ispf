@@ -5,7 +5,6 @@ export interface YargHealth {
   configuredPath: string | null;
   resolvedPath: string | null;
   timeoutSeconds: number;
-  ports: number[];
   pdfHint: string;
 }
 
