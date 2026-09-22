@@ -688,7 +688,11 @@ function AppShell() {
         onOpenWorkspace={(tab) => setWorkspaceTab(tab)}
         onCreate={
           canConfigure
-            ? () => setCreateParentPath(selectedPath || "root.platform.devices")
+            ? () => {
+                setCreatePresetType(null);
+                setCreateParentPath(selectedPath || "root.platform.devices");
+                setShowCreate(true);
+              }
             : undefined
         }
       />
@@ -889,7 +893,11 @@ function AppShell() {
                 isPlatformAdmin={isAdmin}
                 canManageTenantSecurity={canManageSecurity}
                 onCreateApplication={openCreateApplication}
-                onCreateInFolder={(parentPath) => setCreateParentPath(parentPath)}
+                onCreateInFolder={(parentPath) => {
+                  setCreatePresetType(null);
+                  setCreateParentPath(parentPath);
+                  setShowCreate(true);
+                }}
                 showBackToTree={isMobileLayout}
                 onBackToTree={() => setMobileExplorerPane("tree")}
               />
