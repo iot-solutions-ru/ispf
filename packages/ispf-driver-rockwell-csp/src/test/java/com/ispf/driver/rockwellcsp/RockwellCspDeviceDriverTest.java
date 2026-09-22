@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -53,15 +54,27 @@ class RockwellCspDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionReadWriteLabSubset() {
+    void metadataIsBetaReadWriteLabSubset() {
         RockwellCspDeviceDriver underTest = new RockwellCspDeviceDriver();
         assertEquals("rockwell-csp", underTest.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, underTest.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, underTest.metadata().maturity());
         assertEquals(Set.of("read", "write"), underTest.metadata().capabilities());
         assertEquals("2222", underTest.metadata().configurationSchema().get("port"));
         String description = underTest.metadata().description().toLowerCase(Locale.ROOT);
         assertTrue(description.contains("lab"));
         assertTrue(description.contains("not ethernet/ip") || description.contains("not ether"));
+    }
+
+    @Test
+    void lockedLabReadRequestBytes() {
+        // The checksum span is a lab choice, not a verified vendor frame.
+        byte[] expected = new byte[] {
+                0x43, 0x53, 0x01, 0x01, 0x00, 0x01, 0x00, 0x06,
+                0x07, (byte) 0x89, 0x00, 0x00, 0x00, 0x02
+        };
+        assertArrayEquals(
+                expected,
+                RockwellCspFrame.buildTypedRead(1, RockwellCspPoint.parse("N7:0")));
     }
 
     @Test

@@ -26,16 +26,21 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake UDP loopback tests for the OPC UA PubSub UADP-lab subset.
- * Certifies the lab dialect only — not full OPC UA PubSub / MQTT / broker / security.
+ * Fake UDP loopback tests for the OPC UA PubSub UADP-lab NetworkMessage header subset.
+ * Certifies the lab dialect only — not a full OPC UA PubSub DataSetMessage or security stack.
  */
 class OpcuaPubsubDeviceDriverTest {
+
+    /** Handwritten UADP NetworkMessage header — do not build via encoder. */
+    private static final byte[] EXPECTED_UADP_HEADER = {(byte) 0x11, (byte) 0x01};
 
     private OpcuaPubsubDeviceDriver driver;
     private FakeUadpPublisher publisher;
@@ -53,18 +58,27 @@ class OpcuaPubsubDeviceDriverTest {
     }
 
     @Test
-    void metadataDescribesUadpUdpLabNotFullPubsub() {
+    void metadataIsBetaLabUadpNotFullDatasetMessage() {
         driver = new OpcuaPubsubDeviceDriver();
         assertEquals("opcua-pubsub", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("4840", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("uadp") || description.contains("udp"));
-        assertTrue(description.contains("not full") || description.contains("not"));
-        assertTrue(description.contains("mqtt") || description.contains("broker")
-                || description.contains("security"));
-        assertTrue(!description.contains("stub") && !description.contains("placeholder"));
+        assertTrue(description.contains("lab"));
+        assertTrue(description.contains("uadp") || description.contains("publisher"));
+        assertTrue(description.contains("not") && (description.contains("datasetmessage")
+                || description.contains("security")
+                || description.contains("pubsub")));
+    }
+
+    @Test
+    void encodeStartsWithHandwrittenUadpNetworkMessageHeader() {
+        byte[] frame = OpcuaPubsubLabCodec.encodeGet("ds:1");
+        assertTrue(frame.length >= 2);
+        assertArrayEquals(EXPECTED_UADP_HEADER, Arrays.copyOf(frame, 2));
+        assertEquals((byte) 0x11, frame[0]);
+        assertEquals((byte) 0x01, frame[1]);
     }
 
     @Test
@@ -101,6 +115,7 @@ class OpcuaPubsubDeviceDriverTest {
         assertEquals(21.5, (Double) object.variables.get("ds").firstRow().get("value"), 0.001);
         assertEquals(42.0, (Double) object.variables.get("f0").firstRow().get("value"), 0.001);
         assertEquals(23.75, (Double) object.variables.get("temp").firstRow().get("value"), 0.001);
+        assertArrayEquals(EXPECTED_UADP_HEADER, Arrays.copyOf(publisher.lastRequestHeader(), 2));
 
         driver.writePoint("temp", DataRecord.single(
                 DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
@@ -114,6 +129,7 @@ class OpcuaPubsubDeviceDriverTest {
     @Test
     void codecRoundTripFloatDoubleString() {
         byte[] floatFrame = OpcuaPubsubLabCodec.encodeSampleFloat("field:0", 1.25f);
+        assertArrayEquals(EXPECTED_UADP_HEADER, Arrays.copyOf(floatFrame, 2));
         OpcuaPubsubLabCodec.LabFrame decodedFloat = OpcuaPubsubLabCodec.decode(floatFrame);
         assertEquals(OpcuaPubsubLabCodec.MSG_SAMPLE, decodedFloat.messageType());
         assertEquals(1.25, OpcuaPubsubLabCodec.decodeNumeric(decodedFloat), 0.001);
@@ -145,6 +161,7 @@ class OpcuaPubsubDeviceDriverTest {
         private final Map<String, Double> values = new ConcurrentHashMap<>();
         private final CountDownLatch ready = new CountDownLatch(1);
         private final CountDownLatch writeSeen = new CountDownLatch(1);
+        private final AtomicReference<byte[]> lastRequest = new AtomicReference<>();
 
         FakeUadpPublisher() throws IOException {
             socket = new DatagramSocket(new InetSocketAddress("127.0.0.1", 0));
@@ -160,6 +177,11 @@ class OpcuaPubsubDeviceDriverTest {
 
         double get(String key) {
             return values.getOrDefault(normalize(key), 0.0);
+        }
+
+        byte[] lastRequestHeader() {
+            byte[] frame = lastRequest.get();
+            return frame == null ? new byte[0] : Arrays.copyOf(frame, Math.min(2, frame.length));
         }
 
         void start() {
@@ -184,6 +206,7 @@ class OpcuaPubsubDeviceDriverTest {
                     DatagramPacket packet = new DatagramPacket(buf, buf.length);
                     socket.receive(packet);
                     byte[] frame = Arrays.copyOf(packet.getData(), packet.getLength());
+                    lastRequest.set(frame);
                     OpcuaPubsubLabCodec.LabFrame parsed = OpcuaPubsubLabCodec.decode(frame);
                     String key = normalize(parsed.key());
                     byte[] response = null;

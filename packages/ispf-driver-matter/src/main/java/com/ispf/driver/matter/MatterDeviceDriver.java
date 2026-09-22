@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.matter.codec.MatterLabSession;
 
@@ -15,13 +16,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Matter/CHIP controller TCP gateway lab driver — newline JSON over TCP (default port {@code 5540}).
+ * Matter controller TCP gateway lab driver — newline JSON over TCP (default port {@code 5540}).
  * <p>
  * Point forms: {@code node:1:ep:1:cluster:OnOff:attr:OnOff}, {@code node:1:cmd:On}.
  * Attribute and command points support write via {@link MatterLabSession#writeValue}.
  * <p>
- * Honesty: Matter/CHIP controller gateway lab — not full CSA Matter / CHIP SDK / Thread/BLE
- * commissioning stack. Clean-room ISPF code, Apache-2.0 — JDK sockets only. Lab ≠ field.
+ * Honesty: this is a TCP controller gateway lab dialect only — not CSA Matter operational
+ * messages, not the CHIP SDK, and not Thread/BLE commissioning. Clean-room ISPF code,
+ * Apache-2.0 — JDK sockets only.
  */
 public class MatterDeviceDriver implements DeviceDriver {
 
@@ -35,15 +37,15 @@ public class MatterDeviceDriver implements DeviceDriver {
             "matter",
             "Matter Controller Gateway Lab Driver",
             "0.1.0",
-            "Matter/CHIP controller gateway lab — newline JSON attr/cmd over TCP 5540;"
-                    + " not full CSA Matter / CHIP SDK / Thread/BLE commissioning stack",
+            "Matter TCP gateway lab (newline JSON attr/cmd on 5540);"
+                    + " not CSA Matter operational messages / CHIP SDK / Thread-BLE commissioning",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "5540",
                     "timeoutMs", "3000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

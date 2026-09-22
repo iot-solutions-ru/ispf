@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,15 +53,30 @@ class PlcnextDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionReadWriteRscLab() {
+    void metadataIsBetaReadWriteRscLab() {
         PlcnextDeviceDriver underTest = new PlcnextDeviceDriver();
         assertEquals("plcnext", underTest.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, underTest.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, underTest.metadata().maturity());
         assertEquals(Set.of("read", "write"), underTest.metadata().capabilities());
         assertEquals("41100", underTest.metadata().configurationSchema().get("port"));
         String description = underTest.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("rsc-lab") || description.contains("http/json"));
-        assertTrue(description.contains("not full"));
+        assertTrue(description.contains("lab"));
+        assertTrue(description.contains("rsc") || description.contains("http/json"));
+        assertTrue(description.contains("not") && description.contains("grpc"));
+    }
+
+    @Test
+    void labGatewayPutBodyMatchesHandwrittenOctets() {
+        // These bytes are a lab gateway — not PLCnext RSC binary/gRPC.
+        byte[] expected = new byte[] {
+                0x7B, 0x22, 0x70, 0x61, 0x74, 0x68, 0x22, 0x3A, 0x22, 0x41, 0x72, 0x70,
+                0x2E, 0x50, 0x6C, 0x63, 0x2E, 0x45, 0x63, 0x6C, 0x72, 0x2F, 0x4D, 0x61,
+                0x69, 0x6E, 0x49, 0x6E, 0x73, 0x74, 0x61, 0x6E, 0x63, 0x65, 0x2E, 0x78,
+                0x4D, 0x6F, 0x74, 0x6F, 0x72, 0x22, 0x2C, 0x22, 0x76, 0x61, 0x6C, 0x75,
+                0x65, 0x22, 0x3A, 0x22, 0x31, 0x22, 0x7D
+        };
+        assertArrayEquals(expected,
+                PlcnextJson.object(SYMBOL, "1").getBytes(StandardCharsets.UTF_8));
     }
 
     @Test

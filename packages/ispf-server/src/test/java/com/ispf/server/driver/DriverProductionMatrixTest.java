@@ -296,9 +296,27 @@ class DriverProductionMatrixTest {
     }
 
     /** BETA although the mechanical criterion passes — the reason is the value. */
-    private static final Map<String, String> BETA_BY_DECISION = Map.of(
-            "opc-da", "connectivity shell + parser tests, not a full OPC DA (DCOM) stack (BL-191)",
-            "opc-bridge", "mapping shell over opc-da; same DCOM gap (BL-191)"
+    private static final Map<String, String> BETA_BY_DECISION = Map.ofEntries(
+            Map.entry("opc-da", "connectivity shell + parser tests, not a full OPC DA (DCOM) stack (BL-191)"),
+            Map.entry("opc-bridge", "mapping shell over opc-da; same DCOM gap (BL-191)"),
+            Map.entry("grpc", "lab HTTP/2 preface and empty SETTINGS; not HPACK or protobuf RPC"),
+            Map.entry("pulsar", "lab binary header plus BaseCommand CONNECT; not a protobuf broker"),
+            Map.entry("opcua-pubsub", "lab UADP version/publisher header; not a DataSetMessage stack"),
+            Map.entry("ge-srtp", "lab SRTP mailbox subset; not a full CPE/SRTP session"),
+            Map.entry("rockwell-csp", "lab CSP/PCCC subset on TCP 2222; not EtherNet/IP"),
+            Map.entry("ansi-c12", "lab ANSI C12 subset; not a verified C12.18/C12.22 logon"),
+            Map.entry("codesys", "lab CODESYS gateway; not the CODESYS network protocol"),
+            Map.entry("plcnext", "lab PLCnext HTTP variable gateway; not RSC binary or gRPC"),
+            Map.entry("fuji-sph", "lab Fuji host-link subset; checksum span is not a verified MICREX frame"),
+            Map.entry("hitachi-hidic", "lab Hitachi host-link subset; checksum span is not a verified HIDIC frame"),
+            Map.entry("toshiba-t-series", "lab Toshiba host-link subset; not a verified computer-link frame"),
+            Map.entry("lonworks", "lab LonWorks gateway; not LonTalk"),
+            Map.entry("opc-ae", "lab OPC AE gateway; not OPC Classic DCOM A&E"),
+            Map.entry("opc-hda", "lab OPC HDA gateway; not OPC Classic DCOM HDA"),
+            Map.entry("eebus", "lab EEBus gateway; not SHIP TLS or SPINE"),
+            Map.entry("isa100", "lab ISA100 gateway; not ISA100.11a"),
+            Map.entry("fanuc-focas", "lab FANUC gateway; not the FOCAS library"),
+            Map.entry("matter", "lab Matter gateway; not a CSA Matter operational session")
     );
 
     private static Path repoRoot() {

@@ -5,26 +5,43 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.LinkedHashMap;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Lab <strong>gRPC-JSON / gRPC-Web style</strong> HTTP POST driver (driverId {@code grpc}).
+ * gRPC-shaped TCP driver ({@code grpc}) — lab HTTP/2 connection preface and one empty
+ * SETTINGS frame, then length-prefixed lab payloads on the same socket.
  * <p>
- * This is <strong>not</strong> wire-compatible gRPC: no HTTP/2 framing, no protobuf binary codec,
- * no gRPC status trailers. Unary calls map to {@code POST /{Service}/{Method}} with JSON
- * bodies for CI loopback only. JDK-only Apache-2.0 clean-room — does not pull grpc-java.
+ * This is <strong>not</strong> HPACK and <strong>not</strong> a protobuf RPC stack —
+ * no HEADERS/DATA frames for unary calls, no trailers, no grpc-java. JDK sockets,
+ * Apache-2.0 clean-room.
  */
 public class GrpcJsonDeviceDriver implements DeviceDriver {
+
+    /** HTTP/2 client connection preface + empty SETTINGS (length 0, type 4, flags 0, stream 0). */
+    static final byte[] HTTP2_PREFACE_AND_SETTINGS = {
+            0x50, 0x52, 0x49, 0x20, 0x2A, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2F, 0x32, 0x2E, 0x30, 0x0D, 0x0A,
+            0x0D, 0x0A, 0x53, 0x4D, 0x0D, 0x0A, 0x0D, 0x0A,
+            0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+
+    /** Empty SETTINGS with ACK flag (flags 0x01). */
+    static final byte[] HTTP2_SETTINGS_ACK = {
+            0x00, 0x00, 0x00, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00
+    };
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("grpcJsonValue")
             .field("value", FieldType.STRING)
@@ -34,30 +51,31 @@ public class GrpcJsonDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "grpc",
-            "gRPC-JSON Lab Driver",
-            "0.1.0",
-            "Lab gRPC-JSON HTTP POST mapping (NOT wire-compatible gRPC; CI unary JSON-over-HTTP)",
+            "gRPC HTTP/2 Lab Driver",
+            "0.2.0",
+            "lab HTTP/2 preface and empty SETTINGS; not HPACK and not a protobuf RPC",
             "ISPF",
             Map.of(
-                    "baseUrl", "http://127.0.0.1:50051",
+                    "host", "127.0.0.1",
+                    "port", "50051",
                     "timeoutMs", "5000",
                     "pollIntervalMs", "10000",
-                    "requestName", "name",
                     "defaultName", "world"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 
     private DriverObject driverObject;
-    private HttpClient client;
-    private String baseUrl = "http://127.0.0.1:50051";
-    private long timeoutMs = 5000;
-    private String requestName = "name";
+    private String host = "127.0.0.1";
+    private int port = 50051;
+    private int timeoutMs = 5000;
     private String defaultName = "world";
+    private Socket socket;
+    private InputStream in;
+    private OutputStream out;
     private final Map<String, GrpcJsonPoint> points = new ConcurrentHashMap<>();
     private final Map<String, String> lastRequestNames = new ConcurrentHashMap<>();
-    private volatile boolean connected;
 
     @Override
     public DriverMetadata metadata() {
@@ -75,40 +93,86 @@ public class GrpcJsonDeviceDriver implements DeviceDriver {
             return;
         }
         switch (key) {
-            case "baseUrl" -> baseUrl = trimTrailingSlash(value.trim());
-            case "timeoutMs" -> timeoutMs = Long.parseLong(value.trim());
-            case "requestName" -> requestName = value.trim();
+            case "host" -> host = value.trim();
+            case "port" -> port = Integer.parseInt(value.trim());
+            case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
             case "defaultName" -> defaultName = value.trim();
+            case "baseUrl" -> applyBaseUrl(value.trim());
             default -> { }
         }
     }
 
-    private static String trimTrailingSlash(String url) {
-        if (url.endsWith("/") && url.length() > 1) {
-            return url.substring(0, url.length() - 1);
+    /** Accept legacy baseUrl=http://host:port for older configs. */
+    private void applyBaseUrl(String baseUrl) {
+        String trimmed = baseUrl;
+        if (trimmed.startsWith("http://")) {
+            trimmed = trimmed.substring("http://".length());
+        } else if (trimmed.startsWith("https://")) {
+            trimmed = trimmed.substring("https://".length());
         }
-        return url;
+        int slash = trimmed.indexOf('/');
+        if (slash >= 0) {
+            trimmed = trimmed.substring(0, slash);
+        }
+        int colon = trimmed.lastIndexOf(':');
+        if (colon > 0) {
+            host = trimmed.substring(0, colon);
+            port = Integer.parseInt(trimmed.substring(colon + 1));
+        } else if (!trimmed.isEmpty()) {
+            host = trimmed;
+        }
     }
 
     @Override
     public void connect() throws DriverException {
-        client = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(timeoutMs)).build();
-        connected = true;
-        driverObject.log(DriverLogLevel.INFO,
-                "gRPC-JSON lab client ready (baseUrl=" + baseUrl + "; NOT wire gRPC)");
+        disconnect();
+        try {
+            Socket next = new Socket();
+            next.connect(new InetSocketAddress(host, port), timeoutMs);
+            next.setTcpNoDelay(true);
+            next.setSoTimeout(timeoutMs);
+            InputStream nextIn = next.getInputStream();
+            OutputStream nextOut = next.getOutputStream();
+            nextOut.write(HTTP2_PREFACE_AND_SETTINGS);
+            nextOut.flush();
+            byte[] ack = readFully(nextIn, HTTP2_SETTINGS_ACK.length);
+            if (!Arrays.equals(HTTP2_SETTINGS_ACK, ack)) {
+                next.close();
+                throw new DriverException("gRPC lab connect failed: SETTINGS ACK mismatch");
+            }
+            socket = next;
+            in = nextIn;
+            out = nextOut;
+            driverObject.log(DriverLogLevel.INFO,
+                    "gRPC lab HTTP/2 preface connected to " + host + ":" + port
+                            + " (not HPACK / not protobuf RPC)");
+        } catch (DriverException e) {
+            throw e;
+        } catch (IOException e) {
+            disconnect();
+            throw new DriverException("gRPC lab connect failed for " + host + ":" + port, e);
+        }
     }
 
     @Override
     public void disconnect() {
-        connected = false;
-        client = null;
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (IOException ignored) {
+                // best-effort
+            }
+        }
+        socket = null;
+        in = null;
+        out = null;
         points.clear();
         lastRequestNames.clear();
     }
 
     @Override
     public boolean isConnected() {
-        return connected && client != null;
+        return socket != null && socket.isConnected() && !socket.isClosed();
     }
 
     @Override
@@ -140,35 +204,58 @@ public class GrpcJsonDeviceDriver implements DeviceDriver {
     }
 
     private DataRecord invoke(GrpcJsonPoint point, String name) throws DriverException {
-        Map<String, Object> request = new LinkedHashMap<>();
-        request.put(requestName, name);
-        String body = GrpcJson.toJsonObject(request);
+        // Length-prefixed lab request on the same socket (not HPACK / not protobuf RPC).
+        String request = point.serviceMethod() + "\n" + name;
         try {
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(baseUrl + point.httpPath()))
-                    .timeout(Duration.ofMillis(timeoutMs))
-                    .header("Content-Type", "application/json")
-                    .header("Accept", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
-                    .build();
-            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new DriverException("gRPC-JSON call failed: HTTP " + response.statusCode());
-            }
-            Object parsed = GrpcJson.parse(response.body() == null ? "" : response.body());
+            writeLengthPrefixed(request.getBytes(StandardCharsets.UTF_8));
+            byte[] responseBytes = readLengthPrefixed();
+            String response = new String(responseBytes, StandardCharsets.UTF_8);
+            Object parsed = lookLikeJson(response) ? GrpcJson.parse(response) : response;
             String value = point.hasField()
                     ? GrpcJson.extractField(parsed, point.field())
                     : GrpcJson.stringify(parsed);
             return DataRecord.single(VALUE_SCHEMA, Map.of(
                     "value", value == null ? "" : value,
                     "method", point.serviceMethod(),
-                    "statusCode", response.statusCode()
+                    "statusCode", 200
             ));
-        } catch (DriverException e) {
-            throw e;
         } catch (Exception e) {
-            throw new DriverException("gRPC-JSON call failed for " + point.serviceMethod(), e);
+            throw new DriverException("gRPC lab call failed for " + point.serviceMethod(), e);
         }
+    }
+
+    private static boolean lookLikeJson(String text) {
+        String trimmed = text == null ? "" : text.trim();
+        return trimmed.startsWith("{") || trimmed.startsWith("[");
+    }
+
+    private void writeLengthPrefixed(byte[] payload) throws IOException {
+        if (payload.length > 0xFFFF) {
+            throw new IOException("gRPC lab payload too long");
+        }
+        out.write((payload.length >> 8) & 0xFF);
+        out.write(payload.length & 0xFF);
+        out.write(payload);
+        out.flush();
+    }
+
+    private byte[] readLengthPrefixed() throws IOException {
+        byte[] header = readFully(in, 2);
+        int length = ((header[0] & 0xFF) << 8) | (header[1] & 0xFF);
+        return readFully(in, length);
+    }
+
+    static byte[] readFully(InputStream in, int length) throws IOException {
+        byte[] buf = new byte[length];
+        int offset = 0;
+        while (offset < length) {
+            int n = in.read(buf, offset, length - offset);
+            if (n < 0) {
+                throw new EOFException("EOF reading gRPC lab bytes, need " + length + " got " + offset);
+            }
+            offset += n;
+        }
+        return buf;
     }
 
     private static String extractWriteValue(DataRecord value) throws DriverException {
@@ -176,16 +263,12 @@ public class GrpcJsonDeviceDriver implements DeviceDriver {
             throw new DriverException("gRPC-JSON write requires a non-empty DataRecord");
         }
         Map<String, Object> row = value.firstRow();
-        Object raw = row.get("value");
-        if (raw == null) {
-            raw = row.get("name");
+        for (String key : List.of("value", "name", "raw")) {
+            Object raw = row.get(key);
+            if (raw != null) {
+                return String.valueOf(raw);
+            }
         }
-        if (raw == null) {
-            raw = row.get("raw");
-        }
-        if (raw == null) {
-            throw new DriverException("gRPC-JSON write requires value, name, or raw field");
-        }
-        return String.valueOf(raw);
+        throw new DriverException("gRPC-JSON write requires value, name, or raw field");
     }
 }

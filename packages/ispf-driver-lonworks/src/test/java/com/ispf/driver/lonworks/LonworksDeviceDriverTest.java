@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -57,12 +58,21 @@ class LonworksDeviceDriverTest {
     void metadataDescribesGatewayLabNotNativeLontalk() {
         driver = new LonworksDeviceDriver();
         assertEquals("lonworks", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("lab") || description.contains("gateway"));
-        assertTrue(description.contains("not native") || description.contains("not echelon"));
+        assertTrue(description.contains("lab"));
+        assertTrue(description.contains("lontalk"));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
+    }
+
+    @Test
+    void labGatewayGetRequestOctetsAreStable() {
+        // Lab gateway ASCII line — not native LonTalk.
+        byte[] expected = new byte[] {
+                0x47, 0x45, 0x54, 0x20, 0x6E, 0x76, 0x69, 0x54, 0x65, 0x6D, 0x70, 0x0A
+        };
+        assertArrayEquals(expected, LonworksLabCodec.encodeGetBytes("nviTemp"));
     }
 
     @Test

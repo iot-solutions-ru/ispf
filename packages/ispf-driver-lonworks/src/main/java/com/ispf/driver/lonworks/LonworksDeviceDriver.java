@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.lonworks.codec.LonworksLabSession;
 
@@ -15,11 +16,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * LonWorks LonTalk-IP / LON-over-TCP gateway lab driver — ASCII GET/SET over TCP (not native TP).
+ * LonWorks LonTalk-IP / LON-over-TCP gateway lab driver — ASCII GET/SET over TCP.
  * <p>
  * Point forms: {@code nviTemp}, {@code nvoSetpoint}, {@code nvi:temp}, {@code nv:1}.
- * Speaks to a LonTalk-IP gateway lab on {@code host:port} (default 1628). Honesty: gateway lab
- * only — not a native twisted-pair LonTalk master and not an Echelon/Adesto stack.
+ * Speaks to a LonTalk-IP gateway lab on {@code host:port} (default 1628). Honesty: this is a
+ * gateway lab dialect only — not native LonTalk twisted-pair and not an Echelon/Adesto stack.
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class LonworksDeviceDriver implements DeviceDriver {
@@ -33,15 +34,15 @@ public class LonworksDeviceDriver implements DeviceDriver {
             "lonworks",
             "LonWorks LonTalk-IP Gateway Lab Driver",
             "0.1.0",
-            "LonWorks LonTalk-IP / LON-over-TCP gateway lab: ASCII GET/SET network variables;"
-                    + " not native twisted-pair LonTalk master, not Echelon/Adesto stack",
+            "LonWorks LonTalk-IP gateway lab (ASCII GET/SET);"
+                    + " not native LonTalk twisted-pair master, not Echelon/Adesto stack",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "1628",
                     "timeoutMs", "3000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

@@ -48,9 +48,17 @@ public final class MatterLabSession implements AutoCloseable {
     }
 
     public double readValue(String point) throws IOException {
-        String request = "{\"op\":\"get\",\"point\":\"" + jsonEscape(point) + "\"}";
-        String response = transact(request);
+        String response = transact(getRequest(point));
         return parseValue(response);
+    }
+
+    /** Newline-terminated get line actually written by {@link #readValue}. */
+    public static byte[] getLineBytes(String point) {
+        return (getRequest(point) + "\n").getBytes(StandardCharsets.US_ASCII);
+    }
+
+    static String getRequest(String point) {
+        return "{\"op\":\"get\",\"point\":\"" + jsonEscape(point) + "\"}";
     }
 
     public void writeValue(String point, double value) throws IOException {

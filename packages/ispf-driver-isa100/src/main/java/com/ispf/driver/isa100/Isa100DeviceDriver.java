@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.isa100.codec.Isa100LabSession;
 
@@ -20,8 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Point forms: {@code pv}, {@code tag:FI-101}, {@code device:1/pv}, {@code /devices/1/pv}.
  * {@code writePoint} calls {@code session.writeValue(...)}.
  * <p>
- * Honesty: gateway lab — not ISA100.11a RF / Wireless Compliance Institute stack.
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
+ * Honesty: this is a TCP gateway lab dialect only — not ISA100.11a RF and not a
+ * Wireless Compliance Institute stack. Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class Isa100DeviceDriver implements DeviceDriver {
 
@@ -34,7 +35,7 @@ public class Isa100DeviceDriver implements DeviceDriver {
             "isa100",
             "ISA100 Gateway Lab Driver",
             "0.1.0",
-            "ISA100 gateway ASCII/JSON lab: TCP GET/SET on 4840;"
+            "ISA100 gateway ASCII/JSON lab over TCP 4840;"
                     + " not ISA100.11a RF / Wireless Compliance Institute stack",
             "ISPF",
             Map.of(
@@ -42,7 +43,7 @@ public class Isa100DeviceDriver implements DeviceDriver {
                     "port", "4840",
                     "timeoutMs", "3000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

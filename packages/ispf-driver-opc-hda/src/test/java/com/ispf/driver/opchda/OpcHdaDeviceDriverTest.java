@@ -31,13 +31,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Fake TCP loopback tests for the OPC HDA HTTP/JSON gateway lab.
- * Certifies the lab dialect only — not OPC Classic HDA / DCOM.
+ * Certifies the lab dialect only — not OPC Classic DCOM HDA.
  */
 class OpcHdaDeviceDriverTest {
 
@@ -60,14 +61,27 @@ class OpcHdaDeviceDriverTest {
     void metadataDescribesHdaGatewayLabNotClassicDcom() {
         driver = new OpcHdaDeviceDriver();
         assertEquals("opc-hda", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("48081", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("hda") && description.contains("lab"));
+        assertTrue(description.contains("lab"));
+        assertTrue(description.contains("hda"));
         assertTrue(description.contains("not") && (description.contains("dcom")
                 || description.contains("classic")));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
+    }
+
+    @Test
+    void labGatewayGetItemRequestMatchesHandwrittenOctets() {
+        // These bytes are a lab gateway — not OPC Classic DCOM HDA.
+        byte[] expected = new byte[] {
+                0x7B, 0x22, 0x6F, 0x70, 0x22, 0x3A, 0x22, 0x67, 0x65, 0x74, 0x22, 0x2C,
+                0x22, 0x6B, 0x69, 0x6E, 0x64, 0x22, 0x3A, 0x22, 0x69, 0x74, 0x65, 0x6D,
+                0x22, 0x2C, 0x22, 0x6E, 0x61, 0x6D, 0x65, 0x22, 0x3A, 0x22, 0x54, 0x61,
+                0x67, 0x31, 0x22, 0x7D, 0x0A
+        };
+        assertArrayEquals(expected, com.ispf.driver.opchda.codec.OpcHdaLabSession.getLineBytes("item", "Tag1"));
     }
 
     @Test

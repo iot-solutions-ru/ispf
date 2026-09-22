@@ -20,6 +20,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -28,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -56,10 +58,23 @@ class AnsiC12DeviceDriverTest {
     void metadataDescribesLabNotStub() {
         driver = new AnsiC12DeviceDriver();
         assertEquals("ansi-c12", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
-        assertTrue(driver.metadata().description().toLowerCase().contains("lab"));
-        assertTrue(driver.metadata().description().toLowerCase().contains("not a certified"));
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("lab"));
+        assertTrue(description.contains("c12.18") || description.contains("c12.22"));
+        assertTrue(!description.contains("stub") && !description.contains("placeholder"));
+    }
+
+    @Test
+    void labGatewayReadTableRequestOctetsAreStable() {
+        // Lab gateway frame — not ANSI C12.18/C12.22 certified stack.
+        byte[] expected = new byte[] {
+                (byte) 0xEE, 0x00, 0x00, 0x00, 0x03, 0x30, 0x00, 0x01, 0x0E, 0x44
+        };
+        assertArrayEquals(expected, AnsiC12LabCodec.encodeRequest(
+                AnsiC12LabCodec.SVC_READ_TABLE,
+                AnsiC12LabCodec.readTablePayload(1)));
     }
 
     @Test

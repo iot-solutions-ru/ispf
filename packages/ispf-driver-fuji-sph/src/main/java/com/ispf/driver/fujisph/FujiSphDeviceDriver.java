@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 
 import java.io.ByteArrayOutputStream;
@@ -57,7 +58,7 @@ public class FujiSphDeviceDriver implements DeviceDriver {
             "fuji-sph",
             "Fuji SPH Driver",
             "0.1.0",
-            "Fuji SPH/MICREX computer-link ASCII lab (D/M/R) over TCP — not full MICREX-SX",
+            "Fuji SPH/MICREX computer-link ASCII lab (D/M/R) over TCP — not MICREX-SX",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -66,7 +67,7 @@ public class FujiSphDeviceDriver implements DeviceDriver {
                     "timeoutMs", "3000",
                     "pollIntervalMs", "5000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

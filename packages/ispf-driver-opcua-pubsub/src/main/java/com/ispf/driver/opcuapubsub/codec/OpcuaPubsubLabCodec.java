@@ -6,20 +6,23 @@ import java.util.Arrays;
 import java.util.Locale;
 
 /**
- * Minimal UADP-like UDP lab codec (fixed header + dataset payload).
+ * Lab UADP NetworkMessage header plus length-prefixed payload (not a DataSetMessage).
  * <p>
- * Not full OPC UA PubSub / MQTT / broker / security. Lab ≠ field.
+ * Header: version 1 in the low nibble, PublisherId flag set (bit 4), ExtendedFlags1 clear
+ * so PublisherId is a single byte ({@code 0x11 0x01}). Then a 2-byte big-endian length and
+ * lab payload bytes. Not a full OPC UA PubSub DataSetMessage or security stack.
  * <pre>
- *   magic "UADP"(4) version(1) msgType(1) reserved(2)
- *   keyLen(2) keyUTF8  valueType(1) valueLen(2) valueBytes
+ *   uadpHeader(2) length(2 BE) labPayload...
+ *   labPayload: msgType(1) keyLen(2) keyUTF8 valueType(1) valueLen(2) valueBytes
  * </pre>
  * Message types: GET=0x01, SAMPLE=0x02, PUBLISH=0x03, ACK=0x04.
  * Value types: NONE=0, FLOAT=1, DOUBLE=2, STRING=3.
  */
 public final class OpcuaPubsubLabCodec {
 
-    private static final byte[] MAGIC = {'U', 'A', 'D', 'P'};
-    public static final byte VERSION = 0x01;
+    /** Handwritten UADP NetworkMessage header: version|PublisherIdFlag + publisherId 1. */
+    private static final byte[] UADP_NETWORK_MESSAGE_HEADER = {(byte) 0x11, (byte) 0x01};
+
     public static final byte MSG_GET = 0x01;
     public static final byte MSG_SAMPLE = 0x02;
     public static final byte MSG_PUBLISH = 0x03;
@@ -68,11 +71,14 @@ public final class OpcuaPubsubLabCodec {
         if (valueBytes.length > 0xFFFF) {
             throw new IllegalArgumentException("UADP-lab value too long");
         }
-        ByteBuffer buf = ByteBuffer.allocate(8 + 2 + key.length + 1 + 2 + valueBytes.length);
-        buf.put(MAGIC);
-        buf.put(VERSION);
+        int payloadLen = 1 + 2 + key.length + 1 + 2 + valueBytes.length;
+        if (payloadLen > 0xFFFF) {
+            throw new IllegalArgumentException("UADP-lab payload too long");
+        }
+        ByteBuffer buf = ByteBuffer.allocate(2 + 2 + payloadLen);
+        buf.put(UADP_NETWORK_MESSAGE_HEADER);
+        buf.putShort((short) payloadLen);
         buf.put(messageType);
-        buf.putShort((short) 0);
         buf.putShort((short) key.length);
         buf.put(key);
         buf.put(valueType);
@@ -82,22 +88,24 @@ public final class OpcuaPubsubLabCodec {
     }
 
     public static LabFrame decode(byte[] frame) {
-        if (frame == null || frame.length < 13) {
+        if (frame == null || frame.length < 7) {
             throw new IllegalArgumentException("UADP-lab frame too short: "
                     + (frame == null ? 0 : frame.length));
         }
-        ByteBuffer buf = ByteBuffer.wrap(frame);
-        byte[] magic = new byte[4];
-        buf.get(magic);
-        if (!Arrays.equals(magic, MAGIC)) {
-            throw new IllegalArgumentException("UADP-lab bad magic");
+        if (frame[0] != UADP_NETWORK_MESSAGE_HEADER[0]
+                || frame[1] != UADP_NETWORK_MESSAGE_HEADER[1]) {
+            throw new IllegalArgumentException("UADP-lab bad NetworkMessage header");
         }
-        byte version = buf.get();
-        if (version != VERSION) {
-            throw new IllegalArgumentException("UADP-lab unexpected version: " + version);
+        ByteBuffer buf = ByteBuffer.wrap(frame);
+        buf.position(2);
+        int payloadLen = buf.getShort() & 0xFFFF;
+        if (buf.remaining() < payloadLen) {
+            throw new IllegalArgumentException("UADP-lab truncated payload");
+        }
+        if (payloadLen < 6) {
+            throw new IllegalArgumentException("UADP-lab payload too short");
         }
         byte messageType = buf.get();
-        buf.getShort(); // reserved
         int keyLen = buf.getShort() & 0xFFFF;
         if (buf.remaining() < keyLen + 3) {
             throw new IllegalArgumentException("UADP-lab truncated key");
@@ -155,6 +163,36 @@ public final class OpcuaPubsubLabCodec {
         return buf.array();
     }
 
-    public record LabFrame(byte messageType, String key, byte valueType, byte[] value) {
+    /**
+     * Decoded lab payload carrier. Not a record — holds a {@code byte[]} value copy.
+     */
+    public static final class LabFrame {
+        private final byte messageType;
+        private final String key;
+        private final byte valueType;
+        private final byte[] value;
+
+        public LabFrame(byte messageType, String key, byte valueType, byte[] value) {
+            this.messageType = messageType;
+            this.key = key;
+            this.valueType = valueType;
+            this.value = value == null ? new byte[0] : Arrays.copyOf(value, value.length);
+        }
+
+        public byte messageType() {
+            return messageType;
+        }
+
+        public String key() {
+            return key;
+        }
+
+        public byte valueType() {
+            return valueType;
+        }
+
+        public byte[] value() {
+            return Arrays.copyOf(value, value.length);
+        }
     }
 }

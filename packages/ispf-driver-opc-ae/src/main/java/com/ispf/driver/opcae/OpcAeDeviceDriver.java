@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.opcae.codec.OpcAeLabSession;
 
@@ -22,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@code readPoints} polls active alarms / source / area state; {@code writePoint} acknowledges
  * ({@code ack}) or enables via {@link OpcAeLabSession#acknowledge} / {@link OpcAeLabSession#writeValue}.
  * <p>
- * Honesty: HTTP/JSON A&amp;E gateway lab — not OPC Classic DCOM / COM A&amp;E.
+ * Honesty: HTTP/JSON A&amp;E gateway lab — not OPC Classic DCOM A&amp;E.
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only. Lab ≠ field.
  */
 public class OpcAeDeviceDriver implements DeviceDriver {
@@ -39,7 +40,7 @@ public class OpcAeDeviceDriver implements DeviceDriver {
             "opc-ae",
             "OPC A&E HTTP/JSON Gateway Lab Driver",
             "0.1.0",
-            "HTTP/JSON A&E gateway lab — not OPC Classic DCOM / COM A&E;"
+            "HTTP/JSON A&E gateway lab — not OPC Classic DCOM A&E;"
                     + " newline JSON alarm poll / ack / enable over TCP",
             "ISPF",
             Map.of(
@@ -47,7 +48,7 @@ public class OpcAeDeviceDriver implements DeviceDriver {
                     "port", "48080",
                     "timeoutMs", "3000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

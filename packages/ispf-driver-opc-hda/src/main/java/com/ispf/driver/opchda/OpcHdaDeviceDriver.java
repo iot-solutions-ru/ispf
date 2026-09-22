@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.opchda.codec.OpcHdaLabSession;
 
@@ -21,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@code readPoints} fetches last value / raw sample; {@code writePoint} inserts a lab sample via
  * {@link OpcHdaLabSession#writeValue}.
  * <p>
- * Honesty: HDA gateway lab — not OPC Classic HDA / DCOM.
+ * Honesty: HDA gateway lab — not OPC Classic DCOM HDA.
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only. Lab ≠ field.
  */
 public class OpcHdaDeviceDriver implements DeviceDriver {
@@ -37,7 +38,7 @@ public class OpcHdaDeviceDriver implements DeviceDriver {
             "opc-hda",
             "OPC HDA HTTP/JSON Gateway Lab Driver",
             "0.1.0",
-            "HDA gateway lab — not OPC Classic HDA / DCOM;"
+            "HDA gateway lab — not OPC Classic DCOM HDA;"
                     + " HTTP/JSON last-value / raw sample poll and lab insert over TCP",
             "ISPF",
             Map.of(
@@ -45,7 +46,7 @@ public class OpcHdaDeviceDriver implements DeviceDriver {
                     "port", "48081",
                     "timeoutMs", "3000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

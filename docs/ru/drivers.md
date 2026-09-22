@@ -23,7 +23,7 @@
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-В `DriverProductionMatrix` — **156** драйверов **PRODUCTION** (OT Trust Waves 1–11: clean-room lab-кодеки, у каждого in-process loopback-тест; включая `cwmp` и notification-паки `email`/`sms`/`webhook` вне top-20), **6** **BETA** (`opc-da`, `opc-bridge`, `corba`, а также `icmp`, `smb`, `wmi` — понижены механическим критерием доказательности, см. ниже), каталожных **STUB**-пакетов не осталось (`protocol-stub-ids.json` пуст; `ispf-driver-stub-kit` — шаблон для новых протоколов). Многие lab-кодеки небольшие (часть паков < 300 строк вместе с тестом): метка **PRODUCTION** в реестре означает «lab-кодек + loopback-тест + документация», а не проверку в поле — см. колонку **`STUB_LAB`** в [driver-readiness](../evidence/ot-trust/driver-readiness.md). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Цифры сверяются тестом `DriverProductionMatrixTest.docsMaturityCountsMatchMatrix` по маркеру в английской версии.
+В `DriverProductionMatrix` — **138** драйверов **PRODUCTION** (OT Trust Waves 1–11: clean-room lab-кодеки, у каждого in-process loopback-тест; включая `cwmp` и notification-паки `email`/`sms`/`webhook` вне top-20), **24** **BETA** (`opc-da`, `opc-bridge`, `corba`, а также `icmp`, `smb`, `wmi` — понижены механическим критерием доказательности, см. ниже; плюс 18 lab-подмножеств, оставленных BETA по решению: `matter`, `isa100`, `lonworks`, `opc-ae`, `opc-hda`, `opcua-pubsub`, `codesys`, `fanuc-focas`, `ge-srtp`, `rockwell-csp`, `ansi-c12`, `eebus`, `pulsar`, `grpc`, `plcnext`, `hitachi-hidic`, `fuji-sph`, `toshiba-t-series`), каталожных **STUB**-пакетов не осталось (`protocol-stub-ids.json` пуст; `ispf-driver-stub-kit` — шаблон для новых протоколов). Многие lab-кодеки небольшие (часть паков < 300 строк вместе с тестом): метка **PRODUCTION** в реестре означает «lab-кодек + loopback-тест + документация», а не проверку в поле — см. колонку **`STUB_LAB`** в [driver-readiness](../evidence/ot-trust/driver-readiness.md). Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Цифры сверяются тестом `DriverProductionMatrixTest.docsMaturityCountsMatchMatrix` по маркеру в английской версии.
 
 > **Честность (BL-191):** оболочки и неполные стеки в реестре — **BETA**: `opc-da` / `opc-bridge` (оболочка + тесты парсера), `corba`. Бывшие каталожные заглушки (`iec61850`, `profinet`, `visa`, `scpi`, …) продвинуты в Waves 1–11 только на основании lab-кодеков и loopback-тестов и сохраняют аудит-метку **`STUB_LAB`** до полевого пилота. Метка **PRODUCTION** всё ещё ≠ ready-for-field; продвижение через [driver-promotion](driver-promotion.md). См. OT-измерение [competitive-scorecard](competitive-scorecard.md).
 
@@ -507,7 +507,7 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `driverId` | Модуль | Зрелость | Лицензия | Назначение |
 |------------|--------|----------|----------|------------|
 | `amqp` | `ispf-driver-amqp` | STUB | Apache-2.0 | AMQP: AMQP 0-9-1 / 1.0 broker stub (stub TCP-доступности; codec пока не реализован) |
-| `ansi-c12` | `ispf-driver-ansi-c12` | STUB | Apache-2.0 | ANSI C12: ANSI C12.18/C12.22 meter stub (stub TCP-доступности; codec пока не реализован) |
+| `ansi-c12` | `ispf-driver-ansi-c12` | BETA | Apache-2.0 | ANSI C12: lab subset, не полный C12.18/C12.22 |
 | `application` | `ispf-driver-application` | PRODUCTION | Apache-2.0 | Локальные shell/скрипты → переменные ISPF |
 | `as-interface` | `ispf-driver-as-interface` | STUB | Apache-2.0 | AS-Interface: AS-Interface master/gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `asterisk` | `ispf-driver-asterisk` | PRODUCTION | Apache-2.0 | Asterisk Manager Interface (AMI) |
@@ -524,7 +524,7 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `cc-link` | `ispf-driver-cc-link` | STUB | Apache-2.0 | CC-Link: Mitsubishi CC-Link field network stub (stub TCP-доступности; codec пока не реализован) |
 | `cc-link-ie` | `ispf-driver-cc-link-ie` | STUB | Apache-2.0 | CC-Link IE: Mitsubishi CC-Link IE Field/Control stub (stub TCP-доступности; codec пока не реализован) |
 | `coap` | `ispf-driver-coap` | PRODUCTION | Apache-2.0 | CoAP GET клиент (только чтение) |
-| `codesys` | `ispf-driver-codesys` | STUB | Apache-2.0 | CODESYS Gateway: CODESYS gateway / PLCHandler stub (stub TCP-доступности; codec пока не реализован) |
+| `codesys` | `ispf-driver-codesys` | BETA | Apache-2.0 | CODESYS Gateway: lab subset, не сетевой протокол CODESYS |
 | `controlnet` | `ispf-driver-controlnet` | STUB | Apache-2.0 | ControlNet: ODVA ControlNet gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `corba` | `ispf-driver-corba` | BETA | Apache-2.0 | CORBA IIOP TCP shell (без ORB в современном JDK) |
 | `cwmp` | `ispf-driver-cwmp` | PRODUCTION | Apache-2.0 | TR-069/CWMP Inform + Get/SetParameterValues |
@@ -534,29 +534,29 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `dhcp` | `ispf-driver-dhcp` | PRODUCTION | Apache-2.0 | DHCP discover probe |
 | `dlms` | `ispf-driver-dlms` | PRODUCTION | Apache-2.0 | DLMS/COSEM master счётчиков (TCP WRAPPER) |
 | `dnp3` | `ispf-driver-dnp3` | PRODUCTION | Apache-2.0 | DNP3 TCP master — class poll/read (запись не реализована) |
-| `eebus` | `ispf-driver-eebus` | STUB | Apache-2.0 | EEBUS: EEBUS / SHIP energy management stub (stub TCP-доступности; codec пока не реализован) |
+| `eebus` | `ispf-driver-eebus` | BETA | Apache-2.0 | EEBUS: lab subset, не SHIP/SPINE |
 | `email` | `ispf-driver-email` | PRODUCTION | Apache-2.0 | Исходящая почта через HTTP relay |
 | `enocean` | `ispf-driver-enocean` | STUB | Apache-2.0 | EnOcean: EnOcean ESP3 / USB gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `ethercat` | `ispf-driver-ethercat` | STUB | Apache-2.0 | EtherCAT: EtherCAT master/gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `ethernet-ip` | `ispf-driver-ethernet-ip` | PRODUCTION | Apache-2.0 | EtherNet/IP CIP UCMM Read/Write Tag (класс Allen-Bradley) |
 | `ethernet-powerlink` | `ispf-driver-ethernet-powerlink` | STUB | Apache-2.0 | Ethernet POWERLINK: Ethernet POWERLINK stub (stub TCP-доступности; codec пока не реализован) |
-| `fanuc-focas` | `ispf-driver-fanuc-focas` | STUB | Apache-2.0 | Fanuc FOCAS: Fanuc FOCAS CNC stub (stub TCP-доступности; codec пока не реализован) |
+| `fanuc-focas` | `ispf-driver-fanuc-focas` | BETA | Apache-2.0 | Fanuc FOCAS: lab subset, не библиотека FOCAS |
 | `fatek` | `ispf-driver-fatek` | STUB | Apache-2.0 | Fatek FACON: Fatek FACON protocol stub (stub TCP-доступности; codec пока не реализован) |
 | `file` | `ispf-driver-file` | PRODUCTION | Apache-2.0 | Опрос локального файла (метаданные/содержимое) |
 | `flexible` | `ispf-driver-flexible` | PRODUCTION | Apache-2.0 | Гибкий TCP/UDP poller с настраиваемым framing |
 | `folder` | `ispf-driver-folder` | PRODUCTION | Apache-2.0 | Опрос содержимого локальной директории |
 | `foundation-fieldbus` | `ispf-driver-foundation-fieldbus` | STUB | Apache-2.0 | Foundation Fieldbus: Foundation Fieldbus H1/HSE stub (stub TCP-доступности; codec пока не реализован) |
-| `fuji-sph` | `ispf-driver-fuji-sph` | STUB | Apache-2.0 | Fuji SPH: Fuji Electric SPH / MICREX stub (stub TCP-доступности; codec пока не реализован) |
-| `ge-srtp` | `ispf-driver-ge-srtp` | STUB | Apache-2.0 | GE SRTP: Emerson/GE Fanuc SRTP stub (stub TCP-доступности; codec пока не реализован) |
+| `fuji-sph` | `ispf-driver-fuji-sph` | BETA | Apache-2.0 | Fuji SPH: lab subset, не MICREX-SX |
+| `ge-srtp` | `ispf-driver-ge-srtp` | BETA | Apache-2.0 | GE SRTP: lab subset, не полный SRTP |
 | `genicam` | `ispf-driver-genicam` | STUB | Apache-2.0 | GenICam: GenICam / GigE Vision stub (stub TCP-доступности; codec пока не реализован) |
 | `gps-tracker` | `ispf-driver-gps-tracker` | PRODUCTION | Apache-2.0 | TCP listener GPS/M2M трекеров |
 | `graph-db` | `ispf-driver-graph-db` | PRODUCTION | Apache-2.0 | Запросы к графовой БД (Neo4j / Gremlin) |
 | `graphql` | `ispf-driver-graphql` | STUB | Apache-2.0 | GraphQL: GraphQL HTTP stub (stub TCP-доступности; codec пока не реализован) |
-| `grpc` | `ispf-driver-grpc` | STUB | Apache-2.0 | gRPC: Generic gRPC telemetry stub (stub TCP-доступности; codec пока не реализован) |
+| `grpc` | `ispf-driver-grpc` | BETA | Apache-2.0 | gRPC: lab subset (преамбула HTTP/2), не protobuf RPC |
 | `hart-ip` | `ispf-driver-hart-ip` | STUB | Apache-2.0 | HART-IP: HART-IP (UDP/TCP) stub (stub TCP-доступности; codec пока не реализован) |
 | `hart-serial` | `ispf-driver-hart-serial` | STUB | Apache-2.0 | HART serial: HART FSK serial/modem stub (stub TCP-доступности; codec пока не реализован) |
 | `haystack` | `ispf-driver-haystack` | PRODUCTION | Apache-2.0 | Клиент Project Haystack HTTP JSON |
-| `hitachi-hidic` | `ispf-driver-hitachi-hidic` | STUB | Apache-2.0 | Hitachi HIDIC: Hitachi HIDIC / EH-150 stub (stub TCP-доступности; codec пока не реализован) |
+| `hitachi-hidic` | `ispf-driver-hitachi-hidic` | BETA | Apache-2.0 | Hitachi HIDIC: lab subset host-link |
 | `http` | `ispf-driver-http` | PRODUCTION | Apache-2.0 | HTTP/HTTPS клиент (GET/POST JSON/text) |
 | `http-server` | `ispf-driver-http-server` | PRODUCTION | Apache-2.0 | Встроенный HTTP-сервер для входящих запросов |
 | `icmp` | `ispf-driver-icmp` | BETA | Apache-2.0 | ICMP ping / проверка доступности и RTT |
@@ -578,7 +578,7 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `io-link` | `ispf-driver-io-link` | STUB | Apache-2.0 | IO-Link: IO-Link master REST/MQTT bridge stub (stub TCP-доступности; codec пока не реализован) |
 | `ip-host` | `ispf-driver-ip-host` | PRODUCTION | Apache-2.0 | Мультипроверка хоста (PING/HTTP/TCP/DNS/SMTP/FTP) |
 | `ipmi` | `ispf-driver-ipmi` | PRODUCTION | Apache-2.0 | IPMI LAN BMC probe |
-| `isa100` | `ispf-driver-isa100` | STUB | Apache-2.0 | ISA100.11a: ISA100 wireless gateway stub (stub TCP-доступности; codec пока не реализован) |
+| `isa100` | `ispf-driver-isa100` | BETA | Apache-2.0 | ISA100: lab gateway, не ISA100.11a |
 | `j1939` | `ispf-driver-j1939` | STUB | Apache-2.0 | SAE J1939: SAE J1939 vehicle network stub (stub TCP-доступности; codec пока не реализован) |
 | `jdbc` | `ispf-driver-jdbc` | PRODUCTION | Apache-2.0 | SQL JDBC SELECT poll |
 | `jms` | `ispf-driver-jms` | PRODUCTION | Apache-2.0 | JMS клиент (класс ActiveMQ) |
@@ -588,11 +588,11 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `knx` | `ispf-driver-knx` | STUB | Apache-2.0 | KNX/IP: KNX/IP tunneling/routing stub (stub TCP-доступности; codec пока не реализован) |
 | `knx-tp` | `ispf-driver-knx-tp` | STUB | Apache-2.0 | KNX TP: KNX Twisted Pair interface stub (stub TCP-доступности; codec пока не реализован) |
 | `ldap` | `ispf-driver-ldap` | PRODUCTION | Apache-2.0 | LDAP search probe |
-| `lonworks` | `ispf-driver-lonworks` | STUB | Apache-2.0 | LonWorks: LonWorks/LonTalk IP stub (stub TCP-доступности; codec пока не реализован) |
+| `lonworks` | `ispf-driver-lonworks` | BETA | Apache-2.0 | LonWorks: lab gateway, не LonTalk |
 | `lorawan` | `ispf-driver-lorawan` | STUB | Apache-2.0 | LoRaWAN: LoRaWAN network/application server gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `ls-xgt` | `ispf-driver-ls-xgt` | STUB | Apache-2.0 | LS XGT: LS Electric XGT FEnet stub (stub TCP-доступности; codec пока не реализован) |
 | `lwm2m` | `ispf-driver-lwm2m` | STUB | Apache-2.0 | LwM2M: OMA LwM2M client/server stub (stub TCP-доступности; codec пока не реализован) |
-| `matter` | `ispf-driver-matter` | STUB | Apache-2.0 | Matter: Matter / CHIP controller stub (stub TCP-доступности; codec пока не реализован) |
+| `matter` | `ispf-driver-matter` | BETA | Apache-2.0 | Matter: lab gateway, не сессия CSA Matter |
 | `mbus` | `ispf-driver-mbus` | PRODUCTION | Apache-2.0 | M-Bus протокол счётчиков (read-only v0.1) |
 | `message-stream` | `ispf-driver-message-stream` | PRODUCTION | Apache-2.0 | Универсальный TCP/UDP поток сообщений |
 | `mitsubishi-melsec` | `ispf-driver-mitsubishi-melsec` | STUB | Apache-2.0 | Mitsubishi MELSEC: Mitsubishi MELSEC communication stub (MC Protocol / SLMP path planned) (stub TCP-доступности; codec пока не реализован) |
@@ -611,24 +611,24 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `odbc` | `ispf-driver-odbc` | PRODUCTION | Apache-2.0 | ODBC через внешний JDBC bridge JAR (SQL read) |
 | `omron-fins` | `ispf-driver-omron-fins` | PRODUCTION | Apache-2.0 | Omron FINS ПЛК (read-only v0.1) |
 | `onvif` | `ispf-driver-onvif` | STUB | Apache-2.0 | ONVIF: ONVIF Profile S/T device stub (stub TCP-доступности; codec пока не реализован) |
-| `opc-ae` | `ispf-driver-opc-ae` | STUB | Apache-2.0 | OPC Alarms and Events: OPC Classic A&E stub (DCOM/bridge required) (stub TCP-доступности; codec пока не реализован) |
+| `opc-ae` | `ispf-driver-opc-ae` | BETA | Apache-2.0 | OPC A&E: lab subset, не DCOM |
 | `opc-bridge` | `ispf-driver-opc-bridge` | BETA | Apache-2.0 | Оболочка OPC/LON TCP bridge |
 | `opc-da` | `ispf-driver-opc-da` | BETA | Apache-2.0 | Оболочка OPC Classic DA (нужен Windows DCOM/bridge) |
-| `opc-hda` | `ispf-driver-opc-hda` | STUB | Apache-2.0 | OPC Historical Data Access: OPC Classic HDA stub (DCOM/bridge required) (stub TCP-доступности; codec пока не реализован) |
+| `opc-hda` | `ispf-driver-opc-hda` | BETA | Apache-2.0 | OPC HDA: lab subset, не DCOM |
 | `opcua` | `ispf-driver-opcua` | PRODUCTION | Apache-2.0 | OPC UA клиент (Eclipse Milo): poll/subscribe/write/browse |
-| `opcua-pubsub` | `ispf-driver-opcua-pubsub` | STUB | Apache-2.0 | OPC UA PubSub: OPC UA PubSub (UDP/MQTT) stub — connectivity shell only (stub TCP-доступности; codec пока не реализован) |
+| `opcua-pubsub` | `ispf-driver-opcua-pubsub` | BETA | Apache-2.0 | OPC UA PubSub: lab subset заголовка UADP |
 | `opcua-server` | `ispf-driver-opcua-server` | PRODUCTION | Apache-2.0 | OPC UA сервер (Eclipse Milo), публикация переменных ISPF |
 | `openadr` | `ispf-driver-openadr` | STUB | Apache-2.0 | OpenADR: OpenADR 2.0b VTN/VEN stub (stub TCP-доступности; codec пока не реализован) |
 | `panasonic-mewto` | `ispf-driver-panasonic-mewto` | STUB | Apache-2.0 | Panasonic MEWTOCOL: Panasonic MEWTOCOL-COM/DAT stub (stub TCP-доступности; codec пока не реализован) |
-| `plcnext` | `ispf-driver-plcnext` | STUB | Apache-2.0 | PLCnext: Phoenix Contact PLCnext Engineer/RSC stub (stub TCP-доступности; codec пока не реализован) |
+| `plcnext` | `ispf-driver-plcnext` | BETA | Apache-2.0 | PLCnext: lab subset, не RSC/gRPC |
 | `pop3` | `ispf-driver-pop3` | PRODUCTION | Apache-2.0 | Опрос POP3 почтового ящика |
 | `profibus` | `ispf-driver-profibus` | STUB | Apache-2.0 | PROFIBUS: PROFIBUS DP/PA gateway stub (serial/fieldbus bridge required) (stub TCP-доступности; codec пока не реализован) |
 | `profibus-pa` | `ispf-driver-profibus-pa` | STUB | Apache-2.0 | PROFIBUS PA: PROFIBUS PA instrument network stub (stub TCP-доступности; codec пока не реализован) |
 | `profinet` | `ispf-driver-profinet` | STUB | Apache-2.0 | PROFINET IO: PROFINET IO controller/device stub (DCP/RPC not implemented) (stub TCP-доступности; codec пока не реализован) |
-| `pulsar` | `ispf-driver-pulsar` | STUB | Apache-2.0 | Apache Pulsar: Apache Pulsar client stub (stub TCP-доступности; codec пока не реализован) |
+| `pulsar` | `ispf-driver-pulsar` | BETA | Apache-2.0 | Apache Pulsar: lab subset бинарного заголовка |
 | `radius` | `ispf-driver-radius` | PRODUCTION | Apache-2.0 | Проверка RADIUS authentication |
 | `redis` | `ispf-driver-redis` | STUB | Apache-2.0 | Redis: Redis key/stream telemetry stub (stub TCP-доступности; codec пока не реализован) |
-| `rockwell-csp` | `ispf-driver-rockwell-csp` | STUB | Apache-2.0 | Rockwell CSP: Allen-Bradley CSP (legacy Ethernet) stub (stub TCP-доступности; codec пока не реализован) |
+| `rockwell-csp` | `ispf-driver-rockwell-csp` | BETA | Apache-2.0 | Rockwell CSP: lab subset, не EtherNet/IP |
 | `rockwell-df1` | `ispf-driver-rockwell-df1` | STUB | Apache-2.0 | Rockwell DF1: Allen-Bradley DF1 serial/TCP bridge stub (stub TCP-доступности; codec пока не реализован) |
 | `rtsp` | `ispf-driver-rtsp` | STUB | Apache-2.0 | RTSP: RTSP media/metadata stub (stub TCP-доступности; codec пока не реализован) |
 | `s7` | `ispf-driver-s7` | PRODUCTION | Apache-2.0 | Siemens S7 ISO-on-TCP чтение/запись ПЛК |
@@ -648,7 +648,7 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `ssh` | `ispf-driver-ssh` | PRODUCTION | Apache-2.0 | Удалённое выполнение SSH (JSch) |
 | `telnet` | `ispf-driver-telnet` | PRODUCTION | Apache-2.0 | Telnet-сессия удалённых команд |
 | `thread` | `ispf-driver-thread` | STUB | Apache-2.0 | Thread: Thread Border Router stub (stub TCP-доступности; codec пока не реализован) |
-| `toshiba-t-series` | `ispf-driver-toshiba-t-series` | STUB | Apache-2.0 | Toshiba T-series: Toshiba T-series PLC stub (stub TCP-доступности; codec пока не реализован) |
+| `toshiba-t-series` | `ispf-driver-toshiba-t-series` | BETA | Apache-2.0 | Toshiba T-series: lab subset host-link |
 | `uds` | `ispf-driver-uds` | STUB | Apache-2.0 | UDS (ISO 14229): Unified Diagnostic Services over DoIP stub (stub TCP-доступности; codec пока не реализован) |
 | `unitronics` | `ispf-driver-unitronics` | STUB | Apache-2.0 | Unitronics: Unitronics PCOM stub (stub TCP-доступности; codec пока не реализован) |
 | `virtual` | `ispf-driver-virtual` | PRODUCTION | Apache-2.0 | Симулятор / виртуальные профили устройств для демо и тестов |

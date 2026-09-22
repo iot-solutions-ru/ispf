@@ -31,13 +31,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake TCP loopback tests for the Matter/CHIP controller gateway lab.
- * Certifies the lab dialect only — not full CSA Matter / CHIP SDK / Thread/BLE commissioning.
+ * Fake TCP loopback tests for the Matter controller gateway lab.
+ * Certifies the lab dialect only — not CSA Matter operational messages / CHIP SDK.
  */
 class MatterDeviceDriverTest {
 
@@ -61,18 +62,29 @@ class MatterDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionMatterControllerGatewayLab() {
+    void metadataIsBetaMatterControllerGatewayLab() {
         driver = new MatterDeviceDriver();
         assertEquals("matter", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("5540", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("matter") || description.contains("chip")
-                || description.contains("gateway"));
-        assertTrue(description.contains("lab") || description.contains("controller"));
-        assertTrue(description.contains("not"));
+        assertTrue(description.contains("lab"));
+        assertTrue(description.contains("csa matter"));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
+    }
+
+    @Test
+    void labGatewayGetRequestOctetsAreStable() {
+        // Lab gateway JSON line — not CSA Matter operational messaging.
+        byte[] expected = new byte[] {
+                0x7B, 0x22, 0x6F, 0x70, 0x22, 0x3A, 0x22, 0x67, 0x65, 0x74, 0x22, 0x2C,
+                0x22, 0x70, 0x6F, 0x69, 0x6E, 0x74, 0x22, 0x3A, 0x22, 0x6E, 0x6F, 0x64,
+                0x65, 0x3A, 0x31, 0x3A, 0x65, 0x70, 0x3A, 0x31, 0x3A, 0x63, 0x6C, 0x75,
+                0x73, 0x74, 0x65, 0x72, 0x3A, 0x4F, 0x6E, 0x4F, 0x66, 0x66, 0x3A, 0x61,
+                0x74, 0x74, 0x72, 0x3A, 0x4F, 0x6E, 0x4F, 0x66, 0x66, 0x22, 0x7D, 0x0A
+        };
+        assertArrayEquals(expected, com.ispf.driver.matter.codec.MatterLabSession.getLineBytes(ONOFF_ATTR));
     }
 
     @Test

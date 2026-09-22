@@ -30,12 +30,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake TCP loopback tests for the EEBus SHIP/SPINE-lite TCP lab codec.
- * Certifies the lab dialect only — not full EEBus/SHIP.
+ * Fake TCP loopback tests for the EEBus SPINE-lite TCP lab codec.
+ * Certifies the lab dialect only — not SHIP TLS/SPINE.
  */
 class EebusDeviceDriverTest {
 
@@ -58,13 +59,22 @@ class EebusDeviceDriverTest {
     void metadataDescribesTcpSpineLiteLabNotFullEebus() {
         driver = new EebusDeviceDriver();
         assertEquals("eebus", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("4712", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("spine") || description.contains("lab"));
-        assertTrue(description.contains("not full") || description.contains("not official"));
+        assertTrue(description.contains("lab"));
+        assertTrue(description.contains("ship tls/spine") || description.contains("ship tls"));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
+    }
+
+    @Test
+    void labGatewayGetRequestOctetsAreStable() {
+        // Lab gateway ASCII line — not SHIP TLS/SPINE.
+        byte[] expected = new byte[] {
+                0x47, 0x45, 0x54, 0x20, 0x70, 0x6F, 0x77, 0x65, 0x72, 0x0A
+        };
+        assertArrayEquals(expected, EebusLabCodec.encodeGetBytes("power"));
     }
 
     @Test

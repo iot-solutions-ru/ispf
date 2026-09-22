@@ -1,9 +1,11 @@
 package com.ispf.driver.ansic12.codec;
 
+import java.util.HexFormat;
+
 /**
- * Clean-room ANSI C12.18-inspired lab framing (Apache-2.0).
+ * Clean-room ANSI C12 meter lab framing (Apache-2.0).
  * <p>
- * <strong>Lab subset — not a certified ANSI C12.18 optical probe or C12.22 network relay.</strong>
+ * Lab subset only — not ANSI C12.18 optical probe framing and not ANSI C12.22 network relay.
  * Packets use a simplified envelope suitable for TCP loopback on port 1153:
  * {@code STP(0xEE) | identity | ctrl | length(2 BE) | payload | CRC16-IBM}.
  * Services implemented: logon, read standard table, optional write standard table.
@@ -77,7 +79,7 @@ public final class AnsiC12LabCodec {
         byte service = frame[5];
         byte[] payload = new byte[length - 1];
         System.arraycopy(frame, 6, payload, 0, payload.length);
-        return new ParsedFrame(identity, ctrl, service, payload);
+        return new ParsedFrame(identity, ctrl, service, HexFormat.of().formatHex(payload));
     }
 
     public static byte[] logonPayload(String user, String password) {
@@ -122,7 +124,8 @@ public final class AnsiC12LabCodec {
     }
 
     /**
-     * CRC-16/IBM (poly 0xA001, init 0xFFFF) — common for C12.18-style envelopes.
+     * Lab checksum: CRC-16/MODBUS (reflected poly 0xA001, init 0xFFFF, xorout 0).
+     * This is not the ANSI C12.18 packet CRC.
      */
     public static int crc16Ibm(byte[] data, int offset, int length) {
         int crc = 0xFFFF;
@@ -139,9 +142,19 @@ public final class AnsiC12LabCodec {
         return crc & 0xFFFF;
     }
 
-    public record ParsedFrame(byte identity, byte ctrl, byte service, byte[] payload) {
+    /**
+     * Decoded lab frame. Payload is hex text so the record has no {@code byte[]} component.
+     */
+    public record ParsedFrame(byte identity, byte ctrl, byte service, String payloadHex) {
         public boolean isResponse() {
             return (ctrl & CTRL_RESPONSE) != 0;
+        }
+
+        public byte[] payload() {
+            if (payloadHex == null || payloadHex.isEmpty()) {
+                return new byte[0];
+            }
+            return HexFormat.of().parseHex(payloadHex);
         }
     }
 }

@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.eebus.codec.EebusLabSession;
 
@@ -15,11 +16,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * EEBus SHIP/SPINE-lite over TCP lab driver — ASCII GET/SET (not full EEBus SHIP TLS / SDK).
+ * EEBus SPINE-lite over TCP lab driver — ASCII GET/SET power and setpoint.
  * <p>
  * Point forms: {@code power}, {@code setpoint}, {@code entity:ElectricalConnection:power}.
- * Speaks to a SPINE-lite TCP lab on {@code host:port} (default 4712). Honesty: TCP SPINE-lite
- * lab only — not a full EEBus SHIP TLS stack and not an official EEBus SDK.
+ * Speaks to a SPINE-lite TCP lab on {@code host:port} (default 4712). Honesty: this is a TCP
+ * lab dialect only — not SHIP TLS/SPINE and not an official EEBus SDK.
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class EebusDeviceDriver implements DeviceDriver {
@@ -31,17 +32,17 @@ public class EebusDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "eebus",
-            "EEBus SHIP/SPINE-lite TCP Lab Driver",
+            "EEBus SPINE-lite TCP Lab Driver",
             "0.1.0",
-            "EEBus SHIP/SPINE-lite over TCP lab: ASCII GET/SET power and setpoint;"
-                    + " TCP SPINE-lite lab — not full EEBus SHIP TLS stack, not official EEBus SDK",
+            "EEBus SPINE-lite TCP lab (ASCII GET/SET);"
+                    + " not SHIP TLS/SPINE stack, not official EEBus SDK",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "4712",
                     "timeoutMs", "3000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 
