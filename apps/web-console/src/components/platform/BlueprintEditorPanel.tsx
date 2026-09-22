@@ -445,8 +445,8 @@ function ModelDetail({
               </tr>
             </thead>
             <tbody>
-              {variables.map((v) => (
-                <tr key={v.name}>
+              {variables.map((v, index) => (
+                <tr key={`variable-${index}`}>
                   <td>
                     {canManage && !isBuiltin ? (
                       <input
@@ -562,7 +562,7 @@ function ModelDetail({
             </thead>
             <tbody>
               {bindings.map((b, index) => (
-                <tr key={`${b.id}-${index}`}>
+                <tr key={`binding-${index}`}>
                   <td>
                     {canManage && !isBuiltin ? (
                       <input
@@ -625,7 +625,7 @@ function ModelDetail({
           ) : (
             <ul className="event-list editable-list">
               {events.map((e, index) => (
-                <li key={`${e.name}-${index}`}>
+                <li key={`event-${index}`}>
                   {canManage && !isBuiltin ? (
                     <>
                       <input
@@ -668,7 +668,7 @@ function ModelDetail({
           ) : (
             <ul className="event-list editable-list">
               {functions.map((f, index) => (
-                <li key={`${f.name}-${index}`}>
+                <li key={`function-${index}`}>
                   {canManage && !isBuiltin ? (
                     <>
                       <input

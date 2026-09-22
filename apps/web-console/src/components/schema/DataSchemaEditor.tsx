@@ -53,7 +53,7 @@ export default function DataSchemaEditor({
   const fieldRows: SchemaFieldRow[] = value.fields.map((field, index) => ({
     field,
     index,
-    key: `${idPrefix}-${field.name}-${index}`,
+    key: `${idPrefix}-${index}`,
   }));
 
   const columns: TableColumnsType<SchemaFieldRow> = [

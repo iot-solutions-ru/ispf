@@ -51,6 +51,18 @@ describe("CreateVariableDialog", () => {
     );
   }
 
+  it("keeps the name field focused while typing", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+
+    const input = screen.getByPlaceholderText("myVariable");
+    await user.click(input);
+    await user.keyboard("temp");
+
+    expect(input).toHaveValue("temp");
+    expect(input).toHaveFocus();
+  });
+
   it("creates a variable with entered name", async () => {
     const user = userEvent.setup();
     renderDialog();

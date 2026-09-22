@@ -366,6 +366,24 @@ export default function EditDescriptorDialog({
     }
   }
 
+  const saveRef = useRef(handleSave);
+  saveRef.current = handleSave;
+  const footer = useMemo(
+    () => [
+      <Button key="cancel" onClick={onClose}>{t("common:action.cancel")}</Button>,
+      <Button
+        key="save"
+        type="primary"
+        disabled={!nameValid || mutation.isPending}
+        loading={mutation.isPending}
+        onClick={() => saveRef.current()}
+      >
+        {t("common:action.save")}
+      </Button>,
+    ],
+    [nameValid, mutation.isPending, onClose, t],
+  );
+
   const title = initial
     ? isFunction
       ? t("descriptor.functionTitle", { name: initial.name })
@@ -382,18 +400,7 @@ export default function EditDescriptorDialog({
       destroyOnHidden
       width={960}
       className="descriptor-editor-modal"
-      footer={[
-        <Button key="cancel" onClick={onClose}>{t("common:action.cancel")}</Button>,
-        <Button
-          key="save"
-          type="primary"
-          disabled={!nameValid || mutation.isPending}
-          loading={mutation.isPending}
-          onClick={handleSave}
-        >
-          {t("common:action.save")}
-        </Button>,
-      ]}
+      footer={footer}
     >
       <Space orientation="vertical" size="large" style={{ width: "100%" }}>
         <Form layout="vertical" className="modal-section antd-control-grid">
@@ -433,7 +440,7 @@ export default function EditDescriptorDialog({
           {!showAdvancedJson && (
             <>
               <RoleMultiSelect
-                id={`invoke-roles-${kind}-${name || "new"}`}
+                id={`invoke-roles-${kind}`}
                 label={t("descriptor.invokeRoles")}
                 roles={rolesQuery.data ?? []}
                 selected={invokeRoles}
