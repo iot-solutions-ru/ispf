@@ -61,7 +61,7 @@ dependencies {
     implementation("org.apache.poi:poi:5.5.1")
 
     // Bundle manifest JSON Schema (ADR-0060)
-    implementation("com.networknt:json-schema-validator:1.5.9")
+    implementation("com.networknt:json-schema-validator:3.0.7")
 
     // Parquet export (parquet-mr + Avro + hadoop-common, ~57 MB of the bootJar) is an optional
     // runtime module discovered via ServiceLoader (HistoryParquetExporter in ispf-core).
