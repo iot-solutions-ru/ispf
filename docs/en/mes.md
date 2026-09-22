@@ -26,20 +26,22 @@ Open Operator UI: `?mode=operator&app=mes-platform`
 |-----------|------------|
 | **Dispatch** | Work-queue tasks from BPMN; confirm start (sets seed WO `status=complete`) |
 | **OEE** | List shifts / lines; load Morning KPI (`oeePct` > 80 on seed) |
-| **Quality** | SPC chart + list samples; seed `QUALITY_RECORD` under quality-records |
+| **Quality** | SPC chart + list samples; seed quality record under quality-records |
 | **Batch** | Get seed batch status; advance phase to `react` |
 | **Genealogy** | Trace seed lot `BATCH-LINE-A01-001` |
 | **BoM + Ops** | Explode seed material `MAT-WIDGET-A01`; list/complete ready operations for `WO-LINE-A01-001` |
 
-## Seed typed objects (BL-164)
+## Seed objects (BL-164)
 
-| Type | Path |
-|------|------|
-| `WORK_ORDER` | `root.platform.mes.work-orders.wo-line-a01-001` |
-| `OPERATION` | `root.platform.mes.operations.op-assemble-a01` |
-| `LOT` | `root.platform.mes.lots.batch-line-a01-001` |
-| `SHIFT` | `root.platform.mes.shifts.shift-morning-a01` |
-| `QUALITY_RECORD` | `root.platform.mes.quality-records.qr-line-a01-001` |
+Platform type is `CUSTOM`. The catalog path is the MES kind.
+
+| Path | ObjectType |
+|------|------------|
+| `root.platform.mes.work-orders.wo-line-a01-001` | `CUSTOM` |
+| `root.platform.mes.operations.op-assemble-a01` | `CUSTOM` |
+| `root.platform.mes.lots.batch-line-a01-001` | `CUSTOM` |
+| `root.platform.mes.shifts.shift-morning-a01` | `CUSTOM` |
+| `root.platform.mes.quality-records.qr-line-a01-001` | `CUSTOM` |
 
 ## Genealogy lite + DAG (BL-193 / BL-221)
 

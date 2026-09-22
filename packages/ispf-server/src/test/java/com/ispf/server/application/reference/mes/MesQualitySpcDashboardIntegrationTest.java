@@ -66,7 +66,7 @@ class MesQualitySpcDashboardIntegrationTest {
         mockMvc.perform(get("/api/v1/objects/by-path")
                         .param("path", "root.platform.mes.quality-records.qr-line-a01-001"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.type").value("QUALITY_RECORD"));
+                .andExpect(jsonPath("$.type").value("CUSTOM"));
 
         mockMvc.perform(get("/api/v1/objects/by-path/variables")
                         .param("path", "root.platform.mes.quality-records.qr-line-a01-001"))

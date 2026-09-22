@@ -72,30 +72,6 @@ public enum ObjectType {
     AGENT,
     /** Visual-only grouping node; members stored in {@code @groupMembers}. */
     VISUAL_GROUP,
-    /** MES catalog root ({@code root.platform.mes}). */
-    MES,
-    /** Work order catalog folder. */
-    WORK_ORDERS,
-    /** Manufacturing work order instance. */
-    WORK_ORDER,
-    /** Operation catalog folder. */
-    OPERATIONS,
-    /** Manufacturing operation instance. */
-    OPERATION,
-    /** Material lot catalog folder. */
-    LOTS,
-    /** Material lot / batch instance. */
-    LOT,
-    /** Production shift catalog folder. */
-    SHIFTS,
-    /** Production shift instance. */
-    SHIFT,
-    /** Quality record catalog folder. */
-    QUALITY_RECORDS,
-    /** Quality inspection / defect record. */
-    QUALITY_RECORD,
-    /** ISA-95 site/area/line instance hierarchy folder. */
-    MES_INSTANCES,
     /** Cyclic process-control program catalog folder (Phase 30). */
     PROCESS_PROGRAMS,
     /** Cyclic control loop program instance. */
@@ -104,5 +80,9 @@ public enum ObjectType {
     ANALYTICS,
     /** Derived tag / KPI template instance. */
     ANALYTICS_TEMPLATE,
+    /**
+     * Extension object. MES catalogs (work orders, operations, lots, shifts, quality records)
+     * are CUSTOM nodes under {@code root.platform.mes.*}, owned by the mes-platform bundle.
+     */
     CUSTOM
 }

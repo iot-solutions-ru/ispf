@@ -27,12 +27,12 @@
 
 | Path | ObjectType | Purpose |
 |------|------------|---------|
-| `root.platform.mes` | `MES` | Корневой каталог MES |
-| `...mes.work-orders.wo-line-a01-001` | `WORK_ORDER` | Seed WO (`work-order-v1`) |
-| `...mes.operations.op-assemble-a01` | `OPERATION` | Seed routing step |
-| `...mes.lots.batch-line-a01-001` | `LOT` | Seed ISA-88 batch (`batch-v1`) |
-| `...mes.shifts.shift-morning-a01` | `SHIFT` | Seed shift |
-| `...mes.quality-records.qr-line-a01-001` | `QUALITY_RECORD` | Seed defect record |
+| `root.platform.mes` | `CUSTOM` | Корневой каталог MES |
+| `...mes.work-orders.wo-line-a01-001` | `CUSTOM` | Seed WO (`work-order-v1`) |
+| `...mes.operations.op-assemble-a01` | `CUSTOM` | Seed routing step |
+| `...mes.lots.batch-line-a01-001` | `CUSTOM` | Seed ISA-88 batch (`batch-v1`) |
+| `...mes.shifts.shift-morning-a01` | `CUSTOM` | Seed shift |
+| `...mes.quality-records.qr-line-a01-001` | `CUSTOM` | Seed defect record |
 | `...mes.instances.plant-a…line-a01` | `DEVICE` | ISA-95 site/area/line |
 
 Тест: `MesCatalogObjectTypesIntegrationTest`. БЛ-169 (live ERP) остаётся **Отложено**.
@@ -57,12 +57,12 @@
 
 | Artifact | Purpose |
 |----------|---------|
-| MIXIN `quality-record-v1` | `defectCode`, `severity`, `lotId` на узлах `QUALITY_RECORD` |
+| MIXIN `quality-record-v1` | `defectCode`, `severity`, `lotId` на узлах записи качества |
 | MIXIN `mes-platform-hub-v1` | `spcMeasurement` (history-enabled), `spcUcl`, `spcLcl`, `spcTarget` |
 | Dashboard `mes-platform-quality` | Виджет `chart` по `spcMeasurement` + value widgets UCL/LCL |
 | BFF `mes_quality_listSpcSamples` | Seed-строки из таблицы `mes_spc_sample` |
 
-Создайте `QUALITY_RECORD` под `root.platform.mes.quality-records` и примените `quality-record-v1` для трассировки брака.
+Создайте узел `CUSTOM` под `root.platform.mes.quality-records` и примените `quality-record-v1` для трассировки брака.
 
 ---
 

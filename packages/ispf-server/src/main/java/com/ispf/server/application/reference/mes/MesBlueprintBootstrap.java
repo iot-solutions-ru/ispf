@@ -97,7 +97,7 @@ public class MesBlueprintBootstrap {
                 BATCH_MODEL,
                 "ISA-88 batch instance — recipe, phase, batch identity (BL-168)",
                 BlueprintType.INSTANCE,
-                ObjectType.LOT,
+                ObjectType.CUSTOM,
                 "",
                 List.of(
                         varDef("batchId", "Batch identifier", "info", ""),
@@ -119,7 +119,7 @@ public class MesBlueprintBootstrap {
                 WORK_ORDER_MODEL,
                 "Manufacturing work order instance — dispatch, line, status (BL-164 / BL-166)",
                 BlueprintType.INSTANCE,
-                ObjectType.WORK_ORDER,
+                ObjectType.CUSTOM,
                 "",
                 List.of(
                         varDef("orderNumber", "Work order number", "info", ""),
