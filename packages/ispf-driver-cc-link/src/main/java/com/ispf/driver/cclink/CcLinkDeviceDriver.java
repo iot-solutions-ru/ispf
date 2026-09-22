@@ -6,7 +6,8 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.cclink.codec.CcLinkLabSession;
+import com.ispf.driver.cclink.codec.CcLinkSession;
+import com.ispf.driver.cclink.codec.Slmp3eCodec;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,11 +16,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * CC-Link SLMP/ASCII TCP gateway lab driver — register R/W over TCP (default port {@code 5001}).
+ * CC-Link driver — MELSEC SLMP / MC Protocol 3E binary over TCP (default port {@code 5001}).
  * <p>
- * Honesty boundary: TCP gateway / SLMP-shaped register R/W lab only — not CC-Link RS-485,
- * not IE Field ASIC, and not a CLPA protocol stack. Point forms: {@code D100}, {@code R0},
- * {@code W0}, {@code dev:D100}. Lab ≠ field.
+ * Speaks the same SLMP 3E request layout that CC-Link IE gateways use for D/R/W devices.
+ * This is not the CC-Link RS-485 ASIC or a CLPA field stack. Point forms:
+ * {@code D100}, {@code R0}, {@code W0}, {@code dev:D100}.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
@@ -34,15 +35,20 @@ public class CcLinkDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "cc-link",
-            "CC-Link SLMP/ASCII Gateway Lab Driver",
-            "0.1.0",
-            "CC-Link TCP gateway / SLMP-shaped register R/W lab (D/R/W points);"
-                    + " not CC-Link RS-485 / IE Field ASIC / CLPA stack",
+            "CC-Link SLMP 3E Driver",
+            "1.0.0",
+            "MELSEC SLMP 3E binary (MC protocol) over TCP for D/R/W devices;"
+                    + " CC-Link IE gateway path, not CC-Link RS-485 ASIC / CLPA stack",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "5001",
-                    "timeoutMs", "3000"
+                    "timeoutMs", "3000",
+                    "networkNo", "0",
+                    "pcNo", "255",
+                    "ioNo", "1023",
+                    "stationNo", "0",
+                    "monitoringTimer", "16"
             ),
             null,
             Set.of("read", "write")
@@ -52,7 +58,12 @@ public class CcLinkDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 5001;
     private int timeoutMs = 3000;
-    private CcLinkLabSession session;
+    private int networkNo = 0;
+    private int pcNo = 0xFF;
+    private int ioNo = 0x03FF;
+    private int stationNo = 0;
+    private int monitoringTimer = 0x0010;
+    private CcLinkSession session;
     private final Map<String, CcLinkPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -74,6 +85,11 @@ public class CcLinkDeviceDriver implements DeviceDriver {
             case "host" -> host = value.trim();
             case "port" -> port = Integer.parseInt(value.trim());
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
+            case "networkNo" -> networkNo = Integer.parseInt(value.trim());
+            case "pcNo" -> pcNo = Integer.parseInt(value.trim());
+            case "ioNo" -> ioNo = Integer.parseInt(value.trim());
+            case "stationNo" -> stationNo = Integer.parseInt(value.trim());
+            case "monitoringTimer" -> monitoringTimer = Integer.parseInt(value.trim());
             default -> { }
         }
     }
@@ -82,13 +98,14 @@ public class CcLinkDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new CcLinkLabSession(host, port, timeoutMs);
+            session = new CcLinkSession(
+                    host, port, timeoutMs, networkNo, pcNo, ioNo, stationNo, monitoringTimer);
             driverObject.log(DriverLogLevel.INFO,
-                    "CC-Link SLMP/ASCII gateway lab connected to " + host + ":" + port
-                            + " (not CC-Link RS-485 / IE Field ASIC / CLPA stack)");
+                    "CC-Link SLMP 3E connected to " + host + ":" + port
+                            + " (not CC-Link RS-485 ASIC / CLPA stack)");
         } catch (IOException e) {
             session = null;
-            throw new DriverException("CC-Link lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("CC-Link connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -116,10 +133,10 @@ public class CcLinkDeviceDriver implements DeviceDriver {
             CcLinkPoint point = CcLinkPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                double value = session.readValue(point.wireToken());
-                driverObject.updateVariable(entry.getKey(), toRecord(point, value));
+                int word = session.readWord(point.deviceCode(), point.address());
+                driverObject.updateVariable(entry.getKey(), toRecord(point, word));
             } catch (IOException e) {
-                throw new DriverException("CC-Link lab read failed for " + mapping, e);
+                throw new DriverException("CC-Link read failed for " + mapping, e);
             }
         }
     }
@@ -131,18 +148,18 @@ public class CcLinkDeviceDriver implements DeviceDriver {
         if (point == null) {
             throw new DriverException("Unknown point: " + pointId + " (read it first)");
         }
-        double numeric = extractNumeric(value);
+        int word = (int) Math.round(extractNumeric(value)) & 0xFFFF;
         try {
-            session.writeValue(point.wireToken(), numeric);
-            driverObject.updateVariable(pointId, toRecord(point, numeric));
+            session.writeWord(point.deviceCode(), point.address(), word);
+            driverObject.updateVariable(pointId, toRecord(point, word));
         } catch (IOException e) {
-            throw new DriverException("CC-Link lab write failed for " + pointId, e);
+            throw new DriverException("CC-Link write failed for " + pointId, e);
         }
     }
 
-    private static DataRecord toRecord(CcLinkPoint point, double value) {
+    private static DataRecord toRecord(CcLinkPoint point, int word) {
         return DataRecord.single(VALUE_SCHEMA, Map.of(
-                "value", value,
+                "value", (double) word,
                 "kind", point.kind(),
                 "address", (long) point.address(),
                 "point", point.display()
@@ -170,5 +187,10 @@ public class CcLinkDeviceDriver implements DeviceDriver {
         if (!isConnected()) {
             throw new DriverException("Not connected");
         }
+    }
+
+    /** Exposed for literal frame tests. */
+    public static byte[] buildReadD100ReferenceFrame() {
+        return Slmp3eCodec.buildReadD100Reference();
     }
 }

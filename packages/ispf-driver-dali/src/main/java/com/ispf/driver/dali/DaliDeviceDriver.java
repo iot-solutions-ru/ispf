@@ -6,31 +6,33 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.dali.codec.DaliCodec;
 
-import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * DALI lighting gateway driver — ASCII command lab over TCP.
+ * DALI driver — IEC 62386 forward frames (two bytes) over TCP (default port {@code 4001}).
  * <p>
- * Lab dialect (not IEC 62386 native Manchester PHY): client sends newline commands
- * {@code QUERY &lt;addr&gt;} / {@code SET &lt;addr&gt; &lt;level&gt;} where address is
- * {@code A0}..{@code A63}, {@code G0}..{@code G15}, or {@code BCAST}.
- * Point mapping is the DALI address ({@code A5}, {@code G1}, {@code BCAST}).
- * Reads return actual level; writes set arc power level 0..254 from record {@code value}.
+ * Point mapping is the DALI address ({@code A5}, {@code G1}, {@code BCAST}). Reads issue
+ * QUERY ACTUAL LEVEL; writes send DAPC (arc power level 0..254) from record {@code value}.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only; not a DALI USB/dongle vendor SDK.
  */
 public class DaliDeviceDriver implements DeviceDriver {
+
+    private static final Pattern SHORT = Pattern.compile("^A(\\d{1,2})$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern GROUP = Pattern.compile("^G(\\d{1,2})$", Pattern.CASE_INSENSITIVE);
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("daliValue")
             .field("value", FieldType.STRING)
@@ -41,8 +43,9 @@ public class DaliDeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "dali",
             "DALI Driver",
-            "0.1.0",
-            "DALI lighting gateway ASCII lab: QUERY/SET over TCP (not native IEC 62386 PHY)",
+            "1.0.0",
+            "IEC 62386 DALI forward frames (two bytes) over TCP;"
+                    + " not native Manchester PHY / vendor USB dongle SDK",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -93,7 +96,8 @@ public class DaliDeviceDriver implements DeviceDriver {
             next.setTcpNoDelay(true);
             socket = next;
             connected = true;
-            driverObject.log(DriverLogLevel.INFO, "DALI gateway connected to " + host + ":" + port);
+            driverObject.log(DriverLogLevel.INFO,
+                    "DALI IEC 62386 TCP connected to " + host + ":" + port);
         } catch (IOException e) {
             closeSocket();
             throw new DriverException("DALI connect failed for " + host + ":" + port, e);
@@ -120,12 +124,12 @@ public class DaliDeviceDriver implements DeviceDriver {
             String address = normalizeAddress(entry.getValue() == null || entry.getValue().isBlank()
                     ? pointId : entry.getValue());
             addresses.put(pointId, address);
-            String raw = transact("QUERY " + address);
-            String level = extractLevel(raw);
+            byte[] frame = buildQueryFrame(address);
+            int level = transact(frame);
             driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
-                    "value", level,
+                    "value", Integer.toString(level),
                     "address", address,
-                    "raw", raw
+                    "raw", hex(frame) + " -> " + level
             )));
         }
     }
@@ -134,23 +138,27 @@ public class DaliDeviceDriver implements DeviceDriver {
     public void writePoint(String pointId, DataRecord value) throws DriverException {
         ensureConnected();
         String address = addresses.getOrDefault(pointId, normalizeAddress(pointId));
-        String level = extractValue(value);
-        String raw = transact("SET " + address + " " + level);
+        int level = parseLevel(extractValue(value));
+        byte[] frame = buildDapcFrame(address, level);
+        int echoed = transact(frame);
         driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
-                "value", extractLevel(raw).isBlank() ? level : extractLevel(raw),
+                "value", Integer.toString(echoed >= 0 ? echoed : level),
                 "address", address,
-                "raw", raw
+                "raw", hex(frame)
         )));
     }
 
-    private synchronized String transact(String command) throws DriverException {
+    private synchronized int transact(byte[] frame) throws DriverException {
         try {
-            writeLine(socket.getOutputStream(), command);
-            String line = readLine(socket.getInputStream());
-            if (line == null) {
-                throw new IOException("EOF from DALI gateway");
+            OutputStream out = socket.getOutputStream();
+            InputStream in = socket.getInputStream();
+            out.write(frame);
+            out.flush();
+            int b = in.read();
+            if (b < 0) {
+                throw new EOFException("EOF from DALI peer");
             }
-            return line.trim();
+            return b & 0xFF;
         } catch (IOException e) {
             throw new DriverException("DALI I/O failed for " + host + ":" + port, e);
         }
@@ -166,18 +174,48 @@ public class DaliDeviceDriver implements DeviceDriver {
         return t;
     }
 
-    static String extractLevel(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return "";
+    static byte[] buildQueryFrame(String address) {
+        return DaliCodec.buildCommand(addressByte(address, true), DaliCodec.CMD_QUERY_ACTUAL_LEVEL);
+    }
+
+    static byte[] buildDapcFrame(String address, int level) {
+        return DaliCodec.buildDapc(addressByte(address, false), level);
+    }
+
+    static int addressByte(String address, boolean command) {
+        String upper = address.toUpperCase(Locale.ROOT);
+        if ("BCAST".equals(upper) || "BROADCAST".equals(upper)) {
+            return command ? DaliCodec.broadcastCommandByte() : DaliCodec.broadcastDapcByte();
         }
-        String upper = raw.toUpperCase(Locale.ROOT);
-        if (upper.startsWith("LEVEL ")) {
-            return raw.substring(6).trim();
+        Matcher shortAddr = SHORT.matcher(upper);
+        if (shortAddr.matches()) {
+            int s = Integer.parseInt(shortAddr.group(1));
+            if (s < 0 || s > 63) {
+                throw new IllegalArgumentException("DALI short address out of range: " + s);
+            }
+            return command ? DaliCodec.shortAddressCommandByte(s) : DaliCodec.shortAddressDapcByte(s);
         }
-        if (upper.startsWith("OK ")) {
-            return raw.substring(3).trim();
+        Matcher group = GROUP.matcher(upper);
+        if (group.matches()) {
+            int g = Integer.parseInt(group.group(1));
+            if (g < 0 || g > 15) {
+                throw new IllegalArgumentException("DALI group out of range: " + g);
+            }
+            return command ? DaliCodec.groupCommandByte(g) : DaliCodec.groupDapcByte(g);
         }
-        return raw.trim();
+        throw new IllegalArgumentException("Unsupported DALI address: " + address);
+    }
+
+    static int parseLevel(String raw) {
+        String text = raw == null ? "0" : raw.trim();
+        if (text.isEmpty()) {
+            return 0;
+        }
+        int level = Integer.parseInt(text);
+        if (level < 0 || level > 254) {
+            throw new IllegalArgumentException("DALI level out of range: " + level);
+        }
+        return level;
     }
 
     private static String extractValue(DataRecord value) {
@@ -186,6 +224,17 @@ public class DaliDeviceDriver implements DeviceDriver {
         }
         Object raw = value.firstRow().get("value");
         return raw == null ? "0" : String.valueOf(raw).trim();
+    }
+
+    private static String hex(byte[] frame) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < frame.length; i++) {
+            if (i > 0) {
+                sb.append(' ');
+            }
+            sb.append(String.format(Locale.ROOT, "%02X", frame[i] & 0xFF));
+        }
+        return sb.toString();
     }
 
     private void ensureConnected() throws DriverException {
@@ -206,28 +255,7 @@ public class DaliDeviceDriver implements DeviceDriver {
         }
     }
 
-    static void writeLine(OutputStream out, String line) throws IOException {
-        out.write((line + "\r\n").getBytes(StandardCharsets.US_ASCII));
-        out.flush();
-    }
-
-    static String readLine(InputStream in) throws IOException {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        while (true) {
-            int b = in.read();
-            if (b < 0) {
-                if (buf.size() == 0) {
-                    return null;
-                }
-                break;
-            }
-            if (b == '\n') {
-                break;
-            }
-            if (b != '\r') {
-                buf.write(b);
-            }
-        }
-        return buf.toString(StandardCharsets.US_ASCII);
+    public static byte[] buildOffShortAddress0Frame() {
+        return DaliCodec.buildOffShortAddress0();
     }
 }

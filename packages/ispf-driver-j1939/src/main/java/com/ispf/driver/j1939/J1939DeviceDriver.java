@@ -23,23 +23,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * SAE J1939 driver — lab TCP gateway dialect (default port {@code 29536}).
+ * SAE J1939 driver — LAWICEL SLCAN over TCP (default port {@code 29536}).
  * <p>
- * Honesty boundary: this talks to an ISPF J1939-over-TCP gateway lab, not raw SocketCAN,
- * not an ISO 15765-2 (ISO-TP) kernel stack, and not Vector/Peak proprietary CAN SDKs.
- * Frames are line-oriented ASCII:
- * <pre>
- *   PGN,SA,DATA_HEX{@code \\n}
- * </pre>
- * Optional request/response helpers used by the lab gateway:
- * <pre>
- *   GET &lt;pgn-mapping&gt;{@code \\n}  →  PGN,SA,DATA_HEX{@code \\n}
- *   SET PGN,SA,DATA_HEX{@code \\n} →  OK{@code \\n}
- * </pre>
- * Point mappings accept {@code PGN:61444}, {@code 0xF004}, {@code 61444}, or {@code PGN:0xF004}.
- * Reads expose last payload fields {@code value}/{@code data}/{@code sa} (plus {@code pgn}).
- * Writes send a PGN frame; record {@code value}/{@code data} may be hex or a numeric decimal
- * converted to hex; optional {@code sa} overrides the configured source address.
+ * Extended frames use {@code T} + 8 hex CAN id + 1 hex DLC + data hex + CR.
+ * This talks to a USB-CAN adapter protocol peer over TCP, not raw SocketCAN and not
+ * an ISO 15765-2 kernel stack. Point mappings accept {@code PGN:61444}, {@code 0xF004},
+ * {@code 61444}, or {@code PGN:0xF004}.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
@@ -49,9 +38,8 @@ public class J1939DeviceDriver implements DeviceDriver {
             "^(?:PGN[:\\s-]++)?(?:0x)?([0-9A-Fa-f]++)$",
             Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern FRAME_LINE = Pattern.compile(
-            "^\\s*(?:PGN[:\\s-]*)?(?:0x)?([0-9A-Fa-f]+)\\s*,\\s*(?:0x)?([0-9A-Fa-f]+)\\s*,\\s*([0-9A-Fa-f]*)\\s*$",
-            Pattern.CASE_INSENSITIVE);
+    private static final Pattern SLCAN_EXT = Pattern.compile(
+            "^T([0-9A-Fa-f]{8})([0-9A-Fa-f])([0-9A-Fa-f]*)$");
 
     private static final DataSchema FRAME_SCHEMA = DataSchema.builder("j1939Frame")
             .field("value", FieldType.STRING)
@@ -63,13 +51,15 @@ public class J1939DeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "j1939",
             "SAE J1939 Driver",
-            "0.1.0",
-            "SAE J1939 over TCP gateway lab (line frames PGN,SA,DATA_HEX) — not SocketCAN / ISO-TP",
+            "1.0.0",
+            "SAE J1939 via LAWICEL SLCAN over TCP (extended T frames);"
+                    + " not SocketCAN / ISO-TP / Vector-Peak SDK",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "29536",
                     "sa", "0",
+                    "priority", "6",
                     "timeoutMs", "3000",
                     "pollIntervalMs", "5000"
             ),
@@ -81,6 +71,7 @@ public class J1939DeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 29536;
     private int defaultSa = 0;
+    private int priority = 6;
     private int timeoutMs = 3000;
     private Socket socket;
     private final Map<String, String> points = new ConcurrentHashMap<>();
@@ -105,6 +96,7 @@ public class J1939DeviceDriver implements DeviceDriver {
             case "host" -> host = value.trim();
             case "port" -> port = Integer.parseInt(value.trim());
             case "sa", "sourceAddress" -> defaultSa = parseIntFlexible(value.trim());
+            case "priority" -> priority = Integer.parseInt(value.trim());
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
             default -> { }
         }
@@ -120,11 +112,11 @@ public class J1939DeviceDriver implements DeviceDriver {
             socket = next;
             connected = true;
             driverObject.log(DriverLogLevel.INFO,
-                    "J1939 TCP gateway lab connected to " + host + ":" + port
+                    "J1939 SLCAN connected to " + host + ":" + port
                             + " (not SocketCAN / ISO-TP)");
         } catch (IOException e) {
             closeSocket();
-            throw new DriverException("J1939 TCP gateway connect failed for " + host + ":" + port, e);
+            throw new DriverException("J1939 SLCAN connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -153,7 +145,7 @@ public class J1939DeviceDriver implements DeviceDriver {
                     : entry.getValue().trim();
             points.put(pointId, mapping);
             int pgn = parsePgnMapping(mapping);
-            Frame frame = getFrame(pgn);
+            Frame frame = pollFrame(pgn);
             driverObject.updateVariable(pointId, DataRecord.single(FRAME_SCHEMA, Map.of(
                     "value", frame.dataHex,
                     "data", frame.dataHex,
@@ -172,7 +164,7 @@ public class J1939DeviceDriver implements DeviceDriver {
         int pgn = parsePgnMapping(mapping);
         int sa = extractSa(value, defaultSa);
         String dataHex = extractDataHex(value);
-        setFrame(pgn, sa, dataHex);
+        sendExtended(pgn, sa, dataHex);
         driverObject.updateVariable(pointId, DataRecord.single(FRAME_SCHEMA, Map.of(
                 "value", dataHex,
                 "data", dataHex,
@@ -181,34 +173,35 @@ public class J1939DeviceDriver implements DeviceDriver {
         )));
     }
 
-    private Frame getFrame(int pgn) throws DriverException {
-        String response = transact("GET " + formatPgn(pgn));
-        Frame frame = parseFrameLine(response);
+    private Frame pollFrame(int pgn) throws DriverException {
+        int canId = encodeCanId(priority, pgn, defaultSa);
+        String line = formatExtendedFrame(canId, "");
+        String response = transact(line);
+        Frame frame = parseSlcanExtended(response);
         if (frame.pgn != pgn) {
-            throw new DriverException("J1939 gateway returned PGN " + frame.pgn + " for request " + pgn);
+            throw new DriverException("J1939 SLCAN returned PGN " + frame.pgn + " for request " + pgn);
         }
         return frame;
     }
 
-    private void setFrame(int pgn, int sa, String dataHex) throws DriverException {
-        String line = formatFrame(pgn, sa, dataHex);
-        String response = transact("SET " + line);
-        if (!response.toUpperCase(Locale.ROOT).startsWith("OK")) {
-            // Accept echo of the frame as success for push-style gateways.
-            Frame echoed = tryParseFrameLine(response);
-            if (echoed == null || echoed.pgn != pgn) {
-                throw new DriverException("J1939 gateway write rejected: " + response);
-            }
+    private void sendExtended(int pgn, int sa, String dataHex) throws DriverException {
+        int canId = encodeCanId(priority, pgn, sa);
+        String line = formatExtendedFrame(canId, dataHex);
+        String response = transact(line);
+        String trimmed = response.trim();
+        if (!(trimmed.equalsIgnoreCase("z") || trimmed.equalsIgnoreCase("Z")
+                || tryParseSlcanExtended(trimmed) != null)) {
+            throw new DriverException("J1939 SLCAN write rejected: " + response);
         }
     }
 
     private synchronized String transact(String command) throws DriverException {
         try {
-            writeLine(socket.getOutputStream(), command);
-            return readLine(socket.getInputStream());
+            writeAscii(socket.getOutputStream(), command);
+            return readUntilCr(socket.getInputStream());
         } catch (IOException e) {
             throw new DriverException(
-                    "J1939 TCP gateway I/O failed for " + host + ":" + port + " (" + command + ")", e);
+                    "J1939 SLCAN I/O failed for " + host + ":" + port, e);
         }
     }
 
@@ -222,6 +215,60 @@ public class J1939DeviceDriver implements DeviceDriver {
                 // disconnect is best-effort
             }
         }
+    }
+
+    static int encodeCanId(int priority, int pgn, int sa) {
+        return ((priority & 0x7) << 26) | ((pgn & 0x3FFFF) << 8) | (sa & 0xFF);
+    }
+
+    static int pgnFromCanId(int canId) {
+        return (canId >> 8) & 0x3FFFF;
+    }
+
+    static int saFromCanId(int canId) {
+        return canId & 0xFF;
+    }
+
+    static String formatExtendedFrame(int canId, String dataHex) {
+        String data = normalizeHex(dataHex);
+        int dlc = data.length() / 2;
+        if (dlc > 8) {
+            throw new IllegalArgumentException("J1939 DLC exceeds 8: " + dlc);
+        }
+        return "T"
+                + String.format(Locale.ROOT, "%08X", canId & 0x1FFFFFFF)
+                + Integer.toHexString(dlc).toUpperCase(Locale.ROOT)
+                + data
+                + "\r";
+    }
+
+    static Frame parseSlcanExtended(String line) {
+        Frame frame = tryParseSlcanExtended(line);
+        if (frame == null) {
+            throw new IllegalArgumentException("Invalid SLCAN extended frame: " + line);
+        }
+        return frame;
+    }
+
+    static Frame tryParseSlcanExtended(String line) {
+        if (line == null) {
+            return null;
+        }
+        String trimmed = line.trim();
+        if (trimmed.endsWith("\r")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        Matcher matcher = SLCAN_EXT.matcher(trimmed);
+        if (!matcher.matches()) {
+            return null;
+        }
+        int canId = Integer.parseInt(matcher.group(1), 16);
+        int dlc = Integer.parseInt(matcher.group(2), 16);
+        String data = normalizeHex(matcher.group(3));
+        if (data.length() != dlc * 2) {
+            return null;
+        }
+        return new Frame(pgnFromCanId(canId), saFromCanId(canId), data);
     }
 
     static int parsePgnMapping(String mapping) {
@@ -254,43 +301,6 @@ public class J1939DeviceDriver implements DeviceDriver {
             }
         }
         return false;
-    }
-
-    static Frame parseFrameLine(String line) {
-        Frame frame = tryParseFrameLine(line);
-        if (frame == null) {
-            throw new IllegalArgumentException("Invalid J1939 frame line: " + line);
-        }
-        return frame;
-    }
-
-    static Frame tryParseFrameLine(String line) {
-        if (line == null) {
-            return null;
-        }
-        String trimmed = line.trim();
-        if (trimmed.regionMatches(true, 0, "OK", 0, 2) && trimmed.length() > 2) {
-            trimmed = trimmed.substring(2).trim();
-            if (trimmed.startsWith(",")) {
-                trimmed = trimmed.substring(1).trim();
-            }
-        }
-        Matcher matcher = FRAME_LINE.matcher(trimmed);
-        if (!matcher.matches()) {
-            return null;
-        }
-        int pgn = parseIntFlexible(matcher.group(1));
-        int sa = parseIntFlexible(matcher.group(2));
-        String data = normalizeHex(matcher.group(3));
-        return new Frame(pgn, sa, data);
-    }
-
-    static String formatFrame(int pgn, int sa, String dataHex) {
-        return formatPgn(pgn) + "," + sa + "," + normalizeHex(dataHex);
-    }
-
-    static String formatPgn(int pgn) {
-        return Integer.toString(pgn);
     }
 
     static String normalizeHex(String raw) {
@@ -373,25 +383,25 @@ public class J1939DeviceDriver implements DeviceDriver {
         return Integer.parseInt(text, 10);
     }
 
-    static void writeLine(OutputStream out, String line) throws IOException {
-        out.write((line + "\n").getBytes(StandardCharsets.US_ASCII));
+    static void writeAscii(OutputStream out, String line) throws IOException {
+        out.write(line.getBytes(StandardCharsets.US_ASCII));
         out.flush();
     }
 
-    static String readLine(InputStream in) throws IOException {
+    static String readUntilCr(InputStream in) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         while (true) {
             int ch = in.read();
             if (ch < 0) {
                 if (buf.size() == 0) {
-                    throw new IOException("EOF reading J1939 gateway line");
+                    throw new IOException("EOF reading SLCAN line");
                 }
                 break;
             }
-            if (ch == '\n') {
+            if (ch == '\r') {
                 break;
             }
-            if (ch != '\r') {
+            if (ch != '\n') {
                 buf.write(ch);
             }
         }

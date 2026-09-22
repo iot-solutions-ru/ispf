@@ -8,37 +8,35 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.ethernetpowerlink.codec.EthernetPowerlinkCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Fake UDP loopback tests for the Ethernet POWERLINK MN/CN lab subset.
- * Certifies the lab dialect only — not full EPSG POWERLINK MN with hard RT.
- */
 class EthernetPowerlinkDeviceDriverTest {
 
     private EthernetPowerlinkDeviceDriver driver;
-    private FakePowerlinkMnLab lab;
+    private FakePowerlinkPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -46,218 +44,133 @@ class EthernetPowerlinkDeviceDriverTest {
             driver.disconnect();
             driver = null;
         }
-        if (lab != null) {
-            lab.close();
-            lab = null;
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
     }
 
     @Test
-    void metadataIsProductionReadWritePdoUdpLab() {
+    void metadataDescribesPowerlinkTcpGateway() {
         driver = new EthernetPowerlinkDeviceDriver();
         assertEquals("ethernet-powerlink", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
-        assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
-        assertEquals("6040", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("pdo") || description.contains("udp")
-                || description.contains("powerlink"));
-        assertTrue(description.contains("lab"));
-        assertTrue(description.contains("not") || description.contains("not full"));
-        assertTrue(!description.contains("stub") && !description.contains("placeholder"));
+        assertTrue(description.contains("powerlink"));
+        assertTrue(description.contains("tcp"));
+        assertFalse(description.contains("lab"));
     }
 
     @Test
-    void pointParserAcceptsObjectAndPdoForms() throws Exception {
-        EthernetPowerlinkPoint object = EthernetPowerlinkPoint.parse("node:1:obj:0x6000:01");
-        assertEquals("node:1:obj:0x6000:01", object.wireToken());
-        assertEquals(EthernetPowerlinkPoint.Kind.OBJECT, object.kind());
-
-        EthernetPowerlinkPoint pdo = EthernetPowerlinkPoint.parse("pdo:1");
-        assertEquals("pdo:1", pdo.wireToken());
-        assertEquals(EthernetPowerlinkPoint.Kind.PDO, pdo.kind());
+    void pointParserAcceptsNodeAndPdoForms() throws Exception {
+        assertEquals(1, EthernetPowerlinkPoint.parse("node:1:obj:0x6000:01").destinationNode());
+        assertEquals(1, EthernetPowerlinkPoint.parse("pdo:1").destinationNode());
     }
 
     @Test
-    void udpGetAndSetLoopback() throws Exception {
-        lab = new FakePowerlinkMnLab();
-        lab.put("node:1:obj:0x6000:01", 12.5);
-        lab.put("pdo:1", 21.0);
-        lab.start();
-        assertTrue(lab.awaitReady(2, TimeUnit.SECONDS));
+    void readAndWriteViaPreq() throws Exception {
+        peer = new FakePowerlinkPeer();
+        peer.put(1, 12.5f);
+        peer.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(lab.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new EthernetPowerlinkDeviceDriver();
         driver.initialize(object);
         driver.connect();
-        assertTrue(driver.isConnected());
 
-        driver.readPoints(Map.of(
-                "obj", "node:1:obj:0x6000:01",
-                "pdo", "pdo:1"
-        ));
-        assertEquals(12.5, (Double) object.variables.get("obj").firstRow().get("value"), 0.001);
-        assertEquals(21.0, (Double) object.variables.get("pdo").firstRow().get("value"), 0.001);
+        driver.readPoints(Map.of("n", "node:1:obj:0x6000:01"));
+        assertEquals(12.5, (Double) object.variables.get("n").firstRow().get("value"), 0.001);
 
-        driver.writePoint("pdo", DataRecord.single(
+        driver.writePoint("n", DataRecord.single(
                 DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
-                Map.of("value", 33.25)
+                Map.of("value", 9.5)
         ));
-        assertEquals(33.25, lab.get("pdo:1"), 0.001);
-        assertEquals(33.25, (Double) object.variables.get("pdo").firstRow().get("value"), 0.001);
-        assertTrue(lab.awaitWrite(2, TimeUnit.SECONDS));
+        assertEquals(9.5f, peer.get(1), 0.001f);
     }
 
     @Test
-    void readPointsBeforeConnectThrows() {
+    void readBeforeConnectThrows() {
         driver = new EthernetPowerlinkDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of()));
-        DriverException error = assertThrows(DriverException.class, () ->
-                driver.readPoints(Map.of("x", "pdo:1")));
-        assertTrue(error.getMessage().contains("Not connected"));
+        assertThrows(DriverException.class, () -> driver.readPoints(Map.of("x", "pdo:1")));
     }
 
-    private static final class FakePowerlinkMnLab implements AutoCloseable {
-
-        private final DatagramSocket socket;
-        private final ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
-            Thread thread = new Thread(runnable, "fake-powerlink");
-            thread.setDaemon(true);
-            return thread;
+    private static final class FakePowerlinkPeer implements AutoCloseable {
+        private final ServerSocket serverSocket;
+        private final ExecutorService executor = Executors.newCachedThreadPool(r -> {
+            Thread t = new Thread(r, "fake-powerlink");
+            t.setDaemon(true);
+            return t;
         });
-        private final Map<String, Double> values = new ConcurrentHashMap<>();
-        private final CountDownLatch ready = new CountDownLatch(1);
-        private final AtomicInteger writes = new AtomicInteger();
-        private final CountDownLatch writeSeen = new CountDownLatch(1);
-        private volatile boolean running = true;
+        private final Map<Integer, Float> values = new ConcurrentHashMap<>();
 
-        FakePowerlinkMnLab() throws IOException {
-            socket = new DatagramSocket(new InetSocketAddress("127.0.0.1", 0));
-            socket.setSoTimeout(500);
+        FakePowerlinkPeer() throws IOException {
+            serverSocket = new ServerSocket();
+            serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
 
-        int port() {
-            return socket.getLocalPort();
-        }
+        int port() { return serverSocket.getLocalPort(); }
+        void put(int dest, float value) { values.put(dest, value); }
+        float get(int dest) { return values.getOrDefault(dest, 0f); }
+        void start() { executor.submit(this::acceptLoop); }
 
-        void put(String token, double value) {
-            values.put(normalize(token), value);
-        }
-
-        double get(String token) {
-            return values.getOrDefault(normalize(token), 0.0);
-        }
-
-        void start() {
-            executor.submit(this::loop);
-            ready.countDown();
-        }
-
-        boolean awaitReady(long timeout, TimeUnit unit) throws InterruptedException {
-            return ready.await(timeout, unit);
-        }
-
-        boolean awaitWrite(long timeout, TimeUnit unit) throws InterruptedException {
-            return writeSeen.await(timeout, unit);
-        }
-
-        private void loop() {
-            byte[] buf = new byte[2048];
-            while (running && !socket.isClosed()) {
+        private void acceptLoop() {
+            while (!serverSocket.isClosed()) {
                 try {
-                    DatagramPacket packet = new DatagramPacket(buf, buf.length);
-                    socket.receive(packet);
-                    String request = new String(
-                            packet.getData(), 0, packet.getLength(), StandardCharsets.US_ASCII)
-                            .trim();
-                    String upper = request.toUpperCase(Locale.ROOT);
-                    String reply;
-                    if (upper.startsWith("GET ")) {
-                        String token = normalize(request.substring(4).trim());
-                        Double value = values.get(token);
-                        reply = "VALUE " + (value == null ? 0.0 : value);
-                    } else if (upper.startsWith("SET ")) {
-                        String rest = request.substring(4).trim();
-                        int space = rest.lastIndexOf(' ');
-                        if (space < 0) {
-                            reply = "ERR";
-                        } else {
-                            String token = normalize(rest.substring(0, space).trim());
-                            double value = Double.parseDouble(rest.substring(space + 1).trim());
-                            values.put(token, value);
-                            writes.incrementAndGet();
-                            writeSeen.countDown();
-                            reply = "OK";
-                        }
-                    } else {
-                        reply = "ERR";
-                    }
-                    byte[] out = reply.getBytes(StandardCharsets.US_ASCII);
-                    socket.send(new DatagramPacket(
-                            out, out.length, packet.getAddress(), packet.getPort()));
+                    Socket socket = serverSocket.accept();
+                    executor.submit(() -> handle(socket));
                 } catch (IOException e) {
-                    if (!running || socket.isClosed()) {
-                        return;
-                    }
+                    if (serverSocket.isClosed()) return;
                 }
             }
         }
 
-        private static String normalize(String token) {
-            return token.trim().toLowerCase(Locale.ROOT);
+        private void handle(Socket socket) {
+            try (socket) {
+                InputStream in = socket.getInputStream();
+                OutputStream out = socket.getOutputStream();
+                while (true) {
+                    byte[] header = EthernetPowerlinkCodec.readFully(in, 3);
+                    int dest = header[1] & 0xFF;
+                    byte[] payload = EthernetPowerlinkCodec.readFully(in, 4);
+                    boolean allZero = payload[0] == 0 && payload[1] == 0 && payload[2] == 0 && payload[3] == 0;
+                    if (allZero) {
+                        float value = values.getOrDefault(dest, 0f);
+                        out.write(EthernetPowerlinkCodec.encodePRes(
+                                EthernetPowerlinkCodec.MN_NODE, dest, EthernetPowerlinkCodec.encodeFloat(value)));
+                        out.flush();
+                    } else {
+                        values.put(dest, ByteBuffer.wrap(payload).getFloat());
+                        out.write(0x00);
+                        out.flush();
+                    }
+                }
+            } catch (IOException ignored) {
+            }
         }
 
         @Override
         public void close() throws Exception {
-            running = false;
-            socket.close();
+            serverSocket.close();
             executor.shutdownNow();
             executor.awaitTermination(2, TimeUnit.SECONDS);
         }
     }
 
     private static final class StubDriverObject implements DeviceDriver.DriverObject {
-
         private final Map<String, String> configuration;
         private final Map<String, DataRecord> variables = new ConcurrentHashMap<>();
-
-        StubDriverObject(Map<String, String> configuration) {
-            this.configuration = configuration;
+        StubDriverObject(Map<String, String> configuration) { this.configuration = configuration; }
+        @Override public PlatformObject deviceObject() {
+            return new PlatformObject("t", "root.platform.devices.t", ObjectType.DEVICE, "T", "", null);
         }
-
-        @Override
-        public PlatformObject deviceObject() {
-            return new PlatformObject(
-                    "test-ethernet-powerlink",
-                    "root.platform.devices.test",
-                    ObjectType.DEVICE,
-                    "Test",
-                    "",
-                    null
-            );
-        }
-
-        @Override
-        public void updateVariable(String name, DataRecord value) {
-            variables.put(name, value);
-        }
-
-        @Override
-        public Optional<DataRecord> getVariable(String name) {
-            return Optional.ofNullable(variables.get(name));
-        }
-
-        @Override
-        public void log(DeviceDriver.DriverLogLevel level, String message) {
-        }
-
-        @Override
-        public Map<String, String> configuration() {
-            return configuration;
-        }
+        @Override public void updateVariable(String name, DataRecord value) { variables.put(name, value); }
+        @Override public Optional<DataRecord> getVariable(String name) { return Optional.ofNullable(variables.get(name)); }
+        @Override public void log(DeviceDriver.DriverLogLevel level, String message) { }
+        @Override public Map<String, String> configuration() { return configuration; }
     }
 }

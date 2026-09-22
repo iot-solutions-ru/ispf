@@ -19,13 +19,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Allen-Bradley DF1 driver — protected-mode binary lab over a TCP serial bridge.
+ * Allen-Bradley DF1 full-duplex driver over a TCP serial bridge.
  * <p>
  * Default port {@code 2222}. Point mapping: {@code N7:0}, {@code F8:1}, {@code B3:0/0}.
  * Optional write maps {@code value}/{@code raw} to a typed logical write.
  * <p>
- * <strong>Honesty:</strong> TCP bridge full-duplex DF1 lab (Apache-2.0 clean-room), not a native
- * serial DF1 exclusive-owner stack and not EtherNet/IP CIP. JDK sockets only — no PLC4X,
+ * TCP-bridge full-duplex DF1 (Apache-2.0 clean-room), not a native serial DF1
+ * exclusive-owner stack and not EtherNet/IP CIP. JDK sockets only — no PLC4X,
  * no Rockwell/vendor SDKs. Subset: CMD {@code 0x0F} typed read/write for N/F/B files only.
  */
 public class RockwellDf1DeviceDriver implements DeviceDriver {
@@ -41,7 +41,7 @@ public class RockwellDf1DeviceDriver implements DeviceDriver {
             "rockwell-df1",
             "Rockwell DF1 Driver",
             "0.1.0",
-            "DF1 protected-mode binary typed read/write (N/F/B) over TCP bridge lab"
+            "DF1 full-duplex protected-mode typed read/write (N/F/B) over TCP serial bridge"
                     + " (not native serial exclusive-owner; not EtherNet/IP CIP)",
             "ISPF",
             Map.of(
@@ -93,7 +93,7 @@ public class RockwellDf1DeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         connected = true;
-        driverObject.log(DriverLogLevel.INFO, "Rockwell DF1 TCP-bridge lab ready for " + host + ":" + port);
+        driverObject.log(DriverLogLevel.INFO, "Rockwell DF1 ready for " + host + ":" + port);
     }
 
     @Override
@@ -180,10 +180,8 @@ public class RockwellDf1DeviceDriver implements DeviceDriver {
             case B -> {
                 int word = (int) extractNumeric(value) & 0xFFFF;
                 if (word != 0 && word != 1) {
-                    // allow full word write or 0/1 bit semantics
                     yield RockwellDf1Frame.encodeInt16(word);
                 }
-                // 0/1 bit write: store as word with only that bit set/cleared representation
                 yield RockwellDf1Frame.encodeInt16(word == 0 ? 0 : (1 << point.bit()));
             }
         };

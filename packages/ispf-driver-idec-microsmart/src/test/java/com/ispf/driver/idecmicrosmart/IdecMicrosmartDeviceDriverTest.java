@@ -11,6 +11,7 @@ import com.ispf.driver.DriverMaturity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -50,6 +52,20 @@ class IdecMicrosmartDeviceDriverTest {
             plc.close();
             plc = null;
         }
+    }
+
+    @Test
+    void d100ReadIsLiteralHostLinkBytes() throws Exception {
+        // Station 00, RDD D00100 → body 00RDD00100, FCS XOR = 0x63
+        byte[] expected = new byte[] {
+                0x40, 0x30, 0x30, 0x52, 0x44, 0x44, 0x30, 0x30, 0x31, 0x30, 0x30, 0x36, 0x33, 0x2A, 0x0D
+        };
+        String command = IdecMicrosmartDeviceDriver.buildReadCommand("00", "D100");
+        assertEquals("@00RDD0010063*", command);
+
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        IdecMicrosmartDeviceDriver.writeFrame(captured, command);
+        assertArrayEquals(expected, captured.toByteArray());
     }
 
     @Test
@@ -79,7 +95,7 @@ class IdecMicrosmartDeviceDriverTest {
 
         assertEquals("4660", object.variables.get("data").firstRow().get("value"));
         assertEquals("1", object.variables.get("relay").firstRow().get("value"));
-        assertTrue(object.variables.get("data").firstRow().get("command").toString().startsWith("@00RDD00100"));
+        assertEquals("@00RDD0010063*", object.variables.get("data").firstRow().get("command"));
     }
 
     @Test
@@ -110,9 +126,8 @@ class IdecMicrosmartDeviceDriverTest {
 
     @Test
     void helpersBuildAndParseFrames() {
-        String read = IdecMicrosmartDeviceDriver.buildReadCommand("00", "D100");
-        assertTrue(read.startsWith("@00RDD00100"));
-        assertTrue(read.endsWith("*"));
+        assertEquals("@00RDD0010063*", IdecMicrosmartDeviceDriver.buildReadCommand("00", "D100"));
+        assertTrue(IdecMicrosmartDeviceDriver.buildReadCommand("00", "D100").endsWith("*"));
 
         String write = IdecMicrosmartDeviceDriver.buildWriteCommand("00", "M0", "1");
         assertTrue(write.startsWith("@00WDM000000001"));

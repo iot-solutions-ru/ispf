@@ -3,12 +3,12 @@ package com.ispf.driver.secsgem;
 import java.util.Locale;
 
 /**
- * Point mapping for the HSMS/GEM-lab codec.
+ * Point mapping for the HSMS / SECS-II GEM driver.
  * <p>
  * Accepted forms:
  * <ul>
  *   <li>{@code S1F1} / {@code areYouThere} — equipment online / MDLN+SOFTREV</li>
- *   <li>{@code status} / {@code S6F1} — lab status string/number</li>
+ *   <li>{@code status} / {@code S6F1} — status string/number</li>
  *   <li>{@code VID:100} / {@code 100} — equipment variable via S2F13/S2F14</li>
  * </ul>
  */

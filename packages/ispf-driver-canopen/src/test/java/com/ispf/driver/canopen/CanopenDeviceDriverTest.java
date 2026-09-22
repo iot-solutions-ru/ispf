@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -27,17 +28,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link CanopenDeviceDriver} against an in-process CANopen TCP gateway lab.
- * Certifies the SDO GET/SET lab dialect only — not SocketCAN / CiA / Vector-Peak stacks.
+ * In-process peer tests for CANopen LAWICEL SLCAN over TCP.
  */
 class CanopenDeviceDriverTest {
 
     private CanopenDeviceDriver driver;
-    private FakeCanopenGateway gateway;
+    private FakeSlcanPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -45,31 +46,43 @@ class CanopenDeviceDriverTest {
             driver.disconnect();
             driver = null;
         }
-        if (gateway != null) {
-            gateway.close();
-            gateway = null;
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
     }
 
     @Test
-    void metadataIsProductionReadWriteTcpGatewayLab() {
+    void sdoUploadRequestLiteralForNode1Index2000Sub0() {
+        // id 0x601, DLC 8, data 40 00 20 00 00 00 00 00
+        String expected = "t60184000200000000000\r";
+        String line = CanopenDeviceDriver.formatSdoUploadRequest(1, 0x2000, 0);
+        assertEquals(expected, line);
+        assertTrue(expected.contains("t6018") && expected.contains("40002000"));
+    }
+
+    @Test
+    void metadataIsProductionReadWriteSlcan() {
         driver = new CanopenDeviceDriver();
         assertEquals("canopen", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
-        assertTrue(driver.metadata().description().toLowerCase(Locale.ROOT).contains("tcp"));
-        assertTrue(driver.metadata().description().toLowerCase(Locale.ROOT).contains("not"));
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("slcan") || description.contains("tcp"));
+        assertTrue(description.contains("not"));
+        assertFalse(description.contains("lab"));
     }
 
     @Test
     void readHexAndDecimalOdMappings() throws Exception {
-        gateway = new FakeCanopenGateway();
-        gateway.put(0x2000, 0x01, "42");
-        gateway.start();
+        peer = new FakeSlcanPeer();
+        peer.put(0x2000, 0x01, 42);
+        peer.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
+                "nodeId", "1",
                 "timeoutMs", "2000"
         ));
         driver = new CanopenDeviceDriver();
@@ -90,13 +103,14 @@ class CanopenDeviceDriverTest {
 
     @Test
     void writeThenReadSdo() throws Exception {
-        gateway = new FakeCanopenGateway();
-        gateway.put(0x2000, 0x01, "0");
-        gateway.start();
+        peer = new FakeSlcanPeer();
+        peer.put(0x2000, 0x01, 0);
+        peer.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
+                "nodeId", "1",
                 "timeoutMs", "2000"
         ));
         driver = new CanopenDeviceDriver();
@@ -108,7 +122,7 @@ class CanopenDeviceDriverTest {
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
                 Map.of("value", "99")
         ));
-        assertEquals("99", gateway.get(0x2000, 0x01));
+        assertEquals(99, peer.get(0x2000, 0x01));
 
         driver.readPoints(Map.of("od", "0x2000:01"));
         assertEquals("99", object.variables.get("od").firstRow().get("value"));
@@ -137,20 +151,20 @@ class CanopenDeviceDriverTest {
         driver = new CanopenDeviceDriver();
         driver.initialize(object);
         DriverException error = assertThrows(DriverException.class, driver::connect);
-        assertTrue(error.getMessage().contains("CANopen TCP gateway connect failed"));
+        assertTrue(error.getMessage().contains("CANopen SLCAN connect failed"));
     }
 
-    private static final class FakeCanopenGateway implements AutoCloseable {
+    private static final class FakeSlcanPeer implements AutoCloseable {
 
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
-            Thread thread = new Thread(runnable, "fake-canopen-gateway");
+            Thread thread = new Thread(runnable, "fake-canopen-slcan");
             thread.setDaemon(true);
             return thread;
         });
-        private final Map<String, String> values = new ConcurrentHashMap<>();
+        private final Map<String, Long> values = new ConcurrentHashMap<>();
 
-        FakeCanopenGateway() throws IOException {
+        FakeSlcanPeer() throws IOException {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
@@ -159,12 +173,12 @@ class CanopenDeviceDriverTest {
             return serverSocket.getLocalPort();
         }
 
-        void put(int index, int sub, String value) {
+        void put(int index, int sub, long value) {
             values.put(key(index, sub), value);
         }
 
-        String get(int index, int sub) {
-            return values.get(key(index, sub));
+        long get(int index, int sub) {
+            return values.getOrDefault(key(index, sub), 0L);
         }
 
         void start() {
@@ -189,31 +203,50 @@ class CanopenDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    String line = CanopenDeviceDriver.readLine(in);
-                    String trimmed = line.trim();
-                    if (trimmed.regionMatches(true, 0, "SDO GET ", 0, 8)) {
-                        CanopenDeviceDriver.OdAddress address =
-                                CanopenDeviceDriver.parseOdMapping(trimmed.substring(8).trim());
-                        String value = values.get(key(address.index(), address.sub()));
-                        if (value == null) {
-                            CanopenDeviceDriver.writeLine(out, "ERR unknown OD");
-                        } else {
-                            CanopenDeviceDriver.writeLine(out, value);
-                        }
-                    } else if (trimmed.regionMatches(true, 0, "SDO SET ", 0, 8)) {
-                        String rest = trimmed.substring(8).trim();
-                        int space = rest.indexOf(' ');
-                        if (space < 0) {
-                            CanopenDeviceDriver.writeLine(out, "ERR");
-                            continue;
-                        }
-                        CanopenDeviceDriver.OdAddress address =
-                                CanopenDeviceDriver.parseOdMapping(rest.substring(0, space));
-                        String value = rest.substring(space + 1).trim();
-                        values.put(key(address.index(), address.sub()), value);
-                        CanopenDeviceDriver.writeLine(out, "OK");
+                    String line = CanopenDeviceDriver.readUntilCr(in);
+                    CanopenDeviceDriver.SlcanFrame frame = CanopenDeviceDriver.tryParseSlcanStandard(line);
+                    if (frame == null) {
+                        out.write("\r".getBytes(StandardCharsets.US_ASCII));
+                        out.flush();
+                        continue;
+                    }
+                    String data = frame.dataHex();
+                    if (data.length() < 8) {
+                        out.write("\r".getBytes(StandardCharsets.US_ASCII));
+                        out.flush();
+                        continue;
+                    }
+                    int cmd = Integer.parseInt(data.substring(0, 2), 16);
+                    int index = Integer.parseInt(data.substring(2, 4), 16)
+                            | (Integer.parseInt(data.substring(4, 6), 16) << 8);
+                    int sub = Integer.parseInt(data.substring(6, 8), 16);
+                    int node = frame.canId() & 0x7F;
+                    if (cmd == 0x40) {
+                        long value = values.getOrDefault(key(index, sub), 0L);
+                        // Expedited 4-byte upload response
+                        String respData = String.format(Locale.ROOT, "43%02X%02X%02X%02X%02X%02X%02X",
+                                index & 0xFF, (index >> 8) & 0xFF, sub & 0xFF,
+                                (int) (value & 0xFF),
+                                (int) ((value >> 8) & 0xFF),
+                                (int) ((value >> 16) & 0xFF),
+                                (int) ((value >> 24) & 0xFF));
+                        String reply = CanopenDeviceDriver.formatStandardFrame(0x580 + node, respData);
+                        out.write(reply.getBytes(StandardCharsets.US_ASCII));
+                        out.flush();
+                    } else if (cmd == 0x23) {
+                        long value = Integer.parseInt(data.substring(8, 10), 16)
+                                | (Integer.parseInt(data.substring(10, 12), 16) << 8)
+                                | (Integer.parseInt(data.substring(12, 14), 16) << 16)
+                                | ((long) Integer.parseInt(data.substring(14, 16), 16) << 24);
+                        values.put(key(index, sub), value);
+                        String respData = String.format(Locale.ROOT, "60%02X%02X%02X00000000",
+                                index & 0xFF, (index >> 8) & 0xFF, sub & 0xFF);
+                        String reply = CanopenDeviceDriver.formatStandardFrame(0x580 + node, respData);
+                        out.write(reply.getBytes(StandardCharsets.US_ASCII));
+                        out.flush();
                     } else {
-                        CanopenDeviceDriver.writeLine(out, "ERR");
+                        out.write("\r".getBytes(StandardCharsets.US_ASCII));
+                        out.flush();
                     }
                 }
             } catch (IOException ignored) {

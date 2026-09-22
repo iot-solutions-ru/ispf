@@ -30,12 +30,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link AmqpDeviceDriver} against an in-process AMQP 0-9-1 lab broker.
+ * Loopback tests for {@link AmqpDeviceDriver} against an in-process AMQP 0-9-1 peer.
  */
 class AmqpDeviceDriverTest {
 
@@ -55,6 +56,13 @@ class AmqpDeviceDriverTest {
     }
 
     @Test
+    void protocolHeaderIsExactAmqp091() {
+        assertArrayEquals(new byte[] {
+                0x41, 0x4D, 0x51, 0x50, 0x00, 0x00, 0x09, 0x01
+        }, AmqpDeviceDriver.PROTOCOL_HEADER);
+    }
+
+    @Test
     void publishesAndGetsQueueBodies() throws Exception {
         broker = new FakeAmqp091Broker();
         broker.enqueue("sensors.temp", "23.5");
@@ -69,6 +77,7 @@ class AmqpDeviceDriverTest {
         driver.initialize(object);
         driver.connect();
         assertTrue(driver.isConnected());
+        assertArrayEquals(AmqpDeviceDriver.PROTOCOL_HEADER, broker.firstHeaderBytes.get());
 
         driver.readPoints(Map.of("temperature", "sensors.temp"));
         DataRecord temperature = object.variables.get("temperature");
@@ -124,6 +133,7 @@ class AmqpDeviceDriverTest {
         String desc = d.metadata().description().toLowerCase(Locale.ROOT);
         assertTrue(desc.contains("0-9-1"));
         assertTrue(desc.contains("not amqp 1.0"));
+        assertTrue(!desc.contains("lab"));
     }
 
     /**
@@ -149,6 +159,8 @@ class AmqpDeviceDriverTest {
         private final java.util.concurrent.atomic.AtomicInteger publishCount = new java.util.concurrent.atomic.AtomicInteger();
         private final java.util.concurrent.atomic.AtomicReference<String> lastPublishKey =
                 new java.util.concurrent.atomic.AtomicReference<>("");
+        private final java.util.concurrent.atomic.AtomicReference<byte[]> firstHeaderBytes =
+                new java.util.concurrent.atomic.AtomicReference<>();
         private final Object queueSignal = new Object();
 
         FakeAmqp091Broker() throws IOException {
@@ -211,7 +223,10 @@ class AmqpDeviceDriverTest {
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
                 byte[] header = in.readNBytes(8);
-                if (header.length != 8 || header[0] != 'A' || header[1] != 'M' || header[2] != 'Q' || header[3] != 'P') {
+                firstHeaderBytes.set(header);
+                if (header.length != 8
+                        || header[0] != 0x41 || header[1] != 0x4D || header[2] != 0x51 || header[3] != 0x50
+                        || header[4] != 0x00 || header[5] != 0x00 || header[6] != 0x09 || header[7] != 0x01) {
                     return;
                 }
 
@@ -417,7 +432,16 @@ class AmqpDeviceDriverTest {
             void write(DataOutputStream out) throws IOException;
         }
 
-        private record Frame(int type, int channel, byte[] payload) {
+        private static final class Frame {
+            final int type;
+            final int channel;
+            final byte[] payload;
+
+            Frame(int type, int channel, byte[] payload) {
+                this.type = type;
+                this.channel = channel;
+                this.payload = payload == null ? new byte[0] : payload;
+            }
         }
     }
 

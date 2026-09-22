@@ -8,39 +8,35 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.profinet.codec.ProfinetCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Fake TCP loopback tests for the PROFINET PN IO gateway lab.
- * Certifies the lab dialect only — not PROFINET RT/IRT / DCP/RPC / PI stack.
- */
 class ProfinetDeviceDriverTest {
 
     private ProfinetDeviceDriver driver;
-    private FakeProfinetGateway gateway;
+    private FakeProfinetPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -48,48 +44,47 @@ class ProfinetDeviceDriverTest {
             driver.disconnect();
             driver = null;
         }
-        if (gateway != null) {
-            gateway.close();
-            gateway = null;
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
     }
 
     @Test
-    void metadataIsProductionReadWritePnIoGatewayLab() {
+    void metadataDescribesDcpNotRtIrt() {
         driver = new ProfinetDeviceDriver();
         assertEquals("profinet", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
-        assertEquals("34964", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("gateway") || description.contains("tcp")
-                || description.contains("lab"));
+        assertTrue(description.contains("dcp"));
         assertTrue(description.contains("not"));
-        assertTrue(!description.contains("stub") && !description.contains("placeholder"));
+        assertFalse(description.contains("lab"));
+        assertFalse(description.contains("stub"));
+        assertFalse(description.contains("placeholder"));
     }
 
     @Test
     void pointParserAcceptsSlotSubslotAndDeviceApiForms() throws Exception {
         ProfinetPoint slot = ProfinetPoint.parse("slot:1:subslot:1");
-        assertEquals("slot:1:subslot:1", slot.wireToken());
-        assertEquals(ProfinetPoint.Kind.SLOT_SUBSLOT, slot.kind());
+        assertEquals(1, slot.slot());
+        assertEquals(1, slot.subslot());
 
         ProfinetPoint device = ProfinetPoint.parse("device:1:api:0:slot:1");
-        assertEquals("device:1:api:0:slot:1", device.wireToken());
-        assertEquals(ProfinetPoint.Kind.DEVICE_API_SLOT, device.kind());
+        assertEquals(1, device.slot());
+        assertEquals(0, device.subslot());
     }
 
     @Test
-    void readAndWriteGatewayIoPoints() throws Exception {
-        gateway = new FakeProfinetGateway();
-        gateway.put("slot:1:subslot:1", 12.5);
-        gateway.put("device:1:api:0:slot:1", 21.0);
-        gateway.start();
-        assertTrue(gateway.awaitReady(2, TimeUnit.SECONDS));
+    void readAndWriteViaDcpIdentify() throws Exception {
+        peer = new FakeProfinetPeer();
+        peer.put(1, 1, 12.5f);
+        peer.put(1, 0, 21.0f);
+        peer.start();
 
-        TestDriverObject object = new TestDriverObject(Map.of(
+        StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new ProfinetDeviceDriver();
@@ -108,20 +103,19 @@ class ProfinetDeviceDriverTest {
                 DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
                 Map.of("value", 33.25)
         ));
-        assertEquals(33.25, gateway.get("slot:1:subslot:1"), 0.001);
-        assertEquals(33.25, (Double) object.variables.get("io").firstRow().get("value"), 0.001);
+        assertEquals(33.25f, peer.get(1, 1), 0.001f);
     }
 
     @Test
     void readPointsBeforeConnectThrows() {
         driver = new ProfinetDeviceDriver();
-        driver.initialize(new TestDriverObject(Map.of()));
+        driver.initialize(new StubDriverObject(Map.of()));
         DriverException error = assertThrows(DriverException.class, () ->
                 driver.readPoints(Map.of("x", "slot:1:subslot:1")));
         assertTrue(error.getMessage().contains("Not connected"));
     }
 
-    private static final class FakeProfinetGateway implements AutoCloseable {
+    private static final class FakeProfinetPeer implements AutoCloseable {
 
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
@@ -129,10 +123,9 @@ class ProfinetDeviceDriverTest {
             thread.setDaemon(true);
             return thread;
         });
-        private final Map<String, Double> values = new ConcurrentHashMap<>();
-        private final CountDownLatch ready = new CountDownLatch(1);
+        private final Map<Long, Float> values = new ConcurrentHashMap<>();
 
-        FakeProfinetGateway() throws IOException {
+        FakeProfinetPeer() throws IOException {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
@@ -141,21 +134,16 @@ class ProfinetDeviceDriverTest {
             return serverSocket.getLocalPort();
         }
 
-        void put(String token, double value) {
-            values.put(normalize(token), value);
+        void put(int slot, int subslot, float value) {
+            values.put(key(slot, subslot), value);
         }
 
-        double get(String token) {
-            return values.getOrDefault(normalize(token), 0.0);
+        float get(int slot, int subslot) {
+            return values.getOrDefault(key(slot, subslot), 0f);
         }
 
         void start() {
             executor.submit(this::acceptLoop);
-            ready.countDown();
-        }
-
-        boolean awaitReady(long timeout, TimeUnit unit) throws InterruptedException {
-            return ready.await(timeout, unit);
         }
 
         private void acceptLoop() {
@@ -176,33 +164,24 @@ class ProfinetDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    String line = readLine(in);
-                    if (line == null) {
-                        return;
+                    byte[] header = ProfinetCodec.readFully(in, 12);
+                    int dcpLen = ((header[10] & 0xFF) << 8) | (header[11] & 0xFF);
+                    byte[] blocks = dcpLen > 0 ? ProfinetCodec.readFully(in, dcpLen) : new byte[0];
+                    int slot = 0;
+                    int subslot = 0;
+                    if (blocks.length >= 8) {
+                        slot = ((blocks[4] & 0xFF) << 8) | (blocks[5] & 0xFF);
+                        subslot = ((blocks[6] & 0xFF) << 8) | (blocks[7] & 0xFF);
                     }
-                    String trimmed = line.trim();
-                    String upper = trimmed.toUpperCase(Locale.ROOT);
-                    if (upper.startsWith("RD ")) {
-                        String token = normalize(trimmed.substring(3).trim());
-                        Double value = values.get(token);
-                        if (value == null) {
-                            writeLine(out, "VALUE 0");
-                        } else {
-                            writeLine(out, "VALUE " + value);
-                        }
-                    } else if (upper.startsWith("WR ")) {
-                        String rest = trimmed.substring(3).trim();
-                        int space = rest.lastIndexOf(' ');
-                        if (space < 0) {
-                            writeLine(out, "ERR");
-                            continue;
-                        }
-                        String token = normalize(rest.substring(0, space).trim());
-                        double value = Double.parseDouble(rest.substring(space + 1).trim());
-                        values.put(token, value);
-                        writeLine(out, "OK");
+                    if (blocks.length >= 12) {
+                        float value = ByteBuffer.wrap(blocks, 8, 4).getFloat();
+                        values.put(key(slot, subslot), value);
+                        out.write(0x00);
+                        out.flush();
                     } else {
-                        writeLine(out, "ERR");
+                        float value = values.getOrDefault(key(slot, subslot), 0f);
+                        out.write(ProfinetCodec.encodeFloat(value));
+                        out.flush();
                     }
                 }
             } catch (IOException ignored) {
@@ -210,33 +189,8 @@ class ProfinetDeviceDriverTest {
             }
         }
 
-        private static String normalize(String token) {
-            return token.trim().toLowerCase(Locale.ROOT).replace('=', ':');
-        }
-
-        private static void writeLine(OutputStream out, String line) throws IOException {
-            out.write((line + "\n").getBytes(StandardCharsets.US_ASCII));
-            out.flush();
-        }
-
-        private static String readLine(InputStream in) throws IOException {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            while (true) {
-                int ch = in.read();
-                if (ch < 0) {
-                    if (buf.size() == 0) {
-                        return null;
-                    }
-                    break;
-                }
-                if (ch == '\n') {
-                    break;
-                }
-                if (ch != '\r') {
-                    buf.write(ch);
-                }
-            }
-            return buf.toString(StandardCharsets.US_ASCII);
+        private static long key(int slot, int subslot) {
+            return (((long) slot) << 16) | (subslot & 0xFFFF);
         }
 
         @Override
@@ -247,12 +201,12 @@ class ProfinetDeviceDriverTest {
         }
     }
 
-    private static final class TestDriverObject implements DeviceDriver.DriverObject {
+    private static final class StubDriverObject implements DeviceDriver.DriverObject {
 
         private final Map<String, String> configuration;
         private final Map<String, DataRecord> variables = new ConcurrentHashMap<>();
 
-        TestDriverObject(Map<String, String> configuration) {
+        StubDriverObject(Map<String, String> configuration) {
             this.configuration = configuration;
         }
 

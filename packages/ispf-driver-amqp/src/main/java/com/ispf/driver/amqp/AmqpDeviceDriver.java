@@ -21,13 +21,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AMQP <strong>0-9-1 lab subset</strong> client over TCP (default port 5672) — clean-room ISPF,
- * Apache-2.0, JDK sockets only.
+ * AMQP 0-9-1 client over TCP (default port 5672) — clean-room ISPF, Apache-2.0, JDK sockets only.
  * <p>
  * Honesty boundary: this is <strong>not</strong> AMQP 1.0, not a full RabbitMQ / Qpid feature set,
  * and not a Proton/Netty client. Implemented wire methods only:
  * <ul>
- *   <li>Protocol header {@code AMQP\0\0\9\1}</li>
+ *   <li>Protocol header {@code AMQP\0\0\9\1} ({@code 41 4D 51 50 00 00 09 01})</li>
  *   <li>{@code connection.start} / {@code start-ok} / {@code tune} / {@code tune-ok} /
  *       {@code open} / {@code open-ok}</li>
  *   <li>{@code channel.open} / {@code open-ok}</li>
@@ -40,7 +39,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class AmqpDeviceDriver implements DeviceDriver {
 
-    private static final byte[] PROTOCOL_HEADER = new byte[]{'A', 'M', 'Q', 'P', 0, 0, 9, 1};
+    /** AMQP 0-9-1 protocol header: {@code AMQP\0\0\9\1}. */
+    static final byte[] PROTOCOL_HEADER = new byte[]{'A', 'M', 'Q', 'P', 0, 0, 9, 1};
     private static final int FRAME_METHOD = 1;
     private static final int FRAME_HEADER = 2;
     private static final int FRAME_BODY = 3;
@@ -78,9 +78,9 @@ public class AmqpDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "amqp",
-            "AMQP 0-9-1 Lab Driver",
+            "AMQP 0-9-1 Driver",
             "0.1.0",
-            "AMQP 0-9-1 lab subset (header/start/tune/open/channel/basic.publish+get) — "
+            "AMQP 0-9-1 subset (header/start/tune/open/channel/basic.publish+get) — "
                     + "NOT AMQP 1.0, NOT full RabbitMQ feature set",
             "ISPF",
             Map.of(
@@ -554,9 +554,27 @@ public class AmqpDeviceDriver implements DeviceDriver {
         void write(DataOutputStream out) throws IOException;
     }
 
-    private record Frame(int type, int channel, byte[] payload) {
+    private static final class Frame {
+        final int type;
+        final int channel;
+        final byte[] payload;
+
+        Frame(int type, int channel, byte[] payload) {
+            this.type = type;
+            this.channel = channel;
+            this.payload = payload == null ? new byte[0] : payload;
+        }
     }
 
-    private record GetResult(boolean empty, String body, String routingKey) {
+    private static final class GetResult {
+        final boolean empty;
+        final String body;
+        final String routingKey;
+
+        GetResult(boolean empty, String body, String routingKey) {
+            this.empty = empty;
+            this.body = body;
+            this.routingKey = routingKey;
+        }
     }
 }

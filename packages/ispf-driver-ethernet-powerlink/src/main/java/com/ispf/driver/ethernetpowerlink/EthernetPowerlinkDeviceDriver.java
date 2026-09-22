@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.ethernetpowerlink.codec.EthernetPowerlinkLabSession;
+import com.ispf.driver.ethernetpowerlink.codec.EthernetPowerlinkSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,13 +15,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Ethernet POWERLINK MN/CN lab driver — cyclic PDO-ish UDP request/response
- * (default port {@code 6040}; {@code 3000} also valid via config).
+ * Ethernet POWERLINK frame driver over a TCP gateway ({@code ethernet-powerlink}).
  * <p>
- * Honesty boundary: PDO/object UDP lab subset only — not full EPSG POWERLINK MN with hard
- * real-time. Point forms: {@code node:1:obj:0x6000:01}, {@code pdo:1}. Lab ≠ field.
+ * Sends basic POWERLINK headers (SoC/PReq/PRes) with destination and source node IDs.
+ * Not a hard real-time Managing Node.
  * <p>
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
+ * Point forms: {@code node:1:obj:0x6000:01}, {@code pdo:1}.
  */
 public class EthernetPowerlinkDeviceDriver implements DeviceDriver {
 
@@ -33,10 +32,9 @@ public class EthernetPowerlinkDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "ethernet-powerlink",
-            "Ethernet POWERLINK MN/CN Lab Driver",
-            "0.1.0",
-            "Ethernet POWERLINK cyclic PDO-ish UDP request/response lab (MN/CN subset);"
-                    + " not full EPSG POWERLINK MN with hard RT",
+            "Ethernet POWERLINK Driver",
+            "1.0.0",
+            "POWERLINK frame over TCP gateway; not a hard MN",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -51,7 +49,7 @@ public class EthernetPowerlinkDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 6040;
     private int timeoutMs = 3000;
-    private EthernetPowerlinkLabSession session;
+    private EthernetPowerlinkSession session;
     private final Map<String, EthernetPowerlinkPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -81,14 +79,13 @@ public class EthernetPowerlinkDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new EthernetPowerlinkLabSession(host, port, timeoutMs);
+            session = new EthernetPowerlinkSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "Ethernet POWERLINK MN/CN lab connected to " + host + ":" + port
-                            + " (UDP PDO lab — not full EPSG POWERLINK MN with hard RT)");
+                    "POWERLINK connected to " + host + ":" + port + " (TCP gateway, not hard MN)");
         } catch (IOException e) {
             session = null;
             throw new DriverException(
-                    "Ethernet POWERLINK lab connect failed for " + host + ":" + port, e);
+                    "POWERLINK connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -116,10 +113,10 @@ public class EthernetPowerlinkDeviceDriver implements DeviceDriver {
             EthernetPowerlinkPoint point = EthernetPowerlinkPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                double value = session.readValue(point.wireToken());
+                double value = session.readValue(point.destinationNode());
                 driverObject.updateVariable(entry.getKey(), toRecord(point, value));
             } catch (IOException e) {
-                throw new DriverException("Ethernet POWERLINK lab read failed for " + mapping, e);
+                throw new DriverException("POWERLINK read failed for " + mapping, e);
             }
         }
     }
@@ -133,10 +130,10 @@ public class EthernetPowerlinkDeviceDriver implements DeviceDriver {
         }
         double numeric = extractNumeric(value);
         try {
-            session.writeValue(point.wireToken(), numeric);
+            session.writeValue(point.destinationNode(), numeric);
             driverObject.updateVariable(pointId, toRecord(point, numeric));
         } catch (IOException e) {
-            throw new DriverException("Ethernet POWERLINK lab write failed for " + pointId, e);
+            throw new DriverException("POWERLINK write failed for " + pointId, e);
         }
     }
 
@@ -150,7 +147,7 @@ public class EthernetPowerlinkDeviceDriver implements DeviceDriver {
 
     private static double extractNumeric(DataRecord value) {
         if (value == null || value.rowCount() == 0) {
-            throw new IllegalArgumentException("Ethernet POWERLINK write requires a value");
+            throw new IllegalArgumentException("POWERLINK write requires a value");
         }
         Map<String, Object> row = value.firstRow();
         for (String key : List.of("value", "raw")) {
@@ -162,7 +159,7 @@ public class EthernetPowerlinkDeviceDriver implements DeviceDriver {
                 return Double.parseDouble(String.valueOf(candidate).trim());
             }
         }
-        throw new IllegalArgumentException("Ethernet POWERLINK write requires numeric value/raw");
+        throw new IllegalArgumentException("POWERLINK write requires numeric value/raw");
     }
 
     private void ensureConnected() throws DriverException {

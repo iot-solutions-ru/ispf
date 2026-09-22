@@ -15,12 +15,15 @@ import org.xml.sax.InputSource;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringReader;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -28,14 +31,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * MTConnect agent client — HTTP GET of Agent {@code /current} or {@code /sample} XML streams,
+ * MTConnect agent client — HTTP/1.1 GET of Agent {@code /current} (or configured path) XML streams,
  * with a minimal JDK DOM parser for Samples / Events / Condition data items.
  * <p>
  * Point mapping is a data item id or name (for example {@code x_pos}, {@code Xact}, or
- * {@code name:Xact} / {@code id:x_pos}). This is an Agent-compatible subset only — not a full
- * MTConnect client SDK. Poll-only: agents expose read streams; {@link #writePoint} is unsupported.
- * <p>
- * Clean-room ISPF code, Apache-2.0 — JDK {@link HttpClient} + secure XML parser only.
+ * {@code name:Xact} / {@code id:x_pos}). Poll-only: agents expose read streams;
+ * {@link #writePoint} is unsupported. Clean-room ISPF code, Apache-2.0 — JDK sockets + secure XML.
  */
 public class MtconnectDeviceDriver implements DeviceDriver {
 
@@ -52,7 +53,7 @@ public class MtconnectDeviceDriver implements DeviceDriver {
             "mtconnect",
             "MTConnect Driver",
             "0.1.0",
-            "Polls MTConnect Agent /current or /sample XML and extracts data-item values",
+            "HTTP/1.1 GET of MTConnect Agent /current or /sample XML; extracts data-item values",
             "ISPF",
             Map.of(
                     "baseUrl", "http://127.0.0.1:5000",
@@ -66,7 +67,6 @@ public class MtconnectDeviceDriver implements DeviceDriver {
     );
 
     private DriverObject driverObject;
-    private HttpClient client;
     private String baseUrl = "http://127.0.0.1:5000";
     private String path = "/current";
     private long timeoutMs = 3000;
@@ -100,10 +100,6 @@ public class MtconnectDeviceDriver implements DeviceDriver {
 
     @Override
     public void connect() throws DriverException {
-        client = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofMillis(timeoutMs))
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .build();
         connected = true;
         driverObject.log(DriverLogLevel.INFO,
                 "MTConnect ready (baseUrl=" + baseUrl + ", path=" + path + ")");
@@ -112,13 +108,12 @@ public class MtconnectDeviceDriver implements DeviceDriver {
     @Override
     public void disconnect() {
         connected = false;
-        client = null;
         points.clear();
     }
 
     @Override
     public boolean isConnected() {
-        return connected && client != null;
+        return connected;
     }
 
     @Override
@@ -164,25 +159,109 @@ public class MtconnectDeviceDriver implements DeviceDriver {
         throw new DriverException("MTConnect driver is poll-only; writePoint is not supported");
     }
 
+    /**
+     * Builds an HTTP/1.1 GET request line and headers for the Agent path.
+     * The request always starts with {@code GET } and contains {@code HTTP/1.1}.
+     */
+    static String buildGetRequest(String path, String hostHeader) {
+        String requestPath = path == null || path.isBlank() ? "/current" : normalizePath(path);
+        return "GET " + requestPath + " HTTP/1.1\r\n"
+                + "Host: " + hostHeader + "\r\n"
+                + "Accept: application/xml, text/xml, */*\r\n"
+                + "Connection: close\r\n"
+                + "\r\n";
+    }
+
     private Document fetchStreams() throws DriverException {
-        String url = baseUrl + path;
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofMillis(timeoutMs))
-                    .header("Accept", "application/xml, text/xml, */*")
-                    .GET()
-                    .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new DriverException("MTConnect GET failed for " + url + ": HTTP " + response.statusCode());
+        URI uri = URI.create(baseUrl + path);
+        String host = uri.getHost() == null ? "127.0.0.1" : uri.getHost();
+        int port = uri.getPort() > 0 ? uri.getPort() : ("https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80);
+        String requestPath = uri.getRawPath() == null || uri.getRawPath().isBlank() ? path : uri.getRawPath();
+        if (uri.getRawQuery() != null && !uri.getRawQuery().isBlank()) {
+            requestPath = requestPath + "?" + uri.getRawQuery();
+        }
+        String hostHeader = host + ":" + port;
+        String request = buildGetRequest(requestPath, hostHeader);
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(host, port), (int) timeoutMs);
+            socket.setSoTimeout((int) timeoutMs);
+            OutputStream out = socket.getOutputStream();
+            InputStream in = socket.getInputStream();
+            out.write(request.getBytes(StandardCharsets.US_ASCII));
+            out.flush();
+            HttpResponse response = readHttpResponse(in);
+            if (response.statusCode < 200 || response.statusCode >= 300) {
+                throw new DriverException("MTConnect GET failed for " + baseUrl + path
+                        + ": HTTP " + response.statusCode);
             }
-            return parseXml(response.body() == null ? "" : response.body());
+            return parseXml(response.body);
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {
-            throw new DriverException("MTConnect GET failed for " + url, e);
+            throw new DriverException("MTConnect GET failed for " + baseUrl + path, e);
         }
+    }
+
+    static HttpResponse readHttpResponse(InputStream in) throws IOException {
+        String statusLine = readLine(in);
+        if (statusLine == null || statusLine.isBlank()) {
+            throw new IOException("EOF reading HTTP status line");
+        }
+        int statusCode = 0;
+        String[] parts = statusLine.split("\\s+", 3);
+        if (parts.length >= 2) {
+            try {
+                statusCode = Integer.parseInt(parts[1]);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        Map<String, String> headers = new LinkedHashMap<>();
+        while (true) {
+            String line = readLine(in);
+            if (line == null) {
+                throw new IOException("EOF reading HTTP headers");
+            }
+            if (line.isEmpty()) {
+                break;
+            }
+            int colon = line.indexOf(':');
+            if (colon > 0) {
+                headers.put(line.substring(0, colon).trim().toLowerCase(Locale.ROOT),
+                        line.substring(colon + 1).trim());
+            }
+        }
+        int contentLength = -1;
+        String cl = headers.get("content-length");
+        if (cl != null && !cl.isBlank()) {
+            contentLength = Integer.parseInt(cl.trim());
+        }
+        String body;
+        if (contentLength >= 0) {
+            body = new String(in.readNBytes(contentLength), StandardCharsets.UTF_8);
+        } else {
+            body = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        return new HttpResponse(statusCode, body);
+    }
+
+    static String readLine(InputStream in) throws IOException {
+        ByteArrayOutputStream line = new ByteArrayOutputStream();
+        while (true) {
+            int ch = in.read();
+            if (ch < 0) {
+                if (line.size() == 0) {
+                    return null;
+                }
+                break;
+            }
+            if (ch == '\n') {
+                break;
+            }
+            if (ch != '\r') {
+                line.write(ch);
+            }
+        }
+        return line.toString(StandardCharsets.US_ASCII);
     }
 
     static Document parseXml(String xml) throws DriverException {
@@ -304,6 +383,16 @@ public class MtconnectDeviceDriver implements DeviceDriver {
             return raw;
         }
         return "/" + raw;
+    }
+
+    static final class HttpResponse {
+        final int statusCode;
+        final String body;
+
+        HttpResponse(int statusCode, String body) {
+            this.statusCode = statusCode;
+            this.body = body == null ? "" : body;
+        }
     }
 
     record DataItemSample(

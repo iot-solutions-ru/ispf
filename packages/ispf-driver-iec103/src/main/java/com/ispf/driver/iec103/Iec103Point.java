@@ -3,13 +3,13 @@ package com.ispf.driver.iec103;
 import java.util.Locale;
 
 /**
- * Point mapping for the IEC103-lab codec.
+ * Point mapping for the IEC 60870-5-103 driver.
  * <p>
  * Accepted forms:
  * <ul>
- *   <li>{@code FUN:INF} — e.g. {@code 1:40} (defaults to lab measured float ASDU 40)</li>
- *   <li>{@code ASDU:FUN:INF} — e.g. {@code 1:2:16}, {@code 40:1:40}, {@code 9:1:1}</li>
- *   <li>{@code TYPE:FUN:INF} — {@code STATUS}/{@code ASDU1}, {@code MEAS}/{@code ASDU9}/{@code ASDU40}</li>
+ *   <li>{@code FUN:INF} — e.g. {@code 1:40} (defaults to measured float ASDU 40)</li>
+ *   <li>{@code ASDU:FUN:INF} — e.g. {@code 1:2:16}, {@code 40:1:40}, {@code 9:1:1}, {@code 10:1:2}</li>
+ *   <li>{@code TYPE:FUN:INF} — {@code STATUS}/{@code ASDU1}, {@code MEAS}/{@code ASDU9}/{@code ASDU10}/{@code ASDU40}</li>
  *   <li>{@code ASDUid:IOA} — e.g. {@code 40:296} where IOA packs {@code (FUN<<8)|INF}</li>
  * </ul>
  */
@@ -34,15 +34,14 @@ public record Iec103Point(int fun, int inf, Kind kind) {
         if (parts.length == 2) {
             String left = parts[0].trim();
             String right = parts[1].trim();
-            // Prefer FUN:INF for two byte-sized numbers (e.g. 1:40).
-            // ASDUid:IOA when left is a named type or packed IOA > 255 (e.g. ASDU40:296).
             if (isNamedAsduToken(left) && isNumeric(right)) {
                 return fromAsduIoa(parseAsduNumber(left), parseByteOrIoa(right, "IOA"));
             }
             if (isNumeric(left) && isNumeric(right)) {
                 int maybeAsdu = Integer.parseInt(left.trim());
                 int maybeIoa = Integer.parseInt(right.trim());
-                if ((maybeAsdu == 1 || maybeAsdu == 9 || maybeAsdu == 40) && maybeIoa > 255) {
+                if ((maybeAsdu == 1 || maybeAsdu == 2 || maybeAsdu == 9 || maybeAsdu == 10 || maybeAsdu == 40)
+                        && maybeIoa > 255) {
                     return fromAsduIoa(maybeAsdu, maybeIoa);
                 }
                 return new Iec103Point(parseByte(left, "FUN"), parseByte(right, "INF"), Kind.MEASURED_FLOAT);
@@ -71,22 +70,22 @@ public record Iec103Point(int fun, int inf, Kind kind) {
 
     private static Kind kindFromAsdu(int asdu) {
         return switch (asdu) {
-            case 1 -> Kind.STATUS;
+            case 1, 2 -> Kind.STATUS;
             case 9 -> Kind.MEASURANDS_II;
-            case 40 -> Kind.MEASURED_FLOAT;
+            case 10, 40 -> Kind.MEASURED_FLOAT;
             default -> throw new IllegalArgumentException(
-                    "IEC103 ASDU must be 1, 9, or 40 for points, got: " + asdu);
+                    "IEC103 ASDU must be 1, 2, 9, 10, or 40 for points, got: " + asdu);
         };
     }
 
     private static Kind kindFromToken(String token) {
         String upper = token.toUpperCase(Locale.ROOT);
         return switch (upper) {
-            case "1", "ASDU1", "STATUS", "DPI", "M_TM_TA_1" -> Kind.STATUS;
+            case "1", "2", "ASDU1", "ASDU2", "STATUS", "DPI", "M_TM_TA_1" -> Kind.STATUS;
             case "9", "ASDU9", "MEAS9", "M_ME_NA_2" -> Kind.MEASURANDS_II;
-            case "40", "ASDU40", "MEAS", "FLOAT", "LAB_MEAS" -> Kind.MEASURED_FLOAT;
+            case "10", "40", "ASDU10", "ASDU40", "MEAS", "FLOAT", "GENERIC" -> Kind.MEASURED_FLOAT;
             default -> throw new IllegalArgumentException(
-                    "IEC103 type must be STATUS/1, MEAS9/9, or MEAS/40, got: " + token);
+                    "IEC103 type must be STATUS/1/2, MEAS9/9, or MEAS/10/40, got: " + token);
         };
     }
 
@@ -95,15 +94,17 @@ public record Iec103Point(int fun, int inf, Kind kind) {
         return upper.startsWith("ASDU")
                 || "STATUS".equals(upper) || "DPI".equals(upper) || "M_TM_TA_1".equals(upper)
                 || "MEAS".equals(upper) || "MEAS9".equals(upper) || "FLOAT".equals(upper)
-                || "LAB_MEAS".equals(upper) || "M_ME_NA_2".equals(upper);
+                || "GENERIC".equals(upper) || "M_ME_NA_2".equals(upper);
     }
 
     private static int parseAsduNumber(String token) {
         String upper = token.toUpperCase(Locale.ROOT);
         return switch (upper) {
             case "1", "ASDU1", "STATUS", "DPI", "M_TM_TA_1" -> 1;
+            case "2", "ASDU2" -> 2;
             case "9", "ASDU9", "MEAS9", "M_ME_NA_2" -> 9;
-            case "40", "ASDU40", "MEAS", "FLOAT", "LAB_MEAS" -> 40;
+            case "10", "ASDU10", "GENERIC" -> 10;
+            case "40", "ASDU40", "MEAS", "FLOAT" -> 40;
             default -> {
                 if (upper.startsWith("ASDU")) {
                     yield Integer.parseInt(upper.substring(4));

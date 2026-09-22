@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * AS-Interface gateway lab point.
+ * AS-Interface point addressing for master-call telegrams.
  * <p>
  * Forms: {@code slave:3}, {@code slave:3:di0}, {@code slave:3:do1}.
  */
@@ -45,6 +45,30 @@ record AsInterfacePoint(int slave, Channel channel, int bit) {
             throw new DriverException("AS-Interface bit out of range: " + bit);
         }
         return new AsInterfacePoint(slave, channel, bit);
+    }
+
+    int wireAddress() throws DriverException {
+        if (slave < 0 || slave > 31) {
+            throw new DriverException("AS-Interface address out of 5-bit range: " + slave);
+        }
+        return slave;
+    }
+
+    int readCommand() {
+        return switch (channel) {
+            case AGGREGATE -> 0x00;
+            case DI -> 0x10 | (bit & 0x07);
+            case DO -> 0x20 | (bit & 0x07);
+        };
+    }
+
+    int writeData(double value) {
+        int discrete = ((int) Math.round(value)) & 0x7F;
+        return switch (channel) {
+            case AGGREGATE -> discrete;
+            case DO -> (discrete != 0 ? 1 : 0) << (bit & 0x07);
+            case DI -> discrete;
+        };
     }
 
     String wireToken() {

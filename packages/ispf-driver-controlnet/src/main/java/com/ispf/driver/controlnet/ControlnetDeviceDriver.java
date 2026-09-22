@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.controlnet.codec.ControlnetLabSession;
+import com.ispf.driver.controlnet.codec.ControlnetSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -16,13 +16,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * ControlNet CIP gateway driver — ASCII lab over TCP (default port {@code 2222}).
+ * ControlNet CIP explicit-message driver over TCP ({@code controlnet}).
+ * <p>
+ * Uses Get_Attribute_Single ({@code 0x0E}) with class/instance/attribute from the point.
+ * Not native ControlNet coax.
  * <p>
  * Point forms: {@code slot:0}, {@code slot:0:ch:1}, {@code node:2}.
- * Reads/writes via {@link ControlnetLabSession#readValue} / {@link ControlnetLabSession#writeValue}.
- * <p>
- * Honesty: TCP ControlNet/CIP gateway lab — not native ControlNet coax / schedule. Lab ≠ field.
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class ControlnetDeviceDriver implements DeviceDriver {
 
@@ -34,10 +33,9 @@ public class ControlnetDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "controlnet",
-            "ControlNet CIP Gateway Lab Driver",
-            "0.1.0",
-            "ControlNet/CIP gateway ASCII lab over TCP (GET/SET slot/node);"
-                    + " not native ControlNet coax / schedule",
+            "ControlNet CIP Driver",
+            "1.0.0",
+            "ControlNet CIP Get_Attribute_Single over TCP gateway; not native ControlNet coax",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -52,7 +50,7 @@ public class ControlnetDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 2222;
     private int timeoutMs = 3000;
-    private ControlnetLabSession session;
+    private ControlnetSession session;
     private final Map<String, ControlnetPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -82,13 +80,12 @@ public class ControlnetDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new ControlnetLabSession(host, port, timeoutMs);
+            session = new ControlnetSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "ControlNet CIP gateway lab connected to " + host + ":" + port
-                            + " (not native ControlNet coax / schedule)");
+                    "ControlNet CIP connected to " + host + ":" + port);
         } catch (IOException e) {
             session = null;
-            throw new DriverException("ControlNet lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("ControlNet connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -116,10 +113,10 @@ public class ControlnetDeviceDriver implements DeviceDriver {
             ControlnetPoint point = ControlnetPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                double value = session.readValue(point.wireToken());
+                double value = session.readValue(point.cipClass(), point.instance(), point.attribute());
                 driverObject.updateVariable(entry.getKey(), toRecord(point, value));
             } catch (IOException e) {
-                throw new DriverException("ControlNet lab read failed for " + mapping, e);
+                throw new DriverException("ControlNet read failed for " + mapping, e);
             }
         }
     }
@@ -133,10 +130,10 @@ public class ControlnetDeviceDriver implements DeviceDriver {
         }
         double numeric = extractNumeric(value);
         try {
-            session.writeValue(point.wireToken(), numeric);
+            session.writeValue(point.cipClass(), point.instance(), point.attribute(), numeric);
             driverObject.updateVariable(pointId, toRecord(point, numeric));
         } catch (IOException e) {
-            throw new DriverException("ControlNet lab write failed for " + pointId, e);
+            throw new DriverException("ControlNet write failed for " + pointId, e);
         }
     }
 

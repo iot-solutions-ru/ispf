@@ -6,42 +6,39 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.iec101.codec.Iec101LabSession;
-import com.ispf.driver.iec101.codec.Iec101LabTypes;
-import com.ispf.driver.iec101.codec.Iec101LabValue;
+import com.ispf.driver.iec101.codec.Iec101Session;
+import com.ispf.driver.iec101.codec.Iec101Types;
+import com.ispf.driver.iec101.codec.Iec101Value;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * IEC 60870-5-101 TCP <strong>lab</strong> driver ({@code iec101}).
+ * IEC 60870-5-101 unbalanced primary over TCP ({@code iec101}).
  * <p>
- * Clean-room Apache-2.0 codec — not a full balanced serial IEC 101 stack.
- * Uses simplified APCI+ASDU framing over TCP (port 2404 by default) inspired by
- * the ISPF IEC 104 layout so CI can exercise interrogation without FT1.2.
- * See {@link com.ispf.driver.iec101.codec.Iec101LabCodec} for 101-vs-104 differences.
- * <p>
- * Minimum lab behaviour: connect (STARTDT handshake) + general interrogation
- * ({@code C_IC_NA_1}) returning {@code M_ME_NC_1} / {@code M_SP_NA_1}. Optional
- * writes via {@code C_SC_NA_1} / {@code C_SE_NC_1}.
+ * Wire format is FT1.2: reset of remote link, then user data with confirm.
+ * Structure sizes are COT 1 byte, common address 2 bytes, IOA 2 bytes, link address 1 byte.
+ * Supported ASDUs: {@code C_IC_NA_1}, {@code M_ME_NC_1}, {@code M_SP_NA_1},
+ * {@code C_SC_NA_1}, {@code C_SE_NC_1}. Balanced mode and file transfer are outside this driver.
  * <p>
  * Point mapping: IOA, {@code M_ME_NC_1:IOA}, {@code M_SP_NA_1:IOA}, or {@code IOA:FLOAT}/{@code IOA:BOOL}.
- * No OpenMUC / GPL IEC libraries.
  */
 public class Iec101DeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "iec101",
-            "IEC 60870-5-101 Lab Driver",
-            "0.1.0",
-            "IEC101-lab over TCP: APCI+ASDU subset (C_IC_NA_1 / M_ME_NC_1 / M_SP_NA_1);"
-                    + " not full balanced serial IEC 60870-5-101",
+            "IEC 60870-5-101 Driver",
+            "1.0.0",
+            "IEC 60870-5-101 unbalanced FT1.2 over TCP: C_IC_NA_1, M_ME_NC_1, M_SP_NA_1,"
+                    + " C_SC_NA_1, C_SE_NC_1. COT 1, common address 2, IOA 2, link address 1.",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "2404",
+                    "linkAddress", "1",
                     "commonAddress", "1",
                     "timeoutMs", "3000"
             ),
@@ -66,11 +63,12 @@ public class Iec101DeviceDriver implements DeviceDriver {
     private DriverObject driverObject;
     private String host = "127.0.0.1";
     private int port = 2404;
+    private int linkAddress = 1;
     private int commonAddress = 1;
     private int timeoutMs = 3000;
-    private Iec101LabSession session;
+    private Iec101Session session;
     private final Map<String, Iec101Point> points = new ConcurrentHashMap<>();
-    private Map<Integer, Iec101LabValue> lastInterrogation = Map.of();
+    private Map<Integer, Iec101Value> lastInterrogation = Map.of();
 
     @Override
     public DriverMetadata metadata() {
@@ -90,6 +88,7 @@ public class Iec101DeviceDriver implements DeviceDriver {
         switch (key) {
             case "host" -> host = value.trim();
             case "port" -> port = Integer.parseInt(value.trim());
+            case "linkAddress" -> linkAddress = Integer.parseInt(value.trim());
             case "commonAddress" -> commonAddress = Integer.parseInt(value.trim());
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
             default -> { }
@@ -100,24 +99,20 @@ public class Iec101DeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new Iec101LabSession(host, port, commonAddress, timeoutMs);
+            session = new Iec101Session(host, port, linkAddress, commonAddress, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "IEC101-lab connected to " + host + ":" + port
-                            + " (commonAddress=" + commonAddress + ")");
+                    "IEC 101 connected to " + host + ":" + port
+                            + " (linkAddress=" + linkAddress + ", commonAddress=" + commonAddress + ")");
         } catch (IOException e) {
             session = null;
-            throw new DriverException("IEC101-lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("IEC 101 connect failed for " + host + ":" + port, e);
         }
     }
 
     @Override
     public void disconnect() {
         if (session != null) {
-            try {
-                session.close();
-            } catch (Exception ignored) {
-                // best effort
-            }
+            session.close();
             session = null;
         }
         lastInterrogation = Map.of();
@@ -138,14 +133,14 @@ public class Iec101DeviceDriver implements DeviceDriver {
         try {
             lastInterrogation = session.generalInterrogation();
         } catch (IOException e) {
-            throw new DriverException("IEC101-lab interrogation failed", e);
+            throw new DriverException("IEC 101 interrogation failed", e);
         }
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             Iec101Point point = Iec101Point.parse(entry.getValue());
             points.put(entry.getKey(), point);
-            Iec101LabValue value = lastInterrogation.get(point.ioa());
+            Iec101Value value = lastInterrogation.get(point.ioa());
             if (value == null) {
-                throw new DriverException("IEC101-lab IOA " + point.ioa() + " not present in interrogation");
+                throw new DriverException("IEC 101 IOA " + point.ioa() + " not present in interrogation");
             }
             driverObject.updateVariable(entry.getKey(), toRecord(point, value));
         }
@@ -169,7 +164,7 @@ public class Iec101DeviceDriver implements DeviceDriver {
                             "value", on,
                             "quality", "GOOD",
                             "ioa", (long) point.ioa(),
-                            "typeId", (long) Iec101LabTypes.C_SC_NA_1
+                            "typeId", (long) Iec101Types.C_SC_NA_1
                     )));
                 }
                 case MEASURED_FLOAT -> {
@@ -179,19 +174,19 @@ public class Iec101DeviceDriver implements DeviceDriver {
                             "value", (double) numeric,
                             "quality", "GOOD",
                             "ioa", (long) point.ioa(),
-                            "typeId", (long) Iec101LabTypes.C_SE_NC_1
+                            "typeId", (long) Iec101Types.C_SE_NC_1
                     )));
                 }
             }
         } catch (IOException e) {
-            throw new DriverException("IEC101-lab write failed for " + pointId, e);
+            throw new DriverException("IEC 101 write failed for " + pointId, e);
         }
     }
 
-    private static DataRecord toRecord(Iec101Point point, Iec101LabValue value) throws DriverException {
+    private static DataRecord toRecord(Iec101Point point, Iec101Value value) throws DriverException {
         return switch (point.kind()) {
             case SINGLE_POINT -> {
-                if (value.typeId() != Iec101LabTypes.M_SP_NA_1) {
+                if (value.typeId() != Iec101Types.M_SP_NA_1) {
                     throw new DriverException("IOA " + point.ioa() + " is not M_SP_NA_1");
                 }
                 yield DataRecord.single(BOOL_SCHEMA, Map.of(
@@ -202,7 +197,7 @@ public class Iec101DeviceDriver implements DeviceDriver {
                 ));
             }
             case MEASURED_FLOAT -> {
-                if (value.typeId() != Iec101LabTypes.M_ME_NC_1) {
+                if (value.typeId() != Iec101Types.M_ME_NC_1) {
                     throw new DriverException("IOA " + point.ioa() + " is not M_ME_NC_1");
                 }
                 yield DataRecord.single(FLOAT_SCHEMA, Map.of(
@@ -224,9 +219,9 @@ public class Iec101DeviceDriver implements DeviceDriver {
             return bool;
         }
         if (raw == null) {
-            throw new DriverException("IEC101-lab write requires boolean value");
+            throw new DriverException("IEC 101 write requires boolean value");
         }
-        String text = String.valueOf(raw).trim().toLowerCase();
+        String text = String.valueOf(raw).trim().toLowerCase(Locale.ROOT);
         return "true".equals(text) || "1".equals(text) || "on".equals(text);
     }
 
@@ -239,12 +234,12 @@ public class Iec101DeviceDriver implements DeviceDriver {
             return number.doubleValue();
         }
         if (raw == null) {
-            throw new DriverException("IEC101-lab write requires numeric value");
+            throw new DriverException("IEC 101 write requires numeric value");
         }
         try {
             return Double.parseDouble(String.valueOf(raw));
         } catch (NumberFormatException e) {
-            throw new DriverException("IEC101-lab write requires numeric value: " + raw, e);
+            throw new DriverException("IEC 101 write requires numeric value: " + raw, e);
         }
     }
 }

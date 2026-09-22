@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Foundation Fieldbus HSE/TCP gateway lab point.
+ * Foundation Fieldbus HSE point addressing.
  * <p>
  * Forms: {@code ai:1}, {@code ao:2}, {@code device:0:pv}, {@code ff:1}.
  */
@@ -57,6 +57,16 @@ record FoundationFieldbusPoint(String wireToken, String kind, int index) {
             throw new DriverException("Foundation Fieldbus " + kind + " index out of range: " + index);
         }
         return new FoundationFieldbusPoint(kind + ":" + index, kind, index);
+    }
+
+    int kindCode() {
+        return switch (kind.toLowerCase(Locale.ROOT)) {
+            case "ai" -> 1;
+            case "ao" -> 2;
+            case "device-pv" -> 3;
+            case "ff" -> 4;
+            default -> 0;
+        };
     }
 
     String display() {

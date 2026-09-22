@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -27,17 +28,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link J1939DeviceDriver} against an in-process J1939 TCP gateway lab.
- * Certifies the lab line dialect only — not SocketCAN / ISO-TP / Vector-Peak stacks.
+ * In-process peer tests for J1939 LAWICEL SLCAN over TCP.
  */
 class J1939DeviceDriverTest {
 
     private J1939DeviceDriver driver;
-    private FakeJ1939Gateway gateway;
+    private FakeSlcanPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -45,31 +46,33 @@ class J1939DeviceDriverTest {
             driver.disconnect();
             driver = null;
         }
-        if (gateway != null) {
-            gateway.close();
-            gateway = null;
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
     }
 
     @Test
-    void metadataIsProductionReadWriteLabGateway() {
+    void metadataIsProductionReadWriteSlcan() {
         driver = new J1939DeviceDriver();
         assertEquals("j1939", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
-        assertTrue(driver.metadata().description().toLowerCase(Locale.ROOT).contains("tcp"));
-        assertTrue(driver.metadata().description().toLowerCase(Locale.ROOT).contains("not"));
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("slcan") || description.contains("tcp"));
+        assertTrue(description.contains("not"));
+        assertFalse(description.contains("lab"));
     }
 
     @Test
     void readDecimalAndHexPgnMappings() throws Exception {
-        gateway = new FakeJ1939Gateway();
-        gateway.put(61444, 238, "0F0A1B2C3D4E5F60");
-        gateway.start();
+        peer = new FakeSlcanPeer();
+        peer.put(61444, 238, "0F0A1B2C3D4E5F60");
+        peer.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new J1939DeviceDriver();
@@ -91,13 +94,13 @@ class J1939DeviceDriverTest {
 
     @Test
     void writeHexThenNumericThenRead() throws Exception {
-        gateway = new FakeJ1939Gateway();
-        gateway.put(61444, 0, "00");
-        gateway.start();
+        peer = new FakeSlcanPeer();
+        peer.put(61444, 0, "00");
+        peer.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "sa", "16",
                 "timeoutMs", "2000"
         ));
@@ -110,8 +113,8 @@ class J1939DeviceDriverTest {
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
                 Map.of("value", "DEADBEEF")
         ));
-        assertEquals("DEADBEEF", gateway.data(61444));
-        assertEquals(16, gateway.sa(61444));
+        assertEquals("DEADBEEF", peer.data(61444));
+        assertEquals(16, peer.sa(61444));
 
         driver.writePoint("pgn", DataRecord.single(
                 DataSchema.builder("v")
@@ -120,8 +123,8 @@ class J1939DeviceDriverTest {
                         .build(),
                 Map.of("value", "255", "sa", "1")
         ));
-        assertEquals("FF", gateway.data(61444));
-        assertEquals(1, gateway.sa(61444));
+        assertEquals("FF", peer.data(61444));
+        assertEquals(1, peer.sa(61444));
 
         driver.readPoints(Map.of("pgn", "PGN:61444"));
         assertEquals("FF", object.variables.get("pgn").firstRow().get("value"));
@@ -151,20 +154,20 @@ class J1939DeviceDriverTest {
         driver = new J1939DeviceDriver();
         driver.initialize(object);
         DriverException error = assertThrows(DriverException.class, driver::connect);
-        assertTrue(error.getMessage().contains("J1939 TCP gateway connect failed"));
+        assertTrue(error.getMessage().contains("J1939 SLCAN connect failed"));
     }
 
-    private static final class FakeJ1939Gateway implements AutoCloseable {
+    private static final class FakeSlcanPeer implements AutoCloseable {
 
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
-            Thread thread = new Thread(runnable, "fake-j1939-gateway");
+            Thread thread = new Thread(runnable, "fake-j1939-slcan");
             thread.setDaemon(true);
             return thread;
         });
         private final Map<Integer, J1939DeviceDriver.Frame> frames = new ConcurrentHashMap<>();
 
-        FakeJ1939Gateway() throws IOException {
+        FakeSlcanPeer() throws IOException {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
@@ -208,29 +211,27 @@ class J1939DeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    String line = J1939DeviceDriver.readLine(in);
-                    String trimmed = line.trim();
-                    if (trimmed.regionMatches(true, 0, "GET ", 0, 4)) {
-                        int pgn = J1939DeviceDriver.parsePgnMapping(trimmed.substring(4).trim());
-                        J1939DeviceDriver.Frame frame = frames.get(pgn);
-                        if (frame == null) {
-                            J1939DeviceDriver.writeLine(out, "ERR unknown PGN");
+                    String line = J1939DeviceDriver.readUntilCr(in);
+                    J1939DeviceDriver.Frame incoming = J1939DeviceDriver.tryParseSlcanExtended(line);
+                    if (incoming == null) {
+                        out.write("\r".getBytes(StandardCharsets.US_ASCII));
+                        out.flush();
+                        continue;
+                    }
+                    if (incoming.dataHex().isEmpty()) {
+                        J1939DeviceDriver.Frame stored = frames.get(incoming.pgn());
+                        if (stored == null) {
+                            out.write("\r".getBytes(StandardCharsets.US_ASCII));
                         } else {
-                            J1939DeviceDriver.writeLine(out, J1939DeviceDriver.formatFrame(
-                                    frame.pgn(), frame.sa(), frame.dataHex()));
+                            int canId = J1939DeviceDriver.encodeCanId(6, stored.pgn(), stored.sa());
+                            String reply = J1939DeviceDriver.formatExtendedFrame(canId, stored.dataHex());
+                            out.write(reply.getBytes(StandardCharsets.US_ASCII));
                         }
-                    } else if (trimmed.regionMatches(true, 0, "SET ", 0, 4)) {
-                        J1939DeviceDriver.Frame frame = J1939DeviceDriver.parseFrameLine(trimmed.substring(4));
-                        frames.put(frame.pgn(), frame);
-                        J1939DeviceDriver.writeLine(out, "OK");
+                        out.flush();
                     } else {
-                        J1939DeviceDriver.Frame frame = J1939DeviceDriver.tryParseFrameLine(trimmed);
-                        if (frame != null) {
-                            frames.put(frame.pgn(), frame);
-                            J1939DeviceDriver.writeLine(out, "OK");
-                        } else {
-                            J1939DeviceDriver.writeLine(out, "ERR");
-                        }
+                        frames.put(incoming.pgn(), incoming);
+                        out.write("z\r".getBytes(StandardCharsets.US_ASCII));
+                        out.flush();
                     }
                 }
             } catch (IOException ignored) {

@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.iec61850sv.codec.Iec61850SvLabSession;
+import com.ispf.driver.iec61850sv.codec.Iec61850SvSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,12 +15,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * IEC 61850 Sampled Values subscribe lab driver — UDP sample frames
- * (default port {@code 8503}; {@code 102} also valid via config).
+ * IEC 61850 Sampled Values subscribe/publish driver — IEC 61850-9-2 SAV header
+ * over UDP (default port {@code 8503}).
  * <p>
- * Honesty boundary: SV UDP lab only — not IEC 61869 / 9-2LE full stack.
- * Point forms: {@code svID:MU1}, {@code sv:1:smp:0}.
- * Read last sample; optional write publishes a lab frame. Lab ≠ substation field.
+ * Wire format is APPID/Length/Reserved1/Reserved2 then ASDU; not IEC 61869 /
+ * 9-2LE full stack. Point forms: {@code svID:MU1}, {@code sv:1:smp:0}.
+ * Read returns the float carried in the ASDU; write publishes an updated sample.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
@@ -35,9 +35,9 @@ public class Iec61850SvDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "iec61850-sv",
-            "IEC 61850 Sampled Values Lab Driver",
-            "0.1.0",
-            "IEC 61850 Sampled Values UDP subscribe/publish lab;"
+            "IEC 61850 Sampled Values Driver",
+            "1.0.0",
+            "IEC 61850-9-2 SAV header (APPID/Length/Reserved) over UDP;"
                     + " not IEC 61869 / 9-2LE full stack",
             "ISPF",
             Map.of(
@@ -53,7 +53,7 @@ public class Iec61850SvDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 8503;
     private int timeoutMs = 3000;
-    private Iec61850SvLabSession session;
+    private Iec61850SvSession session;
     private final Map<String, Iec61850SvPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -83,14 +83,14 @@ public class Iec61850SvDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new Iec61850SvLabSession(host, port, timeoutMs);
+            session = new Iec61850SvSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "IEC 61850 SV-lab connected to " + host + ":" + port
-                            + " (UDP lab — not IEC 61869 / 9-2LE full stack)");
+                    "IEC 61850 SV connected to " + host + ":" + port
+                            + " (SAV header — not IEC 61869 / 9-2LE full stack)");
         } catch (IOException e) {
             session = null;
             throw new DriverException(
-                    "IEC 61850 SV-lab connect failed for " + host + ":" + port, e);
+                    "IEC 61850 SV connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -121,7 +121,7 @@ public class Iec61850SvDeviceDriver implements DeviceDriver {
                 double value = session.readValue(point.wireToken());
                 driverObject.updateVariable(entry.getKey(), toRecord(point, value, "good"));
             } catch (IOException e) {
-                throw new DriverException("IEC 61850 SV-lab read failed for " + mapping, e);
+                throw new DriverException("IEC 61850 SV read failed for " + mapping, e);
             }
         }
     }
@@ -138,7 +138,7 @@ public class Iec61850SvDeviceDriver implements DeviceDriver {
             session.writeValue(point.wireToken(), numeric);
             driverObject.updateVariable(pointId, toRecord(point, numeric, "good"));
         } catch (IOException e) {
-            throw new DriverException("IEC 61850 SV-lab write failed for " + pointId, e);
+            throw new DriverException("IEC 61850 SV write failed for " + pointId, e);
         }
     }
 
@@ -153,7 +153,7 @@ public class Iec61850SvDeviceDriver implements DeviceDriver {
 
     private static double extractNumeric(DataRecord value) {
         if (value == null || value.rowCount() == 0) {
-            throw new IllegalArgumentException("IEC 61850 SV-lab write requires a value");
+            throw new IllegalArgumentException("IEC 61850 SV write requires a value");
         }
         Map<String, Object> row = value.firstRow();
         for (String key : List.of("value", "raw")) {
@@ -165,7 +165,7 @@ public class Iec61850SvDeviceDriver implements DeviceDriver {
                 return Double.parseDouble(String.valueOf(candidate).trim());
             }
         }
-        throw new IllegalArgumentException("IEC 61850 SV-lab write requires numeric value/raw");
+        throw new IllegalArgumentException("IEC 61850 SV write requires numeric value/raw");
     }
 
     private void ensureConnected() throws DriverException {

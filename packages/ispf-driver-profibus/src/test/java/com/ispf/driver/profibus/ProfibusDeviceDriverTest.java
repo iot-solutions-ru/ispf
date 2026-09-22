@@ -8,17 +8,20 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.profibus.codec.ProfibusFdlCodec;
+import com.ispf.driver.profibus.codec.ProfibusFdlFrame;
+import com.ispf.driver.profibus.codec.ProfibusFdlTypes;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -34,13 +37,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Fake TCP loopback tests for the PROFIBUS DP-over-TCP gateway lab.
- * Certifies the lab dialect only — not RS-485 DP master / FDL ASIC.
+ * In-process ServerSocket peer for PROFIBUS DP FDL over TCP (serial-server).
+ * Certifies SD1/SD2 framing only — not RS-485 DP PHY / FDL ASIC.
  */
 class ProfibusDeviceDriverTest {
 
     private ProfibusDeviceDriver driver;
-    private FakeProfibusGateway gateway;
+    private FakeProfibusFdlPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -48,24 +51,24 @@ class ProfibusDeviceDriverTest {
             driver.disconnect();
             driver = null;
         }
-        if (gateway != null) {
-            gateway.close();
-            gateway = null;
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
     }
 
     @Test
-    void metadataIsProductionReadWriteDpOverTcpGatewayLab() {
+    void metadataIsProductionReadWriteFdlOverTcp() {
         driver = new ProfibusDeviceDriver();
         assertEquals("profibus", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("9600", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("dp") || description.contains("tcp")
-                || description.contains("gateway"));
-        assertTrue(description.contains("lab") || description.contains("not"));
+        assertTrue(description.contains("fdl"));
+        assertTrue(description.contains("tcp"));
         assertTrue(description.contains("not"));
+        assertTrue(!description.contains("lab"));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
     }
 
@@ -82,15 +85,15 @@ class ProfibusDeviceDriverTest {
     }
 
     @Test
-    void readAndWriteDpGatewayBytes() throws Exception {
-        gateway = new FakeProfibusGateway();
-        gateway.put("slave:3:byte:0", 12.5);
-        gateway.start();
-        assertTrue(gateway.awaitReady(2, TimeUnit.SECONDS));
+    void readAndWriteDpFdlBytes() throws Exception {
+        peer = new FakeProfibusFdlPeer();
+        peer.put(3, 0, 12.5);
+        peer.start();
+        assertTrue(peer.awaitReady(2, TimeUnit.SECONDS));
 
         TestDriverObject object = new TestDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new ProfibusDeviceDriver();
@@ -109,7 +112,7 @@ class ProfibusDeviceDriverTest {
                 DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
                 Map.of("value", 33.25)
         ));
-        assertEquals(33.25, gateway.get("slave:3:byte:0"), 0.001);
+        assertEquals(33.25, peer.get(3, 0), 0.001);
         assertEquals(33.25, (Double) object.variables.get("s3b0").firstRow().get("value"), 0.001);
     }
 
@@ -122,18 +125,18 @@ class ProfibusDeviceDriverTest {
         assertTrue(error.getMessage().contains("Not connected"));
     }
 
-    private static final class FakeProfibusGateway implements AutoCloseable {
+    private static final class FakeProfibusFdlPeer implements AutoCloseable {
 
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
-            Thread thread = new Thread(runnable, "fake-profibus");
+            Thread thread = new Thread(runnable, "fake-profibus-fdl");
             thread.setDaemon(true);
             return thread;
         });
         private final Map<String, Double> values = new ConcurrentHashMap<>();
         private final CountDownLatch ready = new CountDownLatch(1);
 
-        FakeProfibusGateway() throws IOException {
+        FakeProfibusFdlPeer() throws IOException {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
@@ -142,12 +145,12 @@ class ProfibusDeviceDriverTest {
             return serverSocket.getLocalPort();
         }
 
-        void put(String token, double value) {
-            values.put(normalize(token), value);
+        void put(int slave, int byteOffset, double value) {
+            values.put(key(slave, byteOffset), value);
         }
 
-        double get(String token) {
-            return values.getOrDefault(normalize(token), 0.0);
+        double get(int slave, int byteOffset) {
+            return values.getOrDefault(key(slave, byteOffset), 0.0);
         }
 
         void start() {
@@ -177,33 +180,42 @@ class ProfibusDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    String line = readLine(in);
-                    if (line == null) {
-                        return;
+                    ProfibusFdlFrame frame = ProfibusFdlCodec.readFrame(in);
+                    if (frame.kind() == ProfibusFdlFrame.Kind.SD1) {
+                        writeFully(out, ProfibusFdlCodec.encodeSd2(
+                                frame.sa(),
+                                frame.da(),
+                                ProfibusFdlTypes.FC_SRD,
+                                ProfibusFdlCodec.encodeStatusPdu()));
+                        continue;
                     }
-                    String trimmed = line.trim();
-                    String upper = trimmed.toUpperCase(Locale.ROOT);
-                    if (upper.startsWith("RD ")) {
-                        String token = normalize(trimmed.substring(3).trim());
-                        Double value = values.get(token);
-                        if (value == null) {
-                            writeLine(out, "VALUE 0");
-                        } else {
-                            writeLine(out, "VALUE " + value);
-                        }
-                    } else if (upper.startsWith("WR ")) {
-                        String rest = trimmed.substring(3).trim();
-                        int space = rest.lastIndexOf(' ');
-                        if (space < 0) {
-                            writeLine(out, "ERR");
-                            continue;
-                        }
-                        String token = normalize(rest.substring(0, space).trim());
-                        double value = Double.parseDouble(rest.substring(space + 1).trim());
-                        values.put(token, value);
-                        writeLine(out, "OK");
-                    } else {
-                        writeLine(out, "ERR");
+                    if (frame.kind() != ProfibusFdlFrame.Kind.SD2) {
+                        continue;
+                    }
+                    byte[] pdu = frame.pdu();
+                    if (pdu.length == 0) {
+                        continue;
+                    }
+                    int opcode = pdu[0] & 0xFF;
+                    if (opcode == ProfibusFdlTypes.PDU_RD_REQ && pdu.length >= 3) {
+                        int slave = pdu[1] & 0xFF;
+                        int byteOffset = pdu[2] & 0xFF;
+                        double value = values.getOrDefault(key(slave, byteOffset), 0.0);
+                        writeFully(out, ProfibusFdlCodec.encodeSd2(
+                                frame.sa(),
+                                frame.da(),
+                                ProfibusFdlTypes.FC_SRD,
+                                ProfibusFdlCodec.encodeReadResponse(slave, byteOffset, value)));
+                    } else if (opcode == ProfibusFdlTypes.PDU_WR_REQ && pdu.length >= 11) {
+                        int slave = pdu[1] & 0xFF;
+                        int byteOffset = pdu[2] & 0xFF;
+                        double value = ByteBuffer.wrap(pdu, 3, 8).order(ByteOrder.LITTLE_ENDIAN).getDouble();
+                        values.put(key(slave, byteOffset), value);
+                        writeFully(out, ProfibusFdlCodec.encodeSd2(
+                                frame.sa(),
+                                frame.da(),
+                                ProfibusFdlTypes.FC_SDA,
+                                ProfibusFdlCodec.encodeWriteResponse(slave, byteOffset)));
                     }
                 }
             } catch (IOException ignored) {
@@ -211,37 +223,13 @@ class ProfibusDeviceDriverTest {
             }
         }
 
-        private static String normalize(String token) {
-            String t = token.trim().toLowerCase(Locale.ROOT).replace('=', ':');
-            if (t.matches("slave:\\d+")) {
-                return t + ":byte:0";
-            }
-            return t;
+        private static String key(int slave, int byteOffset) {
+            return slave + ":" + byteOffset;
         }
 
-        private static void writeLine(OutputStream out, String line) throws IOException {
-            out.write((line + "\n").getBytes(StandardCharsets.US_ASCII));
+        private static void writeFully(OutputStream out, byte[] frame) throws IOException {
+            out.write(frame);
             out.flush();
-        }
-
-        private static String readLine(InputStream in) throws IOException {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            while (true) {
-                int ch = in.read();
-                if (ch < 0) {
-                    if (buf.size() == 0) {
-                        return null;
-                    }
-                    break;
-                }
-                if (ch == '\n') {
-                    break;
-                }
-                if (ch != '\r') {
-                    buf.write(ch);
-                }
-            }
-            return buf.toString(StandardCharsets.US_ASCII);
         }
 
         @Override

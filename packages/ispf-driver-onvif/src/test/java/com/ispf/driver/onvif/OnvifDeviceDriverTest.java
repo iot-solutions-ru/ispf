@@ -16,9 +16,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,13 +28,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link OnvifDeviceDriver} against a fake ONVIF Device SOAP server.
+ * Loopback tests for {@link OnvifDeviceDriver} against a fake ONVIF Device SOAP peer.
  */
 class OnvifDeviceDriverTest {
 
     private OnvifDeviceDriver driver;
     private HttpServer server;
-    private final AtomicReference<String> hostname = new AtomicReference<>("cam-lab");
+    private final AtomicReference<String> hostname = new AtomicReference<>("cam-01");
+    private final AtomicBoolean sawGetDeviceInformation = new AtomicBoolean();
+    private final AtomicReference<String> lastSoapBody = new AtomicReference<>("");
 
     @AfterEach
     void tearDown() {
@@ -44,6 +48,14 @@ class OnvifDeviceDriverTest {
             server.stop(0);
             server = null;
         }
+    }
+
+    @Test
+    void getDeviceInformationSoapBodyContainsOperationName() {
+        String body = OnvifDeviceDriver.soapEnvelope("tds:GetDeviceInformation", "");
+        assertTrue(body.contains("GetDeviceInformation"));
+        assertTrue(body.contains("http://www.w3.org/2003/05/soap-envelope"));
+        assertTrue(body.contains("http://www.onvif.org/ver10/device/wsdl"));
     }
 
     @Test
@@ -66,11 +78,13 @@ class OnvifDeviceDriverTest {
                 "host", "Hostname"
         ));
 
-        assertEquals("ISPF Labs", object.variables.get("mfr").firstRow().get("value"));
-        assertEquals("LabCam", object.variables.get("model").firstRow().get("value"));
+        assertTrue(sawGetDeviceInformation.get());
+        assertTrue(lastSoapBody.get().contains("Get") || lastSoapBody.get().contains("Hostname"));
+        assertEquals("ISPF", object.variables.get("mfr").firstRow().get("value"));
+        assertEquals("Cam-100", object.variables.get("model").firstRow().get("value"));
         assertEquals("1.2.3", object.variables.get("fw").firstRow().get("value"));
         assertTrue(String.valueOf(object.variables.get("device").firstRow().get("value")).contains("/onvif/device_service"));
-        assertEquals("cam-lab", object.variables.get("host").firstRow().get("value"));
+        assertEquals("cam-01", object.variables.get("host").firstRow().get("value"));
     }
 
     @Test
@@ -106,13 +120,19 @@ class OnvifDeviceDriverTest {
     }
 
     @Test
-    void metadataIdIsOnvif() {
+    void metadataIdIsOnvifWithoutLabWording() {
         assertEquals("onvif", new OnvifDeviceDriver().metadata().id());
         assertTrue(new OnvifDeviceDriver().metadata().supportsWrite());
+        String desc = new OnvifDeviceDriver().metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(desc.contains("onvif"));
+        assertTrue(desc.contains("getdeviceinformation") || desc.contains("soap"));
+        assertTrue(!desc.contains("lab"));
     }
 
     private void startServer() throws IOException {
-        hostname.set("cam-lab");
+        hostname.set("cam-01");
+        lastSoapBody.set("");
+        sawGetDeviceInformation.set(false);
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/onvif/device_service", this::handle);
         server.start();
@@ -124,6 +144,10 @@ class OnvifDeviceDriverTest {
 
     private void handle(HttpExchange exchange) throws IOException {
         String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+        lastSoapBody.set(body);
+        if (body.contains("GetDeviceInformation")) {
+            sawGetDeviceInformation.set(true);
+        }
         String response;
         if (body.contains("GetDeviceInformation")) {
             response = """
@@ -133,8 +157,8 @@ class OnvifDeviceDriverTest {
                                 xmlns:tt="http://www.onvif.org/ver10/schema">
                       <s:Body>
                         <tds:GetDeviceInformationResponse>
-                          <tds:Manufacturer>ISPF Labs</tds:Manufacturer>
-                          <tds:Model>LabCam</tds:Model>
+                          <tds:Manufacturer>ISPF</tds:Manufacturer>
+                          <tds:Model>Cam-100</tds:Model>
                           <tds:FirmwareVersion>1.2.3</tds:FirmwareVersion>
                           <tds:SerialNumber>SN-001</tds:SerialNumber>
                           <tds:HardwareId>HW-9</tds:HardwareId>

@@ -5,7 +5,7 @@ import com.ispf.driver.DriverException;
 import java.util.Locale;
 
 /**
- * Parsed LoRaWAN NS/AS lab point — DevEUI token for uplink poll / downlink write.
+ * Parsed LoRaWAN point — DevEUI token for uplink poll / downlink write.
  * <p>
  * Accepted forms: {@code AABBCCDDEEFF0011}, {@code deveui:AABBCCDDEEFF0011}.
  */
@@ -13,7 +13,7 @@ record LorawanPoint(String deveui) {
 
     static LorawanPoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("LoRaWAN lab point mapping is blank");
+            throw new DriverException("LoRaWAN point mapping is blank");
         }
         String normalized = mapping.trim();
         String lower = normalized.toLowerCase(Locale.ROOT);

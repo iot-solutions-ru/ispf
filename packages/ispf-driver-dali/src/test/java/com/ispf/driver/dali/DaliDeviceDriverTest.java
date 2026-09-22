@@ -7,9 +7,11 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.dali.codec.DaliCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -25,13 +27,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DaliDeviceDriverTest {
 
     private DaliDeviceDriver driver;
-    private FakeDaliGateway gateway;
+    private FakeDaliPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -39,10 +43,17 @@ class DaliDeviceDriverTest {
             driver.disconnect();
             driver = null;
         }
-        if (gateway != null) {
-            gateway.close();
-            gateway = null;
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
+    }
+
+    @Test
+    void offToShortAddress0IsExactly0100() {
+        byte[] expected = new byte[] { 0x01, 0x00 };
+        assertArrayEquals(expected, DaliCodec.buildOffShortAddress0());
+        assertArrayEquals(expected, DaliDeviceDriver.buildOffShortAddress0Frame());
     }
 
     @Test
@@ -51,17 +62,20 @@ class DaliDeviceDriverTest {
         assertEquals("dali", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("62386") || description.contains("dali"));
+        assertFalse(description.contains("lab"));
     }
 
     @Test
     void queryAndSetLoopback() throws Exception {
-        gateway = new FakeDaliGateway();
-        gateway.setLevel("A5", 120);
-        gateway.start();
+        peer = new FakeDaliPeer();
+        peer.setLevel(5, 120);
+        peer.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(gateway.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new DaliDeviceDriver();
@@ -76,21 +90,21 @@ class DaliDeviceDriverTest {
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
                 Map.of("value", "200")
         ));
-        assertEquals(200, gateway.level("A5"));
+        assertEquals(200, peer.level(5));
         driver.readPoints(Map.of("lamp", "A5"));
         assertEquals("200", object.variables.get("lamp").firstRow().get("value"));
     }
 
-    private static final class FakeDaliGateway implements AutoCloseable {
+    private static final class FakeDaliPeer implements AutoCloseable {
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(r -> {
             Thread t = new Thread(r, "fake-dali");
             t.setDaemon(true);
             return t;
         });
-        private final Map<String, Integer> levels = new ConcurrentHashMap<>();
+        private final Map<Integer, Integer> levels = new ConcurrentHashMap<>();
 
-        FakeDaliGateway() throws IOException {
+        FakeDaliPeer() throws IOException {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
@@ -99,12 +113,12 @@ class DaliDeviceDriverTest {
             return serverSocket.getLocalPort();
         }
 
-        void setLevel(String address, int level) {
-            levels.put(address.toUpperCase(Locale.ROOT), level);
+        void setLevel(int shortAddress, int level) {
+            levels.put(shortAddress, level);
         }
 
-        int level(String address) {
-            return levels.getOrDefault(address.toUpperCase(Locale.ROOT), 0);
+        int level(int shortAddress) {
+            return levels.getOrDefault(shortAddress, 0);
         }
 
         void start() {
@@ -127,22 +141,32 @@ class DaliDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    String command = DaliDeviceDriver.readLine(in);
-                    if (command == null) {
+                    int address = in.read();
+                    if (address < 0) {
                         return;
                     }
-                    String upper = command.trim().toUpperCase(Locale.ROOT);
-                    if (upper.startsWith("QUERY ")) {
-                        String addr = upper.substring(6).trim();
-                        DaliDeviceDriver.writeLine(out, "LEVEL " + levels.getOrDefault(addr, 0));
-                    } else if (upper.startsWith("SET ")) {
-                        String[] parts = upper.substring(4).trim().split("\\s+");
-                        String addr = parts[0];
-                        int level = Integer.parseInt(parts[1]);
-                        levels.put(addr, level);
-                        DaliDeviceDriver.writeLine(out, "OK " + level);
+                    int data = in.read();
+                    if (data < 0) {
+                        throw new EOFException();
+                    }
+                    boolean command = (address & 1) != 0;
+                    int shortAddress = (address >> 1) & 0x3F;
+                    if (command) {
+                        if ((data & 0xFF) == DaliCodec.CMD_QUERY_ACTUAL_LEVEL) {
+                            out.write(levels.getOrDefault(shortAddress, 0) & 0xFF);
+                            out.flush();
+                        } else if ((data & 0xFF) == DaliCodec.CMD_OFF) {
+                            levels.put(shortAddress, 0);
+                            out.write(0);
+                            out.flush();
+                        } else {
+                            out.write(0xFF);
+                            out.flush();
+                        }
                     } else {
-                        DaliDeviceDriver.writeLine(out, "ERR");
+                        levels.put(shortAddress, data & 0xFF);
+                        out.write(data & 0xFF);
+                        out.flush();
                     }
                 }
             } catch (IOException ignored) {

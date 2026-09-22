@@ -5,7 +5,7 @@ import com.ispf.driver.DriverException;
 import java.util.Locale;
 
 /**
- * Parsed HART serial-gateway lab point: primary variable / universal command against a polling address.
+ * Parsed HART serial-gateway point: primary variable / universal command against a polling address.
  * <p>
  * Accepted forms: {@code pv}, {@code cmd:1}, {@code cmd:3}, {@code device:0},
  * {@code device:0:cmd:1}, {@code 0:1}.

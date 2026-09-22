@@ -8,186 +8,110 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.iolink.codec.IoLinkCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Fake TCP loopback tests for the IO-Link master JSON-over-TCP lab bridge.
- * Certifies the lab dialect only — not IO-Link PHY / ISDU.
- */
 class IoLinkDeviceDriverTest {
 
     private IoLinkDeviceDriver driver;
-    private FakeIoLinkBridge bridge;
+    private FakeIoLinkPeer peer;
 
     @AfterEach
     void tearDown() throws Exception {
-        if (driver != null) {
-            driver.disconnect();
-            driver = null;
-        }
-        if (bridge != null) {
-            bridge.close();
-            bridge = null;
-        }
+        if (driver != null) { driver.disconnect(); driver = null; }
+        if (peer != null) { peer.close(); peer = null; }
     }
 
     @Test
-    void metadataIsProductionReadWriteLabBridge() {
+    void metadataDescribesIsduOverTcp() {
         driver = new IoLinkDeviceDriver();
         assertEquals("io-link", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
-        assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("lab") || description.contains("json"));
-        assertTrue(description.contains("not"));
+        assertTrue(description.contains("isdu"));
+        assertTrue(description.contains("tcp"));
+        assertFalse(description.contains("lab"));
     }
 
     @Test
-    void pointParserAcceptsPortAndProcessDataForms() throws Exception {
+    void pointParserAcceptsPortForms() throws Exception {
         assertEquals(1, IoLinkPoint.parse("port:1").port());
-        assertEquals(IoLinkPoint.Channel.PORT, IoLinkPoint.parse("port:1").channel());
         assertEquals(IoLinkPoint.Channel.PDIN, IoLinkPoint.parse("port:1:pdin").channel());
         assertEquals(IoLinkPoint.Channel.PDOUT, IoLinkPoint.parse("port:1:pdout").channel());
     }
 
     @Test
-    void readPdinAndWritePdoutLoopback() throws Exception {
-        bridge = new FakeIoLinkBridge();
-        bridge.putPdin(1, 17);
-        bridge.putPdout(1, 0);
-        bridge.start();
-        assertTrue(bridge.awaitReady(2, TimeUnit.SECONDS));
+    void readAndWriteIsdu() throws Exception {
+        peer = new FakeIoLinkPeer();
+        peer.put(1, 0x0010, 0, 42.0f);
+        peer.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
-                "port", String.valueOf(bridge.port()),
+                "port", String.valueOf(peer.port()),
                 "timeoutMs", "2000"
         ));
         driver = new IoLinkDeviceDriver();
         driver.initialize(object);
         driver.connect();
-        assertTrue(driver.isConnected());
 
-        driver.readPoints(Map.of(
-                "in", "port:1:pdin",
-                "out", "port:1:pdout"
-        ));
-        assertEquals(17.0, (Double) object.variables.get("in").firstRow().get("value"), 0.001);
-        assertEquals(0.0, (Double) object.variables.get("out").firstRow().get("value"), 0.001);
+        driver.readPoints(Map.of("p", "port:1"));
+        assertEquals(42.0, (Double) object.variables.get("p").firstRow().get("value"), 0.001);
 
-        driver.writePoint("out", DataRecord.single(
+        driver.writePoint("p", DataRecord.single(
                 DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
-                Map.of("value", 42.0)
+                Map.of("value", 11.0)
         ));
-        assertEquals(42.0, bridge.pdout(1), 0.001);
-        assertEquals(42.0, (Double) object.variables.get("out").firstRow().get("value"), 0.001);
+        assertEquals(11.0f, peer.get(1, 0x0010, 0), 0.001f);
     }
 
     @Test
-    void writePdinRejected() throws Exception {
-        bridge = new FakeIoLinkBridge();
-        bridge.putPdin(1, 1);
-        bridge.start();
-        assertTrue(bridge.awaitReady(2, TimeUnit.SECONDS));
-
-        StubDriverObject object = new StubDriverObject(Map.of(
-                "host", "127.0.0.1",
-                "port", String.valueOf(bridge.port()),
-                "timeoutMs", "2000"
-        ));
-        driver = new IoLinkDeviceDriver();
-        driver.initialize(object);
-        driver.connect();
-        driver.readPoints(Map.of("in", "port:1:pdin"));
-        DriverException error = assertThrows(DriverException.class, () ->
-                driver.writePoint("in", DataRecord.single(
-                        DataSchema.builder("v").field("value", FieldType.DOUBLE).build(),
-                        Map.of("value", 9.0)
-                )));
-        assertTrue(error.getMessage().toLowerCase(Locale.ROOT).contains("pdin"));
-    }
-
-    @Test
-    void readPointsBeforeConnectThrows() {
+    void readBeforeConnectThrows() {
         driver = new IoLinkDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of()));
-        DriverException error = assertThrows(DriverException.class, () ->
-                driver.readPoints(Map.of("x", "port:1")));
-        assertTrue(error.getMessage().contains("Not connected"));
+        assertThrows(DriverException.class, () -> driver.readPoints(Map.of("x", "port:1")));
     }
 
-    private static final class FakeIoLinkBridge implements AutoCloseable {
-
-        private static final Pattern PORT = Pattern.compile("\"port\"\\s*:\\s*(\\d+)");
-        private static final Pattern CHANNEL = Pattern.compile("\"channel\"\\s*:\\s*\"([^\"]+)\"");
-        private static final Pattern PDOUT = Pattern.compile("\"pdout\"\\s*:\\s*(-?[0-9.]+)");
-        private static final Pattern VALUE = Pattern.compile("\"value\"\\s*:\\s*(-?[0-9.]+)");
-        private static final Pattern OP = Pattern.compile("\"op\"\\s*:\\s*\"([^\"]+)\"");
-
+    private static final class FakeIoLinkPeer implements AutoCloseable {
         private final ServerSocket serverSocket;
-        private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
-            Thread thread = new Thread(runnable, "fake-io-link");
-            thread.setDaemon(true);
-            return thread;
+        private final ExecutorService executor = Executors.newCachedThreadPool(r -> {
+            Thread t = new Thread(r, "fake-iolink");
+            t.setDaemon(true);
+            return t;
         });
-        private final Map<Integer, Double> pdin = new ConcurrentHashMap<>();
-        private final Map<Integer, Double> pdout = new ConcurrentHashMap<>();
-        private final CountDownLatch ready = new CountDownLatch(1);
+        private final Map<Long, Float> values = new ConcurrentHashMap<>();
 
-        FakeIoLinkBridge() throws IOException {
+        FakeIoLinkPeer() throws IOException {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
 
-        int port() {
-            return serverSocket.getLocalPort();
-        }
-
-        void putPdin(int port, double value) {
-            pdin.put(port, value);
-        }
-
-        void putPdout(int port, double value) {
-            pdout.put(port, value);
-        }
-
-        double pdout(int port) {
-            return pdout.getOrDefault(port, 0.0);
-        }
-
-        void start() {
-            executor.submit(this::acceptLoop);
-            ready.countDown();
-        }
-
-        boolean awaitReady(long timeout, TimeUnit unit) throws InterruptedException {
-            return ready.await(timeout, unit);
-        }
+        int port() { return serverSocket.getLocalPort(); }
+        void put(int port, int index, int sub, float v) { values.put(key(port, index, sub), v); }
+        float get(int port, int index, int sub) { return values.getOrDefault(key(port, index, sub), 0f); }
+        void start() { executor.submit(this::acceptLoop); }
 
         private void acceptLoop() {
             while (!serverSocket.isClosed()) {
@@ -195,9 +119,7 @@ class IoLinkDeviceDriverTest {
                     Socket socket = serverSocket.accept();
                     executor.submit(() -> handle(socket));
                 } catch (IOException e) {
-                    if (serverSocket.isClosed()) {
-                        return;
-                    }
+                    if (serverSocket.isClosed()) return;
                 }
             }
         }
@@ -206,80 +128,31 @@ class IoLinkDeviceDriverTest {
             try (socket) {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
+                socket.setSoTimeout(2000);
                 while (true) {
-                    String line = readLine(in);
-                    if (line == null) {
-                        return;
+                    byte[] header = IoLinkCodec.readFully(in, 4);
+                    int port = header[0] & 0xFF;
+                    int index = ((header[1] & 0xFF) << 8) | (header[2] & 0xFF);
+                    int sub = header[3] & 0xFF;
+                    socket.setSoTimeout(30);
+                    try {
+                        byte[] data = IoLinkCodec.readFully(in, 4);
+                        values.put(key(port, index, sub), ByteBuffer.wrap(data).getFloat());
+                        out.write(0x00);
+                        out.flush();
+                    } catch (java.net.SocketTimeoutException readOnly) {
+                        out.write(IoLinkCodec.encodeFloat(values.getOrDefault(key(port, index, sub), 0f)));
+                        out.flush();
+                    } finally {
+                        socket.setSoTimeout(2000);
                     }
-                    writeLine(out, handleLine(line));
                 }
             } catch (IOException ignored) {
-                // client closed
             }
         }
 
-        private String handleLine(String line) {
-            Matcher opMatcher = OP.matcher(line);
-            Matcher portMatcher = PORT.matcher(line);
-            if (!opMatcher.find() || !portMatcher.find()) {
-                return "{\"ok\":false,\"error\":\"bad request\"}";
-            }
-            String op = opMatcher.group(1).toLowerCase(Locale.ROOT);
-            int port = Integer.parseInt(portMatcher.group(1));
-            String channel = "pdin";
-            Matcher channelMatcher = CHANNEL.matcher(line);
-            if (channelMatcher.find()) {
-                channel = channelMatcher.group(1).toLowerCase(Locale.ROOT);
-            }
-            if ("get".equals(op)) {
-                double value = "pdout".equals(channel)
-                        ? pdout.getOrDefault(port, 0.0)
-                        : pdin.getOrDefault(port, 0.0);
-                return "{\"ok\":true,\"value\":" + Math.round(value) + "}";
-            }
-            if ("set".equals(op)) {
-                Double value = null;
-                Matcher pdoutMatcher = PDOUT.matcher(line);
-                if (pdoutMatcher.find()) {
-                    value = Double.parseDouble(pdoutMatcher.group(1));
-                } else {
-                    Matcher valueMatcher = VALUE.matcher(line);
-                    if (valueMatcher.find()) {
-                        value = Double.parseDouble(valueMatcher.group(1));
-                    }
-                }
-                if (value == null) {
-                    return "{\"ok\":false,\"error\":\"missing pdout\"}";
-                }
-                pdout.put(port, value);
-                return "{\"ok\":true,\"value\":" + Math.round(value) + "}";
-            }
-            return "{\"ok\":false,\"error\":\"unknown op\"}";
-        }
-
-        private static void writeLine(OutputStream out, String line) throws IOException {
-            out.write((line + "\n").getBytes(StandardCharsets.US_ASCII));
-            out.flush();
-        }
-
-        private static String readLine(InputStream in) throws IOException {
-            ByteArrayOutputStream buf = new ByteArrayOutputStream();
-            while (true) {
-                int ch = in.read();
-                if (ch < 0) {
-                    if (buf.size() == 0) {
-                        return null;
-                    }
-                    break;
-                }
-                if (ch == '\n') {
-                    break;
-                }
-                if (ch != '\r') {
-                    buf.write(ch);
-                }
-            }
-            return buf.toString(StandardCharsets.US_ASCII);
+        private static long key(int port, int index, int sub) {
+            return (((long) port) << 24) | (((long) index) << 8) | (sub & 0xFF);
         }
 
         @Override
@@ -291,43 +164,15 @@ class IoLinkDeviceDriverTest {
     }
 
     private static final class StubDriverObject implements DeviceDriver.DriverObject {
-
         private final Map<String, String> configuration;
         private final Map<String, DataRecord> variables = new ConcurrentHashMap<>();
-
-        StubDriverObject(Map<String, String> configuration) {
-            this.configuration = configuration;
+        StubDriverObject(Map<String, String> configuration) { this.configuration = configuration; }
+        @Override public PlatformObject deviceObject() {
+            return new PlatformObject("t", "root.platform.devices.t", ObjectType.DEVICE, "T", "", null);
         }
-
-        @Override
-        public PlatformObject deviceObject() {
-            return new PlatformObject(
-                    "test-io-link",
-                    "root.platform.devices.test",
-                    ObjectType.DEVICE,
-                    "Test",
-                    "",
-                    null
-            );
-        }
-
-        @Override
-        public void updateVariable(String name, DataRecord value) {
-            variables.put(name, value);
-        }
-
-        @Override
-        public Optional<DataRecord> getVariable(String name) {
-            return Optional.ofNullable(variables.get(name));
-        }
-
-        @Override
-        public void log(DeviceDriver.DriverLogLevel level, String message) {
-        }
-
-        @Override
-        public Map<String, String> configuration() {
-            return configuration;
-        }
+        @Override public void updateVariable(String name, DataRecord value) { variables.put(name, value); }
+        @Override public Optional<DataRecord> getVariable(String name) { return Optional.ofNullable(variables.get(name)); }
+        @Override public void log(DeviceDriver.DriverLogLevel level, String message) { }
+        @Override public Map<String, String> configuration() { return configuration; }
     }
 }

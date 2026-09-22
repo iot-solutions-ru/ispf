@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.interbus.codec.InterbusLabSession;
+import com.ispf.driver.interbus.codec.InterbusSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,14 +15,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * INTERBUS gateway driver — framed process-data ASCII lab over TCP (default port {@code 502}).
+ * INTERBUS process-image driver over TCP ({@code interbus}).
  * <p>
- * Honesty boundary: this talks to an ISPF INTERBUS-over-TCP gateway lab, not a Phoenix
- * Interbus master ASIC and not Modbus (even though the lab default port is 502). Lab dialect
- * uses {@code RD}/{@code WR} for process-image words such as {@code slot:1}, {@code word:0},
- * {@code slot:1:word:0}.
+ * Frames a two-byte process-data word as {@code uint16} BE length plus payload.
+ * Not the Phoenix INTERBUS master ASIC.
  * <p>
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
+ * Point forms: {@code slot:1}, {@code word:0}, {@code slot:1:word:0}.
  */
 public class InterbusDeviceDriver implements DeviceDriver {
 
@@ -35,10 +33,9 @@ public class InterbusDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "interbus",
-            "INTERBUS Gateway Lab Driver",
-            "0.1.0",
-            "INTERBUS gateway over TCP process-data lab (RD/WR slot:word);"
-                    + " not Phoenix Interbus master ASIC (port 502 lab only, not Modbus)",
+            "INTERBUS Driver",
+            "1.0.0",
+            "INTERBUS process image over TCP; not the Phoenix ASIC",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -53,7 +50,7 @@ public class InterbusDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 502;
     private int timeoutMs = 3000;
-    private InterbusLabSession session;
+    private InterbusSession session;
     private final Map<String, InterbusPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -83,13 +80,12 @@ public class InterbusDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new InterbusLabSession(host, port, timeoutMs);
+            session = new InterbusSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "INTERBUS TCP gateway lab connected to " + host + ":" + port
-                            + " (not Phoenix master ASIC; not Modbus)");
+                    "INTERBUS connected to " + host + ":" + port + " (process image over TCP)");
         } catch (IOException e) {
             session = null;
-            throw new DriverException("INTERBUS lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("INTERBUS connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -117,10 +113,10 @@ public class InterbusDeviceDriver implements DeviceDriver {
             InterbusPoint point = InterbusPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                double value = session.readValue(point.wireToken());
+                double value = session.readValue(point.slot(), point.word());
                 driverObject.updateVariable(entry.getKey(), toRecord(point, value));
             } catch (IOException e) {
-                throw new DriverException("INTERBUS lab read failed for " + mapping, e);
+                throw new DriverException("INTERBUS read failed for " + mapping, e);
             }
         }
     }
@@ -134,10 +130,10 @@ public class InterbusDeviceDriver implements DeviceDriver {
         }
         double numeric = extractNumeric(value);
         try {
-            session.writeValue(point.wireToken(), numeric);
+            session.writeValue(point.slot(), point.word(), numeric);
             driverObject.updateVariable(pointId, toRecord(point, numeric));
         } catch (IOException e) {
-            throw new DriverException("INTERBUS lab write failed for " + pointId, e);
+            throw new DriverException("INTERBUS write failed for " + pointId, e);
         }
     }
 

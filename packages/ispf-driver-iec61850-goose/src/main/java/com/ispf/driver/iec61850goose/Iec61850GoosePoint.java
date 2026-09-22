@@ -6,7 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * IEC 61850 GOOSE-lab point.
+ * IEC 61850 GOOSE point mapped onto an APDU value.
  * <p>
  * Forms: {@code goose:gcb1}, {@code goID:MyGo}.
  */
@@ -24,7 +24,7 @@ record Iec61850GoosePoint(Kind kind, String name) {
 
     static Iec61850GoosePoint parse(String mapping) throws DriverException {
         if (mapping == null || mapping.isBlank()) {
-            throw new DriverException("IEC 61850 GOOSE-lab point mapping is blank");
+            throw new DriverException("IEC 61850 GOOSE point mapping is blank");
         }
         String trimmed = mapping.trim();
         Matcher goose = GOOSE.matcher(trimmed);
@@ -36,7 +36,7 @@ record Iec61850GoosePoint(Kind kind, String name) {
             return new Iec61850GoosePoint(Kind.GO_ID, goId.group(1));
         }
         throw new DriverException(
-                "Unsupported IEC 61850 GOOSE-lab mapping"
+                "Unsupported IEC 61850 GOOSE mapping"
                         + " (expected goose:gcb1 or goID:MyGo): " + mapping);
     }
 

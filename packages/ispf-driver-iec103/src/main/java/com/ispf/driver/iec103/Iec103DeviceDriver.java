@@ -6,40 +6,40 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.iec103.codec.Iec103LabSession;
-import com.ispf.driver.iec103.codec.Iec103LabTypes;
-import com.ispf.driver.iec103.codec.Iec103LabValue;
+import com.ispf.driver.iec103.codec.Iec103Session;
+import com.ispf.driver.iec103.codec.Iec103Types;
+import com.ispf.driver.iec103.codec.Iec103Value;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * IEC 60870-5-103 protection <strong>lab</strong> driver ({@code iec103}).
+ * IEC 60870-5-103 protection driver ({@code iec103}) over FT1.2 TCP.
  * <p>
- * Clean-room Apache-2.0 codec — not a full serial FT1.2 IEC 103 stack.
- * Uses simplified APCI+ASDU framing over TCP (port 2404 by default) in the same
- * spirit as {@code ispf-driver-iec101}, with 103 type IDs (ASDU 1 / 9 / 40 lab,
- * GI 7/8, optional general command 20) and FUN/INF addressing.
+ * Wire format follows IEC 60870-5-1 FT1.2: reset of remote link, then confirmed
+ * user data. ASDU layout is TYP, VSQ, COT (1), ASDU address (1), FUN, INF, data.
+ * Supported ASDUs: 1 (time-tagged), 2 (relative time-tagged), 7/8 (GI), 9 (measurands II),
+ * 10 (generic data), 20 (general command), and 40 (measured float for existing mappings).
  * <p>
  * Point mapping: {@code FUN:INF}, {@code ASDU:FUN:INF}, or {@code ASDUid:IOA}
  * where IOA packs {@code (FUN<<8)|INF}. See {@link Iec103Point}.
- * <p>
- * No OpenMUC / GPL IEC libraries.
  */
 public class Iec103DeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "iec103",
-            "IEC 60870-5-103 Lab Driver",
-            "0.1.0",
-            "IEC103-lab over TCP: APCI+ASDU subset (ASDU 7/8 GI, 1 status, 9/40 meas, 20 cmd);"
-                    + " FUN/INF points; not full serial FT1.2 IEC 60870-5-103",
+            "IEC 60870-5-103 Driver",
+            "1.0.0",
+            "IEC 60870-5-103 FT1.2 over TCP: ASDU 1/2/7/8/9/10/20/40; FUN/INF addressing;"
+                    + " COT 1, ASDU address 1, link address 1.",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "2404",
+                    "linkAddress", "1",
                     "commonAddress", "1",
                     "timeoutMs", "3000"
             ),
@@ -66,11 +66,12 @@ public class Iec103DeviceDriver implements DeviceDriver {
     private DriverObject driverObject;
     private String host = "127.0.0.1";
     private int port = 2404;
+    private int linkAddress = 1;
     private int commonAddress = 1;
     private int timeoutMs = 3000;
-    private Iec103LabSession session;
+    private Iec103Session session;
     private final Map<String, Iec103Point> points = new ConcurrentHashMap<>();
-    private Map<Integer, Iec103LabValue> lastInterrogation = Map.of();
+    private Map<Integer, Iec103Value> lastInterrogation = Map.of();
 
     @Override
     public DriverMetadata metadata() {
@@ -90,6 +91,7 @@ public class Iec103DeviceDriver implements DeviceDriver {
         switch (key) {
             case "host" -> host = value.trim();
             case "port" -> port = Integer.parseInt(value.trim());
+            case "linkAddress" -> linkAddress = Integer.parseInt(value.trim());
             case "commonAddress" -> commonAddress = Integer.parseInt(value.trim());
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
             default -> { }
@@ -100,24 +102,20 @@ public class Iec103DeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new Iec103LabSession(host, port, commonAddress, timeoutMs);
+            session = new Iec103Session(host, port, linkAddress, commonAddress, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "IEC103-lab connected to " + host + ":" + port
-                            + " (commonAddress=" + commonAddress + ")");
+                    "IEC 103 connected to " + host + ":" + port
+                            + " (linkAddress=" + linkAddress + ", commonAddress=" + commonAddress + ")");
         } catch (IOException e) {
             session = null;
-            throw new DriverException("IEC103-lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("IEC 103 connect failed for " + host + ":" + port, e);
         }
     }
 
     @Override
     public void disconnect() {
         if (session != null) {
-            try {
-                session.close();
-            } catch (Exception ignored) {
-                // best effort
-            }
+            session.close();
             session = null;
         }
         lastInterrogation = Map.of();
@@ -138,14 +136,14 @@ public class Iec103DeviceDriver implements DeviceDriver {
         try {
             lastInterrogation = session.generalInterrogation();
         } catch (IOException e) {
-            throw new DriverException("IEC103-lab interrogation failed", e);
+            throw new DriverException("IEC 103 interrogation failed", e);
         }
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             Iec103Point point = Iec103Point.parse(entry.getValue());
             points.put(entry.getKey(), point);
-            Iec103LabValue value = lastInterrogation.get(point.packedIoa());
+            Iec103Value value = lastInterrogation.get(point.packedIoa());
             if (value == null) {
-                throw new DriverException("IEC103-lab FUN=" + point.fun()
+                throw new DriverException("IEC 103 FUN=" + point.fun()
                         + " INF=" + point.inf() + " not present in interrogation");
             }
             driverObject.updateVariable(entry.getKey(), toRecord(point, value));
@@ -162,7 +160,7 @@ public class Iec103DeviceDriver implements DeviceDriver {
             throw new DriverException("Unknown point: " + pointId + " (read it first)");
         }
         if (point.kind() != Iec103Point.Kind.STATUS) {
-            throw new DriverException("IEC103-lab write supports STATUS points only (general command ASDU 20)");
+            throw new DriverException("IEC 103 write supports STATUS points only (general command ASDU 20)");
         }
         try {
             boolean on = extractBoolean(value);
@@ -172,19 +170,20 @@ public class Iec103DeviceDriver implements DeviceDriver {
                     "quality", "GOOD",
                     "fun", (long) point.fun(),
                     "inf", (long) point.inf(),
-                    "typeId", (long) Iec103LabTypes.ASDU_GENERAL_COMMAND
+                    "typeId", (long) Iec103Types.ASDU_GENERAL_COMMAND
             )));
         } catch (IOException e) {
-            throw new DriverException("IEC103-lab write failed for " + pointId, e);
+            throw new DriverException("IEC 103 write failed for " + pointId, e);
         }
     }
 
-    private static DataRecord toRecord(Iec103Point point, Iec103LabValue value) throws DriverException {
+    private static DataRecord toRecord(Iec103Point point, Iec103Value value) throws DriverException {
         return switch (point.kind()) {
             case STATUS -> {
-                if (value.typeId() != Iec103LabTypes.ASDU_TIME_TAGGED) {
+                if (value.typeId() != Iec103Types.ASDU_TIME_TAGGED
+                        && value.typeId() != Iec103Types.ASDU_RELATIVE_TIME_TAGGED) {
                     throw new DriverException("FUN=" + point.fun() + " INF=" + point.inf()
-                            + " is not ASDU 1 status");
+                            + " is not ASDU 1/2 status");
                 }
                 yield DataRecord.single(BOOL_SCHEMA, Map.of(
                         "value", value.bool(),
@@ -195,10 +194,11 @@ public class Iec103DeviceDriver implements DeviceDriver {
                 ));
             }
             case MEASURED_FLOAT -> {
-                if (value.typeId() != Iec103LabTypes.ASDU_LAB_MEAS_FLOAT
-                        && value.typeId() != Iec103LabTypes.ASDU_MEASURANDS_II) {
+                if (value.typeId() != Iec103Types.ASDU_MEAS_FLOAT
+                        && value.typeId() != Iec103Types.ASDU_GENERIC_DATA
+                        && value.typeId() != Iec103Types.ASDU_MEASURANDS_II) {
                     throw new DriverException("FUN=" + point.fun() + " INF=" + point.inf()
-                            + " is not measured ASDU 9/40");
+                            + " is not measured ASDU 9/10/40");
                 }
                 yield DataRecord.single(FLOAT_SCHEMA, Map.of(
                         "value", value.numeric(),
@@ -209,7 +209,7 @@ public class Iec103DeviceDriver implements DeviceDriver {
                 ));
             }
             case MEASURANDS_II -> {
-                if (value.typeId() != Iec103LabTypes.ASDU_MEASURANDS_II) {
+                if (value.typeId() != Iec103Types.ASDU_MEASURANDS_II) {
                     throw new DriverException("FUN=" + point.fun() + " INF=" + point.inf()
                             + " is not ASDU 9");
                 }
@@ -233,9 +233,9 @@ public class Iec103DeviceDriver implements DeviceDriver {
             return bool;
         }
         if (raw == null) {
-            throw new DriverException("IEC103-lab write requires boolean value");
+            throw new DriverException("IEC 103 write requires boolean value");
         }
-        String text = String.valueOf(raw).trim().toLowerCase();
+        String text = String.valueOf(raw).trim().toLowerCase(Locale.ROOT);
         return "true".equals(text) || "1".equals(text) || "on".equals(text);
     }
 }

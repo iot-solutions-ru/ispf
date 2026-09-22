@@ -28,13 +28,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link UdsDeviceDriver} against an in-process DoIP/UDS lab server.
- * Certifies the lab subset (0x10/0x22/0x2E) only — not full ISO-TP / ISO 13400.
+ * Loopback tests for {@link UdsDeviceDriver} against an in-process DoIP/UDS peer.
+ * Covers routing activation, session control, 0x22, and 0x2E — not full ISO-TP.
  */
 class UdsDeviceDriverTest {
 
@@ -54,13 +55,25 @@ class UdsDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionReadWriteDoipLab() {
+    void metadataIsProductionReadWriteDoip() {
         driver = new UdsDeviceDriver();
         assertEquals("uds", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
-        assertTrue(driver.metadata().description().toLowerCase(Locale.ROOT).contains("doip"));
-        assertTrue(driver.metadata().description().toLowerCase(Locale.ROOT).contains("not"));
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("doip"));
+        assertTrue(description.contains("not"));
+        assertTrue(!description.contains("lab"));
+    }
+
+    @Test
+    void routingActivationRequestFrameIsExactLiteral() {
+        // ISO 13400-2: ver=02, ~ver=FD, type=0005, len=7, SA=0E00, act=00, reserved 00*4
+        byte[] expected = new byte[]{
+                0x02, (byte) 0xFD, 0x00, 0x05, 0x00, 0x00, 0x00, 0x07,
+                0x0E, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        };
+        assertArrayEquals(expected, DoipCodec.buildRoutingActivationRequest(0x0E00));
     }
 
     @Test
@@ -161,7 +174,7 @@ class UdsDeviceDriverTest {
         driver = new UdsDeviceDriver();
         driver.initialize(object);
         DriverException error = assertThrows(DriverException.class, driver::connect);
-        assertTrue(error.getMessage().contains("UDS DoIP-lab connect failed"));
+        assertTrue(error.getMessage().contains("UDS DoIP connect failed"));
     }
 
     private static final class FakeDoipUdsServer implements AutoCloseable {
@@ -218,19 +231,19 @@ class UdsDeviceDriverTest {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 while (true) {
-                    UdsDeviceDriver.DoipMessage message = UdsDeviceDriver.readDoipFrame(in);
-                    if (message.payloadType() == UdsDeviceDriver.PAYLOAD_ROUTING_ACTIVATION_REQUEST) {
+                    DoipCodec.DoipMessage message = DoipCodec.readFrame(in);
+                    if (message.payloadType() == DoipCodec.PAYLOAD_ROUTING_ACTIVATION_REQUEST) {
+                        byte[] requestPayload = message.payload();
                         byte[] response = new byte[9];
-                        if (message.payload().length >= 2) {
-                            response[0] = message.payload()[0];
-                            response[1] = message.payload()[1];
+                        if (requestPayload.length >= 2) {
+                            response[0] = requestPayload[0];
+                            response[1] = requestPayload[1];
                         }
                         response[2] = 0x00;
                         response[3] = 0x01;
                         response[4] = 0x10; // routing successfully activated
-                        UdsDeviceDriver.writeDoipFrame(
-                                out, UdsDeviceDriver.PAYLOAD_ROUTING_ACTIVATION_RESPONSE, response);
-                    } else if (message.payloadType() == UdsDeviceDriver.PAYLOAD_DIAGNOSTIC_MESSAGE) {
+                        DoipCodec.writeFrame(out, DoipCodec.PAYLOAD_ROUTING_ACTIVATION_RESPONSE, response);
+                    } else if (message.payloadType() == DoipCodec.PAYLOAD_DIAGNOSTIC_MESSAGE) {
                         byte[] payload = message.payload();
                         if (payload.length < 5) {
                             continue;
@@ -244,8 +257,7 @@ class UdsDeviceDriverTest {
                         reply[2] = payload[0];
                         reply[3] = payload[1];
                         System.arraycopy(udsResponse, 0, reply, 4, udsResponse.length);
-                        UdsDeviceDriver.writeDoipFrame(
-                                out, UdsDeviceDriver.PAYLOAD_DIAGNOSTIC_MESSAGE, reply);
+                        DoipCodec.writeFrame(out, DoipCodec.PAYLOAD_DIAGNOSTIC_MESSAGE, reply);
                     }
                 }
             } catch (IOException ignored) {

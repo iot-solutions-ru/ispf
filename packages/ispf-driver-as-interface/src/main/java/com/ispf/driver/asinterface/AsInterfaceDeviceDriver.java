@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.asinterface.codec.AsInterfaceLabSession;
+import com.ispf.driver.asinterface.codec.AsInterfaceSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,14 +15,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AS-Interface master/gateway driver — ASCII lab over TCP (default port {@code 9600}).
+ * AS-Interface master-call driver over TCP ({@code as-interface}).
  * <p>
- * Honesty boundary: this talks to an ISPF AS-Interface-over-TCP gateway lab, not an AS-i
- * physical master and not the yellow-cable AS-Interface PHY. Lab dialect uses
- * {@code GET}/{@code SET} (aliases {@code RD}/{@code WR}) for digital slave points such as
- * {@code slave:3}, {@code slave:3:di0}, {@code slave:3:do1}.
+ * Sends a two-byte telegram (5-bit address 0–31 and command/data). Not the yellow-cable PHY.
  * <p>
- * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
+ * Point forms: {@code slave:3}, {@code slave:3:di0}, {@code slave:3:do1}.
  */
 public class AsInterfaceDeviceDriver implements DeviceDriver {
 
@@ -36,10 +33,9 @@ public class AsInterfaceDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "as-interface",
-            "AS-Interface Gateway Lab Driver",
-            "0.1.0",
-            "AS-Interface master/gateway over TCP ASCII lab (GET/SET slave:N:di/do);"
-                    + " not AS-i physical master / yellow cable",
+            "AS-Interface Driver",
+            "1.0.0",
+            "AS-Interface master call over TCP gateway; not AS-i PHY",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -54,7 +50,7 @@ public class AsInterfaceDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 9600;
     private int timeoutMs = 3000;
-    private AsInterfaceLabSession session;
+    private AsInterfaceSession session;
     private final Map<String, AsInterfacePoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -84,13 +80,12 @@ public class AsInterfaceDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new AsInterfaceLabSession(host, port, timeoutMs);
+            session = new AsInterfaceSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "AS-Interface TCP gateway lab connected to " + host + ":" + port
-                            + " (not AS-i physical master)");
+                    "AS-Interface connected to " + host + ":" + port + " (not AS-i PHY)");
         } catch (IOException e) {
             session = null;
-            throw new DriverException("AS-Interface lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("AS-Interface connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -118,10 +113,13 @@ public class AsInterfaceDeviceDriver implements DeviceDriver {
             AsInterfacePoint point = AsInterfacePoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                double value = session.readValue(point.wireToken());
+                double value = session.readValue(point.wireAddress(), point.readCommand());
+                if (point.channel() == AsInterfacePoint.Channel.DI) {
+                    value = (((int) value) >> point.bit()) & 0x01;
+                }
                 driverObject.updateVariable(entry.getKey(), toRecord(point, value));
             } catch (IOException e) {
-                throw new DriverException("AS-Interface lab read failed for " + mapping, e);
+                throw new DriverException("AS-Interface read failed for " + mapping, e);
             }
         }
     }
@@ -134,14 +132,15 @@ public class AsInterfaceDeviceDriver implements DeviceDriver {
             throw new DriverException("Unknown point: " + pointId + " (read it first)");
         }
         if (!point.writable()) {
-            throw new DriverException("AS-Interface lab rejects writes for DI point: " + point.display());
+            throw new DriverException("AS-Interface rejects writes for DI point: " + point.display());
         }
         double numeric = extractNumeric(value);
         try {
-            session.writeValue(point.wireToken(), numeric);
+            int data = point.writeData(numeric);
+            session.writeValue(point.wireAddress(), data);
             driverObject.updateVariable(pointId, toRecord(point, numeric));
         } catch (IOException e) {
-            throw new DriverException("AS-Interface lab write failed for " + pointId, e);
+            throw new DriverException("AS-Interface write failed for " + pointId, e);
         }
     }
 

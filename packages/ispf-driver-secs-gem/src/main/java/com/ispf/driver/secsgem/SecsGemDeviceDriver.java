@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.secsgem.codec.SecsGemLabSession;
+import com.ispf.driver.secsgem.codec.SecsGemSession;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,12 +17,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * SEMI HSMS / GEM <strong>lab</strong> driver ({@code secs-gem}).
+ * SEMI E37 HSMS / SECS-II GEM driver ({@code secs-gem}).
  * <p>
- * Clean-room Apache-2.0 HSMS-lab subset over TCP (port 5000 by default):
- * Select.req/Select.rsp, S1F13/S1F14, S1F1/S1F2, S2F13/S2F14 (VID), lab S6F1 status,
- * and optional S2F41 remote command writes. Not SECS-I serial and not a commercial
- * GEM package — no SEMI vendor libraries.
+ * TCP HSMS: Select.req/Select.rsp, then S1F13/S1F14, S1F1/S1F2, S2F13/S2F14 (VID),
+ * S6F1 status, and optional S2F41 remote command writes. Not SECS-I serial.
  * <p>
  * Point mapping: {@code S1F1}, {@code status}, or {@code VID:100}. See {@link SecsGemPoint}.
  */
@@ -30,10 +28,10 @@ public class SecsGemDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "secs-gem",
-            "SECS/GEM HSMS Lab Driver",
-            "0.1.0",
-            "HSMS-lab / GEM-lab subset over TCP: Select + S1F1/S1F2, S1F13/S1F14,"
-                    + " S2F13/S2F14 VID, S6F1 status, S2F41 RCMD; not SECS-I serial / not commercial GEM",
+            "SECS/GEM HSMS Driver",
+            "1.0.0",
+            "SEMI E37 HSMS over TCP: Select.req/rsp, S1F1/S1F2, S1F13/S1F14,"
+                    + " S2F13/S2F14 VID, S6F1 status, S2F41 RCMD; not SECS-I serial",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -63,7 +61,7 @@ public class SecsGemDeviceDriver implements DeviceDriver {
     private int port = 5000;
     private int sessionId;
     private int timeoutMs = 3000;
-    private SecsGemLabSession session;
+    private SecsGemSession session;
     private final Map<String, SecsGemPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -94,12 +92,12 @@ public class SecsGemDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new SecsGemLabSession(host, port, sessionId, timeoutMs);
+            session = new SecsGemSession(host, port, sessionId, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "HSMS-lab connected to " + host + ":" + port + " (sessionId=" + sessionId + ")");
+                    "HSMS connected to " + host + ":" + port + " (sessionId=" + sessionId + ")");
         } catch (IOException e) {
             session = null;
-            throw new DriverException("HSMS-lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("HSMS connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -143,7 +141,7 @@ public class SecsGemDeviceDriver implements DeviceDriver {
             try {
                 vidValues = session.readVids(vids);
             } catch (IOException e) {
-                throw new DriverException("HSMS-lab S2F13/S2F14 failed", e);
+                throw new DriverException("HSMS S2F13/S2F14 failed", e);
             }
         }
 
@@ -173,7 +171,7 @@ public class SecsGemDeviceDriver implements DeviceDriver {
                     case VID -> {
                         Double value = vidValues.get(point.vid());
                         if (value == null) {
-                            throw new DriverException("HSMS-lab VID " + point.vid() + " missing in S2F14");
+                            throw new DriverException("HSMS VID " + point.vid() + " missing in S2F14");
                         }
                         driverObject.updateVariable(pointId, DataRecord.single(NUMERIC_SCHEMA, Map.of(
                                 "value", value,
@@ -183,7 +181,7 @@ public class SecsGemDeviceDriver implements DeviceDriver {
                     }
                 }
             } catch (IOException e) {
-                throw new DriverException("HSMS-lab read failed for " + pointId, e);
+                throw new DriverException("HSMS read failed for " + pointId, e);
             }
         }
     }
@@ -195,7 +193,7 @@ public class SecsGemDeviceDriver implements DeviceDriver {
         }
         String rcmd = extractString(value);
         if (rcmd.isBlank()) {
-            throw new DriverException("HSMS-lab S2F41 requires non-blank RCMD value");
+            throw new DriverException("HSMS S2F41 requires non-blank RCMD value");
         }
         try {
             int hcack = session.sendRemoteCommand(rcmd);
@@ -206,16 +204,16 @@ public class SecsGemDeviceDriver implements DeviceDriver {
                     "point", "S2F41"
             )));
             if (hcack != 0) {
-                throw new DriverException("HSMS-lab S2F41 HCACK=" + hcack + " for RCMD=" + rcmd);
+                throw new DriverException("HSMS S2F41 HCACK=" + hcack + " for RCMD=" + rcmd);
             }
         } catch (IOException e) {
-            throw new DriverException("HSMS-lab S2F41 failed for " + pointId, e);
+            throw new DriverException("HSMS S2F41 failed for " + pointId, e);
         }
     }
 
     private static String extractString(DataRecord value) throws DriverException {
         if (value == null || value.rowCount() == 0) {
-            throw new DriverException("HSMS-lab write requires a value");
+            throw new DriverException("HSMS write requires a value");
         }
         Object raw = value.firstRow().get("value");
         if (raw == null) {
@@ -225,7 +223,7 @@ public class SecsGemDeviceDriver implements DeviceDriver {
             raw = value.firstRow().get("raw");
         }
         if (raw == null) {
-            throw new DriverException("HSMS-lab write requires value/rcmd");
+            throw new DriverException("HSMS write requires value/rcmd");
         }
         return String.valueOf(raw).trim();
     }

@@ -26,7 +26,8 @@ import java.util.regex.Pattern;
  * (see the separate {@code dlms} pack for that).
  * <p>
  * Implements the Mode C sign-on / identification / data-readout subset over TCP:
- * sign-on {@code /?!}, identification line, ACK {@code 0Z0}, then data lines
+ * opening {@code /?!\r\n} ({@code 2F 3F 21 0D 0A}), identification line, ACK
+ * {@code 06 30 35 30 0D 0A} ({@code ACK 050\r\n}) for baud/mode, then data lines
  * {@code OBIS(value*unit)} until {@code !}. Point mapping is an OBIS code
  * ({@code 1.8.0}, {@code 1-0:1.8.0}). Clean-room ISPF code, Apache-2.0 —
  * no proprietary meter stacks.
@@ -38,6 +39,12 @@ public class Iec62056DeviceDriver implements DeviceDriver {
     private static final byte ETX = 0x03;
     private static final byte CR = 0x0D;
     private static final byte LF = 0x0A;
+
+    /** Mode C opening without device address: {@code /?!\r\n}. */
+    static final byte[] MODE_C_OPENING = new byte[] { 0x2F, 0x3F, 0x21, 0x0D, 0x0A };
+
+    /** Mode C ACK for baud id 5 / mode 0: {@code ACK 050\r\n}. */
+    static final byte[] MODE_C_ACK_050 = new byte[] { ACK, 0x30, 0x35, 0x30, CR, LF };
 
     private static final Pattern DATA_LINE = Pattern.compile(
             "^([^()]+)\\(([^)*]*)(?:\\*([^)]*))?\\)\\s*$"
@@ -179,7 +186,7 @@ public class Iec62056DeviceDriver implements DeviceDriver {
                 throw new DriverException("Expected IEC 62056-21 identification, got: " + identification);
             }
 
-            out.write(new byte[] { ACK, '0', (byte) baudId, '0', CR, LF });
+            out.write(buildAck());
             out.flush();
 
             Map<String, DataLine> lines = readDataBlock(in);
@@ -191,8 +198,18 @@ public class Iec62056DeviceDriver implements DeviceDriver {
 
     private byte[] buildSignOn() {
         String address = deviceAddress == null ? "" : deviceAddress.trim();
+        if (address.isEmpty()) {
+            return MODE_C_OPENING.clone();
+        }
         String signOn = "/?" + address + "!\r\n";
         return signOn.getBytes(StandardCharsets.US_ASCII);
+    }
+
+    private byte[] buildAck() {
+        if (baudId == '5') {
+            return MODE_C_ACK_050.clone();
+        }
+        return new byte[] { ACK, '0', (byte) baudId, '0', CR, LF };
     }
 
     private static Map<String, DataLine> readDataBlock(InputStream in) throws IOException, DriverException {
@@ -263,7 +280,45 @@ public class Iec62056DeviceDriver implements DeviceDriver {
         return buffer.toString(StandardCharsets.US_ASCII);
     }
 
-    private record DataLine(String obis, String value, String unit) { }
+    private static final class DataLine {
+        private final String obis;
+        private final String value;
+        private final String unit;
 
-    private record ReadoutSession(String identification, Map<String, DataLine> lines) { }
+        DataLine(String obis, String value, String unit) {
+            this.obis = obis;
+            this.value = value;
+            this.unit = unit;
+        }
+
+        String obis() {
+            return obis;
+        }
+
+        String value() {
+            return value;
+        }
+
+        String unit() {
+            return unit;
+        }
+    }
+
+    private static final class ReadoutSession {
+        private final String identification;
+        private final Map<String, DataLine> lines;
+
+        ReadoutSession(String identification, Map<String, DataLine> lines) {
+            this.identification = identification;
+            this.lines = lines;
+        }
+
+        String identification() {
+            return identification;
+        }
+
+        Map<String, DataLine> lines() {
+            return lines;
+        }
+    }
 }

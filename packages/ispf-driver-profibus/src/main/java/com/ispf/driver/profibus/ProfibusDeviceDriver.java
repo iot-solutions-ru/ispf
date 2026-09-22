@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.profibus.codec.ProfibusLabSession;
+import com.ispf.driver.profibus.codec.ProfibusFdlSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,10 +15,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * PROFIBUS DP gateway lab driver — DP-over-TCP slave byte R/W (default port {@code 9600}).
+ * PROFIBUS DP driver — FDL over TCP (serial-server), default port {@code 9600}.
  * <p>
- * Honesty boundary: DP-over-TCP gateway lab only — not RS-485 DP master and not FDL ASIC.
- * Point forms: {@code slave:3}, {@code slave:3:byte:0}. Not the PA pack. Lab ≠ field.
+ * Wire format is FDL SD1/SD2 (not an RS-485 PHY or FDL ASIC). Connect may send an SD1
+ * station probe; slave/byte points are read and written with SD2 PDUs.
+ * Point forms: {@code slave:3}, {@code slave:3:byte:0}. Not the PA pack.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
@@ -33,10 +34,10 @@ public class ProfibusDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "profibus",
-            "PROFIBUS DP Gateway Lab Driver",
-            "0.1.0",
-            "PROFIBUS DP-over-TCP gateway lab (slave/byte R/W);"
-                    + " not RS-485 DP master / FDL ASIC",
+            "PROFIBUS DP FDL-over-TCP Driver",
+            "1.0.0",
+            "PROFIBUS DP FDL over TCP (serial-server): SD1 station probe, SD2 slave/byte R/W;"
+                    + " not RS-485 DP PHY / FDL ASIC",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -51,7 +52,7 @@ public class ProfibusDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 9600;
     private int timeoutMs = 3000;
-    private ProfibusLabSession session;
+    private ProfibusFdlSession session;
     private final Map<String, ProfibusPoint> points = new ConcurrentHashMap<>();
 
     @Override
@@ -81,13 +82,13 @@ public class ProfibusDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         try {
-            session = new ProfibusLabSession(host, port, timeoutMs);
+            session = new ProfibusFdlSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "PROFIBUS DP-over-TCP gateway lab connected to " + host + ":" + port
-                            + " (not RS-485 DP master / FDL ASIC)");
+                    "PROFIBUS DP FDL over TCP connected to " + host + ":" + port
+                            + " (not RS-485 DP PHY / FDL ASIC)");
         } catch (IOException e) {
             session = null;
-            throw new DriverException("PROFIBUS lab connect failed for " + host + ":" + port, e);
+            throw new DriverException("PROFIBUS FDL connect failed for " + host + ":" + port, e);
         }
     }
 
@@ -115,10 +116,10 @@ public class ProfibusDeviceDriver implements DeviceDriver {
             ProfibusPoint point = ProfibusPoint.parse(mapping);
             points.put(entry.getKey(), point);
             try {
-                double value = session.readValue(point.wireToken());
+                double value = session.readValue(point.slave(), point.byteOffset());
                 driverObject.updateVariable(entry.getKey(), toRecord(point, value));
             } catch (IOException e) {
-                throw new DriverException("PROFIBUS lab read failed for " + mapping, e);
+                throw new DriverException("PROFIBUS FDL read failed for " + mapping, e);
             }
         }
     }
@@ -132,10 +133,10 @@ public class ProfibusDeviceDriver implements DeviceDriver {
         }
         double numeric = extractNumeric(value);
         try {
-            session.writeValue(point.wireToken(), numeric);
+            session.writeValue(point.slave(), point.byteOffset(), numeric);
             driverObject.updateVariable(pointId, toRecord(point, numeric));
         } catch (IOException e) {
-            throw new DriverException("PROFIBUS lab write failed for " + pointId, e);
+            throw new DriverException("PROFIBUS FDL write failed for " + pointId, e);
         }
     }
 
