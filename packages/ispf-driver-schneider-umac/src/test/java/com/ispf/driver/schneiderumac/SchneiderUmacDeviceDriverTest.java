@@ -8,6 +8,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.schneiderumac.codec.ModbusTcpCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,12 +29,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link SchneiderUmacDeviceDriver} against a fake Modbus TCP server.
+ * Loopback tests for {@link SchneiderUmacDeviceDriver} against an in-process Modbus TCP peer.
  */
 class SchneiderUmacDeviceDriverTest {
 
@@ -53,14 +56,25 @@ class SchneiderUmacDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionModbusLabNotUmas() {
+    void readHoldingRegister0IsModbusTcpMbapLiteral() {
+        // tid=1, protocol=0, length=6, unit=1, FC3, address=0, quantity=1
+        byte[] expected = new byte[] {
+                0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01, 0x03, 0x00, 0x00, 0x00, 0x01
+        };
+        assertArrayEquals(expected, ModbusTcpCodec.buildReadHoldingRegister0Reference());
+        assertArrayEquals(expected, SchneiderUmacDeviceDriver.buildReadHoldingRegister0Frame());
+    }
+
+    @Test
+    void metadataIsProductionModbusTcpNotUmas() {
         SchneiderUmacDeviceDriver underTest = new SchneiderUmacDeviceDriver();
         assertEquals("schneider-umac", underTest.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, underTest.metadata().maturity());
         assertEquals(Set.of("read", "write"), underTest.metadata().capabilities());
         assertEquals("502", underTest.metadata().configurationSchema().get("port"));
         String description = underTest.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("modbus"));
+        assertTrue(description.contains("modbus tcp"));
+        assertFalse(description.contains("lab"));
         assertTrue(description.contains("not umas") || description.contains("not"));
     }
 

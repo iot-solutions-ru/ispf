@@ -8,9 +8,9 @@ import java.util.regex.Pattern;
  * Point mapping for Delta DVP Modbus holding registers.
  * <p>
  * Accepted forms: {@code HR:100}, {@code HR:100:2}, {@code 100}, {@code D100}, {@code D:100},
- * {@code D:100:2}. Lab mapping is 1:1 — the numeric suffix is the Modbus holding-register
- * address. {@code D100} and {@code HR:100} both address register 100. This does not encode
- * vendor-specific D-to-Modbus base offsets used by some Delta AS/DVP series (e.g. 0x1000).
+ * {@code D:100:2}. Mapping is 1:1 — the numeric suffix is the Modbus holding-register address.
+ * {@code D100} and {@code HR:100} both address register 100. This does not encode vendor-specific
+ * D-to-Modbus base offsets used by some Delta AS/DVP series (e.g. 0x1000).
  */
 public record DeltaDvpPoint(int address, int count) {
 

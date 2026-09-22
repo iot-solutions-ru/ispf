@@ -7,9 +7,11 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,12 +29,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link PanasonicMewtoDeviceDriver} against an in-process fake MEWTOCOL station.
+ * Loopback tests for {@link PanasonicMewtoDeviceDriver} against an in-process MEWTOCOL peer.
  */
 class PanasonicMewtoDeviceDriverTest {
 
@@ -52,9 +55,25 @@ class PanasonicMewtoDeviceDriverTest {
     }
 
     @Test
+    void dt0ReadIsLiteralMewtocolBytes() throws Exception {
+        // % 01 # RDD 00000 00000 BCC=70 CR — BCC = XOR of bytes after '%'
+        byte[] expected = new byte[] {
+                0x25, 0x30, 0x31, 0x23, 0x52, 0x44, 0x44,
+                0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30,
+                0x37, 0x30, 0x0D
+        };
+        String command = PanasonicMewtoDeviceDriver.buildReadCommand("01", "DT0");
+        assertEquals("%01#RDD000000000070", command);
+
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        PanasonicMewtoDeviceDriver.writeFrame(captured, command);
+        assertArrayEquals(expected, captured.toByteArray());
+    }
+
+    @Test
     void readDRegisterViaExpandedMapping() throws Exception {
         plc = new FakeMewtocolPlc();
-        plc.setRegister("D100", "42");
+        plc.setRegister("D100", 42);
         plc.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
@@ -67,17 +86,19 @@ class PanasonicMewtoDeviceDriverTest {
         driver.initialize(object);
         driver.connect();
         assertTrue(driver.isConnected());
+        assertEquals("panasonic-mewto", driver.metadata().id());
+        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
 
         driver.readPoints(Map.of("level", "D100"));
         assertEquals("42", object.variables.get("level").firstRow().get("value"));
         assertEquals("D100", object.variables.get("level").firstRow().get("register"));
-        assertTrue(object.variables.get("level").firstRow().get("command").toString().startsWith("%01#RDD"));
+        assertEquals("%01#RDD001000010070", object.variables.get("level").firstRow().get("command"));
     }
 
     @Test
     void writeThenReadViaLoopback() throws Exception {
         plc = new FakeMewtocolPlc();
-        plc.setRegister("D200", "1");
+        plc.setRegister("D200", 1);
         plc.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
@@ -97,13 +118,13 @@ class PanasonicMewtoDeviceDriverTest {
 
         driver.readPoints(Map.of("sp", "D200"));
         assertEquals("77", object.variables.get("sp").firstRow().get("value"));
-        assertEquals("77", plc.register("D200"));
+        assertEquals(77, plc.register("D200"));
     }
 
     @Test
     void rContactAndBccHelpers() throws Exception {
         plc = new FakeMewtocolPlc();
-        plc.setRegister("R0", "1");
+        plc.setRegister("R0", 1);
         plc.start();
 
         StubDriverObject object = new StubDriverObject(Map.of(
@@ -117,10 +138,12 @@ class PanasonicMewtoDeviceDriverTest {
         driver.readPoints(Map.of("relay", "R0"));
         assertEquals("1", object.variables.get("relay").firstRow().get("value"));
 
-        String body = "01#RDD0010000100";
+        String body = "01#RDD0000000000";
         String frame = "%" + body + PanasonicMewtoDeviceDriver.bcc(body);
         assertEquals(frame, PanasonicMewtoDeviceDriver.ensureBccFrame("%" + body + "**"));
-        assertEquals("42", PanasonicMewtoDeviceDriver.parseReadValue("%01$RD42" + PanasonicMewtoDeviceDriver.bcc("01$RD42")));
+        assertEquals("70", PanasonicMewtoDeviceDriver.bcc(body));
+        assertEquals("42", PanasonicMewtoDeviceDriver.parseReadValue(
+                "%01$RD2A00" + PanasonicMewtoDeviceDriver.bcc("01$RD2A00")));
     }
 
     @Test
@@ -163,7 +186,7 @@ class PanasonicMewtoDeviceDriverTest {
             thread.setDaemon(true);
             return thread;
         });
-        private final Map<String, String> registers = new ConcurrentHashMap<>();
+        private final Map<String, Integer> registers = new ConcurrentHashMap<>();
 
         FakeMewtocolPlc() throws IOException {
             serverSocket = new ServerSocket();
@@ -174,12 +197,12 @@ class PanasonicMewtoDeviceDriverTest {
             return serverSocket.getLocalPort();
         }
 
-        void setRegister(String name, String value) {
-            registers.put(name.toUpperCase(Locale.ROOT), value);
+        void setRegister(String name, int value) {
+            registers.put(name.toUpperCase(Locale.ROOT), value & 0xFFFF);
         }
 
-        String register(String name) {
-            return registers.get(name.toUpperCase(Locale.ROOT));
+        int register(String name) {
+            return registers.getOrDefault(name.toUpperCase(Locale.ROOT), 0);
         }
 
         void start() {
@@ -220,17 +243,31 @@ class PanasonicMewtoDeviceDriverTest {
                         continue;
                     }
                     if (cmd.equals("RDD") || cmd.equals("RCC")) {
-                        String device = cmd.startsWith("RD") ? "D" : "R";
+                        String device = cmd.startsWith("RD") && cmd.endsWith("D") ? "D" : "R";
                         int addr = Integer.parseInt(rest.substring(0, 5));
                         String reg = device + addr;
-                        String value = registers.getOrDefault(reg, "0");
-                        String respBody = st + "$" + (device.equals("D") ? "RD" : "RC") + value;
+                        int value = registers.getOrDefault(reg, 0);
+                        String data;
+                        if ("D".equals(device)) {
+                            data = String.format(Locale.ROOT, "%02X%02X", value & 0xFF, (value >> 8) & 0xFF);
+                        } else {
+                            data = String.valueOf(value != 0 ? 1 : 0);
+                        }
+                        String respBody = st + "$" + (device.equals("D") ? "RD" : "RC") + data;
                         write(out, "%" + respBody + PanasonicMewtoDeviceDriver.bcc(respBody));
                     } else if (cmd.equals("WDD") || cmd.equals("WCC")) {
-                        String device = cmd.startsWith("WD") ? "D" : "R";
+                        String device = cmd.startsWith("WD") && cmd.endsWith("D") ? "D" : "R";
                         int addr = Integer.parseInt(rest.substring(0, 5));
                         String data = rest.substring(10);
-                        registers.put(device + addr, data);
+                        int word;
+                        if ("D".equals(device) && data.length() >= 4) {
+                            int low = Integer.parseInt(data.substring(0, 2), 16);
+                            int high = Integer.parseInt(data.substring(2, 4), 16);
+                            word = (high << 8) | low;
+                        } else {
+                            word = Integer.parseInt(data);
+                        }
+                        registers.put(device + addr, word & 0xFFFF);
                         String respBody = st + "$WC";
                         write(out, "%" + respBody + PanasonicMewtoDeviceDriver.bcc(respBody));
                     } else {

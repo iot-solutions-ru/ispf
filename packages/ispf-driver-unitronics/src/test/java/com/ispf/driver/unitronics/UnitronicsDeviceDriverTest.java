@@ -11,6 +11,7 @@ import com.ispf.driver.DriverMaturity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,12 +29,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link UnitronicsDeviceDriver} against a fake PCOM ASCII PLC.
+ * Loopback tests for {@link UnitronicsDeviceDriver} against an in-process PCOM ASCII peer.
  */
 class UnitronicsDeviceDriverTest {
 
@@ -53,6 +55,20 @@ class UnitronicsDeviceDriverTest {
     }
 
     @Test
+    void mi0ReadIsLiteralPcomBytes() throws Exception {
+        // / 00 RW 0000 01 FCS=2A CR — FCS = sum(mod 256) of ASCII after '/'
+        byte[] expected = new byte[] {
+                0x2F, 0x30, 0x30, 0x52, 0x57, 0x30, 0x30, 0x30, 0x30, 0x30, 0x31, 0x32, 0x41, 0x0D
+        };
+        String command = UnitronicsDeviceDriver.buildReadCommand("00", "MI0");
+        assertEquals("/00RW0000012A", command);
+
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        UnitronicsDeviceDriver.writeFrame(captured, command);
+        assertArrayEquals(expected, captured.toByteArray());
+    }
+
+    @Test
     void readMiAndMbViaLoopback() throws Exception {
         plc = new FakePcomPlc();
         plc.setRegister("MI100", 4660);
@@ -62,7 +78,7 @@ class UnitronicsDeviceDriverTest {
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
                 "port", String.valueOf(plc.port()),
-                "unitId", "01",
+                "unitId", "00",
                 "timeoutMs", "2000"
         ));
         driver = new UnitronicsDeviceDriver();
@@ -79,7 +95,7 @@ class UnitronicsDeviceDriverTest {
 
         assertEquals("4660", object.variables.get("int").firstRow().get("value"));
         assertEquals("1", object.variables.get("bit").firstRow().get("value"));
-        assertTrue(object.variables.get("int").firstRow().get("command").toString().startsWith("/01RMI100.1"));
+        assertEquals("/00RW00640134", object.variables.get("int").firstRow().get("command"));
     }
 
     @Test
@@ -110,15 +126,15 @@ class UnitronicsDeviceDriverTest {
 
     @Test
     void helpersBuildAndParseFrames() {
-        String read = UnitronicsDeviceDriver.buildReadCommand("01", "MI100");
-        assertTrue(read.startsWith("/01RMI100.1"));
+        assertEquals("/00RW0000012A", UnitronicsDeviceDriver.buildReadCommand("00", "MI0"));
+        assertEquals("/00RB00000115", UnitronicsDeviceDriver.buildReadCommand("00", "MB0"));
 
-        String write = UnitronicsDeviceDriver.buildWriteCommand("01", "MB0", "1");
-        assertTrue(write.startsWith("/01WMB0.1"));
+        String write = UnitronicsDeviceDriver.buildWriteCommand("00", "MB0", "1");
+        assertTrue(write.startsWith("/00SB0000011"));
 
-        String body = "A014660";
-        String frame = "/" + body + UnitronicsDeviceDriver.fcs(body);
-        assertEquals("4660", UnitronicsDeviceDriver.parseReadValue(frame));
+        assertEquals("4660", UnitronicsDeviceDriver.parseReadValue("/A00RW1234D3"));
+        assertEquals("1", UnitronicsDeviceDriver.parseReadValue(
+                "/A00RB1" + UnitronicsDeviceDriver.fcs("00RB1")));
     }
 
     @Test
@@ -153,8 +169,8 @@ class UnitronicsDeviceDriverTest {
     private static final class FakePcomPlc implements AutoCloseable {
 
         private static final Pattern CMD = Pattern.compile(
-                "^/(?<unit>\\d{2})(?<op>[RW])(?<dev>MI|MB)(?<addr>\\d+)\\.(?<data>-?\\d+)(?<fcs>[0-9A-Fa-f]{2})$",
-                Pattern.CASE_INSENSITIVE);
+                "^/(?<unit>\\d{2})(?<cc>[A-Za-z]{2})(?<addr>[0-9A-Fa-f]{4})"
+                        + "(?<count>[0-9A-Fa-f]{2})(?<data>[0-9A-Fa-f]*)(?<fcs>[0-9A-Fa-f]{2})$");
 
         private final ServerSocket serverSocket;
         private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
@@ -222,24 +238,43 @@ class UnitronicsDeviceDriverTest {
                 return "/" + body + UnitronicsDeviceDriver.fcs(body);
             }
             String unit = matcher.group("unit");
-            String op = matcher.group("op").toUpperCase(Locale.ROOT);
-            String dev = matcher.group("dev").toUpperCase(Locale.ROOT);
-            int addr = Integer.parseInt(matcher.group("addr"));
-            String key = dev + addr;
-            if ("R".equals(op)) {
-                int word = registers.getOrDefault(key, 0);
-                if ("MB".equals(dev)) {
-                    word = word != 0 ? 1 : 0;
-                }
-                String body = "A" + unit + word;
+            String cc = matcher.group("cc").toUpperCase(Locale.ROOT);
+            int addr = Integer.parseInt(matcher.group("addr"), 16);
+            String data = matcher.group("data");
+            String bodyWithoutFcs = request.trim().substring(1, request.trim().length() - 2);
+            String fcs = matcher.group("fcs");
+            if (!UnitronicsDeviceDriver.fcs(bodyWithoutFcs).equalsIgnoreCase(fcs)) {
+                String body = "N" + unit;
                 return "/" + body + UnitronicsDeviceDriver.fcs(body);
             }
-            int data = Integer.parseInt(matcher.group("data"));
-            if ("MB".equals(dev)) {
-                data = data != 0 ? 1 : 0;
+            if ("RW".equals(cc) || "RB".equals(cc)) {
+                String device = "RW".equals(cc) ? "MI" : "MB";
+                int word = registers.getOrDefault(device + addr, 0);
+                String payload;
+                String respCc;
+                if ("MB".equals(device)) {
+                    payload = word != 0 ? "1" : "0";
+                    respCc = "RB";
+                } else {
+                    payload = String.format(Locale.ROOT, "%04X", word & 0xFFFF);
+                    respCc = "RW";
+                }
+                String body = unit + respCc + payload;
+                return "/A" + body + UnitronicsDeviceDriver.fcs(body);
             }
-            registers.put(key, data);
-            String body = "A" + unit;
+            if ("SW".equals(cc) || "SB".equals(cc)) {
+                String device = "SW".equals(cc) ? "MI" : "MB";
+                int word;
+                if ("MB".equals(device)) {
+                    word = data.isEmpty() || data.charAt(0) == '0' ? 0 : 1;
+                } else {
+                    word = Integer.parseInt(data.substring(0, Math.min(4, data.length())), 16);
+                }
+                registers.put(device + addr, word);
+                String body = unit + cc;
+                return "/A" + body + UnitronicsDeviceDriver.fcs(body);
+            }
+            String body = "N" + unit;
             return "/" + body + UnitronicsDeviceDriver.fcs(body);
         }
 

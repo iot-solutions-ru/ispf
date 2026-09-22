@@ -23,16 +23,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Unitronics PCOM ASCII lab driver over a raw TCP socket (default port {@code 20256}).
+ * Unitronics PCOM ASCII driver over a raw TCP socket (default port {@code 20256}).
  * <p>
- * <strong>PCOM-lab subset</strong> — not the full UniLogic / binary PCOM stack. Prefer ASCII:
+ * Published PCOM ASCII (Vision / UniStream serial ASCII subset):
  * <ul>
- *   <li>Frames: {@code /}{@unit(2)}{@cmd}{@operand}{@code .}{@countOrValue}{@FCS(2 hex)} + CR</li>
- *   <li>FCS = XOR of ASCII bytes between {@code /} and the FCS (lab checksum)</li>
- *   <li>Read MI: {@code /01RMI100.1XX} — response {@code /A01}{@decimal}{@FCS}</li>
- *   <li>Write MI: {@code /01WMI100.42XX} — response {@code /A01}{@FCS}</li>
- *   <li>Read MB: {@code /01RMB0.1XX} — response {@code /A01}{@code 0|1}{@FCS}</li>
- *   <li>Write MB: {@code /01WMB0.1XX}</li>
+ *   <li>Frames: {@code /}{@unit(2)}{@cmd}{@params}{@FCS(2 hex)} + CR</li>
+ *   <li>FCS = sum of ASCII bytes after {@code /}, modulo 256, as two uppercase hex digits</li>
+ *   <li>Read MI: {@code /00RW} + addr(4 hex) + count(2 hex) — e.g. MI0×1 → {@code /00RW0000012A}</li>
+ *   <li>Write MI: {@code /00SW} + addr + count + data(4 hex per word)</li>
+ *   <li>Read MB: {@code /00RB} + addr(4 hex) + count(2 hex)</li>
+ *   <li>Write MB: {@code /00SB} + addr + count + bit digits</li>
  * </ul>
  * Point mapping: {@code MI100}, {@code MB0}. Full {@code /…} frames may be sent as-is
  * (FCS recomputed when a trailing {@code **} marker is present).
@@ -55,12 +55,12 @@ public class UnitronicsDeviceDriver implements DeviceDriver {
             "unitronics",
             "Unitronics Driver",
             "0.1.0",
-            "Unitronics PCOM ASCII lab (MI/MB read-write) over TCP — not full UniLogic/binary PCOM",
+            "Unitronics PCOM ASCII (MI/MB read-write) over TCP",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "20256",
-                    "unitId", "01",
+                    "unitId", "00",
                     "timeoutMs", "3000",
                     "pollIntervalMs", "5000"
             ),
@@ -71,7 +71,7 @@ public class UnitronicsDeviceDriver implements DeviceDriver {
     private DriverObject driverObject;
     private String host = "127.0.0.1";
     private int port = 20256;
-    private String unitId = "01";
+    private String unitId = "00";
     private int timeoutMs = 3000;
     private Socket socket;
     private final Map<String, String> points = new ConcurrentHashMap<>();
@@ -185,8 +185,11 @@ public class UnitronicsDeviceDriver implements DeviceDriver {
         Matcher matcher = REGISTER.matcher(map);
         if (matcher.matches()) {
             String device = matcher.group("dev").toUpperCase(Locale.ROOT);
-            String addr = String.valueOf(Integer.parseInt(matcher.group("addr")));
-            String body = unitId + "R" + device + addr + ".1";
+            int addr = Integer.parseInt(matcher.group("addr"));
+            String cmd = "MI".equals(device) ? "RW" : "RB";
+            String body = unitId + cmd
+                    + String.format(Locale.ROOT, "%04X", addr & 0xFFFF)
+                    + "01";
             return "/" + body + fcs(body);
         }
         throw new IllegalArgumentException("Unsupported Unitronics point mapping: " + mapping);
@@ -204,9 +207,13 @@ public class UnitronicsDeviceDriver implements DeviceDriver {
         Matcher matcher = REGISTER.matcher(map);
         if (matcher.matches()) {
             String device = matcher.group("dev").toUpperCase(Locale.ROOT);
-            String addr = String.valueOf(Integer.parseInt(matcher.group("addr")));
+            int addr = Integer.parseInt(matcher.group("addr"));
             String data = normalizeWriteData(device, bodyValue);
-            String body = unitId + "W" + device + addr + "." + data;
+            String cmd = "MI".equals(device) ? "SW" : "SB";
+            String body = unitId + cmd
+                    + String.format(Locale.ROOT, "%04X", addr & 0xFFFF)
+                    + "01"
+                    + data;
             return "/" + body + fcs(body);
         }
         throw new IllegalArgumentException("Unsupported Unitronics write mapping: " + mapping);
@@ -226,7 +233,7 @@ public class UnitronicsDeviceDriver implements DeviceDriver {
     }
 
     /**
-     * Parses {@code /A01}{@value}{@FCS} success frames into a decimal/string value.
+     * Parses {@code /A}{@unit}{@CC}{@data}{@FCS} success frames into a decimal/string value.
      */
     static String parseReadValue(String response) {
         if (response == null) {
@@ -237,16 +244,26 @@ public class UnitronicsDeviceDriver implements DeviceDriver {
             return trimmed;
         }
         Matcher matcher = Pattern.compile(
-                "^/A(\\d{2})(-?\\d+)([0-9A-Fa-f]{2})$").matcher(trimmed);
+                "^/A(\\d{2})([A-Za-z]{2})([0-9A-Fa-f]*)([0-9A-Fa-f]{2})$").matcher(trimmed);
         if (matcher.matches()) {
-            return matcher.group(2);
+            String cc = matcher.group(2).toUpperCase(Locale.ROOT);
+            String data = matcher.group(3);
+            if ("RW".equals(cc) || "GF".equals(cc) || "GT".equals(cc) || "GP".equals(cc)) {
+                if (data.length() >= 4) {
+                    return String.valueOf(Integer.parseInt(data.substring(0, 4), 16));
+                }
+                return data.isEmpty() ? "0" : data;
+            }
+            if ("RB".equals(cc) || "RE".equals(cc) || "RA".equals(cc) || "GS".equals(cc)) {
+                if (data.isEmpty()) {
+                    return "0";
+                }
+                return data.substring(0, 1);
+            }
+            return data;
         }
-        Matcher noFcs = Pattern.compile("^/A(\\d{2})(-?\\d+)$").matcher(trimmed);
-        if (noFcs.matches()) {
-            return noFcs.group(2);
-        }
-        // Write ACK /A01XX — no payload
-        if (trimmed.matches("^/A\\d{2}[0-9A-Fa-f]{2}$")) {
+        // Write ACK /A00SWXX — no payload
+        if (trimmed.matches("^/A\\d{2}[A-Za-z]{2}[0-9A-Fa-f]{2}$")) {
             return "";
         }
         return trimmed;
@@ -260,13 +277,13 @@ public class UnitronicsDeviceDriver implements DeviceDriver {
         return t.startsWith("/N") || t.startsWith("/E") || t.contains("ERR");
     }
 
-    /** XOR FCS over characters after {@code /} (lab checksum — not full PCOM CRC16). */
+    /** PCOM ASCII FCS: sum of characters after {@code /}, modulo 256, as two hex digits. */
     static String fcs(String bodyWithoutSlash) {
-        int xor = 0;
+        int sum = 0;
         for (int i = 0; i < bodyWithoutSlash.length(); i++) {
-            xor ^= bodyWithoutSlash.charAt(i);
+            sum = (sum + bodyWithoutSlash.charAt(i)) & 0xFF;
         }
-        return String.format(Locale.ROOT, "%02X", xor & 0xFF);
+        return String.format(Locale.ROOT, "%02X", sum);
     }
 
     static String ensureFcsFrame(String frame) {
@@ -313,10 +330,17 @@ public class UnitronicsDeviceDriver implements DeviceDriver {
             }
             return String.valueOf(Integer.parseInt(v) != 0 ? 1 : 0);
         }
-        if (value.matches("-?\\d+")) {
-            return value;
+        int n;
+        if (value.matches("(?i)0x[0-9a-f]+")) {
+            n = Integer.parseInt(value.substring(2), 16);
+        } else if (value.matches("-?\\d+")) {
+            n = Integer.parseInt(value);
+        } else if (value.matches("(?i)[0-9a-f]{1,4}")) {
+            n = Integer.parseInt(value, 16);
+        } else {
+            throw new IllegalArgumentException("Unitronics write value must be numeric: " + value);
         }
-        throw new IllegalArgumentException("Unitronics write value must be numeric: " + value);
+        return String.format(Locale.ROOT, "%04X", n & 0xFFFF);
     }
 
     private synchronized String transact(String command) throws DriverException {

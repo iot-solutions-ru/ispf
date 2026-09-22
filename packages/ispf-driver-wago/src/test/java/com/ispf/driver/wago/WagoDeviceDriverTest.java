@@ -8,6 +8,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.wago.codec.ModbusTcpCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -19,6 +20,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,12 +28,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link WagoDeviceDriver} against a fake Modbus TCP server.
+ * Loopback tests for {@link WagoDeviceDriver} against an in-process Modbus TCP peer.
  */
 class WagoDeviceDriverTest {
 
@@ -48,6 +52,27 @@ class WagoDeviceDriverTest {
             modbusServer.close();
             modbusServer = null;
         }
+    }
+
+    @Test
+    void readHoldingRegister0IsModbusTcpMbapLiteral() {
+        // tid=1, protocol=0, length=6, unit=1, FC3, address=0, quantity=1
+        byte[] expected = new byte[] {
+                0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01, 0x03, 0x00, 0x00, 0x00, 0x01
+        };
+        assertArrayEquals(expected, ModbusTcpCodec.buildReadHoldingRegister0Reference());
+        assertArrayEquals(expected, WagoDeviceDriver.buildReadHoldingRegister0Frame());
+    }
+
+    @Test
+    void metadataIsProductionModbusTcp() {
+        driver = new WagoDeviceDriver();
+        assertEquals("wago", driver.metadata().id());
+        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals("502", driver.metadata().configurationSchema().get("port"));
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("modbus tcp"));
+        assertFalse(description.contains("lab"));
     }
 
     @Test

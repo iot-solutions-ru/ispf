@@ -18,6 +18,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -28,29 +29,48 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SigfoxDeviceDriverTest {
+
+    /** Handwritten exact uplink request (not produced by calling an encoder helper as the source of truth). */
+    private static final String UPLINK_GET_LITERAL =
+            "GET /uplink HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n";
 
     private SigfoxDeviceDriver driver;
     private FakeBackend backend;
 
     @AfterEach
     void tearDown() throws Exception {
-        if (driver != null) { driver.disconnect(); driver = null; }
-        if (backend != null) { backend.close(); backend = null; }
+        if (driver != null) {
+            driver.disconnect();
+            driver = null;
+        }
+        if (backend != null) {
+            backend.close();
+            backend = null;
+        }
     }
 
     @Test
-    void metadataIsProductionReadWrite() {
+    void uplinkGetRequestMatchesHandwrittenLiteral() {
+        assertEquals(UPLINK_GET_LITERAL, SigfoxDeviceDriver.buildUplinkGetRequest("127.0.0.1"));
+    }
+
+    @Test
+    void metadataIsProductionReadWriteWithoutLab() {
         driver = new SigfoxDeviceDriver();
         assertEquals("sigfox", driver.metadata().id());
         assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("http/1.1") || description.contains("uplink"));
+        assertFalse(description.contains("lab"));
     }
 
     @Test
-    void getAndPostLoopback() throws Exception {
+    void getUplinkAndPostDownlinkLoopback() throws Exception {
         backend = new FakeBackend();
         backend.start();
         StubDriverObject object = new StubDriverObject(Map.of(
@@ -62,9 +82,13 @@ class SigfoxDeviceDriverTest {
         driver.initialize(object);
         driver.connect();
         assertTrue(driver.isConnected());
+
         driver.readPoints(Map.of("dev", "DEVICE1"));
+        assertEquals(UPLINK_GET_LITERAL, backend.lastRawRequest());
         assertEquals("{\"data\":\"ABCD\"}", object.variables.get("dev").firstRow().get("value"));
         assertEquals("200", object.variables.get("dev").firstRow().get("status"));
+        assertEquals("/uplink", object.variables.get("dev").firstRow().get("path"));
+
         driver.writePoint("dev", DataRecord.single(
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
                 Map.of("value", "{\"downlink\":\"01\"}")
@@ -75,67 +99,99 @@ class SigfoxDeviceDriverTest {
 
     private static final class FakeBackend implements AutoCloseable {
         private final ServerSocket serverSocket;
-        private final ExecutorService executor = Executors.newCachedThreadPool(r -> { Thread t = new Thread(r, "fake-sigfox"); t.setDaemon(true); return t; });
+        private final ExecutorService executor = Executors.newCachedThreadPool(r -> {
+            Thread t = new Thread(r, "fake-sigfox");
+            t.setDaemon(true);
+            return t;
+        });
         private final AtomicReference<String> lastMethod = new AtomicReference<>("");
         private final AtomicReference<String> lastBody = new AtomicReference<>("");
+        private final AtomicReference<String> lastRawRequest = new AtomicReference<>("");
+
         FakeBackend() throws IOException {
             serverSocket = new ServerSocket();
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         }
-        int port() { return serverSocket.getLocalPort(); }
-        String lastMethod() { return lastMethod.get(); }
-        String lastBody() { return lastBody.get(); }
-        void start() { executor.submit(this::acceptLoop); }
+
+        int port() {
+            return serverSocket.getLocalPort();
+        }
+
+        String lastMethod() {
+            return lastMethod.get();
+        }
+
+        String lastBody() {
+            return lastBody.get();
+        }
+
+        String lastRawRequest() {
+            return lastRawRequest.get();
+        }
+
+        void start() {
+            executor.submit(this::acceptLoop);
+        }
+
         private void acceptLoop() {
             while (!serverSocket.isClosed()) {
-                try { Socket s = serverSocket.accept(); executor.submit(() -> handle(s)); }
-                catch (IOException e) { return; }
+                try {
+                    Socket s = serverSocket.accept();
+                    executor.submit(() -> handle(s));
+                } catch (IOException e) {
+                    return;
+                }
             }
         }
+
         private void handle(Socket socket) {
             try (socket) {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
                 String raw = readRequest(in);
+                lastRawRequest.set(raw.contains("\r\n\r\n")
+                        ? raw.substring(0, raw.indexOf("\r\n\r\n") + 4)
+                        : raw);
                 String[] lines = raw.split("\r\n");
                 String[] rl = lines[0].split("\\s+");
                 lastMethod.set(rl[0]);
-                int contentLength = 0;
-                for (String line : lines) {
-                    if (line.toLowerCase().startsWith("content-length:")) {
-                        contentLength = Integer.parseInt(line.substring(15).trim());
-                    }
-                }
                 int he = raw.indexOf("\r\n\r\n");
                 String body = he >= 0 ? raw.substring(he + 4) : "";
                 lastBody.set(body.trim());
                 String responseBody = "GET".equals(rl[0]) ? "{\"data\":\"ABCD\"}" : "{\"ok\":true}";
                 byte[] bytes = responseBody.getBytes(StandardCharsets.UTF_8);
-                String resp = "HTTP/1.1 200 OK\r\nContent-Length: " + bytes.length + "\r\nConnection: close\r\n\r\n" + responseBody;
+                String resp = "HTTP/1.1 200 OK\r\nContent-Length: " + bytes.length
+                        + "\r\nConnection: close\r\n\r\n" + responseBody;
                 out.write(resp.getBytes(StandardCharsets.UTF_8));
                 out.flush();
-            } catch (IOException ignored) {}
+            } catch (IOException ignored) {
+            }
         }
+
         private static String readRequest(InputStream in) throws IOException {
             ByteArrayOutputStream buf = new ByteArrayOutputStream();
             byte[] tmp = new byte[512];
             while (true) {
                 int n = in.read(tmp);
-                if (n < 0) break;
+                if (n < 0) {
+                    break;
+                }
                 buf.write(tmp, 0, n);
                 String soFar = buf.toString(StandardCharsets.US_ASCII);
                 int headerEnd = soFar.indexOf("\r\n\r\n");
                 if (headerEnd >= 0) {
                     int contentLength = 0;
                     for (String line : soFar.substring(0, headerEnd).split("\r\n")) {
-                        if (line.toLowerCase().startsWith("content-length:")) {
+                        if (line.toLowerCase(Locale.ROOT).startsWith("content-length:")) {
                             contentLength = Integer.parseInt(line.substring(15).trim());
                         }
                     }
                     int bodyStart = headerEnd + 4;
                     while (buf.size() < bodyStart + contentLength) {
                         n = in.read(tmp);
-                        if (n < 0) break;
+                        if (n < 0) {
+                            break;
+                        }
                         buf.write(tmp, 0, n);
                     }
                     break;
@@ -143,21 +199,45 @@ class SigfoxDeviceDriverTest {
             }
             return buf.toString(StandardCharsets.UTF_8);
         }
-        @Override public void close() throws Exception {
-            serverSocket.close(); executor.shutdownNow(); executor.awaitTermination(2, TimeUnit.SECONDS);
+
+        @Override
+        public void close() throws Exception {
+            serverSocket.close();
+            executor.shutdownNow();
+            executor.awaitTermination(2, TimeUnit.SECONDS);
         }
     }
 
     private static final class StubDriverObject implements DeviceDriver.DriverObject {
         private final Map<String, String> configuration;
         final Map<String, DataRecord> variables = new ConcurrentHashMap<>();
-        StubDriverObject(Map<String, String> configuration) { this.configuration = configuration; }
-        @Override public PlatformObject deviceObject() {
+
+        StubDriverObject(Map<String, String> configuration) {
+            this.configuration = configuration;
+        }
+
+        @Override
+        public PlatformObject deviceObject() {
             return new PlatformObject("test-sigfox", "root.platform.devices.test", ObjectType.DEVICE, "Test", "", null);
         }
-        @Override public void updateVariable(String name, DataRecord value) { variables.put(name, value); }
-        @Override public Optional<DataRecord> getVariable(String name) { return Optional.ofNullable(variables.get(name)); }
-        @Override public void log(DeviceDriver.DriverLogLevel level, String message) {}
-        @Override public Map<String, String> configuration() { return configuration; }
+
+        @Override
+        public void updateVariable(String name, DataRecord value) {
+            variables.put(name, value);
+        }
+
+        @Override
+        public Optional<DataRecord> getVariable(String name) {
+            return Optional.ofNullable(variables.get(name));
+        }
+
+        @Override
+        public void log(DeviceDriver.DriverLogLevel level, String message) {
+        }
+
+        @Override
+        public Map<String, String> configuration() {
+            return configuration;
+        }
     }
 }

@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.weatherstation.codec.WeatherStationCodec;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,21 +15,17 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Weather station driver — Davis/Vaisala-class lab text protocol over TCP.
+ * Weather station driver — Davis Vantage {@code LOOP} command over TCP.
  * <p>
- * Lab dialect (not a vendor binary LOOP frame): client sends {@code GET &lt;FIELD&gt;} or
- * {@code GET ALL}; station replies with {@code KEY=value} pairs on one line
- * (for example {@code TEMP=21.5 HUM=55 PRESS=1013.2 WIND=3.2}).
- * <p>
- * Point mapping is the field name ({@code TEMP}, {@code HUM}, {@code PRESS}, {@code WIND})
- * or {@code ALL} for the raw line. Reads are poll-only; writes are not supported.
+ * Sends {@code LOOP\n} ({@code 4C 4F 4F 50 0A}), expects ACK {@code 0x06} then a truncated
+ * LOOP payload (not the full 99-byte Vantage packet). Not a Vaisala sensor protocol.
+ * Point mapping is a label (for example {@code loop} or {@code TEMP}); reads are poll-only.
  * <p>
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
@@ -44,7 +41,8 @@ public class WeatherStationDeviceDriver implements DeviceDriver {
             "weather-station",
             "Weather station Driver",
             "0.1.0",
-            "Davis/Vaisala-class lab text weather station: GET FIELD / GET ALL (read-only)",
+            "Davis Vantage LOOP command over TCP (LOOP\\n + ACK); not the full 99-byte Vantage packet;"
+                    + " not a Vaisala sensor",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -95,7 +93,8 @@ public class WeatherStationDeviceDriver implements DeviceDriver {
             next.setTcpNoDelay(true);
             socket = next;
             connected = true;
-            driverObject.log(DriverLogLevel.INFO, "Weather station connected to " + host + ":" + port);
+            driverObject.log(DriverLogLevel.INFO,
+                    "Weather station LOOP TCP connected to " + host + ":" + port);
         } catch (IOException e) {
             closeSocket();
             throw new DriverException("Weather station connect failed for " + host + ":" + port, e);
@@ -123,14 +122,10 @@ public class WeatherStationDeviceDriver implements DeviceDriver {
                     ? pointId
                     : entry.getValue().trim();
             fields.put(pointId, field);
-            String requestField = field.toUpperCase(Locale.ROOT);
-            String raw = query(requestField);
-            String value = "ALL".equals(requestField) || "*".equals(requestField)
-                    ? raw
-                    : extractField(raw, requestField);
+            String raw = queryLoop();
             driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
-                    "value", value == null ? "" : value,
-                    "field", requestField,
+                    "value", raw,
+                    "field", field.toUpperCase(Locale.ROOT),
                     "raw", raw
             )));
         }
@@ -138,41 +133,54 @@ public class WeatherStationDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("weather-station is read-only (GET poll lab dialect)");
+        throw new DriverException("weather-station is read-only (Davis Vantage LOOP over TCP)");
     }
 
-    private synchronized String query(String field) throws DriverException {
+    static byte[] buildLoopCommand() {
+        return WeatherStationCodec.encodeLoopCommand();
+    }
+
+    private synchronized String queryLoop() throws DriverException {
         try {
-            String command = "ALL".equals(field) || "*".equals(field) ? "GET ALL" : "GET " + field;
-            writeLine(socket.getOutputStream(), command);
-            String line = readLine(socket.getInputStream());
-            if (line == null) {
-                throw new IOException("EOF from weather station");
+            OutputStream out = socket.getOutputStream();
+            InputStream in = socket.getInputStream();
+            byte[] command = WeatherStationCodec.encodeLoopCommand();
+            out.write(command);
+            out.flush();
+            int ack = in.read();
+            if (ack < 0) {
+                throw new IOException("EOF waiting for LOOP ACK");
             }
-            return line.trim();
+            if (ack != WeatherStationCodec.ACK) {
+                throw new IOException("Expected LOOP ACK 0x06, got 0x"
+                        + Integer.toHexString(ack & 0xFF));
+            }
+            byte[] payload = readAvailablePayload(in);
+            return new String(payload, StandardCharsets.US_ASCII);
         } catch (IOException e) {
-            throw new DriverException("Weather station query failed for " + host + ":" + port, e);
+            throw new DriverException("Weather station LOOP failed for " + host + ":" + port, e);
         }
     }
 
-    static String extractField(String raw, String field) {
-        Map<String, String> pairs = parsePairs(raw);
-        String direct = pairs.get(field.toUpperCase(Locale.ROOT));
-        return direct == null ? "" : direct;
-    }
-
-    static Map<String, String> parsePairs(String raw) {
-        Map<String, String> out = new LinkedHashMap<>();
-        if (raw == null || raw.isBlank()) {
-            return out;
+    /**
+     * Reads a short truncated LOOP payload after ACK (not the full 99-byte Vantage packet).
+     */
+    private static byte[] readAvailablePayload(InputStream in) throws IOException {
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        byte[] chunk = new byte[64];
+        // At least try one blocking read for the truncated ack body
+        int n = in.read(chunk);
+        if (n > 0) {
+            buf.write(chunk, 0, n);
         }
-        for (String token : raw.trim().split("\\s+")) {
-            int eq = token.indexOf('=');
-            if (eq > 0) {
-                out.put(token.substring(0, eq).toUpperCase(Locale.ROOT), token.substring(eq + 1));
+        while (in.available() > 0) {
+            n = in.read(chunk);
+            if (n <= 0) {
+                break;
             }
+            buf.write(chunk, 0, n);
         }
-        return out;
+        return buf.toByteArray();
     }
 
     private void ensureConnected() throws DriverException {
@@ -191,30 +199,5 @@ public class WeatherStationDeviceDriver implements DeviceDriver {
                 // best-effort
             }
         }
-    }
-
-    static void writeLine(OutputStream out, String line) throws IOException {
-        out.write((line + "\r\n").getBytes(StandardCharsets.US_ASCII));
-        out.flush();
-    }
-
-    static String readLine(InputStream in) throws IOException {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        while (true) {
-            int b = in.read();
-            if (b < 0) {
-                if (buf.size() == 0) {
-                    return null;
-                }
-                break;
-            }
-            if (b == '\n') {
-                break;
-            }
-            if (b != '\r') {
-                buf.write(b);
-            }
-        }
-        return buf.toString(StandardCharsets.US_ASCII);
     }
 }
