@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { Alert, Button, Form, Input, Modal, Segmented, Space, Switch, Typography } from "antd";
@@ -55,6 +55,17 @@ export default function CreateVariableDialog({
 
   const schemaName = useMemo(() => name.trim() || "value", [name]);
 
+  function updateName(nextName: string) {
+    setName(nextName);
+    const nextSchemaName = nextName.trim() || "value";
+    setSchema((prev) => (prev.name === nextSchemaName ? prev : { ...prev, name: nextSchemaName }));
+    setRecord((prev) =>
+      prev.schema.name === nextSchemaName
+        ? prev
+        : syncRecordSchema(prev, { ...prev.schema, name: nextSchemaName }),
+    );
+  }
+
   function applyPreset(preset: SchemaPreset) {
     setSchemaPreset(preset);
     const next = schemaForPreset(preset, schemaName);
@@ -95,6 +106,26 @@ export default function CreateVariableDialog({
     onSuccess: onSaved,
   });
 
+  const createRef = useRef<() => void>(() => {});
+  createRef.current = () => {
+    if (nameValid) mutation.mutate();
+  };
+  const footer = useMemo(
+    () => [
+      <Button key="cancel" onClick={onClose}>{t("common:action.cancel")}</Button>,
+      <Button
+        key="create"
+        type="primary"
+        disabled={!nameValid || schema.fields.length === 0 || mutation.isPending}
+        loading={mutation.isPending}
+        onClick={() => createRef.current()}
+      >
+        {t("common:action.create")}
+      </Button>,
+    ],
+    [nameValid, schema.fields.length, mutation.isPending, onClose, t],
+  );
+
   return (
     <Modal
       title={t("variables.newTitle")}
@@ -103,18 +134,7 @@ export default function CreateVariableDialog({
       destroyOnHidden
       width={900}
       className="variable-editor-modal"
-      footer={[
-        <Button key="cancel" onClick={onClose}>{t("common:action.cancel")}</Button>,
-        <Button
-          key="create"
-          type="primary"
-          disabled={!nameValid || schema.fields.length === 0 || mutation.isPending}
-          loading={mutation.isPending}
-          onClick={() => { if (nameValid) mutation.mutate(); }}
-        >
-          {t("common:action.create")}
-        </Button>,
-      ]}
+      footer={footer}
     >
       <Space orientation="vertical" size="large" style={{ width: "100%" }}>
         <Form layout="vertical">
@@ -126,7 +146,7 @@ export default function CreateVariableDialog({
           >
             <Input
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => updateName(e.target.value)}
               pattern="[A-Za-z_][A-Za-z0-9_]*"
               placeholder="myVariable"
               required
@@ -162,7 +182,7 @@ export default function CreateVariableDialog({
             {t("variables.schemaPresetHint")}
           </Typography.Paragraph>
           <DataSchemaEditor
-            value={{ ...schema, name: schemaName }}
+            value={schema}
             onChange={handleSchemaChange}
             idPrefix="create-var-schema"
           />
