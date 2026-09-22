@@ -61,7 +61,7 @@ class ProfibusPaDeviceDriverTest {
     void metadataIsProductionReadWriteFdlOverTcp() {
         driver = new ProfibusPaDeviceDriver();
         assertEquals("profibus-pa", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
         assertTrue(description.contains("fdl"));

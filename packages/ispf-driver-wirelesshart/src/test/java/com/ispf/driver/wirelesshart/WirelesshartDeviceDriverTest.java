@@ -59,7 +59,7 @@ class WirelesshartDeviceDriverTest {
     void metadataDescribesGatewayHartIpNotRadioStack() {
         driver = new WirelesshartDeviceDriver();
         assertEquals("wirelesshart", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("5094", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);

@@ -74,7 +74,7 @@ class BluetoothLeDeviceDriverTest {
     void metadataIsProductionH4Hci() {
         driver = new BluetoothLeDeviceDriver();
         assertEquals("bluetooth-le", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read"), driver.metadata().capabilities());
         assertEquals("9999", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);

@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.cclink.codec.CcLinkSession;
 import com.ispf.driver.cclink.codec.Slmp3eCodec;
@@ -50,7 +51,7 @@ public class CcLinkDeviceDriver implements DeviceDriver {
                     "stationNo", "0",
                     "monitoringTimer", "16"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

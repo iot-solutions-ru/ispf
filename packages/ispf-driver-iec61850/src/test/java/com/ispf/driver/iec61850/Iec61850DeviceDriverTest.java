@@ -58,7 +58,7 @@ class Iec61850DeviceDriverTest {
     void metadataIsProductionReadWriteMmsTpkt() {
         driver = new Iec61850DeviceDriver();
         assertEquals("iec61850", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("102", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);

@@ -61,7 +61,7 @@ class ProfibusDeviceDriverTest {
     void metadataIsProductionReadWriteFdlOverTcp() {
         driver = new ProfibusDeviceDriver();
         assertEquals("profibus", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("9600", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);

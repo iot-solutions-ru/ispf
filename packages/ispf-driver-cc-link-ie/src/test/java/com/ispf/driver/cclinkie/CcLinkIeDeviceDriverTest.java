@@ -71,7 +71,7 @@ class CcLinkIeDeviceDriverTest {
     void metadataIsProductionReadWriteSlmp() {
         driver = new CcLinkIeDeviceDriver();
         assertEquals("cc-link-ie", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("5007", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);

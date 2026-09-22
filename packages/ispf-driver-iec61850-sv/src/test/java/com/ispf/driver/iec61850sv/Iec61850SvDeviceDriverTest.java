@@ -56,7 +56,7 @@ class Iec61850SvDeviceDriverTest {
     void metadataIsProductionReadWriteSvSavHeader() {
         driver = new Iec61850SvDeviceDriver();
         assertEquals("iec61850-sv", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("8503", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);

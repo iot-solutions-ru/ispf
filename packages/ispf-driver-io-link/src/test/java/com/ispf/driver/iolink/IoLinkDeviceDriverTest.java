@@ -48,7 +48,7 @@ class IoLinkDeviceDriverTest {
     void metadataDescribesIsduOverTcp() {
         driver = new IoLinkDeviceDriver();
         assertEquals("io-link", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
         assertTrue(description.contains("isdu"));
         assertTrue(description.contains("tcp"));

@@ -56,7 +56,7 @@ class Iec61850GooseDeviceDriverTest {
     void metadataIsProductionReadWriteGooseHeader() {
         driver = new Iec61850GooseDeviceDriver();
         assertEquals("iec61850-goose", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("8502", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
