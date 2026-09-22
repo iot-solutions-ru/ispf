@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.fanucfocas.codec.FanucFocasLabSession;
 
@@ -22,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * PMC points support write via {@link FanucFocasLabSession#writeValue}; CNC abs and run status
  * are read-only in this lab.
  * <p>
- * Honesty: FOCAS-shaped TCP lab — not Fanuc FOCAS library / proprietary SDK / real CNC.
+ * Honesty: FOCAS-shaped TCP lab — not FOCAS library / proprietary SDK / real CNC.
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only. Lab ≠ field.
  */
 public class FanucFocasDeviceDriver implements DeviceDriver {
@@ -38,14 +39,14 @@ public class FanucFocasDeviceDriver implements DeviceDriver {
             "Fanuc FOCAS Gateway Lab Driver",
             "0.1.0",
             "FOCAS-shaped TCP gateway lab — length-prefixed ASCII pmc/cnc/stat on 8193;"
-                    + " not Fanuc FOCAS library / proprietary SDK / real CNC",
+                    + " not FOCAS library / proprietary SDK / real CNC",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "8193",
                     "timeoutMs", "3000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

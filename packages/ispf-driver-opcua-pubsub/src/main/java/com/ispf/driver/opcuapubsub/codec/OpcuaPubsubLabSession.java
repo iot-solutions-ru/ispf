@@ -8,9 +8,9 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 
 /**
- * UDP session for the OPC UA PubSub UADP-lab subset (request/response datagrams).
+ * UDP session for the lab UADP NetworkMessage header plus length-prefixed payload.
  * <p>
- * Not full OPC UA PubSub / MQTT / broker / security.
+ * Not a full OPC UA PubSub DataSetMessage or security stack.
  */
 public final class OpcuaPubsubLabSession implements AutoCloseable {
 

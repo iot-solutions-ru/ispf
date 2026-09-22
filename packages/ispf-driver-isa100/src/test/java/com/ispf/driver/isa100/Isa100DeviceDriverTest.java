@@ -7,6 +7,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.isa100.codec.Isa100LabCodec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -56,14 +58,23 @@ class Isa100DeviceDriverTest {
     void metadataDescribesGatewayLabNotIsa100Rf() {
         driver = new Isa100DeviceDriver();
         assertEquals("isa100", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("4840", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
-        assertTrue(description.contains("lab") || description.contains("gateway"));
-        assertTrue(description.contains("not") && (description.contains("isa100.11a")
-                || description.contains("wireless compliance") || description.contains("rf")));
+        assertTrue(description.contains("lab"));
+        assertTrue(description.contains("isa100.11a"));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
+    }
+
+    @Test
+    void labGatewayGetRequestOctetsAreStable() {
+        // Lab gateway ASCII line — not ISA100.11a RF.
+        byte[] expected = new byte[] {
+                0x47, 0x45, 0x54, 0x20, 0x2F, 0x64, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73,
+                0x2F, 0x31, 0x2F, 0x70, 0x76, 0x0D, 0x0A
+        };
+        assertArrayEquals(expected, Isa100LabCodec.encodeGet("/devices/1/pv"));
     }
 
     @Test

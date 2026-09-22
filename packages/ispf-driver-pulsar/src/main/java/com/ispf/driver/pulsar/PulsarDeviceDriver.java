@@ -5,34 +5,49 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 
-import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Apache Pulsar–compatible lab driver using a clean-room TCP text framing protocol.
+ * Apache Pulsar–shaped TCP driver — lab binary framing of a BaseCommand whose type is
+ * CONNECT, then length-prefixed lab topic payloads on the same socket.
  * <p>
- * This is a <strong>lab subset</strong> for CI and twin work — not the Apache Pulsar binary
- * protocol, and not a Pulsar client library. Each TCP session exchanges newline-terminated
- * UTF-8 commands:
- * <ul>
- *   <li>{@code PUB <topic> <payload>} — publish (write)</li>
- *   <li>{@code GET <topic>} — fetch last payload for topic (read)</li>
- * </ul>
- * Broker replies with {@code OK}, {@code MSG <topic> <payload>}, {@code NIL}, or {@code ERR ...}.
- * Clean-room ISPF code, Apache-2.0 — no Apache Pulsar client dependency.
+ * This is <strong>not</strong> a protobuf broker — no CommandProducer / CommandSend,
+ * no full Pulsar client library. JDK sockets, Apache-2.0.
  */
 public class PulsarDeviceDriver implements DeviceDriver {
+
+    /**
+     * totalSize=10, commandSize=2, BaseCommand.type=CONNECT (enum 2): tag 0x08 value 0x02.
+     */
+    static final byte[] PULSAR_CONNECT = {
+            0x00, 0x00, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x02, 0x08, 0x02
+    };
+
+    /** Same sizes with type=CONNECTED (enum 3). */
+    static final byte[] PULSAR_CONNECTED = {
+            0x00, 0x00, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x02, 0x08, 0x03
+    };
+
+    private static final byte OP_GET = 0x01;
+    private static final byte OP_PUB = 0x02;
+    private static final byte OP_MSG = 0x03;
+    private static final byte OP_NIL = 0x04;
+    private static final byte OP_OK = 0x05;
+    private static final byte OP_ERR = 0x06;
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("pulsarValue")
             .field("value", FieldType.STRING)
@@ -42,15 +57,15 @@ public class PulsarDeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "pulsar",
             "Apache Pulsar Lab Driver",
-            "0.1.0",
-            "Lab TCP PUB/GET text framing for topic payloads (not full Pulsar binary protocol)",
+            "0.2.0",
+            "lab binary header plus BaseCommand CONNECT; not a protobuf broker",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "6650",
                     "timeoutMs", "3000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 
@@ -58,8 +73,10 @@ public class PulsarDeviceDriver implements DeviceDriver {
     private String host = "127.0.0.1";
     private int port = 6650;
     private int timeoutMs = 3000;
+    private Socket socket;
+    private InputStream in;
+    private OutputStream out;
     private final Map<String, String> points = new ConcurrentHashMap<>();
-    private volatile boolean connected;
 
     @Override
     public DriverMetadata metadata() {
@@ -86,19 +103,53 @@ public class PulsarDeviceDriver implements DeviceDriver {
 
     @Override
     public void connect() throws DriverException {
-        connected = true;
-        driverObject.log(DriverLogLevel.INFO, "Pulsar lab broker ready for " + host + ":" + port);
+        disconnect();
+        try {
+            Socket next = new Socket();
+            next.connect(new InetSocketAddress(host, port), timeoutMs);
+            next.setTcpNoDelay(true);
+            next.setSoTimeout(timeoutMs);
+            InputStream nextIn = next.getInputStream();
+            OutputStream nextOut = next.getOutputStream();
+            nextOut.write(PULSAR_CONNECT);
+            nextOut.flush();
+            byte[] reply = readFully(nextIn, PULSAR_CONNECTED.length);
+            if (!Arrays.equals(PULSAR_CONNECTED, reply)) {
+                next.close();
+                throw new DriverException("Pulsar lab connect failed: CONNECTED mismatch");
+            }
+            socket = next;
+            in = nextIn;
+            out = nextOut;
+            driverObject.log(DriverLogLevel.INFO,
+                    "Pulsar lab CONNECT to " + host + ":" + port
+                            + " (not a protobuf broker; not CommandProducer / CommandSend)");
+        } catch (DriverException e) {
+            throw e;
+        } catch (IOException e) {
+            disconnect();
+            throw new DriverException("Pulsar lab connect failed for " + host + ":" + port, e);
+        }
     }
 
     @Override
     public void disconnect() {
-        connected = false;
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (IOException ignored) {
+                // best-effort
+            }
+        }
+        socket = null;
+        in = null;
+        out = null;
         points.clear();
     }
 
     @Override
     public boolean isConnected() {
-        return connected;
+        return socket != null && socket.isConnected() && !socket.isClosed();
     }
 
     @Override
@@ -109,7 +160,8 @@ public class PulsarDeviceDriver implements DeviceDriver {
         points.clear();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             String pointId = entry.getKey();
-            String topic = entry.getValue() == null || entry.getValue().isBlank() ? pointId : entry.getValue().trim();
+            String topic = entry.getValue() == null || entry.getValue().isBlank()
+                    ? pointId : entry.getValue().trim();
             points.put(pointId, topic);
             String payload = getTopic(topic);
             driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
@@ -134,66 +186,97 @@ public class PulsarDeviceDriver implements DeviceDriver {
     }
 
     private String getTopic(String topic) throws DriverException {
-        String reply = transact("GET " + topic);
-        if (reply.equals("NIL") || reply.isBlank()) {
-            return "";
-        }
-        if (reply.startsWith("MSG ")) {
-            String rest = reply.substring(4);
-            int space = rest.indexOf(' ');
-            if (space < 0) {
+        try {
+            writeLab(OP_GET, topic, new byte[0]);
+            LabReply reply = readLab();
+            if (reply.op == OP_NIL) {
                 return "";
             }
-            return rest.substring(space + 1);
+            if (reply.op == OP_MSG) {
+                return new String(reply.payload, StandardCharsets.UTF_8);
+            }
+            if (reply.op == OP_ERR) {
+                throw new DriverException("Pulsar lab GET error: "
+                        + new String(reply.payload, StandardCharsets.UTF_8));
+            }
+            throw new DriverException("Unexpected Pulsar lab reply op=" + (reply.op & 0xFF));
+        } catch (IOException e) {
+            throw new DriverException("Pulsar lab GET failed for " + topic, e);
         }
-        if (reply.startsWith("ERR ")) {
-            throw new DriverException("Pulsar lab GET error: " + reply.substring(4));
-        }
-        throw new DriverException("Unexpected Pulsar lab reply: " + reply);
     }
 
     private void publish(String topic, String payload) throws DriverException {
-        String reply = transact("PUB " + topic + " " + payload);
-        if (!"OK".equals(reply)) {
-            if (reply.startsWith("ERR ")) {
-                throw new DriverException("Pulsar lab PUB error: " + reply.substring(4));
+        try {
+            writeLab(OP_PUB, topic, payload.getBytes(StandardCharsets.UTF_8));
+            LabReply reply = readLab();
+            if (reply.op == OP_OK) {
+                return;
             }
-            throw new DriverException("Unexpected Pulsar lab reply: " + reply);
-        }
-    }
-
-    private String transact(String command) throws DriverException {
-        try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(host, port), timeoutMs);
-            socket.setSoTimeout(timeoutMs);
-            OutputStream out = socket.getOutputStream();
-            InputStream in = socket.getInputStream();
-            out.write((command + "\n").getBytes(StandardCharsets.UTF_8));
-            out.flush();
-            return readLine(in);
+            if (reply.op == OP_ERR) {
+                throw new DriverException("Pulsar lab PUB error: "
+                        + new String(reply.payload, StandardCharsets.UTF_8));
+            }
+            throw new DriverException("Unexpected Pulsar lab reply op=" + (reply.op & 0xFF));
         } catch (IOException e) {
-            throw new DriverException("Pulsar lab I/O failed for " + host + ":" + port, e);
+            throw new DriverException("Pulsar lab PUB failed for " + topic, e);
         }
     }
 
-    static String readLine(InputStream in) throws IOException {
-        ByteArrayOutputStream line = new ByteArrayOutputStream();
-        while (true) {
-            int ch = in.read();
-            if (ch < 0) {
-                if (line.size() == 0) {
-                    throw new IOException("EOF reading Pulsar lab reply");
-                }
-                break;
-            }
-            if (ch == '\n') {
-                break;
-            }
-            if (ch != '\r') {
-                line.write(ch);
-            }
+    /**
+     * Length-prefixed lab topic payload on the CONNECT socket — not CommandProducer / CommandSend.
+     * Layout: [2 BE total][op 1][2 BE topicLen][topic][2 BE payloadLen][payload]
+     */
+    private void writeLab(byte op, String topic, byte[] payload) throws IOException {
+        byte[] topicBytes = topic.getBytes(StandardCharsets.UTF_8);
+        if (topicBytes.length > 0xFFFF || payload.length > 0xFFFF) {
+            throw new IOException("Pulsar lab topic/payload too long");
         }
-        return line.toString(StandardCharsets.UTF_8);
+        int body = 1 + 2 + topicBytes.length + 2 + payload.length;
+        out.write((body >> 8) & 0xFF);
+        out.write(body & 0xFF);
+        out.write(op);
+        out.write((topicBytes.length >> 8) & 0xFF);
+        out.write(topicBytes.length & 0xFF);
+        out.write(topicBytes);
+        out.write((payload.length >> 8) & 0xFF);
+        out.write(payload.length & 0xFF);
+        out.write(payload);
+        out.flush();
+    }
+
+    private LabReply readLab() throws IOException {
+        byte[] header = readFully(in, 2);
+        int bodyLen = ((header[0] & 0xFF) << 8) | (header[1] & 0xFF);
+        byte[] body = readFully(in, bodyLen);
+        if (bodyLen < 5) {
+            throw new IOException("Pulsar lab reply too short");
+        }
+        byte op = body[0];
+        int topicLen = ((body[1] & 0xFF) << 8) | (body[2] & 0xFF);
+        int offset = 3 + topicLen;
+        if (offset + 2 > bodyLen) {
+            throw new IOException("Pulsar lab reply truncated topic");
+        }
+        int payloadLen = ((body[offset] & 0xFF) << 8) | (body[offset + 1] & 0xFF);
+        offset += 2;
+        if (offset + payloadLen > bodyLen) {
+            throw new IOException("Pulsar lab reply truncated payload");
+        }
+        byte[] payload = Arrays.copyOfRange(body, offset, offset + payloadLen);
+        return new LabReply(op, payload);
+    }
+
+    static byte[] readFully(InputStream in, int length) throws IOException {
+        byte[] buf = new byte[length];
+        int offset = 0;
+        while (offset < length) {
+            int n = in.read(buf, offset, length - offset);
+            if (n < 0) {
+                throw new EOFException("EOF reading Pulsar lab bytes, need " + length + " got " + offset);
+            }
+            offset += n;
+        }
+        return buf;
     }
 
     private static String extractValue(DataRecord value) {
@@ -211,5 +294,16 @@ public class PulsarDeviceDriver implements DeviceDriver {
             return String.valueOf(row.values().iterator().next());
         }
         return row.toString();
+    }
+
+    /** Lab reply carrier — not a Java record (payload is byte[]). */
+    private static final class LabReply {
+        final byte op;
+        final byte[] payload;
+
+        LabReply(byte op, byte[] payload) {
+            this.op = op;
+            this.payload = payload;
+        }
     }
 }

@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 
 import java.io.ByteArrayOutputStream;
@@ -25,8 +26,8 @@ import java.util.regex.Pattern;
 /**
  * Hitachi HIDIC / EH host-link ASCII lab driver over a raw TCP socket (default port {@code 3000}).
  * <p>
- * <strong>Lab dialect</strong> (host-link–shaped frames for EH-class register names — <em>not</em> a
- * full HIDIC-S10 / EH-150 / Ladder Editor proprietary stack):
+ * <strong>Lab dialect</strong> (host-link–shaped frames for EH-class register names — <em>not</em>
+ * verified HIDIC):
  * <ul>
  *   <li>Frames: {@code @}{@station(2)}{@body}{@FCS(2 hex)}{@code *} + CR</li>
  *   <li>FCS = XOR of ASCII bytes of station+body</li>
@@ -58,7 +59,7 @@ public class HitachiHidicDeviceDriver implements DeviceDriver {
             "hitachi-hidic",
             "Hitachi HIDIC Driver",
             "0.1.0",
-            "Hitachi HIDIC/EH host-link ASCII lab (WR/R/M) over TCP — not full EH-150 stack",
+            "Hitachi HIDIC/EH host-link ASCII lab (WR/R/M) over TCP — not verified HIDIC",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -67,7 +68,7 @@ public class HitachiHidicDeviceDriver implements DeviceDriver {
                     "timeoutMs", "3000",
                     "pollIntervalMs", "5000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

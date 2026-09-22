@@ -30,13 +30,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Fake TCP loopback tests for the Fanuc FOCAS-shaped CNC gateway lab.
- * Certifies the lab dialect only — not Fanuc FOCAS library / proprietary SDK / real CNC.
+ * Certifies the lab dialect only — not FOCAS library / proprietary SDK / real CNC.
  */
 class FanucFocasDeviceDriverTest {
 
@@ -56,17 +57,28 @@ class FanucFocasDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionFocasGatewayLab() {
+    void metadataIsBetaFocasGatewayLab() {
         driver = new FanucFocasDeviceDriver();
         assertEquals("fanuc-focas", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         assertEquals("8193", driver.metadata().configurationSchema().get("port"));
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("lab"));
         assertTrue(description.contains("focas") || description.contains("gateway"));
-        assertTrue(description.contains("lab") || description.contains("tcp"));
         assertTrue(description.contains("not"));
         assertTrue(!description.contains("stub") && !description.contains("placeholder"));
+    }
+
+    @Test
+    void labGatewayGetPmcRequestMatchesHandwrittenOctets() {
+        // These bytes are a lab gateway — not FOCAS library.
+        byte[] expected = new byte[] {
+                0x00, 0x0D,
+                0x47, 0x45, 0x54, 0x20, 0x70, 0x6D, 0x63, 0x3A, 0x44, 0x30, 0x30, 0x30, 0x31
+        };
+        assertArrayEquals(expected,
+                com.ispf.driver.fanucfocas.codec.FanucFocasLabSession.encodeFrame("GET pmc:D0001"));
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 
 import java.net.URI;
@@ -25,14 +26,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * Default TCP/HTTP port {@code 41100}. Point mappings are symbol paths such as
  * {@code Arp.Plc.Eclr/MainInstance.xMotor}.
  * <p>
- * Lab HTTP dialect (not full PLCnext Engineer RSC binary):
+ * Lab HTTP dialect (not PLCnext RSC binary/gRPC):
  * <pre>
  *   GET  /rsc/variables?path=&lt;symbol&gt;     → {"path":"…","value":"…"}
  *   PUT  /rsc/variables  {"path":"…","value":"…"} → {"path":"…","value":"…"}
  * </pre>
- * <strong>Honesty:</strong> this is an ISPF RSC-lab HTTP/JSON subset for interop testing. It does
- * <strong>not</strong> claim the full proprietary PLCnext Engineer / RSC binary Remoting protocol.
- * Clean-room ISPF code, Apache-2.0 — JDK {@code java.net.http} only; no vendor SDK / PLC4X / GPL.
+ * <strong>Honesty:</strong> this is an ISPF RSC-lab HTTP/JSON subset for interop testing — not
+ * PLCnext RSC binary/gRPC. Clean-room ISPF code, Apache-2.0 — JDK {@code java.net.http} only;
+ * no vendor SDK / PLC4X / GPL.
  */
 public class PlcnextDeviceDriver implements DeviceDriver {
 
@@ -47,7 +48,7 @@ public class PlcnextDeviceDriver implements DeviceDriver {
             "PLCnext Driver",
             "0.1.0",
             "PLCnext RSC-lab HTTP/JSON symbol read/write on port 41100"
-                    + " — not full PLCnext Engineer RSC binary",
+                    + " — not PLCnext RSC binary/gRPC",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -55,7 +56,7 @@ public class PlcnextDeviceDriver implements DeviceDriver {
                     "basePath", "/rsc/variables",
                     "timeoutMs", "3000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

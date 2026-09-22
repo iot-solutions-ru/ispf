@@ -49,10 +49,18 @@ public final class OpcAeLabSession implements AutoCloseable {
     }
 
     public AlarmSample readValue(String kind, String id) throws IOException {
-        String request = "{\"op\":\"get\",\"kind\":\"" + jsonEscape(kind)
-                + "\",\"id\":\"" + jsonEscape(id) + "\"}";
-        String response = transact(request);
+        String response = transact(getRequest(kind, id));
         return parseSample(response);
+    }
+
+    /** Newline-terminated get line actually written by {@link #readValue}. */
+    public static byte[] getLineBytes(String kind, String id) {
+        return (getRequest(kind, id) + "\n").getBytes(StandardCharsets.UTF_8);
+    }
+
+    static String getRequest(String kind, String id) {
+        return "{\"op\":\"get\",\"kind\":\"" + jsonEscape(kind)
+                + "\",\"id\":\"" + jsonEscape(id) + "\"}";
     }
 
     public void writeValue(String kind, String id, double enabledOrState) throws IOException {

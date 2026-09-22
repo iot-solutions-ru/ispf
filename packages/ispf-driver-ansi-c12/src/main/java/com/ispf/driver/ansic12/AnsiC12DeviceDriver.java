@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.ansic12.codec.AnsiC12LabClient;
 import com.ispf.driver.ansic12.codec.AnsiC12LabCodec;
@@ -17,12 +18,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * ANSI C12.18 / C12.22 <strong>meter lab</strong> driver ({@code ansi-c12}).
+ * ANSI C12 meter lab driver ({@code ansi-c12}).
  * <p>
  * Clean-room Apache-2.0 TCP subset on port 1153: logon + read standard table
  * (e.g. Table 1 / ST-1 identification). Optional table write is supported for lab
- * exercise. This is <strong>not</strong> a certified C12.22 network relay or vendor
- * meter SDK — see {@link AnsiC12LabCodec}.
+ * exercise. Honesty: this is a meter lab dialect only — not ANSI C12.18 optical probe
+ * framing and not ANSI C12.22 network relay / vendor meter SDK — see {@link AnsiC12LabCodec}.
  * <p>
  * Point mapping: {@code table:1}, {@code ST1}, or {@code 1}.
  */
@@ -32,8 +33,8 @@ public class AnsiC12DeviceDriver implements DeviceDriver {
             "ansi-c12",
             "ANSI C12 Lab Driver",
             "0.1.0",
-            "ANSI C12.18/C12.22 meter lab over TCP: logon + standard table read/write;"
-                    + " not a certified C12.22 relay",
+            "ANSI C12 meter lab over TCP (logon + standard tables);"
+                    + " not ANSI C12.18/C12.22 certified probe or relay",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -42,7 +43,7 @@ public class AnsiC12DeviceDriver implements DeviceDriver {
                     "user", "ISPF",
                     "password", ""
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

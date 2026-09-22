@@ -7,10 +7,10 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,21 +19,42 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Loopback tests for {@link PulsarDeviceDriver} against an in-process lab TCP broker.
+ * Loopback tests for {@link PulsarDeviceDriver} against an in-process lab TCP peer.
  */
 class PulsarDeviceDriverTest {
+
+    /** Handwritten CONNECT frame — do not build via encoder. */
+    private static final byte[] EXPECTED_CONNECT = {
+            0x00, 0x00, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x02, 0x08, 0x02
+    };
+
+    private static final byte[] CONNECTED_REPLY = {
+            0x00, 0x00, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x02, 0x08, 0x03
+    };
+
+    private static final byte OP_GET = 0x01;
+    private static final byte OP_PUB = 0x02;
+    private static final byte OP_MSG = 0x03;
+    private static final byte OP_NIL = 0x04;
+    private static final byte OP_OK = 0x05;
+    private static final byte OP_ERR = 0x06;
 
     private PulsarDeviceDriver driver;
     private FakePulsarBroker broker;
@@ -51,10 +72,42 @@ class PulsarDeviceDriverTest {
     }
 
     @Test
+    void metadataIsBetaLabConnectNotProtobufBroker() {
+        assertEquals("pulsar", new PulsarDeviceDriver().metadata().id());
+        assertEquals(DriverMaturity.BETA, new PulsarDeviceDriver().metadata().maturity());
+        assertTrue(new PulsarDeviceDriver().metadata().supportsWrite());
+        String description = new PulsarDeviceDriver().metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("lab"));
+        assertTrue(description.contains("connect"));
+        assertTrue(description.contains("not") && description.contains("protobuf"));
+    }
+
+    @Test
+    void connectWritesBaseCommandConnectExpectsConnected() throws Exception {
+        broker = new FakePulsarBroker();
+        broker.start();
+        assertTrue(broker.awaitReady(2, TimeUnit.SECONDS));
+
+        StubDriverObject object = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(broker.port()),
+                "timeoutMs", "2000"
+        ));
+        driver = new PulsarDeviceDriver();
+        driver.initialize(object);
+        driver.connect();
+        assertTrue(driver.isConnected());
+        assertTrue(broker.awaitConnect(2, TimeUnit.SECONDS));
+        assertArrayEquals(EXPECTED_CONNECT, broker.capturedConnect());
+        assertEquals(10, broker.capturedConnect().length);
+    }
+
+    @Test
     void publishesAndGetsTopicPayloads() throws Exception {
         broker = new FakePulsarBroker();
         broker.put("sensors/temp", "23.5");
         broker.start();
+        assertTrue(broker.awaitReady(2, TimeUnit.SECONDS));
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
@@ -86,6 +139,7 @@ class PulsarDeviceDriverTest {
     void missingTopicReturnsEmptyString() throws Exception {
         broker = new FakePulsarBroker();
         broker.start();
+        assertTrue(broker.awaitReady(2, TimeUnit.SECONDS));
 
         StubDriverObject object = new StubDriverObject(Map.of(
                 "host", "127.0.0.1",
@@ -109,12 +163,6 @@ class PulsarDeviceDriverTest {
         assertTrue(error.getMessage().contains("Not connected"));
     }
 
-    @Test
-    void metadataIdIsPulsar() {
-        assertEquals("pulsar", new PulsarDeviceDriver().metadata().id());
-        assertTrue(new PulsarDeviceDriver().metadata().supportsWrite());
-    }
-
     private static final class FakePulsarBroker implements AutoCloseable {
 
         private final ServerSocket serverSocket;
@@ -124,6 +172,9 @@ class PulsarDeviceDriverTest {
             return thread;
         });
         private final Map<String, String> topics = new ConcurrentHashMap<>();
+        private final CountDownLatch ready = new CountDownLatch(1);
+        private final CountDownLatch connectSeen = new CountDownLatch(1);
+        private final AtomicReference<byte[]> capturedConnect = new AtomicReference<>();
 
         FakePulsarBroker() throws IOException {
             serverSocket = new ServerSocket();
@@ -143,7 +194,22 @@ class PulsarDeviceDriverTest {
         }
 
         void start() {
-            executor.submit(this::acceptLoop);
+            executor.submit(() -> {
+                ready.countDown();
+                acceptLoop();
+            });
+        }
+
+        boolean awaitReady(long timeout, TimeUnit unit) throws InterruptedException {
+            return ready.await(timeout, unit);
+        }
+
+        boolean awaitConnect(long timeout, TimeUnit unit) throws InterruptedException {
+            return connectSeen.await(timeout, unit);
+        }
+
+        byte[] capturedConnect() {
+            return capturedConnect.get();
         }
 
         private void acceptLoop() {
@@ -163,60 +229,54 @@ class PulsarDeviceDriverTest {
             try (socket) {
                 InputStream in = socket.getInputStream();
                 OutputStream out = socket.getOutputStream();
+                byte[] connect = PulsarDeviceDriver.readFully(in, EXPECTED_CONNECT.length);
+                capturedConnect.set(connect);
+                out.write(CONNECTED_REPLY);
+                out.flush();
+                connectSeen.countDown();
                 while (true) {
-                    String line = readLine(in);
-                    if (line == null) {
-                        return;
+                    byte[] lenHdr = PulsarDeviceDriver.readFully(in, 2);
+                    int bodyLen = ((lenHdr[0] & 0xFF) << 8) | (lenHdr[1] & 0xFF);
+                    byte[] body = PulsarDeviceDriver.readFully(in, bodyLen);
+                    byte op = body[0];
+                    int topicLen = ((body[1] & 0xFF) << 8) | (body[2] & 0xFF);
+                    String topic = new String(body, 3, topicLen, StandardCharsets.UTF_8);
+                    int payloadOffset = 3 + topicLen;
+                    int payloadLen = ((body[payloadOffset] & 0xFF) << 8) | (body[payloadOffset + 1] & 0xFF);
+                    byte[] payload = Arrays.copyOfRange(body, payloadOffset + 2, payloadOffset + 2 + payloadLen);
+                    if (op == OP_PUB) {
+                        topics.put(topic, new String(payload, StandardCharsets.UTF_8));
+                        writeLab(out, OP_OK, topic, new byte[0]);
+                    } else if (op == OP_GET) {
+                        String stored = topics.get(topic);
+                        if (stored == null) {
+                            writeLab(out, OP_NIL, topic, new byte[0]);
+                        } else {
+                            writeLab(out, OP_MSG, topic, stored.getBytes(StandardCharsets.UTF_8));
+                        }
+                    } else {
+                        writeLab(out, OP_ERR, topic, "unknown".getBytes(StandardCharsets.UTF_8));
                     }
-                    out.write((reply(line) + "\n").getBytes(StandardCharsets.UTF_8));
-                    out.flush();
                 }
             } catch (EOFException ignored) {
             } catch (IOException ignored) {
             }
         }
 
-        private String reply(String line) {
-            if (line.startsWith("PUB ")) {
-                String rest = line.substring(4);
-                int space = rest.indexOf(' ');
-                if (space < 0) {
-                    return "ERR missing payload";
-                }
-                String topic = rest.substring(0, space);
-                String payload = rest.substring(space + 1);
-                topics.put(topic, payload);
-                return "OK";
-            }
-            if (line.startsWith("GET ")) {
-                String topic = line.substring(4).trim();
-                String payload = topics.get(topic);
-                if (payload == null) {
-                    return "NIL";
-                }
-                return "MSG " + topic + " " + payload;
-            }
-            return "ERR unknown command";
-        }
-
-        private static String readLine(InputStream in) throws IOException {
-            ByteArrayOutputStream line = new ByteArrayOutputStream();
-            while (true) {
-                int ch = in.read();
-                if (ch < 0) {
-                    if (line.size() == 0) {
-                        return null;
-                    }
-                    break;
-                }
-                if (ch == '\n') {
-                    break;
-                }
-                if (ch != '\r') {
-                    line.write(ch);
-                }
-            }
-            return line.toString(StandardCharsets.UTF_8);
+        private static void writeLab(OutputStream out, byte op, String topic, byte[] payload)
+                throws IOException {
+            byte[] topicBytes = topic.getBytes(StandardCharsets.UTF_8);
+            int body = 1 + 2 + topicBytes.length + 2 + payload.length;
+            out.write((body >> 8) & 0xFF);
+            out.write(body & 0xFF);
+            out.write(op);
+            out.write((topicBytes.length >> 8) & 0xFF);
+            out.write(topicBytes.length & 0xFF);
+            out.write(topicBytes);
+            out.write((payload.length >> 8) & 0xFF);
+            out.write(payload.length & 0xFF);
+            out.write(payload);
+            out.flush();
         }
 
         @Override

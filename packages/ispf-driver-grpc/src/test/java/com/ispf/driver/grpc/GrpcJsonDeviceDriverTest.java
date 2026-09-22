@@ -7,77 +7,113 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
+import com.ispf.driver.DriverMaturity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GrpcJsonDeviceDriverTest {
 
-    private HttpServer server;
-    private String baseUrl;
-    private final AtomicReference<String> lastBody = new AtomicReference<>();
+    /**
+     * Handwritten HTTP/2 preface + empty SETTINGS (do not build via encoder).
+     * Preface: PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n then SETTINGS length=0 type=4 flags=0 stream=0.
+     */
+    private static final byte[] EXPECTED_CONNECT = {
+            0x50, 0x52, 0x49, 0x20, 0x2A, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2F, 0x32, 0x2E, 0x30, 0x0D, 0x0A,
+            0x0D, 0x0A, 0x53, 0x4D, 0x0D, 0x0A, 0x0D, 0x0A,
+            0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+
+    private static final byte[] SETTINGS_ACK = {
+            0x00, 0x00, 0x00, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00
+    };
+
+    private GrpcJsonDeviceDriver driver;
+    private FakeGrpcPeer peer;
 
     @AfterEach
-    void tearDown() {
-        if (server != null) {
-            server.stop(0);
-            server = null;
+    void tearDown() throws Exception {
+        if (driver != null) {
+            driver.disconnect();
+            driver = null;
+        }
+        if (peer != null) {
+            peer.close();
+            peer = null;
         }
     }
 
     @Test
-    void unaryJsonPostExtractsMessageField() throws Exception {
-        startHelloServer();
-        StubDriverObject object = config();
-        GrpcJsonDeviceDriver driver = new GrpcJsonDeviceDriver();
+    void metadataIsBetaLabHttp2PrefaceNotHpackOrProtobufRpc() {
+        driver = new GrpcJsonDeviceDriver();
+        assertEquals("grpc", driver.metadata().id());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
+        String description = driver.metadata().description().toLowerCase(Locale.ROOT);
+        assertTrue(description.contains("lab"));
+        assertTrue(description.contains("http/2") || description.contains("preface"));
+        assertTrue(description.contains("not hpack") || description.contains("hpack"));
+        assertTrue(description.contains("not") && description.contains("protobuf"));
+    }
+
+    @Test
+    void connectWritesHttp2PrefaceAndSettingsExpectsAck() throws Exception {
+        peer = new FakeGrpcPeer();
+        peer.start();
+        assertTrue(peer.awaitReady(2, TimeUnit.SECONDS));
+
+        StubDriverObject object = config(peer.port());
+        driver = new GrpcJsonDeviceDriver();
+        driver.initialize(object);
+        driver.connect();
+        assertTrue(driver.isConnected());
+        assertTrue(peer.awaitConnect(2, TimeUnit.SECONDS));
+        assertArrayEquals(EXPECTED_CONNECT, peer.capturedConnect());
+        assertEquals(33, peer.capturedConnect().length);
+    }
+
+    @Test
+    void lengthPrefixedLabCallAfterPreface() throws Exception {
+        peer = new FakeGrpcPeer();
+        peer.start();
+        assertTrue(peer.awaitReady(2, TimeUnit.SECONDS));
+
+        StubDriverObject object = config(peer.port());
+        driver = new GrpcJsonDeviceDriver();
         driver.initialize(object);
         driver.connect();
         driver.readPoints(Map.of("greeting", "helloworld.Greeter/SayHello#message"));
         DataRecord record = object.variables.get("greeting");
         assertEquals("Hello world", record.firstRow().get("value"));
         assertEquals("helloworld.Greeter/SayHello", record.firstRow().get("method"));
-        assertEquals(200, record.firstRow().get("statusCode"));
-        assertTrue(lastBody.get().contains("\"name\":\"world\""));
-        driver.disconnect();
-    }
 
-    @Test
-    void writeUpdatesRequestNameAndReinvokes() throws Exception {
-        startHelloServer();
-        StubDriverObject object = config();
-        GrpcJsonDeviceDriver driver = new GrpcJsonDeviceDriver();
-        driver.initialize(object);
-        driver.connect();
-        driver.readPoints(Map.of("greeting", "helloworld.Greeter/SayHello#message"));
         driver.writePoint("greeting", DataRecord.single(
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
                 Map.of("value", "ISPF")
         ));
         assertEquals("Hello ISPF", object.variables.get("greeting").firstRow().get("value"));
-        assertTrue(lastBody.get().contains("\"name\":\"ISPF\""));
         driver.disconnect();
-    }
-
-    @Test
-    void metadataIsHonestAboutLabJsonMapping() {
-        GrpcJsonDeviceDriver driver = new GrpcJsonDeviceDriver();
-        assertEquals("grpc", driver.metadata().id());
-        assertTrue(driver.metadata().description().contains("NOT wire-compatible"));
-        assertTrue(driver.metadata().name().contains("JSON"));
     }
 
     @Test
@@ -90,49 +126,114 @@ class GrpcJsonDeviceDriverTest {
 
     @Test
     void readBeforeConnectThrows() {
-        GrpcJsonDeviceDriver driver = new GrpcJsonDeviceDriver();
-        driver.initialize(new StubDriverObject(Map.of()));
+        GrpcJsonDeviceDriver underTest = new GrpcJsonDeviceDriver();
+        underTest.initialize(new StubDriverObject(Map.of()));
         DriverException error = assertThrows(DriverException.class, () ->
-                driver.readPoints(Map.of("g", "Greeter/SayHello#message")));
+                underTest.readPoints(Map.of("g", "Greeter/SayHello#message")));
         assertTrue(error.getMessage().contains("Not connected"));
     }
 
-    private void startHelloServer() throws IOException {
-        lastBody.set(null);
-        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        server.createContext("/helloworld.Greeter/SayHello", this::handleHello);
-        server.start();
-        baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
+    private StubDriverObject config(int port) {
+        return new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "timeoutMs", "3000",
+                "defaultName", "world"
+        ));
     }
 
-    private void handleHello(HttpExchange exchange) throws IOException {
-        String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-        lastBody.set(body);
-        String name = "world";
-        int idx = body.indexOf("\"name\"");
-        if (idx >= 0) {
-            int colon = body.indexOf(':', idx);
-            int q1 = body.indexOf('"', colon + 1);
-            int q2 = body.indexOf('"', q1 + 1);
-            if (q1 >= 0 && q2 > q1) {
-                name = body.substring(q1 + 1, q2);
+    private static final class FakeGrpcPeer implements AutoCloseable {
+
+        private final ServerSocket serverSocket;
+        private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
+            Thread thread = new Thread(runnable, "fake-grpc-peer");
+            thread.setDaemon(true);
+            return thread;
+        });
+        private final CountDownLatch ready = new CountDownLatch(1);
+        private final CountDownLatch connectSeen = new CountDownLatch(1);
+        private final AtomicReference<byte[]> capturedConnect = new AtomicReference<>();
+
+        FakeGrpcPeer() throws IOException {
+            serverSocket = new ServerSocket();
+            serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+        }
+
+        int port() {
+            return serverSocket.getLocalPort();
+        }
+
+        void start() {
+            executor.submit(() -> {
+                ready.countDown();
+                acceptLoop();
+            });
+        }
+
+        boolean awaitReady(long timeout, TimeUnit unit) throws InterruptedException {
+            return ready.await(timeout, unit);
+        }
+
+        boolean awaitConnect(long timeout, TimeUnit unit) throws InterruptedException {
+            return connectSeen.await(timeout, unit);
+        }
+
+        byte[] capturedConnect() {
+            return capturedConnect.get();
+        }
+
+        private void acceptLoop() {
+            while (!serverSocket.isClosed()) {
+                try {
+                    Socket socket = serverSocket.accept();
+                    executor.submit(() -> handle(socket));
+                } catch (IOException e) {
+                    if (serverSocket.isClosed()) {
+                        return;
+                    }
+                }
             }
         }
-        byte[] response = ("{\"message\":\"Hello " + name + "\"}").getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().add("Content-Type", "application/json");
-        exchange.sendResponseHeaders(200, response.length);
-        try (OutputStream out = exchange.getResponseBody()) {
-            out.write(response);
-        }
-    }
 
-    private StubDriverObject config() {
-        return new StubDriverObject(Map.of("baseUrl", baseUrl, "timeoutMs", "3000", "defaultName", "world"));
+        private void handle(Socket socket) {
+            try (socket) {
+                InputStream in = socket.getInputStream();
+                OutputStream out = socket.getOutputStream();
+                byte[] connect = GrpcJsonDeviceDriver.readFully(in, EXPECTED_CONNECT.length);
+                capturedConnect.set(connect);
+                out.write(SETTINGS_ACK);
+                out.flush();
+                connectSeen.countDown();
+                while (true) {
+                    byte[] header = GrpcJsonDeviceDriver.readFully(in, 2);
+                    int length = ((header[0] & 0xFF) << 8) | (header[1] & 0xFF);
+                    byte[] body = GrpcJsonDeviceDriver.readFully(in, length);
+                    String text = new String(body, StandardCharsets.UTF_8);
+                    int nl = text.indexOf('\n');
+                    String name = nl >= 0 ? text.substring(nl + 1) : "world";
+                    byte[] response = ("{\"message\":\"Hello " + name + "\"}")
+                            .getBytes(StandardCharsets.UTF_8);
+                    out.write((response.length >> 8) & 0xFF);
+                    out.write(response.length & 0xFF);
+                    out.write(response);
+                    out.flush();
+                }
+            } catch (EOFException ignored) {
+            } catch (IOException ignored) {
+            }
+        }
+
+        @Override
+        public void close() throws Exception {
+            serverSocket.close();
+            executor.shutdownNow();
+            executor.awaitTermination(2, TimeUnit.SECONDS);
+        }
     }
 
     private static final class StubDriverObject implements DeviceDriver.DriverObject {
         private final Map<String, String> configuration;
-        final Map<String, DataRecord> variables = new HashMap<>();
+        final Map<String, DataRecord> variables = new ConcurrentHashMap<>();
 
         StubDriverObject(Map<String, String> configuration) {
             this.configuration = configuration;

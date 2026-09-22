@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 
 import java.io.ByteArrayOutputStream;
@@ -24,9 +25,8 @@ import java.util.regex.Pattern;
 /**
  * CODESYS Gateway driver — lab text dialect over TCP (default port {@code 1217}).
  * <p>
- * Honesty boundary: this is an ISPF CODESYS-lab gateway dialect, not the official
- * CODESYS Network Protocol, not PLCHandler binary, and not CODESYS Automation Server proprietary
- * libraries. Line commands:
+ * Honesty boundary: this is an ISPF CODESYS-lab gateway dialect — not CODESYS network protocol,
+ * not PLCHandler binary, and not CODESYS Automation Server proprietary libraries. Line commands:
  * <pre>
  *   GET &lt;symbol&gt;{@code \\n}           →  OK &lt;symbol&gt;=&lt;value&gt;{@code \\n}
  *   SET &lt;symbol&gt; &lt;value&gt;{@code \\n}   →  OK &lt;symbol&gt;=&lt;value&gt;{@code \\n}
@@ -50,7 +50,7 @@ public class CodesysDeviceDriver implements DeviceDriver {
             "codesys",
             "CODESYS Gateway Driver",
             "0.1.0",
-            "CODESYS-lab text GET/SET gateway on TCP 1217 — not official CODESYS Network Protocol / PLCHandler",
+            "CODESYS-lab text GET/SET gateway on TCP 1217 — not CODESYS network protocol / PLCHandler",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -58,7 +58,7 @@ public class CodesysDeviceDriver implements DeviceDriver {
                     "timeoutMs", "3000",
                     "pollIntervalMs", "5000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

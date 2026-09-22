@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 
 import java.io.IOException;
@@ -26,9 +27,9 @@ import java.util.stream.IntStream;
  * {@code %AI1}, {@code %AQ2}, {@code %I10}, {@code %Q5} (optional {@code :count}).
  * Optional write maps {@code value}/{@code raw} to a single-word write at the point address.
  * <p>
- * <strong>Honesty:</strong> this is an ISPF clean-room SRTP-lab subset (Apache-2.0), not a full
- * CPE/SRTP stack. No session negotiation, no multi-segment transfers, no symbolic names, no
- * PLC control services. JDK sockets only — no PLC4X, no vendor SDKs.
+ * <strong>Honesty:</strong> this is an ISPF clean-room SRTP-lab subset (Apache-2.0), not full
+ * SRTP (no CPE session negotiation, multi-segment transfers, symbolic names, or PLC control
+ * services). JDK sockets only — no PLC4X, no vendor SDKs.
  */
 public class GeSrtpDeviceDriver implements DeviceDriver {
 
@@ -43,14 +44,14 @@ public class GeSrtpDeviceDriver implements DeviceDriver {
             "ge-srtp",
             "GE SRTP Driver",
             "0.1.0",
-            "SRTP-lab MAILBOX read/write for %R/%AI/%AQ/%I/%Q over TCP (not full CPE/SRTP)",
+            "SRTP-lab MAILBOX read/write for %R/%AI/%AQ/%I/%Q over TCP — not full SRTP",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "18245",
                     "timeoutMs", "3000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

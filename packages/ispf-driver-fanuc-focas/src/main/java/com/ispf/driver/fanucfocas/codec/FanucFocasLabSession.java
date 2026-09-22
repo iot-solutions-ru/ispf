@@ -61,14 +61,22 @@ public final class FanucFocasLabSession implements AutoCloseable {
         return response;
     }
 
+    /** Length-prefixed frame actually written by the session. */
+    public static byte[] encodeFrame(String payload) {
+        byte[] body = payload.getBytes(StandardCharsets.US_ASCII);
+        byte[] header = ByteBuffer.allocate(2).putShort((short) body.length).array();
+        byte[] frame = new byte[header.length + body.length];
+        System.arraycopy(header, 0, frame, 0, header.length);
+        System.arraycopy(body, 0, frame, header.length, body.length);
+        return frame;
+    }
+
     private void writeFrame(String payload) throws IOException {
         byte[] body = payload.getBytes(StandardCharsets.US_ASCII);
         if (body.length > MAX_FRAME) {
             throw new IOException("Fanuc FOCAS gateway lab frame too large: " + body.length);
         }
-        byte[] header = ByteBuffer.allocate(2).putShort((short) body.length).array();
-        out.write(header);
-        out.write(body);
+        out.write(encodeFrame(payload));
         out.flush();
     }
 

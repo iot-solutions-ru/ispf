@@ -47,10 +47,18 @@ public final class OpcHdaLabSession implements AutoCloseable {
     }
 
     public double readValue(String kind, String name) throws IOException {
-        String request = "{\"op\":\"get\",\"kind\":\"" + jsonEscape(kind)
-                + "\",\"name\":\"" + jsonEscape(name) + "\"}";
-        String response = transact(request);
+        String response = transact(getRequest(kind, name));
         return parseValue(response);
+    }
+
+    /** Newline-terminated get line actually written by {@link #readValue}. */
+    public static byte[] getLineBytes(String kind, String name) {
+        return (getRequest(kind, name) + "\n").getBytes(StandardCharsets.UTF_8);
+    }
+
+    static String getRequest(String kind, String name) {
+        return "{\"op\":\"get\",\"kind\":\"" + jsonEscape(kind)
+                + "\",\"name\":\"" + jsonEscape(name) + "\"}";
     }
 
     public void writeValue(String kind, String name, double value) throws IOException {

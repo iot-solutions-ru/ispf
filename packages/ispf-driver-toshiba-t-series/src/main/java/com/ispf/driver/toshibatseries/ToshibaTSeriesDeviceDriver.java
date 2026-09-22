@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 
 import java.io.ByteArrayOutputStream;
@@ -25,8 +26,8 @@ import java.util.regex.Pattern;
 /**
  * Toshiba T-series computer-link ASCII lab driver over a raw TCP socket (default port {@code 9600}).
  * <p>
- * <strong>Lab dialect</strong> (computer-link–shaped Host Link frames — <em>not</em> a full T1/T2/T3
- * / V-series / T-PDS proprietary stack):
+ * <strong>Lab dialect</strong> (computer-link–shaped Host Link frames — <em>not</em> verified
+ * Toshiba computer-link):
  * <ul>
  *   <li>Frames: {@code @}{@station(2)}{@body}{@FCS(2 hex)}{@code *} + CR</li>
  *   <li>FCS = XOR of ASCII bytes of station+body</li>
@@ -57,7 +58,7 @@ public class ToshibaTSeriesDeviceDriver implements DeviceDriver {
             "toshiba-t-series",
             "Toshiba T-series Driver",
             "0.1.0",
-            "Toshiba T-series computer-link ASCII lab (D/X/Y) over TCP — not full T-PDS stack",
+            "Toshiba T-series computer-link ASCII lab (D/X/Y) over TCP — not verified Toshiba computer-link",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -66,7 +67,7 @@ public class ToshibaTSeriesDeviceDriver implements DeviceDriver {
                     "timeoutMs", "3000",
                     "pollIntervalMs", "5000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 

@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.opcuapubsub.codec.OpcuaPubsubLabSession;
 
@@ -16,13 +17,14 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * OPC UA PubSub UADP/UDP lab driver — minimal publisher/subscriber subset (default port {@code 4840}).
+ * OPC UA PubSub UADP/UDP driver — lab NetworkMessage header (version 1 + PublisherId)
+ * plus length-prefixed lab payload (default port {@code 4840}).
  * <p>
  * Point forms: {@code ds:1}, {@code field:0}, {@code ns:2;s=Temp}.
  * Reads issue a GET datagram and expect a SAMPLE response (request/response UDP for testability).
- * Writes PUBLISH a lab sample (float/double/string payload) and expect ACK.
+ * Writes PUBLISH a lab sample and expect ACK.
  * <p>
- * Honesty: UADP/UDP lab subset — not full OPC UA PubSub / MQTT / broker / security. Lab ≠ field.
+ * This is <strong>not</strong> a full OPC UA PubSub DataSetMessage or security stack.
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only.
  */
 public class OpcuaPubsubDeviceDriver implements DeviceDriver {
@@ -36,16 +38,15 @@ public class OpcuaPubsubDeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "opcua-pubsub",
             "OPC UA PubSub UADP/UDP Lab Driver",
-            "0.1.0",
-            "UADP/UDP lab subset (GET/SAMPLE/PUBLISH dataset payload) —"
-                    + " not full OPC UA PubSub / MQTT / broker / security",
+            "0.2.0",
+            "lab UADP version/publisher header; not a full OPC UA PubSub DataSetMessage or security stack",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "4840",
                     "timeoutMs", "3000"
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 
@@ -85,8 +86,8 @@ public class OpcuaPubsubDeviceDriver implements DeviceDriver {
         try {
             session = new OpcuaPubsubLabSession(host, port, timeoutMs);
             driverObject.log(DriverLogLevel.INFO,
-                    "OPC UA PubSub UADP/UDP lab connected to " + host + ":" + port
-                            + " (lab subset — not full PubSub / MQTT / broker / security)");
+                    "OPC UA PubSub UADP lab connected to " + host + ":" + port
+                            + " (not a full DataSetMessage or security stack)");
         } catch (IOException e) {
             session = null;
             throw new DriverException("OPC UA PubSub lab connect failed for " + host + ":" + port, e);

@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -26,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,11 +53,27 @@ class GeSrtpDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionReadWrite() {
+    void metadataIsBetaLabReadWrite() {
         GeSrtpDeviceDriver underTest = new GeSrtpDeviceDriver();
         assertEquals("ge-srtp", underTest.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, underTest.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, underTest.metadata().maturity());
         assertEquals(Set.of("read", "write"), underTest.metadata().capabilities());
+        assertTrue(underTest.metadata().description().toLowerCase(Locale.ROOT).contains("lab"));
+    }
+
+    @Test
+    void lockedLabReadRequestBytes() {
+        // The checksum span is a lab choice, not a verified vendor frame.
+        byte[] expected = new byte[] {
+                0x00, 0x08,
+                0x01, 0x01, 0x08, 0x00, 0x64, 0x00, 0x01, 0x00
+        };
+        assertArrayEquals(
+                expected,
+                GeSrtpFrame.buildRequest(
+                        GeSrtpFrame.CMD_READ,
+                        new GeSrtpPoint(GeSrtpPoint.GeSrtpMemoryType.R, 100, 1),
+                        null));
     }
 
     @Test

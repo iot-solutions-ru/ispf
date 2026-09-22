@@ -11,12 +11,14 @@ import com.ispf.driver.DriverMaturity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -26,13 +28,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Loopback tests for {@link CodesysDeviceDriver} against an in-process CODESYS-lab text gateway.
- * Certifies the lab GET/SET dialect only — not official CODESYS Network Protocol / PLCHandler.
+ * Certifies the lab GET/SET dialect only — not CODESYS network protocol / PLCHandler.
  */
 class CodesysDeviceDriverTest {
 
@@ -52,14 +55,29 @@ class CodesysDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionReadWriteLabDialect() {
+    void metadataIsBetaReadWriteLabDialect() {
         driver = new CodesysDeviceDriver();
         assertEquals("codesys", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
         assertTrue(description.contains("lab"));
-        assertTrue(description.contains("not official") || description.contains("not"));
+        assertTrue(description.contains("not") && description.contains("codesys network protocol"));
+    }
+
+    @Test
+    void labGatewayGetSymbolRequestMatchesHandwrittenOctets() throws Exception {
+        // These bytes are a lab gateway — not CODESYS network protocol.
+        byte[] expected = new byte[] {
+                0x47, 0x45, 0x54, 0x20, 0x41, 0x70, 0x70, 0x6C, 0x69, 0x63, 0x61, 0x74,
+                0x69, 0x6F, 0x6E, 0x2E, 0x47, 0x56, 0x4C, 0x2E, 0x4D, 0x6F, 0x74, 0x6F,
+                0x72, 0x53, 0x70, 0x65, 0x65, 0x64, 0x0A
+        };
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        CodesysDeviceDriver.writeLine(out, "GET Application.GVL.MotorSpeed");
+        assertArrayEquals(expected, out.toByteArray());
+        assertArrayEquals(expected,
+                "GET Application.GVL.MotorSpeed\n".getBytes(StandardCharsets.UTF_8));
     }
 
     @Test

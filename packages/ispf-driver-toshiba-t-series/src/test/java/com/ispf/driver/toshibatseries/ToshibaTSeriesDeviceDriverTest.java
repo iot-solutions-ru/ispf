@@ -11,6 +11,7 @@ import com.ispf.driver.DriverMaturity;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,7 +73,8 @@ class ToshibaTSeriesDeviceDriverTest {
         driver.connect();
         assertTrue(driver.isConnected());
         assertEquals("toshiba-t-series", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
+        assertTrue(driver.metadata().description().toLowerCase(Locale.ROOT).contains("lab"));
 
         driver.readPoints(Map.of(
                 "data", "D100",
@@ -83,6 +86,18 @@ class ToshibaTSeriesDeviceDriverTest {
         assertEquals("1", object.variables.get("input").firstRow().get("value"));
         assertEquals("0", object.variables.get("output").firstRow().get("value"));
         assertTrue(object.variables.get("data").firstRow().get("command").toString().startsWith("@00RDD00100"));
+    }
+
+    @Test
+    void lockedLabReadRequestBytes() throws Exception {
+        // The checksum span is a lab choice, not a verified vendor frame.
+        byte[] expected = new byte[] {
+                0x40, 0x30, 0x30, 0x52, 0x44, 0x44, 0x30, 0x30, 0x31, 0x30, 0x30, 0x36, 0x33, 0x2A, 0x0D
+        };
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        ToshibaTSeriesDeviceDriver.writeFrame(
+                captured, ToshibaTSeriesDeviceDriver.buildReadCommand("00", "D100"));
+        assertArrayEquals(expected, captured.toByteArray());
     }
 
     @Test
