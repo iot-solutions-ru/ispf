@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -60,16 +60,23 @@ export default function ObjectTableWidgetView({
     });
   }, [children.data, widget.namePattern, widget.objectType]);
 
+  // Palette samples are created with an empty id. useId still gives this instance a stable owner.
+  const fallbackOwnerId = useId();
+  const ownerId = widget.id || fallbackOwnerId;
   const slotPath = widget.selectionKey ? selection[widget.selectionKey] : undefined;
   const slotOwner = widget.selectionKey ? selectionOwner[widget.selectionKey] : undefined;
-  const selectedPath = slotPath && slotOwner === widget.id ? slotPath : undefined;
+  const selectedPath = slotPath && slotOwner === ownerId ? slotPath : undefined;
+  const setSelectionRef = useRef(setSelection);
+  setSelectionRef.current = setSelection;
 
+  // setSelection is read from a ref: its identity changes on every parent render, and
+  // listing it here re-claims the slot forever when that parent does not echo the owner.
   useEffect(() => {
     if (!widget.selectionKey || editable || slotOwner || !slotPath) return;
     if (rows.some((row) => row.path === slotPath)) {
-      setSelection(widget.selectionKey, slotPath, widget.id);
+      setSelectionRef.current(widget.selectionKey, slotPath, ownerId);
     }
-  }, [rows, editable, slotPath, slotOwner, setSelection, widget.selectionKey, widget.id]);
+  }, [rows, editable, slotPath, slotOwner, widget.selectionKey, ownerId]);
 
   const tableWrapRef = useRef<HTMLDivElement>(null);
   const shouldVirtualize = rows.length >= VIRTUALIZE_ROW_THRESHOLD;
@@ -187,7 +194,7 @@ export default function ObjectTableWidgetView({
           params: parseJsonObject(widget.rowParamsJson),
         };
         if (widget.selectionKey) {
-          setSelection(widget.selectionKey, obj.path, widget.id);
+          setSelection(widget.selectionKey, obj.path, ownerId);
         }
         triggerDashboardOpen(
           widget.rowOpenMode,

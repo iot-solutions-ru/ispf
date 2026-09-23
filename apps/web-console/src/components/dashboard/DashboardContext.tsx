@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { sessionsEqual } from "../../utils/dashboard/dashboardContext";
 import {
   emptySession,
   noop,
@@ -63,6 +64,9 @@ export function DashboardProvider({
     }
 
     const publishSession = (next: DashboardSession) => {
+      if (sessionsEqual(sessionRef.current, next)) {
+        return;
+      }
       sessionRef.current = next;
       if (onSessionChange) {
         onSessionChange(next);

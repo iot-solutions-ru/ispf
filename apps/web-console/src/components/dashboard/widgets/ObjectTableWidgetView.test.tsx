@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -117,6 +117,71 @@ describe("ObjectTableWidgetView selection", () => {
     await waitFor(() => {
       const selected = [...selectedLabels("Table A"), ...selectedLabels("Table B")];
       expect(selected.filter((label) => label === "Beta")).toHaveLength(1);
+    });
+  });
+
+  it("highlights the clicked row when the widget id is empty", async () => {
+    function EmptyIdTables() {
+      const [session, setSession] = useState<DashboardSession>(emptySession());
+      const onSessionChange = (next: DashboardSession) => setSession(next);
+      return (
+        <DashboardProvider session={session} onSessionChange={onSessionChange}>
+          <ObjectTableWidgetView widget={table("", "Table A")} refreshIntervalMs={60_000} />
+          <ObjectTableWidgetView widget={table("", "Table B")} refreshIntervalMs={60_000} />
+        </DashboardProvider>
+      );
+    }
+
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    renderWithDashboard(
+      <QueryClientProvider client={client}>
+        <EmptyIdTables />
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findAllByText("Alpha")).toHaveLength(2);
+    const tableA = screen.getByText("Table A").closest(".dash-widget");
+    const beta = tableA?.querySelector("tbody tr:nth-child(2)");
+    expect(beta).toBeTruthy();
+    fireEvent.click(beta!);
+
+    expect(selectedLabels("Table A")).toEqual(["Beta"]);
+    expect(selectedLabels("Table B")).toEqual([]);
+  });
+
+  it("does not reclaim a selection the parent session refuses to store", async () => {
+    function FrozenSession() {
+      const [writes, setWrites] = useState(0);
+      const session = useMemo<DashboardSession>(
+        () => ({
+          ...emptySession(),
+          selection: { device: "root.platform.devices.b" },
+        }),
+        []
+      );
+      const onSessionChange = () => setWrites((count) => count + 1);
+      return (
+        <DashboardProvider session={session} onSessionChange={onSessionChange}>
+          <span data-testid="writes">{writes}</span>
+          <ObjectTableWidgetView widget={table("table-a", "Table A")} refreshIntervalMs={60_000} />
+        </DashboardProvider>
+      );
+    }
+
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    renderWithDashboard(
+      <QueryClientProvider client={client}>
+        <FrozenSession />
+      </QueryClientProvider>
+    );
+
+    await screen.findByText("Beta");
+    await waitFor(() => {
+      expect(screen.getByTestId("writes").textContent).toBe("1");
     });
   });
 
