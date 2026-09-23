@@ -4,7 +4,7 @@ import com.ispf.core.dashboard.DashboardContextConstants;
 import com.ispf.server.automation.AutomationRuleIndex;
 import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.workflow.WorkflowEventTriggerIndex;
+import com.ispf.server.spi.WorkflowTriggerLookup;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +19,7 @@ public class VariableChangeSubscriptionRegistry {
     private final ObjectManager objectManager;
     private final BindingDependencyIndex bindingDependencyIndex;
     private final AutomationRuleIndex automationRuleIndex;
-    private final WorkflowEventTriggerIndex workflowTriggerIndex;
+    private final WorkflowTriggerLookup workflowTriggerIndex;
     private final ObjectWebSocketPathInterestRegistry webSocketPathInterest;
     private final FederationExportInterestRegistry federationExportInterest;
     private final ClusterPathInterestStore clusterPathInterest;
@@ -28,7 +28,7 @@ public class VariableChangeSubscriptionRegistry {
             @Lazy ObjectManager objectManager,
             BindingDependencyIndex bindingDependencyIndex,
             AutomationRuleIndex automationRuleIndex,
-            WorkflowEventTriggerIndex workflowTriggerIndex,
+            WorkflowTriggerLookup workflowTriggerIndex,
             ObjectWebSocketPathInterestRegistry webSocketPathInterest,
             FederationExportInterestRegistry federationExportInterest,
             ClusterPathInterestStore clusterPathInterest
@@ -49,7 +49,7 @@ public class VariableChangeSubscriptionRegistry {
         boolean historian = isHistorized(objectPath, variableName);
         boolean bindings = hasBindingSubscribers(objectPath, variableName);
         boolean alerts = !automationRuleIndex.findAlertRules(objectPath, variableName).isEmpty();
-        boolean workflows = !workflowTriggerIndex.findVariableWorkflows(objectPath, variableName).isEmpty();
+        boolean workflows = workflowTriggerIndex.hasVariableWorkflows(objectPath, variableName);
         boolean workflowIndex = isWorkflowIndexVariable(objectPath, variableName);
         boolean uiRefresh = webSocketPathInterest.hasVariableInterest(objectPath, variableName)
                 || clusterPathInterest.hasPathInterest(objectPath)

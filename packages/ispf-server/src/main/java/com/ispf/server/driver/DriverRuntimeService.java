@@ -18,6 +18,7 @@ import com.ispf.server.concurrent.ElasticWorkerLauncher;
 import com.ispf.server.config.DriverPackProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.driver.TelemetryPublishMode;
+import com.ispf.server.spi.DriverConnectionLookup;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import jakarta.annotation.PostConstruct;
@@ -50,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
-public class DriverRuntimeService {
+public class DriverRuntimeService implements DriverConnectionLookup {
 
     private static final Logger log = LoggerFactory.getLogger(DriverRuntimeService.class);
     private static final DataSchema STRING_VALUE_SCHEMA = DataSchema.builder("stringValue")
@@ -246,6 +247,11 @@ public class DriverRuntimeService {
     private static boolean isLabTrainingDevice(String devicePath) {
         return LabTrainingBundleLayouts.LAB_DEVICE_A.equals(devicePath)
                 || LabTrainingBundleLayouts.LAB_DEVICE_B.equals(devicePath);
+    }
+
+    @Override
+    public Optional<Boolean> connected(String devicePath) {
+        return status(devicePath).map(DriverRuntimeStatus::connected);
     }
 
     public Optional<DriverRuntimeStatus> status(String devicePath) {
