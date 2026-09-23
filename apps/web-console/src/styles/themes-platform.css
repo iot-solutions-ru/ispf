@@ -4240,6 +4240,7 @@ html {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  min-width: 0;
 }
 
 .object-path-field-controls {
@@ -4247,16 +4248,23 @@ html {
   flex-wrap: wrap;
   gap: 0.4rem;
   align-items: center;
-}
-
-.object-path-field-controls select {
-  min-width: 8rem;
-  flex: 1 1 8rem;
-}
-
-.object-path-field-controls input {
-  flex: 2 1 12rem;
   min-width: 0;
+}
+
+.object-path-field-controls .ant-select,
+.object-path-field-controls select {
+  flex: 1 1 8rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Direct child only: antd Select nests its own search input. */
+.object-path-field-controls > .ant-input,
+.object-path-field-controls > input {
+  flex: 1 1 8rem;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .object-path-browse {
