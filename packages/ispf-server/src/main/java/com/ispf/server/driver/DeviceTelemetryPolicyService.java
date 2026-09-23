@@ -6,6 +6,7 @@ import com.ispf.core.object.Variable;
 import com.ispf.core.object.VariableStorageMode;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.DeviceTelemetryPolicy;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
@@ -18,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * with optional per-variable overrides on {@link Variable}.
  */
 @Service
-public class DeviceTelemetryPolicyService {
+public class DeviceTelemetryPolicyService implements DeviceTelemetryPolicy {
 
     private static final long CACHE_TTL_MS = 1_000;
 
@@ -58,6 +59,7 @@ public class DeviceTelemetryPolicyService {
         return resolved;
     }
 
+    @Override
     public long coalesceMs(String devicePath) {
         return policyFor(devicePath).coalesceMs();
     }
@@ -66,6 +68,7 @@ public class DeviceTelemetryPolicyService {
         return policyFor(devicePath).automationEligible();
     }
 
+    @Override
     public boolean automationEligible(String objectPath, String variableName) {
         return publishMode(objectPath, variableName).automationEligible();
     }
@@ -76,6 +79,7 @@ public class DeviceTelemetryPolicyService {
     }
 
     /** When true, coalesce lanes are keyed by ingress payload (same topic, many devices). */
+    @Override
     public boolean ingressPayloadLanes(String devicePath) {
         return policyFor(devicePath).ingressPayloadLanes();
     }
@@ -104,18 +108,26 @@ public class DeviceTelemetryPolicyService {
         }
     }
 
+    @Override
     public void invalidateVariable(String objectPath, String variableName) {
         if (objectPath != null && !objectPath.isBlank() && variableName != null && !variableName.isBlank()) {
             variableModeCache.remove(objectPath + "|" + variableName);
         }
     }
 
+    @Override
+    public void validatePublishModeOverride(String raw) {
+        TelemetryPublishMode.validateOverride(raw);
+    }
+
+    @Override
     public HistorySampleMode historySampleMode(String objectPath, String variableName) {
         return readVariable(objectPath, variableName)
                 .map(Variable::historySampleMode)
                 .orElse(HistorySampleMode.CHANGES_ONLY);
     }
 
+    @Override
     public boolean includePreviousValueInEvent(String objectPath, String variableName) {
         return readVariable(objectPath, variableName)
                 .map(Variable::includePreviousValueInEvent)

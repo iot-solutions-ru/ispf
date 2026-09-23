@@ -24,6 +24,8 @@ val aiAgentJar = aiAgentProject.tasks.named("jar")
 
 dependencies {
     implementation(project(":packages:ispf-core"))
+    implementation(project(":packages:ispf-persistence"))
+    implementation(project(":packages:ispf-server-spi"))
     implementation(project(":packages:ispf-concurrent"))
     implementation(project(":packages:ispf-expression"))
     implementation(project(":packages:ispf-analytics-engine"))
