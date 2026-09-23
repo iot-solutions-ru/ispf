@@ -1,6 +1,5 @@
 package com.ispf.server.persistence.entity;
 
-import com.ispf.server.correlator.CorrelatorPatternType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -24,8 +23,9 @@ public class EventCorrelatorEntity {
     @Column(name = "event_name", nullable = false)
     private String eventName;
 
+    /** Default matches {@code CorrelatorPatternType.COUNT}. The enum stays in the server. */
     @Column(name = "pattern_type", nullable = false)
-    private String patternType = CorrelatorPatternType.COUNT.name();
+    private String patternType = "COUNT";
 
     @Column(name = "second_event_name")
     private String secondEventName;
