@@ -21,6 +21,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -112,26 +113,53 @@ class WorkflowRetryIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.instanceState").value(org.hamcrest.Matchers.containsString("FAILED")));
 
-        // Retry schedule is written after the failed run; under CI load that can lag a few hundred ms.
-        List<WorkflowRetryScheduleEntity> pending = List.of();
-        long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
-        while (System.nanoTime() < deadline) {
-            pending = retryRepository.findDue(Instant.now().plusSeconds(5));
-            if (!pending.isEmpty()) {
-                break;
-            }
-            Thread.sleep(50);
-        }
-        assertThat(pending).isNotEmpty();
-        assertThat(pending.get(0).getWorkflowPath()).isEqualTo(WORKFLOW);
-        assertThat(pending.get(0).getStatus()).isEqualTo(WorkflowRetryService.STATUS_PENDING);
+        // The insert can lag under CI load. findDue(now + 5s) also sees a row whose dueAt
+        // is still ahead, but runDueRetries() only claims rows that are already due.
+        WorkflowRetryScheduleEntity pending = awaitDueSchedule();
+        assertThat(pending.getStatus()).isEqualTo(WorkflowRetryService.STATUS_PENDING);
         assertThat(deadLetterService.listUnresolvedByPath(WORKFLOW)).isEmpty();
 
         retryScheduler.runDueRetries();
 
-        List<WorkflowRetryScheduleEntity> after = retryService.listByPath(WORKFLOW);
-        assertThat(after).anyMatch(r -> WorkflowRetryService.STATUS_DONE.equals(r.getStatus())
-                || WorkflowRetryService.STATUS_FAILED.equals(r.getStatus()));
+        List<WorkflowRetryScheduleEntity> after = awaitTerminalSchedule();
+        assertThat(after).anyMatch(WorkflowRetryIntegrationTest::isTerminal);
         assertThat(deadLetterService.listUnresolvedByPath(WORKFLOW)).isNotEmpty();
+    }
+
+    private WorkflowRetryScheduleEntity awaitDueSchedule() throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        WorkflowRetryScheduleEntity seen = null;
+        while (System.nanoTime() < deadline) {
+            seen = retryRepository.findDue(Instant.now().plusSeconds(5)).stream()
+                    .filter(row -> WORKFLOW.equals(row.getWorkflowPath()))
+                    .findFirst()
+                    .orElse(null);
+            if (seen != null && !seen.getDueAt().isAfter(Instant.now())) {
+                return seen;
+            }
+            Thread.sleep(50);
+        }
+        assertThat(seen).as("due retry schedule for %s", WORKFLOW).isNotNull();
+        assertThat(seen.getDueAt()).isBeforeOrEqualTo(Instant.now());
+        return seen;
+    }
+
+    private List<WorkflowRetryScheduleEntity> awaitTerminalSchedule() throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        List<WorkflowRetryScheduleEntity> after = List.of();
+        while (System.nanoTime() < deadline) {
+            after = retryService.listByPath(WORKFLOW);
+            if (after.stream().anyMatch(WorkflowRetryIntegrationTest::isTerminal)
+                    && !deadLetterService.listUnresolvedByPath(WORKFLOW).isEmpty()) {
+                return after;
+            }
+            Thread.sleep(50);
+        }
+        return retryService.listByPath(WORKFLOW);
+    }
+
+    private static boolean isTerminal(WorkflowRetryScheduleEntity row) {
+        return WorkflowRetryService.STATUS_DONE.equals(row.getStatus())
+                || WorkflowRetryService.STATUS_FAILED.equals(row.getStatus());
     }
 }
