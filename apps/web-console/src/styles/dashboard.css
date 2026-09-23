@@ -2430,11 +2430,40 @@ body.scada-mimic-editor-open {
 
 .widget-editor-form .form-grid-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.65rem;
   align-items: start;
   min-width: 0;
   width: 100%;
+}
+
+.widget-editor-form .form-grid-row > .path-select-field {
+  min-width: 0;
+}
+
+.widget-editor-form .object-path-field-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.widget-editor-form .object-path-field-controls .ant-select {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.widget-editor-form .object-path-field-controls > .ant-input,
+.widget-editor-form .object-path-field-controls > input {
+  grid-column: 1;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.widget-editor-form .object-path-field-controls > .object-path-browse {
+  grid-column: 2;
 }
 
 .widget-editor-form .form-grid-row > label:not(.path-select-field):not(:has(.field-caption)) {
