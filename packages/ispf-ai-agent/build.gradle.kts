@@ -15,6 +15,7 @@ dependencyManagement {
 
 dependencies {
     implementation(project(":packages:ispf-server"))
+    implementation(project(":packages:ispf-license"))
     implementation(project(":packages:ispf-core"))
     implementation(project(":packages:ispf-expression"))
     implementation(project(":packages:ispf-ai-api"))
