@@ -12,6 +12,7 @@ include(
     "packages:ispf-analytics-core-ext",
     "packages:ispf-analytics-marketplace-demo",
     "packages:ispf-server",
+    "packages:ispf-persistence",
     "packages:ispf-server-spi",
     "packages:ispf-export-parquet",
     "packages:ispf-plugin-blueprint",

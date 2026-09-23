@@ -38,7 +38,12 @@ export interface DashboardContextValue extends DashboardSession {
   operatorMode?: boolean;
   /** Dashboard is rendered inside a modal overlay */
   embeddedModal?: boolean;
-  setSelection: (key: string, path: string) => void;
+  /**
+   * Widget id that last wrote each selection slot.
+   * Missing when the writer passed no owner, or the slot path was replaced elsewhere.
+   */
+  selectionOwner: Record<string, string>;
+  setSelection: (key: string, path: string, ownerId?: string) => void;
   setParams: (patch: Record<string, unknown>) => void;
   navigateToDashboard: (path: string, options?: OpenDashboardOptions) => void;
   openDashboardModal: (path: string, title?: string, options?: OpenDashboardOptions) => void;
@@ -47,10 +52,69 @@ export interface DashboardContextValue extends DashboardSession {
 
 export const noop = () => {};
 
+/** Session param that remembers which widget wrote each selection slot. Survives refresh. */
+export const SELECTION_OWNER_PARAM = "@selectionOwner";
+
+type SelectionOwnerEntry = { path: string; ownerId: string };
+
+function readSelectionOwnerMap(params: Record<string, unknown>): Record<string, SelectionOwnerEntry> {
+  const raw = params[SELECTION_OWNER_PARAM];
+  if (!raw || typeof raw !== "object") {
+    return {};
+  }
+  const map: Record<string, SelectionOwnerEntry> = {};
+  for (const [key, entry] of Object.entries(raw as Record<string, unknown>)) {
+    if (!entry || typeof entry !== "object") {
+      continue;
+    }
+    const path = (entry as SelectionOwnerEntry).path;
+    const ownerId = (entry as SelectionOwnerEntry).ownerId;
+    if (typeof path === "string" && typeof ownerId === "string") {
+      map[key] = { path, ownerId };
+    }
+  }
+  return map;
+}
+
+/** Owner counts only while it still matches the path currently stored in the slot. */
+export function selectionOwnerFromSession(
+  session: Pick<DashboardSession, "selection" | "params">
+): Record<string, string> {
+  const owners = readSelectionOwnerMap(session.params);
+  const active: Record<string, string> = {};
+  for (const [key, path] of Object.entries(session.selection)) {
+    const owner = owners[key];
+    if (owner && owner.path === path) {
+      active[key] = owner.ownerId;
+    }
+  }
+  return active;
+}
+
+export function sessionWithSelection(
+  session: DashboardSession,
+  key: string,
+  path: string,
+  ownerId?: string
+): DashboardSession {
+  const owners = { ...readSelectionOwnerMap(session.params) };
+  if (ownerId) {
+    owners[key] = { path, ownerId };
+  } else {
+    delete owners[key];
+  }
+  return {
+    ...session,
+    selection: { ...session.selection, [key]: path },
+    params: { ...session.params, [SELECTION_OWNER_PARAM]: owners },
+  };
+}
+
 const defaultValue: DashboardContextValue = {
   selection: {},
   params: {},
   widgets: {},
+  selectionOwner: {},
   setSelection: noop,
   setParams: noop,
   navigateToDashboard: noop,
