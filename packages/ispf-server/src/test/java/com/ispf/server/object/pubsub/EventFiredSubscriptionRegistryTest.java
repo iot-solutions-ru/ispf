@@ -73,7 +73,7 @@ class EventFiredSubscriptionRegistryTest {
 
     @Test
     void detectsWorkflowsAndSqlBindings() {
-        when(workflowTriggerIndex.findEventWorkflows(PATH, EVENT)).thenReturn(List.of("wf-1"));
+        when(workflowTriggerIndex.hasEventWorkflows(PATH, EVENT)).thenReturn(true);
         when(sqlBindingEventIndex.hasBindings(PATH, EVENT)).thenReturn(true);
 
         EventFiredInterest interest = registry.interest(PATH, EVENT);

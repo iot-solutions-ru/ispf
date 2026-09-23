@@ -4,7 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataRecordValues;
 import com.ispf.core.object.HistorySampleMode;
 import com.ispf.server.config.RuntimeTelemetryProperties;
-import com.ispf.server.driver.DeviceTelemetryPolicyService;
+import com.ispf.server.spi.DeviceTelemetryPolicy;
 import com.ispf.server.function.MqttGatewayIngressDispatchService;
 import com.ispf.server.history.TelemetryHistorianFastPath;
 import com.ispf.driver.ingress.ElasticWorkerScaler;
@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RuntimeTelemetryCoalescer {
 
     private final RuntimeTelemetryProperties properties;
-    private final DeviceTelemetryPolicyService policyService;
+    private final DeviceTelemetryPolicy policyService;
     private final ObjectChangePublicationService publicationService;
     private final MqttGatewayIngressDispatchService gatewayIngressDispatch;
     private final TelemetryHistorianFastPath historianFastPath;
@@ -48,7 +48,7 @@ public class RuntimeTelemetryCoalescer {
 
     public RuntimeTelemetryCoalescer(
             RuntimeTelemetryProperties properties,
-            DeviceTelemetryPolicyService policyService,
+            DeviceTelemetryPolicy policyService,
             ObjectChangePublicationService publicationService,
             @Lazy MqttGatewayIngressDispatchService gatewayIngressDispatch,
             @Lazy TelemetryHistorianFastPath historianFastPath,
@@ -271,7 +271,7 @@ public class RuntimeTelemetryCoalescer {
 
     /**
      * {@link HistorySampleMode#CHANGES_ONLY} suppresses historian churn on duplicate payloads, but
-     * {@link com.ispf.server.driver.TelemetryPublishMode#FULL} automation (bindings, alerts) still
+     * FULL publish mode automation (bindings, alerts) still
      * needs object-change ticks — same rationale as gateway child {@code ALL_VALUES} override.
      */
     private boolean suppressUnchangedSample(
