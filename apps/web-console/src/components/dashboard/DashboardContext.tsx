@@ -1,6 +1,12 @@
 import { useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { emptySession, noop, DashboardContext } from "./useDashboardContext";
+import {
+  emptySession,
+  noop,
+  selectionOwnerFromSession,
+  sessionWithSelection,
+  DashboardContext,
+} from "./useDashboardContext";
 import type {
   DashboardSession,
   OpenDashboardOptions,
@@ -73,12 +79,8 @@ export function DashboardProvider({
       }
     };
 
-    const setSelection = (key: string, path: string) => {
-      const current = sessionRef.current;
-      publishSession({
-        ...current,
-        selection: { ...current.selection, [key]: path },
-      });
+    const setSelection = (key: string, path: string, ownerId?: string) => {
+      publishSession(sessionWithSelection(sessionRef.current, key, path, ownerId));
     };
 
     const setParams = (patch: Record<string, unknown>) => {
@@ -95,6 +97,7 @@ export function DashboardProvider({
       selection: session.selection,
       params: session.params,
       widgets: session.widgets,
+      selectionOwner: selectionOwnerFromSession(session),
       setSelection,
       setParams,
       navigateToDashboard: onNavigateDashboard ?? noop,

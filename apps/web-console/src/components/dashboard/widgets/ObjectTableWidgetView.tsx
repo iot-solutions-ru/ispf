@@ -32,7 +32,8 @@ export default function ObjectTableWidgetView({
 }: ObjectTableWidgetViewProps) {
   const { t } = useTranslation(["widgets", "common"]);
   const styles = useWidgetStyles(widget.stylesJson);
-  const { selection, setSelection, navigateToDashboard, openDashboardModal } = useDashboardContext();
+  const { selection, selectionOwner, setSelection, navigateToDashboard, openDashboardModal } =
+    useDashboardContext();
   const parsedColumns = useMemo(
     () => parseWidgetJsonArray<ObjectTableColumn>(widget.columnsJson),
     [widget.columnsJson]
@@ -59,15 +60,16 @@ export default function ObjectTableWidgetView({
     });
   }, [children.data, widget.namePattern, widget.objectType]);
 
-  const selectedPath = widget.selectionKey ? selection[widget.selectionKey] : undefined;
+  const slotPath = widget.selectionKey ? selection[widget.selectionKey] : undefined;
+  const slotOwner = widget.selectionKey ? selectionOwner[widget.selectionKey] : undefined;
+  const selectedPath = slotPath && slotOwner === widget.id ? slotPath : undefined;
 
   useEffect(() => {
-    if (!widget.selectionKey || editable || selectedPath) return;
-    const first = rows[0];
-    if (first) {
-      setSelection(widget.selectionKey, first.path);
+    if (!widget.selectionKey || editable || slotOwner || !slotPath) return;
+    if (rows.some((row) => row.path === slotPath)) {
+      setSelection(widget.selectionKey, slotPath, widget.id);
     }
-  }, [rows, editable, selectedPath, setSelection, widget.selectionKey]);
+  }, [rows, editable, slotPath, slotOwner, setSelection, widget.selectionKey, widget.id]);
 
   const tableWrapRef = useRef<HTMLDivElement>(null);
   const shouldVirtualize = rows.length >= VIRTUALIZE_ROW_THRESHOLD;
@@ -185,7 +187,7 @@ export default function ObjectTableWidgetView({
           params: parseJsonObject(widget.rowParamsJson),
         };
         if (widget.selectionKey) {
-          setSelection(widget.selectionKey, obj.path);
+          setSelection(widget.selectionKey, obj.path, widget.id);
         }
         triggerDashboardOpen(
           widget.rowOpenMode,
