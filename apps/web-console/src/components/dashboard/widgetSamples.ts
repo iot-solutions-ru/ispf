@@ -240,10 +240,6 @@ export function buildSampleWidget(type: WidgetType, index: number): DashboardWid
           { variable: "status", label: "Статус" },
         ]),
         selectionKey: "device",
-        rowSelectionKey: "device",
-        rowTargetDashboard: WIDGET_SAMPLE_PATHS.demoDashboard,
-        rowOpenMode: "modal",
-        rowParamsJson: j({ source: "object-table" }),
       };
     case "event-feed":
       return {
