@@ -30,6 +30,7 @@ jobs:
           filters: |
             backend:
               - 'packages/ispf-server/**'
+              - 'packages/ispf-server-spi/**'
               - 'packages/ispf-core/**'
               - 'packages/ispf-expression/**'
               - 'packages/ispf-export-parquet/**'

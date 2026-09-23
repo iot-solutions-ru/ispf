@@ -6,6 +6,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.WorkflowTriggerLookup;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Component
-public class WorkflowEventTriggerIndex {
+public class WorkflowEventTriggerIndex implements WorkflowTriggerLookup {
 
     private static final String WORKFLOWS_ROOT = "root.platform.workflows";
     private static final Snapshot EMPTY = new Snapshot(Map.of(), Map.of());
@@ -94,6 +95,16 @@ public class WorkflowEventTriggerIndex {
         }
         snapshot = new Snapshot(events, variables);
         touchIndexed();
+    }
+
+    @Override
+    public boolean hasEventWorkflows(String objectPath, String eventName) {
+        return !findEventWorkflows(objectPath, eventName).isEmpty();
+    }
+
+    @Override
+    public boolean hasVariableWorkflows(String objectPath, String variableName) {
+        return !findVariableWorkflows(objectPath, variableName).isEmpty();
     }
 
     public List<String> findEventWorkflows(String objectPath, String eventName) {
