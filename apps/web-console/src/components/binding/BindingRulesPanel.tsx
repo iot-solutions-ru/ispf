@@ -365,7 +365,7 @@ export default function BindingRulesPanel({
                   value={editing.id}
                   disabled={Boolean(isExistingBindingRule(rules, editing.id))}
                   onChange={(e) => setEditing({ ...editing, id: e.target.value })}
-                  pattern="[A-Za-z0-9_\\-]+"
+                  pattern="[A-Za-z0-9_\-]+"
                   required
                   aria-invalid={Boolean(editing.id) && !isTechnicalIdentifier(editing.id, "pathSegment")}
                 />

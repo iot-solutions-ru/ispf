@@ -1018,7 +1018,7 @@ function ModelsCatalog({
                 name="name"
                 placeholder={t("inspector:blueprint.namePlaceholder")}
                 required
-                pattern="[a-zA-Z0-9._\\-]+"
+                pattern="[a-zA-Z0-9._\-]+"
                 aria-invalid={invalidEmptyModelName}
                 onChange={(e) => setInvalidEmptyModelName(Boolean(e.target.value) && !isTechnicalIdentifier(e.target.value, "dottedName"))}
               />
@@ -1087,7 +1087,7 @@ function ModelsCatalog({
                 name="modelName"
                 placeholder={t("inspector:blueprint.newModelNamePlaceholder")}
                 required
-                pattern="[a-zA-Z0-9._\\-]+"
+                pattern="[a-zA-Z0-9._\-]+"
                 aria-invalid={invalidExportModelName}
                 onChange={(e) => setInvalidExportModelName(Boolean(e.target.value) && !isTechnicalIdentifier(e.target.value, "dottedName"))}
               />
