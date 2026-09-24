@@ -35,7 +35,7 @@ STUB_JSON = (
 MATRIX_JAVA = (
     ROOT
     / "packages"
-    / "ispf-server"
+    / "ispf-server-driver"
     / "src"
     / "main"
     / "java"

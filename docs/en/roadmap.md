@@ -1458,7 +1458,7 @@ Build **usable slices** end-to-end before breadth. Each wave ends with a **named
 
 **Code anchors today:**
 
-```149:151:packages/ispf-server/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java
+```149:151:packages/ispf-server-driver/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java
             entry("opc-da", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-opc-da", "com.ispf.driver.opcda.OpcDaDeviceDriverTest"),
                     "ispf-driver-opc-da"),

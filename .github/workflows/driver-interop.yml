@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - "packages/ispf-driver-*/**"
-      - "packages/ispf-server/src/main/java/com/ispf/server/driver/**"
+      - "packages/ispf-server-driver/**"
       - ".github/workflows/driver-interop.yml"
       - "deploy/driver-interop/**"
       - "deploy/tools/driver-interop-report.sh"
