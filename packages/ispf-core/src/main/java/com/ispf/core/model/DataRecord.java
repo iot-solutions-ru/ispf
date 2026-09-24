@@ -76,11 +76,30 @@ public final class DataRecord {
                 throw new IllegalArgumentException("Required field missing: " + field.name());
             }
             if (value != null) {
-                validateType(field, value);
+                value = storedValue(field, value);
             }
             normalized.put(field.name(), value);
         }
         rows.add(Collections.unmodifiableMap(normalized));
+    }
+
+    private static Object storedValue(FieldDefinition field, Object value) {
+        if (field.type() == FieldType.DOUBLE) {
+            return finiteDouble(field, value);
+        }
+        validateType(field, value);
+        return value;
+    }
+
+    private static Double finiteDouble(FieldDefinition field, Object value) {
+        if (!(value instanceof Number number)) {
+            throw new IllegalArgumentException(field.name() + " must be double");
+        }
+        double coerced = number.doubleValue();
+        if (!Double.isFinite(coerced)) {
+            throw new IllegalArgumentException(field.name() + " must be double");
+        }
+        return coerced;
     }
 
     private static void validateType(FieldDefinition field, Object value) {
@@ -100,11 +119,7 @@ public final class DataRecord {
                     throw new IllegalArgumentException(field.name() + " must be long");
                 }
             }
-            case DOUBLE -> {
-                if (!(value instanceof Double) && !(value instanceof Float) && !(value instanceof Integer)) {
-                    throw new IllegalArgumentException(field.name() + " must be double");
-                }
-            }
+            case DOUBLE -> throw new IllegalStateException("double is stored by finiteDouble");
             case STRING -> {
                 if (!(value instanceof String)) {
                     throw new IllegalArgumentException(field.name() + " must be string");

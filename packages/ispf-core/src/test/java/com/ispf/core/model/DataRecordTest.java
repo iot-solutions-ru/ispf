@@ -31,4 +31,37 @@ class DataRecordTest {
         assertThatThrownBy(() -> DataRecord.single(schema, Map.of()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    void storesFiniteNumbersInDoubleFieldAsDouble() {
+        DataSchema schema = DataSchema.builder("sensor")
+                .field("value", FieldType.DOUBLE)
+                .build();
+
+        long aboveInt = Integer.MAX_VALUE + 1L;
+        DataRecord fromLong = DataRecord.single(schema, Map.of("value", aboveInt));
+        DataRecord fromInt = DataRecord.single(schema, Map.of("value", 21));
+        DataRecord fromFloat = DataRecord.single(schema, Map.of("value", 1.5f));
+
+        assertThat(fromLong.get("value", 0)).isEqualTo(2147483648.0);
+        assertThat(fromInt.get("value", 0)).isEqualTo(21.0);
+        assertThat(fromFloat.get("value", 0)).isEqualTo(1.5);
+    }
+
+    @Test
+    void rejectsNonFiniteAndNonNumericDoubleField() {
+        DataSchema schema = DataSchema.builder("sensor")
+                .field("value", FieldType.DOUBLE)
+                .build();
+
+        assertThatThrownBy(() -> DataRecord.single(schema, Map.of("value", "21")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be double");
+        assertThatThrownBy(() -> DataRecord.single(schema, Map.of("value", Double.NaN)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be double");
+        assertThatThrownBy(() -> DataRecord.single(schema, Map.of("value", Double.POSITIVE_INFINITY)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be double");
+    }
 }
