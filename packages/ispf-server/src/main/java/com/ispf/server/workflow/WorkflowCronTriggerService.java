@@ -3,7 +3,7 @@ package com.ispf.server.workflow;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.WorkflowObjectAccess;
 import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,21 +22,21 @@ public class WorkflowCronTriggerService {
 
     private static final Logger log = LoggerFactory.getLogger(WorkflowCronTriggerService.class);
 
-    private final ObjectManager objectManager;
+    private final WorkflowObjectAccess objects;
     private final WorkflowService workflowService;
 
-    public WorkflowCronTriggerService(ObjectManager objectManager, WorkflowService workflowService) {
-        this.objectManager = objectManager;
+    public WorkflowCronTriggerService(WorkflowObjectAccess objects, WorkflowService workflowService) {
+        this.objects = objects;
         this.workflowService = workflowService;
     }
 
     @Scheduled(fixedDelayString = "${ispf.workflow.cron-poll-ms:60000}")
     public void poll() {
-        if (!objectManager.isInitialized()) {
+        if (!objects.isInitialized()) {
             return;
         }
         try {
-            for (PlatformObject child : objectManager.tree().childrenOf("root.platform.workflows")) {
+            for (PlatformObject child : objects.childrenOf("root.platform.workflows")) {
                 if (child.type() != ObjectType.WORKFLOW) {
                     continue;
                 }

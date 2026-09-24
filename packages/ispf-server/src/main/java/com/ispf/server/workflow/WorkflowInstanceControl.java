@@ -7,7 +7,7 @@ import com.ispf.plugin.workflow.WorkflowConditionEvaluator;
 import com.ispf.plugin.workflow.WorkflowEngine;
 import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowInstance;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.WorkflowObjectAccess;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
 
@@ -22,7 +22,7 @@ import java.util.Map;
 final class WorkflowInstanceControl {
 
     private final WorkflowService workflows;
-    private final ObjectManager objectManager;
+    private final WorkflowObjectAccess objects;
     private final WorkflowEngine workflowEngine;
     private final WorkflowInstanceStore instanceStore;
     private final WorkflowTaskExecutor taskExecutor;
@@ -31,7 +31,7 @@ final class WorkflowInstanceControl {
 
     WorkflowInstanceControl(
             WorkflowService workflows,
-            ObjectManager objectManager,
+            WorkflowObjectAccess objects,
             WorkflowEngine workflowEngine,
             WorkflowInstanceStore instanceStore,
             WorkflowTaskExecutor taskExecutor,
@@ -39,7 +39,7 @@ final class WorkflowInstanceControl {
             WorkflowInstanceRepository instanceRepository
     ) {
         this.workflows = workflows;
-        this.objectManager = objectManager;
+        this.objects = objects;
         this.workflowEngine = workflowEngine;
         this.instanceStore = instanceStore;
         this.taskExecutor = taskExecutor;
@@ -50,7 +50,7 @@ final class WorkflowInstanceControl {
     void claimInstance(String instanceId, String operatorId) throws WorkflowException {
         WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(instanceId);
         stored.instance().claim(operatorId);
-        String bpmnXml = WorkflowService.readString(objectManager.require(stored.instance().workflowPath()), "bpmnXml")
+        String bpmnXml = WorkflowService.readString(objects.require(stored.instance().workflowPath()), "bpmnXml")
                 .orElseThrow(() -> new WorkflowException("BPMN missing"));
         BpmnProcess process = workflowEngine.parse(bpmnXml);
         UserTaskDefinition pendingTask = stored.instance().pendingUserTaskId()

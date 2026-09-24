@@ -4,7 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.plugin.workflow.InstanceStatus;
 import com.ispf.plugin.workflow.WorkflowInstance;
 import com.ispf.server.cluster.NatsEventBridge;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.WorkflowObjectAccess;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
@@ -19,16 +19,16 @@ import java.util.Map;
 @Component
 public class WorkflowInstanceStatePublisher {
 
-    private final ObjectManager objectManager;
+    private final WorkflowObjectAccess objects;
     private final NatsEventBridge natsEventBridge;
     private final ObjectMapper objectMapper;
 
     public WorkflowInstanceStatePublisher(
-            ObjectManager objectManager,
+            WorkflowObjectAccess objects,
             NatsEventBridge natsEventBridge,
             ObjectMapper objectMapper
     ) {
-        this.objectManager = objectManager;
+        this.objects = objects;
         this.natsEventBridge = natsEventBridge;
         this.objectMapper = objectMapper;
     }
@@ -72,17 +72,17 @@ public class WorkflowInstanceStatePublisher {
             state.put("variables", instance.variables() == null ? Map.of() : Map.copyOf(instance.variables()));
 
             String json = objectMapper.writeValueAsString(state);
-            objectManager.setVariableValue(
+            objects.setVariableValue(
                     path,
                     "instanceState",
                     DataRecord.single(WorkflowTaskExecutor.STRING_VALUE, Map.of("value", json))
             );
-            objectManager.setVariableValue(
+            objects.setVariableValue(
                     path,
                     "lastRunAt",
                     DataRecord.single(WorkflowTaskExecutor.STRING_VALUE, Map.of("value", Instant.now().toString()))
             );
-            objectManager.persistNodeTree(path);
+            objects.persistNodeTree(path);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to persist workflow instance state", e);
         }

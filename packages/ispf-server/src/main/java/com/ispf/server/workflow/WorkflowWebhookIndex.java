@@ -3,7 +3,7 @@ package com.ispf.server.workflow;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.WorkflowObjectAccess;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -16,17 +16,17 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class WorkflowWebhookIndex {
 
-    private final ObjectManager objectManager;
+    private final WorkflowObjectAccess objects;
     private final ConcurrentHashMap<String, String> slugToPath = new ConcurrentHashMap<>();
 
-    public WorkflowWebhookIndex(ObjectManager objectManager) {
-        this.objectManager = objectManager;
+    public WorkflowWebhookIndex(WorkflowObjectAccess objects) {
+        this.objects = objects;
     }
 
     public void rebuild() {
         slugToPath.clear();
         try {
-            for (PlatformObject child : objectManager.tree().childrenOf("root.platform.workflows")) {
+            for (PlatformObject child : objects.childrenOf("root.platform.workflows")) {
                 indexNode(child);
             }
         } catch (Exception ignored) {
@@ -40,7 +40,7 @@ public class WorkflowWebhookIndex {
         }
         slugToPath.entrySet().removeIf(entry -> path.equals(entry.getValue()));
         try {
-            indexNode(objectManager.require(path));
+            indexNode(objects.require(path));
         } catch (Exception ignored) {
             // ignore
         }

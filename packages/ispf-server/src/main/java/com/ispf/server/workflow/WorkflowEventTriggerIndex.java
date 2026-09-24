@@ -5,7 +5,7 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.WorkflowObjectAccess;
 import com.ispf.server.spi.WorkflowTriggerLookup;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -26,20 +26,20 @@ public class WorkflowEventTriggerIndex implements WorkflowTriggerLookup {
     private static final String WORKFLOWS_ROOT = "root.platform.workflows";
     private static final Snapshot EMPTY = new Snapshot(Map.of(), Map.of());
 
-    private final ObjectManager objectManager;
+    private final WorkflowObjectAccess objects;
     private final ObjectMapper objectMapper;
     private volatile Snapshot snapshot = EMPTY;
     private volatile Instant lastIndexedAt;
 
-    public WorkflowEventTriggerIndex(@Lazy ObjectManager objectManager, ObjectMapper objectMapper) {
-        this.objectManager = objectManager;
+    public WorkflowEventTriggerIndex(@Lazy WorkflowObjectAccess objects, ObjectMapper objectMapper) {
+        this.objects = objects;
         this.objectMapper = objectMapper;
     }
 
     public synchronized void rebuild() {
         Map<String, List<String>> eventWorkflowPathsByTarget = new HashMap<>();
         Map<String, List<String>> variableWorkflowPathsByTarget = new HashMap<>();
-        for (PlatformObject node : objectManager.tree().childrenOf(WORKFLOWS_ROOT)) {
+        for (PlatformObject node : objects.childrenOf(WORKFLOWS_ROOT)) {
             if (node.type() != ObjectType.WORKFLOW) {
                 continue;
             }

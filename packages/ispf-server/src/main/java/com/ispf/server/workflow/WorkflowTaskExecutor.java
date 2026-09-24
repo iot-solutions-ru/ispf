@@ -17,7 +17,7 @@ import com.ispf.server.cluster.NatsEventBridge;
 import com.ispf.server.event.EventService;
 import com.ispf.server.function.FunctionInvocationScope;
 import com.ispf.server.function.FunctionService;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.WorkflowObjectAccess;
 import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +45,7 @@ public class WorkflowTaskExecutor {
             .field("value", FieldType.STRING)
             .build();
 
-    private final ObjectManager objectManager;
+    private final WorkflowObjectAccess objects;
     private final NatsEventBridge natsEventBridge;
     private final FunctionService functionService;
     private final EventService eventService;
@@ -54,7 +54,7 @@ public class WorkflowTaskExecutor {
     private final ObjectProvider<WorkflowService> workflows;
 
     public WorkflowTaskExecutor(
-            ObjectManager objectManager,
+            WorkflowObjectAccess objects,
             NatsEventBridge natsEventBridge,
             FunctionService functionService,
             EventService eventService,
@@ -62,7 +62,7 @@ public class WorkflowTaskExecutor {
             WorkflowAiActionService workflowAiActionService,
             ObjectProvider<WorkflowService> workflows
     ) {
-        this.objectManager = objectManager;
+        this.objects = objects;
         this.natsEventBridge = natsEventBridge;
         this.functionService = functionService;
         this.eventService = eventService;
@@ -148,7 +148,7 @@ public class WorkflowTaskExecutor {
                 String target = required(params, "targetObject");
                 String variable = required(params, "variable");
                 String value = params.getOrDefault("value", "");
-                objectManager.setVariableValue(
+                objects.setVariableValue(
                         target,
                         variable,
                         DataRecord.single(STRING_VALUE, Map.of("value", value))
@@ -215,14 +215,14 @@ public class WorkflowTaskExecutor {
         if (payloadVariable == null || payloadVariable.isBlank()) {
             return null;
         }
-        PlatformObject node = objectManager.require(objectPath);
+        PlatformObject node = objects.require(objectPath);
         return node.getVariable(payloadVariable)
                 .flatMap(Variable::value)
                 .orElse(null);
     }
 
     private String readObjectVariableField(String objectPath, String variableName, String valueField) {
-        PlatformObject node = objectManager.require(objectPath);
+        PlatformObject node = objects.require(objectPath);
         return node.getVariable(variableName)
                 .flatMap(Variable::value)
                 .map(record -> {
