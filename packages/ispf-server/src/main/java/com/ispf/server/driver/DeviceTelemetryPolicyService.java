@@ -5,7 +5,7 @@ import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.Variable;
 import com.ispf.core.object.VariableStorageMode;
 import com.ispf.server.config.RuntimeTelemetryProperties;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.DeviceObjectAccess;
 import com.ispf.server.spi.DeviceTelemetryPolicy;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -23,18 +23,18 @@ public class DeviceTelemetryPolicyService implements DeviceTelemetryPolicy {
 
     private static final long CACHE_TTL_MS = 1_000;
 
-    private final ObjectManager objectManager;
+    private final DeviceObjectAccess objects;
     private final ObjectMapper objectMapper;
     private final RuntimeTelemetryProperties globalProperties;
     private final ConcurrentHashMap<String, CachedPolicy> cache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, CachedVariableMode> variableModeCache = new ConcurrentHashMap<>();
 
     public DeviceTelemetryPolicyService(
-            @Lazy ObjectManager objectManager,
+            @Lazy DeviceObjectAccess objects,
             ObjectMapper objectMapper,
             RuntimeTelemetryProperties globalProperties
     ) {
-        this.objectManager = objectManager;
+        this.objects = objects;
         this.objectMapper = objectMapper;
         this.globalProperties = globalProperties;
     }
@@ -141,7 +141,7 @@ public class DeviceTelemetryPolicyService implements DeviceTelemetryPolicy {
     }
 
     private Optional<Variable> readVariable(String objectPath, String variableName) {
-        return objectManager.tree().findByPath(objectPath)
+        return objects.findByPath(objectPath)
                 .flatMap(node -> node.getVariable(variableName));
     }
 
@@ -156,7 +156,7 @@ public class DeviceTelemetryPolicyService implements DeviceTelemetryPolicy {
     }
 
     private Optional<String> readVariablePublishModeOverride(String objectPath, String variableName) {
-        return objectManager.tree().findByPath(objectPath)
+        return objects.findByPath(objectPath)
                 .flatMap(node -> node.getVariable(variableName))
                 .flatMap(Variable::telemetryPublishModeOverride);
     }
@@ -198,7 +198,7 @@ public class DeviceTelemetryPolicyService implements DeviceTelemetryPolicy {
     }
 
     private Optional<DriverBinding> readBinding(String devicePath) {
-        PlatformObject device = objectManager.tree().findByPath(devicePath).orElse(null);
+        PlatformObject device = objects.findByPath(devicePath).orElse(null);
         if (device == null) {
             return Optional.empty();
         }

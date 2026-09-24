@@ -18,17 +18,15 @@ import com.ispf.server.concurrent.ElasticWorkerLauncher;
 import com.ispf.server.config.DriverPackProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.driver.TelemetryPublishMode;
+import com.ispf.server.spi.DeviceObjectAccess;
 import com.ispf.server.spi.DriverConnectionLookup;
-import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
+import com.ispf.server.spi.ObjectTreeReadyOrder;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.ispf.server.object.PlatformObjectReadinessGate;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -64,7 +62,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
             .field("value", FieldType.BOOLEAN)
             .build();
 
-    private final ObjectManager objectManager;
+    private final DeviceObjectAccess objects;
     private final DriverFactory driverFactory;
     private final ObjectMapper objectMapper;
     private final Environment environment;
@@ -73,7 +71,6 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     private final RuntimeTelemetryProperties runtimeTelemetryProperties;
     private final ObjectProvider<DriverRuntimeService> self;
     private final DriverOwnershipService ownershipService;
-    private final SystemObjectStructureService structureService;
     private final DriverErrorMetrics errorMetrics;
     private final DriverPointCatalogService pointCatalog;
     private ElasticScheduledPool schedulerPool;
@@ -84,7 +81,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     private final Map<String, ActiveDriver> activeDrivers = new ConcurrentHashMap<>();
 
     public DriverRuntimeService(
-            ObjectManager objectManager,
+            DeviceObjectAccess objects,
             DriverFactory driverFactory,
             ObjectMapper objectMapper,
             Environment environment,
@@ -93,11 +90,10 @@ public class DriverRuntimeService implements DriverConnectionLookup {
             RuntimeTelemetryProperties runtimeTelemetryProperties,
             ObjectProvider<DriverRuntimeService> self,
             DriverOwnershipService ownershipService,
-            SystemObjectStructureService structureService,
             DriverErrorMetrics errorMetrics
     ) {
         this.errorMetrics = errorMetrics;
-        this.objectManager = objectManager;
+        this.objects = objects;
         this.driverFactory = driverFactory;
         this.objectMapper = objectMapper;
         this.environment = environment;
@@ -106,13 +102,11 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         this.runtimeTelemetryProperties = runtimeTelemetryProperties;
         this.self = self;
         this.ownershipService = ownershipService;
-        this.structureService = structureService;
         this.pointCatalog = new DriverPointCatalogService(
                 this,
-                objectManager,
+                objects,
                 driverFactory,
                 objectMapper,
-                structureService,
                 telemetryPolicyService
         );
     }
@@ -159,7 +153,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    @Order(PlatformObjectReadinessGate.AFTER_OBJECT_TREE_READY_ORDER)
+    @Order(ObjectTreeReadyOrder.AFTER_OBJECT_TREE_READY_ORDER)
     public void startConfiguredDrivers() {
         if (!driverPackProperties.isAutoStartOnBoot()) {
             log.info("Driver auto-start on boot disabled (ispf.driver.auto-start-on-boot=false)");
@@ -167,7 +161,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         }
         // Nested trees (e.g. devices.itm.sites.*.network.*) must be included — not only
         // direct children of root.platform.devices.
-        for (PlatformObject node : objectManager.tree().all()) {
+        for (PlatformObject node : objects.all()) {
             if (node.type() != ObjectType.DEVICE) {
                 continue;
             }
@@ -176,7 +170,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                 continue;
             }
             try {
-                structureService.ensureDeviceDriverStructure(path);
+                objects.ensureDeviceDriverStructure(path);
             } catch (Exception e) {
                 log.debug("Skip driver structure ensure for {}: {}", path, e.getMessage());
             }
@@ -230,14 +224,14 @@ public class DriverRuntimeService implements DriverConnectionLookup {
 
     /** Whether this device should start on server boot. Missing variable → true. */
     public boolean readDriverAutoStart(String devicePath) {
-        return objectManager.tree().findByPath(devicePath)
+        return objects.findByPath(devicePath)
                 .flatMap(node -> boolValue(node, "driverAutoStart"))
                 .orElse(true);
     }
 
     public void setDriverAutoStart(String devicePath, boolean enabled) {
-        structureService.ensureDeviceDriverStructure(devicePath);
-        objectManager.setSystemVariableValue(
+        objects.ensureDeviceDriverStructure(devicePath);
+        objects.setSystemVariableValue(
                 devicePath,
                 "driverAutoStart",
                 DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", enabled))
@@ -299,7 +293,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     }
 
     private DriverRuntimeStatus doStart(String devicePath) {
-        PlatformObject device = objectManager.require(devicePath);
+        PlatformObject device = objects.require(devicePath);
         if (device.type() != ObjectType.DEVICE) {
             throw new IllegalArgumentException("Drivers attach only to DEVICE objects: " + devicePath);
         }
@@ -311,9 +305,9 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                 new DriverIngressBuffer[1];
         Consumer<ServerDriverObject.VariableUpdate> variableUpdater = update -> {
             if (update.system()) {
-                objectManager.setSystemVariableValue(update.path(), update.variableName(), update.value());
+                objects.setSystemVariableValue(update.path(), update.variableName(), update.value());
             } else {
-                objectManager.setDriverTelemetryValue(
+                objects.setDriverTelemetryValue(
                         update.path(), update.variableName(), update.value(), update.observedAt()
                 );
             }
@@ -416,18 +410,18 @@ public class DriverRuntimeService implements DriverConnectionLookup {
 
     private void persistDriverBinding(String devicePath, DriverBinding binding) {
         telemetryPolicyService.invalidateCache(devicePath);
-        objectManager.setSystemVariableValue(
+        objects.setSystemVariableValue(
                 devicePath,
                 "driverId",
                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", binding.driverId()))
         );
-        objectManager.setSystemVariableValue(
+        objects.setSystemVariableValue(
                 devicePath,
                 "driverPollIntervalMs",
                 DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", binding.pollIntervalMs()))
         );
         try {
-            objectManager.setSystemVariableValue(
+            objects.setSystemVariableValue(
                     devicePath,
                     "driverConfigJson",
                     DataRecord.single(
@@ -435,7 +429,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                             Map.of("value", objectMapper.writeValueAsString(binding.configurationWithPolicy()))
                     )
             );
-            objectManager.setSystemVariableValue(
+            objects.setSystemVariableValue(
                     devicePath,
                     "driverPointMappingsJson",
                     DataRecord.single(
@@ -526,7 +520,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         if (!(driver instanceof DriverDiscovery discovery)) {
             throw new IllegalArgumentException("Driver does not support browse: " + binding.driverId());
         }
-        PlatformObject device = objectManager.require(devicePath);
+        PlatformObject device = objects.require(devicePath);
         ServerDriverObject driverObject = new ServerDriverObject(
                 device,
                 binding.configuration(),
@@ -635,7 +629,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     }
 
     public Optional<DriverBinding> readBinding(String devicePath) {
-        PlatformObject device = objectManager.tree().findByPath(devicePath).orElse(null);
+        PlatformObject device = objects.findByPath(devicePath).orElse(null);
         if (device == null) {
             return Optional.empty();
         }
@@ -650,12 +644,12 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     }
 
     private Optional<String> readStatusVariable(String devicePath) {
-        return objectManager.tree().findByPath(devicePath).flatMap(node -> stringValue(node, "driverStatus"));
+        return objects.findByPath(devicePath).flatMap(node -> stringValue(node, "driverStatus"));
     }
 
     private void setStatus(String devicePath, String status) {
         boolean unchanged = readStatusVariable(devicePath).map(status::equals).orElse(false);
-        objectManager.setRuntimeVariableValue(
+        objects.setRuntimeVariableValue(
                 devicePath,
                 "driverStatus",
                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", status)),
@@ -667,7 +661,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         if (previous.lastKnownConnected() == next.lastKnownConnected()) {
             return;
         }
-        objectManager.publishDriverRuntimeChanged(devicePath);
+        objects.publishDriverRuntimeChanged(devicePath);
     }
 
     private static Optional<String> stringValue(PlatformObject node, String variableName) {
@@ -748,7 +742,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         long withError = activeDrivers.values().stream()
                 .filter(entry -> entry.lastError() != null)
                 .count();
-        long devices = objectManager.tree().childrenOf("root.platform.devices").stream()
+        long devices = objects.childrenOf("root.platform.devices").stream()
                 .filter(node -> node.type() == ObjectType.DEVICE)
                 .count();
 

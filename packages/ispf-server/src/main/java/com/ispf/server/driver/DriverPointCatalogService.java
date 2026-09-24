@@ -7,8 +7,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverPointCatalog;
-import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
+import com.ispf.server.spi.DeviceObjectAccess;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
@@ -30,25 +29,22 @@ final class DriverPointCatalogService {
             .build();
 
     private final DriverRuntimeService runtime;
-    private final ObjectManager objectManager;
+    private final DeviceObjectAccess objects;
     private final DriverFactory driverFactory;
     private final ObjectMapper objectMapper;
-    private final SystemObjectStructureService structureService;
     private final DeviceTelemetryPolicyService telemetryPolicyService;
 
     DriverPointCatalogService(
             DriverRuntimeService runtime,
-            ObjectManager objectManager,
+            DeviceObjectAccess objects,
             DriverFactory driverFactory,
             ObjectMapper objectMapper,
-            SystemObjectStructureService structureService,
             DeviceTelemetryPolicyService telemetryPolicyService
     ) {
         this.runtime = runtime;
-        this.objectManager = objectManager;
+        this.objects = objects;
         this.driverFactory = driverFactory;
         this.objectMapper = objectMapper;
-        this.structureService = structureService;
         this.telemetryPolicyService = telemetryPolicyService;
     }
 
@@ -110,14 +106,14 @@ final class DriverPointCatalogService {
             String devicePath,
             List<DriverPointCatalog.PointProposal> proposals
     ) {
-        structureService.ensureDeviceDriverStructure(devicePath);
+        objects.ensureDeviceDriverStructure(devicePath);
         if (runtime.readBinding(devicePath).isEmpty()) {
             throw new IllegalArgumentException("No driver binding for: " + devicePath);
         }
         if (proposals == null || proposals.isEmpty()) {
             return new DriverRuntimeService.ImportPointsResult(0, 0, List.of());
         }
-        PlatformObject device = objectManager.require(devicePath);
+        PlatformObject device = objects.require(devicePath);
         String mappingsJson = stringValue(device, "driverPointMappingsJson").orElse("{}");
         Map<String, Object> mappings = parseMappingsObject(mappingsJson);
         int createdVars = 0;
@@ -153,7 +149,7 @@ final class DriverPointCatalogService {
             if (device.getVariable(proposal.variableName()).isEmpty()) {
                 DataSchema schema = schemaFromProposal(proposal);
                 DataRecord initial = DataRecord.single(schema, emptyRowFor(schema));
-                objectManager.createVariable(
+                objects.createVariable(
                         devicePath,
                         proposal.variableName(),
                         schema,
@@ -167,7 +163,7 @@ final class DriverPointCatalogService {
             }
         }
         try {
-            objectManager.setSystemVariableValue(
+            objects.setSystemVariableValue(
                     devicePath,
                     "driverPointMappingsJson",
                     DataRecord.single(
