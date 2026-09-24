@@ -5,8 +5,8 @@ package com.ispf.server.bootstrap;
  */
 public final class LabTrainingBundleLayouts {
 
-    public static final String LAB_DEVICE_A = "root.platform.devices.lab-userA-01";
-    public static final String LAB_DEVICE_B = "root.platform.devices.lab-userB-01";
+    public static final String LAB_DEVICE_A = com.ispf.server.spi.LabDevicePaths.DEVICE_A;
+    public static final String LAB_DEVICE_B = com.ispf.server.spi.LabDevicePaths.DEVICE_B;
 
     public static final String FORM_GRID = """
             {"columns": 84,"rowHeight": 8,"widgets":[{"id":"append-row","type":"function-form","title":"Append table row","x": 0,"y": 0,"w": 42,"h": 28,"objectPath":"%s","functionName":"appendTableRow","buttonLabel":"Append","fieldsJson":"[{\\"name\\":\\"int\\",\\"label\\":\\"Int\\",\\"type\\":\\"number\\"},{\\"name\\":\\"string\\",\\"label\\":\\"String\\",\\"type\\":\\"text\\"}]"}]}

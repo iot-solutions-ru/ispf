@@ -8,7 +8,7 @@ import com.ispf.ai.LlmResponse;
 import com.ispf.ai.openai.OpenAiCompatibleLlmProvider;
 import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.server.config.AiProperties;
-import com.ispf.server.security.PlatformCredentialService;
+import com.ispf.server.spi.CredentialLookup;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -28,12 +28,12 @@ import java.util.Optional;
 public class WorkflowAiActionService {
 
     private final AiProperties aiProperties;
-    private final PlatformCredentialService credentialService;
+    private final CredentialLookup credentialService;
     private final ObjectMapper objectMapper;
 
     public WorkflowAiActionService(
             AiProperties aiProperties,
-            PlatformCredentialService credentialService,
+            CredentialLookup credentialService,
             ObjectMapper objectMapper
     ) {
         this.aiProperties = aiProperties;
