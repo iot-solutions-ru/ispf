@@ -35,6 +35,7 @@ jobs:
               - 'packages/ispf-server-config/**'
               - 'packages/ispf-license/**'
               - 'packages/ispf-concurrent/**'
+              - 'packages/ispf-server-driver/**'
               - 'packages/ispf-core/**'
               - 'packages/ispf-expression/**'
               - 'packages/ispf-export-parquet/**'
