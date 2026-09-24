@@ -65,7 +65,7 @@ public class WorkflowController {
         return workflowService.runWorkflow(
                 path,
                 triggerObjectPath,
-                com.ispf.server.platform.AutomationMetricsRecorder.WorkflowStartTrigger.MANUAL,
+                com.ispf.server.spi.WorkflowStartTrigger.MANUAL,
                 input
         );
     }

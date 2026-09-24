@@ -3,7 +3,7 @@ package com.ispf.server.workflow;
 import com.ispf.core.model.DataRecord;
 import com.ispf.plugin.workflow.InstanceStatus;
 import com.ispf.plugin.workflow.WorkflowInstance;
-import com.ispf.server.cluster.NatsEventBridge;
+import com.ispf.server.spi.WorkflowMessageBus;
 import com.ispf.server.spi.WorkflowObjectAccess;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
@@ -20,12 +20,12 @@ import java.util.Map;
 public class WorkflowInstanceStatePublisher {
 
     private final WorkflowObjectAccess objects;
-    private final NatsEventBridge natsEventBridge;
+    private final WorkflowMessageBus natsEventBridge;
     private final ObjectMapper objectMapper;
 
     public WorkflowInstanceStatePublisher(
             WorkflowObjectAccess objects,
-            NatsEventBridge natsEventBridge,
+            WorkflowMessageBus natsEventBridge,
             ObjectMapper objectMapper
     ) {
         this.objects = objects;
