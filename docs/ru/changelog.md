@@ -11,7 +11,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
-- Правило с `call()` глотало ошибку функции: `invokeFunction` ловил любой `RuntimeException` и при повторном входе (`INVOKE_GUARD`) тоже отдавал пустой результат. Правило выглядело успешным, целевое поле не менялось, прямой вызов той же функции падал. Теперь сбой — `Function call failed`; заблокированный вложенный вызов — `Nested function call is not allowed`, а не тихий пустой ответ.
+- Правило с `call()`, `queryScalar()`, `queryRows()` или `fire()` прятало сбой как пустой результат: правило выглядело успешным, цель не менялась. Теперь ошибка содержит цель и исходный текст. Вложенный `call()` во время уже идущего вызова запрещён. Успешный `fire()` без полезной нагрузки остаётся успехом.
 - Java-функции при `bootRun`: сохранение `sourceType=java` падало с
   `classpath missing ispf-core (entries=1)`, потому что Gradle кладёт один classpath-jar
   в `java.class.path`, а `JavaFunctionCompileClasspath` не читал его манифест `Class-Path`.

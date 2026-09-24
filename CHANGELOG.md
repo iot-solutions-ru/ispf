@@ -19,7 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
-- **Binding `call()` errors** — `ServerBindingEvaluationContext.invokeFunction` swallowed any `RuntimeException` (and a nested invoke while `INVOKE_GUARD` was set) as `Optional.empty()`. The rule looked successful, the target variable was left unchanged, and a direct invoke of the same function still failed. Failures now surface as `Function call failed`; a blocked nested invoke is `Nested function call is not allowed`, not an empty success.
+- **Binding `call()`, `queryScalar()`, `queryRows()`, and `fire()`** — a failure inside a binding rule was returned as an empty result, so the rule looked successful and the target kept its previous value. Those operations now fail with the target and the original message. A nested `call()` while one is already running is rejected. A `fire()` that did run still counts as success when it has no payload.
 - **Java functions on `bootRun`** — saving `sourceType=java` failed with
   `classpath missing ispf-core (entries=1)` because Gradle puts one classpath jar on
   `java.class.path` and `JavaFunctionCompileClasspath` did not read its manifest
