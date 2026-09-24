@@ -78,6 +78,15 @@ public final class AgentJudgeService {
             issues.addAll(AgentConformanceEvaluator.verifySmokeCases(steps, assignmentType));
         }
 
+        AcceptanceVerdict.Result acceptance = AcceptanceVerdict.evaluate(steps, userMessage, assignmentType.id());
+        if (acceptance.checks() != null) {
+            for (AcceptanceVerdict.Check check : acceptance.checks()) {
+                if (!check.passed()) {
+                    issues.add(check.id() + ": " + check.summary());
+                }
+            }
+        }
+
         if (runState != null && runState.reworkRoundCount() >= 2 && hasBlockingErrorSteps(steps)) {
             return new JudgeResult(
                     Verdict.USER_MODERATION_REQUIRED,
