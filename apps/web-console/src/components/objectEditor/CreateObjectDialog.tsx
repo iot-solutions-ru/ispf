@@ -31,6 +31,7 @@ import {
   applicationObjectPath,
   defaultObjectTypeForParent,
   instanceTypeFilterForParent,
+  platformTypesForParent,
   operatorAppObjectPath,
   resolveCreateDialogMode,
 } from "../../utils/object/createObjectMode";
@@ -41,21 +42,6 @@ import type { ObjectType } from "../../types";
 import { isTechnicalIdentifier } from "../../utils/ui/technicalIdentifier";
 
 const INSTANCE_TYPE_PREFIX = "instance:";
-
-const OBJECT_TYPES: ObjectType[] = [
-  "CUSTOM",
-  "VISUAL_GROUP",
-  "DEVICE",
-  "BLUEPRINT",
-  "DASHBOARD",
-  "REPORT",
-  "WORKFLOW",
-  "ALERT",
-  "AGENT",
-  "USER",
-  "TENANT",
-  "DRIVER",
-];
 
 const DEFAULT_POLL_INTERVAL_MS = 5000;
 
@@ -653,7 +639,7 @@ export default function CreateObjectDialog({
                   options={[
                     {
                       label: "Platform types",
-                      options: OBJECT_TYPES.map((objectType) => ({
+                      options: platformTypesForParent(parentPath).map((objectType) => ({
                         value: objectType,
                         label: objectType === "VISUAL_GROUP" ? t("dialog.typeVisualGroup") : objectType,
                       })),

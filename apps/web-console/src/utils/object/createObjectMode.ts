@@ -297,6 +297,49 @@ export function defaultObjectTypeForParent(parentPath: string): ObjectType {
   return "CUSTOM";
 }
 
+/** Types offered by the generic Create dialog. Federation does not use this list. */
+export const PLATFORM_CREATE_TYPES: readonly ObjectType[] = [
+  "CUSTOM",
+  "VISUAL_GROUP",
+  "DEVICE",
+  "BLUEPRINT",
+  "DASHBOARD",
+  "REPORT",
+  "WORKFLOW",
+  "ALERT",
+  "AGENT",
+  "USER",
+  "TENANT",
+  "DRIVER",
+];
+
+/**
+ * Platform types the manual Create dialog may offer under this parent.
+ * A catalog folder offers its own child type plus {@code VISUAL_GROUP}.
+ * Unconstrained parents (for example {@code root.platform}) keep the full list.
+ */
+export function platformTypesForParent(parentPath: string): ObjectType[] {
+  const catalogType = instanceTypeFilterForParent(parentPath) ?? blueprintCatalogType(parentPath);
+  if (!catalogType || !PLATFORM_CREATE_TYPES.includes(catalogType)) {
+    return [...PLATFORM_CREATE_TYPES];
+  }
+  if (catalogType === "VISUAL_GROUP") {
+    return ["VISUAL_GROUP"];
+  }
+  return [catalogType, "VISUAL_GROUP"];
+}
+
+function blueprintCatalogType(parentPath: string): ObjectType | undefined {
+  if (
+    parentPath.endsWith(".mixin-blueprints")
+    || parentPath.endsWith(".instance-types")
+    || parentPath.endsWith(".singleton-blueprints")
+  ) {
+    return "BLUEPRINT";
+  }
+  return undefined;
+}
+
 /** Platform type filter for INSTANCE blueprints in create dialog (undefined = all types). */
 export function instanceTypeFilterForParent(parentPath: string): ObjectType | undefined {
   if (parentPath.endsWith(".devices")) {
