@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Binding `call()` errors** — `ServerBindingEvaluationContext.invokeFunction` swallowed any `RuntimeException` (and a nested invoke while `INVOKE_GUARD` was set) as `Optional.empty()`. The rule looked successful, the target variable was left unchanged, and a direct invoke of the same function still failed. Failures now surface as `Function call failed`; a blocked nested invoke is `Nested function call is not allowed`, not an empty success.
 - **Java functions on `bootRun`** — saving `sourceType=java` failed with
   `classpath missing ispf-core (entries=1)` because Gradle puts one classpath jar on
   `java.class.path` and `JavaFunctionCompileClasspath` did not read its manifest

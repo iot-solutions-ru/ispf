@@ -55,13 +55,18 @@ public class ServerBindingEvaluationContext implements BindingEvaluationContext 
     @Override
     public Optional<DataRecord> invokeFunction(String objectPath, String functionName, DataRecord input) {
         if (INVOKE_GUARD.get()) {
-            return Optional.empty();
+            throw new IllegalStateException(
+                    "Nested function call is not allowed: " + objectPath + "." + functionName
+            );
         }
         INVOKE_GUARD.set(true);
         try {
             return Optional.of(functionService.getObject().invoke(objectPath, functionName, input));
-        } catch (RuntimeException ignored) {
-            return Optional.empty();
+        } catch (RuntimeException ex) {
+            throw new IllegalStateException(
+                    "Function call failed: " + objectPath + "." + functionName + ": " + ex.getMessage(),
+                    ex
+            );
         } finally {
             INVOKE_GUARD.set(false);
         }
