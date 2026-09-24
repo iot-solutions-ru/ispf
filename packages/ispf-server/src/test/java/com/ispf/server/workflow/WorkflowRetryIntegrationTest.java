@@ -6,7 +6,6 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.persistence.WorkflowRetryScheduleRepository;
 import com.ispf.server.persistence.entity.WorkflowRetryScheduleEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -72,9 +72,6 @@ class WorkflowRetryIntegrationTest {
     private WorkflowRetryScheduler retryScheduler;
 
     @Autowired
-    private WorkflowRetryScheduleRepository retryRepository;
-
-    @Autowired
     private WorkflowDeadLetterService deadLetterService;
 
     @BeforeEach
@@ -113,8 +110,8 @@ class WorkflowRetryIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.instanceState").value(org.hamcrest.Matchers.containsString("FAILED")));
 
-        // The insert can lag under CI load. findDue(now + 5s) also sees a row whose dueAt
-        // is still ahead, but runDueRetries() only claims rows that are already due.
+        // findDue only returns rows already due. A backoff larger than that window, or a
+        // late insert under CI load, leaves the schedule invisible to findDue(now + 5s).
         WorkflowRetryScheduleEntity pending = awaitDueSchedule();
         assertThat(pending.getStatus()).isEqualTo(WorkflowRetryService.STATUS_PENDING);
         assertThat(deadLetterService.listUnresolvedByPath(WORKFLOW)).isEmpty();
@@ -127,19 +124,25 @@ class WorkflowRetryIntegrationTest {
     }
 
     private WorkflowRetryScheduleEntity awaitDueSchedule() throws InterruptedException {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
         WorkflowRetryScheduleEntity seen = null;
         while (System.nanoTime() < deadline) {
-            seen = retryRepository.findDue(Instant.now().plusSeconds(5)).stream()
-                    .filter(row -> WORKFLOW.equals(row.getWorkflowPath()))
+            seen = retryService.listByPath(WORKFLOW).stream()
+                    .filter(row -> WorkflowRetryService.STATUS_PENDING.equals(row.getStatus()))
                     .findFirst()
                     .orElse(null);
-            if (seen != null && !seen.getDueAt().isAfter(Instant.now())) {
-                return seen;
+            if (seen != null) {
+                long waitMs = Duration.between(Instant.now(), seen.getDueAt()).toMillis();
+                if (waitMs > 0) {
+                    Thread.sleep(Math.min(waitMs + 50, 35_000));
+                }
+                if (!seen.getDueAt().isAfter(Instant.now())) {
+                    return seen;
+                }
             }
             Thread.sleep(50);
         }
-        assertThat(seen).as("due retry schedule for %s", WORKFLOW).isNotNull();
+        assertThat(seen).as("retry schedule for %s", WORKFLOW).isNotNull();
         assertThat(seen.getDueAt()).isBeforeOrEqualTo(Instant.now());
         return seen;
     }
