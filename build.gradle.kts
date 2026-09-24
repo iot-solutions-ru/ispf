@@ -294,6 +294,7 @@ val prFastBackendTestTasks = listOf(
     ":packages:ispf-license:test",
     ":packages:ispf-concurrent:test",
     ":packages:ispf-server-driver:test",
+    ":packages:ispf-server-workflow:test",
     ":packages:ispf-plugin-blueprint:test",
     ":packages:ispf-plugin-workflow:test",
     ":packages:ispf-server:test",

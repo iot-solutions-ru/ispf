@@ -87,5 +87,5 @@ Legacy objects without `triggerType` but with `variableName` continue to work as
 ## Related
 
 - [AutomationRuleIndex](../../../packages/ispf-server/src/main/java/com/ispf/server/automation/AutomationRuleIndex.java)
-- [WorkflowEventTriggerIndex](../../../packages/ispf-server/src/main/java/com/ispf/server/workflow/WorkflowEventTriggerIndex.java)
+- [WorkflowEventTriggerIndex](../../../packages/ispf-server-workflow/src/main/java/com/ispf/server/workflow/WorkflowEventTriggerIndex.java)
 - [ObjectChangeEventBus](../../../packages/ispf-server/src/main/java/com/ispf/server/object/bus/ObjectChangeEventBus.java)
