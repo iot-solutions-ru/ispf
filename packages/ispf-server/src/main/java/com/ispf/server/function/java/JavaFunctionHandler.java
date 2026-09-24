@@ -4,6 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.function.FunctionHandler;
+import com.ispf.server.function.FunctionOutputSchema;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -35,6 +36,11 @@ public class JavaFunctionHandler implements FunctionHandler {
 
     @Override
     public DataRecord invoke(String objectPath, String functionName, DataRecord input) {
-        return runtimeService.invoke(objectPath, functionName, input);
+        DataRecord raw = runtimeService.invoke(objectPath, functionName, input);
+        FunctionDescriptor descriptor = objectManager.require(objectPath).functions().get(functionName);
+        if (descriptor == null) {
+            throw new IllegalStateException("Java function not found: " + functionName);
+        }
+        return FunctionOutputSchema.apply(descriptor.outputSchema(), raw);
     }
 }

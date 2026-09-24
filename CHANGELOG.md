@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Java function output schema** — a script function maps its result to `descriptor.outputSchema()`; a Java function returned the `DataRecord` the class built and ignored that schema. Callers could get fields and types that were not declared, or miss a required field the schema promised. The invoke path now projects the result onto the declared schema: extra fields are dropped, a missing required field fails the call, numbers are coerced like script output.
 - **Java functions on `bootRun`** — saving `sourceType=java` failed with
   `classpath missing ispf-core (entries=1)` because Gradle puts one classpath jar on
   `java.class.path` and `JavaFunctionCompileClasspath` did not read its manifest

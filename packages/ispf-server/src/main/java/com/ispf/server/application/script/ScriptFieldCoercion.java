@@ -3,7 +3,7 @@ package com.ispf.server.application.script;
 import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
 
-final class ScriptFieldCoercion {
+public final class ScriptFieldCoercion {
 
     private ScriptFieldCoercion() {
     }
@@ -19,7 +19,7 @@ final class ScriptFieldCoercion {
         };
     }
 
-    static Object coerce(FieldDefinition field, Object value) {
+    public static Object coerce(FieldDefinition field, Object value) {
         if (value == null) {
             return field.nullable() ? null : defaultValue(field.type());
         }
