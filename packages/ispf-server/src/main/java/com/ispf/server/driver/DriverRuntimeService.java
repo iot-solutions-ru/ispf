@@ -11,7 +11,7 @@ import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverPointCatalog;
 import com.ispf.driver.ingress.DriverIngress;
-import com.ispf.server.bootstrap.LabTrainingBundleLayouts;
+import com.ispf.server.spi.LabDevicePaths;
 import com.ispf.driver.ingress.DriverIngressBuffer;
 import com.ispf.server.concurrent.ElasticScheduledPool;
 import com.ispf.server.concurrent.ElasticWorkerLauncher;
@@ -245,8 +245,8 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     }
 
     private static boolean isLabTrainingDevice(String devicePath) {
-        return LabTrainingBundleLayouts.LAB_DEVICE_A.equals(devicePath)
-                || LabTrainingBundleLayouts.LAB_DEVICE_B.equals(devicePath);
+        return LabDevicePaths.DEVICE_A.equals(devicePath)
+                || LabDevicePaths.DEVICE_B.equals(devicePath);
     }
 
     @Override

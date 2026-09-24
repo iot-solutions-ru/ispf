@@ -14,6 +14,7 @@ include(
     "packages:ispf-server",
     "packages:ispf-persistence",
     "packages:ispf-server-spi",
+    "packages:ispf-server-config",
     "packages:ispf-license",
     "packages:ispf-concurrent",
     "packages:ispf-export-parquet",
