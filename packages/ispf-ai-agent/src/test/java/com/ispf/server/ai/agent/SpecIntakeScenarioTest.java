@@ -144,8 +144,8 @@ class SpecIntakeScenarioTest {
                         "Cannot set_dashboard_layout: object path was not created or discovered in this turn: " + dashPath),
                 toolOk("list_objects", Map.of("parent", "root.platform.dashboards")),
                 toolOk("set_dashboard_layout", Map.of("path", dashPath)),
-                toolOk("get_mimic_diagram", Map.of("path", mimicPath)),
-                toolOk("get_dashboard_layout", Map.of("path", dashPath))
+                toolObserved("get_mimic_diagram", Map.of("path", mimicPath), Map.of("elementCount", 2)),
+                toolObserved("get_dashboard_layout", Map.of("path", dashPath), Map.of("widgetCount", 1))
         );
         var judge = AgentJudgeService.evaluate(
                 steps,
@@ -173,11 +173,22 @@ class SpecIntakeScenarioTest {
     }
 
     private static Map<String, Object> toolOk(String tool, Map<String, Object> args) {
+        return toolObserved(tool, args, Map.of());
+    }
+
+    private static Map<String, Object> toolObserved(
+            String tool,
+            Map<String, Object> args,
+            Map<String, Object> resultFields
+    ) {
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("status", "OK");
+        result.putAll(resultFields);
         return Map.of(
                 "type", "tool",
                 "tool", tool,
                 "arguments", args,
-                "result", Map.of("status", "OK")
+                "result", result
         );
     }
 

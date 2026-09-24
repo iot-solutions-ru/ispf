@@ -5,6 +5,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.object.ObjectChangeEvent;
+import com.ispf.server.spi.WorkflowMessageBus;
 import com.ispf.server.object.ObjectChangeType;
 import com.ispf.server.object.pubsub.StructureChangeSubscriptionRegistry;
 import io.nats.client.Connection;
@@ -23,7 +24,7 @@ import java.time.Instant;
 import java.util.Map;
 
 @Component
-public class NatsEventBridge {
+public class NatsEventBridge implements WorkflowMessageBus {
 
     private static final Logger log = LoggerFactory.getLogger(NatsEventBridge.class);
 
@@ -112,6 +113,7 @@ public class NatsEventBridge {
         }
     }
 
+    @Override
     public void publish(String subject, String message) {
         if (!properties.enabled() || connection == null) {
             log.info("[nats:disabled] {} -> {}", subject, message);
@@ -124,6 +126,7 @@ public class NatsEventBridge {
         }
     }
 
+    @Override
     public void publishWorkflowEvent(String workflowPath, String event, Map<String, Object> payload) {
         try {
             Map<String, Object> body = new java.util.HashMap<>(payload);

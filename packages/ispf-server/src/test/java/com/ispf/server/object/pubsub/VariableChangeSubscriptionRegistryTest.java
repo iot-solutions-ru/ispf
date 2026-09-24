@@ -159,7 +159,7 @@ class VariableChangeSubscriptionRegistryTest {
 
     @Test
     void detectsWorkflowTriggers() {
-        when(workflowTriggerIndex.findVariableWorkflows(PATH, VAR)).thenReturn(List.of("wf-1"));
+        when(workflowTriggerIndex.hasVariableWorkflows(PATH, VAR)).thenReturn(true);
 
         VariableChangeInterest interest = registry.interest(PATH, VAR);
 

@@ -1,5 +1,7 @@
 package com.ispf.server.platform;
 
+import com.ispf.server.spi.WorkflowMetrics;
+import com.ispf.server.spi.WorkflowStartTrigger;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
@@ -14,7 +16,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
-public class AutomationMetricsRecorder {
+public class AutomationMetricsRecorder implements WorkflowMetrics {
 
     public enum EventFireSource {
         ALERT("alert"),
@@ -26,23 +28,6 @@ public class AutomationMetricsRecorder {
         private final String tag;
 
         EventFireSource(String tag) {
-            this.tag = tag;
-        }
-
-        String tag() {
-            return tag;
-        }
-    }
-
-    public enum WorkflowStartTrigger {
-        VARIABLE("variable"),
-        CORRELATOR("correlator"),
-        EVENT("event"),
-        MANUAL("manual");
-
-        private final String tag;
-
-        WorkflowStartTrigger(String tag) {
             this.tag = tag;
         }
 
@@ -185,6 +170,7 @@ public class AutomationMetricsRecorder {
         meterRegistry.ifPresent(registry -> registry.counter("ispf.correlator.triggers.total").increment());
     }
 
+    @Override
     public void recordWorkflowStart(WorkflowStartTrigger trigger) {
         workflowStartsByTrigger.get(trigger).incrementAndGet();
         meterRegistry.ifPresent(registry -> registry.counter(

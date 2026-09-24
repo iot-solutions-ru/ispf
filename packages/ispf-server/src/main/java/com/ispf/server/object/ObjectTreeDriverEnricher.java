@@ -4,7 +4,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.api.dto.ObjectDto;
-import com.ispf.server.driver.DriverRuntimeService;
+import com.ispf.server.spi.DriverConnectionLookup;
 
 /**
  * Adds driver runtime hints to lite {@link ObjectDto} payloads for explorer tree styling.
@@ -14,7 +14,7 @@ public final class ObjectTreeDriverEnricher {
     private ObjectTreeDriverEnricher() {
     }
 
-    public static ObjectDto enrichLite(ObjectDto dto, PlatformObject node, DriverRuntimeService driverRuntimeService) {
+    public static ObjectDto enrichLite(ObjectDto dto, PlatformObject node, DriverConnectionLookup driverConnection) {
         if (node.type() != ObjectType.DEVICE) {
             return dto;
         }
@@ -28,9 +28,7 @@ public final class ObjectTreeDriverEnricher {
         }
         Boolean connected = null;
         if ("RUNNING".equals(status)) {
-            connected = driverRuntimeService.status(node.path())
-                    .map(DriverRuntimeService.DriverRuntimeStatus::connected)
-                    .orElse(false);
+            connected = driverConnection.connected(node.path()).orElse(false);
         }
         return dto.withDriverRuntime(status, connected);
     }

@@ -30,6 +30,13 @@ jobs:
           filters: |
             backend:
               - 'packages/ispf-server/**'
+              - 'packages/ispf-persistence/**'
+              - 'packages/ispf-server-spi/**'
+              - 'packages/ispf-server-config/**'
+              - 'packages/ispf-license/**'
+              - 'packages/ispf-concurrent/**'
+              - 'packages/ispf-server-driver/**'
+              - 'packages/ispf-server-workflow/**'
               - 'packages/ispf-core/**'
               - 'packages/ispf-expression/**'
               - 'packages/ispf-export-parquet/**'

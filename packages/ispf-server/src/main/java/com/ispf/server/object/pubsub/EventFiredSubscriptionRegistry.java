@@ -3,7 +3,7 @@ package com.ispf.server.object.pubsub;
 import com.ispf.server.application.binding.ApplicationSqlBindingEventIndex;
 import com.ispf.server.automation.AutomationRuleIndex;
 import com.ispf.server.object.BindingDependencyIndex;
-import com.ispf.server.workflow.WorkflowEventTriggerIndex;
+import com.ispf.server.spi.WorkflowTriggerLookup;
 import org.springframework.stereotype.Service;
 
 /**
@@ -14,13 +14,13 @@ public class EventFiredSubscriptionRegistry {
 
     private final BindingDependencyIndex bindingDependencyIndex;
     private final AutomationRuleIndex automationRuleIndex;
-    private final WorkflowEventTriggerIndex workflowTriggerIndex;
+    private final WorkflowTriggerLookup workflowTriggerIndex;
     private final ApplicationSqlBindingEventIndex sqlBindingEventIndex;
 
     public EventFiredSubscriptionRegistry(
             BindingDependencyIndex bindingDependencyIndex,
             AutomationRuleIndex automationRuleIndex,
-            WorkflowEventTriggerIndex workflowTriggerIndex,
+            WorkflowTriggerLookup workflowTriggerIndex,
             ApplicationSqlBindingEventIndex sqlBindingEventIndex
     ) {
         this.bindingDependencyIndex = bindingDependencyIndex;
@@ -35,7 +35,7 @@ public class EventFiredSubscriptionRegistry {
         }
         boolean bindings = !bindingDependencyIndex.eventConsumers(objectPath, eventName).isEmpty();
         boolean correlators = !automationRuleIndex.findCorrelatorsForEvent(eventName).isEmpty();
-        boolean workflows = !workflowTriggerIndex.findEventWorkflows(objectPath, eventName).isEmpty();
+        boolean workflows = workflowTriggerIndex.hasEventWorkflows(objectPath, eventName);
         boolean sqlBindings = sqlBindingEventIndex.hasBindings(objectPath, eventName);
         return new EventFiredInterest(bindings, correlators, workflows, sqlBindings);
     }

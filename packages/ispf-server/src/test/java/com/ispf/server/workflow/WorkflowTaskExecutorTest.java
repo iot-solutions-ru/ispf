@@ -13,12 +13,12 @@ import com.ispf.plugin.workflow.ServiceTaskDefinition;
 import com.ispf.plugin.workflow.WorkflowActionType;
 import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowInstance;
-import com.ispf.server.binding.BindingRefreshAfterCommit;
-import com.ispf.server.cluster.NatsEventBridge;
-import com.ispf.server.event.EventService;
-import com.ispf.server.function.FunctionService;
-import com.ispf.server.object.ObjectManager;
-import com.ispf.server.platform.AutomationMetricsRecorder;
+import com.ispf.server.spi.WorkflowBindingRefresh;
+import com.ispf.server.spi.WorkflowEventPublish;
+import com.ispf.server.spi.WorkflowFunctionCalls;
+import com.ispf.server.spi.WorkflowMessageBus;
+import com.ispf.server.spi.WorkflowStartTrigger;
+import com.ispf.server.spi.WorkflowObjectAccess;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -48,15 +48,15 @@ class WorkflowTaskExecutorTest {
     private static final String TARGET = "root.devices.pump";
 
     @Mock
-    private ObjectManager objectManager;
+    private WorkflowObjectAccess objects;
     @Mock
-    private NatsEventBridge natsEventBridge;
+    private WorkflowMessageBus natsEventBridge;
     @Mock
-    private FunctionService functionService;
+    private WorkflowFunctionCalls functionService;
     @Mock
-    private EventService eventService;
+    private WorkflowEventPublish eventService;
     @Mock
-    private BindingRefreshAfterCommit bindingRefreshAfterCommit;
+    private WorkflowBindingRefresh bindingRefreshAfterCommit;
     @Mock
     private WorkflowAiActionService workflowAiActionService;
     @Mock
@@ -66,7 +66,7 @@ class WorkflowTaskExecutorTest {
 
     private WorkflowTaskExecutor executor() {
         return new WorkflowTaskExecutor(
-                objectManager,
+                objects,
                 natsEventBridge,
                 functionService,
                 eventService,
@@ -92,7 +92,7 @@ class WorkflowTaskExecutorTest {
         );
 
         ArgumentCaptor<DataRecord> record = ArgumentCaptor.forClass(DataRecord.class);
-        verify(objectManager).setVariableValue(eq(TARGET), eq("mode"), record.capture());
+        verify(objects).setVariableValue(eq(TARGET), eq("mode"), record.capture());
         assertEquals("auto", record.getValue().firstRow().get("value"));
     }
 
@@ -103,7 +103,7 @@ class WorkflowTaskExecutorTest {
                 instance()
         ));
         assertTrue(ex.getMessage().contains("targetObject"));
-        verify(objectManager, never()).setVariableValue(anyString(), anyString(), any());
+        verify(objects, never()).setVariableValue(anyString(), anyString(), any());
     }
 
     @Test
@@ -113,7 +113,7 @@ class WorkflowTaskExecutorTest {
         when(variable.value()).thenReturn(Optional.of(DataRecord.single(schema, Map.of("value", "42"))));
         PlatformObject node = mock(PlatformObject.class);
         when(node.getVariable("level")).thenReturn(Optional.of(variable));
-        when(objectManager.require(TARGET)).thenReturn(node);
+        when(objects.require(TARGET)).thenReturn(node);
 
         WorkflowInstance instance = instance();
         executor().executeServiceTask(
@@ -188,7 +188,7 @@ class WorkflowTaskExecutorTest {
         when(workflowService.runWorkflowInstance(
                 eq("root.platform.workflows.child"),
                 eq(TARGET),
-                eq(AutomationMetricsRecorder.WorkflowStartTrigger.EVENT),
+                eq(WorkflowStartTrigger.EVENT),
                 any()
         )).thenReturn(child);
 
@@ -219,6 +219,6 @@ class WorkflowTaskExecutorTest {
                 task(WorkflowActionType.FIRE_EVENT, Map.of("objectPath", TARGET, "eventName", "alarm")),
                 instance()
         );
-        verify(eventService).fire(eq(TARGET), eq("alarm"), (DataRecord) isNull());
+        verify(eventService).publishFired(eq(TARGET), eq("alarm"), (DataRecord) isNull());
     }
 }

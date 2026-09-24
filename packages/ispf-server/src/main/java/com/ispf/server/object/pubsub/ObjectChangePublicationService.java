@@ -3,7 +3,7 @@ package com.ispf.server.object.pubsub;
 import com.ispf.core.model.DataRecord;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.ObjectChangeProperties;
-import com.ispf.server.driver.DeviceTelemetryPolicyService;
+import com.ispf.server.spi.DeviceTelemetryPolicy;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import org.springframework.context.ApplicationEventPublisher;
@@ -23,7 +23,7 @@ public class ObjectChangePublicationService {
     private final VariableChangeSubscriptionRegistry variableSubscriptionRegistry;
     private final EventFiredSubscriptionRegistry eventFiredSubscriptionRegistry;
     private final StructureChangeSubscriptionRegistry structureSubscriptionRegistry;
-    private final DeviceTelemetryPolicyService telemetryPolicyService;
+    private final DeviceTelemetryPolicy telemetryPolicyService;
     private final ObjectChangeProperties objectChangeProperties;
     private final ClusterProperties clusterProperties;
 
@@ -32,7 +32,7 @@ public class ObjectChangePublicationService {
             VariableChangeSubscriptionRegistry variableSubscriptionRegistry,
             EventFiredSubscriptionRegistry eventFiredSubscriptionRegistry,
             StructureChangeSubscriptionRegistry structureSubscriptionRegistry,
-            DeviceTelemetryPolicyService telemetryPolicyService,
+            DeviceTelemetryPolicy telemetryPolicyService,
             ObjectChangeProperties objectChangeProperties,
             ClusterProperties clusterProperties
     ) {

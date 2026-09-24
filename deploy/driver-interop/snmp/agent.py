@@ -364,13 +364,14 @@ def snmp_set(host: str, port: int, oid: Tuple[int, ...], value: int, version: in
 
 def self_test() -> None:
     store = LabStore()
-    host, port = "127.0.0.1", 1161
+    host = "127.0.0.1"
     done = threading.Event()
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((host, 0))
+    sock.settimeout(5)
+    port = sock.getsockname()[1]
 
     def run() -> None:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.bind((host, port))
-        sock.settimeout(5)
         try:
             for _ in range(3):
                 data, addr = sock.recvfrom(65535)

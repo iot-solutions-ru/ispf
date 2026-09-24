@@ -8,8 +8,7 @@ import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.object.VariableStorageMode;
-import com.ispf.server.driver.DeviceTelemetryPolicyService;
-import com.ispf.server.driver.TelemetryPublishMode;
+import com.ispf.server.spi.DeviceTelemetryPolicy;
 import com.ispf.server.function.java.JavaFunctionRuntimeService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -34,14 +33,14 @@ public class ObjectVariableService {
     private final ObjectManager objectManager;
     private final ObjectVariableRepository variableRepository;
     private final ObjectEntityMapper mapper;
-    private final DeviceTelemetryPolicyService telemetryPolicyService;
+    private final DeviceTelemetryPolicy telemetryPolicyService;
     private final JavaFunctionRuntimeService javaFunctionRuntimeService;
 
     public ObjectVariableService(
             @Lazy ObjectManager objectManager,
             ObjectVariableRepository variableRepository,
             ObjectEntityMapper mapper,
-            @Lazy DeviceTelemetryPolicyService telemetryPolicyService,
+            @Lazy DeviceTelemetryPolicy telemetryPolicyService,
             JavaFunctionRuntimeService javaFunctionRuntimeService
     ) {
         this.objectManager = objectManager;
@@ -342,7 +341,7 @@ public class ObjectVariableService {
             Boolean includePreviousValueInEvent,
             VariableStorageMode storageMode
     ) {
-        TelemetryPublishMode.validateOverride(telemetryPublishMode);
+        telemetryPolicyService.validatePublishModeOverride(telemetryPublishMode);
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
         long revisionBefore = node.revision();

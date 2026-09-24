@@ -1,6 +1,7 @@
 package com.ispf.server.binding;
 
 import com.ispf.server.application.binding.ApplicationSqlBindingService;
+import com.ispf.server.spi.WorkflowBindingRefresh;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import org.springframework.stereotype.Component;
@@ -12,7 +13,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * function transaction commits, so workflow steps see committed application data.
  */
 @Component
-public class BindingRefreshAfterCommit {
+public class BindingRefreshAfterCommit implements WorkflowBindingRefresh {
 
     private final SqlBindingObjectService sqlBindingObjectService;
     private final ApplicationSqlBindingService applicationSqlBindingService;
@@ -44,6 +45,7 @@ public class BindingRefreshAfterCommit {
         });
     }
 
+    @Override
     public void refreshNow(String objectPath, String functionName) {
         schemaSession.runWithPlatformCatalog(() -> {
             sqlBindingObjectService.refreshAfterFunction(objectPath, functionName);

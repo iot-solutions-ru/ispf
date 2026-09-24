@@ -517,6 +517,7 @@ public class TreeFirstAgentService {
                         );
                         break;
                     }
+                    AcceptanceVerdict.Result executionAcceptance = null;
                     if (profile != AgentProfile.OPERATOR) {
                         AgentPlanGuard.FinishOutcome planOutcome = AgentPlanGuard.evaluateFinish(
                                 session.runState(),
@@ -653,7 +654,12 @@ public class TreeFirstAgentService {
                             syncRunPlanState(session);
                         }
                         if (planOutcome == AgentPlanGuard.FinishOutcome.ALLOW_EXECUTION) {
-                            var block = AgentPlatformTurnGuard.checkBeforeFinish(steps, userMessage);
+                            executionAcceptance = AcceptanceVerdict.evaluate(
+                                    steps,
+                                    userMessage,
+                                    session.runState().assignmentType()
+                            );
+                            var block = AgentPlatformTurnGuard.blockIfNeeded(executionAcceptance);
                             if (block.isPresent()) {
                                 AgentPlatformTurnGuard.BlockDecision decision = block.get();
                                 if (AgentPlatformTurnGuard.isStuckGuardLoop(steps, decision.error())) {
@@ -676,13 +682,14 @@ public class TreeFirstAgentService {
                                     publishStep(session.sessionId(), finishStep);
                                     break;
                                 }
-                                Map<String, Object> guardStep = Map.of(
-                                        "step", stepNumber,
-                                        "type", "guard",
-                                        "label", "Проверка перед завершением",
-                                        "error", decision.error(),
-                                        "hint", decision.hint() != null ? decision.hint() : ""
-                                );
+                                Map<String, Object> guardStep = new LinkedHashMap<>();
+                                guardStep.put("step", stepNumber);
+                                guardStep.put("type", "guard");
+                                guardStep.put("label", "Проверка перед завершением");
+                                guardStep.put("error", decision.error());
+                                guardStep.put("hint", decision.hint() != null ? decision.hint() : "");
+                                guardStep.put("checkId", decision.checkId());
+                                guardStep.put("acceptance", executionAcceptance.toMap());
                                 steps.add(guardStep);
                                 publishStep(session.sessionId(), guardStep);
                                 messages.add(new LlmMessage("assistant", response.content()));
@@ -700,13 +707,15 @@ public class TreeFirstAgentService {
                     finishSummary = agentAction.summary();
                     finishResult = candidateResult;
                     finalStatus = AgentTurnStatus.OK;
-                    Map<String, Object> finishStep = Map.of(
-                            "step", stepNumber,
-                            "type", "finish",
-                            "summary", finishSummary != null ? finishSummary : "",
-                            "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary),
-                            "result", finishResult
-                    );
+                    Map<String, Object> finishStep = new LinkedHashMap<>();
+                    finishStep.put("step", stepNumber);
+                    finishStep.put("type", "finish");
+                    finishStep.put("summary", finishSummary != null ? finishSummary : "");
+                    finishStep.put("label", AgentStepHumanizer.label("finish", null, null, null, finishSummary));
+                    finishStep.put("result", finishResult);
+                    if (executionAcceptance != null) {
+                        finishStep.put("acceptance", executionAcceptance.toMap());
+                    }
                     steps.add(finishStep);
                     publishStep(session.sessionId(), finishStep);
                     recordTurnAudit(

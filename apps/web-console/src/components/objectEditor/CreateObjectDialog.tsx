@@ -510,7 +510,7 @@ export default function CreateObjectDialog({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                pattern="[a-zA-Z0-9_\\-]+"
+                pattern="[a-zA-Z0-9_\-]+"
                 aria-invalid={Boolean(name) && !nameValid}
               />
             </Form.Item>

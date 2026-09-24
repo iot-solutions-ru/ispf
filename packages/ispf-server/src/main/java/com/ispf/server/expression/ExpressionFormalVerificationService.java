@@ -5,6 +5,7 @@ import com.ispf.expression.ExpressionFormalVerifier;
 import com.ispf.expression.FormalVerificationReport;
 import com.ispf.expression.HistorianCelFormalRewrite;
 import com.ispf.server.config.ExpressionFormalVerificationProperties;
+import com.ispf.server.spi.WorkflowConditionCheck;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -21,7 +22,7 @@ import java.util.regex.Pattern;
  * timeouts, and enforce-on-apply / enforce-on-validate policy.
  */
 @Service
-public class ExpressionFormalVerificationService {
+public class ExpressionFormalVerificationService implements WorkflowConditionCheck {
 
     private static final Pattern HISTORIAN_HELPER = Pattern.compile(
             "(avg|min|max|last|sum|live)\\s*\\(",
@@ -86,6 +87,11 @@ public class ExpressionFormalVerificationService {
      * Compile + formal verify for apply paths. Honours {@code enforceOnApply}:
      * when enforcement is off, still returns the report but never throws on formal failure.
      */
+    @Override
+    public void requireSafeCondition(String expression) {
+        requireSafeConditionForApply(expression);
+    }
+
     public FormalVerificationReport requireSafeConditionForApply(String expression) {
         if (expression == null || expression.isBlank()) {
             return FormalVerificationReport.skipped(

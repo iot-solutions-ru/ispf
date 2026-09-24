@@ -1,6 +1,7 @@
 package com.ispf.server.security;
 
 import com.ispf.server.persistence.PlatformCredentialRepository;
+import com.ispf.server.spi.CredentialLookup;
 import com.ispf.server.persistence.entity.PlatformCredentialEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +17,7 @@ import java.util.UUID;
  * Encrypted credentials vault (ADR-0049 Wave 4). Reuses AES-GCM federation cipher.
  */
 @Service
-public class PlatformCredentialService {
+public class PlatformCredentialService implements CredentialLookup {
 
     private final PlatformCredentialRepository repository;
     private final IspfSecretCipher cipher;
@@ -64,11 +65,13 @@ public class PlatformCredentialService {
         return result;
     }
 
+    @Override
     @Transactional(readOnly = true)
     public Optional<String> resolveSecret(String objectPath) {
         return repository.findByObjectPath(objectPath).map(entity -> cipher.decrypt(entity.getCipherText()));
     }
 
+    @Override
     @Transactional(readOnly = true)
     public Map<String, Object> describe(String objectPath) {
         return repository.findByObjectPath(objectPath)
