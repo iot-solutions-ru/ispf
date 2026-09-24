@@ -18,6 +18,7 @@ include(
     "packages:ispf-license",
     "packages:ispf-concurrent",
     "packages:ispf-server-driver",
+    "packages:ispf-server-workflow",
     "packages:ispf-export-parquet",
     "packages:ispf-plugin-blueprint",
     "packages:ispf-plugin-workflow",
