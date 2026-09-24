@@ -5,11 +5,17 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashSet;
+import java.util.jar.Attributes;
 import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaFunctionCompilerTest {
 
@@ -57,6 +63,43 @@ class JavaFunctionCompilerTest {
                 classpath.toLowerCase().contains("ispf-core"),
                 () -> "expected ispf-core on compile classpath but got: " + classpath
         );
+    }
+
+    @Test
+    void manifestClasspathJarResolvesIspfCore() throws Exception {
+        Path dir = Files.createTempDirectory("ispf-cp-");
+        Path jarPath = dir.resolve("gradle-javaexec-classpath.jar");
+        Path core = dir.resolve("ispf-core-0.9.208.jar");
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        manifest.getMainAttributes().putValue(
+                "Class-Path",
+                core.toUri() + " libs/ispf-core-relative.jar"
+        );
+        try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jarPath), manifest)) {
+            // classpath pointer jar, same shape as Gradle bootRun
+        }
+        LinkedHashSet<String> entries = new LinkedHashSet<>();
+        try (JarFile jar = new JarFile(jarPath.toFile())) {
+            JavaFunctionCompileClasspath.addManifestClasspath(jarPath, jar, entries);
+        }
+        assertTrue(entries.stream().anyMatch(entry -> entry.contains("ispf-core-0.9.208.jar")));
+        assertTrue(entries.stream().anyMatch(entry -> entry.replace('\\', '/').endsWith("libs/ispf-core-relative.jar")));
+    }
+
+    @Test
+    void manifestClasspathIsReadOnlyForASingleJar() {
+        String sep = java.io.File.pathSeparator;
+        assertTrue(JavaFunctionCompileClasspath.soleClasspathJar("gradle/classpath.jar"));
+        assertFalse(JavaFunctionCompileClasspath.soleClasspathJar("a.jar" + sep + "b.jar"));
+        assertFalse(JavaFunctionCompileClasspath.soleClasspathJar("build/classes/java/main"));
+    }
+
+    @Test
+    void malformedManifestFileUrlIsNotDropped() {
+        Path jarPath = Path.of("gradle-javaexec-classpath.jar");
+        assertThrows(IllegalArgumentException.class,
+                () -> JavaFunctionCompileClasspath.resolveManifestEntry(jarPath, "file://not a uri"));
     }
 
     @Test

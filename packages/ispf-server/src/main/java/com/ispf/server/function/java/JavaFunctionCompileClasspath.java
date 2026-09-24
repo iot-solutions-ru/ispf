@@ -17,6 +17,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 /**
  * Builds a {@code javac} classpath that includes {@code ispf-core} API types.
@@ -85,6 +86,9 @@ final class JavaFunctionCompileClasspath {
         if (system == null || system.isBlank()) {
             return;
         }
+        // Gradle bootRun is one pointer jar. A normal test or java -jar classpath has many
+        // entries; their manifests are not the compile classpath.
+        boolean soleJar = soleClasspathJar(system);
         for (String part : system.split(java.io.File.pathSeparator)) {
             if (part.isBlank() || !part.endsWith(".jar")) {
                 continue;
@@ -105,11 +109,72 @@ final class JavaFunctionCompileClasspath {
                 }
                 if (!bootLayout) {
                     entries.add(bootJar.toString());
+                    if (soleJar) {
+                        addManifestClasspath(bootJar, jar, entries);
+                    }
                 }
             } catch (IOException ex) {
                 throw new UncheckedIOException("Failed to read boot jar " + bootJar, ex);
             }
         }
+    }
+
+    /**
+     * True when {@code java.class.path} is the single pointer jar Gradle {@code bootRun} launches with.
+     */
+    static boolean soleClasspathJar(String javaClassPath) {
+        if (javaClassPath == null || javaClassPath.isBlank()) {
+            return false;
+        }
+        int jars = 0;
+        for (String part : javaClassPath.split(java.io.File.pathSeparator, -1)) {
+            if (part.isBlank()) {
+                continue;
+            }
+            if (!part.endsWith(".jar")) {
+                return false;
+            }
+            jars++;
+            if (jars > 1) {
+                return false;
+            }
+        }
+        return jars == 1;
+    }
+
+    /**
+     * Gradle {@code bootRun} puts one classpath jar on {@code java.class.path}.
+     * The real entries, including {@code ispf-core}, are in that jar's manifest {@code Class-Path}.
+     */
+    static void addManifestClasspath(Path jarPath, JarFile jar, Set<String> entries) throws IOException {
+        Manifest manifest = jar.getManifest();
+        if (manifest == null) {
+            return;
+        }
+        String classPath = manifest.getMainAttributes().getValue("Class-Path");
+        if (classPath == null || classPath.isBlank()) {
+            return;
+        }
+        for (String token : classPath.trim().split("\\s+")) {
+            String resolved = resolveManifestEntry(jarPath, token);
+            if (resolved != null) {
+                entries.add(resolved);
+            }
+        }
+    }
+
+    static String resolveManifestEntry(Path jarPath, String token) {
+        if (token == null || token.isBlank()) {
+            return null;
+        }
+        if (token.startsWith("file:")) {
+            return Paths.get(URI.create(token)).toString();
+        }
+        Path parent = jarPath.getParent();
+        if (parent == null) {
+            return null;
+        }
+        return parent.resolve(token).normalize().toString();
     }
 
     private static void collectFromLoader(ClassLoader loader, Set<String> entries) {
