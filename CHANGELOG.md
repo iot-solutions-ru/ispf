@@ -19,6 +19,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Java functions on `bootRun`** — saving `sourceType=java` failed with
+  `classpath missing ispf-core (entries=1)` because Gradle puts one classpath jar on
+  `java.class.path` and `JavaFunctionCompileClasspath` did not read its manifest
+  `Class-Path`. The manifest entries are now included for `javac`.
 - **`flexible` driver over UDP** — `exchangeUdpBytes` built the `DatagramPacket` with
   `InetSocketAddress.createUnresolved(...)`, which the JDK rejects (`IllegalArgumentException:
   unresolved address`), so every UDP exchange failed before the request left the host. Now resolves

@@ -11,6 +11,10 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
+- Java-функции при `bootRun`: сохранение `sourceType=java` падало с
+  `classpath missing ispf-core (entries=1)`, потому что Gradle кладёт один classpath-jar
+  в `java.class.path`, а `JavaFunctionCompileClasspath` не читал его манифест `Class-Path`.
+  Записи манифеста теперь попадают в `javac`.
 - Драйвер `flexible` по UDP: `exchangeUdpBytes` собирал `DatagramPacket` через
   `InetSocketAddress.createUnresolved(...)`, который JDK отвергает (`IllegalArgumentException:
   unresolved address`) — любой UDP-обмен падал до отправки запроса. Адрес теперь резолвится;
