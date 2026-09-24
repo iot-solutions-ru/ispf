@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **`DOUBLE` fields** — `DataRecord` accepted `Double`, `Float`, and `Integer` but rejected `Long`, so a JSON integer larger than 32 bits failed with "must be double" while a smaller integer stored as `Integer` passed. Any finite number is now stored as `double`.
 - **Java functions on `bootRun`** — saving `sourceType=java` failed with
   `classpath missing ispf-core (entries=1)` because Gradle puts one classpath jar on
   `java.class.path` and `JavaFunctionCompileClasspath` did not read its manifest
