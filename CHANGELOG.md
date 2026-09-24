@@ -20,6 +20,9 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 ### Fixed
 
 - **Binding `call()`, `queryScalar()`, `queryRows()`, and `fire()`** — a failure inside a binding rule was returned as an empty result, so the rule looked successful and the target kept its previous value. Those operations now fail with the target and the original message. A nested `call()` while one is already running is rejected. A `fire()` that did run still counts as success when it has no payload.
+- **Java function output schema** — a script function maps its result to `descriptor.outputSchema()`; a Java function returned the `DataRecord` the class built and ignored that schema. Callers could get fields and types that were not declared, or miss a required field the schema promised. The invoke path now projects the result onto the declared schema: extra fields are dropped, a missing required field fails the call, numbers are coerced like script output.
+- **Binding rule chains** — `BindingRuleEngine` stopped after 8 passes or 16 nested activations with no error, so a long chain looked like a successful write while later fields stayed stale. The pass and depth limits are unchanged; hitting them now fails with the object path and "truncated".
+- **`DOUBLE` fields** — `DataRecord` accepted `Double`, `Float`, and `Integer` but rejected `Long`, so a JSON integer larger than 32 bits failed with "must be double" while a smaller integer stored as `Integer` passed. Any finite number is now stored as `double`.
 - **Java functions on `bootRun`** — saving `sourceType=java` failed with
   `classpath missing ispf-core (entries=1)` because Gradle puts one classpath jar on
   `java.class.path` and `JavaFunctionCompileClasspath` did not read its manifest
