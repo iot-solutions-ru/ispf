@@ -17,6 +17,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 /**
  * Builds a {@code javac} classpath that includes {@code ispf-core} API types.
@@ -105,10 +106,50 @@ final class JavaFunctionCompileClasspath {
                 }
                 if (!bootLayout) {
                     entries.add(bootJar.toString());
+                    addManifestClasspath(bootJar, jar, entries);
                 }
             } catch (IOException ex) {
                 throw new UncheckedIOException("Failed to read boot jar " + bootJar, ex);
             }
+        }
+    }
+
+    /**
+     * Gradle {@code bootRun} puts one classpath jar on {@code java.class.path}.
+     * The real entries, including {@code ispf-core}, are in that jar's manifest {@code Class-Path}.
+     */
+    static void addManifestClasspath(Path jarPath, JarFile jar, Set<String> entries) throws IOException {
+        Manifest manifest = jar.getManifest();
+        if (manifest == null) {
+            return;
+        }
+        String classPath = manifest.getMainAttributes().getValue("Class-Path");
+        if (classPath == null || classPath.isBlank()) {
+            return;
+        }
+        for (String token : classPath.trim().split("\\s+")) {
+            String resolved = resolveManifestEntry(jarPath, token);
+            if (resolved != null) {
+                entries.add(resolved);
+            }
+        }
+    }
+
+    static String resolveManifestEntry(Path jarPath, String token) {
+        if (token == null || token.isBlank()) {
+            return null;
+        }
+        try {
+            if (token.startsWith("file:")) {
+                return Paths.get(URI.create(token)).toString();
+            }
+            Path parent = jarPath.getParent();
+            if (parent == null) {
+                return null;
+            }
+            return parent.resolve(token).normalize().toString();
+        } catch (RuntimeException ex) {
+            return null;
         }
     }
 
