@@ -3,6 +3,8 @@ import {
   canCreateChildAt,
   defaultObjectTypeForParent,
   instanceTypeFilterForParent,
+  PLATFORM_CREATE_TYPES,
+  platformTypesForParent,
   resolveCreateDialogMode,
 } from "./createObjectMode";
 
@@ -41,6 +43,20 @@ describe("defaultObjectTypeForParent", () => {
     expect(defaultObjectTypeForParent("root.platform.process-programs")).toBe("PROCESS_PROGRAM");
     expect(defaultObjectTypeForParent("root.platform.mes.work-orders")).toBe("CUSTOM");
     expect(defaultObjectTypeForParent("root.platform.mes.lots")).toBe("CUSTOM");
+  });
+});
+
+describe("platformTypesForParent", () => {
+  it("offers the catalog child type and a visual group", () => {
+    expect(platformTypesForParent("root.platform.devices")).toEqual(["DEVICE", "VISUAL_GROUP"]);
+    expect(platformTypesForParent("root.platform.dashboards")).toEqual(["DASHBOARD", "VISUAL_GROUP"]);
+    expect(platformTypesForParent("root.platform.workflows")).toEqual(["WORKFLOW", "VISUAL_GROUP"]);
+    expect(platformTypesForParent("root.platform.singleton-blueprints")).toEqual(["BLUEPRINT", "VISUAL_GROUP"]);
+    expect(platformTypesForParent("root.platform.mes.work-orders")).toEqual(["CUSTOM", "VISUAL_GROUP"]);
+  });
+
+  it("keeps the full list for an unconstrained parent", () => {
+    expect(platformTypesForParent("root.platform")).toEqual([...PLATFORM_CREATE_TYPES]);
   });
 });
 
