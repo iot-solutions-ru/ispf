@@ -12,6 +12,7 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -84,6 +85,21 @@ class JavaFunctionCompilerTest {
         }
         assertTrue(entries.stream().anyMatch(entry -> entry.contains("ispf-core-0.9.208.jar")));
         assertTrue(entries.stream().anyMatch(entry -> entry.replace('\\', '/').endsWith("libs/ispf-core-relative.jar")));
+    }
+
+    @Test
+    void manifestClasspathIsReadOnlyForASingleJar() {
+        String sep = java.io.File.pathSeparator;
+        assertTrue(JavaFunctionCompileClasspath.soleClasspathJar("C:/gradle/classpath.jar"));
+        assertFalse(JavaFunctionCompileClasspath.soleClasspathJar("a.jar" + sep + "b.jar"));
+        assertFalse(JavaFunctionCompileClasspath.soleClasspathJar("build/classes/java/main"));
+    }
+
+    @Test
+    void malformedManifestFileUrlIsNotDropped() {
+        Path jarPath = Path.of("gradle-javaexec-classpath.jar");
+        assertThrows(IllegalArgumentException.class,
+                () -> JavaFunctionCompileClasspath.resolveManifestEntry(jarPath, "file://not a uri"));
     }
 
     @Test
