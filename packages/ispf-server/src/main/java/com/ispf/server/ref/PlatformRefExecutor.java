@@ -82,7 +82,7 @@ public class PlatformRefExecutor {
         try {
             return Optional.of(functionService.invoke(resolved.object(), resolved.name(), input));
         } catch (RuntimeException ex) {
-            return Optional.empty();
+            throw failed("Function call failed", resolved.object() + "." + resolved.name(), ex);
         }
     }
 
@@ -95,8 +95,13 @@ public class PlatformRefExecutor {
             eventService.fire(resolved.object(), resolved.name(), payload);
             return Optional.ofNullable(payload);
         } catch (RuntimeException ex) {
-            return Optional.empty();
+            throw failed("Event fire failed", resolved.object() + "." + resolved.name(), ex);
         }
+    }
+
+    private static IllegalStateException failed(String action, String target, RuntimeException cause) {
+        String detail = cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName();
+        return new IllegalStateException(action + ": " + target + ": " + detail, cause);
     }
 
     public boolean write(PlatformRef ref, Object value, String ruleObjectPath) {

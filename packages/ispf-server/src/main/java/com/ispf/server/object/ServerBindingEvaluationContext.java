@@ -54,14 +54,15 @@ public class ServerBindingEvaluationContext implements BindingEvaluationContext 
 
     @Override
     public Optional<DataRecord> invokeFunction(String objectPath, String functionName, DataRecord input) {
+        String target = objectPath + "." + functionName;
         if (INVOKE_GUARD.get()) {
-            return Optional.empty();
+            throw new IllegalStateException("Nested function call is not allowed: " + target);
         }
         INVOKE_GUARD.set(true);
         try {
             return Optional.of(functionService.getObject().invoke(objectPath, functionName, input));
-        } catch (RuntimeException ignored) {
-            return Optional.empty();
+        } catch (RuntimeException ex) {
+            throw failed("Function call failed", target, ex);
         } finally {
             INVOKE_GUARD.set(false);
         }
@@ -77,11 +78,12 @@ public class ServerBindingEvaluationContext implements BindingEvaluationContext 
 
     @Override
     public Optional<Boolean> fireEvent(String objectPath, String eventName) {
-        return platformRefExecutor.fire(
+        platformRefExecutor.fire(
                 PlatformRef.event(objectPath, eventName),
                 objectPath,
                 null
-        ).map(ignored -> Boolean.TRUE);
+        );
+        return Optional.of(Boolean.TRUE);
     }
 
     @Override
@@ -98,7 +100,7 @@ public class ServerBindingEvaluationContext implements BindingEvaluationContext 
                 }
                 return readRemoteField(ref.object(), ref.name(), ref.field()).map(String::valueOf);
             } catch (RuntimeException ex) {
-                return Optional.empty();
+                throw failed("Object query spec failed", trimmed, ex);
             }
         }
         if (trimmed.length() >= 2 && trimmed.startsWith("'") && trimmed.endsWith("'")) {
@@ -116,7 +118,7 @@ public class ServerBindingEvaluationContext implements BindingEvaluationContext 
             ObjectQuerySpec spec = objectQuerySpecParser.parse(specJson);
             return Optional.of(objectQueryService.executeAggregate(spec, aggregate, field, ruleObjectPath));
         } catch (RuntimeException ex) {
-            return Optional.empty();
+            throw failed("queryScalar failed", ruleObjectPath, ex);
         }
     }
 
@@ -127,12 +129,17 @@ public class ServerBindingEvaluationContext implements BindingEvaluationContext 
             ObjectQueryResult result = objectQueryService.execute(spec, ruleObjectPath);
             return Optional.of(result.rows());
         } catch (RuntimeException ex) {
-            return Optional.empty();
+            throw failed("queryRows failed", ruleObjectPath, ex);
         }
     }
 
     @Override
     public boolean writeRemoteField(PlatformRef ref, Object value, String ruleObjectPath) {
         return platformRefExecutor.write(ref, value, ruleObjectPath);
+    }
+
+    private static IllegalStateException failed(String action, String target, RuntimeException cause) {
+        String detail = cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName();
+        return new IllegalStateException(action + ": " + target + ": " + detail, cause);
     }
 }

@@ -87,6 +87,58 @@ class PlatformRefExecutorTest {
     }
 
     @Test
+    void callFailureNamesTheFunctionAndKeepsTheCause() {
+        PlatformRefExecutor executor = new PlatformRefExecutor(
+                objectManager,
+                functionService,
+                eventService,
+                variableMemberAccessService
+        );
+        IllegalArgumentException missing = new IllegalArgumentException("Unknown function: boom");
+        when(functionService.invoke(
+                eq("root.platform.devices.pump"),
+                eq("boom"),
+                nullable(DataRecord.class)
+        )).thenThrow(missing);
+
+        assertThatThrownBy(() -> executor.call(
+                PlatformRefParser.parse("root.platform.devices.pump/fn/boom"),
+                "root.platform.devices.local",
+                null
+        ))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Function call failed: root.platform.devices.pump.boom: Unknown function: boom")
+                .cause()
+                .isSameAs(missing);
+    }
+
+    @Test
+    void fireFailureNamesTheEventAndKeepsTheCause() {
+        PlatformRefExecutor executor = new PlatformRefExecutor(
+                objectManager,
+                functionService,
+                eventService,
+                variableMemberAccessService
+        );
+        IllegalStateException missing = new IllegalStateException("Unknown event: overload");
+        doThrow(missing).when(eventService).fire(
+                eq("root.platform.devices.pump"),
+                eq("overload"),
+                nullable(DataRecord.class)
+        );
+
+        assertThatThrownBy(() -> executor.fire(
+                PlatformRefParser.parse("root.platform.devices.pump/evt/overload"),
+                "root.platform.devices.local",
+                null
+        ))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Event fire failed: root.platform.devices.pump.overload: Unknown event: overload")
+                .cause()
+                .isSameAs(missing);
+    }
+
+    @Test
     void memberReadOmitsVariableDeniedByAcl() {
         String path = "root.platform.devices.remote";
         var authentication = UsernamePasswordAuthenticationToken.authenticated(
