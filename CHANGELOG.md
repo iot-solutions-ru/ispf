@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Binding rule chains** — `BindingRuleEngine` stopped after 8 passes or 16 nested activations with no error, so a long chain looked like a successful write while later fields stayed stale. The pass and depth limits are unchanged; hitting them now fails with the object path and "truncated".
 - **Java functions on `bootRun`** — saving `sourceType=java` failed with
   `classpath missing ispf-core (entries=1)` because Gradle puts one classpath jar on
   `java.class.path` and `JavaFunctionCompileClasspath` did not read its manifest

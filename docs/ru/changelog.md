@@ -11,6 +11,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
+- Цепочка правил обрывалась после 8 проходов или 16 вложений без ошибки: запись исходного поля выглядела успешной, хвост оставался прежним. Потолки те же; при обрыве теперь ошибка с путём объекта и текстом, что цепочка обрезана.
 - Java-функции при `bootRun`: сохранение `sourceType=java` падало с
   `classpath missing ispf-core (entries=1)`, потому что Gradle кладёт один classpath-jar
   в `java.class.path`, а `JavaFunctionCompileClasspath` не читал его манифест `Class-Path`.
