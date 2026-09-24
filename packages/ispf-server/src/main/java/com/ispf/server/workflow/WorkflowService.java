@@ -7,8 +7,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
-import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
+import com.ispf.server.spi.WorkflowObjectAccess;
 import com.ispf.plugin.workflow.BpmnProcess;
 import com.ispf.plugin.workflow.InstanceStatus;
 import com.ispf.plugin.workflow.SequenceFlowDefinition;
@@ -47,8 +46,7 @@ public class WorkflowService {
 
     private static final DataSchema STRING_VALUE = WorkflowTaskExecutor.STRING_VALUE;
 
-    private final ObjectManager objectManager;
-    private final SystemObjectStructureService structureService;
+    private final WorkflowObjectAccess objects;
     private final WorkflowEngine workflowEngine;
     private final ObjectMapper objectMapper;
     private final WorkflowInstanceStore instanceStore;
@@ -67,8 +65,7 @@ public class WorkflowService {
     private final WorkflowInstanceControl instanceControl;
 
     public WorkflowService(
-            ObjectManager objectManager,
-            SystemObjectStructureService structureService,
+            WorkflowObjectAccess objects,
             WorkflowEngine workflowEngine,
             ObjectMapper objectMapper,
             WorkflowInstanceStore instanceStore,
@@ -85,8 +82,7 @@ public class WorkflowService {
             WorkflowRetryService retryService,
             ExpressionFormalVerificationService formalVerificationService
     ) {
-        this.objectManager = objectManager;
-        this.structureService = structureService;
+        this.objects = objects;
         this.workflowEngine = workflowEngine;
         this.objectMapper = objectMapper;
         this.instanceStore = instanceStore;
@@ -104,7 +100,7 @@ public class WorkflowService {
         this.formalVerificationService = formalVerificationService;
         this.instanceControl = new WorkflowInstanceControl(
                 this,
-                objectManager,
+                objects,
                 workflowEngine,
                 instanceStore,
                 taskExecutor,
@@ -120,15 +116,15 @@ public class WorkflowService {
 
     @Transactional
     public void ensureWorkflowStructure(String path) {
-        PlatformObject node = objectManager.require(path);
+        PlatformObject node = objects.require(path);
         if (node.type() != ObjectType.WORKFLOW) {
             throw new IllegalArgumentException("Not a workflow object: " + path);
         }
-        structureService.ensureWorkflowStructure(path);
+        objects.ensureWorkflowStructure(path);
     }
 
     public WorkflowView getWorkflow(String path) {
-        PlatformObject node = objectManager.require(path);
+        PlatformObject node = objects.require(path);
         if (node.type() != ObjectType.WORKFLOW) {
             throw new IllegalArgumentException("Not a workflow object: " + path);
         }
@@ -155,7 +151,7 @@ public class WorkflowService {
             return null;
         }
         try {
-            PlatformObject node = objectManager.require(workflowPath);
+            PlatformObject node = objects.require(workflowPath);
             return readString(node, "operatorAppId").orElse(null);
         } catch (Exception ignored) {
             return null;
@@ -166,7 +162,7 @@ public class WorkflowService {
     public WorkflowView saveBpmn(String path, String bpmnXml) throws WorkflowException {
         BpmnProcess process = workflowEngine.parse(bpmnXml);
         verifySequenceFlowConditions(process);
-        objectManager.setVariableValue(
+        objects.setVariableValue(
                 path,
                 "bpmnXml",
                 DataRecord.single(STRING_VALUE, Map.of("value", bpmnXml))
@@ -177,7 +173,7 @@ public class WorkflowService {
     @Transactional
     public WorkflowView updateStatus(String path, WorkflowLifecycleStatus status) {
         if (status == WorkflowLifecycleStatus.ACTIVE) {
-            PlatformObject node = objectManager.require(path);
+            PlatformObject node = objects.require(path);
             String bpmnXml = readString(node, "bpmnXml").orElse("");
             if (!bpmnXml.isBlank()) {
                 try {
@@ -187,7 +183,7 @@ public class WorkflowService {
                 }
             }
         }
-        objectManager.setVariableValue(
+        objects.setVariableValue(
                 path,
                 "status",
                 DataRecord.single(STRING_VALUE, Map.of("value", status.name()))
@@ -220,7 +216,7 @@ public class WorkflowService {
     @Transactional
     public WorkflowView updateOperatorAppId(String path, String operatorAppId) {
         String normalized = operatorAppId != null ? operatorAppId.trim() : "";
-        objectManager.setVariableValue(
+        objects.setVariableValue(
                 path,
                 "operatorAppId",
                 DataRecord.single(STRING_VALUE, Map.of("value", normalized))
@@ -255,7 +251,7 @@ public class WorkflowService {
         if (value == null || value.isBlank()) {
             return;
         }
-        objectManager.setVariableValue(
+        objects.setVariableValue(
                 path,
                 variableName,
                 DataRecord.single(STRING_VALUE, Map.of("value", value))
@@ -303,8 +299,8 @@ public class WorkflowService {
             Map<String, String> input
     ) throws WorkflowException {
         automationMetricsRecorder.recordWorkflowStart(trigger);
-        structureService.ensureWorkflowStructure(path);
-        PlatformObject node = objectManager.require(path);
+        objects.ensureWorkflowStructure(path);
+        PlatformObject node = objects.require(path);
         String bpmnXml = readString(node, "bpmnXml").orElseThrow(() ->
                 new WorkflowException("Workflow BPMN is empty: " + path));
         try {
@@ -341,11 +337,11 @@ public class WorkflowService {
 
     @Transactional
     public Map<String, Object> invokeWorkflowTool(String path, Map<String, String> input) throws WorkflowException {
-        PlatformObject node = objectManager.require(path);
+        PlatformObject node = objects.require(path);
         if (node.type() != ObjectType.WORKFLOW) {
             throw new WorkflowException("Not a workflow: " + path);
         }
-        structureService.ensureWorkflowStructure(path);
+        objects.ensureWorkflowStructure(path);
         if (readLifecycleStatus(node) != WorkflowLifecycleStatus.ACTIVE) {
             throw new WorkflowException("Workflow tool requires ACTIVE status: " + path);
         }
@@ -392,7 +388,7 @@ public class WorkflowService {
     public List<PublishedWorkflowTool> listPublishedWorkflowTools() {
         List<PublishedWorkflowTool> tools = new ArrayList<>();
         Set<String> usedNames = new HashSet<>();
-        for (PlatformObject node : objectManager.tree().all()) {
+        for (PlatformObject node : objects.all()) {
             if (node.type() != ObjectType.WORKFLOW) {
                 continue;
             }
@@ -504,7 +500,7 @@ public class WorkflowService {
     }
 
     private void handleFailure(String path, WorkflowInstance instance, Map<String, String> input) {
-        PlatformObject node = objectManager.require(path);
+        PlatformObject node = objects.require(path);
         int attempt = WorkflowTaskExecutor.parseInt(instance.variables().getOrDefault("_retryAttempt", "0"), 0) + 1;
         int maxAttempts = WorkflowTaskExecutor.parseInt(readString(node, "retryMaxAttempts").orElse("0"), 0);
         int backoffSeconds = Math.max(0, WorkflowTaskExecutor.parseInt(readString(node, "retryBackoffSeconds").orElse("30"), 30));
@@ -610,7 +606,7 @@ public class WorkflowService {
         for (String workflowPath : eventTriggerIndex.findVariableWorkflows(objectPath, variableName)) {
             PlatformObject node;
             try {
-                node = objectManager.require(workflowPath);
+                node = objects.require(workflowPath);
             } catch (ObjectNotFoundException ex) {
                 log.warn("Skipping variable trigger for missing workflow {}: {}", workflowPath, ex.getMessage());
                 eventTriggerIndex.removeWorkflow(workflowPath);
@@ -639,7 +635,7 @@ public class WorkflowService {
         for (String workflowPath : eventTriggerIndex.findEventWorkflows(objectPath, eventName)) {
             PlatformObject node;
             try {
-                node = objectManager.require(workflowPath);
+                node = objects.require(workflowPath);
             } catch (ObjectNotFoundException ex) {
                 log.warn("Skipping event trigger for missing workflow {}: {}", workflowPath, ex.getMessage());
                 eventTriggerIndex.removeWorkflow(workflowPath);
@@ -724,7 +720,7 @@ public class WorkflowService {
 
     BpmnProcess parseProcess(String workflowPath) throws WorkflowException {
         return workflowEngine.parse(
-                readString(objectManager.require(workflowPath), "bpmnXml")
+                readString(objects.require(workflowPath), "bpmnXml")
                         .orElseThrow(() -> new WorkflowException("BPMN missing"))
         );
     }
@@ -744,7 +740,7 @@ public class WorkflowService {
                 return true;
             }
 
-            PlatformObject source = objectManager.require(objectPath);
+            PlatformObject source = objects.require(objectPath);
             Optional<Variable> variable = source.getVariable(variableName);
             if (variable.isEmpty() || variable.get().value().isEmpty()) {
                 return false;

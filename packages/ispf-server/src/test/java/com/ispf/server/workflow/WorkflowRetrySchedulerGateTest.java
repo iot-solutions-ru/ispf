@@ -1,7 +1,7 @@
 package com.ispf.server.workflow;
 
 import com.ispf.server.config.ClusterProperties;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.WorkflowObjectAccess;
 import com.ispf.server.platform.PlatformLeaderLockService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,7 @@ class WorkflowRetrySchedulerGateTest {
     @Mock
     ClusterProperties clusterProperties;
     @Mock
-    ObjectManager objectManager;
+    WorkflowObjectAccess objects;
 
     private WorkflowRetryScheduler scheduler;
 
@@ -37,14 +37,14 @@ class WorkflowRetrySchedulerGateTest {
                 workflowService,
                 leaderLockService,
                 clusterProperties,
-                objectManager
+                objects
         );
     }
 
     @Test
     void pollSkipsWhenObjectTreeNotReady() {
         when(clusterProperties.isSchedulerActive()).thenReturn(true);
-        when(objectManager.isInitialized()).thenReturn(false);
+        when(objects.isInitialized()).thenReturn(false);
 
         scheduler.poll();
 

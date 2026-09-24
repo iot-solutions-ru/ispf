@@ -16,7 +16,7 @@ import com.ispf.server.persistence.entity.WorkflowExecutionStepEntity;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
 import com.ispf.server.persistence.entity.WorkflowUserTaskEntity;
 import com.ispf.plugin.workflow.WorkflowStepRecord;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.WorkflowObjectAccess;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,20 +33,20 @@ public class WorkflowInstanceStore {
     private final WorkflowInstanceRepository instanceRepository;
     private final WorkflowUserTaskRepository userTaskRepository;
     private final WorkflowExecutionStepRepository stepRepository;
-    private final ObjectManager objectManager;
+    private final WorkflowObjectAccess objects;
     private final ObjectMapper objectMapper;
 
     public WorkflowInstanceStore(
             WorkflowInstanceRepository instanceRepository,
             WorkflowUserTaskRepository userTaskRepository,
             WorkflowExecutionStepRepository stepRepository,
-            ObjectManager objectManager,
+            WorkflowObjectAccess objects,
             ObjectMapper objectMapper
     ) {
         this.instanceRepository = instanceRepository;
         this.userTaskRepository = userTaskRepository;
         this.stepRepository = stepRepository;
-        this.objectManager = objectManager;
+        this.objects = objects;
         this.objectMapper = objectMapper;
     }
 
@@ -122,7 +122,7 @@ public class WorkflowInstanceStore {
 
     private String resolveOperatorAppId(String workflowPath) {
         try {
-            PlatformObject workflow = objectManager.require(workflowPath);
+            PlatformObject workflow = objects.require(workflowPath);
             return readString(workflow, "operatorAppId").orElse(null);
         } catch (Exception ignored) {
             return null;

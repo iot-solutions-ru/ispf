@@ -5,17 +5,17 @@ import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.ExpressionException;
 import com.ispf.plugin.workflow.WorkflowConditionEvaluator;
 import com.ispf.plugin.workflow.WorkflowException;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.WorkflowObjectAccess;
 import org.springframework.stereotype.Component;
 
 @Component
 public class WorkflowConditionFactory {
 
-    private final ObjectManager objectManager;
+    private final WorkflowObjectAccess objects;
     private final ExpressionEngine expressionEngine;
 
-    public WorkflowConditionFactory(ObjectManager objectManager, ExpressionEngine expressionEngine) {
-        this.objectManager = objectManager;
+    public WorkflowConditionFactory(WorkflowObjectAccess objects, ExpressionEngine expressionEngine) {
+        this.objects = objects;
         this.expressionEngine = expressionEngine;
     }
 
@@ -31,7 +31,7 @@ public class WorkflowConditionFactory {
             return false;
         }
         try {
-            PlatformObject node = objectManager.require(triggerObjectPath);
+            PlatformObject node = objects.require(triggerObjectPath);
             Object result = expressionEngine.evaluate(expression, node);
             if (result instanceof Boolean bool) {
                 return bool;

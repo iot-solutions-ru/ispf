@@ -9,10 +9,9 @@ import com.ispf.core.object.Variable;
 import com.ispf.plugin.workflow.WorkflowEngine;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.expression.ExpressionFormalVerificationService;
-import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.platform.AutomationMetricsRecorder;
-import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
+import com.ispf.server.spi.WorkflowObjectAccess;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,9 +40,7 @@ class WorkflowTriggerSoftFailTest {
     private static final String EVENT_NAME = "thresholdExceeded";
 
     @Mock
-    private ObjectManager objectManager;
-    @Mock
-    private SystemObjectStructureService structureService;
+    private WorkflowObjectAccess objects;
     @Mock
     private WorkflowEngine workflowEngine;
     @Mock
@@ -79,8 +76,7 @@ class WorkflowTriggerSoftFailTest {
     @BeforeEach
     void setUp() {
         workflowService = new WorkflowService(
-                objectManager,
-                structureService,
+                objects,
                 workflowEngine,
                 objectMapper,
                 instanceStore,
@@ -104,15 +100,15 @@ class WorkflowTriggerSoftFailTest {
         PlatformObject activeNode = workflowNode(WorkflowLifecycleStatus.DRAFT);
         when(eventTriggerIndex.findVariableWorkflows(OBJECT_PATH, VARIABLE_NAME))
                 .thenReturn(List.of(STALE_WORKFLOW, ACTIVE_WORKFLOW));
-        when(objectManager.require(STALE_WORKFLOW))
+        when(objects.require(STALE_WORKFLOW))
                 .thenThrow(new ObjectNotFoundException(STALE_WORKFLOW));
-        when(objectManager.require(ACTIVE_WORKFLOW)).thenReturn(activeNode);
+        when(objects.require(ACTIVE_WORKFLOW)).thenReturn(activeNode);
 
         assertThatCode(() -> workflowService.handleVariableTrigger(OBJECT_PATH, VARIABLE_NAME))
                 .doesNotThrowAnyException();
 
-        verify(objectManager).require(STALE_WORKFLOW);
-        verify(objectManager).require(ACTIVE_WORKFLOW);
+        verify(objects).require(STALE_WORKFLOW);
+        verify(objects).require(ACTIVE_WORKFLOW);
         verify(eventTriggerIndex).removeWorkflow(STALE_WORKFLOW);
     }
 
@@ -121,15 +117,15 @@ class WorkflowTriggerSoftFailTest {
         PlatformObject activeNode = workflowNode(WorkflowLifecycleStatus.DRAFT);
         when(eventTriggerIndex.findEventWorkflows(OBJECT_PATH, EVENT_NAME))
                 .thenReturn(List.of(STALE_WORKFLOW, ACTIVE_WORKFLOW));
-        when(objectManager.require(STALE_WORKFLOW))
+        when(objects.require(STALE_WORKFLOW))
                 .thenThrow(new ObjectNotFoundException(STALE_WORKFLOW));
-        when(objectManager.require(ACTIVE_WORKFLOW)).thenReturn(activeNode);
+        when(objects.require(ACTIVE_WORKFLOW)).thenReturn(activeNode);
 
         assertThatCode(() -> workflowService.handleEventTrigger(OBJECT_PATH, EVENT_NAME))
                 .doesNotThrowAnyException();
 
-        verify(objectManager).require(STALE_WORKFLOW);
-        verify(objectManager).require(eq(ACTIVE_WORKFLOW));
+        verify(objects).require(STALE_WORKFLOW);
+        verify(objects).require(eq(ACTIVE_WORKFLOW));
         verify(eventTriggerIndex).removeWorkflow(STALE_WORKFLOW);
     }
 

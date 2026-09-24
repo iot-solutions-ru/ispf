@@ -27,13 +27,13 @@ class WorkflowTriggerIndexTest {
     private static final String WORKFLOWS_ROOT = "root.platform.workflows";
 
     @Mock
-    private com.ispf.server.object.ObjectManager objectManager;
+    private com.ispf.server.spi.WorkflowObjectAccess objects;
 
     private WorkflowEventTriggerIndex index;
 
     @BeforeEach
     void setUp() {
-        index = new WorkflowEventTriggerIndex(objectManager, OBJECT_MAPPER);
+        index = new WorkflowEventTriggerIndex(objects, OBJECT_MAPPER);
     }
 
     @Test
@@ -45,7 +45,7 @@ class WorkflowTriggerIndexTest {
                         {"triggerType":"variable","objectPath":"root.device","variableName":"temperature"}
                         """
         );
-        when(objectManager.tree()).thenReturn(treeWithChildren(workflow));
+        when(objects.childrenOf(WORKFLOWS_ROOT)).thenReturn(List.of(workflow));
 
         index.rebuild();
 
@@ -63,29 +63,12 @@ class WorkflowTriggerIndexTest {
                         {"triggerType":"variable","objectPath":"root.device","variableName":"temperature"}
                         """
         );
-        when(objectManager.tree()).thenReturn(treeWithChildren(workflow));
+        when(objects.childrenOf(WORKFLOWS_ROOT)).thenReturn(List.of(workflow));
 
         index.rebuild();
 
         assertEquals(0, index.variableTriggersIndexed());
         assertTrue(index.findVariableWorkflows("root.device", "temperature").isEmpty());
-    }
-
-    private static com.ispf.core.object.ObjectTree treeWithChildren(PlatformObject... workflows) {
-        com.ispf.core.object.ObjectTree tree = new com.ispf.core.object.ObjectTree();
-        PlatformObject root = new PlatformObject(
-                "workflows-root",
-                WORKFLOWS_ROOT,
-                ObjectType.WORKFLOWS,
-                "Workflows",
-                "",
-                null
-        );
-        tree.register(root);
-        for (PlatformObject workflow : workflows) {
-            tree.register(workflow);
-        }
-        return tree;
     }
 
     private static PlatformObject workflowNode(

@@ -17,7 +17,7 @@ import com.ispf.server.binding.BindingRefreshAfterCommit;
 import com.ispf.server.cluster.NatsEventBridge;
 import com.ispf.server.event.EventService;
 import com.ispf.server.function.FunctionService;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.WorkflowObjectAccess;
 import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,7 +48,7 @@ class WorkflowTaskExecutorTest {
     private static final String TARGET = "root.devices.pump";
 
     @Mock
-    private ObjectManager objectManager;
+    private WorkflowObjectAccess objects;
     @Mock
     private NatsEventBridge natsEventBridge;
     @Mock
@@ -66,7 +66,7 @@ class WorkflowTaskExecutorTest {
 
     private WorkflowTaskExecutor executor() {
         return new WorkflowTaskExecutor(
-                objectManager,
+                objects,
                 natsEventBridge,
                 functionService,
                 eventService,
@@ -92,7 +92,7 @@ class WorkflowTaskExecutorTest {
         );
 
         ArgumentCaptor<DataRecord> record = ArgumentCaptor.forClass(DataRecord.class);
-        verify(objectManager).setVariableValue(eq(TARGET), eq("mode"), record.capture());
+        verify(objects).setVariableValue(eq(TARGET), eq("mode"), record.capture());
         assertEquals("auto", record.getValue().firstRow().get("value"));
     }
 
@@ -103,7 +103,7 @@ class WorkflowTaskExecutorTest {
                 instance()
         ));
         assertTrue(ex.getMessage().contains("targetObject"));
-        verify(objectManager, never()).setVariableValue(anyString(), anyString(), any());
+        verify(objects, never()).setVariableValue(anyString(), anyString(), any());
     }
 
     @Test
@@ -113,7 +113,7 @@ class WorkflowTaskExecutorTest {
         when(variable.value()).thenReturn(Optional.of(DataRecord.single(schema, Map.of("value", "42"))));
         PlatformObject node = mock(PlatformObject.class);
         when(node.getVariable("level")).thenReturn(Optional.of(variable));
-        when(objectManager.require(TARGET)).thenReturn(node);
+        when(objects.require(TARGET)).thenReturn(node);
 
         WorkflowInstance instance = instance();
         executor().executeServiceTask(
