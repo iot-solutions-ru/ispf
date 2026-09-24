@@ -1035,7 +1035,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 **Цель:** подключение OT/IT **10/10** — драйверы промышленного уровня, лаборатория взаимодействия, граничные агенты, DDK.
 
-**Пробел сегодня:** 58 `driverId` в каталоге, ~13 `PRODUCTION` в [DriverProductionMatrix](../../packages/ispf-server/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java).
+**Пробел сегодня:** 58 `driverId` в каталоге, ~13 `PRODUCTION` в [DriverProductionMatrix](../../packages/ispf-server-driver/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java).
 
 | ID | Задача | Приоритет | Принятие |
 | -- | ------ | --------- | ---------- |
