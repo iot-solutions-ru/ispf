@@ -130,22 +130,30 @@ public class BindingRuleEngine {
         runRules(objectPath, Trigger.manual(), false);
     }
 
+    private static IllegalStateException truncated(String objectPath, String limit) {
+        return new IllegalStateException("Binding rule chain truncated at " + objectPath + ": " + limit);
+    }
+
     private void runRules(String objectPath, Trigger trigger, boolean guardDepth) {
         if (guardDepth) {
             int depth = ACTIVATION_DEPTH.get();
             if (depth >= MAX_DEPTH) {
-                return;
+                throw truncated(objectPath, "depth limit " + MAX_DEPTH);
             }
             ACTIVATION_DEPTH.set(depth + 1);
         }
         try {
             Set<String> changedVariables = new LinkedHashSet<>();
+            boolean changedInPass = false;
             for (int pass = 0; pass < MAX_PASSES; pass++) {
-                boolean changedInPass = evaluatePass(objectPath, trigger, changedVariables);
+                changedInPass = evaluatePass(objectPath, trigger, changedVariables);
                 if (!changedInPass) {
                     break;
                 }
                 trigger = Trigger.manual();
+            }
+            if (changedInPass) {
+                throw truncated(objectPath, "pass limit " + MAX_PASSES);
             }
             for (String variableName : changedVariables) {
                 if (shouldPublishVariableUpdate(variableName)) {
