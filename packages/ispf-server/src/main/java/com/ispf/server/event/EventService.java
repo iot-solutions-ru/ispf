@@ -11,6 +11,7 @@ import com.ispf.server.api.dto.DataRecordPayloadResolver;
 import com.ispf.server.application.catalog.EventCatalogPayloadValidator;
 import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.WorkflowEventPublish;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.entity.EventHistoryEntity;
 import com.ispf.server.eventfilter.EventFilterMatcher;
@@ -30,7 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @Service
-public class EventService {
+public class EventService implements WorkflowEventPublish {
 
     private static final int MAX_FILTER_EXPRESSION_LENGTH = 2000;
 
@@ -104,6 +105,11 @@ public class EventService {
     }
 
     /** HTTP/API fire — no surrounding transaction; journal and automation reactions are async. */
+    @Override
+    public void publishFired(String objectPath, String eventName, DataRecord payload) {
+        fire(objectPath, eventName, payload);
+    }
+
     public ObjectEvent fire(String objectPath, String eventName, DataRecordPayloadRequest payload) {
         return fireInternal(objectPath, eventName, payload, null, AutomationMetricsRecorder.EventFireSource.API, null);
     }

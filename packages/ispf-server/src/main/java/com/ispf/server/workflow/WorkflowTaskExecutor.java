@@ -12,13 +12,13 @@ import com.ispf.plugin.workflow.ServiceTaskDefinition;
 import com.ispf.plugin.workflow.UserTaskDefinition;
 import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowInstance;
-import com.ispf.server.binding.BindingRefreshAfterCommit;
-import com.ispf.server.cluster.NatsEventBridge;
-import com.ispf.server.event.EventService;
 import com.ispf.server.function.FunctionInvocationScope;
-import com.ispf.server.function.FunctionService;
+import com.ispf.server.spi.WorkflowBindingRefresh;
+import com.ispf.server.spi.WorkflowEventPublish;
+import com.ispf.server.spi.WorkflowFunctionCalls;
+import com.ispf.server.spi.WorkflowMessageBus;
 import com.ispf.server.spi.WorkflowObjectAccess;
-import com.ispf.server.platform.AutomationMetricsRecorder;
+import com.ispf.server.spi.WorkflowStartTrigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -46,19 +46,19 @@ public class WorkflowTaskExecutor {
             .build();
 
     private final WorkflowObjectAccess objects;
-    private final NatsEventBridge natsEventBridge;
-    private final FunctionService functionService;
-    private final EventService eventService;
-    private final BindingRefreshAfterCommit bindingRefreshAfterCommit;
+    private final WorkflowMessageBus natsEventBridge;
+    private final WorkflowFunctionCalls functionService;
+    private final WorkflowEventPublish eventService;
+    private final WorkflowBindingRefresh bindingRefreshAfterCommit;
     private final WorkflowAiActionService workflowAiActionService;
     private final ObjectProvider<WorkflowService> workflows;
 
     public WorkflowTaskExecutor(
             WorkflowObjectAccess objects,
-            NatsEventBridge natsEventBridge,
-            FunctionService functionService,
-            EventService eventService,
-            BindingRefreshAfterCommit bindingRefreshAfterCommit,
+            WorkflowMessageBus natsEventBridge,
+            WorkflowFunctionCalls functionService,
+            WorkflowEventPublish eventService,
+            WorkflowBindingRefresh bindingRefreshAfterCommit,
             WorkflowAiActionService workflowAiActionService,
             ObjectProvider<WorkflowService> workflows
     ) {
@@ -129,7 +129,7 @@ public class WorkflowTaskExecutor {
         WorkflowInstance child = workflows.getObject().runWorkflowInstance(
                 call.workflowPath(),
                 trigger,
-                AutomationMetricsRecorder.WorkflowStartTrigger.EVENT,
+                WorkflowStartTrigger.EVENT,
                 input
         );
         return new CallActivityExecutor.Result(
@@ -163,7 +163,7 @@ public class WorkflowTaskExecutor {
                 String target = params.getOrDefault("objectPath", params.getOrDefault("targetObject", ""));
                 String eventName = required(params, "eventName");
                 DataRecord payload = resolveEventPayload(target, params.get("payloadVariable"));
-                eventService.fire(target, eventName, payload);
+                eventService.publishFired(target, eventName, payload);
             }
             case READ_VARIABLE -> {
                 String target = params.getOrDefault("objectPath", params.getOrDefault("targetObject", ""));
@@ -181,7 +181,7 @@ public class WorkflowTaskExecutor {
                 workflows.getObject().runWorkflow(
                         childPath,
                         params.get("objectPath"),
-                        AutomationMetricsRecorder.WorkflowStartTrigger.EVENT
+                        WorkflowStartTrigger.EVENT
                 );
             }
             case LLM_COMPLETE -> {

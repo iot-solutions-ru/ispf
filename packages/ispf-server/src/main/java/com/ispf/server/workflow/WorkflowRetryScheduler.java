@@ -3,8 +3,8 @@ package com.ispf.server.workflow;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.spi.WorkflowObjectAccess;
 import com.ispf.server.persistence.entity.WorkflowRetryScheduleEntity;
-import com.ispf.server.platform.AutomationMetricsRecorder;
-import com.ispf.server.platform.PlatformLeaderLockService;
+import com.ispf.server.spi.LeaderLock;
+import com.ispf.server.spi.WorkflowStartTrigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -29,14 +29,14 @@ public class WorkflowRetryScheduler {
 
     private final WorkflowRetryService retryService;
     private final WorkflowService workflowService;
-    private final PlatformLeaderLockService leaderLockService;
+    private final LeaderLock leaderLockService;
     private final ClusterProperties clusterProperties;
     private final WorkflowObjectAccess objects;
 
     public WorkflowRetryScheduler(
             WorkflowRetryService retryService,
             @Lazy WorkflowService workflowService,
-            PlatformLeaderLockService leaderLockService,
+            LeaderLock leaderLockService,
             ClusterProperties clusterProperties,
             WorkflowObjectAccess objects
     ) {
@@ -78,7 +78,7 @@ public class WorkflowRetryScheduler {
                 workflowService.runWorkflow(
                         row.getWorkflowPath(),
                         null,
-                        AutomationMetricsRecorder.WorkflowStartTrigger.EVENT,
+                        WorkflowStartTrigger.EVENT,
                         input
                 );
                 retryService.markDone(row.getId());

@@ -2,7 +2,7 @@ package com.ispf.server.api;
 
 import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
-import com.ispf.server.platform.AutomationMetricsRecorder;
+import com.ispf.server.spi.WorkflowStartTrigger;
 import com.ispf.server.workflow.WorkflowService;
 import com.ispf.server.workflow.WorkflowWebhookIndex;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -61,7 +61,7 @@ public class WorkflowWebhookController {
         WorkflowService.WorkflowView result = workflowService.runWorkflow(
                 path,
                 null,
-                AutomationMetricsRecorder.WorkflowStartTrigger.EVENT,
+                WorkflowStartTrigger.EVENT,
                 input
         );
         return Map.of(

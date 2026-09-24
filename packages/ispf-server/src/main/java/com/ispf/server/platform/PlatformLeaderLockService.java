@@ -1,5 +1,6 @@
 package com.ispf.server.platform;
 
+import com.ispf.server.spi.LeaderLock;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +13,7 @@ import java.util.UUID;
  * JDBC-based leader lock for scheduled jobs across replicas (PostgreSQL/H2).
  */
 @Service
-public class PlatformLeaderLockService {
+public class PlatformLeaderLockService implements LeaderLock {
 
     private final JdbcTemplate jdbcTemplate;
     private final String instanceId = UUID.randomUUID().toString();
@@ -21,6 +22,7 @@ public class PlatformLeaderLockService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    @Override
     public boolean tryAcquire(String lockName, Duration ttl) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(ttl);
@@ -64,6 +66,7 @@ public class PlatformLeaderLockService {
         }
     }
 
+    @Override
     public void release(String lockName) {
         jdbcTemplate.update(
                 """

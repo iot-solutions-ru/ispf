@@ -4,7 +4,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.spi.WorkflowObjectAccess;
-import com.ispf.server.platform.AutomationMetricsRecorder;
+import com.ispf.server.spi.WorkflowStartTrigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -52,7 +52,7 @@ public class WorkflowCronTriggerService {
                     workflowService.runWorkflow(
                             child.path(),
                             null,
-                            AutomationMetricsRecorder.WorkflowStartTrigger.EVENT,
+                            WorkflowStartTrigger.EVENT,
                             Map.of("cronExpression", cron)
                     );
                 } catch (Exception e) {

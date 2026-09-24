@@ -1,6 +1,6 @@
 package com.ispf.server.workflow;
 
-import com.ispf.server.object.PlatformObjectReadinessGate;
+import com.ispf.server.spi.ObjectTreeReadyOrder;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
@@ -16,7 +16,7 @@ public class WorkflowEventTriggerIndexStartup {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    @Order(PlatformObjectReadinessGate.AFTER_OBJECT_TREE_READY_ORDER)
+    @Order(ObjectTreeReadyOrder.AFTER_OBJECT_TREE_READY_ORDER)
     public void rebuildAfterTreeLoaded() {
         triggerIndex.rebuild();
     }

@@ -13,13 +13,14 @@ import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.function.FunctionInvokeAuditService;
 import com.ispf.server.datasource.DataSourceFunctionSupport;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.WorkflowFunctionCalls;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-public class FunctionService {
+public class FunctionService implements WorkflowFunctionCalls {
 
     private final ObjectManager objectManager;
     private final List<FunctionHandler> handlers;
@@ -47,6 +48,7 @@ public class FunctionService {
         this.invokeAccessService = invokeAccessService;
     }
 
+    @Override
     public DataRecord invoke(String objectPath, String functionName) {
         return invoke(objectPath, functionName, (DataRecordPayloadRequest) null);
     }
@@ -132,6 +134,7 @@ public class FunctionService {
     ) {
     }
 
+    @Override
     public DataRecord invoke(String objectPath, String functionName, DataRecord input) {
         return invoke(objectPath, functionName, DataRecordPayloadResolver.fromRecord(input));
     }

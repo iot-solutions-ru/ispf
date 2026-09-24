@@ -19,10 +19,11 @@ import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowInstance;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import jakarta.annotation.PostConstruct;
-import com.ispf.server.expression.ExpressionFormalVerificationService;
+import com.ispf.server.spi.WorkflowConditionCheck;
+import com.ispf.server.spi.WorkflowMetrics;
+import com.ispf.server.spi.WorkflowStartTrigger;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowDeadLetterEntity;
-import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -55,13 +56,13 @@ public class WorkflowService {
     private final WorkflowInstanceStatePublisher statePublisher;
     private final WorkflowInstanceRepository instanceRepository;
     private final WorkflowEventTriggerIndex eventTriggerIndex;
-    private final AutomationMetricsRecorder automationMetricsRecorder;
+    private final WorkflowMetrics automationMetricsRecorder;
     private final WorkflowTriggerIndexRefresh triggerIndexRefresh;
     private final ObjectProvider<WorkflowService> self;
     private final WorkflowDeadLetterService deadLetterService;
     private final WorkflowWebhookIndex webhookIndex;
     private final WorkflowRetryService retryService;
-    private final ExpressionFormalVerificationService formalVerificationService;
+    private final WorkflowConditionCheck formalVerificationService;
     private final WorkflowInstanceControl instanceControl;
 
     public WorkflowService(
@@ -74,13 +75,13 @@ public class WorkflowService {
             WorkflowInstanceStatePublisher statePublisher,
             WorkflowInstanceRepository instanceRepository,
             WorkflowEventTriggerIndex eventTriggerIndex,
-            AutomationMetricsRecorder automationMetricsRecorder,
+            WorkflowMetrics automationMetricsRecorder,
             WorkflowTriggerIndexRefresh triggerIndexRefresh,
             ObjectProvider<WorkflowService> self,
             WorkflowDeadLetterService deadLetterService,
             WorkflowWebhookIndex webhookIndex,
             WorkflowRetryService retryService,
-            ExpressionFormalVerificationService formalVerificationService
+            WorkflowConditionCheck formalVerificationService
     ) {
         this.objects = objects;
         this.workflowEngine = workflowEngine;
@@ -200,7 +201,7 @@ public class WorkflowService {
                 continue;
             }
             try {
-                formalVerificationService.requireSafeConditionForApply(condition.trim());
+                formalVerificationService.requireSafeCondition(condition.trim());
             } catch (RuntimeException ex) {
                 throw new IllegalArgumentException(
                         "Formal verification rejected sequence flow '"
@@ -260,19 +261,19 @@ public class WorkflowService {
 
     @Transactional
     public WorkflowView runWorkflow(String path) throws WorkflowException {
-        return runWorkflow(path, null, AutomationMetricsRecorder.WorkflowStartTrigger.MANUAL);
+        return runWorkflow(path, null, WorkflowStartTrigger.MANUAL);
     }
 
     @Transactional
     public WorkflowView runWorkflow(String path, String triggerObjectPath) throws WorkflowException {
-        return runWorkflow(path, triggerObjectPath, AutomationMetricsRecorder.WorkflowStartTrigger.MANUAL);
+        return runWorkflow(path, triggerObjectPath, WorkflowStartTrigger.MANUAL);
     }
 
     @Transactional
     public WorkflowView runWorkflow(
             String path,
             String triggerObjectPath,
-            AutomationMetricsRecorder.WorkflowStartTrigger trigger
+            WorkflowStartTrigger trigger
     ) throws WorkflowException {
         return runWorkflow(path, triggerObjectPath, trigger, Map.of());
     }
@@ -281,7 +282,7 @@ public class WorkflowService {
     public WorkflowView runWorkflow(
             String path,
             String triggerObjectPath,
-            AutomationMetricsRecorder.WorkflowStartTrigger trigger,
+            WorkflowStartTrigger trigger,
             Map<String, String> input
     ) throws WorkflowException {
         runWorkflowInstance(path, triggerObjectPath, trigger, input);
@@ -295,7 +296,7 @@ public class WorkflowService {
     public WorkflowInstance runWorkflowInstance(
             String path,
             String triggerObjectPath,
-            AutomationMetricsRecorder.WorkflowStartTrigger trigger,
+            WorkflowStartTrigger trigger,
             Map<String, String> input
     ) throws WorkflowException {
         automationMetricsRecorder.recordWorkflowStart(trigger);
@@ -348,7 +349,7 @@ public class WorkflowService {
         WorkflowView view = runWorkflow(
                 path,
                 null,
-                AutomationMetricsRecorder.WorkflowStartTrigger.MANUAL,
+                WorkflowStartTrigger.MANUAL,
                 input == null ? Map.of() : input
         );
         Map<String, String> variables = Map.of();
@@ -544,7 +545,7 @@ public class WorkflowService {
                 self.getObject().runWorkflow(
                         errorWorkflow,
                         path,
-                        AutomationMetricsRecorder.WorkflowStartTrigger.EVENT,
+                        WorkflowStartTrigger.EVENT,
                         Map.of(
                                 "failedWorkflowPath", path,
                                 "failedInstanceId", instance.instanceId(),
@@ -622,7 +623,7 @@ public class WorkflowService {
                 runWorkflow(
                         workflowPath,
                         objectPath,
-                        AutomationMetricsRecorder.WorkflowStartTrigger.VARIABLE
+                        WorkflowStartTrigger.VARIABLE
                 );
             } catch (WorkflowException e) {
                 log.warn("Workflow trigger failed for {}: {}", workflowPath, e.getMessage());
@@ -648,7 +649,7 @@ public class WorkflowService {
                 runWorkflow(
                         workflowPath,
                         objectPath,
-                        AutomationMetricsRecorder.WorkflowStartTrigger.EVENT
+                        WorkflowStartTrigger.EVENT
                 );
             } catch (WorkflowException e) {
                 log.warn("Workflow event trigger failed for {}: {}", workflowPath, e.getMessage());

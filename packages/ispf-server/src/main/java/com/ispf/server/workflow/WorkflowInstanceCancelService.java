@@ -1,8 +1,7 @@
 package com.ispf.server.workflow;
 
 import com.ispf.plugin.workflow.InstanceStatus;
-import com.ispf.server.application.data.ApplicationSchemaSession;
-import com.ispf.server.application.data.PlatformSqlCatalog;
+import com.ispf.server.spi.WorkflowPlatformSql;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -21,21 +20,20 @@ public class WorkflowInstanceCancelService {
 
     private final WorkflowInstanceRepository instanceRepository;
     private final JdbcTemplate jdbcTemplate;
-    private final ApplicationSchemaSession schemaSession;
+    private final WorkflowPlatformSql platformSql;
     private final String cancelJournalTable;
     private final ObjectProvider<WorkflowInstanceCancelService> self;
 
     public WorkflowInstanceCancelService(
             WorkflowInstanceRepository instanceRepository,
             JdbcTemplate jdbcTemplate,
-            ApplicationSchemaSession schemaSession,
-            PlatformSqlCatalog platformSqlCatalog,
+            WorkflowPlatformSql platformSql,
             ObjectProvider<WorkflowInstanceCancelService> self
     ) {
         this.instanceRepository = instanceRepository;
         this.jdbcTemplate = jdbcTemplate;
-        this.schemaSession = schemaSession;
-        this.cancelJournalTable = platformSqlCatalog.table("workflow_cancel_journal");
+        this.platformSql = platformSql;
+        this.cancelJournalTable = platformSql.table("workflow_cancel_journal");
         this.self = self;
     }
 
@@ -94,7 +92,7 @@ public class WorkflowInstanceCancelService {
             String cancelledBy
     ) {
         int[] count = new int[1];
-        schemaSession.runWithPlatformCatalog(() ->
+        platformSql.runWithPlatformCatalog(() ->
                 count[0] = cancelByWorkflowPathOnPlatformCatalog(workflowPath, statusIn, reason, detailJson, cancelledBy)
         );
         return count[0];

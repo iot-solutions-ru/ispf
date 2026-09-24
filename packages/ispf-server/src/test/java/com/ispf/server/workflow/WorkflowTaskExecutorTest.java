@@ -13,12 +13,12 @@ import com.ispf.plugin.workflow.ServiceTaskDefinition;
 import com.ispf.plugin.workflow.WorkflowActionType;
 import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowInstance;
-import com.ispf.server.binding.BindingRefreshAfterCommit;
-import com.ispf.server.cluster.NatsEventBridge;
-import com.ispf.server.event.EventService;
-import com.ispf.server.function.FunctionService;
+import com.ispf.server.spi.WorkflowBindingRefresh;
+import com.ispf.server.spi.WorkflowEventPublish;
+import com.ispf.server.spi.WorkflowFunctionCalls;
+import com.ispf.server.spi.WorkflowMessageBus;
+import com.ispf.server.spi.WorkflowStartTrigger;
 import com.ispf.server.spi.WorkflowObjectAccess;
-import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -50,13 +50,13 @@ class WorkflowTaskExecutorTest {
     @Mock
     private WorkflowObjectAccess objects;
     @Mock
-    private NatsEventBridge natsEventBridge;
+    private WorkflowMessageBus natsEventBridge;
     @Mock
-    private FunctionService functionService;
+    private WorkflowFunctionCalls functionService;
     @Mock
-    private EventService eventService;
+    private WorkflowEventPublish eventService;
     @Mock
-    private BindingRefreshAfterCommit bindingRefreshAfterCommit;
+    private WorkflowBindingRefresh bindingRefreshAfterCommit;
     @Mock
     private WorkflowAiActionService workflowAiActionService;
     @Mock
@@ -188,7 +188,7 @@ class WorkflowTaskExecutorTest {
         when(workflowService.runWorkflowInstance(
                 eq("root.platform.workflows.child"),
                 eq(TARGET),
-                eq(AutomationMetricsRecorder.WorkflowStartTrigger.EVENT),
+                eq(WorkflowStartTrigger.EVENT),
                 any()
         )).thenReturn(child);
 
@@ -219,6 +219,6 @@ class WorkflowTaskExecutorTest {
                 task(WorkflowActionType.FIRE_EVENT, Map.of("objectPath", TARGET, "eventName", "alarm")),
                 instance()
         );
-        verify(eventService).fire(eq(TARGET), eq("alarm"), (DataRecord) isNull());
+        verify(eventService).publishFired(eq(TARGET), eq("alarm"), (DataRecord) isNull());
     }
 }
