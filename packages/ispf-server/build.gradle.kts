@@ -27,6 +27,7 @@ dependencies {
     implementation(project(":packages:ispf-persistence"))
     implementation(project(":packages:ispf-server-spi"))
     implementation(project(":packages:ispf-license"))
+    implementation(project(":packages:ispf-concurrent"))
     implementation(project(":packages:ispf-expression"))
     implementation(project(":packages:ispf-analytics-engine"))
     implementation(project(":packages:ispf-analytics-api"))

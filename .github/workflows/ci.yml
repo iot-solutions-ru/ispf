@@ -33,6 +33,7 @@ jobs:
               - 'packages/ispf-persistence/**'
               - 'packages/ispf-server-spi/**'
               - 'packages/ispf-license/**'
+              - 'packages/ispf-concurrent/**'
               - 'packages/ispf-core/**'
               - 'packages/ispf-expression/**'
               - 'packages/ispf-export-parquet/**'
