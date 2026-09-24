@@ -90,7 +90,7 @@ class JavaFunctionCompilerTest {
     @Test
     void manifestClasspathIsReadOnlyForASingleJar() {
         String sep = java.io.File.pathSeparator;
-        assertTrue(JavaFunctionCompileClasspath.soleClasspathJar("C:/gradle/classpath.jar"));
+        assertTrue(JavaFunctionCompileClasspath.soleClasspathJar("gradle/classpath.jar"));
         assertFalse(JavaFunctionCompileClasspath.soleClasspathJar("a.jar" + sep + "b.jar"));
         assertFalse(JavaFunctionCompileClasspath.soleClasspathJar("build/classes/java/main"));
     }
