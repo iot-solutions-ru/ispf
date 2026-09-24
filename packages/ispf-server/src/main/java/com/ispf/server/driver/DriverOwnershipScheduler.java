@@ -2,7 +2,7 @@ package com.ispf.server.driver;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.spi.DeviceObjectAccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,16 +21,16 @@ public class DriverOwnershipScheduler {
 
     private final DriverOwnershipService ownershipService;
     private final DriverRuntimeService driverRuntimeService;
-    private final ObjectManager objectManager;
+    private final DeviceObjectAccess objects;
 
     public DriverOwnershipScheduler(
             DriverOwnershipService ownershipService,
             DriverRuntimeService driverRuntimeService,
-            ObjectManager objectManager
+            DeviceObjectAccess objects
     ) {
         this.ownershipService = ownershipService;
         this.driverRuntimeService = driverRuntimeService;
-        this.objectManager = objectManager;
+        this.objects = objects;
     }
 
     @Scheduled(fixedDelayString = "${ispf.cluster.driver-lock-renew-ms:10000}")
@@ -74,7 +74,7 @@ public class DriverOwnershipScheduler {
 
     private boolean shouldAutoReclaim(String devicePath) {
         try {
-            PlatformObject node = objectManager.require(devicePath);
+            PlatformObject node = objects.require(devicePath);
             if (node.type() != ObjectType.DEVICE) {
                 return false;
             }

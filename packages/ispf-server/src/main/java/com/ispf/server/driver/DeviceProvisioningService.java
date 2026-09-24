@@ -1,7 +1,7 @@
 package com.ispf.server.driver;
 
 import com.ispf.driver.DriverMetadata;
-import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
+import com.ispf.server.spi.DeviceObjectAccess;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,16 +14,16 @@ import java.util.Map;
 @Service
 public class DeviceProvisioningService {
 
-    private final SystemObjectStructureService structureService;
+    private final DeviceObjectAccess objects;
     private final DriverCatalog driverCatalog;
     private final DriverRuntimeService driverRuntimeService;
 
     public DeviceProvisioningService(
-            SystemObjectStructureService structureService,
+            DeviceObjectAccess objects,
             DriverCatalog driverCatalog,
             DriverRuntimeService driverRuntimeService
     ) {
-        this.structureService = structureService;
+        this.objects = objects;
         this.driverCatalog = driverCatalog;
         this.driverRuntimeService = driverRuntimeService;
     }
@@ -41,7 +41,7 @@ public class DeviceProvisioningService {
                         "Unknown driverId: " + resolvedDriverId
                 ));
 
-        structureService.ensureDeviceDriverStructure(devicePath);
+        objects.ensureDeviceDriverStructure(devicePath);
 
         int interval = pollIntervalMs != null && pollIntervalMs > 0 ? pollIntervalMs : 5000;
         Map<String, String> configuration = metadata.configurationSchema() != null
