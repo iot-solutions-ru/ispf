@@ -14,6 +14,7 @@ include(
     "packages:ispf-server",
     "packages:ispf-persistence",
     "packages:ispf-server-spi",
+    "packages:ispf-license",
     "packages:ispf-export-parquet",
     "packages:ispf-plugin-blueprint",
     "packages:ispf-plugin-workflow",
