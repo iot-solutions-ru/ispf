@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **User-task `ispf:function` on complete** — `executeUserTaskAction` logged function failures and returned, so `completeUserTask` still claimed and closed the task while the side effect never ran. A failed invoke now rejects complete with a `WorkflowException`; the task stays open.
 - **Binding rules surface failures** — a failed `call()` / `queryScalar()` / `queryRows()` / `fire()`, an uncomputable condition, or a truncated pass/depth chain looked like success or like an honest `false`. Those now fail the recalc with the object path and cause; nested `call()` while one is running is rejected; a computed `false` still skips the rule; a blank condition still means always run.
 - **Object-query honesty** — blank or unparsable aggregate cells were treated as `0`, and a historian column failure became a blank cell so the query looked empty of samples. Blanks are skipped (a real `0` still counts); non-numbers and historian errors fail the query (member ACL denial still omits the column); `min` / `max` / `avg` over no numeric cells fail instead of returning `0`.
 - **Java functions** — `bootRun` now reads the single classpath jar's manifest `Class-Path` for `javac` (fixes `classpath missing ispf-core`); invoke projects the result onto `descriptor.outputSchema()` like script functions (drop extras, fail on missing required fields, coerce numbers).
