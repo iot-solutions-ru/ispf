@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
 
 @Service
@@ -482,25 +483,92 @@ public class ObjectQueryService {
 
     private static double sumField(List<Map<String, Object>> rows, String field) {
         double sum = 0;
-        for (Map<String, Object> row : rows) {
-            sum += toDouble(row.get(field));
+        for (double value : numericValues(rows, field)) {
+            sum += value;
         }
         return sum;
     }
 
     private static double avgField(List<Map<String, Object>> rows, String field) {
-        if (rows.isEmpty()) {
-            return 0;
+        List<Double> values = numericValues(rows, field);
+        if (values.isEmpty()) {
+            throw noNumericValues("avg", field);
         }
-        return sumField(rows, field) / rows.size();
+        double sum = 0;
+        for (double value : values) {
+            sum += value;
+        }
+        return sum / values.size();
     }
 
     private static double minField(List<Map<String, Object>> rows, String field) {
-        return rows.stream().mapToDouble(row -> toDouble(row.get(field))).min().orElse(0);
+        return numericValues(rows, field).stream()
+                .mapToDouble(Double::doubleValue)
+                .min()
+                .orElseThrow(() -> noNumericValues("min", field));
     }
 
     private static double maxField(List<Map<String, Object>> rows, String field) {
-        return rows.stream().mapToDouble(row -> toDouble(row.get(field))).max().orElse(0);
+        return numericValues(rows, field).stream()
+                .mapToDouble(Double::doubleValue)
+                .max()
+                .orElseThrow(() -> noNumericValues("max", field));
+    }
+
+    private static List<Double> numericValues(List<Map<String, Object>> rows, String field) {
+        List<Double> values = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            numericCell(row.get(field), field).ifPresent(values::add);
+        }
+        return values;
+    }
+
+    private static IllegalStateException noNumericValues(String aggregate, String field) {
+        return new IllegalStateException(
+                "Object query " + aggregate + " has no numeric values for field " + field
+        );
+    }
+
+    /**
+     * Blank cells ({@code null}, empty or whitespace-only text) are skipped.
+     * A real numeric zero is kept. Anything else is an error, not a silent zero.
+     */
+    private static OptionalDouble numericCell(Object value, String field) {
+        if (value == null) {
+            return OptionalDouble.empty();
+        }
+        if (value instanceof Number number) {
+            double parsed = number.doubleValue();
+            if (!Double.isFinite(parsed)) {
+                throw new IllegalArgumentException(
+                        "Object query aggregate field is not a finite number: " + field + "=" + value
+                );
+            }
+            return OptionalDouble.of(parsed);
+        }
+        if (value instanceof CharSequence || value instanceof Character) {
+            String text = String.valueOf(value).trim();
+            if (text.isEmpty()) {
+                return OptionalDouble.empty();
+            }
+            try {
+                double parsed = Double.parseDouble(text);
+                if (!Double.isFinite(parsed)) {
+                    throw new IllegalArgumentException(
+                            "Object query aggregate field is not a finite number: " + field + "=" + text
+                    );
+                }
+                return OptionalDouble.of(parsed);
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException(
+                        "Object query aggregate field is not a number: " + field + "=" + text,
+                        ex
+                );
+            }
+        }
+        throw new IllegalArgumentException(
+                "Object query aggregate field is not a number: " + field + "=" + value
+        );
     }
 
     private static Object firstField(List<Map<String, Object>> rows, String field) {
@@ -508,20 +576,6 @@ public class ObjectQueryService {
             return null;
         }
         return rows.get(0).get(field);
-    }
-
-    private static double toDouble(Object value) {
-        if (value instanceof Number number) {
-            return number.doubleValue();
-        }
-        if (value == null) {
-            return 0;
-        }
-        try {
-            return Double.parseDouble(String.valueOf(value));
-        } catch (NumberFormatException ex) {
-            return 0;
-        }
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
