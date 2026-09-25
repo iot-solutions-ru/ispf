@@ -11,18 +11,27 @@ public final class DataRecordPayloadResolver {
     private DataRecordPayloadResolver() {
     }
 
-    public static DataRecord resolve(DataSchema defaultSchema, DataRecordPayloadRequest payload) {
+    public static DataRecord resolve(DataSchema contractSchema, DataRecordPayloadRequest payload) {
+        DataSchema schema = contractSchema != null
+                ? contractSchema
+                : DataSchema.builder("void").build();
         if (payload == null) {
-            return DataRecord.empty(defaultSchema);
+            return emptyAgainstContract(schema);
         }
-        DataSchema schema = payload.schema() != null && !payload.schema().fields().isEmpty()
-                ? payload.schema()
-                : defaultSchema;
+        // Contract schema wins: client schema must not replace field names or types.
         List<Map<String, Object>> rows = payload.rows();
         if (rows == null || rows.isEmpty() || rows.stream().allMatch(Map::isEmpty)) {
-            return DataRecord.empty(schema);
+            return emptyAgainstContract(schema);
         }
         return new DataRecord(schema, rows);
+    }
+
+    private static DataRecord emptyAgainstContract(DataSchema schema) {
+        if (schema.fields().isEmpty()) {
+            return DataRecord.empty(schema);
+        }
+        // Enforce required fields when the caller sent no values.
+        return DataRecord.single(schema, Map.of());
     }
 
     public static DataRecordPayloadRequest fromRecord(DataRecord record) {
