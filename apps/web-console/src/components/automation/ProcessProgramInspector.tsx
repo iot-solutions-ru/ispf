@@ -6,6 +6,7 @@ import { inspectorQueryLoading, useInspectorVariables } from "../../hooks/useIns
 import { variableBoolean, variableNumber, variableString } from "../../utils/object/variableFieldValue";
 import { cloneRecord, setFieldValue } from "../../utils/ui/record";
 import ObjectFederationBindSection from "../federation/ObjectFederationBindSection";
+import { ObjectPathField } from "../../ui";
 
 interface ProcessProgramInspectorProps {
   path: string;
@@ -112,7 +113,12 @@ export default function ProcessProgramInspector({ path, canManage = false }: Pro
           <InputNumber min={100} step={100} style={{ width: "100%" }} />
         </Form.Item>
         <Form.Item className="full" name="targetObjectPath" label={t("automation:processProgram.targetObjectPath")}>
-          <Input placeholder={t("automation:processProgram.targetObjectPathPlaceholder")} />
+          <ObjectPathField
+            filterTypes={["DEVICE"]}
+            placeholder={t("automation:processProgram.targetObjectPathPlaceholder")}
+            value=""
+            onChange={() => undefined}
+          />
         </Form.Item>
         <Form.Item name="outputVariable" label={t("automation:processProgram.outputVariable")}>
           <Input placeholder={t("automation:processProgram.outputVariablePlaceholder")} />

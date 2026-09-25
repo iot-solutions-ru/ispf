@@ -3003,6 +3003,11 @@
   align-items: center;
 }
 
+.model-action-row .object-path-field {
+  flex: 1 1 220px;
+  min-width: 180px;
+}
+
 .model-form-grid input,
 .model-form-grid select,
 .model-action-row input {

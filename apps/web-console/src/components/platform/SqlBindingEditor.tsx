@@ -5,6 +5,7 @@ import { Alert, Button, Checkbox, Form, Input, Select } from "antd";
 import { fetchVariables } from "../../api";
 import { fetchSqlBinding, refreshSqlBinding, updateSqlBinding } from "../../api/platformSql";
 import PlatformSqlEditorShell from "./PlatformSqlEditorShell";
+import { ObjectPathField } from "../../ui";
 import { useDataSourceOptions } from "./useDataSourceOptions";
 
 const REFRESH_MODES = ["manual", "on_schedule", "on_function_success"] as const;
@@ -139,15 +140,14 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
           saveMutation.mutate();
         }}
       >
-        <label className="full">
-          Target object path *
-          <Input
-            value={targetObjectPath}
-            onChange={(e) => setTargetObjectPath(e.target.value)}
-            placeholder="root.platform.devices.demo-sensor-01"
-            required
-          />
-        </label>
+        <ObjectPathField
+          className="full"
+          label="Target object path"
+          value={targetObjectPath}
+          onChange={setTargetObjectPath}
+          filterTypes={["DEVICE"]}
+          placeholder="root.platform.devices.demo-sensor-01"
+        />
         <label>
           Variable *
           <Input value={variable} onChange={(e) => setVariable(e.target.value)} required />
@@ -199,14 +199,13 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
             onChange={(e) => setRefreshIntervalMs(Number(e.target.value) || 30_000)}
           />
         </label>
-        <label className="full">
-          Trigger object path
-          <Input
-            value={triggerObjectPath}
-            onChange={(e) => setTriggerObjectPath(e.target.value)}
-            placeholder={t("platform:sqlBinding.triggerPlaceholder")}
-          />
-        </label>
+        <ObjectPathField
+          className="full"
+          label="Trigger object path"
+          value={triggerObjectPath}
+          onChange={setTriggerObjectPath}
+          placeholder={t("platform:sqlBinding.triggerPlaceholder")}
+        />
         <label className="full">
           Trigger function name
           <Input

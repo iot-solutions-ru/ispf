@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Checkbox, Form, Input } from "antd";
 import { fetchSchedule, updateSchedule } from "../../api/platformSchedules";
+import { ObjectPathField } from "../../ui";
 import PlatformSqlEditorShell from "./PlatformSqlEditorShell";
 
 const { TextArea } = Input;
@@ -128,15 +129,13 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
           {t("platform:schedule.timeZone")}
           <Input value={timeZone} onChange={(e) => setTimeZone(e.target.value)} placeholder={t("platform:schedule.timeZonePlaceholder")} />
         </label>
-        <label className="full">
-          {t("platform:schedule.objectPath")}
-          <Input
-            value={objectPath}
-            onChange={(e) => setObjectPath(e.target.value)}
-            placeholder="root.platform.devices.demo-sensor-01"
-            required
-          />
-        </label>
+        <ObjectPathField
+          className="full"
+          label={t("platform:schedule.objectPath")}
+          value={objectPath}
+          onChange={setObjectPath}
+          placeholder="root.platform.devices.demo-sensor-01"
+        />
         <label className="full">
           {t("platform:schedule.functionName")}
           <Input

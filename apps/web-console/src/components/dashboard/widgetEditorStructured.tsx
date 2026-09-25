@@ -13,6 +13,7 @@ import {
 import { WIDGET_STYLE_KEYS_HINT, parseWidgetStyles } from "./widgetStyles";
 import type { WidgetStyleKey } from "./widgetStyles";
 import { parseJsonArray, parseJsonObject, stringifyJson } from "./widgetEditorJson";
+import { ObjectPathField } from "../../ui";
 
 function ListActions({
   onAdd,
@@ -514,27 +515,14 @@ export function NavMenuItemsEditor({
               setItems(next);
             }}
           />
-          <select
+          <ObjectPathField
             value={item.dashboardPath}
-            onChange={(e) => {
-              const next = [...items];
-              next[index] = { ...next[index], dashboardPath: e.target.value };
-              setItems(next);
-            }}
-          >
-            <option value="">—</option>
-            {dashboards.map((d) => (
-              <option key={d.path} value={d.path}>
-                {d.displayName}
-              </option>
-            ))}
-          </select>
-          <input
-            value={item.dashboardPath}
+            objects={dashboards}
+            filterTypes={["DASHBOARD"]}
             placeholder="root.platform.dashboards..."
-            onChange={(e) => {
+            onChange={(path) => {
               const next = [...items];
-              next[index] = { ...next[index], dashboardPath: e.target.value };
+              next[index] = { ...next[index], dashboardPath: path };
               setItems(next);
             }}
           />

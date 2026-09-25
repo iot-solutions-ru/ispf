@@ -17,6 +17,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+### Changed
+
+- **Object path fields** — screens that asked for an existing object path as plain text now use the tree picker (`ObjectPathField`): mixin Apply and instantiate parent (with “use selected object”), schedules, SQL binding target and trigger, create-object schedule and migration data source, script step paths, BPMN `objectPath` / `workflowPath` / `targetObject`, process-program target, mimic action path, widget workflow / dashboard / mimic / event-prefix paths, and the alarm-bar folder prefix. Typing a path still works. Expressions, driver JSON, and read-only paths stay text. Federation remote path stays text because that object is on the peer, not in the local tree.
+
 ### Fixed
 
 - **Function invoke `inputSchema`** — invoke preferred a non-empty client schema over the descriptor, so extra fields and the client's types became the function input. Invoke now projects each row onto the descriptor `inputSchema` (drop extras, coerce types, fill a missing value the same way script coercion does). Event, driver-write, and federation payloads still accept a client schema.
