@@ -92,6 +92,15 @@ public class ServerBindingEvaluationContext implements BindingEvaluationContext 
             return Optional.empty();
         }
         String trimmed = specArg.trim();
+        // Strip expression string quotes before deciding ref vs JSON. A quoted Object Query
+        // spec often contains "/" inside path values; treating those as variable sources
+        // made queryScalar('{"…path…"}', …) fail as an invalid ref.
+        if (trimmed.length() >= 2 && trimmed.startsWith("'") && trimmed.endsWith("'")) {
+            trimmed = trimmed.substring(1, trimmed.length() - 1).trim();
+        }
+        if (trimmed.isEmpty()) {
+            return Optional.empty();
+        }
         if (trimmed.startsWith("@/") || (trimmed.contains("/") && !trimmed.startsWith("{"))) {
             try {
                 PlatformRef ref = PlatformRefParser.parseVariableSource(trimmed);
@@ -102,9 +111,6 @@ public class ServerBindingEvaluationContext implements BindingEvaluationContext 
             } catch (RuntimeException ex) {
                 throw failed("Object query spec failed", trimmed, ex);
             }
-        }
-        if (trimmed.length() >= 2 && trimmed.startsWith("'") && trimmed.endsWith("'")) {
-            return Optional.of(trimmed.substring(1, trimmed.length() - 1));
         }
         if (trimmed.startsWith("{")) {
             return Optional.of(trimmed);
