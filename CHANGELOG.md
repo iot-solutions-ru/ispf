@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **BPMN due timers** — the platform registered boundary and intermediate catch deadlines but never fired them on its own; only `POST /api/v1/workflows/instances/{id}/timer` continued the instance. A leader-locked `WorkflowDueTimerScheduler` now polls waiting instances (`ispf.workflow.timer-poll-ms`, default 2s) and fires due timers. The manual endpoint remains for tests and forced fire.
 - **Object-query historian columns** — a failure while resolving a historian field (`historian.fn` / window) was caught and turned into a blank cell, so the query looked successful as if there were no samples. Member ACL denial still omits the column; any other historian failure now fails the query.
 - **Object-query aggregates** — `sum` / `avg` / `min` / `max` treated a blank cell and unparsable text as `0`, so a missing value pulled `min` to zero and diluted `avg` by empty rows. Blanks are skipped; a real numeric `0` still counts; non-numbers fail the query. `min` / `max` / `avg` over no numeric cells fail instead of returning `0`.
 - **Binding conditions** — `BindingRuleEngine.conditionPasses` treated an `ExpressionException` as `false`, so a typo or unknown name looked like a condition that honestly failed. Uncomputable conditions now fail the recalc with the object path and condition text. A computed `false` still skips the rule; a blank condition still means always run.
