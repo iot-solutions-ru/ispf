@@ -26,7 +26,7 @@ public final class ScriptFieldCoercion {
         }
         return switch (field.type()) {
             case BOOLEAN -> coerceBoolean(value);
-            case INTEGER -> coerceInteger(value);
+            case INTEGER -> IntegerValues.requireInt(field.name(), value);
             case LONG -> coerceLong(value);
             case DOUBLE -> coerceDouble(value);
             case STRING -> String.valueOf(value);
@@ -45,10 +45,6 @@ public final class ScriptFieldCoercion {
             return "true".equalsIgnoreCase(text) || "1".equals(text);
         }
         throw new IllegalArgumentException("value must be boolean");
-    }
-
-    private static Integer coerceInteger(Object value) {
-        return IntegerValues.requireInt("value", value);
     }
 
     private static Long coerceLong(Object value) {
