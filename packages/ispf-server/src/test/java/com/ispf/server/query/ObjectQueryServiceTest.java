@@ -18,10 +18,12 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -37,9 +39,16 @@ class ObjectQueryServiceTest {
     private ObjectManager objectManager;
 
     private String aclObjectPath;
+    private final List<String> createdPaths = new ArrayList<>();
 
     @AfterEach
     void cleanup() {
+        for (String path : createdPaths) {
+            if (objectManager.tree().findByPath(path).isPresent()) {
+                objectManager.delete(path);
+            }
+        }
+        createdPaths.clear();
         if (aclObjectPath != null && objectManager.tree().findByPath(aclObjectPath).isPresent()) {
             objectManager.delete(aclObjectPath);
         }
@@ -262,5 +271,152 @@ class ObjectQueryServiceTest {
         );
         assertThat(memberFilter.rows()).isEmpty();
         assertThat(objectQueryService.execute(filterSpec, "root.platform").rows()).hasSize(1);
+    }
+
+    @Test
+    void aggregateSkipsBlankCells() {
+        String prefix = "oq-agg-blank-" + System.nanoTime();
+        createAmountDevice(prefix + "-n10", 10.0);
+        createAmountDevice(prefix + "-empty", null);
+        createAmountDevice(prefix + "-n20", 20.0);
+        ObjectQuerySpec spec = amountSpec("root.platform.devices." + prefix + "-*");
+
+        assertThat(objectQueryService.execute(spec, "root.platform").rowCount()).isEqualTo(3);
+        assertThat(objectQueryService.executeAggregate(spec, "sum", "amount", "root.platform"))
+                .isEqualTo(30.0);
+        assertThat(objectQueryService.executeAggregate(spec, "avg", "amount", "root.platform"))
+                .isEqualTo(15.0);
+        assertThat(objectQueryService.executeAggregate(spec, "min", "amount", "root.platform"))
+                .isEqualTo(10.0);
+        assertThat(objectQueryService.executeAggregate(spec, "max", "amount", "root.platform"))
+                .isEqualTo(20.0);
+    }
+
+    @Test
+    void aggregateKeepsNumericZero() {
+        String prefix = "oq-agg-zero-" + System.nanoTime();
+        createAmountDevice(prefix + "-n10", 10.0);
+        createAmountDevice(prefix + "-zero", 0.0);
+        createAmountDevice(prefix + "-n20", 20.0);
+        ObjectQuerySpec spec = amountSpec("root.platform.devices." + prefix + "-*");
+
+        assertThat(objectQueryService.executeAggregate(spec, "sum", "amount", "root.platform"))
+                .isEqualTo(30.0);
+        assertThat(objectQueryService.executeAggregate(spec, "avg", "amount", "root.platform"))
+                .isEqualTo(10.0);
+        assertThat(objectQueryService.executeAggregate(spec, "min", "amount", "root.platform"))
+                .isEqualTo(0.0);
+        assertThat(objectQueryService.executeAggregate(spec, "max", "amount", "root.platform"))
+                .isEqualTo(20.0);
+    }
+
+    @Test
+    void aggregateRejectsNonNumber() {
+        String prefix = "oq-agg-text-" + System.nanoTime();
+        createLabeledDevice(prefix + "-bad", "n/a");
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "%s",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "label", "ref": "{row}/label/value"}
+                  ]
+                }
+                """.formatted("root.platform.devices." + prefix + "-*"));
+
+        assertThatThrownBy(() -> objectQueryService.executeAggregate(spec, "sum", "label", "root.platform"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("not a number")
+                .hasMessageContaining("n/a");
+    }
+
+    @Test
+    void aggregateMinMaxAvgFailWhenNoNumericValues() {
+        String prefix = "oq-agg-none-" + System.nanoTime();
+        createAmountDevice(prefix + "-empty", null);
+        ObjectQuerySpec spec = amountSpec("root.platform.devices." + prefix + "-*");
+
+        assertThat(objectQueryService.executeAggregate(spec, "sum", "amount", "root.platform"))
+                .isEqualTo(0.0);
+        assertThatThrownBy(() -> objectQueryService.executeAggregate(spec, "avg", "amount", "root.platform"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("no numeric values");
+        assertThatThrownBy(() -> objectQueryService.executeAggregate(spec, "min", "amount", "root.platform"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("no numeric values");
+        assertThatThrownBy(() -> objectQueryService.executeAggregate(spec, "max", "amount", "root.platform"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("no numeric values");
+    }
+
+    private ObjectQuerySpec amountSpec(String pattern) {
+        return new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "%s",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "amount", "ref": "{row}/amount/value"}
+                  ]
+                }
+                """.formatted(pattern));
+    }
+
+    private void createAmountDevice(String name, Double amount) {
+        String path = createDevice(name);
+        if (amount == null) {
+            return;
+        }
+        DataSchema schema = DataSchema.builder("amount")
+                .field("value", FieldType.DOUBLE)
+                .build();
+        objectManager.createVariable(
+                path,
+                "amount",
+                schema,
+                true,
+                true,
+                DataRecord.single(schema, Map.of("value", amount)),
+                true,
+                null,
+                List.of(),
+                List.of()
+        );
+    }
+
+    private void createLabeledDevice(String name, String label) {
+        String path = createDevice(name);
+        DataSchema schema = DataSchema.builder("label")
+                .field("value", FieldType.STRING)
+                .build();
+        objectManager.createVariable(
+                path,
+                "label",
+                schema,
+                true,
+                true,
+                DataRecord.single(schema, Map.of("value", label)),
+                true,
+                null,
+                List.of(),
+                List.of()
+        );
+    }
+
+    private String createDevice(String name) {
+        String path = "root.platform.devices." + name;
+        objectManager.create(
+                "root.platform.devices",
+                name,
+                ObjectType.DEVICE,
+                name,
+                "",
+                null
+        );
+        createdPaths.add(path);
+        return path;
     }
 }
