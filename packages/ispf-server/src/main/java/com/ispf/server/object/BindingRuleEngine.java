@@ -554,8 +554,11 @@ public class BindingRuleEngine {
                 return bool;
             }
             return Boolean.parseBoolean(String.valueOf(result));
-        } catch (ExpressionException ignored) {
-            return false;
+        } catch (ExpressionException ex) {
+            throw new IllegalStateException(
+                    "Binding condition failed at " + object.path() + ": " + condition + ": " + ex.getMessage(),
+                    ex
+            );
         }
     }
 
