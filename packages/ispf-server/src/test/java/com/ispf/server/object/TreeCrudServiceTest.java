@@ -4,6 +4,7 @@ import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -19,6 +20,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -38,6 +40,10 @@ class TreeCrudServiceTest {
     private ObjectEntityMapper mapper;
     @Mock
     private ObjectProvider<VisualGroupService> visualGroupService;
+    @Mock
+    private ObjectProvider<DriverRuntimeService> driverRuntimeServiceProvider;
+    @Mock
+    private DriverRuntimeService driverRuntimeService;
 
     private ObjectTree objectTree;
     private TreeCrudService treeCrudService;
@@ -54,12 +60,15 @@ class TreeCrudServiceTest {
                 null
         ));
         lenient().when(objectManager.tree()).thenReturn(objectTree);
+        lenient().when(driverRuntimeServiceProvider.getIfAvailable()).thenReturn(driverRuntimeService);
+        lenient().when(driverRuntimeService.activeDevicePaths()).thenReturn(List.of());
         treeCrudService = new TreeCrudService(
                 objectManager,
                 nodeRepository,
                 variableRepository,
                 mapper,
-                visualGroupService
+                visualGroupService,
+                driverRuntimeServiceProvider
         );
     }
 
@@ -119,6 +128,30 @@ class TreeCrudServiceTest {
 
         verify(objectManager).removePathFromMemoryIfPresent("root.devices.pump-1");
         verify(objectManager, atLeastOnce()).publish(any(ObjectChangeEvent.class));
+    }
+
+    @Test
+    void deleteStopsActiveDriversUnderPath() {
+        treeCrudService.create(
+                "root.devices",
+                "cluster",
+                ObjectType.VISUAL_GROUP,
+                "cluster",
+                null,
+                null
+        );
+        when(nodeRepository.findByPathPrefixOrderByPathLengthDesc("root.devices.cluster"))
+                .thenReturn(List.of());
+        when(driverRuntimeService.activeDevicePaths()).thenReturn(List.of(
+                "root.devices.cluster.dev-01",
+                "root.devices.other"
+        ));
+
+        treeCrudService.delete("root.devices.cluster");
+
+        verify(driverRuntimeService).stopIfRunning("root.devices.cluster.dev-01");
+        verify(driverRuntimeService, never()).stopIfRunning(eq("root.devices.other"));
+        verify(objectManager).removePathFromMemoryIfPresent("root.devices.cluster");
     }
 
     @Test
