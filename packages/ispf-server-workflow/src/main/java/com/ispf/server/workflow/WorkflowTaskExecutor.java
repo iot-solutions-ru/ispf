@@ -71,8 +71,10 @@ public class WorkflowTaskExecutor {
         this.workflows = workflows;
     }
 
-    /** Runs the {@code function} configured on a user task (if any) against its target object; failures are logged. */
-    public void executeUserTaskAction(UserTaskDefinition userTask, String triggerObjectPath) {
+    /** Runs the {@code function} configured on a user task (if any) against its target object.
+     * Failure rejects complete — the task stays open. */
+    public void executeUserTaskAction(UserTaskDefinition userTask, String triggerObjectPath)
+            throws WorkflowException {
         Map<String, String> params = userTask.parameters();
         String functionName = params.get("function");
         String targetObject = params.getOrDefault("targetObject", triggerObjectPath);
@@ -82,8 +84,11 @@ public class WorkflowTaskExecutor {
         try {
             FunctionInvocationScope.runSystemTrusted(() ->
                     functionService.invoke(targetObject, functionName));
-        } catch (Exception e) {
-            log.warn("User task function {} on {} failed: {}", functionName, targetObject, e.getMessage());
+        } catch (RuntimeException e) {
+            throw new WorkflowException(
+                    "User task function " + functionName + " on " + targetObject + " failed: " + e.getMessage(),
+                    e
+            );
         }
     }
 
