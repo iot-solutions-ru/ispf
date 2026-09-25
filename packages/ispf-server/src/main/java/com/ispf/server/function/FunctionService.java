@@ -143,7 +143,7 @@ public class FunctionService implements WorkflowFunctionCalls {
         DataSchema schema = descriptor != null
                 ? descriptor.inputSchema()
                 : DataSchema.builder("voidInput").build();
-        return DataRecordPayloadResolver.resolve(schema, input);
+        return FunctionInputSchema.apply(schema, input);
     }
 
     private String resolveAppId(String objectPath, String functionName) {
