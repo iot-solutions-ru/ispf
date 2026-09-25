@@ -222,6 +222,7 @@ POST /api/v1/work-queue/complete?taskId=...&operatorId=operator
 ```
 
 When `ispf:function` is set on a user task, the function is invoked on complete.
+If the call fails, complete is rejected and the task stays open.
 
 ## Triggers
 

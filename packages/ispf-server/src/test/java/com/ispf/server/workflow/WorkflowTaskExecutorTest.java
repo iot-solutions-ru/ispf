@@ -10,6 +10,7 @@ import com.ispf.plugin.workflow.CallActivityExecutor;
 import com.ispf.plugin.workflow.InstanceStatus;
 import com.ispf.plugin.workflow.MessageTaskDefinition;
 import com.ispf.plugin.workflow.ServiceTaskDefinition;
+import com.ispf.plugin.workflow.UserTaskDefinition;
 import com.ispf.plugin.workflow.WorkflowActionType;
 import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowInstance;
@@ -220,5 +221,43 @@ class WorkflowTaskExecutorTest {
                 instance()
         );
         verify(eventService).publishFired(eq(TARGET), eq("alarm"), (DataRecord) isNull());
+    }
+
+    @Test
+    void userTaskFunctionFailureRejectsComplete() {
+        when(functionService.invoke(TARGET, "boom"))
+                .thenThrow(new IllegalStateException("Expression returned empty: no_such_name"));
+
+        UserTaskDefinition userTask = new UserTaskDefinition(
+                "ut1",
+                "Approve",
+                "Approve",
+                "",
+                "operator",
+                Map.of("function", "boom", "targetObject", TARGET)
+        );
+
+        WorkflowException ex = assertThrows(WorkflowException.class, () ->
+                executor().executeUserTaskAction(userTask, TARGET));
+
+        assertTrue(ex.getMessage().contains("boom"));
+        assertTrue(ex.getMessage().contains(TARGET));
+        assertTrue(ex.getMessage().contains("failed"));
+    }
+
+    @Test
+    void userTaskWithoutFunctionIsNoOp() throws WorkflowException {
+        UserTaskDefinition userTask = new UserTaskDefinition(
+                "ut1",
+                "Approve",
+                "Approve",
+                "",
+                "operator",
+                Map.of()
+        );
+
+        executor().executeUserTaskAction(userTask, TARGET);
+
+        verify(functionService, never()).invoke(anyString(), anyString());
     }
 }

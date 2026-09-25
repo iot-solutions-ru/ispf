@@ -205,6 +205,7 @@ POST /api/v1/work-queue/complete?taskId=...&operatorId=operator
 ```
 
 При `ispf:function` на user task — функция вызывается при complete.
+Сбой вызова отклоняет complete; задача остаётся открытой.
 
 ## Триггеры
 
