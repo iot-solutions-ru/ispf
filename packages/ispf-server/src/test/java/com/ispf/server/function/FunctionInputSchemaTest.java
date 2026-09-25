@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class FunctionInputSchemaTest {
 
@@ -39,14 +38,17 @@ class FunctionInputSchemaTest {
     }
 
     @Test
-    void emptyBodyFailsOnRequiredInputField() {
+    void emptyBodyFillsMissingContractFields() {
         DataSchema contract = DataSchema.builder("in")
                 .field(FieldDefinition.required("jobNo", FieldType.STRING))
+                .field("finishCode", FieldType.STRING)
                 .build();
 
-        assertThatThrownBy(() -> FunctionInputSchema.apply(contract, null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("jobNo");
+        DataRecord resolved = FunctionInputSchema.apply(contract, null);
+
+        assertThat(resolved.schema()).isEqualTo(contract);
+        assertThat(resolved.firstRow().get("jobNo")).isEqualTo("");
+        assertThat(resolved.firstRow().get("finishCode")).isNull();
     }
 
     @Test

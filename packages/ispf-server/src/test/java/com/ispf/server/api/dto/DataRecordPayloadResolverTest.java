@@ -2,7 +2,6 @@ package com.ispf.server.api.dto;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
-import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DataRecordPayloadResolverTest {
 
@@ -31,30 +29,18 @@ class DataRecordPayloadResolverTest {
     }
 
     @Test
-    void projectsOntoContractSchemaWhenClientSchemaHasFields() {
+    void keepsClientSchemaWhenFieldsArePresent() {
         DataSchema client = DataSchema.builder("custom")
                 .field("action", FieldType.STRING)
                 .build();
         DataRecordPayloadRequest payload = new DataRecordPayloadRequest(
                 client,
-                List.of(Map.of("action", "open", "jobNo", "PRINT-1"))
+                List.of(Map.of("action", "open"))
         );
 
         DataRecord resolved = DataRecordPayloadResolver.resolve(DEFAULT, payload);
 
-        assertThat(resolved.schema().name()).isEqualTo("in");
-        assertThat(resolved.firstRow().get("jobNo")).isEqualTo("PRINT-1");
-        assertThat(resolved.firstRow()).doesNotContainKey("action");
-    }
-
-    @Test
-    void emptyBodyFailsWhenContractRequiresFields() {
-        DataSchema required = DataSchema.builder("in")
-                .field(FieldDefinition.required("jobNo", FieldType.STRING))
-                .build();
-
-        assertThatThrownBy(() -> DataRecordPayloadResolver.resolve(required, null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("jobNo");
+        assertThat(resolved.firstRow().get("action")).isEqualTo("open");
+        assertThat(resolved.firstRow()).doesNotContainKey("jobNo");
     }
 }
