@@ -22,9 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -76,6 +78,27 @@ public class WorkflowInstanceStore {
             syncUserTasks(instance, process, pendingUserTask);
         } else if (instance.status() == InstanceStatus.WAITING) {
             syncAllWaitingUserTasks(instance, process);
+        }
+        closeOrphanOpenUserTasks(instance);
+    }
+
+    /**
+     * Interrupting boundary timers (and any other resume that drops a pending user task)
+     * leave the work-queue row OPEN/CLAIMED unless we close it here.
+     */
+    private void closeOrphanOpenUserTasks(WorkflowInstance instance) {
+        Set<String> pending = new HashSet<>(instance.pendingUserTaskIds());
+        for (WorkflowUserTaskEntity task : userTaskRepository.findByInstanceId(instance.instanceId())) {
+            String status = task.getStatus();
+            if (!"OPEN".equals(status) && !"CLAIMED".equals(status)) {
+                continue;
+            }
+            if (pending.contains(task.getTaskNodeId())) {
+                continue;
+            }
+            task.setStatus("COMPLETED");
+            task.setCompletedAt(Instant.now());
+            userTaskRepository.save(task);
         }
     }
 

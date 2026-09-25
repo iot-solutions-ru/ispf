@@ -48,8 +48,11 @@ public class BindingExpressionEvaluator {
             }
             Object result = engine.evaluate(expression, platformObject, bindings);
             return Optional.of(mapResult(targetSchema, result));
-        } catch (ExpressionException ignored) {
-            return Optional.empty();
+        } catch (ExpressionException ex) {
+            throw new ExpressionException(
+                    "Binding expression failed: " + expression + ": " + ex.getMessage(),
+                    ex
+            );
         }
     }
 
