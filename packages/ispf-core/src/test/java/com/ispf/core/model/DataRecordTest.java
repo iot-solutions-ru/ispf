@@ -64,4 +64,29 @@ class DataRecordTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("must be double");
     }
+
+    @Test
+    void storesWholeNumbersInIntegerFieldAsInteger() {
+        DataSchema schema = DataSchema.builder("counter")
+                .field("value", FieldType.INTEGER)
+                .build();
+
+        assertThat(DataRecord.single(schema, Map.of("value", 7)).get("value", 0)).isEqualTo(7);
+        assertThat(DataRecord.single(schema, Map.of("value", 7L)).get("value", 0)).isEqualTo(7);
+        assertThat(DataRecord.single(schema, Map.of("value", 7.0)).get("value", 0)).isEqualTo(7);
+    }
+
+    @Test
+    void rejectsFractionAndOutOfRangeIntegerField() {
+        DataSchema schema = DataSchema.builder("counter")
+                .field("value", FieldType.INTEGER)
+                .build();
+
+        assertThatThrownBy(() -> DataRecord.single(schema, Map.of("value", 1.9)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be integer");
+        assertThatThrownBy(() -> DataRecord.single(schema, Map.of("value", Integer.MAX_VALUE + 1L)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("out of integer range");
+    }
 }

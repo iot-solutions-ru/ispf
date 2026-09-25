@@ -22,18 +22,26 @@ class PlatformSelfDiagnosticsBootstrapZeroValueTest {
 
     @Test
     @SuppressWarnings("ConditionalExpressionNumericPromotion") // the promotion IS the subject of this test
-    void numericTernaryZeroPromotesToDoubleAndBreaksIntegerSchema() {
-        // Documents the Java trap that skipped self-diagnostics bootstrap on demostand.
-        assertThatThrownBy(() -> DataRecord.single(
+    void numericTernaryZeroPromotesToDoubleButWholeZeroStoresAsInteger() {
+        // Java ternary promotes int 0 with double 0.0 to Double. INTEGER used to reject any Double
+        // and skipped self-diagnostics bootstrap on demostand; whole 0.0 is now accepted.
+        assertThatCode(() -> DataRecord.single(
                 INTEGER_VALUE,
                 Map.of("value", false ? 0.0 : 0)
-        )).isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("must be integer");
+        )).doesNotThrowAnyException();
+        assertThat(DataRecord.single(
+                INTEGER_VALUE,
+                Map.of("value", false ? 0.0 : 0)
+        ).firstRow().get("value")).isInstanceOf(Integer.class).isEqualTo(0);
 
-        // Even boxed Double/Integer still promote via unboxing in a numeric conditional.
-        assertThatThrownBy(() -> DataRecord.single(
+        assertThatCode(() -> DataRecord.single(
                 INTEGER_VALUE,
                 Map.of("value", false ? Double.valueOf(0.0) : Integer.valueOf(0))
+        )).doesNotThrowAnyException();
+
+        assertThatThrownBy(() -> DataRecord.single(
+                INTEGER_VALUE,
+                Map.of("value", false ? 1.5 : 0.5)
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("must be integer");
     }

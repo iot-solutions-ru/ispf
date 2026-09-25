@@ -142,7 +142,7 @@ class MqttSensorAutomationIngressTest {
                         {"name": "raw", "type": "STRING"}
                       ]
                     },
-                    "rows": [{"value": 0.0, "unit": "C", "raw": "0"}]
+                    "rows": [{"value": 0.0, "unit": "C", "raw": "25.0"}]
                   }
                 }
                 """;
