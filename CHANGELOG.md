@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Object-query historian columns** — a failure while resolving a historian field (`historian.fn` / window) was caught and turned into a blank cell, so the query looked successful as if there were no samples. Member ACL denial still omits the column; any other historian failure now fails the query.
 - **Binding conditions** — `BindingRuleEngine.conditionPasses` treated an `ExpressionException` as `false`, so a typo or unknown name looked like a condition that honestly failed. Uncomputable conditions now fail the recalc with the object path and condition text. A computed `false` still skips the rule; a blank condition still means always run.
 - **DEVICE delete leaves the driver running** — HTTP / UI / bulk delete removed the tree node but did not call `stopIfRunning`, so polls kept enqueueing for a path that no longer exists and `POST .../drivers/runtime/stop` failed with 404 while writing `driverStatus`. Delete now stops every active driver under the path (including children) before removing the node; `stop` / orphan polls no longer require the tree node.
 - **Binding `call()`, `queryScalar()`, `queryRows()`, and `fire()`** — a failure inside a binding rule was returned as an empty result, so the rule looked successful and the target kept its previous value. Those operations now fail with the target and the original message. A nested `call()` while one is already running is rejected. A `fire()` that did run still counts as success when it has no payload.

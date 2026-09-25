@@ -202,13 +202,12 @@ public class ObjectQueryService {
                 }
                 return historianColumnResolver.resolve(field.historianFn(), field.historianWindow(), ref);
             } catch (ResponseStatusException ex) {
+                // Member ACL denial omits the column; any other historian failure must surface.
                 if (VariableAclRequestContext.isMemberEnforced()
                         && ex.getStatusCode().value() == 403) {
                     return OMIT_FIELD;
                 }
-                return null;
-            } catch (RuntimeException ignored) {
-                return null;
+                throw ex;
             }
         }
         if (field.ref() != null && !field.ref().isBlank()) {
