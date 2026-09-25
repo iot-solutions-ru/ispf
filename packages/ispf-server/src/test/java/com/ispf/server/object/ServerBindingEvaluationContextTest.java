@@ -142,6 +142,20 @@ class ServerBindingEvaluationContextTest {
     }
 
     @Test
+    void quotedObjectQueryJsonIsNotParsedAsVariableRef() {
+        String json = "{\"kind\":\"OBJECT_QUERY\",\"from\":{\"sourcePathPattern\":\"root.platform.devices.*\"},"
+                + "\"select\":[{\"path\":\"seriesRows\",\"as\":\"rows\"}]}";
+        String quoted = "'" + json + "'";
+
+        assertThat(context.resolveObjectQuerySpec(quoted, ruleObject)).contains(json);
+    }
+
+    @Test
+    void quotedBlankSpecStaysEmpty() {
+        assertThat(context.resolveObjectQuerySpec("''", ruleObject)).isEmpty();
+    }
+
+    @Test
     void successfulFireIsTrueEvenWhenThePayloadIsEmpty() {
         when(platformRefExecutor.fire(
                 org.mockito.ArgumentMatchers.any(PlatformRef.class),
