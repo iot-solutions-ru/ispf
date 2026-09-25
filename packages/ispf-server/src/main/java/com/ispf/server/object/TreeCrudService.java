@@ -8,6 +8,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.bootstrap.PlatformCatalogSortOrder;
 import com.ispf.server.bootstrap.SystemObjectDescriptions;
+import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -38,19 +39,22 @@ public class TreeCrudService {
     private final ObjectVariableRepository variableRepository;
     private final ObjectEntityMapper mapper;
     private final ObjectProvider<VisualGroupService> visualGroupService;
+    private final ObjectProvider<DriverRuntimeService> driverRuntimeService;
 
     public TreeCrudService(
             @Lazy ObjectManager objectManager,
             ObjectNodeRepository nodeRepository,
             ObjectVariableRepository variableRepository,
             ObjectEntityMapper mapper,
-            ObjectProvider<VisualGroupService> visualGroupService
+            ObjectProvider<VisualGroupService> visualGroupService,
+            ObjectProvider<DriverRuntimeService> driverRuntimeService
     ) {
         this.objectManager = objectManager;
         this.nodeRepository = nodeRepository;
         this.variableRepository = variableRepository;
         this.mapper = mapper;
         this.visualGroupService = visualGroupService;
+        this.driverRuntimeService = driverRuntimeService;
     }
 
     @Transactional
@@ -200,12 +204,30 @@ public class TreeCrudService {
         if (toDelete.isEmpty() && objectManager.tree().findByPath(path).isEmpty()) {
             throw new ObjectNotFoundException(path);
         }
+        stopDriversUnder(path);
         objectManager.removePathFromMemoryIfPresent(path);
         for (ObjectNodeEntity entity : toDelete) {
             variableRepository.deleteByObjectPath(entity.getPath());
             nodeRepository.deleteById(entity.getId());
         }
         objectManager.publish(ObjectChangeEvent.of(ObjectChangeType.DELETED, path));
+    }
+
+    /**
+     * Stops every in-memory driver for {@code path} and its descendants before the tree node is removed.
+     * HTTP / bulk / agent deletes all go through this path; without it polls keep enqueuing for ghosts.
+     */
+    private void stopDriversUnder(String path) {
+        DriverRuntimeService runtime = driverRuntimeService.getIfAvailable();
+        if (runtime == null) {
+            return;
+        }
+        String prefix = path + ".";
+        for (String activePath : runtime.activeDevicePaths()) {
+            if (activePath.equals(path) || activePath.startsWith(prefix)) {
+                runtime.stopIfRunning(activePath);
+            }
+        }
     }
 
     @Transactional
