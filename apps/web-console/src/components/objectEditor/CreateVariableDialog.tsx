@@ -27,6 +27,25 @@ function schemaForPreset(preset: SchemaPreset, schemaName: string): DataSchema {
   return scalarValueSchema(schemaName, preset as SchemaFieldType);
 }
 
+function isStockValuePreset(schema: DataSchema): boolean {
+  const only = schema.fields.length === 1 ? schema.fields[0] : null;
+  return Boolean(only && only.name === "value" && PRESETS.includes(only.type as SchemaPreset));
+}
+
+function patchLastFieldType(schema: DataSchema, preset: SchemaPreset, schemaName: string): DataSchema {
+  if (schema.fields.length === 0) {
+    return schemaForPreset(preset, schemaName);
+  }
+  const last = schema.fields.length - 1;
+  return {
+    ...schema,
+    name: schemaName,
+    fields: schema.fields.map((field, index) =>
+      index === last ? { ...field, type: preset, nestedSchema: undefined } : field,
+    ),
+  };
+}
+
 export default function CreateVariableDialog({
   objectPath,
   onClose,
@@ -36,7 +55,7 @@ export default function CreateVariableDialog({
   const [name, setName] = useState("");
   const [readable, setReadable] = useState(true);
   const [writable, setWritable] = useState(false);
-  const [schemaPreset, setSchemaPreset] = useState<SchemaPreset>("DOUBLE");
+  const [schemaPreset, setSchemaPreset] = useState<SchemaPreset | null>("DOUBLE");
   const [schema, setSchema] = useState<DataSchema>(() => scalarValueSchema("value", "DOUBLE"));
   const [record, setRecord] = useState<DataRecord>(() => ({
     schema: scalarValueSchema("value", "DOUBLE"),
@@ -67,8 +86,9 @@ export default function CreateVariableDialog({
   }
 
   function applyPreset(preset: SchemaPreset) {
-    setSchemaPreset(preset);
-    const next = schemaForPreset(preset, schemaName);
+    const stock = isStockValuePreset(schema);
+    const next = stock ? schemaForPreset(preset, schemaName) : patchLastFieldType(schema, preset, schemaName);
+    setSchemaPreset(stock ? preset : null);
     setSchema(next);
     setRecord((prev) => syncRecordSchema(prev, next));
   }
@@ -80,6 +100,8 @@ export default function CreateVariableDialog({
     const only = named.fields.length === 1 ? named.fields[0] : null;
     if (only?.name === "value" && PRESETS.includes(only.type as SchemaPreset)) {
       setSchemaPreset(only.type as SchemaPreset);
+    } else {
+      setSchemaPreset(null);
     }
   }
 
@@ -170,9 +192,11 @@ export default function CreateVariableDialog({
 
         <section className="modal-section">
           <Typography.Title level={4}>{t("variables.schemaSection")}</Typography.Title>
-          <Segmented<SchemaPreset>
-            value={schemaPreset}
-            onChange={applyPreset}
+          <Segmented<SchemaPreset | "">
+            value={schemaPreset ?? ""}
+            onChange={(preset) => {
+              if (preset) applyPreset(preset);
+            }}
             options={PRESETS.map((preset) => ({
               value: preset,
               label: t(`variables.schemaPreset.${preset}`),
