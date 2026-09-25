@@ -27,6 +27,10 @@ public class FunctionScriptValidator {
             "writeVariable",
             "instantiateModelIfMissing",
             "setDriverTelemetry",
+            "queryRows",
+            "scan_objects",
+            "for_each_row",
+            "apply_query_patch",
             "return"
     );
 
@@ -135,6 +139,22 @@ public class FunctionScriptValidator {
                 require(step, "objectPath");
                 if (!step.has("fields") || !step.get("fields").isObject()) {
                     throw new IllegalArgumentException("setDriverTelemetry step requires fields object");
+                }
+            }
+            case "queryRows", "scan_objects" -> require(step, "spec");
+            case "for_each_row" -> {
+                if (!step.has("source")) {
+                    throw new IllegalArgumentException("for_each_row step requires source");
+                }
+                JsonNode body = step.get("steps");
+                if (body == null || !body.isArray() || body.isEmpty()) {
+                    throw new IllegalArgumentException("for_each_row step requires non-empty steps array");
+                }
+                validateSteps(body, false);
+            }
+            case "apply_query_patch" -> {
+                if (!step.has("patches")) {
+                    throw new IllegalArgumentException("apply_query_patch step requires patches");
                 }
             }
             case "return" -> {
