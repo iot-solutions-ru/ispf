@@ -2,6 +2,7 @@ package com.ispf.server.application.script;
 
 import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
+import com.ispf.core.model.IntegerValues;
 
 public final class ScriptFieldCoercion {
 
@@ -25,7 +26,7 @@ public final class ScriptFieldCoercion {
         }
         return switch (field.type()) {
             case BOOLEAN -> coerceBoolean(value);
-            case INTEGER -> coerceInteger(value);
+            case INTEGER -> IntegerValues.requireInt(field.name(), value);
             case LONG -> coerceLong(value);
             case DOUBLE -> coerceDouble(value);
             case STRING -> String.valueOf(value);
@@ -44,19 +45,6 @@ public final class ScriptFieldCoercion {
             return "true".equalsIgnoreCase(text) || "1".equals(text);
         }
         throw new IllegalArgumentException("value must be boolean");
-    }
-
-    private static Integer coerceInteger(Object value) {
-        if (value instanceof Integer integer) {
-            return integer;
-        }
-        if (value instanceof Number number) {
-            return number.intValue();
-        }
-        if (value instanceof String text) {
-            return Integer.parseInt(text.trim());
-        }
-        throw new IllegalArgumentException("value must be integer");
     }
 
     private static Long coerceLong(Object value) {
