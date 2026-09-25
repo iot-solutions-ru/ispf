@@ -87,6 +87,9 @@ public final class DataRecord {
         if (field.type() == FieldType.DOUBLE) {
             return finiteDouble(field, value);
         }
+        if (field.type() == FieldType.INTEGER) {
+            return IntegerValues.requireInt(field.name(), value);
+        }
         validateType(field, value);
         return value;
     }

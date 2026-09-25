@@ -4,6 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
+import com.ispf.core.model.IntegerValues;
 import com.ispf.core.object.PlatformObject;
 
 import java.util.Map;
@@ -115,7 +116,7 @@ public class BindingExpressionEvaluator {
         }
         return switch (field.type()) {
             case BOOLEAN -> Boolean.valueOf(value.toString());
-            case INTEGER -> ((Number) value).intValue();
+            case INTEGER -> IntegerValues.requireInt(field.name(), value);
             case LONG -> ((Number) value).longValue();
             case DOUBLE -> ((Number) value).doubleValue();
             case STRING -> value.toString();
