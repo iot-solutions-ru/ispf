@@ -184,7 +184,8 @@ Publishes via the message executor (`channel=bpmn-throw`, subject = message name
                         ispf:durationSeconds="300"/>
 ```
 
-The instance waits until the deadline expires; continuation via `POST .../timer` (see below) or the scheduler.
+The instance waits until the deadline expires; continuation via the built-in due-timer scheduler
+(`ispf.workflow.timer-poll-ms`, default 2s) or `POST .../timer` (see below).
 
 ### boundaryEvent (timer on user task)
 
@@ -310,6 +311,8 @@ Content-Type: application/json
 ```
 
 Continues the instance when a deadline boundary timer or intermediate timer catch has fired.
+The platform also polls waiting instances on a schedule and fires due timers automatically;
+this endpoint remains for tests and forced fire.
 
 ## API
 
