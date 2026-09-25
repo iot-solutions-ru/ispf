@@ -362,7 +362,9 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     public DriverRuntimeStatus stopLocal(String devicePath, boolean releaseOwnership) {
         ActiveDriver active = activeDrivers.remove(devicePath);
         signalSchedulerLoad();
-        DriverBinding binding = readBinding(devicePath).orElse(DriverBinding.virtualDemo());
+        DriverBinding binding = active != null
+                ? active.binding()
+                : readBinding(devicePath).orElse(DriverBinding.virtualDemo());
         if (active != null) {
             active.future().cancel(false);
             active.driver().disconnect();
@@ -371,7 +373,9 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         if (releaseOwnership) {
             ownershipService.release(devicePath);
         }
-        setStatus(devicePath, "STOPPED");
+        if (objects.findByPath(devicePath).isPresent()) {
+            setStatus(devicePath, "STOPPED");
+        }
         return statusOf(
                 devicePath,
                 binding,
@@ -592,6 +596,16 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     }
 
     private void pollOnIoThread(String devicePath, ActiveDriver active, String pointId) {
+        // A stop (delete) may have removed this runtime while the poll sat in the I/O queue.
+        if (activeDrivers.get(devicePath) != active) {
+            return;
+        }
+        if (objects.findByPath(devicePath).isEmpty()) {
+            // Object gone (delete raced the queue, or a prior leak). Drop the runtime; do not re-enqueue forever.
+            log.warn("Dropping driver poll for deleted device {}", devicePath);
+            stopLocal(devicePath, true);
+            return;
+        }
         try {
             Map<String, String> mappings = active.binding().pointMappings();
             if (pointId != null && !pointId.isBlank()) {
@@ -610,19 +624,27 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                     connected,
                     active.driverObject()
             );
-            activeDrivers.put(devicePath, next);
+            if (!activeDrivers.replace(devicePath, active, next)) {
+                return;
+            }
             notifyConnectionIfChanged(devicePath, active, next);
             setStatus(devicePath, "RUNNING");
         } catch (Exception e) {
+            if (activeDrivers.get(devicePath) != active) {
+                return;
+            }
             var kind = errorMetrics.record(active.binding().driverId(), DriverErrorMetrics.Operation.POLL, e);
-            activeDrivers.put(devicePath, new ActiveDriver(
+            ActiveDriver errored = new ActiveDriver(
                     active.driver(),
                     active.binding(),
                     active.future(),
                     e.getMessage(),
                     active.lastKnownConnected(),
                     active.driverObject()
-            ));
+            );
+            if (!activeDrivers.replace(devicePath, active, errored)) {
+                return;
+            }
             setStatus(devicePath, "ERROR");
             log.warn("Driver poll failed for {} [{}]: {}", devicePath, kind.tag(), e.getMessage());
         }
