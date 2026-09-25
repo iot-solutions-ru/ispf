@@ -17,6 +17,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+### Changed
+
+- **Object path fields** — screens that asked for an existing object path as plain text now use the tree picker (`ObjectPathField`): mixin Apply and instantiate parent (with “use selected object”), schedules, SQL binding target and trigger, create-object schedule and migration data source, script step paths, BPMN `objectPath` / `workflowPath` / `targetObject`, process-program target, mimic action path, widget workflow / dashboard / mimic / event-prefix paths, and the alarm-bar folder prefix. Typing a path still works. Expressions, driver JSON, and read-only paths stay text. Federation remote path stays text because that object is on the peer, not in the local tree.
+
 ### Fixed
 
 - **`INTEGER` fields** — binding rules and script function output coerced any `Number` with `intValue()`, so `1.9` became `1` and values outside `int` range wrapped silently. `DataRecord` only accepted `Integer` and rejected in-range `Long`. Shared `IntegerValues.requireInt` now accepts whole numbers in `int` range (including `Long`) and rejects fractions and out-of-range values on all three paths.

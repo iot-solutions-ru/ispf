@@ -1,6 +1,14 @@
 import { useTranslation } from "react-i18next";
 import { WORKFLOW_ISPF_ACTIONS, type WorkflowIspfAction } from "../../types/automation";
 import type { CatchKind, FlowEdge, FlowNode } from "../../bpmn/model/types";
+import type { ObjectType } from "../../types";
+import { ObjectPathField } from "../../ui";
+
+const PATH_FILTERS: Record<string, ObjectType[] | undefined> = {
+  objectPath: undefined,
+  workflowPath: ["WORKFLOW"],
+  targetObject: ["DEVICE"],
+};
 
 const ACTION_ATTRS: Record<WorkflowIspfAction, string[]> = {
   fire_event: ["objectPath", "eventName", "payloadJson"],
@@ -24,6 +32,33 @@ interface Props {
   onChangeNode: (id: string, patch: Partial<FlowNode>) => void;
   onChangeEdge: (id: string, patch: Partial<FlowEdge>) => void;
   onDelete: () => void;
+}
+
+function IspfAttrField({
+  attr,
+  value,
+  onChange,
+}: {
+  attr: string;
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  if (Object.prototype.hasOwnProperty.call(PATH_FILTERS, attr)) {
+    return (
+      <ObjectPathField
+        label={`ispf:${attr}`}
+        value={value}
+        onChange={onChange}
+        filterTypes={PATH_FILTERS[attr]}
+      />
+    );
+  }
+  return (
+    <label>
+      ispf:{attr}
+      <input value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
 }
 
 export default function IspfBpmnPropertiesPanel({
@@ -130,13 +165,12 @@ export default function IspfBpmnPropertiesPanel({
               </label>
             ))}
           {hintAttrs.map((attr) => (
-            <label key={attr}>
-              ispf:{attr}
-              <input
-                value={node.ispf[attr] ?? ""}
-                onChange={(e) => setIspf(attr, e.target.value)}
-              />
-            </label>
+            <IspfAttrField
+              key={attr}
+              attr={attr}
+              value={node.ispf[attr] ?? ""}
+              onChange={(next) => setIspf(attr, next)}
+            />
           ))}
         </section>
       )}
@@ -145,10 +179,12 @@ export default function IspfBpmnPropertiesPanel({
         <section className="bpmn-prop-section">
           <h5>{t("bpmn.props.tabImplementation")}</h5>
           {["title", "instructions", "assigneeRole", "targetObject", "function"].map((attr) => (
-            <label key={attr}>
-              ispf:{attr}
-              <input value={node.ispf[attr] ?? ""} onChange={(e) => setIspf(attr, e.target.value)} />
-            </label>
+            <IspfAttrField
+              key={attr}
+              attr={attr}
+              value={node.ispf[attr] ?? ""}
+              onChange={(next) => setIspf(attr, next)}
+            />
           ))}
         </section>
       )}
@@ -158,10 +194,12 @@ export default function IspfBpmnPropertiesPanel({
           <h5>{t("bpmn.props.tabImplementation")}</h5>
           <p className="hint">{t("bpmn.props.callActivityHint")}</p>
           {["workflowPath", "objectPath", "inputMap"].map((attr) => (
-            <label key={attr}>
-              ispf:{attr}
-              <input value={node.ispf[attr] ?? ""} onChange={(e) => setIspf(attr, e.target.value)} />
-            </label>
+            <IspfAttrField
+              key={attr}
+              attr={attr}
+              value={node.ispf[attr] ?? ""}
+              onChange={(next) => setIspf(attr, next)}
+            />
           ))}
         </section>
       )}

@@ -16,6 +16,8 @@ import {
   SheetGridSizeEditor,
   StringListEditor,
 } from "../widgetEditorStructured";
+import { ObjectPathField } from "../../../ui";
+import { FOLDER_OBJECT_TYPES } from "../../../ui/objectPathFilters";
 import {
   DashboardPathField,
   FieldLabel,
@@ -55,14 +57,13 @@ function functionFields(ctx: WidgetFieldContextFor<"function">, t: TFunction): R
           onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
         />
       </label>
-      <label>
-        workflowPath
-        <input
-          value={widget.workflowPath ?? ""}
-          onChange={(e) => update({ workflowPath: e.target.value || undefined })}
-          placeholder="root.platform.workflows..."
-        />
-      </label>
+      <ObjectPathField
+        label="workflowPath"
+        value={widget.workflowPath ?? ""}
+        onChange={(path) => update({ workflowPath: path || undefined })}
+        filterTypes={["WORKFLOW"]}
+        placeholder="root.platform.workflows..."
+      />
       <KeyValueEditor
         label={t("editor.inputJsonStatic")}
         value={widget.inputJson}
@@ -194,14 +195,13 @@ function eventFeedFields(ctx: WidgetFieldContextFor<"event-feed">, t: TFunction)
   return (
     <>
       <Section title={t("editor.section.eventFeed")} />
-      <label>
-        objectPathPrefix
-        <input
-          value={widget.objectPathPrefix ?? ""}
-          onChange={(e) => update({ objectPathPrefix: e.target.value || undefined })}
-          placeholder="root.platform.devices"
-        />
-      </label>
+      <ObjectPathField
+        label="objectPathPrefix"
+        value={widget.objectPathPrefix ?? ""}
+        onChange={(path) => update({ objectPathPrefix: path || undefined })}
+        filterTypes={FOLDER_OBJECT_TYPES}
+        placeholder="root.platform.devices"
+      />
       <StringListEditor
         label="eventNamesJson"
         value={widget.eventNamesJson}

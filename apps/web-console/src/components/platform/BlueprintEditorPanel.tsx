@@ -28,6 +28,7 @@ import {
   catalogRootForBlueprintType,
   isBlueprintCatalogRoot,
   blueprintNameFromPath,
+  isBlueprintsPath,
 } from "../../types/blueprints";
 import type {
   BlueprintBindingRule,
@@ -40,6 +41,8 @@ import { recordDisplayValue } from "../../utils/tree/tree";
 import { isTechnicalIdentifier } from "../../utils/ui/technicalIdentifier";
 import { formatHistoryRetention } from "../objectEditor/variableHistoryModel";
 import { required } from "../../utils/required";
+import { ObjectPathField } from "../../ui";
+import { PARENT_OBJECT_TYPES } from "../../ui/objectPathFilters";
 
 interface BlueprintEditorPanelProps {
   selectedPath: string;
@@ -47,6 +50,8 @@ interface BlueprintEditorPanelProps {
   onSelectPath?: (path: string) => void;
   onClose?: () => void;
   title?: string;
+  /** Object currently selected in the explorer, used to fill Apply. */
+  explorerPath?: string | null;
 }
 
 const OBJECT_TYPES: ObjectType[] = [
@@ -62,10 +67,12 @@ function ModelDetail({
   model,
   canManage,
   onSelectPath,
+  explorerPath,
 }: {
   model: BlueprintDto;
   canManage: boolean;
   onSelectPath?: (path: string) => void;
+  explorerPath?: string | null;
 }) {
   const { t } = useTranslation(["inspector", "common"]);
   const queryClient = useQueryClient();
@@ -707,11 +714,22 @@ function ModelDetail({
               {t("inspector:blueprint.applyHint")}
             </p>
             <div className="model-action-row">
-              <input
+              <ObjectPathField
                 value={applyPath}
-                onChange={(e) => setApplyPath(e.target.value)}
+                onChange={setApplyPath}
                 placeholder={t("inspector:blueprint.applyPathPlaceholder")}
+                filterTypes={
+                  model.targetObjectType && model.targetObjectType !== "CUSTOM"
+                    ? [model.targetObjectType]
+                    : undefined
+                }
+                pickerTitle={t("inspector:blueprint.apply")}
               />
+              {explorerPath && !isBlueprintsPath(explorerPath) && (
+                <Button onClick={() => setApplyPath(explorerPath)}>
+                  {t("common:objectPath.useSelection")}
+                </Button>
+              )}
               <Button
                 type="primary"
                 disabled={!applyPath.trim() || applyMutation.isPending}
@@ -820,10 +838,12 @@ function ModelDetail({
                 {t("inspector:blueprint.instantiateHint")}
               </p>
               <div className="model-action-row">
-                <input
+                <ObjectPathField
                   value={parentPath}
-                  onChange={(e) => setParentPath(e.target.value)}
+                  onChange={setParentPath}
                   placeholder="parentPath"
+                  filterTypes={PARENT_OBJECT_TYPES}
+                  pickerTitle={t("inspector:blueprint.createInstance")}
                 />
                 <input
                   value={instanceName}
@@ -1122,6 +1142,7 @@ export default function BlueprintEditorPanel({
   onSelectPath,
   onClose,
   title,
+  explorerPath,
 }: BlueprintEditorPanelProps) {
   const { t } = useTranslation(["inspector", "common"]);
   const modelName = blueprintNameFromPath(selectedPath);
@@ -1186,6 +1207,7 @@ export default function BlueprintEditorPanel({
                 model={modelQuery.data}
                 canManage={canManage}
                 onSelectPath={onSelectPath}
+                explorerPath={explorerPath}
               />
             )}
           </>

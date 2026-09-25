@@ -14,6 +14,7 @@ import { resolveElementSymbol, symbolSize } from "../../scada/symbols/registry";
 import CustomSvgEditor from "./CustomSvgEditor";
 import { supportsSvgMarkupEditor } from "./customSvgElement";
 import MimicBindingSlotEditor from "./MimicBindingSlotEditor";
+import { ObjectPathField } from "../../ui";
 
 interface MimicPropertiesPanelProps {
   document: ScadaMimicDocument;
@@ -99,14 +100,12 @@ function MimicActionFields({
         action.type === "toggleVariable" ||
         action.type === "invokeFunction") && (
         <>
-          <Form.Item className={fieldClassName()} label="objectPath">
-            <Input
-              className="scada-form-input mono"
-              spellCheck={false}
-              value={action.objectPath ?? ""}
-              onChange={(e) => onChange({ objectPath: e.target.value })}
-            />
-          </Form.Item>
+          <ObjectPathField
+            className="scada-object-path-field"
+            label="objectPath"
+            value={action.objectPath ?? ""}
+            onChange={(path) => onChange({ objectPath: path })}
+          />
           {action.type === "invokeFunction" ? (
             <Form.Item className={fieldClassName()} label="functionName">
               <Input
