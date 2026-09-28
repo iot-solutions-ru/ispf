@@ -23,12 +23,14 @@ public class WorkflowConditionFactory {
         return expression -> evaluateExpression(expression, triggerObjectPath);
     }
 
-    private boolean evaluateExpression(String expression, String triggerObjectPath) {
+    private boolean evaluateExpression(String expression, String triggerObjectPath) throws WorkflowException {
         if (expression == null || expression.isBlank()) {
             return true;
         }
         if (triggerObjectPath == null || triggerObjectPath.isBlank()) {
-            return false;
+            throw new WorkflowException(
+                    "Workflow gateway condition failed: missing trigger object for expression: " + expression
+            );
         }
         try {
             PlatformObject node = objects.require(triggerObjectPath);
@@ -38,7 +40,10 @@ public class WorkflowConditionFactory {
             }
             return Boolean.parseBoolean(String.valueOf(result));
         } catch (ExpressionException | IllegalArgumentException e) {
-            return false;
+            throw new WorkflowException(
+                    "Workflow gateway condition failed: " + expression + ": " + e.getMessage(),
+                    e
+            );
         }
     }
 }
