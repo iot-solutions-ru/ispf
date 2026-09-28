@@ -35,8 +35,14 @@ export default function AdminCopilotFab() {
         type="button"
         className={`admin-copilot-fab${open ? " open" : ""}`}
         aria-expanded={open}
-        aria-label={t("copilot.open")}
-        title={chip ? `${t("copilot.open")} — ${chip}` : t("copilot.open")}
+        aria-label={open ? t("copilot.close") : t("copilot.open")}
+        title={
+          open
+            ? t("copilot.close")
+            : chip
+              ? `${t("copilot.open")} — ${chip}`
+              : t("copilot.open")
+        }
         onClick={() => setOpen((prev) => !prev)}
       >
         {open ? "×" : "AI"}

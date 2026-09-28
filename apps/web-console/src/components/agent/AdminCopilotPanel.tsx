@@ -181,15 +181,6 @@ export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelPr
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const wasOpen = useRef(false);
-  useEffect(() => {
-    if (open && !wasOpen.current) {
-      // Fresh helper session each time the drawer opens.
-      startNewChat();
-    }
-    wasOpen.current = open;
-  }, [open, startNewChat]);
-
   useEffect(() => {
     if (open) {
       scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -273,6 +264,7 @@ export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelPr
             disabled={isPending || messages.length === 0}
             onClick={() => startNewChat()}
             title={t("ai:copilot.newChat")}
+            aria-label={t("ai:copilot.newChat")}
           >
             {t("ai:copilot.newChatShort")}
           </Button>

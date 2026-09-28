@@ -23,6 +23,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Admin Copilot collapse** — opening the drawer called `startNewChat()`, so closing it and opening again discarded the thread. The AI button and the header × now only hide and restore the same conversation. **New chat** is the control that clears it.
 - **Workflow gateway conditions** — `WorkflowConditionFactory.evaluateExpression` treated an `ExpressionException` (and a missing trigger object) as `false`, so a typo looked like an honest false branch and exclusive gateways took the default flow. Uncomputable conditions now fail the step with the expression text; a computed `false` still skips to the next/default flow; a blank condition still means unconditional.
 - **Event filter CEL errors** — `EventFilterMatcher` treated an `ExpressionException` as a miss (`false`), so a typo or invalid expression looked like an honest filter rejection and emptied `GET /api/v1/events?filterPath=` / `?expr=`. Uncomputable expressions now fail the filter application with the expression text; a computed `false` still drops the event; a blank expression still means no CEL narrowing.
 - **Function invoke `inputSchema`** — invoke preferred a non-empty client schema over the descriptor, so extra fields and the client's types became the function input. Invoke now projects each row onto the descriptor `inputSchema` (drop extras, coerce types, fill a missing value the same way script coercion does). Event, driver-write, and federation payloads still accept a client schema.

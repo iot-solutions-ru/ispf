@@ -204,7 +204,7 @@
   "copilot.cancel": "Abbrechen",
   "copilot.thinking": "Denke nach…",
   "copilot.newChat": "Neuen Copilot-Chat starten",
-  "copilot.newChatShort": "Neu",
+  "copilot.newChatShort": "Neuer Chat",
   "copilot.llmUnavailable": "LLM nicht verfügbar. AI Studio → Status öffnen.",
   "copilot.suggest.bindings": "Hilf mir, einen CEL-Binding-Ausdruck zu schreiben oder zu korrigieren",
   "copilot.suggest.explain": "Erkläre, was ich auf diesem Bildschirm tun sollte",
