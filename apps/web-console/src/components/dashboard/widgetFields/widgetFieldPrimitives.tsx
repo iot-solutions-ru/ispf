@@ -251,21 +251,13 @@ export function DashboardPathInput({
   onChange: (path: string) => void;
 }) {
   return (
-    <>
-      <select value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="">—</option>
-        {dashboards.map((d) => (
-          <option key={d.path} value={d.path}>
-            {d.displayName}
-          </option>
-        ))}
-      </select>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="root.platform.dashboards.detail"
-      />
-    </>
+    <ObjectPathField
+      value={value}
+      objects={dashboards}
+      onChange={onChange}
+      filterTypes={["DASHBOARD"]}
+      placeholder="root.platform.dashboards.detail"
+    />
   );
 }
 

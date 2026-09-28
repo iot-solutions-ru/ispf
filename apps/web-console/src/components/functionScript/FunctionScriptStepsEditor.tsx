@@ -23,6 +23,9 @@ import {
   type ScriptStepCategory,
   type WhenConditionKind,
 } from "../../utils/functionScript/functionScriptSteps";
+import type { ObjectType } from "../../types";
+import { ObjectPathField } from "../../ui";
+import { FOLDER_OBJECT_TYPES } from "../../ui/objectPathFilters";
 
 interface FunctionScriptStepsEditorProps {
   value: string;
@@ -74,6 +77,35 @@ function TextField({
       />
       {hint && <span className="hint inline">{hint}</span>}
     </label>
+  );
+}
+
+function PathField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  hint,
+  filterTypes,
+}: {
+  label: string;
+  value: string;
+  onChange: (next: string) => void;
+  placeholder?: string;
+  hint?: string;
+  filterTypes?: ObjectType[];
+}) {
+  return (
+    <div className="field-block">
+      <ObjectPathField
+        label={label}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        filterTypes={filterTypes}
+      />
+      {hint && <span className="hint inline">{hint}</span>}
+    </div>
   );
 }
 
@@ -415,7 +447,7 @@ function StepFields({
 
       {type === "readVariable" && (
         <>
-          <TextField
+          <PathField
             label={t("scriptSteps.field.objectPath")}
             value={String(step.objectPath ?? "")}
             onChange={(next) => onPatch({ objectPath: next })}
@@ -445,11 +477,12 @@ function StepFields({
             onChange={(next) => onPatch({ modelName: next })}
             placeholder="mqtt-sensor-v1"
           />
-          <TextField
+          <PathField
             label={t("scriptSteps.field.parentPath")}
             value={String(step.parentPath ?? "")}
             onChange={(next) => onPatch({ parentPath: next })}
             placeholder="root.platform.devices"
+            filterTypes={FOLDER_OBJECT_TYPES}
           />
           <TextField
             label={t("scriptSteps.field.instanceName")}
@@ -462,7 +495,7 @@ function StepFields({
 
       {type === "setDriverTelemetry" && (
         <>
-          <TextField
+          <PathField
             label={t("scriptSteps.field.objectPath")}
             value={String(step.objectPath ?? "")}
             onChange={(next) => onPatch({ objectPath: next })}
@@ -506,7 +539,7 @@ function StepFields({
 
       {type === "invoke_function" && (
         <>
-          <TextField
+          <PathField
             label={t("scriptSteps.field.objectPath")}
             value={String(step.objectPath ?? "")}
             onChange={(next) => onPatch({ objectPath: next })}
@@ -530,11 +563,12 @@ function StepFields({
 
       {type === "cancel_workflows" && (
         <>
-          <TextField
+          <PathField
             label={t("scriptSteps.field.workflowPath")}
             value={String(step.workflowPath ?? "")}
             onChange={(next) => onPatch({ workflowPath: next })}
             placeholder="root.platform.workflows.demo"
+            filterTypes={["WORKFLOW"]}
           />
           <StringListField
             label={t("scriptSteps.field.statusIn")}

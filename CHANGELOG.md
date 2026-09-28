@@ -17,6 +17,10 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+### Changed
+
+- **Object path fields** — screens that asked for an existing object path as plain text now use the tree picker (`ObjectPathField`): mixin Apply and instantiate parent (with “use selected object”), schedules, SQL binding target and trigger, create-object schedule and migration data source, script step paths, BPMN `objectPath` / `workflowPath` / `targetObject`, process-program target, mimic action path, widget workflow / dashboard / mimic / event-prefix paths, and the alarm-bar folder prefix. Typing a path still works. Expressions, driver JSON, and read-only paths stay text. Federation remote path stays text because that object is on the peer, not in the local tree.
+
 ### Fixed
 
 - **Event filter CEL errors** — `EventFilterMatcher` treated an `ExpressionException` as a miss (`false`), so a typo or invalid expression looked like an honest filter rejection and emptied `GET /api/v1/events?filterPath=` / `?expr=`. Uncomputable expressions now fail the filter application with the expression text; a computed `false` still drops the event; a blank expression still means no CEL narrowing.

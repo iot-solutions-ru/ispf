@@ -10,6 +10,7 @@ import {
   PIPELINE_RP_MIMIC_PATH,
 } from "../../scada/templates/pipelineScadaMimic";
 import { TANK_FARM_DOCUMENT_JSON, TANK_FARM_MIMIC_PATH } from "../../scada/templates/tankFarmMimic";
+import { ObjectPathField } from "../../ui";
 
 interface ScadaMimicWidgetEditorFieldsProps {
   widget: ScadaMimicWidget;
@@ -55,15 +56,13 @@ export default function ScadaMimicWidgetEditorFields({
 
   return (
     <>
-      <label>
-        {t("editor.scadaMimic.mimicPath")}
-        <input
-          type="text"
-          value={widget.mimicPath ?? ""}
-          onChange={(e) => update({ mimicPath: e.target.value || undefined })}
-          placeholder="root.platform.mimics.my-mimic"
-        />
-      </label>
+      <ObjectPathField
+        label={t("editor.scadaMimic.mimicPath")}
+        value={widget.mimicPath ?? ""}
+        onChange={(path) => update({ mimicPath: path || undefined })}
+        filterTypes={["MIMIC"]}
+        placeholder="root.platform.mimics.my-mimic"
+      />
       {mimicPath ? (
         <p className="hint">{t("editor.scadaMimic.mimicPathHint")}</p>
       ) : (

@@ -935,6 +935,7 @@ function AppShell() {
               setSelectedPath(path);
               openEditor(path);
             }}
+            explorerPath={selectedPath}
           />
         )}
 
