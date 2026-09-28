@@ -156,6 +156,13 @@
   "workflows": null,
   "blueprints": [
     {
+      "name": "laminate-flow-hub",
+      "description": "Application logic hub (SINGLETON). Functions live here, not on a DEVICE.",
+      "type": "SINGLETON",
+      "targetObjectType": "CUSTOM",
+      "variables": []
+    },
+    {
       "name": "laminate-line-v1",
       "description": "Поточная линия: только работает/не работает и скорость. Без операций и НСИ станков.",
       "type": "INSTANCE",
@@ -496,7 +503,7 @@
   ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.laminate-flow-hub",
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
       "functionName": "lf_listSchedule",
       "version": "1",
       "descriptor": {
@@ -576,7 +583,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.laminate-flow-hub",
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
       "functionName": "lf_moveOrder",
       "version": "1",
       "descriptor": {
@@ -660,7 +667,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.laminate-flow-hub",
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
       "functionName": "lf_releaseDispatch",
       "version": "1",
       "descriptor": {
@@ -716,7 +723,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.laminate-flow-hub",
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
       "functionName": "lf_ackLineStop",
       "version": "1",
       "descriptor": {
@@ -772,7 +779,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.laminate-flow-hub",
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
       "functionName": "lf_setQualityState",
       "version": "1",
       "descriptor": {
@@ -842,7 +849,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.laminate-flow-hub",
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
       "functionName": "lf_ackWmsCommand",
       "version": "1",
       "descriptor": {
@@ -898,7 +905,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.laminate-flow-hub",
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
       "functionName": "lf_applySapChange",
       "version": "1",
       "descriptor": {
