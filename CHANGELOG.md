@@ -23,6 +23,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Binding startup** — a startup rule that hit the chain pass limit threw out of `ApplicationReadyEvent` and stopped the whole server. That object is now logged and skipped. Periodic rules already isolated the same failure. On the demostand this was `root.platform.singleton-blueprints.doom`.
 - **Admin Copilot collapse** — opening the drawer called `startNewChat()`, so closing it and opening again discarded the thread. The AI button and the header × now only hide and restore the same conversation. **New chat** is the control that clears it.
 - **Operator assistant** — close and reopen already kept the thread. The header now has **New chat**, which clears the messages and the session; × still only hides the drawer.
 - **Workflow gateway conditions** — `WorkflowConditionFactory.evaluateExpression` treated an `ExpressionException` (and a missing trigger object) as `false`, so a typo looked like an honest false branch and exclusive gateways took the default flow. Uncomputable conditions now fail the step with the expression text; a computed `false` still skips to the next/default flow; a blank condition still means unconditional.
