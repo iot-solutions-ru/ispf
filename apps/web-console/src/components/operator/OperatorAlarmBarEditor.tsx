@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
 import type { EventLevel } from "../../types/event";
 import type { OperatorAlarmBarConfig, OperatorAlarmRule } from "../../types/operatorAlarmBar";
+import { ObjectPathField } from "../../ui";
+import { FOLDER_OBJECT_TYPES } from "../../ui/objectPathFilters";
 
 const EVENT_LEVELS: EventLevel[] = ["WARNING", "ERROR", "CRITICAL"];
 
@@ -169,14 +171,13 @@ export default function OperatorAlarmBarEditor({
                   }
                 />
               </label>
-              <label>
-                {t("alarmBarEditor.objectPathPrefix")}
-                <input
-                  value={rule.objectPathPrefix ?? ""}
-                  disabled={disabled}
-                  onChange={(e) => patchRule(index, { objectPathPrefix: e.target.value || undefined })}
-                />
-              </label>
+              <ObjectPathField
+                label={t("alarmBarEditor.objectPathPrefix")}
+                value={rule.objectPathPrefix ?? ""}
+                disabled={disabled}
+                filterTypes={FOLDER_OBJECT_TYPES}
+                onChange={(path) => patchRule(index, { objectPathPrefix: path || undefined })}
+              />
               <label>
                 {t("alarmBarEditor.minLevel")}
                 <select

@@ -29,6 +29,8 @@ export interface EditorWorkspaceProps {
   onDashboardSessionChange: (tabId: string, next: DashboardSession) => void;
   /** Blueprint editor navigates within its own tree and also moves the explorer selection. */
   onSelectBlueprintPath: (path: string) => void;
+  /** Object currently highlighted in the explorer tree. */
+  explorerPath?: string | null;
 }
 
 /**
@@ -45,6 +47,7 @@ export default function EditorWorkspace({
   onOpenEditor,
   onDashboardSessionChange,
   onSelectBlueprintPath,
+  explorerPath,
 }: EditorWorkspaceProps) {
   const close = () => onClose(editor.id);
   const openProperties = () => onOpenProperties(editor.path);
@@ -88,6 +91,7 @@ export default function EditorWorkspace({
           title={editor.title}
           onClose={close}
           onSelectPath={onSelectBlueprintPath}
+          explorerPath={explorerPath}
         />
       );
     }

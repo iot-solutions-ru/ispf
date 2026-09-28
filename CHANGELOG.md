@@ -17,9 +17,14 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+### Changed
+
+- **Object path fields** — screens that asked for an existing object path as plain text now use the tree picker (`ObjectPathField`): mixin Apply and instantiate parent (with “use selected object”), schedules, SQL binding target and trigger, create-object schedule and migration data source, script step paths, BPMN `objectPath` / `workflowPath` / `targetObject`, process-program target, mimic action path, widget workflow / dashboard / mimic / event-prefix paths, and the alarm-bar folder prefix. Typing a path still works. Expressions, driver JSON, and read-only paths stay text. Federation remote path stays text because that object is on the peer, not in the local tree.
+
 ### Fixed
 
 - **Workflow gateway conditions** — `WorkflowConditionFactory.evaluateExpression` treated an `ExpressionException` (and a missing trigger object) as `false`, so a typo looked like an honest false branch and exclusive gateways took the default flow. Uncomputable conditions now fail the step with the expression text; a computed `false` still skips to the next/default flow; a blank condition still means unconditional.
+- **Event filter CEL errors** — `EventFilterMatcher` treated an `ExpressionException` as a miss (`false`), so a typo or invalid expression looked like an honest filter rejection and emptied `GET /api/v1/events?filterPath=` / `?expr=`. Uncomputable expressions now fail the filter application with the expression text; a computed `false` still drops the event; a blank expression still means no CEL narrowing.
 - **Function invoke `inputSchema`** — invoke preferred a non-empty client schema over the descriptor, so extra fields and the client's types became the function input. Invoke now projects each row onto the descriptor `inputSchema` (drop extras, coerce types, fill a missing value the same way script coercion does). Event, driver-write, and federation payloads still accept a client schema.
 - **`INTEGER` fields** — binding rules and script function output coerced any `Number` with `intValue()`, so `1.9` became `1` and values outside `int` range wrapped silently. `DataRecord` only accepted `Integer` and rejected in-range `Long`. Shared `IntegerValues.requireInt` now accepts whole numbers in `int` range (including `Long`) and rejects fractions and out-of-range values on all three paths.
 - **Binding expression errors** — `BindingExpressionEvaluator.evaluate` swallowed `ExpressionException` and returned empty, so a typo in a rule expression looked like "Expression returned empty" and left the target unchanged without failing the recalc. Uncomputable expressions now fail with the expression text and engine message; a blank expression still means nothing to evaluate.

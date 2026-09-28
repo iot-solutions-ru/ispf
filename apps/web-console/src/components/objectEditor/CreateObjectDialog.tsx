@@ -535,13 +535,15 @@ export default function CreateObjectDialog({
                 <Form.Item label="Version">
                   <Input value={migrationVersion} onChange={(e) => setMigrationVersion(e.target.value)} />
                 </Form.Item>
-                <Form.Item label="Data source path" className="full">
-                  <Input
-                    value={migrationDataSourcePath}
-                    onChange={(e) => setMigrationDataSourcePath(e.target.value)}
-                    placeholder="root.platform.data-sources.myapp"
-                  />
-                </Form.Item>
+                <ObjectPathField
+                  className="full"
+                  label="Data source path"
+                  value={migrationDataSourcePath}
+                  onChange={setMigrationDataSourcePath}
+                  filterTypes={["DATA_SOURCE"]}
+                  rootPath={DATA_SOURCES_ROOT}
+                  placeholder="root.platform.data-sources.myapp"
+                />
                 <Form.Item label={t("dialog.sqlOptional")} className="full">
                   <Input.TextArea
                     className="mono"
@@ -601,14 +603,13 @@ export default function CreateObjectDialog({
                     style={{ width: "100%" }}
                   />
                 </Form.Item>
-                <Form.Item label={t("platform:schedule.objectPath")} className="full">
-                  <Input
-                    value={scheduleObjectPath}
-                    onChange={(e) => setScheduleObjectPath(e.target.value)}
-                    placeholder="root.platform.devices.demo-sensor-01"
-                    required
-                  />
-                </Form.Item>
+                <ObjectPathField
+                  className="full"
+                  label={t("platform:schedule.objectPath")}
+                  value={scheduleObjectPath}
+                  onChange={setScheduleObjectPath}
+                  placeholder="root.platform.devices.demo-sensor-01"
+                />
                 <Form.Item label={t("platform:schedule.functionName")} className="full">
                   <Input
                     value={scheduleFunctionName}
