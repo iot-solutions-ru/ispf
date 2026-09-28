@@ -7,8 +7,6 @@ import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.ExpressionException;
 import com.ispf.server.eventfilter.EventFilterObjectService.EventFilterDefinition;
 import com.ispf.server.query.ObjectPathPattern;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -21,8 +19,6 @@ import java.util.regex.Pattern;
  */
 @Component
 public class EventFilterMatcher {
-
-    private static final Logger log = LoggerFactory.getLogger(EventFilterMatcher.class);
 
     private final ExpressionEngine expressionEngine;
 
@@ -70,6 +66,7 @@ public class EventFilterMatcher {
      * Evaluates ad-hoc CEL against an event. Bindings live on {@code payload}
      * ({@code eventName}, {@code objectPath}, {@code level}, {@code severity}, {@code timestamp},
      * plus first-row payload fields).
+     * Uncomputable expressions fail the filter application — they are not treated as a miss.
      */
     public boolean matchesExpression(String expression, ObjectEvent event) {
         if (expression == null || expression.isBlank()) {
@@ -100,8 +97,10 @@ public class EventFilterMatcher {
             }
             return Boolean.parseBoolean(String.valueOf(result));
         } catch (ExpressionException ex) {
-            log.warn("Event filter expression failed: {}", ex.getMessage());
-            return false;
+            throw new IllegalStateException(
+                    "Event filter expression failed: " + expression + ": " + ex.getMessage(),
+                    ex
+            );
         }
     }
 
