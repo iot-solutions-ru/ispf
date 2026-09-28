@@ -1,6 +1,7 @@
 {
   "agent.cancel": "Stopp",
   "agent.close": "Enger Assistent",
+  "agent.newChat": "Neuer Chat",
   "agent.closeTable": "Tabelle schließen",
   "agent.documentCount": "{{count}} Dokumente",
   "agent.emptyHint": "Fragen Sie nach Alarmen, Trends, Berichten oder Ihrer Aufgabenwarteschlange.",

@@ -146,6 +146,7 @@
   "agent.title": "AI assistant",
   "agent.open": "Open AI assistant",
   "agent.close": "Close assistant",
+  "agent.newChat": "New chat",
   "agent.readOnlyHint": "read-only · this application only",
   "agent.memoryCount": "{{count}} memories",
   "agent.documentCount": "{{count}} docs",

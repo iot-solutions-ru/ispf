@@ -152,6 +152,19 @@ export default function OperatorAgentPanel({
     requestAnimationFrame(() => inputRef.current?.focus());
   }, []);
 
+  const startNewChat = useCallback(() => {
+    const activeSessionId = sessionIdRef.current;
+    if (isPending && activeSessionId) {
+      void cancelOperatorAgentRun(appId, activeSessionId).catch(() => undefined);
+    }
+    setMessages([]);
+    setInput("");
+    setSessionId(null);
+    sessionIdRef.current = null;
+    setLiveSteps([]);
+    setIsPending(false);
+  }, [appId, isPending]);
+
   const handleCancel = useCallback(async () => {
     const activeSessionId = sessionIdRef.current;
     if (!activeSessionId || !isPending) {
@@ -183,9 +196,20 @@ export default function OperatorAgentPanel({
               : ""}
           </p>
         </div>
-        <button type="button" className="btn small" onClick={onClose} aria-label={t("agent.close")}>
-          ×
-        </button>
+        <div className="operator-agent-head-actions">
+          <button
+            type="button"
+            className="btn small"
+            disabled={messages.length === 0 && !isPending}
+            onClick={startNewChat}
+            title={t("agent.newChat")}
+          >
+            {t("agent.newChat")}
+          </button>
+          <button type="button" className="btn small" onClick={onClose} aria-label={t("agent.close")}>
+            ×
+          </button>
+        </div>
       </div>
 
       {!providerReady && !statusQuery.isLoading && (
