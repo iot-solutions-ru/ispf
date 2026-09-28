@@ -13,7 +13,7 @@ rights described in [CLA.md](CLA.md) (dual licensing / commercial relicensing).
 3. Do not commit local scratch (`tmp*`, `*.log`, `packages.zip`, `web-console-hotfix.zip`, `apps/web-console/tmp-bpmn-*`).
    Do not commit binaries or build outputs: CI runs `node tools/repo-hygiene/check-tracked-binaries.mjs`
    (binary extensions must be allow-listed there, files > 2 MiB need a reason, ui-pack zips live only under
-   `examples/marketplace-catalog/` within an 8 MiB budget). Publish anything else as a CI/Release artifact.
+   `examples/marketplace-catalog/` within a 20 MiB budget). Publish anything else as a CI/Release artifact.
 4. See [docs/en/plugins.md](docs/en/plugins.md) and [docs/en/license.md](docs/en/license.md) for boundaries.
 5. For user-visible platform changes, add a bullet under **`[Unreleased]`** in
    [CHANGELOG.md](CHANGELOG.md) (Keep a Changelog). Move that section into a versioned
