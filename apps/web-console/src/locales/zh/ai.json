@@ -204,7 +204,7 @@
   "copilot.cancel": "取消",
   "copilot.thinking": "思考中…",
   "copilot.newChat": "开始新的 Copilot 对话",
-  "copilot.newChatShort": "新建",
+  "copilot.newChatShort": "新对话",
   "copilot.llmUnavailable": "LLM 不可用。打开 AI Studio → 状态。",
   "copilot.suggest.bindings": "帮我编写或修复 CEL 绑定表达式",
   "copilot.suggest.explain": "解释我在这个屏幕上应该做什么",

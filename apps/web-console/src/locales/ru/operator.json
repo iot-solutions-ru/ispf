@@ -1,6 +1,7 @@
 {
   "agent.cancel": "Стоп",
   "agent.close": "Закрыть помощник",
+  "agent.newChat": "Новый чат",
   "agent.closeTable": "Закрыть таблицу",
   "agent.documentCount": "документов: {{count}}",
   "agent.emptyHint": "Спросите про аварии, тренды, отчёты или задачи смены.",

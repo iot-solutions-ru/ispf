@@ -204,7 +204,7 @@
   "copilot.cancel": "Отмена",
   "copilot.thinking": "Думаю…",
   "copilot.newChat": "Начать новый чат Copilot",
-  "copilot.newChatShort": "Новый",
+  "copilot.newChatShort": "Новый чат",
   "copilot.llmUnavailable": "LLM недоступен. Откройте AI Studio → Статус.",
   "copilot.suggest.bindings": "Помоги написать или исправить CEL-выражение привязки",
   "copilot.suggest.explain": "Объясни, что делать на этом экране",

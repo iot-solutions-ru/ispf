@@ -1,6 +1,7 @@
 {
   "agent.cancel": "停止",
   "agent.close": "贴心助手",
+  "agent.newChat": "新对话",
   "agent.closeTable": "关闭表",
   "agent.documentCount": "{{count}} 文档",
   "agent.emptyHint": "询问警报、趋势、报告或任务队列。",

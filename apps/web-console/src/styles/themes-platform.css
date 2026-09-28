@@ -2688,6 +2688,13 @@
   overflow: hidden;
 }
 
+.operator-agent-head-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
 .operator-agent-drawer-head {
   display: flex;
   justify-content: space-between;
