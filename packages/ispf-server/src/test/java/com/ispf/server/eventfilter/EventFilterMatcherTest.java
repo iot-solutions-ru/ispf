@@ -139,4 +139,21 @@ class EventFilterMatcherTest {
         assertThatThrownBy(() -> matcher.validateExpression("payload."))
                 .isInstanceOf(ExpressionException.class);
     }
+
+    @Test
+    void uncomputableExpressionFailsInsteadOfActingAsFalse() {
+        ObjectEvent event = ObjectEvent.of(
+                "root.platform.devices.pump-1",
+                "tick",
+                EventLevel.INFO,
+                DataRecord.empty(DataSchema.builder("payload").build())
+        );
+
+        assertThatThrownBy(() -> matcher.matchesExpression("payload.", event))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Event filter expression failed")
+                .hasMessageContaining("payload.");
+
+        assertThat(matcher.matchesExpression("false", event)).isFalse();
+    }
 }
