@@ -34,7 +34,25 @@ class WorkQueueApiTest {
 
     @Test
     void manualRunCompletesViaDefaultGateway() throws Exception {
-        mockMvc.perform(post("/api/v1/workflows/by-path/run").param("path", DEMO_WORKFLOW))
+        // Condition is self.alarmAcknowledged["value"] == false; acknowledged true → default branch.
+        mockMvc.perform(put("/api/v1/objects/by-path/variables")
+                        .param("path", DEMO_DEVICE)
+                        .param("name", "alarmAcknowledged")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "schema": {
+                                    "name": "alarmAcknowledged",
+                                    "fields": [{"name": "value", "type": "BOOLEAN"}]
+                                  },
+                                  "rows": [{"value": true}]
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/workflows/by-path/run")
+                        .param("path", DEMO_WORKFLOW)
+                        .param("triggerObjectPath", DEMO_DEVICE))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.instanceState").value(org.hamcrest.Matchers.containsString("COMPLETED")));
     }
