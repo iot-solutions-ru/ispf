@@ -1,0 +1,9 @@
+{
+  "id": "doom",
+  "appId": "doom",
+  "packId": "doom",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "basePath": "/apps/doom/",
+  "title": "DOOM on ISPF (Freedoom)"
+}

@@ -1,0 +1,27 @@
+{
+  "slug": "mes-wrangel-ui",
+  "title": "MES · Цех переработки сырья · ВрангельМинерал",
+  "description": "Hosted SPA for mes-wrangel-cps (base /apps/mes-wrangel-cps/). Same-origin /api/v1. artifactKind ui-pack.",
+  "artifactKind": "ui-pack",
+  "appId": "mes-wrangel-cps",
+  "packId": "mes-wrangel-ui",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "pricing": "free",
+  "minIspfVersion": "0.9.0",
+  "latestVersion": "1.0.0",
+  "bundleArtifact": "mes-wrangel-ui-1.0.0.zip",
+  "tags": [
+    "ui-pack",
+    "mes-wrangel-cps",
+    "spa",
+    "marketplace"
+  ],
+  "changelog": "1.0.0 — snapshot from ispf.iot-solutions.ru installed ui-pack."
+}

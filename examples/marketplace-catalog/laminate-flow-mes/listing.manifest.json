@@ -1,0 +1,24 @@
+{
+  "slug": "laminate-flow-mes",
+  "title": "MES поточное производство",
+  "description": "MES поточного производства. BFF appId=laminate-flow-mes; Web UI — ui-pack laminate-flow-ui (/apps/laminate-flow-mes/).",
+  "appId": "laminate-flow-mes",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "pricing": "free",
+  "minIspfVersion": "0.9.30",
+  "latestVersion": "1.1.0",
+  "bundleArtifact": "bundle.json",
+  "uiPackSlug": "laminate-flow-ui",
+  "tags": [
+    "laminate-flow-mes",
+    "marketplace"
+  ],
+  "changelog": "1.1.0 — snapshot from ispf.iot-solutions.ru active deployment."
+}

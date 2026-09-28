@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024; // 2 MiB
-const UI_PACK_BUDGET_BYTES = 8 * 1024 * 1024; // 8 MiB for all catalog ui-pack zips together
+const UI_PACK_BUDGET_BYTES = 20 * 1024 * 1024; // 20 MiB; Freedoom UI pack alone is ~10.5 MiB
 
 const BINARY_EXT = /\.(zip|jar|war|ear|gz|tgz|bz2|xz|7z|rar|exe|dll|so|dylib|bin|class|pdf|docx?|xlsx?|pptx?|mp4|mov|avi|wmf|emf|psd|iso|img|db|sqlite)$/i;
 

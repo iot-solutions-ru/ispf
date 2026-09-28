@@ -1,0 +1,24 @@
+{
+  "slug": "mes-wrangel-cps",
+  "title": "MES Цех переработки сырья (ВрангельМинерал)",
+  "description": "MES цеха переработки сырья (ВрангельМинерал). BFF appId=mes-wrangel-cps; Web UI — ui-pack mes-wrangel-ui (/apps/mes-wrangel-cps/).",
+  "appId": "mes-wrangel-cps",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "pricing": "free",
+  "minIspfVersion": "0.9.30",
+  "latestVersion": "1.0.1",
+  "bundleArtifact": "bundle.json",
+  "uiPackSlug": "mes-wrangel-ui",
+  "tags": [
+    "mes-wrangel-cps",
+    "marketplace"
+  ],
+  "changelog": "1.0.1 — snapshot from ispf.iot-solutions.ru active deployment."
+}

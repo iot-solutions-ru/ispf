@@ -1,0 +1,27 @@
+{
+  "slug": "doom",
+  "title": "DOOM on ISPF",
+  "description": "Playable Freedoom (Chocolate Doom WASM) as a hosted UI pack. Freedoom assets are redistributed under the Freedoom license (COPYING.txt).",
+  "artifactKind": "ui-pack",
+  "appId": "doom",
+  "packId": "doom",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "pricing": "free",
+  "minIspfVersion": "0.9.30",
+  "latestVersion": "1.0.0",
+  "bundleArtifact": "doom-1.0.0.zip",
+  "tags": [
+    "ui-pack",
+    "demo",
+    "freedoom",
+    "marketplace"
+  ],
+  "changelog": "1.0.0 — Freedoom WASM demo hosted at /apps/doom/."
+}

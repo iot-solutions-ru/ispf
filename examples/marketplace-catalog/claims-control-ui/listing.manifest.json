@@ -1,0 +1,27 @@
+{
+  "slug": "claims-control-ui",
+  "title": "Claims Control",
+  "description": "Hosted SPA for claims-control (base /apps/claims-control/). Same-origin /api/v1. artifactKind ui-pack.",
+  "artifactKind": "ui-pack",
+  "appId": "claims-control",
+  "packId": "claims-control-ui",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "pricing": "free",
+  "minIspfVersion": "0.9.208",
+  "latestVersion": "1.3.2",
+  "bundleArtifact": "claims-control-ui-1.3.2.zip",
+  "tags": [
+    "ui-pack",
+    "claims-control",
+    "spa",
+    "marketplace"
+  ],
+  "changelog": "1.3.2 — snapshot from ispf.iot-solutions.ru installed ui-pack."
+}

@@ -1,0 +1,9 @@
+{
+  "appId": "mes-wrangel-cps",
+  "packId": "mes-wrangel-ui",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "basePath": "/apps/mes-wrangel-cps/",
+  "title": "MES · Цех переработки сырья · ВрангельМинерал",
+  "minIspfVersion": "0.9.0"
+}

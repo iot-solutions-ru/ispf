@@ -1,0 +1,1566 @@
+{
+  "version": "1.1.0",
+  "displayName": "MES поточное производство",
+  "tablePrefix": "lf_",
+  "schemaName": "app_laminate_flow_mes",
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "laminate-flow-hub",
+      "type": "DEVICE",
+      "displayName": "Хаб поточного плана",
+      "description": "Функции перепланирования, доска заказов, пересчёт WMS",
+      "templateId": "laminate-flow-hub-v1"
+    },
+    {
+      "parentPath": "root.platform.mes.instances",
+      "name": "laminate-dzerzhinsk",
+      "type": "DEVICE",
+      "displayName": "Площадка ламината",
+      "description": " site. Планирование на уровне линий, не рабочих центров.",
+      "templateId": null
+    },
+    {
+      "parentPath": "root.platform.mes.instances.laminate-dzerzhinsk",
+      "name": "areas",
+      "type": "DEVICE",
+      "displayName": "Участки",
+      "description": null,
+      "templateId": null
+    },
+    {
+      "parentPath": "root.platform.mes.instances.laminate-dzerzhinsk.areas",
+      "name": "flow",
+      "type": "DEVICE",
+      "displayName": "Поточный контур",
+      "description": null,
+      "templateId": null
+    },
+    {
+      "parentPath": "root.platform.mes.instances.laminate-dzerzhinsk.areas.flow",
+      "name": "lines",
+      "type": "DEVICE",
+      "displayName": "Линии",
+      "description": null,
+      "templateId": null
+    },
+    {
+      "parentPath": "root.platform.mes.instances.laminate-dzerzhinsk.areas.flow",
+      "name": "buffers",
+      "type": "DEVICE",
+      "displayName": "Буферные склады",
+      "description": null,
+      "templateId": null
+    },
+    {
+      "parentPath": "root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines",
+      "name": "l-impreg",
+      "type": "DEVICE",
+      "displayName": "L1 Пропитка",
+      "description": "Поточная линия, стадия 1. Состояние: работает/не работает и скорость.",
+      "templateId": "laminate-line-v1"
+    },
+    {
+      "parentPath": "root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines",
+      "name": "l-press-a",
+      "type": "DEVICE",
+      "displayName": "L2 Пресс A",
+      "description": "Поточная линия, стадия 2. Состояние: работает/не работает и скорость.",
+      "templateId": "laminate-line-v1"
+    },
+    {
+      "parentPath": "root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines",
+      "name": "l-press-b",
+      "type": "DEVICE",
+      "displayName": "L3 Пресс B",
+      "description": "Поточная линия, стадия 2. Состояние: работает/не работает и скорость.",
+      "templateId": "laminate-line-v1"
+    },
+    {
+      "parentPath": "root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines",
+      "name": "l-pack",
+      "type": "DEVICE",
+      "displayName": "L4 Упаковка",
+      "description": "Поточная линия, стадия 3. Состояние: работает/не работает и скорость.",
+      "templateId": "laminate-line-v1"
+    },
+    {
+      "parentPath": "root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.buffers",
+      "name": "buf-film",
+      "type": "DEVICE",
+      "displayName": "Буфер плёнки",
+      "description": "после пропитки",
+      "templateId": "laminate-buffer-v1"
+    },
+    {
+      "parentPath": "root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.buffers",
+      "name": "buf-board",
+      "type": "DEVICE",
+      "displayName": "Буфер плиты",
+      "description": "после пресса",
+      "templateId": "laminate-buffer-v1"
+    },
+    {
+      "parentPath": "root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.buffers",
+      "name": "fg-barcode",
+      "type": "DEVICE",
+      "displayName": "Склад ГП, штрихкод",
+      "description": "после упаковки",
+      "templateId": "laminate-buffer-v1"
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.laminate-flow-plan",
+      "title": "План линий",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"intro\", \"type\": \"html-snippet\", \"title\": \"Оперативный план\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 14, \"htmlJson\": \"<p>Поточное производство. Единица плана — линия, горизонт — неделя. Перенос заказа между линиями и днями пересчитывает потребность в полуфабрикате и команду в WMS. Операций и незавершёнки нет.</p>\"}, {\"id\": \"board\", \"type\": \"gantt-chart\", \"title\": \"Доска линий\", \"x\": 0, \"y\": 14, \"w\": 84, \"h\": 42, \"objectPath\": \"root.platform.devices.laminate-flow-hub\", \"variableName\": \"schedule\", \"labelField\": \"label\", \"startField\": \"startMs\", \"endField\": \"endMs\", \"allowBarDrag\": true, \"interactive\": true}, {\"id\": \"refresh\", \"type\": \"function\", \"title\": \"Заказы на доске\", \"x\": 0, \"y\": 56, \"w\": 42, \"h\": 21, \"objectPath\": \"root.platform.devices.laminate-flow-hub\", \"functionName\": \"lf_listSchedule\", \"buttonLabel\": \"Показать заказы\"}, {\"id\": \"move\", \"type\": \"function\", \"title\": \"Перенос SO-1002 на Пресс B\", \"x\": 42, \"y\": 56, \"w\": 42, \"h\": 21, \"objectPath\": \"root.platform.devices.laminate-flow-hub\", \"functionName\": \"lf_moveOrder\", \"buttonLabel\": \"Перенести и пересчитать WMS\", \"inputMapJson\": \"{\\\"orderNo\\\": \\\"SO-1002\\\", \\\"lineCode\\\": \\\"l-press-b\\\", \\\"startAt\\\": \\\"2026-09-15T06:00:00+03:00\\\", \\\"endAt\\\": \\\"2026-09-15T14:00:00+03:00\\\"}\"}]}",
+      "refreshIntervalMs": 5000
+    },
+    {
+      "path": "root.platform.dashboards.laminate-flow-lines",
+      "title": "Состояние линий",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"run-l-impreg\", \"type\": \"indicator\", \"title\": \"L1 Пропитка\", \"x\": 0, \"y\": 0, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-impreg\", \"variableName\": \"running\"}, {\"id\": \"spd-l-impreg\", \"type\": \"value\", \"title\": \"Скорость\", \"x\": 0, \"y\": 14, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-impreg\", \"variableName\": \"speed\", \"valueField\": \"value\"}, {\"id\": \"run-l-press-a\", \"type\": \"indicator\", \"title\": \"L2 Пресс A\", \"x\": 21, \"y\": 0, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-press-a\", \"variableName\": \"running\"}, {\"id\": \"spd-l-press-a\", \"type\": \"value\", \"title\": \"Скорость\", \"x\": 21, \"y\": 14, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-press-a\", \"variableName\": \"speed\", \"valueField\": \"value\"}, {\"id\": \"run-l-press-b\", \"type\": \"indicator\", \"title\": \"L3 Пресс B\", \"x\": 42, \"y\": 0, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-press-b\", \"variableName\": \"running\"}, {\"id\": \"spd-l-press-b\", \"type\": \"value\", \"title\": \"Скорость\", \"x\": 42, \"y\": 14, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-press-b\", \"variableName\": \"speed\", \"valueField\": \"value\"}, {\"id\": \"run-l-pack\", \"type\": \"indicator\", \"title\": \"L4 Упаковка\", \"x\": 63, \"y\": 0, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-pack\", \"variableName\": \"running\"}, {\"id\": \"spd-l-pack\", \"type\": \"value\", \"title\": \"Скорость\", \"x\": 63, \"y\": 14, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-pack\", \"variableName\": \"speed\", \"valueField\": \"value\"}, {\"id\": \"buf\", \"type\": \"report\", \"title\": \"Буферы между линиями\", \"x\": 0, \"y\": 28, \"w\": 84, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-buffers\"}]}",
+      "refreshIntervalMs": 5000
+    },
+    {
+      "path": "root.platform.dashboards.laminate-flow-supply",
+      "title": "Материалы",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"sap\", \"type\": \"report\", \"title\": \"Заказы SAP\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-sales-orders\"}, {\"id\": \"need\", \"type\": \"report\", \"title\": \"Потребность в сырье и полуфабрикатах\", \"x\": 0, \"y\": 28, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-material-need\"}, {\"id\": \"wms\", \"type\": \"report\", \"title\": \"Команды WMS\", \"x\": 42, \"y\": 28, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-wms-commands\"}]}",
+      "refreshIntervalMs": 5000
+    },
+    {
+      "path": "root.platform.dashboards.laminate-flow-performance",
+      "title": "Смена",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"perf\", \"type\": \"report\", \"title\": \"Производительность линий\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-line-performance\"}, {\"id\": \"disp\", \"type\": \"report\", \"title\": \"Очередь выдачи\", \"x\": 0, \"y\": 28, \"w\": 84, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-dispatch-queue\"}]}",
+      "refreshIntervalMs": 5000
+    },
+    {
+      "path": "root.platform.dashboards.laminate-flow-quality",
+      "title": "Качество",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"q\", \"type\": \"report\", \"title\": \"Партии\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 48, \"reportPath\": \"root.platform.reports.lf-quality-lots\"}]}",
+      "refreshIntervalMs": 5000
+    },
+    {
+      "path": "root.platform.dashboards.laminate-flow-trace",
+      "title": "Партии",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"g\", \"type\": \"report\", \"title\": \"Прослеживаемость\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 48, \"reportPath\": \"root.platform.reports.lf-genealogy\"}]}",
+      "refreshIntervalMs": 5000
+    },
+    {
+      "path": "root.platform.dashboards.laminate-flow-admin",
+      "title": "Справочники",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"art\", \"type\": \"report\", \"title\": \"Артикулы\", \"x\": 0, \"y\": 0, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-articles\"}, {\"id\": \"dep\", \"type\": \"report\", \"title\": \"Нормы\", \"x\": 42, \"y\": 0, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-dependencies\"}, {\"id\": \"ln\", \"type\": \"report\", \"title\": \"Линии\", \"x\": 0, \"y\": 28, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-lines\"}, {\"id\": \"buf\", \"type\": \"report\", \"title\": \"Буферы\", \"x\": 42, \"y\": 28, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-buffers\"}]}",
+      "refreshIntervalMs": 5000
+    }
+  ],
+  "workflows": null,
+  "blueprints": [
+    {
+      "name": "laminate-flow-hub",
+      "description": "Application logic hub (SINGLETON). Functions live here, not on a DEVICE.",
+      "type": "SINGLETON",
+      "targetObjectType": "CUSTOM",
+      "variables": []
+    },
+    {
+      "name": "laminate-line-v1",
+      "description": "Поточная линия: только работает/не работает и скорость. Без операций и НСИ станков.",
+      "type": "INSTANCE",
+      "targetObjectType": "DEVICE",
+      "suitabilityExpression": "",
+      "variables": [
+        {
+          "name": "running",
+          "description": "Линия работает",
+          "group": "line",
+          "schema": {
+            "name": "running",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "running",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": true
+              }
+            ]
+          },
+          "historyEnabled": false,
+          "historyRetentionDays": null
+        },
+        {
+          "name": "speed",
+          "description": "Скорость линии",
+          "group": "line",
+          "schema": {
+            "name": "speed",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              },
+              {
+                "name": "unit",
+                "type": "STRING",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "speed",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0,
+                "unit": "m/min"
+              }
+            ]
+          },
+          "historyEnabled": true,
+          "historyRetentionDays": 14
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
+    {
+      "name": "laminate-buffer-v1",
+      "description": "Буферный склад между несинхронными линиями",
+      "type": "INSTANCE",
+      "targetObjectType": "DEVICE",
+      "suitabilityExpression": "",
+      "variables": [
+        {
+          "name": "qtyM2",
+          "description": "Остаток полуфабриката или ГП",
+          "group": "line",
+          "schema": {
+            "name": "qtyM2",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              },
+              {
+                "name": "unit",
+                "type": "STRING",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "qtyM2",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                },
+                {
+                  "name": "unit",
+                  "type": "STRING",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0,
+                "unit": "m2"
+              }
+            ]
+          },
+          "historyEnabled": false,
+          "historyRetentionDays": 0
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
+    {
+      "name": "laminate-flow-hub-v1",
+      "description": "Хаб планирования: доска заказов на неделю",
+      "type": "INSTANCE",
+      "targetObjectType": "DEVICE",
+      "suitabilityExpression": "",
+      "variables": [
+        {
+          "name": "schedule",
+          "description": "Доска планирования, RECORD_LIST для gantt-chart",
+          "group": "plan",
+          "schema": {
+            "name": "scheduleBlock",
+            "fields": [
+              {
+                "name": "label",
+                "type": "STRING",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              },
+              {
+                "name": "orderNo",
+                "type": "STRING",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              },
+              {
+                "name": "sku",
+                "type": "STRING",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              },
+              {
+                "name": "lineCode",
+                "type": "STRING",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              },
+              {
+                "name": "startMs",
+                "type": "DOUBLE",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              },
+              {
+                "name": "endMs",
+                "type": "DOUBLE",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "scheduleBlock",
+              "fields": [
+                {
+                  "name": "label",
+                  "type": "STRING",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                },
+                {
+                  "name": "orderNo",
+                  "type": "STRING",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                },
+                {
+                  "name": "sku",
+                  "type": "STRING",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                },
+                {
+                  "name": "lineCode",
+                  "type": "STRING",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                },
+                {
+                  "name": "startMs",
+                  "type": "DOUBLE",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                },
+                {
+                  "name": "endMs",
+                  "type": "DOUBLE",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                }
+              ]
+            },
+            "rows": [
+              {
+                "label": "L2 Пресс A",
+                "orderNo": "SO-1001",
+                "sku": "QS-OAK-8",
+                "lineCode": "l-press-a",
+                "startMs": 1789354800000.0,
+                "endMs": 1789383600000.0
+              },
+              {
+                "label": "L2 Пресс A",
+                "orderNo": "SO-1002",
+                "sku": "QS-OAK-8",
+                "lineCode": "l-press-a",
+                "startMs": 1789441200000.0,
+                "endMs": 1789470000000.0
+              },
+              {
+                "label": "L1 Пропитка",
+                "orderNo": "SO-1101",
+                "sku": "FILM-OAK",
+                "lineCode": "l-impreg",
+                "startMs": 1789354800000.0,
+                "endMs": 1789376400000.0
+              },
+              {
+                "label": "L4 Упаковка",
+                "orderNo": "SO-1201",
+                "sku": "QS-OAK-8",
+                "lineCode": "l-pack",
+                "startMs": 1789534800000.0,
+                "endMs": 1789563600000.0
+              }
+            ]
+          },
+          "historyEnabled": false,
+          "historyRetentionDays": null
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ],
+  "migrations": [
+    {
+      "id": "lf_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS lf_line (\n  code VARCHAR(32) PRIMARY KEY,\n  name VARCHAR(80) NOT NULL,\n  stage INTEGER NOT NULL,\n  sequence INTEGER NOT NULL\n);\nCREATE TABLE IF NOT EXISTS lf_buffer (\n  code VARCHAR(32) PRIMARY KEY,\n  name VARCHAR(80) NOT NULL,\n  role VARCHAR(80) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS lf_article (\n  sku VARCHAR(32) PRIMARY KEY,\n  name VARCHAR(120) NOT NULL,\n  kind VARCHAR(16) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS lf_article_line (\n  sku VARCHAR(32) NOT NULL,\n  line_code VARCHAR(32) NOT NULL,\n  PRIMARY KEY (sku, line_code)\n);\nCREATE TABLE IF NOT EXISTS lf_dependency (\n  id VARCHAR(40) PRIMARY KEY,\n  sku VARCHAR(32) NOT NULL,\n  consumer_line VARCHAR(32) NOT NULL,\n  material_sku VARCHAR(32) NOT NULL,\n  qty_per_m2 DOUBLE PRECISION NOT NULL,\n  buffer_code VARCHAR(32) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS lf_sales_order (\n  order_no VARCHAR(32) PRIMARY KEY,\n  sku VARCHAR(32) NOT NULL,\n  qty_m2 DOUBLE PRECISION NOT NULL,\n  priority INTEGER NOT NULL,\n  status VARCHAR(32) NOT NULL,\n  due_date DATE NOT NULL,\n  source VARCHAR(16) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS lf_schedule (\n  order_no VARCHAR(32) PRIMARY KEY,\n  sku VARCHAR(32) NOT NULL,\n  line_code VARCHAR(32) NOT NULL,\n  start_at TIMESTAMPTZ NOT NULL,\n  end_at TIMESTAMPTZ NOT NULL,\n  status VARCHAR(32) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS lf_material_need (\n  id VARCHAR(40) PRIMARY KEY,\n  order_no VARCHAR(32) NOT NULL,\n  material_sku VARCHAR(32) NOT NULL,\n  qty_m2 DOUBLE PRECISION NOT NULL,\n  buffer_code VARCHAR(32) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS lf_wms_command (\n  id VARCHAR(40) PRIMARY KEY,\n  order_no VARCHAR(32) NOT NULL,\n  command_type VARCHAR(32) NOT NULL,\n  material_sku VARCHAR(32) NOT NULL,\n  qty_m2 DOUBLE PRECISION NOT NULL,\n  target VARCHAR(80) NOT NULL,\n  status VARCHAR(32) NOT NULL\n);\nINSERT INTO lf_line (code, name, stage, sequence) VALUES\n ('l-impreg','L1 Пропитка',1,1),\n ('l-press-a','L2 Пресс A',2,2),\n ('l-press-b','L3 Пресс B',2,3),\n ('l-pack','L4 Упаковка',3,4)\nON CONFLICT (code) DO NOTHING;\nINSERT INTO lf_buffer (code, name, role) VALUES\n ('buf-film','Буфер плёнки','после пропитки'),\n ('buf-board','Буфер плиты','после пресса'),\n ('fg-barcode','Склад ГП','маркировка штрихкодом')\nON CONFLICT (code) DO NOTHING;\nINSERT INTO lf_article (sku, name, kind) VALUES\n ('FILM-OAK','Плёнка дуб','semi'),\n ('BOARD-OAK','Плита дуб','semi'),\n ('QS-OAK-8','Ламинат QS дуб 8 мм','finished')\nON CONFLICT (sku) DO NOTHING;\nINSERT INTO lf_article_line (sku, line_code) VALUES\n ('FILM-OAK','l-impreg'),\n ('BOARD-OAK','l-press-a'),\n ('BOARD-OAK','l-press-b'),\n ('QS-OAK-8','l-pack')\nON CONFLICT DO NOTHING;\nINSERT INTO lf_dependency (id, sku, consumer_line, material_sku, qty_per_m2, buffer_code) VALUES\n ('dep-press','BOARD-OAK','l-press-a','FILM-OAK',1.05,'buf-film'),\n ('dep-press-b','BOARD-OAK','l-press-b','FILM-OAK',1.05,'buf-film'),\n ('dep-pack','QS-OAK-8','l-pack','BOARD-OAK',1.0,'buf-board')\nON CONFLICT (id) DO NOTHING;\nINSERT INTO lf_sales_order (order_no, sku, qty_m2, priority, status, due_date, source) VALUES\n ('SO-1001','BOARD-OAK',4200,2,'planned','2026-09-16','SAP'),\n ('SO-1002','BOARD-OAK',3800,1,'planned','2026-09-17','SAP'),\n ('SO-1101','FILM-OAK',4500,2,'planned','2026-09-15','SAP'),\n ('SO-1201','QS-OAK-8',3600,1,'planned','2026-09-18','SAP')\nON CONFLICT (order_no) DO NOTHING;\nINSERT INTO lf_schedule (order_no, sku, line_code, start_at, end_at, status) VALUES\n ('SO-1101','FILM-OAK','l-impreg','2026-09-14T06:00:00+03:00','2026-09-14T12:00:00+03:00','planned'),\n ('SO-1001','BOARD-OAK','l-press-a','2026-09-14T06:00:00+03:00','2026-09-14T14:00:00+03:00','planned'),\n ('SO-1002','BOARD-OAK','l-press-a','2026-09-15T06:00:00+03:00','2026-09-15T14:00:00+03:00','planned'),\n ('SO-1201','QS-OAK-8','l-pack','2026-09-16T08:00:00+03:00','2026-09-16T16:00:00+03:00','planned')\nON CONFLICT (order_no) DO NOTHING;\nINSERT INTO lf_material_need (id, order_no, material_sku, qty_m2, buffer_code) VALUES\n ('need-1001','SO-1001','FILM-OAK',4410,'buf-film'),\n ('need-1002','SO-1002','FILM-OAK',3990,'buf-film'),\n ('need-1201','SO-1201','BOARD-OAK',3600,'buf-board')\nON CONFLICT (id) DO NOTHING;\nINSERT INTO lf_wms_command (id, order_no, command_type, material_sku, qty_m2, target, status) VALUES\n ('wms-1001','SO-1001','FEED_LINE','FILM-OAK',4410,'L2 Пресс A','queued'),\n ('wms-1002','SO-1002','FEED_LINE','FILM-OAK',3990,'L2 Пресс A','queued'),\n ('wms-1201','SO-1201','FEED_LINE','BOARD-OAK',3600,'L4 Упаковка','queued')\nON CONFLICT (id) DO NOTHING;"
+    },
+    {
+      "id": "lf_v2",
+      "sql": "CREATE TABLE IF NOT EXISTS lf_line_performance (\n  line_code VARCHAR(32) PRIMARY KEY,\n  plan_m2 DOUBLE PRECISION NOT NULL,\n  fact_m2 DOUBLE PRECISION NOT NULL,\n  util_pct INTEGER NOT NULL,\n  downtime_min INTEGER NOT NULL,\n  stop_reason VARCHAR(120),\n  stop_note VARCHAR(240),\n  oee_proxy DOUBLE PRECISION NOT NULL\n);\nCREATE TABLE IF NOT EXISTS lf_dispatch_job (\n  order_no VARCHAR(32) PRIMARY KEY,\n  sku VARCHAR(32) NOT NULL,\n  line_code VARCHAR(32) NOT NULL,\n  window_label VARCHAR(80) NOT NULL,\n  state VARCHAR(16) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS lf_quality_lot (\n  lot_id VARCHAR(40) PRIMARY KEY,\n  order_no VARCHAR(32) NOT NULL,\n  sku VARCHAR(32) NOT NULL,\n  line_code VARCHAR(32) NOT NULL,\n  sample_at TIMESTAMPTZ NOT NULL,\n  lims_ref VARCHAR(40),\n  state VARCHAR(16) NOT NULL,\n  note VARCHAR(240) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS lf_genealogy (\n  lot_id VARCHAR(40) PRIMARY KEY,\n  barcode VARCHAR(40) NOT NULL,\n  sku VARCHAR(32) NOT NULL,\n  order_no VARCHAR(32) NOT NULL,\n  line_code VARCHAR(32) NOT NULL,\n  recorded_at TIMESTAMPTZ NOT NULL,\n  parent_lot_id VARCHAR(40),\n  buffer_code VARCHAR(32)\n);\nINSERT INTO lf_line_performance (line_code, plan_m2, fact_m2, util_pct, downtime_min, stop_reason, stop_note, oee_proxy) VALUES\n ('l-impreg',4500,4380,92,18,NULL,NULL,0.89),\n ('l-press-a',8000,7640,88,42,NULL,NULL,0.84),\n ('l-press-b',0,0,0,480,'плановый простой',NULL,0),\n ('l-pack',3600,3120,79,55,'ожидание плиты',NULL,0.76)\nON CONFLICT (line_code) DO NOTHING;\nINSERT INTO lf_dispatch_job (order_no, sku, line_code, window_label, state) VALUES\n ('SO-1101','FILM-OAK','l-impreg','14.09 06:00–12:00','done'),\n ('SO-1001','BOARD-OAK','l-press-a','14.09 06:00–14:00','running'),\n ('SO-1002','BOARD-OAK','l-press-a','15.09 06:00–14:00','released'),\n ('SO-1201','QS-OAK-8','l-pack','16.09 08:00–16:00','queued')\nON CONFLICT (order_no) DO NOTHING;\nINSERT INTO lf_quality_lot (lot_id, order_no, sku, line_code, sample_at, lims_ref, state, note) VALUES\n ('LOT-F-4410','SO-1101','FILM-OAK','l-impreg','2026-09-14T09:40:00+03:00','LIMS-8821','released','Влажность в норме'),\n ('LOT-B-1001','SO-1001','BOARD-OAK','l-press-a','2026-09-14T11:15:00+03:00','LIMS-8830','ok','Толщина 8.02 мм'),\n ('LOT-B-1002','SO-1002','BOARD-OAK','l-press-a','2026-09-15T10:05:00+03:00',NULL,'hold','Ожидание результата LIMS'),\n ('LOT-P-1201','SO-1201','QS-OAK-8','l-pack','2026-09-16T12:20:00+03:00','LIMS-8844','retest','Повтор по геометрии замка')\nON CONFLICT (lot_id) DO NOTHING;\nINSERT INTO lf_genealogy (lot_id, barcode, sku, order_no, line_code, recorded_at, parent_lot_id, buffer_code) VALUES\n ('LOT-F-4410','FM-4410-14','FILM-OAK','SO-1101','l-impreg','2026-09-14T12:05:00+03:00',NULL,'buf-film'),\n ('LOT-B-1001','BD-1001-14','BOARD-OAK','SO-1001','l-press-a','2026-09-14T14:10:00+03:00','LOT-F-4410','buf-board'),\n ('LOT-P-1201','QS-1201-16','QS-OAK-8','SO-1201','l-pack','2026-09-16T16:02:00+03:00','LOT-B-1001','fg-barcode')\nON CONFLICT (lot_id) DO NOTHING;\n"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
+      "functionName": "lf_listSchedule",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": {
+                "name": "row",
+                "fields": [
+                  {
+                    "name": "order_no",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "sku",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "line_name",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "line_code",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT s.order_no, s.sku, l.name AS line_name, s.line_code, s.status FROM lf_schedule s JOIN lf_line l ON l.code = s.line_code ORDER BY s.start_at\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
+      "functionName": "lf_moveOrder",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "orderNo",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "lineCode",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "startAt",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "endAt",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "orderNo",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "lineCode",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "status",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"slot\", \"sql\": \"SELECT order_no, sku, line_code FROM lf_schedule WHERE order_no = ?\", \"params\": [\"${input.orderNo}\"]}, {\"type\": \"failIfNull\", \"var\": \"slot\", \"message\": \"Заказ не найден на доске\"}, {\"type\": \"selectOne\", \"var\": \"cap\", \"sql\": \"SELECT line_code FROM lf_article_line WHERE sku = ? AND line_code = ?\", \"params\": [\"${slot.sku}\", \"${input.lineCode}\"]}, {\"type\": \"failIfNull\", \"var\": \"cap\", \"message\": \"Артикул нельзя выпускать на этой линии\"}, {\"type\": \"exec\", \"sql\": \"UPDATE lf_schedule SET line_code = ?, start_at = ?::timestamptz, end_at = ?::timestamptz, status = 'replanned' WHERE order_no = ?\", \"params\": [\"${input.lineCode}\", \"${input.startAt}\", \"${input.endAt}\", \"${input.orderNo}\"]}, {\"type\": \"exec\", \"sql\": \"DELETE FROM lf_material_need WHERE order_no = ?\", \"params\": [\"${input.orderNo}\"]}, {\"type\": \"exec\", \"sql\": \"DELETE FROM lf_wms_command WHERE order_no = ?\", \"params\": [\"${input.orderNo}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO lf_material_need (id, order_no, material_sku, qty_m2, buffer_code) SELECT 'need-' || s.order_no || '-' || d.material_sku, s.order_no, d.material_sku, o.qty_m2 * d.qty_per_m2, d.buffer_code FROM lf_schedule s JOIN lf_sales_order o ON o.order_no = s.order_no JOIN lf_dependency d ON d.sku = s.sku AND d.consumer_line = s.line_code WHERE s.order_no = ?\", \"params\": [\"${input.orderNo}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO lf_wms_command (id, order_no, command_type, material_sku, qty_m2, target, status) SELECT 'wms-' || n.order_no || '-' || n.material_sku, n.order_no, 'FEED_LINE', n.material_sku, n.qty_m2, l.name, 'queued' FROM lf_material_need n JOIN lf_schedule s ON s.order_no = n.order_no JOIN lf_line l ON l.code = s.line_code WHERE n.order_no = ?\", \"params\": [\"${input.orderNo}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"orderNo\": \"${input.orderNo}\", \"lineCode\": \"${input.lineCode}\", \"status\": \"replanned\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
+      "functionName": "lf_releaseDispatch",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "orderNo",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "orderNo",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "state",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE lf_dispatch_job SET state = 'released' WHERE order_no = ? AND state = 'queued'\", \"params\": [\"${input.orderNo}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"orderNo\": \"${input.orderNo}\", \"state\": \"released\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
+      "functionName": "lf_ackLineStop",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "lineCode",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "note",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "lineCode",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE lf_line_performance SET stop_note = ? WHERE line_code = ?\", \"params\": [\"${input.note}\", \"${input.lineCode}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"lineCode\": \"${input.lineCode}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
+      "functionName": "lf_setQualityState",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "lotId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "state",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "note",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "lotId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "state",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE lf_quality_lot SET state = ?, note = ? WHERE lot_id = ?\", \"params\": [\"${input.state}\", \"${input.note}\", \"${input.lotId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"lotId\": \"${input.lotId}\", \"state\": \"${input.state}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
+      "functionName": "lf_ackWmsCommand",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "commandId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "commandId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "status",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE lf_wms_command SET status = 'sent' WHERE id = ?\", \"params\": [\"${input.commandId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"commandId\": \"${input.commandId}\", \"status\": \"sent\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.laminate-flow-hub",
+      "functionName": "lf_applySapChange",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "orderNo",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "action",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "value",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "orderNo",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "status",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"ord\", \"sql\": \"SELECT order_no, qty_m2, priority, status FROM lf_sales_order WHERE order_no = ?\", \"params\": [\"${input.orderNo}\"]}, {\"type\": \"failIfNull\", \"var\": \"ord\", \"message\": \"Заказ SAP не найден\"}, {\"type\": \"exec\", \"sql\": \"UPDATE lf_sales_order SET status = CASE WHEN ? = 'cancel' THEN 'cancelled' ELSE status END, priority = CASE WHEN ? = 'priority' THEN ?::integer ELSE priority END, qty_m2 = CASE WHEN ? = 'qty' THEN ?::double precision ELSE qty_m2 END WHERE order_no = ?\", \"params\": [\"${input.action}\", \"${input.action}\", \"${input.value}\", \"${input.action}\", \"${input.value}\", \"${input.orderNo}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE lf_schedule SET status = CASE WHEN ? = 'cancel' THEN 'cancelled' ELSE status END WHERE order_no = ?\", \"params\": [\"${input.action}\", \"${input.orderNo}\"]}, {\"type\": \"exec\", \"sql\": \"DELETE FROM lf_material_need WHERE order_no = ? AND ? = 'cancel'\", \"params\": [\"${input.orderNo}\", \"${input.action}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE lf_wms_command SET status = 'CANCEL' WHERE order_no = ? AND ? = 'cancel'\", \"params\": [\"${input.orderNo}\", \"${input.action}\"]}, {\"type\": \"exec\", \"sql\": \"DELETE FROM lf_material_need WHERE order_no = ? AND ? = 'qty'\", \"params\": [\"${input.orderNo}\", \"${input.action}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO lf_material_need (id, order_no, material_sku, qty_m2, buffer_code) SELECT 'need-' || s.order_no || '-' || d.material_sku, s.order_no, d.material_sku, o.qty_m2 * d.qty_per_m2, d.buffer_code FROM lf_schedule s JOIN lf_sales_order o ON o.order_no = s.order_no JOIN lf_dependency d ON d.sku = s.sku AND d.consumer_line = s.line_code WHERE s.order_no = ? AND ? = 'qty'\", \"params\": [\"${input.orderNo}\", \"${input.action}\"]}, {\"type\": \"exec\", \"sql\": \"DELETE FROM lf_wms_command WHERE order_no = ? AND ? = 'qty'\", \"params\": [\"${input.orderNo}\", \"${input.action}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO lf_wms_command (id, order_no, command_type, material_sku, qty_m2, target, status) SELECT 'wms-' || n.order_no || '-' || n.material_sku, n.order_no, 'FEED_LINE', n.material_sku, n.qty_m2, l.name, 'queued' FROM lf_material_need n JOIN lf_schedule s ON s.order_no = n.order_no JOIN lf_line l ON l.code = s.line_code WHERE n.order_no = ? AND ? = 'qty'\", \"params\": [\"${input.orderNo}\", \"${input.action}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"orderNo\": \"${input.orderNo}\", \"status\": \"${input.action}\"}}]}"
+      }
+    }
+  ],
+  "bindings": null,
+  "reports": [
+    {
+      "reportId": "lf-sales-orders",
+      "title": "Заказы SAP",
+      "description": null,
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT order_no, sku, qty_m2, priority, status, due_date, source FROM lf_sales_order ORDER BY due_date",
+      "parameters": null,
+      "columns": [
+        {
+          "field": "order_no",
+          "label": "Заказ"
+        },
+        {
+          "field": "sku",
+          "label": "Артикул"
+        },
+        {
+          "field": "qty_m2",
+          "label": "м2"
+        },
+        {
+          "field": "priority",
+          "label": "Приоритет"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "due_date",
+          "label": "Срок"
+        },
+        {
+          "field": "source",
+          "label": "Источник"
+        }
+      ],
+      "maxRows": null
+    },
+    {
+      "reportId": "lf-material-need",
+      "title": "Потребность",
+      "description": null,
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT order_no, material_sku, qty_m2, buffer_code FROM lf_material_need ORDER BY order_no",
+      "parameters": null,
+      "columns": [
+        {
+          "field": "order_no",
+          "label": "Заказ"
+        },
+        {
+          "field": "material_sku",
+          "label": "Материал"
+        },
+        {
+          "field": "qty_m2",
+          "label": "м2"
+        },
+        {
+          "field": "buffer_code",
+          "label": "Буфер"
+        }
+      ],
+      "maxRows": null
+    },
+    {
+      "reportId": "lf-wms-commands",
+      "title": "Команды WMS",
+      "description": null,
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT order_no, command_type, material_sku, qty_m2, target, status FROM lf_wms_command ORDER BY order_no",
+      "parameters": null,
+      "columns": [
+        {
+          "field": "order_no",
+          "label": "Заказ"
+        },
+        {
+          "field": "command_type",
+          "label": "Команда"
+        },
+        {
+          "field": "material_sku",
+          "label": "Материал"
+        },
+        {
+          "field": "qty_m2",
+          "label": "м2"
+        },
+        {
+          "field": "target",
+          "label": "Куда"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        }
+      ],
+      "maxRows": null
+    },
+    {
+      "reportId": "lf-buffers",
+      "title": "Буферы",
+      "description": null,
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT code, name, role FROM lf_buffer ORDER BY code",
+      "parameters": null,
+      "columns": [
+        {
+          "field": "code",
+          "label": "Код"
+        },
+        {
+          "field": "name",
+          "label": "Склад"
+        },
+        {
+          "field": "role",
+          "label": "Роль"
+        }
+      ],
+      "maxRows": null
+    },
+    {
+      "reportId": "lf-line-performance",
+      "title": "Производительность линий",
+      "description": null,
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT line_code, plan_m2, fact_m2, util_pct, downtime_min, stop_reason, stop_note, oee_proxy FROM lf_line_performance ORDER BY line_code",
+      "parameters": null,
+      "columns": [
+        {
+          "field": "line_code",
+          "label": "Линия"
+        },
+        {
+          "field": "plan_m2",
+          "label": "План м2"
+        },
+        {
+          "field": "fact_m2",
+          "label": "Факт м2"
+        },
+        {
+          "field": "util_pct",
+          "label": "Загрузка %"
+        },
+        {
+          "field": "downtime_min",
+          "label": "Простой мин"
+        },
+        {
+          "field": "stop_reason",
+          "label": "Причина"
+        },
+        {
+          "field": "stop_note",
+          "label": "Комментарий"
+        },
+        {
+          "field": "oee_proxy",
+          "label": "Эффект."
+        }
+      ],
+      "maxRows": null
+    },
+    {
+      "reportId": "lf-dispatch-queue",
+      "title": "Очередь выдачи на линии",
+      "description": null,
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT order_no, sku, line_code, window_label, state FROM lf_dispatch_job ORDER BY order_no",
+      "parameters": null,
+      "columns": [
+        {
+          "field": "order_no",
+          "label": "Заказ"
+        },
+        {
+          "field": "sku",
+          "label": "Артикул"
+        },
+        {
+          "field": "line_code",
+          "label": "Линия"
+        },
+        {
+          "field": "window_label",
+          "label": "Окно"
+        },
+        {
+          "field": "state",
+          "label": "Статус"
+        }
+      ],
+      "maxRows": null
+    },
+    {
+      "reportId": "lf-quality-lots",
+      "title": "Качество партий",
+      "description": null,
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT lot_id, order_no, sku, line_code, sample_at, lims_ref, state, note FROM lf_quality_lot ORDER BY sample_at",
+      "parameters": null,
+      "columns": [
+        {
+          "field": "lot_id",
+          "label": "Партия"
+        },
+        {
+          "field": "order_no",
+          "label": "Заказ"
+        },
+        {
+          "field": "sku",
+          "label": "Артикул"
+        },
+        {
+          "field": "line_code",
+          "label": "Линия"
+        },
+        {
+          "field": "sample_at",
+          "label": "Проба"
+        },
+        {
+          "field": "lims_ref",
+          "label": "LIMS"
+        },
+        {
+          "field": "state",
+          "label": "Статус"
+        },
+        {
+          "field": "note",
+          "label": "Заметка"
+        }
+      ],
+      "maxRows": null
+    },
+    {
+      "reportId": "lf-genealogy",
+      "title": "Прослеживаемость партий",
+      "description": null,
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT lot_id, barcode, sku, order_no, line_code, recorded_at, parent_lot_id, buffer_code FROM lf_genealogy ORDER BY recorded_at",
+      "parameters": null,
+      "columns": [
+        {
+          "field": "lot_id",
+          "label": "Партия"
+        },
+        {
+          "field": "barcode",
+          "label": "Штрихкод"
+        },
+        {
+          "field": "sku",
+          "label": "Артикул"
+        },
+        {
+          "field": "order_no",
+          "label": "Заказ"
+        },
+        {
+          "field": "line_code",
+          "label": "Линия"
+        },
+        {
+          "field": "recorded_at",
+          "label": "Время"
+        },
+        {
+          "field": "parent_lot_id",
+          "label": "Предшественник"
+        },
+        {
+          "field": "buffer_code",
+          "label": "Буфер"
+        }
+      ],
+      "maxRows": null
+    },
+    {
+      "reportId": "lf-articles",
+      "title": "Артикулы",
+      "description": null,
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT sku, name, kind FROM lf_article ORDER BY sku",
+      "parameters": null,
+      "columns": [
+        {
+          "field": "sku",
+          "label": "Артикул"
+        },
+        {
+          "field": "name",
+          "label": "Наименование"
+        },
+        {
+          "field": "kind",
+          "label": "Вид"
+        }
+      ],
+      "maxRows": null
+    },
+    {
+      "reportId": "lf-dependencies",
+      "title": "Нормы полуфабрикатов",
+      "description": null,
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT id, sku, consumer_line, material_sku, qty_per_m2, buffer_code FROM lf_dependency ORDER BY sku, consumer_line",
+      "parameters": null,
+      "columns": [
+        {
+          "field": "id",
+          "label": "ID"
+        },
+        {
+          "field": "sku",
+          "label": "Артикул"
+        },
+        {
+          "field": "consumer_line",
+          "label": "Линия"
+        },
+        {
+          "field": "material_sku",
+          "label": "Материал"
+        },
+        {
+          "field": "qty_per_m2",
+          "label": "Норма"
+        },
+        {
+          "field": "buffer_code",
+          "label": "Буфер"
+        }
+      ],
+      "maxRows": null
+    },
+    {
+      "reportId": "lf-lines",
+      "title": "Линии",
+      "description": null,
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT code, name, stage, sequence FROM lf_line ORDER BY sequence",
+      "parameters": null,
+      "columns": [
+        {
+          "field": "code",
+          "label": "Код"
+        },
+        {
+          "field": "name",
+          "label": "Название"
+        },
+        {
+          "field": "stage",
+          "label": "Стадия"
+        },
+        {
+          "field": "sequence",
+          "label": "Порядок"
+        }
+      ],
+      "maxRows": null
+    }
+  ],
+  "alertRules": null,
+  "correlators": null,
+  "schedules": null,
+  "analyticsFormulas": null,
+  "events": [
+    {
+      "id": "laminateScheduleMoved",
+      "roles": [
+        "operator",
+        "admin"
+      ],
+      "payloadSchema": null
+    },
+    {
+      "id": "laminateWmsCommandQueued",
+      "roles": [
+        "operator",
+        "admin"
+      ],
+      "payloadSchema": null
+    },
+    {
+      "id": "laminateDispatchReleased",
+      "roles": [
+        "operator",
+        "admin"
+      ],
+      "payloadSchema": null
+    },
+    {
+      "id": "laminateQualityChanged",
+      "roles": [
+        "operator",
+        "admin"
+      ],
+      "payloadSchema": null
+    },
+    {
+      "id": "laminateLineStopAcked",
+      "roles": [
+        "operator",
+        "admin"
+      ],
+      "payloadSchema": null
+    },
+    {
+      "id": "laminateWmsAcked",
+      "roles": [
+        "operator",
+        "admin"
+      ],
+      "payloadSchema": null
+    }
+  ],
+  "requires": null,
+  "license": {
+    "bundleId": "laminate-flow-mes",
+    "minPlatformVersion": "0.9.208",
+    "installationId": "9466af4766a35acd780a0b85e682d215fce6576cbf1c023ccd22bdb0996b5d79",
+    "contentSha256": "072ec87336ab62ab7122d14647a282d1ca8d2e75eb4061163ce10408be753d13",
+    "expiresAt": "2027-09-17T19:14:55.867213418Z",
+    "signature": "FbMt+UVbAofdDLvmXxceYBQ8clT6kgVjn8LDSZOC/hkvOgy9xc+uW2kK5LfVdfH+Qb4BjsQwhh43mWe186t7/RZDdnV9Waz5ttAkxvUQtnRNvLmnHMfmJ+5Bu/wKg9JgCPg+yiMfIwyf6fBPJLD52i5NYEpmGo9WBUoYVYL+MLnbegPHabg90VTIa3tqUz/+/Rigdz2QKegp05Yl0g595Qpp4hFas43jzn+aARLviZIVUPY/RTBgWd/TWycUENRnzFxTL0pswPt27zvtUVm0HGiqjNI9O5KxyXPwrUSDknVA3xQBacvP5Mn2xVL76Ywi7T1iOG2M163cJ3Ad5rA/Iw=="
+  },
+  "metadata": {
+    "generatedBy": "cursor-agent",
+    "contextPackVersion": "ispf-0.9.208",
+    "industry": "laminate-flow",
+    "planningUnit": "line",
+    "outOfScope": [
+      "operations",
+      "classic-wip",
+      "equipment-nsi",
+      "competency-matrix",
+      "heavy-digital-twin"
+    ],
+    "integrations": [
+      "SAP",
+      "WMS",
+      "ASUTP-SCADA",
+      "LIMS"
+    ],
+    "uiPackSlug": "laminate-flow-ui",
+    "uiScreens": [
+      "plan",
+      "scenarios",
+      "lines",
+      "performance",
+      "supply",
+      "quality",
+      "trace",
+      "admin"
+    ]
+  },
+  "operatorUi": {
+    "appId": "laminate-flow-mes",
+    "title": "Поточное производство",
+    "defaultDashboard": "root.platform.dashboards.laminate-flow-plan",
+    "uiPack": {
+      "packId": "laminate-flow-ui",
+      "version": "1.0.0",
+      "entry": "index.html",
+      "basePath": "/apps/laminate-flow-mes/"
+    },
+    "externalSpaUrl": "https://ispf.ai/apps/laminate-flow-mes/",
+    "spaNav": [
+      {
+        "id": "plan",
+        "title": "План",
+        "route": "/plan",
+        "group": "Производство",
+        "dashboard": "root.platform.dashboards.laminate-flow-plan"
+      },
+      {
+        "id": "scenarios",
+        "title": "Как работать",
+        "route": "/scenarios",
+        "group": "Производство"
+      },
+      {
+        "id": "lines",
+        "title": "Линии",
+        "route": "/lines",
+        "group": "Производство",
+        "dashboard": "root.platform.dashboards.laminate-flow-lines"
+      },
+      {
+        "id": "performance",
+        "title": "Смена",
+        "route": "/performance",
+        "group": "Производство",
+        "dashboard": "root.platform.dashboards.laminate-flow-performance"
+      },
+      {
+        "id": "supply",
+        "title": "Материалы",
+        "route": "/supply",
+        "group": "Контроль",
+        "dashboard": "root.platform.dashboards.laminate-flow-supply"
+      },
+      {
+        "id": "quality",
+        "title": "Качество",
+        "route": "/quality",
+        "group": "Контроль",
+        "dashboard": "root.platform.dashboards.laminate-flow-quality"
+      },
+      {
+        "id": "trace",
+        "title": "Партии",
+        "route": "/trace",
+        "group": "Контроль",
+        "dashboard": "root.platform.dashboards.laminate-flow-trace"
+      },
+      {
+        "id": "admin",
+        "title": "Справочники",
+        "route": "/admin",
+        "group": "Система",
+        "dashboard": "root.platform.dashboards.laminate-flow-admin"
+      }
+    ],
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.laminate-flow-plan",
+        "title": "План линий"
+      },
+      {
+        "path": "root.platform.dashboards.laminate-flow-lines",
+        "title": "Линии"
+      },
+      {
+        "path": "root.platform.dashboards.laminate-flow-performance",
+        "title": "Смена"
+      },
+      {
+        "path": "root.platform.dashboards.laminate-flow-supply",
+        "title": "Материалы"
+      },
+      {
+        "path": "root.platform.dashboards.laminate-flow-quality",
+        "title": "Качество"
+      },
+      {
+        "path": "root.platform.dashboards.laminate-flow-trace",
+        "title": "Партии"
+      },
+      {
+        "path": "root.platform.dashboards.laminate-flow-admin",
+        "title": "Справочники"
+      }
+    ],
+    "eventJournalObjectPath": "root.platform.devices.laminate-flow-hub"
+  },
+  "operatorManifest": null
+}

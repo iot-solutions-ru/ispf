@@ -1,0 +1,10 @@
+{
+  "appId": "claims-control",
+  "packId": "claims-control-ui",
+  "version": "1.3.2",
+  "entry": "index.html",
+  "basePath": "/apps/claims-control/",
+  "title": "Claims Control",
+  "minIspfVersion": "0.9.208",
+  "id": "claims-control"
+}

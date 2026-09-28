@@ -1,0 +1,1537 @@
+{
+  "version": "1.2.3",
+  "displayName": "Claims Control",
+  "tablePrefix": "cc_",
+  "schemaName": "app_claims_control",
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "claims-control",
+      "type": "CUSTOM",
+      "displayName": "Claims Control (app host)",
+      "description": "BFF host for Claims Control",
+      "templateId": null,
+      "parameters": null
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.claims-control",
+      "title": "Claims Control — Операции",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"w-claims-list\", \"type\": \"report\", \"title\": \"Список претензий\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 28, \"reportPath\": \"root.platform.reports.cc-claims-list\"}, {\"id\": \"w-open-tasks\", \"type\": \"report\", \"title\": \"Открытые задачи\", \"x\": 0, \"y\": 28, \"w\": 42, \"h\": 35, \"reportPath\": \"root.platform.reports.cc-open-tasks\"}, {\"id\": \"w-docs\", \"type\": \"report\", \"title\": \"Недостающие документы\", \"x\": 42, \"y\": 28, \"w\": 42, \"h\": 35, \"reportPath\": \"root.platform.reports.cc-documents-missing\"}, {\"id\": \"w-create-claim\", \"type\": \"function-form\", \"title\": \"Новая претензия\", \"x\": 0, \"y\": 63, \"w\": 28, \"h\": 42, \"objectPath\": \"root.platform.devices.claims-control\", \"functionName\": \"cc_createClaim\"}, {\"id\": \"w-advance\", \"type\": \"function-form\", \"title\": \"Сменить этап workflow\", \"x\": 28, \"y\": 63, \"w\": 28, \"h\": 28, \"objectPath\": \"root.platform.devices.claims-control\", \"functionName\": \"cc_advanceStage\"}, {\"id\": \"w-ai\", \"type\": \"function-form\", \"title\": \"AI-анализ риска\", \"x\": 56, \"y\": 63, \"w\": 28, \"h\": 28, \"objectPath\": \"root.platform.devices.claims-control\", \"functionName\": \"cc_runAiAnalysis\"}, {\"id\": \"w-add-comment\", \"type\": \"function-form\", \"title\": \"Комментарий\", \"x\": 28, \"y\": 91, \"w\": 28, \"h\": 21, \"objectPath\": \"root.platform.devices.claims-control\", \"functionName\": \"cc_addComment\"}, {\"id\": \"w-doc-mark\", \"type\": \"function-form\", \"title\": \"Документ получен\", \"x\": 56, \"y\": 91, \"w\": 28, \"h\": 21, \"objectPath\": \"root.platform.devices.claims-control\", \"functionName\": \"cc_markDocumentReceived\"}, {\"id\": \"w-csat\", \"type\": \"function-form\", \"title\": \"Зарегистрировать CSAT\", \"x\": 0, \"y\": 105, \"w\": 28, \"h\": 28, \"objectPath\": \"root.platform.devices.claims-control\", \"functionName\": \"cc_registerCsat\"}, {\"id\": \"w-court\", \"type\": \"function-form\", \"title\": \"Создать судебное дело\", \"x\": 28, \"y\": 112, \"w\": 28, \"h\": 35, \"objectPath\": \"root.platform.devices.claims-control\", \"functionName\": \"cc_createCourtCase\"}, {\"id\": \"w-cal\", \"type\": \"report\", \"title\": \"Календарь\", \"x\": 56, \"y\": 112, \"w\": 28, \"h\": 35, \"reportPath\": \"root.platform.reports.cc-calendar\"}, {\"id\": \"w-ai-log\", \"type\": \"report\", \"title\": \"Журнал AI\", \"x\": 0, \"y\": 133, \"w\": 84, \"h\": 28, \"reportPath\": \"root.platform.reports.cc-ai-log\"}]}",
+      "refreshIntervalMs": 15000
+    },
+    {
+      "path": "root.platform.dashboards.claims-control-mgmt",
+      "title": "Claims Control — Dashboard руководителя",
+      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"help\", \"type\": \"html-snippet\", \"title\": \"Claims Control\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 10, \"htmlJson\": \"<p><b>Управленческий dashboard</b> по брифу: претензии, SLA, риски, суды, CSAT, расходы. Данные обезличены (client_label / vin_token).</p>\"}, {\"id\": \"kpis\", \"type\": \"report\", \"title\": \"KPI\", \"x\": 0, \"y\": 10, \"w\": 84, \"h\": 18, \"reportPath\": \"root.platform.reports.cc-mgmt-kpis\"}, {\"id\": \"sla\", \"type\": \"report\", \"title\": \"Просрочки SLA\", \"x\": 0, \"y\": 28, \"w\": 42, \"h\": 35, \"reportPath\": \"root.platform.reports.cc-sla-overdue\"}, {\"id\": \"bydc\", \"type\": \"report\", \"title\": \"По ДЦ\", \"x\": 42, \"y\": 28, \"w\": 42, \"h\": 35, \"reportPath\": \"root.platform.reports.cc-by-dealer\"}, {\"id\": \"courts\", \"type\": \"report\", \"title\": \"Суды\", \"x\": 0, \"y\": 63, \"w\": 42, \"h\": 35, \"reportPath\": \"root.platform.reports.cc-courts\"}, {\"id\": \"csat\", \"type\": \"report\", \"title\": \"CSAT\", \"x\": 42, \"y\": 63, \"w\": 42, \"h\": 35, \"reportPath\": \"root.platform.reports.cc-csat-list\"}]}",
+      "refreshIntervalMs": 20000
+    }
+  ],
+  "workflows": [
+    {
+      "path": "root.platform.workflows.claims-control-intake",
+      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n xmlns:ispf=\"http://ispf.io/bpmn\"\n targetNamespace=\"http://ispf.io/bpmn\">\n <process id=\"claims-control-intake\" name=\"Claims Control — интейк претензии\" isExecutable=\"true\">\n <startEvent id=\"start\" name=\"Обращение\"/>\n <serviceTask id=\"create\" name=\"Создать претензию\"\n ispf:action=\"invoke_function\"\n ispf:objectPath=\"root.platform.devices.claims-control\"\n ispf:functionName=\"cc_createClaim\"/>\n <serviceTask id=\"ai\" name=\"AI-оценка риска\"\n ispf:action=\"invoke_function\"\n ispf:objectPath=\"root.platform.devices.claims-control\"\n ispf:functionName=\"cc_runAiAnalysis\"/>\n <endEvent id=\"end\" name=\"В работе\"/>\n <sequenceFlow sourceRef=\"start\" targetRef=\"create\"/>\n <sequenceFlow sourceRef=\"create\" targetRef=\"ai\"/>\n <sequenceFlow sourceRef=\"ai\" targetRef=\"end\"/>\n </process>\n</definitions>",
+      "status": "ACTIVE",
+      "operatorAppId": "claims-control",
+      "title": null,
+      "inputSchemaJson": null,
+      "outputSchemaJson": null,
+      "toolDescription": null,
+      "sideEffectClass": null,
+      "webhookSlug": null
+    }
+  ],
+  "blueprints": [],
+  "migrations": [
+    {
+      "id": "cc_schema_v112",
+      "sql": "\nCREATE TABLE IF NOT EXISTS cc_stage_history (\n id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n claim_id UUID NOT NULL,\n from_stage VARCHAR(64),\n to_stage VARCHAR(64) NOT NULL,\n stage_no INTEGER NOT NULL,\n changed_by_role VARCHAR(64),\n note TEXT,\n entered_at TIMESTAMP NOT NULL DEFAULT now()\n);\nCREATE TABLE IF NOT EXISTS cc_documents (\n id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n claim_id UUID NOT NULL,\n doc_code VARCHAR(64) NOT NULL,\n title VARCHAR(256) NOT NULL,\n required BOOLEAN NOT NULL DEFAULT false,\n status VARCHAR(32) NOT NULL DEFAULT 'missing',\n file_ref VARCHAR(512),\n version_no INTEGER NOT NULL DEFAULT 1,\n updated_at TIMESTAMP NOT NULL DEFAULT now()\n);\nCREATE TABLE IF NOT EXISTS cc_csat (\n id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n client_label VARCHAR(256) NOT NULL,\n dealer_center VARCHAR(256),\n department VARCHAR(128),\n score INTEGER NOT NULL,\n comment_text TEXT,\n claim_id UUID,\n status VARCHAR(32) NOT NULL DEFAULT 'new',\n received_at TIMESTAMP NOT NULL DEFAULT now()\n);\nCREATE TABLE IF NOT EXISTS cc_court_cases (\n id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n claim_id UUID NOT NULL,\n case_number VARCHAR(128) NOT NULL,\n court_name VARCHAR(256),\n dispute_summary TEXT,\n claim_amount NUMERIC(14,2) DEFAULT 0,\n legal_position TEXT,\n status VARCHAR(64) NOT NULL DEFAULT 'opened',\n next_hearing_at TIMESTAMP,\n responsible_lawyer VARCHAR(256),\n created_at TIMESTAMP NOT NULL DEFAULT now()\n);\nCREATE TABLE IF NOT EXISTS cc_court_hearings (\n id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n court_case_id UUID NOT NULL,\n hearing_at TIMESTAMP NOT NULL,\n result_text TEXT,\n notified_7d BOOLEAN NOT NULL DEFAULT false,\n notified_3d BOOLEAN NOT NULL DEFAULT false,\n notified_1d BOOLEAN NOT NULL DEFAULT false,\n created_at TIMESTAMP NOT NULL DEFAULT now()\n);\nCREATE TABLE IF NOT EXISTS cc_calendar_events (\n id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n event_type VARCHAR(64) NOT NULL,\n title VARCHAR(256) NOT NULL,\n role VARCHAR(64),\n claim_id UUID,\n court_case_id UUID,\n starts_at TIMESTAMP NOT NULL,\n ends_at TIMESTAMP,\n created_at TIMESTAMP NOT NULL DEFAULT now()\n);\nCREATE TABLE IF NOT EXISTS cc_ai_analyses (\n id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n claim_id UUID,\n csat_id UUID,\n analysis_type VARCHAR(64) NOT NULL,\n model_name VARCHAR(128) NOT NULL DEFAULT 'stub-rules',\n user_role VARCHAR(64),\n cost_rub NUMERIC(12,4) DEFAULT 0,\n risk_score INTEGER,\n risk_factors TEXT,\n law_refs TEXT,\n recommendations TEXT,\n routing_hint VARCHAR(128),\n result_json TEXT,\n created_at TIMESTAMP NOT NULL DEFAULT now()\n);\nCREATE TABLE IF NOT EXISTS cc_notifications (\n id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n channel VARCHAR(64) NOT NULL DEFAULT 'internal',\n event_type VARCHAR(64) NOT NULL,\n payload TEXT,\n claim_id UUID,\n status VARCHAR(32) NOT NULL DEFAULT 'queued',\n created_at TIMESTAMP NOT NULL DEFAULT now()\n);\nCREATE TABLE IF NOT EXISTS cc_roles (\n role_code VARCHAR(64) PRIMARY KEY,\n role_name VARCHAR(128) NOT NULL,\n description TEXT\n);\nCREATE TABLE IF NOT EXISTS cc_debug (\n id SERIAL PRIMARY KEY,\n val TEXT,\n created_at TIMESTAMP NOT NULL DEFAULT now()\n);\n\nALTER TABLE cc_claims ADD COLUMN IF NOT EXISTS vin_token VARCHAR(64);\nALTER TABLE cc_claims ADD COLUMN IF NOT EXISTS workflow_stage VARCHAR(64) DEFAULT 'registration';\nALTER TABLE cc_claims ADD COLUMN IF NOT EXISTS stage_no INTEGER DEFAULT 1;\nALTER TABLE cc_claims ADD COLUMN IF NOT EXISTS amount_approved NUMERIC(14,2) DEFAULT 0;\nALTER TABLE cc_claims ADD COLUMN IF NOT EXISTS risk_score INTEGER DEFAULT 0;\nALTER TABLE cc_claims ADD COLUMN IF NOT EXISTS risk_level VARCHAR(32) DEFAULT 'unknown';\nALTER TABLE cc_claims ADD COLUMN IF NOT EXISTS responsible_role VARCHAR(64);\nALTER TABLE cc_claims ADD COLUMN IF NOT EXISTS closed_at TIMESTAMP;\nALTER TABLE cc_claims ADD COLUMN IF NOT EXISTS outcome_notes TEXT;\nALTER TABLE cc_claims ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT now();\nALTER TABLE cc_claims ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT now();\nALTER TABLE cc_tasks ADD COLUMN IF NOT EXISTS csat_id UUID;\nALTER TABLE cc_tasks ADD COLUMN IF NOT EXISTS court_case_id UUID;\nALTER TABLE cc_tasks ADD COLUMN IF NOT EXISTS priority VARCHAR(32) DEFAULT 'normal';\nALTER TABLE cc_tasks ADD COLUMN IF NOT EXISTS due_at TIMESTAMP;\nALTER TABLE cc_tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;\nALTER TABLE cc_comments ADD COLUMN IF NOT EXISTS author_name VARCHAR(256);\nALTER TABLE cc_comments ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT now();\nALTER TABLE cc_tasks ALTER COLUMN claim_id DROP NOT NULL;\n"
+    },
+    {
+      "id": "cc_seed_v112",
+      "sql": "\nINSERT INTO cc_roles (role_code, role_name, description) VALUES\n ('quality_manager','Менеджер ОКК','Регистрация претензий, SLA, клиент, CSAT'),\n ('service_specialist','Мастер-консультант','Сервисная часть обращения'),\n ('lawyer','Юрист','Юридический анализ, суды, риски'),\n ('sales_director','РОП / руководитель','Согласование, контроль, аналитика'),\n ('dc_director','Директор ДЦ','Крупные выплаты, судебные риски'),\n ('accounting','Бухгалтерия','Финальный пакет и выплата'),\n ('admin','Администратор','Роли, справочники, настройки, AI-лимиты')\nON CONFLICT (role_code) DO NOTHING;\n\nUPDATE cc_claims SET\n workflow_stage = COALESCE(NULLIF(workflow_stage,''), CASE\n WHEN status='closed' THEN 'closed'\n WHEN status='awaiting_legal' THEN 'analysis'\n WHEN status='awaiting_diagnostic' THEN 'collecting_info'\n WHEN status='in_approval' THEN 'approval'\n WHEN status='in_court' THEN 'settlement_or_court'\n ELSE 'registration' END),\n stage_no = COALESCE(NULLIF(stage_no,0), CASE\n WHEN status='closed' THEN 8\n WHEN status='awaiting_legal' THEN 3\n WHEN status='awaiting_diagnostic' THEN 2\n WHEN status='in_approval' THEN 5\n WHEN status='in_court' THEN 7\n ELSE 1 END),\n risk_score = COALESCE(NULLIF(risk_score,0), CASE WHEN amount_demanded > 500000 THEN 90 WHEN amount_demanded > 100000 THEN 70 ELSE 40 END),\n risk_level = COALESCE(NULLIF(risk_level,'unknown'), CASE WHEN amount_demanded > 500000 THEN 'critical' WHEN amount_demanded > 100000 THEN 'high' ELSE 'medium' END),\n responsible_role = COALESCE(responsible_role, 'quality_manager'),\n updated_at = now();\n\n-- demo overdue + lawsuit claim if missing\nINSERT INTO cc_claims (\n id, incoming_number, client_label, vehicle_brand, vehicle_model, vehicle_year,\n dealer_center, claim_type, category, department, status, workflow_stage, stage_no,\n reason_text, amount_demanded, risk_score, risk_level, responsible_role, responsible_name,\n received_at, sla_deadline\n) SELECT\n gen_random_uuid(), 'IN-0004', 'Клиент №4', 'Toyota', 'Camry', 2021,\n 'ДЦ Восток', 'lawsuit', 'service_quality', 'service', 'in_approval', 'approval', 5,\n 'Повторный отказ в гарантийном ремонте, клиент подал иск.',\n 510000, 91, 'critical', 'dc_director', 'Директор Смирнов',\n now() - interval '20 days', now() - interval '2 days'\nWHERE NOT EXISTS (SELECT 1 FROM cc_claims WHERE incoming_number = 'IN-0004');\n"
+    },
+    {
+      "id": "cc_seed_related_v112",
+      "sql": "\nINSERT INTO cc_stage_history (claim_id, from_stage, to_stage, stage_no, changed_by_role, note)\nSELECT c.id, NULL, 'registration', 1, 'quality_manager', 'Создана претензия'\nFROM cc_claims c WHERE c.incoming_number='IN-0001'\nAND NOT EXISTS (SELECT 1 FROM cc_stage_history h WHERE h.claim_id=c.id AND h.stage_no=1);\n\nINSERT INTO cc_stage_history (claim_id, from_stage, to_stage, stage_no, changed_by_role, note)\nSELECT c.id, 'registration', 'collecting_info', 2, 'quality_manager', 'Сбор документов'\nFROM cc_claims c WHERE c.incoming_number='IN-0001'\nAND NOT EXISTS (SELECT 1 FROM cc_stage_history h WHERE h.claim_id=c.id AND h.stage_no=2);\n\nINSERT INTO cc_stage_history (claim_id, from_stage, to_stage, stage_no, changed_by_role, note)\nSELECT c.id, 'collecting_info', 'analysis', 3, 'lawyer', 'Передано юристу'\nFROM cc_claims c WHERE c.incoming_number='IN-0001'\nAND NOT EXISTS (SELECT 1 FROM cc_stage_history h WHERE h.claim_id=c.id AND h.stage_no=3);\n\nINSERT INTO cc_documents (claim_id, doc_code, title, required, status)\nSELECT c.id, 'claim_letter', 'Письменная претензия', true, 'received'\nFROM cc_claims c WHERE c.incoming_number='IN-0001'\nAND NOT EXISTS (SELECT 1 FROM cc_documents d WHERE d.claim_id=c.id AND d.doc_code='claim_letter');\n\nINSERT INTO cc_documents (claim_id, doc_code, title, required, status)\nSELECT c.id, 'dkp', 'ДКП', true, 'received'\nFROM cc_claims c WHERE c.incoming_number='IN-0001'\nAND NOT EXISTS (SELECT 1 FROM cc_documents d WHERE d.claim_id=c.id AND d.doc_code='dkp');\n\nINSERT INTO cc_documents (claim_id, doc_code, title, required, status)\nSELECT c.id, 'expertise', 'Акт экспертизы', true, 'missing'\nFROM cc_claims c WHERE c.incoming_number='IN-0001'\nAND NOT EXISTS (SELECT 1 FROM cc_documents d WHERE d.claim_id=c.id AND d.doc_code='expertise');\n\nINSERT INTO cc_documents (claim_id, doc_code, title, required, status)\nSELECT c.id, 'photos', 'Фото дефекта', false, 'received'\nFROM cc_claims c WHERE c.incoming_number='IN-0001'\nAND NOT EXISTS (SELECT 1 FROM cc_documents d WHERE d.claim_id=c.id AND d.doc_code='photos');\n\n-- ensure open tasks for demo claims\nINSERT INTO cc_tasks (claim_id, title, role, priority, status)\nSELECT c.id, 'Получить юридическое заключение', 'lawyer', 'high', 'open'\nFROM cc_claims c WHERE c.incoming_number='IN-0001'\nAND NOT EXISTS (SELECT 1 FROM cc_tasks t WHERE t.claim_id=c.id AND t.title='Получить юридическое заключение');\n\nINSERT INTO cc_tasks (claim_id, title, role, priority, status)\nSELECT c.id, 'Провести диагностику', 'service_specialist', 'normal', 'open'\nFROM cc_claims c WHERE c.incoming_number='IN-0002'\nAND NOT EXISTS (SELECT 1 FROM cc_tasks t WHERE t.claim_id=c.id AND t.title='Провести диагностику');\n\nINSERT INTO cc_tasks (claim_id, title, role, priority, status)\nSELECT c.id, 'Согласовать крупную выплату / позицию по иску', 'dc_director', 'critical', 'open'\nFROM cc_claims c WHERE c.incoming_number='IN-0004'\nAND NOT EXISTS (SELECT 1 FROM cc_tasks t WHERE t.claim_id=c.id AND t.title='Согласовать крупную выплату / позицию по иску');\n\nINSERT INTO cc_csat (id, client_label, dealer_center, department, score, comment_text, status)\nSELECT 'b0000001-0000-0000-0000-000000000001','Клиент №5','ДЦ Запад','service',2,'Долго ждал выдачи автомобиля','open'\nWHERE NOT EXISTS (SELECT 1 FROM cc_csat WHERE id='b0000001-0000-0000-0000-000000000001');\n\nINSERT INTO cc_csat (id, client_label, dealer_center, department, score, comment_text, status)\nSELECT 'b0000002-0000-0000-0000-000000000002','Клиент №6','ДЦ Север','sales',4,'Менеджер торопился','open'\nWHERE NOT EXISTS (SELECT 1 FROM cc_csat WHERE id='b0000002-0000-0000-0000-000000000002');\n\nINSERT INTO cc_csat (id, client_label, dealer_center, department, score, comment_text, status, claim_id)\nSELECT 'b0000003-0000-0000-0000-000000000003','Клиент №1','ДЦ Север','sales',3,'Претензия ещё не закрыта','linked', c.id\nFROM cc_claims c WHERE c.incoming_number='IN-0001'\nAND NOT EXISTS (SELECT 1 FROM cc_csat WHERE id='b0000003-0000-0000-0000-000000000003');\n\nINSERT INTO cc_tasks (csat_id, title, role, priority, status)\nSELECT 'b0000001-0000-0000-0000-000000000001','Приоритетный разбор низкой CSAT (1-2)','sales_director','critical','open'\nWHERE NOT EXISTS (SELECT 1 FROM cc_tasks WHERE csat_id='b0000001-0000-0000-0000-000000000001');\n\nINSERT INTO cc_court_cases (id, claim_id, case_number, court_name, dispute_summary, claim_amount, legal_position, status, next_hearing_at, responsible_lawyer)\nSELECT 'c0000001-0000-0000-0000-000000000001', c.id, 'А40-12345/2026','Арбитражный суд г. Москвы',\n 'Иск по качеству сервисных работ',510000,'Оспариваем сумму и причинно-следственную связь','opened',\n now() + interval '5 days','Юрист Сидорова'\nFROM cc_claims c WHERE c.incoming_number='IN-0004'\nAND NOT EXISTS (SELECT 1 FROM cc_court_cases WHERE case_number='А40-12345/2026');\n\nINSERT INTO cc_court_hearings (court_case_id, hearing_at)\nSELECT cc.id, cc.next_hearing_at\nFROM cc_court_cases cc WHERE cc.case_number='А40-12345/2026'\nAND NOT EXISTS (SELECT 1 FROM cc_court_hearings h WHERE h.court_case_id=cc.id);\n\nINSERT INTO cc_calendar_events (event_type, title, role, claim_id, court_case_id, starts_at, ends_at)\nSELECT 'hearing','Судебное заседание А40-12345/2026','lawyer', cc.claim_id, cc.id,\n cc.next_hearing_at, cc.next_hearing_at + interval '2 hours'\nFROM cc_court_cases cc WHERE cc.case_number='А40-12345/2026'\nAND NOT EXISTS (SELECT 1 FROM cc_calendar_events e WHERE e.title='Судебное заседание А40-12345/2026');\n\nINSERT INTO cc_calendar_events (event_type, title, role, claim_id, starts_at)\nSELECT 'client_meeting','Встреча с клиентом по IN-0001','quality_manager', c.id, now() + interval '1 day'\nFROM cc_claims c WHERE c.incoming_number='IN-0001'\nAND NOT EXISTS (SELECT 1 FROM cc_calendar_events e WHERE e.title='Встреча с клиентом по IN-0001');\n\nINSERT INTO cc_ai_analyses (claim_id, analysis_type, model_name, user_role, cost_rub, risk_score, risk_factors, law_refs, recommendations, routing_hint)\nSELECT c.id,'claim_risk','stub-rules','lawyer',0.0,72,\n 'Скрытый дефект в 14 дней; письменная претензия; сумма 85к',\n 'ЗоЗПП ст.18; ГК РФ ст.475',\n 'Собрать акт экспертизы; подготовить ответ в срок SLA; оценить замену/устранение',\n 'lawyer'\nFROM cc_claims c WHERE c.incoming_number='IN-0001'\nAND NOT EXISTS (SELECT 1 FROM cc_ai_analyses a WHERE a.claim_id=c.id AND a.analysis_type='claim_risk');\n\nINSERT INTO cc_notifications (channel, event_type, payload, claim_id, status)\nSELECT 'telegram','claim_created','Новая претензия IN-0001', c.id,'sent'\nFROM cc_claims c WHERE c.incoming_number='IN-0001'\nAND NOT EXISTS (SELECT 1 FROM cc_notifications n WHERE n.claim_id=c.id AND n.event_type='claim_created');\n\nINSERT INTO cc_notifications (channel, event_type, payload, claim_id, status)\nSELECT 'telegram','hearing_reminder_7d','Напоминание о заседании через 7 дней', c.id,'queued'\nFROM cc_claims c WHERE c.incoming_number='IN-0004'\nAND NOT EXISTS (SELECT 1 FROM cc_notifications n WHERE n.claim_id=c.id AND n.event_type='hearing_reminder_7d');\n"
+    },
+    {
+      "id": "cc_live_screens_v123",
+      "sql": "\nCREATE TABLE IF NOT EXISTS cc_notification_rules (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  rule_code VARCHAR(64) UNIQUE NOT NULL,\n  title VARCHAR(256) NOT NULL,\n  event_type VARCHAR(64) NOT NULL,\n  channel VARCHAR(64) NOT NULL DEFAULT 'telegram',\n  target_role VARCHAR(64),\n  enabled BOOLEAN NOT NULL DEFAULT true,\n  template_text TEXT,\n  created_at TIMESTAMP NOT NULL DEFAULT now()\n);\nCREATE TABLE IF NOT EXISTS cc_csat_meetings (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  meeting_at TIMESTAMP NOT NULL,\n  title VARCHAR(256) NOT NULL,\n  participants TEXT,\n  decisions TEXT,\n  assignments TEXT,\n  status VARCHAR(32) NOT NULL DEFAULT 'planned',\n  created_at TIMESTAMP NOT NULL DEFAULT now()\n);\nINSERT INTO cc_notification_rules (rule_code, title, event_type, channel, target_role, enabled, template_text) VALUES\n ('claim_created','Новая претензия','claim_created','telegram','quality_manager',true,'Создана претензия {{incoming_number}}'),\n ('status_changed','Смена этапа','status_changed','telegram','quality_manager',true,'{{incoming_number}}: этап → {{to_stage}}'),\n ('sla_overdue','Просрочка SLA','sla_overdue','telegram','sales_director',true,'SLA нарушен: {{incoming_number}}'),\n ('hearing_reminder_7d','Напоминание о суде (7д)','hearing_reminder_7d','telegram','lawyer',true,'Заседание через 7 дней: {{case_number}}'),\n ('csat_low','Низкий CSAT','csat_low','telegram','sales_director',true,'CSAT ≤2: {{client_label}}')\nON CONFLICT (rule_code) DO NOTHING;\n"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.claims-control",
+      "functionName": "cc_createClaim",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "cc_createClaimInput",
+          "fields": [
+            {
+              "name": "incoming_number",
+              "type": "STRING",
+              "description": "№ обращения",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "client_label",
+              "type": "STRING",
+              "description": "Клиент (лейбл без ПДн)",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "vehicle_brand",
+              "type": "STRING",
+              "description": "Марка",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "vehicle_model",
+              "type": "STRING",
+              "description": "Модель",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "vehicle_year",
+              "type": "LONG",
+              "description": "Год",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "dealer_center",
+              "type": "STRING",
+              "description": "ДЦ",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "claim_type",
+              "type": "STRING",
+              "description": "verbal|written_claim|pre_court|lawsuit",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "category",
+              "type": "STRING",
+              "description": "категория претензии",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "department",
+              "type": "STRING",
+              "description": "sales|service|...",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "reason_text",
+              "type": "STRING",
+              "description": "Суть обращения",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "amount_demanded",
+              "type": "DOUBLE",
+              "description": "Заявленная сумма",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "responsible_name",
+              "type": "STRING",
+              "description": "Ответственный",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "cc_createClaimOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "claim_id",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"newId\", \"sql\": \"SELECT gen_random_uuid() AS id\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_claims (id, incoming_number, client_label, vehicle_brand, vehicle_model, vehicle_year, dealer_center, claim_type, category, department, status, workflow_stage, stage_no, reason_text, amount_demanded, responsible_name, responsible_role, received_at, sla_deadline, risk_score, risk_level) VALUES ('${newId.id}', '${input.incoming_number}', '${input.client_label}', '${input.vehicle_brand}', '${input.vehicle_model}', ${input.vehicle_year}, '${input.dealer_center}', '${input.claim_type}', '${input.category}', '${input.department}', 'new', 'registration', 1, '${input.reason_text}', ${input.amount_demanded}, '${input.responsible_name}', 'quality_manager', now(), now() + interval '10 days', CASE WHEN ${input.amount_demanded} > 500000 THEN 90 WHEN ${input.amount_demanded} > 100000 THEN 70 ELSE 40 END, CASE WHEN ${input.amount_demanded} > 500000 THEN 'critical' WHEN ${input.amount_demanded} > 100000 THEN 'high' ELSE 'medium' END)\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_stage_history (claim_id, from_stage, to_stage, stage_no, changed_by_role, note) VALUES ('${newId.id}', NULL, 'registration', 1, 'quality_manager', 'Регистрация обращения')\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_tasks (claim_id, title, role, status) VALUES ('${newId.id}', 'Принять обращение от клиента', 'quality_manager', 'open')\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_tasks (claim_id, title, role, status) SELECT '${newId.id}', 'Провести диагностику', 'service_specialist', 'open' WHERE '${input.category}' = ANY(string_to_array('hidden_defects_14days,breakdown_after_14,service_quality,mileage_fraud', ','))\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_tasks (claim_id, title, role, status) SELECT '${newId.id}', 'Получить юридическое заключение', 'lawyer', 'open' WHERE '${input.claim_type}' = ANY(string_to_array('written_claim,pre_court,lawsuit', ','))\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_tasks (claim_id, title, role, priority, status) SELECT '${newId.id}', 'Принять решение', CASE WHEN ${input.amount_demanded} > 500000 THEN 'dc_director' ELSE 'sales_director' END, CASE WHEN ${input.amount_demanded} > 500000 THEN 'critical' ELSE 'high' END, 'open'\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_tasks (claim_id, title, role, status) VALUES ('${newId.id}', 'Связаться с клиентом', 'quality_manager', 'open')\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_documents (claim_id, doc_code, title, required, status) VALUES ('${newId.id}', 'claim_letter', 'Письменная претензия / обращение', true, 'missing'), ('${newId.id}', 'id_docs', 'Документы клиента (ссылка/токен)', true, 'missing'), ('${newId.id}', 'vehicle_docs', 'Документы на ТС / ДКП', true, 'missing'), ('${newId.id}', 'photos', 'Фото / доказательства', false, 'missing')\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_notifications (channel, event_type, payload, claim_id, status) VALUES ('telegram', 'claim_created', 'Новая претензия ${input.incoming_number}', '${newId.id}', 'queued')\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_calendar_events (event_type, title, role, claim_id, starts_at) VALUES ('sla_deadline', 'SLA по ${input.incoming_number}', 'quality_manager', '${newId.id}', now() + interval '10 days')\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"claim_id\": \"${newId.id}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.claims-control",
+      "functionName": "cc_listClaims",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "cc_listClaimsInput",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "cc_listClaimsOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": {
+                "name": "cc_claim_row",
+                "fields": [
+                  {
+                    "name": "incoming_number",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "client_label",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "vehicle",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "dealer_center",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "claim_type",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "category",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "workflow_stage",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "stage_no",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "reason_text",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "amount_demanded",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "amount_spent",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "risk_level",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "responsible_name",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "received_at",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  },
+                  {
+                    "name": "sla_deadline",
+                    "type": "STRING",
+                    "description": "",
+                    "nullable": false,
+                    "nestedSchema": null
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows\", \"sql\": \"SELECT incoming_number, client_label, (vehicle_brand || ' ' || vehicle_model) AS vehicle, dealer_center, claim_type, category, status, workflow_stage, stage_no::text AS stage_no, reason_text, amount_demanded::text AS amount_demanded, amount_spent::text AS amount_spent, risk_level, responsible_name, received_at::text AS received_at, sla_deadline::text AS sla_deadline FROM cc_claims ORDER BY received_at DESC\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.claims-control",
+      "functionName": "cc_addComment",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "cc_addCommentInput",
+          "fields": [
+            {
+              "name": "incoming_number",
+              "type": "STRING",
+              "description": "№ обращения",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "author_role",
+              "type": "STRING",
+              "description": "Роль автора",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "body",
+              "type": "STRING",
+              "description": "Текст комментария",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "visibility",
+              "type": "STRING",
+              "description": "internal|client",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "cc_addCommentOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"claim\", \"sql\": \"SELECT id FROM cc_claims WHERE incoming_number = ?\", \"params\": [\"${input.incoming_number}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_comments (claim_id, author_role, body, visibility) VALUES (?, ?, ?, ?)\", \"params\": [\"${claim.id}\", \"${input.author_role}\", \"${input.body}\", \"${input.visibility}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.claims-control",
+      "functionName": "cc_advanceStage",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "cc_advanceStageInput",
+          "fields": [
+            {
+              "name": "incoming_number",
+              "type": "STRING",
+              "description": "№ обращения",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "to_stage",
+              "type": "STRING",
+              "description": "registration|collecting_info|analysis|routing|approval|decision|settlement_or_court|closed",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "changed_by_role",
+              "type": "STRING",
+              "description": "Роль",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "note",
+              "type": "STRING",
+              "description": "Комментарий перехода",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "cc_advanceStageOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"claim\", \"sql\": \"SELECT id, workflow_stage, stage_no FROM cc_claims WHERE incoming_number = ?\", \"params\": [\"${input.incoming_number}\"]}, {\"type\": \"selectOne\", \"var\": \"st\", \"sql\": \"SELECT CASE '${input.to_stage}' WHEN 'registration' THEN 1 WHEN 'collecting_info' THEN 2 WHEN 'analysis' THEN 3 WHEN 'routing' THEN 4 WHEN 'approval' THEN 5 WHEN 'decision' THEN 6 WHEN 'settlement_or_court' THEN 7 WHEN 'closed' THEN 8 ELSE 0 END AS stage_no\"}, {\"type\": \"exec\", \"sql\": \"UPDATE cc_claims SET workflow_stage='${input.to_stage}', stage_no=${st.stage_no}, updated_at=now(), status=CASE WHEN '${input.to_stage}'='closed' THEN 'closed' WHEN '${input.to_stage}'='approval' THEN 'in_approval' WHEN '${input.to_stage}'='analysis' THEN 'awaiting_legal' WHEN '${input.to_stage}'='collecting_info' THEN 'awaiting_diagnostic' ELSE status END, closed_at=CASE WHEN '${input.to_stage}'='closed' THEN now() ELSE closed_at END WHERE id='${claim.id}'\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_stage_history (claim_id, from_stage, to_stage, stage_no, changed_by_role, note) VALUES ('${claim.id}', '${claim.workflow_stage}', '${input.to_stage}', ${st.stage_no}, '${input.changed_by_role}', '${input.note}')\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_notifications (channel, event_type, payload, claim_id, status) VALUES ('telegram', 'status_changed', 'Статус ${input.incoming_number} → ${input.to_stage}', '${claim.id}', 'queued')\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.claims-control",
+      "functionName": "cc_completeTask",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "cc_completeTaskInput",
+          "fields": [
+            {
+              "name": "task_id",
+              "type": "STRING",
+              "description": "UUID задачи",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "role",
+              "type": "STRING",
+              "description": "Кто закрыл",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "cc_completeTaskOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE cc_tasks SET status='done', completed_at=now() WHERE id='${input.task_id}'::uuid\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.claims-control",
+      "functionName": "cc_registerCsat",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "cc_registerCsatInput",
+          "fields": [
+            {
+              "name": "client_label",
+              "type": "STRING",
+              "description": "Клиент",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "dealer_center",
+              "type": "STRING",
+              "description": "ДЦ",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "department",
+              "type": "STRING",
+              "description": "Направление",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "score",
+              "type": "LONG",
+              "description": "Оценка 1-10",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "comment_text",
+              "type": "STRING",
+              "description": "Комментарий",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "cc_registerCsatOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "csat_id",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"newId\", \"sql\": \"SELECT gen_random_uuid() AS id\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_csat (id, client_label, dealer_center, department, score, comment_text, status) VALUES ('${newId.id}', '${input.client_label}', '${input.dealer_center}', '${input.department}', ${input.score}, '${input.comment_text}', 'new')\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_tasks (csat_id, title, role, priority, status) SELECT '${newId.id}', 'Разобрать низкую CSAT', 'quality_manager', 'high', 'open' WHERE ${input.score} < 5\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_tasks (csat_id, title, role, priority, status) SELECT '${newId.id}', 'Приоритетный алерт руководителю по CSAT 1-2', 'sales_director', 'critical', 'open' WHERE ${input.score} <= 2\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_tasks (csat_id, title, role, priority, status) SELECT '${newId.id}', 'Запросить причину и предложить звонок руководителя', 'sales_director', 'high', 'open' WHERE ${input.score} < 4\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_notifications (channel, event_type, payload, status) SELECT 'telegram', 'csat_low', 'Низкая CSAT ${input.score} / ${input.client_label}', 'queued' WHERE ${input.score} <= 2\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"csat_id\": \"${newId.id}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.claims-control",
+      "functionName": "cc_createCourtCase",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "cc_createCourtCaseInput",
+          "fields": [
+            {
+              "name": "incoming_number",
+              "type": "STRING",
+              "description": "№ претензии",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "case_number",
+              "type": "STRING",
+              "description": "Номер дела",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "court_name",
+              "type": "STRING",
+              "description": "Суд",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "dispute_summary",
+              "type": "STRING",
+              "description": "Суть спора",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "claim_amount",
+              "type": "DOUBLE",
+              "description": "Сумма иска",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "legal_position",
+              "type": "STRING",
+              "description": "Правовая позиция",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "responsible_lawyer",
+              "type": "STRING",
+              "description": "Юрист",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "hearing_at",
+              "type": "STRING",
+              "description": "Дата заседания ISO/timestamp",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "cc_createCourtCaseOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "court_case_id",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"claim\", \"sql\": \"SELECT id FROM cc_claims WHERE incoming_number = ?\", \"params\": [\"${input.incoming_number}\"]}, {\"type\": \"selectOne\", \"var\": \"newId\", \"sql\": \"SELECT gen_random_uuid() AS id\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_court_cases (id, claim_id, case_number, court_name, dispute_summary, claim_amount, legal_position, status, next_hearing_at, responsible_lawyer) VALUES ('${newId.id}', '${claim.id}', '${input.case_number}', '${input.court_name}', '${input.dispute_summary}', ${input.claim_amount}, '${input.legal_position}', 'opened', '${input.hearing_at}'::timestamp, '${input.responsible_lawyer}')\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_court_hearings (court_case_id, hearing_at) VALUES ('${newId.id}', '${input.hearing_at}'::timestamp)\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_calendar_events (event_type, title, role, claim_id, court_case_id, starts_at) VALUES ('hearing', 'Судебное заседание ${input.case_number}', 'lawyer', '${claim.id}', '${newId.id}', '${input.hearing_at}'::timestamp)\"}, {\"type\": \"exec\", \"sql\": \"UPDATE cc_claims SET workflow_stage='settlement_or_court', stage_no=7, status='in_court', updated_at=now() WHERE id='${claim.id}'\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_stage_history (claim_id, from_stage, to_stage, stage_no, changed_by_role, note) VALUES ('${claim.id}', 'decision', 'settlement_or_court', 7, 'lawyer', 'Создано судебное дело ${input.case_number}')\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_notifications (channel, event_type, payload, claim_id, status) VALUES ('telegram', 'hearing_reminder_7d', 'Напоминание о заседании ${input.case_number}', '${claim.id}', 'queued')\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"court_case_id\": \"${newId.id}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.claims-control",
+      "functionName": "cc_runAiAnalysis",
+      "version": "3",
+      "descriptor": {
+        "inputSchema": {
+          "name": "cc_runAiAnalysisInput",
+          "fields": [
+            {
+              "name": "incoming_number",
+              "type": "STRING",
+              "description": "№ обращения",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "user_role",
+              "type": "STRING",
+              "description": "Кто запросил",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "cc_runAiAnalysisOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "analysis_id",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "risk_score",
+              "type": "LONG",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "risk_level",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"claim\", \"sql\": \"SELECT id::text AS id, claim_type, category, amount_demanded::text AS amount_demanded, LEAST(99, GREATEST(10, CASE WHEN amount_demanded > 500000 THEN 40 ELSE 10 END + CASE WHEN claim_type IN ('pre_court','lawsuit') THEN 30 ELSE 10 END + CASE WHEN category IN ('mileage_fraud','hidden_defects_14days') THEN 25 ELSE 10 END))::text AS risk_score, CASE WHEN LEAST(99, GREATEST(10, CASE WHEN amount_demanded > 500000 THEN 40 ELSE 10 END + CASE WHEN claim_type IN ('pre_court','lawsuit') THEN 30 ELSE 10 END + CASE WHEN category IN ('mileage_fraud','hidden_defects_14days') THEN 25 ELSE 10 END)) >= 80 THEN 'critical' WHEN LEAST(99, GREATEST(10, CASE WHEN amount_demanded > 500000 THEN 40 ELSE 10 END + CASE WHEN claim_type IN ('pre_court','lawsuit') THEN 30 ELSE 10 END + CASE WHEN category IN ('mileage_fraud','hidden_defects_14days') THEN 25 ELSE 10 END)) >= 60 THEN 'high' ELSE 'medium' END AS risk_level, CASE WHEN claim_type IN ('pre_court','lawsuit') THEN 'lawyer' WHEN category IN ('breakdown_after_14','service_quality') THEN 'service_specialist' ELSE 'quality_manager' END AS routing_hint FROM cc_claims WHERE incoming_number = ?\", \"params\": [\"${input.incoming_number}\"]}, {\"type\": \"selectOne\", \"var\": \"newId\", \"sql\": \"SELECT gen_random_uuid()::text AS id\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO cc_ai_analyses (id, claim_id, analysis_type, model_name, user_role, cost_rub, risk_score, risk_factors, law_refs, recommendations, routing_hint) VALUES (?::uuid, ?::uuid, 'claim_risk', 'stub-rules', ?, 0.15, ?::int, ?, ?, ?, ?)\", \"params\": [\"${newId.id}\", \"${claim.id}\", \"${input.user_role}\", \"${claim.risk_score}\", \"type=${claim.claim_type}; category=${claim.category}; amount=${claim.amount_demanded}\", \"ЗоЗПП; ГК РФ (ориентир, не юр.заключение)\", \"Проверить комплект документов; оценить SLA; маршрутизировать по роли ${claim.routing_hint}\", \"${claim.routing_hint}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE cc_claims SET risk_score=?::int, risk_level=?, updated_at=now() WHERE id=?::uuid\", \"params\": [\"${claim.risk_score}\", \"${claim.risk_level}\", \"${claim.id}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"analysis_id\": \"${newId.id}\", \"risk_score\": \"${claim.risk_score}\", \"risk_level\": \"${claim.risk_level}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.claims-control",
+      "functionName": "cc_markDocumentReceived",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "cc_markDocumentReceivedInput",
+          "fields": [
+            {
+              "name": "incoming_number",
+              "type": "STRING",
+              "description": "№ обращения",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "doc_code",
+              "type": "STRING",
+              "description": "Код документа",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "file_ref",
+              "type": "STRING",
+              "description": "Ссылка/путь (без ПДн)",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "cc_markDocumentReceivedOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"claim\", \"sql\": \"SELECT id FROM cc_claims WHERE incoming_number = ?\", \"params\": [\"${input.incoming_number}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE cc_documents SET status='received', file_ref='${input.file_ref}', version_no=version_no+1, updated_at=now() WHERE claim_id='${claim.id}' AND doc_code='${input.doc_code}'\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\"}}]}"
+      }
+    }
+  ],
+  "bindings": [],
+  "reports": [
+    {
+      "reportId": "cc-claims-list",
+      "title": "Список претензий",
+      "description": "Рабочий реестр претензий",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT incoming_number, client_label, vehicle_brand || ' ' || vehicle_model AS vehicle, dealer_center, claim_type, category, status, workflow_stage, stage_no, risk_level, reason_text, amount_demanded, amount_spent, responsible_name, received_at::text AS received_at, sla_deadline::text AS sla_deadline, outcome FROM cc_claims ORDER BY received_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "incoming_number",
+          "label": "№"
+        },
+        {
+          "field": "client_label",
+          "label": "Клиент"
+        },
+        {
+          "field": "vehicle",
+          "label": "Авто"
+        },
+        {
+          "field": "dealer_center",
+          "label": "ДЦ"
+        },
+        {
+          "field": "claim_type",
+          "label": "Тип"
+        },
+        {
+          "field": "category",
+          "label": "Категория"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "workflow_stage",
+          "label": "Этап"
+        },
+        {
+          "field": "stage_no",
+          "label": "№ этапа"
+        },
+        {
+          "field": "risk_level",
+          "label": "Риск"
+        },
+        {
+          "field": "reason_text",
+          "label": "Причина"
+        },
+        {
+          "field": "amount_demanded",
+          "label": "Заявлено"
+        },
+        {
+          "field": "amount_spent",
+          "label": "Потрачено"
+        },
+        {
+          "field": "responsible_name",
+          "label": "Ответственный"
+        },
+        {
+          "field": "received_at",
+          "label": "Получено"
+        },
+        {
+          "field": "sla_deadline",
+          "label": "SLA до"
+        },
+        {
+          "field": "outcome",
+          "label": "Итог"
+        }
+      ],
+      "maxRows": 1000
+    },
+    {
+      "reportId": "cc-open-tasks",
+      "title": "Открытые задачи",
+      "description": "Задачи по претензиям и CSAT",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT COALESCE(c.incoming_number, s.client_label, '—') AS ref, COALESCE(c.client_label, s.client_label, '') AS client_label, t.title, t.role, t.priority, t.status, t.created_at::text AS created_at FROM cc_tasks t LEFT JOIN cc_claims c ON c.id = t.claim_id LEFT JOIN cc_csat s ON s.id = t.csat_id WHERE t.status = 'open' ORDER BY CASE t.priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 ELSE 2 END, t.created_at",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "ref",
+          "label": "Ссылка"
+        },
+        {
+          "field": "client_label",
+          "label": "Клиент"
+        },
+        {
+          "field": "title",
+          "label": "Задача"
+        },
+        {
+          "field": "role",
+          "label": "Роль"
+        },
+        {
+          "field": "priority",
+          "label": "Приоритет"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "created_at",
+          "label": "Создана"
+        }
+      ],
+      "maxRows": 1000
+    },
+    {
+      "reportId": "cc-mgmt-kpis",
+      "title": "KPI руководителя",
+      "description": "Сводка для управленческого dashboard",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT (SELECT COUNT(*) FROM cc_claims WHERE status <> 'closed') AS open_claims, (SELECT COALESCE(SUM(amount_demanded),0) FROM cc_claims WHERE status <> 'closed') AS amount_at_risk, (SELECT COUNT(*) FROM cc_claims WHERE status <> 'closed' AND sla_deadline < now()) AS overdue_sla, (SELECT COUNT(*) FROM cc_claims WHERE risk_level IN ('high','critical') AND status <> 'closed') AS high_risk, (SELECT COUNT(*) FROM cc_court_cases WHERE status <> 'closed') AS open_courts, (SELECT COALESCE(SUM(amount_spent),0) FROM cc_claims) AS total_spent, (SELECT ROUND(AVG(score)::numeric,2) FROM cc_csat) AS csat_avg, (SELECT COUNT(*) FROM cc_csat WHERE score <= 2 AND received_at > now() - interval '30 days') AS low_csat_30d",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "open_claims",
+          "label": "В работе"
+        },
+        {
+          "field": "amount_at_risk",
+          "label": "Под риском, ₽"
+        },
+        {
+          "field": "overdue_sla",
+          "label": "Просрочки SLA"
+        },
+        {
+          "field": "high_risk",
+          "label": "Высокий риск"
+        },
+        {
+          "field": "open_courts",
+          "label": "Суды"
+        },
+        {
+          "field": "total_spent",
+          "label": "Расходы, ₽"
+        },
+        {
+          "field": "csat_avg",
+          "label": "CSAT ср."
+        },
+        {
+          "field": "low_csat_30d",
+          "label": "CSAT≤2 (30д)"
+        }
+      ],
+      "maxRows": 10
+    },
+    {
+      "reportId": "cc-sla-overdue",
+      "title": "Просрочки SLA",
+      "description": "Претензии с нарушенным сроком",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT incoming_number, client_label, dealer_center, workflow_stage, risk_level, amount_demanded, responsible_name, sla_deadline::text AS sla_deadline, EXTRACT(DAY FROM now() - sla_deadline)::int AS days_overdue FROM cc_claims WHERE status <> 'closed' AND sla_deadline < now() ORDER BY sla_deadline",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "incoming_number",
+          "label": "№"
+        },
+        {
+          "field": "client_label",
+          "label": "Клиент"
+        },
+        {
+          "field": "dealer_center",
+          "label": "ДЦ"
+        },
+        {
+          "field": "workflow_stage",
+          "label": "Этап"
+        },
+        {
+          "field": "risk_level",
+          "label": "Риск"
+        },
+        {
+          "field": "amount_demanded",
+          "label": "Сумма"
+        },
+        {
+          "field": "responsible_name",
+          "label": "Ответственный"
+        },
+        {
+          "field": "sla_deadline",
+          "label": "SLA"
+        },
+        {
+          "field": "days_overdue",
+          "label": "Дней просрочки"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "cc-by-dealer",
+      "title": "Претензии по ДЦ",
+      "description": "Распределение по дилерским центрам",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT dealer_center, COUNT(*) AS claims_cnt, SUM(CASE WHEN status<>'closed' THEN 1 ELSE 0 END) AS open_cnt, COALESCE(SUM(amount_demanded),0) AS amount_sum FROM cc_claims GROUP BY dealer_center ORDER BY claims_cnt DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "dealer_center",
+          "label": "ДЦ"
+        },
+        {
+          "field": "claims_cnt",
+          "label": "Всего"
+        },
+        {
+          "field": "open_cnt",
+          "label": "В работе"
+        },
+        {
+          "field": "amount_sum",
+          "label": "Сумма"
+        }
+      ],
+      "maxRows": 100
+    },
+    {
+      "reportId": "cc-csat-list",
+      "title": "CSAT оценки",
+      "description": "Оценки удовлетворённости",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT client_label, dealer_center, department, score, comment_text, status, received_at::text AS received_at FROM cc_csat ORDER BY received_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "client_label",
+          "label": "Клиент"
+        },
+        {
+          "field": "dealer_center",
+          "label": "ДЦ"
+        },
+        {
+          "field": "department",
+          "label": "Направление"
+        },
+        {
+          "field": "score",
+          "label": "Оценка"
+        },
+        {
+          "field": "comment_text",
+          "label": "Комментарий"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "received_at",
+          "label": "Получено"
+        }
+      ],
+      "maxRows": 1000
+    },
+    {
+      "reportId": "cc-courts",
+      "title": "Судебные дела",
+      "description": "Реестр судов",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT cc.case_number, c.incoming_number, cc.court_name, cc.claim_amount, cc.status, cc.responsible_lawyer, cc.next_hearing_at::text AS next_hearing_at, cc.dispute_summary FROM cc_court_cases cc JOIN cc_claims c ON c.id = cc.claim_id ORDER BY cc.next_hearing_at NULLS LAST",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "case_number",
+          "label": "Дело"
+        },
+        {
+          "field": "incoming_number",
+          "label": "Претензия"
+        },
+        {
+          "field": "court_name",
+          "label": "Суд"
+        },
+        {
+          "field": "claim_amount",
+          "label": "Сумма"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "responsible_lawyer",
+          "label": "Юрист"
+        },
+        {
+          "field": "next_hearing_at",
+          "label": "Заседание"
+        },
+        {
+          "field": "dispute_summary",
+          "label": "Суть"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "cc-calendar",
+      "title": "Календарь событий",
+      "description": "События по ролям",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT event_type, title, role, starts_at::text AS starts_at, ends_at::text AS ends_at FROM cc_calendar_events WHERE starts_at >= now() - interval '1 day' ORDER BY starts_at",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "event_type",
+          "label": "Тип"
+        },
+        {
+          "field": "title",
+          "label": "Событие"
+        },
+        {
+          "field": "role",
+          "label": "Роль"
+        },
+        {
+          "field": "starts_at",
+          "label": "Начало"
+        },
+        {
+          "field": "ends_at",
+          "label": "Конец"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "cc-documents-missing",
+      "title": "Недостающие документы",
+      "description": "Контроль обязательных документов",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT c.incoming_number, c.client_label, d.doc_code, d.title, d.required, d.status FROM cc_documents d JOIN cc_claims c ON c.id = d.claim_id WHERE d.status = 'missing' AND c.status <> 'closed' ORDER BY d.required DESC, c.incoming_number",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "incoming_number",
+          "label": "№"
+        },
+        {
+          "field": "client_label",
+          "label": "Клиент"
+        },
+        {
+          "field": "doc_code",
+          "label": "Код"
+        },
+        {
+          "field": "title",
+          "label": "Документ"
+        },
+        {
+          "field": "required",
+          "label": "Обязателен"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        }
+      ],
+      "maxRows": 1000
+    },
+    {
+      "reportId": "cc-ai-log",
+      "title": "Журнал AI",
+      "description": "Контроль AI-расходов и результатов",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT a.created_at::text AS created_at, c.incoming_number, a.analysis_type, a.model_name, a.user_role, a.cost_rub, a.risk_score, a.routing_hint, a.recommendations FROM cc_ai_analyses a LEFT JOIN cc_claims c ON c.id = a.claim_id ORDER BY a.created_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "created_at",
+          "label": "Когда"
+        },
+        {
+          "field": "incoming_number",
+          "label": "Претензия"
+        },
+        {
+          "field": "analysis_type",
+          "label": "Тип"
+        },
+        {
+          "field": "model_name",
+          "label": "Модель"
+        },
+        {
+          "field": "user_role",
+          "label": "Кто"
+        },
+        {
+          "field": "cost_rub",
+          "label": "Стоимость"
+        },
+        {
+          "field": "risk_score",
+          "label": "Риск"
+        },
+        {
+          "field": "routing_hint",
+          "label": "Маршрут"
+        },
+        {
+          "field": "recommendations",
+          "label": "Рекомендации"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "cc-debug",
+      "title": "CC Debug",
+      "description": "",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT id, val, created_at::text AS created_at FROM cc_debug ORDER BY id DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "id",
+          "label": "ID"
+        },
+        {
+          "field": "val",
+          "label": "Value"
+        },
+        {
+          "field": "created_at",
+          "label": "Created"
+        }
+      ],
+      "maxRows": 1000
+    },
+    {
+      "reportId": "cc-comments",
+      "title": "Лента комментариев",
+      "description": "Комментарии",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT c.incoming_number, c.client_label, cm.author_role, COALESCE(cm.author_name,'') AS author_name, cm.visibility, cm.body, cm.created_at::text AS created_at FROM cc_comments cm JOIN cc_claims c ON c.id=cm.claim_id ORDER BY cm.created_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "incoming_number",
+          "label": "Претензия"
+        },
+        {
+          "field": "client_label",
+          "label": "Клиент"
+        },
+        {
+          "field": "author_role",
+          "label": "Роль"
+        },
+        {
+          "field": "author_name",
+          "label": "Автор"
+        },
+        {
+          "field": "visibility",
+          "label": "Видимость"
+        },
+        {
+          "field": "body",
+          "label": "Текст"
+        },
+        {
+          "field": "created_at",
+          "label": "Когда"
+        }
+      ],
+      "maxRows": 1000
+    },
+    {
+      "reportId": "cc-notification-rules",
+      "title": "Правила уведомлений",
+      "description": "Справочник",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT rule_code, title, event_type, channel, COALESCE(target_role,'') AS target_role, enabled::text AS enabled, COALESCE(template_text,'') AS template_text FROM cc_notification_rules ORDER BY rule_code",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "rule_code",
+          "label": "Код"
+        },
+        {
+          "field": "title",
+          "label": "Правило"
+        },
+        {
+          "field": "event_type",
+          "label": "Событие"
+        },
+        {
+          "field": "channel",
+          "label": "Канал"
+        },
+        {
+          "field": "target_role",
+          "label": "Роль"
+        },
+        {
+          "field": "enabled",
+          "label": "Вкл"
+        },
+        {
+          "field": "template_text",
+          "label": "Шаблон"
+        }
+      ],
+      "maxRows": 1000
+    },
+    {
+      "reportId": "cc-court-outcomes",
+      "title": "Итоги судебных дел",
+      "description": "Агрегат",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT status, COUNT(*)::int AS cases_cnt, COALESCE(SUM(claim_amount),0) AS amount_sum, string_agg(case_number, ', ' ORDER BY case_number) AS case_numbers FROM cc_court_cases GROUP BY status ORDER BY status",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "status",
+          "label": "Итог"
+        },
+        {
+          "field": "cases_cnt",
+          "label": "Дел"
+        },
+        {
+          "field": "amount_sum",
+          "label": "Сумма"
+        },
+        {
+          "field": "case_numbers",
+          "label": "Номера"
+        }
+      ],
+      "maxRows": 100
+    },
+    {
+      "reportId": "cc-csat-meetings",
+      "title": "Планёрки CSAT",
+      "description": "Протоколы",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT meeting_at::text AS meeting_at, title, COALESCE(participants,'') AS participants, COALESCE(decisions,'') AS decisions, COALESCE(assignments,'') AS assignments, status FROM cc_csat_meetings ORDER BY meeting_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "meeting_at",
+          "label": "Когда"
+        },
+        {
+          "field": "title",
+          "label": "Тема"
+        },
+        {
+          "field": "participants",
+          "label": "Участники"
+        },
+        {
+          "field": "decisions",
+          "label": "Решения"
+        },
+        {
+          "field": "assignments",
+          "label": "Поручения"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "cc-notifications-log",
+      "title": "Очередь уведомлений",
+      "description": "Лог",
+      "reportType": null,
+      "devicePathPattern": null,
+      "variableName": null,
+      "query": "SELECT n.created_at::text AS created_at, n.event_type, n.channel, n.status, COALESCE(n.payload,'') AS payload, COALESCE(c.incoming_number,'') AS incoming_number FROM cc_notifications n LEFT JOIN cc_claims c ON c.id=n.claim_id ORDER BY n.created_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "created_at",
+          "label": "Когда"
+        },
+        {
+          "field": "event_type",
+          "label": "Событие"
+        },
+        {
+          "field": "channel",
+          "label": "Канал"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "payload",
+          "label": "Текст"
+        },
+        {
+          "field": "incoming_number",
+          "label": "Претензия"
+        }
+      ],
+      "maxRows": 1000
+    }
+  ],
+  "alertRules": [],
+  "correlators": [],
+  "schedules": [],
+  "analyticsFormulas": null,
+  "events": [],
+  "tests": null,
+  "requires": [],
+  "license": {
+    "bundleId": "claims-control",
+    "minPlatformVersion": "0.9.208",
+    "installationId": "9466af4766a35acd780a0b85e682d215fce6576cbf1c023ccd22bdb0996b5d79",
+    "contentSha256": "aed9b132ee3b431561ee1cf58846c330e36b561aed1accc27885ec4dbe162c02",
+    "expiresAt": "2027-09-25T11:24:09Z",
+    "signature": "ceJWpqg0a+3dHuDaeB3CiquEMOfd+P4aYX6efLxrGpucxGH42M5Nt3ofPXKqHnViTpEZKQ8zvt/uaV3C7eLZXHcI9Bvwp+9Si3RxvzQdf+YWhUVjOoR8lScBUdhKdLM7jmHF3kpGbe4uWxtA/eVvBFy8rZUYIjK7KGTFasYeOhuz+dfS8dUwDbbBJJEtMHG3ZypLWTEyPG2MuWWk16qHq2inXa3KYmGVxNGoEw7aHjeFH+JReQGDU8RNcog1r/7RjcpX7dNJv79M95xyTkIy88Stt0kwEJeDm4bhBIN+x87TK3azWcTDYfJUSNZYdIUHoOWkB/CsDAO22FaXj34yjg=="
+  },
+  "metadata": {
+    "brief": "Бриф CLAIMS CONTROL — P1: workflow претензий, документы, CSAT, Dashboard, AI, уведомления; P2: суды, календарь",
+    "roles": [
+      "quality_manager",
+      "service_specialist",
+      "lawyer",
+      "sales_director",
+      "dc_director",
+      "accounting",
+      "admin"
+    ],
+    "workflowStages": [
+      "registration",
+      "collecting_info",
+      "analysis",
+      "routing",
+      "approval",
+      "decision",
+      "settlement_or_court",
+      "closed"
+    ],
+    "branding": "anonymized"
+  },
+  "operatorUi": {
+    "title": "Claims Control",
+    "uiPack": {
+      "packId": "claims-control-ui",
+      "version": "1.2.3",
+      "entry": "index.html"
+    },
+    "externalSpaUrl": "/apps/claims-control/",
+    "defaultDashboard": "root.platform.dashboards.claims-control-mgmt"
+  },
+  "operatorManifest": null
+}
