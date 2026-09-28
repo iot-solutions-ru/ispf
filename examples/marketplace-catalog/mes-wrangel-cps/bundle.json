@@ -1,0 +1,3528 @@
+{
+  "version": "1.0.1",
+  "displayName": "MES Цех переработки сырья (ВрангельМинерал)",
+  "tablePrefix": "wm_",
+  "schemaName": "app_mes_wrangel",
+  "metadata": {
+    "customer": "ВрангельМинерал",
+    "tz": "ТЗ_MES_Цех_переработки_сырья_v7",
+    "appId": "mes-wrangel-cps",
+    "brief": "Посменный производственный учёт цеха CPS: ДР-1…СГ-1, OPC/LIMS, НСИ, мнемосхема, сменные и сводный отчёты",
+    "roles": [
+      "apparatчик",
+      "operator",
+      "supervisor",
+      "admin"
+    ],
+    "roleMap": {
+      "apparatчик": "Аппаратчик — ввод на учётных экранах",
+      "operator": "Оператор — ввод/редактирование, отчёты, мнемосхема",
+      "supervisor": "Начальник — только просмотр",
+      "admin": "Администратор системы — НСИ + обход FT-9"
+    },
+    "ftCoverage": [
+      "FT-1..FT-7 accounts",
+      "FT-8..FT-10 LIMS",
+      "FT-11..FT-13 OPC",
+      "FT-14 mimic",
+      "FT-15 plant report",
+      "FT-16..FT-19 NSI",
+      "FT-20 OPC hub",
+      "FT-21..FT-25 ore receipt",
+      "FT-26 admin",
+      "FT-27..FT-28 downtime"
+    ],
+    "processStages": [
+      "DR-1",
+      "DR-2",
+      "DR-3",
+      "GR-1",
+      "GR-2",
+      "GC-1",
+      "SG-1"
+    ],
+    "balancePoints": {
+      "FT-1": "GC-1.FEED_FLOW",
+      "FT-2": "GC-1.UNDERFLOW_FLOW",
+      "FT-3": "GC-1.OVERFLOW_FLOW",
+      "FT-4": "SG-1.OUTPUT_FLOW"
+    },
+    "uiPackSlug": "mes-wrangel-ui",
+    "hostedUiUrl": "/apps/mes-wrangel-cps/"
+  },
+  "migrations": [
+    {
+      "id": "wm_schema_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS wm_dict_product (\n  product_id SERIAL PRIMARY KEY,\n  product_code VARCHAR(64) NOT NULL UNIQUE,\n  product_name VARCHAR(256) NOT NULL,\n  product_type VARCHAR(64) NOT NULL,\n  unit VARCHAR(16) NOT NULL,\n  parent_product_id INTEGER REFERENCES wm_dict_product(product_id),\n  is_active BOOLEAN NOT NULL DEFAULT true,\n  created_at TIMESTAMP NOT NULL DEFAULT now()\n);\n\nCREATE TABLE IF NOT EXISTS wm_dict_equipment (\n  equipment_id SERIAL PRIMARY KEY,\n  equipment_tag VARCHAR(32) NOT NULL UNIQUE,\n  equipment_name VARCHAR(256) NOT NULL,\n  equipment_type VARCHAR(64) NOT NULL,\n  process_stage_code VARCHAR(32) NOT NULL,\n  line_no INTEGER,\n  asutp_point_id VARCHAR(64) NOT NULL,\n  object_path VARCHAR(256),\n  is_active BOOLEAN NOT NULL DEFAULT true,\n  created_at TIMESTAMP NOT NULL DEFAULT now()\n);\n\nCREATE TABLE IF NOT EXISTS wm_dict_coefficient (\n  coefficient_id SERIAL PRIMARY KEY,\n  coefficient_code VARCHAR(64) NOT NULL UNIQUE,\n  coefficient_name VARCHAR(256) NOT NULL,\n  value NUMERIC(18,6) NOT NULL,\n  unit VARCHAR(32),\n  ref_object_code VARCHAR(64),\n  valid_from DATE NOT NULL DEFAULT CURRENT_DATE,\n  is_active BOOLEAN NOT NULL DEFAULT true\n);\n\nCREATE TABLE IF NOT EXISTS wm_dict_downtime_reason (\n  reason_id SERIAL PRIMARY KEY,\n  reason_code VARCHAR(64) NOT NULL UNIQUE,\n  reason_name VARCHAR(256) NOT NULL,\n  reason_category VARCHAR(64) NOT NULL,\n  is_active BOOLEAN NOT NULL DEFAULT true\n);\n\nCREATE TABLE IF NOT EXISTS wm_shift_calendar (\n  shift_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  work_date DATE NOT NULL,\n  shift_no INTEGER NOT NULL CHECK (shift_no BETWEEN 1 AND 3),\n  started_at TIMESTAMP NOT NULL,\n  ended_at TIMESTAMP NOT NULL,\n  UNIQUE(work_date, shift_no)\n);\n\nCREATE TABLE IF NOT EXISTS wm_integration_status (\n  source_code VARCHAR(32) PRIMARY KEY,\n  is_healthy BOOLEAN NOT NULL DEFAULT true,\n  last_success_at TIMESTAMP,\n  last_error TEXT,\n  updated_at TIMESTAMP NOT NULL DEFAULT now()\n);\n\nCREATE TABLE IF NOT EXISTS wm_lims_quality (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  work_date DATE NOT NULL,\n  shift_no INTEGER NOT NULL,\n  sample_point VARCHAR(32) NOT NULL,\n  h2o_pct NUMERIC(10,3),\n  sio2_pct NUMERIC(10,3),\n  fe_pct NUMERIC(10,3),\n  co_pct NUMERIC(10,3),\n  source VARCHAR(16) NOT NULL DEFAULT 'LIMS',\n  created_at TIMESTAMP NOT NULL DEFAULT now(),\n  UNIQUE(work_date, shift_no, sample_point)\n);\n\nCREATE TABLE IF NOT EXISTS wm_lims_bulk_density (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  work_date DATE NOT NULL UNIQUE,\n  density_t_m3 NUMERIC(10,4) NOT NULL,\n  source VARCHAR(16) NOT NULL DEFAULT 'LIMS',\n  is_fallback BOOLEAN NOT NULL DEFAULT false,\n  created_at TIMESTAMP NOT NULL DEFAULT now()\n);\n\nCREATE TABLE IF NOT EXISTS wm_ore_receipt (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  work_date DATE NOT NULL,\n  shift_no INTEGER NOT NULL,\n  received_at TIMESTAMP NOT NULL,\n  bucket_volume_m3 NUMERIC(10,3) NOT NULL,\n  equipment_tag VARCHAR(32) NOT NULL DEFAULT 'DR-1',\n  created_by VARCHAR(128) NOT NULL,\n  created_at TIMESTAMP NOT NULL DEFAULT now()\n);\nCREATE INDEX IF NOT EXISTS ix_wm_ore_receipt_shift ON wm_ore_receipt(work_date, shift_no);\n\nCREATE TABLE IF NOT EXISTS wm_downtime (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  work_date DATE NOT NULL,\n  shift_no INTEGER NOT NULL,\n  equipment_tag VARCHAR(32) NOT NULL,\n  started_at TIMESTAMP NOT NULL,\n  ended_at TIMESTAMP NOT NULL,\n  reason_code VARCHAR(64) NOT NULL,\n  comment TEXT,\n  duration_min INTEGER GENERATED ALWAYS AS (GREATEST(EXTRACT(EPOCH FROM (ended_at - started_at))/60, 0)::INTEGER) STORED,\n  created_by VARCHAR(128) NOT NULL,\n  created_at TIMESTAMP NOT NULL DEFAULT now()\n);\nCREATE INDEX IF NOT EXISTS ix_wm_downtime_eq ON wm_downtime(equipment_tag, work_date, shift_no);\n\nCREATE TABLE IF NOT EXISTS wm_shift_metric (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  work_date DATE NOT NULL,\n  shift_no INTEGER NOT NULL,\n  equipment_tag VARCHAR(32) NOT NULL,\n  metric_code VARCHAR(64) NOT NULL,\n  metric_value NUMERIC(18,6),\n  unit VARCHAR(32),\n  source VARCHAR(32) NOT NULL DEFAULT 'manual',\n  is_overridden BOOLEAN NOT NULL DEFAULT false,\n  updated_by VARCHAR(128),\n  updated_at TIMESTAMP NOT NULL DEFAULT now(),\n  UNIQUE(work_date, shift_no, equipment_tag, metric_code)\n);\n\nCREATE TABLE IF NOT EXISTS wm_flowmeter_hourly (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  work_date DATE NOT NULL,\n  shift_no INTEGER NOT NULL,\n  hour_index INTEGER NOT NULL CHECK (hour_index BETWEEN 1 AND 8),\n  equipment_tag VARCHAR(32) NOT NULL DEFAULT 'SG-1',\n  tag_code VARCHAR(64) NOT NULL DEFAULT 'OUTPUT_FLOW',\n  q_m3h NUMERIC(18,4) NOT NULL,\n  captured_at TIMESTAMP NOT NULL DEFAULT now(),\n  UNIQUE(work_date, shift_no, hour_index, equipment_tag, tag_code)\n);\n\nCREATE TABLE IF NOT EXISTS wm_equipment_tag_snapshot (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  equipment_tag VARCHAR(32) NOT NULL,\n  tag_code VARCHAR(64) NOT NULL,\n  tag_value NUMERIC(18,6),\n  tag_text VARCHAR(256),\n  captured_at TIMESTAMP NOT NULL DEFAULT now()\n);\nCREATE INDEX IF NOT EXISTS ix_wm_tag_snap ON wm_equipment_tag_snapshot(equipment_tag, tag_code, captured_at DESC);\n\nCREATE TABLE IF NOT EXISTS wm_audit_log (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  entity_type VARCHAR(64) NOT NULL,\n  entity_id VARCHAR(64) NOT NULL,\n  action VARCHAR(32) NOT NULL,\n  actor_role VARCHAR(64),\n  actor_name VARCHAR(128),\n  payload_json TEXT,\n  created_at TIMESTAMP NOT NULL DEFAULT now()\n);\n\nCREATE TABLE IF NOT EXISTS wm_opc_tag_catalog (\n  tag_id SERIAL PRIMARY KEY,\n  equipment_type VARCHAR(64) NOT NULL,\n  tag_code VARCHAR(64) NOT NULL,\n  parameter_name VARCHAR(256) NOT NULL,\n  data_type VARCHAR(32) NOT NULL,\n  unit VARCHAR(32),\n  mes_usage VARCHAR(128),\n  UNIQUE(equipment_type, tag_code)\n);"
+    },
+    {
+      "id": "wm_seed_v1",
+      "sql": "INSERT INTO wm_dict_product (product_id, product_code, product_name, product_type, unit, parent_product_id)\nVALUES\n (1,'RAW_ORE','Исходная руда','raw_material','t',NULL),\n (2,'CRUSHED_1','Дробленая руда','intermediate','t',1),\n (3,'CRUSHED_2_L1','Мелкодробленая руда (линия 1)','intermediate','t',2),\n (4,'CRUSHED_2_L2','Мелкодробленая руда (линия 2)','intermediate','t',2),\n (5,'SCREENED_L1','Классифицированная руда (линия 1)','intermediate','t',3),\n (6,'SCREENED_L2','Классифицированная руда (линия 2)','intermediate','t',4),\n (7,'SEPARATED_PULP','Сепарированная пульпа','intermediate','m3',NULL),\n (8,'THICKENED_PRODUCT','Сгущённый продукт (питание флотации)','finished_product','t',7)\nON CONFLICT (product_code) DO NOTHING;\nSELECT setval(pg_get_serial_sequence('wm_dict_product','product_id'), (SELECT MAX(product_id) FROM wm_dict_product));\n\nINSERT INTO wm_dict_equipment (equipment_id, equipment_tag, equipment_name, equipment_type, process_stage_code, line_no, asutp_point_id, object_path)\nVALUES\n (1,'DR-1','Дробилка №1','crusher','STAGE_1',NULL,'AS-DR1','root.platform.devices.mes-wrangel-dr1'),\n (2,'DR-2','Дробилка №2','crusher','STAGE_2',1,'AS-DR2','root.platform.devices.mes-wrangel-dr2'),\n (3,'DR-3','Дробилка №3','crusher','STAGE_2',2,'AS-DR3','root.platform.devices.mes-wrangel-dr3'),\n (4,'GR-1','Грохот №1','screen','STAGE_3',1,'AS-GR1','root.platform.devices.mes-wrangel-gr1'),\n (5,'GR-2','Грохот №2','screen','STAGE_3',2,'AS-GR2','root.platform.devices.mes-wrangel-gr2'),\n (6,'GC-1','Гидроциклон','hydrocyclone','STAGE_4',NULL,'AS-GC1','root.platform.devices.mes-wrangel-gc1'),\n (7,'SG-1','Сгуститель','thickener','STAGE_5',NULL,'AS-SG1','root.platform.devices.mes-wrangel-sg1')\nON CONFLICT (equipment_tag) DO NOTHING;\nSELECT setval(pg_get_serial_sequence('wm_dict_equipment','equipment_id'), (SELECT MAX(equipment_id) FROM wm_dict_equipment));\n\nINSERT INTO wm_dict_coefficient (coefficient_id, coefficient_code, coefficient_name, value, unit, ref_object_code, valid_from)\nVALUES\n (1,'SHIFT_HOURS','Количество часов в смене',8,'час',NULL,'2026-01-01'),\n (2,'DENSITY_PULP_GC1','Плотность пульпы (слив ГЦ-1)',1.28,'t/m3','GC-1','2026-01-01'),\n (3,'DENSITY_PROD_SG1','Плотность сгущённого продукта',1.62,'t/m3','SG-1','2026-01-01'),\n (4,'SOLIDS_SHARE_SG1','Массовая доля твёрдого в продукте СГ-1',0.45,'доля','SG-1','2026-01-01'),\n (5,'MOISTURE_DEFAULT_ORE','Влажность руды по умолчанию (при сбое LIMS)',5.0,'%','RAW_ORE','2026-01-01'),\n (6,'RECOVERY_FACTOR_GC1','Коэффициент извлечения гидроциклона',0.92,'доля','GC-1','2026-01-01'),\n (7,'CAPACITY_DR1','Номинальная производительность ДР-1',250,'t/h','DR-1','2026-01-01'),\n (8,'CAPACITY_DR2','Номинальная производительность ДР-2',140,'t/h','DR-2','2026-01-01'),\n (9,'CAPACITY_DR3','Номинальная производительность ДР-3',140,'t/h','DR-3','2026-01-01'),\n (10,'FLOWMETER_UNIT_SG1','Единица измерения расходомера СГ-1',1,'m3/h','SG-1','2026-01-01'),\n (11,'BUCKET_VOLUME_DR1','Нормативный объём ковша авто-рудопогрузчика',10,'m3','DR-1','2026-01-01')\nON CONFLICT (coefficient_code) DO NOTHING;\nSELECT setval(pg_get_serial_sequence('wm_dict_coefficient','coefficient_id'), (SELECT MAX(coefficient_id) FROM wm_dict_coefficient));\n\nINSERT INTO wm_dict_downtime_reason (reason_id, reason_code, reason_name, reason_category) VALUES\n (1,'EQUIP_FAILURE','Аварийная остановка оборудования','Авария'),\n (2,'SCHED_MAINT','Плановое техническое обслуживание','ТО'),\n (3,'UNSCHED_MAINT','Внеплановый ремонт','ТО'),\n (4,'NO_FEED','Отсутствие сырья / промежуточного продукта на входе','Организационная'),\n (5,'DOWNSTREAM_BLOCK','Простой из-за остановки следующего передела','Организационная'),\n (6,'POWER_OUTAGE','Отключение электроэнергии','Внешняя'),\n (7,'SHIFT_CHANGE','Пересменка','Организационная'),\n (8,'CLEANING','Плановая очистка/промывка оборудования','ТО'),\n (9,'SAFETY_STOP','Остановка по требованиям техники безопасности','Организационная'),\n (10,'OTHER','Прочая причина (см. комментарий)','Прочее')\nON CONFLICT (reason_code) DO NOTHING;\nSELECT setval(pg_get_serial_sequence('wm_dict_downtime_reason','reason_id'), (SELECT MAX(reason_id) FROM wm_dict_downtime_reason));\n\nINSERT INTO wm_integration_status (source_code, is_healthy, last_success_at) VALUES\n ('OPC','true', now()),\n ('LIMS','true', now())\nON CONFLICT (source_code) DO NOTHING;\n\nINSERT INTO wm_opc_tag_catalog (equipment_type, tag_code, parameter_name, data_type, unit, mes_usage) VALUES\n ('crusher','STATUS','Статус работы','INT',NULL,'FT-13,FT-14'),\n ('crusher','RUN_CMD','Команда пуск/останов','BOOL',NULL,'FT-13'),\n ('crusher','ALARM_CODE','Код аварии','INT',NULL,'FT-13,FT-14'),\n ('crusher','RUN_HOURS','Наработка','REAL','ч','FT-13'),\n ('crusher','MOTOR_CURRENT','Ток электродвигателя','REAL','А','FT-13,FT-14'),\n ('crusher','MOTOR_POWER','Активная мощность','REAL','кВт','FT-13'),\n ('crusher','VIBRATION','Вибрация','REAL','мм/с','FT-13,FT-14'),\n ('crusher','BEARING_TEMP','Температура подшипников','REAL','°C','FT-13'),\n ('crusher','FEED_RATE','Производительность по загрузке','REAL','т/ч','FT-1–FT-3'),\n ('crusher','GAP_SETTING','Разгрузочная щель','REAL','мм','FT-13'),\n ('crusher','HOPPER_LEVEL','Уровень бункера','REAL','%','FT-13,FT-14'),\n ('crusher','LAST_UPDATE_TS','Метка времени','DATETIME',NULL,'FT-13'),\n ('screen','STATUS','Статус работы','INT',NULL,'FT-13,FT-14'),\n ('screen','RUN_CMD','Команда пуск/останов','BOOL',NULL,'FT-13'),\n ('screen','ALARM_CODE','Код аварии','INT',NULL,'FT-13,FT-14'),\n ('screen','RUN_HOURS','Наработка','REAL','ч','FT-13'),\n ('screen','MOTOR_CURRENT','Ток вибропривода','REAL','А','FT-13,FT-14'),\n ('screen','VIBRATION_AMPLITUDE','Амплитуда вибрации','REAL','мм','FT-13,FT-14'),\n ('screen','FEED_RATE','Производительность по питанию','REAL','т/ч','FT-4,FT-5'),\n ('screen','OVERSIZE_LEVEL','Надрешётный продукт','REAL','%','FT-13'),\n ('screen','BEARING_TEMP','Температура подшипников','REAL','°C','FT-13'),\n ('screen','LAST_UPDATE_TS','Метка времени','DATETIME',NULL,'FT-13'),\n ('hydrocyclone','STATUS','Статус работы','INT',NULL,'FT-13,FT-14'),\n ('hydrocyclone','ALARM_CODE','Код аварии','INT',NULL,'FT-13,FT-14'),\n ('hydrocyclone','FEED_PRESSURE','Давление питания','REAL','бар','FT-13,FT-14'),\n ('hydrocyclone','FEED_FLOW','Расход питания FT-1','REAL','м3/ч','FT-6,FT-1'),\n ('hydrocyclone','UNDERFLOW_DENSITY','Плотность песков','REAL','т/м3','FT-6'),\n ('hydrocyclone','OVERFLOW_DENSITY','Плотность слива','REAL','т/м3','FT-6'),\n ('hydrocyclone','UNDERFLOW_FLOW','Расход песков FT-2','REAL','м3/ч','FT-6,FT-2'),\n ('hydrocyclone','OVERFLOW_FLOW','Расход слива FT-3','REAL','м3/ч','FT-6,FT-3'),\n ('hydrocyclone','APEX_DIAMETER','Диаметр апекса','REAL','мм','FT-13'),\n ('hydrocyclone','LAST_UPDATE_TS','Метка времени','DATETIME',NULL,'FT-13'),\n ('thickener','STATUS','Статус работы','INT',NULL,'FT-13,FT-14'),\n ('thickener','ALARM_CODE','Код аварии','INT',NULL,'FT-13,FT-14'),\n ('thickener','FEED_FLOW','Расход питания FT-3','REAL','м3/ч','FT-7,FT-3'),\n ('thickener','FEED_DENSITY','Плотность питания','REAL','т/м3','FT-7'),\n ('thickener','OUTPUT_FLOW','Расход продукта FT-4','REAL','м3/ч','FT-11,FT-12,FT-4'),\n ('thickener','OUTPUT_DENSITY','Плотность продукта','REAL','т/м3','FT-7'),\n ('thickener','BED_LEVEL','Уровень постели','REAL','м','FT-13,FT-14'),\n ('thickener','RAKE_TORQUE','Момент гребков','REAL','%','FT-13,FT-14'),\n ('thickener','RAKE_SPEED','Скорость гребков','REAL','об/мин','FT-13'),\n ('thickener','FLOCCULANT_DOSE','Доза флокулянта','REAL','л/ч','FT-13'),\n ('thickener','LAST_UPDATE_TS','Метка времени','DATETIME',NULL,'FT-13')\nON CONFLICT (equipment_type, tag_code) DO NOTHING;\n\n-- demo shift calendar 18.09.2026\nINSERT INTO wm_shift_calendar (work_date, shift_no, started_at, ended_at) VALUES\n ('2026-09-18',1,'2026-09-18 00:00:00','2026-09-18 08:00:00'),\n ('2026-09-18',2,'2026-09-18 08:00:00','2026-09-18 16:00:00'),\n ('2026-09-18',3,'2026-09-18 16:00:00','2026-09-19 00:00:00')\nON CONFLICT (work_date, shift_no) DO NOTHING;\n\nINSERT INTO wm_lims_bulk_density (work_date, density_t_m3, source, is_fallback) VALUES\n ('2026-09-16',2.08,'LIMS',false),\n ('2026-09-17',2.09,'LIMS',false),\n ('2026-09-18',2.10,'LIMS',false),\n ('2026-09-19',2.11,'LIMS',false),\n ('2026-09-20',2.10,'LIMS',false)\nON CONFLICT (work_date) DO NOTHING;\n\nINSERT INTO wm_lims_quality (work_date, shift_no, sample_point, h2o_pct, sio2_pct, fe_pct, co_pct, source) VALUES\n ('2026-09-18',1,'RAW_ORE',4.8,6.2,61.4,0.021,'LIMS'),\n ('2026-09-18',1,'PRODUCT',38.5,6.0,61.6,0.021,'LIMS'),\n ('2026-09-18',2,'RAW_ORE',4.9,6.1,61.5,0.020,'LIMS'),\n ('2026-09-18',2,'PRODUCT',39.1,5.9,61.7,0.020,'LIMS'),\n ('2026-09-18',3,'RAW_ORE',5.0,6.0,61.3,0.022,'LIMS'),\n ('2026-09-18',3,'PRODUCT',38.8,6.1,61.5,0.022,'LIMS')\nON CONFLICT (work_date, shift_no, sample_point) DO NOTHING;\n\nINSERT INTO wm_ore_receipt (work_date, shift_no, received_at, bucket_volume_m3, created_by) VALUES\n ('2026-09-18',1,'2026-09-18 01:10:00',10,'Иванов И.И.'),\n ('2026-09-18',1,'2026-09-18 03:12:00',10,'Иванов И.И.'),\n ('2026-09-18',1,'2026-09-18 05:40:00',10,'Иванов И.И.'),\n ('2026-09-18',1,'2026-09-18 07:05:00',10,'Иванов И.И.'),\n ('2026-09-18',2,'2026-09-18 09:20:00',10,'Петров П.П.'),\n ('2026-09-18',2,'2026-09-18 11:15:00',10,'Петров П.П.'),\n ('2026-09-18',2,'2026-09-18 13:40:00',10,'Петров П.П.'),\n ('2026-09-18',3,'2026-09-18 17:10:00',10,'Сидоров С.С.'),\n ('2026-09-18',3,'2026-09-18 19:30:00',10,'Сидоров С.С.'),\n ('2026-09-18',3,'2026-09-18 21:50:00',10,'Сидоров С.С.');\n\nINSERT INTO wm_downtime (work_date, shift_no, equipment_tag, started_at, ended_at, reason_code, comment, created_by) VALUES\n ('2026-09-18',2,'DR-2','2026-09-18 08:10:00','2026-09-18 08:45:00','SCHED_MAINT','Плановая замена футеровки','Оператор'),\n ('2026-09-18',2,'GR-1','2026-09-18 13:20:00','2026-09-18 13:30:00','SHIFT_CHANGE','Пересменка','Оператор'),\n ('2026-09-18',3,'GC-1','2026-09-18 19:05:00','2026-09-18 20:00:00','EQUIP_FAILURE','Засор насадки','Оператор'),\n ('2026-09-18',1,'DR-3','2026-09-18 02:00:00','2026-09-18 02:15:00','NO_FEED','Нет питания','Аппаратчик');\n\nINSERT INTO wm_shift_metric (work_date, shift_no, equipment_tag, metric_code, metric_value, unit, source) VALUES\n ('2026-09-18',2,'DR-2','THROUGHPUT_T',118,'t','manual'),\n ('2026-09-18',2,'DR-3','THROUGHPUT_T',118,'t','manual'),\n ('2026-09-18',2,'GR-1','FEED_T',108,'t','manual'),\n ('2026-09-18',2,'GR-1','OVERSIZE_PCT',8.4,'%','opc_avg'),\n ('2026-09-18',2,'GR-2','FEED_T',108,'t','manual'),\n ('2026-09-18',2,'GR-2','OVERSIZE_PCT',8.4,'%','opc_avg'),\n ('2026-09-18',3,'GC-1','PULP_VOLUME_M3',198,'m3','manual'),\n ('2026-09-18',3,'GC-1','OVERFLOW_DENSITY',1.28,'t/m3','opc_avg'),\n ('2026-09-18',3,'GC-1','UNDERFLOW_DENSITY',1.95,'t/m3','opc_avg'),\n ('2026-09-18',1,'SG-1','SHIFT_VOLUME_M3',940.4,'m3','opc_agg'),\n ('2026-09-18',1,'SG-1','OUTPUT_DENSITY',1.62,'t/m3','opc_avg');\n\nINSERT INTO wm_flowmeter_hourly (work_date, shift_no, hour_index, q_m3h) VALUES\n ('2026-09-18',1,1,118.4),('2026-09-18',1,2,120.1),('2026-09-18',1,3,116.8),('2026-09-18',1,4,119.2),\n ('2026-09-18',1,5,117.5),('2026-09-18',1,6,118.0),('2026-09-18',1,7,115.9),('2026-09-18',1,8,114.5);"
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "wm-mes-hub-v1",
+      "description": "BFF hub MES Wrangel CPS",
+      "type": "MIXIN",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "ft4ShiftVolume",
+          "description": "Сменный объём FT-4, м3",
+          "group": "kpi",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "oreReceiptShiftMass",
+          "description": "Масса принятой руды за смену, т",
+          "group": "kpi",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "plantUtilizationPct",
+          "description": "Кисп. оборудования по цеху, %",
+          "group": "kpi",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 100
+              }
+            ]
+          }
+        },
+        {
+          "name": "limsHealthy",
+          "description": "LIMS OK/FAIL",
+          "group": "integration",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "OK"
+              }
+            ]
+          }
+        },
+        {
+          "name": "opcHealthy",
+          "description": "OPC OK/FAIL",
+          "group": "integration",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "OK"
+              }
+            ]
+          }
+        },
+        {
+          "name": "activeShiftLabel",
+          "description": "Текущая смена",
+          "group": "runtime",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        }
+      ],
+      "events": [
+        {
+          "name": "wmIntegrationFailed",
+          "roles": [
+            "operator",
+            "admin"
+          ]
+        },
+        {
+          "name": "wmShiftClosed",
+          "roles": [
+            "supervisor",
+            "operator",
+            "admin"
+          ]
+        },
+        {
+          "name": "wmEquipmentAlarm",
+          "roles": [
+            "operator",
+            "supervisor",
+            "admin"
+          ]
+        }
+      ],
+      "functions": []
+    },
+    {
+      "name": "wm-crusher-v1",
+      "description": "Дробилка CPS",
+      "type": "MIXIN",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "STATUS",
+          "description": "STATUS",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "ALARM_CODE",
+          "description": "ALARM_CODE",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "MOTOR_CURRENT",
+          "description": "MOTOR_CURRENT",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "VIBRATION",
+          "description": "VIBRATION",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "BEARING_TEMP",
+          "description": "BEARING_TEMP",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "FEED_RATE",
+          "description": "FEED_RATE",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "HOPPER_LEVEL",
+          "description": "HOPPER_LEVEL",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "displayStatus",
+          "description": "Статус для мнемосхемы",
+          "group": "runtime",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "STOP"
+              }
+            ]
+          }
+        }
+      ],
+      "events": [
+        {
+          "name": "equipmentAlarm",
+          "roles": [
+            "operator",
+            "supervisor",
+            "admin"
+          ]
+        }
+      ],
+      "functions": []
+    },
+    {
+      "name": "wm-screen-v1",
+      "description": "Грохот CPS",
+      "type": "MIXIN",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "STATUS",
+          "description": "STATUS",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "ALARM_CODE",
+          "description": "ALARM_CODE",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "MOTOR_CURRENT",
+          "description": "MOTOR_CURRENT",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "VIBRATION_AMPLITUDE",
+          "description": "VIBRATION_AMPLITUDE",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "FEED_RATE",
+          "description": "FEED_RATE",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "OVERSIZE_LEVEL",
+          "description": "OVERSIZE_LEVEL",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "displayStatus",
+          "description": "Статус для мнемосхемы",
+          "group": "runtime",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "STOP"
+              }
+            ]
+          }
+        }
+      ],
+      "events": [
+        {
+          "name": "equipmentAlarm",
+          "roles": [
+            "operator",
+            "supervisor",
+            "admin"
+          ]
+        }
+      ],
+      "functions": []
+    },
+    {
+      "name": "wm-hydrocyclone-v1",
+      "description": "Гидроциклон CPS",
+      "type": "MIXIN",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "STATUS",
+          "description": "STATUS",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "ALARM_CODE",
+          "description": "ALARM_CODE",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "FEED_PRESSURE",
+          "description": "FEED_PRESSURE",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "FEED_FLOW",
+          "description": "FEED_FLOW",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "UNDERFLOW_FLOW",
+          "description": "UNDERFLOW_FLOW",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "OVERFLOW_FLOW",
+          "description": "OVERFLOW_FLOW",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "OVERFLOW_DENSITY",
+          "description": "OVERFLOW_DENSITY",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "UNDERFLOW_DENSITY",
+          "description": "UNDERFLOW_DENSITY",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "displayStatus",
+          "description": "Статус для мнемосхемы",
+          "group": "runtime",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "STOP"
+              }
+            ]
+          }
+        }
+      ],
+      "events": [
+        {
+          "name": "equipmentAlarm",
+          "roles": [
+            "operator",
+            "supervisor",
+            "admin"
+          ]
+        }
+      ],
+      "functions": []
+    },
+    {
+      "name": "wm-thickener-v1",
+      "description": "Сгуститель CPS",
+      "type": "MIXIN",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "STATUS",
+          "description": "STATUS",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "ALARM_CODE",
+          "description": "ALARM_CODE",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "FEED_FLOW",
+          "description": "FEED_FLOW",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "OUTPUT_FLOW",
+          "description": "OUTPUT_FLOW",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "OUTPUT_DENSITY",
+          "description": "OUTPUT_DENSITY",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "BED_LEVEL",
+          "description": "BED_LEVEL",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "RAKE_TORQUE",
+          "description": "RAKE_TORQUE",
+          "group": "opc",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0.0
+              }
+            ]
+          }
+        },
+        {
+          "name": "displayStatus",
+          "description": "Статус для мнемосхемы",
+          "group": "runtime",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "STOP"
+              }
+            ]
+          }
+        }
+      ],
+      "events": [
+        {
+          "name": "equipmentAlarm",
+          "roles": [
+            "operator",
+            "supervisor",
+            "admin"
+          ]
+        }
+      ],
+      "functions": []
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-wrangel-hub",
+      "type": "DEVICE",
+      "displayName": "MES Wrangel CPS Hub",
+      "description": "BFF host: учёт, НСИ, интеграции OPC/LIMS, отчёты",
+      "blueprintName": "wm-mes-hub-v1"
+    },
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-wrangel-dr1",
+      "type": "DEVICE",
+      "displayName": "ДР-1 Дробилка №1",
+      "description": "Оборудование цеха переработки сырья — ДР-1 Дробилка №1",
+      "blueprintName": "wm-crusher-v1"
+    },
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-wrangel-dr2",
+      "type": "DEVICE",
+      "displayName": "ДР-2 Дробилка №2",
+      "description": "Оборудование цеха переработки сырья — ДР-2 Дробилка №2",
+      "blueprintName": "wm-crusher-v1"
+    },
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-wrangel-dr3",
+      "type": "DEVICE",
+      "displayName": "ДР-3 Дробилка №3",
+      "description": "Оборудование цеха переработки сырья — ДР-3 Дробилка №3",
+      "blueprintName": "wm-crusher-v1"
+    },
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-wrangel-gr1",
+      "type": "DEVICE",
+      "displayName": "ГР-1 Грохот №1",
+      "description": "Оборудование цеха переработки сырья — ГР-1 Грохот №1",
+      "blueprintName": "wm-screen-v1"
+    },
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-wrangel-gr2",
+      "type": "DEVICE",
+      "displayName": "ГР-2 Грохот №2",
+      "description": "Оборудование цеха переработки сырья — ГР-2 Грохот №2",
+      "blueprintName": "wm-screen-v1"
+    },
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-wrangel-gc1",
+      "type": "DEVICE",
+      "displayName": "ГЦ-1 Гидроциклон",
+      "description": "Оборудование цеха переработки сырья — ГЦ-1 Гидроциклон",
+      "blueprintName": "wm-hydrocyclone-v1"
+    },
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-wrangel-sg1",
+      "type": "DEVICE",
+      "displayName": "СГ-1 Сгуститель",
+      "description": "Оборудование цеха переработки сырья — СГ-1 Сгуститель",
+      "blueprintName": "wm-thickener-v1"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_listProducts",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_listProductsInput",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "wm_listProductsOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "product_row",
+                "fields": [
+                  {
+                    "name": "product_code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "product_name",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "product_type",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "unit",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "parent_product_code",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT p.product_code, p.product_name, p.product_type, p.unit, COALESCE(pp.product_code,'') AS parent_product_code FROM wm_dict_product p LEFT JOIN wm_dict_product pp ON pp.product_id=p.parent_product_id WHERE p.is_active ORDER BY p.product_id\"}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"product_code\": \"${item.product_code}\", \"product_name\": \"${item.product_name}\", \"product_type\": \"${item.product_type}\", \"unit\": \"${item.unit}\", \"parent_product_code\": \"${item.parent_product_code}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_upsertProduct",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_upsertProductInput",
+          "fields": [
+            {
+              "name": "product_code",
+              "type": "STRING",
+              "description": "Код"
+            },
+            {
+              "name": "product_name",
+              "type": "STRING",
+              "description": "Наименование"
+            },
+            {
+              "name": "product_type",
+              "type": "STRING",
+              "description": "raw_material|intermediate|finished_product"
+            },
+            {
+              "name": "unit",
+              "type": "STRING",
+              "description": "Ед."
+            },
+            {
+              "name": "parent_product_code",
+              "type": "STRING",
+              "description": "Код родителя (опц.)"
+            },
+            {
+              "name": "actor",
+              "type": "STRING",
+              "description": "Администратор"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_upsertProductOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "product_code",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"INSERT INTO wm_dict_product (product_code, product_name, product_type, unit, parent_product_id) VALUES (?, ?, ?, ?, (SELECT product_id FROM wm_dict_product WHERE product_code = NULLIF(?, '') LIMIT 1)) ON CONFLICT (product_code) DO UPDATE SET product_name=EXCLUDED.product_name, product_type=EXCLUDED.product_type, unit=EXCLUDED.unit, parent_product_id=EXCLUDED.parent_product_id, is_active=true\", \"params\": [\"${input.product_code}\", \"${input.product_name}\", \"${input.product_type}\", \"${input.unit}\", \"${input.parent_product_code}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wm_audit_log(entity_type, entity_id, action, actor_role, actor_name) VALUES ('dict_product', ?, 'upsert', 'admin', ?)\", \"params\": [\"${input.product_code}\", \"${input.actor}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"product_code\": \"${input.product_code}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_deactivateProduct",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_deactivateProductInput",
+          "fields": [
+            {
+              "name": "product_code",
+              "type": "STRING"
+            },
+            {
+              "name": "actor",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_deactivateProductOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"ref\", \"sql\": \"SELECT COUNT(*)::text AS cnt FROM wm_shift_metric sm WHERE sm.metric_code LIKE '%' AND EXISTS (SELECT 1 FROM wm_dict_product p WHERE p.product_code=?)\", \"params\": [\"${input.product_code}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE wm_dict_product SET is_active=false WHERE product_code=?\", \"params\": [\"${input.product_code}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wm_audit_log(entity_type, entity_id, action, actor_role, actor_name) VALUES ('dict_product', ?, 'deactivate', 'admin', ?)\", \"params\": [\"${input.product_code}\", \"${input.actor}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_listEquipment",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_listEquipmentInput",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "wm_listEquipmentOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "eq_row",
+                "fields": [
+                  {
+                    "name": "equipment_tag",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "equipment_name",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "equipment_type",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "process_stage_code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "line_no",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "asutp_point_id",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT equipment_tag, equipment_name, equipment_type, process_stage_code, COALESCE(line_no::text,'') AS line_no, asutp_point_id FROM wm_dict_equipment WHERE is_active ORDER BY equipment_id\"}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"equipment_tag\": \"${item.equipment_tag}\", \"equipment_name\": \"${item.equipment_name}\", \"equipment_type\": \"${item.equipment_type}\", \"process_stage_code\": \"${item.process_stage_code}\", \"line_no\": \"${item.line_no}\", \"asutp_point_id\": \"${item.asutp_point_id}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_listCoefficients",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_listCoefficientsInput",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "wm_listCoefficientsOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "coef_row",
+                "fields": [
+                  {
+                    "name": "coefficient_code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "coefficient_name",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "value",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "unit",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "ref_object_code",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT coefficient_code, coefficient_name, value::text AS value, COALESCE(unit,'') AS unit, COALESCE(ref_object_code,'') AS ref_object_code FROM wm_dict_coefficient WHERE is_active ORDER BY coefficient_id\"}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"coefficient_code\": \"${item.coefficient_code}\", \"coefficient_name\": \"${item.coefficient_name}\", \"value\": \"${item.value}\", \"unit\": \"${item.unit}\", \"ref_object_code\": \"${item.ref_object_code}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_upsertCoefficient",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_upsertCoefficientInput",
+          "fields": [
+            {
+              "name": "coefficient_code",
+              "type": "STRING"
+            },
+            {
+              "name": "coefficient_name",
+              "type": "STRING"
+            },
+            {
+              "name": "value",
+              "type": "STRING"
+            },
+            {
+              "name": "unit",
+              "type": "STRING"
+            },
+            {
+              "name": "ref_object_code",
+              "type": "STRING"
+            },
+            {
+              "name": "actor",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_upsertCoefficientOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"INSERT INTO wm_dict_coefficient (coefficient_code, coefficient_name, value, unit, ref_object_code) VALUES (?, ?, ?::numeric, NULLIF(?,''), NULLIF(?,'')) ON CONFLICT (coefficient_code) DO UPDATE SET coefficient_name=EXCLUDED.coefficient_name, value=EXCLUDED.value, unit=EXCLUDED.unit, ref_object_code=EXCLUDED.ref_object_code, is_active=true\", \"params\": [\"${input.coefficient_code}\", \"${input.coefficient_name}\", \"${input.value}\", \"${input.unit}\", \"${input.ref_object_code}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_listDowntimeReasons",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_listDowntimeReasonsInput",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "wm_listDowntimeReasonsOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "reason_row",
+                "fields": [
+                  {
+                    "name": "reason_code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "reason_name",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "reason_category",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT reason_code, reason_name, reason_category FROM wm_dict_downtime_reason WHERE is_active ORDER BY reason_id\"}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"reason_code\": \"${item.reason_code}\", \"reason_name\": \"${item.reason_name}\", \"reason_category\": \"${item.reason_category}\"}}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_upsertDowntimeReason",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_upsertDowntimeReasonInput",
+          "fields": [
+            {
+              "name": "reason_code",
+              "type": "STRING"
+            },
+            {
+              "name": "reason_name",
+              "type": "STRING"
+            },
+            {
+              "name": "reason_category",
+              "type": "STRING"
+            },
+            {
+              "name": "actor",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_upsertDowntimeReasonOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"INSERT INTO wm_dict_downtime_reason (reason_code, reason_name, reason_category) VALUES (?, ?, ?) ON CONFLICT (reason_code) DO UPDATE SET reason_name=EXCLUDED.reason_name, reason_category=EXCLUDED.reason_category, is_active=true\", \"params\": [\"${input.reason_code}\", \"${input.reason_name}\", \"${input.reason_category}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_addOreReceipt",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_addOreReceiptInput",
+          "fields": [
+            {
+              "name": "work_date",
+              "type": "STRING",
+              "description": "YYYY-MM-DD"
+            },
+            {
+              "name": "shift_no",
+              "type": "STRING",
+              "description": "1|2|3"
+            },
+            {
+              "name": "received_at",
+              "type": "STRING",
+              "description": "timestamp"
+            },
+            {
+              "name": "created_by",
+              "type": "STRING",
+              "description": "Аппаратчик"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_addOreReceiptOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "id",
+              "type": "STRING"
+            },
+            {
+              "name": "volume_m3",
+              "type": "STRING"
+            },
+            {
+              "name": "mass_t",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"bucket\", \"sql\": \"SELECT value::text AS v FROM wm_dict_coefficient WHERE coefficient_code='BUCKET_VOLUME_DR1' AND is_active LIMIT 1\"}, {\"type\": \"failIfNull\", \"var\": \"bucket\", \"message\": \"BUCKET_VOLUME_DR1 not found\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wm_ore_receipt (work_date, shift_no, received_at, bucket_volume_m3, created_by) VALUES (?::date, ?::int, ?::timestamp, (SELECT value FROM wm_dict_coefficient WHERE coefficient_code='BUCKET_VOLUME_DR1' LIMIT 1), ?)\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\", \"${input.received_at}\", \"${input.created_by}\"]}, {\"type\": \"selectOne\", \"var\": \"tot\", \"sql\": \"SELECT COUNT(*)::text AS n, (COUNT(*) * (SELECT value FROM wm_dict_coefficient WHERE coefficient_code='BUCKET_VOLUME_DR1'))::text AS vol, (COUNT(*) * (SELECT value FROM wm_dict_coefficient WHERE coefficient_code='BUCKET_VOLUME_DR1') *  COALESCE((SELECT density_t_m3 FROM wm_lims_bulk_density WHERE work_date=?::date),  (SELECT density_t_m3 FROM wm_lims_bulk_density ORDER BY work_date DESC LIMIT 1), 0))::text AS mass FROM wm_ore_receipt WHERE work_date=?::date AND shift_no=?::int\", \"params\": [\"${input.work_date}\", \"${input.work_date}\", \"${input.shift_no}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"id\": \"OK\", \"volume_m3\": \"${tot.vol}\", \"mass_t\": \"${tot.mass}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_getOreReceiptShift",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_getOreReceiptShiftInput",
+          "fields": [
+            {
+              "name": "work_date",
+              "type": "STRING"
+            },
+            {
+              "name": "shift_no",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_getOreReceiptShiftOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "receipt_count",
+              "type": "STRING"
+            },
+            {
+              "name": "volume_m3",
+              "type": "STRING"
+            },
+            {
+              "name": "density_t_m3",
+              "type": "STRING"
+            },
+            {
+              "name": "mass_t",
+              "type": "STRING"
+            },
+            {
+              "name": "density_is_fallback",
+              "type": "STRING"
+            },
+            {
+              "name": "h2o_pct",
+              "type": "STRING"
+            },
+            {
+              "name": "sio2_pct",
+              "type": "STRING"
+            },
+            {
+              "name": "fe_pct",
+              "type": "STRING"
+            },
+            {
+              "name": "co_pct",
+              "type": "STRING"
+            },
+            {
+              "name": "quality_locked",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "receipt_row",
+                "fields": [
+                  {
+                    "name": "received_at",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "bucket_volume_m3",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "created_by",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"dens\", \"sql\": \"SELECT COALESCE((SELECT density_t_m3::text FROM wm_lims_bulk_density WHERE work_date=?::date),(SELECT density_t_m3::text FROM wm_lims_bulk_density ORDER BY work_date DESC LIMIT 1),'0') AS density, CASE WHEN EXISTS(SELECT 1 FROM wm_lims_bulk_density WHERE work_date=?::date) THEN 'false' ELSE 'true' END AS is_fallback\", \"params\": [\"${input.work_date}\", \"${input.work_date}\"]}, {\"type\": \"selectOne\", \"var\": \"agg\", \"sql\": \"SELECT COUNT(*)::text AS n, (COUNT(*) * (SELECT value FROM wm_dict_coefficient WHERE coefficient_code='BUCKET_VOLUME_DR1'))::text AS vol FROM wm_ore_receipt WHERE work_date=?::date AND shift_no=?::int\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\"]}, {\"type\": \"selectOne\", \"var\": \"q\", \"sql\": \"SELECT COALESCE(h2o_pct::text,'') AS h2o, COALESCE(sio2_pct::text,'') AS sio2, COALESCE(fe_pct::text,'') AS fe, COALESCE(co_pct::text,'') AS co FROM wm_lims_quality WHERE work_date=?::date AND shift_no=?::int AND sample_point='RAW_ORE'\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\"]}, {\"type\": \"selectOne\", \"var\": \"lims\", \"sql\": \"SELECT CASE WHEN is_healthy THEN 'true' ELSE 'false' END AS ok FROM wm_integration_status WHERE source_code='LIMS'\"}, {\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT received_at::text AS received_at, bucket_volume_m3::text AS bucket_volume_m3, created_by FROM wm_ore_receipt WHERE work_date=?::date AND shift_no=?::int ORDER BY received_at\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\"]}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"received_at\": \"${item.received_at}\", \"bucket_volume_m3\": \"${item.bucket_volume_m3}\", \"created_by\": \"${item.created_by}\"}}, {\"type\": \"selectOne\", \"var\": \"mass\", \"sql\": \"SELECT (COALESCE(?::numeric,0) * COALESCE(?::numeric,0))::text AS mass\", \"params\": [\"${agg.vol}\", \"${dens.density}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"receipt_count\": \"${agg.n}\", \"volume_m3\": \"${agg.vol}\", \"density_t_m3\": \"${dens.density}\", \"mass_t\": \"${mass.mass}\", \"density_is_fallback\": \"${dens.is_fallback}\", \"h2o_pct\": \"${q.h2o}\", \"sio2_pct\": \"${q.sio2}\", \"fe_pct\": \"${q.fe}\", \"co_pct\": \"${q.co}\", \"quality_locked\": \"${lims.ok}\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_addDowntime",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_addDowntimeInput",
+          "fields": [
+            {
+              "name": "work_date",
+              "type": "STRING"
+            },
+            {
+              "name": "shift_no",
+              "type": "STRING"
+            },
+            {
+              "name": "equipment_tag",
+              "type": "STRING"
+            },
+            {
+              "name": "started_at",
+              "type": "STRING"
+            },
+            {
+              "name": "ended_at",
+              "type": "STRING"
+            },
+            {
+              "name": "reason_code",
+              "type": "STRING"
+            },
+            {
+              "name": "comment",
+              "type": "STRING"
+            },
+            {
+              "name": "created_by",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_addDowntimeOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "duration_min",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"reason\", \"sql\": \"SELECT reason_code FROM wm_dict_downtime_reason WHERE reason_code=? AND is_active\", \"params\": [\"${input.reason_code}\"]}, {\"type\": \"failIfNull\", \"var\": \"reason\", \"message\": \"Unknown downtime reason\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wm_downtime (work_date, shift_no, equipment_tag, started_at, ended_at, reason_code, comment, created_by) VALUES (?::date, ?::int, ?, ?::timestamp, ?::timestamp, ?, ?, ?)\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\", \"${input.equipment_tag}\", \"${input.started_at}\", \"${input.ended_at}\", \"${input.reason_code}\", \"${input.comment}\", \"${input.created_by}\"]}, {\"type\": \"selectOne\", \"var\": \"d\", \"sql\": \"SELECT duration_min::text AS m FROM wm_downtime WHERE work_date=?::date AND shift_no=?::int AND equipment_tag=? ORDER BY created_at DESC LIMIT 1\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\", \"${input.equipment_tag}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"duration_min\": \"${d.m}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_saveShiftMetric",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_saveShiftMetricInput",
+          "fields": [
+            {
+              "name": "work_date",
+              "type": "STRING"
+            },
+            {
+              "name": "shift_no",
+              "type": "STRING"
+            },
+            {
+              "name": "equipment_tag",
+              "type": "STRING"
+            },
+            {
+              "name": "metric_code",
+              "type": "STRING"
+            },
+            {
+              "name": "metric_value",
+              "type": "STRING"
+            },
+            {
+              "name": "unit",
+              "type": "STRING"
+            },
+            {
+              "name": "source",
+              "type": "STRING",
+              "description": "manual|opc_agg|opc_avg"
+            },
+            {
+              "name": "is_overridden",
+              "type": "STRING",
+              "description": "true|false"
+            },
+            {
+              "name": "updated_by",
+              "type": "STRING"
+            },
+            {
+              "name": "actor_role",
+              "type": "STRING",
+              "description": "operator|admin|apparatчик"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_saveShiftMetricOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"INSERT INTO wm_shift_metric (work_date, shift_no, equipment_tag, metric_code, metric_value, unit, source, is_overridden, updated_by) VALUES (?::date, ?::int, ?, ?, ?::numeric, ?, ?, (? = 'true'), ?) ON CONFLICT (work_date, shift_no, equipment_tag, metric_code) DO UPDATE SET metric_value=EXCLUDED.metric_value, unit=EXCLUDED.unit, source=EXCLUDED.source, is_overridden=EXCLUDED.is_overridden, updated_by=EXCLUDED.updated_by, updated_at=now()\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\", \"${input.equipment_tag}\", \"${input.metric_code}\", \"${input.metric_value}\", \"${input.unit}\", \"${input.source}\", \"${input.is_overridden}\", \"${input.updated_by}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wm_audit_log(entity_type, entity_id, action, actor_role, actor_name, payload_json) VALUES ('shift_metric', ?, 'upsert', ?, ?, ?)\", \"params\": [\"${input.equipment_tag}\", \"${input.actor_role}\", \"${input.updated_by}\", \"${input.metric_code}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_captureFlowmeterHour",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_captureFlowmeterHourInput",
+          "fields": [
+            {
+              "name": "work_date",
+              "type": "STRING"
+            },
+            {
+              "name": "shift_no",
+              "type": "STRING"
+            },
+            {
+              "name": "hour_index",
+              "type": "STRING"
+            },
+            {
+              "name": "q_m3h",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_captureFlowmeterHourOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "shift_volume_m3",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"INSERT INTO wm_flowmeter_hourly (work_date, shift_no, hour_index, q_m3h) VALUES (?::date, ?::int, ?::int, ?::numeric) ON CONFLICT (work_date, shift_no, hour_index, equipment_tag, tag_code) DO UPDATE SET q_m3h=EXCLUDED.q_m3h, captured_at=now()\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\", \"${input.hour_index}\", \"${input.q_m3h}\"]}, {\"type\": \"selectOne\", \"var\": \"sum\", \"sql\": \"SELECT COALESCE(SUM(q_m3h),0)::text AS v FROM wm_flowmeter_hourly WHERE work_date=?::date AND shift_no=?::int AND equipment_tag='SG-1'\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wm_shift_metric (work_date, shift_no, equipment_tag, metric_code, metric_value, unit, source, is_overridden) VALUES (?::date, ?::int, 'SG-1', 'SHIFT_VOLUME_M3', ?::numeric, 'm3', 'opc_agg', false) ON CONFLICT (work_date, shift_no, equipment_tag, metric_code) DO UPDATE SET metric_value = CASE WHEN wm_shift_metric.is_overridden THEN wm_shift_metric.metric_value ELSE EXCLUDED.metric_value END, updated_at=now()\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\", \"${sum.v}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"shift_volume_m3\": \"${sum.v}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_listFlowmeterHours",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_listFlowmeterHoursInput",
+          "fields": [
+            {
+              "name": "work_date",
+              "type": "STRING"
+            },
+            {
+              "name": "shift_no",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_listFlowmeterHoursOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "shift_volume_m3",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "hour_row",
+                "fields": [
+                  {
+                    "name": "hour_index",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "q_m3h",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "captured_at",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"rows_raw\", \"sql\": \"SELECT hour_index::text AS hour_index, q_m3h::text AS q_m3h, captured_at::text AS captured_at FROM wm_flowmeter_hourly WHERE work_date=?::date AND shift_no=?::int AND equipment_tag='SG-1' ORDER BY hour_index\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\"]}, {\"type\": \"map\", \"var\": \"rows\", \"source\": \"${rows_raw}\", \"fields\": {\"hour_index\": \"${item.hour_index}\", \"q_m3h\": \"${item.q_m3h}\", \"captured_at\": \"${item.captured_at}\"}}, {\"type\": \"selectOne\", \"var\": \"sum\", \"sql\": \"SELECT COALESCE(SUM(q_m3h),0)::text AS v FROM wm_flowmeter_hourly WHERE work_date=?::date AND shift_no=?::int\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"shift_volume_m3\": \"${sum.v}\", \"rows\": \"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_upsertLimsQuality",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_upsertLimsQualityInput",
+          "fields": [
+            {
+              "name": "work_date",
+              "type": "STRING"
+            },
+            {
+              "name": "shift_no",
+              "type": "STRING"
+            },
+            {
+              "name": "sample_point",
+              "type": "STRING",
+              "description": "RAW_ORE|PRODUCT"
+            },
+            {
+              "name": "h2o_pct",
+              "type": "STRING"
+            },
+            {
+              "name": "sio2_pct",
+              "type": "STRING"
+            },
+            {
+              "name": "fe_pct",
+              "type": "STRING"
+            },
+            {
+              "name": "co_pct",
+              "type": "STRING"
+            },
+            {
+              "name": "source",
+              "type": "STRING",
+              "description": "LIMS|manual"
+            },
+            {
+              "name": "actor_role",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_upsertLimsQualityOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"lims\", \"sql\": \"SELECT CASE WHEN is_healthy THEN 'true' ELSE 'false' END AS ok FROM wm_integration_status WHERE source_code='LIMS'\"}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wm_lims_quality (work_date, shift_no, sample_point, h2o_pct, sio2_pct, fe_pct, co_pct, source) VALUES (?::date, ?::int, ?, ?::numeric, ?::numeric, ?::numeric, ?::numeric, ?) ON CONFLICT (work_date, shift_no, sample_point) DO UPDATE SET h2o_pct=EXCLUDED.h2o_pct, sio2_pct=EXCLUDED.sio2_pct, fe_pct=EXCLUDED.fe_pct, co_pct=EXCLUDED.co_pct, source=EXCLUDED.source\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\", \"${input.sample_point}\", \"${input.h2o_pct}\", \"${input.sio2_pct}\", \"${input.fe_pct}\", \"${input.co_pct}\", \"${input.source}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_upsertBulkDensity",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_upsertBulkDensityInput",
+          "fields": [
+            {
+              "name": "work_date",
+              "type": "STRING"
+            },
+            {
+              "name": "density_t_m3",
+              "type": "STRING"
+            },
+            {
+              "name": "source",
+              "type": "STRING",
+              "description": "LIMS|fallback"
+            },
+            {
+              "name": "is_fallback",
+              "type": "STRING",
+              "description": "true|false"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_upsertBulkDensityOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"INSERT INTO wm_lims_bulk_density (work_date, density_t_m3, source, is_fallback) VALUES (?::date, ?::numeric, ?, (?='true')) ON CONFLICT (work_date) DO UPDATE SET density_t_m3=EXCLUDED.density_t_m3, source=EXCLUDED.source, is_fallback=EXCLUDED.is_fallback\", \"params\": [\"${input.work_date}\", \"${input.density_t_m3}\", \"${input.source}\", \"${input.is_fallback}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE wm_integration_status SET is_healthy=true, last_success_at=now(), updated_at=now() WHERE source_code='LIMS'\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_setIntegrationStatus",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_setIntegrationStatusInput",
+          "fields": [
+            {
+              "name": "source_code",
+              "type": "STRING",
+              "description": "OPC|LIMS"
+            },
+            {
+              "name": "is_healthy",
+              "type": "STRING",
+              "description": "true|false"
+            },
+            {
+              "name": "last_error",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_setIntegrationStatusOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"INSERT INTO wm_integration_status (source_code, is_healthy, last_error, last_success_at, updated_at) VALUES (?, (?='true'), NULLIF(?,''), CASE WHEN ?='true' THEN now() ELSE NULL END, now()) ON CONFLICT (source_code) DO UPDATE SET is_healthy=EXCLUDED.is_healthy, last_error=EXCLUDED.last_error, last_success_at=CASE WHEN EXCLUDED.is_healthy THEN now() ELSE wm_integration_status.last_success_at END, updated_at=now()\", \"params\": [\"${input.source_code}\", \"${input.is_healthy}\", \"${input.last_error}\", \"${input.is_healthy}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_getStageShiftSummary",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_getStageShiftSummaryInput",
+          "fields": [
+            {
+              "name": "work_date",
+              "type": "STRING"
+            },
+            {
+              "name": "shift_no",
+              "type": "STRING"
+            },
+            {
+              "name": "equipment_tag",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_getStageShiftSummaryOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "metrics",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "metric_row",
+                "fields": [
+                  {
+                    "name": "metric_code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "metric_value",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "unit",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "source",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "is_overridden",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "downtimes",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "dt_row",
+                "fields": [
+                  {
+                    "name": "started_at",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "ended_at",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "reason_code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "comment",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "duration_min",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "utilization_pct",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectMany\", \"var\": \"mraw\", \"sql\": \"SELECT metric_code, metric_value::text AS metric_value, COALESCE(unit,'') AS unit, source, CASE WHEN is_overridden THEN 'true' ELSE 'false' END AS is_overridden FROM wm_shift_metric WHERE work_date=?::date AND shift_no=?::int AND equipment_tag=?\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\", \"${input.equipment_tag}\"]}, {\"type\": \"map\", \"var\": \"metrics\", \"source\": \"${mraw}\", \"fields\": {\"metric_code\": \"${item.metric_code}\", \"metric_value\": \"${item.metric_value}\", \"unit\": \"${item.unit}\", \"source\": \"${item.source}\", \"is_overridden\": \"${item.is_overridden}\"}}, {\"type\": \"selectMany\", \"var\": \"draw\", \"sql\": \"SELECT started_at::text, ended_at::text, reason_code, COALESCE(comment,'') AS comment, duration_min::text AS duration_min FROM wm_downtime WHERE work_date=?::date AND shift_no=?::int AND equipment_tag=? ORDER BY started_at\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\", \"${input.equipment_tag}\"]}, {\"type\": \"map\", \"var\": \"downtimes\", \"source\": \"${draw}\", \"fields\": {\"started_at\": \"${item.started_at}\", \"ended_at\": \"${item.ended_at}\", \"reason_code\": \"${item.reason_code}\", \"comment\": \"${item.comment}\", \"duration_min\": \"${item.duration_min}\"}}, {\"type\": \"selectOne\", \"var\": \"util\", \"sql\": \"SELECT ROUND(((480 - COALESCE(SUM(duration_min),0)) / 480.0 * 100)::numeric, 1)::text AS pct FROM wm_downtime WHERE work_date=?::date AND shift_no=?::int AND equipment_tag=?\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\", \"${input.equipment_tag}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"metrics\": \"${metrics}\", \"downtimes\": \"${downtimes}\", \"utilization_pct\": \"${util.pct}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_getPlantSummary",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_getPlantSummaryInput",
+          "fields": [
+            {
+              "name": "date_from",
+              "type": "STRING"
+            },
+            {
+              "name": "date_to",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_getPlantSummaryOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "ore_mass_t",
+              "type": "STRING"
+            },
+            {
+              "name": "crush_t",
+              "type": "STRING"
+            },
+            {
+              "name": "screen_t",
+              "type": "STRING"
+            },
+            {
+              "name": "pulp_m3",
+              "type": "STRING"
+            },
+            {
+              "name": "gc_recovery_m3",
+              "type": "STRING"
+            },
+            {
+              "name": "product_mass_t",
+              "type": "STRING"
+            },
+            {
+              "name": "downtime_cases",
+              "type": "STRING"
+            },
+            {
+              "name": "downtime_min",
+              "type": "STRING"
+            },
+            {
+              "name": "utilization_pct",
+              "type": "STRING"
+            },
+            {
+              "name": "ore_fe",
+              "type": "STRING"
+            },
+            {
+              "name": "ore_sio2",
+              "type": "STRING"
+            },
+            {
+              "name": "ore_h2o",
+              "type": "STRING"
+            },
+            {
+              "name": "prod_fe",
+              "type": "STRING"
+            },
+            {
+              "name": "prod_sio2",
+              "type": "STRING"
+            },
+            {
+              "name": "prod_h2o",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"ore\", \"sql\": \"SELECT COALESCE(SUM(r.bucket_volume_m3 * COALESCE(d.density_t_m3, (SELECT density_t_m3 FROM wm_lims_bulk_density b WHERE b.work_date <= r.work_date ORDER BY b.work_date DESC LIMIT 1), 0)),0)::text AS mass FROM wm_ore_receipt r LEFT JOIN wm_lims_bulk_density d ON d.work_date=r.work_date WHERE r.work_date BETWEEN ?::date AND ?::date\", \"params\": [\"${input.date_from}\", \"${input.date_to}\"]}, {\"type\": \"selectOne\", \"var\": \"crush\", \"sql\": \"SELECT COALESCE(SUM(metric_value),0)::text AS v FROM wm_shift_metric WHERE equipment_tag IN ('DR-2','DR-3') AND metric_code='THROUGHPUT_T' AND work_date BETWEEN ?::date AND ?::date\", \"params\": [\"${input.date_from}\", \"${input.date_to}\"]}, {\"type\": \"selectOne\", \"var\": \"screen\", \"sql\": \"SELECT COALESCE(SUM(metric_value),0)::text AS v FROM wm_shift_metric WHERE equipment_tag IN ('GR-1','GR-2') AND metric_code='FEED_T' AND work_date BETWEEN ?::date AND ?::date\", \"params\": [\"${input.date_from}\", \"${input.date_to}\"]}, {\"type\": \"selectOne\", \"var\": \"pulp\", \"sql\": \"SELECT COALESCE(SUM(metric_value),0)::text AS v FROM wm_shift_metric WHERE equipment_tag='GC-1' AND metric_code='PULP_VOLUME_M3' AND work_date BETWEEN ?::date AND ?::date\", \"params\": [\"${input.date_from}\", \"${input.date_to}\"]}, {\"type\": \"selectOne\", \"var\": \"rec\", \"sql\": \"SELECT (COALESCE((SELECT SUM(metric_value) FROM wm_shift_metric WHERE equipment_tag='GC-1' AND metric_code='PULP_VOLUME_M3' AND work_date BETWEEN ?::date AND ?::date),0)  * (SELECT value FROM wm_dict_coefficient WHERE coefficient_code='RECOVERY_FACTOR_GC1'))::text AS v\", \"params\": [\"${input.date_from}\", \"${input.date_to}\"]}, {\"type\": \"selectOne\", \"var\": \"prod\", \"sql\": \"SELECT COALESCE(SUM(CASE WHEN m.metric_code='SHIFT_VOLUME_M3' THEN m.metric_value * COALESCE(d.metric_value, (SELECT value FROM wm_dict_coefficient WHERE coefficient_code='DENSITY_PROD_SG1'), 1.62) ELSE 0 END),0)::text AS mass FROM wm_shift_metric m LEFT JOIN wm_shift_metric d ON d.work_date=m.work_date AND d.shift_no=m.shift_no AND d.equipment_tag='SG-1' AND d.metric_code='OUTPUT_DENSITY' WHERE m.equipment_tag='SG-1' AND m.metric_code='SHIFT_VOLUME_M3' AND m.work_date BETWEEN ?::date AND ?::date\", \"params\": [\"${input.date_from}\", \"${input.date_to}\"]}, {\"type\": \"selectOne\", \"var\": \"dt\", \"sql\": \"SELECT COUNT(*)::text AS cases, COALESCE(SUM(duration_min),0)::text AS mins FROM wm_downtime WHERE work_date BETWEEN ?::date AND ?::date\", \"params\": [\"${input.date_from}\", \"${input.date_to}\"]}, {\"type\": \"selectOne\", \"var\": \"util\", \"sql\": \"SELECT ROUND(((5*3*480 - COALESCE((SELECT SUM(duration_min) FROM wm_downtime WHERE work_date BETWEEN ?::date AND ?::date AND equipment_tag IN ('DR-2','DR-3','GR-1','GR-2','GC-1')),0))  / (5.0*3*480) * 100)::numeric, 1)::text AS pct\", \"params\": [\"${input.date_from}\", \"${input.date_to}\"]}, {\"type\": \"selectOne\", \"var\": \"oq\", \"sql\": \"SELECT COALESCE(AVG(fe_pct),0)::text AS fe, COALESCE(AVG(sio2_pct),0)::text AS sio2, COALESCE(AVG(h2o_pct),0)::text AS h2o FROM wm_lims_quality WHERE sample_point='RAW_ORE' AND work_date BETWEEN ?::date AND ?::date\", \"params\": [\"${input.date_from}\", \"${input.date_to}\"]}, {\"type\": \"selectOne\", \"var\": \"pq\", \"sql\": \"SELECT COALESCE(AVG(fe_pct),0)::text AS fe, COALESCE(AVG(sio2_pct),0)::text AS sio2, COALESCE(AVG(h2o_pct),0)::text AS h2o FROM wm_lims_quality WHERE sample_point='PRODUCT' AND work_date BETWEEN ?::date AND ?::date\", \"params\": [\"${input.date_from}\", \"${input.date_to}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"ore_mass_t\": \"${ore.mass}\", \"crush_t\": \"${crush.v}\", \"screen_t\": \"${screen.v}\", \"pulp_m3\": \"${pulp.v}\", \"gc_recovery_m3\": \"${rec.v}\", \"product_mass_t\": \"${prod.mass}\", \"downtime_cases\": \"${dt.cases}\", \"downtime_min\": \"${dt.mins}\", \"utilization_pct\": \"${util.pct}\", \"ore_fe\": \"${oq.fe}\", \"ore_sio2\": \"${oq.sio2}\", \"ore_h2o\": \"${oq.h2o}\", \"prod_fe\": \"${pq.fe}\", \"prod_sio2\": \"${pq.sio2}\", \"prod_h2o\": \"${pq.h2o}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "functionName": "wm_refreshHubKpis",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "wm_refreshHubKpisInput",
+          "fields": [
+            {
+              "name": "work_date",
+              "type": "STRING"
+            },
+            {
+              "name": "shift_no",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "wm_refreshHubKpisOutput",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"vol\", \"sql\": \"SELECT COALESCE(metric_value,0)::text AS v FROM wm_shift_metric WHERE work_date=?::date AND shift_no=?::int AND equipment_tag='SG-1' AND metric_code='SHIFT_VOLUME_M3'\", \"params\": [\"${input.work_date}\", \"${input.shift_no}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\"}}]}"
+      }
+    }
+  ],
+  "reports": [
+    {
+      "reportId": "wm-dict-product",
+      "title": "НСИ: продукты",
+      "description": "ФТ-16",
+      "query": "SELECT product_code, product_name, product_type, unit FROM wm_dict_product WHERE is_active ORDER BY product_id",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "product_code",
+          "label": "Код"
+        },
+        {
+          "field": "product_name",
+          "label": "Наименование"
+        },
+        {
+          "field": "product_type",
+          "label": "Тип"
+        },
+        {
+          "field": "unit",
+          "label": "Ед."
+        }
+      ]
+    },
+    {
+      "reportId": "wm-dict-equipment",
+      "title": "НСИ: оборудование",
+      "description": "ФТ-17",
+      "query": "SELECT equipment_tag, equipment_name, equipment_type, process_stage_code, line_no, asutp_point_id FROM wm_dict_equipment WHERE is_active ORDER BY equipment_id",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "equipment_tag",
+          "label": "Тег"
+        },
+        {
+          "field": "equipment_name",
+          "label": "Имя"
+        },
+        {
+          "field": "equipment_type",
+          "label": "Тип"
+        },
+        {
+          "field": "process_stage_code",
+          "label": "Передел"
+        },
+        {
+          "field": "line_no",
+          "label": "Линия"
+        },
+        {
+          "field": "asutp_point_id",
+          "label": "OPC point"
+        }
+      ]
+    },
+    {
+      "reportId": "wm-dict-coefficient",
+      "title": "НСИ: коэффициенты",
+      "description": "ФТ-18",
+      "query": "SELECT coefficient_code, coefficient_name, value, unit, ref_object_code, valid_from::text AS valid_from FROM wm_dict_coefficient WHERE is_active ORDER BY coefficient_id",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "coefficient_code",
+          "label": "Код"
+        },
+        {
+          "field": "coefficient_name",
+          "label": "Наименование"
+        },
+        {
+          "field": "value",
+          "label": "Значение"
+        },
+        {
+          "field": "unit",
+          "label": "Ед."
+        },
+        {
+          "field": "ref_object_code",
+          "label": "Объект"
+        },
+        {
+          "field": "valid_from",
+          "label": "С"
+        }
+      ]
+    },
+    {
+      "reportId": "wm-dict-downtime-reason",
+      "title": "НСИ: причины простоя",
+      "description": "ФТ-28",
+      "query": "SELECT reason_code, reason_name, reason_category FROM wm_dict_downtime_reason WHERE is_active ORDER BY reason_id",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "reason_code",
+          "label": "Код"
+        },
+        {
+          "field": "reason_name",
+          "label": "Причина"
+        },
+        {
+          "field": "reason_category",
+          "label": "Категория"
+        }
+      ]
+    },
+    {
+      "reportId": "wm-ore-receipt",
+      "title": "Журнал приёма руды ДР-1",
+      "description": "ФТ-21",
+      "query": "SELECT work_date::text AS work_date, shift_no, received_at::text AS received_at, bucket_volume_m3, created_by FROM wm_ore_receipt ORDER BY received_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "work_date",
+          "label": "Дата"
+        },
+        {
+          "field": "shift_no",
+          "label": "Смена"
+        },
+        {
+          "field": "received_at",
+          "label": "Время"
+        },
+        {
+          "field": "bucket_volume_m3",
+          "label": "Объём ковша, м³"
+        },
+        {
+          "field": "created_by",
+          "label": "Кто"
+        }
+      ]
+    },
+    {
+      "reportId": "wm-downtime-journal",
+      "title": "Журнал простоев",
+      "description": "ФТ-27",
+      "query": "SELECT work_date::text AS work_date, shift_no, equipment_tag, started_at::text AS started_at, ended_at::text AS ended_at, reason_code, duration_min, comment FROM wm_downtime ORDER BY started_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "work_date",
+          "label": "Дата"
+        },
+        {
+          "field": "shift_no",
+          "label": "Смена"
+        },
+        {
+          "field": "equipment_tag",
+          "label": "Агрегат"
+        },
+        {
+          "field": "started_at",
+          "label": "Начало"
+        },
+        {
+          "field": "ended_at",
+          "label": "Конец"
+        },
+        {
+          "field": "reason_code",
+          "label": "Причина"
+        },
+        {
+          "field": "duration_min",
+          "label": "Мин"
+        },
+        {
+          "field": "comment",
+          "label": "Комментарий"
+        }
+      ]
+    },
+    {
+      "reportId": "wm-flowmeter-hourly",
+      "title": "Часовые значения расходомера СГ-1 (FT-4)",
+      "description": "ФТ-12",
+      "query": "SELECT work_date::text AS work_date, shift_no, hour_index, q_m3h, captured_at::text AS captured_at FROM wm_flowmeter_hourly WHERE equipment_tag='SG-1' ORDER BY work_date DESC, shift_no, hour_index",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "work_date",
+          "label": "Дата"
+        },
+        {
+          "field": "shift_no",
+          "label": "Смена"
+        },
+        {
+          "field": "hour_index",
+          "label": "Час"
+        },
+        {
+          "field": "q_m3h",
+          "label": "q, м³/ч"
+        },
+        {
+          "field": "captured_at",
+          "label": "Снято"
+        }
+      ]
+    },
+    {
+      "reportId": "wm-shift-metrics",
+      "title": "Сменные показатели по переделам",
+      "description": "ФТ-1–ФТ-7",
+      "query": "SELECT work_date::text AS work_date, shift_no, equipment_tag, metric_code, metric_value, unit, source, is_overridden FROM wm_shift_metric ORDER BY work_date DESC, shift_no, equipment_tag",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "work_date",
+          "label": "Дата"
+        },
+        {
+          "field": "shift_no",
+          "label": "Смена"
+        },
+        {
+          "field": "equipment_tag",
+          "label": "Передел"
+        },
+        {
+          "field": "metric_code",
+          "label": "Показатель"
+        },
+        {
+          "field": "metric_value",
+          "label": "Значение"
+        },
+        {
+          "field": "unit",
+          "label": "Ед."
+        },
+        {
+          "field": "source",
+          "label": "Источник"
+        },
+        {
+          "field": "is_overridden",
+          "label": "Корр."
+        }
+      ]
+    },
+    {
+      "reportId": "wm-report-dr1",
+      "title": "Сменный отчёт ДР-1",
+      "description": "Прил. 3.1",
+      "query": "SELECT r.work_date::text AS work_date, r.shift_no,\n              COUNT(*) AS receipt_count,\n              (COUNT(*) * (SELECT value FROM wm_dict_coefficient WHERE coefficient_code='BUCKET_VOLUME_DR1')) AS volume_m3,\n              COALESCE(d.density_t_m3, (SELECT density_t_m3 FROM wm_lims_bulk_density ORDER BY work_date DESC LIMIT 1)) AS density,\n              (COUNT(*) * (SELECT value FROM wm_dict_coefficient WHERE coefficient_code='BUCKET_VOLUME_DR1') *\n               COALESCE(d.density_t_m3, (SELECT density_t_m3 FROM wm_lims_bulk_density ORDER BY work_date DESC LIMIT 1))) AS mass_t,\n              q.h2o_pct, q.fe_pct, q.sio2_pct\n           FROM wm_ore_receipt r\n           LEFT JOIN wm_lims_bulk_density d ON d.work_date=r.work_date\n           LEFT JOIN wm_lims_quality q ON q.work_date=r.work_date AND q.shift_no=r.shift_no AND q.sample_point='RAW_ORE'\n           GROUP BY r.work_date, r.shift_no, d.density_t_m3, q.h2o_pct, q.fe_pct, q.sio2_pct\n           ORDER BY r.work_date DESC, r.shift_no",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "work_date",
+          "label": "Дата"
+        },
+        {
+          "field": "shift_no",
+          "label": "Смена"
+        },
+        {
+          "field": "receipt_count",
+          "label": "Приёмок"
+        },
+        {
+          "field": "volume_m3",
+          "label": "Объём, м³"
+        },
+        {
+          "field": "density",
+          "label": "ρ"
+        },
+        {
+          "field": "mass_t",
+          "label": "Масса, т"
+        },
+        {
+          "field": "h2o_pct",
+          "label": "H₂O %"
+        },
+        {
+          "field": "fe_pct",
+          "label": "Fe %"
+        },
+        {
+          "field": "sio2_pct",
+          "label": "SiO₂ %"
+        }
+      ]
+    },
+    {
+      "reportId": "wm-report-dr23",
+      "title": "Сменный отчёт ДР-2 / ДР-3",
+      "description": "Прил. 3.2",
+      "query": "SELECT m.work_date::text AS work_date, m.shift_no, m.equipment_tag, m.metric_value AS throughput_t,\n              COALESCE(dt.cnt,0) AS downtime_cases, COALESCE(dt.mins,0) AS downtime_min,\n              ROUND(((480 - COALESCE(dt.mins,0)) / 480.0 * 100)::numeric,1) AS utilization_pct\n           FROM wm_shift_metric m\n           LEFT JOIN (\n             SELECT work_date, shift_no, equipment_tag, COUNT(*) cnt, SUM(duration_min) mins\n             FROM wm_downtime GROUP BY work_date, shift_no, equipment_tag\n           ) dt ON dt.work_date=m.work_date AND dt.shift_no=m.shift_no AND dt.equipment_tag=m.equipment_tag\n           WHERE m.equipment_tag IN ('DR-2','DR-3') AND m.metric_code='THROUGHPUT_T'\n           ORDER BY m.work_date DESC, m.shift_no, m.equipment_tag",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "work_date",
+          "label": "Дата"
+        },
+        {
+          "field": "shift_no",
+          "label": "Смена"
+        },
+        {
+          "field": "equipment_tag",
+          "label": "Линия"
+        },
+        {
+          "field": "throughput_t",
+          "label": "Произв., т"
+        },
+        {
+          "field": "downtime_cases",
+          "label": "Простоев"
+        },
+        {
+          "field": "downtime_min",
+          "label": "Мин"
+        },
+        {
+          "field": "utilization_pct",
+          "label": "Кисп %"
+        }
+      ]
+    },
+    {
+      "reportId": "wm-report-gr12",
+      "title": "Сменный отчёт ГР-1 / ГР-2",
+      "description": "Прил. 3.3",
+      "query": "SELECT m.work_date::text AS work_date, m.shift_no, m.equipment_tag, m.metric_value AS feed_t,\n              ov.metric_value AS oversize_pct,\n              COALESCE(dt.mins,0) AS downtime_min,\n              ROUND(((480 - COALESCE(dt.mins,0)) / 480.0 * 100)::numeric,1) AS utilization_pct\n           FROM wm_shift_metric m\n           LEFT JOIN wm_shift_metric ov ON ov.work_date=m.work_date AND ov.shift_no=m.shift_no AND ov.equipment_tag=m.equipment_tag AND ov.metric_code='OVERSIZE_PCT'\n           LEFT JOIN (\n             SELECT work_date, shift_no, equipment_tag, SUM(duration_min) mins FROM wm_downtime GROUP BY 1,2,3\n           ) dt ON dt.work_date=m.work_date AND dt.shift_no=m.shift_no AND dt.equipment_tag=m.equipment_tag\n           WHERE m.equipment_tag IN ('GR-1','GR-2') AND m.metric_code='FEED_T'\n           ORDER BY m.work_date DESC, m.shift_no, m.equipment_tag",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "work_date",
+          "label": "Дата"
+        },
+        {
+          "field": "shift_no",
+          "label": "Смена"
+        },
+        {
+          "field": "equipment_tag",
+          "label": "Линия"
+        },
+        {
+          "field": "feed_t",
+          "label": "Питание, т"
+        },
+        {
+          "field": "oversize_pct",
+          "label": "Надрешёт %"
+        },
+        {
+          "field": "downtime_min",
+          "label": "Простой, мин"
+        },
+        {
+          "field": "utilization_pct",
+          "label": "Кисп %"
+        }
+      ]
+    },
+    {
+      "reportId": "wm-report-gc1",
+      "title": "Сменный отчёт ГЦ-1",
+      "description": "Прил. 3.4",
+      "query": "SELECT m.work_date::text AS work_date, m.shift_no, m.metric_value AS pulp_m3,\n              od.metric_value AS overflow_density, ud.metric_value AS underflow_density,\n              (m.metric_value * (SELECT value FROM wm_dict_coefficient WHERE coefficient_code='RECOVERY_FACTOR_GC1')) AS recovery_m3,\n              COALESCE(dt.mins,0) AS downtime_min\n           FROM wm_shift_metric m\n           LEFT JOIN wm_shift_metric od ON od.work_date=m.work_date AND od.shift_no=m.shift_no AND od.equipment_tag='GC-1' AND od.metric_code='OVERFLOW_DENSITY'\n           LEFT JOIN wm_shift_metric ud ON ud.work_date=m.work_date AND ud.shift_no=m.shift_no AND ud.equipment_tag='GC-1' AND ud.metric_code='UNDERFLOW_DENSITY'\n           LEFT JOIN (SELECT work_date, shift_no, SUM(duration_min) mins FROM wm_downtime WHERE equipment_tag='GC-1' GROUP BY 1,2) dt\n             ON dt.work_date=m.work_date AND dt.shift_no=m.shift_no\n           WHERE m.equipment_tag='GC-1' AND m.metric_code='PULP_VOLUME_M3'\n           ORDER BY m.work_date DESC, m.shift_no",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "work_date",
+          "label": "Дата"
+        },
+        {
+          "field": "shift_no",
+          "label": "Смена"
+        },
+        {
+          "field": "pulp_m3",
+          "label": "Пульпа, м³"
+        },
+        {
+          "field": "overflow_density",
+          "label": "ρ слива"
+        },
+        {
+          "field": "underflow_density",
+          "label": "ρ песков"
+        },
+        {
+          "field": "recovery_m3",
+          "label": "Выход, м³"
+        },
+        {
+          "field": "downtime_min",
+          "label": "Простой"
+        }
+      ]
+    },
+    {
+      "reportId": "wm-report-sg1",
+      "title": "Сменный отчёт СГ-1",
+      "description": "Прил. 3.5",
+      "query": "SELECT m.work_date::text AS work_date, m.shift_no, m.metric_value AS shift_volume_m3,\n              dens.metric_value AS density,\n              (m.metric_value * COALESCE(dens.metric_value, (SELECT value FROM wm_dict_coefficient WHERE coefficient_code='DENSITY_PROD_SG1'))) AS mass_t,\n              q.h2o_pct, q.fe_pct, q.sio2_pct\n           FROM wm_shift_metric m\n           LEFT JOIN wm_shift_metric dens ON dens.work_date=m.work_date AND dens.shift_no=m.shift_no AND dens.equipment_tag='SG-1' AND dens.metric_code='OUTPUT_DENSITY'\n           LEFT JOIN wm_lims_quality q ON q.work_date=m.work_date AND q.shift_no=m.shift_no AND q.sample_point='PRODUCT'\n           WHERE m.equipment_tag='SG-1' AND m.metric_code='SHIFT_VOLUME_M3'\n           ORDER BY m.work_date DESC, m.shift_no",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "work_date",
+          "label": "Дата"
+        },
+        {
+          "field": "shift_no",
+          "label": "Смена"
+        },
+        {
+          "field": "shift_volume_m3",
+          "label": "Q, м³"
+        },
+        {
+          "field": "density",
+          "label": "ρ"
+        },
+        {
+          "field": "mass_t",
+          "label": "Масса, т"
+        },
+        {
+          "field": "h2o_pct",
+          "label": "H₂O"
+        },
+        {
+          "field": "fe_pct",
+          "label": "Fe"
+        },
+        {
+          "field": "sio2_pct",
+          "label": "SiO₂"
+        }
+      ]
+    },
+    {
+      "reportId": "wm-report-plant-summary",
+      "title": "Сводный отчёт по цеху",
+      "description": "ФТ-15 / Прил. 3.6",
+      "query": "SELECT 'plant' AS scope,\n              (SELECT COALESCE(SUM(r.bucket_volume_m3 * COALESCE(d.density_t_m3,2.1)),0) FROM wm_ore_receipt r LEFT JOIN wm_lims_bulk_density d ON d.work_date=r.work_date) AS ore_mass_t,\n              (SELECT COALESCE(SUM(metric_value),0) FROM wm_shift_metric WHERE equipment_tag IN ('DR-2','DR-3') AND metric_code='THROUGHPUT_T') AS crush_t,\n              (SELECT COALESCE(SUM(metric_value),0) FROM wm_shift_metric WHERE equipment_tag IN ('GR-1','GR-2') AND metric_code='FEED_T') AS screen_t,\n              (SELECT COALESCE(SUM(metric_value),0) FROM wm_shift_metric WHERE equipment_tag='GC-1' AND metric_code='PULP_VOLUME_M3') AS pulp_m3,\n              (SELECT COALESCE(SUM(metric_value),0) * (SELECT value FROM wm_dict_coefficient WHERE coefficient_code='RECOVERY_FACTOR_GC1')\n                 FROM wm_shift_metric WHERE equipment_tag='GC-1' AND metric_code='PULP_VOLUME_M3') AS gc_recovery_m3,\n              (SELECT COUNT(*) FROM wm_downtime) AS downtime_cases,\n              (SELECT COALESCE(SUM(duration_min),0) FROM wm_downtime) AS downtime_min",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "ore_mass_t",
+          "label": "Руда, т"
+        },
+        {
+          "field": "crush_t",
+          "label": "Дробление, т"
+        },
+        {
+          "field": "screen_t",
+          "label": "Грохочение, т"
+        },
+        {
+          "field": "pulp_m3",
+          "label": "Пульпа ГЦ-1"
+        },
+        {
+          "field": "gc_recovery_m3",
+          "label": "Выход ГЦ-1"
+        },
+        {
+          "field": "downtime_cases",
+          "label": "Простоев"
+        },
+        {
+          "field": "downtime_min",
+          "label": "Простой, мин"
+        }
+      ]
+    },
+    {
+      "reportId": "wm-integration-status",
+      "title": "Статус интеграций OPC / LIMS",
+      "description": "ФТ-8, ФТ-20",
+      "query": "SELECT source_code, is_healthy, last_success_at::text AS last_success_at, COALESCE(last_error,'') AS last_error, updated_at::text AS updated_at FROM wm_integration_status",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "source_code",
+          "label": "Источник"
+        },
+        {
+          "field": "is_healthy",
+          "label": "OK"
+        },
+        {
+          "field": "last_success_at",
+          "label": "Успех"
+        },
+        {
+          "field": "last_error",
+          "label": "Ошибка"
+        },
+        {
+          "field": "updated_at",
+          "label": "Обновлено"
+        }
+      ]
+    },
+    {
+      "reportId": "wm-opc-tag-catalog",
+      "title": "Каталог OPC-тегов",
+      "description": "п. 7.2",
+      "query": "SELECT equipment_type, tag_code, parameter_name, data_type, unit, mes_usage FROM wm_opc_tag_catalog ORDER BY equipment_type, tag_code",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "equipment_type",
+          "label": "Тип"
+        },
+        {
+          "field": "tag_code",
+          "label": "Тег"
+        },
+        {
+          "field": "parameter_name",
+          "label": "Параметр"
+        },
+        {
+          "field": "data_type",
+          "label": "Тип данных"
+        },
+        {
+          "field": "unit",
+          "label": "Ед."
+        },
+        {
+          "field": "mes_usage",
+          "label": "Использование"
+        }
+      ]
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.wm-mimic",
+      "title": "Мнемосхема цеха",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\": 12, \"rowHeight\": 48, \"widgets\": [{\"id\": \"st-dr1\", \"type\": \"value\", \"title\": \"ДР-1 STATUS\", \"x\": 0, \"y\": 0, \"w\": 3, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-dr1\", \"variableName\": \"STATUS\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-dr1\", \"decimals\": 0}, {\"id\": \"st-dr2\", \"type\": \"value\", \"title\": \"ДР-2 STATUS\", \"x\": 3, \"y\": 0, \"w\": 3, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-dr2\", \"variableName\": \"STATUS\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-dr2\", \"decimals\": 0}, {\"id\": \"st-dr3\", \"type\": \"value\", \"title\": \"ДР-3 STATUS\", \"x\": 6, \"y\": 0, \"w\": 3, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-dr3\", \"variableName\": \"STATUS\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-dr3\", \"decimals\": 0}, {\"id\": \"st-gr1\", \"type\": \"value\", \"title\": \"ГР-1 STATUS\", \"x\": 0, \"y\": 2, \"w\": 3, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-gr1\", \"variableName\": \"STATUS\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-gr1\", \"decimals\": 0}, {\"id\": \"st-gr2\", \"type\": \"value\", \"title\": \"ГР-2 STATUS\", \"x\": 3, \"y\": 2, \"w\": 3, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-gr2\", \"variableName\": \"STATUS\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-gr2\", \"decimals\": 0}, {\"id\": \"st-gc1\", \"type\": \"value\", \"title\": \"ГЦ-1 STATUS\", \"x\": 6, \"y\": 2, \"w\": 3, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-gc1\", \"variableName\": \"STATUS\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-gc1\", \"decimals\": 0}, {\"id\": \"st-sg1\", \"type\": \"value\", \"title\": \"СГ-1 STATUS\", \"x\": 9, \"y\": 2, \"w\": 3, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-sg1\", \"variableName\": \"STATUS\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-sg1\", \"decimals\": 0}, {\"id\": \"ft1\", \"type\": \"value\", \"title\": \"FT-1 питание ГЦ-1\", \"x\": 0, \"y\": 4, \"w\": 3, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-gc1\", \"variableName\": \"FEED_FLOW\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-gc1\", \"decimals\": 1}, {\"id\": \"ft2\", \"type\": \"value\", \"title\": \"FT-2 пески\", \"x\": 3, \"y\": 4, \"w\": 3, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-gc1\", \"variableName\": \"UNDERFLOW_FLOW\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-gc1\", \"decimals\": 1}, {\"id\": \"ft3\", \"type\": \"value\", \"title\": \"FT-3 слив\", \"x\": 6, \"y\": 4, \"w\": 3, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-gc1\", \"variableName\": \"OVERFLOW_FLOW\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-gc1\", \"decimals\": 1}, {\"id\": \"ft4\", \"type\": \"value\", \"title\": \"FT-4 выход СГ-1\", \"x\": 9, \"y\": 4, \"w\": 3, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-sg1\", \"variableName\": \"OUTPUT_FLOW\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-sg1\", \"decimals\": 1}, {\"id\": \"kpi-vol\", \"type\": \"value\", \"title\": \"Смена Q FT-4\", \"x\": 0, \"y\": 6, \"w\": 4, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"variableName\": \"ft4ShiftVolume\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-hub\", \"decimals\": 1}, {\"id\": \"kpi-ore\", \"type\": \"value\", \"title\": \"Руда за смену\", \"x\": 4, \"y\": 6, \"w\": 4, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"variableName\": \"oreReceiptShiftMass\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-hub\", \"decimals\": 1}, {\"id\": \"kpi-util\", \"type\": \"value\", \"title\": \"Кисп. цеха %\", \"x\": 8, \"y\": 6, \"w\": 4, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"variableName\": \"plantUtilizationPct\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-hub\", \"decimals\": 1}, {\"id\": \"int-opc\", \"type\": \"value\", \"title\": \"OPC\", \"x\": 0, \"y\": 8, \"w\": 3, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"variableName\": \"opcHealthy\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-hub\"}, {\"id\": \"int-lims\", \"type\": \"value\", \"title\": \"LIMS\", \"x\": 3, \"y\": 8, \"w\": 3, \"h\": 2, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"variableName\": \"limsHealthy\", \"modelHintPath\": \"root.platform.devices.mes-wrangel-hub\"}, {\"id\": \"rep-eq\", \"type\": \"report\", \"title\": \"Оборудование\", \"x\": 0, \"y\": 10, \"w\": 12, \"h\": 6, \"reportPath\": \"root.platform.reports.wm-dict-equipment\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.wm-erv-dr1",
+      "title": "ЭРВ-1 Учёт ДР-1",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 12, \"rowHeight\": 48, \"widgets\": [{\"id\": \"add-ore\", \"type\": \"function-form\", \"title\": \"Добавить приёмку руды\", \"x\": 0, \"y\": 0, \"w\": 5, \"h\": 10, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_addOreReceipt\"}, {\"id\": \"get-ore\", \"type\": \"function-form\", \"title\": \"Итог смены ДР-1\", \"x\": 5, \"y\": 0, \"w\": 7, \"h\": 10, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_getOreReceiptShift\"}, {\"id\": \"ore-j\", \"type\": \"report\", \"title\": \"Журнал приёма\", \"x\": 0, \"y\": 10, \"w\": 12, \"h\": 8, \"reportPath\": \"root.platform.reports.wm-ore-receipt\"}, {\"id\": \"rep-dr1\", \"type\": \"report\", \"title\": \"Отчёт ДР-1\", \"x\": 0, \"y\": 18, \"w\": 12, \"h\": 8, \"reportPath\": \"root.platform.reports.wm-report-dr1\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.wm-erv-dr2",
+      "title": "ЭРВ-2 Учёт ДР-2",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 12, \"rowHeight\": 48, \"widgets\": [{\"id\": \"save-dr2\", \"type\": \"function-form\", \"title\": \"Сохранить сменный показатель\", \"x\": 0, \"y\": 0, \"w\": 6, \"h\": 12, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_saveShiftMetric\"}, {\"id\": \"dt-dr2\", \"type\": \"function-form\", \"title\": \"Добавить простой\", \"x\": 6, \"y\": 0, \"w\": 6, \"h\": 12, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_addDowntime\"}, {\"id\": \"sum-dr2\", \"type\": \"function-form\", \"title\": \"Сводка смены\", \"x\": 0, \"y\": 12, \"w\": 12, \"h\": 10, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_getStageShiftSummary\"}, {\"id\": \"dtj-dr2\", \"type\": \"report\", \"title\": \"Журнал простоев\", \"x\": 0, \"y\": 22, \"w\": 12, \"h\": 8, \"reportPath\": \"root.platform.reports.wm-downtime-journal\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.wm-erv-dr3",
+      "title": "ЭРВ-3 Учёт ДР-3",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 12, \"rowHeight\": 48, \"widgets\": [{\"id\": \"save-dr3\", \"type\": \"function-form\", \"title\": \"Сохранить сменный показатель\", \"x\": 0, \"y\": 0, \"w\": 6, \"h\": 12, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_saveShiftMetric\"}, {\"id\": \"dt-dr3\", \"type\": \"function-form\", \"title\": \"Добавить простой\", \"x\": 6, \"y\": 0, \"w\": 6, \"h\": 12, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_addDowntime\"}, {\"id\": \"sum-dr3\", \"type\": \"function-form\", \"title\": \"Сводка смены\", \"x\": 0, \"y\": 12, \"w\": 12, \"h\": 10, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_getStageShiftSummary\"}, {\"id\": \"dtj-dr3\", \"type\": \"report\", \"title\": \"Журнал простоев\", \"x\": 0, \"y\": 22, \"w\": 12, \"h\": 8, \"reportPath\": \"root.platform.reports.wm-downtime-journal\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.wm-erv-gr1",
+      "title": "ЭРВ-4 Учёт ГР-1",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 12, \"rowHeight\": 48, \"widgets\": [{\"id\": \"save-gr1\", \"type\": \"function-form\", \"title\": \"Сохранить сменный показатель\", \"x\": 0, \"y\": 0, \"w\": 6, \"h\": 12, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_saveShiftMetric\"}, {\"id\": \"dt-gr1\", \"type\": \"function-form\", \"title\": \"Добавить простой\", \"x\": 6, \"y\": 0, \"w\": 6, \"h\": 12, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_addDowntime\"}, {\"id\": \"sum-gr1\", \"type\": \"function-form\", \"title\": \"Сводка смены\", \"x\": 0, \"y\": 12, \"w\": 12, \"h\": 10, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_getStageShiftSummary\"}, {\"id\": \"dtj-gr1\", \"type\": \"report\", \"title\": \"Журнал простоев\", \"x\": 0, \"y\": 22, \"w\": 12, \"h\": 8, \"reportPath\": \"root.platform.reports.wm-downtime-journal\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.wm-erv-gr2",
+      "title": "ЭРВ-5 Учёт ГР-2",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 12, \"rowHeight\": 48, \"widgets\": [{\"id\": \"save-gr2\", \"type\": \"function-form\", \"title\": \"Сохранить сменный показатель\", \"x\": 0, \"y\": 0, \"w\": 6, \"h\": 12, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_saveShiftMetric\"}, {\"id\": \"dt-gr2\", \"type\": \"function-form\", \"title\": \"Добавить простой\", \"x\": 6, \"y\": 0, \"w\": 6, \"h\": 12, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_addDowntime\"}, {\"id\": \"sum-gr2\", \"type\": \"function-form\", \"title\": \"Сводка смены\", \"x\": 0, \"y\": 12, \"w\": 12, \"h\": 10, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_getStageShiftSummary\"}, {\"id\": \"dtj-gr2\", \"type\": \"report\", \"title\": \"Журнал простоев\", \"x\": 0, \"y\": 22, \"w\": 12, \"h\": 8, \"reportPath\": \"root.platform.reports.wm-downtime-journal\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.wm-erv-gc1",
+      "title": "ЭРВ-6 Учёт ГЦ-1",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 12, \"rowHeight\": 48, \"widgets\": [{\"id\": \"save-gc1\", \"type\": \"function-form\", \"title\": \"Сохранить сменный показатель\", \"x\": 0, \"y\": 0, \"w\": 6, \"h\": 12, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_saveShiftMetric\"}, {\"id\": \"dt-gc1\", \"type\": \"function-form\", \"title\": \"Добавить простой\", \"x\": 6, \"y\": 0, \"w\": 6, \"h\": 12, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_addDowntime\"}, {\"id\": \"sum-gc1\", \"type\": \"function-form\", \"title\": \"Сводка смены\", \"x\": 0, \"y\": 12, \"w\": 12, \"h\": 10, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_getStageShiftSummary\"}, {\"id\": \"dtj-gc1\", \"type\": \"report\", \"title\": \"Журнал простоев\", \"x\": 0, \"y\": 22, \"w\": 12, \"h\": 8, \"reportPath\": \"root.platform.reports.wm-downtime-journal\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.wm-erv-sg1",
+      "title": "ЭРВ-7 Учёт СГ-1",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 12, \"rowHeight\": 48, \"widgets\": [{\"id\": \"cap-flow\", \"type\": \"function-form\", \"title\": \"Фиксация часового расхода FT-4\", \"x\": 0, \"y\": 0, \"w\": 6, \"h\": 10, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_captureFlowmeterHour\"}, {\"id\": \"list-flow\", \"type\": \"function-form\", \"title\": \"Часовые значения (ФТ-12)\", \"x\": 6, \"y\": 0, \"w\": 6, \"h\": 10, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_listFlowmeterHours\"}, {\"id\": \"save-sg\", \"type\": \"function-form\", \"title\": \"Корректировка сменного показателя\", \"x\": 0, \"y\": 10, \"w\": 6, \"h\": 10, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_saveShiftMetric\"}, {\"id\": \"lims-prod\", \"type\": \"function-form\", \"title\": \"Качество продукта (LIMS/ручной)\", \"x\": 6, \"y\": 10, \"w\": 6, \"h\": 10, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_upsertLimsQuality\"}, {\"id\": \"flow-rep\", \"type\": \"report\", \"title\": \"Часовые FT-4\", \"x\": 0, \"y\": 20, \"w\": 12, \"h\": 7, \"reportPath\": \"root.platform.reports.wm-flowmeter-hourly\"}, {\"id\": \"sg-rep\", \"type\": \"report\", \"title\": \"Отчёт СГ-1\", \"x\": 0, \"y\": 27, \"w\": 12, \"h\": 7, \"reportPath\": \"root.platform.reports.wm-report-sg1\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.wm-nsi",
+      "title": "НСИ (ЭРВ-8–11)",
+      "refreshIntervalMs": 15000,
+      "layoutJson": "{\"columns\": 12, \"rowHeight\": 48, \"widgets\": [{\"id\": \"up-prod\", \"type\": \"function-form\", \"title\": \"Продукт (upsert)\", \"x\": 0, \"y\": 0, \"w\": 6, \"h\": 10, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_upsertProduct\"}, {\"id\": \"up-coef\", \"type\": \"function-form\", \"title\": \"Коэффициент (upsert)\", \"x\": 6, \"y\": 0, \"w\": 6, \"h\": 10, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_upsertCoefficient\"}, {\"id\": \"up-reason\", \"type\": \"function-form\", \"title\": \"Причина простоя (upsert)\", \"x\": 0, \"y\": 10, \"w\": 6, \"h\": 8, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_upsertDowntimeReason\"}, {\"id\": \"deact-prod\", \"type\": \"function-form\", \"title\": \"Деактивация продукта (без hard-delete)\", \"x\": 6, \"y\": 10, \"w\": 6, \"h\": 8, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_deactivateProduct\"}, {\"id\": \"rp\", \"type\": \"report\", \"title\": \"Продукты\", \"x\": 0, \"y\": 18, \"w\": 6, \"h\": 7, \"reportPath\": \"root.platform.reports.wm-dict-product\"}, {\"id\": \"re\", \"type\": \"report\", \"title\": \"Оборудование\", \"x\": 6, \"y\": 18, \"w\": 6, \"h\": 7, \"reportPath\": \"root.platform.reports.wm-dict-equipment\"}, {\"id\": \"rc\", \"type\": \"report\", \"title\": \"Коэффициенты\", \"x\": 0, \"y\": 25, \"w\": 6, \"h\": 7, \"reportPath\": \"root.platform.reports.wm-dict-coefficient\"}, {\"id\": \"rr\", \"type\": \"report\", \"title\": \"Причины простоя\", \"x\": 6, \"y\": 25, \"w\": 6, \"h\": 7, \"reportPath\": \"root.platform.reports.wm-dict-downtime-reason\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.wm-reports",
+      "title": "Отчёты по переделам и сводный",
+      "refreshIntervalMs": 20000,
+      "layoutJson": "{\"columns\": 12, \"rowHeight\": 48, \"widgets\": [{\"id\": \"plant-sum\", \"type\": \"function-form\", \"title\": \"Сводный расчёт по периоду\", \"x\": 0, \"y\": 0, \"w\": 12, \"h\": 8, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_getPlantSummary\"}, {\"id\": \"r1\", \"type\": \"report\", \"title\": \"ДР-1\", \"x\": 0, \"y\": 8, \"w\": 6, \"h\": 7, \"reportPath\": \"root.platform.reports.wm-report-dr1\"}, {\"id\": \"r2\", \"type\": \"report\", \"title\": \"ДР-2/3\", \"x\": 6, \"y\": 8, \"w\": 6, \"h\": 7, \"reportPath\": \"root.platform.reports.wm-report-dr23\"}, {\"id\": \"r3\", \"type\": \"report\", \"title\": \"ГР-1/2\", \"x\": 0, \"y\": 15, \"w\": 6, \"h\": 7, \"reportPath\": \"root.platform.reports.wm-report-gr12\"}, {\"id\": \"r4\", \"type\": \"report\", \"title\": \"ГЦ-1\", \"x\": 6, \"y\": 15, \"w\": 6, \"h\": 7, \"reportPath\": \"root.platform.reports.wm-report-gc1\"}, {\"id\": \"r5\", \"type\": \"report\", \"title\": \"СГ-1\", \"x\": 0, \"y\": 22, \"w\": 6, \"h\": 7, \"reportPath\": \"root.platform.reports.wm-report-sg1\"}, {\"id\": \"r6\", \"type\": \"report\", \"title\": \"Сводный\", \"x\": 6, \"y\": 22, \"w\": 6, \"h\": 7, \"reportPath\": \"root.platform.reports.wm-report-plant-summary\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.wm-integration",
+      "title": "Интеграции OPC / LIMS",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\": 12, \"rowHeight\": 48, \"widgets\": [{\"id\": \"set-int\", \"type\": \"function-form\", \"title\": \"Статус интеграции\", \"x\": 0, \"y\": 0, \"w\": 6, \"h\": 8, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_setIntegrationStatus\"}, {\"id\": \"bulk\", \"type\": \"function-form\", \"title\": \"Насыпная плотность (сутки)\", \"x\": 6, \"y\": 0, \"w\": 6, \"h\": 8, \"objectPath\": \"root.platform.devices.mes-wrangel-hub\", \"functionName\": \"wm_upsertBulkDensity\"}, {\"id\": \"ist\", \"type\": \"report\", \"title\": \"Статусы\", \"x\": 0, \"y\": 8, \"w\": 6, \"h\": 6, \"reportPath\": \"root.platform.reports.wm-integration-status\"}, {\"id\": \"tags\", \"type\": \"report\", \"title\": \"Каталог OPC-тегов\", \"x\": 6, \"y\": 8, \"w\": 6, \"h\": 10, \"reportPath\": \"root.platform.reports.wm-opc-tag-catalog\"}]}"
+    }
+  ],
+  "bindings": [
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "variable": "ft4ShiftVolume",
+      "query": "SELECT COALESCE((SELECT metric_value FROM wm_shift_metric WHERE equipment_tag='SG-1' AND metric_code='SHIFT_VOLUME_M3' ORDER BY work_date DESC, shift_no DESC LIMIT 1),0)::float8 AS v",
+      "refresh": "interval",
+      "refreshIntervalMs": 15000,
+      "valueField": "v",
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "variable": "oreReceiptShiftMass",
+      "query": "SELECT COALESCE((\n          SELECT COUNT(*) * (SELECT value FROM wm_dict_coefficient WHERE coefficient_code='BUCKET_VOLUME_DR1') *\n                 COALESCE((SELECT density_t_m3 FROM wm_lims_bulk_density ORDER BY work_date DESC LIMIT 1), 2.1)\n          FROM wm_ore_receipt WHERE work_date=(SELECT MAX(work_date) FROM wm_ore_receipt)\n            AND shift_no=(SELECT MAX(shift_no) FROM wm_ore_receipt WHERE work_date=(SELECT MAX(work_date) FROM wm_ore_receipt))\n        ),0)::float8 AS v",
+      "refresh": "interval",
+      "refreshIntervalMs": 15000,
+      "valueField": "v",
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "variable": "plantUtilizationPct",
+      "query": "SELECT COALESCE(ROUND(((5*480.0 - COALESCE((SELECT SUM(duration_min) FROM wm_downtime WHERE work_date=(SELECT MAX(work_date) FROM wm_downtime) AND equipment_tag IN ('DR-2','DR-3','GR-1','GR-2','GC-1')),0)) / (5*480.0) * 100)::numeric,1),100)::float8 AS v",
+      "refresh": "interval",
+      "refreshIntervalMs": 20000,
+      "valueField": "v",
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "variable": "limsHealthy",
+      "query": "SELECT CASE WHEN is_healthy THEN 'OK' ELSE 'FAIL' END AS v FROM wm_integration_status WHERE source_code='LIMS'",
+      "refresh": "interval",
+      "refreshIntervalMs": 10000,
+      "valueField": "v",
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "variable": "opcHealthy",
+      "query": "SELECT CASE WHEN is_healthy THEN 'OK' ELSE 'FAIL' END AS v FROM wm_integration_status WHERE source_code='OPC'",
+      "refresh": "interval",
+      "refreshIntervalMs": 10000,
+      "valueField": "v",
+      "enabled": true
+    }
+  ],
+  "schedules": [
+    {
+      "scheduleId": "wm-flowmeter-hour-tick",
+      "enabled": false,
+      "intervalMs": 3600000,
+      "actionType": "invoke_function",
+      "action": {
+        "objectPath": "root.platform.devices.mes-wrangel-hub",
+        "functionName": "wm_captureFlowmeterHour"
+      },
+      "description": "ФТ-11: часовой опрос OUTPUT_FLOW (включается после привязки OPC-драйвера)"
+    },
+    {
+      "scheduleId": "wm-hub-kpi-refresh",
+      "enabled": true,
+      "intervalMs": 60000,
+      "actionType": "invoke_function",
+      "action": {
+        "objectPath": "root.platform.devices.mes-wrangel-hub",
+        "functionName": "wm_refreshHubKpis"
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "wmIntegrationFailed",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "wmShiftClosed",
+      "roles": [
+        "supervisor",
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "wmEquipmentAlarm",
+      "roles": [
+        "operator",
+        "supervisor",
+        "admin"
+      ]
+    }
+  ],
+  "alertRules": [
+    {
+      "name": "WM SG-1 over-temp proxy via RAKE_TORQUE",
+      "objectPath": "root.platform.devices.mes-wrangel-sg1",
+      "watchVariable": "RAKE_TORQUE",
+      "conditionExpr": "self.RAKE_TORQUE[\"value\"] > 90",
+      "eventName": "wmEquipmentAlarm",
+      "payloadVariable": "RAKE_TORQUE",
+      "enabled": true,
+      "edgeTrigger": true,
+      "delaySeconds": 0,
+      "sustainWhileTrue": false
+    }
+  ],
+  "correlators": [
+    {
+      "name": "WM latch equipment alarm",
+      "objectPath": "root.platform.devices.mes-wrangel-hub",
+      "patternType": "COUNT",
+      "eventName": "wmEquipmentAlarm",
+      "windowSeconds": 0,
+      "minOccurrences": 1,
+      "cooldownSeconds": 60,
+      "sequenceGapSeconds": 0,
+      "actionType": "SET_VARIABLE",
+      "actionTarget": "opcHealthy=FAIL",
+      "enabled": false
+    }
+  ],
+  "workflows": [
+    {
+      "path": "root.platform.workflows.wm-shift-close",
+      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n             xmlns:ispf=\"http://ispf.io/bpmn\"\n             targetNamespace=\"http://ispf.io/bpmn\">\n  <process id=\"wm-shift-close\" name=\"Закрытие смены CPS\" isExecutable=\"true\">\n    <startEvent id=\"start\" name=\"Конец смены\"/>\n    <serviceTask id=\"agg\" name=\"Агрегация FT-4\"\n                 ispf:action=\"invoke_function\"\n                 ispf:objectPath=\"root.platform.devices.mes-wrangel-hub\"\n                 ispf:functionName=\"wm_captureFlowmeterHour\"/>\n    <serviceTask id=\"kpi\" name=\"Обновить KPI\"\n                 ispf:action=\"invoke_function\"\n                 ispf:objectPath=\"root.platform.devices.mes-wrangel-hub\"\n                 ispf:functionName=\"wm_refreshHubKpis\"/>\n    <endEvent id=\"end\" name=\"Смена закрыта\"/>\n    <sequenceFlow sourceRef=\"start\" targetRef=\"agg\"/>\n    <sequenceFlow sourceRef=\"agg\" targetRef=\"kpi\"/>\n    <sequenceFlow sourceRef=\"kpi\" targetRef=\"end\"/>\n  </process>\n</definitions>"
+    }
+  ],
+  "operatorUi": {
+    "appId": "mes-wrangel-cps",
+    "title": "Цех переработки сырья · ВрангельМинерал",
+    "defaultDashboard": "root.platform.dashboards.wm-mimic",
+    "eventJournalObjectPath": "root.platform.devices.mes-wrangel-hub",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.wm-mimic",
+        "title": "Мнемосхема"
+      },
+      {
+        "path": "root.platform.dashboards.wm-erv-dr1",
+        "title": "ЭРВ-1 ДР-1"
+      },
+      {
+        "path": "root.platform.dashboards.wm-erv-dr2",
+        "title": "ЭРВ-2 ДР-2"
+      },
+      {
+        "path": "root.platform.dashboards.wm-erv-dr3",
+        "title": "ЭРВ-3 ДР-3"
+      },
+      {
+        "path": "root.platform.dashboards.wm-erv-gr1",
+        "title": "ЭРВ-4 ГР-1"
+      },
+      {
+        "path": "root.platform.dashboards.wm-erv-gr2",
+        "title": "ЭРВ-5 ГР-2"
+      },
+      {
+        "path": "root.platform.dashboards.wm-erv-gc1",
+        "title": "ЭРВ-6 ГЦ-1"
+      },
+      {
+        "path": "root.platform.dashboards.wm-erv-sg1",
+        "title": "ЭРВ-7 СГ-1"
+      },
+      {
+        "path": "root.platform.dashboards.wm-nsi",
+        "title": "НСИ"
+      },
+      {
+        "path": "root.platform.dashboards.wm-reports",
+        "title": "Отчёты"
+      },
+      {
+        "path": "root.platform.dashboards.wm-integration",
+        "title": "Интеграции"
+      }
+    ],
+    "externalSpaUrl": "https://ispf.ai/apps/mes-wrangel-cps/",
+    "uiPack": {
+      "packId": "mes-wrangel-ui",
+      "version": "1.0.0",
+      "entry": "index.html",
+      "basePath": "/apps/mes-wrangel-cps/"
+    },
+    "spaNav": [
+      {
+        "to": "/",
+        "label": "Мнемосхема"
+      },
+      {
+        "to": "/erv/dr1",
+        "label": "Приёмка руды"
+      },
+      {
+        "to": "/erv/dr2",
+        "label": "Дробление"
+      },
+      {
+        "to": "/erv/gr1",
+        "label": "Грохочение"
+      },
+      {
+        "to": "/erv/gc1",
+        "label": "Гидроциклон"
+      },
+      {
+        "to": "/erv/sg1",
+        "label": "Сгущение"
+      },
+      {
+        "to": "/reports",
+        "label": "Сводка"
+      },
+      {
+        "to": "/nsi",
+        "label": "Справочники"
+      },
+      {
+        "to": "/integration",
+        "label": "Обмен данными"
+      }
+    ]
+  },
+  "requires": []
+}

@@ -1,0 +1,27 @@
+{
+  "slug": "laminate-flow-ui",
+  "title": "Поточное производство",
+  "description": "Hosted SPA for laminate-flow-mes (base /apps/laminate-flow-mes/). Same-origin /api/v1. artifactKind ui-pack.",
+  "artifactKind": "ui-pack",
+  "appId": "laminate-flow-mes",
+  "packId": "laminate-flow-ui",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "pricing": "free",
+  "minIspfVersion": "0.9.208",
+  "latestVersion": "1.0.0",
+  "bundleArtifact": "laminate-flow-ui-1.0.0.zip",
+  "tags": [
+    "ui-pack",
+    "laminate-flow-mes",
+    "spa",
+    "marketplace"
+  ],
+  "changelog": "1.0.0 — snapshot from ispf.iot-solutions.ru installed ui-pack."
+}

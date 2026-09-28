@@ -1,0 +1,1791 @@
+{
+  "version": "1.0.0",
+  "displayName": "WoodMES · Завод глубокой переработки древесины",
+  "tablePrefix": "wm_",
+  "schemaName": "app_woodmes",
+  "objects": [],
+  "dashboards": [],
+  "workflows": [],
+  "blueprints": [],
+  "migrations": [],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_confirmTechStep",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "cardId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "stepsJson",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "id",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE wm_tech_card SET steps_json = CAST(? AS text) WHERE id = CAST(? AS varchar)\", \"params\": [\"${input.stepsJson}\", \"${input.cardId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"id\": \"${input.cardId}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_createTicket",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "equipmentId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "title",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "description",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "severity",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "createdBy",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "id",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"INSERT INTO wm_ticket (id, plant_id, equipment_id, shop_id, title, description, severity, status, source, created_by, assignee, created_at) SELECT 'tk-' || substr(md5(random()::text),1,8), 'plant-zgpd', CAST(? AS varchar), (SELECT shop_id FROM wm_equipment WHERE id = CAST(? AS varchar)), CAST(? AS varchar), CAST(? AS varchar), CAST(? AS varchar), 'new', 'hmi', CAST(? AS varchar), 'Федоров П.И.', NOW()\", \"params\": [\"${input.equipmentId}\", \"${input.equipmentId}\", \"${input.title}\", \"${input.description}\", \"${input.severity}\", \"${input.createdBy}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wm_audit_log (id, plant_id, entity_type, entity_id, action, detail, actor, created_at) SELECT 'au-' || substr(md5(random()::text),1,8), 'plant-zgpd', 'ticket', CAST(? AS varchar), 'created', CAST(? AS varchar), CAST(? AS varchar), NOW()\", \"params\": [\"${input.equipmentId}\", \"${input.title}\", \"${input.createdBy}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"id\": \"${input.equipmentId}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_getEquipment",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "equipmentId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT e.*, s.code AS shop_code, s.name AS shop_name FROM wm_equipment e JOIN wm_shop s ON s.id = e.shop_id WHERE e.id = ?) t\", \"params\": [\"${input.equipmentId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_getKpi",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT key, value FROM wm_kpi ORDER BY key) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_getPlant",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, code, name, profile, status FROM wm_plant WHERE id = 'plant-zgpd') t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listAiAdvice",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, advice_type AS \\\"adviceType\\\", context_ref AS \\\"contextRef\\\", question, answer_json AS \\\"answerJson\\\", created_at AS \\\"createdAt\\\" FROM wm_ai_advice ORDER BY created_at DESC) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listAlarms",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT a.id, a.severity, a.title, a.param_key AS \\\"paramKey\\\", a.param_value AS \\\"paramValue\\\", a.status, a.created_at AS \\\"createdAt\\\", e.code AS \\\"equipmentCode\\\" FROM wm_alarm a LEFT JOIN wm_equipment e ON e.id = a.equipment_id ORDER BY a.created_at DESC) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listAudit",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, entity_type AS \\\"entityType\\\", entity_id AS \\\"entityId\\\", action, detail, actor, created_at AS \\\"createdAt\\\" FROM wm_audit_log ORDER BY created_at DESC) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listDryers",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, code, name, status, health_index AS \\\"healthIndex\\\", chamber_temp_c AS \\\"chamberTempC\\\", air_humidity_pct AS \\\"airHumidityPct\\\", wood_moisture_pct AS \\\"woodMoisturePct\\\", cycle_stage AS \\\"cycleStage\\\", cycle_eta_min AS \\\"cycleEtaMin\\\", fan_ok AS \\\"fanOk\\\", heater_ok AS \\\"heaterOk\\\", mode_deviation AS \\\"modeDeviation\\\" FROM wm_equipment WHERE eq_type = 'dryer' ORDER BY code) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listDryingBatches",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT b.id, b.batch_no AS \\\"batchNo\\\", b.species, b.thickness_mm AS \\\"thicknessMm\\\", b.moisture_in_pct AS \\\"moistureInPct\\\", b.moisture_out_pct AS \\\"moistureOutPct\\\", b.target_moisture_pct AS \\\"targetMoisturePct\\\", b.duration_h AS \\\"durationH\\\", b.max_temp_c AS \\\"maxTempC\\\", b.status, b.deviations, e.code AS \\\"chamberCode\\\", b.started_at AS \\\"startedAt\\\", b.finished_at AS \\\"finishedAt\\\" FROM wm_drying_batch b JOIN wm_equipment e ON e.id = b.chamber_id ORDER BY b.started_at DESC NULLS LAST) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listEquipment",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT e.id, e.code, e.name, e.eq_type AS \\\"eqType\\\", e.status, e.health_index AS \\\"healthIndex\\\", e.link_ok AS \\\"linkOk\\\", e.shop_id AS \\\"shopId\\\", s.code AS \\\"shopCode\\\", s.name AS \\\"shopName\\\", e.feed_mpm AS \\\"feedMpm\\\", e.power_kw AS \\\"powerKw\\\", e.current_a AS \\\"currentA\\\", e.bearing_temp_c AS \\\"bearingTempC\\\", e.vibration_mms AS \\\"vibrationMms\\\", e.tool_state AS \\\"toolState\\\", e.volume_m3 AS \\\"volumeM3\\\", e.stop_count AS \\\"stopCount\\\", e.spindle_rpm AS \\\"spindleRpm\\\", e.load_pct AS \\\"loadPct\\\", e.tool_wear_pct AS \\\"toolWearPct\\\", e.vacuum_bar AS \\\"vacuumBar\\\", e.chamber_temp_c AS \\\"chamberTempC\\\", e.air_humidity_pct AS \\\"airHumidityPct\\\", e.wood_moisture_pct AS \\\"woodMoisturePct\\\", e.cycle_stage AS \\\"cycleStage\\\", e.cycle_eta_min AS \\\"cycleEtaMin\\\", e.fan_ok AS \\\"fanOk\\\", e.heater_ok AS \\\"heaterOk\\\", e.mode_deviation AS \\\"modeDeviation\\\", e.press_mpa AS \\\"pressMpa\\\", e.glue_gm2 AS \\\"glueGm2\\\", e.hold_min AS \\\"holdMin\\\", e.coat_temp_c AS \\\"coatTempC\\\", e.operator_name AS \\\"operatorName\\\", e.runtime_hours AS \\\"runtimeHours\\\" FROM wm_equipment e JOIN wm_shop s ON s.id = e.shop_id WHERE e.plant_id = 'plant-zgpd' ORDER BY s.sort_order, e.code) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listEquipmentByShop",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "shopId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT e.id, e.code, e.name, e.eq_type AS \\\"eqType\\\", e.status, e.health_index AS \\\"healthIndex\\\", e.link_ok AS \\\"linkOk\\\", e.feed_mpm AS \\\"feedMpm\\\", e.power_kw AS \\\"powerKw\\\", e.current_a AS \\\"currentA\\\", e.bearing_temp_c AS \\\"bearingTempC\\\", e.vibration_mms AS \\\"vibrationMms\\\", e.tool_state AS \\\"toolState\\\", e.volume_m3 AS \\\"volumeM3\\\", e.stop_count AS \\\"stopCount\\\", e.chamber_temp_c AS \\\"chamberTempC\\\", e.wood_moisture_pct AS \\\"woodMoisturePct\\\", e.cycle_stage AS \\\"cycleStage\\\", e.cycle_eta_min AS \\\"cycleEtaMin\\\", e.mode_deviation AS \\\"modeDeviation\\\", e.fan_ok AS \\\"fanOk\\\", e.heater_ok AS \\\"heaterOk\\\", e.tool_wear_pct AS \\\"toolWearPct\\\", e.vacuum_bar AS \\\"vacuumBar\\\", e.spindle_rpm AS \\\"spindleRpm\\\", e.load_pct AS \\\"loadPct\\\", e.press_mpa AS \\\"pressMpa\\\", e.operator_name AS \\\"operatorName\\\" FROM wm_equipment e WHERE e.shop_id = ? ORDER BY e.code) t\", \"params\": [\"${input.shopId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listHealth",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT e.code, e.name, e.eq_type AS \\\"eqType\\\", e.health_index AS \\\"healthIndex\\\", e.status, s.code AS \\\"shopCode\\\", e.bearing_temp_c AS \\\"bearingTempC\\\", e.vibration_mms AS \\\"vibrationMms\\\", e.current_a AS \\\"currentA\\\", e.stop_count AS \\\"stopCount\\\", e.tool_wear_pct AS \\\"toolWearPct\\\", e.runtime_hours AS \\\"runtimeHours\\\", e.last_service_at AS \\\"lastServiceAt\\\" FROM wm_equipment e JOIN wm_shop s ON s.id = e.shop_id ORDER BY e.health_index ASC, e.code) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listKpiPoints",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "series",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, series, label, value, sort_order AS \\\"sortOrder\\\" FROM wm_kpi_point WHERE series = ? ORDER BY sort_order) t\", \"params\": [\"${input.series}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listParamHistory",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "equipmentId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, equipment_id AS \\\"equipmentId\\\", param_key AS \\\"paramKey\\\", param_value AS \\\"paramValue\\\", recorded_at AS \\\"recordedAt\\\" FROM wm_param_history WHERE equipment_id = ? ORDER BY recorded_at) t\", \"params\": [\"${input.equipmentId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listPlan",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT p.id, s.code AS \\\"shopCode\\\", s.name AS \\\"shopName\\\", p.shift_date AS \\\"shiftDate\\\", p.shift_code AS \\\"shiftCode\\\", p.product_name AS \\\"productName\\\", p.plan_m3 AS \\\"planM3\\\", p.fact_m3 AS \\\"factM3\\\", CASE WHEN p.plan_m3 = 0 THEN 0 ELSE ROUND((p.fact_m3 * 100.0 / p.plan_m3)::numeric, 1) END AS \\\"planPct\\\", p.pieces, p.scrap_pct AS \\\"scrapPct\\\", p.status FROM wm_production_plan p JOIN wm_shop s ON s.id = p.shop_id ORDER BY s.sort_order) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listQuality",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT q.id, q.batch_no AS \\\"batchNo\\\", q.product_type AS \\\"productType\\\", q.thickness_mm AS \\\"thicknessMm\\\", q.thickness_dev_mm AS \\\"thicknessDevMm\\\", q.moisture_pct AS \\\"moisturePct\\\", q.flatness_mm AS \\\"flatnessMm\\\", q.glue_joint_ok AS \\\"glueJointOk\\\", q.defects, q.status, q.decision, q.inspector, q.checked_at AS \\\"checkedAt\\\", e.code AS \\\"equipmentCode\\\" FROM wm_quality_check q LEFT JOIN wm_equipment e ON e.id = q.equipment_id ORDER BY q.checked_at DESC) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listShops",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, code, name, purpose, sort_order AS \\\"sortOrder\\\", plan_m3 AS \\\"planM3\\\", fact_m3 AS \\\"factM3\\\", CASE WHEN plan_m3 = 0 THEN 0 ELSE ROUND((fact_m3 * 100.0 / plan_m3)::numeric, 1) END AS \\\"planPct\\\", scrap_pct AS \\\"scrapPct\\\", waste_m3 AS \\\"wasteM3\\\", downtime_min AS \\\"downtimeMin\\\", energy_kwh_m3 AS \\\"energyKwhM3\\\", status FROM wm_shop WHERE plant_id = 'plant-zgpd' ORDER BY sort_order) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listTechCards",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, part_name AS \\\"partName\\\", order_no AS \\\"orderNo\\\", material, blank_size AS \\\"blankSize\\\", program_code AS \\\"programCode\\\", spindle_rpm AS \\\"spindleRpm\\\", feed_mpm AS \\\"feedMpm\\\", depth_mm AS \\\"depthMm\\\", tools, quality_req AS \\\"qualityReq\\\", steps_json AS \\\"stepsJson\\\", equipment_id AS \\\"equipmentId\\\" FROM wm_tech_card) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listTickets",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT t.id, t.title, t.description, t.severity, t.status, t.source, t.created_by AS \\\"createdBy\\\", t.assignee, t.root_cause AS \\\"rootCause\\\", t.created_at AS \\\"createdAt\\\", t.closed_at AS \\\"closedAt\\\", e.code AS \\\"equipmentCode\\\", s.code AS \\\"shopCode\\\" FROM wm_ticket t LEFT JOIN wm_equipment e ON e.id = t.equipment_id LEFT JOIN wm_shop s ON s.id = t.shop_id ORDER BY t.created_at DESC) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_listUsers",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, name, role, zone, email FROM wm_user ORDER BY name) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_ping",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_saveAiAdvice",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "adviceType",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "contextRef",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "question",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "answerJson",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "id",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"INSERT INTO wm_ai_advice (id, plant_id, advice_type, context_ref, question, answer_json, created_at) VALUES ('ai-' || substr(md5(random()::text),1,10), 'plant-zgpd', CAST(? AS varchar), NULLIF(CAST(? AS varchar), ''), CAST(? AS varchar), CAST(? AS varchar), NOW())\", \"params\": [\"${input.adviceType}\", \"${input.contextRef}\", \"${input.question}\", \"${input.answerJson}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wm_audit_log (id, plant_id, entity_type, entity_id, action, detail, actor, created_at) SELECT 'au-' || substr(md5(random()::text),1,8), 'plant-zgpd', 'ai', 'ask', 'advice', left(CAST(? AS varchar), 200), 'ИИ-советник', NOW()\", \"params\": [\"${input.question}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"id\": \"saved\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.woodmes.hub",
+      "functionName": "wm_updateTicketStatus",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "ticketId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "status",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rootCause",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "id",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE wm_ticket SET status = CAST(? AS varchar), closed_at = CASE WHEN CAST(? AS varchar) IN ('closed','done') THEN NOW() ELSE closed_at END, root_cause = COALESCE(NULLIF(CAST(? AS varchar),''), root_cause) WHERE id = CAST(? AS varchar)\", \"params\": [\"${input.status}\", \"${input.status}\", \"${input.rootCause}\", \"${input.ticketId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"id\": \"${input.ticketId}\"}}]}"
+      }
+    }
+  ],
+  "bindings": [],
+  "reports": [
+    {
+      "reportId": "wm-shops",
+      "title": "Цехи · план/факт",
+      "description": "Сводка по 5 цехам",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT code, name, plan_m3, fact_m3, CASE WHEN plan_m3 = 0 THEN 0 ELSE ROUND((fact_m3 * 100.0 / plan_m3)::numeric, 1) END AS plan_pct, scrap_pct, waste_m3, downtime_min, energy_kwh_m3, status FROM wm_shop ORDER BY sort_order",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "code",
+          "label": "Цех"
+        },
+        {
+          "field": "name",
+          "label": "Название"
+        },
+        {
+          "field": "plan_m3",
+          "label": "План м3"
+        },
+        {
+          "field": "fact_m3",
+          "label": "Факт м3"
+        },
+        {
+          "field": "plan_pct",
+          "label": "%"
+        },
+        {
+          "field": "scrap_pct",
+          "label": "Брак %"
+        },
+        {
+          "field": "waste_m3",
+          "label": "Отходы"
+        },
+        {
+          "field": "downtime_min",
+          "label": "Простой мин"
+        },
+        {
+          "field": "energy_kwh_m3",
+          "label": "кВтч/м3"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-equipment",
+      "title": "Оборудование",
+      "description": "Все единицы с индексом состояния",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT e.code, e.name, s.code AS shop, e.eq_type, e.status, e.health_index, e.link_ok, e.bearing_temp_c, e.vibration_mms, e.current_a, e.tool_wear_pct, e.operator_name FROM wm_equipment e JOIN wm_shop s ON s.id = e.shop_id ORDER BY s.sort_order, e.code",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "code",
+          "label": "Код"
+        },
+        {
+          "field": "name",
+          "label": "Наименование"
+        },
+        {
+          "field": "shop",
+          "label": "Цех"
+        },
+        {
+          "field": "eq_type",
+          "label": "Тип"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "health_index",
+          "label": "HI%"
+        },
+        {
+          "field": "link_ok",
+          "label": "Связь"
+        },
+        {
+          "field": "bearing_temp_c",
+          "label": "T°C"
+        },
+        {
+          "field": "vibration_mms",
+          "label": "Вибр."
+        },
+        {
+          "field": "current_a",
+          "label": "Ток А"
+        },
+        {
+          "field": "tool_wear_pct",
+          "label": "Износ %"
+        },
+        {
+          "field": "operator_name",
+          "label": "Оператор"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-sawmill",
+      "title": "Ц-1 Распиловка",
+      "description": "Матрица участка первичного раскроя",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT code, name, status, feed_mpm, power_kw, current_a, bearing_temp_c, vibration_mms, tool_state, volume_m3, stop_count FROM wm_equipment WHERE shop_id = 'shop-1' ORDER BY code",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "code",
+          "label": "Код"
+        },
+        {
+          "field": "name",
+          "label": "Станок"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "feed_mpm",
+          "label": "Подача"
+        },
+        {
+          "field": "power_kw",
+          "label": "кВт"
+        },
+        {
+          "field": "current_a",
+          "label": "Ток"
+        },
+        {
+          "field": "bearing_temp_c",
+          "label": "T°C"
+        },
+        {
+          "field": "vibration_mms",
+          "label": "Вибр."
+        },
+        {
+          "field": "tool_state",
+          "label": "Инструмент"
+        },
+        {
+          "field": "volume_m3",
+          "label": "м³"
+        },
+        {
+          "field": "stop_count",
+          "label": "Ост."
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-dryers",
+      "title": "Сушильные камеры",
+      "description": "Режимы и влажность",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT code, status, chamber_temp_c, air_humidity_pct, wood_moisture_pct, cycle_stage, cycle_eta_min, fan_ok, heater_ok, mode_deviation, health_index FROM wm_equipment WHERE eq_type = 'dryer' ORDER BY code",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "code",
+          "label": "Камера"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "chamber_temp_c",
+          "label": "T°C"
+        },
+        {
+          "field": "air_humidity_pct",
+          "label": "φ%"
+        },
+        {
+          "field": "wood_moisture_pct",
+          "label": "W%"
+        },
+        {
+          "field": "cycle_stage",
+          "label": "Стадия"
+        },
+        {
+          "field": "cycle_eta_min",
+          "label": "ETA мин"
+        },
+        {
+          "field": "fan_ok",
+          "label": "Вент."
+        },
+        {
+          "field": "heater_ok",
+          "label": "Нагрев"
+        },
+        {
+          "field": "mode_deviation",
+          "label": "ΔT"
+        },
+        {
+          "field": "health_index",
+          "label": "HI%"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-drying-batches",
+      "title": "Партии сушки",
+      "description": "Отчёты циклов сушки",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT b.batch_no, e.code AS chamber, b.species, b.thickness_mm, b.moisture_in_pct, b.moisture_out_pct, b.duration_h, b.max_temp_c, b.status, b.deviations FROM wm_drying_batch b JOIN wm_equipment e ON e.id = b.chamber_id ORDER BY b.started_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "batch_no",
+          "label": "Партия"
+        },
+        {
+          "field": "chamber",
+          "label": "Камера"
+        },
+        {
+          "field": "species",
+          "label": "Порода"
+        },
+        {
+          "field": "thickness_mm",
+          "label": "Толщ."
+        },
+        {
+          "field": "moisture_in_pct",
+          "label": "W вх"
+        },
+        {
+          "field": "moisture_out_pct",
+          "label": "W вых"
+        },
+        {
+          "field": "duration_h",
+          "label": "Часы"
+        },
+        {
+          "field": "max_temp_c",
+          "label": "Tmax"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "deviations",
+          "label": "Отклонения"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-tickets",
+      "title": "Заявки ТОиР",
+      "description": "Заявки на ремонт",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT t.id, e.code AS equipment, t.title, t.severity, t.status, t.source, t.created_by, t.assignee, t.created_at FROM wm_ticket t LEFT JOIN wm_equipment e ON e.id = t.equipment_id ORDER BY t.created_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "id",
+          "label": "ID"
+        },
+        {
+          "field": "equipment",
+          "label": "Станок"
+        },
+        {
+          "field": "title",
+          "label": "Тема"
+        },
+        {
+          "field": "severity",
+          "label": "Крит."
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "source",
+          "label": "Источник"
+        },
+        {
+          "field": "created_by",
+          "label": "Создал"
+        },
+        {
+          "field": "assignee",
+          "label": "Исполнитель"
+        },
+        {
+          "field": "created_at",
+          "label": "Создано"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-health",
+      "title": "Состояние оборудования",
+      "description": "Техсостояние по убыванию риска",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT e.code, s.code AS shop, e.name, e.health_index, e.status, e.bearing_temp_c, e.vibration_mms, e.stop_count, e.tool_wear_pct, e.runtime_hours FROM wm_equipment e JOIN wm_shop s ON s.id = e.shop_id ORDER BY e.health_index ASC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "code",
+          "label": "Код"
+        },
+        {
+          "field": "shop",
+          "label": "Цех"
+        },
+        {
+          "field": "name",
+          "label": "Наименование"
+        },
+        {
+          "field": "health_index",
+          "label": "HI%"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "bearing_temp_c",
+          "label": "T°C"
+        },
+        {
+          "field": "vibration_mms",
+          "label": "Вибр."
+        },
+        {
+          "field": "stop_count",
+          "label": "Аварии"
+        },
+        {
+          "field": "tool_wear_pct",
+          "label": "Износ"
+        },
+        {
+          "field": "runtime_hours",
+          "label": "Моточасы"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-quality",
+      "title": "Качество",
+      "description": "Контроль партий",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT batch_no, product_type, thickness_mm, thickness_dev_mm, moisture_pct, flatness_mm, status, decision, inspector, checked_at FROM wm_quality_check ORDER BY checked_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "batch_no",
+          "label": "Партия"
+        },
+        {
+          "field": "product_type",
+          "label": "Тип"
+        },
+        {
+          "field": "thickness_mm",
+          "label": "Толщ."
+        },
+        {
+          "field": "thickness_dev_mm",
+          "label": "Δмм"
+        },
+        {
+          "field": "moisture_pct",
+          "label": "W%"
+        },
+        {
+          "field": "flatness_mm",
+          "label": "Плоск."
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "decision",
+          "label": "Решение"
+        },
+        {
+          "field": "inspector",
+          "label": "Инспектор"
+        },
+        {
+          "field": "checked_at",
+          "label": "Дата"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-alarms",
+      "title": "Аварии / предупреждения",
+      "description": "Активные сигналы",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT a.severity, e.code AS equipment, a.title, a.param_key, a.param_value, a.status, a.created_at FROM wm_alarm a LEFT JOIN wm_equipment e ON e.id = a.equipment_id ORDER BY a.created_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "severity",
+          "label": "Уровень"
+        },
+        {
+          "field": "equipment",
+          "label": "Станок"
+        },
+        {
+          "field": "title",
+          "label": "Событие"
+        },
+        {
+          "field": "param_key",
+          "label": "Параметр"
+        },
+        {
+          "field": "param_value",
+          "label": "Значение"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "created_at",
+          "label": "Время"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-ai",
+      "title": "ИИ-советник",
+      "description": "Рекомендации",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT advice_type, context_ref, question, created_at FROM wm_ai_advice ORDER BY created_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "advice_type",
+          "label": "Тип"
+        },
+        {
+          "field": "context_ref",
+          "label": "Контекст"
+        },
+        {
+          "field": "question",
+          "label": "Запрос"
+        },
+        {
+          "field": "created_at",
+          "label": "Время"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-audit",
+      "title": "Журнал аудита",
+      "description": "Действия пользователей",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT created_at, actor, entity_type, entity_id, action, detail FROM wm_audit_log ORDER BY created_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "created_at",
+          "label": "Время"
+        },
+        {
+          "field": "actor",
+          "label": "Кто"
+        },
+        {
+          "field": "entity_type",
+          "label": "Сущность"
+        },
+        {
+          "field": "entity_id",
+          "label": "ID"
+        },
+        {
+          "field": "action",
+          "label": "Действие"
+        },
+        {
+          "field": "detail",
+          "label": "Деталь"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-plan",
+      "title": "Сменный план",
+      "description": "План/факт смены",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT s.code, p.product_name, p.plan_m3, p.fact_m3, CASE WHEN p.plan_m3 = 0 THEN 0 ELSE ROUND((p.fact_m3 * 100.0 / p.plan_m3)::numeric, 1) END AS plan_pct, p.pieces, p.scrap_pct, p.status FROM wm_production_plan p JOIN wm_shop s ON s.id = p.shop_id ORDER BY s.sort_order",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "code",
+          "label": "Цех"
+        },
+        {
+          "field": "product_name",
+          "label": "Продукция"
+        },
+        {
+          "field": "plan_m3",
+          "label": "План"
+        },
+        {
+          "field": "fact_m3",
+          "label": "Факт"
+        },
+        {
+          "field": "plan_pct",
+          "label": "%"
+        },
+        {
+          "field": "pieces",
+          "label": "Шт"
+        },
+        {
+          "field": "scrap_pct",
+          "label": "Брак"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-kpi-output",
+      "title": "Выпуск по часам",
+      "description": "м³ за смену",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT label AS hour, value AS m3 FROM wm_kpi_point WHERE series = 'output_m3' ORDER BY sort_order",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "hour",
+          "label": "Час"
+        },
+        {
+          "field": "m3",
+          "label": "м³"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-kpi-plan",
+      "title": "Выполнение плана по цехам",
+      "description": "% плана",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT label AS shop, value AS plan_pct FROM wm_kpi_point WHERE series = 'plan_pct' ORDER BY sort_order",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "shop",
+          "label": "Цех"
+        },
+        {
+          "field": "plan_pct",
+          "label": "%"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wm-moisture-trend",
+      "title": "Влажность древесины",
+      "description": "Тренд партии сушки SK-02",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT label AS t, value AS moisture_pct FROM wm_kpi_point WHERE series = 'moisture' ORDER BY sort_order",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "t",
+          "label": "Метка"
+        },
+        {
+          "field": "moisture_pct",
+          "label": "W%"
+        }
+      ],
+      "maxRows": 500
+    }
+  ],
+  "alertRules": [],
+  "correlators": [],
+  "schedules": [],
+  "analyticsFormulas": null,
+  "events": [],
+  "tests": [],
+  "requires": [],
+  "license": null,
+  "metadata": null,
+  "operatorUi": {
+    "appId": "woodmes",
+    "title": "WoodMES · Завод глубокой переработки древесины",
+    "externalSpaUrl": "https://ispf.ai/apps/woodmes/",
+    "uiPack": {
+      "packId": "woodmes-ui",
+      "version": "1.0.0",
+      "entry": "index.html"
+    }
+  },
+  "operatorManifest": null
+}

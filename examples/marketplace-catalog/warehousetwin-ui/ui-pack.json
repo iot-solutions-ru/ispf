@@ -1,0 +1,10 @@
+{
+  "id": "warehousetwin",
+  "appId": "warehousetwin",
+  "packId": "warehousetwin-ui",
+  "version": "1.0.4",
+  "entry": "index.html",
+  "basePath": "/apps/warehousetwin/",
+  "title": "Цифровой двойник склада",
+  "minIspfVersion": "0.9.30"
+}

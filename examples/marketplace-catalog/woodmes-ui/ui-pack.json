@@ -1,0 +1,10 @@
+{
+  "id": "woodmes",
+  "appId": "woodmes",
+  "packId": "woodmes-ui",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "basePath": "/apps/woodmes/",
+  "title": "WoodMES · ЗГПД",
+  "minIspfVersion": "0.9.30"
+}

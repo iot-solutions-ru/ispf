@@ -1,0 +1,2153 @@
+{
+  "version": "1.0.0",
+  "displayName": "Цифровой двойник склада",
+  "tablePrefix": "wt_",
+  "schemaName": "app_warehousetwin",
+  "objects": [],
+  "dashboards": [],
+  "workflows": [],
+  "blueprints": [],
+  "migrations": [],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_createOrder",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "orderNo",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "orderType",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "priority",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "linesCount",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "dueAt",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"idRow\", \"sql\": \"SELECT 'ord-' || (COALESCE(MAX(CAST(NULLIF(regexp_replace(id, '[^0-9]', '', 'g'), '') AS INTEGER)), 0) + 1)::text AS id FROM wt_order WHERE warehouse_id = ?\", \"params\": [\"wh-rc01\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wt_order (id, warehouse_id, order_no, order_type, status, priority, lines_count, due_at) VALUES (?, 'wh-rc01', ?, ?, CASE WHEN ? = 'inbound' THEN 'planned' ELSE 'queued' END, COALESCE(NULLIF(?, ''), 'normal'), GREATEST(COALESCE(NULLIF(?, '')::integer, 1), 1), COALESCE(NULLIF(?, '')::timestamptz, NOW() + interval '6 hours'))\", \"params\": [\"${idRow.id}\", \"${input.orderNo}\", \"${input.orderType}\", \"${input.orderType}\", \"${input.priority}\", \"${input.linesCount}\", \"${input.dueAt}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE wt_kpi SET value = value + 1 WHERE key = 'ordersActive'\"}, {\"type\": \"selectOne\", \"var\": \"created\", \"sql\": \"SELECT row_to_json(t)::text AS rows FROM (SELECT id, order_no AS \\\"orderNo\\\", order_type AS \\\"orderType\\\", status, priority, lines_count AS \\\"linesCount\\\", due_at AS \\\"dueAt\\\", created_at AS \\\"createdAt\\\" FROM wt_order WHERE id = ?) t\", \"params\": [\"${idRow.id}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${created.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_createPutawayTask",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "title",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "orderId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "sourceLocation",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "targetLocation",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "skuCode",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "qty",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "priority",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "assignee",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "dueAt",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"idRow\", \"sql\": \"SELECT 't-' || (COALESCE(MAX(CAST(NULLIF(regexp_replace(id, '[^0-9]', '', 'g'), '') AS INTEGER)), 0) + 1)::text AS id FROM wt_task WHERE warehouse_id = ?\", \"params\": [\"wh-rc01\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wt_task (id, warehouse_id, title, task_type, status, priority, assignee, location_code, source_location_code, sku_code, qty, order_id, due_at) VALUES (?, 'wh-rc01', ?, 'putaway', CASE WHEN NULLIF(?, '') IS NOT NULL THEN 'assigned' ELSE 'queued' END, COALESCE(NULLIF(?, ''), 'normal'), NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), NULLIF(?::integer, 0), NULLIF(?, ''), COALESCE(NULLIF(?, '')::timestamptz, NOW() + interval '6 hours'))\", \"params\": [\"${idRow.id}\", \"${input.title}\", \"${input.assignee}\", \"${input.priority}\", \"${input.assignee}\", \"${input.targetLocation}\", \"${input.sourceLocation}\", \"${input.skuCode}\", \"${input.qty}\", \"${input.orderId}\", \"${input.dueAt}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE wt_kpi SET value = value + 1 WHERE key = 'tasksOpen'\"}, {\"type\": \"selectOne\", \"var\": \"created\", \"sql\": \"SELECT row_to_json(t)::text AS rows FROM (SELECT id, title, task_type AS \\\"taskType\\\", status, priority, COALESCE(assignee,'') AS assignee, COALESCE(location_code,'') AS \\\"locationCode\\\", COALESCE(source_location_code,'') AS \\\"sourceLocationCode\\\", COALESCE(sku_code,'') AS \\\"skuCode\\\", qty, COALESCE(order_id,'') AS \\\"orderId\\\", due_at AS \\\"dueAt\\\", created_at AS \\\"createdAt\\\" FROM wt_task WHERE id = ?) t\", \"params\": [\"${idRow.id}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${created.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_createReplenishTask",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "title",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "sourceLocation",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "targetLocation",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "skuCode",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "qty",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "assignee",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "dueAt",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"idRow\", \"sql\": \"SELECT 't-' || (COALESCE(MAX(CAST(NULLIF(regexp_replace(id, '[^0-9]', '', 'g'), '') AS INTEGER)), 0) + 1)::text AS id FROM wt_task WHERE warehouse_id = ?\", \"params\": [\"wh-rc01\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wt_task (id, warehouse_id, title, task_type, status, priority, assignee, location_code, source_location_code, sku_code, qty, due_at) VALUES (?, 'wh-rc01', ?, 'replenish', CASE WHEN NULLIF(?, '') IS NOT NULL THEN 'assigned' ELSE 'queued' END, 'normal', NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), NULLIF(?::integer, 0), COALESCE(NULLIF(?, '')::timestamptz, NOW() + interval '4 hours'))\", \"params\": [\"${idRow.id}\", \"${input.title}\", \"${input.assignee}\", \"${input.assignee}\", \"${input.targetLocation}\", \"${input.sourceLocation}\", \"${input.skuCode}\", \"${input.qty}\", \"${input.dueAt}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE wt_kpi SET value = value + 1 WHERE key = 'tasksOpen'\"}, {\"type\": \"selectOne\", \"var\": \"created\", \"sql\": \"SELECT row_to_json(t)::text AS rows FROM (SELECT id, title, task_type AS \\\"taskType\\\", status, priority, COALESCE(assignee,'') AS assignee, COALESCE(location_code,'') AS \\\"locationCode\\\", COALESCE(source_location_code,'') AS \\\"sourceLocationCode\\\", COALESCE(sku_code,'') AS \\\"skuCode\\\", qty, COALESCE(order_id,'') AS \\\"orderId\\\", due_at AS \\\"dueAt\\\", created_at AS \\\"createdAt\\\" FROM wt_task WHERE id = ?) t\", \"params\": [\"${idRow.id}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${created.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_createTask",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "title",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "taskType",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "priority",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "assignee",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "locationCode",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "sourceLocationCode",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "skuCode",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "qty",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "orderId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "dueAt",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"idRow\", \"sql\": \"SELECT 't-' || (COALESCE(MAX(CAST(NULLIF(regexp_replace(id, '[^0-9]', '', 'g'), '') AS INTEGER)), 0) + 1)::text AS id FROM wt_task WHERE warehouse_id = ?\", \"params\": [\"wh-rc01\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wt_task (id, warehouse_id, title, task_type, status, priority, assignee, location_code, source_location_code, sku_code, qty, order_id, due_at) VALUES (?, 'wh-rc01', ?, ?, CASE WHEN NULLIF(?, '') IS NOT NULL THEN 'assigned' ELSE 'queued' END, COALESCE(NULLIF(?, ''), 'normal'), NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), NULLIF(?::integer, 0), NULLIF(?, ''), COALESCE(NULLIF(?, '')::timestamptz, NOW() + interval '4 hours'))\", \"params\": [\"${idRow.id}\", \"${input.title}\", \"${input.taskType}\", \"${input.assignee}\", \"${input.priority}\", \"${input.assignee}\", \"${input.locationCode}\", \"${input.sourceLocationCode}\", \"${input.skuCode}\", \"${input.qty}\", \"${input.orderId}\", \"${input.dueAt}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE wt_kpi SET value = value + 1 WHERE key = 'tasksOpen'\"}, {\"type\": \"selectOne\", \"var\": \"created\", \"sql\": \"SELECT row_to_json(t)::text AS rows FROM (SELECT id, title, task_type AS \\\"taskType\\\", status, priority, COALESCE(assignee,'') AS assignee, COALESCE(location_code,'') AS \\\"locationCode\\\", COALESCE(source_location_code,'') AS \\\"sourceLocationCode\\\", COALESCE(sku_code,'') AS \\\"skuCode\\\", qty, COALESCE(order_id,'') AS \\\"orderId\\\", due_at AS \\\"dueAt\\\", created_at AS \\\"createdAt\\\" FROM wt_task WHERE id = ?) t\", \"params\": [\"${idRow.id}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${created.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_createWave",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "waveNo",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "orderIdsJson",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "priority",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "assignee",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "dueAt",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "actor",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"idRow\", \"sql\": \"SELECT 'wave-' || (COALESCE(MAX(CAST(NULLIF(regexp_replace(id, '[^0-9]', '', 'g'), '') AS INTEGER)), 0) + 1)::text AS id FROM wt_wave WHERE warehouse_id = ?\", \"params\": [\"wh-rc01\"]}, {\"type\": \"selectOne\", \"var\": \"stats\", \"sql\": \"SELECT COUNT(*)::integer AS oc, COALESCE(SUM(o.lines_count), 0)::integer AS lc FROM wt_order o WHERE o.warehouse_id = ? AND o.id IN (SELECT json_array_elements_text(?::json))\", \"params\": [\"wh-rc01\", \"${input.orderIdsJson}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wt_wave (id, warehouse_id, wave_no, status, priority, order_count, line_count, assignee, due_at) VALUES (?, 'wh-rc01', ?, 'planned', COALESCE(NULLIF(?, ''), 'normal'), COALESCE(?::integer, 0), COALESCE(?::integer, 0), NULLIF(?, ''), COALESCE(NULLIF(?, '')::timestamptz, NOW() + interval '8 hours'))\", \"params\": [\"${idRow.id}\", \"${input.waveNo}\", \"${input.priority}\", \"${stats.oc}\", \"${stats.lc}\", \"${input.assignee}\", \"${input.dueAt}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wt_wave_order (wave_id, order_id) SELECT ?, json_array_elements_text(?::json)\", \"params\": [\"${idRow.id}\", \"${input.orderIdsJson}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wt_audit_log (id, warehouse_id, entity_type, entity_id, action, detail, actor) VALUES ('aud-' || extract(epoch from now())::bigint, 'wh-rc01', 'wave', ?, 'created', ?, NULLIF(?, ''))\", \"params\": [\"${idRow.id}\", \"${input.waveNo}\", \"${input.actor}\"]}, {\"type\": \"selectOne\", \"var\": \"created\", \"sql\": \"SELECT row_to_json(t)::text AS rows FROM (SELECT w.id, w.wave_no AS \\\"waveNo\\\", w.status, w.priority, w.order_count AS \\\"orderCount\\\", w.line_count AS \\\"lineCount\\\", COALESCE(w.assignee, '') AS assignee, w.created_at AS \\\"createdAt\\\", w.released_at AS \\\"releasedAt\\\", w.due_at AS \\\"dueAt\\\", COALESCE((SELECT json_agg(wo.order_id)::text FROM wt_wave_order wo WHERE wo.wave_id = w.id), '[]') AS \\\"orderIdsJson\\\" FROM wt_wave w WHERE w.id = ?) t\", \"params\": [\"${idRow.id}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${created.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_getKpi",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_object_agg(key, value)::text, '{}') AS rows FROM wt_kpi\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_getWarehouse",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, code, name, address, area_m2 AS \\\"areaM2\\\", status FROM wt_warehouse WHERE id = 'wh-rc01') t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listAuditLog",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, entity_type AS \\\"entityType\\\", entity_id AS \\\"entityId\\\", action, COALESCE(detail, '') AS detail, COALESCE(actor, '') AS actor, created_at AS \\\"createdAt\\\" FROM wt_audit_log WHERE warehouse_id = 'wh-rc01' ORDER BY created_at DESC LIMIT 200) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listEquipment",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, code, name, eq_type AS \\\"eqType\\\", status, zone_label AS \\\"zoneLabel\\\", battery, pos_x AS \\\"posX\\\", pos_y AS \\\"posY\\\" FROM wt_equipment WHERE warehouse_id = 'wh-rc01' ORDER BY code) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listFefoAlerts",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT i.id, i.location_code AS \\\"locationCode\\\", i.sku_code AS \\\"skuCode\\\", i.sku_name AS \\\"skuName\\\", i.qty, i.uom, i.lot, i.expiry_date AS \\\"expiryDate\\\", (i.expiry_date::date - CURRENT_DATE) AS \\\"daysLeft\\\", CASE WHEN i.expiry_date::date < CURRENT_DATE THEN 'expired' WHEN i.expiry_date::date <= CURRENT_DATE + 3 THEN 'critical' WHEN i.expiry_date::date <= CURRENT_DATE + 14 THEN 'warning' ELSE 'ok' END AS \\\"fefoStatus\\\" FROM wt_inventory i WHERE i.warehouse_id = 'wh-rc01' AND i.expiry_date IS NOT NULL ORDER BY i.expiry_date ASC) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listIncidents",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, title, severity, status, COALESCE(assignee,'') AS assignee, COALESCE(source,'') AS source, COALESCE(equipment_id,'') AS \\\"equipmentId\\\", COALESCE(location_code,'') AS \\\"locationCode\\\", created_at AS \\\"createdAt\\\", sla_due_at AS \\\"slaDueAt\\\" FROM wt_incident WHERE warehouse_id = 'wh-rc01' ORDER BY created_at DESC) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listIntegrations",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, name, protocol, health, latency_ms AS \\\"latencyMs\\\", COALESCE(endpoint,'') AS endpoint, COALESCE(description,'') AS description, last_sync_at AS \\\"lastSyncAt\\\" FROM wt_integration ORDER BY name) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listInventory",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, location_code AS \\\"locationCode\\\", sku_code AS \\\"skuCode\\\", sku_name AS \\\"skuName\\\", qty, uom, lot, expiry_date AS \\\"expiryDate\\\" FROM wt_inventory WHERE warehouse_id = 'wh-rc01' ORDER BY location_code, sku_code) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listKpis",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT series, label, value, sort_order AS \\\"sortOrder\\\" FROM wt_kpi_point WHERE warehouse_id = 'wh-rc01' ORDER BY sort_order, label) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listLocations",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, location_code AS \\\"locationCode\\\", zone_id AS \\\"zoneId\\\", aisle, rack, level, status, fill_pct AS \\\"fillPct\\\", sku_count AS \\\"skuCount\\\" FROM wt_location WHERE warehouse_id = 'wh-rc01' ORDER BY location_code) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listOrders",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, order_no AS \\\"orderNo\\\", order_type AS \\\"orderType\\\", status, priority, lines_count AS \\\"linesCount\\\", due_at AS \\\"dueAt\\\", created_at AS \\\"createdAt\\\" FROM wt_order WHERE warehouse_id = 'wh-rc01' ORDER BY created_at DESC) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listPickRoutes",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, wave_id AS \\\"waveId\\\", sort_order AS \\\"sortOrder\\\", location_code AS \\\"locationCode\\\" FROM wt_pick_route WHERE warehouse_id = 'wh-rc01' ORDER BY wave_id, sort_order) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listPutawayQueue",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT o.id, o.order_no AS \\\"orderNo\\\", o.status, o.lines_count AS \\\"linesCount\\\", o.priority, o.due_at AS \\\"dueAt\\\", 'R-DOCK-1' AS \\\"dockLocation\\\", (SELECT l.location_code FROM wt_location l WHERE l.warehouse_id = o.warehouse_id AND l.zone_id = 'z-rack' AND l.status IN ('ready','occupied') ORDER BY l.fill_pct ASC LIMIT 1) AS \\\"suggestLocation\\\" FROM wt_order o WHERE o.warehouse_id = 'wh-rc01' AND o.order_type = 'inbound' AND o.status IN ('planned','receiving') ORDER BY o.due_at) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listReplenishNeeds",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT sku_code AS \\\"skuCode\\\", sku_name AS \\\"skuName\\\", pick_qty AS \\\"pickQty\\\", bulk_qty AS \\\"bulkQty\\\", min_stock AS \\\"minStock\\\", need_qty AS \\\"needQty\\\", source_location AS \\\"sourceLocation\\\", target_location AS \\\"targetLocation\\\" FROM (SELECT s.sku_code, s.sku_name, s.min_stock, COALESCE((SELECT SUM(i.qty) FROM wt_inventory i JOIN wt_location l ON l.location_code = i.location_code WHERE i.warehouse_id = s.warehouse_id AND i.sku_code = s.sku_code AND l.zone_id = 'z-pick'), 0)::integer AS pick_qty, COALESCE((SELECT SUM(i.qty) FROM wt_inventory i JOIN wt_location l ON l.location_code = i.location_code WHERE i.warehouse_id = s.warehouse_id AND i.sku_code = s.sku_code AND l.zone_id IN ('z-rack','z-bulk')), 0)::integer AS bulk_qty, GREATEST(s.min_stock - COALESCE((SELECT SUM(i.qty) FROM wt_inventory i JOIN wt_location l ON l.location_code = i.location_code WHERE i.warehouse_id = s.warehouse_id AND i.sku_code = s.sku_code AND l.zone_id = 'z-pick'), 0), 0)::integer AS need_qty, (SELECT i.location_code FROM wt_inventory i JOIN wt_location l ON l.location_code = i.location_code WHERE i.warehouse_id = s.warehouse_id AND i.sku_code = s.sku_code AND l.zone_id IN ('z-rack','z-bulk') ORDER BY i.qty DESC LIMIT 1) AS source_location, (SELECT l.location_code FROM wt_location l WHERE l.warehouse_id = s.warehouse_id AND l.zone_id = 'z-pick' ORDER BY l.fill_pct ASC LIMIT 1) AS target_location FROM wt_sku s WHERE s.warehouse_id = 'wh-rc01') x WHERE need_qty > 0 AND bulk_qty > 0 ORDER BY need_qty DESC) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listSkus",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, sku_code AS \\\"skuCode\\\", sku_name AS \\\"skuName\\\", abc_class AS \\\"abcClass\\\", storage_zone AS \\\"storageZone\\\", uom, shelf_life_days AS \\\"shelfLifeDays\\\", min_stock AS \\\"minStock\\\" FROM wt_sku WHERE warehouse_id = 'wh-rc01' ORDER BY sku_code) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listTasks",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, title, task_type AS \\\"taskType\\\", status, priority, COALESCE(assignee,'') AS assignee, COALESCE(location_code,'') AS \\\"locationCode\\\", COALESCE(source_location_code,'') AS \\\"sourceLocationCode\\\", COALESCE(sku_code,'') AS \\\"skuCode\\\", qty, COALESCE(order_id,'') AS \\\"orderId\\\", due_at AS \\\"dueAt\\\", created_at AS \\\"createdAt\\\" FROM wt_task WHERE warehouse_id = 'wh-rc01' ORDER BY created_at DESC) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listUsers",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, name, email, role FROM wt_user WHERE warehouse_id = 'wh-rc01' ORDER BY name) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listWaves",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT w.id, w.wave_no AS \\\"waveNo\\\", w.status, w.priority, w.order_count AS \\\"orderCount\\\", w.line_count AS \\\"lineCount\\\", COALESCE(w.assignee, '') AS assignee, w.created_at AS \\\"createdAt\\\", w.released_at AS \\\"releasedAt\\\", w.due_at AS \\\"dueAt\\\", COALESCE((SELECT json_agg(wo.order_id)::text FROM wt_wave_order wo WHERE wo.wave_id = w.id), '[]') AS \\\"orderIdsJson\\\" FROM wt_wave w WHERE w.warehouse_id = 'wh-rc01' ORDER BY w.created_at DESC) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_listZones",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)::text AS rows FROM (SELECT id, warehouse_id AS \\\"warehouseId\\\", label, zone_type AS \\\"zoneType\\\", x, y, w, h FROM wt_zone WHERE warehouse_id = 'wh-rc01' ORDER BY label) t\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_logAudit",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "entityType",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "entityId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "action",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "detail",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "actor",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"idRow\", \"sql\": \"SELECT 'aud-' || (COALESCE(MAX(CAST(NULLIF(regexp_replace(id, '[^0-9]', '', 'g'), '') AS INTEGER)), 0) + 1)::text AS id FROM wt_audit_log WHERE warehouse_id = ?\", \"params\": [\"wh-rc01\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wt_audit_log (id, warehouse_id, entity_type, entity_id, action, detail, actor) VALUES (?, 'wh-rc01', ?, ?, ?, NULLIF(?, ''), NULLIF(?, ''))\", \"params\": [\"${idRow.id}\", \"${input.entityType}\", \"${input.entityId}\", \"${input.action}\", \"${input.detail}\", \"${input.actor}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"{}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_pingIntegration",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "id",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"selectOne\", \"var\": \"row\", \"sql\": \"SELECT COALESCE(json_build_object('id', id, 'name', name, 'health', 'online', 'latencyMs', latency_ms + 12, 'pingAt', NOW())::text, '{}') AS rows FROM wt_integration WHERE id = ?\", \"params\": [\"${input.id}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${row.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_saveMapLayout",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "zonesJson",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "equipmentJson",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE wt_zone z SET x = (e->>'x')::double precision, y = (e->>'y')::double precision, w = (e->>'w')::double precision, h = (e->>'h')::double precision, label = COALESCE(NULLIF(trim(e->>'label'), ''), z.label) FROM json_array_elements(?::json) AS e WHERE z.id = e->>'id' AND z.warehouse_id = 'wh-rc01'\", \"params\": [\"${input.zonesJson}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE wt_equipment eq SET pos_x = (e->>'posX')::double precision, pos_y = (e->>'posY')::double precision FROM json_array_elements(?::json) AS e WHERE eq.id = e->>'id' AND eq.warehouse_id = 'wh-rc01'\", \"params\": [\"${input.equipmentJson}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"{}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_updateOrderStatus",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "orderId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "status",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE wt_order o SET status = ? WHERE o.id = ? AND o.warehouse_id = ? AND ((o.order_type = 'inbound' AND o.status = 'planned' AND ? IN ('receiving', 'cancelled')) OR (o.order_type = 'inbound' AND o.status = 'receiving' AND ? IN ('received', 'cancelled')) OR (o.order_type = 'outbound' AND o.status = 'queued' AND ? IN ('picking', 'cancelled')) OR (o.order_type = 'outbound' AND o.status = 'picking' AND ? IN ('shipped', 'cancelled')))\", \"params\": [\"${input.status}\", \"${input.orderId}\", \"wh-rc01\", \"${input.status}\", \"${input.status}\", \"${input.status}\", \"${input.status}\"]}, {\"type\": \"selectOne\", \"var\": \"after\", \"sql\": \"SELECT row_to_json(t)::text AS rows FROM (SELECT id, order_no AS \\\"orderNo\\\", order_type AS \\\"orderType\\\", status, priority, lines_count AS \\\"linesCount\\\", due_at AS \\\"dueAt\\\", created_at AS \\\"createdAt\\\" FROM wt_order WHERE id = ? AND warehouse_id = ?) t\", \"params\": [\"${input.orderId}\", \"wh-rc01\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE wt_kpi SET value = (SELECT COUNT(*) FROM wt_order WHERE warehouse_id = 'wh-rc01' AND status NOT IN ('shipped', 'received', 'cancelled')) WHERE key = 'ordersActive'\"}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${after.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_updateTaskStatus",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "taskId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "status",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "assignee",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE wt_task t SET status = ?, assignee = CASE WHEN NULLIF(?, '') IS NOT NULL THEN ? ELSE t.assignee END WHERE t.id = ? AND t.warehouse_id = ? AND ((t.status = 'queued' AND ? IN ('assigned', 'cancelled')) OR (t.status = 'assigned' AND ? IN ('in_progress', 'cancelled')) OR (t.status = 'in_progress' AND ? IN ('done', 'cancelled')))\", \"params\": [\"${input.status}\", \"${input.assignee}\", \"${input.assignee}\", \"${input.taskId}\", \"wh-rc01\", \"${input.status}\", \"${input.status}\", \"${input.status}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE wt_order o SET status = CASE WHEN o.order_type = 'inbound' AND o.status = 'planned' THEN 'receiving' WHEN o.order_type = 'outbound' AND o.status = 'queued' THEN 'picking' ELSE o.status END FROM wt_task t WHERE t.id = ? AND t.order_id = o.id AND t.status = 'in_progress' AND o.warehouse_id = ?\", \"params\": [\"${input.taskId}\", \"wh-rc01\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE wt_order o SET status = CASE WHEN o.order_type = 'outbound' AND o.status = 'picking' AND NOT EXISTS (SELECT 1 FROM wt_task tk WHERE tk.order_id = o.id AND tk.status NOT IN ('done', 'cancelled')) THEN 'shipped' WHEN o.order_type = 'inbound' AND o.status = 'receiving' AND NOT EXISTS (SELECT 1 FROM wt_task tk WHERE tk.order_id = o.id AND tk.status NOT IN ('done', 'cancelled')) THEN 'received' ELSE o.status END WHERE o.id IN (SELECT order_id FROM wt_task WHERE id = ? AND order_id IS NOT NULL) AND o.warehouse_id = 'wh-rc01'\", \"params\": [\"${input.taskId}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE wt_kpi SET value = (SELECT COUNT(*) FROM wt_task WHERE warehouse_id = 'wh-rc01' AND status NOT IN ('done', 'cancelled')) WHERE key = 'tasksOpen'\"}, {\"type\": \"exec\", \"sql\": \"UPDATE wt_kpi SET value = (SELECT COUNT(*) FROM wt_order WHERE warehouse_id = 'wh-rc01' AND status NOT IN ('shipped', 'received', 'cancelled')) WHERE key = 'ordersActive'\"}, {\"type\": \"selectOne\", \"var\": \"updated\", \"sql\": \"SELECT row_to_json(t)::text AS rows FROM (SELECT id, title, task_type AS \\\"taskType\\\", status, priority, COALESCE(assignee,'') AS assignee, COALESCE(location_code,'') AS \\\"locationCode\\\", COALESCE(order_id,'') AS \\\"orderId\\\", due_at AS \\\"dueAt\\\", created_at AS \\\"createdAt\\\" FROM wt_task WHERE id = ? AND warehouse_id = ?) t\", \"params\": [\"${input.taskId}\", \"wh-rc01\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${updated.rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "functionName": "wt_updateWaveStatus",
+      "version": "ui1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "waveId",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "status",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "actor",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "error_message",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            },
+            {
+              "name": "rows",
+              "type": "STRING",
+              "description": "",
+              "nullable": false,
+              "nestedSchema": null
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE wt_wave w SET status = ?, released_at = CASE WHEN ? = 'released' AND w.released_at IS NULL THEN NOW() ELSE w.released_at END WHERE w.id = ? AND w.warehouse_id = 'wh-rc01' AND ((w.status = 'planned' AND ? IN ('released', 'cancelled')) OR (w.status = 'released' AND ? IN ('picking', 'cancelled')) OR (w.status = 'picking' AND ? IN ('done', 'cancelled')))\", \"params\": [\"${input.status}\", \"${input.status}\", \"${input.waveId}\", \"${input.status}\", \"${input.status}\", \"${input.status}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE wt_order o SET status = 'picking' FROM wt_wave_order wo WHERE wo.wave_id = ? AND wo.order_id = o.id AND o.warehouse_id = 'wh-rc01' AND o.status = 'queued' AND ? = 'picking'\", \"params\": [\"${input.waveId}\", \"${input.status}\"]}, {\"type\": \"exec\", \"sql\": \"UPDATE wt_order o SET status = 'shipped' FROM wt_wave_order wo WHERE wo.wave_id = ? AND wo.order_id = o.id AND o.warehouse_id = 'wh-rc01' AND o.status = 'picking' AND ? = 'done'\", \"params\": [\"${input.waveId}\", \"${input.status}\"]}, {\"type\": \"exec\", \"sql\": \"INSERT INTO wt_audit_log (id, warehouse_id, entity_type, entity_id, action, detail, actor) VALUES ('aud-' || extract(epoch from now())::bigint, 'wh-rc01', 'wave', ?, 'status_change', ?, NULLIF(?, ''))\", \"params\": [\"${input.waveId}\", \"${input.status}\", \"${input.actor}\"]}, {\"type\": \"selectOne\", \"var\": \"updated\", \"sql\": \"SELECT row_to_json(t)::text AS rows FROM (SELECT w.id, w.wave_no AS \\\"waveNo\\\", w.status, w.priority, w.order_count AS \\\"orderCount\\\", w.line_count AS \\\"lineCount\\\", COALESCE(w.assignee, '') AS assignee, w.created_at AS \\\"createdAt\\\", w.released_at AS \\\"releasedAt\\\", w.due_at AS \\\"dueAt\\\", COALESCE((SELECT json_agg(wo.order_id)::text FROM wt_wave_order wo WHERE wo.wave_id = w.id), '[]') AS \\\"orderIdsJson\\\" FROM wt_wave w WHERE w.id = ?) t\", \"params\": [\"${input.waveId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"rows\": \"${updated.rows}\"}}]}"
+      }
+    }
+  ],
+  "bindings": [],
+  "reports": [
+    {
+      "reportId": "wt-locations",
+      "title": "Ячейки хранения",
+      "description": "Статус и заполненность ячеек РЦ-01",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT location_code, aisle, rack, level, status, fill_pct, sku_count FROM wt_location WHERE warehouse_id = 'wh-rc01' ORDER BY location_code",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "location_code",
+          "label": "Ячейка"
+        },
+        {
+          "field": "aisle",
+          "label": "Ряд"
+        },
+        {
+          "field": "rack",
+          "label": "Стеллаж"
+        },
+        {
+          "field": "level",
+          "label": "Уровень"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "fill_pct",
+          "label": "Заполн.%"
+        },
+        {
+          "field": "sku_count",
+          "label": "SKU"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wt-inventory",
+      "title": "Остатки по ячейкам",
+      "description": "SKU и количество в ячейках",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT location_code, sku_code, sku_name, qty, uom, lot, expiry_date FROM wt_inventory WHERE warehouse_id = 'wh-rc01' ORDER BY location_code, sku_code",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "location_code",
+          "label": "Ячейка"
+        },
+        {
+          "field": "sku_code",
+          "label": "SKU"
+        },
+        {
+          "field": "sku_name",
+          "label": "Наименование"
+        },
+        {
+          "field": "qty",
+          "label": "Кол-во"
+        },
+        {
+          "field": "uom",
+          "label": "ЕИ"
+        },
+        {
+          "field": "lot",
+          "label": "Партия"
+        },
+        {
+          "field": "expiry_date",
+          "label": "Срок"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wt-orders",
+      "title": "Заказы inbound/outbound",
+      "description": "Активные и завершённые заказы",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT order_no, order_type, status, priority, lines_count, due_at, created_at FROM wt_order WHERE warehouse_id = 'wh-rc01' ORDER BY created_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "order_no",
+          "label": "Заказ"
+        },
+        {
+          "field": "order_type",
+          "label": "Тип"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "priority",
+          "label": "Приоритет"
+        },
+        {
+          "field": "lines_count",
+          "label": "Строк"
+        },
+        {
+          "field": "due_at",
+          "label": "Срок"
+        },
+        {
+          "field": "created_at",
+          "label": "Создан"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wt-tasks",
+      "title": "Складские задачи",
+      "description": "Putaway, pick, replenish, cycle count",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT id, title, task_type, status, priority, COALESCE(assignee,'') AS assignee, COALESCE(location_code,'') AS location_code, COALESCE(order_id,'') AS order_id, due_at FROM wt_task WHERE warehouse_id = 'wh-rc01' ORDER BY created_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "id",
+          "label": "ID"
+        },
+        {
+          "field": "title",
+          "label": "Задача"
+        },
+        {
+          "field": "task_type",
+          "label": "Тип"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "priority",
+          "label": "Приоритет"
+        },
+        {
+          "field": "assignee",
+          "label": "Исполнитель"
+        },
+        {
+          "field": "location_code",
+          "label": "Ячейка"
+        },
+        {
+          "field": "order_id",
+          "label": "Заказ"
+        },
+        {
+          "field": "due_at",
+          "label": "Срок"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wt-incidents",
+      "title": "Инциденты и аварии",
+      "description": "WMS / SCADA / IoT события",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT id, title, severity, status, COALESCE(assignee,'') AS assignee, COALESCE(source,'') AS source, COALESCE(location_code,'') AS location_code, created_at, sla_due_at FROM wt_incident WHERE warehouse_id = 'wh-rc01' ORDER BY created_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "id",
+          "label": "ID"
+        },
+        {
+          "field": "title",
+          "label": "Инцидент"
+        },
+        {
+          "field": "severity",
+          "label": "Критичность"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "assignee",
+          "label": "Исполнитель"
+        },
+        {
+          "field": "source",
+          "label": "Источник"
+        },
+        {
+          "field": "location_code",
+          "label": "Ячейка"
+        },
+        {
+          "field": "created_at",
+          "label": "Создан"
+        },
+        {
+          "field": "sla_due_at",
+          "label": "SLA"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wt-equipment",
+      "title": "Оборудование склада",
+      "description": "Погрузчики, AGV, конвейеры, ТСД",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT code, name, eq_type, status, zone_label, battery FROM wt_equipment WHERE warehouse_id = 'wh-rc01' ORDER BY code",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "code",
+          "label": "Код"
+        },
+        {
+          "field": "name",
+          "label": "Наименование"
+        },
+        {
+          "field": "eq_type",
+          "label": "Тип"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "zone_label",
+          "label": "Зона"
+        },
+        {
+          "field": "battery",
+          "label": "Заряд %"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wt-kpi-throughput",
+      "title": "KPI · пропускная способность",
+      "description": "Отбор строк/час по часам",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT label, value FROM wt_kpi_point WHERE warehouse_id = 'wh-rc01' AND series = 'throughput' ORDER BY sort_order",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "label",
+          "label": "Час"
+        },
+        {
+          "field": "value",
+          "label": "Строк/ч"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wt-kpi-utilization",
+      "title": "KPI · загрузка РЦ",
+      "description": "Utilization % по дням",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT label, value FROM wt_kpi_point WHERE warehouse_id = 'wh-rc01' AND series = 'utilization' ORDER BY sort_order",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "label",
+          "label": "День"
+        },
+        {
+          "field": "value",
+          "label": "Util %"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wt-integrations",
+      "title": "Интеграционные каналы",
+      "description": "WMS / ERP / TMS / IoT / SCADA",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT id, name, protocol, health, latency_ms, COALESCE(endpoint,'') AS endpoint, last_sync_at FROM wt_integration ORDER BY name",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "id",
+          "label": "ID"
+        },
+        {
+          "field": "name",
+          "label": "Канал"
+        },
+        {
+          "field": "protocol",
+          "label": "Протокол"
+        },
+        {
+          "field": "health",
+          "label": "Статус"
+        },
+        {
+          "field": "latency_ms",
+          "label": "Latency"
+        },
+        {
+          "field": "endpoint",
+          "label": "Endpoint"
+        },
+        {
+          "field": "last_sync_at",
+          "label": "Last sync"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wt-skus",
+      "title": "Справочник SKU",
+      "description": "ABC-класс, зона хранения, срок годности",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT sku_code, sku_name, abc_class, storage_zone, uom, shelf_life_days, min_stock FROM wt_sku WHERE warehouse_id = 'wh-rc01' ORDER BY sku_code",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "sku_code",
+          "label": "SKU"
+        },
+        {
+          "field": "sku_name",
+          "label": "Наименование"
+        },
+        {
+          "field": "abc_class",
+          "label": "ABC"
+        },
+        {
+          "field": "storage_zone",
+          "label": "Зона"
+        },
+        {
+          "field": "uom",
+          "label": "ЕИ"
+        },
+        {
+          "field": "shelf_life_days",
+          "label": "Срок, дн"
+        },
+        {
+          "field": "min_stock",
+          "label": "Мин."
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wt-waves",
+      "title": "Волны отбора",
+      "description": "Планирование и статус волн",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT wave_no, status, priority, order_count, line_count, assignee, created_at, released_at, due_at FROM wt_wave WHERE warehouse_id = 'wh-rc01' ORDER BY created_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "wave_no",
+          "label": "Волна"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "priority",
+          "label": "Приоритет"
+        },
+        {
+          "field": "order_count",
+          "label": "Заказов"
+        },
+        {
+          "field": "line_count",
+          "label": "Строк"
+        },
+        {
+          "field": "assignee",
+          "label": "Исполнитель"
+        },
+        {
+          "field": "created_at",
+          "label": "Создана"
+        },
+        {
+          "field": "released_at",
+          "label": "Выпущена"
+        },
+        {
+          "field": "due_at",
+          "label": "Срок"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wt-fefo",
+      "title": "FEFO / срок годности",
+      "description": "Остатки с контролем срока",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT location_code, sku_code, sku_name, qty, expiry_date, (expiry_date::date - CURRENT_DATE) AS days_left FROM wt_inventory WHERE warehouse_id = 'wh-rc01' AND expiry_date IS NOT NULL ORDER BY expiry_date",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "location_code",
+          "label": "Ячейка"
+        },
+        {
+          "field": "sku_code",
+          "label": "SKU"
+        },
+        {
+          "field": "sku_name",
+          "label": "Наименование"
+        },
+        {
+          "field": "qty",
+          "label": "Кол-во"
+        },
+        {
+          "field": "expiry_date",
+          "label": "Срок"
+        },
+        {
+          "field": "days_left",
+          "label": "Дней"
+        }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "wt-audit",
+      "title": "Журнал аудита",
+      "description": "Изменения статусов и действия пользователей",
+      "reportType": "",
+      "devicePathPattern": "",
+      "variableName": "",
+      "query": "SELECT created_at, entity_type, entity_id, action, detail, actor FROM wt_audit_log WHERE warehouse_id = 'wh-rc01' ORDER BY created_at DESC LIMIT 200",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "created_at",
+          "label": "Время"
+        },
+        {
+          "field": "entity_type",
+          "label": "Тип"
+        },
+        {
+          "field": "entity_id",
+          "label": "ID"
+        },
+        {
+          "field": "action",
+          "label": "Действие"
+        },
+        {
+          "field": "detail",
+          "label": "Детали"
+        },
+        {
+          "field": "actor",
+          "label": "Кто"
+        }
+      ],
+      "maxRows": 500
+    }
+  ],
+  "alertRules": [],
+  "correlators": [],
+  "schedules": [],
+  "analyticsFormulas": null,
+  "events": [],
+  "tests": [],
+  "requires": [],
+  "license": null,
+  "metadata": null,
+  "operatorUi": {
+    "appId": "warehousetwin",
+    "title": "Цифровой двойник склада",
+    "externalSpaUrl": "https://ispf.ai/apps/warehousetwin/",
+    "uiPack": {
+      "packId": "warehousetwin-ui",
+      "version": "1.0.4",
+      "entry": "index.html"
+    }
+  },
+  "operatorManifest": null
+}

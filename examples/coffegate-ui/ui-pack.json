@@ -1,0 +1,10 @@
+{
+  "appId": "coffegate",
+  "packId": "coffegate-ui",
+  "version": "0.5.83",
+  "entry": "index.html",
+  "basePath": "/apps/coffegate/",
+  "title": "CoffeeGate",
+  "minIspfVersion": "0.9.30",
+  "id": "coffegate"
+}

@@ -1,0 +1,27 @@
+{
+  "slug": "warehousetwin-ui",
+  "title": "Цифровой двойник склада",
+  "description": "Hosted SPA for warehousetwin (base /apps/warehousetwin/). Same-origin /api/v1. artifactKind ui-pack.",
+  "artifactKind": "ui-pack",
+  "appId": "warehousetwin",
+  "packId": "warehousetwin-ui",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "pricing": "free",
+  "minIspfVersion": "0.9.30",
+  "latestVersion": "1.0.4",
+  "bundleArtifact": "warehousetwin-ui-1.0.4.zip",
+  "tags": [
+    "ui-pack",
+    "warehousetwin",
+    "spa",
+    "marketplace"
+  ],
+  "changelog": "1.0.4 — snapshot from ispf.iot-solutions.ru installed ui-pack."
+}

@@ -1,0 +1,10 @@
+{
+  "id": "laminate-flow-mes",
+  "appId": "laminate-flow-mes",
+  "packId": "laminate-flow-ui",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "basePath": "/apps/laminate-flow-mes/",
+  "title": "Поточное производство",
+  "minIspfVersion": "0.9.208"
+}

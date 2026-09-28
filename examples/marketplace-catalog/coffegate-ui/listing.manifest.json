@@ -1,0 +1,27 @@
+{
+  "slug": "coffegate-ui",
+  "title": "CoffeeGate",
+  "description": "Hosted SPA for coffegate (base /apps/coffegate/). Same-origin /api/v1. artifactKind ui-pack.",
+  "artifactKind": "ui-pack",
+  "appId": "coffegate",
+  "packId": "coffegate-ui",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "info@vendor.example.invalid",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "priceCents": 0,
+  "pricing": "free",
+  "minIspfVersion": "0.9.30",
+  "latestVersion": "0.5.83",
+  "bundleArtifact": "coffegate-ui-0.5.83.zip",
+  "tags": [
+    "ui-pack",
+    "coffegate",
+    "spa",
+    "marketplace"
+  ],
+  "changelog": "0.5.83 — snapshot from ispf.iot-solutions.ru installed ui-pack."
+}
