@@ -169,7 +169,7 @@ subprojects {
                 "org.bouncycastle:bcutil-jdk18on:1.86",
                 // kafka-clients 4.3.1 -> lz4-java 1.10.2 (CVE-2026-59949); hadoop-common 3.5.0 ->
                 // commons-configuration2 2.10.1 (CVE-2026-45205). Drop when the parents move.
-                "at.yawk.lz4:lz4-java:1.11.3",
+                "at.yawk.lz4:lz4-java:1.12.0",
                 "org.apache.commons:commons-configuration2:2.15.1",
             )
         }
