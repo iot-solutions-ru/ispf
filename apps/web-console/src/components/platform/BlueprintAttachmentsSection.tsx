@@ -1,13 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { BlueprintAttachmentDto } from "../../types/blueprints";
 
-export function attachmentsForBlueprint(
-  attachments: BlueprintAttachmentDto[],
-  blueprintId: string
-): BlueprintAttachmentDto[] {
-  return attachments.filter((row) => row.blueprintId === blueprintId);
-}
-
 export default function BlueprintAttachmentsSection({
   attachments,
   loading = false,
@@ -51,9 +44,9 @@ export default function BlueprintAttachmentsSection({
                   : ""}
                 )
               </span>
-              {(row.warnings?.length ?? 0) > 0 && (
+              {(row.warnings ?? []).length > 0 && (
                 <ul className="hint">
-                  {row.warnings!.map((warning) => (
+                  {(row.warnings ?? []).map((warning) => (
                     <li key={`${warning.kind}-${warning.name}`}>
                       {warning.kind}: <code>{warning.name}</code>
                     </li>

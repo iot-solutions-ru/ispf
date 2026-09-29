@@ -873,9 +873,9 @@ export default function ObjectPropertiesEditor({
                               · {t("common:field.attachedAt", { at: attachment.attachedAt })}
                             </span>
                           )}
-                          {(attachment?.warnings?.length ?? 0) > 0 && (
+                          {(attachment?.warnings ?? []).length > 0 && (
                             <ul className="hint">
-                              {attachment!.warnings!.map((warning) => (
+                              {(attachment?.warnings ?? []).map((warning) => (
                                 <li key={`${warning.kind}-${warning.name}`}>
                                   {warning.kind}: <code>{warning.name}</code>
                                 </li>

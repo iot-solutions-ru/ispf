@@ -5,9 +5,8 @@ import i18n from "i18next";
 import { I18nextProvider, initReactI18next } from "react-i18next";
 import enInspector from "../../locales/en/inspector.json";
 import type { BlueprintAttachmentDto } from "../../types/blueprints";
-import BlueprintAttachmentsSection, {
-  attachmentsForBlueprint,
-} from "./BlueprintAttachmentsSection";
+import BlueprintAttachmentsSection from "./BlueprintAttachmentsSection";
+import { attachmentsForBlueprint } from "./blueprintAttachments";
 
 const testI18n = i18n.createInstance();
 void testI18n.use(initReactI18next).init({

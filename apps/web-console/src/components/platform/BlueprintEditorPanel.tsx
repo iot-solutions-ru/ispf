@@ -44,9 +44,8 @@ import { formatHistoryRetention } from "../objectEditor/variableHistoryModel";
 import { required } from "../../utils/required";
 import { ObjectPathField } from "../../ui";
 import { PARENT_OBJECT_TYPES } from "../../ui/objectPathFilters";
-import BlueprintAttachmentsSection, {
-  attachmentsForBlueprint,
-} from "./BlueprintAttachmentsSection";
+import BlueprintAttachmentsSection from "./BlueprintAttachmentsSection";
+import { attachmentsForBlueprint } from "./blueprintAttachments";
 
 interface BlueprintEditorPanelProps {
   selectedPath: string;
