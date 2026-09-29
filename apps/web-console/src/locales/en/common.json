@@ -55,6 +55,7 @@
   "field.iconInTree": "Tree icon",
   "field.primaryBlueprint": "Primary blueprint",
   "field.appliedBlueprints": "Applied blueprints",
+  "field.attachedAt": "attached {{at}}",
   "field.templateId": "templateId",
   "hint.adminOnly": "Available to admin only.",
   "hint.doubleClickEditor": "Double-click a tree node to open the editor",

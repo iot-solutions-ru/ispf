@@ -62,6 +62,7 @@
   "error.treeLoadFailed": "Objektbaum konnte nicht geladen werden",
   "field.actor": "Akteur",
   "field.appliedBlueprints": "Angewandte Blueprints",
+  "field.attachedAt": "angehängt {{at}}",
   "field.createdAt": "Erstellt",
   "field.description": "Beschreibung",
   "field.displayName": "Anzeigename",

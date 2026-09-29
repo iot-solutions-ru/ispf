@@ -62,6 +62,7 @@
   "error.treeLoadFailed": "无法加载对象树",
   "field.actor": "操作者",
   "field.appliedBlueprints": "已应用蓝图",
+  "field.attachedAt": "附着于 {{at}}",
   "field.createdAt": "已创建",
   "field.description": "描述",
   "field.displayName": "显示名称",
