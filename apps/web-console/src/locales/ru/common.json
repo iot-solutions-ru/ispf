@@ -62,6 +62,7 @@
   "error.treeLoadFailed": "Не удалось загрузить дерево объектов.",
   "field.actor": "Актор",
   "field.appliedBlueprints": "Применённые blueprints",
+  "field.attachedAt": "прикреплено {{at}}",
   "field.createdAt": "Создано",
   "field.description": "Описание",
   "field.displayName": "Отображаемое имя",

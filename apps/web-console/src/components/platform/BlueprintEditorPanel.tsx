@@ -7,6 +7,7 @@ import {
   createBlueprint,
   createBlueprintFromObject,
   deleteBlueprint,
+  fetchBlueprintAttachments,
   fetchBlueprintByName,
   fetchBlueprintInstances,
   fetchSingletonBlueprintInstance,
@@ -43,6 +44,8 @@ import { formatHistoryRetention } from "../objectEditor/variableHistoryModel";
 import { required } from "../../utils/required";
 import { ObjectPathField } from "../../ui";
 import { PARENT_OBJECT_TYPES } from "../../ui/objectPathFilters";
+import BlueprintAttachmentsSection from "./BlueprintAttachmentsSection";
+import { attachmentsForBlueprint } from "./blueprintAttachments";
 
 interface BlueprintEditorPanelProps {
   selectedPath: string;
@@ -149,16 +152,34 @@ function ModelDetail({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       queryClient.invalidateQueries({ queryKey: ["variables"] });
+      queryClient.invalidateQueries({ queryKey: ["blueprint-attachments"] });
       if (applyPath.trim() && onSelectPath) {
         onSelectPath(applyPath.trim());
       }
     },
   });
 
+  const attachmentsQuery = useQuery({
+    queryKey: ["blueprint-attachments"],
+    queryFn: () => fetchBlueprintAttachments(),
+    enabled: model.type === "MIXIN",
+  });
+  const mixinAttachments = useMemo(
+    () => attachmentsForBlueprint(attachmentsQuery.data ?? [], model.id),
+    [attachmentsQuery.data, model.id]
+  );
+
   const instancesQuery = useQuery({
     queryKey: ["model-instances", model.id],
     queryFn: () => fetchBlueprintInstances(model.id),
+    enabled: model.type === "INSTANCE",
   });
+  const upgradeTargetCount =
+    model.type === "INSTANCE"
+      ? (instancesQuery.data?.length ?? 0)
+      : model.type === "MIXIN"
+        ? mixinAttachments.length
+        : 0;
 
   const diffQuery = useQuery({
     queryKey: ["model-diff", model.id, applyPath],
@@ -178,6 +199,7 @@ function ModelDetail({
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       queryClient.invalidateQueries({ queryKey: ["variables"] });
       queryClient.invalidateQueries({ queryKey: ["model-instances", model.id] });
+      queryClient.invalidateQueries({ queryKey: ["blueprint-attachments"] });
     },
   });
 
@@ -187,6 +209,7 @@ function ModelDetail({
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       queryClient.invalidateQueries({ queryKey: ["variables"] });
       queryClient.invalidateQueries({ queryKey: ["model-instances", model.id] });
+      queryClient.invalidateQueries({ queryKey: ["blueprint-attachments"] });
     },
   });
 
@@ -743,6 +766,14 @@ function ModelDetail({
             )}
           </div>
 
+          {model.type === "MIXIN" && (
+            <BlueprintAttachmentsSection
+              attachments={mixinAttachments}
+              loading={attachmentsQuery.isLoading}
+              onSelectPath={onSelectPath}
+            />
+          )}
+
           <div className="model-action-block">
             <p className="hint">
               {t("inspector:blueprint.upgradeHint", {
@@ -751,11 +782,22 @@ function ModelDetail({
                   : t("inspector:blueprint.upgradeNoVersion"),
               })}
             </p>
-            {instancesQuery.data && instancesQuery.data.length > 0 && (
+            {model.type === "INSTANCE" && instancesQuery.data && instancesQuery.data.length > 0 && (
               <ul className="model-instance-list">
                 {instancesQuery.data.map((row) => (
                   <li key={row.objectPath}>
-                    <code>{row.objectPath}</code>
+                    {onSelectPath ? (
+                      <button
+                        type="button"
+                        className="link-btn"
+                        onClick={() => onSelectPath(row.objectPath)}
+                        title={row.objectPath}
+                      >
+                        <code>{row.objectPath}</code>
+                      </button>
+                    ) : (
+                      <code>{row.objectPath}</code>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -816,10 +858,10 @@ function ModelDetail({
               </Button>
               <Button
                 type="primary"
-                disabled={upgradeAllMutation.isPending || (instancesQuery.data?.length ?? 0) === 0}
+                disabled={upgradeAllMutation.isPending || upgradeTargetCount === 0}
                 onClick={() => upgradeAllMutation.mutate()}
               >
-                Upgrade all ({instancesQuery.data?.length ?? 0})
+                Upgrade all ({upgradeTargetCount})
               </Button>
             </div>
             {(upgradeOneMutation.error || upgradeAllMutation.error) && (

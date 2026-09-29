@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Changed
 
+- **Mixin attachments in Web Console** — the mixin editor Actions block lists objects from `GET /api/v1/blueprints/attachments` (filtered by the current blueprint), including empty “not applied anywhere”, click-to-select path, `attachedAt`, and merge warnings. `/instances` stays on INSTANCE Upgrade only. Object inspector Applied blueprints enrich MIXIN rows with `attachedAt` / warnings via `?objectPath=`.
 - **Object path fields** — screens that asked for an existing object path as plain text now use the tree picker (`ObjectPathField`): mixin Apply and instantiate parent (with “use selected object”), schedules, SQL binding target and trigger, create-object schedule and migration data source, script step paths, BPMN `objectPath` / `workflowPath` / `targetObject`, process-program target, mimic action path, widget workflow / dashboard / mimic / event-prefix paths, and the alarm-bar folder prefix. Typing a path still works. Expressions, driver JSON, and read-only paths stay text. Federation remote path stays text because that object is on the peer, not in the local tree.
 
 ### Fixed

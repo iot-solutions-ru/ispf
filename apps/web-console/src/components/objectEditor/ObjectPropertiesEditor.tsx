@@ -14,6 +14,7 @@ import {
   updateVariableHistory,
   fetchAuthMe,
 } from "../../api";
+import { fetchBlueprintAttachments } from "../../api/blueprints";
 import { inspectorQueryLoading, resolveInspectorEditor, useInspectorObjectEditor } from "../../hooks/useInspectorQueries";
 import { useVariablesQuery } from "../../hooks/useVariablesQuery";
 import type {
@@ -291,6 +292,12 @@ export default function ObjectPropertiesEditor({
   const historianTagsQuery = useQuery({
     queryKey: ["analytics-tags", path],
     queryFn: () => fetchAnalyticsTags(path),
+    enabled: Boolean(path),
+  });
+
+  const objectAttachmentsQuery = useQuery({
+    queryKey: ["blueprint-attachments", "object", path],
+    queryFn: () => fetchBlueprintAttachments(path),
     enabled: Boolean(path),
   });
 
@@ -583,6 +590,12 @@ export default function ObjectPropertiesEditor({
 
   const ctx = editorData.object;
   const appliedBlueprints = ctx.appliedBlueprints ?? [];
+  const attachmentsByBlueprintId = new Map(
+    (objectAttachmentsQuery.data ?? []).map((row) => [
+      row.blueprintId,
+      { attachedAt: row.attachedAt, warnings: row.warnings },
+    ])
+  );
   const isRoot = path === "root";
   const isPlatformRoot = path === "root.platform";
   const isDevice = ctx.type === "DEVICE";
@@ -848,12 +861,30 @@ export default function ObjectPropertiesEditor({
                 <div className="full">
                   <span className="field-label">{t("common:field.appliedBlueprints")}</span>
                   <ul className="applied-models-list">
-                    {appliedBlueprints.map((model) => (
-                      <li key={model.id}>
-                        <code>{model.name}</code> ({model.type}
-                        {model.primary ? ", primary" : ""})
-                      </li>
-                    ))}
+                    {appliedBlueprints.map((model) => {
+                      const attachment = attachmentsByBlueprintId.get(model.id);
+                      return (
+                        <li key={model.id}>
+                          <code>{model.name}</code> ({model.type}
+                          {model.primary ? ", primary" : ""})
+                          {attachment?.attachedAt && (
+                            <span className="hint">
+                              {" "}
+                              · {t("common:field.attachedAt", { at: attachment.attachedAt })}
+                            </span>
+                          )}
+                          {(attachment?.warnings ?? []).length > 0 && (
+                            <ul className="hint">
+                              {(attachment?.warnings ?? []).map((warning) => (
+                                <li key={`${warning.kind}-${warning.name}`}>
+                                  {warning.kind}: <code>{warning.name}</code>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
