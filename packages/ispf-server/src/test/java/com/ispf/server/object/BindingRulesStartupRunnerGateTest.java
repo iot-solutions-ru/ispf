@@ -2,6 +2,8 @@ package com.ispf.server.object;
 
 import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.ObjectTree;
+import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.PlatformObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -85,6 +87,30 @@ class BindingRulesStartupRunnerGateTest {
         verify(dependencyIndex).rebuildAll(List.of());
         verify(dependencyIndex).rebuild("root");
         verify(periodicScheduleRegistry).clearAll();
+        verify(periodicScheduler).reschedule();
+    }
+
+    @Test
+    void initializeContinuesWhenStartupChainIsTruncated() {
+        ObjectTree tree = new ObjectTree();
+        tree.register(new PlatformObject(
+                "doom",
+                "root.doom",
+                ObjectType.APPLICATION,
+                "DOOM",
+                "",
+                null
+        ));
+        when(objectManager.isInitialized()).thenReturn(true);
+        when(objectManager.tree()).thenReturn(tree);
+        when(periodicScheduleRegistry.objectPathsWithBindingRules()).thenReturn(List.of());
+        doThrow(new IllegalStateException("Binding rule chain truncated at root.doom: pass limit 8"))
+                .when(bindingRuleEngine).onStartup("root.doom");
+
+        runner.initializeBindingRules();
+
+        verify(bindingRuleEngine).onStartup("root.doom");
+        verify(bindingRuleEngine).onStartup("root");
         verify(periodicScheduler).reschedule();
     }
 }

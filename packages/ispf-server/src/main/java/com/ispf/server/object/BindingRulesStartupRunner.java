@@ -75,6 +75,14 @@ public class BindingRulesStartupRunner {
                 bindingRuleEngine.onStartup(path);
             } catch (ObjectNotFoundException ex) {
                 log.debug("Skip binding startup for missing object {}: {}", path, ex.getMessage());
+            } catch (RuntimeException ex) {
+                // A looping rule (pass/depth limit) must not fail ApplicationReadyEvent.
+                // Periodic runs already isolate the same failure per rule.
+                log.error(
+                        "Binding startup failed for {} and was skipped so the server can finish starting: {}",
+                        path,
+                        ex.getMessage()
+                );
             }
         }
     }
