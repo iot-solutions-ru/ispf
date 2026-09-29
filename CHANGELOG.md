@@ -24,6 +24,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Driver JSON configuration** — `DriverBinding.parseMap` and `DriverPointMappingParser.parse` treated an unparsable `driverConfigJson` / `driverPointMappingsJson` as an empty map, so a device started with no points and no config instead of a configuration error. Invalid JSON now fails the driver start with the parse message and marks the driver `ERROR`; blank JSON still means no maps.
 - **Binding startup** — a startup rule that hit the chain pass limit threw out of `ApplicationReadyEvent` and stopped the whole server. That object is now logged and skipped. Periodic rules already isolated the same failure. On the demostand this was `root.platform.singleton-blueprints.doom`.
 - **Admin Copilot collapse** — opening the drawer called `startNewChat()`, so closing it and opening again discarded the thread. The AI button and the header × now only hide and restore the same conversation. **New chat** is the control that clears it.
 - **Operator assistant** — close and reopen already kept the thread. The header now has **New chat**, which clears the messages and the session; × still only hides the drawer.

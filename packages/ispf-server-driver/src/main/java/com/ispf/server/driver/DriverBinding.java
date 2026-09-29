@@ -148,7 +148,7 @@ public record DriverBinding(
             return objectMapper.readValue(json, new TypeReference<>() {
             });
         } catch (Exception e) {
-            return Map.of();
+            throw new IllegalArgumentException("Driver configuration JSON is not parseable: " + e.getMessage(), e);
         }
     }
 }

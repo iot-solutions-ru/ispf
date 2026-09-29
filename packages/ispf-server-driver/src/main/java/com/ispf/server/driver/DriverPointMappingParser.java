@@ -49,8 +49,8 @@ public final class DriverPointMappingParser {
                 result.put(item.getKey(), parseEntry(item.getValue()));
             }
             return Map.copyOf(result);
-        } catch (Exception ignored) {
-            return Map.of();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Driver point mappings JSON is not parseable: " + e.getMessage(), e);
         }
     }
 
