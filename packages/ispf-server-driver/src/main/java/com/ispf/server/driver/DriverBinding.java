@@ -136,7 +136,8 @@ public record DriverBinding(
             int value = Integer.parseInt(raw.trim());
             return value > 0 ? value : 0;
         } catch (NumberFormatException e) {
-            return 0;
+            throw new IllegalArgumentException(
+                    "Driver configuration telemetryCoalesceMs is not a positive integer: " + raw, e);
         }
     }
 
