@@ -195,6 +195,13 @@ public class AlertRuleService {
                     log.warn("Could not disable alert rule {}: {}", rule.id(), disableEx.getMessage());
                 }
             }
+        } catch (IllegalStateException ex) {
+            // Uncomputable condition/deactivate must not look like an honest false (and must not
+            // abort evaluation of the remaining rules in the same fan-out).
+            if (!(ex.getCause() instanceof ExpressionException)) {
+                throw ex;
+            }
+            log.error("Alert rule {} condition failed (not treated as false): {}", rule.id(), ex.getMessage());
         }
     }
 
@@ -446,7 +453,10 @@ public class AlertRuleService {
             }
             return Boolean.parseBoolean(String.valueOf(result));
         } catch (ExpressionException e) {
-            return false;
+            throw new IllegalStateException(
+                    "Alert rule condition failed: " + expression + ": " + e.getMessage(),
+                    e
+            );
         }
     }
 
