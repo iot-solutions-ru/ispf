@@ -146,7 +146,7 @@ public class PlatformSchedulerService {
                 scheduleObjectService.recordTick(schedule.path(), now, null);
             } catch (Exception ex) {
                 log.warn("Platform tree schedule {} failed: {}", schedule.path(), ex.getMessage());
-                scheduleObjectService.recordTick(schedule.path(), now, ex.getMessage());
+                scheduleObjectService.recordError(schedule.path(), ex.getMessage());
             }
         }
     }
@@ -173,8 +173,7 @@ public class PlatformSchedulerService {
             } catch (Exception ex) {
                 log.warn("Platform legacy schedule {} failed: {}", scheduleId, ex.getMessage());
                 jdbcTemplate.update(
-                        "UPDATE platform_schedules SET last_tick_at = ?, last_error = ? WHERE schedule_id = ?",
-                        Timestamp.from(now),
+                        "UPDATE platform_schedules SET last_error = ? WHERE schedule_id = ?",
                         ex.getMessage(),
                         scheduleId
                 );
