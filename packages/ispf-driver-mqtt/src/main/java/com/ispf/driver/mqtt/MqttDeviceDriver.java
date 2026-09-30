@@ -205,7 +205,13 @@ public class MqttDeviceDriver implements DeviceDriver {
 
     private void handleMessage(String topic, byte[] payloadBytes) {
         String payload = new String(payloadBytes, StandardCharsets.UTF_8);
-        Instant observed = MqttPayloadTimestamps.resolve(payloadBytes);
+        final Instant observed;
+        try {
+            observed = MqttPayloadTimestamps.resolve(payloadBytes);
+        } catch (IllegalArgumentException e) {
+            driverObject.log(DriverLogLevel.ERROR, "MQTT message rejected on " + topic + ": " + e.getMessage());
+            return;
+        }
         String variableName = resolveVariableForTopic(topic);
         if (usesIngressSchema(variableName, topic)) {
             driverObject.updateVariable(variableName, DataRecord.single(
