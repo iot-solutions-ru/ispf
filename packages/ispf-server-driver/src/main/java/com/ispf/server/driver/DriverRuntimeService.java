@@ -195,6 +195,12 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                 }
             } catch (Exception e) {
                 log.warn("Failed to auto-start driver for {}: {}", path, e.getMessage());
+                try {
+                    setStatus(path, "ERROR");
+                } catch (Exception statusError) {
+                    log.debug("Could not mark driver ERROR after auto-start failure for {}: {}",
+                            path, statusError.getMessage());
+                }
             }
         }
     }
