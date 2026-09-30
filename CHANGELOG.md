@@ -24,6 +24,8 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Blueprint catalogs** — Explorer create on instance-types, mixin-blueprints, and singleton-blueprints registers a blueprint of that folder’s kind. An empty blueprint no longer asks for MIXIN, INSTANCE, or SINGLETON. Target object type is asked only for INSTANCE and MIXIN (DEVICE, CUSTOM, DASHBOARD, WORKFLOW, MIMIC, ALERT, REPORT). Export follows the catalog kind; a singleton catalog does not offer export-from-object. `GET /api/v1/blueprints/by-name/{name}` for a missing registry row is 404, and the editor says the tree node was created as an ordinary object.
+- **Create object under devices** — the type list is DEVICE, CUSTOM, and a visual group. Instance-type options under devices stay DEVICE.
 - **Alert rule conditions** — `AlertRuleService.evaluateCondition` treated an `ExpressionException` as `false`, so a typo looked like an honest unmet threshold and the rule neither raised nor reported failure. Uncomputable `conditionExpr` / `deactivateExpr` now fail that rule evaluation with the expression text (other rules in the same fan-out still run); a computed `false` still means do not raise; orphan missing targets stay soft-disabled.
 - **Binding startup** — a startup rule that hit the chain pass limit threw out of `ApplicationReadyEvent` and stopped the whole server. That object is now logged and skipped. Periodic rules already isolated the same failure. On the demostand this was `root.platform.singleton-blueprints.doom`.
 - **Admin Copilot collapse** — opening the drawer called `startNewChat()`, so closing it and opening again discarded the thread. The AI button and the header × now only hide and restore the same conversation. **New chat** is the control that clears it.

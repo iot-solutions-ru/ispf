@@ -29,7 +29,8 @@ export type CreateDialogMode =
   | "schedule"
   | "query"
   | "event-filter"
-  | "process-program";
+  | "process-program"
+  | "blueprint";
 
 export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
   if (parentPath === APPLICATIONS_ROOT) {
@@ -67,6 +68,9 @@ export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
   }
   if (isPlatformReportsFolder(parentPath)) {
     return "report";
+  }
+  if (blueprintKindForCatalog(parentPath)) {
+    return "blueprint";
   }
   return "object";
 }
@@ -313,12 +317,43 @@ export const PLATFORM_CREATE_TYPES: readonly ObjectType[] = [
   "DRIVER",
 ];
 
+/** Target types for INSTANCE and MIXIN blueprints. SINGLETON does not take one. */
+export const BLUEPRINT_TARGET_OBJECT_TYPES: readonly ObjectType[] = [
+  "DEVICE",
+  "CUSTOM",
+  "DASHBOARD",
+  "WORKFLOW",
+  "MIMIC",
+  "ALERT",
+  "REPORT",
+];
+
+export type BlueprintCatalogKind = "MIXIN" | "INSTANCE" | "SINGLETON";
+
+/** Kind implied by a blueprint catalog folder. Null outside those folders. */
+export function blueprintKindForCatalog(parentPath: string): BlueprintCatalogKind | null {
+  if (parentPath.endsWith(".mixin-blueprints")) {
+    return "MIXIN";
+  }
+  if (parentPath.endsWith(".instance-types")) {
+    return "INSTANCE";
+  }
+  if (parentPath.endsWith(".singleton-blueprints")) {
+    return "SINGLETON";
+  }
+  return null;
+}
+
 /**
  * Platform types the manual Create dialog may offer under this parent.
  * A catalog folder offers its own child type plus {@code VISUAL_GROUP}.
+ * {@code devices} also offers {@code CUSTOM} for a logic object next to drivers.
  * Unconstrained parents (for example {@code root.platform}) keep the full list.
  */
 export function platformTypesForParent(parentPath: string): ObjectType[] {
+  if (parentPath.endsWith(".devices")) {
+    return ["DEVICE", "CUSTOM", "VISUAL_GROUP"];
+  }
   const catalogType = instanceTypeFilterForParent(parentPath) ?? blueprintCatalogType(parentPath);
   if (!catalogType || !PLATFORM_CREATE_TYPES.includes(catalogType)) {
     return [...PLATFORM_CREATE_TYPES];

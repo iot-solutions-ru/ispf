@@ -44,6 +44,7 @@ import { formatHistoryRetention } from "../objectEditor/variableHistoryModel";
 import { required } from "../../utils/required";
 import { ObjectPathField } from "../../ui";
 import { PARENT_OBJECT_TYPES } from "../../ui/objectPathFilters";
+import { BLUEPRINT_TARGET_OBJECT_TYPES } from "../../utils/object/createObjectMode";
 import BlueprintAttachmentsSection from "./BlueprintAttachmentsSection";
 import { attachmentsForBlueprint } from "./blueprintAttachments";
 
@@ -56,15 +57,6 @@ interface BlueprintEditorPanelProps {
   /** Object currently selected in the explorer, used to fill Apply. */
   explorerPath?: string | null;
 }
-
-const OBJECT_TYPES: ObjectType[] = [
-  "DEVICE",
-  "DASHBOARD",
-  "WORKFLOW",
-  "CUSTOM",
-  "APPLICATION",
-  "USER",
-];
 
 function ModelDetail({
   model,
@@ -1068,13 +1060,18 @@ function ModelsCatalog({
               createMutation.mutate({
                 name,
                 description: String(data.get("description") ?? ""),
-                type: String(data.get("type") ?? "MIXIN") as "MIXIN" | "INSTANCE",
-                targetObjectType: String(data.get("targetObjectType") ?? "CUSTOM") as ObjectType,
+                type: defaultCreateType,
+                ...(defaultCreateType === "SINGLETON"
+                  ? {}
+                  : {
+                      targetObjectType: String(data.get("targetObjectType") ?? "CUSTOM") as ObjectType,
+                    }),
               });
               form.reset();
             }}
           >
             <h4>{t("inspector:blueprint.newEmptyTitle")}</h4>
+            <p className="hint">{t("inspector:blueprint.catalogKind", { type: defaultCreateType })}</p>
             <div className="model-form-grid">
               <input
                 name="name"
@@ -1085,18 +1082,15 @@ function ModelsCatalog({
                 onChange={(e) => setInvalidEmptyModelName(Boolean(e.target.value) && !isTechnicalIdentifier(e.target.value, "dottedName"))}
               />
               <input name="description" placeholder={t("inspector:blueprint.descriptionPlaceholder")} />
-              <select name="type" defaultValue={defaultCreateType}>
-                <option value="MIXIN">{t("inspector:blueprint.type.MIXIN")}</option>
-                <option value="INSTANCE">{t("inspector:blueprint.type.INSTANCE")}</option>
-                <option value="SINGLETON">{t("inspector:blueprint.type.SINGLETON")}</option>
-              </select>
-              <select name="targetObjectType" defaultValue="CUSTOM">
-                {OBJECT_TYPES.map((objectType) => (
-                  <option key={objectType} value={objectType}>
-                    {objectType}
-                  </option>
-                ))}
-              </select>
+              {defaultCreateType !== "SINGLETON" && (
+                <select name="targetObjectType" defaultValue="CUSTOM">
+                  {BLUEPRINT_TARGET_OBJECT_TYPES.map((objectType) => (
+                    <option key={objectType} value={objectType}>
+                      {objectType}
+                    </option>
+                  ))}
+                </select>
+              )}
               <Button htmlType="submit" type="primary" disabled={createMutation.isPending}>
                 {t("common:action.create")}
               </Button>
@@ -1109,6 +1103,7 @@ function ModelsCatalog({
             )}
           </form>
 
+          {defaultCreateType !== "SINGLETON" && (
           <form
             className="model-create-form"
             onSubmit={(e) => {
@@ -1124,13 +1119,14 @@ function ModelsCatalog({
                 sourcePath: String(data.get("sourcePath") ?? ""),
                 modelName,
                 description: String(data.get("description") ?? ""),
-                type: String(data.get("type") ?? "MIXIN") as "MIXIN" | "INSTANCE",
+                type: defaultCreateType === "MIXIN" ? "MIXIN" : "INSTANCE",
               });
               form.reset();
             }}
           >
             <h4>{t("inspector:blueprint.exportObjectTitle")}</h4>
             <p className="hint">
+              {t("inspector:blueprint.exportKind", { type: defaultCreateType })}{" "}
               {t("inspector:blueprint.exportObjectHint")}{" "}
               {selectedPath !== catalogRoot ? (
                 <code>{selectedPath}</code>
@@ -1154,13 +1150,6 @@ function ModelsCatalog({
                 onChange={(e) => setInvalidExportModelName(Boolean(e.target.value) && !isTechnicalIdentifier(e.target.value, "dottedName"))}
               />
               <input name="description" placeholder={t("inspector:blueprint.descriptionPlaceholder")} />
-              <select
-                name="type"
-                defaultValue={defaultCreateType === "SINGLETON" ? "INSTANCE" : defaultCreateType}
-              >
-                <option value="MIXIN">{t("inspector:blueprint.type.MIXIN")}</option>
-                <option value="INSTANCE">{t("inspector:blueprint.type.INSTANCE")}</option>
-              </select>
               <Button htmlType="submit" disabled={fromObjectMutation.isPending}>
                 {t("inspector:blueprint.export")}
               </Button>
@@ -1172,6 +1161,7 @@ function ModelsCatalog({
               <Alert type="error" showIcon title={String(fromObjectMutation.error)} />
             )}
           </form>
+          )}
         </>
       )}
     </div>
