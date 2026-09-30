@@ -3,10 +3,12 @@ package com.ispf.server.driver.pack;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverMetadata;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 public class LicensedDriverRegistry {
 
     private final Map<String, LicensedDriverBinding> bindingsByDriverId = new ConcurrentHashMap<>();
+    private final List<PackLoadFailure> packLoadFailures = new CopyOnWriteArrayList<>();
 
     public void register(LicensedDriverBinding binding) {
         bindingsByDriverId.put(binding.driverId(), binding);
@@ -42,11 +45,27 @@ public class LicensedDriverRegistry {
                 .toList();
     }
 
+    public void recordPackLoadFailure(String packId, String packDir, String reason) {
+        packLoadFailures.add(new PackLoadFailure(packId, packDir, reason, Instant.now()));
+    }
+
+    public List<PackLoadFailure> packLoadFailures() {
+        return List.copyOf(packLoadFailures);
+    }
+
     public record LicensedDriverBinding(
             String packId,
             String driverId,
             DriverMetadata metadata,
             Supplier<DeviceDriver> driverSupplier
+    ) {
+    }
+
+    public record PackLoadFailure(
+            String packId,
+            String packDir,
+            String reason,
+            Instant at
     ) {
     }
 }
