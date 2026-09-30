@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  blueprintKindForCatalog,
   canCreateChildAt,
   defaultObjectTypeForParent,
   instanceTypeFilterForParent,
@@ -34,6 +35,16 @@ describe("resolveCreateDialogMode", () => {
     expect(resolveCreateDialogMode("root.platform.event-filters")).toBe("event-filter");
     expect(resolveCreateDialogMode("root.platform.process-programs")).toBe("process-program");
   });
+
+  it("maps blueprint catalogs to the blueprint dialog", () => {
+    expect(resolveCreateDialogMode("root.platform.instance-types")).toBe("blueprint");
+    expect(resolveCreateDialogMode("root.platform.mixin-blueprints")).toBe("blueprint");
+    expect(resolveCreateDialogMode("root.platform.singleton-blueprints")).toBe("blueprint");
+    expect(blueprintKindForCatalog("root.platform.instance-types")).toBe("INSTANCE");
+    expect(blueprintKindForCatalog("root.platform.mixin-blueprints")).toBe("MIXIN");
+    expect(blueprintKindForCatalog("root.platform.singleton-blueprints")).toBe("SINGLETON");
+    expect(blueprintKindForCatalog("root.platform.devices")).toBeNull();
+  });
 });
 
 describe("defaultObjectTypeForParent", () => {
@@ -48,7 +59,7 @@ describe("defaultObjectTypeForParent", () => {
 
 describe("platformTypesForParent", () => {
   it("offers the catalog child type and a visual group", () => {
-    expect(platformTypesForParent("root.platform.devices")).toEqual(["DEVICE", "VISUAL_GROUP"]);
+    expect(platformTypesForParent("root.platform.devices")).toEqual(["DEVICE", "CUSTOM", "VISUAL_GROUP"]);
     expect(platformTypesForParent("root.platform.dashboards")).toEqual(["DASHBOARD", "VISUAL_GROUP"]);
     expect(platformTypesForParent("root.platform.workflows")).toEqual(["WORKFLOW", "VISUAL_GROUP"]);
     expect(platformTypesForParent("root.platform.singleton-blueprints")).toEqual(["BLUEPRINT", "VISUAL_GROUP"]);
