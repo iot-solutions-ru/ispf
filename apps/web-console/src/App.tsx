@@ -302,6 +302,12 @@ function AppShell() {
     useLazyObjectTree(Boolean(session));
   const objectSearch = useObjectTreeSearch(treeFilter, Boolean(session));
   const fullTreeSearch = treeFilter.trim().length >= OBJECT_SEARCH_MIN_CHARS;
+  const treeSearchStatus =
+    treeFilter.trim().length > 0 && treeFilter.trim().length < OBJECT_SEARCH_MIN_CHARS
+      ? t("shell:admin.treeSearchNeedChars")
+      : fullTreeSearch && objectSearch.data?.truncated
+        ? t("shell:admin.treeSearchTruncated", { count: objectSearch.data.matchCount })
+        : null;
 
   useEffect(() => {
     if (!selectedPath || !objectList.length) {
@@ -806,18 +812,17 @@ function AppShell() {
               <input
                 type="search"
                 placeholder={t("shell:admin.treeSearchPlaceholder")}
+                title={t("shell:admin.treeSearchHint")}
                 value={treeFilter}
                 onChange={(e) => setTreeFilter(e.target.value)}
-                aria-describedby="object-tree-search-hint"
+                aria-describedby={treeSearchStatus ? "object-tree-search-hint" : undefined}
               />
             </div>
-            <p id="object-tree-search-hint" className="sidebar-msg">
-              {treeFilter.trim().length > 0 && treeFilter.trim().length < OBJECT_SEARCH_MIN_CHARS
-                ? t("shell:admin.treeSearchNeedChars")
-                : fullTreeSearch && objectSearch.data?.truncated
-                  ? t("shell:admin.treeSearchTruncated", { count: objectSearch.data.matchCount })
-                  : t("shell:admin.treeSearchHint")}
-            </p>
+            {treeSearchStatus && (
+              <p id="object-tree-search-hint" className="sidebar-msg">
+                {treeSearchStatus}
+              </p>
+            )}
             <div className="sidebar-body">
               {treeLoadError && <p className="sidebar-msg error">{treeLoadError}</p>}
               {fullTreeSearch && objectSearch.isError && (

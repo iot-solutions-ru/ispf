@@ -154,13 +154,11 @@ export default function ObjectTreePickerDialog({
         <Input.Search
           className="object-tree-picker-search"
           placeholder={t("action.search")}
+          title={t("objectPath.searchHint")}
           value={filterQuery}
           onChange={(event) => setFilterQuery(event.target.value)}
           autoFocus
         />
-        <Typography.Paragraph type="secondary" className="object-tree-picker-hint" style={{ marginBottom: 0 }}>
-          {t("objectPath.searchHint")}
-        </Typography.Paragraph>
         {treeLoadError && <Alert type="error" showIcon title={treeLoadError} />}
         {fullTreeSearch && objectSearch.isError && (
           <Alert type="warning" showIcon title={t("objectPath.searchHint")} />
