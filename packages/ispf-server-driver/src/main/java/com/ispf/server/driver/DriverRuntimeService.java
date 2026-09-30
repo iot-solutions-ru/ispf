@@ -177,15 +177,22 @@ public class DriverRuntimeService implements DriverConnectionLookup {
             if (!shouldAutoStart(path)) {
                 continue;
             }
-            if (readBinding(path).isEmpty()) {
-                if ("root.platform.devices.demo-sensor-01".equals(path)) {
-                    self.getObject().configure(path, DriverBinding.virtualDemo());
-                } else {
-                    continue;
-                }
-            }
             try {
+                if (readBinding(path).isEmpty()) {
+                    if ("root.platform.devices.demo-sensor-01".equals(path)) {
+                        self.getObject().configure(path, DriverBinding.virtualDemo());
+                    } else {
+                        continue;
+                    }
+                }
                 self.getObject().start(path);
+            } catch (IllegalArgumentException e) {
+                log.warn("Driver configuration invalid for {}: {}", path, e.getMessage());
+                try {
+                    setStatus(path, "ERROR");
+                } catch (Exception statusEx) {
+                    log.debug("Could not mark driver {} as ERROR: {}", path, statusEx.getMessage());
+                }
             } catch (Exception e) {
                 log.warn("Failed to auto-start driver for {}: {}", path, e.getMessage());
             }
@@ -251,13 +258,23 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     public Optional<DriverRuntimeStatus> status(String devicePath) {
         ActiveDriver active = activeDrivers.get(devicePath);
         if (active == null) {
-            return readBinding(devicePath).map(binding -> statusOf(
-                    devicePath,
-                    binding,
-                    "STOPPED",
-                    false,
-                    null
-            ));
+            try {
+                return readBinding(devicePath).map(binding -> statusOf(
+                        devicePath,
+                        binding,
+                        "STOPPED",
+                        false,
+                        null
+                ));
+            } catch (IllegalArgumentException e) {
+                return Optional.of(statusOf(
+                        devicePath,
+                        bindingForStatusFallback(devicePath),
+                        readStatusVariable(devicePath).orElse("ERROR"),
+                        false,
+                        e.getMessage()
+                ));
+            }
         }
         return Optional.of(statusOf(
                 devicePath,
@@ -298,7 +315,16 @@ public class DriverRuntimeService implements DriverConnectionLookup {
             throw new IllegalArgumentException("Drivers attach only to DEVICE objects: " + devicePath);
         }
 
-        DriverBinding binding = readBinding(devicePath).orElse(DriverBinding.virtualDemo());
+        DriverBinding binding;
+        try {
+            binding = readBinding(devicePath).orElse(DriverBinding.virtualDemo());
+        } catch (IllegalArgumentException e) {
+            setStatus(devicePath, "ERROR");
+            throw new IllegalArgumentException(
+                    "Driver configuration invalid for " + devicePath + ": " + e.getMessage(),
+                    e
+            );
+        }
         DeviceDriver driver = driverFactory.create(binding.driverId());
         @SuppressWarnings("unchecked")
         final DriverIngressBuffer<String, ServerDriverObject.VariableUpdate>[] ingressBufferHolder =
@@ -362,9 +388,16 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     public DriverRuntimeStatus stopLocal(String devicePath, boolean releaseOwnership) {
         ActiveDriver active = activeDrivers.remove(devicePath);
         signalSchedulerLoad();
-        DriverBinding binding = active != null
-                ? active.binding()
-                : readBinding(devicePath).orElse(DriverBinding.virtualDemo());
+        DriverBinding binding;
+        if (active != null) {
+            binding = active.binding();
+        } else {
+            try {
+                binding = readBinding(devicePath).orElse(DriverBinding.virtualDemo());
+            } catch (IllegalArgumentException e) {
+                binding = bindingForStatusFallback(devicePath);
+            }
+        }
         if (active != null) {
             active.future().cancel(false);
             active.driver().disconnect();
@@ -401,10 +434,12 @@ public class DriverRuntimeService implements DriverConnectionLookup {
 
     @Transactional
     public DriverRuntimeStatus configure(String devicePath, DriverBinding binding) {
-        Optional<DriverBinding> existing = readBinding(devicePath);
-        if (existing.isPresent() && !existing.get().driverId().equals(binding.driverId())) {
+        String existingDriverId = objects.findByPath(devicePath)
+                .flatMap(node -> stringValue(node, "driverId"))
+                .orElse("");
+        if (!existingDriverId.isBlank() && !existingDriverId.equals(binding.driverId())) {
             throw new IllegalStateException(
-                    "Driver already configured as " + existing.get().driverId()
+                    "Driver already configured as " + existingDriverId
                             + "; cannot switch to " + binding.driverId()
             );
         }
@@ -663,6 +698,21 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         String configJson = stringValue(device, "driverConfigJson").orElse("{}");
         String mappingsJson = stringValue(device, "driverPointMappingsJson").orElse("{}");
         return Optional.of(DriverBinding.parse(driverId, pollInterval, configJson, mappingsJson, objectMapper));
+    }
+
+    private DriverBinding bindingForStatusFallback(String devicePath) {
+        PlatformObject device = objects.findByPath(devicePath).orElse(null);
+        if (device == null) {
+            return DriverBinding.virtualDemo();
+        }
+        String driverId = stringValue(device, "driverId").orElse(DriverBinding.DEFAULT_DRIVER_ID);
+        int pollInterval = intValue(device, "driverPollIntervalMs").orElse(2000);
+        return DriverBinding.of(
+                driverId.isBlank() ? DriverBinding.DEFAULT_DRIVER_ID : driverId,
+                pollInterval,
+                Map.of(),
+                Map.of()
+        );
     }
 
     private Optional<String> readStatusVariable(String devicePath) {

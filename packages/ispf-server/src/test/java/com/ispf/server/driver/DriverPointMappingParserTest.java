@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DriverPointMappingParserTest {
 
@@ -59,5 +60,17 @@ class DriverPointMappingParserTest {
 
         assertThat(parsed.get("presentValue").pointId()).isEqualTo("analog-value:1:present-value");
         assertThat(parsed.get("presentValue").haystackTags()).containsExactly("point", "cur");
+    }
+
+    @Test
+    void invalidJsonFailsInsteadOfBecomingEmpty() {
+        assertThatThrownBy(() -> DriverPointMappingParser.parse("{broken", objectMapper))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Driver point mappings JSON is not parseable");
+    }
+
+    @Test
+    void blankJsonStillMeansEmpty() {
+        assertThat(DriverPointMappingParser.parse(" ", objectMapper)).isEmpty();
     }
 }
