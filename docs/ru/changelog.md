@@ -16,6 +16,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
+- `brace-expansion`: npm overrides web-console держали 1.1.18 и 2.1.4, которые попадают в GHSA-6j4f-fj2g-mc7p, GHSA-qhr7-859c-m2p7 и GHSA-q2hr-2g5m-vwhr (переполнение стека и квадратичное раскрытие скобок). Пины теперь 1.1.21 и 2.1.7.
 - Битый JSON драйвера больше не превращается в пустую карту: `driverConfigJson` / `driverPointMappingsJson` с ошибкой разбора раньше стартовали устройство без конфигурации и точек. Теперь старт падает с текстом разбора и ставит драйвер в `ERROR`; пустой JSON по-прежнему значит «карт нет».
 - Каталоги blueprint: «создать» в instance-types, mixin-blueprints и singleton-blueprints регистрирует blueprint того вида, который задаёт папка. Пустой blueprint больше не спрашивает MIXIN, INSTANCE или SINGLETON. Целевой тип объекта спрашивается только у INSTANCE и MIXIN (DEVICE, CUSTOM, DASHBOARD, WORKFLOW, MIMIC, ALERT, REPORT). Экспорт берёт вид каталога; у singleton экспорт из объекта не предлагается. `GET /api/v1/blueprints/by-name/{name}` для отсутствующей строки реестра отвечает 404, а редактор пишет, что узел дерева создан как обычный объект.
 - Создание объекта в devices: в списке типов DEVICE, CUSTOM и визуальная группа. Типы экземпляров под devices по-прежнему только DEVICE.
