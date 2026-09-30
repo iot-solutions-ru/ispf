@@ -24,6 +24,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **`brace-expansion`** — the web-console npm overrides held 1.1.18 and 2.1.4, which are inside GHSA-6j4f-fj2g-mc7p, GHSA-qhr7-859c-m2p7, and GHSA-q2hr-2g5m-vwhr (stack exhaustion and quadratic brace expansion). The pins are now 1.1.21 and 2.1.7.
 - **Driver JSON configuration** — `DriverBinding.parseMap` and `DriverPointMappingParser.parse` treated an unparsable `driverConfigJson` / `driverPointMappingsJson` as an empty map, so a device started with no points and no config instead of a configuration error. Invalid JSON now fails the driver start with the parse message and marks the driver `ERROR`; blank JSON still means no maps.
 - **Blueprint catalogs** — Explorer create on instance-types, mixin-blueprints, and singleton-blueprints registers a blueprint of that folder’s kind. An empty blueprint no longer asks for MIXIN, INSTANCE, or SINGLETON. Target object type is asked only for INSTANCE and MIXIN (DEVICE, CUSTOM, DASHBOARD, WORKFLOW, MIMIC, ALERT, REPORT). Export follows the catalog kind; a singleton catalog does not offer export-from-object. `GET /api/v1/blueprints/by-name/{name}` for a missing registry row is 404, and the editor says the tree node was created as an ordinary object.
 - **Create object under devices** — the type list is DEVICE, CUSTOM, and a visual group. Instance-type options under devices stay DEVICE.
