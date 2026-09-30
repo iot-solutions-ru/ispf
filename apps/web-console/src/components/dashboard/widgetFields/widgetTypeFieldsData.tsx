@@ -275,9 +275,9 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
       <PathSelect
         label="reportPath"
         value={rw.reportPath}
-        objects={ctx.reports.map((r) => ({ ...r, variableNames: [] }))}
         onChange={(path) => update({ reportPath: path })}
         placeholder="root.platform.reports.ready-items"
+        filterTypes={["REPORT"]}
       />
       <ReportParameterHints reportPath={rw.reportPath} />
       <KeyValueEditor

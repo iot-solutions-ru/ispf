@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import type { AnalyticsQueryTagInput } from "../../../api";
 import { fetchReport } from "../../../api/reports";
 import { parseAnalyticsQueryTags } from "../../../hooks/useAnalyticsMultiSeries";
+import type { ObjectType } from "../../../types";
 import type { ChartWidget, DashboardWidget } from "../../../types/dashboard";
 import { ObjectPathField } from "../../../ui";
 import { AdvancedJsonField } from "../widgetEditorStructured";
@@ -136,15 +137,15 @@ export function FieldLabel({
 export function PathSelect({
   label,
   value,
-  objects,
   onChange,
   placeholder,
+  filterTypes,
 }: {
   label: string;
   value: string;
-  objects: ObjectOption[];
   onChange: (path: string) => void;
   placeholder?: string;
+  filterTypes?: ObjectType[];
 }) {
   const { t } = useTranslation(["widgets", "common"]);
   return (
@@ -152,9 +153,10 @@ export function PathSelect({
       className="path-select-field"
       label={label}
       value={value}
-      objects={objects.map(({ path, displayName }) => ({ path, displayName }))}
       onChange={onChange}
-      placeholder={placeholder ?? t("editor.placeholder.orEnterPath")}
+      filterTypes={filterTypes}
+      placeholder={placeholder ?? t("common:objectPath.placeholder")}
+      pickerTitle={label}
     />
   );
 }
