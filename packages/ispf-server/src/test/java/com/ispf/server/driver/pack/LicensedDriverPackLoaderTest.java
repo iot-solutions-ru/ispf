@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LicensedDriverPackLoaderTest {
@@ -46,6 +48,90 @@ class LicensedDriverPackLoaderTest {
 
         loader.loadPackDirectory(packDir);
         assertTrue(registry.metadata().isEmpty());
+        assertEquals(1, registry.packLoadFailures().size());
+        LicensedDriverRegistry.PackLoadFailure failure = registry.packLoadFailures().get(0);
+        assertEquals("demo-pack", failure.packId());
+        assertTrue(failure.reason().startsWith("load failed:"));
+    }
+
+    @Test
+    void recordsFailureForInvalidManifest() throws Exception {
+        Path packDir = tempDir.resolve("broken-pack");
+        Files.createDirectories(packDir);
+        Map<String, Object> manifest = Map.of(
+                "packId", " ",
+                "jarFile", "demo.jar"
+        );
+        new ObjectMapper().writeValue(packDir.resolve("driver-pack.json").toFile(), manifest);
+
+        LicensedDriverRegistry registry = new LicensedDriverRegistry();
+        LicensedDriverPackLoader loader = new LicensedDriverPackLoader(
+                packProperties(packDir.getParent()),
+                licenseProperties(false),
+                null,
+                registry,
+                new ObjectMapper()
+        );
+
+        loader.loadPackDirectory(packDir);
+        assertEquals(1, registry.packLoadFailures().size());
+        LicensedDriverRegistry.PackLoadFailure failure = registry.packLoadFailures().get(0);
+        assertNull(failure.packId());
+        assertEquals("invalid driver pack manifest", failure.reason());
+    }
+
+    @Test
+    void recordsFailureForMissingJar() throws Exception {
+        Path packDir = tempDir.resolve("no-jar-pack");
+        Files.createDirectories(packDir);
+        Map<String, Object> manifest = Map.of(
+                "packId", "no-jar-pack",
+                "jarFile", "missing.jar"
+        );
+        new ObjectMapper().writeValue(packDir.resolve("driver-pack.json").toFile(), manifest);
+
+        LicensedDriverRegistry registry = new LicensedDriverRegistry();
+        LicensedDriverPackLoader loader = new LicensedDriverPackLoader(
+                packProperties(packDir.getParent()),
+                licenseProperties(false),
+                null,
+                registry,
+                new ObjectMapper()
+        );
+
+        loader.loadPackDirectory(packDir);
+        assertEquals(1, registry.packLoadFailures().size());
+        LicensedDriverRegistry.PackLoadFailure failure = registry.packLoadFailures().get(0);
+        assertEquals("no-jar-pack", failure.packId());
+        assertTrue(failure.reason().startsWith("JAR not found:"));
+    }
+
+    @Test
+    void recordsFailureWhenLicenseBlockMissingUnderEnforce() throws Exception {
+        Path packDir = tempDir.resolve("unlicensed-pack");
+        Files.createDirectories(packDir);
+        Files.writeString(packDir.resolve("demo.jar"), "placeholder");
+        Map<String, Object> manifest = Map.of(
+                "packId", "unlicensed-pack",
+                "jarFile", "demo.jar"
+        );
+        new ObjectMapper().writeValue(packDir.resolve("driver-pack.json").toFile(), manifest);
+
+        LicensedDriverRegistry registry = new LicensedDriverRegistry();
+        LicensedDriverPackLoader loader = new LicensedDriverPackLoader(
+                packProperties(packDir.getParent()),
+                licenseProperties(true),
+                null,
+                registry,
+                new ObjectMapper()
+        );
+
+        loader.loadPackDirectory(packDir);
+        assertTrue(registry.metadata().isEmpty());
+        assertEquals(1, registry.packLoadFailures().size());
+        LicensedDriverRegistry.PackLoadFailure failure = registry.packLoadFailures().get(0);
+        assertEquals("unlicensed-pack", failure.packId());
+        assertEquals("license block required when enforce=true", failure.reason());
     }
 
     private static com.ispf.server.config.DriverPackProperties packProperties(Path root) {
