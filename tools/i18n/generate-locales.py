@@ -19,7 +19,9 @@ SOURCE = "en"
 TARGETS = ("ru", "de", "zh")
 LANG_CODES = {"ru": "ru", "de": "de", "zh": "zh-CN"}
 BATCH_SIZE = 40
-PLACEHOLDER_RE = re.compile(r"\{\{[^}]+\}\}|\$\{[^}]+\}|`\w+`|`\{\{[^}]+\}\}`)
+# \x60 is a backtick. A literal backtick in this pattern makes CodeQL's regex
+# parser treat the span as a string and skip the file.
+PLACEHOLDER_RE = re.compile(r"\{\{[^}]+\}\}|\$\{[^}]+\}|\x60\w+\x60|\x60\{\{[^}]+\}\}\x60")
 
 
 def load_glossary() -> dict[str, dict[str, str]]:
