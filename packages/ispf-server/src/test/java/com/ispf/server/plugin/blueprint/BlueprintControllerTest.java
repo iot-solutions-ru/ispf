@@ -22,6 +22,12 @@ class BlueprintControllerTest {
     private MockMvc mockMvc;
 
     @Test
+    void missingBlueprintByNameIsNotFound() throws Exception {
+        mockMvc.perform(get("/api/v1/blueprints/by-name/no-such-blueprint-404"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void listsFixtureMqttSensorModelWhenFixturesEnabled() throws Exception {
         mockMvc.perform(get("/api/v1/blueprints"))
                 .andExpect(status().isOk())

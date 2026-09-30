@@ -92,7 +92,12 @@ public class BlueprintController {
 
     @GetMapping("/by-name/{name}")
     public BlueprintDto getByName(@PathVariable String name) {
-        return BlueprintDto.from(blueprintRegistry.requireByName(name));
+        return blueprintRegistry.findByName(name)
+                .map(BlueprintDto::from)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Blueprint not found: " + name
+                ));
     }
 
     @PostMapping

@@ -74,4 +74,24 @@ class DriverBindingTest {
 
         assertThat(binding.telemetryCoalesceMs()).isZero();
     }
+
+    @Test
+    void invalidConfigurationJsonFailsInsteadOfBecomingEmpty() {
+        assertThatThrownBy(() -> DriverBinding.parse(
+                "virtual",
+                1000,
+                "{broken",
+                "{}",
+                objectMapper
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Driver configuration JSON is not parseable");
+    }
+
+    @Test
+    void blankConfigurationJsonStillMeansEmpty() {
+        DriverBinding binding = DriverBinding.parse("virtual", 1000, " ", "{}", objectMapper);
+
+        assertThat(binding.configuration()).isEmpty();
+    }
 }
