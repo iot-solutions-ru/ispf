@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Alert, Button, Form, Input, InputNumber, Modal, Select, Space, Switch, Typography } from "antd";
 import { createObject, createEventFilter, upsertFunction } from "../../api";
 import { buildObjectQueryRunFunction } from "../../utils/object/objectQueryDefaults";
-import { fetchInstanceTypes, instantiateBlueprint } from "../../api/blueprints";
+import { createBlueprint, fetchInstanceTypes, instantiateBlueprint } from "../../api/blueprints";
 import { registerApplication } from "../../api/applications";
 import { saveReportDefinition } from "../../api/reports";
 import { createOperatorApp } from "../../api/operatorApps";
@@ -29,6 +29,8 @@ import DriverMaturityBadge from "../DriverMaturityBadge";
 import { formatDriverOptionLabel } from "../driverOptionLabel";
 import {
   applicationObjectPath,
+  BLUEPRINT_TARGET_OBJECT_TYPES,
+  blueprintKindForCatalog,
   defaultObjectTypeForParent,
   instanceTypeFilterForParent,
   platformTypesForParent,
@@ -60,10 +62,12 @@ export default function CreateObjectDialog({
 }: CreateObjectDialogProps) {
   const { t } = useTranslation(["explorer", "common", "platform"]);
   const mode = resolveCreateDialogMode(parentPath);
+  const blueprintKind = blueprintKindForCatalog(parentPath);
   const isMimicCatalog = parentPath.endsWith(".mimics");
   const [name, setName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [description, setDescription] = useState("");
+  const [blueprintTarget, setBlueprintTarget] = useState<ObjectType>("CUSTOM");
   const [type, setType] = useState<ObjectType>(() => defaultObjectTypeForParent(parentPath));
   const [typeSelection, setTypeSelection] = useState<string>(() => defaultObjectTypeForParent(parentPath));
 
@@ -132,6 +136,8 @@ export default function CreateObjectDialog({
         return t("dialog.newEventFilter");
       case "process-program":
         return t("dialog.newProcessProgram");
+      case "blueprint":
+        return t("dialog.newBlueprint");
       default:
         return presetType === "VISUAL_GROUP"
           ? t("dialog.newVisualGroup")
@@ -196,6 +202,18 @@ export default function CreateObjectDialog({
 
   const mutation = useMutation({
     mutationFn: async () => {
+      if (mode === "blueprint") {
+        if (!blueprintKind) {
+          throw new Error("Not a blueprint catalog");
+        }
+        const created = await createBlueprint({
+          name: name.trim(),
+          description: description.trim() || undefined,
+          type: blueprintKind,
+          ...(blueprintKind === "SINGLETON" ? {} : { targetObjectType: blueprintTarget }),
+        });
+        return created.objectPath;
+      }
       if (mode === "application") {
         await registerApplication({
           appId: name,
@@ -478,6 +496,11 @@ export default function CreateObjectDialog({
           {(mode === "query" || mode === "event-filter" || mode === "process-program") && (
             <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>{t(`dialog.${mode}Hint`, { path: parentPath })}</Typography.Paragraph>
           )}
+          {mode === "blueprint" && blueprintKind && (
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+              {t("dialog.blueprintHint", { type: blueprintKind })}
+            </Typography.Paragraph>
+          )}
           <Form
             layout="vertical"
             className="antd-control-grid"
@@ -487,7 +510,7 @@ export default function CreateObjectDialog({
             }}
           >
             <Form.Item
-              label={mode === "object" ? t("dialog.namePathSegment") : t("dialog.nameOrId")}
+              label={mode === "object" || mode === "blueprint" ? t("dialog.namePathSegment") : t("dialog.nameOrId")}
               validateStatus={name && !nameValid ? "error" : undefined}
               help={name && !nameValid ? t("common:error.invalidPathSegment") : undefined}
               required
@@ -500,9 +523,23 @@ export default function CreateObjectDialog({
                 aria-invalid={Boolean(name) && !nameValid}
               />
             </Form.Item>
-            <Form.Item label={t("common:field.displayName")}>
-              <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-            </Form.Item>
+            {mode !== "blueprint" && (
+              <Form.Item label={t("common:field.displayName")}>
+                <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+              </Form.Item>
+            )}
+            {mode === "blueprint" && blueprintKind && blueprintKind !== "SINGLETON" && (
+              <Form.Item label={t("dialog.blueprintTarget")}>
+                <Select
+                  value={blueprintTarget}
+                  onChange={(next) => setBlueprintTarget(next as ObjectType)}
+                  options={BLUEPRINT_TARGET_OBJECT_TYPES.map((objectType) => ({
+                    value: objectType,
+                    label: objectType,
+                  }))}
+                />
+              </Form.Item>
+            )}
 
             {mode === "data-source" && (
               <DataSourceConnectionFields
@@ -736,7 +773,7 @@ export default function CreateObjectDialog({
               </>
             )}
 
-            {(mode === "object" || mode === "data-source" || mode === "migration" || mode === "sql-binding"
+            {(mode === "object" || mode === "blueprint" || mode === "data-source" || mode === "migration" || mode === "sql-binding"
               || mode === "query" || mode === "event-filter" || mode === "process-program") && (
               <Form.Item label={t("common:field.description")} className="full">
                 <Input.TextArea
