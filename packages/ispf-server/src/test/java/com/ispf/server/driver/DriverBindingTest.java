@@ -6,6 +6,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DriverBindingTest {
 
@@ -35,5 +36,42 @@ class DriverBindingTest {
 
         assertThat(binding.telemetryPublishMode()).isEqualTo(TelemetryPublishMode.FULL);
         assertThat(TelemetryPublishMode.FULL.automationEligible()).isTrue();
+    }
+
+    @Test
+    void rejectsUnparseableTelemetryCoalesceMsInJson() {
+        assertThatThrownBy(() -> DriverBinding.parse(
+                "virtual",
+                1000,
+                "{\"telemetryCoalesceMs\":\"soon\"}",
+                "{}",
+                objectMapper
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("telemetryCoalesceMs");
+    }
+
+    @Test
+    void rejectsUnparseableTelemetryCoalesceMsInConfiguration() {
+        assertThatThrownBy(() -> DriverBinding.of(
+                "virtual",
+                1000,
+                Map.of("telemetryCoalesceMs", "abc"),
+                Map.of()
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("telemetryCoalesceMs");
+    }
+
+    @Test
+    void keepsExplicitZeroTelemetryCoalesceMsDisabled() {
+        DriverBinding binding = DriverBinding.of(
+                "virtual",
+                1000,
+                Map.of("telemetryCoalesceMs", "0"),
+                Map.of()
+        );
+
+        assertThat(binding.telemetryCoalesceMs()).isZero();
     }
 }
