@@ -33,10 +33,18 @@ final class MqttPayloadTimestamps {
         }
         Matcher isoMatch = ISO_FIELD.matcher(payload);
         if (isoMatch.find()) {
+            String raw = isoMatch.group(1);
             try {
-                return Instant.parse(isoMatch.group(1));
+                return Instant.parse(raw);
             } catch (Exception ignored) {
-                // fall through
+                // not ISO-8601 — a quoted epoch is still acceptable below
+            }
+            try {
+                long epoch = Long.parseLong(raw.trim());
+                return epoch > 1_000_000_000_000L ? Instant.ofEpochMilli(epoch) : Instant.ofEpochSecond(epoch);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException(
+                        "MQTT payload timestamp field is not parseable: " + raw, e);
             }
         }
         Matcher epochMatch = EPOCH_FIELD.matcher(payload);
