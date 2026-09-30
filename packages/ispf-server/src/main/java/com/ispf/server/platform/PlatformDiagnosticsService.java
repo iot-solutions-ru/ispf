@@ -160,6 +160,7 @@ public class PlatformDiagnosticsService {
         detail.put("bindingPeriodicNextWakeAt", nextWake != null ? nextWake.toString() : null);
         detail.put("telemetryIngressStarted", telemetryIngressDispatcher.isStarted());
         detail.put("mqttGatewayIngressStarted", mqttGatewayIngressDispatchService.isWorkersStarted());
+        detail.put("mqttGatewayIngressDispatchFailures", mqttGatewayIngressDispatchService.dispatchFailureCount());
         detail.put("runtimeTelemetryCoalescerStarted", runtimeTelemetryCoalescer.isSchedulerStarted());
         return detail;
     }
