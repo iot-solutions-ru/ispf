@@ -94,6 +94,12 @@ public final class DataRecord {
         if (field.type() == FieldType.DATETIME) {
             return datetimeValue(field, value);
         }
+        if (field.type() == FieldType.RECORD) {
+            return nestedRecordValue(field, value);
+        }
+        if (field.type() == FieldType.RECORD_LIST) {
+            return nestedRecordListValue(field, value);
+        }
         validateType(field, value);
         return value;
     }
@@ -110,6 +116,35 @@ public final class DataRecord {
             }
         }
         throw new IllegalArgumentException(field.name() + " must be datetime");
+    }
+
+    private static Object nestedRecordValue(FieldDefinition field, Object value) {
+        if (value instanceof DataRecord record) {
+            if (!field.nestedSchema().isCompatibleWith(record.schema())) {
+                throw new IllegalArgumentException(field.name() + " does not match nested schema");
+            }
+            return record;
+        }
+        if (value instanceof Map<?, ?>) {
+            return value;
+        }
+        throw new IllegalArgumentException(field.name() + " must be DataRecord");
+    }
+
+    private static Object nestedRecordListValue(FieldDefinition field, Object value) {
+        if (!(value instanceof List<?> list)) {
+            throw new IllegalArgumentException(field.name() + " must be list");
+        }
+        for (Object element : list) {
+            if (element instanceof DataRecord record) {
+                if (!field.nestedSchema().isCompatibleWith(record.schema())) {
+                    throw new IllegalArgumentException(field.name() + " element does not match nested schema");
+                }
+            } else if (!(element instanceof Map<?, ?>)) {
+                throw new IllegalArgumentException(field.name() + " must be a list of DataRecord");
+            }
+        }
+        return value;
     }
 
     private static Double finiteDouble(FieldDefinition field, Object value) {
@@ -151,16 +186,8 @@ public final class DataRecord {
                     throw new IllegalArgumentException(field.name() + " must be datetime");
                 }
             }
-            case RECORD -> {
-                if (!(value instanceof DataRecord)) {
-                    throw new IllegalArgumentException(field.name() + " must be DataRecord");
-                }
-            }
-            case RECORD_LIST -> {
-                if (!(value instanceof List)) {
-                    throw new IllegalArgumentException(field.name() + " must be list");
-                }
-            }
+            case RECORD -> throw new IllegalStateException("record is stored by nestedRecordValue");
+            case RECORD_LIST -> throw new IllegalStateException("record list is stored by nestedRecordListValue");
             case BINARY -> {
                 if (!(value instanceof byte[])) {
                     throw new IllegalArgumentException(field.name() + " must be binary");
