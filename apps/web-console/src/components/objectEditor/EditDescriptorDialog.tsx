@@ -42,9 +42,9 @@ function defaultFunction(name = ""): FunctionDescriptor {
   return {
     name: base,
     description: "",
-    inputSchema: { ...emptySchema(`${base}Input`), fields: [] },
+    inputSchema: emptySchema("in"),
     outputSchema: {
-      name: `${base}Output`,
+      name: "out",
       fields: [{ name: "result", type: "DOUBLE", description: "Result", nullable: false }],
     },
     sourceType: null,
@@ -89,8 +89,8 @@ export default function EditDescriptorDialog({
     !isFunction && initial ? (initial as EventDescriptor).level : "INFO"
   );
   const [invokeRoles, setInvokeRoles] = useState<string[]>(initial?.invokeRoles ?? []);
-  const [inputSchema, setInputSchema] = useState<DataSchema>(emptySchema("input"));
-  const [outputSchema, setOutputSchema] = useState<DataSchema>(emptySchema("output"));
+  const [inputSchema, setInputSchema] = useState<DataSchema>(emptySchema("in"));
+  const [outputSchema, setOutputSchema] = useState<DataSchema>(emptySchema("out"));
   const [payloadSchema, setPayloadSchema] = useState<DataSchema>(emptySchema("payload"));
   const [sourceType, setSourceType] = useState("");
   const [sourceBody, setSourceBody] = useState("");
@@ -114,6 +114,15 @@ export default function EditDescriptorDialog({
     () => inputSchema.fields.map((field) => field.name).filter(Boolean),
     [inputSchema.fields]
   );
+
+  function changeDescriptorName(nextName: string) {
+    setName(nextName);
+    if (isFunction || initial) {
+      return;
+    }
+    const schemaName = `${nextName.trim() || "event"}Payload`;
+    setPayloadSchema((prev) => (prev.name === schemaName ? prev : { ...prev, name: schemaName }));
+  }
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -412,7 +421,7 @@ export default function EditDescriptorDialog({
           >
             <Input
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => changeDescriptorName(e.target.value)}
               readOnly={Boolean(initial)}
               pattern="[A-Za-z_][A-Za-z0-9_]*"
               required
@@ -461,6 +470,7 @@ export default function EditDescriptorDialog({
                 value={inputSchema}
                 onChange={setInputSchema}
                 idPrefix="fn-input"
+                showSchemaName={false}
               />
             </section>
             <section className="modal-section">
@@ -469,6 +479,7 @@ export default function EditDescriptorDialog({
                 value={outputSchema}
                 onChange={setOutputSchema}
                 idPrefix="fn-output"
+                showSchemaName={false}
               />
             </section>
             <Form layout="vertical" className="modal-section antd-control-grid">
@@ -601,6 +612,7 @@ export default function EditDescriptorDialog({
               value={payloadSchema}
               onChange={setPayloadSchema}
               idPrefix="ev-payload"
+              showSchemaName={false}
             />
           </section>
         )}

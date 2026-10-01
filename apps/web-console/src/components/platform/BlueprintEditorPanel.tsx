@@ -291,22 +291,43 @@ function ModelDetail({
   }
 
   function patchEvent(index: number, patch: Partial<EventDescriptor>) {
-    setEvents((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)));
+    setEvents((prev) =>
+      prev.map((event, i) => {
+        if (i !== index) {
+          return event;
+        }
+        const next = { ...event, ...patch };
+        if (
+          patch.name != null &&
+          patch.name !== event.name &&
+          event.payloadSchema.name === `${event.name}Payload`
+        ) {
+          next.payloadSchema = {
+            ...event.payloadSchema,
+            name: `${patch.name.trim() || "event"}Payload`,
+          };
+        }
+        return next;
+      }),
+    );
   }
 
   function addEvent() {
-    setEvents((prev) => [
-      ...prev,
-      {
-        name: `event${prev.length + 1}`,
-        description: "",
-        payloadSchema: {
-          name: "payload",
-          fields: [{ name: "message", type: "STRING" }],
+    setEvents((prev) => {
+      const eventName = `event${prev.length + 1}`;
+      return [
+        ...prev,
+        {
+          name: eventName,
+          description: "",
+          payloadSchema: {
+            name: `${eventName}Payload`,
+            fields: [{ name: "message", type: "STRING" }],
+          },
+          level: "INFO",
         },
-        level: "INFO",
-      },
-    ]);
+      ];
+    });
   }
 
   function removeEvent(index: number) {
@@ -323,9 +344,9 @@ function ModelDetail({
       {
         name: `fn${prev.length + 1}`,
         description: "",
-        inputSchema: { name: "input", fields: [] },
+        inputSchema: { name: "in", fields: [] },
         outputSchema: {
-          name: "output",
+          name: "out",
           fields: [{ name: "ok", type: "BOOLEAN" }],
         },
       },

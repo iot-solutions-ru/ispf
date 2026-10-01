@@ -209,6 +209,7 @@ export default function CreateVariableDialog({
             value={schema}
             onChange={handleSchemaChange}
             idPrefix="create-var-schema"
+            showSchemaName={false}
           />
         </section>
 

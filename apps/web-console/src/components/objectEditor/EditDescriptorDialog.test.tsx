@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { FunctionDescriptor } from "../../types";
+import type { EventDescriptor, FunctionDescriptor } from "../../types";
 import { renderWithInspector } from "../../test/renderWithInspector";
 import EditDescriptorDialog from "./EditDescriptorDialog";
 import * as api from "../../api";
@@ -20,7 +20,9 @@ vi.mock("../../api/securityRoles", () => ({
 }));
 
 vi.mock("../schema/DataSchemaEditor", () => ({
-  default: () => <div data-testid="schema-editor" />,
+  default: ({ showSchemaName = true }: { showSchemaName?: boolean }) => (
+    <div data-testid="schema-editor" data-show-schema-name={String(showSchemaName)} />
+  ),
 }));
 
 vi.mock("../functionScript/FunctionScriptStepsEditor", () => ({
@@ -91,6 +93,91 @@ describe("EditDescriptorDialog", () => {
       ),
     );
   }
+
+  it("hides schema names and saves new functions as in and out", async () => {
+    const user = userEvent.setup();
+    renderWithInspector(
+      <QueryClientProvider client={queryClient}>
+        <EditDescriptorDialog
+          objectPath="root.platform.functions"
+          kind="function"
+          onClose={vi.fn()}
+          onSaved={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+
+    const editors = screen.getAllByTestId("schema-editor");
+    expect(editors).toHaveLength(2);
+    for (const editor of editors) {
+      expect(editor).toHaveAttribute("data-show-schema-name", "false");
+    }
+
+    const nameInput = document.querySelector("input[required]") as HTMLInputElement;
+    fireEvent.change(nameInput, { target: { value: "calculate" } });
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(api.upsertFunction).toHaveBeenCalledTimes(1));
+    const saved = vi.mocked(api.upsertFunction).mock.calls[0][1];
+    expect(saved.inputSchema.name).toBe("in");
+    expect(saved.outputSchema.name).toBe("out");
+  });
+
+  it("hides the event payload schema name and saves a new event as namePayload", async () => {
+    const user = userEvent.setup();
+    renderWithInspector(
+      <QueryClientProvider client={queryClient}>
+        <EditDescriptorDialog
+          objectPath="root.platform.devices.lab"
+          kind="event"
+          onClose={vi.fn()}
+          onSaved={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId("schema-editor")).toHaveAttribute("data-show-schema-name", "false");
+
+    const nameInput = document.querySelector("input[required]") as HTMLInputElement;
+    fireEvent.change(nameInput, { target: { value: "alarm" } });
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(api.upsertEvent).toHaveBeenCalledTimes(1));
+    const saved = vi.mocked(api.upsertEvent).mock.calls[0][1] as EventDescriptor;
+    expect(saved.name).toBe("alarm");
+    expect(saved.payloadSchema.name).toBe("alarmPayload");
+  });
+
+  it("keeps an existing event payload schema name", async () => {
+    const user = userEvent.setup();
+    const initial: EventDescriptor = {
+      name: "alarm",
+      description: "Raised alarm",
+      payloadSchema: {
+        name: "customPayload",
+        fields: [{ name: "message", type: "STRING", description: "Message", nullable: true }],
+      },
+      level: "INFO",
+      invokeRoles: [],
+    };
+    renderWithInspector(
+      <QueryClientProvider client={queryClient}>
+        <EditDescriptorDialog
+          objectPath="root.platform.devices.lab"
+          kind="event"
+          initial={initial}
+          onClose={vi.fn()}
+          onSaved={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(api.upsertEvent).toHaveBeenCalledTimes(1));
+    const saved = vi.mocked(api.upsertEvent).mock.calls[0][1] as EventDescriptor;
+    expect(saved.payloadSchema.name).toBe("customPayload");
+  });
 
   it("preserves independent Java and steps drafts when switching source type", async () => {
     const user = userEvent.setup();
