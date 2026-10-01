@@ -16,6 +16,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,7 +36,7 @@ class ObjectQueryJoinResolverTest {
     @BeforeEach
     void setUp() {
         resolver = new ObjectQueryJoinResolver(objectManager, platformRefExecutor);
-        when(objectManager.tree()).thenReturn(tree);
+        lenient().when(objectManager.tree()).thenReturn(tree);
     }
 
     @Test
@@ -82,6 +83,50 @@ class ObjectQueryJoinResolverTest {
                 "root.platform.queries.test"
         );
         assertThat(joined).contains(catalog.path());
+    }
+
+    @Test
+    void pathSubstringJoinMatchesLiteralFragmentWithDots() {
+        PlatformObject device = stubNode("root.platform.devices.site-a.tank-1", ObjectType.DEVICE);
+        PlatformObject catalog = stubNode("root.platform.instances.site-a.tank", ObjectType.CUSTOM);
+        when(tree.all()).thenReturn(java.util.List.of(catalog));
+
+        ObjectQueryJoinSpec join = new ObjectQueryJoinSpec(
+                "instance",
+                "left",
+                "root.platform.instances.**",
+                null,
+                null,
+                new ObjectQueryJoinOnSpec(JoinKind.PATH_SUBSTRING, null, null, "site-a.tank", null)
+        );
+        Optional<String> joined = resolver.resolveJoin(
+                join,
+                Map.of("row", device.path()),
+                "row",
+                "root.platform.queries.test"
+        );
+        assertThat(joined).contains(catalog.path());
+    }
+
+    @Test
+    void pathSubstringJoinDoesNotTreatMatchAsRegex() {
+        PlatformObject device = stubNode("root.platform.devices.devicesXpump.tank", ObjectType.DEVICE);
+
+        ObjectQueryJoinSpec join = new ObjectQueryJoinSpec(
+                "instance",
+                "left",
+                "root.platform.instances.*",
+                null,
+                null,
+                new ObjectQueryJoinOnSpec(JoinKind.PATH_SUBSTRING, null, null, "devices.pump", null)
+        );
+        Optional<String> joined = resolver.resolveJoin(
+                join,
+                Map.of("row", device.path()),
+                "row",
+                "root.platform.queries.test"
+        );
+        assertThat(joined).isEmpty();
     }
 
     @Test
