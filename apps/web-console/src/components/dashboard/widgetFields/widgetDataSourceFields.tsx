@@ -45,7 +45,6 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
             <PathSelect
               label={t("editor.objectPath")}
               value={widget.objectPath ?? ""}
-              objects={objects}
               onChange={(path) => update({ objectPath: path || undefined, variableName: "" })}
             />
             <FieldLabel caption={t("editor.selectionKey")}>
@@ -142,7 +141,6 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
           <PathSelect
             label={t("editor.parentPath")}
             value={(widget as { parentPath?: string }).parentPath ?? ""}
-            objects={objects}
             onChange={(path) => update({ parentPath: path } as Partial<DashboardWidget>)}
             placeholder="root.platform.devices"
           />
