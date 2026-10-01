@@ -457,7 +457,12 @@ public class ObjectQueryService {
             if (order.field() == null) {
                 continue;
             }
-        Comparator<Map<String, Object>> next = (left, right) -> compareValues(left.get(order.field()), right.get(order.field()));
+        String orderField = order.field();
+        Comparator<Map<String, Object>> next = (left, right) -> compareValues(
+                left.get(orderField),
+                right.get(orderField),
+                orderField
+        );
             if ("desc".equalsIgnoreCase(order.dir())) {
                 next = next.reversed();
             }
@@ -585,7 +590,7 @@ public class ObjectQueryService {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static int compareValues(Object left, Object right) {
+    private static int compareValues(Object left, Object right, String fieldName) {
         if (left == null && right == null) {
             return 0;
         }
@@ -598,10 +603,28 @@ public class ObjectQueryService {
         if (left instanceof Comparable comparable) {
             try {
                 return comparable.compareTo(right);
-            } catch (ClassCastException ignored) {
-                return String.valueOf(left).compareToIgnoreCase(String.valueOf(right));
+            } catch (ClassCastException ex) {
+                throw incompatibleOrderTypes(fieldName, left, right, ex);
             }
         }
+        if (!left.getClass().equals(right.getClass())) {
+            throw incompatibleOrderTypes(fieldName, left, right, null);
+        }
         return String.valueOf(left).compareToIgnoreCase(String.valueOf(right));
+    }
+
+    private static IllegalArgumentException incompatibleOrderTypes(
+            String fieldName,
+            Object left,
+            Object right,
+            ClassCastException cause
+    ) {
+        String message = "Cannot order by field '" + fieldName + "': incompatible types "
+                + typeLabel(left) + " and " + typeLabel(right);
+        return cause == null ? new IllegalArgumentException(message) : new IllegalArgumentException(message, cause);
+    }
+
+    private static String typeLabel(Object value) {
+        return value == null ? "null" : value.getClass().getSimpleName();
     }
 }
