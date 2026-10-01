@@ -83,7 +83,6 @@ export default function EditDescriptorDialog({
   const { t } = useTranslation(["inspector", "common"]);
   const isFunction = kind === "function";
   const expressionCatalog = useFunctionExpressionCatalog();
-  const dataSourcesQuery = useDataSourceOptions(isFunction);
   const rolesQuery = useQuery({ queryKey: ["security-roles"], queryFn: fetchSecurityRoles });
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -96,6 +95,7 @@ export default function EditDescriptorDialog({
   const [payloadSchema, setPayloadSchema] = useState<DataSchema>(emptySchema("payload"));
   const [sourceType, setSourceType] = useState("");
   const [sourceBody, setSourceBody] = useState("");
+  const dataSourcesQuery = useDataSourceOptions(isFunction && sourceType === "script");
   const [dataSourcePath, setDataSourcePath] = useState("");
   const [version, setVersion] = useState("");
   const [expressionText, setExpressionText] = useState("");
@@ -536,7 +536,7 @@ export default function EditDescriptorDialog({
                   placeholder="1.0.0"
                 />
               </Form.Item>
-              {sourceType !== "expression" && (
+              {sourceType === "script" && (
                 <Form.Item
                   label={t("descriptor.dataSourcePath")}
                   className="full"

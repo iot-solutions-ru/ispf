@@ -222,9 +222,9 @@ describe("EditDescriptorDialog", () => {
     );
   });
 
-  it("keeps data source path inactive for a Java function", () => {
+  it("hides data source path for a Java function", () => {
     renderDialog();
-    expect(screen.getByRole("combobox", { name: "Data source path" })).toBeDisabled();
+    expect(screen.queryByRole("combobox", { name: "Data source path" })).not.toBeInTheDocument();
   });
 
   it("marks an empty name and an empty script body", () => {
