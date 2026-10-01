@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -90,8 +91,25 @@ public final class DataRecord {
         if (field.type() == FieldType.INTEGER) {
             return IntegerValues.requireInt(field.name(), value);
         }
+        if (field.type() == FieldType.DATETIME) {
+            return datetimeValue(field, value);
+        }
         validateType(field, value);
         return value;
+    }
+
+    private static Instant datetimeValue(FieldDefinition field, Object value) {
+        if (value instanceof Instant instant) {
+            return instant;
+        }
+        if (value instanceof String text) {
+            try {
+                return Instant.parse(text.trim());
+            } catch (DateTimeParseException ex) {
+                throw new IllegalArgumentException(field.name() + " must be datetime", ex);
+            }
+        }
+        throw new IllegalArgumentException(field.name() + " must be datetime");
     }
 
     private static Double finiteDouble(FieldDefinition field, Object value) {
