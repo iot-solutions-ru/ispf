@@ -429,8 +429,15 @@ public class ObjectQueryService {
             }
             try {
                 Object result = expressionEngine.evaluate(having, null, row);
-                if (!(result instanceof Boolean bool) || bool) {
-                    filtered.add(row);
+                if (result instanceof Boolean bool) {
+                    if (bool) {
+                        filtered.add(row);
+                    }
+                } else {
+                    throw new IllegalArgumentException(
+                            "HAVING expression must yield boolean: " + having
+                                    + " (got " + (result == null ? "null" : result.getClass().getSimpleName()) + ")"
+                    );
                 }
             } catch (RuntimeException ex) {
                 if (!VariableAclRequestContext.isMemberEnforced()) {

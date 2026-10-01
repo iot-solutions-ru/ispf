@@ -158,6 +158,69 @@ class ObjectQueryServiceTest {
     }
 
     @Test
+    @Transactional(readOnly = true)
+    void havingFalseFiltersRows() {
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.*",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"}
+                  ],
+                  "having": "false",
+                  "limit": 5
+                }
+                """);
+        ObjectQueryResult result = objectQueryService.execute(spec, "root.platform.queries.test");
+        assertThat(result.rowCount()).isZero();
+    }
+
+    @Test
+    @Transactional(readOnly = true)
+    void havingTrueKeepsRows() {
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.*",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"}
+                  ],
+                  "having": "true",
+                  "limit": 5
+                }
+                """);
+        ObjectQueryResult result = objectQueryService.execute(spec, "root.platform.queries.test");
+        assertThat(result.rowCount()).isGreaterThan(0);
+    }
+
+    @Test
+    @Transactional(readOnly = true)
+    void havingRejectsNonBooleanResult() {
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.*",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"},
+                    {"name": "type", "source": "type", "alias": "row"}
+                  ],
+                  "having": "type",
+                  "limit": 5
+                }
+                """);
+        assertThatThrownBy(() -> objectQueryService.execute(spec, "root.platform.queries.test"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("HAVING expression must yield boolean")
+                .hasMessageContaining("type");
+    }
+
+    @Test
     void memberQueryOmitsRestrictedLiveAndHistorianColumns() {
         String name = "oq-acl-" + System.nanoTime();
         aclObjectPath = "root.platform.devices." + name;
