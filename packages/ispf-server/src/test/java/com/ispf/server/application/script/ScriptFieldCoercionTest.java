@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ScriptFieldCoercionTest {
 
@@ -40,5 +41,29 @@ class ScriptFieldCoercionTest {
             () -> ScriptFieldCoercion.coerce(pages, Integer.MAX_VALUE + 1L)
     );
     assertEquals(true, ex.getMessage().contains("out of integer range"));
+  }
+
+  @Test
+  void coercesZeroAndOneToBooleanField() {
+    FieldDefinition active = FieldDefinition.required("active", FieldType.BOOLEAN);
+    assertEquals(false, ScriptFieldCoercion.coerce(active, 0));
+    assertEquals(true, ScriptFieldCoercion.coerce(active, 1));
+    assertEquals(true, ScriptFieldCoercion.coerce(active, "true"));
+  }
+
+  @Test
+  void rejectsNonBinaryNumberForBooleanField() {
+    FieldDefinition active = FieldDefinition.required("active", FieldType.BOOLEAN);
+    IllegalArgumentException ex = assertThrows(
+            IllegalArgumentException.class,
+            () -> ScriptFieldCoercion.coerce(active, 42)
+    );
+    assertTrue(ex.getMessage().contains("must be boolean"));
+  }
+
+  @Test
+  void rejectsArbitraryStringForBooleanField() {
+    FieldDefinition active = FieldDefinition.required("active", FieldType.BOOLEAN);
+    assertThrows(IllegalArgumentException.class, () -> ScriptFieldCoercion.coerce(active, "yes"));
   }
 }
