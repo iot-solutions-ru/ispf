@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Component
 public class ObjectQueryJoinResolver {
@@ -185,16 +183,10 @@ public class ObjectQueryJoinResolver {
     }
 
     private static String extractPathSegment(String leftPath, String matchPattern) {
-        try {
-            Matcher matcher = Pattern.compile(matchPattern).matcher(leftPath);
-            if (!matcher.find()) {
-                return null;
-            }
-            return matcher.groupCount() >= 1 ? matcher.group(1) : matcher.group();
-        } catch (RuntimeException ex) {
-            int index = leftPath.indexOf(matchPattern);
-            return index >= 0 ? matchPattern : null;
+        if (matchPattern == null || matchPattern.isBlank()) {
+            return null;
         }
+        return leftPath.contains(matchPattern) ? matchPattern : null;
     }
 
     private static String leafName(String path) {
