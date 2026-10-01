@@ -3,6 +3,7 @@ package com.ispf.core.model;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -114,5 +115,67 @@ class DataRecordTest {
         assertThatThrownBy(() -> DataRecord.single(schema, Map.of("at", "")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("must be datetime");
+    }
+
+    @Test
+    void acceptsRecordMatchingNestedSchema() {
+        DataSchema lineSchema = DataSchema.builder("line")
+                .field("quantity", FieldType.STRING)
+                .build();
+        DataSchema wrapper = DataSchema.builder("order")
+                .field(new FieldDefinition("line", FieldType.RECORD, "", true, lineSchema))
+                .build();
+        DataRecord nested = DataRecord.single(lineSchema, Map.of("quantity", "50"));
+
+        DataRecord record = DataRecord.single(wrapper, Map.of("line", nested));
+
+        assertThat(record.get("line", 0)).isSameAs(nested);
+    }
+
+    @Test
+    void rejectsRecordWithMismatchedNestedSchema() {
+        DataSchema expected = DataSchema.builder("line")
+                .field("quantity", FieldType.STRING)
+                .build();
+        DataSchema foreign = DataSchema.builder("other")
+                .field("amount", FieldType.DOUBLE)
+                .build();
+        DataSchema wrapper = DataSchema.builder("order")
+                .field(new FieldDefinition("line", FieldType.RECORD, "", true, expected))
+                .build();
+        DataRecord nested = DataRecord.single(foreign, Map.of("amount", 1.0));
+
+        assertThatThrownBy(() -> DataRecord.single(wrapper, Map.of("line", nested)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("does not match nested schema");
+    }
+
+    @Test
+    void validatesRecordListElementsAndAcceptsRowMaps() {
+        DataSchema rowSchema = DataSchema.builder("row")
+                .field("quantity", FieldType.STRING)
+                .build();
+        DataSchema table = DataSchema.builder("rows")
+                .field(new FieldDefinition("items", FieldType.RECORD_LIST, "", true, rowSchema))
+                .build();
+        DataRecord goodRow = DataRecord.single(rowSchema, Map.of("quantity", "1"));
+        Map<String, Object> looseRow = Map.of("quantity", 50);
+
+        DataRecord record = DataRecord.single(table, Map.of("items", List.of(goodRow, looseRow)));
+
+        List<?> items = (List<?>) record.get("items", 0);
+        assertThat(items).hasSize(2);
+        assertThat(items.get(0)).isSameAs(goodRow);
+        assertThat(items.get(1)).isEqualTo(looseRow);
+
+        DataSchema foreign = DataSchema.builder("other").field("x", FieldType.STRING).build();
+        DataRecord badRow = DataRecord.single(foreign, Map.of("x", "a"));
+
+        assertThatThrownBy(() -> DataRecord.single(table, Map.of("items", List.of(badRow))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("element does not match nested schema");
+        assertThatThrownBy(() -> DataRecord.single(table, Map.of("items", List.of(1, 2))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("list of DataRecord");
     }
 }
