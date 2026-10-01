@@ -82,10 +82,14 @@ public class ObjectQueryHistorianColumnResolver {
             return sample.value();
         }
         if (sample.text() != null) {
-            try {
-                return Double.parseDouble(sample.text());
-            } catch (NumberFormatException ignored) {
+            String text = sample.text().trim();
+            if (text.isEmpty()) {
                 return 0;
+            }
+            try {
+                return Double.parseDouble(text);
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException("Historian sample text is not numeric: " + text, ex);
             }
         }
         return 0;
