@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BindingEvaluatorTest {
@@ -148,6 +149,74 @@ class BindingEvaluatorTest {
         assertEquals(
                 true,
                 alarm.value().orElseThrow().firstRow().get("value")
+        );
+    }
+
+    @Test
+    void coercesZeroOneNumberIntoBooleanField() {
+        DataSchema counterSchema = DataSchema.builder("counter")
+                .field("value", FieldType.DOUBLE)
+                .build();
+        DataSchema flagSchema = DataSchema.builder("flag")
+                .field("value", FieldType.BOOLEAN)
+                .build();
+
+        PlatformObject node = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.devices.sensor",
+                ObjectType.DEVICE,
+                "sensor",
+                "",
+                null
+        );
+        node.addVariable(new Variable(
+                "counter",
+                counterSchema,
+                true,
+                true,
+                DataRecord.single(counterSchema, Map.of("value", 1.0))
+        ));
+
+        var computed = evaluator.evaluate(
+                node,
+                "flag",
+                "self.counter.value",
+                flagSchema,
+                BindingEvaluationContext.NONE
+        );
+
+        assertTrue(computed.isPresent());
+        assertEquals(true, computed.get().firstRow().get("value"));
+    }
+
+    @Test
+    void rejectsNonBinaryNumberIntoBooleanField() {
+        DataSchema counterSchema = DataSchema.builder("counter")
+                .field("value", FieldType.DOUBLE)
+                .build();
+        DataSchema flagSchema = DataSchema.builder("flag")
+                .field("value", FieldType.BOOLEAN)
+                .build();
+
+        PlatformObject node = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.devices.sensor",
+                ObjectType.DEVICE,
+                "sensor",
+                "",
+                null
+        );
+        node.addVariable(new Variable(
+                "counter",
+                counterSchema,
+                true,
+                true,
+                DataRecord.single(counterSchema, Map.of("value", 42.0))
+        ));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> evaluator.evaluate(node, "flag", "self.counter.value", flagSchema, BindingEvaluationContext.NONE)
         );
     }
 }

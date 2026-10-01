@@ -1,5 +1,6 @@
 package com.ispf.expression;
 
+import com.ispf.core.model.BooleanValues;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldDefinition;
@@ -115,7 +116,7 @@ public class BindingExpressionEvaluator {
             return null;
         }
         return switch (field.type()) {
-            case BOOLEAN -> Boolean.valueOf(value.toString());
+            case BOOLEAN -> BooleanValues.requireBoolean(field.name(), value);
             case INTEGER -> IntegerValues.requireInt(field.name(), value);
             case LONG -> ((Number) value).longValue();
             case DOUBLE -> ((Number) value).doubleValue();
