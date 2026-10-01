@@ -221,6 +221,119 @@ class ObjectQueryServiceTest {
     }
 
     @Test
+    void orderByRejectsMixedTypesInColumn() {
+        String suffix = Long.toString(System.nanoTime());
+        String pathA = "root.platform.devices.oq-sort-a-" + suffix;
+        String pathB = "root.platform.devices.oq-sort-b-" + suffix;
+        objectManager.create("root.platform.devices", "oq-sort-a-" + suffix, ObjectType.DEVICE, "A", "", null);
+        objectManager.create("root.platform.devices", "oq-sort-b-" + suffix, ObjectType.DEVICE, "B", "", null);
+        createdPaths.add(pathA);
+        createdPaths.add(pathB);
+
+        DataSchema numeric = DataSchema.builder("sortKey").field("value", FieldType.DOUBLE).build();
+        DataSchema text = DataSchema.builder("sortKey").field("value", FieldType.STRING).build();
+        objectManager.createVariable(
+                pathA,
+                "sortKey",
+                numeric,
+                true,
+                true,
+                DataRecord.single(numeric, Map.of("value", 10.0)),
+                false,
+                null,
+                List.of(),
+                List.of()
+        );
+        objectManager.createVariable(
+                pathB,
+                "sortKey",
+                text,
+                true,
+                true,
+                DataRecord.single(text, Map.of("value", "2")),
+                false,
+                null,
+                List.of(),
+                List.of()
+        );
+
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.oq-sort-*-%s",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"},
+                    {"name": "sortKey", "ref": "{row}/sortKey/value"}
+                  ],
+                  "orderBy": [{"field": "sortKey", "dir": "asc"}]
+                }
+                """.formatted(suffix));
+
+        assertThatThrownBy(() -> objectQueryService.execute(spec, "root.platform.queries.test"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Cannot order by field 'sortKey'")
+                .hasMessageContaining("incompatible types");
+    }
+
+    @Test
+    void orderBySortsSameTypeNumbers() {
+        String suffix = Long.toString(System.nanoTime());
+        String pathLow = "root.platform.devices.oq-num-low-" + suffix;
+        String pathHigh = "root.platform.devices.oq-num-high-" + suffix;
+        objectManager.create("root.platform.devices", "oq-num-low-" + suffix, ObjectType.DEVICE, "low", "", null);
+        objectManager.create("root.platform.devices", "oq-num-high-" + suffix, ObjectType.DEVICE, "high", "", null);
+        createdPaths.add(pathLow);
+        createdPaths.add(pathHigh);
+
+        DataSchema numeric = DataSchema.builder("rank").field("value", FieldType.DOUBLE).build();
+        objectManager.createVariable(
+                pathLow,
+                "rank",
+                numeric,
+                true,
+                true,
+                DataRecord.single(numeric, Map.of("value", 2.0)),
+                false,
+                null,
+                List.of(),
+                List.of()
+        );
+        objectManager.createVariable(
+                pathHigh,
+                "rank",
+                numeric,
+                true,
+                true,
+                DataRecord.single(numeric, Map.of("value", 10.0)),
+                false,
+                null,
+                List.of(),
+                List.of()
+        );
+
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.oq-num-*-%s",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"},
+                    {"name": "rank", "ref": "{row}/rank/value"}
+                  ],
+                  "orderBy": [{"field": "rank", "dir": "asc"}]
+                }
+                """.formatted(suffix));
+
+        ObjectQueryResult result = objectQueryService.execute(spec, "root.platform.queries.test");
+        assertThat(result.rowCount()).isEqualTo(2);
+        assertThat(result.rows().get(0).get("path")).isEqualTo(pathLow);
+        assertThat(result.rows().get(1).get("path")).isEqualTo(pathHigh);
+    }
+
+    @Test
     void memberQueryOmitsRestrictedLiveAndHistorianColumns() {
         String name = "oq-acl-" + System.nanoTime();
         aclObjectPath = "root.platform.devices." + name;
