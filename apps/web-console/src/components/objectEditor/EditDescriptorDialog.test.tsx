@@ -9,7 +9,18 @@ import * as api from "../../api";
 
 vi.mock("../../api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../api")>();
-  return { ...actual, upsertFunction: vi.fn(), upsertEvent: vi.fn() };
+  return {
+    ...actual,
+    upsertFunction: vi.fn(),
+    upsertEvent: vi.fn(),
+    fetchObjects: vi.fn().mockResolvedValue([
+      {
+        path: "root.platform.data-sources.app_myapp",
+        type: "DATA_SOURCE",
+        displayName: "App",
+      },
+    ]),
+  };
 });
 
 vi.mock("../../api/securityRoles", () => ({
@@ -177,6 +188,55 @@ describe("EditDescriptorDialog", () => {
     await waitFor(() => expect(api.upsertEvent).toHaveBeenCalledTimes(1));
     const saved = vi.mocked(api.upsertEvent).mock.calls[0][1] as EventDescriptor;
     expect(saved.payloadSchema.name).toBe("customPayload");
+  });
+
+  it("keeps data source path inactive until the script contains SQL", async () => {
+    const user = userEvent.setup();
+    const sqlBody = JSON.stringify({
+      steps: [
+        { type: "selectOne", var: "row", sql: "SELECT 1", params: [] },
+        { type: "return", fields: { ok: true } },
+      ],
+    });
+    renderDialog({
+      ...javaFunction,
+      sourceType: "script",
+      sourceBody: sqlBody,
+      dataSourcePath: "root.platform.data-sources.app_myapp",
+    });
+
+    const path = await screen.findByRole("combobox", { name: "Data source path" });
+    expect(path).toBeEnabled();
+    expect(await screen.findByText("App (root.platform.data-sources.app_myapp)")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Steps source" }), {
+      target: { value: JSON.stringify({ steps: [{ type: "return", fields: { ok: true } }] }) },
+    });
+    expect(path).toBeDisabled();
+    expect(screen.getByText("App (root.platform.data-sources.app_myapp)")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(api.upsertFunction).toHaveBeenCalled());
+    expect(vi.mocked(api.upsertFunction).mock.calls.at(-1)?.[1].dataSourcePath).toBe(
+      "root.platform.data-sources.app_myapp",
+    );
+  });
+
+  it("keeps data source path inactive for a Java function", () => {
+    renderDialog();
+    expect(screen.getByRole("combobox", { name: "Data source path" })).toBeDisabled();
+  });
+
+  it("marks an empty name and an empty script body", () => {
+    renderDialog({
+      ...javaFunction,
+      name: "",
+      sourceType: "script",
+      sourceBody: "",
+    });
+
+    expect(screen.getByText("Enter a name.")).toBeInTheDocument();
+    expect(screen.getByText("Enter the function body.")).toBeInTheDocument();
   });
 
   it("preserves independent Java and steps drafts when switching source type", async () => {

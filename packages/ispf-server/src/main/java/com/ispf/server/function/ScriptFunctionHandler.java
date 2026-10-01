@@ -5,6 +5,7 @@ import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.script.FunctionScriptEngine;
+import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.application.script.ScriptExecutionContext;
 import com.ispf.server.binding.BindingRefreshAfterCommit;
 import com.ispf.server.datasource.DataSourceSqlSession;
@@ -24,6 +25,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
 
     private final ObjectManager objectManager;
     private final FunctionScriptEngine scriptEngine;
+    private final FunctionScriptValidator scriptValidator;
     private final ApplicationSchemaSession schemaSession;
     private final DataSourceSqlSession dataSourceSqlSession;
     private final FunctionService functionService;
@@ -33,6 +35,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
     public ScriptFunctionHandler(
             ObjectManager objectManager,
             FunctionScriptEngine scriptEngine,
+            FunctionScriptValidator scriptValidator,
             ApplicationSchemaSession schemaSession,
             DataSourceSqlSession dataSourceSqlSession,
             @Lazy FunctionService functionService,
@@ -41,6 +44,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
     ) {
         this.objectManager = objectManager;
         this.scriptEngine = scriptEngine;
+        this.scriptValidator = scriptValidator;
         this.schemaSession = schemaSession;
         this.dataSourceSqlSession = dataSourceSqlSession;
         this.functionService = functionService;
@@ -86,7 +90,9 @@ public class ScriptFunctionHandler implements FunctionHandler {
                 descriptor.outputSchema(),
                 nestedContext(objectPath, functionName, 0)
         );
-        if (dataSourcePath != null && !dataSourcePath.isBlank()) {
+        // A stored path stays on the descriptor, but it selects a connection only while the script has SQL.
+        if (dataSourcePath != null && !dataSourcePath.isBlank()
+                && scriptValidator.containsSqlStep(descriptor.sourceBody())) {
             tenantLocalDataAccessGuard.requireAllowedDataSourcePath(dataSourcePath);
             dataSourceSqlSession.runWithDataSource(dataSourcePath, ignored -> execute.run());
         } else {

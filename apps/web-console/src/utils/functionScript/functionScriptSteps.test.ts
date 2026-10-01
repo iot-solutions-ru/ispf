@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   parseScriptBody,
+  scriptHasSqlStep,
   serializeScriptBody,
   serializeStepsArray,
   SCRIPT_TEMPLATES,
@@ -22,6 +23,25 @@ describe("functionScriptSteps", () => {
     const parsed = parseScriptBody("{not json");
     expect(parsed.steps).toHaveLength(0);
     expect(parsed.error).toBeTruthy();
+  });
+
+  it("detects SQL steps, including ones nested in a branch", () => {
+    expect(scriptHasSqlStep("")).toBe(false);
+    expect(scriptHasSqlStep("{not json")).toBe(false);
+    expect(scriptHasSqlStep(JSON.stringify({ steps: [{ type: "return", fields: { ok: true } }] }))).toBe(false);
+    expect(
+      scriptHasSqlStep(
+        JSON.stringify({
+          steps: [
+            {
+              type: "when",
+              var: "input.id",
+              then: [{ type: "selectOne", var: "row", sql: "SELECT 1", params: [] }],
+            },
+          ],
+        }),
+      ),
+    ).toBe(true);
   });
 
   it("unwrapSteps omits empty optional fields", () => {
