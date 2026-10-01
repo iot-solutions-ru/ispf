@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchObjects } from "../../api";
+import { loadDataSourceOptions } from "../../utils/platform/dataSourceOptions";
 
-export function useDataSourceOptions() {
+export function useDataSourceOptions(enabled = true) {
   return useQuery({
     queryKey: ["data-sources-list"],
-    queryFn: () => fetchObjects("root.platform.data-sources"),
-    select: (objects) => objects.filter((obj) => obj.type === "DATA_SOURCE"),
+    queryFn: () => loadDataSourceOptions(),
+    enabled,
   });
 }

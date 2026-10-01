@@ -3,12 +3,36 @@ package com.ispf.server.application.script;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class FunctionScriptValidatorObjectQueryStepsTest {
 
     private final FunctionScriptValidator validator = new FunctionScriptValidator(new ObjectMapper());
+
+    @Test
+    void detectsSqlStepsNestedInBranchesAndIgnoresInvalidJson() {
+        assertThat(validator.containsSqlStep(null)).isFalse();
+        assertThat(validator.containsSqlStep(" ")).isFalse();
+        assertThat(validator.containsSqlStep("{not json")).isFalse();
+        assertThat(validator.containsSqlStep("""
+                {"steps":[{"type":"return","fields":{"ok":true}}]}
+                """)).isFalse();
+        assertThat(validator.containsSqlStep("""
+                {
+                  "steps": [
+                    {
+                      "type": "for_each_row",
+                      "source": "rows",
+                      "steps": [
+                        {"type": "exec", "sql": "UPDATE orders SET status = ?", "params": ["OPEN"]}
+                      ]
+                    }
+                  ]
+                }
+                """)).isTrue();
+    }
 
     @Test
     void acceptsQueryRowsScanObjectsForEachAndPatchSteps() {
