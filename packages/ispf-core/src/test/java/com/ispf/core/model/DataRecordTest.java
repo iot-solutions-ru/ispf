@@ -2,6 +2,7 @@ package com.ispf.core.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -88,5 +89,30 @@ class DataRecordTest {
         assertThatThrownBy(() -> DataRecord.single(schema, Map.of("value", Integer.MAX_VALUE + 1L)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("out of integer range");
+    }
+
+    @Test
+    void parsesDatetimeStringsIntoInstant() {
+        DataSchema schema = DataSchema.builder("event")
+                .field("at", FieldType.DATETIME)
+                .build();
+
+        DataRecord record = DataRecord.single(schema, Map.of("at", "2026-10-01T09:00:00Z"));
+
+        assertThat(record.get("at", 0)).isEqualTo(Instant.parse("2026-10-01T09:00:00Z"));
+    }
+
+    @Test
+    void rejectsUnparsableDatetimeStrings() {
+        DataSchema schema = DataSchema.builder("event")
+                .field("at", FieldType.DATETIME)
+                .build();
+
+        assertThatThrownBy(() -> DataRecord.single(schema, Map.of("at", "not-a-date")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be datetime");
+        assertThatThrownBy(() -> DataRecord.single(schema, Map.of("at", "")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be datetime");
     }
 }
