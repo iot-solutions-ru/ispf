@@ -553,7 +553,10 @@ public class BindingRuleEngine {
             if (result instanceof Boolean bool) {
                 return bool;
             }
-            return Boolean.parseBoolean(String.valueOf(result));
+            throw new IllegalStateException(
+                    "Binding condition failed at " + object.path() + ": " + condition
+                            + ": condition must be boolean, was " + result.getClass().getSimpleName()
+            );
         } catch (ExpressionException ex) {
             throw new IllegalStateException(
                     "Binding condition failed at " + object.path() + ": " + condition + ": " + ex.getMessage(),
