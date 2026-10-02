@@ -367,11 +367,18 @@ public class ObjectQueryService {
         return objectTypes.contains(node.type().name());
     }
 
+    private static final List<ObjectQueryAggregateSpec> DEFAULT_GROUP_BY_AGGREGATES = List.of(
+            new ObjectQueryAggregateSpec("rowCount", "count", null, null)
+    );
+
     private List<Map<String, Object>> applyGroupBy(List<Map<String, Object>> rows, ObjectQuerySpec spec) {
         List<String> groupBy = spec.groupBy();
-        List<ObjectQueryAggregateSpec> aggregates = spec.aggregates();
-        if (groupBy == null || groupBy.isEmpty() || aggregates == null || aggregates.isEmpty()) {
+        if (groupBy == null || groupBy.isEmpty()) {
             return rows;
+        }
+        List<ObjectQueryAggregateSpec> aggregates = spec.aggregates();
+        if (aggregates == null || aggregates.isEmpty()) {
+            aggregates = DEFAULT_GROUP_BY_AGGREGATES;
         }
         Map<String, List<Map<String, Object>>> groups = new LinkedHashMap<>();
         for (Map<String, Object> row : rows) {

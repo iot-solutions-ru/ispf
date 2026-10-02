@@ -185,6 +185,35 @@ class ObjectQueryServiceTest {
     }
 
     @Test
+    void groupByWithoutAggregatesUsesImplicitRowCount() {
+        String suffix = Long.toString(System.nanoTime());
+        createLabeledDevice("oq-gb-ia-" + suffix + "-a1", "A");
+        createLabeledDevice("oq-gb-ia-" + suffix + "-a2", "A");
+        createLabeledDevice("oq-gb-ia-" + suffix + "-b1", "B");
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.oq-gb-ia-%s-*",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "batch", "ref": "{row}/label/value", "alias": "row"}
+                  ],
+                  "groupBy": ["batch"]
+                }
+                """.formatted(suffix));
+        ObjectQueryResult result = objectQueryService.execute(spec, "root.platform");
+        assertThat(result.rowCount()).isEqualTo(2);
+        assertThat(result.rows())
+                .anySatisfy(row -> assertThat(row)
+                        .containsEntry("batch", "A")
+                        .containsEntry("rowCount", 2))
+                .anySatisfy(row -> assertThat(row)
+                        .containsEntry("batch", "B")
+                        .containsEntry("rowCount", 1));
+    }
+
+    @Test
     @Transactional(readOnly = true)
     void havingFalseFiltersRows() {
         ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
