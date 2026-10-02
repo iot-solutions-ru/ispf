@@ -1,7 +1,5 @@
 package com.ispf.server.function;
 
-import com.ispf.core.object.ObjectType;
-import com.ispf.core.object.PlatformObject;
 import com.ispf.server.config.IspfRoles;
 import com.ispf.server.datasource.DataSourceFunctionSupport;
 import com.ispf.server.function.FunctionInvocationScope;
@@ -36,10 +34,6 @@ class FunctionInvokeAccessServiceTest {
     private static final String DATA_SOURCE = "root.platform.data-sources.demo";
 
     @Mock
-    private ObjectManager objectManager;
-    @Mock
-    private com.ispf.core.object.ObjectTree objectTree;
-    @Mock
     private ObjectAclStore aclStore;
     @Mock
     private RoleScopeAccessService roleScopeAccessService;
@@ -53,18 +47,25 @@ class FunctionInvokeAccessServiceTest {
     void setUp() {
         lenient().when(roleScopeAccessService.isPathInRoleScope(anyString(), any())).thenReturn(true);
         accessService = new FunctionInvokeAccessService(
-                new PrivilegedPlatformFunctionPolicy(objectManager),
+                new PrivilegedPlatformFunctionPolicy(),
                 new ObjectAccessService(aclStore, roleScopeAccessService, tenantScopeService),
-                objectManager
+                org.mockito.Mockito.mock(ObjectManager.class)
         );
-        PlatformObject node = new PlatformObject("1", DATA_SOURCE, ObjectType.DATA_SOURCE, "Demo", "", "");
-        when(objectManager.tree()).thenReturn(objectTree);
-        when(objectTree.findByPath(DATA_SOURCE)).thenReturn(java.util.Optional.of(node));
     }
 
     @AfterEach
     void clear() {
         SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void operatorCannotInvokeExecuteQueryOnNonDataSourceObject() {
+        assertThatThrownBy(() -> accessService.guardScriptOnlyFunction(
+                "root.platform.singletons.demo",
+                DataSourceFunctionSupport.EXECUTE_QUERY_FUNCTION_NAME,
+                operatorAuth()
+        )).isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("trusted script");
     }
 
     @Test

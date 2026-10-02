@@ -1,7 +1,7 @@
 package com.ispf.server.function;
 
 import com.ispf.core.model.DataRecord;
-import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.datasource.DataSourceFunctionSupport;
 import com.ispf.server.datasource.DataSourceObjectService;
@@ -52,13 +52,23 @@ public class DataSourceFunctionHandler implements FunctionHandler {
             return false;
         }
         PlatformObject node = objectManager.tree().findByPath(objectPath).orElse(null);
-        return node != null && node.type() == ObjectType.DATA_SOURCE;
+        if (node == null || !node.functions().containsKey(functionName)) {
+            return false;
+        }
+        FunctionDescriptor descriptor = node.functions().get(functionName);
+        return ExecuteQueryPathResolver.tryResolve(objectManager, objectPath, descriptor).isPresent();
     }
 
     @Override
     public DataRecord invoke(String objectPath, String functionName, DataRecord input) {
-        dataSourceObjectService.ensureStructure(objectPath);
-        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(objectPath);
+        PlatformObject node = objectManager.require(objectPath);
+        FunctionDescriptor descriptor = node.functions().get(functionName);
+        if (descriptor == null) {
+            throw new IllegalArgumentException("Unknown function: " + functionName);
+        }
+        String queryPath = ExecuteQueryPathResolver.requireResolve(objectManager, objectPath, descriptor);
+        dataSourceObjectService.ensureStructure(queryPath);
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(queryPath);
         Map<String, Object> row = input != null && input.rowCount() > 0
                 ? input.firstRow()
                 : Map.of();
@@ -69,7 +79,7 @@ public class DataSourceFunctionHandler implements FunctionHandler {
         List<Object> params = parseParams(row.get("paramsJson"));
         Integer maxRows = intValue(row.get("maxRows"));
 
-        DataSourceQueryResult result = queryExecutor.execute(objectPath, query, params, maxRows);
+        DataSourceQueryResult result = queryExecutor.execute(queryPath, query, params, maxRows);
         return toOutput(result);
     }
 
