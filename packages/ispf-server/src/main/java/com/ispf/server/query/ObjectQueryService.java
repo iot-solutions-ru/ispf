@@ -90,8 +90,8 @@ public class ObjectQueryService {
                 rows.add(buildProjectedRow(queryNode, null, drivingAlias, spec, ruleObjectPath));
             }
         }
-        rows = applyHaving(rows, spec.having());
         rows = applyGroupBy(rows, spec);
+        rows = applyHaving(rows, spec.having());
         rows = sortRows(rows, spec.orderBy());
         rows = paginate(rows, spec.limit(), spec.offset());
         return new ObjectQueryResult(List.copyOf(rows), rows.size());
@@ -421,6 +421,19 @@ public class ObjectQueryService {
         };
     }
 
+    private static Map<String, Object> normalizeHavingRow(Map<String, Object> row) {
+        Map<String, Object> normalized = LinkedHashMap.newLinkedHashMap(row.size());
+        for (Map.Entry<String, Object> entry : row.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof Number number) {
+                normalized.put(entry.getKey(), number.doubleValue());
+            } else {
+                normalized.put(entry.getKey(), value);
+            }
+        }
+        return normalized;
+    }
+
     private List<Map<String, Object>> applyHaving(List<Map<String, Object>> rows, String having) {
         if (having == null || having.isBlank()) {
             return rows.stream().filter(row -> !row.isEmpty()).toList();
@@ -431,7 +444,7 @@ public class ObjectQueryService {
                 continue;
             }
             try {
-                Object result = expressionEngine.evaluate(having, null, row);
+                Object result = expressionEngine.evaluate(having, null, normalizeHavingRow(row));
                 if (result instanceof Boolean bool) {
                     if (bool) {
                         filtered.add(row);
