@@ -554,6 +554,36 @@ class ObjectQueryServiceTest {
                 .hasMessageContaining("no numeric values");
     }
 
+    @Test
+    void scalarAggregateUsesFullMatchSetNotPage() {
+        String prefix = "oq-agg-page-" + System.nanoTime();
+        createAmountDevice(prefix + "-1", 1.0);
+        createAmountDevice(prefix + "-2", 2.0);
+        createAmountDevice(prefix + "-3", 3.0);
+        createAmountDevice(prefix + "-4", 4.0);
+        createAmountDevice(prefix + "-5", 5.0);
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "%s",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "amount", "ref": "{row}/amount/value"}
+                  ],
+                  "limit": 2
+                }
+                """.formatted("root.platform.devices." + prefix + "-*"));
+
+        ObjectQueryResult table = objectQueryService.execute(spec, "root.platform");
+        assertThat(table.rows()).hasSize(2);
+        assertThat(table.rowCount()).isEqualTo(5);
+        assertThat(table.rowsTruncated()).isTrue();
+
+        assertThat(objectQueryService.executeAggregate(spec, "count", null, "root.platform")).isEqualTo(5);
+        assertThat(objectQueryService.executeAggregate(spec, "sum", "amount", "root.platform")).isEqualTo(15.0);
+    }
+
     private ObjectQuerySpec amountSpec(String pattern) {
         return new ObjectQuerySpecParser(objectMapper).parse("""
                 {

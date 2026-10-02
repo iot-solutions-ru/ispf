@@ -63,6 +63,28 @@ public class ObjectQueryService {
     }
 
     public ObjectQueryResult execute(ObjectQuerySpec spec, String ruleObjectPath) {
+        List<Map<String, Object>> matched = executeMatchedRows(spec, ruleObjectPath);
+        int total = matched.size();
+        List<Map<String, Object>> page = paginate(matched, spec.limit(), spec.offset());
+        boolean truncated = page.size() < total;
+        return new ObjectQueryResult(List.copyOf(page), total, truncated);
+    }
+
+    public Object executeAggregate(ObjectQuerySpec spec, String aggregate, String field, String ruleObjectPath) {
+        List<Map<String, Object>> rows = executeMatchedRows(spec, ruleObjectPath);
+        String fn = aggregate != null ? aggregate.trim().toLowerCase() : "count";
+        return switch (fn) {
+            case "count" -> rows.size();
+            case "sum" -> sumField(rows, requireField(field));
+            case "avg" -> avgField(rows, requireField(field));
+            case "min" -> minField(rows, requireField(field));
+            case "max" -> maxField(rows, requireField(field));
+            case "first" -> firstField(rows, requireField(field));
+            default -> throw new IllegalArgumentException("Unsupported OQ aggregate: " + aggregate);
+        };
+    }
+
+    private List<Map<String, Object>> executeMatchedRows(ObjectQuerySpec spec, String ruleObjectPath) {
         if (spec == null || spec.from() == null) {
             throw new IllegalArgumentException("OQ spec requires from");
         }
@@ -92,23 +114,7 @@ public class ObjectQueryService {
         }
         rows = applyGroupBy(rows, spec);
         rows = applyHaving(rows, spec.having());
-        rows = sortRows(rows, spec.orderBy());
-        rows = paginate(rows, spec.limit(), spec.offset());
-        return new ObjectQueryResult(List.copyOf(rows), rows.size());
-    }
-
-    public Object executeAggregate(ObjectQuerySpec spec, String aggregate, String field, String ruleObjectPath) {
-        ObjectQueryResult result = execute(spec, ruleObjectPath);
-        String fn = aggregate != null ? aggregate.trim().toLowerCase() : "count";
-        return switch (fn) {
-            case "count" -> result.rowCount();
-            case "sum" -> sumField(result.rows(), requireField(field));
-            case "avg" -> avgField(result.rows(), requireField(field));
-            case "min" -> minField(result.rows(), requireField(field));
-            case "max" -> maxField(result.rows(), requireField(field));
-            case "first" -> firstField(result.rows(), requireField(field));
-            default -> throw new IllegalArgumentException("Unsupported OQ aggregate: " + aggregate);
-        };
+        return sortRows(rows, spec.orderBy());
     }
 
     private List<Map<String, Object>> expandRows(

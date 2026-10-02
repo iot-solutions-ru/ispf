@@ -18,6 +18,7 @@ public final class ObjectQueryFunctionSupport {
     public static final DataSchema RUN_OUTPUT_SCHEMA = DataSchema.builder("objectQueryOutput")
             .field("rows", FieldType.STRING)
             .field("rowCount", FieldType.INTEGER)
+            .field("rowsTruncated", FieldType.BOOLEAN)
             .field("patchApplied", FieldType.BOOLEAN)
             .field("patchesApplied", FieldType.INTEGER)
             .build();
