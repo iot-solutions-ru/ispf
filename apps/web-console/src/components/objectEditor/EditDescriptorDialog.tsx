@@ -529,13 +529,6 @@ export default function EditDescriptorDialog({
                   ]}
                 />
               </Form.Item>
-              <Form.Item label={t("descriptor.version")}>
-                <Input
-                  value={version}
-                  onChange={(e) => setVersion(e.target.value)}
-                  placeholder="1.0.0"
-                />
-              </Form.Item>
               {sourceType === "script" && (
                 <Form.Item
                   label={t("descriptor.dataSourcePath")}
