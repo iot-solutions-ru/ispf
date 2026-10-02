@@ -8,6 +8,7 @@ import com.ispf.core.ref.PlatformRef;
 import com.ispf.core.ref.PlatformRefKind;
 import com.ispf.core.ref.PlatformRefParser;
 import com.ispf.expression.ExpressionEngine;
+import com.ispf.expression.ExpressionException;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.query.oq.ObjectQueryAggregateSpec;
 import com.ispf.server.query.oq.ObjectQueryExpandSpec;
@@ -22,6 +23,7 @@ import com.ispf.server.ref.PlatformRefExecutor;
 import com.ispf.server.ref.PlatformRefResolver;
 import com.ispf.server.security.acl.VariableAclRequestContext;
 import com.ispf.server.security.acl.VariableMemberAccessService;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -234,7 +236,8 @@ public class ObjectQueryService {
             try {
                 return expressionEngine.evaluate(field.expression(), drivingNode, context);
             } catch (RuntimeException ex) {
-                if (VariableAclRequestContext.isMemberEnforced()) {
+                if (VariableAclRequestContext.isMemberEnforced()
+                        && shouldOmitExpressionFieldUnderMemberAcl(ex)) {
                     return OMIT_FIELD;
                 }
                 throw ex;
@@ -626,5 +629,36 @@ public class ObjectQueryService {
 
     private static String typeLabel(Object value) {
         return value == null ? "null" : value.getClass().getSimpleName();
+    }
+
+    /**
+     * Under member ACL the driving node omits unreadable variables ({@link #readableVariablesOnly}).
+     * Field expressions that still touch hidden data fail at evaluation — omit the column.
+     * Invalid expressions must fail the query.
+     */
+    private static boolean shouldOmitExpressionFieldUnderMemberAcl(RuntimeException ex) {
+        if (containsResponseStatus(ex, HttpStatus.FORBIDDEN)) {
+            return true;
+        }
+        if (ex instanceof ExpressionException expressionEx) {
+            String message = expressionEx.getMessage();
+            if (message != null && message.startsWith("Invalid expression:")) {
+                return false;
+            }
+            if (message != null && message.startsWith("Evaluation failed:")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean containsResponseStatus(Throwable ex, HttpStatus status) {
+        for (Throwable current = ex; current != null; current = current.getCause()) {
+            if (current instanceof ResponseStatusException rse
+                    && rse.getStatusCode().value() == status.value()) {
+                return true;
+            }
+        }
+        return false;
     }
 }
