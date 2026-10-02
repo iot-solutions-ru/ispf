@@ -227,6 +227,17 @@ describe("EditDescriptorDialog", () => {
     expect(screen.queryByRole("combobox", { name: "Data source path" })).not.toBeInTheDocument();
   });
 
+  it("hides version in the structured editor but keeps it on save", async () => {
+    const user = userEvent.setup();
+    renderDialog();
+
+    expect(screen.queryByPlaceholderText("1.0.0")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(api.upsertFunction).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(api.upsertFunction).mock.calls[0][1].version).toBe("1.2.3");
+  });
+
   it("marks an empty name and an empty script body", () => {
     renderDialog({
       ...javaFunction,
