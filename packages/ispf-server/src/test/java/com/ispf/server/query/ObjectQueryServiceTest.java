@@ -158,6 +158,33 @@ class ObjectQueryServiceTest {
     }
 
     @Test
+    void havingAfterGroupByFiltersByAggregate() {
+        String suffix = Long.toString(System.nanoTime());
+        createLabeledDevice("oq-hgb-" + suffix + "-a1", "A");
+        createLabeledDevice("oq-hgb-" + suffix + "-a2", "A");
+        createLabeledDevice("oq-hgb-" + suffix + "-b1", "B");
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.oq-hgb-%s-*",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "batch", "ref": "{row}/label/value", "alias": "row"}
+                  ],
+                  "groupBy": ["batch"],
+                  "aggregates": [{"name": "rowCount", "fn": "count"}],
+                  "having": "input.rowCount > 1.0"
+                }
+                """.formatted(suffix));
+        ObjectQueryResult result = objectQueryService.execute(spec, "root.platform");
+        assertThat(result.rowCount()).isEqualTo(1);
+        assertThat(result.rows().getFirst())
+                .containsEntry("batch", "A")
+                .containsEntry("rowCount", 2);
+    }
+
+    @Test
     @Transactional(readOnly = true)
     void havingFalseFiltersRows() {
         ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
