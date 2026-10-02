@@ -227,6 +227,19 @@ describe("EditDescriptorDialog", () => {
     expect(screen.queryByRole("combobox", { name: "Data source path" })).not.toBeInTheDocument();
   });
 
+  it("shows data source path for executeQuery handler", async () => {
+    renderDialog({
+      ...javaFunction,
+      name: "executeQuery",
+      sourceType: null,
+      sourceBody: null,
+      dataSourcePath: "root.platform.data-sources.app_myapp",
+    });
+
+    const path = await screen.findByRole("combobox", { name: "Data source path" });
+    expect(path).toBeEnabled();
+  });
+
   it("hides version in the structured editor but keeps it on save", async () => {
     const user = userEvent.setup();
     renderDialog();
