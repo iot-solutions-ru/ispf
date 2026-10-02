@@ -48,6 +48,14 @@ class ObjectQueryHistorianColumnResolverTest {
     }
 
     @Test
+    void parseWindowRejectsInvalidBucketSpec() {
+        assertThatThrownBy(() -> ObjectQueryHistorianColumnResolver.parseWindow("not-a-window"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid OQ historian window")
+                .hasMessageContaining("not-a-window");
+    }
+
+    @Test
     void numericAggregateRejectsNonNumericHistorianText() {
         VariableHistoryService history = mock(VariableHistoryService.class);
         when(variableHistoryService.getIfAvailable()).thenReturn(history);

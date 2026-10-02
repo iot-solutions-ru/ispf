@@ -106,10 +106,11 @@ public class ObjectQueryHistorianColumnResolver {
         if (window == null || window.isBlank()) {
             return Duration.ofMinutes(15);
         }
+        String trimmed = window.trim();
         try {
-            return VariableHistoryService.parseBucket(window.trim());
+            return VariableHistoryService.parseBucket(trimmed);
         } catch (RuntimeException ex) {
-            return Duration.ofMinutes(15);
+            throw new IllegalArgumentException("Invalid OQ historian window: " + trimmed, ex);
         }
     }
 }
