@@ -212,7 +212,7 @@ function KeyValueField({
   const [pairs, setPairs] = useState(() => keyValueRowsForEditor(value));
 
   useEffect(() => {
-    setPairs(keyValueRowsForEditor(value));
+    setPairs(keyValueRowsForEditor(JSON.parse(valueSnapshot)));
   }, [valueSnapshot]);
 
   const commit = (rows: { key: string; val: string }[]) => {
