@@ -209,6 +209,40 @@ class WorkflowTaskExecutorTest {
     }
 
     @Test
+    void callActivityRejectsInputMapEntryWithoutEquals() {
+        WorkflowInstance parent = instance();
+
+        WorkflowException error = assertThrows(WorkflowException.class, () -> executor().executeCallActivity(
+                new CallActivityDefinition(
+                        "c1",
+                        "call",
+                        "root.platform.workflows.child",
+                        Map.of("inputMap", "order=1,broken")
+                ),
+                parent
+        ));
+
+        assertTrue(error.getMessage().contains("not a key=value pair"));
+        assertTrue(error.getMessage().contains("broken"));
+        verify(workflows, never()).getObject();
+    }
+
+    @Test
+    void functionInputMapEntryWithoutEqualsFailsBeforeInvoke() {
+        WorkflowException error = assertThrows(WorkflowException.class, () -> executor().executeServiceTask(
+                task(WorkflowActionType.INVOKE_FUNCTION, Map.of(
+                        "objectPath", TARGET,
+                        "functionName", "ping",
+                        "inputMap", "alarmId=a-1,orphan"
+                )),
+                instance()
+        ));
+
+        assertTrue(error.getMessage().contains("orphan"));
+        verify(functionService, never()).invoke(anyString(), anyString(), any());
+    }
+
+    @Test
     void parseIntFallsBackOnGarbage() {
         assertEquals(30, WorkflowTaskExecutor.parseInt("x", 30));
         assertEquals(7, WorkflowTaskExecutor.parseInt(" 7 ", 30));
