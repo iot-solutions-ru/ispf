@@ -15,6 +15,7 @@
   "editor.layerZIndex": "Z-индекс",
   "editor.layerZIndexAuto": "авто",
   "editor.layoutHint": "Позицию и размер меняйте перетаскиванием на сетке.",
+  "editor.layoutGridBounds": "Fine grid: {{columns}} колонок; для этого виджета x ≤ {{maxX}}, w ≤ {{maxW}}.",
   "editor.sampleZoneLabel": "Зона А",
   "editor.selectWidgetHint": "Выберите виджет на сетке или добавьте новый. Delete — удалить выбранный.",
   "editor.stylesHint": "Ключи элементов: {{keys}}. CSS в camelCase. Пусто — по умолчанию.",

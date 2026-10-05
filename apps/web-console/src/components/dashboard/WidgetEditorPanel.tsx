@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Checkbox, Select, Space, Typography } from "antd";
 import type { DashboardWidget, WidgetType } from "../../types/dashboard";
-import { newWidget, WIDGET_TYPES } from "../../types/dashboard";
+import { DASHBOARD_COLUMNS, newWidget, WIDGET_TYPES } from "../../types/dashboard";
 import { translateWidgetType } from "./widgetI18n";
 import {
   FieldPairs,
@@ -16,6 +16,12 @@ import {
   sendWidgetBackward,
   sendWidgetToBack,
 } from "./widgetLayerUtils";
+import {
+  layoutGridMaxW,
+  layoutGridMaxX,
+  parseLayoutGridInt,
+  parseOptionalZIndex,
+} from "../../utils/dashboard/widgetLayoutFieldParse";
 
 interface WidgetEditorPanelProps {
   widget: DashboardWidget | null;
@@ -26,6 +32,8 @@ interface WidgetEditorPanelProps {
   onChange: (widget: DashboardWidget) => void;
   onWidgetsChange: (widgets: DashboardWidget[]) => void;
   onDelete: () => void;
+  /** Dashboard fine-grid column count (default {@link DASHBOARD_COLUMNS}). */
+  gridColumns?: number;
 }
 
 export default function WidgetEditorPanel({
@@ -37,6 +45,7 @@ export default function WidgetEditorPanel({
   onChange,
   onWidgetsChange,
   onDelete,
+  gridColumns = DASHBOARD_COLUMNS,
 }: WidgetEditorPanelProps) {
   const { t } = useTranslation(["dashboard", "widgets", "common"]);
 
@@ -62,6 +71,9 @@ export default function WidgetEditorPanel({
   const update = (patch: Partial<DashboardWidget>) => {
     onChange({ ...widget, ...patch } as DashboardWidget);
   };
+
+  const maxX = layoutGridMaxX(gridColumns, widget.w);
+  const maxW = layoutGridMaxW(gridColumns, widget.x);
 
   const fieldCtx = {
     widget,
@@ -119,9 +131,14 @@ export default function WidgetEditorPanel({
             <input
               type="number"
               min={0}
-              max={11}
+              max={maxX}
               value={widget.x}
-              onChange={(e) => update({ x: Number(e.target.value) })}
+              onChange={(e) => {
+                const next = parseLayoutGridInt(e.target.value, 0, maxX);
+                if (next !== undefined) {
+                  update({ x: next });
+                }
+              }}
             />
           </label>
           <label>
@@ -130,7 +147,12 @@ export default function WidgetEditorPanel({
               type="number"
               min={0}
               value={widget.y}
-              onChange={(e) => update({ y: Number(e.target.value) })}
+              onChange={(e) => {
+                const next = parseLayoutGridInt(e.target.value, 0);
+                if (next !== undefined) {
+                  update({ y: next });
+                }
+              }}
             />
           </label>
           <label>
@@ -138,9 +160,14 @@ export default function WidgetEditorPanel({
             <input
               type="number"
               min={1}
-              max={12}
+              max={maxW}
               value={widget.w}
-              onChange={(e) => update({ w: Number(e.target.value) })}
+              onChange={(e) => {
+                const next = parseLayoutGridInt(e.target.value, 1, maxW);
+                if (next !== undefined) {
+                  update({ w: next });
+                }
+              }}
             />
           </label>
           <label>
@@ -149,10 +176,18 @@ export default function WidgetEditorPanel({
               type="number"
               min={1}
               value={widget.h}
-              onChange={(e) => update({ h: Number(e.target.value) })}
+              onChange={(e) => {
+                const next = parseLayoutGridInt(e.target.value, 1);
+                if (next !== undefined) {
+                  update({ h: next });
+                }
+              }}
             />
           </label>
-          <p className="hint full">{t("editor.layoutHint")}</p>
+          <p className="hint full">
+            {t("editor.layoutHint")}{" "}
+            {t("editor.layoutGridBounds", { columns: gridColumns, maxX, maxW })}
+          </p>
 
           <h5 className="widget-editor-section">{t("editor.layerTitle")}</h5>
           <label className="widget-layer-visible">
@@ -170,8 +205,11 @@ export default function WidgetEditorPanel({
               value={widget.zIndex ?? ""}
               placeholder={t("editor.layerZIndexAuto")}
               onChange={(e) => {
-                const raw = e.target.value.trim();
-                update({ zIndex: raw === "" ? undefined : Number(raw) });
+                const parsed = parseOptionalZIndex(e.target.value);
+                if (parsed === null) {
+                  return;
+                }
+                update({ zIndex: parsed });
               }}
             />
           </label>

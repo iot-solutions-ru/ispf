@@ -15,6 +15,7 @@
   "editor.layerZIndex": "Z 指数",
   "editor.layerZIndexAuto": "自动",
   "editor.layoutHint": "在网格上拖动以更改位置和大小。",
+  "editor.layoutGridBounds": "Fine grid：{{columns}} 列；此组件 x ≤ {{maxX}}，w ≤ {{maxW}}。",
   "editor.sampleZoneLabel": "A区",
   "editor.selectWidgetHint": "在网格中选择小部件或添加新小部件。",
   "editor.stylesHint": "元素键：{{keys}}。CSS 使用 camelCase。留空 — 默认。",

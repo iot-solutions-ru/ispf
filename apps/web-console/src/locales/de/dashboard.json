@@ -15,6 +15,7 @@
   "editor.layerZIndex": "Z-Index",
   "editor.layerZIndexAuto": "auto",
   "editor.layoutHint": "Position und Größe per Drag im Raster ändern.",
+  "editor.layoutGridBounds": "Fine Grid: {{columns}} Spalten; für dieses Widget x ≤ {{maxX}}, w ≤ {{maxW}}.",
   "editor.sampleZoneLabel": "Zone A",
   "editor.selectWidgetHint": "Widget im Raster auswählen oder neues hinzufügen.",
   "editor.stylesHint": "Element-Schlüssel: {{keys}}. CSS in camelCase. Leer — Standard.",

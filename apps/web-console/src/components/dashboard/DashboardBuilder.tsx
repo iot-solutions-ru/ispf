@@ -830,6 +830,7 @@ export default function DashboardBuilder({
               objects={bindingObjects}
               dashboards={dashboardObjects}
               reports={reportObjects}
+              gridColumns={layout.columns}
               onChange={updateWidget}
               onWidgetsChange={updateWidgets}
               onDelete={deleteWidget}
