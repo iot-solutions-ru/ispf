@@ -1,6 +1,7 @@
 package com.ispf.server.api;
 
 import com.ispf.core.object.ObjectNotFoundException;
+import com.ispf.expression.ExpressionException;
 import com.ispf.plugin.workflow.WorkflowException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -23,6 +24,13 @@ public class ApiExceptionHandler {
     public ProblemDetail handleWorkflow(WorkflowException exception) {
         ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
         detail.setTitle("Workflow error");
+        return detail;
+    }
+
+    @ExceptionHandler(ExpressionException.class)
+    public ProblemDetail handleExpression(ExpressionException exception) {
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+        detail.setTitle("Expression error");
         return detail;
     }
 
