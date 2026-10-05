@@ -1,8 +1,8 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Checkbox, Select, Space, Typography } from "antd";
 import type { DashboardWidget, WidgetType } from "../../types/dashboard";
-import { newWidget, WIDGET_TYPES } from "../../types/dashboard";
+import { DASHBOARD_COLUMNS, newWidget, WIDGET_TYPES } from "../../types/dashboard";
 import { translateWidgetType } from "./widgetI18n";
 import {
   FieldPairs,
@@ -16,6 +16,103 @@ import {
   sendWidgetBackward,
   sendWidgetToBack,
 } from "./widgetLayerUtils";
+import {
+  layoutGridMaxW,
+  layoutGridMaxX,
+  parseLayoutGridInt,
+  parseOptionalZIndex,
+} from "../../utils/dashboard/widgetLayoutFieldParse";
+
+/** Local text while editing so layout fields can be cleared without snapping back. */
+function LayoutGridInput({
+  syncKey,
+  value,
+  min,
+  max,
+  onCommit,
+}: {
+  syncKey: string;
+  value: number;
+  min: number;
+  max?: number;
+  onCommit: (next: number) => void;
+}) {
+  const [text, setText] = useState(() => String(value));
+
+  useEffect(() => {
+    setText(String(value));
+  }, [syncKey, value]);
+
+  return (
+    <input
+      type="number"
+      min={min}
+      max={max}
+      value={text}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setText(raw);
+        const next = parseLayoutGridInt(raw, min, max);
+        if (next !== undefined) {
+          onCommit(next);
+        }
+      }}
+      onBlur={() => {
+        const next = parseLayoutGridInt(text, min, max);
+        if (next !== undefined) {
+          setText(String(next));
+          onCommit(next);
+        } else {
+          setText(String(value));
+        }
+      }}
+    />
+  );
+}
+
+function OptionalZIndexInput({
+  syncKey,
+  value,
+  placeholder,
+  onCommit,
+}: {
+  syncKey: string;
+  value: number | undefined;
+  placeholder: string;
+  onCommit: (next: number | undefined) => void;
+}) {
+  const [text, setText] = useState(() => (value === undefined ? "" : String(value)));
+
+  useEffect(() => {
+    setText(value === undefined ? "" : String(value));
+  }, [syncKey, value]);
+
+  return (
+    <input
+      type="number"
+      value={text}
+      placeholder={placeholder}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setText(raw);
+        const parsed = parseOptionalZIndex(raw);
+        if (parsed === null) {
+          return;
+        }
+        onCommit(parsed);
+      }}
+      onBlur={() => {
+        const parsed = parseOptionalZIndex(text);
+        if (parsed === null) {
+          setText(value === undefined ? "" : String(value));
+          return;
+        }
+        setText(parsed === undefined ? "" : String(parsed));
+        onCommit(parsed);
+      }}
+    />
+  );
+}
 
 interface WidgetEditorPanelProps {
   widget: DashboardWidget | null;
@@ -26,6 +123,8 @@ interface WidgetEditorPanelProps {
   onChange: (widget: DashboardWidget) => void;
   onWidgetsChange: (widgets: DashboardWidget[]) => void;
   onDelete: () => void;
+  /** Dashboard fine-grid column count (default {@link DASHBOARD_COLUMNS}). */
+  gridColumns?: number;
 }
 
 export default function WidgetEditorPanel({
@@ -37,6 +136,7 @@ export default function WidgetEditorPanel({
   onChange,
   onWidgetsChange,
   onDelete,
+  gridColumns = DASHBOARD_COLUMNS,
 }: WidgetEditorPanelProps) {
   const { t } = useTranslation(["dashboard", "widgets", "common"]);
 
@@ -62,6 +162,9 @@ export default function WidgetEditorPanel({
   const update = (patch: Partial<DashboardWidget>) => {
     onChange({ ...widget, ...patch } as DashboardWidget);
   };
+
+  const maxX = layoutGridMaxX(gridColumns, widget.w);
+  const maxW = layoutGridMaxW(gridColumns, widget.x);
 
   const fieldCtx = {
     widget,
@@ -116,43 +219,46 @@ export default function WidgetEditorPanel({
           </label>
           <label>
             <span className="field-caption">x</span>
-            <input
-              type="number"
-              min={0}
-              max={11}
+            <LayoutGridInput
+              syncKey={widget.id}
               value={widget.x}
-              onChange={(e) => update({ x: Number(e.target.value) })}
+              min={0}
+              max={maxX}
+              onCommit={(x) => update({ x })}
             />
           </label>
           <label>
             <span className="field-caption">y</span>
-            <input
-              type="number"
-              min={0}
+            <LayoutGridInput
+              syncKey={widget.id}
               value={widget.y}
-              onChange={(e) => update({ y: Number(e.target.value) })}
+              min={0}
+              onCommit={(y) => update({ y })}
             />
           </label>
           <label>
             <span className="field-caption">w</span>
-            <input
-              type="number"
-              min={1}
-              max={12}
+            <LayoutGridInput
+              syncKey={widget.id}
               value={widget.w}
-              onChange={(e) => update({ w: Number(e.target.value) })}
+              min={1}
+              max={maxW}
+              onCommit={(w) => update({ w })}
             />
           </label>
           <label>
             <span className="field-caption">h</span>
-            <input
-              type="number"
-              min={1}
+            <LayoutGridInput
+              syncKey={widget.id}
               value={widget.h}
-              onChange={(e) => update({ h: Number(e.target.value) })}
+              min={1}
+              onCommit={(h) => update({ h })}
             />
           </label>
-          <p className="hint full">{t("editor.layoutHint")}</p>
+          <p className="hint full">
+            {t("editor.layoutHint")}{" "}
+            {t("editor.layoutGridBounds", { columns: gridColumns, maxX, maxW })}
+          </p>
 
           <h5 className="widget-editor-section">{t("editor.layerTitle")}</h5>
           <label className="widget-layer-visible">
@@ -165,14 +271,11 @@ export default function WidgetEditorPanel({
           </label>
           <label>
             <span className="field-caption">{t("editor.layerZIndex")}</span>
-            <input
-              type="number"
-              value={widget.zIndex ?? ""}
+            <OptionalZIndexInput
+              syncKey={widget.id}
+              value={widget.zIndex}
               placeholder={t("editor.layerZIndexAuto")}
-              onChange={(e) => {
-                const raw = e.target.value.trim();
-                update({ zIndex: raw === "" ? undefined : Number(raw) });
-              }}
+              onCommit={(zIndex) => update({ zIndex })}
             />
           </label>
           <Space className="widget-layer-actions full" wrap>

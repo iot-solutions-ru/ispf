@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import WidgetEditorPanel from "./WidgetEditorPanel";
-import { newWidget } from "../../types/dashboard";
+import { DASHBOARD_COLUMNS, newWidget } from "../../types/dashboard";
 import { renderWithDashboard } from "../../test/renderWithDashboard";
 
 describe("WidgetEditorPanel", () => {
@@ -49,6 +49,85 @@ describe("WidgetEditorPanel", () => {
     expect(onChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ title: "Updated title" }),
     );
+  });
+
+  it("allows fine-grid x within layout.columns (demo sparkline column)", () => {
+    const widget = { ...newWidget("value", 0), x: 0, w: 28 };
+
+    renderWithDashboard(
+      <WidgetEditorPanel
+        widget={widget}
+        widgets={[widget]}
+        objects={[]}
+        gridColumns={DASHBOARD_COLUMNS}
+        onChange={onChange}
+        onWidgetsChange={onWidgetsChange}
+        onDelete={onDelete}
+      />,
+    );
+
+    const xCaption = screen.getByText("x", { selector: "span.field-caption" });
+    const xInput = xCaption.parentElement?.querySelector('input[type="number"]');
+    expect(xInput).toBeTruthy();
+    fireEvent.change(xInput!, { target: { value: "56" } });
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ x: 56 }));
+  });
+
+  it("does not coerce cleared layout fields to zero", async () => {
+    const widget = { ...newWidget("value", 0), x: 2, y: 3, w: 4, h: 5 };
+
+    renderWithDashboard(
+      <WidgetEditorPanel
+        widget={widget}
+        widgets={[widget]}
+        objects={[]}
+        onChange={onChange}
+        onWidgetsChange={onWidgetsChange}
+        onDelete={onDelete}
+      />,
+    );
+
+    const xCaption = screen.getByText("x", { selector: "span.field-caption" });
+    const xInput = xCaption.parentElement?.querySelector('input[type="number"]');
+    expect(xInput).toHaveValue(2);
+    fireEvent.change(xInput!, { target: { value: "" } });
+    expect(xInput).toHaveValue(null);
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.blur(xInput!);
+    await waitFor(() => expect(xInput).toHaveValue(2));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("updates zIndex only for finite numbers", () => {
+    const widget = { ...newWidget("value", 0), zIndex: 5 };
+
+    renderWithDashboard(
+      <WidgetEditorPanel
+        widget={widget}
+        widgets={[widget]}
+        objects={[]}
+        onChange={onChange}
+        onWidgetsChange={onWidgetsChange}
+        onDelete={onDelete}
+      />,
+    );
+
+    const zCaption = screen.getByText("Z-index");
+    const zInput = zCaption.parentElement?.querySelector("input");
+    expect(zInput).toBeTruthy();
+
+    fireEvent.change(zInput!, { target: { value: "7" } });
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ zIndex: 7 }));
+
+    fireEvent.change(zInput!, { target: { value: "" } });
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ zIndex: undefined }));
+    for (const call of onChange.mock.calls) {
+      const z = (call[0] as { zIndex?: number }).zIndex;
+      if (z !== undefined) {
+        expect(Number.isFinite(z)).toBe(true);
+      }
+    }
   });
 
   it("binds object path with a typed field and tree picker, not a flat object list", () => {
