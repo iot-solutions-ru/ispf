@@ -372,11 +372,11 @@
           "fields": [
             {
               "name": "workOrderPath",
-              "type": "STRING"
+              "type": "STRING", "nullable": true
             },
             {
               "name": "operatorId",
-              "type": "STRING"
+              "type": "STRING", "nullable": true
             }
           ]
         },
@@ -397,7 +397,7 @@
             },
             {
               "name": "workOrderPath",
-              "type": "STRING"
+              "type": "STRING", "nullable": true
             }
           ]
         }
