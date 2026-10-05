@@ -357,23 +357,7 @@ public class WorkflowService {
                 WorkflowStartTrigger.MANUAL,
                 input == null ? Map.of() : input
         );
-        Map<String, String> variables = Map.of();
-        try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> state = objectMapper.readValue(view.instanceState(), Map.class);
-            Object vars = state.get("variables");
-            if (vars instanceof Map<?, ?> map) {
-                Map<String, String> parsed = new HashMap<>();
-                map.forEach((k, v) -> {
-                    if (k != null) {
-                        parsed.put(k.toString(), v == null ? "" : v.toString());
-                    }
-                });
-                variables = parsed;
-            }
-        } catch (Exception ignored) {
-            // keep empty
-        }
+        Map<String, String> variables = variablesFromInstanceState(objectMapper, path, view.instanceState());
         Map<String, String> output = WorkflowToolContract.extractOutput(
                 objectMapper,
                 view.outputSchemaJson(),
@@ -766,6 +750,38 @@ public class WorkflowService {
         return readString(node, "status")
                 .map(WorkflowLifecycleStatus::valueOf)
                 .orElse(WorkflowLifecycleStatus.DRAFT);
+    }
+
+    /**
+     * Tool output is projected from {@code instanceState.variables}. Unreadable JSON is a failed
+     * tool call, not an empty success.
+     */
+    static Map<String, String> variablesFromInstanceState(
+            ObjectMapper objectMapper,
+            String workflowPath,
+            String instanceState
+    ) throws WorkflowException {
+        String json = instanceState == null || instanceState.isBlank() ? "{}" : instanceState;
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> state = objectMapper.readValue(json, Map.class);
+            Object vars = state.get("variables");
+            if (!(vars instanceof Map<?, ?> map)) {
+                return Map.of();
+            }
+            Map<String, String> parsed = new HashMap<>();
+            map.forEach((key, value) -> {
+                if (key != null) {
+                    parsed.put(key.toString(), value == null ? "" : value.toString());
+                }
+            });
+            return parsed;
+        } catch (RuntimeException ex) {
+            throw new WorkflowException(
+                    "Workflow instance state is not readable at " + workflowPath + ": " + ex.getMessage(),
+                    ex
+            );
+        }
     }
 
     static Optional<String> readString(PlatformObject node, String variableName) {
