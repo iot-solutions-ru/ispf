@@ -3855,26 +3855,6 @@
   font-size: 0.95rem;
 }
 
-/* Match RoleMultiSelect label spacing (6px) instead of default Ant Form vertical label padding. */
-.descriptor-editor-modal .antd-control-grid > .ant-form-item {
-  margin-bottom: 0;
-}
-
-.descriptor-editor-modal .antd-control-grid > .ant-form-item .ant-form-item-label {
-  padding: 0 0 0.35rem;
-}
-
-.descriptor-editor-modal .antd-control-grid > .ant-form-item .ant-form-item-label > label {
-  height: auto;
-  min-height: 0;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.descriptor-editor-modal .antd-control-grid > .ant-form-item .ant-form-item-control-input {
-  min-height: 0;
-}
-
 .function-script-steps-editor {
   display: flex;
   flex-direction: column;
