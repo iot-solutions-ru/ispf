@@ -45,8 +45,18 @@ public class BindingDependencyIndex {
     }
 
     public synchronized void removeObject(String objectPath) {
-        consumersByKey.entrySet().removeIf(entry -> entry.getValue().remove(objectPath));
-        eventConsumersByKey.entrySet().removeIf(entry -> entry.getValue().remove(objectPath));
+        // Drop this path as a consumer only; keep the map entry when other consumers remain.
+        // (removeIf(set.remove(path)) would delete the whole entry whenever remove returned true.)
+        removeConsumerFromIndex(consumersByKey, objectPath);
+        removeConsumerFromIndex(eventConsumersByKey, objectPath);
+    }
+
+    private static void removeConsumerFromIndex(Map<String, Set<String>> index, String objectPath) {
+        index.entrySet().removeIf(entry -> {
+            Set<String> consumers = entry.getValue();
+            consumers.remove(objectPath);
+            return consumers.isEmpty();
+        });
     }
 
     public Set<String> eventConsumers(String objectPath, String eventName) {
