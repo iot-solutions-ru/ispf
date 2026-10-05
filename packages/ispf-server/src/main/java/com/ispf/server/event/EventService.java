@@ -343,7 +343,7 @@ public class EventService implements WorkflowEventPublish {
         EventDescriptor descriptor = Optional.ofNullable(node.events().get(eventName))
                 .orElseThrow(() -> new IllegalArgumentException("Unknown event: " + eventName));
 
-        DataRecord resolvedPayload = DataRecordPayloadResolver.resolve(descriptor.payloadSchema(), payload);
+        DataRecord resolvedPayload = EventPayloadSchema.apply(descriptor.payloadSchema(), payload);
         Instant resolvedOccurredAt = eventTimestampValidator.validateOccurredAt(occurredAt);
         ObjectEvent event = ObjectEvent.of(
                 objectPath,
