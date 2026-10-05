@@ -23,6 +23,17 @@ import {
   serializeFunctionExpressionBody,
 } from "../../utils/functionScript/functionExpressionBody";
 import { validateFunctionExpression } from "../../utils/binding/bindingExpressionValidation";
+import {
+  BUILTIN_FUNCTION_PRESETS,
+  applyBuiltinPreset,
+  builtinPresetKindForSourceType,
+  findBuiltinPresetById,
+  presetUsesBuiltinSource,
+  resolveBuiltinPresetId,
+  functionHostIsDataSourceObject,
+  isExecuteQueryHandlerFunction,
+  type BuiltinFunctionPresetGroup,
+} from "../../utils/platform/builtinFunctionPresets";
 
 const JavaFunctionEditor = lazy(() => import("../functionScript/JavaFunctionEditor"));
 type DescriptorKind = "function" | "event";
@@ -55,6 +66,14 @@ function defaultFunction(name = ""): FunctionDescriptor {
     invokeRoles: [],
   };
 }
+
+const BUILTIN_PRESET_GROUP_ORDER: BuiltinFunctionPresetGroup[] = [
+  "virtualLab",
+  "alarm",
+  "dataSource",
+  "mqtt",
+  "pulse",
+];
 
 function defaultEvent(name = ""): EventDescriptor {
   const base = name || "event";
@@ -100,6 +119,7 @@ export default function EditDescriptorDialog({
   const [version, setVersion] = useState("");
   const [expressionText, setExpressionText] = useState("");
   const [expressionFormulaLink, setExpressionFormulaLink] = useState<BindingFormulaLink | null>(null);
+  const [builtinPresetId, setBuiltinPresetId] = useState("");
   const [showAdvancedJson, setShowAdvancedJson] = useState(false);
   const [schemaJson, setSchemaJson] = useState("{}");
   const [parseError, setParseError] = useState<string | null>(null);
@@ -116,7 +136,13 @@ export default function EditDescriptorDialog({
     () => inputSchema.fields.map((field) => field.name).filter(Boolean),
     [inputSchema.fields]
   );
-  const dataSourceActive = sourceType === "script" && scriptHasSqlStep(sourceBody);
+  const executeQueryHandler = isExecuteQueryHandlerFunction(name, sourceType);
+  const dataSourceActive =
+    (sourceType === "script" && scriptHasSqlStep(sourceBody)) || executeQueryHandler;
+  const showDataSourcePath =
+    isFunction && !showAdvancedJson && (sourceType === "script" || executeQueryHandler);
+  const executeQueryNeedsDataSourcePath =
+    executeQueryHandler && !functionHostIsDataSourceObject(objectPath) && !dataSourcePath.trim();
   const nameEmpty = !name.trim();
   const sourceBodyMissing =
     isFunction &&
@@ -168,8 +194,10 @@ export default function EditDescriptorDialog({
       setSourceBody(fn.sourceBody ?? "");
       setDataSourcePath(fn.dataSourcePath ?? "");
       setVersion(fn.version ?? "");
+      setBuiltinPresetId(resolveBuiltinPresetId(fn));
       sourceDrafts.current = {
         handler: fn.sourceType ? "" : (fn.sourceBody ?? ""),
+        pulse: fn.sourceType === "pulse" ? (fn.sourceBody ?? "") : "",
         script: fn.sourceType === "script" ? (fn.sourceBody ?? "") : "",
         java: fn.sourceType === "java" ? (fn.sourceBody ?? "") : "",
         expression: fn.sourceType === "expression" ? (fn.sourceBody ?? "") : "",
@@ -278,11 +306,52 @@ export default function EditDescriptorDialog({
     persistExpressionDraft(expression, formulaLink ?? null);
   }
 
+  const builtinPresetKind = builtinPresetKindForSourceType(sourceType);
+
+  const builtinPresetSelectOptions = useMemo(
+    () =>
+      BUILTIN_PRESET_GROUP_ORDER.map((group) => ({
+        label: t(`descriptor.builtinFunctionGroup.${group}`),
+        options: BUILTIN_FUNCTION_PRESETS.filter(
+          (preset) => preset.group === group && preset.kind === builtinPresetKind
+        ).map((preset) => ({
+          value: preset.id,
+          label: t(`descriptor.builtinPreset.${preset.id}.label`),
+        })),
+      })).filter((group) => group.options.length > 0),
+    [builtinPresetKind, t]
+  );
+
+  function applyBuiltinPresetById(presetId: string) {
+    const preset = findBuiltinPresetById(presetId);
+    if (!preset) return;
+    const applied = applyBuiltinPreset(preset);
+    if (!initial) {
+      setName(applied.name);
+    }
+    setDescription(t(`descriptor.builtinPreset.${preset.id}.description`));
+    setInputSchema(applied.inputSchema);
+    setOutputSchema(applied.outputSchema);
+    setSourceType(applied.sourceType);
+    setSourceBody(applied.sourceBody);
+    sourceDrafts.current[applied.sourceType || "handler"] = applied.sourceBody;
+    setBuiltinPresetId(presetId);
+  }
+
   function changeSourceType(next: string) {
     if (sourceType === "expression") {
       persistExpressionDraft(expressionText, expressionFormulaLink);
     } else {
       sourceDrafts.current[sourceType || "handler"] = sourceBody;
+    }
+    if (!presetUsesBuiltinSource(next)) {
+      setBuiltinPresetId("");
+    } else {
+      const nextKind = builtinPresetKindForSourceType(next);
+      setBuiltinPresetId((id) => {
+        const preset = id ? findBuiltinPresetById(id) : undefined;
+        return preset?.kind === nextKind ? id : "";
+      });
     }
     const draftKey = next || "handler";
     let nextBody = sourceDrafts.current[draftKey] ?? "";
@@ -384,6 +453,10 @@ export default function EditDescriptorDialog({
         }
         if (st === "expression" && !expressionText.trim()) {
           setParseError(t("descriptor.sourceBodyRequired"));
+          return;
+        }
+        if (executeQueryNeedsDataSourcePath) {
+          setParseError(t("descriptor.executeQueryDataSourceRequired"));
           return;
         }
         if (st === "expression") {
@@ -522,6 +595,7 @@ export default function EditDescriptorDialog({
                   virtual={false}
                   options={[
                     { value: "", label: t("descriptor.sourceTypeHandler") },
+                    { value: "pulse", label: t("descriptor.sourceTypePulse") },
                     { value: "script", label: t("descriptor.sourceTypeScript") },
                     { value: "java", label: t("descriptor.sourceTypeJava") },
                     { value: "expression", label: t("descriptor.sourceTypeExpression") },
@@ -529,11 +603,56 @@ export default function EditDescriptorDialog({
                   ]}
                 />
               </Form.Item>
-              {sourceType === "script" && (
+              {presetUsesBuiltinSource(sourceType) && (
+                <>
+                  <Form.Item label={t("descriptor.builtinFunctionPreset")} className="full">
+                    <Select
+                      aria-label={t("descriptor.builtinFunctionPreset")}
+                      virtual={false}
+                      allowClear
+                      placeholder={t("descriptor.builtinFunctionPresetPlaceholder")}
+                      value={builtinPresetId || undefined}
+                      onChange={(next) => {
+                        if (!next) {
+                          setBuiltinPresetId("");
+                          return;
+                        }
+                        applyBuiltinPresetById(next);
+                      }}
+                      options={builtinPresetSelectOptions}
+                    />
+                  </Form.Item>
+                  <Typography.Paragraph type="secondary" className="full">
+                    {t("descriptor.builtinFunctionPresetHint")}
+                  </Typography.Paragraph>
+                </>
+              )}
+              {sourceType === "pulse" && (
+                <Form.Item label={t("descriptor.pulseSourceBody")} className="full">
+                  <Input.TextArea
+                    className="json-editor"
+                    rows={4}
+                    value={sourceBody}
+                    onChange={(e) => setSourceBody(e.target.value)}
+                    placeholder='{"variable":"cmdStart"}'
+                    spellCheck={false}
+                  />
+                </Form.Item>
+              )}
+              {showDataSourcePath && (
                 <Form.Item
                   label={t("descriptor.dataSourcePath")}
                   className="full"
-                  extra={dataSourceActive ? undefined : t("descriptor.dataSourcePathInactive")}
+                  validateStatus={executeQueryNeedsDataSourcePath ? "error" : undefined}
+                  help={
+                    executeQueryNeedsDataSourcePath
+                      ? t("descriptor.executeQueryDataSourceRequired")
+                      : executeQueryHandler
+                        ? t("descriptor.executeQueryDataSourceHint")
+                        : dataSourceActive
+                          ? undefined
+                          : t("descriptor.dataSourcePathInactive")
+                  }
                 >
                   <Select
                     aria-label={t("descriptor.dataSourcePath")}
@@ -625,6 +744,7 @@ export default function EditDescriptorDialog({
                 sourceType !== "java" &&
                 sourceType !== "expression" &&
                 sourceType !== "object-query" &&
+                sourceType !== "pulse" &&
                 sourceBody.trim() && (
                 <Form.Item label={t("descriptor.sourceBody")} className="full">
                   <Input.TextArea
@@ -644,7 +764,11 @@ export default function EditDescriptorDialog({
                     ? t("descriptor.expressionHint")
                     : sourceType === "object-query"
                       ? t("descriptor.objectQueryHint")
-                    : t("descriptor.scriptHint")}
+                      : sourceType === "pulse"
+                        ? t("descriptor.pulseHint")
+                        : presetUsesBuiltinSource(sourceType)
+                          ? t("descriptor.builtinHandlerHint")
+                          : t("descriptor.scriptHint")}
               </Typography.Paragraph>
             </Form>
           </>
