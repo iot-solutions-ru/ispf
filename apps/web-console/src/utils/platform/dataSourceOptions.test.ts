@@ -47,4 +47,48 @@ describe("loadDataSourceOptions", () => {
       "root.platform.data-sources.demo",
     ]);
   });
+
+  it("walks nested visual groups recursively", async () => {
+    vi.mocked(api.fetchObjects).mockImplementation(async (parent) => {
+      if (parent === "root.platform.data-sources") {
+        return [
+          {
+            path: "root.platform.data-sources.outer",
+            type: "VISUAL_GROUP",
+            displayName: "Outer",
+          } as ObjectSummary,
+        ];
+      }
+      if (parent === "root.platform.data-sources.outer") {
+        return [
+          {
+            path: "root.platform.data-sources.inner",
+            type: "VISUAL_GROUP",
+            displayName: "Inner",
+          } as ObjectSummary,
+          {
+            path: "root.platform.data-sources.shallow",
+            type: "DATA_SOURCE",
+            displayName: "Shallow",
+          } as ObjectSummary,
+        ];
+      }
+      if (parent === "root.platform.data-sources.inner") {
+        return [
+          {
+            path: "root.platform.data-sources.deep",
+            type: "DATA_SOURCE",
+            displayName: "Deep",
+          } as ObjectSummary,
+        ];
+      }
+      return [];
+    });
+
+    const sources = await loadDataSourceOptions();
+    expect(sources.map((source) => source.path)).toEqual([
+      "root.platform.data-sources.deep",
+      "root.platform.data-sources.shallow",
+    ]);
+  });
 });

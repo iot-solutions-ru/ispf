@@ -114,7 +114,10 @@ export default function EditDescriptorDialog({
   const [payloadSchema, setPayloadSchema] = useState<DataSchema>(emptySchema("payload"));
   const [sourceType, setSourceType] = useState("");
   const [sourceBody, setSourceBody] = useState("");
-  const dataSourcesQuery = useDataSourceOptions(isFunction && sourceType === "script");
+  const executeQueryHandler = isExecuteQueryHandlerFunction(name, sourceType);
+  const dataSourcesQuery = useDataSourceOptions(
+    isFunction && (sourceType === "script" || executeQueryHandler),
+  );
   const [dataSourcePath, setDataSourcePath] = useState("");
   const [version, setVersion] = useState("");
   const [expressionText, setExpressionText] = useState("");
@@ -136,7 +139,6 @@ export default function EditDescriptorDialog({
     () => inputSchema.fields.map((field) => field.name).filter(Boolean),
     [inputSchema.fields]
   );
-  const executeQueryHandler = isExecuteQueryHandlerFunction(name, sourceType);
   const dataSourceActive =
     (sourceType === "script" && scriptHasSqlStep(sourceBody)) || executeQueryHandler;
   const showDataSourcePath =
