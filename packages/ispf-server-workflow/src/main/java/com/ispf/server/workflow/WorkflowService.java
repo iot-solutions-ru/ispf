@@ -183,6 +183,11 @@ public class WorkflowService {
                     throw new IllegalArgumentException("Cannot activate workflow with invalid BPMN: " + ex.getMessage(), ex);
                 }
             }
+            WorkflowEventTriggerIndex.parseTrigger(
+                    path,
+                    readString(node, "triggerJson").orElse("{}"),
+                    objectMapper
+            );
         }
         objects.setVariableValue(
                 path,
