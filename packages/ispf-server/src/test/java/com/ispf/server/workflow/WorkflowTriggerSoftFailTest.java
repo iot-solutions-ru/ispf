@@ -7,7 +7,9 @@ import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.plugin.workflow.WorkflowEngine;
+import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
+import com.ispf.server.spi.WorkflowStartTrigger;
 import com.ispf.server.expression.ExpressionFormalVerificationService;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.platform.AutomationMetricsRecorder;
@@ -24,9 +26,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -127,6 +134,78 @@ class WorkflowTriggerSoftFailTest {
         verify(objects).require(STALE_WORKFLOW);
         verify(objects).require(eq(ACTIVE_WORKFLOW));
         verify(eventTriggerIndex).removeWorkflow(STALE_WORKFLOW);
+    }
+
+    @Test
+    void variableTriggerRecordsTheStartFailureAndDoesNotReturnSuccess() throws Exception {
+        PlatformObject node = workflowNode(WorkflowLifecycleStatus.ACTIVE);
+        Variable triggerJson = stringVariable(
+                "triggerJson",
+                "{\"triggerType\":\"variable\",\"objectPath\":\"" + OBJECT_PATH
+                        + "\",\"variableName\":\"" + VARIABLE_NAME + "\"}"
+        );
+        when(node.path()).thenReturn(ACTIVE_WORKFLOW);
+        when(node.getVariable("triggerJson")).thenReturn(Optional.of(triggerJson));
+        when(eventTriggerIndex.findVariableWorkflows(OBJECT_PATH, VARIABLE_NAME))
+                .thenReturn(List.of(ACTIVE_WORKFLOW));
+        when(objects.require(ACTIVE_WORKFLOW)).thenReturn(node);
+        WorkflowService spyService = spy(workflowService);
+        doThrow(new WorkflowException("bpmn boom")).when(spyService).runWorkflow(
+                eq(ACTIVE_WORKFLOW),
+                eq(OBJECT_PATH),
+                eq(WorkflowStartTrigger.VARIABLE)
+        );
+
+        IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                () -> spyService.handleVariableTrigger(OBJECT_PATH, VARIABLE_NAME)
+        );
+
+        assertThat(error.getMessage()).contains("bpmn boom");
+        verify(deadLetterService).recordCommitted(
+                eq("trigger-start"),
+                eq(ACTIVE_WORKFLOW),
+                eq(1),
+                eq("bpmn boom"),
+                contains("\"trigger\":\"variable\"")
+        );
+    }
+
+    @Test
+    void eventTriggerRecordsTheStartFailureAndDoesNotReturnSuccess() throws Exception {
+        PlatformObject node = workflowNode(WorkflowLifecycleStatus.ACTIVE);
+        when(eventTriggerIndex.findEventWorkflows(OBJECT_PATH, EVENT_NAME))
+                .thenReturn(List.of(ACTIVE_WORKFLOW));
+        when(objects.require(ACTIVE_WORKFLOW)).thenReturn(node);
+        WorkflowService spyService = spy(workflowService);
+        doThrow(new WorkflowException("bpmn boom")).when(spyService).runWorkflow(
+                eq(ACTIVE_WORKFLOW),
+                eq(OBJECT_PATH),
+                eq(WorkflowStartTrigger.EVENT)
+        );
+
+        IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                () -> spyService.handleEventTrigger(OBJECT_PATH, EVENT_NAME)
+        );
+
+        assertThat(error.getMessage()).contains("bpmn boom");
+        verify(deadLetterService).recordCommitted(
+                eq("trigger-start"),
+                eq(ACTIVE_WORKFLOW),
+                eq(1),
+                eq("bpmn boom"),
+                contains("\"trigger\":\"event\"")
+        );
+    }
+
+    private Variable stringVariable(String name, String value) {
+        Variable variable = mock(Variable.class);
+        when(variable.value()).thenReturn(Optional.of(DataRecord.single(
+                DataSchema.builder(name).field("value", FieldType.STRING).build(),
+                Map.of("value", value)
+        )));
+        return variable;
     }
 
     private PlatformObject workflowNode(WorkflowLifecycleStatus status) {

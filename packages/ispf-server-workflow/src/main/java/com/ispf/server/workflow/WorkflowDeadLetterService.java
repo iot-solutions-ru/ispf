@@ -3,6 +3,7 @@ package com.ispf.server.workflow;
 import com.ispf.server.persistence.entity.WorkflowDeadLetterEntity;
 import com.ispf.server.persistence.WorkflowDeadLetterRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -36,6 +37,21 @@ public class WorkflowDeadLetterService {
         entity.setPayloadJson(payloadJson);
         entity.setCreatedAt(Instant.now());
         return repository.save(entity);
+    }
+
+    /**
+     * Persists a trigger-start failure in its own transaction so a later rollback of the
+     * trigger handler does not erase the operator-visible record.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public WorkflowDeadLetterEntity recordCommitted(
+            String instanceId,
+            String workflowPath,
+            int attemptCount,
+            String lastError,
+            String payloadJson
+    ) {
+        return record(instanceId, workflowPath, attemptCount, lastError, payloadJson);
     }
 
     @Transactional(readOnly = true)
