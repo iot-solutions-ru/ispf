@@ -167,8 +167,11 @@ public class WorkflowEventTriggerIndex implements WorkflowTriggerLookup {
                 return Optional.of(new TriggerBinding(workflowPath, TriggerType.VARIABLE, objectPath, variableName, null));
             }
             return Optional.empty();
-        } catch (Exception ignored) {
-            return Optional.empty();
+        } catch (RuntimeException ex) {
+            throw new IllegalArgumentException(
+                    "Workflow trigger JSON is not valid at " + workflowPath + ": " + ex.getMessage(),
+                    ex
+            );
         }
     }
 
