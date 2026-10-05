@@ -604,6 +604,7 @@ public class WorkflowService {
 
     @Transactional
     public void handleVariableTrigger(String objectPath, String variableName) {
+        List<String> failures = new ArrayList<>();
         for (String workflowPath : eventTriggerIndex.findVariableWorkflows(objectPath, variableName)) {
             PlatformObject node;
             try {
@@ -626,13 +627,16 @@ public class WorkflowService {
                         WorkflowStartTrigger.VARIABLE
                 );
             } catch (WorkflowException e) {
-                log.warn("Workflow trigger failed for {}: {}", workflowPath, e.getMessage());
+                recordTriggerStartFailure(workflowPath, "variable", objectPath, e);
+                failures.add(workflowPath + ": " + e.getMessage());
             }
         }
+        failTriggerStart(failures);
     }
 
     @Transactional
     public void handleEventTrigger(String objectPath, String eventName) {
+        List<String> failures = new ArrayList<>();
         for (String workflowPath : eventTriggerIndex.findEventWorkflows(objectPath, eventName)) {
             PlatformObject node;
             try {
@@ -652,9 +656,39 @@ public class WorkflowService {
                         WorkflowStartTrigger.EVENT
                 );
             } catch (WorkflowException e) {
-                log.warn("Workflow event trigger failed for {}: {}", workflowPath, e.getMessage());
+                recordTriggerStartFailure(workflowPath, "event", objectPath, e);
+                failures.add(workflowPath + ": " + e.getMessage());
             }
         }
+        failTriggerStart(failures);
+    }
+
+    private void recordTriggerStartFailure(
+            String workflowPath,
+            String triggerKind,
+            String sourcePath,
+            WorkflowException error
+    ) {
+        deadLetterService.recordCommitted(
+                "trigger-start",
+                workflowPath,
+                1,
+                error.getMessage(),
+                "{\"trigger\":\"" + triggerKind + "\",\"sourcePath\":\"" + escapeJson(sourcePath) + "\"}"
+        );
+    }
+
+    private static void failTriggerStart(List<String> failures) {
+        if (!failures.isEmpty()) {
+            throw new IllegalStateException("Workflow trigger start failed: " + String.join("; ", failures));
+        }
+    }
+
+    private static String escapeJson(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private void notifyCallActivityParents(WorkflowInstance child) {
