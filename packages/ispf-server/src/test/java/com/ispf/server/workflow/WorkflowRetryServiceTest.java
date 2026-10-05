@@ -15,7 +15,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -66,5 +68,37 @@ class WorkflowRetryServiceTest {
         verify(repository).save(captor.capture());
         assertThat(captor.getValue().getStatus()).isEqualTo(WorkflowRetryService.STATUS_CLAIMED);
         assertThat(captor.getValue().getClaimedAt()).isNotNull();
+    }
+
+    @Test
+    void readInputRejectsUnreadableJsonAndKeepsBlankEmpty() {
+        WorkflowRetryService real = new WorkflowRetryService(repository, new ObjectMapper());
+        WorkflowRetryScheduleEntity blank = new WorkflowRetryScheduleEntity();
+        blank.setInputJson("  ");
+        assertThat(real.readInput(blank)).isEmpty();
+        WorkflowRetryScheduleEntity emptyObject = new WorkflowRetryScheduleEntity();
+        emptyObject.setInputJson("{}");
+        assertThat(real.readInput(emptyObject)).isEmpty();
+
+        WorkflowRetryScheduleEntity broken = new WorkflowRetryScheduleEntity();
+        broken.setInputJson("{not-json");
+        assertThatThrownBy(() -> real.readInput(broken))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Workflow retry input JSON is not readable");
+    }
+
+    @Test
+    void scheduleFailsWhenInputCannotBeStored() throws Exception {
+        when(objectMapper.writeValueAsString(any())).thenThrow(new IllegalStateException("serialize"));
+        assertThatThrownBy(() -> service.schedule(
+                "root.platform.workflows.demo",
+                "inst-1",
+                1,
+                Instant.parse("2026-07-19T12:00:00Z"),
+                Map.of("k", "v"),
+                "boom"
+        )).isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Workflow retry input cannot be stored");
+        verify(repository, never()).save(any());
     }
 }
