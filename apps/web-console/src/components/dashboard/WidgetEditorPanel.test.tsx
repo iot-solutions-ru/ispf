@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import WidgetEditorPanel from "./WidgetEditorPanel";
 import { DASHBOARD_COLUMNS, newWidget } from "../../types/dashboard";
 import { renderWithDashboard } from "../../test/renderWithDashboard";
@@ -73,7 +73,7 @@ describe("WidgetEditorPanel", () => {
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ x: 56 }));
   });
 
-  it("does not coerce cleared layout fields to zero", () => {
+  it("does not coerce cleared layout fields to zero", async () => {
     const widget = { ...newWidget("value", 0), x: 2, y: 3, w: 4, h: 5 };
 
     renderWithDashboard(
@@ -91,6 +91,11 @@ describe("WidgetEditorPanel", () => {
     const xInput = xCaption.parentElement?.querySelector('input[type="number"]');
     expect(xInput).toHaveValue(2);
     fireEvent.change(xInput!, { target: { value: "" } });
+    expect(xInput).toHaveValue(null);
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.blur(xInput!);
+    await waitFor(() => expect(xInput).toHaveValue(2));
     expect(onChange).not.toHaveBeenCalled();
   });
 

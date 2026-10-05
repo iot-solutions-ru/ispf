@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Checkbox, Select, Space, Typography } from "antd";
 import type { DashboardWidget, WidgetType } from "../../types/dashboard";
@@ -22,6 +22,97 @@ import {
   parseLayoutGridInt,
   parseOptionalZIndex,
 } from "../../utils/dashboard/widgetLayoutFieldParse";
+
+/** Local text while editing so layout fields can be cleared without snapping back. */
+function LayoutGridInput({
+  syncKey,
+  value,
+  min,
+  max,
+  onCommit,
+}: {
+  syncKey: string;
+  value: number;
+  min: number;
+  max?: number;
+  onCommit: (next: number) => void;
+}) {
+  const [text, setText] = useState(() => String(value));
+
+  useEffect(() => {
+    setText(String(value));
+  }, [syncKey, value]);
+
+  return (
+    <input
+      type="number"
+      min={min}
+      max={max}
+      value={text}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setText(raw);
+        const next = parseLayoutGridInt(raw, min, max);
+        if (next !== undefined) {
+          onCommit(next);
+        }
+      }}
+      onBlur={() => {
+        const next = parseLayoutGridInt(text, min, max);
+        if (next !== undefined) {
+          setText(String(next));
+          onCommit(next);
+        } else {
+          setText(String(value));
+        }
+      }}
+    />
+  );
+}
+
+function OptionalZIndexInput({
+  syncKey,
+  value,
+  placeholder,
+  onCommit,
+}: {
+  syncKey: string;
+  value: number | undefined;
+  placeholder: string;
+  onCommit: (next: number | undefined) => void;
+}) {
+  const [text, setText] = useState(() => (value === undefined ? "" : String(value)));
+
+  useEffect(() => {
+    setText(value === undefined ? "" : String(value));
+  }, [syncKey, value]);
+
+  return (
+    <input
+      type="number"
+      value={text}
+      placeholder={placeholder}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setText(raw);
+        const parsed = parseOptionalZIndex(raw);
+        if (parsed === null) {
+          return;
+        }
+        onCommit(parsed);
+      }}
+      onBlur={() => {
+        const parsed = parseOptionalZIndex(text);
+        if (parsed === null) {
+          setText(value === undefined ? "" : String(value));
+          return;
+        }
+        setText(parsed === undefined ? "" : String(parsed));
+        onCommit(parsed);
+      }}
+    />
+  );
+}
 
 interface WidgetEditorPanelProps {
   widget: DashboardWidget | null;
@@ -128,60 +219,40 @@ export default function WidgetEditorPanel({
           </label>
           <label>
             <span className="field-caption">x</span>
-            <input
-              type="number"
+            <LayoutGridInput
+              syncKey={widget.id}
+              value={widget.x}
               min={0}
               max={maxX}
-              value={widget.x}
-              onChange={(e) => {
-                const next = parseLayoutGridInt(e.target.value, 0, maxX);
-                if (next !== undefined) {
-                  update({ x: next });
-                }
-              }}
+              onCommit={(x) => update({ x })}
             />
           </label>
           <label>
             <span className="field-caption">y</span>
-            <input
-              type="number"
-              min={0}
+            <LayoutGridInput
+              syncKey={widget.id}
               value={widget.y}
-              onChange={(e) => {
-                const next = parseLayoutGridInt(e.target.value, 0);
-                if (next !== undefined) {
-                  update({ y: next });
-                }
-              }}
+              min={0}
+              onCommit={(y) => update({ y })}
             />
           </label>
           <label>
             <span className="field-caption">w</span>
-            <input
-              type="number"
+            <LayoutGridInput
+              syncKey={widget.id}
+              value={widget.w}
               min={1}
               max={maxW}
-              value={widget.w}
-              onChange={(e) => {
-                const next = parseLayoutGridInt(e.target.value, 1, maxW);
-                if (next !== undefined) {
-                  update({ w: next });
-                }
-              }}
+              onCommit={(w) => update({ w })}
             />
           </label>
           <label>
             <span className="field-caption">h</span>
-            <input
-              type="number"
-              min={1}
+            <LayoutGridInput
+              syncKey={widget.id}
               value={widget.h}
-              onChange={(e) => {
-                const next = parseLayoutGridInt(e.target.value, 1);
-                if (next !== undefined) {
-                  update({ h: next });
-                }
-              }}
+              min={1}
+              onCommit={(h) => update({ h })}
             />
           </label>
           <p className="hint full">
@@ -200,17 +271,11 @@ export default function WidgetEditorPanel({
           </label>
           <label>
             <span className="field-caption">{t("editor.layerZIndex")}</span>
-            <input
-              type="number"
-              value={widget.zIndex ?? ""}
+            <OptionalZIndexInput
+              syncKey={widget.id}
+              value={widget.zIndex}
               placeholder={t("editor.layerZIndexAuto")}
-              onChange={(e) => {
-                const parsed = parseOptionalZIndex(e.target.value);
-                if (parsed === null) {
-                  return;
-                }
-                update({ zIndex: parsed });
-              }}
+              onCommit={(zIndex) => update({ zIndex })}
             />
           </label>
           <Space className="widget-layer-actions full" wrap>
