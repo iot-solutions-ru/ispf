@@ -119,13 +119,7 @@ public class WorkflowTaskExecutor {
         input.put("__callParentInstanceId", parent.instanceId());
         String inputMap = call.parameters().get("inputMap");
         if (inputMap != null && !inputMap.isBlank()) {
-            for (String part : inputMap.split(",")) {
-                String[] kv = part.split("=", 2);
-                if (kv.length != 2) {
-                    continue;
-                }
-                input.put(kv[0].trim(), resolveMappedValue(kv[1].trim(), parent));
-            }
+            input.putAll(readInputMap(inputMap, parent));
         }
         String trigger = call.parameters().get("objectPath");
         if (trigger == null || trigger.isBlank()) {
@@ -254,22 +248,37 @@ public class WorkflowTaskExecutor {
         }
     }
 
-    private static DataRecord buildWorkflowFunctionInput(String inputMap, WorkflowInstance instance) {
+    private static DataRecord buildWorkflowFunctionInput(String inputMap, WorkflowInstance instance)
+            throws WorkflowException {
         if (inputMap == null || inputMap.isBlank()) {
+            return null;
+        }
+        Map<String, String> mapped = readInputMap(inputMap, instance);
+        if (mapped.isEmpty()) {
             return null;
         }
         Map<String, Object> row = new HashMap<>();
         DataSchema.Builder schemaBuilder = DataSchema.builder("workflowFunctionInput");
+        mapped.forEach((key, value) -> {
+            row.put(key, value);
+            schemaBuilder.field(key, FieldType.STRING);
+        });
+        return DataRecord.single(schemaBuilder.build(), row);
+    }
+
+    private static Map<String, String> readInputMap(String inputMap, WorkflowInstance instance) throws WorkflowException {
+        Map<String, String> mapped = new HashMap<>();
         for (String part : inputMap.split(",")) {
-            String[] kv = part.split("=", 2);
-            if (kv.length != 2) {
+            if (part == null || part.isBlank()) {
                 continue;
             }
-            String key = kv[0].trim();
-            row.put(key, resolveMappedValue(kv[1].trim(), instance));
-            schemaBuilder.field(key, FieldType.STRING);
+            String[] kv = part.split("=", 2);
+            if (kv.length != 2) {
+                throw new WorkflowException("Workflow inputMap entry is not a key=value pair: " + part.trim());
+            }
+            mapped.put(kv[0].trim(), resolveMappedValue(kv[1].trim(), instance));
         }
-        return row.isEmpty() ? null : DataRecord.single(schemaBuilder.build(), row);
+        return mapped;
     }
 
     private static void applyWorkflowFunctionOutput(String outputMap, DataRecord output, WorkflowInstance instance) {
