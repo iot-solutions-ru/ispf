@@ -46,6 +46,13 @@ public class PlatformMetricsProbeService {
     /** True after a failed sync: device variables are the previous snapshot, not a current one. */
     private volatile boolean stale;
 
+    /**
+     * Ensure-on-startup outcome: {@code pending} until bootstrap runs, then {@code ok},
+     * {@code error}, or {@code skipped} when ensure is disabled.
+     */
+    private volatile String bootstrapStatus = "pending";
+    private volatile String bootstrapError = "";
+
     public PlatformMetricsProbeService(
             PlatformMetricsProbeProperties properties,
             PlatformMetricsService metricsService,
@@ -58,7 +65,7 @@ public class PlatformMetricsProbeService {
 
     @EventListener(ApplicationReadyEvent.class)
     void bootstrap() {
-        if (!shouldSync() || !objectManager.isInitialized()) {
+        if (isBootstrapFailed() || !shouldSync() || !objectManager.isInitialized()) {
             return;
         }
         if (!probeDeviceExists()) {
@@ -74,6 +81,11 @@ public class PlatformMetricsProbeService {
     }
 
     public void setDiagnosticsProbeEnabled(boolean enabled) {
+        if (enabled && isBootstrapFailed()) {
+            throw new IllegalStateException(
+                    "Self-diagnostics is not ready: " + (bootstrapError.isBlank() ? bootstrapStatus : bootstrapError)
+            );
+        }
         diagnosticsProbeEnabled = enabled;
         if (enabled) {
             log.info("Diagnostics metrics probe enabled (interval {}ms)", properties.getIntervalMs());
@@ -87,6 +99,38 @@ public class PlatformMetricsProbeService {
 
     public boolean probeDeviceExists() {
         return objectManager.tree().findByPath(DEVICE_PATH).isPresent();
+    }
+
+    public void markBootstrapOk() {
+        bootstrapStatus = "ok";
+        bootstrapError = "";
+    }
+
+    public void markBootstrapSkipped() {
+        bootstrapStatus = "skipped";
+        bootstrapError = "";
+    }
+
+    public void markBootstrapFailure(RuntimeException failure) {
+        bootstrapStatus = "error";
+        bootstrapError = failure.getMessage() == null ? failure.getClass().getSimpleName() : failure.getMessage();
+        diagnosticsProbeEnabled = false;
+    }
+
+    public boolean isBootstrapFailed() {
+        return "error".equals(bootstrapStatus);
+    }
+
+    public boolean isBootstrapReady() {
+        return "ok".equals(bootstrapStatus) || "skipped".equals(bootstrapStatus);
+    }
+
+    public String bootstrapStatus() {
+        return bootstrapStatus;
+    }
+
+    public String bootstrapError() {
+        return bootstrapError;
     }
 
     public String syncStatus() {
@@ -107,7 +151,7 @@ public class PlatformMetricsProbeService {
 
     @Scheduled(fixedDelayString = "${ispf.platform-metrics-probe.interval-ms:5000}")
     void poll() {
-        if (!objectManager.isInitialized()) {
+        if (!objectManager.isInitialized() || isBootstrapFailed()) {
             return;
         }
         if (!shouldSync() || !probeDeviceExists()) {
