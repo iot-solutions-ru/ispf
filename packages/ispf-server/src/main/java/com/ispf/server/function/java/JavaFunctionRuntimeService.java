@@ -15,6 +15,7 @@ public class JavaFunctionRuntimeService {
 
     private final FunctionProperties functionProperties;
     private final Map<String, CompiledJavaFunction> compiled = new ConcurrentHashMap<>();
+    private final Map<String, RuntimeException> bootstrapFailures = new ConcurrentHashMap<>();
 
     public JavaFunctionRuntimeService(FunctionProperties functionProperties) {
         this.functionProperties = functionProperties;
@@ -29,17 +30,31 @@ public class JavaFunctionRuntimeService {
             String beforeKey = key(objectPath, before.name());
             if (!function.hasJavaBody() || !before.name().equals(function.name())) {
                 compiled.remove(beforeKey);
+                bootstrapFailures.remove(beforeKey);
             }
         }
         if (function.hasJavaBody()) {
             compileAndRegister(objectPath, function);
         } else if (before != null && before.hasJavaBody() && before.name().equals(function.name())) {
             compiled.remove(key(objectPath, function.name()));
+            bootstrapFailures.remove(key(objectPath, function.name()));
         }
     }
 
     public void unregister(String objectPath, String functionName) {
         compiled.remove(key(objectPath, functionName));
+        bootstrapFailures.remove(key(objectPath, functionName));
+    }
+
+    public void markBootstrapFailure(String objectPath, String functionName, RuntimeException failure) {
+        String id = key(objectPath, functionName);
+        compiled.remove(id);
+        bootstrapFailures.put(id, failure);
+    }
+
+    public boolean isReady(String objectPath, String functionName) {
+        String id = key(objectPath, functionName);
+        return compiled.containsKey(id) && !bootstrapFailures.containsKey(id);
     }
 
     public CompiledJavaFunction get(String objectPath, String functionName) {
@@ -50,15 +65,22 @@ public class JavaFunctionRuntimeService {
         requireEnabled();
         JavaFunctionCompiler.CompiledArtifact artifact = JavaFunctionCompiler.compile(function.sourceBody());
         ObjectJavaFunction instance = JavaFunctionCompiler.instantiate(artifact);
-        compiled.put(
-                key(objectPath, function.name()),
-                new CompiledJavaFunction(function.name(), artifact.className(), instance)
-        );
+        String id = key(objectPath, function.name());
+        bootstrapFailures.remove(id);
+        compiled.put(id, new CompiledJavaFunction(function.name(), artifact.className(), instance));
     }
 
     public DataRecord invoke(String objectPath, String functionName, DataRecord input) {
         requireEnabled();
-        CompiledJavaFunction fn = get(objectPath, functionName);
+        String id = key(objectPath, functionName);
+        RuntimeException failure = bootstrapFailures.get(id);
+        if (failure != null) {
+            throw new IllegalStateException(
+                    "Java function is not ready: " + functionName + ": " + failure.getMessage(),
+                    failure
+            );
+        }
+        CompiledJavaFunction fn = compiled.get(id);
         if (fn == null) {
             throw new IllegalStateException("Java function is not compiled: " + functionName);
         }
