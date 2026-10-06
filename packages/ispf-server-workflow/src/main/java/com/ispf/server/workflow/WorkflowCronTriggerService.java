@@ -10,12 +10,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
 /**
- * Cron-like poller for WORKFLOW.cronExpression (simple minute cadence; ADR-0049 Wave 3).
- * Supports expressions of the form {@code every:Nm} (every N minutes) for v1.
+ * Poller for WORKFLOW.cronExpression. Due rules match schedule objects:
+ * {@code every:Nm} and 5/6-field cron, measured from {@code lastRunAt}.
  */
 @Service
 public class WorkflowCronTriggerService {
@@ -45,10 +46,14 @@ public class WorkflowCronTriggerService {
                     continue;
                 }
                 String cron = read(child, "cronExpression").orElse("");
-                if (!"every:1m".equalsIgnoreCase(cron.trim())) {
+                if (cron.isBlank()) {
                     continue;
                 }
                 try {
+                    Instant lastRunAt = read(child, "lastRunAt").map(Instant::parse).orElse(null);
+                    if (!WorkflowCronDue.isDue(Instant.now(), lastRunAt, cron)) {
+                        continue;
+                    }
                     workflowService.runWorkflow(
                             child.path(),
                             null,
