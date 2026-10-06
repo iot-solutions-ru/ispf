@@ -99,7 +99,8 @@ public class PlatformSelfDiagnosticsBootstrap {
                     properties.isEnabled()
             );
         } catch (RuntimeException ex) {
-            log.warn("Self-diagnostics bootstrap skipped: {}", ex.getMessage());
+            log.error("Self-diagnostics bootstrap failed: {}", ex.getMessage());
+            throw new IllegalStateException("Self-diagnostics bootstrap failed: " + ex.getMessage(), ex);
         }
     }
 
