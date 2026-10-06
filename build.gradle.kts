@@ -171,7 +171,24 @@ subprojects {
                 // commons-configuration2 2.10.1 (CVE-2026-45205). Drop when the parents move.
                 "at.yawk.lz4:lz4-java:1.12.0",
                 "org.apache.commons:commons-configuration2:2.15.1",
+                // Dependabot GHSA stream (attributed to settings.gradle.kts): Jackson / Log4j
+                // transitives still resolve below the patched lines. Drop when Boot BOM / parents catch up.
+                "com.fasterxml.jackson.core:jackson-core:2.22.3",
+                "com.fasterxml.jackson.core:jackson-databind:2.22.3",
+                "tools.jackson.core:jackson-core:3.1.7",
+                "tools.jackson.core:jackson-databind:3.1.7",
+                "org.apache.logging.log4j:log4j-api:2.25.5",
             )
+            eachDependency {
+                if (requested.group != "org.eclipse.jetty") {
+                    return@eachDependency
+                }
+                val current = requested.version ?: return@eachDependency
+                when {
+                    current.startsWith("9.4") -> useVersion("9.4.63")
+                    current.startsWith("12.0") -> useVersion("12.0.12")
+                }
+            }
         }
     }
 }
