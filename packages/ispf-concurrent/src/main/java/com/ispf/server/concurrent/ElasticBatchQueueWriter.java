@@ -142,9 +142,10 @@ public final class ElasticBatchQueueWriter<T> {
                 }
                 long elapsedMs = (System.nanoTime() - lastFlush) / 1_000_000L;
                 if (!batch.isEmpty() && (batch.size() >= batchSize || elapsedMs >= flushIntervalMs)) {
-                    flushBatch(batch);
+                    if (flushBatch(batch)) {
+                        lastFlush = System.nanoTime();
+                    }
                     batch.clear();
-                    lastFlush = System.nanoTime();
                 } else if (batch.isEmpty()) {
                     adjustWorkers();
                 }
@@ -159,11 +160,30 @@ public final class ElasticBatchQueueWriter<T> {
         }
     }
 
-    private void flushBatch(List<T> batch) {
+    private boolean flushBatch(List<T> batch) {
+        List<T> payload = List.copyOf(batch);
         try {
-            batchConsumer.accept(batch);
+            batchConsumer.accept(payload);
+            return true;
         } catch (Exception ex) {
-            log.warn("{} batch flush failed (size={}): {}", workerThreadName, batch.size(), ex.getMessage());
+            log.warn(
+                    "{} batch flush failed (size={}), requeueing: {}",
+                    workerThreadName,
+                    payload.size(),
+                    ex.getMessage()
+            );
+            int restored = 0;
+            for (T item : payload) {
+                if (queue == null || !queue.offer(item)) {
+                    throw new IllegalStateException(
+                            "Failed to requeue " + (payload.size() - restored) + " " + workerThreadName
+                                    + " records after flush failure",
+                            ex
+                    );
+                }
+                restored++;
+            }
+            return false;
         }
     }
 
@@ -184,8 +204,8 @@ public final class ElasticBatchQueueWriter<T> {
         while (!queue.isEmpty()) {
             batch.clear();
             queue.drainTo(batch, batchSize);
-            if (!batch.isEmpty()) {
-                flushBatch(batch);
+            if (!batch.isEmpty() && !flushBatch(batch)) {
+                throw new IllegalStateException(workerThreadName + " batch flush failed during drain");
             }
         }
     }
