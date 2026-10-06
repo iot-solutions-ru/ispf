@@ -53,8 +53,9 @@ public class JavaFunctionBootstrap {
                 try {
                     runtimeService.compileAndRegister(node.path(), function);
                 } catch (RuntimeException ex) {
+                    runtimeService.markBootstrapFailure(node.path(), function.name(), ex);
                     log.warn(
-                            "Failed to compile Java function {} on {} during startup: {}",
+                            "Java function {} on {} is not ready after startup compile failed: {}",
                             function.name(),
                             node.path(),
                             ex.getMessage()
