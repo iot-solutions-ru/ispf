@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -99,6 +100,22 @@ class ExamplesBundleValidationTest {
                 canonIssues.stream().map(BundleValidationIssue::path).toList()
         );
         assertTrue(canonIssues.stream().allMatch(i -> BundleValidationIssue.WARNING.equals(i.severity())));
+    }
+
+    @Test
+    void mesReferenceDispatchDashboardHostsBffOnSingletonHub() throws Exception {
+        Path bundlePath = resolveExamplesRoot().resolve("mes-reference").resolve("bundle.json");
+        var tree = objectMapper.readTree(Files.readString(bundlePath));
+        String layout = tree.path("dashboards").get(0).path("layoutJson").asText();
+        assertTrue(
+                layout.contains("root.platform.singleton-blueprints.mes-reference-hub-v1")
+                        && layout.contains("\"functionName\":\"mes_listOrders\""),
+                "dispatch widgets must invoke BFF on the SINGLETON hub"
+        );
+        assertFalse(
+                layout.contains("root.platform.devices.demo-sensor-01"),
+                "dispatch widgets must not invoke BFF on the rack DEVICE"
+        );
     }
 
     private static Path resolveExamplesRoot() {

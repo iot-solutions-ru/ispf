@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.208",
-  "generatedAt": "2026-10-06T10:02:26.437888+00:00",
+  "generatedAt": "2026-10-06T10:08:57.280576+00:00",
   "platformVersion": "0.9.208",
   "bundleManifest": {
     "fields": [
@@ -2054,7 +2054,7 @@
       "appId": "mes-reference",
       "purpose": "MES dispatch orders, BFF mes_listOrders/startFilling/completeFilling",
       "keySections": "blueprints, dashboards, events, functions, migrations, objects",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "path": "examples/mes-reference/bundle.json",
       "keywords": "mes-reference blueprints dashboards events functions migrations objects"
     },
@@ -24876,7 +24876,8 @@
                 "fields": [
                   {
                     "name": "optionsJson",
-                    "type": "STRING"
+                    "type": "STRING",
+                    "nullable": true
                   },
                   {
                     "name": "finishCode",
@@ -24930,7 +24931,8 @@
                 "fields": [
                   {
                     "name": "optionsJson",
-                    "type": "STRING"
+                    "type": "STRING",
+                    "nullable": true
                   },
                   {
                     "name": "finishCode",
@@ -29172,11 +29174,13 @@
                 "fields": [
                   {
                     "name": "workOrderPath",
-                    "type": "STRING"
+                    "type": "STRING",
+                    "nullable": true
                   },
                   {
                     "name": "operatorId",
-                    "type": "STRING"
+                    "type": "STRING",
+                    "nullable": true
                   }
                 ]
               },
@@ -29197,7 +29201,8 @@
                   },
                   {
                     "name": "workOrderPath",
-                    "type": "STRING"
+                    "type": "STRING",
+                    "nullable": true
                   }
                 ]
               }
@@ -31332,11 +31337,13 @@
                 "fields": [
                   {
                     "name": "workOrderPath",
-                    "type": "STRING"
+                    "type": "STRING",
+                    "nullable": true
                   },
                   {
                     "name": "operatorId",
-                    "type": "STRING"
+                    "type": "STRING",
+                    "nullable": true
                   }
                 ]
               },
@@ -31357,7 +31364,8 @@
                   },
                   {
                     "name": "workOrderPath",
-                    "type": "STRING"
+                    "type": "STRING",
+                    "nullable": true
                   }
                 ]
               }
@@ -32247,7 +32255,7 @@
       "appId": "mes-reference",
       "packageId": "mes_ref",
       "path": "examples/mes-reference/bundle.json",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "sections": [
         "alertRules",
         "blueprints",
@@ -32264,7 +32272,7 @@
         "version"
       ],
       "manifest": {
-        "version": "1.0.1",
+        "version": "1.0.2",
         "displayName": "MES Reference (dispatch / tank / rack)",
         "tablePrefix": "",
         "schemaName": "app_mes_ref",
@@ -32469,14 +32477,14 @@
           "eventJournalObjectPath": "root.platform.devices.demo-sensor-01"
         },
         "metadata": {
-          "changelog": "1.0.1 — Operator dispatch dashboard (list/start/complete filling)"
+          "changelog": "1.0.2 — Dispatch dashboard BFF widgets on SINGLETON hub mes-reference-hub-v1"
         },
         "dashboards": [
           {
             "path": "root.platform.dashboards.mes-reference-dispatch",
             "title": "MES Reference Dispatch",
             "refreshIntervalMs": 5000,
-            "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"help\",\"type\":\"html-snippet\",\"title\":\"Dispatch\",\"x\":0,\"y\":0,\"w\":84,\"h\":10,\"htmlJson\":\"<p>Dispatch orders from <code>mes_dispatch_order</code>. List → start filling (DO-1001) → complete.</p>\"},{\"id\":\"list\",\"type\":\"function\",\"title\":\"Orders\",\"x\":0,\"y\":10,\"w\":42,\"h\":28,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_listOrders\",\"buttonLabel\":\"List orders\"},{\"id\":\"start\",\"type\":\"function\",\"title\":\"Start filling\",\"x\":42,\"y\":10,\"w\":42,\"h\":14,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_startFilling\",\"buttonLabel\":\"Start DO-1001\",\"inputMapJson\":\"{\\\"orderNo\\\":\\\"DO-1001\\\"}\"},{\"id\":\"complete\",\"type\":\"function\",\"title\":\"Complete filling\",\"x\":42,\"y\":24,\"w\":42,\"h\":14,\"objectPath\":\"root.platform.devices.demo-sensor-01\",\"functionName\":\"mes_completeFilling\",\"buttonLabel\":\"Complete DO-1001\",\"inputMapJson\":\"{\\\"orderNo\\\":\\\"DO-1001\\\"}\"}]}"
+            "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"help\",\"type\":\"html-snippet\",\"title\":\"Dispatch\",\"x\":0,\"y\":0,\"w\":84,\"h\":10,\"htmlJson\":\"<p>Dispatch orders from <code>mes_dispatch_order</code>. List → start filling (DO-1001) → complete.</p>\"},{\"id\":\"list\",\"type\":\"function\",\"title\":\"Orders\",\"x\":0,\"y\":10,\"w\":42,\"h\":28,\"objectPath\":\"root.platform.singleton-blueprints.mes-reference-hub-v1\",\"functionName\":\"mes_listOrders\",\"buttonLabel\":\"List orders\"},{\"id\":\"start\",\"type\":\"function\",\"title\":\"Start filling\",\"x\":42,\"y\":10,\"w\":42,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.mes-reference-hub-v1\",\"functionName\":\"mes_startFilling\",\"buttonLabel\":\"Start DO-1001\",\"inputMapJson\":\"{\\\"orderNo\\\":\\\"DO-1001\\\"}\"},{\"id\":\"complete\",\"type\":\"function\",\"title\":\"Complete filling\",\"x\":42,\"y\":24,\"w\":42,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.mes-reference-hub-v1\",\"functionName\":\"mes_completeFilling\",\"buttonLabel\":\"Complete DO-1001\",\"inputMapJson\":\"{\\\"orderNo\\\":\\\"DO-1001\\\"}\"}]}"
           }
         ],
         "blueprints": [
@@ -50279,5 +50287,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "0936355693ffa9c3052b40b07242fac0dffe73dfaec5fe0358663c2225028617"
+  "contentSha256": "99b89eff5d40a783034ff6259a2ab1524f062e3a690ac3186f4dd38a3cbb3498"
 }

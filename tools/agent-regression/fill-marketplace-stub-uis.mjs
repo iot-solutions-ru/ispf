@@ -96,7 +96,8 @@ function patchMesReference() {
     ...(j.metadata || {}),
     changelog: `${j.version} — Operator dispatch dashboard (list/start/complete filling)`,
   };
-  const hub = "root.platform.devices.demo-sensor-01";
+  const hub = "root.platform.singleton-blueprints.mes-reference-hub-v1";
+  const rack = "root.platform.devices.demo-sensor-01";
   j.dashboards = [
     {
       path: "root.platform.dashboards.mes-reference-dispatch",
@@ -145,7 +146,7 @@ function patchMesReference() {
     "mes-reference",
     "MES Reference",
     [{ path: j.dashboards[0].path, title: "Dispatch", navTitle: "Dispatch" }],
-    hub
+    rack
   );
   writeJson(p, j);
   return p;
