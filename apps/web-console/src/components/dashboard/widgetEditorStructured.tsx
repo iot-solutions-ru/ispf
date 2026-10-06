@@ -33,12 +33,14 @@ function ListActions({
 
 export function StringListEditor({
   label,
+  code,
   value,
   onChange,
   suggestions = [],
   placeholder,
 }: {
   label: string;
+  code?: string;
   value: string | undefined;
   onChange: (next: string) => void;
   suggestions?: string[];
@@ -65,6 +67,7 @@ export function StringListEditor({
   return (
     <div className="widget-editor-structured full">
       <span className="field-caption">{label}</span>
+      {code ? <span className="field-code">{code}</span> : null}
       <div className="widget-editor-list">
         {items.map((item, index) => (
           <div key={index} className="widget-editor-list-row">
@@ -103,14 +106,20 @@ export function StringListEditor({
 
 export function KeyValueEditor({
   label,
+  code,
   value,
   onChange,
+  keyCaption,
+  valueCaption,
   keyPlaceholder,
   valuePlaceholder,
 }: {
   label: string;
+  code?: string;
   value: string | undefined;
   onChange: (next: string | undefined) => void;
+  keyCaption?: string;
+  valueCaption?: string;
   keyPlaceholder?: string;
   valuePlaceholder?: string;
 }) {
@@ -140,12 +149,20 @@ export function KeyValueEditor({
   return (
     <div className="widget-editor-structured full">
       <span className="field-caption">{label}</span>
+      {code ? <span className="field-code">{code}</span> : null}
+      {(keyCaption || valueCaption) && (
+        <div className="widget-editor-kv-head">
+          <span>{keyCaption}</span>
+          <span>{valueCaption}</span>
+          <span />
+        </div>
+      )}
       <div className="widget-editor-list">
         {rows.map((row, index) => (
           <div key={index} className="widget-editor-list-row widget-editor-kv-row">
             <input
               value={row.key}
-              placeholder={keyPlaceholder ?? "key"}
+              placeholder={keyPlaceholder ?? keyCaption ?? "key"}
               onChange={(e) => {
                 const next = [...rows];
                 next[index] = { ...next[index], key: e.target.value };
@@ -154,7 +171,7 @@ export function KeyValueEditor({
             />
             <input
               value={row.val}
-              placeholder={valuePlaceholder ?? "value"}
+              placeholder={valuePlaceholder ?? valueCaption ?? "value"}
               onChange={(e) => {
                 const next = [...rows];
                 next[index] = { ...next[index], val: e.target.value };

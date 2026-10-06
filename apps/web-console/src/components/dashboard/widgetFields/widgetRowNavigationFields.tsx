@@ -40,7 +40,7 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
           </FieldLabel>
         </FormRow>
         <FormRow>
-          <FieldLabel caption="rowSelectionKey">
+          <FieldLabel caption={t("editor.rowSelectionSlot")} code="rowSelectionKey">
             <SelectionKeyInput
               value={mw.rowSelectionKey ?? ""}
               keys={ctx.selectionKeys}
@@ -49,7 +49,10 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
             />
           </FieldLabel>
         <KeyValueEditor
-          label="rowParamsJson"
+          label={t("editor.openScreenParams")}
+          code="rowParamsJson"
+          keyCaption={t("editor.col.sessionParam")}
+          valueCaption={t("editor.col.value")}
           value={mw.rowParamsJson}
           onChange={(v) => update({ rowParamsJson: v })}
         />
@@ -83,7 +86,7 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
           </FieldLabel>
         </FormRow>
         <FormRow>
-          <FieldLabel caption="rowSelectionKey">
+          <FieldLabel caption={t("editor.rowSelectionSlot")} code="rowSelectionKey">
             <SelectionKeyInput
               value={tw.rowSelectionKey ?? ""}
               keys={ctx.selectionKeys}
@@ -92,7 +95,10 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
             />
           </FieldLabel>
         <KeyValueEditor
-          label="rowParamsJson"
+          label={t("editor.openScreenParams")}
+          code="rowParamsJson"
+          keyCaption={t("editor.col.sessionParam")}
+          valueCaption={t("editor.col.value")}
           value={tw.rowParamsJson}
           onChange={(v) => update({ rowParamsJson: v })}
         />
@@ -126,7 +132,7 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
           </FieldLabel>
         </FormRow>
         <FormRow>
-          <FieldLabel caption="cardSelectionKey">
+          <FieldLabel caption={t("editor.cardSelectionKey")} code="cardSelectionKey">
             <SelectionKeyInput
               value={cw.cardSelectionKey ?? ""}
               keys={ctx.selectionKeys}
@@ -135,7 +141,10 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
             />
           </FieldLabel>
         <KeyValueEditor
-          label="cardParamsJson"
+          label={t("editor.openScreenParams")}
+          code="cardParamsJson"
+          keyCaption={t("editor.col.sessionParam")}
+          valueCaption={t("editor.col.value")}
           value={cw.cardParamsJson}
           onChange={(v) => update({ cardParamsJson: v })}
         />

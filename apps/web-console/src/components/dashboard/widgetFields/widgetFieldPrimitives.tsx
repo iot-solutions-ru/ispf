@@ -165,16 +165,19 @@ export function SelectionKeyInput({
 
 export function FieldLabel({
   caption,
+  code,
   children,
   className,
 }: {
   caption: string;
+  code?: string;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <label className={className}>
       <span className="field-caption">{caption}</span>
+      {code ? <span className="field-code">{code}</span> : null}
       {children}
     </label>
   );

@@ -39,7 +39,7 @@ describe("WidgetEditorPanel", () => {
     );
 
     expect(screen.getByDisplayValue("Temperature")).toBeInTheDocument();
-    expect(screen.getByText("Selection key (selectionKey)")).toBeInTheDocument();
+    expect(screen.getByText("Object path slot")).toBeInTheDocument();
   });
 
   it("shows empty-state hint when no widget is selected", () => {
@@ -205,7 +205,7 @@ describe("WidgetEditorPanel", () => {
       />,
     );
 
-    const caption = screen.getByText("Selection key (selectionKey)");
+    const caption = screen.getByText("Object path slot");
     const input = caption.parentElement?.querySelector("input");
     expect(input).toBeTruthy();
 
