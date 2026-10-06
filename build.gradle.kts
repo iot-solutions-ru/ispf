@@ -180,14 +180,22 @@ subprojects {
                 "org.apache.logging.log4j:log4j-api:2.25.5",
             )
             eachDependency {
-                if (requested.group != "org.eclipse.jetty") {
-                    return@eachDependency
-                }
                 val current = requested.version ?: return@eachDependency
-                when {
-                    // 9.4.x is timestamped on Central (no 9.4.63). Latest 9.4 line is 9.4.58.v20250814.
-                    current.startsWith("9.4") -> useVersion("9.4.58.v20250814")
-                    current.startsWith("12.0") -> useVersion("12.0.12")
+                when (requested.group) {
+                    "org.eclipse.jetty" -> when {
+                        // 9.4.x is timestamped on Central (no 9.4.63). Latest 9.4 line is 9.4.58.v20250814.
+                        current.startsWith("9.4") -> useVersion("9.4.58.v20250814")
+                        current.startsWith("12.0") -> useVersion("12.0.12")
+                    }
+                    "io.netty" -> {
+                        if (!requested.name.startsWith("netty-")) {
+                            return@eachDependency
+                        }
+                        when {
+                            current.startsWith("4.1") -> useVersion("4.1.137.Final")
+                            current.startsWith("4.2") -> useVersion("4.2.18.Final")
+                        }
+                    }
                 }
             }
         }
