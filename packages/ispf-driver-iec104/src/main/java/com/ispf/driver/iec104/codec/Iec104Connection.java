@@ -43,11 +43,29 @@ public final class Iec104Connection implements AutoCloseable {
     }
 
     public Iec104Connection(Socket socket, Iec104ConnectionListener listener) throws IOException {
+        this(socket, listener, true);
+    }
+
+    /**
+     * @param startReaderImmediately false when the listener is not fully wired yet (server accept path)
+     */
+    Iec104Connection(Socket socket, Iec104ConnectionListener listener, boolean startReaderImmediately)
+            throws IOException {
         this.socket = socket;
         this.listener = listener;
         this.in = socket.getInputStream();
         this.out = socket.getOutputStream();
-        startReader();
+        if (startReaderImmediately) {
+            startReader();
+        }
+    }
+
+    void startReaderIfNeeded() {
+        synchronized (this) {
+            if (readerThread == null && !closed.get()) {
+                startReader();
+            }
+        }
     }
 
     public void startDataTransfer() throws IOException {

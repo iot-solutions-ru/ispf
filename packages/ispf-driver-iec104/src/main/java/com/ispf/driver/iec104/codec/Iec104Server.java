@@ -76,10 +76,14 @@ public final class Iec104Server implements AutoCloseable {
     private void registerConnection(Socket socket, Iec104ServerListener listener) {
         try {
             DelegatingConnectionListener delegate = new DelegatingConnectionListener();
-            Iec104Connection connection = new Iec104Connection(socket, delegate);
+            // Reader must start after onConnection() assigns the target listener. Starting it in
+            // the Iec104Connection constructor drops early I-frames (STARTDT + first command)
+            // because DelegatingConnectionListener.onAsdu no-ops while target is still null.
+            Iec104Connection connection = new Iec104Connection(socket, delegate, false);
             connections.add(connection);
             delegate.connection = connection;
             delegate.target = listener.onConnection(connection);
+            connection.startReaderIfNeeded();
         } catch (IOException e) {
             listener.onConnectionAttemptFailed(e);
             try {
