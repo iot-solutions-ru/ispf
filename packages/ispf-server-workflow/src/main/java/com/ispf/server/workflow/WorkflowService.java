@@ -491,9 +491,19 @@ public class WorkflowService {
 
     private void handleFailure(String path, WorkflowInstance instance, Map<String, String> input) {
         PlatformObject node = objects.require(path);
-        int attempt = WorkflowTaskExecutor.parseInt(instance.variables().getOrDefault("_retryAttempt", "0"), 0) + 1;
-        int maxAttempts = WorkflowTaskExecutor.parseInt(readString(node, "retryMaxAttempts").orElse("0"), 0);
-        int backoffSeconds = Math.max(0, WorkflowTaskExecutor.parseInt(readString(node, "retryBackoffSeconds").orElse("30"), 30));
+        int attempt;
+        int maxAttempts;
+        int backoffSeconds;
+        try {
+            attempt = WorkflowTaskExecutor.parseInt(instance.variables().getOrDefault("_retryAttempt", "0"), 0) + 1;
+            maxAttempts = WorkflowTaskExecutor.parseInt(readString(node, "retryMaxAttempts").orElse("0"), 0);
+            backoffSeconds = Math.max(0, WorkflowTaskExecutor.parseInt(readString(node, "retryBackoffSeconds").orElse("30"), 30));
+        } catch (WorkflowException e) {
+            String primary = instance.errorMessage() == null ? "" : instance.errorMessage();
+            instance.fail(primary.isBlank() ? e.getMessage() : primary + ". " + e.getMessage());
+            statePublisher.publish(path, instance);
+            return;
+        }
         if (maxAttempts > 0 && attempt < maxAttempts) {
             Map<String, String> retryInput = new HashMap<>(input == null ? Map.of() : input);
             retryInput.put("_retryAttempt", String.valueOf(attempt));
@@ -519,7 +529,7 @@ public class WorkflowService {
                     "attempt", String.valueOf(attempt)
             ));
         } catch (Exception e) {
-            payload = "{}";
+            throw new IllegalStateException("Failed to serialize workflow dead letter", e);
         }
         deadLetterService.record(
                 instance.instanceId(),
