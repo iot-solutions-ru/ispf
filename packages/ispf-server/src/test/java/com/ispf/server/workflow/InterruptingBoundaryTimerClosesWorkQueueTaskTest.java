@@ -1,9 +1,11 @@
 package com.ispf.server.workflow;
 
+import com.ispf.core.object.ObjectType;
 import com.ispf.plugin.workflow.BpmnProcess;
 import com.ispf.plugin.workflow.InstanceStatus;
 import com.ispf.plugin.workflow.WorkflowEngine;
 import com.ispf.plugin.workflow.WorkflowInstance;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.WorkflowUserTaskRepository;
 import com.ispf.server.persistence.entity.WorkflowUserTaskEntity;
 import org.junit.jupiter.api.Test;
@@ -52,13 +54,18 @@ class InterruptingBoundaryTimerClosesWorkQueueTaskTest {
     @Autowired
     private WorkflowUserTaskRepository userTaskRepository;
 
+    @Autowired
+    private ObjectManager objectManager;
+
+    @Autowired
+    private WorkflowService workflowService;
+
     @Test
     void interruptingBoundaryTimerClosesOpenWorkQueueTask() throws Exception {
+        String path = "root.platform.workflows.boundary-wq-demo";
+        ensureWorkflow(path, "boundary-wq-demo", "Boundary WQ Demo");
         BpmnProcess process = workflowEngine.parse(BOUNDARY_TIMER_BPMN);
-        WorkflowInstance instance = workflowEngine.start(
-                "root.platform.workflows.boundary-wq-demo",
-                process
-        );
+        WorkflowInstance instance = workflowEngine.start(path, process);
         workflowEngine.runToCompletion(
                 instance,
                 process,
@@ -97,11 +104,10 @@ class InterruptingBoundaryTimerClosesWorkQueueTaskTest {
 
     @Test
     void claimedOrphanTaskAlsoCloses() throws Exception {
+        String path = "root.platform.workflows.boundary-wq-claimed";
+        ensureWorkflow(path, "boundary-wq-claimed", "Boundary WQ Claimed");
         BpmnProcess process = workflowEngine.parse(BOUNDARY_TIMER_BPMN);
-        WorkflowInstance instance = workflowEngine.start(
-                "root.platform.workflows.boundary-wq-claimed",
-                process
-        );
+        WorkflowInstance instance = workflowEngine.start(path, process);
         workflowEngine.runToCompletion(instance, process, (task, ignored) -> { }, expr -> true);
         instanceStore.save(instance, process, null, process.userTasks().get("ackTask"));
 
@@ -124,5 +130,19 @@ class InterruptingBoundaryTimerClosesWorkQueueTaskTest {
 
         assertThat(userTaskRepository.findById(claimed.getId()).orElseThrow().getStatus())
                 .isEqualTo("COMPLETED");
+    }
+
+    private void ensureWorkflow(String path, String name, String displayName) {
+        if (objectManager.tree().findByPath(path).isEmpty()) {
+            objectManager.create(
+                    "root.platform.workflows",
+                    name,
+                    ObjectType.WORKFLOW,
+                    displayName,
+                    "Boundary timer work-queue coverage",
+                    "workflow-v1"
+            );
+            workflowService.ensureWorkflowStructure(path);
+        }
     }
 }
