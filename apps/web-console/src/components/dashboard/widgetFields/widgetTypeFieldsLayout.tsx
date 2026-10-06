@@ -155,7 +155,7 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
           onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
         />
       </label>
-      <SvgWidgetInteractiveEditor widget={widget} update={update} />
+      <SvgWidgetInteractiveEditor widget={widget} update={update} selectionKeys={ctx.selectionKeys} />
       <label>
         <input
           type="checkbox"

@@ -37,6 +37,7 @@ function contextFor(widget: DashboardWidget): WidgetFieldContext {
     variables: ["flow", "state"],
     allVariableNames: ["flow", "state", "pressure"],
     variableSelectEnabled: true,
+    selectionKeys: [],
     update: () => {},
   };
 }

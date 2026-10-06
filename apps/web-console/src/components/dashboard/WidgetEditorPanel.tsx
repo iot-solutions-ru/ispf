@@ -22,6 +22,7 @@ import {
   parseLayoutGridInt,
   parseOptionalZIndex,
 } from "../../utils/dashboard/widgetLayoutFieldParse";
+import { collectDashboardSelectionKeys } from "./selectionKeys";
 
 /** Local text while editing so layout fields can be cleared without snapping back. */
 function LayoutGridInput({
@@ -144,6 +145,7 @@ export default function WidgetEditorPanel({
     () => [...new Set(objects.flatMap((o) => o.variableNames))].sort(),
     [objects]
   );
+  const selectionKeys = useMemo(() => collectDashboardSelectionKeys(widgets), [widgets]);
 
   if (!widget) {
     return (
@@ -174,6 +176,7 @@ export default function WidgetEditorPanel({
     variables,
     allVariableNames,
     variableSelectEnabled,
+    selectionKeys,
     update,
   };
 

@@ -2514,6 +2514,18 @@ body.scada-mimic-editor-open {
   min-width: 0;
 }
 
+.widget-editor-form .selection-key-input {
+  width: 100%;
+}
+
+.form-grid .selection-key-input input {
+  width: 100%;
+  border: none;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+}
+
 .widget-editor-form .field-controls-slot--stacked {
   min-height: 5.05rem;
   display: flex;

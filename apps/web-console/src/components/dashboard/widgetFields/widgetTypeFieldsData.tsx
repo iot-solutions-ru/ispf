@@ -25,6 +25,7 @@ import {
   PathSelect,
   ReportParameterHints,
   Section,
+  SelectionKeyInput,
   StackedSlot,
   type WidgetFieldContextFor,
   type WidgetTypeFieldsRegistry,
@@ -264,7 +265,7 @@ function workQueueFields(ctx: WidgetFieldContextFor<"work-queue">, t: TFunction)
 }
 
 function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): ReactNode {
-  const { widget, update } = ctx;
+  const { widget, selectionKeys, update } = ctx;
   const rw = widget;
   return (
     <>
@@ -365,17 +366,19 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
       </label>
       <label>
         rowSelectionKey
-        <input
+        <SelectionKeyInput
           value={rw.rowSelectionKey ?? ""}
-          onChange={(e) => update({ rowSelectionKey: e.target.value || undefined })}
+          keys={selectionKeys}
+          onChange={(next) => update({ rowSelectionKey: next || undefined })}
         />
       </label>
       <label>
         selectionKey
-        <input
+        <SelectionKeyInput
           value={rw.selectionKey ?? ""}
-          onChange={(e) => update({ selectionKey: e.target.value || undefined })}
+          keys={selectionKeys}
           placeholder="device"
+          onChange={(next) => update({ selectionKey: next || undefined })}
         />
       </label>
       <FormRow>
@@ -402,11 +405,12 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
       </FormRow>
       <label>
         rowTargetSelectionKey
-        <input
+        <SelectionKeyInput
           value={rw.rowTargetSelectionKey ?? ""}
-          onChange={(e) => update({ rowTargetSelectionKey: e.target.value || undefined })}
+          keys={selectionKeys}
           disabled={!rw.rowTargetDashboard}
           placeholder="device"
+          onChange={(next) => update({ rowTargetSelectionKey: next || undefined })}
         />
       </label>
       <KeyValueEditor

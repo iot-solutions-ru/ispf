@@ -14,6 +14,34 @@ describe("WidgetEditorPanel", () => {
     vi.clearAllMocks();
   });
 
+  it("opens the editor after the empty state", () => {
+    const widget = { ...newWidget("value", 0), id: "value", title: "Temperature" };
+    const { rerender } = renderWithDashboard(
+      <WidgetEditorPanel
+        widget={null}
+        widgets={[]}
+        objects={[]}
+        onChange={onChange}
+        onWidgetsChange={onWidgetsChange}
+        onDelete={onDelete}
+      />,
+    );
+
+    rerender(
+      <WidgetEditorPanel
+        widget={widget}
+        widgets={[widget]}
+        objects={[]}
+        onChange={onChange}
+        onWidgetsChange={onWidgetsChange}
+        onDelete={onDelete}
+      />,
+    );
+
+    expect(screen.getByDisplayValue("Temperature")).toBeInTheDocument();
+    expect(screen.getByText("Selection key (selectionKey)")).toBeInTheDocument();
+  });
+
   it("shows empty-state hint when no widget is selected", () => {
     renderWithDashboard(
       <WidgetEditorPanel
@@ -159,5 +187,35 @@ describe("WidgetEditorPanel", () => {
     expect(onChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ objectPath: "root.platform.devices.pump-2", variableName: "" }),
     );
+  });
+
+  it("suggests selection keys already set on the dashboard and still accepts a new name", async () => {
+    const widget = { ...newWidget("value", 0), id: "value" };
+    const table = { ...newWidget("object-table", 1), id: "table", selectionKey: "order" };
+    const cards = { ...newWidget("card-grid", 2), id: "cards", cardSelectionKey: "pump" };
+
+    renderWithDashboard(
+      <WidgetEditorPanel
+        widget={widget}
+        widgets={[widget, table, cards]}
+        objects={[]}
+        onChange={onChange}
+        onWidgetsChange={onWidgetsChange}
+        onDelete={onDelete}
+      />,
+    );
+
+    const caption = screen.getByText("Selection key (selectionKey)");
+    const input = caption.parentElement?.querySelector("input");
+    expect(input).toBeTruthy();
+
+    fireEvent.mouseDown(input!);
+    const listbox = await screen.findByRole("listbox");
+    expect(
+      [...listbox.querySelectorAll("[role='option']")].map((option) => option.textContent),
+    ).toEqual(["order", "pump"]);
+
+    fireEvent.change(input!, { target: { value: "batch" } });
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ selectionKey: "batch" }));
   });
 });

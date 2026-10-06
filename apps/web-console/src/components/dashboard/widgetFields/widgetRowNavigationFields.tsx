@@ -6,6 +6,7 @@ import {
   DashboardPathField,
   FieldLabel,
   FormRow,
+  SelectionKeyInput,
   StackedSlot,
   type WidgetFieldContext,
 } from "./widgetFieldPrimitives";
@@ -40,10 +41,11 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
         </FormRow>
         <FormRow>
           <FieldLabel caption="rowSelectionKey">
-            <input
+            <SelectionKeyInput
               value={mw.rowSelectionKey ?? ""}
-              onChange={(e) => update({ rowSelectionKey: e.target.value || undefined })}
+              keys={ctx.selectionKeys}
               disabled={!mw.rowTargetDashboard}
+              onChange={(next) => update({ rowSelectionKey: next || undefined })}
             />
           </FieldLabel>
         <KeyValueEditor
@@ -82,10 +84,11 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
         </FormRow>
         <FormRow>
           <FieldLabel caption="rowSelectionKey">
-            <input
+            <SelectionKeyInput
               value={tw.rowSelectionKey ?? ""}
-              onChange={(e) => update({ rowSelectionKey: e.target.value || undefined })}
+              keys={ctx.selectionKeys}
               disabled={!tw.rowTargetDashboard}
+              onChange={(next) => update({ rowSelectionKey: next || undefined })}
             />
           </FieldLabel>
         <KeyValueEditor
@@ -124,10 +127,11 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
         </FormRow>
         <FormRow>
           <FieldLabel caption="cardSelectionKey">
-            <input
+            <SelectionKeyInput
               value={cw.cardSelectionKey ?? ""}
-              onChange={(e) => update({ cardSelectionKey: e.target.value || undefined })}
+              keys={ctx.selectionKeys}
               disabled={!cw.cardTargetDashboard}
+              onChange={(next) => update({ cardSelectionKey: next || undefined })}
             />
           </FieldLabel>
         <KeyValueEditor
