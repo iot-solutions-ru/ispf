@@ -8,6 +8,7 @@ import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.object.VariableStorageMode;
+import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.spi.DeviceTelemetryPolicy;
 import com.ispf.server.function.java.JavaFunctionRuntimeService;
 import com.ispf.server.persistence.ObjectEntityMapper;
@@ -35,19 +36,22 @@ public class ObjectVariableService {
     private final ObjectEntityMapper mapper;
     private final DeviceTelemetryPolicy telemetryPolicyService;
     private final JavaFunctionRuntimeService javaFunctionRuntimeService;
+    private final FunctionScriptValidator scriptValidator;
 
     public ObjectVariableService(
             @Lazy ObjectManager objectManager,
             ObjectVariableRepository variableRepository,
             ObjectEntityMapper mapper,
             @Lazy DeviceTelemetryPolicy telemetryPolicyService,
-            JavaFunctionRuntimeService javaFunctionRuntimeService
+            JavaFunctionRuntimeService javaFunctionRuntimeService,
+            FunctionScriptValidator scriptValidator
     ) {
         this.objectManager = objectManager;
         this.variableRepository = variableRepository;
         this.mapper = mapper;
         this.telemetryPolicyService = telemetryPolicyService;
         this.javaFunctionRuntimeService = javaFunctionRuntimeService;
+        this.scriptValidator = scriptValidator;
     }
 
     @Transactional
@@ -249,6 +253,13 @@ public class ObjectVariableService {
     public FunctionDescriptor upsertFunction(String path, FunctionDescriptor function) {
         if (function == null || function.name() == null || function.name().isBlank()) {
             throw new IllegalArgumentException("Function name is required");
+        }
+        if (function.hasScriptBody()) {
+            try {
+                scriptValidator.validate(function.sourceBody());
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Function " + function.name() + ": " + ex.getMessage(), ex);
+            }
         }
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);

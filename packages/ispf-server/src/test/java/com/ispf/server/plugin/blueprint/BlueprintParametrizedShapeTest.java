@@ -132,6 +132,64 @@ class BlueprintParametrizedShapeTest {
         verify(objectManager).persistNodeTree(objectPath);
     }
 
+    @Test
+    void ensureSingletonInstanceMaterializesAlertRulesOnTheHub() {
+        when(objectManager.tree()).thenReturn(tree);
+        String hubPath = "root.platform.singleton-blueprints.parity-hub-v1";
+        PlatformObject hub = new PlatformObject("2", hubPath, ObjectType.CUSTOM, "Parity hub", "", null);
+        BlueprintDefinition model = hubBlueprint();
+        when(blueprintRegistry.requireById(model.id())).thenReturn(model);
+        when(blueprintEngine.ensureSingletonInstance(model)).thenReturn(hub);
+        when(objectManager.require(hubPath)).thenReturn(hub);
+
+        assertThat(applicationService.ensureSingletonInstanceWithRules(model.id())).isSameAs(hub);
+
+        ArgumentCaptor<AlertRuleService.CreateAlertRuleRequest> alertCaptor =
+                ArgumentCaptor.forClass(AlertRuleService.CreateAlertRuleRequest.class);
+        verify(alertRuleService).create(alertCaptor.capture());
+        assertThat(alertCaptor.getValue().name()).isEqualTo("hub-parity-hub-v1-backlog");
+        assertThat(alertCaptor.getValue().objectPath()).isEqualTo(hubPath);
+        assertThat(alertCaptor.getValue().conditionExpr()).contains(hubPath);
+        verify(bindingRulesMerger).mergeBlueprintRules(eq(hubPath), eq(model), any());
+        verify(objectManager).persistNodeTree(hubPath);
+    }
+
+    private static BlueprintDefinition hubBlueprint() {
+        Instant now = Instant.now();
+        return new BlueprintDefinition(
+                "bp-hub",
+                "parity-hub-v1",
+                "hub",
+                BlueprintType.SINGLETON,
+                null,
+                "",
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(new BlueprintAlertTemplate(
+                        "hub-${self.name}-backlog",
+                        "backlog",
+                        "self.backlog.value > 10 /* ${self.path} */",
+                        "backlogHigh",
+                        null,
+                        true,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                )),
+                Map.of(),
+                now,
+                now
+        );
+    }
+
     private static BlueprintDefinition tankBlueprint() {
         Instant now = Instant.now();
         return new BlueprintDefinition(

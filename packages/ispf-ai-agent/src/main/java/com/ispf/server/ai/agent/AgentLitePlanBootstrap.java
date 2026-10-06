@@ -291,7 +291,7 @@ final class AgentLitePlanBootstrap {
                 "2. validate_bundle appId=mes-reference",
                 "3. dry_run_deploy appId=mes-reference",
                 "4. import_package / register_application — deploy bundle",
-                "5. list_functions objectPath=<devicePath> appId=mes-reference"
+                "5. list_functions objectPath=<hubPath из functions[].objectPath> appId=mes-reference"
         );
     }
 
