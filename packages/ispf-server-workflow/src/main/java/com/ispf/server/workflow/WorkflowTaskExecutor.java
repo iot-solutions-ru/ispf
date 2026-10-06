@@ -313,11 +313,14 @@ public class WorkflowTaskExecutor {
     }
 
     /** Lenient integer parse shared with retry-policy reads in {@link WorkflowService}. */
-    static int parseInt(String raw, int fallback) {
+    static int parseInt(String raw, int fallback) throws WorkflowException {
+        if (raw == null || raw.isBlank()) {
+            return fallback;
+        }
         try {
             return Integer.parseInt(raw.trim());
-        } catch (Exception e) {
-            return fallback;
+        } catch (NumberFormatException e) {
+            throw new WorkflowException("Workflow integer is not a number: " + raw.trim());
         }
     }
 }
