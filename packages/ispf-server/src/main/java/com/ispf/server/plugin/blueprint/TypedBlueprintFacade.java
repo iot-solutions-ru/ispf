@@ -224,8 +224,12 @@ public class TypedBlueprintFacade {
         if (blueprintType != BlueprintType.SINGLETON) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "singleton instance is only for Singleton Blueprints");
         }
-        BlueprintDefinition model = requireTyped(id);
-        return blueprintEngine.ensureSingletonInstance(model);
+        requireTyped(id);
+        try {
+            return blueprintApplicationService.ensureSingletonInstanceWithRules(id);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     private BlueprintDefinition requireTyped(String id) {

@@ -292,8 +292,9 @@ public class BundleManifestValidator {
     }
 
     /**
-     * ADR-0060: script functions and blueprint-hosted functions must not live on DEVICE.
-     * SQL bindings[] on DEVICE telemetry remain allowed.
+     * ADR-0060: script functions and blueprint-hosted functions belong on a SINGLETON hub or INSTANCE twin.
+     * A DEVICE host is a solution-logic warning, never a deploy blocker. SQL bindings[] on DEVICE telemetry
+     * remain allowed.
      */
     private void validateLogicHosts(
             ApplicationBundleDeployService.BundleManifest manifest,
@@ -317,12 +318,13 @@ public class BundleManifestValidator {
                                 BundleValidationIssue.DOC_LOGIC_HOST
                         ));
                     } else if (ObjectType.DEVICE.name().equalsIgnoreCase(resolved.get())) {
-                        builder.addIssue(BundleValidationIssue.error(
+                        builder.addIssue(BundleValidationIssue.warning(
                                 "LOGIC_HOST_DEVICE",
                                 issuePath,
-                                "Function '" + function.functionName() + "' is hosted on DEVICE path '" + objectPath + "'",
+                                "Function '" + function.functionName() + "' is hosted on DEVICE path '" + objectPath
+                                        + "': solution logic outside the canon (deploy is not blocked)",
                                 "Move functions to root.platform.singleton-blueprints.{name} (SINGLETON) "
-                                        + "or an INSTANCE twin — never ObjectType.DEVICE.",
+                                        + "or an INSTANCE twin; DEVICE is for drivers and telemetry.",
                                 BundleValidationIssue.DOC_LOGIC_HOST
                         ));
                     }
@@ -336,10 +338,11 @@ public class BundleManifestValidator {
                 // SINGLETON hubs must not materialize as DEVICE (application-principles hard rule).
                 if (blueprint.type() == BlueprintType.SINGLETON
                         && blueprint.targetObjectType() == ObjectType.DEVICE) {
-                    builder.addIssue(BundleValidationIssue.error(
+                    builder.addIssue(BundleValidationIssue.warning(
                             "LOGIC_HOST_DEVICE",
                             "blueprints[" + index + "].targetObjectType",
-                            "SINGLETON blueprint '" + blueprint.name() + "' must not use targetObjectType=DEVICE",
+                            "SINGLETON blueprint '" + blueprint.name() + "' uses targetObjectType=DEVICE: "
+                                    + "solution logic outside the canon (deploy is not blocked)",
                             "Omit targetObjectType (defaults to CUSTOM) or set CUSTOM/APPLICATION.",
                             BundleValidationIssue.DOC_LOGIC_HOST
                     ));

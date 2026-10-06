@@ -19,7 +19,7 @@ curl -X POST http://localhost:8080/api/v1/applications/mes-reference/deploy \
 ```bash
 curl -X POST http://localhost:8080/api/v1/bff/invoke \
   -H "Content-Type: application/json" \
-  -d '{"objectPath":"root.platform.devices.demo-sensor-01","functionName":"mes_listOrders","input":{"schema":{"name":"in","fields":[]},"rows":[{}]}}'
+  -d '{"objectPath":"root.platform.singleton-blueprints.mes-reference-hub-v1","functionName":"mes_listOrders","input":{"schema":{"name":"in","fields":[]},"rows":[{}]}}'
 ```
 
 Пошаговый walkthrough: [docs/en/reference-mes-walkthrough.md](../../docs/en/reference-mes-walkthrough.md).
