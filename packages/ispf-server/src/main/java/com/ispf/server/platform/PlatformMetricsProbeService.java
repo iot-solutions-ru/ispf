@@ -40,6 +40,12 @@ public class PlatformMetricsProbeService {
     private Long lastAlertFiresTotal;
     private Instant lastPollTime;
 
+    /** {@code unknown} until the first attempt, then {@code ok} or {@code error}. */
+    private volatile String syncStatus = "unknown";
+    private volatile String syncError = "";
+    /** True after a failed sync: device variables are the previous snapshot, not a current one. */
+    private volatile boolean stale;
+
     public PlatformMetricsProbeService(
             PlatformMetricsProbeProperties properties,
             PlatformMetricsService metricsService,
@@ -83,6 +89,18 @@ public class PlatformMetricsProbeService {
         return objectManager.tree().findByPath(DEVICE_PATH).isPresent();
     }
 
+    public String syncStatus() {
+        return syncStatus;
+    }
+
+    public String syncError() {
+        return syncError;
+    }
+
+    public boolean isStale() {
+        return stale;
+    }
+
     private boolean shouldSync() {
         return properties.isEnabled() || diagnosticsProbeEnabled;
     }
@@ -116,7 +134,8 @@ public class PlatformMetricsProbeService {
 
             long events = longValue(automation.get("eventHistoryRecords"));
             long alertFires = longValue(automation.get("alertFiresTotal"));
-            RateSnapshot rates = computeRates(events, alertFires);
+            Instant now = Instant.now();
+            RateSnapshot rates = computeRates(events, alertFires, now);
 
             writeInteger("eventHistoryRecords", events);
             writeDouble("eventsPerSecond", rates.eventsPerSecond());
@@ -136,13 +155,21 @@ public class PlatformMetricsProbeService {
             writeInteger("activeDrivers", longValue(drivers.get("activeDrivers")));
             writeInteger("workflowInstancesRunning", longValue(automation.get("workflowInstancesRunning")));
             writeInteger("variableHistorySamples", longValue(history.get("sampleCount")));
+            lastEventHistoryRecords = events;
+            lastAlertFiresTotal = alertFires;
+            lastPollTime = now;
+            stale = false;
+            syncStatus = "ok";
+            syncError = "";
         } catch (Exception ex) {
-            log.warn("Platform metrics probe sync failed: {}", ex.getMessage());
+            stale = true;
+            syncStatus = "error";
+            syncError = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+            log.warn("Platform metrics probe sync failed, snapshot left stale: {}", syncError);
         }
     }
 
-    private RateSnapshot computeRates(long events, long alertFires) {
-        Instant now = Instant.now();
+    private RateSnapshot computeRates(long events, long alertFires, Instant now) {
         double eventsRate = 0.0;
         double alertRate = 0.0;
         if (lastPollTime != null) {
@@ -156,9 +183,6 @@ public class PlatformMetricsProbeService {
                 }
             }
         }
-        lastEventHistoryRecords = events;
-        lastAlertFiresTotal = alertFires;
-        lastPollTime = now;
         return new RateSnapshot(
                 Math.round(eventsRate * 100.0) / 100.0,
                 Math.round(alertRate * 100.0) / 100.0
