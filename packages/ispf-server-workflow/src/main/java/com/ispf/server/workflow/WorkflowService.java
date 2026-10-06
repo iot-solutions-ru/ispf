@@ -542,9 +542,28 @@ public class WorkflowService {
                         )
                 );
             } catch (Exception e) {
-                log.warn("errorWorkflowPath {} failed: {}", errorWorkflow, e.getMessage());
+                recordErrorPathFailure(path, instance, errorWorkflow, e);
             }
         }
+    }
+
+    private void recordErrorPathFailure(
+            String failedWorkflowPath,
+            WorkflowInstance instance,
+            String errorWorkflow,
+            Exception error
+    ) {
+        String message = "Workflow error path failed: " + errorWorkflow + ": " + error.getMessage();
+        deadLetterService.recordCommitted(
+                instance.instanceId(),
+                errorWorkflow,
+                1,
+                message,
+                "{\"failedWorkflowPath\":\"" + escapeJson(failedWorkflowPath) + "\"}"
+        );
+        String primary = instance.errorMessage() == null ? "" : instance.errorMessage();
+        instance.fail(primary.isBlank() ? message : primary + ". " + message);
+        statePublisher.publish(failedWorkflowPath, instance);
     }
 
     @Transactional
