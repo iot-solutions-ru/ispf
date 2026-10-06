@@ -529,7 +529,7 @@ public class WorkflowService {
                     "attempt", String.valueOf(attempt)
             ));
         } catch (Exception e) {
-            payload = "{}";
+            throw new IllegalStateException("Failed to serialize workflow dead letter", e);
         }
         deadLetterService.record(
                 instance.instanceId(),
