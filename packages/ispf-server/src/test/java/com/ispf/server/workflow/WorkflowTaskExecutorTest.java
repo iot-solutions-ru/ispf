@@ -243,8 +243,10 @@ class WorkflowTaskExecutorTest {
     }
 
     @Test
-    void parseIntFallsBackOnGarbage() {
-        assertEquals(30, WorkflowTaskExecutor.parseInt("x", 30));
+    void parseIntRejectsANonNumberAndKeepsABlankFallback() throws WorkflowException {
+        WorkflowException error = assertThrows(WorkflowException.class, () -> WorkflowTaskExecutor.parseInt("x", 30));
+        assertTrue(error.getMessage().contains("Workflow integer is not a number: x"));
+        assertEquals(30, WorkflowTaskExecutor.parseInt("  ", 30));
         assertEquals(7, WorkflowTaskExecutor.parseInt(" 7 ", 30));
     }
 

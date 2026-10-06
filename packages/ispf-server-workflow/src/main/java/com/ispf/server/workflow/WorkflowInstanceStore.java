@@ -182,7 +182,7 @@ public class WorkflowInstanceStore {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (Exception e) {
-            return "{}";
+            throw new IllegalStateException("Failed to serialize workflow step", e);
         }
     }
 

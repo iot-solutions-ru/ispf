@@ -1,5 +1,6 @@
 package com.ispf.server.workflow;
 
+import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
@@ -10,12 +11,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
 /**
- * Cron-like poller for WORKFLOW.cronExpression (simple minute cadence; ADR-0049 Wave 3).
- * Supports expressions of the form {@code every:Nm} (every N minutes) for v1.
+ * Poller for WORKFLOW.cronExpression. Due rules match schedule objects:
+ * {@code every:Nm} and 5/6-field cron, measured from {@code lastRunAt}.
  */
 @Service
 public class WorkflowCronTriggerService {
@@ -24,10 +26,16 @@ public class WorkflowCronTriggerService {
 
     private final WorkflowObjectAccess objects;
     private final WorkflowService workflowService;
+    private final WorkflowDeadLetterService deadLetterService;
 
-    public WorkflowCronTriggerService(WorkflowObjectAccess objects, WorkflowService workflowService) {
+    public WorkflowCronTriggerService(
+            WorkflowObjectAccess objects,
+            WorkflowService workflowService,
+            WorkflowDeadLetterService deadLetterService
+    ) {
         this.objects = objects;
         this.workflowService = workflowService;
+        this.deadLetterService = deadLetterService;
     }
 
     @Scheduled(fixedDelayString = "${ispf.workflow.cron-poll-ms:60000}")
@@ -45,10 +53,14 @@ public class WorkflowCronTriggerService {
                     continue;
                 }
                 String cron = read(child, "cronExpression").orElse("");
-                if (!"every:1m".equalsIgnoreCase(cron.trim())) {
+                if (cron.isBlank()) {
                     continue;
                 }
                 try {
+                    Instant lastRunAt = read(child, "lastRunAt").map(Instant::parse).orElse(null);
+                    if (!WorkflowCronDue.isDue(Instant.now(), lastRunAt, cron)) {
+                        continue;
+                    }
                     workflowService.runWorkflow(
                             child.path(),
                             null,
@@ -56,12 +68,38 @@ public class WorkflowCronTriggerService {
                             Map.of("cronExpression", cron)
                     );
                 } catch (Exception e) {
-                    log.warn("Cron workflow {} failed: {}", child.path(), e.getMessage());
+                    recordCronStartFailure(child.path(), cron, e);
                 }
             }
         } catch (Exception e) {
             log.debug("Workflow cron poll skipped: {}", e.getMessage());
         }
+    }
+
+    private void recordCronStartFailure(String path, String cron, Exception error) {
+        String message = error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage();
+        deadLetterService.recordCommitted(
+                "cron-start",
+                path,
+                1,
+                message,
+                "{\"cronExpression\":\"" + escapeJson(cron) + "\"}"
+        );
+        String state = "{\"status\":\"FAILED\",\"instanceId\":\"cron-start\",\"errorMessage\":\""
+                + escapeJson(message) + "\"}";
+        objects.setVariableValue(
+                path,
+                "instanceState",
+                DataRecord.single(WorkflowTaskExecutor.STRING_VALUE, Map.of("value", state))
+        );
+        objects.persistNodeTree(path);
+    }
+
+    private static String escapeJson(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private static Optional<String> read(PlatformObject node, String name) {
