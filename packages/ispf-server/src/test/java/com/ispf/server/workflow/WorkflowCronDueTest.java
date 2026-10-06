@@ -35,6 +35,8 @@ class WorkflowCronDueTest {
     private WorkflowObjectAccess objects;
     @Mock
     private WorkflowService workflowService;
+    @Mock
+    private WorkflowDeadLetterService deadLetterService;
 
     @Test
     void everyFiveMinutesIsDueAfterTheInterval() {
@@ -60,7 +62,7 @@ class WorkflowCronDueTest {
         when(due.path()).thenReturn(PATH + "-5");
         when(objects.childrenOf("root.platform.workflows")).thenReturn(List.of(due, fresh));
 
-        new WorkflowCronTriggerService(objects, workflowService).poll();
+        new WorkflowCronTriggerService(objects, workflowService, deadLetterService).poll();
 
         verify(workflowService).runWorkflow(
                 eq(PATH + "-5"),
@@ -82,7 +84,7 @@ class WorkflowCronDueTest {
         PlatformObject node = workflow("not-a-cron", null);
         when(objects.childrenOf("root.platform.workflows")).thenReturn(List.of(node));
 
-        new WorkflowCronTriggerService(objects, workflowService).poll();
+        new WorkflowCronTriggerService(objects, workflowService, deadLetterService).poll();
 
         verify(workflowService, never()).runWorkflow(any(), any(), any(), any());
     }
