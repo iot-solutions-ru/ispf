@@ -21,21 +21,24 @@ public class PlatformDiagnosticsController {
 
     @GetMapping("/metrics-probe")
     public Map<String, Object> metricsProbeStatus() {
-        return Map.of(
-                "enabled", metricsProbeService.isDiagnosticsProbeEnabled(),
-                "devicePath", PlatformMetricsProbeService.DEVICE_PATH,
-                "devicePresent", metricsProbeService.probeDeviceExists()
-        );
+        return probeStatus();
     }
 
     @PutMapping("/metrics-probe")
     public Map<String, Object> setMetricsProbe(@RequestBody MetricsProbeRequest request) {
         boolean enabled = request.enabled() != null && request.enabled();
         metricsProbeService.setDiagnosticsProbeEnabled(enabled);
+        return probeStatus();
+    }
+
+    private Map<String, Object> probeStatus() {
         return Map.of(
                 "enabled", metricsProbeService.isDiagnosticsProbeEnabled(),
                 "devicePath", PlatformMetricsProbeService.DEVICE_PATH,
-                "devicePresent", metricsProbeService.probeDeviceExists()
+                "devicePresent", metricsProbeService.probeDeviceExists(),
+                "syncStatus", metricsProbeService.syncStatus(),
+                "stale", metricsProbeService.isStale(),
+                "syncError", metricsProbeService.syncError()
         );
     }
 
