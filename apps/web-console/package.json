@@ -39,7 +39,7 @@
     "cytoscape": "^3.34.3",
     "dompurify": "^3.4.16",
     "exceljs": "^4.4.0",
-    "framer-motion": "^13.4.4",
+    "framer-motion": "^14.0.0",
     "i18next": "^26.4.2",
     "maplibre-gl": "^6.4.1",
     "qrcode": "^1.5.4",
