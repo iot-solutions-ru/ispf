@@ -24,6 +24,7 @@ import {
   DashboardPathField,
   FieldLabel,
   FormRow,
+  ObjectFunctionSelect,
   PathSelect,
   ReportParameterHints,
   Section,
@@ -39,13 +40,13 @@ function functionFields(ctx: WidgetFieldContextFor<"function">, t: TFunction): R
   return (
     <>
       <Section title={t("editor.section.functionInvoke")} />
-      <label>
-        functionName
-        <input
-          value={widget.functionName}
-          onChange={(e) => update({ functionName: e.target.value })}
-        />
-      </label>
+      <ObjectFunctionSelect
+        label="functionName"
+        code="functionName"
+        objectPath={widget.objectPath}
+        value={widget.functionName}
+        onChange={(next) => update({ functionName: next })}
+      />
       <label>
         buttonLabel
         <input
@@ -92,13 +93,13 @@ function functionFormFields(ctx: WidgetFieldContextFor<"function-form">, t: TFun
   return (
     <>
       <Section title={t("editor.section.functionForm")} />
-      <label>
-        functionName
-        <input
-          value={widget.functionName}
-          onChange={(e) => update({ functionName: e.target.value })}
-        />
-      </label>
+      <ObjectFunctionSelect
+        label="functionName"
+        code="functionName"
+        objectPath={widget.objectPath}
+        value={widget.functionName}
+        onChange={(next) => update({ functionName: next })}
+      />
       <label>
         buttonLabel
         <input
@@ -113,13 +114,13 @@ function functionFormFields(ctx: WidgetFieldContextFor<"function-form">, t: TFun
           onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
         />
       </label>
-      <label>
-        validateFunctionName
-        <input
-          value={widget.validateFunctionName ?? ""}
-          onChange={(e) => update({ validateFunctionName: e.target.value || undefined })}
-        />
-      </label>
+      <ObjectFunctionSelect
+        label="validateFunctionName"
+        code="validateFunctionName"
+        objectPath={widget.objectPath}
+        value={widget.validateFunctionName ?? ""}
+        onChange={(next) => update({ validateFunctionName: next || undefined })}
+      />
       <label>
         <input
           type="checkbox"

@@ -11,6 +11,7 @@ import {
 } from "../widgetEditorStructured";
 import {
   DashboardPathField,
+  ObjectFunctionSelect,
   Section,
   StackedSlot,
   type WidgetFieldContextFor,
@@ -139,13 +140,13 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
         </select>
       </label>
       {widget.clickAction === "function" && (
-        <label>
-          functionName
-          <input
-            value={widget.functionName ?? ""}
-            onChange={(e) => update({ functionName: e.target.value })}
-          />
-        </label>
+        <ObjectFunctionSelect
+          label="functionName"
+          code="functionName"
+          objectPath={widget.objectPath}
+          value={widget.functionName ?? ""}
+          onChange={(next) => update({ functionName: next || undefined })}
+        />
       )}
       {widget.clickAction === "toggle" && (
         <label>

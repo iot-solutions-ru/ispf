@@ -126,6 +126,8 @@
   "editor.section.eventFeed": "Event-Feed",
   "editor.section.functionForm": "Funktionsform",
   "editor.section.functionInvoke": "Funktionsaufruf",
+  "editor.functionNamesNeedObject": "Zuerst ein Objekt wählen — die Liste enthält dessen Funktionen.",
+  "editor.functionNamesEmpty": "Das gewählte Objekt hat keine Funktionen.",
   "editor.section.gantt": "Gantt",
   "editor.section.gauge": "Messgerät",
   "editor.section.historyTable": "Verlaufstabelle",

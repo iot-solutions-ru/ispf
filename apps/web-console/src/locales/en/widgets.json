@@ -85,6 +85,8 @@
   "editor.section.eventFeed": "Event feed",
   "editor.section.functionForm": "Function form",
   "editor.section.functionInvoke": "Function invoke",
+  "editor.functionNamesNeedObject": "Choose an object first — the list is that object's functions.",
+  "editor.functionNamesEmpty": "The selected object has no functions.",
   "editor.section.gantt": "Gantt",
   "editor.ganttInteractive": "Interactive timeline (pan/zoom in operator mode)",
   "editor.ganttAllowBarDrag": "Allow bar drag when variable is writable",

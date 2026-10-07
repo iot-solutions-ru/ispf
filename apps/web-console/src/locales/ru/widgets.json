@@ -107,6 +107,8 @@
   "editor.section.eventFeed": "Лента событий",
   "editor.section.functionForm": "Форма функции",
   "editor.section.functionInvoke": "Вызов функции",
+  "editor.functionNamesNeedObject": "Сначала выберите объект — список берётся из его функций.",
+  "editor.functionNamesEmpty": "У выбранного объекта нет функций.",
   "editor.section.gantt": "Гантт",
   "editor.section.gauge": "Калибр",
   "editor.section.historyTable": "Таблица истории",

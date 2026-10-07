@@ -4,7 +4,7 @@ import type { TFunction } from "i18next";
 import { AutoComplete } from "antd";
 import { Children, Fragment, isValidElement, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { AnalyticsQueryTagInput } from "../../../api";
+import { fetchObjectEditor, type AnalyticsQueryTagInput } from "../../../api";
 import { fetchReport } from "../../../api/reports";
 import { parseAnalyticsQueryTags } from "../../../hooks/useAnalyticsMultiSeries";
 import type { ObjectType } from "../../../types";
@@ -212,6 +212,62 @@ export function PathSelect({
       placeholder=""
       pickerTitle={label}
     />
+  );
+}
+
+/** Function name limited to the functions declared on the widget's object. */
+export function ObjectFunctionSelect({
+  label,
+  code,
+  objectPath,
+  value,
+  onChange,
+}: {
+  label: string;
+  code?: string;
+  objectPath?: string;
+  value?: string;
+  onChange: (next: string) => void;
+}) {
+  const { t } = useTranslation("widgets");
+  const path = objectPath?.trim() ?? "";
+  const query = useQuery({
+    queryKey: ["widget-editor-object-functions", path],
+    queryFn: () => fetchObjectEditor(path),
+    enabled: Boolean(path),
+  });
+  const names = [
+    ...new Set(
+      (query.data?.functions ?? [])
+        .map((fn) => fn.name.trim())
+        .filter(Boolean),
+    ),
+  ].sort((a, b) => a.localeCompare(b));
+  const current = (value ?? "").trim();
+  const options = current && !names.includes(current) ? [current, ...names] : names;
+
+  return (
+    <label>
+      <span className="field-caption">{label}</span>
+      {code ? <span className="field-code">{code}</span> : null}
+      <select
+        aria-label={label}
+        value={current}
+        disabled={!path || query.isLoading}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">—</option>
+        {options.map((name) => (
+          <option key={name} value={name}>
+            {name}
+          </option>
+        ))}
+      </select>
+      {!path ? <p className="hint">{t("editor.functionNamesNeedObject")}</p> : null}
+      {path && query.isSuccess && names.length === 0 ? (
+        <p className="hint">{t("editor.functionNamesEmpty")}</p>
+      ) : null}
+    </label>
   );
 }
 

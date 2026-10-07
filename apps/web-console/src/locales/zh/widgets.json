@@ -126,6 +126,8 @@
   "editor.section.eventFeed": "事件源",
   "editor.section.functionForm": "函数形式",
   "editor.section.functionInvoke": "函数调用",
+  "editor.functionNamesNeedObject": "请先选择对象——列表来自该对象的函数。",
+  "editor.functionNamesEmpty": "所选对象没有函数。",
   "editor.section.gantt": "甘特",
   "editor.section.gauge": "仪表",
   "editor.section.historyTable": "历史表",
