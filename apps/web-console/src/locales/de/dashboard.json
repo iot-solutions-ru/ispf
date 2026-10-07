@@ -1,7 +1,7 @@
 {
   "editor.advanced": "Erweitert",
   "editor.containerDropHint": "Legen Sie Widgets hier ab oder fügen Sie sie aus der Palette hinzu, während dieser Container ausgewählt ist.",
-  "editor.demoPreviewLabel": "demoPreviewJson (Editor-Vorschau)",
+  "editor.demoPreviewLabel": "Beispiel ohne Daten (Im Editor, solange keine Live-Werte da sind)",
   "editor.deprecation.payloadFilterExpr": "Legacy Mini-DSL, sofern der Ausdruck kein payload enthält. CEL wie payload.int > 20 wertet der Server aus.",
   "editor.deprecation.requireSessionParamsJson": "Legacy-Prüfung. Bevorzugen: Platform-Regeln mit CEL auf context.params.*.",
   "editor.general": "Allgemein",
@@ -15,7 +15,7 @@
   "editor.layerZIndex": "Z-Index",
   "editor.layerZIndexAuto": "auto",
   "editor.layoutHint": "Position und Größe per Drag im Raster ändern.",
-  "editor.layoutGridBounds": "Fine Grid: {{columns}} Spalten; für dieses Widget x ≤ {{maxX}}, w ≤ {{maxW}}.",
+  "editor.layoutGridBounds": "Raster mit {{columns}} Spalten. Für dieses Widget bleiben Position und Breite im Raster: x ≤ {{maxX}}, Breite ≤ {{maxW}}.",
   "editor.sampleZoneLabel": "Zone A",
   "editor.selectWidgetHint": "Widget im Raster auswählen oder neues hinzufügen.",
   "editor.stylesHint": "Element-Schlüssel: {{keys}}. CSS in camelCase. Leer — Standard.",

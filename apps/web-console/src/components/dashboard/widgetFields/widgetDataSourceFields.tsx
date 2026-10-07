@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { parseAnalyticsQueryTags } from "../../../hooks/useAnalyticsMultiSeries";
 import type { DashboardWidget } from "../../../types/dashboard";
 import { DATA_BINDING_HINT_KEYS, WIDGET_TYPE_HINT_KEYS, widgetDataBinding } from "../widgetEditorBinding";
+import { RecordFieldGroup, variableListAllowCustom } from "./widgetBoundChoices";
 import {
   ChartAnalyticsQueryTagsField,
   FieldLabel,
@@ -35,7 +36,10 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
 
       {chartWidget && (
         <>
-          <Section title={t("editor.section.analyticsQueryTags")} />
+          <Section
+            title={t("editor.section.analyticsQueryTags")}
+            hint={t("editor.analyticsQueryTagsHint")}
+          />
           <ChartAnalyticsQueryTagsField widget={chartWidget} objects={objects} update={update} />
         </>
       )}
@@ -126,14 +130,18 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
               )}
             </div>
           </FieldLabel>
-          <FieldLabel caption={t("editor.valueField")} hint="value">
-            <div className="field-controls-slot field-controls-slot--stacked">
-              <input
-                value={widget.valueField ?? "value"}
-                onChange={(e) => update({ valueField: e.target.value || undefined })}
-              />
-            </div>
-          </FieldLabel>
+          <RecordFieldGroup
+            objectPath={widget.objectPath ?? widget.modelHintPath}
+            variableName={widget.variableName}
+            allowCustom={variableListAllowCustom(widget)}
+            fields={[
+              {
+                label: t("editor.valueField"),
+                value: widget.valueField ?? "value",
+                onChange: (next) => update({ valueField: next || undefined }),
+              },
+            ]}
+          />
         </FormRow>
       )}
 

@@ -34,6 +34,15 @@ import {
   type WidgetTypeFieldsRegistry,
 } from "./widgetFieldPrimitives";
 import { rowNavigationFields } from "./widgetRowNavigationFields";
+import {
+  FunctionInputPairs,
+  ReportColumnList,
+  ReportColumnPairs,
+  ReportColumnSelect,
+  ReportParameterPairs,
+  variableListAllowCustom,
+} from "./widgetBoundChoices";
+import { VariableSelect } from "../widgetEditorStructured";
 
 function functionFields(ctx: WidgetFieldContextFor<"function">, t: TFunction): ReactNode {
   const { widget, update } = ctx;
@@ -41,36 +50,37 @@ function functionFields(ctx: WidgetFieldContextFor<"function">, t: TFunction): R
     <>
       <Section title={t("editor.section.functionInvoke")} />
       <ObjectFunctionSelect
-        label="functionName"
+        label={t("editor.field.functionName")}
         code="functionName"
         objectPath={widget.objectPath}
         value={widget.functionName}
         onChange={(next) => update({ functionName: next })}
       />
       <label>
-        buttonLabel
+        {t("editor.field.buttonLabel")}
         <input
           value={widget.buttonLabel ?? ""}
           onChange={(e) => update({ buttonLabel: e.target.value })}
         />
       </label>
       <label>
-        confirmMessage
+        {t("editor.field.confirmMessage")}
         <input
           value={widget.confirmMessage ?? ""}
           onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
         />
       </label>
-      <ObjectPathField
-        label="workflowPath"
+      <PathSelect
+        label={t("editor.field.workflowPath")}
         value={widget.workflowPath ?? ""}
         onChange={(path) => update({ workflowPath: path || undefined })}
         filterTypes={["WORKFLOW"]}
-        hint="root.platform.workflows..."
-        placeholder=""
+        placeholder="root.platform.workflows..."
       />
-      <KeyValueEditor
+      <FunctionInputPairs
         label={t("editor.inputJsonStatic")}
+        objectPath={widget.objectPath}
+        functionName={widget.functionName}
         value={widget.inputJson}
         onChange={(v) => update({ inputJson: v })}
       />
@@ -94,28 +104,28 @@ function functionFormFields(ctx: WidgetFieldContextFor<"function-form">, t: TFun
     <>
       <Section title={t("editor.section.functionForm")} />
       <ObjectFunctionSelect
-        label="functionName"
+        label={t("editor.field.functionName")}
         code="functionName"
         objectPath={widget.objectPath}
         value={widget.functionName}
         onChange={(next) => update({ functionName: next })}
       />
       <label>
-        buttonLabel
+        {t("editor.field.buttonLabel")}
         <input
           value={widget.buttonLabel ?? ""}
           onChange={(e) => update({ buttonLabel: e.target.value })}
         />
       </label>
       <label>
-        confirmMessage
+        {t("editor.field.confirmMessage")}
         <input
           value={widget.confirmMessage ?? ""}
           onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
         />
       </label>
       <ObjectFunctionSelect
-        label="validateFunctionName"
+        label={t("editor.field.validateFunctionName")}
         code="validateFunctionName"
         objectPath={widget.objectPath}
         value={widget.validateFunctionName ?? ""}
@@ -127,10 +137,12 @@ function functionFormFields(ctx: WidgetFieldContextFor<"function-form">, t: TFun
           checked={widget.closeModalOnSuccess !== false}
           onChange={(e) => update({ closeModalOnSuccess: e.target.checked })}
         />
-        closeModalOnSuccess
+        {t("editor.field.closeModalOnSuccess")}
       </label>
       <FormFieldsEditor
         mode="function-form"
+        objectPath={widget.objectPath}
+        functionName={widget.functionName}
         value={widget.fieldsJson}
         onChange={(v) => update({ fieldsJson: v })}
       />
@@ -168,7 +180,7 @@ function functionFormFields(ctx: WidgetFieldContextFor<"function-form">, t: TFun
         onChange={(v) => update({ clearSessionParamsJson: v || undefined })}
       />
       <AdvancedJsonField
-        label="wizardStepsJson"
+        label={t("editor.field.wizardSteps")}
         value={widget.wizardStepsJson}
         onChange={(v) => update({ wizardStepsJson: v })}
         rows={3}
@@ -178,7 +190,7 @@ function functionFormFields(ctx: WidgetFieldContextFor<"function-form">, t: TFun
 }
 
 function objectTableFields(ctx: WidgetFieldContextFor<"object-table">, t: TFunction): ReactNode {
-  const { widget, update, allVariableNames } = ctx;
+  const { widget, update, objects } = ctx;
   return (
     <>
       <Section title={t("editor.section.objectTable")} />
@@ -209,7 +221,8 @@ function objectTableFields(ctx: WidgetFieldContextFor<"object-table">, t: TFunct
       <ObjectTableColumnsEditor
         value={widget.columnsJson}
         onChange={(v) => update({ columnsJson: v })}
-        variableSuggestions={allVariableNames}
+        parentPath={widget.parentPath}
+        objects={objects}
       />
       {rowNavigationFields(ctx, "row", t)}
     </>
@@ -299,25 +312,25 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
         hint={t("editor.reportHint")}
       />
       <PathSelect
-        label="reportPath"
+        label={t("editor.field.reportPath")}
         value={rw.reportPath}
         onChange={(path) => update({ reportPath: path })}
         placeholder="root.platform.reports.ready-items"
         filterTypes={["REPORT"]}
       />
       <ReportParameterHints reportPath={rw.reportPath} />
-      <KeyValueEditor
+      <ReportParameterPairs
+        reportPath={rw.reportPath}
         label={t("editor.staticParams")}
         code="parametersJson"
-        keyCaption={t("editor.col.reportParam")}
         valueCaption={t("editor.col.value")}
         value={rw.parametersJson}
         onChange={(v) => update({ parametersJson: v })}
       />
-      <KeyValueEditor
+      <ReportParameterPairs
+        reportPath={rw.reportPath}
         label={t("editor.reportContextParams")}
         code="contextParamsJson"
-        keyCaption={t("editor.col.reportParam")}
         valueCaption={t("editor.col.sessionParam")}
         valueSuggestions={sessionParams}
         value={rw.contextParamsJson}
@@ -331,7 +344,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
         />
       </label>
       <FormRow>
-        <FieldLabel caption="showCsv">
+        <FieldLabel caption={t("editor.field.showCsv")}>
           <select
             value={rw.showCsv === false ? "false" : "true"}
             onChange={(e) => update({ showCsv: e.target.value === "true" })}
@@ -340,7 +353,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
             <option value="false">{t("common:action.no")}</option>
           </select>
         </FieldLabel>
-        <FieldLabel caption="showTruncatedWarning">
+        <FieldLabel caption={t("editor.field.showTruncatedWarning")}>
           <select
             value={rw.showTruncatedWarning === false ? "false" : "true"}
             onChange={(e) => update({ showTruncatedWarning: e.target.value === "true" })}
@@ -351,7 +364,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
         </FieldLabel>
       </FormRow>
       <FormRow>
-        <FieldLabel caption="showPdf">
+        <FieldLabel caption={t("editor.field.showPdf")}>
           <select
             value={rw.showPdf === false ? "false" : "true"}
             onChange={(e) => update({ showPdf: e.target.value === "true" })}
@@ -360,7 +373,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
             <option value="false">{t("common:action.no")}</option>
           </select>
         </FieldLabel>
-        <FieldLabel caption="showXlsx">
+        <FieldLabel caption={t("editor.field.showXlsx")}>
           <select
             value={rw.showXlsx === false ? "false" : "true"}
             onChange={(e) => update({ showXlsx: e.target.value === "true" })}
@@ -396,13 +409,13 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
         />
         autoSelectFirstRow
       </label>
-      <FieldLabel caption={t("editor.rowSelectionColumn")} code="rowSelectionKey">
-        <SelectionKeyInput
-          value={rw.rowSelectionKey ?? ""}
-          keys={selectionKeys}
-          onChange={(next) => update({ rowSelectionKey: next || undefined })}
-        />
-      </FieldLabel>
+      <ReportColumnSelect
+        reportPath={rw.reportPath}
+        label={t("editor.rowSelectionColumn")}
+        code="rowSelectionKey"
+        value={rw.rowSelectionKey ?? ""}
+        onChange={(next) => update({ rowSelectionKey: next || undefined })}
+      />
       <FieldLabel caption={t("editor.selectionKeyOnClick")} code="selectionKey" hint="device">
         <SelectionKeyInput
           value={rw.selectionKey ?? ""}
@@ -440,17 +453,18 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
           onChange={(next) => update({ rowTargetSelectionKey: next || undefined })}
         />
       </FieldLabel>
-      <KeyValueEditor
+      <ReportColumnPairs
+        reportPath={rw.reportPath}
         label={t("editor.rowParamsFromRow")}
         code="rowParamsFromRowJson"
         keyCaption={t("editor.col.sessionParam")}
-        valueCaption={t("editor.col.reportColumn")}
         keySuggestions={sessionParams}
         value={rw.rowParamsFromRowJson}
         onChange={(v) => update({ rowParamsFromRowJson: v })}
       />
-      <StringListEditor
-        label="statusDotColumnsJson"
+      <ReportColumnList
+        reportPath={rw.reportPath}
+        label={t("editor.field.statusColumns")}
         value={rw.statusDotColumnsJson}
         onChange={(v) => update({ statusDotColumnsJson: v || undefined })}
       />
@@ -494,14 +508,19 @@ function historyTableFields(ctx: WidgetFieldContextFor<"history-table">, t: TFun
 
 function variableEditorFields(ctx: WidgetFieldContextFor<"variable-editor">, t: TFunction): ReactNode {
   const { widget, update, variables } = ctx;
+  const objectKnown = Boolean(widget.objectPath?.trim() || widget.modelHintPath?.trim());
   return (
     <>
       <Section title={t("editor.section.variableEditor")} />
+      {objectKnown && variables.length === 0 ? (
+        <p className="hint">{t("editor.variableNamesEmpty")}</p>
+      ) : null}
       <StringListEditor
         label={t("editor.variablesJsonAll")}
         value={widget.variablesJson}
         onChange={(v) => update({ variablesJson: v || undefined })}
-        suggestions={variables}
+        suggestions={objectKnown ? undefined : variables}
+        options={objectKnown ? variables : undefined}
       />
     </>
   );
@@ -542,13 +561,14 @@ function spreadsheetFields(ctx: WidgetFieldContextFor<"spreadsheet">, t: TFuncti
         </select>
       </label>
       {widget.persistMode === "variable" && (
-        <label>
-          <HintCaption hint="sheetValues">{t("editor.spreadsheet.valuesVariable")}</HintCaption>
-          <input
-            value={widget.valuesVariable ?? ""}
-            onChange={(e) => update({ valuesVariable: e.target.value })}
-          />
-        </label>
+        <VariableSelect
+          label={t("editor.spreadsheet.valuesVariable")}
+          value={widget.valuesVariable ?? ""}
+          onChange={(v) => update({ valuesVariable: v })}
+          variables={ctx.variables}
+          allowCustom={variableListAllowCustom(widget)}
+          disabled={!ctx.variableSelectEnabled}
+        />
       )}
       <label>
         <HintCaption hint={`sheet:${widget.id}`}>{t("editor.spreadsheet.sessionKey")}</HintCaption>
@@ -676,7 +696,7 @@ function inputFormFields(ctx: WidgetFieldContextFor<"input-form">, t: TFunction)
     <>
       <Section title={t("editor.section.inputForm")} />
       <label>
-        buttonLabel
+        {t("editor.field.buttonLabel")}
         <input
           value={widget.buttonLabel ?? ""}
           onChange={(e) => update({ buttonLabel: e.target.value || undefined })}

@@ -3,6 +3,7 @@ import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { WIDGET_HISTORY_RANGE_OPTIONS } from "../../../types/dashboard";
 import { VariableSelect } from "../widgetEditorStructured";
+import { RecordFieldGroup, variableListAllowCustom } from "./widgetBoundChoices";
 import { Section, type WidgetFieldContextFor, type WidgetTypeFieldsRegistry } from "./widgetFieldPrimitives";
 import WidgetMediaUploadField from "../WidgetMediaUploadField";
 
@@ -15,13 +16,19 @@ function valueFields(ctx: WidgetFieldContextFor<"value">, t: TFunction): ReactNo
         {t("editor.unit")}
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
-      <label>
-        {t("editor.unitField")}
-        <input
-          value={widget.unitField ?? ""}
-          onChange={(e) => update({ unitField: e.target.value || undefined })}
-        />
-      </label>
+      <RecordFieldGroup
+        objectPath={widget.objectPath ?? widget.modelHintPath}
+        variableName={widget.variableName}
+        allowCustom={variableListAllowCustom(widget)}
+        showHints={false}
+        fields={[
+          {
+            label: t("editor.unitField"),
+            value: widget.unitField ?? "",
+            onChange: (next) => update({ unitField: next || undefined }),
+          },
+        ]}
+      />
       <label>
         {t("editor.decimals")}
         <input
@@ -180,16 +187,20 @@ function progressFields(ctx: WidgetFieldContextFor<"progress">, t: TFunction): R
     <>
       <Section title={t("editor.section.progress")} />
       <VariableSelect
-        label="currentVariable"
+        label={t("editor.field.currentVariable")}
         value={widget.currentVariable}
         onChange={(v) => update({ currentVariable: v })}
         variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
       />
       <VariableSelect
-        label="maxVariable"
+        label={t("editor.field.maxVariable")}
         value={widget.maxVariable}
         onChange={(v) => update({ maxVariable: v })}
         variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
       />
       <label>
         unit
@@ -215,16 +226,20 @@ function gaugeFields(ctx: WidgetFieldContextFor<"gauge">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.gauge")} />
       <VariableSelect
-        label="minVariable"
+        label={t("editor.field.minVariable")}
         value={widget.minVariable ?? ""}
         onChange={(v) => update({ minVariable: v || undefined })}
         variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
       />
       <VariableSelect
-        label="maxVariable"
+        label={t("editor.field.rangeMax")}
         value={widget.maxVariable ?? ""}
         onChange={(v) => update({ maxVariable: v || undefined })}
         variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
       />
       <label>
         {t("editor.minValueNoVariable")}
@@ -261,24 +276,26 @@ function gaugeFields(ctx: WidgetFieldContextFor<"gauge">, t: TFunction): ReactNo
 }
 
 function linearGaugeFields(ctx: WidgetFieldContextFor<"linear-gauge">, t: TFunction): ReactNode {
-  const { widget, update } = ctx;
+  const { widget, update, variables } = ctx;
   return (
     <>
       <Section title={t("editor.section.linearGauge")} />
-      <label>
-        minVariable
-        <input
-          value={widget.minVariable ?? ""}
-          onChange={(e) => update({ minVariable: e.target.value || undefined })}
-        />
-      </label>
-      <label>
-        maxVariable
-        <input
-          value={widget.maxVariable ?? ""}
-          onChange={(e) => update({ maxVariable: e.target.value || undefined })}
-        />
-      </label>
+      <VariableSelect
+        label={t("editor.field.minVariable")}
+        value={widget.minVariable ?? ""}
+        onChange={(v) => update({ minVariable: v || undefined })}
+        variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
+      />
+      <VariableSelect
+        label={t("editor.field.rangeMax")}
+        value={widget.maxVariable ?? ""}
+        onChange={(v) => update({ maxVariable: v || undefined })}
+        variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
+      />
       <label>
         minValue
         <input
@@ -314,24 +331,26 @@ function linearGaugeFields(ctx: WidgetFieldContextFor<"linear-gauge">, t: TFunct
 }
 
 function liquidGaugeFields(ctx: WidgetFieldContextFor<"liquid-gauge">, t: TFunction): ReactNode {
-  const { widget, update } = ctx;
+  const { widget, update, variables } = ctx;
   return (
     <>
       <Section title={t("editor.section.liquidGauge")} />
-      <label>
-        minVariable
-        <input
-          value={widget.minVariable ?? ""}
-          onChange={(e) => update({ minVariable: e.target.value || undefined })}
-        />
-      </label>
-      <label>
-        maxVariable
-        <input
-          value={widget.maxVariable ?? ""}
-          onChange={(e) => update({ maxVariable: e.target.value || undefined })}
-        />
-      </label>
+      <VariableSelect
+        label={t("editor.field.minVariable")}
+        value={widget.minVariable ?? ""}
+        onChange={(v) => update({ minVariable: v || undefined })}
+        variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
+      />
+      <VariableSelect
+        label={t("editor.field.rangeMax")}
+        value={widget.maxVariable ?? ""}
+        onChange={(v) => update({ maxVariable: v || undefined })}
+        variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
+      />
       <label>
         minValue
         <input
@@ -367,13 +386,18 @@ function pieChartFields(ctx: WidgetFieldContextFor<"pie-chart">, t: TFunction): 
   return (
     <>
       <Section title={t("editor.section.pieChart")} />
-      <label>
-        labelField
-        <input
-          value={widget.labelField ?? "name"}
-          onChange={(e) => update({ labelField: e.target.value })}
-        />
-      </label>
+      <RecordFieldGroup
+        objectPath={widget.objectPath ?? widget.modelHintPath}
+        variableName={widget.variableName}
+        allowCustom={variableListAllowCustom(widget)}
+        fields={[
+          {
+            label: t("editor.field.recordLabel"),
+            value: widget.labelField ?? "name",
+            onChange: (next) => update({ labelField: next }),
+          },
+        ]}
+      />
       <label>
         decimals
         <input

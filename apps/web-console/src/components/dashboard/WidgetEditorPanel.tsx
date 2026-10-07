@@ -263,7 +263,11 @@ export default function WidgetEditorPanel({
             {t("editor.layoutGridBounds", { columns: gridColumns, maxX, maxW })}
           </p>
 
-          <h5 className="widget-editor-section">{t("editor.layerTitle")}</h5>
+          <h5 className="widget-editor-section">
+            <HintCaption className="" hint={t("editor.layerHint")}>
+              {t("editor.layerTitle")}
+            </HintCaption>
+          </h5>
           <label className="widget-layer-visible">
             <Checkbox
               checked={widget.visible !== false}
@@ -306,7 +310,6 @@ export default function WidgetEditorPanel({
               {t("editor.layerToFront")}
             </Button>
           </Space>
-          <p className="hint full">{t("editor.layerHint")}</p>
         </FieldPairs>
 
         <WidgetDataSourceFields {...fieldCtx} />
