@@ -2507,11 +2507,41 @@ body.scada-mimic-editor-open {
   line-height: 1.3;
 }
 
+.field-code {
+  display: block;
+  margin-top: 0.1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: var(--text-muted, #8b949e);
+}
+
+.widget-editor-kv-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  color: var(--text-muted, #8b949e);
+}
+
 .widget-editor-form .field-controls {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   min-width: 0;
+}
+
+.widget-editor-form .selection-key-input {
+  width: 100%;
+}
+
+.form-grid .selection-key-input input {
+  width: 100%;
+  border: none;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
 }
 
 .widget-editor-form .field-controls-slot--stacked {

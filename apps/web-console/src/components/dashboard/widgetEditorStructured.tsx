@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
   ObjectTableColumn,
@@ -33,28 +33,41 @@ function ListActions({
 
 export function StringListEditor({
   label,
+  code,
   value,
   onChange,
   suggestions = [],
   placeholder,
 }: {
   label: string;
+  code?: string;
   value: string | undefined;
   onChange: (next: string) => void;
   suggestions?: string[];
   placeholder?: string;
 }) {
   const { t } = useTranslation("widgets");
-  const items = parseJsonArray<string>(value, []);
+  const [items, setItems] = useState(() => itemsFromValue(value));
+  const [source, setSource] = useState(value);
+  if (value !== source) {
+    setSource(value);
+    const saved = itemsFromValue(value);
+    const pending = items.filter((item) => !item.trim());
+    setItems(pending.length > 0 ? [...saved, ...pending] : saved);
+  }
 
-  const setItems = (next: string[]) => {
-    const filtered = next.filter((s) => s.trim() !== "");
-    onChange(filtered.length ? stringifyJson(filtered) : "[]");
+  const commit = (next: string[]) => {
+    setItems(next);
+    const nextValue = serializeItems(next);
+    if (nextValue !== serializeItems(itemsFromValue(value))) {
+      onChange(nextValue);
+    }
   };
 
   return (
     <div className="widget-editor-structured full">
       <span className="field-caption">{label}</span>
+      {code ? <span className="field-code">{code}</span> : null}
       <div className="widget-editor-list">
         {items.map((item, index) => (
           <div key={index} className="widget-editor-list-row">
@@ -65,14 +78,14 @@ export function StringListEditor({
               onChange={(e) => {
                 const next = [...items];
                 next[index] = e.target.value;
-                setItems(next);
+                commit(next);
               }}
             />
             <button
               type="button"
               className="btn small danger"
               aria-label={t("editor.structured.removeRow")}
-              onClick={() => setItems(items.filter((_, i) => i !== index))}
+              onClick={() => commit(items.filter((_, i) => i !== index))}
             >
               ×
             </button>
@@ -86,59 +99,81 @@ export function StringListEditor({
           </datalist>
         )}
       </div>
-      <ListActions onAdd={() => setItems([...items, ""])} addLabel={t("editor.structured.addItem")} />
+      <ListActions onAdd={() => commit([...items, ""])} addLabel={t("editor.structured.addItem")} />
     </div>
   );
 }
 
 export function KeyValueEditor({
   label,
+  code,
   value,
   onChange,
+  keyCaption,
+  valueCaption,
   keyPlaceholder,
   valuePlaceholder,
 }: {
   label: string;
+  code?: string;
   value: string | undefined;
   onChange: (next: string | undefined) => void;
+  keyCaption?: string;
+  valueCaption?: string;
   keyPlaceholder?: string;
   valuePlaceholder?: string;
 }) {
   const { t } = useTranslation("widgets");
-  const pairs = useMemo(() => {
-    const obj = parseJsonObject(value);
-    return Object.entries(obj).map(([k, v]) => ({ key: k, val: v }));
-  }, [value]);
+  const [rows, setRows] = useState(() => rowsFromValue(value));
+  const [source, setSource] = useState(value);
+  if (value !== source) {
+    setSource(value);
+    const saved = rowsFromValue(value);
+    const pending = rows.filter((row) => !row.key.trim());
+    setRows(pending.length > 0 ? [...saved, ...pending] : saved);
+  }
 
-  const commit = (rows: { key: string; val: string }[]) => {
+  const commit = (next: { key: string; val: string }[]) => {
+    setRows(next);
     const obj: Record<string, string> = {};
-    for (const row of rows) {
+    for (const row of next) {
       if (row.key.trim()) obj[row.key.trim()] = row.val;
     }
     const keys = Object.keys(obj);
-    onChange(keys.length ? stringifyJson(obj) : undefined);
+    const nextValue = keys.length ? stringifyJson(obj) : undefined;
+    if (nextValue !== value) {
+      onChange(nextValue);
+    }
   };
 
   return (
     <div className="widget-editor-structured full">
       <span className="field-caption">{label}</span>
+      {code ? <span className="field-code">{code}</span> : null}
+      {(keyCaption || valueCaption) && (
+        <div className="widget-editor-kv-head">
+          <span>{keyCaption}</span>
+          <span>{valueCaption}</span>
+          <span />
+        </div>
+      )}
       <div className="widget-editor-list">
-        {pairs.map((row, index) => (
+        {rows.map((row, index) => (
           <div key={index} className="widget-editor-list-row widget-editor-kv-row">
             <input
               value={row.key}
-              placeholder={keyPlaceholder ?? "key"}
+              placeholder={keyPlaceholder ?? keyCaption ?? "key"}
               onChange={(e) => {
-                const next = [...pairs];
+                const next = [...rows];
                 next[index] = { ...next[index], key: e.target.value };
                 commit(next);
               }}
             />
             <input
               value={row.val}
-              placeholder={valuePlaceholder ?? "value"}
+              placeholder={valuePlaceholder ?? valueCaption ?? "value"}
               onChange={(e) => {
-                const next = [...pairs];
+                const next = [...rows];
                 next[index] = { ...next[index], val: e.target.value };
                 commit(next);
               }}
@@ -147,7 +182,7 @@ export function KeyValueEditor({
               type="button"
               className="btn small danger"
               aria-label={t("editor.structured.removeRow")}
-              onClick={() => commit(pairs.filter((_, i) => i !== index))}
+              onClick={() => commit(rows.filter((_, i) => i !== index))}
             >
               ×
             </button>
@@ -155,11 +190,24 @@ export function KeyValueEditor({
         ))}
       </div>
       <ListActions
-        onAdd={() => commit([...pairs, { key: "", val: "" }])}
+        onAdd={() => commit([...rows, { key: "", val: "" }])}
         addLabel={t("editor.structured.addPair")}
       />
     </div>
   );
+}
+
+function itemsFromValue(value: string | undefined): string[] {
+  return parseJsonArray<string>(value, []);
+}
+
+function serializeItems(items: string[]): string {
+  const filtered = items.filter((item) => item.trim() !== "");
+  return filtered.length ? stringifyJson(filtered) : "[]";
+}
+
+function rowsFromValue(value: string | undefined): { key: string; val: string }[] {
+  return Object.entries(parseJsonObject(value)).map(([key, val]) => ({ key, val }));
 }
 
 export function VariableSelect({

@@ -10,13 +10,14 @@ import {
   FormRow,
   PathSelect,
   Section,
+  SelectionKeyInput,
   StackedSlot,
   type WidgetFieldContext,
 } from "./widgetFieldPrimitives";
 
 export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
   const { t } = useTranslation(["widgets", "common"]);
-  const { widget, objects, variables, variableSelectEnabled, update } = ctx;
+  const { widget, objects, variables, variableSelectEnabled, selectionKeys, update } = ctx;
   const binding = widgetDataBinding(widget.type);
   const bindingHint = t(DATA_BINDING_HINT_KEYS[binding], { defaultValue: "" });
   const typeHintKey = WIDGET_TYPE_HINT_KEYS[widget.type];
@@ -47,12 +48,13 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
               value={widget.objectPath ?? ""}
               onChange={(path) => update({ objectPath: path || undefined, variableName: "" })}
             />
-            <FieldLabel caption={t("editor.selectionKey")}>
+            <FieldLabel caption={t("editor.selectionKey")} code="selectionKey">
               <div className="field-controls-slot field-controls-slot--stacked">
-                <input
+                <SelectionKeyInput
                   value={widget.selectionKey ?? ""}
-                  onChange={(e) => update({ selectionKey: e.target.value || undefined })}
+                  keys={selectionKeys}
                   placeholder={t("editor.placeholder.selectionPath")}
+                  onChange={(next) => update({ selectionKey: next || undefined })}
                 />
               </div>
             </FieldLabel>
@@ -144,12 +146,13 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
             onChange={(path) => update({ parentPath: path } as Partial<DashboardWidget>)}
             placeholder="root.platform.devices"
           />
-          <FieldLabel caption={t("editor.selectionKeyOnClick")}>
+          <FieldLabel caption={t("editor.selectionKeyOnClick")} code="selectionKey">
             <StackedSlot>
-              <input
+              <SelectionKeyInput
                 value={widget.selectionKey ?? ""}
-                onChange={(e) => update({ selectionKey: e.target.value || undefined })}
+                keys={selectionKeys}
                 placeholder="device"
+                onChange={(next) => update({ selectionKey: next || undefined })}
               />
             </StackedSlot>
           </FieldLabel>

@@ -25,6 +25,7 @@ import {
   PathSelect,
   ReportParameterHints,
   Section,
+  SelectionKeyInput,
   StackedSlot,
   type WidgetFieldContextFor,
   type WidgetTypeFieldsRegistry,
@@ -120,23 +121,31 @@ function functionFormFields(ctx: WidgetFieldContextFor<"function-form">, t: TFun
         onChange={(v) => update({ fieldsJson: v })}
       />
       <KeyValueEditor
-        label="paramBindingsJson"
+        label={t("editor.paramBindings")}
+        code="paramBindingsJson"
+        keyCaption={t("editor.col.formField")}
+        valueCaption={t("editor.col.sessionParam")}
         value={widget.paramBindingsJson}
         onChange={(v) => update({ paramBindingsJson: v })}
       />
       <StringListEditor
-        label="requireSessionParamsJson"
+        label={t("editor.requireSessionParams")}
+        code="requireSessionParamsJson"
         value={widget.requireSessionParamsJson}
         onChange={(v) => update({ requireSessionParamsJson: v || undefined })}
       />
       <p className="hint">{t("editor.deprecation.requireSessionParamsJson")}</p>
       <KeyValueEditor
-        label="syncFieldsToSessionJson"
+        label={t("editor.syncFieldsToSession")}
+        code="syncFieldsToSessionJson"
+        keyCaption={t("editor.col.formField")}
+        valueCaption={t("editor.col.sessionParam")}
         value={widget.syncFieldsToSessionJson}
         onChange={(v) => update({ syncFieldsToSessionJson: v })}
       />
       <StringListEditor
-        label="clearSessionParamsJson"
+        label={t("editor.clearSessionParams")}
+        code="clearSessionParamsJson"
         value={widget.clearSessionParamsJson}
         onChange={(v) => update({ clearSessionParamsJson: v || undefined })}
       />
@@ -264,7 +273,7 @@ function workQueueFields(ctx: WidgetFieldContextFor<"work-queue">, t: TFunction)
 }
 
 function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): ReactNode {
-  const { widget, update } = ctx;
+  const { widget, selectionKeys, update } = ctx;
   const rw = widget;
   return (
     <>
@@ -281,12 +290,18 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
       />
       <ReportParameterHints reportPath={rw.reportPath} />
       <KeyValueEditor
-        label={t("editor.parametersJsonStatic")}
+        label={t("editor.staticParams")}
+        code="parametersJson"
+        keyCaption={t("editor.col.reportParam")}
+        valueCaption={t("editor.col.value")}
         value={rw.parametersJson}
         onChange={(v) => update({ parametersJson: v })}
       />
       <KeyValueEditor
-        label={t("editor.contextParamsJsonReport")}
+        label={t("editor.reportContextParams")}
+        code="contextParamsJson"
+        keyCaption={t("editor.col.reportParam")}
+        valueCaption={t("editor.col.sessionParam")}
         value={rw.contextParamsJson}
         onChange={(v) => update({ contextParamsJson: v })}
       />
@@ -363,21 +378,21 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
         />
         autoSelectFirstRow
       </label>
-      <label>
-        rowSelectionKey
-        <input
+      <FieldLabel caption={t("editor.rowSelectionColumn")} code="rowSelectionKey">
+        <SelectionKeyInput
           value={rw.rowSelectionKey ?? ""}
-          onChange={(e) => update({ rowSelectionKey: e.target.value || undefined })}
+          keys={selectionKeys}
+          onChange={(next) => update({ rowSelectionKey: next || undefined })}
         />
-      </label>
-      <label>
-        selectionKey
-        <input
+      </FieldLabel>
+      <FieldLabel caption={t("editor.selectionKeyOnClick")} code="selectionKey">
+        <SelectionKeyInput
           value={rw.selectionKey ?? ""}
-          onChange={(e) => update({ selectionKey: e.target.value || undefined })}
+          keys={selectionKeys}
           placeholder="device"
+          onChange={(next) => update({ selectionKey: next || undefined })}
         />
-      </label>
+      </FieldLabel>
       <FormRow>
         <DashboardPathField
           caption={t("editor.rowTargetDashboard")}
@@ -400,17 +415,20 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
           </StackedSlot>
         </FieldLabel>
       </FormRow>
-      <label>
-        rowTargetSelectionKey
-        <input
+      <FieldLabel caption={t("editor.rowTargetSelectionKey")} code="rowTargetSelectionKey">
+        <SelectionKeyInput
           value={rw.rowTargetSelectionKey ?? ""}
-          onChange={(e) => update({ rowTargetSelectionKey: e.target.value || undefined })}
+          keys={selectionKeys}
           disabled={!rw.rowTargetDashboard}
           placeholder="device"
+          onChange={(next) => update({ rowTargetSelectionKey: next || undefined })}
         />
-      </label>
+      </FieldLabel>
       <KeyValueEditor
-        label="rowParamsFromRowJson"
+        label={t("editor.rowParamsFromRow")}
+        code="rowParamsFromRowJson"
+        keyCaption={t("editor.col.sessionParam")}
+        valueCaption={t("editor.col.reportColumn")}
         value={rw.rowParamsFromRowJson}
         onChange={(v) => update({ rowParamsFromRowJson: v })}
       />

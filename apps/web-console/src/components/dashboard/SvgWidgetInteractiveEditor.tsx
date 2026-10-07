@@ -15,10 +15,12 @@ import type { TopologySvgHitArea } from "../../scada/topologySvgConfig";
 import SymbolBehaviorsEditor from "../scada/SymbolBehaviorsEditor";
 import MimicBindingSlotEditor from "../scada/MimicBindingSlotEditor";
 import WidgetMediaUploadField from "./WidgetMediaUploadField";
+import { SelectionKeyInput } from "./widgetFields/widgetFieldPrimitives";
 
 interface SvgWidgetInteractiveEditorProps {
   widget: SvgWidget;
   update: (patch: Partial<SvgWidget>) => void;
+  selectionKeys?: string[];
 }
 
 function commit(
@@ -36,7 +38,11 @@ function commit(
   update(serializeSvgInteractivePatch(state));
 }
 
-export default function SvgWidgetInteractiveEditor({ widget, update }: SvgWidgetInteractiveEditorProps) {
+export default function SvgWidgetInteractiveEditor({
+  widget,
+  update,
+  selectionKeys = [],
+}: SvgWidgetInteractiveEditorProps) {
   const { t } = useTranslation(["scada", "widgets"]);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -274,12 +280,13 @@ export default function SvgWidgetInteractiveEditor({ widget, update }: SvgWidget
       </div>
 
       <label className="scada-form-field">
-        <span className="scada-form-label">selectionKey</span>
-        <input
-          type="text"
+        <span className="scada-form-label">{t("editor.selectionKeyOnClick", { ns: "widgets" })}</span>
+        <span className="field-code">selectionKey</span>
+        <SelectionKeyInput
           className="scada-form-input mono"
           value={widget.selectionKey ?? ""}
-          onChange={(e) => update({ selectionKey: e.target.value || undefined })}
+          keys={selectionKeys}
+          onChange={(next) => update({ selectionKey: next || undefined })}
         />
       </label>
     </div>

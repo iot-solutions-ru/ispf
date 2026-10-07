@@ -1,6 +1,7 @@
 // Shared building blocks for widget editor fields: context type, layout primitives, path pickers.
 import { useQuery } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
+import { AutoComplete } from "antd";
 import { Children, Fragment, isValidElement, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { AnalyticsQueryTagInput } from "../../../api";
@@ -23,6 +24,8 @@ export interface WidgetFieldContext {
   variables: string[];
   allVariableNames: string[];
   variableSelectEnabled: boolean;
+  /** Selection-slot names already used by widgets on this dashboard. */
+  selectionKeys: string[];
   update: (patch: Partial<DashboardWidget>) => void;
 }
 
@@ -117,18 +120,64 @@ export function StackedSlot({ children }: { children: ReactNode }) {
   return <div className="field-controls-slot field-controls-slot--stacked">{children}</div>;
 }
 
+/** Free-text selection slot name. Known keys open as a list when the field is focused. */
+export function SelectionKeyInput({
+  value,
+  keys,
+  placeholder,
+  disabled,
+  className,
+  onChange,
+}: {
+  value: string;
+  keys: string[];
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+  onChange: (next: string) => void;
+}) {
+  const suggestions = keys.filter((key) => key.trim());
+  if (suggestions.length === 0) {
+    return (
+      <input
+        className={className}
+        value={value}
+        placeholder={placeholder}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    );
+  }
+  return (
+    <AutoComplete
+      className={["selection-key-input", className].filter(Boolean).join(" ")}
+      value={value}
+      options={suggestions.map((key) => ({ value: key }))}
+      placeholder={placeholder}
+      disabled={disabled}
+      filterOption={false}
+      virtual={false}
+      getPopupContainer={() => document.body}
+      onChange={onChange}
+    />
+  );
+}
+
 export function FieldLabel({
   caption,
+  code,
   children,
   className,
 }: {
   caption: string;
+  code?: string;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <label className={className}>
       <span className="field-caption">{caption}</span>
+      {code ? <span className="field-code">{code}</span> : null}
       {children}
     </label>
   );

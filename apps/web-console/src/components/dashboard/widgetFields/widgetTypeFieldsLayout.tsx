@@ -83,17 +83,24 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
         />
       </label>
       <KeyValueEditor
-        label="contextSelectionJson"
+        label={t("editor.contextSelection")}
+        code="contextSelectionJson"
+        keyCaption={t("editor.col.slotName")}
+        valueCaption={t("editor.col.objectPath")}
         value={widget.contextSelectionJson}
         onChange={(v) => update({ contextSelectionJson: v })}
       />
       <KeyValueEditor
-        label="contextParamsJson"
+        label={t("editor.openScreenParams")}
+        code="contextParamsJson"
+        keyCaption={t("editor.col.sessionParam")}
+        valueCaption={t("editor.col.value")}
         value={widget.contextParamsJson}
         onChange={(v) => update({ contextParamsJson: v })}
       />
       <StringListEditor
-        label="requireSessionParamsJson"
+        label={t("editor.requireSessionParamsNavigate")}
+        code="requireSessionParamsJson"
         value={widget.requireSessionParamsJson}
         onChange={(v) => update({ requireSessionParamsJson: v || undefined })}
       />
@@ -155,7 +162,7 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
           onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
         />
       </label>
-      <SvgWidgetInteractiveEditor widget={widget} update={update} />
+      <SvgWidgetInteractiveEditor widget={widget} update={update} selectionKeys={ctx.selectionKeys} />
       <label>
         <input
           type="checkbox"
