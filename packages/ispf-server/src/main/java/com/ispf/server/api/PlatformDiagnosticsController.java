@@ -36,6 +36,9 @@ public class PlatformDiagnosticsController {
                 "enabled", metricsProbeService.isDiagnosticsProbeEnabled(),
                 "devicePath", PlatformMetricsProbeService.DEVICE_PATH,
                 "devicePresent", metricsProbeService.probeDeviceExists(),
+                "bootstrapStatus", metricsProbeService.bootstrapStatus(),
+                "bootstrapReady", metricsProbeService.isBootstrapReady(),
+                "bootstrapError", metricsProbeService.bootstrapError(),
                 "syncStatus", metricsProbeService.syncStatus(),
                 "stale", metricsProbeService.isStale(),
                 "syncError", metricsProbeService.syncError()
