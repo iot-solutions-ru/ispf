@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HintCaption } from "./widgetEditorStructured";
 import {
   isWidgetMediaDataUrl,
   MAX_WIDGET_MEDIA_BYTES,
@@ -52,11 +53,10 @@ export default function WidgetMediaUploadField({
   return (
     <div className="widget-media-upload-field">
       <label>
-        <span className="field-caption">{label}</span>
+        <HintCaption hint={placeholder}>{label}</HintCaption>
         <input
           type="text"
           value={value}
-          placeholder={placeholder}
           onChange={(e) => {
             setError(null);
             onChange(e.target.value);

@@ -11,12 +11,14 @@ import {
 import {
   AdvancedJsonField,
   FormFieldsEditor,
+  HintCaption,
   KeyValueEditor,
   ObjectTableColumnsEditor,
   SheetGridSizeEditor,
   StringListEditor,
 } from "../widgetEditorStructured";
 import { ObjectPathField } from "../../../ui";
+import { parseJsonArray } from "../widgetEditorJson";
 import { FOLDER_OBJECT_TYPES } from "../../../ui/objectPathFilters";
 import {
   DashboardPathField,
@@ -63,7 +65,8 @@ function functionFields(ctx: WidgetFieldContextFor<"function">, t: TFunction): R
         value={widget.workflowPath ?? ""}
         onChange={(path) => update({ workflowPath: path || undefined })}
         filterTypes={["WORKFLOW"]}
-        placeholder="root.platform.workflows..."
+        hint="root.platform.workflows..."
+        placeholder=""
       />
       <KeyValueEditor
         label={t("editor.inputJsonStatic")}
@@ -74,8 +77,18 @@ function functionFields(ctx: WidgetFieldContextFor<"function">, t: TFunction): R
   );
 }
 
+function formFieldNames(fieldsJson: string | undefined): string[] {
+  const names = new Set<string>();
+  for (const field of parseJsonArray<{ name?: string }>(fieldsJson, [])) {
+    const name = field?.name?.trim();
+    if (name) names.add(name);
+  }
+  return [...names];
+}
+
 function functionFormFields(ctx: WidgetFieldContextFor<"function-form">, t: TFunction): ReactNode {
-  const { widget, update } = ctx;
+  const { widget, sessionParams, update } = ctx;
+  const fieldNames = formFieldNames(widget.fieldsJson);
   return (
     <>
       <Section title={t("editor.section.functionForm")} />
@@ -125,6 +138,8 @@ function functionFormFields(ctx: WidgetFieldContextFor<"function-form">, t: TFun
         code="paramBindingsJson"
         keyCaption={t("editor.col.formField")}
         valueCaption={t("editor.col.sessionParam")}
+        keyOptions={fieldNames}
+        valueSuggestions={sessionParams}
         value={widget.paramBindingsJson}
         onChange={(v) => update({ paramBindingsJson: v })}
       />
@@ -140,6 +155,8 @@ function functionFormFields(ctx: WidgetFieldContextFor<"function-form">, t: TFun
         code="syncFieldsToSessionJson"
         keyCaption={t("editor.col.formField")}
         valueCaption={t("editor.col.sessionParam")}
+        keyOptions={fieldNames}
+        valueSuggestions={sessionParams}
         value={widget.syncFieldsToSessionJson}
         onChange={(v) => update({ syncFieldsToSessionJson: v })}
       />
@@ -165,11 +182,10 @@ function objectTableFields(ctx: WidgetFieldContextFor<"object-table">, t: TFunct
     <>
       <Section title={t("editor.section.objectTable")} />
       <label>
-        namePattern
+        <HintCaption hint="gpu-*">namePattern</HintCaption>
         <input
           value={widget.namePattern ?? ""}
           onChange={(e) => update({ namePattern: e.target.value || undefined })}
-          placeholder="gpu-*"
         />
       </label>
       <label>
@@ -209,7 +225,8 @@ function eventFeedFields(ctx: WidgetFieldContextFor<"event-feed">, t: TFunction)
         value={widget.objectPathPrefix ?? ""}
         onChange={(path) => update({ objectPathPrefix: path || undefined })}
         filterTypes={FOLDER_OBJECT_TYPES}
-        placeholder="root.platform.devices"
+        hint="root.platform.devices"
+        placeholder=""
       />
       <StringListEditor
         label="eventNamesJson"
@@ -227,11 +244,10 @@ function eventFeedFields(ctx: WidgetFieldContextFor<"event-feed">, t: TFunction)
         />
       </label>
       <label>
-        payloadFilterExpr
+        <HintCaption hint="payload.int > 20">payloadFilterExpr</HintCaption>
         <input
           value={widget.payloadFilterExpr ?? ""}
           onChange={(e) => update({ payloadFilterExpr: e.target.value || undefined })}
-          placeholder="payload.int > 20"
         />
       </label>
       <p className="hint">{t("editor.deprecation.payloadFilterExpr")}</p>
@@ -273,7 +289,7 @@ function workQueueFields(ctx: WidgetFieldContextFor<"work-queue">, t: TFunction)
 }
 
 function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): ReactNode {
-  const { widget, selectionKeys, update } = ctx;
+  const { widget, selectionKeys, sessionParams, update } = ctx;
   const rw = widget;
   return (
     <>
@@ -302,6 +318,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
         code="contextParamsJson"
         keyCaption={t("editor.col.reportParam")}
         valueCaption={t("editor.col.sessionParam")}
+        valueSuggestions={sessionParams}
         value={rw.contextParamsJson}
         onChange={(v) => update({ contextParamsJson: v })}
       />
@@ -385,11 +402,10 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
           onChange={(next) => update({ rowSelectionKey: next || undefined })}
         />
       </FieldLabel>
-      <FieldLabel caption={t("editor.selectionKeyOnClick")} code="selectionKey">
+      <FieldLabel caption={t("editor.selectionKeyOnClick")} code="selectionKey" hint="device">
         <SelectionKeyInput
           value={rw.selectionKey ?? ""}
           keys={selectionKeys}
-          placeholder="device"
           onChange={(next) => update({ selectionKey: next || undefined })}
         />
       </FieldLabel>
@@ -415,12 +431,11 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
           </StackedSlot>
         </FieldLabel>
       </FormRow>
-      <FieldLabel caption={t("editor.rowTargetSelectionKey")} code="rowTargetSelectionKey">
+      <FieldLabel caption={t("editor.rowTargetSelectionKey")} code="rowTargetSelectionKey" hint="device">
         <SelectionKeyInput
           value={rw.rowTargetSelectionKey ?? ""}
           keys={selectionKeys}
           disabled={!rw.rowTargetDashboard}
-          placeholder="device"
           onChange={(next) => update({ rowTargetSelectionKey: next || undefined })}
         />
       </FieldLabel>
@@ -429,6 +444,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
         code="rowParamsFromRowJson"
         keyCaption={t("editor.col.sessionParam")}
         valueCaption={t("editor.col.reportColumn")}
+        keySuggestions={sessionParams}
         value={rw.rowParamsFromRowJson}
         onChange={(v) => update({ rowParamsFromRowJson: v })}
       />
@@ -485,7 +501,6 @@ function variableEditorFields(ctx: WidgetFieldContextFor<"variable-editor">, t: 
         value={widget.variablesJson}
         onChange={(v) => update({ variablesJson: v || undefined })}
         suggestions={variables}
-        placeholder={t("editor.structured.emptyMeansAll")}
       />
     </>
   );
@@ -527,20 +542,18 @@ function spreadsheetFields(ctx: WidgetFieldContextFor<"spreadsheet">, t: TFuncti
       </label>
       {widget.persistMode === "variable" && (
         <label>
-          {t("editor.spreadsheet.valuesVariable")}
+          <HintCaption hint="sheetValues">{t("editor.spreadsheet.valuesVariable")}</HintCaption>
           <input
             value={widget.valuesVariable ?? ""}
             onChange={(e) => update({ valuesVariable: e.target.value })}
-            placeholder="sheetValues"
           />
         </label>
       )}
       <label>
-        {t("editor.spreadsheet.sessionKey")}
+        <HintCaption hint={`sheet:${widget.id}`}>{t("editor.spreadsheet.sessionKey")}</HintCaption>
         <input
           value={widget.sessionKey ?? ""}
           onChange={(e) => update({ sessionKey: e.target.value })}
-          placeholder={`sheet:${widget.id}`}
         />
       </label>
       <label>

@@ -9,7 +9,7 @@ import {
   WidgetDataSourceFields,
   WidgetTypeSpecificFields,
 } from "./widgetFields";
-import { WidgetStylesEditor } from "./widgetEditorStructured";
+import { HintCaption, WidgetStylesEditor } from "./widgetEditorStructured";
 import {
   bringWidgetForward,
   bringWidgetToFront,
@@ -23,6 +23,7 @@ import {
   parseOptionalZIndex,
 } from "../../utils/dashboard/widgetLayoutFieldParse";
 import { collectDashboardSelectionKeys } from "./selectionKeys";
+import { collectDashboardSessionParams } from "./sessionParams";
 
 /** Local text while editing so layout fields can be cleared without snapping back. */
 function LayoutGridInput({
@@ -74,12 +75,10 @@ function LayoutGridInput({
 function OptionalZIndexInput({
   syncKey,
   value,
-  placeholder,
   onCommit,
 }: {
   syncKey: string;
   value: number | undefined;
-  placeholder: string;
   onCommit: (next: number | undefined) => void;
 }) {
   const [text, setText] = useState(() => (value === undefined ? "" : String(value)));
@@ -92,7 +91,6 @@ function OptionalZIndexInput({
     <input
       type="number"
       value={text}
-      placeholder={placeholder}
       onChange={(e) => {
         const raw = e.target.value;
         setText(raw);
@@ -146,6 +144,7 @@ export default function WidgetEditorPanel({
     [objects]
   );
   const selectionKeys = useMemo(() => collectDashboardSelectionKeys(widgets), [widgets]);
+  const sessionParams = useMemo(() => collectDashboardSessionParams(widgets), [widgets]);
 
   if (!widget) {
     return (
@@ -177,6 +176,7 @@ export default function WidgetEditorPanel({
     allVariableNames,
     variableSelectEnabled,
     selectionKeys,
+    sessionParams,
     update,
   };
 
@@ -273,11 +273,10 @@ export default function WidgetEditorPanel({
             </Checkbox>
           </label>
           <label>
-            <span className="field-caption">{t("editor.layerZIndex")}</span>
+            <HintCaption hint={t("editor.layerZIndexAuto")}>{t("editor.layerZIndex")}</HintCaption>
             <OptionalZIndexInput
               syncKey={widget.id}
               value={widget.zIndex}
-              placeholder={t("editor.layerZIndexAuto")}
               onCommit={(zIndex) => update({ zIndex })}
             />
           </label>

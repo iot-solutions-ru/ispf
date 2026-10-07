@@ -2507,6 +2507,34 @@ body.scada-mimic-editor-open {
   line-height: 1.3;
 }
 
+.field-caption-hint {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.15em;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.widget-editor-mini-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.widget-editor-mini-caption {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  color: var(--text-muted, #8b949e);
+}
+
+.widget-editor-mini-field input,
+.widget-editor-mini-field select,
+.widget-editor-mini-field .object-path-field {
+  width: 100%;
+  min-width: 0;
+}
+
 .field-code {
   display: block;
   margin-top: 0.1rem;
@@ -2532,8 +2560,10 @@ body.scada-mimic-editor-open {
   min-width: 0;
 }
 
-.widget-editor-form .selection-key-input {
+.widget-editor-form .selection-key-input,
+.widget-editor-list-row .selection-key-input {
   width: 100%;
+  min-width: 0;
 }
 
 .form-grid .selection-key-input input {

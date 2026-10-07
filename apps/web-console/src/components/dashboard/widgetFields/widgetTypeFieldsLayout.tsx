@@ -95,6 +95,7 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
         code="contextParamsJson"
         keyCaption={t("editor.col.sessionParam")}
         valueCaption={t("editor.col.value")}
+        keySuggestions={ctx.sessionParams}
         value={widget.contextParamsJson}
         onChange={(v) => update({ contextParamsJson: v })}
       />

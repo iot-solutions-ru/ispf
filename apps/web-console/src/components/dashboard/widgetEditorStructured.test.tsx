@@ -16,8 +16,8 @@ describe("KeyValueEditor", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Add pair" }));
 
-    expect(screen.getByPlaceholderText("key")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("value")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "key" })).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: "value" })).toHaveValue("");
     expect(onChange).not.toHaveBeenCalled();
   });
 
@@ -28,9 +28,59 @@ describe("KeyValueEditor", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Add pair" }));
-    fireEvent.change(screen.getByPlaceholderText("key"), { target: { value: "file_name" } });
-    fireEvent.change(screen.getByPlaceholderText("value"), { target: { value: "fileName" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "key" }), { target: { value: "file_name" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "value" }), { target: { value: "fileName" } });
 
+    expect(onChange).toHaveBeenLastCalledWith('{\n  "file_name": "fileName"\n}');
+  });
+
+  it("lets the form field be chosen only from the given names", () => {
+    const onChange = vi.fn();
+    renderWithDashboard(
+      <KeyValueEditor
+        label="paramBindingsJson"
+        keyCaption="Поле формы"
+        keyOptions={["file_name", "qty"]}
+        value={undefined}
+        onChange={onChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Add pair" }));
+    const field = screen.getByRole("combobox", { name: "Поле формы" });
+    expect(screen.queryByRole("textbox", { name: "Поле формы" })).toBeNull();
+    expect([...field.querySelectorAll("option")].map((option) => option.textContent)).toEqual([
+      "—",
+      "file_name",
+      "qty",
+    ]);
+
+    fireEvent.change(field, { target: { value: "qty" } });
+    expect(onChange).toHaveBeenLastCalledWith('{\n  "qty": ""\n}');
+  });
+
+  it("offers session param names already used on the dashboard", async () => {
+    const onChange = vi.fn();
+    renderWithDashboard(
+      <KeyValueEditor
+        label="paramBindingsJson"
+        valueCaption="Параметр сессии"
+        valueSuggestions={["fileName", "orderId"]}
+        value={undefined}
+        onChange={onChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Add pair" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "key" }), { target: { value: "file_name" } });
+    const valueInput = screen.getByRole("combobox", { name: "Параметр сессии" });
+    fireEvent.mouseDown(valueInput);
+    const listbox = await screen.findByRole("listbox");
+    expect(
+      [...listbox.querySelectorAll("[role='option']")].map((option) => option.textContent),
+    ).toEqual(["fileName", "orderId"]);
+
+    fireEvent.change(valueInput, { target: { value: "fileName" } });
     expect(onChange).toHaveBeenLastCalledWith('{\n  "file_name": "fileName"\n}');
   });
 });

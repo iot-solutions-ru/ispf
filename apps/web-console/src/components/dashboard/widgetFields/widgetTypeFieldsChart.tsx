@@ -2,7 +2,7 @@
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { type NetworkGraphWidget, WIDGET_HISTORY_RANGE_OPTIONS } from "../../../types/dashboard";
-import { AdvancedJsonField, VariableSelect } from "../widgetEditorStructured";
+import { AdvancedJsonField, HintCaption, VariableSelect } from "../widgetEditorStructured";
 import { Section, type WidgetFieldContextFor, type WidgetTypeFieldsRegistry } from "./widgetFieldPrimitives";
 import { rowNavigationFields } from "./widgetRowNavigationFields";
 
@@ -288,19 +288,17 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
         />
       </label>
       <label>
-        mapStyleUrl
+        <HintCaption hint={t("editor.placeholder.vectorStyle")}>mapStyleUrl</HintCaption>
         <input
           value={widget.mapStyleUrl ?? ""}
           onChange={(e) => update({ mapStyleUrl: e.target.value || undefined })}
-          placeholder={t("editor.placeholder.vectorStyle")}
         />
       </label>
       <label>
-        tileUrl
+        <HintCaption hint="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png">tileUrl</HintCaption>
         <input
           value={widget.tileUrl ?? ""}
           onChange={(e) => update({ tileUrl: e.target.value || undefined })}
-          placeholder="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
       </label>
       <label>

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { AutoComplete, Tooltip } from "antd";
 import { useTranslation } from "react-i18next";
 import type {
   ObjectTableColumn,
@@ -14,6 +15,99 @@ import { WIDGET_STYLE_KEYS_HINT, parseWidgetStyles } from "./widgetStyles";
 import type { WidgetStyleKey } from "./widgetStyles";
 import { parseJsonArray, parseJsonObject, stringifyJson } from "./widgetEditorJson";
 import { ObjectPathField } from "../../ui";
+
+/** Caption that keeps a longer explanation on hover, not inside the control. */
+export function HintCaption({
+  hint,
+  children,
+  className = "field-caption",
+}: {
+  hint?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  const classNames = [className, hint ? "field-caption-hint" : ""].filter(Boolean).join(" ");
+  const caption = <span className={classNames}>{children}</span>;
+  if (!hint) return caption;
+  return (
+    <Tooltip title={hint} overlayStyle={{ maxWidth: 420 }}>
+      {caption}
+    </Tooltip>
+  );
+}
+
+function FixedOptionsSelect({
+  value,
+  options,
+  ariaLabel,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  ariaLabel: string;
+  onChange: (next: string) => void;
+}) {
+  const names = options.map((name) => name.trim()).filter(Boolean);
+  const choices = value.trim() && !names.includes(value) ? [value, ...names] : names;
+  return (
+    <select aria-label={ariaLabel} value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="">—</option>
+      {choices.map((name) => (
+        <option key={name} value={name}>
+          {name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function SuggestInput({
+  value,
+  suggestions,
+  ariaLabel,
+  onChange,
+}: {
+  value: string;
+  suggestions?: string[];
+  ariaLabel: string;
+  onChange: (next: string) => void;
+}) {
+  const names = (suggestions ?? []).filter((name) => name.trim());
+  if (names.length === 0) {
+    return <input value={value} aria-label={ariaLabel} onChange={(e) => onChange(e.target.value)} />;
+  }
+  return (
+    <AutoComplete
+      className="selection-key-input"
+      value={value}
+      options={names.map((name) => ({ value: name }))}
+      aria-label={ariaLabel}
+      filterOption={false}
+      virtual={false}
+      getPopupContainer={() => document.body}
+      onChange={onChange}
+    />
+  );
+}
+
+function MiniField({
+  caption,
+  hint,
+  children,
+}: {
+  caption: string;
+  hint?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="widget-editor-mini-field">
+      <HintCaption className="widget-editor-mini-caption" hint={hint}>
+        {caption}
+      </HintCaption>
+      {children}
+    </div>
+  );
+}
 
 function ListActions({
   onAdd,
@@ -66,7 +160,7 @@ export function StringListEditor({
 
   return (
     <div className="widget-editor-structured full">
-      <span className="field-caption">{label}</span>
+      <HintCaption hint={placeholder}>{label}</HintCaption>
       {code ? <span className="field-code">{code}</span> : null}
       <div className="widget-editor-list">
         {items.map((item, index) => (
@@ -74,7 +168,6 @@ export function StringListEditor({
             <input
               list={suggestions.length ? `suggest-${label}` : undefined}
               value={item}
-              placeholder={placeholder}
               onChange={(e) => {
                 const next = [...items];
                 next[index] = e.target.value;
@@ -113,6 +206,9 @@ export function KeyValueEditor({
   valueCaption,
   keyPlaceholder,
   valuePlaceholder,
+  keySuggestions,
+  valueSuggestions,
+  keyOptions,
 }: {
   label: string;
   code?: string;
@@ -122,6 +218,10 @@ export function KeyValueEditor({
   valueCaption?: string;
   keyPlaceholder?: string;
   valuePlaceholder?: string;
+  keySuggestions?: string[];
+  valueSuggestions?: string[];
+  /** When set, the key is chosen from this list and cannot be typed freely. */
+  keyOptions?: string[];
 }) {
   const { t } = useTranslation("widgets");
   const [rows, setRows] = useState(() => rowsFromValue(value));
@@ -150,31 +250,50 @@ export function KeyValueEditor({
     <div className="widget-editor-structured full">
       <span className="field-caption">{label}</span>
       {code ? <span className="field-code">{code}</span> : null}
-      {(keyCaption || valueCaption) && (
+      {(keyCaption || valueCaption || keyPlaceholder || valuePlaceholder) && (
         <div className="widget-editor-kv-head">
-          <span>{keyCaption}</span>
-          <span>{valueCaption}</span>
+          <HintCaption className="widget-editor-mini-caption" hint={keyPlaceholder}>
+            {keyCaption ?? keyPlaceholder}
+          </HintCaption>
+          <HintCaption className="widget-editor-mini-caption" hint={valuePlaceholder}>
+            {valueCaption ?? valuePlaceholder}
+          </HintCaption>
           <span />
         </div>
       )}
       <div className="widget-editor-list">
         {rows.map((row, index) => (
           <div key={index} className="widget-editor-list-row widget-editor-kv-row">
-            <input
-              value={row.key}
-              placeholder={keyPlaceholder ?? keyCaption ?? "key"}
-              onChange={(e) => {
-                const next = [...rows];
-                next[index] = { ...next[index], key: e.target.value };
-                commit(next);
-              }}
-            />
-            <input
+            {keyOptions ? (
+              <FixedOptionsSelect
+                value={row.key}
+                options={keyOptions}
+                ariaLabel={keyCaption ?? keyPlaceholder ?? "key"}
+                onChange={(nextValue) => {
+                  const next = [...rows];
+                  next[index] = { ...next[index], key: nextValue };
+                  commit(next);
+                }}
+              />
+            ) : (
+              <SuggestInput
+                value={row.key}
+                suggestions={keySuggestions}
+                ariaLabel={keyCaption ?? keyPlaceholder ?? "key"}
+                onChange={(nextValue) => {
+                  const next = [...rows];
+                  next[index] = { ...next[index], key: nextValue };
+                  commit(next);
+                }}
+              />
+            )}
+            <SuggestInput
               value={row.val}
-              placeholder={valuePlaceholder ?? valueCaption ?? "value"}
-              onChange={(e) => {
+              suggestions={valueSuggestions}
+              ariaLabel={valueCaption ?? valuePlaceholder ?? "value"}
+              onChange={(nextValue) => {
                 const next = [...rows];
-                next[index] = { ...next[index], val: e.target.value };
+                next[index] = { ...next[index], val: nextValue };
                 commit(next);
               }}
             />
@@ -228,7 +347,7 @@ export function VariableSelect({
   const { t } = useTranslation("widgets");
   return (
     <label>
-      <span className="field-caption">{label}</span>
+      <HintCaption hint={allowCustom ? t("editor.placeholder.orEnterVariable") : undefined}>{label}</HintCaption>
       <div className="field-controls">
         <select value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}>
           <option value="">—</option>
@@ -242,7 +361,6 @@ export function VariableSelect({
           <input
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={t("editor.placeholder.orEnterVariable")}
             disabled={disabled}
           />
         )}
@@ -272,9 +390,13 @@ export function ObjectTableColumnsEditor({
       <span className="field-caption">{t("editor.structured.columns")}</span>
       <div className="widget-editor-table-editor">
         <div className="widget-editor-table-head">
-          <span>{t("editor.structured.colVariable")}</span>
+          <HintCaption className="widget-editor-mini-caption" hint="sysName">
+            {t("editor.structured.colVariable")}
+          </HintCaption>
           <span>{t("editor.structured.colLabel")}</span>
-          <span>{t("editor.structured.colField")}</span>
+          <HintCaption className="widget-editor-mini-caption" hint="value">
+            {t("editor.structured.colField")}
+          </HintCaption>
           <span />
         </div>
         {columns.map((col, index) => (
@@ -282,7 +404,7 @@ export function ObjectTableColumnsEditor({
             <input
               list="col-var-suggest"
               value={col.variable ?? ""}
-              placeholder="sysName"
+              aria-label={t("editor.structured.colVariable")}
               onChange={(e) => {
                 const next = [...columns];
                 next[index] = { ...next[index], variable: e.target.value || undefined };
@@ -299,7 +421,7 @@ export function ObjectTableColumnsEditor({
             />
             <input
               value={col.field ?? ""}
-              placeholder="value"
+              aria-label={t("editor.structured.colField")}
               onChange={(e) => {
                 const next = [...columns];
                 next[index] = { ...next[index], field: e.target.value || undefined };
@@ -374,24 +496,26 @@ export function FormFieldsEditor({
         {fields.map((field, index) => (
           <div key={index} className="widget-editor-field-card">
             <div className="widget-editor-list-row">
-              <input
-                value={field.name}
-                placeholder={t("editor.structured.fieldName")}
-                onChange={(e) => {
-                  const next = [...fields];
-                  next[index] = { ...next[index], name: e.target.value };
-                  setFields(next);
-                }}
-              />
-              <input
-                value={field.label}
-                placeholder={t("editor.structured.fieldLabel")}
-                onChange={(e) => {
-                  const next = [...fields];
-                  next[index] = { ...next[index], label: e.target.value };
-                  setFields(next);
-                }}
-              />
+              <MiniField caption={t("editor.structured.fieldName")}>
+                <input
+                  value={field.name}
+                  onChange={(e) => {
+                    const next = [...fields];
+                    next[index] = { ...next[index], name: e.target.value };
+                    setFields(next);
+                  }}
+                />
+              </MiniField>
+              <MiniField caption={t("editor.structured.fieldLabel")}>
+                <input
+                  value={field.label}
+                  onChange={(e) => {
+                    const next = [...fields];
+                    next[index] = { ...next[index], label: e.target.value };
+                    setFields(next);
+                  }}
+                />
+              </MiniField>
               <select
                 value={field.type}
                 onChange={(e) => {
@@ -418,15 +542,16 @@ export function FormFieldsEditor({
               </button>
             </div>
             <div className="widget-editor-list-row">
-              <input
-                value={field.defaultValue ?? ""}
-                placeholder={t("editor.structured.defaultValue")}
-                onChange={(e) => {
-                  const next = [...fields];
-                  next[index] = { ...next[index], defaultValue: e.target.value || undefined };
-                  setFields(next);
-                }}
-              />
+              <MiniField caption={t("editor.structured.defaultValue")}>
+                <input
+                  value={field.defaultValue ?? ""}
+                  onChange={(e) => {
+                    const next = [...fields];
+                    next[index] = { ...next[index], defaultValue: e.target.value || undefined };
+                    setFields(next);
+                  }}
+                />
+              </MiniField>
               <label className="widget-editor-inline-check">
                 <input
                   type="checkbox"
@@ -461,24 +586,26 @@ export function FormFieldsEditor({
       {fields.map((field, index) => (
         <div key={index} className="widget-editor-field-card">
           <div className="widget-editor-list-row">
-            <input
-              value={field.name}
-              placeholder={t("editor.structured.fieldName")}
-              onChange={(e) => {
-                const next = [...fields];
-                next[index] = { ...next[index], name: e.target.value };
-                setFields(next);
-              }}
-            />
-            <input
-              value={field.label}
-              placeholder={t("editor.structured.fieldLabel")}
-              onChange={(e) => {
-                const next = [...fields];
-                next[index] = { ...next[index], label: e.target.value };
-                setFields(next);
-              }}
-            />
+            <MiniField caption={t("editor.structured.fieldName")}>
+              <input
+                value={field.name}
+                onChange={(e) => {
+                  const next = [...fields];
+                  next[index] = { ...next[index], name: e.target.value };
+                  setFields(next);
+                }}
+              />
+            </MiniField>
+            <MiniField caption={t("editor.structured.fieldLabel")}>
+              <input
+                value={field.label}
+                onChange={(e) => {
+                  const next = [...fields];
+                  next[index] = { ...next[index], label: e.target.value };
+                  setFields(next);
+                }}
+              />
+            </MiniField>
             <select
               value={field.type}
               onChange={(e) => {
@@ -502,24 +629,26 @@ export function FormFieldsEditor({
             </button>
           </div>
           <div className="widget-editor-list-row">
-            <input
-              value={field.variableName ?? ""}
-              placeholder={t("editor.structured.targetVariable")}
-              onChange={(e) => {
-                const next = [...fields];
-                next[index] = { ...next[index], variableName: e.target.value || undefined };
-                setFields(next);
-              }}
-            />
-            <input
-              value={field.defaultValue ?? ""}
-              placeholder={t("editor.structured.defaultValue")}
-              onChange={(e) => {
-                const next = [...fields];
-                next[index] = { ...next[index], defaultValue: e.target.value || undefined };
-                setFields(next);
-              }}
-            />
+            <MiniField caption={t("editor.structured.targetVariable")}>
+              <input
+                value={field.variableName ?? ""}
+                onChange={(e) => {
+                  const next = [...fields];
+                  next[index] = { ...next[index], variableName: e.target.value || undefined };
+                  setFields(next);
+                }}
+              />
+            </MiniField>
+            <MiniField caption={t("editor.structured.defaultValue")}>
+              <input
+                value={field.defaultValue ?? ""}
+                onChange={(e) => {
+                  const next = [...fields];
+                  next[index] = { ...next[index], defaultValue: e.target.value || undefined };
+                  setFields(next);
+                }}
+              />
+            </MiniField>
           </div>
         </div>
       ))}
@@ -554,26 +683,29 @@ export function NavMenuItemsEditor({
       <span className="field-caption">{t("editor.structured.navItems")}</span>
       {items.map((item, index) => (
         <div key={index} className="widget-editor-list-row">
-          <input
-            value={item.label}
-            placeholder={t("editor.structured.navLabel")}
-            onChange={(e) => {
-              const next = [...items];
-              next[index] = { ...next[index], label: e.target.value };
-              setItems(next);
-            }}
-          />
-          <ObjectPathField
-            value={item.dashboardPath}
-            objects={dashboards}
-            filterTypes={["DASHBOARD"]}
-            placeholder="root.platform.dashboards..."
-            onChange={(path) => {
-              const next = [...items];
-              next[index] = { ...next[index], dashboardPath: path };
-              setItems(next);
-            }}
-          />
+          <MiniField caption={t("editor.structured.navLabel")}>
+            <input
+              value={item.label}
+              onChange={(e) => {
+                const next = [...items];
+                next[index] = { ...next[index], label: e.target.value };
+                setItems(next);
+              }}
+            />
+          </MiniField>
+          <MiniField caption={t("editor.col.objectPath")} hint="root.platform.dashboards...">
+            <ObjectPathField
+              value={item.dashboardPath}
+              objects={dashboards}
+              filterTypes={["DASHBOARD"]}
+              placeholder=""
+              onChange={(path) => {
+                const next = [...items];
+                next[index] = { ...next[index], dashboardPath: path };
+                setItems(next);
+              }}
+            />
+          </MiniField>
           <button
             type="button"
             className="btn small danger"
@@ -618,24 +750,26 @@ export function IdLabelListEditor({
       <p className="hint">{t("editor.structured.nestedWidgetsHint")}</p>
       {items.map((item, index) => (
         <div key={index} className="widget-editor-list-row">
-          <input
-            value={item.id}
-            placeholder="id"
-            onChange={(e) => {
-              const next = [...items];
-              next[index] = { ...next[index], id: e.target.value };
-              setItems(next);
-            }}
-          />
-          <input
-            value={item.label}
-            placeholder={t("editor.structured.fieldLabel")}
-            onChange={(e) => {
-              const next = [...items];
-              next[index] = { ...next[index], label: e.target.value };
-              setItems(next);
-            }}
-          />
+          <MiniField caption="id">
+            <input
+              value={item.id}
+              onChange={(e) => {
+                const next = [...items];
+                next[index] = { ...next[index], id: e.target.value };
+                setItems(next);
+              }}
+            />
+          </MiniField>
+          <MiniField caption={t("editor.structured.fieldLabel")}>
+            <input
+              value={item.label}
+              onChange={(e) => {
+                const next = [...items];
+                next[index] = { ...next[index], label: e.target.value };
+                setItems(next);
+              }}
+            />
+          </MiniField>
           <button
             type="button"
             className="btn small danger"
@@ -769,14 +903,12 @@ export function WidgetStylesEditor({
         </select>
       </label>
       <div className="widget-editor-list-row">
-        <label>
-          fontSize
+        <MiniField caption="fontSize" hint="0.88rem">
           <input
             value={String(current.fontSize ?? "")}
             onChange={(e) => patchStyle("fontSize", e.target.value)}
-            placeholder="0.88rem"
           />
-        </label>
+        </MiniField>
         <label>
           color
           <input
@@ -844,24 +976,26 @@ export function TabPanelMetaEditor({
       <span className="field-caption">{t("editor.structured.tabs")}</span>
       {tabs.map((tab, index) => (
         <div key={index} className="widget-editor-list-row">
-          <input
-            value={tab.id}
-            placeholder="id"
-            onChange={(e) => {
-              const next = [...tabs];
-              next[index] = { ...next[index], id: e.target.value };
-              setTabs(next);
-            }}
-          />
-          <input
-            value={tab.label}
-            placeholder={t("editor.structured.fieldLabel")}
-            onChange={(e) => {
-              const next = [...tabs];
-              next[index] = { ...next[index], label: e.target.value };
-              setTabs(next);
-            }}
-          />
+          <MiniField caption="id">
+            <input
+              value={tab.id}
+              onChange={(e) => {
+                const next = [...tabs];
+                next[index] = { ...next[index], id: e.target.value };
+                setTabs(next);
+              }}
+            />
+          </MiniField>
+          <MiniField caption={t("editor.structured.fieldLabel")}>
+            <input
+              value={tab.label}
+              onChange={(e) => {
+                const next = [...tabs];
+                next[index] = { ...next[index], label: e.target.value };
+                setTabs(next);
+              }}
+            />
+          </MiniField>
           <button
             type="button"
             className="btn small danger"
@@ -895,12 +1029,15 @@ export function AdvancedJsonField({
   const { t } = useTranslation("widgets");
   return (
     <details className="widget-editor-advanced-json full">
-      <summary>{label} ({t("editor.structured.jsonAdvanced")})</summary>
+      <summary>
+        <HintCaption className="widget-editor-mini-caption" hint={placeholder}>
+          {label} ({t("editor.structured.jsonAdvanced")})
+        </HintCaption>
+      </summary>
       <textarea
         rows={rows}
         className="mono"
         value={value ?? ""}
-        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value || undefined)}
       />
     </details>

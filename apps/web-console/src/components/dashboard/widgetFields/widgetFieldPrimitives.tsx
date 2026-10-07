@@ -10,7 +10,7 @@ import { parseAnalyticsQueryTags } from "../../../hooks/useAnalyticsMultiSeries"
 import type { ObjectType } from "../../../types";
 import type { ChartWidget, DashboardWidget } from "../../../types/dashboard";
 import { ObjectPathField } from "../../../ui";
-import { AdvancedJsonField } from "../widgetEditorStructured";
+import { AdvancedJsonField, HintCaption } from "../widgetEditorStructured";
 
 export type ObjectOption = { path: string; displayName: string; variableNames: string[] };
 export type DashboardOption = { path: string; displayName: string };
@@ -26,6 +26,8 @@ export interface WidgetFieldContext {
   variableSelectEnabled: boolean;
   /** Selection-slot names already used by widgets on this dashboard. */
   selectionKeys: string[];
+  /** session.params names already used by widgets on this dashboard. */
+  sessionParams: string[];
   update: (patch: Partial<DashboardWidget>) => void;
 }
 
@@ -166,17 +168,19 @@ export function SelectionKeyInput({
 export function FieldLabel({
   caption,
   code,
+  hint,
   children,
   className,
 }: {
   caption: string;
   code?: string;
+  hint?: string;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <label className={className}>
-      <span className="field-caption">{caption}</span>
+      <HintCaption hint={hint}>{caption}</HintCaption>
       {code ? <span className="field-code">{code}</span> : null}
       {children}
     </label>
@@ -204,7 +208,8 @@ export function PathSelect({
       value={value}
       onChange={onChange}
       filterTypes={filterTypes}
-      placeholder={placeholder ?? t("common:objectPath.placeholder")}
+      hint={placeholder ?? t("common:objectPath.placeholder")}
+      placeholder=""
       pickerTitle={label}
     />
   );
@@ -307,7 +312,8 @@ export function DashboardPathInput({
       objects={dashboards}
       onChange={onChange}
       filterTypes={["DASHBOARD"]}
-      placeholder="root.platform.dashboards.detail"
+      hint="root.platform.dashboards.detail"
+      placeholder=""
     />
   );
 }
@@ -359,23 +365,24 @@ export function ChartAnalyticsQueryTagsField({
                 label={t("editor.objectPath")}
                 value={tag.path}
                 onChange={(path) => updateTag(index, { path })}
-                placeholder={t("editor.placeholder.orEnterPath")}
+                hint={t("editor.placeholder.orEnterPath")}
+                placeholder=""
                 pickerTitle={t("editor.objectPath")}
               />
               <label>
-                {t("editor.variableName")}
+                <HintCaption hint="temperature">{t("editor.variableName")}</HintCaption>
                 <input
                   value={tag.variable}
                   onChange={(e) => updateTag(index, { variable: e.target.value })}
-                  placeholder="temperature"
                 />
               </label>
               <label>
-                {t("editor.analyticsQueryTagLabel")}
+                <HintCaption hint={tag.path.split(".").pop() || undefined}>
+                  {t("editor.analyticsQueryTagLabel")}
+                </HintCaption>
                 <input
                   value={tag.label ?? ""}
                   onChange={(e) => updateTag(index, { label: e.target.value || undefined })}
-                  placeholder={tag.path.split(".").pop() ?? ""}
                 />
               </label>
             </div>
