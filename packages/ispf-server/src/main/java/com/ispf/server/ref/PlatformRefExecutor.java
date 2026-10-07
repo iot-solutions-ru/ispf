@@ -1,6 +1,7 @@
 package com.ispf.server.ref;
 
 import com.ispf.core.model.DataRecord;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.ref.PlatformRef;
@@ -116,21 +117,21 @@ public class PlatformRefExecutor {
                     VariableAclRequestContext.requireAuthentication()
             );
         }
-        return objectManager.tree().findByPath(resolved.object())
-                .flatMap(node -> node.getVariable(resolved.name()))
-                .map(variable -> {
-                    var schema = variable.schema();
-                    var row = new java.util.LinkedHashMap<String, Object>();
-                    if (schema != null && schema.fields() != null && !schema.fields().isEmpty()) {
-                        String field = resolved.field() != null ? resolved.field() : schema.fields().get(0).name();
-                        row.put(field, value);
-                    } else {
-                        row.put(resolved.field() != null ? resolved.field() : "value", value);
-                    }
-                    objectManager.setVariableValue(resolved.object(), resolved.name(), DataRecord.single(schema, row));
-                    return true;
-                })
-                .orElse(false);
+        PlatformObject node = objectManager.tree().findByPath(resolved.object())
+                .orElseThrow(() -> new ObjectNotFoundException(resolved.object()));
+        Variable variable = node.getVariable(resolved.name())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Unknown variable: " + resolved.name() + " on " + resolved.object()));
+        var schema = variable.schema();
+        var row = new java.util.LinkedHashMap<String, Object>();
+        if (schema != null && schema.fields() != null && !schema.fields().isEmpty()) {
+            String field = resolved.field() != null ? resolved.field() : schema.fields().get(0).name();
+            row.put(field, value);
+        } else {
+            row.put(resolved.field() != null ? resolved.field() : "value", value);
+        }
+        objectManager.setVariableValue(resolved.object(), resolved.name(), DataRecord.single(schema, row));
+        return true;
     }
 
     private boolean canRead(PlatformRef ref) {

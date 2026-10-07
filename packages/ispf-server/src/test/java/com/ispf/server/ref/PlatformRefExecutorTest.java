@@ -3,6 +3,7 @@ package com.ispf.server.ref;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -188,6 +190,65 @@ class PlatformRefExecutorTest {
 
         verify(variableMemberAccessService).requireWrite(path, "temperature", authentication);
         verifyNoInteractions(objectManager);
+    }
+
+    @Test
+    void writeMissingObjectThrowsWithPath() {
+        String path = "root.platform.devices.missing";
+        when(objectManager.tree()).thenReturn(objectTree);
+        when(objectTree.findByPath(path)).thenReturn(Optional.empty());
+        PlatformRefExecutor executor = executor();
+
+        assertThatThrownBy(() -> executor.write(PlatformRefParser.parse(path + "/temperature"), 1.0, null))
+                .isInstanceOf(ObjectNotFoundException.class)
+                .hasMessage("Object not found: " + path);
+
+        verify(objectManager, never()).setVariableValue(eq(path), eq("temperature"), nullable(DataRecord.class));
+    }
+
+    @Test
+    void writeMissingVariableThrowsWithPathAndName() {
+        String path = "root.platform.devices.remote";
+        PlatformObject object = new PlatformObject(
+                UUID.randomUUID().toString(),
+                path,
+                ObjectType.DEVICE,
+                "device",
+                "",
+                null
+        );
+        when(objectManager.tree()).thenReturn(objectTree);
+        when(objectTree.findByPath(path)).thenReturn(Optional.of(object));
+        PlatformRefExecutor executor = executor();
+
+        assertThatThrownBy(() -> executor.write(PlatformRefParser.parse(path + "/temperature"), 1.0, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Unknown variable: temperature on " + path);
+
+        verify(objectManager, never()).setVariableValue(eq(path), eq("temperature"), nullable(DataRecord.class));
+    }
+
+    @Test
+    void writeExistingVariableReturnsTrue() {
+        String path = "root.platform.devices.remote";
+        PlatformObject remote = deviceWithTemperature(path, 1.0);
+        when(objectManager.tree()).thenReturn(objectTree);
+        when(objectTree.findByPath(path)).thenReturn(Optional.of(remote));
+        PlatformRefExecutor executor = executor();
+
+        boolean written = executor.write(PlatformRefParser.parse(path + "/temperature"), 43.0, null);
+
+        assertThat(written).isTrue();
+        verify(objectManager).setVariableValue(eq(path), eq("temperature"), nullable(DataRecord.class));
+    }
+
+    private PlatformRefExecutor executor() {
+        return new PlatformRefExecutor(
+                objectManager,
+                functionService,
+                eventService,
+                variableMemberAccessService
+        );
     }
 
     private static PlatformObject deviceWithTemperature(String path, double temp) {
