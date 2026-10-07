@@ -10,7 +10,8 @@ import { parseAnalyticsQueryTags } from "../../../hooks/useAnalyticsMultiSeries"
 import type { ObjectType } from "../../../types";
 import type { ChartWidget, DashboardWidget } from "../../../types/dashboard";
 import { ObjectPathField } from "../../../ui";
-import { AdvancedJsonField, HintCaption, splitCaptionDetail } from "../widgetEditorStructured";
+import { splitCaptionDetail } from "../widgetEditorHelpers";
+import { AdvancedJsonField, HintCaption } from "../widgetEditorStructured";
 
 export type ObjectOption = { path: string; displayName: string; variableNames: string[] };
 export type DashboardOption = { path: string; displayName: string };

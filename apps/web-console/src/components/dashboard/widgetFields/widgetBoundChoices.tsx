@@ -3,16 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchObjectEditor, fetchVariables } from "../../../api";
 import { fetchReport } from "../../../api/reports";
-import { HintCaption, KeyValueEditor, OptionsSelect, recordFieldNames, splitCaptionDetail, StringListEditor } from "../widgetEditorStructured";
-
-export function variableListAllowCustom(widget: {
-  objectPath?: string;
-  modelHintPath?: string;
-  selectionKey?: string;
-}): boolean {
-  const known = Boolean(widget.objectPath?.trim() || widget.modelHintPath?.trim());
-  return !known && Boolean(widget.selectionKey?.trim());
-}
+import { recordFieldNames, splitCaptionDetail } from "../widgetEditorHelpers";
+import { HintCaption, KeyValueEditor, OptionsSelect, StringListEditor } from "../widgetEditorStructured";
 
 function useReportDefinition(reportPath: string | undefined) {
   const path = reportPath?.trim() ?? "";

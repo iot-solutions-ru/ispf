@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { parseAnalyticsQueryTags } from "../../../hooks/useAnalyticsMultiSeries";
 import type { DashboardWidget } from "../../../types/dashboard";
 import { DATA_BINDING_HINT_KEYS, WIDGET_TYPE_HINT_KEYS, widgetDataBinding } from "../widgetEditorBinding";
-import { RecordFieldGroup, variableListAllowCustom } from "./widgetBoundChoices";
+import { variableListAllowCustom } from "../widgetEditorHelpers";
+import { RecordFieldGroup } from "./widgetBoundChoices";
 import {
   ChartAnalyticsQueryTagsField,
   FieldLabel,

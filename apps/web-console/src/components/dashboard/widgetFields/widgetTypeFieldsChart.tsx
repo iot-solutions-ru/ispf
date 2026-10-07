@@ -3,7 +3,8 @@ import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { type NetworkGraphWidget, WIDGET_HISTORY_RANGE_OPTIONS } from "../../../types/dashboard";
 import { AdvancedJsonField, HintCaption, VariableSelect } from "../widgetEditorStructured";
-import { RecordFieldGroup, variableListAllowCustom } from "./widgetBoundChoices";
+import { variableListAllowCustom } from "../widgetEditorHelpers";
+import { RecordFieldGroup } from "./widgetBoundChoices";
 import { Section, type WidgetFieldContextFor, type WidgetTypeFieldsRegistry } from "./widgetFieldPrimitives";
 import { rowNavigationFields } from "./widgetRowNavigationFields";
 

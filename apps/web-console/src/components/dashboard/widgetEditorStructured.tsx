@@ -16,17 +16,8 @@ import {
 import { WIDGET_STYLE_KEYS_HINT, parseWidgetStyles } from "./widgetStyles";
 import type { WidgetStyleKey } from "./widgetStyles";
 import { parseJsonArray, parseJsonObject, stringifyJson } from "./widgetEditorJson";
+import { recordFieldNames, splitCaptionDetail } from "./widgetEditorHelpers";
 import { ObjectPathField } from "../../ui";
-
-/** Pulls a trailing "(description)" out of a block title. */
-export function splitCaptionDetail(text: string): { title: string; detail?: string } {
-  const match = text.trim().match(/^(.*?)\s*\(([^()]*)\)\s*$/);
-  if (!match) return { title: text };
-  const title = match[1].trim();
-  const detail = match[2].trim();
-  if (!title || !detail) return { title: text };
-  return { title, detail };
-}
 
 function joinHints(...parts: Array<string | undefined>): string | undefined {
   const text = parts.map((part) => part?.trim()).filter((part): part is string => Boolean(part));
@@ -53,19 +44,6 @@ export function HintCaption({
     <Tooltip title={title} overlayStyle={{ maxWidth: 420 }}>
       {caption}
     </Tooltip>
-  );
-}
-
-export function recordFieldNames(
-  variables: Array<{ name: string; value?: { schema?: { fields?: Array<{ name: string }> } } | null }> | undefined,
-  variableName: string,
-): string[] {
-  const name = variableName.trim();
-  if (!name) return [];
-  const variable = variables?.find((item) => item.name === name);
-  const fields = variable?.value?.schema?.fields ?? [];
-  return [...new Set(fields.map((field) => field.name.trim()).filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b),
   );
 }
 

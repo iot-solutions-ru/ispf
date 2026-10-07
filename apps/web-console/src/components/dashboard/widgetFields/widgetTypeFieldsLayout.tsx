@@ -10,7 +10,7 @@ import {
   TabPanelMetaEditor,
   VariableSelect,
 } from "../widgetEditorStructured";
-import { variableListAllowCustom } from "./widgetBoundChoices";
+import { variableListAllowCustom } from "../widgetEditorHelpers";
 import {
   DashboardPathField,
   ObjectFunctionSelect,

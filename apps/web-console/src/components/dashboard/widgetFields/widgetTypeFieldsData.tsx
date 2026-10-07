@@ -34,13 +34,13 @@ import {
   type WidgetTypeFieldsRegistry,
 } from "./widgetFieldPrimitives";
 import { rowNavigationFields } from "./widgetRowNavigationFields";
+import { variableListAllowCustom } from "../widgetEditorHelpers";
 import {
   FunctionInputPairs,
   ReportColumnList,
   ReportColumnPairs,
   ReportColumnSelect,
   ReportParameterPairs,
-  variableListAllowCustom,
 } from "./widgetBoundChoices";
 import { VariableSelect } from "../widgetEditorStructured";
 
