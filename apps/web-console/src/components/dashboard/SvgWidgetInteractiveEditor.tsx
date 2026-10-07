@@ -135,10 +135,7 @@ export default function SvgWidgetInteractiveEditor({
     <div className="svg-widget-interactive-editor scada-editor-panel">
       <h3 className="scada-props-section-title">
         <HintCaption className="">
-          {t("editor.section.svgInteractive", {
-            ns: "widgets",
-            defaultValue: "Интерактивный SVG (как SCADA-символ)",
-          })}
+          {t("editor.section.svgInteractive", { ns: "widgets" })}
         </HintCaption>
       </h3>
       <p className="scada-props-hint scada-props-hint-compact">

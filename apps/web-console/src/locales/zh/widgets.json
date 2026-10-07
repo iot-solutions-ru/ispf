@@ -189,6 +189,7 @@
   "editor.section.sparkline": "迷你图",
   "editor.section.spreadsheet": "电子表格",
   "editor.section.status": "状态",
+  "editor.section.svgInteractive": "交互式 SVG (与 SCADA 符号相同)",
   "editor.section.steps": "步骤",
   "editor.section.subDashboard": "嵌套仪表板",
   "editor.section.tabs": "选项卡",

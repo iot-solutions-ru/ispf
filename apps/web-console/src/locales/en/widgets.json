@@ -250,6 +250,7 @@
   "spreadsheet.filterPlaceholder": "Filter",
   "spreadsheet.validationError": "Invalid value",
   "editor.section.status": "Status",
+  "editor.section.svgInteractive": "Interactive SVG (Same as a SCADA symbol)",
   "editor.section.steps": "Steps",
   "editor.section.subDashboard": "Nested dashboard",
   "editor.section.tabs": "Tabs",

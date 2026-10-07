@@ -170,6 +170,7 @@
   "editor.section.sparkline": "Спарклайн",
   "editor.section.spreadsheet": "Электронная таблица",
   "editor.section.status": "Статус",
+  "editor.section.svgInteractive": "Интерактивный SVG (как SCADA-символ)",
   "editor.section.steps": "Шаги",
   "editor.section.subDashboard": "Вложенная панель мониторинга",
   "editor.section.tabs": "Вкладки",

@@ -189,6 +189,7 @@
   "editor.section.sparkline": "Sparkline",
   "editor.section.spreadsheet": "Tabellenkalkulation",
   "editor.section.status": "Status",
+  "editor.section.svgInteractive": "Interaktives SVG (Wie ein SCADA-Symbol)",
   "editor.section.steps": "Schritte",
   "editor.section.subDashboard": "Verschachteltes Dashboard",
   "editor.section.tabs": "Tabs",
