@@ -277,6 +277,74 @@ class ObjectQueryServiceTest {
     }
 
     @Test
+    @Transactional(readOnly = true)
+    void havingRejectsNonBooleanResultUnderMemberAcl() {
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.*",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"},
+                    {"name": "type", "source": "type", "alias": "row"}
+                  ],
+                  "having": "type",
+                  "limit": 5
+                }
+                """);
+        var operator = UsernamePasswordAuthenticationToken.authenticated("operator", "n/a", List.of());
+        assertThatThrownBy(() -> VariableAclRequestContext.callAsMember(
+                operator,
+                () -> objectQueryService.execute(spec, "root.platform.queries.test")
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("HAVING expression must yield boolean")
+                .hasMessageContaining("type");
+    }
+
+    @Test
+    void havingSkipsRowWhenMemberCannotReadReferencedVariable() {
+        String name = "oq-having-acl-" + System.nanoTime();
+        aclObjectPath = "root.platform.devices." + name;
+        objectManager.create("root.platform.devices", name, ObjectType.DEVICE, "having acl", "", null);
+        DataSchema schema = DataSchema.builder("secret").field("value", FieldType.DOUBLE).build();
+        objectManager.createVariable(
+                aclObjectPath,
+                "secret",
+                schema,
+                true,
+                true,
+                DataRecord.single(schema, Map.of("value", 8675309.0)),
+                true,
+                null,
+                List.of("engineer"),
+                List.of()
+        );
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "%s",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"},
+                    {"name": "secret", "ref": "{row}/secret/value"}
+                  ],
+                  "having": "input.secret == 8675309.0"
+                }
+                """.formatted(aclObjectPath));
+        var operator = UsernamePasswordAuthenticationToken.authenticated("operator", "n/a", List.of());
+
+        ObjectQueryResult memberResult = VariableAclRequestContext.callAsMember(
+                operator,
+                () -> objectQueryService.execute(spec, "root.platform")
+        );
+        assertThat(memberResult.rows()).isEmpty();
+        assertThat(objectQueryService.execute(spec, "root.platform").rows()).hasSize(1);
+    }
+
+    @Test
     void orderByRejectsMixedTypesInColumn() {
         String suffix = Long.toString(System.nanoTime());
         String pathA = "root.platform.devices.oq-sort-a-" + suffix;
