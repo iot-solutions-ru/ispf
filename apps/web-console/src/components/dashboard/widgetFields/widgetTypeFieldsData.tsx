@@ -372,6 +372,10 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
           <option value="false">{t("common:action.no")}</option>
         </select>
       </label>
+      <Section
+        title={t("editor.section.reportRowSelection")}
+        hint={t("editor.section.reportRowSelectionHint")}
+      />
       <label>
         <input
           type="checkbox"
@@ -394,13 +398,25 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
         value={rw.rowSelectionKey ?? ""}
         onChange={(next) => update({ rowSelectionKey: next || undefined })}
       />
-        <FieldLabel caption={t("editor.selectionKeyOnClick")} hint={t("editor.hint.selectionKeyOnClick")}>
+      <FieldLabel caption={t("editor.selectionKeyOnClick")} hint={t("editor.hint.selectionKeyOnClick")}>
         <SelectionKeyInput
           value={rw.selectionKey ?? ""}
           keys={selectionKeys}
           onChange={(next) => update({ selectionKey: next || undefined })}
         />
       </FieldLabel>
+      <ReportColumnPairs
+        reportPath={rw.reportPath}
+        label={t("editor.rowParamsFromRow")}
+        keyCaption={t("editor.col.sessionParam")}
+        keySuggestions={sessionParams}
+        value={rw.rowParamsFromRowJson}
+        onChange={(v) => update({ rowParamsFromRowJson: v })}
+      />
+      <Section
+        title={t("editor.section.reportOpenPanel")}
+        hint={t("editor.section.reportOpenPanelHint")}
+      />
       <FormRow>
         <DashboardPathField
           caption={t("editor.rowTargetDashboard")}
@@ -423,22 +439,18 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
           </StackedSlot>
         </FieldLabel>
       </FormRow>
-      <FieldLabel caption={t("editor.rowTargetSelectionKey")} hint={t("editor.hint.exampleSelection")}>
-        <SelectionKeyInput
-          value={rw.rowTargetSelectionKey ?? ""}
-          keys={selectionKeys}
-          disabled={!rw.rowTargetDashboard}
-          onChange={(next) => update({ rowTargetSelectionKey: next || undefined })}
-        />
-      </FieldLabel>
-      <ReportColumnPairs
-        reportPath={rw.reportPath}
-        label={t("editor.rowParamsFromRow")}
-        keyCaption={t("editor.col.sessionParam")}
-        keySuggestions={sessionParams}
-        value={rw.rowParamsFromRowJson}
-        onChange={(v) => update({ rowParamsFromRowJson: v })}
-      />
+      {rw.rowTargetDashboard?.trim() ? (
+        <FieldLabel
+          caption={t("editor.rowTargetSelectionKey")}
+          hint={t("editor.hint.rowTargetSelectionKey")}
+        >
+          <SelectionKeyInput
+            value={rw.rowTargetSelectionKey ?? ""}
+            keys={selectionKeys}
+            onChange={(next) => update({ rowTargetSelectionKey: next || undefined })}
+          />
+        </FieldLabel>
+      ) : null}
       <ReportColumnList
         reportPath={rw.reportPath}
         label={t("editor.field.statusColumns")}

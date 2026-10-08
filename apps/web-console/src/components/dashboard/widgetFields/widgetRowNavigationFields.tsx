@@ -40,7 +40,10 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
           </FieldLabel>
         </FormRow>
         <FormRow>
-          <FieldLabel caption={t("editor.rowSelectionSlot")}>
+          <FieldLabel
+            caption={t("editor.rowSelectionSlot")}
+            hint={t("editor.hint.rowTargetSelectionKey")}
+          >
             <SelectionKeyInput
               value={mw.rowSelectionKey ?? ""}
               keys={ctx.selectionKeys}
@@ -86,7 +89,10 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
           </FieldLabel>
         </FormRow>
         <FormRow>
-          <FieldLabel caption={t("editor.rowSelectionSlot")}>
+          <FieldLabel
+            caption={t("editor.rowSelectionSlot")}
+            hint={t("editor.hint.rowTargetSelectionKey")}
+          >
             <SelectionKeyInput
               value={tw.rowSelectionKey ?? ""}
               keys={ctx.selectionKeys}
