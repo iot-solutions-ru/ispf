@@ -34,7 +34,7 @@ import {
   type WidgetTypeFieldsRegistry,
 } from "./widgetFieldPrimitives";
 import { rowNavigationFields } from "./widgetRowNavigationFields";
-import { variableListAllowCustom } from "../widgetEditorHelpers";
+import { variableListAllowCustom, WIDGET_EDITOR_HINT_DELAY_S } from "../widgetEditorHelpers";
 import {
   FunctionInputPairs,
   ReportColumnList,
@@ -75,7 +75,7 @@ function functionFields(ctx: WidgetFieldContextFor<"function">, t: TFunction): R
         value={widget.workflowPath ?? ""}
         onChange={(path) => update({ workflowPath: path || undefined })}
         filterTypes={["WORKFLOW"]}
-        placeholder="root.platform.workflows..."
+        placeholder={t("editor.hint.exampleWorkflow")}
       />
       <FunctionInputPairs
         label={t("editor.inputJsonStatic")}
@@ -195,14 +195,14 @@ function objectTableFields(ctx: WidgetFieldContextFor<"object-table">, t: TFunct
     <>
       <Section title={t("editor.section.objectTable")} />
       <label>
-        <HintCaption hint="gpu-*">namePattern</HintCaption>
+        <HintCaption>{t("editor.field.namePattern")}</HintCaption>
         <input
           value={widget.namePattern ?? ""}
           onChange={(e) => update({ namePattern: e.target.value || undefined })}
         />
       </label>
       <label>
-        objectType
+        {t("editor.field.objectType")}
         <select
           value={widget.objectType ?? ""}
           onChange={(e) =>
@@ -235,20 +235,21 @@ function eventFeedFields(ctx: WidgetFieldContextFor<"event-feed">, t: TFunction)
     <>
       <Section title={t("editor.section.eventFeed")} />
       <ObjectPathField
-        label="objectPathPrefix"
+        label={t("editor.field.objectPathPrefix")}
         value={widget.objectPathPrefix ?? ""}
         onChange={(path) => update({ objectPathPrefix: path || undefined })}
         filterTypes={FOLDER_OBJECT_TYPES}
-        hint="root.platform.devices"
+        hint={t("editor.hint.exampleFolder")}
+        hintDelay={WIDGET_EDITOR_HINT_DELAY_S}
         placeholder=""
       />
       <StringListEditor
-        label="eventNamesJson"
+        label={t("editor.field.eventNames")}
         value={widget.eventNamesJson}
         onChange={(v) => update({ eventNamesJson: v })}
       />
       <label>
-        maxItems
+        {t("editor.field.maxItems")}
         <input
           type="number"
           min={5}
@@ -258,7 +259,7 @@ function eventFeedFields(ctx: WidgetFieldContextFor<"event-feed">, t: TFunction)
         />
       </label>
       <label>
-        <HintCaption hint="payload.int > 20">payloadFilterExpr</HintCaption>
+        <HintCaption>{t("editor.field.payloadFilter")}</HintCaption>
         <input
           value={widget.payloadFilterExpr ?? ""}
           onChange={(e) => update({ payloadFilterExpr: e.target.value || undefined })}
@@ -275,21 +276,21 @@ function workQueueFields(ctx: WidgetFieldContextFor<"work-queue">, t: TFunction)
     <>
       <Section title={t("editor.section.workQueue")} />
       <label>
-        operatorId
+        {t("editor.field.operatorId")}
         <input
           value={widget.operatorId ?? "operator"}
           onChange={(e) => update({ operatorId: e.target.value })}
         />
       </label>
       <label>
-        operatorAppId
+        {t("editor.field.operatorAppId")}
         <input
           value={widget.operatorAppId ?? ""}
           onChange={(e) => update({ operatorAppId: e.target.value || undefined })}
         />
       </label>
       <label>
-        maxItems
+        {t("editor.field.maxItems")}
         <input
           type="number"
           min={5}
@@ -315,7 +316,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
         label={t("editor.field.reportPath")}
         value={rw.reportPath}
         onChange={(path) => update({ reportPath: path })}
-        placeholder="root.platform.reports.ready-items"
+        placeholder={t("editor.hint.exampleReport")}
         filterTypes={["REPORT"]}
       />
       <ReportParameterHints reportPath={rw.reportPath} />
@@ -337,7 +338,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
         onChange={(v) => update({ contextParamsJson: v })}
       />
       <label>
-        emptyMessage
+        {t("editor.field.emptyMessage")}
         <input
           value={rw.emptyMessage ?? ""}
           onChange={(e) => update({ emptyMessage: e.target.value || undefined })}
@@ -384,7 +385,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
         </FieldLabel>
       </FormRow>
       <label>
-        showHtml
+        {t("editor.field.showHtml")}
         <select
           value={rw.showHtml === false ? "false" : "true"}
           onChange={(e) => update({ showHtml: e.target.value === "true" })}
@@ -399,7 +400,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
           checked={rw.selectable === true}
           onChange={(e) => update({ selectable: e.target.checked || undefined })}
         />
-        selectable
+        {t("editor.field.selectable")}
       </label>
       <label>
         <input
@@ -407,7 +408,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
           checked={rw.autoSelectFirstRow === true}
           onChange={(e) => update({ autoSelectFirstRow: e.target.checked || undefined })}
         />
-        autoSelectFirstRow
+        {t("editor.field.autoSelectFirstRow")}
       </label>
       <ReportColumnSelect
         reportPath={rw.reportPath}
@@ -416,7 +417,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
         value={rw.rowSelectionKey ?? ""}
         onChange={(next) => update({ rowSelectionKey: next || undefined })}
       />
-      <FieldLabel caption={t("editor.selectionKeyOnClick")} code="selectionKey" hint="device">
+        <FieldLabel caption={t("editor.selectionKeyOnClick")} code="selectionKey" hint={t("editor.hint.exampleSelection")}>
         <SelectionKeyInput
           value={rw.selectionKey ?? ""}
           keys={selectionKeys}
@@ -430,7 +431,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
           dashboards={ctx.dashboards}
           onChange={(v) => update({ rowTargetDashboard: v || undefined })}
         />
-        <FieldLabel caption="rowOpenMode">
+        <FieldLabel caption={t("editor.field.openMode")}>
           <StackedSlot>
             <select
               value={rw.rowOpenMode ?? "navigate"}
@@ -439,13 +440,13 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
               }
               disabled={!rw.rowTargetDashboard}
             >
-              <option value="navigate">navigate</option>
-              <option value="modal">modal</option>
+              <option value="navigate">{t("editor.openMode.navigate")}</option>
+              <option value="modal">{t("editor.openMode.modal")}</option>
             </select>
           </StackedSlot>
         </FieldLabel>
       </FormRow>
-      <FieldLabel caption={t("editor.rowTargetSelectionKey")} code="rowTargetSelectionKey" hint="device">
+      <FieldLabel caption={t("editor.rowTargetSelectionKey")} code="rowTargetSelectionKey" hint={t("editor.hint.exampleSelection")}>
         <SelectionKeyInput
           value={rw.rowTargetSelectionKey ?? ""}
           keys={selectionKeys}
@@ -493,7 +494,7 @@ function historyTableFields(ctx: WidgetFieldContextFor<"history-table">, t: TFun
         </select>
       </label>
       <label>
-        decimals
+        {t("editor.decimals")}
         <input
           type="number"
           min={0}
@@ -571,7 +572,9 @@ function spreadsheetFields(ctx: WidgetFieldContextFor<"spreadsheet">, t: TFuncti
         />
       )}
       <label>
-        <HintCaption hint={`sheet:${widget.id}`}>{t("editor.spreadsheet.sessionKey")}</HintCaption>
+        <HintCaption hint={t("editor.spreadsheet.sessionKeyHint", { example: `sheet:${widget.id}` })}>
+          {t("editor.spreadsheet.sessionKey")}
+        </HintCaption>
         <input
           value={widget.sessionKey ?? ""}
           onChange={(e) => update({ sessionKey: e.target.value })}
@@ -668,7 +671,7 @@ function objectTreeFields(ctx: WidgetFieldContextFor<"object-tree">, t: TFunctio
     <>
       <Section title={t("editor.section.objectTree")} />
       <label>
-        maxDepth
+        {t("editor.field.maxDepth")}
         <input
           type="number"
           min={1}

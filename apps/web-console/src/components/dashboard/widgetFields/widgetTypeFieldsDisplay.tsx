@@ -108,7 +108,7 @@ function indicatorFields(ctx: WidgetFieldContextFor<"indicator">, t: TFunction):
           checked={widget.alarmMode === true}
           onChange={(e) => update({ alarmMode: e.target.checked || undefined })}
         />
-        alarmMode ({t("editor.structured.alarmModeHint")})
+        {t("editor.structured.alarmMode")}
       </label>
     </>
   );
@@ -120,7 +120,7 @@ function sparklineFields(ctx: WidgetFieldContextFor<"sparkline">, t: TFunction):
     <>
       <Section title={t("editor.section.sparkline")} />
       <label>
-        historyRange
+        {t("editor.historyRange")}
         <select
           value={widget.historyRange ?? "live"}
           onChange={(e) => update({ historyRange: e.target.value as typeof widget.historyRange })}
@@ -133,7 +133,7 @@ function sparklineFields(ctx: WidgetFieldContextFor<"sparkline">, t: TFunction):
         </select>
       </label>
       <label>
-        maxPoints
+        {t("editor.maxPoints")}
         <input
           type="number"
           min={10}
@@ -204,11 +204,11 @@ function progressFields(ctx: WidgetFieldContextFor<"progress">, t: TFunction): R
         disabled={!ctx.variableSelectEnabled}
       />
       <label>
-        unit
+        {t("editor.unit")}
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
       <label>
-        decimals
+        {t("editor.decimals")}
         <input
           type="number"
           min={0}
@@ -259,11 +259,11 @@ function gaugeFields(ctx: WidgetFieldContextFor<"gauge">, t: TFunction): ReactNo
         />
       </label>
       <label>
-        unit
+        {t("editor.unit")}
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
       <label>
-        decimals
+        {t("editor.decimals")}
         <input
           type="number"
           min={0}
@@ -298,7 +298,7 @@ function linearGaugeFields(ctx: WidgetFieldContextFor<"linear-gauge">, t: TFunct
         disabled={!ctx.variableSelectEnabled}
       />
       <label>
-        minValue
+        {t("editor.minValueNoVariable")}
         <input
           type="number"
           value={widget.minValue ?? 0}
@@ -306,7 +306,7 @@ function linearGaugeFields(ctx: WidgetFieldContextFor<"linear-gauge">, t: TFunct
         />
       </label>
       <label>
-        maxValue
+        {t("editor.maxValueNoVariable")}
         <input
           type="number"
           value={widget.maxValue ?? 100}
@@ -314,11 +314,11 @@ function linearGaugeFields(ctx: WidgetFieldContextFor<"linear-gauge">, t: TFunct
         />
       </label>
       <label>
-        unit
+        {t("editor.unit")}
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
       <label>
-        decimals
+        {t("editor.decimals")}
         <input
           type="number"
           min={0}
@@ -353,7 +353,7 @@ function liquidGaugeFields(ctx: WidgetFieldContextFor<"liquid-gauge">, t: TFunct
         disabled={!ctx.variableSelectEnabled}
       />
       <label>
-        minValue
+        {t("editor.minValueNoVariable")}
         <input
           type="number"
           value={widget.minValue ?? 0}
@@ -361,7 +361,7 @@ function liquidGaugeFields(ctx: WidgetFieldContextFor<"liquid-gauge">, t: TFunct
         />
       </label>
       <label>
-        maxValue
+        {t("editor.maxValueNoVariable")}
         <input
           type="number"
           value={widget.maxValue ?? 100}
@@ -369,7 +369,7 @@ function liquidGaugeFields(ctx: WidgetFieldContextFor<"liquid-gauge">, t: TFunct
         />
       </label>
       <label>
-        decimals
+        {t("editor.decimals")}
         <input
           type="number"
           min={0}
@@ -400,7 +400,7 @@ function pieChartFields(ctx: WidgetFieldContextFor<"pie-chart">, t: TFunction): 
         ]}
       />
       <label>
-        decimals
+        {t("editor.decimals")}
         <input
           type="number"
           min={0}
@@ -442,14 +442,14 @@ function imageFields(ctx: WidgetFieldContextFor<"image">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.image")} />
       <WidgetMediaUploadField
-        label="imageUrl"
+        label={t("editor.field.imageUrl")}
         value={widget.imageUrl ?? ""}
         onChange={(imageUrl) => update({ imageUrl: imageUrl || undefined })}
         accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg"
         previewAlt={widget.alt ?? widget.title}
       />
       <label>
-        alt
+        {t("editor.field.alt")}
         <input
           value={widget.alt ?? ""}
           onChange={(e) => update({ alt: e.target.value || undefined })}
@@ -465,7 +465,7 @@ function htmlSnippetFields(ctx: WidgetFieldContextFor<"html-snippet">, t: TFunct
     <>
       <Section title={t("type.htmlSnippet")} />
       <label className="full">
-        htmlJson
+        {t("editor.field.html")}
         <textarea
           rows={6}
           value={widget.htmlJson ?? ""}
@@ -482,17 +482,17 @@ function timerFields(ctx: WidgetFieldContextFor<"timer">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.timer")} />
       <label>
-        mode
+        {t("editor.field.timerMode")}
         <select
           value={widget.mode ?? "countdown"}
           onChange={(e) => update({ mode: e.target.value as "countdown" | "elapsed" })}
         >
-          <option value="countdown">countdown</option>
-          <option value="elapsed">elapsed</option>
+          <option value="countdown">{t("editor.timerMode.countdown")}</option>
+          <option value="elapsed">{t("editor.timerMode.elapsed")}</option>
         </select>
       </label>
       <label>
-        durationSeconds (countdown)
+        {t("editor.field.durationSeconds")}
         <input
           type="number"
           min={1}

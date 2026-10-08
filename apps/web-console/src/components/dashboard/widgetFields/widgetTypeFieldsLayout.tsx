@@ -30,7 +30,7 @@ function cardGridFields(ctx: WidgetFieldContextFor<"card-grid">, t: TFunction): 
     <>
       <Section title={t("editor.section.cardGrid")} />
       <StringListEditor
-        label="variablesJson"
+        label={t("editor.field.variablesToShow")}
         value={widget.variablesJson}
         onChange={(v) => update({ variablesJson: v })}
         suggestions={allVariableNames}
@@ -46,20 +46,20 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
     <>
       <Section title={t("editor.section.dashboardLink")} />
       <DashboardPathField
-        caption="targetDashboardPath"
+        caption={t("editor.field.targetDashboard")}
         value={widget.targetDashboardPath}
         dashboards={ctx.dashboards}
         onChange={(v) => update({ targetDashboardPath: v })}
       />
       <label>
-        openMode
+        {t("editor.field.openMode")}
         <StackedSlot>
           <select
             value={widget.openMode ?? "navigate"}
             onChange={(e) => update({ openMode: e.target.value as "navigate" | "modal" })}
           >
-            <option value="navigate">navigate</option>
-            <option value="modal">modal</option>
+            <option value="navigate">{t("editor.openMode.navigate")}</option>
+            <option value="modal">{t("editor.openMode.modal")}</option>
           </select>
         </StackedSlot>
       </label>
@@ -71,7 +71,7 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
         />
       </label>
       <label>
-        modalTitle
+        {t("editor.field.modalTitle")}
         <input
           value={widget.modalTitle ?? ""}
           onChange={(e) => update({ modalTitle: e.target.value || undefined })}
@@ -119,15 +119,15 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
     <>
       <Section title={t("type.svgWidget")} />
       <WidgetMediaUploadField
-        label="svgUrl"
+        label={t("editor.field.svgUrl")}
         value={widget.svgUrl ?? ""}
         onChange={(svgUrl) => update({ svgUrl })}
         accept=".svg,image/svg+xml,image/png,image/jpeg,image/webp,image/gif"
-        placeholder="/lab-assets/button.svg"
+        placeholder={t("editor.hint.exampleSvg")}
         previewAlt={widget.title}
       />
       <label>
-        clickAction
+        {t("editor.field.clickAction")}
         <select
           value={widget.clickAction ?? ""}
           onChange={(e) =>
@@ -137,8 +137,8 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
           }
         >
           <option value="">—</option>
-          <option value="function">function</option>
-          <option value="toggle">toggle</option>
+          <option value="function">{t("editor.clickAction.function")}</option>
+          <option value="toggle">{t("editor.clickAction.toggle")}</option>
         </select>
       </label>
       {widget.clickAction === "function" && (
@@ -152,7 +152,7 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
       )}
       {widget.clickAction === "toggle" && (
         <VariableSelect
-          label="toggleVariable"
+          label={t("editor.field.toggleVariable")}
           value={widget.toggleVariable ?? widget.variableName ?? ""}
           onChange={(v) => update({ toggleVariable: v })}
           variables={ctx.variables}
@@ -174,7 +174,7 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
           checked={widget.showLegend !== false}
           onChange={(e) => update({ showLegend: e.target.checked })}
         />
-        showLegend
+        {t("editor.field.showLegend")}
       </label>
       <label>
         <input
@@ -182,7 +182,7 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
           checked={widget.panEnabled !== false}
           onChange={(e) => update({ panEnabled: e.target.checked })}
         />
-        panEnabled
+        {t("editor.field.panEnabled")}
       </label>
     </>
   );
@@ -194,7 +194,7 @@ function subDashboardFields(ctx: WidgetFieldContextFor<"sub-dashboard">, t: TFun
     <>
       <Section title={t("editor.section.subDashboard")} />
       <DashboardPathField
-        caption="targetDashboardPath"
+        caption={t("editor.field.targetDashboard")}
         value={widget.targetDashboardPath ?? ""}
         dashboards={ctx.dashboards}
         onChange={(v) => update({ targetDashboardPath: v || undefined })}
@@ -214,7 +214,7 @@ function subDashboardFields(ctx: WidgetFieldContextFor<"sub-dashboard">, t: TFun
           checked={widget.inheritContext !== false}
           onChange={(e) => update({ inheritContext: e.target.checked })}
         />
-        inheritContext
+        {t("editor.field.inheritContext")}
       </label>
     </>
   );
@@ -226,7 +226,7 @@ function panelFields(ctx: WidgetFieldContextFor<"panel">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.panel")} />
       <label>
-        variant
+        {t("editor.field.variant")}
         <input
           value={widget.variant ?? "simple"}
           onChange={(e) => update({ variant: e.target.value as "simple" })}
@@ -238,10 +238,10 @@ function panelFields(ctx: WidgetFieldContextFor<"panel">, t: TFunction): ReactNo
           checked={widget.collapsible === true}
           onChange={(e) => update({ collapsible: e.target.checked })}
         />
-        collapsible
+        {t("editor.field.collapsible")}
       </label>
       <AdvancedJsonField
-        label="childrenJson"
+        label={t("editor.field.childrenJson")}
         value={widget.childrenJson}
         onChange={(v) => update({ childrenJson: v ?? "[]" })}
         rows={8}
@@ -257,7 +257,7 @@ function compositeWidgetFields(ctx: WidgetFieldContextFor<"composite-widget" | "
       <Section title={widget.type === "drawer-panel" ? t("editor.drawerPanel") : t("editor.composite")} />
       {widget.type === "drawer-panel" && (
         <label>
-          drawerLabel
+          {t("editor.field.drawerLabel")}
           <input
             value={widget.drawerLabel ?? ""}
             onChange={(e) => update({ drawerLabel: e.target.value || undefined })}
@@ -265,7 +265,7 @@ function compositeWidgetFields(ctx: WidgetFieldContextFor<"composite-widget" | "
         </label>
       )}
       <AdvancedJsonField
-        label="childrenJson"
+        label={t("editor.field.childrenJson")}
         value={widget.childrenJson}
         onChange={(v) => update({ childrenJson: v ?? "[]" })}
         rows={8}
@@ -284,7 +284,7 @@ function tabPanelFields(ctx: WidgetFieldContextFor<"tab-panel">, t: TFunction): 
         onChange={(v) => update({ tabsJson: v })}
       />
       <AdvancedJsonField
-        label="tabsJson"
+        label={t("editor.field.tabsJson")}
         value={widget.tabsJson}
         onChange={(v) => update({ tabsJson: v ?? "[]" })}
         rows={8}
@@ -306,7 +306,7 @@ function breadcrumbsFields(ctx: WidgetFieldContextFor<"breadcrumbs">, t: TFuncti
         />
       </label>
       <label>
-        separator
+        {t("editor.field.separator")}
         <input
           value={widget.separator ?? " / "}
           onChange={(e) => update({ separator: e.target.value })}
@@ -322,7 +322,7 @@ function carouselFields(ctx: WidgetFieldContextFor<"carousel">, t: TFunction): R
     <>
       <Section title={t("editor.section.carousel")} />
       <AdvancedJsonField
-        label="slidesJson"
+        label={t("editor.field.slidesJson")}
         value={widget.slidesJson}
         onChange={(v) => update({ slidesJson: v ?? "[]" })}
         rows={6}
@@ -346,13 +346,13 @@ function stepsPanelFields(ctx: WidgetFieldContextFor<"steps-panel">, t: TFunctio
     <>
       <Section title={t("editor.section.steps")} />
       <IdLabelListEditor
-        label="stepsJson"
+        label={t("editor.field.stepsJson")}
         value={widget.stepsJson}
         onChange={(v) => update({ stepsJson: v })}
         idPrefix="step"
       />
       <AdvancedJsonField
-        label="stepsJson"
+        label={t("editor.field.stepsJson")}
         value={widget.stepsJson}
         onChange={(v) => update({ stepsJson: v ?? "[]" })}
         rows={6}
