@@ -5,7 +5,12 @@ import { WIDGET_HISTORY_RANGE_OPTIONS } from "../../../types/dashboard";
 import { VariableSelect } from "../widgetEditorStructured";
 import { variableListAllowCustom } from "../widgetEditorHelpers";
 import { RecordFieldGroup } from "./widgetBoundChoices";
-import { Section, type WidgetFieldContextFor, type WidgetTypeFieldsRegistry } from "./widgetFieldPrimitives";
+import {
+  Section,
+  WidgetEditorCaption,
+  type WidgetFieldContextFor,
+  type WidgetTypeFieldsRegistry,
+} from "./widgetFieldPrimitives";
 import WidgetMediaUploadField from "../WidgetMediaUploadField";
 
 function valueFields(ctx: WidgetFieldContextFor<"value">, t: TFunction): ReactNode {
@@ -14,7 +19,7 @@ function valueFields(ctx: WidgetFieldContextFor<"value">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.valueDisplay")} />
       <label>
-        {t("editor.unit")}
+        <WidgetEditorCaption text={t("editor.unit")} />
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
       <RecordFieldGroup
@@ -31,7 +36,7 @@ function valueFields(ctx: WidgetFieldContextFor<"value">, t: TFunction): ReactNo
         ]}
       />
       <label>
-        {t("editor.decimals")}
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -50,14 +55,14 @@ function toggleFields(ctx: WidgetFieldContextFor<"toggle">, t: TFunction): React
     <>
       <Section title={t("editor.section.toggle")} />
       <label>
-        {t("editor.trueLabelOn")}
+        <WidgetEditorCaption text={t("editor.trueLabelOn")} />
         <input
           value={widget.trueLabel ?? ""}
           onChange={(e) => update({ trueLabel: e.target.value || undefined })}
         />
       </label>
       <label>
-        {t("editor.trueLabelOff")}
+        <WidgetEditorCaption text={t("editor.trueLabelOff")} />
         <input
           value={widget.falseLabel ?? ""}
           onChange={(e) => update({ falseLabel: e.target.value || undefined })}
@@ -73,21 +78,21 @@ function indicatorFields(ctx: WidgetFieldContextFor<"indicator">, t: TFunction):
     <>
       <Section title={t("editor.section.indicator")} />
       <label>
-        {t("editor.trueLabel")}
+        <WidgetEditorCaption text={t("editor.trueLabel")} />
         <input
           value={widget.trueLabel ?? ""}
           onChange={(e) => update({ trueLabel: e.target.value || undefined })}
         />
       </label>
       <label>
-        {t("editor.falseLabel")}
+        <WidgetEditorCaption text={t("editor.falseLabel")} />
         <input
           value={widget.falseLabel ?? ""}
           onChange={(e) => update({ falseLabel: e.target.value || undefined })}
         />
       </label>
       <label>
-        {t("editor.trueColor")}
+        <WidgetEditorCaption text={t("editor.trueColor")} />
         <input
           type="color"
           value={widget.trueColor ?? "#3fb950"}
@@ -95,7 +100,7 @@ function indicatorFields(ctx: WidgetFieldContextFor<"indicator">, t: TFunction):
         />
       </label>
       <label>
-        {t("editor.falseColor")}
+        <WidgetEditorCaption text={t("editor.falseColor")} />
         <input
           type="color"
           value={widget.falseColor ?? "#f85149"}
@@ -108,7 +113,7 @@ function indicatorFields(ctx: WidgetFieldContextFor<"indicator">, t: TFunction):
           checked={widget.alarmMode === true}
           onChange={(e) => update({ alarmMode: e.target.checked || undefined })}
         />
-        {t("editor.structured.alarmMode")}
+        <WidgetEditorCaption text={t("editor.structured.alarmMode")} />
       </label>
     </>
   );
@@ -120,7 +125,7 @@ function sparklineFields(ctx: WidgetFieldContextFor<"sparkline">, t: TFunction):
     <>
       <Section title={t("editor.section.sparkline")} />
       <label>
-        {t("editor.historyRange")}
+        <WidgetEditorCaption text={t("editor.historyRange")} />
         <select
           value={widget.historyRange ?? "live"}
           onChange={(e) => update({ historyRange: e.target.value as typeof widget.historyRange })}
@@ -133,7 +138,7 @@ function sparklineFields(ctx: WidgetFieldContextFor<"sparkline">, t: TFunction):
         </select>
       </label>
       <label>
-        {t("editor.maxPoints")}
+        <WidgetEditorCaption text={t("editor.maxPoints")} />
         <input
           type="number"
           min={10}
@@ -143,7 +148,7 @@ function sparklineFields(ctx: WidgetFieldContextFor<"sparkline">, t: TFunction):
         />
       </label>
       <label>
-        {t("editor.sampleMode")}
+        <WidgetEditorCaption text={t("editor.sampleMode")} />
         <select
           value={widget.sampleMode ?? "auto"}
           onChange={(e) =>
@@ -161,7 +166,7 @@ function sparklineFields(ctx: WidgetFieldContextFor<"sparkline">, t: TFunction):
         </select>
       </label>
       <label>
-        {t("editor.color")}
+        <WidgetEditorCaption text={t("editor.color")} />
         <input
           type="color"
           value={widget.color ?? "#3fb950"}
@@ -169,7 +174,7 @@ function sparklineFields(ctx: WidgetFieldContextFor<"sparkline">, t: TFunction):
         />
       </label>
       <label>
-        {t("editor.decimals")}
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -204,11 +209,11 @@ function progressFields(ctx: WidgetFieldContextFor<"progress">, t: TFunction): R
         disabled={!ctx.variableSelectEnabled}
       />
       <label>
-        {t("editor.unit")}
+        <WidgetEditorCaption text={t("editor.unit")} />
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
       <label>
-        {t("editor.decimals")}
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -243,7 +248,7 @@ function gaugeFields(ctx: WidgetFieldContextFor<"gauge">, t: TFunction): ReactNo
         disabled={!ctx.variableSelectEnabled}
       />
       <label>
-        {t("editor.minValueNoVariable")}
+        <WidgetEditorCaption text={t("editor.minValueNoVariable")} />
         <input
           type="number"
           value={widget.minValue ?? 0}
@@ -251,7 +256,7 @@ function gaugeFields(ctx: WidgetFieldContextFor<"gauge">, t: TFunction): ReactNo
         />
       </label>
       <label>
-        {t("editor.maxValueNoVariable")}
+        <WidgetEditorCaption text={t("editor.maxValueNoVariable")} />
         <input
           type="number"
           value={widget.maxValue ?? 100}
@@ -259,11 +264,11 @@ function gaugeFields(ctx: WidgetFieldContextFor<"gauge">, t: TFunction): ReactNo
         />
       </label>
       <label>
-        {t("editor.unit")}
+        <WidgetEditorCaption text={t("editor.unit")} />
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
       <label>
-        {t("editor.decimals")}
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -298,7 +303,7 @@ function linearGaugeFields(ctx: WidgetFieldContextFor<"linear-gauge">, t: TFunct
         disabled={!ctx.variableSelectEnabled}
       />
       <label>
-        {t("editor.minValueNoVariable")}
+        <WidgetEditorCaption text={t("editor.minValueNoVariable")} />
         <input
           type="number"
           value={widget.minValue ?? 0}
@@ -306,7 +311,7 @@ function linearGaugeFields(ctx: WidgetFieldContextFor<"linear-gauge">, t: TFunct
         />
       </label>
       <label>
-        {t("editor.maxValueNoVariable")}
+        <WidgetEditorCaption text={t("editor.maxValueNoVariable")} />
         <input
           type="number"
           value={widget.maxValue ?? 100}
@@ -314,11 +319,11 @@ function linearGaugeFields(ctx: WidgetFieldContextFor<"linear-gauge">, t: TFunct
         />
       </label>
       <label>
-        {t("editor.unit")}
+        <WidgetEditorCaption text={t("editor.unit")} />
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
       <label>
-        {t("editor.decimals")}
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -353,7 +358,7 @@ function liquidGaugeFields(ctx: WidgetFieldContextFor<"liquid-gauge">, t: TFunct
         disabled={!ctx.variableSelectEnabled}
       />
       <label>
-        {t("editor.minValueNoVariable")}
+        <WidgetEditorCaption text={t("editor.minValueNoVariable")} />
         <input
           type="number"
           value={widget.minValue ?? 0}
@@ -361,7 +366,7 @@ function liquidGaugeFields(ctx: WidgetFieldContextFor<"liquid-gauge">, t: TFunct
         />
       </label>
       <label>
-        {t("editor.maxValueNoVariable")}
+        <WidgetEditorCaption text={t("editor.maxValueNoVariable")} />
         <input
           type="number"
           value={widget.maxValue ?? 100}
@@ -369,7 +374,7 @@ function liquidGaugeFields(ctx: WidgetFieldContextFor<"liquid-gauge">, t: TFunct
         />
       </label>
       <label>
-        {t("editor.decimals")}
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -400,7 +405,7 @@ function pieChartFields(ctx: WidgetFieldContextFor<"pie-chart">, t: TFunction): 
         ]}
       />
       <label>
-        {t("editor.decimals")}
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -419,14 +424,14 @@ function labelFields(ctx: WidgetFieldContextFor<"label">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.label")} />
       <label>
-        {t("editor.textStatic")}
+        <WidgetEditorCaption text={t("editor.textStatic")} />
         <input
           value={widget.text ?? ""}
           onChange={(e) => update({ text: e.target.value || undefined })}
         />
       </label>
       <label>
-        {t("editor.textJsonAlt")}
+        <WidgetEditorCaption text={t("editor.textJsonAlt")} />
         <input
           value={widget.textJson ?? ""}
           onChange={(e) => update({ textJson: e.target.value || undefined })}
@@ -449,7 +454,7 @@ function imageFields(ctx: WidgetFieldContextFor<"image">, t: TFunction): ReactNo
         previewAlt={widget.alt ?? widget.title}
       />
       <label>
-        {t("editor.field.alt")}
+        <WidgetEditorCaption text={t("editor.field.alt")} />
         <input
           value={widget.alt ?? ""}
           onChange={(e) => update({ alt: e.target.value || undefined })}
@@ -465,7 +470,7 @@ function htmlSnippetFields(ctx: WidgetFieldContextFor<"html-snippet">, t: TFunct
     <>
       <Section title={t("type.htmlSnippet")} />
       <label className="full">
-        {t("editor.field.html")}
+        <WidgetEditorCaption text={t("editor.field.html")} />
         <textarea
           rows={6}
           value={widget.htmlJson ?? ""}
@@ -482,7 +487,7 @@ function timerFields(ctx: WidgetFieldContextFor<"timer">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.timer")} />
       <label>
-        {t("editor.field.timerMode")}
+        <WidgetEditorCaption text={t("editor.field.timerMode")} />
         <select
           value={widget.mode ?? "countdown"}
           onChange={(e) => update({ mode: e.target.value as "countdown" | "elapsed" })}
@@ -492,7 +497,7 @@ function timerFields(ctx: WidgetFieldContextFor<"timer">, t: TFunction): ReactNo
         </select>
       </label>
       <label>
-        {t("editor.field.durationSeconds")}
+        <WidgetEditorCaption text={t("editor.field.durationSeconds")} />
         <input
           type="number"
           min={1}

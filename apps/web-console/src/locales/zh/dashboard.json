@@ -2,8 +2,6 @@
   "editor.advanced": "高级",
   "editor.containerDropHint": "选择此容器时，将小部件拖放到此处或从调色板添加。",
   "editor.demoPreviewLabel": "无数据示例 (编辑器中在没有实时值时显示)",
-  "editor.deprecation.payloadFilterExpr": "旧的筛选方式。例如 payload.int > 20 的表达式在服务器上计算。",
-  "editor.deprecation.requireSessionParamsJson": "旧的检查。现在由平台规则设置必填参数。",
   "editor.general": "常规",
   "editor.layerBackward": "下移",
   "editor.layerForward": "上移",

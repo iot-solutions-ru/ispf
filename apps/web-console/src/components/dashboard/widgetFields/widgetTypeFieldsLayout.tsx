@@ -16,6 +16,7 @@ import {
   ObjectFunctionSelect,
   Section,
   StackedSlot,
+  WidgetEditorCaption,
   type WidgetFieldContextFor,
   type WidgetTypeFieldsRegistry,
 } from "./widgetFieldPrimitives";
@@ -52,7 +53,7 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
         onChange={(v) => update({ targetDashboardPath: v })}
       />
       <label>
-        {t("editor.field.openMode")}
+        <WidgetEditorCaption text={t("editor.field.openMode")} />
         <StackedSlot>
           <select
             value={widget.openMode ?? "navigate"}
@@ -64,14 +65,14 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
         </StackedSlot>
       </label>
       <label>
-        {t("editor.field.buttonLabel")}
+        <WidgetEditorCaption text={t("editor.field.buttonLabel")} />
         <input
           value={widget.buttonLabel ?? ""}
           onChange={(e) => update({ buttonLabel: e.target.value })}
         />
       </label>
       <label>
-        {t("editor.field.modalTitle")}
+        <WidgetEditorCaption text={t("editor.field.modalTitle")} />
         <input
           value={widget.modalTitle ?? ""}
           onChange={(e) => update({ modalTitle: e.target.value || undefined })}
@@ -79,7 +80,7 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
         />
       </label>
       <label>
-        {t("editor.field.confirmMessage")}
+        <WidgetEditorCaption text={t("editor.field.confirmMessage")} />
         <input
           value={widget.confirmMessage ?? ""}
           onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
@@ -87,7 +88,6 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
       </label>
       <KeyValueEditor
         label={t("editor.contextSelection")}
-        code="contextSelectionJson"
         keyCaption={t("editor.col.slotName")}
         valueCaption={t("editor.col.objectPath")}
         value={widget.contextSelectionJson}
@@ -95,20 +95,12 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
       />
       <KeyValueEditor
         label={t("editor.openScreenParams")}
-        code="contextParamsJson"
         keyCaption={t("editor.col.sessionParam")}
         valueCaption={t("editor.col.value")}
         keySuggestions={ctx.sessionParams}
         value={widget.contextParamsJson}
         onChange={(v) => update({ contextParamsJson: v })}
       />
-      <StringListEditor
-        label={t("editor.requireSessionParamsNavigate")}
-        code="requireSessionParamsJson"
-        value={widget.requireSessionParamsJson}
-        onChange={(v) => update({ requireSessionParamsJson: v || undefined })}
-      />
-      <p className="hint">{t("editor.deprecation.requireSessionParamsJson")}</p>
     </>
   );
 }
@@ -127,7 +119,7 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
         previewAlt={widget.title}
       />
       <label>
-        {t("editor.field.clickAction")}
+        <WidgetEditorCaption text={t("editor.field.clickAction")} />
         <select
           value={widget.clickAction ?? ""}
           onChange={(e) =>
@@ -144,7 +136,6 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
       {widget.clickAction === "function" && (
         <ObjectFunctionSelect
           label={t("editor.field.functionName")}
-          code="functionName"
           objectPath={widget.objectPath}
           value={widget.functionName ?? ""}
           onChange={(next) => update({ functionName: next || undefined })}
@@ -161,7 +152,7 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
         />
       )}
       <label>
-        {t("editor.field.confirmMessage")}
+        <WidgetEditorCaption text={t("editor.field.confirmMessage")} />
         <input
           value={widget.confirmMessage ?? ""}
           onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
@@ -174,7 +165,7 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
           checked={widget.showLegend !== false}
           onChange={(e) => update({ showLegend: e.target.checked })}
         />
-        {t("editor.field.showLegend")}
+        <WidgetEditorCaption text={t("editor.field.showLegend")} />
       </label>
       <label>
         <input
@@ -182,7 +173,7 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
           checked={widget.panEnabled !== false}
           onChange={(e) => update({ panEnabled: e.target.checked })}
         />
-        {t("editor.field.panEnabled")}
+        <WidgetEditorCaption text={t("editor.field.panEnabled")} />
       </label>
     </>
   );
@@ -200,7 +191,7 @@ function subDashboardFields(ctx: WidgetFieldContextFor<"sub-dashboard">, t: TFun
         onChange={(v) => update({ targetDashboardPath: v || undefined })}
       />
       <label>
-        {t("editor.targetDashboardPathKeyFromParams")}
+        <WidgetEditorCaption text={t("editor.targetDashboardPathKeyFromParams")} />
         <StackedSlot>
           <input
             value={widget.targetDashboardPathKey ?? ""}
@@ -214,7 +205,7 @@ function subDashboardFields(ctx: WidgetFieldContextFor<"sub-dashboard">, t: TFun
           checked={widget.inheritContext !== false}
           onChange={(e) => update({ inheritContext: e.target.checked })}
         />
-        {t("editor.field.inheritContext")}
+        <WidgetEditorCaption text={t("editor.field.inheritContext")} />
       </label>
     </>
   );
@@ -226,7 +217,7 @@ function panelFields(ctx: WidgetFieldContextFor<"panel">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.panel")} />
       <label>
-        {t("editor.field.variant")}
+        <WidgetEditorCaption text={t("editor.field.variant")} />
         <input
           value={widget.variant ?? "simple"}
           onChange={(e) => update({ variant: e.target.value as "simple" })}
@@ -238,7 +229,7 @@ function panelFields(ctx: WidgetFieldContextFor<"panel">, t: TFunction): ReactNo
           checked={widget.collapsible === true}
           onChange={(e) => update({ collapsible: e.target.checked })}
         />
-        {t("editor.field.collapsible")}
+        <WidgetEditorCaption text={t("editor.field.collapsible")} />
       </label>
       <AdvancedJsonField
         label={t("editor.field.childrenJson")}
@@ -257,7 +248,7 @@ function compositeWidgetFields(ctx: WidgetFieldContextFor<"composite-widget" | "
       <Section title={widget.type === "drawer-panel" ? t("editor.drawerPanel") : t("editor.composite")} />
       {widget.type === "drawer-panel" && (
         <label>
-          {t("editor.field.drawerLabel")}
+          <WidgetEditorCaption text={t("editor.field.drawerLabel")} />
           <input
             value={widget.drawerLabel ?? ""}
             onChange={(e) => update({ drawerLabel: e.target.value || undefined })}
@@ -299,14 +290,14 @@ function breadcrumbsFields(ctx: WidgetFieldContextFor<"breadcrumbs">, t: TFuncti
     <>
       <Section title={t("editor.section.breadcrumbs")} />
       <label>
-        {t("editor.pathKeyInParams")}
+        <WidgetEditorCaption text={t("editor.pathKeyInParams")} />
         <input
           value={widget.pathKey ?? ""}
           onChange={(e) => update({ pathKey: e.target.value || undefined })}
         />
       </label>
       <label>
-        {t("editor.field.separator")}
+        <WidgetEditorCaption text={t("editor.field.separator")} />
         <input
           value={widget.separator ?? " / "}
           onChange={(e) => update({ separator: e.target.value })}
@@ -328,7 +319,7 @@ function carouselFields(ctx: WidgetFieldContextFor<"carousel">, t: TFunction): R
         rows={6}
       />
       <label>
-        {t("editor.autoplayOff")}
+        <WidgetEditorCaption text={t("editor.autoplayOff")} />
         <input
           type="number"
           min={0}
@@ -358,7 +349,7 @@ function stepsPanelFields(ctx: WidgetFieldContextFor<"steps-panel">, t: TFunctio
         rows={6}
       />
       <label>
-        {t("editor.activeStepKeyInParams")}
+        <WidgetEditorCaption text={t("editor.activeStepKeyInParams")} />
         <input
           value={widget.activeStepKey ?? ""}
           onChange={(e) => update({ activeStepKey: e.target.value || undefined })}

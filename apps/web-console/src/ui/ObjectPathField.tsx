@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button, Input, Select, Tooltip } from "antd";
 import type { ObjectType } from "../types";
 import ObjectTreePickerDialog from "./ObjectTreePickerDialog";
+import { joinCaptionHints, splitCaptionDetail } from "../utils/splitCaptionDetail";
 
 export interface ObjectPathOption {
   path: string;
@@ -46,17 +47,21 @@ export default function ObjectPathField({
 }: ObjectPathFieldProps) {
   const { t } = useTranslation("common");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const caption = label ? splitCaptionDetail(label) : null;
+  const shownLabel = caption?.title ?? label;
+  const tooltip = joinCaptionHints(hint, caption?.detail);
+  const pickerDialogTitle = pickerTitle ? splitCaptionDetail(pickerTitle).title : pickerTitle;
 
   return (
     <>
       <label className={`object-path-field ${className}`.trim()} htmlFor={id}>
-        {label &&
-          (hint ? (
-            <Tooltip title={hint} mouseEnterDelay={hintDelay ?? 0.1}>
-              <span className="field-caption field-caption-hint">{label}</span>
+        {shownLabel &&
+          (tooltip ? (
+            <Tooltip title={tooltip} mouseEnterDelay={hintDelay ?? 0.1}>
+              <span className="field-caption field-caption-hint">{shownLabel}</span>
             </Tooltip>
           ) : (
-            <span className="field-caption">{label}</span>
+            <span className="field-caption">{shownLabel}</span>
           ))}
         <div className="object-path-field-controls">
           {objects && objects.length > 0 && (
@@ -94,7 +99,7 @@ export default function ObjectPathField({
       </label>
       <ObjectTreePickerDialog
         open={pickerOpen}
-        title={pickerTitle}
+        title={pickerDialogTitle}
         onClose={() => setPickerOpen(false)}
         onSelect={onChange}
         filterTypes={filterTypes}

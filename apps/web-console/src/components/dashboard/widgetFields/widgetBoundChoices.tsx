@@ -66,7 +66,6 @@ export function FunctionInputPairs({
 export function ReportParameterPairs({
   reportPath,
   label,
-  code,
   valueCaption,
   valueSuggestions,
   value,
@@ -74,7 +73,6 @@ export function ReportParameterPairs({
 }: {
   reportPath?: string;
   label: string;
-  code?: string;
   valueCaption: string;
   valueSuggestions?: string[];
   value: string | undefined;
@@ -94,7 +92,6 @@ export function ReportParameterPairs({
       ) : null}
       <KeyValueEditor
         label={label}
-        code={code}
         keyCaption={t("editor.col.reportParam")}
         valueCaption={valueCaption}
         keyOptions={names}
@@ -110,7 +107,6 @@ export function ReportParameterPairs({
 export function ReportColumnPairs({
   reportPath,
   label,
-  code,
   keyCaption,
   keySuggestions,
   value,
@@ -118,7 +114,6 @@ export function ReportColumnPairs({
 }: {
   reportPath?: string;
   label: string;
-  code?: string;
   keyCaption: string;
   keySuggestions?: string[];
   value: string | undefined;
@@ -136,7 +131,6 @@ export function ReportColumnPairs({
       ) : null}
       <KeyValueEditor
         label={label}
-        code={code}
         keyCaption={keyCaption}
         valueCaption={t("editor.col.reportColumn")}
         keySuggestions={keySuggestions}
@@ -152,13 +146,11 @@ export function ReportColumnPairs({
 export function ReportColumnSelect({
   reportPath,
   label,
-  code,
   value,
   onChange,
 }: {
   reportPath?: string;
   label: string;
-  code?: string;
   value: string;
   onChange: (next: string) => void;
 }) {
@@ -168,8 +160,7 @@ export function ReportColumnSelect({
   const columns = reportColumnNames(query.data?.columns);
   return (
     <label>
-      <span className="field-caption">{label}</span>
-      {code ? <span className="field-code">{code}</span> : null}
+      <HintCaption>{label}</HintCaption>
       <OptionsSelect
         ariaLabel={label}
         value={value}
@@ -188,13 +179,11 @@ export function ReportColumnSelect({
 export function ReportColumnList({
   reportPath,
   label,
-  code,
   value,
   onChange,
 }: {
   reportPath?: string;
   label: string;
-  code?: string;
   value: string | undefined;
   onChange: (next: string) => void;
 }) {
@@ -210,7 +199,6 @@ export function ReportColumnList({
       ) : null}
       <StringListEditor
         label={label}
-        code={code}
         value={value}
         onChange={onChange}
         options={columns}
@@ -256,6 +244,7 @@ export function RecordFieldGroup({
     <div>
       {showHints && missing ? <p className="hint">{t("editor.recordFieldsNeedVariable")}</p> : null}
       {showHints && unknown ? <p className="hint">{t("editor.recordFieldsEmpty")}</p> : null}
+      {showHints && fields.length > 0 ? <p className="hint">{t("editor.hint.recordVariableField")}</p> : null}
       {fields.map((field) => (
         <label key={field.label}>
           <HintCaption>{field.label}</HintCaption>

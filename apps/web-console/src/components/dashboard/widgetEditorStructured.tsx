@@ -145,7 +145,6 @@ function ListActions({
 
 export function StringListEditor({
   label,
-  code,
   value,
   onChange,
   suggestions = [],
@@ -154,7 +153,6 @@ export function StringListEditor({
   optionsDisabled,
 }: {
   label: string;
-  code?: string;
   value: string | undefined;
   onChange: (next: string) => void;
   suggestions?: string[];
@@ -184,7 +182,6 @@ export function StringListEditor({
   return (
     <div className="widget-editor-structured full">
       <HintCaption hint={placeholder}>{label}</HintCaption>
-      {code ? <span className="field-code">{code}</span> : null}
       <div className="widget-editor-list">
         {items.map((item, index) => (
           <div key={index} className="widget-editor-list-row">
@@ -236,7 +233,6 @@ export function StringListEditor({
 
 export function KeyValueEditor({
   label,
-  code,
   value,
   onChange,
   keyCaption,
@@ -251,7 +247,6 @@ export function KeyValueEditor({
   valueDisabled,
 }: {
   label: string;
-  code?: string;
   value: string | undefined;
   onChange: (next: string | undefined) => void;
   keyCaption?: string;
@@ -293,7 +288,6 @@ export function KeyValueEditor({
   return (
     <div className="widget-editor-structured full">
       <HintCaption>{label}</HintCaption>
-      {code ? <span className="field-code">{code}</span> : null}
       {(keyCaption || valueCaption || keyPlaceholder || valuePlaceholder) && (
         <div className="widget-editor-kv-head">
           <HintCaption className="widget-editor-mini-caption" hint={keyPlaceholder}>

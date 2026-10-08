@@ -286,7 +286,6 @@ export default function SvgWidgetInteractiveEditor({
 
       <label className="scada-form-field">
         <span className="scada-form-label">{t("editor.selectionKeyOnClick", { ns: "widgets" })}</span>
-        <span className="field-code">selectionKey</span>
         <SelectionKeyInput
           className="scada-form-input mono"
           value={widget.selectionKey ?? ""}

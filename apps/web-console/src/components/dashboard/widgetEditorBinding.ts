@@ -60,6 +60,55 @@ export function widgetDataBinding(type: WidgetType): WidgetDataBinding {
   return BINDING_BY_TYPE[type];
 }
 
+/** Editor-only sample object for variable/record dropdowns (not used at runtime). */
+export function widgetUsesModelHintPath(type: WidgetType): boolean {
+  if (widgetDataBinding(type) === "object-variable") {
+    return true;
+  }
+  return type === "variable-editor";
+}
+
+/** Path from session.params when selection slot is empty (runtime: toggle only). */
+export function widgetUsesContextPathKey(type: WidgetType): boolean {
+  return type === "toggle";
+}
+
+function chartUsesDedicatedSeriesFields(widget: {
+  type: WidgetType;
+  chartType?: string;
+  chartStyle?: string;
+}): boolean {
+  if (widget.type !== "chart") {
+    return false;
+  }
+  const chartType = widget.chartType ?? widget.chartStyle ?? "area";
+  return chartType === "bubble" || chartType === "radar";
+}
+
+/** Shared «variable + valueField» block in the data-source panel. */
+export function widgetUsesGenericVariableBinding(
+  widget: { type: WidgetType; chartType?: string; chartStyle?: string },
+  usesMultiTagQuery: boolean,
+): boolean {
+  if (widgetDataBinding(widget.type) !== "object-variable") {
+    return false;
+  }
+  if (widget.type === "spreadsheet" || usesMultiTagQuery) {
+    return false;
+  }
+  if (chartUsesDedicatedSeriesFields(widget)) {
+    return false;
+  }
+  return true;
+}
+
+export function widgetUsesGenericVariableName(
+  widget: { type: WidgetType; chartType?: string; chartStyle?: string },
+  usesMultiTagQuery: boolean,
+): boolean {
+  return widgetUsesGenericVariableBinding(widget, usesMultiTagQuery) && widget.type !== "network-graph";
+}
+
 export const DATA_BINDING_HINT_KEYS: Record<WidgetDataBinding, string> = {
   "object-variable": "editor.bindingHint.objectVariable",
   "object-only": "editor.bindingHint.objectOnly",
@@ -84,4 +133,6 @@ export const WIDGET_TYPE_HINT_KEYS: Partial<Record<WidgetType, string>> = {
   "event-feed": "editor.typeHint.eventFeed",
   spreadsheet: "editor.typeHint.spreadsheet",
   timer: "editor.typeHint.timer",
+  function: "editor.typeHint.function",
+  "function-form": "editor.typeHint.functionForm",
 };

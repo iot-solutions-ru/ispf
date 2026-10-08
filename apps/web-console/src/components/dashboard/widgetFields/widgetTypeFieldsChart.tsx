@@ -5,7 +5,12 @@ import { type NetworkGraphWidget, WIDGET_HISTORY_RANGE_OPTIONS } from "../../../
 import { AdvancedJsonField, HintCaption, VariableSelect } from "../widgetEditorStructured";
 import { variableListAllowCustom } from "../widgetEditorHelpers";
 import { RecordFieldGroup } from "./widgetBoundChoices";
-import { Section, type WidgetFieldContextFor, type WidgetTypeFieldsRegistry } from "./widgetFieldPrimitives";
+import {
+  Section,
+  WidgetEditorCaption,
+  type WidgetFieldContextFor,
+  type WidgetTypeFieldsRegistry,
+} from "./widgetFieldPrimitives";
 import { rowNavigationFields } from "./widgetRowNavigationFields";
 
 function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNode {
@@ -15,7 +20,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.chart")} />
       <label>
-        {t("editor.historyRange")}
+        <WidgetEditorCaption text={t("editor.historyRange")} />
         <select
           value={widget.historyRange ?? "live"}
           onChange={(e) => update({ historyRange: e.target.value as typeof widget.historyRange })}
@@ -28,7 +33,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
         </select>
       </label>
       <label>
-        {t("editor.chartType")}
+        <WidgetEditorCaption text={t("editor.chartType")} />
         <select
           value={chartType}
           onChange={(e) => update({ chartType: e.target.value as typeof widget.chartType })}
@@ -82,7 +87,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
             disabled={!ctx.variableSelectEnabled}
           />
           <label>
-            {t("editor.chartBubbleDefaultSize")}
+            <WidgetEditorCaption text={t("editor.chartBubbleDefaultSize")} />
             <input
               type="number"
               min={10}
@@ -114,7 +119,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
       )}
       {chartType !== "bubble" && chartType !== "radar" && (
         <label>
-          {t("editor.chartStyle")}
+          <WidgetEditorCaption text={t("editor.chartStyle")} />
           <select
             value={widget.chartStyle ?? "area"}
             onChange={(e) => update({ chartStyle: e.target.value as "line" | "area" })}
@@ -125,7 +130,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
         </label>
       )}
       <label>
-        {t("editor.maxPoints")}
+        <WidgetEditorCaption text={t("editor.maxPoints")} />
         <input
           type="number"
           min={10}
@@ -135,7 +140,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
         />
       </label>
       <label>
-        {t("editor.sampleMode")}
+        <WidgetEditorCaption text={t("editor.sampleMode")} />
         <select
           value={widget.sampleMode ?? "auto"}
           onChange={(e) =>
@@ -156,7 +161,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
       {(widget.sampleMode ?? "auto") !== "raw"
         && (widget.sampleMode ?? "auto") !== "coalesce" && (
         <label>
-          {t("editor.historyBucket")}
+          <WidgetEditorCaption text={t("editor.historyBucket")} />
           <select
             value={widget.historyBucket ?? "auto"}
             onChange={(e) =>
@@ -181,7 +186,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
       {((widget.sampleMode ?? "auto") === "coalesce"
         || (widget.sampleMode ?? "auto") === "auto") && (
         <label>
-          {t("editor.liveCoalesceMs")}
+          <WidgetEditorCaption text={t("editor.liveCoalesceMs")} />
           <input
             type="number"
             min={200}
@@ -199,7 +204,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
         </label>
       )}
       <label>
-        {t("editor.color")}
+        <WidgetEditorCaption text={t("editor.color")} />
         <input
           type="color"
           value={widget.color ?? "#2f81f7"}
@@ -207,18 +212,18 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
         />
       </label>
       <label>
-        {t("editor.unit")}
+        <WidgetEditorCaption text={t("editor.unit")} />
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
       <label>
-        {t("editor.unitField")}
+        <WidgetEditorCaption text={t("editor.unitField")} />
         <input
           value={widget.unitField ?? ""}
           onChange={(e) => update({ unitField: e.target.value || undefined })}
         />
       </label>
       <label>
-        {t("editor.decimals")}
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -237,35 +242,35 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
     <>
       <Section title={t("editor.section.map")} />
       <label>
-        {t("editor.field.latVariable")}
+        <WidgetEditorCaption text={t("editor.field.latVariable")} />
         <input
           value={widget.latVariable ?? "coordinates"}
           onChange={(e) => update({ latVariable: e.target.value })}
         />
       </label>
       <label>
-        {t("editor.field.latField")}
+        <WidgetEditorCaption text={t("editor.field.latField")} />
         <input
           value={widget.latField ?? "latitude"}
           onChange={(e) => update({ latField: e.target.value })}
         />
       </label>
       <label>
-        {t("editor.field.lonField")}
+        <WidgetEditorCaption text={t("editor.field.lonField")} />
         <input
           value={widget.lonField ?? "longitude"}
           onChange={(e) => update({ lonField: e.target.value })}
         />
       </label>
       <label>
-        {t("editor.field.labelVariable")}
+        <WidgetEditorCaption text={t("editor.field.labelVariable")} />
         <input
           value={widget.labelVariable ?? ""}
           onChange={(e) => update({ labelVariable: e.target.value || undefined })}
         />
       </label>
       <label>
-        {t("editor.field.zoom")}
+        <WidgetEditorCaption text={t("editor.field.zoom")} />
         <input
           type="number"
           min={1}
@@ -275,7 +280,7 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
         />
       </label>
       <label>
-        {t("editor.field.centerLat")}
+        <WidgetEditorCaption text={t("editor.field.centerLat")} />
         <input
           type="number"
           step="any"
@@ -284,7 +289,7 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
         />
       </label>
       <label>
-        {t("editor.field.centerLon")}
+        <WidgetEditorCaption text={t("editor.field.centerLon")} />
         <input
           type="number"
           step="any"
@@ -307,7 +312,7 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
         />
       </label>
       <label>
-        {t("editor.field.tileAttribution")}
+        <WidgetEditorCaption text={t("editor.field.tileAttribution")} />
         <input
           value={widget.tileAttribution ?? ""}
           onChange={(e) => update({ tileAttribution: e.target.value || undefined })}
@@ -351,7 +356,7 @@ function ganttChartFields(ctx: WidgetFieldContextFor<"gantt-chart">, t: TFunctio
           checked={widget.interactive !== false}
           onChange={(e) => update({ interactive: e.target.checked })}
         />
-        {t("editor.ganttInteractive")}
+        <WidgetEditorCaption text={t("editor.ganttInteractive")} />
       </label>
       <label className="checkbox-row">
         <input
@@ -359,7 +364,7 @@ function ganttChartFields(ctx: WidgetFieldContextFor<"gantt-chart">, t: TFunctio
           checked={widget.allowBarDrag !== false}
           onChange={(e) => update({ allowBarDrag: e.target.checked })}
         />
-        {t("editor.ganttAllowBarDrag")}
+        <WidgetEditorCaption text={t("editor.ganttAllowBarDrag")} />
       </label>
     </>
   );
@@ -421,7 +426,7 @@ function networkGraphFields(ctx: WidgetFieldContextFor<"network-graph">, t: TFun
         ]}
       />
       <label>
-        {t("editor.field.graphLayout")}
+        <WidgetEditorCaption text={t("editor.field.graphLayout")} />
         <select
           value={widget.layout ?? "cose"}
           onChange={(e) =>

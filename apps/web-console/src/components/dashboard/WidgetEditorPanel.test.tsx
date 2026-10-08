@@ -39,7 +39,7 @@ describe("WidgetEditorPanel", () => {
     );
 
     expect(screen.getByDisplayValue("Temperature")).toBeInTheDocument();
-    expect(screen.getByText("Where the choice is stored")).toBeInTheDocument();
+    expect(screen.getByText("Selection slot")).toBeInTheDocument();
   });
 
   it("shows empty-state hint when no widget is selected", () => {
@@ -205,7 +205,7 @@ describe("WidgetEditorPanel", () => {
       />,
     );
 
-    const caption = screen.getByText("Where the choice is stored");
+    const caption = screen.getByText("Selection slot");
     const input = caption.parentElement?.querySelector("input");
     expect(input).toBeTruthy();
 
