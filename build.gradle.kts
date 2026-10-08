@@ -175,8 +175,8 @@ subprojects {
                 // transitives still resolve below the patched lines. Drop when Boot BOM / parents catch up.
                 "com.fasterxml.jackson.core:jackson-core:2.22.3",
                 "com.fasterxml.jackson.core:jackson-databind:2.22.3",
-                "tools.jackson.core:jackson-core:3.1.7",
-                "tools.jackson.core:jackson-databind:3.1.7",
+                "tools.jackson.core:jackson-core:3.2.3",
+                "tools.jackson.core:jackson-databind:3.2.3",
                 "org.apache.logging.log4j:log4j-api:2.25.5",
             )
             eachDependency {
