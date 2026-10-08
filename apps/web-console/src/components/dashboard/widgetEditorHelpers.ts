@@ -3,15 +3,7 @@
 /** Seconds before a widget-editor caption tooltip appears. */
 export const WIDGET_EDITOR_HINT_DELAY_S = 0.8;
 
-/** Pulls a trailing "(description)" out of a block title. */
-export function splitCaptionDetail(text: string): { title: string; detail?: string } {
-  const match = text.trim().match(/^(.*?)\s*\(([^()]*)\)\s*$/);
-  if (!match) return { title: text };
-  const title = match[1].trim();
-  const detail = match[2].trim();
-  if (!title || !detail) return { title: text };
-  return { title, detail };
-}
+export { joinCaptionHints, splitCaptionDetail } from "../../utils/splitCaptionDetail";
 
 export function recordFieldNames(
   variables: Array<{ name: string; value?: { schema?: { fields?: Array<{ name: string }> } } | null }> | undefined,

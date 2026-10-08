@@ -68,8 +68,6 @@
   "rules.templates.onSelectMode": "Mode on selection",
   "rules.templates.showWidget": "Show widget in detail",
   "rules.templates.hideWidget": "Hide widget when idle",
-  "editor.deprecation.payloadFilterExpr": "An older filter. An expression such as payload.int > 20 is evaluated on the server.",
-  "editor.deprecation.requireSessionParamsJson": "An older check. Required parameters are now set by a platform rule.",
   "haystackBind.open": "Bind by Haystack query",
   "haystackBind.title": "Bind widgets by Haystack query",
   "haystackBind.intro": "Search points under a subtree by Haystack filter or tag checkboxes (AND). Adds value widgets for each match.",

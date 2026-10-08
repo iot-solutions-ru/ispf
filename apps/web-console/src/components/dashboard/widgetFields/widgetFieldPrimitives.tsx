@@ -202,13 +202,11 @@ export function SelectionKeyInput({
 
 export function FieldLabel({
   caption,
-  code,
   hint,
   children,
   className,
 }: {
   caption: string;
-  code?: string;
   hint?: string;
   children: ReactNode;
   className?: string;
@@ -216,7 +214,6 @@ export function FieldLabel({
   return (
     <label className={className}>
       <HintCaption hint={hint}>{caption}</HintCaption>
-      {code ? <span className="field-code">{code}</span> : null}
       {children}
     </label>
   );
@@ -236,33 +233,35 @@ export function PathSelect({
   filterTypes?: ObjectType[];
 }) {
   const { t } = useTranslation(["widgets", "common"]);
-  const split = splitCaptionDetail(label);
-  const hint = [split.detail, placeholder ?? t("common:objectPath.placeholder")].filter(Boolean).join("\n");
+  const hint = [placeholder ?? t("common:objectPath.placeholder")].filter(Boolean).join("\n") || undefined;
   return (
     <ObjectPathField
       className="path-select-field"
-      label={split.title}
+      label={label}
       value={value}
       onChange={onChange}
       filterTypes={filterTypes}
       hint={hint}
       hintDelay={WIDGET_EDITOR_HINT_DELAY_S}
       placeholder=""
-      pickerTitle={split.title}
+      pickerTitle={label}
     />
   );
+}
+
+/** Field caption: short title on screen, trailing "(…)" moved to tooltip. */
+export function WidgetEditorCaption({ text, hint }: { text: string; hint?: string }) {
+  return <HintCaption hint={hint}>{text}</HintCaption>;
 }
 
 /** Function name limited to the functions declared on the widget's object. */
 export function ObjectFunctionSelect({
   label,
-  code,
   objectPath,
   value,
   onChange,
 }: {
   label: string;
-  code?: string;
   objectPath?: string;
   value?: string;
   onChange: (next: string) => void;
@@ -287,7 +286,6 @@ export function ObjectFunctionSelect({
   return (
     <label>
       <HintCaption>{label}</HintCaption>
-      {code ? <span className="field-code">{code}</span> : null}
       <select
         aria-label={splitCaptionDetail(label).title}
         value={current}

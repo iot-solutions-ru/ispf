@@ -2,8 +2,6 @@
   "editor.advanced": "Расширенное",
   "editor.containerDropHint": "Перетащите виджет сюда или добавьте из палитры, когда контейнер выбран.",
   "editor.demoPreviewLabel": "Пример без данных (Показывается в редакторе, пока нет живых значений)",
-  "editor.deprecation.payloadFilterExpr": "Старый способ отбора. Выражение вроде payload.int > 20 считается на сервере.",
-  "editor.deprecation.requireSessionParamsJson": "Старая проверка. Теперь обязательные параметры задаются правилом платформы.",
   "editor.general": "Общее",
   "editor.layerBackward": "Ниже",
   "editor.layerForward": "Выше",

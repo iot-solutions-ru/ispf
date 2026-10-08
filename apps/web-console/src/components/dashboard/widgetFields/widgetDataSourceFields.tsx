@@ -2,7 +2,15 @@
 import { useTranslation } from "react-i18next";
 import { parseAnalyticsQueryTags } from "../../../hooks/useAnalyticsMultiSeries";
 import type { DashboardWidget } from "../../../types/dashboard";
-import { DATA_BINDING_HINT_KEYS, WIDGET_TYPE_HINT_KEYS, widgetDataBinding } from "../widgetEditorBinding";
+import {
+  DATA_BINDING_HINT_KEYS,
+  WIDGET_TYPE_HINT_KEYS,
+  widgetDataBinding,
+  widgetUsesContextPathKey,
+  widgetUsesGenericVariableBinding,
+  widgetUsesGenericVariableName,
+  widgetUsesModelHintPath,
+} from "../widgetEditorBinding";
 import { variableListAllowCustom } from "../widgetEditorHelpers";
 import { RecordFieldGroup } from "./widgetBoundChoices";
 import {
@@ -14,6 +22,7 @@ import {
   Section,
   SelectionKeyInput,
   StackedSlot,
+  WidgetEditorCaption,
   type WidgetFieldContext,
 } from "./widgetFieldPrimitives";
 
@@ -27,6 +36,10 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
   const chartWidget = widget.type === "chart" ? widget : null;
   const multiQueryTags = chartWidget ? parseAnalyticsQueryTags(chartWidget.analyticsQueryTagsJson) : [];
   const usesMultiTagQuery = multiQueryTags.length > 0;
+  const showModelHintPath = widgetUsesModelHintPath(widget.type);
+  const showContextPathKey = widgetUsesContextPathKey(widget.type);
+  const showGenericVariableBinding = widgetUsesGenericVariableBinding(widget, usesMultiTagQuery);
+  const showGenericVariableName = widgetUsesGenericVariableName(widget, usesMultiTagQuery);
 
   return (
     <FieldPairs>
@@ -53,11 +66,7 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
               value={widget.objectPath ?? ""}
               onChange={(path) => update({ objectPath: path || undefined, variableName: "" })}
             />
-            <FieldLabel
-              caption={t("editor.selectionKey")}
-              code="selectionKey"
-              hint={t("editor.placeholder.selectionPath")}
-            >
+            <FieldLabel caption={t("editor.selectionKey")}>
               <div className="field-controls-slot field-controls-slot--stacked">
                 <SelectionKeyInput
                   value={widget.selectionKey ?? ""}
@@ -67,73 +76,80 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
               </div>
             </FieldLabel>
           </FormRow>
-          <FormRow>
-            <FieldLabel caption={t("editor.contextPathKey")} hint={t("editor.placeholder.contextPathEmpty")}>
-              <input
-                value={widget.contextPathKey ?? ""}
-                onChange={(e) => update({ contextPathKey: e.target.value || undefined })}
-              />
-            </FieldLabel>
-            <FieldLabel caption={t("editor.modelHintPath")}>
-              <select
-                value={widget.modelHintPath ?? ""}
-                onChange={(e) => update({ modelHintPath: e.target.value || undefined })}
-              >
-                <option value="">—</option>
-                {objects.map((o) => (
-                  <option key={o.path} value={o.path}>
-                    {o.displayName}
-                  </option>
-                ))}
-              </select>
-            </FieldLabel>
-          </FormRow>
+          {(showContextPathKey || showModelHintPath) && (
+            <FormRow>
+              {showContextPathKey ? (
+                <FieldLabel caption={t("editor.contextPathKey")} hint={t("editor.placeholder.contextPathEmpty")}>
+                  <input
+                    value={widget.contextPathKey ?? ""}
+                    onChange={(e) => update({ contextPathKey: e.target.value || undefined })}
+                  />
+                </FieldLabel>
+              ) : null}
+              {showModelHintPath ? (
+                <FieldLabel caption={t("editor.modelHintPath")}>
+                  <select
+                    value={widget.modelHintPath ?? ""}
+                    onChange={(e) => update({ modelHintPath: e.target.value || undefined })}
+                  >
+                    <option value="">—</option>
+                    {objects.map((o) => (
+                      <option key={o.path} value={o.path}>
+                        {o.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </FieldLabel>
+              ) : null}
+            </FormRow>
+          )}
         </>
       )}
 
-      {binding === "object-variable" &&
-        widget.type !== "spreadsheet" &&
-        !usesMultiTagQuery &&
-        !(
-          widget.type === "chart" &&
-          ((widget.chartType ?? widget.chartStyle) === "bubble" ||
-            (widget.chartType ?? widget.chartStyle) === "radar")
-        ) && (
+      {showGenericVariableBinding && (
         <FormRow>
-          <FieldLabel
-            caption={t("editor.variableName")}
-            hint={!widget.objectPath && widget.selectionKey ? t("editor.placeholder.orEnterVariable") : undefined}
-          >
-            <div
-              className={
-                !widget.objectPath && widget.selectionKey
-                  ? "field-controls"
-                  : "field-controls-slot field-controls-slot--stacked"
-              }
+          {showGenericVariableName ? (
+            <FieldLabel
+              caption={t("editor.variableName")}
+              hint={!widget.objectPath && widget.selectionKey ? t("editor.placeholder.orEnterVariable") : undefined}
             >
-              <select
-                value={widget.variableName ?? ""}
-                onChange={(e) => update({ variableName: e.target.value || undefined })}
-                disabled={!variableSelectEnabled}
+              <div
+                className={
+                  !widget.objectPath && widget.selectionKey
+                    ? "field-controls"
+                    : "field-controls-slot field-controls-slot--stacked"
+                }
               >
-                <option value="">—</option>
-                {variables.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-              {!widget.objectPath && widget.selectionKey && (
-                <input
+                <select
                   value={widget.variableName ?? ""}
                   onChange={(e) => update({ variableName: e.target.value || undefined })}
-                />
-              )}
-            </div>
-          </FieldLabel>
+                  disabled={!variableSelectEnabled}
+                >
+                  <option value="">—</option>
+                  {variables.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+                {!widget.objectPath && widget.selectionKey && (
+                  <input
+                    value={widget.variableName ?? ""}
+                    onChange={(e) => update({ variableName: e.target.value || undefined })}
+                  />
+                )}
+              </div>
+            </FieldLabel>
+          ) : null}
           <RecordFieldGroup
             objectPath={widget.objectPath ?? widget.modelHintPath}
-            variableName={widget.variableName}
+            variableName={
+              showGenericVariableName
+                ? widget.variableName
+                : widget.type === "network-graph"
+                  ? widget.nodesVariable ?? "nodes"
+                  : widget.variableName
+            }
             allowCustom={variableListAllowCustom(widget)}
             fields={[
               {
@@ -158,7 +174,7 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
             onChange={(path) => update({ parentPath: path } as Partial<DashboardWidget>)}
             placeholder={t("editor.hint.exampleFolder")}
           />
-          <FieldLabel caption={t("editor.selectionKeyOnClick")} code="selectionKey" hint={t("editor.hint.exampleSelection")}>
+          <FieldLabel caption={t("editor.selectionKeyOnClick")} hint={t("editor.hint.exampleSelection")}>
             <StackedSlot>
               <SelectionKeyInput
                 value={widget.selectionKey ?? ""}
@@ -172,7 +188,7 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
 
       {(binding === "session" || widget.paramKey) && (
         <label>
-          {t("editor.paramKey")}
+          <WidgetEditorCaption text={t("editor.paramKey")} />
           <input
             value={widget.paramKey ?? ""}
             onChange={(e) => update({ paramKey: e.target.value || undefined })}
