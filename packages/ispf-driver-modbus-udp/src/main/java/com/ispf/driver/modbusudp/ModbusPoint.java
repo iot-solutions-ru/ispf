@@ -3,6 +3,7 @@ package com.ispf.driver.modbusudp;
 import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 
+import java.util.Locale;
 /**
  * Parsed Modbus point reference from mapping string {@code slaveId:type:address[:count]}.
  */
@@ -19,7 +20,7 @@ record ModbusPoint(int slaveId, RegisterType type, int address, int count) {
         }
         try {
             int slaveId = Integer.parseInt(parts[0].trim());
-            RegisterType type = RegisterType.valueOf(parts[1].trim().toUpperCase());
+            RegisterType type = RegisterType.valueOf(parts[1].trim().toUpperCase(Locale.ROOT));
             int address = Integer.parseInt(parts[2].trim());
             int count = parts.length > 3 ? Integer.parseInt(parts[3].trim()) : 1;
             return new ModbusPoint(slaveId, type, address, count);

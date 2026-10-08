@@ -18,17 +18,17 @@ import java.util.Map;
 @Service
 public class BlueprintMergeService {
 
-    private final BlueprintRegistry BlueprintRegistry;
+    private final BlueprintRegistry blueprintRegistry;
     private final ObjectManager objectManager;
 
-    public BlueprintMergeService(BlueprintRegistry BlueprintRegistry, ObjectManager objectManager) {
-        this.BlueprintRegistry = BlueprintRegistry;
+    public BlueprintMergeService(BlueprintRegistry blueprintRegistry, ObjectManager objectManager) {
+        this.blueprintRegistry = blueprintRegistry;
         this.objectManager = objectManager;
     }
 
     public Map<String, Object> mergePreview(String baseModelId, String theirsModelId, String objectPath) {
-        BlueprintDefinition base = BlueprintRegistry.requireById(baseModelId);
-        BlueprintDefinition theirs = BlueprintRegistry.requireById(theirsModelId);
+        BlueprintDefinition base = blueprintRegistry.requireById(baseModelId);
+        BlueprintDefinition theirs = blueprintRegistry.requireById(theirsModelId);
         PlatformObject object = objectManager.require(objectPath);
 
         List<Map<String, Object>> variableConflicts = new ArrayList<>();

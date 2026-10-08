@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Primary;
 
 import javax.sql.DataSource;
 
+import java.util.Locale;
 /**
  * Wraps the primary DataSource with {@link TenantRlsHikariDataSource} when
  * PostgreSQL + {@code ispf.tenant.db-row-isolation=true}.
@@ -42,13 +43,13 @@ public class TenantRlsDataSourceConfiguration {
         }
         String url = properties.getUrl();
         if (url != null) {
-            String lower = url.toLowerCase();
+            String lower = url.toLowerCase(Locale.ROOT);
             // Require jdbc:postgresql — H2 URLs often contain MODE=PostgreSQL.
             if (lower.startsWith("jdbc:postgresql:") || lower.startsWith("jdbc:pgsql:")) {
                 return true;
             }
         }
         String driver = properties.getDriverClassName();
-        return driver != null && driver.toLowerCase().contains("org.postgresql.");
+        return driver != null && driver.toLowerCase(Locale.ROOT).contains("org.postgresql.");
     }
 }

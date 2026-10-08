@@ -46,7 +46,7 @@ class AgentActionToolsTest {
     @Mock
     private com.ispf.server.application.function.ApplicationFunctionStore functionStore;
     @Mock
-    private ObjectTreePort ObjectTreePort;
+    private ObjectTreePort objectTreePort;
     @Mock
     private ObjectAccessService objectAccessService;
     @Mock
@@ -56,7 +56,7 @@ class AgentActionToolsTest {
     @Mock
     private EventService eventService;
     @Mock
-    private BlueprintRegistry BlueprintRegistry;
+    private BlueprintRegistry blueprintRegistry;
     @Mock
     private HaystackExportService haystackExportService;
     @Mock
@@ -69,12 +69,12 @@ class AgentActionToolsTest {
         tools = AgentActionTools.all(
                 functionService,
                 functionStore,
-                ObjectTreePort,
+                objectTreePort,
                 objectAccessService,
                 invokeAccessService,
                 tenantScopeService,
                 eventService,
-                BlueprintRegistry,
+                blueprintRegistry,
                 haystackExportService,
                 new ObjectMapper()
         );
@@ -82,7 +82,7 @@ class AgentActionToolsTest {
 
     @Test
     void searchObjectsFiltersByQuery() throws Exception {
-        when(ObjectTreePort.tree()).thenReturn(objectTree);
+        when(objectTreePort.tree()).thenReturn(objectTree);
         when(objectTree.all()).thenReturn(List.of(
                 new PlatformObject("1", "root.platform.devices.snmp-localhost", ObjectType.DEVICE, "SNMP localhost", "", "snmp-agent-v1"),
                 new PlatformObject("2", "root.platform.devices.demo-sensor-01", ObjectType.DEVICE, "Demo", "", null)
@@ -100,7 +100,7 @@ class AgentActionToolsTest {
 
     @Test
     void listObjectModelsReturnsTemplates() throws Exception {
-        when(BlueprintRegistry.all()).thenReturn(List.of(
+        when(blueprintRegistry.all()).thenReturn(List.of(
                 new BlueprintDefinition(
                         "id-snmp",
                         "snmp-agent-v1",

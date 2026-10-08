@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
 class AgentDiscoveryToolsTest {
 
     @Mock
-    private ObjectTreePort ObjectTreePort;
+    private ObjectTreePort objectTreePort;
     @Mock
     private ObjectAccessService objectAccessService;
     @Mock
@@ -56,7 +56,7 @@ class AgentDiscoveryToolsTest {
     @BeforeEach
     void setUp() {
         tools = AgentDiscoveryTools.all(
-                ObjectTreePort,
+                objectTreePort,
                 objectAccessService,
                 variableMemberAccessService,
                 tenantScopeService,
@@ -78,7 +78,7 @@ class AgentDiscoveryToolsTest {
                 DataSchema.builder("in").field(FieldDefinition.of("alarmId", FieldType.STRING)).build(),
                 DataSchema.builder("out").field(FieldDefinition.of("error_code", FieldType.STRING)).build()
         ));
-        when(ObjectTreePort.require(path)).thenReturn(node);
+        when(objectTreePort.require(path)).thenReturn(node);
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
         when(functionStore.listLatestByObjectPath(path)).thenReturn(List.of(
                 new ApplicationFunctionHandler.DeployedFunction(
@@ -131,7 +131,7 @@ class AgentDiscoveryToolsTest {
                 "1", path, ObjectType.DEVICE, "Demo", "", null
         );
         node.addVariable(new Variable("temperature", schema, true, true, null));
-        when(ObjectTreePort.require(path)).thenReturn(node);
+        when(objectTreePort.require(path)).thenReturn(node);
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
         when(variableMemberAccessService.filterReadable(eq(path), anyCollection(), isNull()))
                 .thenReturn(List.copyOf(node.variables().values()));
@@ -169,7 +169,7 @@ class AgentDiscoveryToolsTest {
         );
         node.addVariable(temperature);
         node.addVariable(secret);
-        when(ObjectTreePort.require(path)).thenReturn(node);
+        when(objectTreePort.require(path)).thenReturn(node);
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
         when(variableMemberAccessService.filterReadable(eq(path), anyCollection(), isNull()))
                 .thenReturn(List.of(temperature));
@@ -194,7 +194,7 @@ class AgentDiscoveryToolsTest {
                 "1", path, ObjectType.DEVICE, "Demo", "", null
         );
         node.addEvent(new EventDescriptor("thresholdExceeded", "Threshold", payload, EventLevel.WARNING));
-        when(ObjectTreePort.require(path)).thenReturn(node);
+        when(objectTreePort.require(path)).thenReturn(node);
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
 
         Map<String, Object> result = tool("get_event_schema").execute(

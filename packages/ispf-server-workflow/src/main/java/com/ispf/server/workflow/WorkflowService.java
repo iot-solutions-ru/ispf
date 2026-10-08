@@ -54,7 +54,6 @@ public class WorkflowService {
     private final WorkflowConditionFactory conditionFactory;
     private final WorkflowTaskExecutor taskExecutor;
     private final WorkflowInstanceStatePublisher statePublisher;
-    private final WorkflowInstanceRepository instanceRepository;
     private final WorkflowEventTriggerIndex eventTriggerIndex;
     private final WorkflowMetrics automationMetricsRecorder;
     private final WorkflowTriggerIndexRefresh triggerIndexRefresh;
@@ -90,7 +89,6 @@ public class WorkflowService {
         this.conditionFactory = conditionFactory;
         this.taskExecutor = taskExecutor;
         this.statePublisher = statePublisher;
-        this.instanceRepository = instanceRepository;
         this.eventTriggerIndex = eventTriggerIndex;
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.triggerIndexRefresh = triggerIndexRefresh;

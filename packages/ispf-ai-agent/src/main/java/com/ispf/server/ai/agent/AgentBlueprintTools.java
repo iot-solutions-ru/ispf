@@ -31,7 +31,7 @@ final class AgentBlueprintTools {
     static List<PlatformAgentTool> all(
             BlueprintRegistry blueprintRegistry,
             BlueprintApplicationService blueprintApplicationService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -43,14 +43,14 @@ final class AgentBlueprintTools {
                 applyMixinBlueprintTool(
                         blueprintRegistry,
                         blueprintApplicationService,
-                        ObjectTreePort,
+                        objectTreePort,
                         objectAccessService,
                         tenantScopeService
                 ),
                 instantiateInstanceTypeTool(
                         blueprintRegistry,
                         blueprintApplicationService,
-                        ObjectTreePort,
+                        objectTreePort,
                         objectAccessService,
                         tenantScopeService
                 ),
@@ -205,7 +205,7 @@ final class AgentBlueprintTools {
     private static PlatformAgentTool applyMixinBlueprintTool(
             BlueprintRegistry blueprintRegistry,
             BlueprintApplicationService blueprintApplicationService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -255,7 +255,7 @@ final class AgentBlueprintTools {
                     return Map.of("status", "ERROR", "error", "Tenant scope denied for " + objectPath);
                 }
                 objectAccessService.requireWrite(objectPath, auth);
-                PlatformObject target = ObjectTreePort.require(objectPath);
+                PlatformObject target = objectTreePort.require(objectPath);
                 if (model.targetObjectType() != null && target.type() != model.targetObjectType()) {
                     return AgentToolErrors.error(
                             "TOOL_ERROR",
@@ -271,7 +271,7 @@ final class AgentBlueprintTools {
                             model.id(),
                             objectPath
                     );
-                    PlatformObject updated = ObjectTreePort.require(objectPath);
+                    PlatformObject updated = objectTreePort.require(objectPath);
                     int variablesAfter = updated.variables().size();
                     Map<String, Object> result = new LinkedHashMap<>();
                     result.put("status", "OK");
@@ -301,7 +301,7 @@ final class AgentBlueprintTools {
     private static PlatformAgentTool instantiateInstanceTypeTool(
             BlueprintRegistry blueprintRegistry,
             BlueprintApplicationService blueprintApplicationService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -359,8 +359,8 @@ final class AgentBlueprintTools {
                             instanceName,
                             parameters
                     );
-                    String fullPath = ObjectTreePort.tree().resolveChildPath(parentPath, instanceName);
-                    PlatformObject instance = ObjectTreePort.require(fullPath);
+                    String fullPath = objectTreePort.tree().resolveChildPath(parentPath, instanceName);
+                    PlatformObject instance = objectTreePort.require(fullPath);
                     Map<String, Object> response = new LinkedHashMap<>();
                     response.put("status", "OK");
                     response.put("path", fullPath);

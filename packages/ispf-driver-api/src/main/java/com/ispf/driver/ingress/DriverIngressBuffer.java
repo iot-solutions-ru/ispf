@@ -190,7 +190,7 @@ public final class DriverIngressBuffer<K, V> {
         if (workers == null || activeWorkers.get() >= elastic.resolvedMaxWorkers()) {
             return;
         }
-        workers.submit(this::workerLoop);
+        var _ = workers.submit(this::workerLoop);
     }
 
     private void scheduleLaneDrain(K key) {

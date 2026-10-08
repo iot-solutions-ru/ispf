@@ -1,5 +1,7 @@
 package com.ispf.core.object;
 
+
+import java.util.Locale;
 /**
  * Whether a variable's live value is persisted across server restarts.
  */
@@ -13,6 +15,6 @@ public enum VariableStorageMode {
         if (raw == null || raw.isBlank()) {
             return PERSISTENT;
         }
-        return VariableStorageMode.valueOf(raw.trim().toUpperCase());
+        return VariableStorageMode.valueOf(raw.trim().toUpperCase(Locale.ROOT));
     }
 }

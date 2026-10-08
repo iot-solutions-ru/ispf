@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Locale;
 final class ReportRowPreparation {
 
     private ReportRowPreparation() {
@@ -16,10 +17,10 @@ final class ReportRowPreparation {
         return rows.stream().map(row -> {
             Map<String, Object> mapped = new LinkedHashMap<>();
             for (Map.Entry<String, Object> entry : row.entrySet()) {
-                String upper = entry.getKey().toUpperCase();
+                String upper = entry.getKey().toUpperCase(Locale.ROOT);
                 Object value = entry.getValue();
                 mapped.put(upper, value);
-                mapped.put(upper.toLowerCase(), value);
+                mapped.put(upper.toLowerCase(Locale.ROOT), value);
             }
             return mapped;
         }).toList();

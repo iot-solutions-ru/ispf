@@ -200,11 +200,11 @@ public class RuntimeTelemetryCoalescer {
             scheduler.shutdown();
             try {
                 if (!scheduler.awaitTermination(2, TimeUnit.SECONDS)) {
-                    scheduler.shutdownNow();
+                    var _ = scheduler.shutdownNow();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                scheduler.shutdownNow();
+                var _ = scheduler.shutdownNow();
             }
         }
     }
@@ -213,7 +213,7 @@ public class RuntimeTelemetryCoalescer {
         long coalesceMs = policyService.coalesceMs(devicePath);
         AtomicBoolean scheduled = laneFlushScheduled.computeIfAbsent(coalesceKey, ignored -> new AtomicBoolean(false));
         if (scheduled.compareAndSet(false, true)) {
-            scheduler.schedule(() -> {
+            var _ = scheduler.schedule(() -> {
                 scheduled.set(false);
                 flushLane(coalesceKey, devicePath);
             }, coalesceMs, TimeUnit.MILLISECONDS);

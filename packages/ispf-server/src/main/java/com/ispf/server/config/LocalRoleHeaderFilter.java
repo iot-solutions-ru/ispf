@@ -14,6 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+import java.util.Locale;
 /**
  * Simulates Keycloak roles in local profile via {@code X-ISPF-Role: admin|developer|operator}.
  */
@@ -53,7 +54,7 @@ public class LocalRoleHeaderFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        role = role.trim().toLowerCase();
+        role = role.trim().toLowerCase(Locale.ROOT);
         if (IspfRoles.ADMIN.equals(role)
                 || IspfRoles.DEVELOPER.equals(role)
                 || IspfRoles.OPERATOR.equals(role)) {

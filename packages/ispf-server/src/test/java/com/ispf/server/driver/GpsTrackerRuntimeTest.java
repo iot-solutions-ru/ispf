@@ -39,7 +39,7 @@ class GpsTrackerRuntimeTest {
     private ObjectManager objectManager;
 
     @Autowired
-    private BlueprintApplicationService BlueprintApplicationService;
+    private BlueprintApplicationService blueprintApplicationService;
 
     @Autowired
     private DriverRuntimeService driverRuntimeService;
@@ -55,7 +55,7 @@ class GpsTrackerRuntimeTest {
     void createDevice() {
         devicePath = DriverIntegrationTestSupport.createDevice(
                 objectManager,
-                BlueprintApplicationService,
+                blueprintApplicationService,
                 driverRuntimeService,
                 DEVICE_NAME
         );

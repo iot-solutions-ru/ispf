@@ -56,7 +56,7 @@ public class ExpressionEngine {
             .addVar("payload", SimpleType.DYN)
             .build();
 
-    private final CelRuntime runtime = CelRuntimeFactory.standardCelRuntimeBuilder()
+    private final CelRuntime runtime = CelRuntimeFactory.legacyCelRuntimeBuilder()
             .setOptions(CEL_OPTIONS)
             .build();
 

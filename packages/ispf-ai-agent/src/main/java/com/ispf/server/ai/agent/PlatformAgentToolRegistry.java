@@ -85,10 +85,10 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
             ApplicationFunctionStore applicationFunctionStore,
             ApplicationEventCatalogService eventCatalogService,
             EventService eventService,
-            BlueprintRegistry BlueprintRegistry,
-            BlueprintApplicationService BlueprintApplicationService,
-            LabBlueprintBootstrap LabBlueprintBootstrap,
-            ObjectTreePort ObjectTreePort,
+            BlueprintRegistry blueprintRegistry,
+            BlueprintApplicationService blueprintApplicationService,
+            LabBlueprintBootstrap labBlueprintBootstrap,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService,
@@ -150,13 +150,13 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
         tools.add(AgentSessionKnowledgeTools.searchSessionContextTool(agentSessionDocumentService));
         tools.addAll(AgentReportTools.all(
                 reportService,
-                ObjectTreePort,
+                objectTreePort,
                 objectAccessService,
                 tenantScopeService
         ));
         tools.addAll(AgentMimicTools.all(
                 mimicService,
-                ObjectTreePort,
+                objectTreePort,
                 objectAccessService,
                 tenantScopeService,
                 objectMapper
@@ -165,7 +165,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 workflowService,
                 workflowInstanceCancelService,
                 workflowInstanceRepository,
-                ObjectTreePort,
+                objectTreePort,
                 objectAccessService,
                 tenantScopeService,
                 objectMapper
@@ -199,36 +199,36 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 bindingRuleEngine,
                 platformTimeZoneResolver,
                 haystackExportService,
-                ObjectTreePort,
+                objectTreePort,
                 objectAccessService,
                 tenantScopeService,
                 formalVerificationService
         ));
         tools.addAll(AgentFunctionTools.all(
-                ObjectTreePort,
+                objectTreePort,
                 objectAccessService,
                 tenantScopeService,
                 objectMapper
         ));
         tools.addAll(AgentVirtualDeviceTools.all(
-                ObjectTreePort,
+                objectTreePort,
                 objectAccessService,
                 objectTemplateService,
                 deviceProvisioningService,
                 driverRuntimeService,
-                LabBlueprintBootstrap,
-                BlueprintRegistry,
+                labBlueprintBootstrap,
+                blueprintRegistry,
                 objectMapper
         ));
         tools.addAll(AgentBlueprintTools.all(
-                BlueprintRegistry,
-                BlueprintApplicationService,
-                ObjectTreePort,
+                blueprintRegistry,
+                blueprintApplicationService,
+                objectTreePort,
                 objectAccessService,
                 tenantScopeService
         ));
         tools.addAll(AgentDiscoveryTools.all(
-                ObjectTreePort,
+                objectTreePort,
                 objectAccessService,
                 variableMemberAccessService,
                 tenantScopeService,
@@ -239,12 +239,12 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
         tools.addAll(AgentActionTools.all(
                 functionService,
                 applicationFunctionStore,
-                ObjectTreePort,
+                objectTreePort,
                 objectAccessService,
                 functionInvokeAccessService,
                 tenantScopeService,
                 eventService,
-                BlueprintRegistry,
+                blueprintRegistry,
                 haystackExportService,
                 objectMapper
         ));
@@ -254,12 +254,12 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 platformScriptBridge,
                 alertRuleService,
                 eventJournalStore,
-                ObjectTreePort
+                objectTreePort
         ));
         tools.addAll(AgentAutomationTools.all(
                 automationTreeService,
                 operatorAppUiService,
-                ObjectTreePort,
+                objectTreePort,
                 objectAccessService,
                 tenantScopeService,
                 bindingRulesService,
@@ -277,7 +277,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 contextPackSearchService
         ));
         tools.addAll(AgentTreeTools.all(
-                ObjectTreePort,
+                objectTreePort,
                 objectAccessService,
                 variableMemberAccessService,
                 tenantScopeService,

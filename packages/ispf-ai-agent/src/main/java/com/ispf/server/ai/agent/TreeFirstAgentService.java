@@ -59,7 +59,7 @@ public class TreeFirstAgentService {
     private final AgentTurnRateLimiter turnRateLimiter;
     private final AgentMetricsRecorder agentMetrics;
     private final AgentSessionDocumentService sessionDocumentService;
-    private final ObjectTreePort ObjectTreePort;
+    private final ObjectTreePort objectTreePort;
     private final AgentPromptAssembler promptAssembler;
 
     public TreeFirstAgentService(
@@ -82,7 +82,7 @@ public class TreeFirstAgentService {
             AgentTurnRateLimiter turnRateLimiter,
             AgentMetricsRecorder agentMetrics,
             AgentSessionDocumentService sessionDocumentService,
-            ObjectTreePort ObjectTreePort
+            ObjectTreePort objectTreePort
     ) {
         this.llmProviderRegistry = llmProviderRegistry;
         this.toolRegistry = toolRegistry;
@@ -103,7 +103,7 @@ public class TreeFirstAgentService {
         this.turnRateLimiter = turnRateLimiter;
         this.agentMetrics = agentMetrics;
         this.sessionDocumentService = sessionDocumentService;
-        this.ObjectTreePort = ObjectTreePort;
+        this.objectTreePort = objectTreePort;
         this.promptAssembler = new AgentPromptAssembler(
                 aiProperties,
                 platformBriefingService,
@@ -822,7 +822,7 @@ public class TreeFirstAgentService {
                                         toolName,
                                         toolArgs,
                                         steps,
-                                        path -> ObjectTreePort.tree().findByPath(path).isPresent()
+                                        path -> objectTreePort.tree().findByPath(path).isPresent()
                                 );
                         Optional<AgentWidgetBindingGuard.BlockDecision> widgetBlock =
                                 AgentWidgetBindingGuard.checkBeforeTool(toolName, toolArgs, steps);

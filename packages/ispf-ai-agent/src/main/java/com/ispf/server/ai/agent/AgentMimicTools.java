@@ -25,15 +25,15 @@ final class AgentMimicTools {
 
     static List<PlatformAgentTool> all(
             MimicService mimicService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ObjectMapper objectMapper
     ) {
         return List.of(
                 getMimicDiagramTool(mimicService, objectAccessService, tenantScopeService, objectMapper),
-                saveMimicDiagramTool(mimicService, ObjectTreePort, objectAccessService, tenantScopeService, objectMapper),
-                addMimicElementsTool(mimicService, ObjectTreePort, objectAccessService, tenantScopeService, objectMapper),
+                saveMimicDiagramTool(mimicService, objectTreePort, objectAccessService, tenantScopeService, objectMapper),
+                addMimicElementsTool(mimicService, objectTreePort, objectAccessService, tenantScopeService, objectMapper),
                 listMimicSymbolsTool()
         );
     }
@@ -96,7 +96,7 @@ final class AgentMimicTools {
 
     private static PlatformAgentTool saveMimicDiagramTool(
             MimicService mimicService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ObjectMapper objectMapper
@@ -119,7 +119,7 @@ final class AgentMimicTools {
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
-                return persistDiagram(arguments, context, false, mimicService, ObjectTreePort,
+                return persistDiagram(arguments, context, false, mimicService, objectTreePort,
                         objectAccessService, tenantScopeService, objectMapper);
             }
         };
@@ -127,7 +127,7 @@ final class AgentMimicTools {
 
     private static PlatformAgentTool addMimicElementsTool(
             MimicService mimicService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ObjectMapper objectMapper
@@ -149,7 +149,7 @@ final class AgentMimicTools {
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
                 Map<String, Object> args = new LinkedHashMap<>(arguments);
                 args.put("merge", true);
-                return persistDiagram(args, context, true, mimicService, ObjectTreePort,
+                return persistDiagram(args, context, true, mimicService, objectTreePort,
                         objectAccessService, tenantScopeService, objectMapper);
             }
         };
@@ -160,7 +160,7 @@ final class AgentMimicTools {
             AgentContext context,
             boolean requireElements,
             MimicService mimicService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ObjectMapper objectMapper
@@ -175,7 +175,7 @@ final class AgentMimicTools {
         }
         objectAccessService.requireWrite(path, auth);
         try {
-            PlatformObject node = ObjectTreePort.require(path);
+            PlatformObject node = objectTreePort.require(path);
             if (node.type() != ObjectType.MIMIC) {
                 return Map.of("status", "ERROR", "error", "Not a MIMIC object: " + path);
             }

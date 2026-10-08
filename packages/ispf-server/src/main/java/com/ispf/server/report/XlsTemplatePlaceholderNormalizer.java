@@ -11,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.util.Locale;
 /**
  * Normalizes legacy .xls Band1 placeholders to the POI spreadsheet form.
  */
@@ -67,7 +68,7 @@ final class XlsTemplatePlaceholderNormalizer {
         Matcher matcher = BAND1_PLACEHOLDER.matcher(value);
         StringBuffer buffer = new StringBuffer();
         while (matcher.find()) {
-            matcher.appendReplacement(buffer, Matcher.quoteReplacement("${" + matcher.group(1).toUpperCase() + "}"));
+            matcher.appendReplacement(buffer, Matcher.quoteReplacement("${" + matcher.group(1).toUpperCase(Locale.ROOT) + "}"));
         }
         matcher.appendTail(buffer);
         return buffer.toString();

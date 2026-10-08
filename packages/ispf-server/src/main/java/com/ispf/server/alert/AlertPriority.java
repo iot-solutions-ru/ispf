@@ -1,5 +1,7 @@
 package com.ispf.server.alert;
 
+
+import java.util.Locale;
 /**
  * Alert rule priority for operator sorting and escalation (BL-87).
  */
@@ -24,7 +26,7 @@ public enum AlertPriority {
             return MEDIUM;
         }
         try {
-            return AlertPriority.valueOf(raw.trim().toUpperCase());
+            return AlertPriority.valueOf(raw.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
             return MEDIUM;
         }

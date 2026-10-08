@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Locale;
 @RestController
 @RequestMapping("/api/v1/platform")
 public class PlatformRuntimeController {
@@ -59,7 +60,7 @@ public class PlatformRuntimeController {
         return Map.of(
                 "masterEnabled", masterEnabled,
                 "objectEnabled", objectEnabled,
-                "mode", functionAuditService.auditMode().name().toLowerCase(),
+                "mode", functionAuditService.auditMode().name().toLowerCase(Locale.ROOT),
                 "enabled", objectPath != null && !objectPath.isBlank()
                         ? objectEnabled
                         : masterEnabled

@@ -18,6 +18,7 @@ import org.snmp4j.smi.Variable;
 
 import java.util.Map;
 
+import java.util.Locale;
 final class SnmpValueMapper {
 
     private static final DataSchema NUMERIC_SCHEMA = DataSchema.builder("snmpNumeric")
@@ -118,7 +119,7 @@ final class SnmpValueMapper {
     }
 
     private static boolean parseBoolean(String raw) {
-        return switch (raw.trim().toLowerCase()) {
+        return switch (raw.trim().toLowerCase(Locale.ROOT)) {
             case "1", "true", "yes", "on" -> true;
             default -> false;
         };

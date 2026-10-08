@@ -74,7 +74,7 @@ public class PlatformBriefingService {
     private final DriverCatalog driverCatalog;
     private final ApplicationDataStore applicationDataStore;
     private final ApplicationBundleSnapshotStore bundleSnapshotStore;
-    private final ObjectTreePort ObjectTreePort;
+    private final ObjectTreePort objectTreePort;
     private final CacheManager cacheManager;
     private final PlatformBriefingCacheEpoch briefingCacheEpoch;
     private final Optional<BuildProperties> buildProperties;
@@ -85,7 +85,7 @@ public class PlatformBriefingService {
             DriverCatalog driverCatalog,
             ApplicationDataStore applicationDataStore,
             ApplicationBundleSnapshotStore bundleSnapshotStore,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             CacheManager cacheManager,
             PlatformBriefingCacheEpoch briefingCacheEpoch,
             Optional<BuildProperties> buildProperties
@@ -95,7 +95,7 @@ public class PlatformBriefingService {
         this.driverCatalog = driverCatalog;
         this.applicationDataStore = applicationDataStore;
         this.bundleSnapshotStore = bundleSnapshotStore;
-        this.ObjectTreePort = ObjectTreePort;
+        this.objectTreePort = objectTreePort;
         this.cacheManager = cacheManager;
         this.briefingCacheEpoch = briefingCacheEpoch;
         this.buildProperties = buildProperties;
@@ -314,7 +314,7 @@ public class PlatformBriefingService {
         sb.append("Live object counts:\n");
         try {
             Map<ObjectType, Integer> counts = new EnumMap<>(ObjectType.class);
-            for (PlatformObject object : ObjectTreePort.tree().all()) {
+            for (PlatformObject object : objectTreePort.tree().all()) {
                 if (LIVE_OBJECT_COUNT_TYPES.contains(object.type())) {
                     counts.merge(object.type(), 1, Integer::sum);
                 }
@@ -339,7 +339,7 @@ public class PlatformBriefingService {
     private void appendDirectChildren(StringBuilder sb, String parentPath, int cap, String heading) {
         sb.append(heading).append(":\n");
         try {
-            List<PlatformObject> children = ObjectTreePort.tree().childrenOf(parentPath);
+            List<PlatformObject> children = objectTreePort.tree().childrenOf(parentPath);
             int count = 0;
             for (PlatformObject child : children) {
                 if (count >= cap) {
@@ -364,17 +364,17 @@ public class PlatformBriefingService {
     private void appendPlatformTreeDetail(StringBuilder sb) {
         sb.append("Platform tree under ").append(PLATFORM_ROOT).append(":\n");
         try {
-            if (ObjectTreePort.tree().findByPath(PLATFORM_ROOT).isEmpty()) {
+            if (objectTreePort.tree().findByPath(PLATFORM_ROOT).isEmpty()) {
                 sb.append("- (root.platform not found)\n");
                 return;
             }
-            List<PlatformObject> folders = ObjectTreePort.tree().childrenOf(PLATFORM_ROOT);
+            List<PlatformObject> folders = objectTreePort.tree().childrenOf(PLATFORM_ROOT);
             if (folders.isEmpty()) {
                 sb.append("- (no platform folders)\n");
                 return;
             }
             for (PlatformObject folder : folders) {
-                List<PlatformObject> items = ObjectTreePort.tree().childrenOf(folder.path());
+                List<PlatformObject> items = objectTreePort.tree().childrenOf(folder.path());
                 sb.append("- ")
                         .append(folder.path())
                         .append(" [")

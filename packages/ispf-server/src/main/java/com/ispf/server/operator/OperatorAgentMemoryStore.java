@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import java.util.Locale;
 @Repository
 public class OperatorAgentMemoryStore {
 
@@ -75,7 +76,7 @@ public class OperatorAgentMemoryStore {
 
     public List<OperatorAgentMemoryRecord> search(String appId, String query, int limit) {
         int capped = Math.min(Math.max(limit, 1), 50);
-        String pattern = "%" + query.trim().toLowerCase() + "%";
+        String pattern = "%" + query.trim().toLowerCase(Locale.ROOT) + "%";
         return jdbcTemplate.query("""
                 SELECT memory_id, app_id, kind, topic, content, source_actor, source_turn_id,
                        use_count, created_at, updated_at

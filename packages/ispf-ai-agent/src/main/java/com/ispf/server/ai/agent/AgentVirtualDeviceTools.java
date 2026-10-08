@@ -27,31 +27,31 @@ final class AgentVirtualDeviceTools {
     }
 
     static List<PlatformAgentTool> all(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             ObjectTemplateService objectTemplateService,
             DeviceProvisioningService deviceProvisioningService,
             DriverRuntimeService driverRuntimeService,
-            LabBlueprintBootstrap LabBlueprintBootstrap,
-            BlueprintRegistry BlueprintRegistry,
+            LabBlueprintBootstrap labBlueprintBootstrap,
+            BlueprintRegistry blueprintRegistry,
             ObjectMapper objectMapper
     ) {
         return List.of(
                 createVirtualDeviceTool(
-                        ObjectTreePort,
+                        objectTreePort,
                         objectAccessService,
                         objectTemplateService,
                         deviceProvisioningService,
                         driverRuntimeService,
-                        LabBlueprintBootstrap,
-                        BlueprintRegistry,
+                        labBlueprintBootstrap,
+                        blueprintRegistry,
                         objectMapper
                 ),
-                describeVirtualDriverTool(BlueprintRegistry)
+                describeVirtualDriverTool(blueprintRegistry)
         );
     }
 
-    private static PlatformAgentTool describeVirtualDriverTool(BlueprintRegistry BlueprintRegistry) {
+    private static PlatformAgentTool describeVirtualDriverTool(BlueprintRegistry blueprintRegistry) {
         return new PlatformAgentTool() {
             @Override
             public String name() {
@@ -67,7 +67,7 @@ final class AgentVirtualDeviceTools {
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
-                boolean registered = BlueprintRegistry.findByName(VirtualDeviceDefaults.TEMPLATE_ID).isPresent();
+                boolean registered = blueprintRegistry.findByName(VirtualDeviceDefaults.TEMPLATE_ID).isPresent();
                 return Map.of(
                         "status", "OK",
                         "driverId", "virtual",
@@ -80,13 +80,13 @@ final class AgentVirtualDeviceTools {
     }
 
     private static PlatformAgentTool createVirtualDeviceTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             ObjectTemplateService objectTemplateService,
             DeviceProvisioningService deviceProvisioningService,
             DriverRuntimeService driverRuntimeService,
-            LabBlueprintBootstrap LabBlueprintBootstrap,
-            BlueprintRegistry BlueprintRegistry,
+            LabBlueprintBootstrap labBlueprintBootstrap,
+            BlueprintRegistry blueprintRegistry,
             ObjectMapper objectMapper
     ) {
         return new PlatformAgentTool() {
@@ -115,8 +115,8 @@ final class AgentVirtualDeviceTools {
                             "error", "parentPath, name, displayName are required"
                     );
                 }
-                LabBlueprintBootstrap.ensureLabModels();
-                if (BlueprintRegistry.findByName(VirtualDeviceDefaults.TEMPLATE_ID).isEmpty()) {
+                labBlueprintBootstrap.ensureLabModels();
+                if (blueprintRegistry.findByName(VirtualDeviceDefaults.TEMPLATE_ID).isEmpty()) {
                     return Map.of(
                             "status", "ERROR",
                             "error", "Model not registered: " + VirtualDeviceDefaults.TEMPLATE_ID
@@ -124,7 +124,7 @@ final class AgentVirtualDeviceTools {
                             "templateId", VirtualDeviceDefaults.TEMPLATE_ID
                     );
                 }
-                if (ObjectTreePort.tree().findByPath(parentPath).isEmpty()) {
+                if (objectTreePort.tree().findByPath(parentPath).isEmpty()) {
                     return Map.of(
                             "status", "ERROR",
                             "error", "Parent not found: " + parentPath,
@@ -133,8 +133,8 @@ final class AgentVirtualDeviceTools {
                 }
                 var auth = context.authentication();
                 objectAccessService.requireWrite(parentPath, auth);
-                String fullPath = ObjectTreePort.tree().resolveChildPath(parentPath, name);
-                if (ObjectTreePort.tree().findByPath(fullPath).isPresent()) {
+                String fullPath = objectTreePort.tree().resolveChildPath(parentPath, name);
+                if (objectTreePort.tree().findByPath(fullPath).isPresent()) {
                     return Map.of(
                             "status", "ERROR",
                             "error", "Object exists: " + fullPath,
@@ -144,7 +144,7 @@ final class AgentVirtualDeviceTools {
                 }
 
                 try {
-                    PlatformObject node = ObjectTreePort.create(
+                    PlatformObject node = objectTreePort.create(
                             parentPath,
                             name,
                             ObjectType.DEVICE,
@@ -173,9 +173,9 @@ final class AgentVirtualDeviceTools {
                         runtimeStatus = driverRuntimeService.start(node.path());
                         driverRuntimeService.pollNow(node.path());
                     }
-                    ObjectTreePort.persistNodeTree(node.path());
+                    objectTreePort.persistNodeTree(node.path());
 
-                    PlatformObject saved = ObjectTreePort.require(node.path());
+                    PlatformObject saved = objectTreePort.require(node.path());
                     List<Map<String, Object>> variables = saved.variables().values().stream()
                             .map(AgentVirtualDeviceTools::variablePreview)
                             .toList();

@@ -5,6 +5,7 @@ import com.ispf.driver.DriverException;
 import com.ispf.driver.bacnet.codec.BacnetObjectType;
 import com.ispf.driver.bacnet.codec.BacnetPropertyIdentifier;
 
+import java.util.Locale;
 /**
  * Parsed BACnet point reference from mapping string {@code objectType:instance:property}.
  * Example: {@code analog-input:1:present-value}.
@@ -27,7 +28,7 @@ record BacnetPoint(BacnetObjectType objectType, int instance, BacnetPropertyIden
     }
 
     private static BacnetObjectType parseObjectType(String name) {
-        String normalized = name.trim().toLowerCase().replace('_', '-');
+        String normalized = name.trim().toLowerCase(Locale.ROOT).replace('_', '-');
         return switch (normalized) {
             case "analog-input", "ai" -> BacnetObjectType.ANALOG_INPUT;
             case "analog-value", "av" -> BacnetObjectType.ANALOG_VALUE;
@@ -38,7 +39,7 @@ record BacnetPoint(BacnetObjectType objectType, int instance, BacnetPropertyIden
     }
 
     private static BacnetPropertyIdentifier parseProperty(String name) {
-        String normalized = name.trim().toLowerCase().replace('_', '-');
+        String normalized = name.trim().toLowerCase(Locale.ROOT).replace('_', '-');
         return switch (normalized) {
             case "present-value", "value" -> BacnetPropertyIdentifier.PRESENT_VALUE;
             case "units" -> BacnetPropertyIdentifier.UNITS;

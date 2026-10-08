@@ -97,7 +97,7 @@ public class OperatorAgentMemoryService {
             return Locale.ENGLISH;
         }
         for (int i = 0; i < userMessage.length(); i++) {
-            if (Character.UnicodeBlock.of(userMessage.charAt(i)) == Character.UnicodeBlock.CYRILLIC) {
+            if (Character.UnicodeBlock.CYRILLIC.equals(Character.UnicodeBlock.of(userMessage.charAt(i)))) {
                 return Locale.forLanguageTag("ru");
             }
         }

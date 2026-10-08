@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
+import java.util.Locale;
 @Service
 public class OperatorAppUiService {
 
@@ -506,7 +507,7 @@ public class OperatorAppUiService {
         if (trimmed.isEmpty()) {
             return false;
         }
-        String lower = trimmed.toLowerCase();
+        String lower = trimmed.toLowerCase(Locale.ROOT);
         if (lower.startsWith("javascript:") || lower.startsWith("data:") || lower.startsWith("vbscript:")) {
             return false;
         }

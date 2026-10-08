@@ -49,12 +49,12 @@ public class TankFarmBlueprintBootstrap {
             .field("value", FieldType.STRING)
             .build();
 
-    private final BlueprintEngine BlueprintEngine;
-    private final BlueprintRegistry BlueprintRegistry;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintRegistry blueprintRegistry;
 
-    public TankFarmBlueprintBootstrap(BlueprintEngine BlueprintEngine, BlueprintRegistry BlueprintRegistry) {
-        this.BlueprintEngine = BlueprintEngine;
-        this.BlueprintRegistry = BlueprintRegistry;
+    public TankFarmBlueprintBootstrap(BlueprintEngine blueprintEngine, BlueprintRegistry blueprintRegistry) {
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintRegistry = blueprintRegistry;
     }
 
     public void ensureTankFarmModels() {
@@ -63,16 +63,16 @@ public class TankFarmBlueprintBootstrap {
     }
 
     private void ensure(BlueprintDefinition desired) {
-        var existing = BlueprintRegistry.findByName(desired.name());
+        var existing = blueprintRegistry.findByName(desired.name());
         if (existing.isEmpty()) {
-            BlueprintEngine.createBlueprint(desired);
+            blueprintEngine.createBlueprint(desired);
             return;
         }
         BlueprintDefinition current = existing.get();
         if (current.variables().size() >= desired.variables().size()) {
             return;
         }
-        BlueprintEngine.updateBlueprint(new BlueprintDefinition(
+        blueprintEngine.updateBlueprint(new BlueprintDefinition(
                 current.id(),
                 desired.name(),
                 desired.description(),

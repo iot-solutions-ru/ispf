@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.Locale;
 @Service
 @Transactional
 public class ApplicationSqlBindingService {
@@ -172,7 +173,7 @@ public class ApplicationSqlBindingService {
                 }
                 Map<String, Object> row = normalizeRow(rows.getFirst());
                 String field = binding.valueField() != null ? binding.valueField() : "value";
-                Object value = row.get(field.toLowerCase());
+                Object value = row.get(field.toLowerCase(Locale.ROOT));
                 if (value == null) {
                     value = row.get(field);
                 }
@@ -261,7 +262,7 @@ public class ApplicationSqlBindingService {
     private static Map<String, Object> normalizeRow(Map<String, Object> row) {
         Map<String, Object> normalized = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : row.entrySet()) {
-            normalized.put(entry.getKey().toLowerCase(), entry.getValue());
+            normalized.put(entry.getKey().toLowerCase(Locale.ROOT), entry.getValue());
         }
         return normalized;
     }
@@ -313,7 +314,7 @@ public class ApplicationSqlBindingService {
         if ("value".equalsIgnoreCase(field) || field.isBlank()) {
             return FieldType.DOUBLE;
         }
-        if (field.toLowerCase().contains("code") || field.toLowerCase().contains("name") || field.toLowerCase().contains("status")) {
+        if (field.toLowerCase(Locale.ROOT).contains("code") || field.toLowerCase(Locale.ROOT).contains("name") || field.toLowerCase(Locale.ROOT).contains("status")) {
             return FieldType.STRING;
         }
         return FieldType.DOUBLE;

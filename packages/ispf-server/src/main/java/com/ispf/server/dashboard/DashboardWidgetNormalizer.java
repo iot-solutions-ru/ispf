@@ -84,12 +84,9 @@ public final class DashboardWidgetNormalizer {
             return layoutJson;
         }
         try {
-            var root = objectMapper.readValue(layoutJson, Map.class);
-            if (!(root instanceof Map<?, ?> map)) {
-                return layoutJson;
-            }
             @SuppressWarnings("unchecked")
-            Map<String, Object> normalized = normalizeLayoutMap((Map<String, Object>) map, objectMapper);
+            Map<String, Object> root = objectMapper.readValue(layoutJson, Map.class);
+            Map<String, Object> normalized = normalizeLayoutMap(root, objectMapper);
             return objectMapper.writeValueAsString(normalized);
         } catch (JacksonException ex) {
             return layoutJson;

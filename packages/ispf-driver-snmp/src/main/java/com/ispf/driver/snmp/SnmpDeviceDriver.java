@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.Locale;
 /**
  * SNMP driver (v1/v2c/v3) — polls OIDs and maps values to ISPF object variables.
  * <p>
@@ -207,7 +208,7 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
 
     private static OID resolveAuthProtocol(String value) {
         // MD5 stays selectable via explicit config; anything else falls back to SHA.
-        return switch (value.toUpperCase()) {
+        return switch (value.toUpperCase(Locale.ROOT)) {
             case "MD5" -> AuthMD5.ID;
             default -> AuthSHA.ID;
         };
@@ -215,7 +216,7 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
 
     private static OID resolvePrivProtocol(String value) {
         // DES stays selectable via explicit config; anything else falls back to AES-128.
-        return switch (value.toUpperCase()) {
+        return switch (value.toUpperCase(Locale.ROOT)) {
             case "DES" -> PrivDES.ID;
             default -> PrivAES128.ID;
         };
@@ -393,7 +394,7 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
     }
 
     private int parseVersion(String version) {
-        return switch (version.toLowerCase()) {
+        return switch (version.toLowerCase(Locale.ROOT)) {
             case "1", "v1" -> SnmpConstants.version1;
             case "3", "v3" -> SnmpConstants.version3;
             default -> SnmpConstants.version2c;

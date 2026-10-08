@@ -9,6 +9,7 @@ import java.util.Deque;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.Locale;
 /**
  * Tracks failed login attempts per username and client IP; blocks brute-force retries.
  */
@@ -63,7 +64,7 @@ public class LoginAttemptLimiter {
     }
 
     private static String key(String username, String clientIp) {
-        String user = username == null ? "" : username.trim().toLowerCase();
+        String user = username == null ? "" : username.trim().toLowerCase(Locale.ROOT);
         String ip = clientIp == null ? "" : clientIp.trim();
         return user + "|" + ip;
     }

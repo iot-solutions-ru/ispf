@@ -1,5 +1,7 @@
 package com.ispf.core.object;
 
+
+import java.util.Locale;
 /**
  * Per-variable historian sampling: store every update or only when {@link com.ispf.core.model.DataRecord}
  * value changes.
@@ -14,6 +16,6 @@ public enum HistorySampleMode {
         if (raw == null || raw.isBlank()) {
             return CHANGES_ONLY;
         }
-        return HistorySampleMode.valueOf(raw.trim().toUpperCase());
+        return HistorySampleMode.valueOf(raw.trim().toUpperCase(Locale.ROOT));
     }
 }

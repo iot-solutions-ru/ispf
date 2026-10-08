@@ -30,17 +30,17 @@ public class BrickBlueprintBootstrap {
             .field("value", FieldType.STRING)
             .build();
 
-    private final BlueprintEngine BlueprintEngine;
-    private final BlueprintRegistry BlueprintRegistry;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintRegistry blueprintRegistry;
 
-    public BrickBlueprintBootstrap(BlueprintEngine BlueprintEngine, BlueprintRegistry BlueprintRegistry) {
-        this.BlueprintEngine = BlueprintEngine;
-        this.BlueprintRegistry = BlueprintRegistry;
+    public BrickBlueprintBootstrap(BlueprintEngine blueprintEngine, BlueprintRegistry blueprintRegistry) {
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintRegistry = blueprintRegistry;
     }
 
     public void ensureBrickModel() {
-        if (BlueprintRegistry.findByName(BRICK_METADATA_MODEL).isEmpty()) {
-            BlueprintEngine.createBlueprint(buildBrickMetadataModel());
+        if (blueprintRegistry.findByName(BRICK_METADATA_MODEL).isEmpty()) {
+            blueprintEngine.createBlueprint(buildBrickMetadataModel());
         }
     }
 

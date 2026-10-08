@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import java.util.Locale;
 /**
  * A typed property on a {@link PlatformObject}.
  */
@@ -329,7 +330,7 @@ public class Variable {
         if (raw == null || raw.isBlank() || "INHERIT".equalsIgnoreCase(raw.trim())) {
             return null;
         }
-        return raw.trim().toUpperCase();
+        return raw.trim().toUpperCase(Locale.ROOT);
     }
 
     public Optional<DataRecord> value() {

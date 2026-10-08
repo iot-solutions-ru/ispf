@@ -25,7 +25,9 @@ final class AgentToolTransientRetry {
             return true;
         }
         Throwable cause = error.getCause();
-        return cause != null && cause != error && matches(cause.getMessage());
+        @SuppressWarnings("ReferenceEquality")
+        boolean distinctCause = cause != null && cause != error;
+        return distinctCause && matches(cause.getMessage());
     }
 
     static boolean isTransientFailure(Map<String, Object> toolResult) {

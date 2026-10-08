@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Locale;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -74,7 +75,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public Map<String, Object> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
-        String username = request.username().trim().toLowerCase();
+        String username = request.username().trim().toLowerCase(Locale.ROOT);
         String clientIp = clientIp(httpRequest);
         try {
             loginAttemptLimiter.checkAllowed(username, clientIp);

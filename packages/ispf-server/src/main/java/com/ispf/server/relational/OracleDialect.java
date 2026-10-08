@@ -1,5 +1,7 @@
 package com.ispf.server.relational;
 
+
+import java.util.Locale;
 public class OracleDialect extends AbstractRelationalDialect {
 
     @Override
@@ -22,7 +24,7 @@ public class OracleDialect extends AbstractRelationalDialect {
         if (identifier == null || identifier.isBlank()) {
             throw new IllegalArgumentException("identifier is required");
         }
-        return "\"" + identifier.toUpperCase().replace("\"", "\"\"") + "\"";
+        return "\"" + identifier.toUpperCase(Locale.ROOT).replace("\"", "\"\"") + "\"";
     }
 
     @Override

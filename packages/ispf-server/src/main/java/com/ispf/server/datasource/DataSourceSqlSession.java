@@ -91,8 +91,14 @@ public class DataSourceSqlSession {
 
     private static String connectionErrorMessage(Throwable ex) {
         Throwable root = ex;
-        while (root.getCause() != null && root.getCause() != root) {
-            root = root.getCause();
+        while (true) {
+            Throwable cause = root.getCause();
+            @SuppressWarnings("ReferenceEquality")
+            boolean selfCause = cause == null || cause == root;
+            if (selfCause) {
+                break;
+            }
+            root = cause;
         }
         String message = root.getMessage();
         if (message == null || message.isBlank()) {

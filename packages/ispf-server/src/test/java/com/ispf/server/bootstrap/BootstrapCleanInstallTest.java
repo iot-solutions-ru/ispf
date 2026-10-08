@@ -24,7 +24,7 @@ class BootstrapCleanInstallTest {
     private ObjectManager objectManager;
 
     @Autowired
-    private BlueprintRegistry BlueprintRegistry;
+    private BlueprintRegistry blueprintRegistry;
 
     @Autowired
     private PlatformUserService userService;
@@ -34,16 +34,16 @@ class BootstrapCleanInstallTest {
 
     @Test
     void registersVirtualLabModelsWithoutFixtures() {
-        assertThat(BlueprintRegistry.findByName(LabBlueprintBootstrap.VIRTUAL_LAB_MODEL)).isPresent();
-        assertThat(BlueprintRegistry.findByName(LabBlueprintBootstrap.VIRTUAL_UNIFIED_MODEL)).isPresent();
-        assertThat(BlueprintRegistry.findByName(PlatformReferenceBlueprintBootstrap.SNMP_AGENT_MODEL)).isPresent();
-        assertThat(BlueprintRegistry.findByName(PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL)).isPresent();
+        assertThat(blueprintRegistry.findByName(LabBlueprintBootstrap.VIRTUAL_LAB_MODEL)).isPresent();
+        assertThat(blueprintRegistry.findByName(LabBlueprintBootstrap.VIRTUAL_UNIFIED_MODEL)).isPresent();
+        assertThat(blueprintRegistry.findByName(PlatformReferenceBlueprintBootstrap.SNMP_AGENT_MODEL)).isPresent();
+        assertThat(blueprintRegistry.findByName(PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL)).isPresent();
     }
 
     @Test
     void doesNotRegisterMesInstanceTypesOnCleanBasePlatform() {
-        assertThat(BlueprintRegistry.findByName(MesBlueprintBootstrap.BATCH_MODEL)).isEmpty();
-        assertThat(BlueprintRegistry.findByName(MesBlueprintBootstrap.WORK_ORDER_MODEL)).isEmpty();
+        assertThat(blueprintRegistry.findByName(MesBlueprintBootstrap.BATCH_MODEL)).isEmpty();
+        assertThat(blueprintRegistry.findByName(MesBlueprintBootstrap.WORK_ORDER_MODEL)).isEmpty();
         assertThat(objectManager.tree().findByPath("root.platform.mes")).isEmpty();
         assertThat(objectManager.tree().findByPath("root.platform.instance-types.batch-v1")).isEmpty();
         assertThat(objectManager.tree().findByPath("root.platform.instance-types.work-order-v1")).isEmpty();
@@ -61,7 +61,7 @@ class BootstrapCleanInstallTest {
     @Test
     void doesNotSeedFixtureModels() {
         for (String name : DemoFixtureBootstrap.DEMO_MODEL_NAMES) {
-            assertThat(BlueprintRegistry.findByName(name)).isEmpty();
+            assertThat(blueprintRegistry.findByName(name)).isEmpty();
             assertThat(objectManager.tree().findByPath("root.platform.mixin-blueprints." + name)).isEmpty();
             assertThat(objectManager.tree().findByPath("root.platform.instance-types." + name)).isEmpty();
         }

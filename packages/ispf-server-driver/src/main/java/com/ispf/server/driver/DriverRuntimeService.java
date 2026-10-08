@@ -638,7 +638,9 @@ public class DriverRuntimeService implements DriverConnectionLookup {
 
     private void pollOnIoThread(String devicePath, ActiveDriver active, String pointId) {
         // A stop (delete) may have removed this runtime while the poll sat in the I/O queue.
-        if (activeDrivers.get(devicePath) != active) {
+        @SuppressWarnings("ReferenceEquality")
+        boolean stillActive = activeDrivers.get(devicePath) == active;
+        if (!stillActive) {
             return;
         }
         if (objects.findByPath(devicePath).isEmpty()) {
@@ -671,7 +673,9 @@ public class DriverRuntimeService implements DriverConnectionLookup {
             notifyConnectionIfChanged(devicePath, active, next);
             setStatus(devicePath, "RUNNING");
         } catch (Exception e) {
-            if (activeDrivers.get(devicePath) != active) {
+            @SuppressWarnings("ReferenceEquality")
+            boolean stillActiveOnError = activeDrivers.get(devicePath) == active;
+            if (!stillActiveOnError) {
                 return;
             }
             var kind = errorMetrics.record(active.binding().driverId(), DriverErrorMetrics.Operation.POLL, e);

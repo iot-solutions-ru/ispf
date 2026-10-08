@@ -182,12 +182,12 @@ public class LabBlueprintBootstrap {
             .field("mimeType", FieldType.STRING)
             .build();
 
-    private final BlueprintEngine BlueprintEngine;
-    private final BlueprintRegistry BlueprintRegistry;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintRegistry blueprintRegistry;
 
-    public LabBlueprintBootstrap(BlueprintEngine BlueprintEngine, BlueprintRegistry BlueprintRegistry) {
-        this.BlueprintEngine = BlueprintEngine;
-        this.BlueprintRegistry = BlueprintRegistry;
+    public LabBlueprintBootstrap(BlueprintEngine blueprintEngine, BlueprintRegistry blueprintRegistry) {
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintRegistry = blueprintRegistry;
     }
 
     public void ensureLabModels() {
@@ -198,8 +198,8 @@ public class LabBlueprintBootstrap {
     }
 
     private void ensureModel(String name, BlueprintDefinition definition) {
-        if (BlueprintRegistry.findByName(name).isEmpty()) {
-            BlueprintEngine.createBlueprint(definition);
+        if (blueprintRegistry.findByName(name).isEmpty()) {
+            blueprintEngine.createBlueprint(definition);
         }
     }
 

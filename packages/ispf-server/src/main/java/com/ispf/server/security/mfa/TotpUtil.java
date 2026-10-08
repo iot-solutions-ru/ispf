@@ -7,6 +7,7 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.time.Instant;
 
+import java.util.Locale;
 /**
  * RFC 6238 TOTP (HMAC-SHA1, 6 digits, 30s step) with RFC 4648 base32 secrets.
  */
@@ -93,11 +94,12 @@ public final class TotpUtil {
     }
 
     private static byte[] decodeBase32(String secret) {
-        String normalized = secret.trim().replace("=", "").toUpperCase();
+        String normalized = secret.trim().replace("=", "").toUpperCase(Locale.ROOT);
         ByteBuffer buffer = ByteBuffer.allocate(normalized.length() * 5 / 8 + 1);
         int bits = 0;
         int value = 0;
-        for (char ch : normalized.toCharArray()) {
+        for (int i = 0; i < normalized.length(); i++) {
+            char ch = normalized.charAt(i);
             int index = BASE32_ALPHABET.indexOf(ch);
             if (index < 0) {
                 throw new IllegalArgumentException("Invalid base32 secret");

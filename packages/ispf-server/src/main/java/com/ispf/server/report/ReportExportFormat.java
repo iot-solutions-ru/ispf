@@ -1,5 +1,7 @@
 package com.ispf.server.report;
 
+
+import java.util.Locale;
 public enum ReportExportFormat {
     CSV,
     PDF,
@@ -12,7 +14,7 @@ public enum ReportExportFormat {
         if (value == null || value.isBlank()) {
             return CSV;
         }
-        return ReportExportFormat.valueOf(value.trim().toUpperCase());
+        return ReportExportFormat.valueOf(value.trim().toUpperCase(Locale.ROOT));
     }
 
     public String fileExtension() {
