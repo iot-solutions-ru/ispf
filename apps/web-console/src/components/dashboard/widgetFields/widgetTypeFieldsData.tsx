@@ -394,7 +394,7 @@ function reportFields(ctx: WidgetFieldContextFor<"report">, t: TFunction): React
         value={rw.rowSelectionKey ?? ""}
         onChange={(next) => update({ rowSelectionKey: next || undefined })}
       />
-        <FieldLabel caption={t("editor.selectionKeyOnClick")} hint={t("editor.hint.exampleSelection")}>
+        <FieldLabel caption={t("editor.selectionKeyOnClick")} hint={t("editor.hint.selectionKeyOnClick")}>
         <SelectionKeyInput
           value={rw.selectionKey ?? ""}
           keys={selectionKeys}

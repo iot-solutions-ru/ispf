@@ -66,7 +66,10 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
               value={widget.objectPath ?? ""}
               onChange={(path) => update({ objectPath: path || undefined, variableName: "" })}
             />
-            <FieldLabel caption={t("editor.selectionKey")}>
+            <FieldLabel
+              caption={t("editor.selectionKeyFromSession")}
+              hint={t("editor.hint.selectionKeyFromSession")}
+            >
               <div className="field-controls-slot field-controls-slot--stacked">
                 <SelectionKeyInput
                   value={widget.selectionKey ?? ""}
@@ -174,7 +177,7 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
             onChange={(path) => update({ parentPath: path } as Partial<DashboardWidget>)}
             placeholder={t("editor.hint.exampleFolder")}
           />
-          <FieldLabel caption={t("editor.selectionKeyOnClick")} hint={t("editor.hint.exampleSelection")}>
+          <FieldLabel caption={t("editor.selectionKeyOnClick")} hint={t("editor.hint.selectionKeyOnClick")}>
             <StackedSlot>
               <SelectionKeyInput
                 value={widget.selectionKey ?? ""}

@@ -133,4 +133,6 @@ export const WIDGET_TYPE_HINT_KEYS: Partial<Record<WidgetType, string>> = {
   "event-feed": "editor.typeHint.eventFeed",
   spreadsheet: "editor.typeHint.spreadsheet",
   timer: "editor.typeHint.timer",
+  function: "editor.typeHint.function",
+  "function-form": "editor.typeHint.functionForm",
 };
