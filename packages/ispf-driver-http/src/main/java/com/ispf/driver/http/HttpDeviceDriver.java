@@ -42,7 +42,6 @@ public class HttpDeviceDriver implements DeviceDriver {
                     "baseUrl", "http://127.0.0.1:8080",
                     "timeoutMs", "5000",
                     "pollIntervalMs", "10000",
-                    "insecureTls", "false",
                     "writePath", ""
             ),
             com.ispf.driver.DriverMaturity.PRODUCTION,
@@ -54,7 +53,6 @@ public class HttpDeviceDriver implements DeviceDriver {
     private String baseUrl = "http://127.0.0.1:8080";
     private String writePath = "";
     private long timeoutMs = 5000;
-    private boolean insecureTls;
     private final Map<String, HttpPoint> points = new ConcurrentHashMap<>();
     private final Map<String, String> lastMappings = new ConcurrentHashMap<>();
     private volatile boolean connected;
@@ -78,25 +76,16 @@ public class HttpDeviceDriver implements DeviceDriver {
             case "baseUrl" -> baseUrl = value.trim();
             case "timeoutMs" -> timeoutMs = Long.parseLong(value.trim());
             case "writePath" -> writePath = value.trim();
-            case "insecureTls" -> insecureTls = Boolean.parseBoolean(value.trim());
             default -> { }
         }
     }
 
     @Override
     public void connect() throws DriverException {
-        HttpClient.Builder builder = HttpClient.newBuilder()
+        client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(timeoutMs))
-                .followRedirects(HttpClient.Redirect.NORMAL);
-        if (insecureTls) {
-            try {
-                builder.sslContext(insecureSslContext());
-                driverObject.log(DriverLogLevel.WARNING, "HTTP insecureTls=true — TLS certificate verification disabled");
-            } catch (Exception e) {
-                throw new DriverConfigurationException("Failed to enable insecureTls", e);
-            }
-        }
-        client = builder.build();
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build();
         connected = true;
         driverObject.log(DriverLogLevel.INFO, "HTTP client ready (baseUrl=" + baseUrl + ")");
     }
@@ -214,28 +203,6 @@ public class HttpDeviceDriver implements DeviceDriver {
             return 443;
         }
         return 80;
-    }
-
-    private static javax.net.ssl.SSLContext insecureSslContext() throws Exception {
-        javax.net.ssl.TrustManager[] trustAll = new javax.net.ssl.TrustManager[]{
-                new javax.net.ssl.X509TrustManager() {
-                    @Override
-                    public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
-                    }
-
-                    @Override
-                    public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {
-                    }
-
-                    @Override
-                    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                        return new java.security.cert.X509Certificate[0];
-                    }
-                }
-        };
-        javax.net.ssl.SSLContext context = javax.net.ssl.SSLContext.getInstance("TLS");
-        context.init(null, trustAll, new java.security.SecureRandom());
-        return context;
     }
 
     private static String writeMethod(String mappedMethod) {
