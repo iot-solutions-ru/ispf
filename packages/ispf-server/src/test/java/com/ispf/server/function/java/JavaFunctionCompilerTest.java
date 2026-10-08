@@ -1,11 +1,16 @@
 package com.ispf.server.function.java;
 
+import com.ispf.core.function.JavaFunctionContext;
 import com.ispf.core.function.ObjectJavaFunction;
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldType;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
@@ -42,7 +47,41 @@ class JavaFunctionCompilerTest {
         JavaFunctionCompiler.CompiledArtifact artifact = JavaFunctionCompiler.compile(ECHO_SOURCE);
         assertEquals("EchoJavaFn", artifact.className());
         ObjectJavaFunction fn = JavaFunctionCompiler.instantiate(artifact);
-        assertNotNull(fn.invoke(null, new com.ispf.core.function.JavaFunctionContext("root.test", "echo")));
+        assertNotNull(fn.invoke(null, new JavaFunctionContext("root.test", "echo")));
+    }
+
+    @Test
+    void nestedRecordClassIsLoadedAndInvoked() {
+        String source = """
+            import com.ispf.core.function.ObjectJavaFunction;
+            import com.ispf.core.function.JavaFunctionContext;
+            import com.ispf.core.model.DataRecord;
+            import com.ispf.core.model.DataSchema;
+            import com.ispf.core.model.FieldType;
+            import java.util.Map;
+
+            public class NestedJavaFn implements ObjectJavaFunction {
+                @Override
+                public DataRecord invoke(DataRecord input, JavaFunctionContext context) {
+                    Object raw = input != null && input.rowCount() > 0 ? input.firstRow().get("value") : null;
+                    Piece piece = new Piece(raw == null ? "" : String.valueOf(raw));
+                    DataSchema schema = DataSchema.builder("out").field("value", FieldType.STRING).build();
+                    return DataRecord.single(schema, Map.of("value", piece.text()));
+                }
+
+                public record Piece(String text) {}
+            }
+            """;
+        JavaFunctionCompiler.CompiledArtifact artifact = JavaFunctionCompiler.compile(source);
+        assertTrue(artifact.classBytes().containsKey("NestedJavaFn"));
+        assertTrue(artifact.classBytes().containsKey("NestedJavaFn$Piece"));
+        ObjectJavaFunction fn = JavaFunctionCompiler.instantiate(artifact);
+        DataSchema inputSchema = DataSchema.builder("in").field("value", FieldType.STRING).build();
+        DataRecord result = fn.invoke(
+                DataRecord.single(inputSchema, Map.of("value", "ok")),
+                new JavaFunctionContext("root.test", "nested")
+        );
+        assertEquals("ok", result.firstRow().get("value"));
     }
 
     @Test
