@@ -15,10 +15,12 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
@@ -46,6 +48,8 @@ public class SshDeviceDriver implements DeviceDriver {
                     "password", "",
                     "timeoutMs", "10000",
                     "pollIntervalMs", "60000",
+                    "strictHostKeyChecking", "yes",
+                    "knownHostsPath", "",
                     "writeEnabled", "false",
                     "writeCommandAllowlist", ""
             ),
@@ -59,6 +63,8 @@ public class SshDeviceDriver implements DeviceDriver {
     private String username = "admin";
     private String password = "";
     private int timeoutMs = 10_000;
+    private String strictHostKeyChecking = "yes";
+    private String knownHostsPath = "";
     private boolean writeEnabled;
     private final List<Pattern> writeAllowlist = new ArrayList<>();
     private final Map<String, String> points = new ConcurrentHashMap<>();
@@ -85,6 +91,8 @@ public class SshDeviceDriver implements DeviceDriver {
             case "username" -> username = value.trim();
             case "password" -> password = value;
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
+            case "strictHostKeyChecking" -> strictHostKeyChecking = value.trim().toLowerCase(Locale.ROOT);
+            case "knownHostsPath" -> knownHostsPath = value.trim();
             case "writeEnabled" -> writeEnabled = Boolean.parseBoolean(value.trim());
             case "writeCommandAllowlist" -> parseAllowlist(value);
             default -> { }
@@ -192,10 +200,25 @@ public class SshDeviceDriver implements DeviceDriver {
         ChannelExec channel = null;
         try {
             JSch jsch = new JSch();
+            if (!knownHostsPath.isBlank()) {
+                jsch.setKnownHosts(knownHostsPath);
+            } else if (!"no".equals(strictHostKeyChecking)) {
+                String defaultKnownHosts = System.getProperty("user.home") + "/.ssh/known_hosts";
+                try {
+                    jsch.setKnownHosts(defaultKnownHosts);
+                } catch (Exception ignored) {
+                    // Fall through; StrictHostKeyChecking=yes will fail closed without a hosts file.
+                }
+            }
             session = jsch.getSession(username, host, port);
             session.setPassword(password);
             Properties config = new Properties();
-            config.put("StrictHostKeyChecking", "no");
+            String hostKeyMode = switch (strictHostKeyChecking) {
+                case "no", "false" -> "no";
+                case "ask" -> "ask";
+                default -> "yes";
+            };
+            config.put("StrictHostKeyChecking", hostKeyMode);
             session.setConfig(config);
             session.connect(timeoutMs);
 
@@ -207,7 +230,11 @@ public class SshDeviceDriver implements DeviceDriver {
             channel.setErrStream(stderr);
             channel.connect(timeoutMs);
 
+            long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(Math.max(1, timeoutMs));
             while (!channel.isClosed()) {
+                if (System.nanoTime() >= deadline) {
+                    throw new DriverException("SSH command timed out after " + timeoutMs + "ms: " + command);
+                }
                 Thread.sleep(50);
             }
 
@@ -217,6 +244,8 @@ public class SshDeviceDriver implements DeviceDriver {
                     "exitCode", exitCode,
                     "stderr", stderr.toString(StandardCharsets.UTF_8).trim()
             ));
+        } catch (DriverException e) {
+            throw e;
         } catch (Exception e) {
             throw new DriverException("SSH command failed: " + command, e);
         } finally {

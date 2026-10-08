@@ -72,6 +72,25 @@ class DriverIngressBufferTest {
     }
 
     @Test
+    void overflowEvictsWithoutCallingHandlerOnProducerThread() {
+        AtomicInteger handledOnSubmitThread = new AtomicInteger();
+        Thread producer = Thread.currentThread();
+        DriverIngressBuffer<String, String> buffer = new DriverIngressBuffer<>(1, 2, (key, value) -> {
+            if (Thread.currentThread().equals(producer)) {
+                handledOnSubmitThread.incrementAndGet();
+            }
+        });
+
+        buffer.submit("a", "1");
+        buffer.submit("b", "2");
+        buffer.submit("c", "3"); // capacity exceeded — must not sync-call handler on producer
+
+        assertEquals(0, handledOnSubmitThread.get());
+        assertTrue(buffer.evictedTotal() >= 1);
+        buffer.shutdown();
+    }
+
+    @Test
     void elasticBufferScalesWorkersUnderLoad() throws Exception {
         CountDownLatch started = new CountDownLatch(1);
         AtomicInteger handled = new AtomicInteger();

@@ -18,7 +18,7 @@ public class PlatformObject {
 
     private final String id;
     private final String path;
-    private ObjectType type;
+    private volatile ObjectType type;
     private volatile String displayName;
     private volatile String description;
     private final String templateId;
@@ -128,11 +128,14 @@ public class PlatformObject {
     }
 
     public void setappliedBlueprintIds(List<String> modelIds) {
-        appliedBlueprintIds.clear();
-        if (modelIds != null) {
-            for (String modelId : modelIds) {
-                if (modelId != null && !modelId.isBlank()) {
-                    appliedBlueprintIds.add(modelId);
+        // ObjectEditLease / revision guard authoring races; this lock covers in-memory apply/reload.
+        synchronized (this) {
+            appliedBlueprintIds.clear();
+            if (modelIds != null) {
+                for (String modelId : modelIds) {
+                    if (modelId != null && !modelId.isBlank()) {
+                        appliedBlueprintIds.add(modelId);
+                    }
                 }
             }
         }
@@ -142,8 +145,10 @@ public class PlatformObject {
         if (modelId == null || modelId.isBlank()) {
             return;
         }
-        if (!appliedBlueprintIds.contains(modelId)) {
-            appliedBlueprintIds.add(modelId);
+        synchronized (this) {
+            if (!appliedBlueprintIds.contains(modelId)) {
+                appliedBlueprintIds.add(modelId);
+            }
         }
     }
 
@@ -151,7 +156,9 @@ public class PlatformObject {
         if (modelId == null || modelId.isBlank()) {
             return;
         }
-        appliedBlueprintIds.remove(modelId);
+        synchronized (this) {
+            appliedBlueprintIds.remove(modelId);
+        }
     }
 
     public Map<String, BlueprintContribution> blueprintContributions() {
@@ -159,13 +166,15 @@ public class PlatformObject {
     }
 
     public void setBlueprintContributions(Map<String, BlueprintContribution> contributions) {
-        blueprintContributions.clear();
-        if (contributions != null) {
-            contributions.forEach((id, contrib) -> {
-                if (id != null && !id.isBlank() && contrib != null) {
-                    blueprintContributions.put(id, contrib);
-                }
-            });
+        synchronized (this) {
+            blueprintContributions.clear();
+            if (contributions != null) {
+                contributions.forEach((id, contrib) -> {
+                    if (id != null && !id.isBlank() && contrib != null) {
+                        blueprintContributions.put(id, contrib);
+                    }
+                });
+            }
         }
     }
 
@@ -177,25 +186,29 @@ public class PlatformObject {
         if (blueprintId == null || blueprintId.isBlank() || contribution == null) {
             return;
         }
-        // Last-apply wins: drop claimed names from other owners.
-        for (String var : contribution.variables()) {
-            relinquishVariable(blueprintId, var);
+        synchronized (this) {
+            // Last-apply wins: drop claimed names from other owners.
+            for (String var : contribution.variables()) {
+                relinquishVariable(blueprintId, var);
+            }
+            for (String event : contribution.events()) {
+                relinquishEvent(blueprintId, event);
+            }
+            for (String fn : contribution.functions()) {
+                relinquishFunction(blueprintId, fn);
+            }
+            for (String ruleId : contribution.bindingRuleIds()) {
+                relinquishBindingRule(blueprintId, ruleId);
+            }
+            blueprintContributions.put(blueprintId, contribution);
         }
-        for (String event : contribution.events()) {
-            relinquishEvent(blueprintId, event);
-        }
-        for (String fn : contribution.functions()) {
-            relinquishFunction(blueprintId, fn);
-        }
-        for (String ruleId : contribution.bindingRuleIds()) {
-            relinquishBindingRule(blueprintId, ruleId);
-        }
-        blueprintContributions.put(blueprintId, contribution);
     }
 
     public void removeBlueprintContribution(String blueprintId) {
         if (blueprintId != null) {
-            blueprintContributions.remove(blueprintId);
+            synchronized (this) {
+                blueprintContributions.remove(blueprintId);
+            }
         }
     }
 

@@ -76,6 +76,8 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     private ElasticScheduledPool schedulerPool;
     private ScheduledThreadPoolExecutor scheduler;
     private ElasticWorkerLauncher ioWorkers;
+    private static final int IO_PENDING_MAX = 10_000;
+
     private final ConcurrentLinkedQueue<Runnable> ioPending = new ConcurrentLinkedQueue<>();
     private final AtomicInteger ioPendingCount = new AtomicInteger();
     private final Map<String, ActiveDriver> activeDrivers = new ConcurrentHashMap<>();
@@ -113,13 +115,20 @@ public class DriverRuntimeService implements DriverConnectionLookup {
 
     @PostConstruct
     void startExecutors() {
-        System.setProperty("ispf.driver.packs-dir", driverPackProperties.getPacksDir());
+        // Prefer env / JVM flags when already set; only fill defaults for unpackaged lab runs.
+        System.setProperty(
+                "ispf.driver.packs-dir",
+                System.getProperty("ispf.driver.packs-dir", driverPackProperties.getPacksDir())
+        );
         System.setProperty(
                 "ispf.snmp.mibs-dir",
-                java.nio.file.Path.of(driverPackProperties.getPacksDir(), "snmp", "mibs")
-                        .toAbsolutePath()
-                        .normalize()
-                        .toString()
+                System.getProperty(
+                        "ispf.snmp.mibs-dir",
+                        java.nio.file.Path.of(driverPackProperties.getPacksDir(), "snmp", "mibs")
+                                .toAbsolutePath()
+                                .normalize()
+                                .toString()
+                )
         );
         schedulerPool = new ElasticScheduledPool(
                 driverPackProperties.resolvedSchedulerElastic(),
@@ -368,6 +377,14 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         try {
             driver.connect();
         } catch (DriverException e) {
+            if (ingressBuffer != null) {
+                try {
+                    ingressBuffer.shutdown();
+                } catch (RuntimeException shutdownError) {
+                    log.warn("Ingress buffer shutdown after connect failure for {}: {}",
+                            devicePath, shutdownError.toString());
+                }
+            }
             var kind = errorMetrics.record(binding.driverId(), DriverErrorMetrics.Operation.CONNECT, e);
             setStatus(devicePath, "ERROR");
             throw new IllegalStateException("Driver connect failed [" + kind.tag() + "]: " + e.getMessage(), e);
@@ -405,7 +422,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
             }
         }
         if (active != null) {
-            active.future().cancel(false);
+            active.future().cancel(true);
             active.driver().disconnect();
             active.driverObject().shutdown();
         }
@@ -628,6 +645,10 @@ public class DriverRuntimeService implements DriverConnectionLookup {
             return;
         }
         if (driverPackProperties.isAsyncPollEnabled()) {
+            if (ioPendingCount.get() >= IO_PENDING_MAX) {
+                log.warn("Dropping driver poll for {} — I/O queue at capacity {}", devicePath, IO_PENDING_MAX);
+                return;
+            }
             ioPendingCount.incrementAndGet();
             ioPending.offer(() -> pollOnIoThread(devicePath, active, pointId));
             ioWorkers.signalWork();
@@ -753,7 +774,21 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         return node.getVariable(variableName)
                 .flatMap(com.ispf.core.object.Variable::value)
                 .map(record -> record.firstRow().get("value"))
-                .map(value -> ((Number) value).intValue());
+                .flatMap(DriverRuntimeService::coerceInt);
+    }
+
+    private static Optional<Integer> coerceInt(Object value) {
+        if (value instanceof Number number) {
+            return Optional.of(number.intValue());
+        }
+        if (value instanceof String text) {
+            try {
+                return Optional.of(Integer.parseInt(text.trim()));
+            } catch (NumberFormatException ignored) {
+                return Optional.empty();
+            }
+        }
+        return Optional.empty();
     }
 
     private static Optional<Boolean> boolValue(PlatformObject node, String variableName) {
@@ -820,8 +855,13 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         long withError = activeDrivers.values().stream()
                 .filter(entry -> entry.lastError() != null)
                 .count();
-        long devices = objects.childrenOf("root.platform.devices").stream()
+        long devices = objects.all().stream()
                 .filter(node -> node.type() == ObjectType.DEVICE)
+                .filter(node -> {
+                    String path = node.path();
+                    return "root.platform.devices".equals(path)
+                            || path.startsWith("root.platform.devices.");
+                })
                 .count();
 
         Map<String, Object> metrics = new LinkedHashMap<>();

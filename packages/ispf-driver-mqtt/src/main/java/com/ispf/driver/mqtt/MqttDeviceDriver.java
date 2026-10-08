@@ -4,6 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.DriverTransientException;
@@ -408,8 +409,17 @@ public class MqttDeviceDriver implements DeviceDriver {
         }
         String topic = topicPrefix + pointId;
         Object raw = value.firstRow().get("raw");
+        if (raw == null) {
+            raw = value.firstRow().get("value");
+        }
+        if (raw == null) {
+            throw new DriverConfigurationException("MQTT write requires raw/value field for " + pointId);
+        }
         try {
-            client.publish(topic, new MqttMessage(String.valueOf(raw).getBytes(StandardCharsets.UTF_8)));
+            byte[] payload = raw instanceof byte[] bytes
+                    ? bytes
+                    : String.valueOf(raw).getBytes(StandardCharsets.UTF_8);
+            client.publish(topic, new MqttMessage(payload));
         } catch (Exception e) {
             throw new DriverTransientException("Publish failed: " + topic, e);
         }

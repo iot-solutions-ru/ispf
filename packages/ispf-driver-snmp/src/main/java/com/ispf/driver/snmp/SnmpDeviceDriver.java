@@ -170,8 +170,11 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
             throw new IllegalArgumentException("SNMPv3 requires securityName");
         }
         SecurityProtocols.getInstance().addDefaultProtocols();
-        USM usm = new USM(SecurityProtocols.getInstance(), new OctetString(MPv3.createLocalEngineID()), 0);
-        SecurityModels.getInstance().addSecurityModel(usm);
+        // USM is a JVM-global SecurityModels singleton — register once, then add users.
+        if (SecurityModels.getInstance().getSecurityModel(new org.snmp4j.smi.Integer32(USM.SECURITY_MODEL_USM)) == null) {
+            USM usm = new USM(SecurityProtocols.getInstance(), new OctetString(MPv3.createLocalEngineID()), 0);
+            SecurityModels.getInstance().addSecurityModel(usm);
+        }
         snmp.getUSM().addUser(
                 new OctetString(securityName),
                 new UsmUser(
@@ -302,15 +305,38 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
                 throw new DriverPermanentException("SNMP GET batch error: " + response.getErrorStatusText());
             }
 
+            Map<String, SnmpPoint> byOid = new LinkedHashMap<>();
+            Map<String, String> pointIdByOid = new LinkedHashMap<>();
+            for (Map.Entry<String, SnmpPoint> entry : entries) {
+                String oidKey = new OID(entry.getValue().oid()).toString();
+                byOid.put(oidKey, entry.getValue());
+                pointIdByOid.put(oidKey, entry.getKey());
+            }
             Map<String, DataRecord> results = new LinkedHashMap<>();
-            int bindings = Math.min(response.size(), entries.size());
-            for (int i = 0; i < bindings; i++) {
+            for (int i = 0; i < response.size(); i++) {
                 VariableBinding binding = response.get(i);
-                if (binding == null || binding.getVariable() == null || binding.getVariable() instanceof Null) {
+                if (binding == null || binding.getOid() == null
+                        || binding.getVariable() == null || binding.getVariable() instanceof Null) {
                     continue;
                 }
-                Map.Entry<String, SnmpPoint> entry = entries.get(i);
-                results.put(entry.getKey(), SnmpValueMapper.toRecord(binding.getVariable(), entry.getValue().valueKind()));
+                String responseOid = binding.getOid().toString();
+                SnmpPoint point = byOid.get(responseOid);
+                String pointId = pointIdByOid.get(responseOid);
+                if (point == null) {
+                    // Agents may return instance OIDs (… .0); match by prefix of requested OID.
+                    for (Map.Entry<String, SnmpPoint> candidate : byOid.entrySet()) {
+                        if (responseOid.equals(candidate.getKey())
+                                || responseOid.startsWith(candidate.getKey() + ".")) {
+                            point = candidate.getValue();
+                            pointId = pointIdByOid.get(candidate.getKey());
+                            break;
+                        }
+                    }
+                }
+                if (point == null || pointId == null) {
+                    continue;
+                }
+                results.put(pointId, SnmpValueMapper.toRecord(binding.getVariable(), point.valueKind()));
             }
             return results;
         } catch (DriverException e) {

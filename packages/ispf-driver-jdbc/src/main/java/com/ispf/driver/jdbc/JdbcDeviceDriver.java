@@ -14,6 +14,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -76,7 +77,9 @@ public class JdbcDeviceDriver implements DeviceDriver {
 
     @Override
     public void connect() throws DriverException {
+        int previousLoginTimeout = DriverManager.getLoginTimeout();
         try {
+            // DriverManager login timeout is JVM-global — restore prior value after connect.
             DriverManager.setLoginTimeout(Math.max(1, timeoutMs / 1000));
             if (username == null || username.isBlank()) {
                 connection = DriverManager.getConnection(jdbcUrl);
@@ -88,6 +91,8 @@ public class JdbcDeviceDriver implements DeviceDriver {
             driverObject.log(DriverLogLevel.INFO, "JDBC connected to " + jdbcUrl);
         } catch (SQLException e) {
             throw new DriverException("JDBC connect failed", e);
+        } finally {
+            DriverManager.setLoginTimeout(previousLoginTimeout);
         }
     }
 
@@ -106,7 +111,14 @@ public class JdbcDeviceDriver implements DeviceDriver {
 
     @Override
     public boolean isConnected() {
-        return connected && connection != null;
+        if (!connected || connection == null) {
+            return false;
+        }
+        try {
+            return !connection.isClosed();
+        } catch (SQLException e) {
+            return false;
+        }
     }
 
     @Override
@@ -132,8 +144,22 @@ public class JdbcDeviceDriver implements DeviceDriver {
 
     private DataRecord executeQuery(String sql) throws DriverException {
         String normalized = sql.trim();
-        if (!normalized.regionMatches(true, 0, "SELECT", 0, 6)) {
-            throw new DriverException("Only SELECT queries are allowed");
+        if (!normalized.regionMatches(true, 0, "SELECT", 0, 6)
+                && !normalized.regionMatches(true, 0, "WITH", 0, 4)) {
+            throw new DriverException("Only SELECT/WITH queries are allowed");
+        }
+        // Reject multi-statement payloads (e.g. SELECT 1; DROP TABLE …).
+        String withoutTrailingSemi = normalized.endsWith(";")
+                ? normalized.substring(0, normalized.length() - 1).trim()
+                : normalized;
+        if (withoutTrailingSemi.indexOf(';') >= 0) {
+            throw new DriverException("Multiple SQL statements are not allowed");
+        }
+        String upper = withoutTrailingSemi.toUpperCase(java.util.Locale.ROOT);
+        for (String banned : List.of(" INSERT ", " UPDATE ", " DELETE ", " DROP ", " ALTER ", " TRUNCATE ", " CREATE ", " GRANT ", " REVOKE ")) {
+            if (upper.contains(banned)) {
+                throw new DriverException("SQL contains disallowed keyword:" + banned.trim());
+            }
         }
         try (Statement statement = connection.createStatement()) {
             statement.setQueryTimeout(Math.max(1, timeoutMs / 1000));

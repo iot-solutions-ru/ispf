@@ -23,6 +23,10 @@ public record BindingActivators(
         if (onEventRef != null && onEventRef.isBlank()) {
             onEventRef = null;
         }
+        // Fail fast at construction so matchesEvent never hides bad refs as "no match".
+        if (onEventRef != null) {
+            PlatformRefParser.parse(onEventRef);
+        }
     }
 
     /** Whether this rule runs on a dedicated async executor (default false). */
