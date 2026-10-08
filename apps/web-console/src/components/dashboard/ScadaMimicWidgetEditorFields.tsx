@@ -11,6 +11,7 @@ import {
 } from "../../scada/templates/pipelineScadaMimic";
 import { TANK_FARM_DOCUMENT_JSON, TANK_FARM_MIMIC_PATH } from "../../scada/templates/tankFarmMimic";
 import { ObjectPathField } from "../../ui";
+import { WIDGET_EDITOR_HINT_DELAY_S } from "./widgetEditorHelpers";
 
 interface ScadaMimicWidgetEditorFieldsProps {
   widget: ScadaMimicWidget;
@@ -61,7 +62,8 @@ export default function ScadaMimicWidgetEditorFields({
         value={widget.mimicPath ?? ""}
         onChange={(path) => update({ mimicPath: path || undefined })}
         filterTypes={["MIMIC"]}
-        hint="root.platform.mimics.my-mimic"
+        hint={t("editor.hint.exampleMimic")}
+        hintDelay={WIDGET_EDITOR_HINT_DELAY_S}
         placeholder=""
       />
       {mimicPath ? (

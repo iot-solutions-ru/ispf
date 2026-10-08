@@ -156,9 +156,9 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
             label={t("editor.parentPath")}
             value={(widget as { parentPath?: string }).parentPath ?? ""}
             onChange={(path) => update({ parentPath: path } as Partial<DashboardWidget>)}
-            placeholder="root.platform.devices"
+            placeholder={t("editor.hint.exampleFolder")}
           />
-          <FieldLabel caption={t("editor.selectionKeyOnClick")} code="selectionKey" hint="device">
+          <FieldLabel caption={t("editor.selectionKeyOnClick")} code="selectionKey" hint={t("editor.hint.exampleSelection")}>
             <StackedSlot>
               <SelectionKeyInput
                 value={widget.selectionKey ?? ""}

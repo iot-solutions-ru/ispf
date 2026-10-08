@@ -1,5 +1,8 @@
 // Plain helpers kept out of component modules so Fast Refresh can preserve editor state.
 
+/** Seconds before a widget-editor caption tooltip appears. */
+export const WIDGET_EDITOR_HINT_DELAY_S = 0.8;
+
 /** Pulls a trailing "(description)" out of a block title. */
 export function splitCaptionDetail(text: string): { title: string; detail?: string } {
   const match = text.trim().match(/^(.*?)\s*\(([^()]*)\)\s*$/);

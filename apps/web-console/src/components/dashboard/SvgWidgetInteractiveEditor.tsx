@@ -143,11 +143,11 @@ export default function SvgWidgetInteractiveEditor({
       </p>
 
       <WidgetMediaUploadField
-        label="svgUrl"
+        label={t("editor.field.svgUrl", { ns: "widgets" })}
         value={widget.svgUrl ?? ""}
         onChange={(svgUrl) => update({ svgUrl })}
         accept=".svg,image/svg+xml"
-        placeholder="/itm-assets/m11/main_topology.svg"
+        placeholder={t("editor.hint.exampleSvg", { ns: "widgets" })}
         previewAlt={widget.title}
       />
 

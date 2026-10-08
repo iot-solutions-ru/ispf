@@ -33,9 +33,9 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
           value={chartType}
           onChange={(e) => update({ chartType: e.target.value as typeof widget.chartType })}
         >
-          <option value="line">line</option>
-          <option value="area">area</option>
-          <option value="bar">bar</option>
+          <option value="line">{t("editor.chartStyle.line")}</option>
+          <option value="area">{t("editor.chartStyle.area")}</option>
+          <option value="bar">{t("editor.chartType.bar")}</option>
           <option value="range">{t("editor.chartTypeRange")}</option>
           <option value="candlestick">{t("editor.chartTypeCandlestick")}</option>
           <option value="bubble">{t("editor.chartTypeBubble")}</option>
@@ -119,8 +119,8 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
             value={widget.chartStyle ?? "area"}
             onChange={(e) => update({ chartStyle: e.target.value as "line" | "area" })}
           >
-            <option value="area">area</option>
-            <option value="line">line</option>
+            <option value="area">{t("editor.chartStyle.area")}</option>
+            <option value="line">{t("editor.chartStyle.line")}</option>
           </select>
         </label>
       )}
@@ -165,15 +165,15 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
               })
             }
           >
-            <option value="auto">auto</option>
-            <option value="1m">1m</option>
-            <option value="5m">5m</option>
-            <option value="15m">15m</option>
-            <option value="30m">30m</option>
-            <option value="1h">1h</option>
-            <option value="6h">6h</option>
-            <option value="8h">8h</option>
-            <option value="1d">1d</option>
+            <option value="auto">{t("editor.historyBucket.auto")}</option>
+            <option value="1m">{t("editor.historyBucket.1m")}</option>
+            <option value="5m">{t("editor.historyBucket.5m")}</option>
+            <option value="15m">{t("editor.historyBucket.15m")}</option>
+            <option value="30m">{t("editor.historyBucket.30m")}</option>
+            <option value="1h">{t("editor.historyBucket.1h")}</option>
+            <option value="6h">{t("editor.historyBucket.6h")}</option>
+            <option value="8h">{t("editor.historyBucket.8h")}</option>
+            <option value="1d">{t("editor.historyBucket.1d")}</option>
           </select>
           <span className="hint">{t("editor.historyBucketHint")}</span>
         </label>
@@ -237,35 +237,35 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
     <>
       <Section title={t("editor.section.map")} />
       <label>
-        latVariable
+        {t("editor.field.latVariable")}
         <input
           value={widget.latVariable ?? "coordinates"}
           onChange={(e) => update({ latVariable: e.target.value })}
         />
       </label>
       <label>
-        latField
+        {t("editor.field.latField")}
         <input
           value={widget.latField ?? "latitude"}
           onChange={(e) => update({ latField: e.target.value })}
         />
       </label>
       <label>
-        lonField
+        {t("editor.field.lonField")}
         <input
           value={widget.lonField ?? "longitude"}
           onChange={(e) => update({ lonField: e.target.value })}
         />
       </label>
       <label>
-        labelVariable
+        {t("editor.field.labelVariable")}
         <input
           value={widget.labelVariable ?? ""}
           onChange={(e) => update({ labelVariable: e.target.value || undefined })}
         />
       </label>
       <label>
-        zoom
+        {t("editor.field.zoom")}
         <input
           type="number"
           min={1}
@@ -275,7 +275,7 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
         />
       </label>
       <label>
-        centerLat
+        {t("editor.field.centerLat")}
         <input
           type="number"
           step="any"
@@ -284,7 +284,7 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
         />
       </label>
       <label>
-        centerLon
+        {t("editor.field.centerLon")}
         <input
           type="number"
           step="any"
@@ -293,21 +293,21 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
         />
       </label>
       <label>
-        <HintCaption hint={t("editor.placeholder.vectorStyle")}>mapStyleUrl</HintCaption>
+        <HintCaption>{t("editor.field.mapStyleUrl")}</HintCaption>
         <input
           value={widget.mapStyleUrl ?? ""}
           onChange={(e) => update({ mapStyleUrl: e.target.value || undefined })}
         />
       </label>
       <label>
-        <HintCaption hint="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png">tileUrl</HintCaption>
+        <HintCaption>{t("editor.field.tileUrl")}</HintCaption>
         <input
           value={widget.tileUrl ?? ""}
           onChange={(e) => update({ tileUrl: e.target.value || undefined })}
         />
       </label>
       <label>
-        tileAttribution
+        {t("editor.field.tileAttribution")}
         <input
           value={widget.tileAttribution ?? ""}
           onChange={(e) => update({ tileAttribution: e.target.value || undefined })}

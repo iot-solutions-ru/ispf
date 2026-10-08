@@ -20,6 +20,8 @@ export interface ObjectPathFieldProps {
   placeholder?: string;
   /** Shown on the caption. The input itself stays empty. */
   hint?: string;
+  /** Seconds before the caption tooltip appears. */
+  hintDelay?: number;
   disabled?: boolean;
   allowManual?: boolean;
   className?: string;
@@ -36,6 +38,7 @@ export default function ObjectPathField({
   rootPath,
   placeholder,
   hint,
+  hintDelay,
   disabled = false,
   allowManual = true,
   className = "",
@@ -49,7 +52,7 @@ export default function ObjectPathField({
       <label className={`object-path-field ${className}`.trim()} htmlFor={id}>
         {label &&
           (hint ? (
-            <Tooltip title={hint}>
+            <Tooltip title={hint} mouseEnterDelay={hintDelay ?? 0.1}>
               <span className="field-caption field-caption-hint">{label}</span>
             </Tooltip>
           ) : (

@@ -10,7 +10,7 @@ import { parseAnalyticsQueryTags } from "../../../hooks/useAnalyticsMultiSeries"
 import type { ObjectType } from "../../../types";
 import type { ChartWidget, DashboardWidget } from "../../../types/dashboard";
 import { ObjectPathField } from "../../../ui";
-import { splitCaptionDetail } from "../widgetEditorHelpers";
+import { splitCaptionDetail, WIDGET_EDITOR_HINT_DELAY_S } from "../widgetEditorHelpers";
 import { AdvancedJsonField, HintCaption } from "../widgetEditorStructured";
 
 export type ObjectOption = { path: string; displayName: string; variableNames: string[] };
@@ -246,6 +246,7 @@ export function PathSelect({
       onChange={onChange}
       filterTypes={filterTypes}
       hint={hint}
+      hintDelay={WIDGET_EDITOR_HINT_DELAY_S}
       placeholder=""
       pickerTitle={split.title}
     />
@@ -399,13 +400,15 @@ export function DashboardPathInput({
   dashboards: DashboardOption[];
   onChange: (path: string) => void;
 }) {
+  const { t } = useTranslation("widgets");
   return (
     <ObjectPathField
       value={value}
       objects={dashboards}
       onChange={onChange}
       filterTypes={["DASHBOARD"]}
-      hint="root.platform.dashboards.detail"
+      hint={t("editor.hint.exampleDashboardPath")}
+      hintDelay={WIDGET_EDITOR_HINT_DELAY_S}
       placeholder=""
     />
   );
@@ -458,11 +461,12 @@ export function ChartAnalyticsQueryTagsField({
                 value={tag.path}
                 onChange={(path) => updateTag(index, { path })}
                 hint={t("editor.placeholder.orEnterPath")}
+                hintDelay={WIDGET_EDITOR_HINT_DELAY_S}
                 placeholder=""
                 pickerTitle={t("editor.objectPath")}
               />
               <label>
-                <HintCaption hint="temperature">{t("editor.variableName")}</HintCaption>
+                <HintCaption hint={t("editor.hint.exampleVariable")}>{t("editor.variableName")}</HintCaption>
                 <input
                   value={tag.variable}
                   onChange={(e) => updateTag(index, { variable: e.target.value })}

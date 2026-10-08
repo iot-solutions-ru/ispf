@@ -16,7 +16,7 @@ import {
 import { WIDGET_STYLE_KEYS_HINT, parseWidgetStyles } from "./widgetStyles";
 import type { WidgetStyleKey } from "./widgetStyles";
 import { parseJsonArray, parseJsonObject, stringifyJson } from "./widgetEditorJson";
-import { recordFieldNames, splitCaptionDetail } from "./widgetEditorHelpers";
+import { recordFieldNames, splitCaptionDetail, WIDGET_EDITOR_HINT_DELAY_S } from "./widgetEditorHelpers";
 import { ObjectPathField } from "../../ui";
 
 function joinHints(...parts: Array<string | undefined>): string | undefined {
@@ -41,7 +41,7 @@ export function HintCaption({
   const caption = <span className={classNames}>{shown}</span>;
   if (!title) return caption;
   return (
-    <Tooltip title={title} overlayStyle={{ maxWidth: 420 }}>
+    <Tooltip title={title} mouseEnterDelay={WIDGET_EDITOR_HINT_DELAY_S} overlayStyle={{ maxWidth: 420 }}>
       {caption}
     </Tooltip>
   );
@@ -489,11 +489,11 @@ export function ObjectTableColumnsEditor({
       ) : null}
       <div className="widget-editor-table-editor">
         <div className="widget-editor-table-head">
-          <HintCaption className="widget-editor-mini-caption" hint="sysName">
+          <HintCaption className="widget-editor-mini-caption" hint={t("editor.hint.exampleColumnVariable")}>
             {t("editor.structured.colVariable")}
           </HintCaption>
           <span>{t("editor.structured.colLabel")}</span>
-          <HintCaption className="widget-editor-mini-caption" hint="value">
+          <HintCaption className="widget-editor-mini-caption" hint={t("editor.hint.exampleField")}>
             {t("editor.structured.colField")}
           </HintCaption>
           <span />
@@ -850,11 +850,12 @@ export function NavMenuItemsEditor({
               }}
             />
           </MiniField>
-          <MiniField caption={t("editor.col.objectPath")} hint="root.platform.dashboards...">
+          <MiniField caption={t("editor.col.objectPath")} hint={t("editor.hint.exampleDashboardPath")}>
             <ObjectPathField
               value={item.dashboardPath}
               objects={dashboards}
               filterTypes={["DASHBOARD"]}
+              hintDelay={WIDGET_EDITOR_HINT_DELAY_S}
               placeholder=""
               onChange={(path) => {
                 const next = [...items];
@@ -903,10 +904,10 @@ export function IdLabelListEditor({
 
   return (
     <div className="widget-editor-structured full">
-      <HintCaption hint={t("editor.structured.nestedWidgetsHint")}>{label}</HintCaption>
+      <HintCaption>{label}</HintCaption>
       {items.map((item, index) => (
         <div key={index} className="widget-editor-list-row">
-          <MiniField caption="id">
+          <MiniField caption={t("editor.structured.stepId")}>
             <input
               value={item.id}
               onChange={(e) => {
@@ -971,7 +972,7 @@ export function SheetGridSizeEditor({
       <HintCaption>{t("editor.spreadsheet.gridSize")}</HintCaption>
       <div className="widget-editor-list-row">
         <label>
-          rows
+          {t("editor.spreadsheet.rows")}
           <input
             type="number"
             min={1}
@@ -981,7 +982,7 @@ export function SheetGridSizeEditor({
           />
         </label>
         <label>
-          cols
+          {t("editor.spreadsheet.cols")}
           <input
             type="number"
             min={1}
@@ -991,7 +992,7 @@ export function SheetGridSizeEditor({
           />
         </label>
         <label>
-          frozenRows
+          {t("editor.spreadsheet.frozenRows")}
           <input
             type="number"
             min={0}
@@ -1000,7 +1001,7 @@ export function SheetGridSizeEditor({
           />
         </label>
         <label>
-          frozenCols
+          {t("editor.spreadsheet.frozenCols")}
           <input
             type="number"
             min={0}
@@ -1022,7 +1023,7 @@ export function WidgetStylesEditor({
   value: string | undefined;
   onChange: (next: string | undefined) => void;
 }) {
-  const { t } = useTranslation("widgets");
+  const { t } = useTranslation(["widgets", "dashboard"]);
   const styles = parseWidgetStyles(value);
   const [activeKey, setActiveKey] = useState<WidgetStyleKey>("value");
 
@@ -1047,26 +1048,26 @@ export function WidgetStylesEditor({
 
   return (
     <div className="widget-editor-structured full">
-      <HintCaption>{t("editor.styling")}</HintCaption>
+      <HintCaption>{t("editor.styling", { ns: "dashboard" })}</HintCaption>
       <label>
         {t("editor.structured.styleElement")}
         <select value={activeKey} onChange={(e) => setActiveKey(e.target.value as WidgetStyleKey)}>
           {STYLE_KEYS.map((k) => (
             <option key={k} value={k}>
-              {k}
+              {t(`editor.styleElement.${k}`)}
             </option>
           ))}
         </select>
       </label>
       <div className="widget-editor-list-row">
-        <MiniField caption="fontSize" hint="0.88rem">
+        <MiniField caption={t("editor.style.fontSize")} hint={t("editor.hint.exampleFontSize")}>
           <input
             value={String(current.fontSize ?? "")}
             onChange={(e) => patchStyle("fontSize", e.target.value)}
           />
         </MiniField>
         <label>
-          color
+          {t("editor.style.color")}
           <input
             type="color"
             value={typeof current.color === "string" && current.color.startsWith("#") ? current.color : "var(--text)"}
@@ -1076,26 +1077,26 @@ export function WidgetStylesEditor({
       </div>
       <div className="widget-editor-list-row">
         <label>
-          display
+          {t("editor.style.display")}
           <select
             value={String(current.display ?? "")}
             onChange={(e) => patchStyle("display", e.target.value)}
           >
             <option value="">—</option>
-            <option value="block">block</option>
-            <option value="none">none</option>
-            <option value="flex">flex</option>
+            <option value="block">{t("editor.style.display.block")}</option>
+            <option value="none">{t("editor.style.display.none")}</option>
+            <option value="flex">{t("editor.style.display.flex")}</option>
           </select>
         </label>
         <label>
-          whiteSpace
+          {t("editor.style.whiteSpace")}
           <select
             value={String(current.whiteSpace ?? "")}
             onChange={(e) => patchStyle("whiteSpace", e.target.value)}
           >
             <option value="">—</option>
-            <option value="nowrap">nowrap</option>
-            <option value="normal">normal</option>
+            <option value="nowrap">{t("editor.style.whiteSpace.nowrap")}</option>
+            <option value="normal">{t("editor.style.whiteSpace.normal")}</option>
           </select>
         </label>
       </div>
@@ -1136,7 +1137,7 @@ export function TabPanelMetaEditor({
       <HintCaption>{t("editor.structured.tabs")}</HintCaption>
       {tabs.map((tab, index) => (
         <div key={index} className="widget-editor-list-row">
-          <MiniField caption="id">
+          <MiniField caption={t("editor.structured.tabId")}>
             <input
               value={tab.id}
               onChange={(e) => {

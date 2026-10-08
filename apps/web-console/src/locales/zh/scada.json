@@ -101,7 +101,7 @@
   "props.behaviors": "行为",
   "props.behaviorsAdd": "添加行为",
   "props.behaviorsEmpty": "No behaviors yet.",
-  "props.behaviorsHint": "Map binding keys to SVG targets (id=\"ispf-…\").",
+  "props.behaviorsHint": "图中每个区域对应一个对象。SVG 的 id 以 ispf- 开头。下方列表会自动更新。",
   "props.behaviorsRemove": "删除",
   "props.bindingObjectPath": "对象路径",
   "props.bindingQualityField": "品质领域",
