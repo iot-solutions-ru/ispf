@@ -71,4 +71,28 @@ class ObjectTreeTest {
 
         assertThat(tree.childrenOf("root.platform.operator-apps")).hasSize(1);
     }
+
+    @Test
+    void rejectsDuplicateObjectId() {
+        ObjectTree tree = new ObjectTree();
+        tree.register(new PlatformObject("same-id", "root.a", ObjectType.DEVICE, "A", null, null));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                        tree.register(new PlatformObject("same-id", "root.b", ObjectType.DEVICE, "B", null, null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Object id already registered");
+
+        assertThat(tree.findByPath("root.b")).isEmpty();
+        assertThat(tree.findById("same-id")).isPresent();
+        assertThat(tree.findById("same-id").orElseThrow().path()).isEqualTo("root.a");
+    }
+
+    @Test
+    void resolveChildPathRejectsDottedName() {
+        ObjectTree tree = new ObjectTree();
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tree.resolveChildPath("root", "a.b"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must not contain");
+        assertThat(tree.resolveChildPath("root", "pump")).isEqualTo("root.pump");
+    }
 }

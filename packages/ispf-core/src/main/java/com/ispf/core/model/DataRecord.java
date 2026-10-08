@@ -69,7 +69,11 @@ public final class DataRecord {
         return rows.get(rowIndex).get(field);
     }
 
-    public void addRow(Map<String, Object> values) {
+    /**
+     * Construction-time only. Published records must stay immutable so variable readers
+     * and CHANGES_ONLY dedup cannot race on a shared mutable list.
+     */
+    private void addRow(Map<String, Object> values) {
         Map<String, Object> normalized = new LinkedHashMap<>();
         for (FieldDefinition field : schema.fields()) {
             Object value = values.get(field.name());

@@ -2,6 +2,7 @@ package com.ispf.core.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,11 @@ class DataRecordTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("must be integer");
         assertThatThrownBy(() -> DataRecord.single(schema, Map.of("value", Integer.MAX_VALUE + 1L)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("out of integer range");
+        assertThatThrownBy(() -> DataRecord.single(
+                        schema,
+                        Map.of("value", BigInteger.valueOf(Integer.MAX_VALUE).add(BigInteger.ONE))))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("out of integer range");
     }

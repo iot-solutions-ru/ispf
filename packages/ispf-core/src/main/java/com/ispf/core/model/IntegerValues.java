@@ -1,5 +1,7 @@
 package com.ispf.core.model;
 
+import java.math.BigInteger;
+
 /**
  * Shared INTEGER field checks: whole number in {@code int} range, no silent truncation.
  */
@@ -21,6 +23,13 @@ public final class IntegerValues {
                 throw new IllegalArgumentException(fieldName + " is out of integer range");
             }
             return longValue.intValue();
+        }
+        if (value instanceof BigInteger bigInteger) {
+            if (bigInteger.compareTo(BigInteger.valueOf(Integer.MIN_VALUE)) < 0
+                    || bigInteger.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) {
+                throw new IllegalArgumentException(fieldName + " is out of integer range");
+            }
+            return bigInteger.intValueExact();
         }
         if (value instanceof Short || value instanceof Byte) {
             return ((Number) value).intValue();

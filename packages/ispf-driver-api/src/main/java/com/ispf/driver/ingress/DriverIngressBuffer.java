@@ -7,10 +7,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
 
 /**
@@ -35,7 +35,7 @@ public final class DriverIngressBuffer<K, V> {
     private volatile boolean running = true;
     private ExecutorService workers;
     private ElasticWorkerScaler scaler;
-    private volatile Thread drainWaiter;
+    private final Semaphore workAvailable = new Semaphore(0);
 
     public DriverIngressBuffer(int workerThreads, int capacity, BiConsumer<K, V> handler) {
         this(workerThreads, capacity, handler, "driver-ingress-worker", false);
@@ -119,12 +119,8 @@ public final class DriverIngressBuffer<K, V> {
         if (previous == null) {
             int size = pendingCount.incrementAndGet();
             if (size > capacity) {
-                V removed = pendingByKey.remove(key);
-                if (removed != null && pendingCount.decrementAndGet() >= 0) {
-                    evictedTotal.incrementAndGet();
-                }
-                handler.accept(key, value);
-                return;
+                // Drop another pending sample so producers never call handler on the I/O thread.
+                evictOtherPending(key);
             }
         } else {
             coalescedTotal.incrementAndGet();
@@ -132,14 +128,15 @@ public final class DriverIngressBuffer<K, V> {
         if (eagerDrain) {
             scheduleLaneDrain(key);
         } else {
-            unparkDrainWaiter();
+            signalWork();
         }
         adjustWorkers();
     }
 
     public void shutdown() {
         running = false;
-        unparkDrainWaiter();
+        signalWork();
+        workAvailable.release(Math.max(1, activeWorkers.get()));
         if (workers != null) {
             workers.shutdownNow();
             workers = null;
@@ -231,8 +228,12 @@ public final class DriverIngressBuffer<K, V> {
                 List<Entry> batch = drainBatch(64);
                 if (batch.isEmpty()) {
                     adjustWorkers();
-                    drainWaiter = Thread.currentThread();
-                    LockSupport.parkNanos(250_000L);
+                    try {
+                        workAvailable.tryAcquire(1, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                     continue;
                 }
                 for (Entry entry : batch) {
@@ -241,6 +242,20 @@ public final class DriverIngressBuffer<K, V> {
             }
         } finally {
             activeWorkers.decrementAndGet();
+        }
+    }
+
+    private void evictOtherPending(K keepKey) {
+        for (K other : pendingByKey.keySet()) {
+            if (other.equals(keepKey)) {
+                continue;
+            }
+            V dropped = pendingByKey.remove(other);
+            if (dropped != null) {
+                pendingCount.decrementAndGet();
+                evictedTotal.incrementAndGet();
+                return;
+            }
         }
     }
 
@@ -268,11 +283,8 @@ public final class DriverIngressBuffer<K, V> {
         } while (!batch.isEmpty());
     }
 
-    private void unparkDrainWaiter() {
-        Thread waiter = drainWaiter;
-        if (waiter != null) {
-            LockSupport.unpark(waiter);
-        }
+    private void signalWork() {
+        workAvailable.release();
     }
 
     private final class Entry {
