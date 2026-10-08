@@ -9,6 +9,8 @@
 1. **[Попробовать ISPF](#попробовать-ispf-15-минут)** — запуск и демо (новички).  
 2. **[Контрибут](#контрибут-локальный-dev--qa)** — быстрый local QA / pre-push (контрибьюторы).
 
+**Карта обучения** (первый час → первое решение → по ролям → сертификация): **[Обучение ISPF](learn.md)**.
+
 ---
 
 ## Попробовать ISPF (≈15 минут)
@@ -99,7 +101,8 @@ curl -X POST "http://localhost:8080/api/v1/drivers/runtime/start?devicePath=root
 
 ### Дальше после демо
 
-- [Обзор продукта](product.md) · [Модель объектов](object-model.md) · [Дашборды](dashboards.md) · [Автоматизация](automation.md)  
+- **[Обучение ISPF](learn.md)** — путь B (день первого решения) или путь C (по ролям)  
+- [Обзор продукта](product.md) · [Модель объектов](object-model.md) · [Anti-patterns](../en/anti-patterns.md)  
 - [Разработчик решений](solution-developer-guide.md) — реальный bundle  
 - [Внешняя AI IDE](external-ide.md) — продуктовый React SPA в Cursor (hosted ui-pack)  
 - [Архитектура](architecture.md) · [API](api.md)
