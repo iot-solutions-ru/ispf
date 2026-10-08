@@ -7,7 +7,8 @@
 **Одна страница: где вы сейчас и что открыть дальше.**  
 Остальные гайды, лабы и сертификация висят на этой карте.
 
-Ясный каркас обучения: Getting started → Quick start → Tutorials → How-to → Troubleshooting. У ISPF та же ясность плюс безопасные дефолты ([anti-patterns](../en/anti-patterns.md)).
+Каркас: **Getting started → Quick start → Curriculum → How-to → How not to → Troubleshooting**.  
+Только текст и практика — без видео.
 
 ---
 
@@ -34,7 +35,39 @@
 
 **Готово, когда:** можете объяснить дерево → переменная → binding/alert → dashboard без Java.
 
-Полная карта путей B/C, туториалы и topic map — в **английском каноне**: [en/learn.md](../en/learn.md).
+---
+
+## Путь B — День первого решения
+
+| Шаг | Цель | Документ |
+|-----|------|----------|
+| 1 | Хаб + DEVICE | [Принципы приложений](application-principles.md) · [Lab training](lab-training.md) |
+| 2 | Драйвер RUNNING | [Драйверы](drivers.md) |
+| 3 | Binding / функция хаба | [Привязки](bindings.md) · [Язык выражений](expression-language.md) |
+| 4 | Dashboard / SCADA | [Дашборды](dashboards.md) · [Виджеты](widgets.md) |
+| 5 | Alert → workflow | [Автоматизация](automation.md) · [Workflows](workflows.md) |
+| 6 | Pack & validate | [Разработчик решений](solution-developer-guide.md) |
+
+---
+
+## Curriculum — глубокий трек (текст)
+
+После A/B — модули по порядку (читать → практика). Полная таблица с ссылками — в **[en/learn.md](../en/learn.md)#curriculum--deep-track-text**.
+
+| # | Модуль |
+|---|--------|
+| 1 | Цели и слои платформы |
+| 2 | Модель объектов |
+| 3 | Драйверы и протоколы |
+| 4 | Единая модель (хаб ≠ DEVICE) |
+| 5 | Bindings и выражения |
+| 6 | Хранение и historian |
+| 7 | Алерты и автоматизация |
+| 8 | Визуализация |
+| 9 | Доступ и роли |
+| 10 | Отгрузка (bundle / ui-pack) |
+| 11 | Эксплуатация |
+| 12 | Стандарт именования / authoring |
 
 ---
 

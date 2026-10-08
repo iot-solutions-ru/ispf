@@ -7,7 +7,8 @@
 **One page to decide where you are and what to open next.**  
 Everything else (guides, labs, certification) hangs off this map.
 
-A clear learning spine is Getting started → Quick start → Tutorials → How-to → Troubleshooting. ISPF keeps that clarity, with **safer defaults** ([anti-patterns](anti-patterns.md)).
+Learning spine: **Getting started → Quick start → Curriculum → How-to → How not to → Troubleshooting**.  
+Text-first: read + do labs; no video track required.
 
 ---
 
@@ -58,37 +59,36 @@ Quick-start spine (device → data → viz → automation → ship):
 | I am… | Follow | Then certify |
 |-------|--------|--------------|
 | **Operator / HMI user** | Path A → [Operator guide](operator-guide.md) → [SCADA](scada.md) | — |
-| **Solution developer** | Path A → B → [External AI IDE](external-ide.md) (optional SPA) | [Certification — Solution developer](certification.md#solution-developer-track) |
+| **Solution developer** | Path A → B → Curriculum below → [External AI IDE](external-ide.md) (optional SPA) | [Certification — Solution developer](certification.md#solution-developer-track) |
 | **OT / drivers** | Path A → [Drivers](drivers.md) → [Field pilot](field-pilot-playbook.md) | Admin L2 modules in certification |
 | **Platform admin** | [Deployment](deployment.md) → [Security](security.md) → [Observability](observability.md) | [Certification — Platform admin](certification.md#platform-admin-track) |
 | **AI / agent author** | [AI development](ai-development.md) → [Agent knowledge](agent-knowledge.md) → [OT Automation tutorials](ot-automation-excellence-tutorials.md) | Solution developer L3 |
 
 ---
 
-## Tutorials & walkthroughs (hands-on)
+## Curriculum — deep track (text)
 
-### Core OT automation (timed)
+After Path A/B: work the modules in order. Each row is **read the doc → do the practice** (lab pack, demo tree, or mini exercise). Same progression as a classic platform course: goals → model → I/O → logic → history → UI → ship → ops.
 
-Hub: [OT Automation Excellence tutorials](ot-automation-excellence-tutorials.md) (~10–20 min each).
+| # | Module | Learn | Practice | Doc |
+|---|--------|-------|----------|-----|
+| 1 | Platform goals & layers | Why one object tree; what an application is | Sketch your plant as folders under `root.platform` | [Product](product.md) · [Architecture](architecture.md) |
+| 2 | Object model | Objects, variables, events, functions | Name paths for hub + one DEVICE | [Object model](object-model.md) |
+| 3 | Drivers & protocols | Connect OT/IT; start/stop; status | Bring demo or Modbus/MQTT device to RUNNING | [Drivers](drivers.md) |
+| 4 | Unified model | Logic on SINGLETON/INSTANCE; DEVICE = I/O only | Create hub; put DEVICE under it | [Application principles](application-principles.md) § Logic objects · [Blueprints](blueprints.md) |
+| 5 | Bindings & expressions | Rules, order, multi-pass; CEL | One binding writing a display variable | [Bindings](bindings.md)#execution · [Expression language](expression-language.md) |
+| 6 | Storage & historian | Last-value vs history; rollups; journal off by default | Chart a variable; leave MQTT journal off | [Variable history](variable-history.md) · [Anti-patterns](anti-patterns.md) § MQTT |
+| 7 | Alerts & automation | Threshold → alert → optional workflow | Reuse demo alarm; add one rule | [Automation](automation.md) · [Workflows](workflows.md) |
+| 8 | Visualization | Dashboards, widgets, SCADA; thin client | Bind widgets to hub vars only | [Dashboards](dashboards.md) · [Widgets](widgets.md) · [SCADA](scada.md) |
+| 9 | Access control | Roles, object/variable permissions | Operator vs admin login | [Security](security.md) · [Operator guide](operator-guide.md) |
+| 10 | Ship the solution | Bundle, validate, deploy; optional ui-pack | `ispf pack` / `validate_bundle` green | [Solution developer guide](solution-developer-guide.md) · [Applications](applications.md) · [External AI IDE](external-ide.md) |
+| 11 | Operations | Deploy, observe, recover | One observability check on a running stand | [Deployment](deployment.md) · [Observability](observability.md) |
+| 12 | Authoring standard | Names, short expressions, dictionaries | Rename hub functions with verb prefixes | [Anti-patterns](anti-patterns.md) § Authoring naming · [Application principles](application-principles.md) |
 
-### Reference solutions (import & explore)
+**Done when:** you can build Path B from scratch **and** explain why each anti-pattern is blocked or warned.
 
-| Walkthrough | What you learn |
-|-------------|----------------|
-| [Lab training](lab-training.md) | Virtual device, dashboards, reports |
-| [MES reference](reference-mes-walkthrough.md) | Manufacturing tree + operator app |
-| [MES OEE](reference-mes-oee-walkthrough.md) | OEE KPIs |
-| [mini-TEC](reference-mini-tec-walkthrough.md) | Energy / SLD HMI |
-| [Building HVAC](reference-building-hvac-walkthrough.md) | Building automation pattern |
-
-### Deep dives (when you need them)
-
-| Topic | Doc |
-|-------|-----|
-| Historian / rollups | [Variable history](variable-history.md) · [Analytics cookbook](analytics-historian-cookbook.md) |
-| Blueprints / SHAPE | [Blueprints](blueprints.md) |
-| Collaboration / leases | [Collaboration](collaboration.md) |
-| Troubleshooting production | [Observability](observability.md) · [Deployment](deployment.md) |
+Optional intensives (timed, still text): [OT Automation tutorials](ot-automation-excellence-tutorials.md).  
+Reference packs: [Lab training](lab-training.md) · [MES](reference-mes-walkthrough.md) · [mini-TEC](reference-mini-tec-walkthrough.md) · [HVAC](reference-building-hvac-walkthrough.md).
 
 ---
 
@@ -97,11 +97,11 @@ Hub: [OT Automation Excellence tutorials](ot-automation-excellence-tutorials.md)
 | Topic | ISPF home |
 |-------|-----------|
 | Getting started / Install | [Getting started](getting-started.md) · [Deployment](deployment.md) |
-| Quick start (device → viz → DB) | **Path B** above |
-| Tutorial / video courses | Path C + OT tutorials + reference walkthroughs |
-| How to | Topic docs + [expression-language](expression-language.md) recipes |
+| Quick start | **Path B** |
+| Deep curriculum | **Curriculum** above |
+| How to | Topic docs + [expression-language](expression-language.md) |
 | How **not** to | [Anti-patterns](anti-patterns.md) |
-| Troubleshooting | [Observability](observability.md) · lab stress docs · support via [product](product.md) |
+| Troubleshooting | [Observability](observability.md) · lab stress docs · [product](product.md) |
 | Glossary | [Glossary](glossary.md) |
 | Certification | [Certification](certification.md) |
 
@@ -110,12 +110,13 @@ Hub: [OT Automation Excellence tutorials](ot-automation-excellence-tutorials.md)
 ## Teaching tips (for trainers / partners)
 
 1. **Demo first, theory second** — Path A before object-model lectures.  
-2. **Show the anti-pattern** — one bad widget expression vs hub function (why ISPF is faster/safer).  
+2. **Show the anti-pattern** — one bad widget expression vs hub function.  
 3. **Always end with ship** — pack/validate, not a snowflake tree.  
-4. **One hub rule** — chant SINGLETON/INSTANCE vs DEVICE until it sticks.  
-5. **Use lab packs** — `examples/lab-training`, `mes-reference` beat empty sandboxes.
+4. **One hub rule** — SINGLETON/INSTANCE vs DEVICE until it sticks.  
+5. **Use lab packs** — `examples/lab-training`, `mes-reference` beat empty sandboxes.  
+6. **Text modules, not slides** — walk Curriculum #1–12 with docs open; assign one practice per module.
 
-Partner curriculum hours: [Certification](certification.md) · [Partner program](partner-program.md).
+Partner hours: [Certification](certification.md) · [Partner program](partner-program.md).
 
 ---
 
@@ -125,7 +126,7 @@ Partner curriculum hours: [Certification](certification.md) · [Partner program]
 |-----|------|
 | [docs/en/readme](readme.md) | Full catalog |
 | [Getting started](getting-started.md) | Boot + first login |
-| [Anti-patterns](anti-patterns.md) | What not to build |
+| [Anti-patterns](anti-patterns.md) | What not to build + naming standard |
 | [Application principles](application-principles.md) | P1–P10 for authors & agents |
 
 *Keep this page short. Add links, not essays — detail lives in topic docs.*
