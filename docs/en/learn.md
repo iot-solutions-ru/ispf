@@ -125,7 +125,7 @@ Partner curriculum hours: [Certification](certification.md) · [Partner program]
 |-----|------|
 | [docs/en/readme](readme.md) | Full catalog |
 | [Getting started](getting-started.md) | Boot + first login |
-| [Anti-patterns](anti-patterns.md) | What not to recreate from field pain |
+| [Anti-patterns](anti-patterns.md) | What not to build |
 | [Application principles](application-principles.md) | P1–P10 for authors & agents |
 
 *Keep this page short. Add links, not essays — detail lives in topic docs.*

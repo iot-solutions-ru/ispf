@@ -279,7 +279,7 @@ Smoke: `GET /apps/my-app/` **не** должен отдавать заголов
 | `base: '/'` в production | `base: '/apps/<appId>/'` |
 | Правила только в React | SQL/CEL/alerts на платформе; SPA рисует |
 | Хаб логики типа DEVICE | SINGLETON или INSTANCE |
-| AggreGate или чужой MCP вместо `/api/v1/ai/mcp` | MCP ISPF с admin Bearer |
+| Чужой MCP вместо `/api/v1/ai/mcp` | MCP ISPF с admin Bearer |
 | Десять `add_dashboard_widget` как продуктовый UI | Kit — fallback; SPA — продукт |
 
 ---

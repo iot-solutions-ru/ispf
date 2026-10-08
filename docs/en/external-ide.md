@@ -282,7 +282,7 @@ For the platform checkout, a second agent session with ISPF MCP owns migrations,
 | `base: '/'` in production | `base: '/apps/<appId>/'` |
 | Business rules only in React | SQL/CEL/alerts on the platform; SPA renders |
 | Logic hub typed as DEVICE | SINGLETON or INSTANCE |
-| AggreGate or other MCP instead of `/api/v1/ai/mcp` | ISPF MCP with admin Bearer |
+| Third-party MCP instead of `/api/v1/ai/mcp` | ISPF MCP with admin Bearer |
 | Ten `add_dashboard_widget` calls as the product UI | Widget kit is fallback; SPA is the product |
 
 ---
