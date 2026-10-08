@@ -494,8 +494,8 @@ public class BundleManifestValidator {
     }
 
     /**
-     * Field pain: heavy expressions in widgets run on the client path and are ~40× slower.
-     * ISPF keeps logic on the hub — warn when a dashboard widget embeds oversized CEL/scripts.
+     * Field pain: oversized logic in dashboard widgets is hard to reuse/test and belongs on the hub.
+     * ISPF has no desktop calc client — warn when a widget embeds oversized CEL/scripts.
      */
     private void warnHeavyWidgetExpressions(
             JsonNode widget,
@@ -509,7 +509,7 @@ public class BundleManifestValidator {
                 builder.addIssue(BundleValidationIssue.warning(
                         "HEAVY_WIDGET_EXPRESSION",
                         "dashboards[" + dashboardPath + "].widgets[" + widgetIndex + "]" + fieldPath,
-                        "Widget expression is ≥" + limit + " chars — client-side logic anti-pattern",
+                        "Widget expression is ≥" + limit + " chars — put logic on the hub, not in HMI fields",
                         "Move branching/queries to a SINGLETON/INSTANCE hub function or binding rule; "
                                 + "keep the widget as a thin binding to a variable.",
                         BundleValidationIssue.DOC_ANTI_PATTERNS

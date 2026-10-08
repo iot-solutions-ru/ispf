@@ -14,8 +14,8 @@ See also: [learn](learn.md) (how we teach the safe path), [application-principle
 
 | Field pitfall | ISPF |
 |-----------|------|
-| Large expressions in widgets (~40× slower than server) | Widgets bind to variables; logic on **SINGLETON / INSTANCE hub** (functions, binding rules) |
-| Desktop client round-trips data for client-side calc | Hosted SPA + `POST /api/v1/bff/invoke` on hub |
+| Heavy branching / joins living in dashboard widgets | Widgets bind to variables; logic on **SINGLETON / INSTANCE hub** (functions, binding rules) |
+| Logic scattered where HMI cannot reuse or test it | Hosted SPA + `POST /api/v1/bff/invoke` on hub |
 
 **Enforced:** bundle validate warns `HEAVY_WIDGET_EXPRESSION` (≥400 chars in widget expression/condition/script fields). Binding save logs heavy rule expressions via `BindingCascadeAnalyzer`.
 
