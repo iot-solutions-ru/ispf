@@ -199,7 +199,7 @@ class FatekDeviceDriverTest {
         }
 
         void start() {
-            var _ = var _ = executor.submit(this::acceptLoop);
+            var _ = executor.submit(this::acceptLoop);
         }
 
         private void acceptLoop() {

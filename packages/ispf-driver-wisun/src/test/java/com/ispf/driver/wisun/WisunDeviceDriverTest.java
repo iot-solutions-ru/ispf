@@ -141,7 +141,7 @@ class WisunDeviceDriverTest {
         }
 
         void start() {
-            var _ = var _ = executor.submit(this::serve);
+            var _ = executor.submit(this::serve);
         }
 
         private void serve() {

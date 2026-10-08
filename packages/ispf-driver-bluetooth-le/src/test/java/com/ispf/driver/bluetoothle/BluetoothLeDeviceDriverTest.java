@@ -197,7 +197,7 @@ class BluetoothLeDeviceDriverTest {
         }
 
         void start() {
-            var unusedAccept = var _ = executor.submit(this::acceptLoop);
+            var _ = executor.submit(this::acceptLoop);
             ready.countDown();
         }
 

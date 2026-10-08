@@ -167,7 +167,7 @@ class ThreadDeviceDriverTest {
         }
 
         void start() {
-            var _ = var _ = executor.submit(this::acceptOnce);
+            var _ = executor.submit(this::acceptOnce);
             ready.countDown();
         }
 
