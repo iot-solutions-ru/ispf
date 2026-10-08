@@ -482,12 +482,78 @@ public class BundleManifestValidator {
         if (!widgets.isArray()) {
             return;
         }
+        int widgetIndex = 0;
         for (JsonNode widget : widgets) {
             String type = widget.path("type").asText("");
             if (!type.isBlank() && !KNOWN_WIDGET_TYPES.contains(type)) {
                 builder.addWarning("dashboard " + dashboardPath + ": unknown widget type '" + type + "'");
             }
+            warnHeavyWidgetExpressions(widget, dashboardPath, widgetIndex, builder);
+            widgetIndex++;
         }
+    }
+
+    /**
+     * Field pain: heavy expressions in widgets run on the client path and are ~40× slower.
+     * ISPF keeps logic on the hub — warn when a dashboard widget embeds oversized CEL/scripts.
+     */
+    private void warnHeavyWidgetExpressions(
+            JsonNode widget,
+            String dashboardPath,
+            int widgetIndex,
+            BundleValidationResult.Builder builder
+    ) {
+        final int limit = 400;
+        walkExpressionFields(widget, "", (fieldPath, text) -> {
+            if (text != null && text.length() >= limit) {
+                builder.addIssue(BundleValidationIssue.warning(
+                        "HEAVY_WIDGET_EXPRESSION",
+                        "dashboards[" + dashboardPath + "].widgets[" + widgetIndex + "]" + fieldPath,
+                        "Widget expression is ≥" + limit + " chars — client-side logic anti-pattern",
+                        "Move branching/queries to a SINGLETON/INSTANCE hub function or binding rule; "
+                                + "keep the widget as a thin binding to a variable.",
+                        BundleValidationIssue.DOC_ANTI_PATTERNS
+                ));
+            }
+        });
+    }
+
+    private interface ExpressionFieldConsumer {
+        void accept(String fieldPath, String text);
+    }
+
+    private void walkExpressionFields(JsonNode node, String path, ExpressionFieldConsumer consumer) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+        if (node.isObject()) {
+            for (String name : node.propertyNames()) {
+                JsonNode child = node.get(name);
+                String childPath = path + "." + name;
+                if (isExpressionishField(name) && child != null && child.isTextual()) {
+                    consumer.accept(childPath, child.asText());
+                } else {
+                    walkExpressionFields(child, childPath, consumer);
+                }
+            }
+            return;
+        }
+        if (node.isArray()) {
+            int i = 0;
+            for (JsonNode child : node) {
+                walkExpressionFields(child, path + "[" + i + "]", consumer);
+                i++;
+            }
+        }
+    }
+
+    private static boolean isExpressionishField(String name) {
+        String lower = name.toLowerCase(Locale.ROOT);
+        return lower.contains("expression")
+                || lower.contains("condition")
+                || "visibility".equals(lower)
+                || "formula".equals(lower)
+                || "script".equals(lower);
     }
 
     private void validateObjects(

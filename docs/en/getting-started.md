@@ -9,6 +9,8 @@ Two tracks:
 1. **[Try ISPF](#try-ispf-15-minutes)** — run the platform and open the demo (newcomers).  
 2. **[Contribute](#contribute-local-dev--qa)** — fast local QA / pre-push (contributors).
 
+**Learning map** (first hour → first solution → by role → certification): **[Learn ISPF](learn.md)**.
+
 ---
 
 ## Try ISPF (≈15 minutes)
@@ -59,6 +61,12 @@ cd apps/web-console && npm install && npm run dev
 
 `bootRun` uses **`syncDevDriverPacks`** by default (≈8 packs). Full catalog: `-Dispf.driver.packs=all`.
 
+### Solution pack (repeatable ship)
+
+Author as a folder → `tools/ispf-cli` (`ispf pack|validate|diff|deploy`) → `bundle.json`. This is the ISPF answer to “save whole Application” snapshots: see [solution-developer-guide](solution-developer-guide.md) § solution-as-repo and [anti-patterns](anti-patterns.md) § Solution snapshot.
+
+Avoid: heavy widget expressions, MQTT event journal on flood topics, logic on `DEVICE` hubs ([anti-patterns](anti-patterns.md)).
+
 ### 2. Sign in (`local` profile)
 
 Default empty DB seeds: **`admin` / `admin`** (also `developer` / `developer`, `operator` / `operator`). Use the Web Console login screen.
@@ -99,7 +107,8 @@ Temperature is a sine wave; when the threshold is exceeded, `alarmActive` and th
 
 ### Next after the demo
 
-- [Product overview](product.md) · [Object model](object-model.md) · [Dashboards](dashboards.md) · [Automation](automation.md)  
+- **[Learn ISPF](learn.md)** — Path B (first solution day) or Path C (by role)  
+- [Product overview](product.md) · [Object model](object-model.md) · [Anti-patterns](anti-patterns.md)  
 - [Solution developer guide](solution-developer-guide.md) — build a real bundle  
 - [External AI IDE](external-ide.md) — product React SPA in Cursor (hosted ui-pack)  
 - [Architecture](architecture.md) · [API](api.md)

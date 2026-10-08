@@ -108,6 +108,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0058-mixin-reevaluation-and-detach](0058-mixin-reevaluation-and-detach.md) | MIXIN opt-in reevaluation + ownership-aware detach — **Accepted** |
 | [0059-toolchain-version-policy](0059-toolchain-version-policy.md) | Toolchain / dependency version policy (N or N-1, pins with owners, heavy deps in modules) — **Accepted** |
 | [0060-solution-authoring-constraints](0060-solution-authoring-constraints.md) | AI-first solution authoring constraints (schema, SINGLETON hubs, W1–W6) — **Accepted** |
+| [0061-high-rate-telemetry-history-defaults](0061-high-rate-telemetry-history-defaults.md) | MQTT / journal / previousValue safe defaults (field pain) — **Accepted** |
 
 ## Topic chains (read in order)
 

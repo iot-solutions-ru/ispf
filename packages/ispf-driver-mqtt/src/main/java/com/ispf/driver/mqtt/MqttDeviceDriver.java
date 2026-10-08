@@ -32,6 +32,10 @@ import java.util.concurrent.ThreadPoolExecutor;
  * Callbacks enqueue into a bounded ingress lane so Paho I/O threads never block on variable
  * updates under flood load. {@code EVENT_JOURNAL_ONLY} and {@code ingressCoalesceEnabled=false}
  * use {@link DriverIngressFifoExecutor} (1:1 FIFO); otherwise a last-value-wins coalesce buffer.
+ * <p>
+ * Safe defaults: {@code eventToVariable=false} keeps high-rate traffic as last-value variables.
+ * Leave object {@code eventJournalEnabled=false} unless durable message audit is required
+ * (see {@code docs/en/anti-patterns.md}).
  */
 public class MqttDeviceDriver implements DeviceDriver {
 
@@ -39,7 +43,7 @@ public class MqttDeviceDriver implements DeviceDriver {
             "mqtt",
             "MQTT Driver",
             "0.1.0",
-            "Connects to MQTT 3.1.1 brokers (Paho mqttv3) and maps topic payloads to ISPF variables",
+            "MQTT 3.1.1 → variables (default last-value; keep eventJournalEnabled off for high-rate topics)",
             "ISPF",
             Map.of(
                     "brokerUrl", "tcp://localhost:1883",

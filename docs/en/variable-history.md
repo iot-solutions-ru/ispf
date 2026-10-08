@@ -77,8 +77,9 @@ ispf:
     record-snapshot-enabled: true   # field $record — full DataRecord JSON in value_text
     # Per-variable policy (PATCH .../variables/history):
     #   historySampleMode: CHANGES_ONLY | ALL_VALUES
-    #   includePreviousValueInEvent: boolean
+    #   includePreviousValueInEvent: boolean  # opt-in previousValue on WS/automation (ADR-0061)
     #   storageMode: PERSISTENT | TRANSIENT
+    # High-rate MQTT: keep object eventJournalEnabled=false (anti-patterns.md / ADR-0061)
     slo:
       aggregate-max-points: 1000000
       aggregate-max-latency-ms: 2000

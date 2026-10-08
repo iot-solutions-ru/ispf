@@ -24,6 +24,8 @@ import com.ispf.server.event.EventService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -34,13 +36,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class BindingRuleEngine {
 
+    private static final Logger log = LoggerFactory.getLogger(BindingRuleEngine.class);
+
     private static final int MAX_PASSES = 8;
     private static final int MAX_DEPTH = 16;
     private static final ThreadLocal<Integer> ACTIVATION_DEPTH = ThreadLocal.withInitial(() -> 0);
+    private static final AtomicLong TRUNCATION_TOTAL = new AtomicLong();
 
     private static final DataSchema CONTEXT_VALUE_SCHEMA = DataSchema.builder("dashboardContext")
             .field("value", FieldType.STRING)
@@ -131,7 +137,21 @@ public class BindingRuleEngine {
     }
 
     private static IllegalStateException truncated(String objectPath, String limit) {
+        long total = TRUNCATION_TOTAL.incrementAndGet();
+        log.error(
+                "Binding rule chain truncated at {} ({}); totalTruncations={}. "
+                        + "Break write/activate cycles or move logic to a hub function "
+                        + "(docs/en/anti-patterns.md, docs/en/bindings.md#execution).",
+                objectPath,
+                limit,
+                total
+        );
         return new IllegalStateException("Binding rule chain truncated at " + objectPath + ": " + limit);
+    }
+
+    /** Test / diagnostics counter for cascade stop-loss hits. */
+    public static long truncationTotal() {
+        return TRUNCATION_TOTAL.get();
     }
 
     private void runRules(String objectPath, Trigger trigger, boolean guardDepth) {
