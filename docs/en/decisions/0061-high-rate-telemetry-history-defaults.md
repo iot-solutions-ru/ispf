@@ -14,7 +14,7 @@ Legacy MQTT device setups often stored every inbound `message` event by default.
 2. New objects keep `eventJournalEnabled=false` unless an author explicitly enables it.
 3. `Variable.includePreviousValueInEvent` remains **opt-in** (payload size / automation need).
 4. Time-bucket analytics use historian **rollups** (`kind: historian`, `rollupBuckets`), not per-message event granules.
-5. Bundle / authoring docs point at [anti-patterns.md](../anti-patterns.md) § MQTT and § Granulation.
+5. Bundle / authoring docs point at [anti-patterns.md](../anti-patterns.md) § MQTT and § Hand-rolled time buckets.
 
 ## Consequences
 

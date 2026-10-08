@@ -19,7 +19,7 @@
 | Где живёт решение? | **Дерево объектов** (`root.platform…`) — один runtime |
 | Куда класть логику? | Хаб **SINGLETON** или twin **INSTANCE** — никогда `DEVICE` |
 | Как отгружать? | **Bundle** (`ispf pack` / deploy) + опционально **ui-pack** |
-| Чего не делать? | Тяжёлая логика в виджетах, MQTT journal flood, циклы binding — [anti-patterns](../en/anti-patterns.md) |
+| Чего не делать? | Тяжёлая логика в виджетах, MQTT journal flood, циклы binding — [anti-patterns](anti-patterns.md) |
 
 ---
 
@@ -31,7 +31,7 @@
 | 2 | 10 мин | Старт драйвера; температура / alarm | Getting started |
 | 3 | 10 мин | Режим оператора (`?mode=operator`) | [Оператор](operator-guide.md) |
 | 4 | 15 мин | Модель дерева | [Модель объектов](object-model.md) |
-| 5 | 10 мин | Чего не строить | [Anti-patterns](../en/anti-patterns.md) |
+| 5 | 10 мин | Чего не строить | [Anti-patterns](anti-patterns.md) |
 
 **Готово, когда:** можете объяснить дерево → переменная → binding/alert → dashboard без Java.
 

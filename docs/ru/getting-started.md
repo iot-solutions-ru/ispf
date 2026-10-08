@@ -102,7 +102,7 @@ curl -X POST "http://localhost:8080/api/v1/drivers/runtime/start?devicePath=root
 ### Дальше после демо
 
 - **[Обучение ISPF](learn.md)** — путь B (день первого решения) или путь C (по ролям)  
-- [Обзор продукта](product.md) · [Модель объектов](object-model.md) · [Anti-patterns](../en/anti-patterns.md)  
+- [Обзор продукта](product.md) · [Модель объектов](object-model.md) · [Anti-patterns](anti-patterns.md)  
 - [Разработчик решений](solution-developer-guide.md) — реальный bundle  
 - [Внешняя AI IDE](external-ide.md) — продуктовый React SPA в Cursor (hosted ui-pack)  
 - [Архитектура](architecture.md) · [API](api.md)

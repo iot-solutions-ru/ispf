@@ -293,7 +293,7 @@ Do **not** invent a fake “hub DEVICE” and hang KPIs on it. A CUSTOM/folder c
 | Binding write↔activate cycles | Pass/depth truncation under load | One owner per variable; see [bindings § Execution](bindings.md#execution) |
 | MQTT / flood topics with event journal on | History DB and UI melt | Last-value variables; `eventJournalEnabled` opt-in only ([anti-patterns](anti-patterns.md)) |
 
-Full transfer list from field wiki: **[anti-patterns.md](anti-patterns.md)**.
+Field pain → ISPF constraints (only enforced items): **[anti-patterns.md](anti-patterns.md)**.
 
 ---
 

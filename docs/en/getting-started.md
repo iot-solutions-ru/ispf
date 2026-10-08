@@ -63,7 +63,7 @@ cd apps/web-console && npm install && npm run dev
 
 ### Solution pack (repeatable ship)
 
-Author as a folder → `tools/ispf-cli` (`ispf pack|validate|diff|deploy`) → `bundle.json`. This is the ISPF answer to “save whole Application” snapshots: see [solution-developer-guide](solution-developer-guide.md) § solution-as-repo and [anti-patterns](anti-patterns.md) § Solution snapshot.
+Author as a folder → `tools/ispf-cli` (`ispf pack|validate|diff|deploy`) → `bundle.json`. Prefer that over hand-copied trees: see [solution-developer-guide](solution-developer-guide.md) § solution-as-repo and [anti-patterns](anti-patterns.md) § Hand-copied trees.
 
 Avoid: heavy widget expressions, MQTT event journal on flood topics, logic on `DEVICE` hubs ([anti-patterns](anti-patterns.md)).
 

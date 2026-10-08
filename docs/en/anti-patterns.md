@@ -1,12 +1,12 @@
-> **Language:** Canonical English. Russian edition: [ru/anti-patterns.md](../ru/anti-patterns.md) (when published).
+> **Language:** Canonical English. Russian edition: [ru/anti-patterns.md](../ru/anti-patterns.md).
 
 # Anti-patterns (field pain → ISPF design)
 
-> **Status:** Stable — poka-yoke lessons from production field wiki. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — poka-yoke mappings with **existing** ISPF enforcement. Hub: [doc-status.md](doc-status.md).
 
-Internal knowledge base ([wiki.iot-solutions.ru](https://wiki.iot-solutions.ru/doku.php?id=main)) captures years of field pain from prior SCADA/IoT deployments. ISPF must **not** reproduce those footguns. This page is the transfer list: what hurt there, what we do instead, and how the platform enforces it.
+This page lists field footguns that **already have** an ISPF answer (validator code, binding engine, driver default, or ADR). It is not a dump of prior-platform docs and does not invent features.
 
-See also: [learn](learn.md) (how we teach the safe path), [application-principles](application-principles.md), [bindings](bindings.md)#execution, [variable-history](variable-history.md), [solution-developer-guide](solution-developer-guide.md) § solution-as-repo.
+See also: [learn](learn.md), [application-principles](application-principles.md), [bindings](bindings.md)#execution, [variable-history](variable-history.md), [ADR-0061](decisions/0061-high-rate-telemetry-history-defaults.md), [solution-developer-guide](solution-developer-guide.md) § solution-as-repo.
 
 ---
 
@@ -14,23 +14,23 @@ See also: [learn](learn.md) (how we teach the safe path), [application-principle
 
 | Field pitfall | ISPF |
 |-----------|------|
-| Heavy branching / joins living in dashboard widgets | Widgets bind to variables; logic on **SINGLETON / INSTANCE hub** (functions, binding rules) |
-| Logic scattered where HMI cannot reuse or test it | Hosted SPA + `POST /api/v1/bff/invoke` on hub |
+| Branching / multi-step logic living in dashboard widgets | Widgets bind variables; logic on a **SINGLETON / INSTANCE** hub (object functions, binding rules) |
+| Same logic scattered where HMI cannot reuse or test it | Hosted SPA calls hub via `POST /api/v1/bff/invoke` |
 
-**Enforced:** bundle validate warns `HEAVY_WIDGET_EXPRESSION` (≥400 chars in widget expression/condition/script fields). Binding save logs heavy rule expressions via `BindingCascadeAnalyzer`.
+**Enforced:** `BundleManifestValidator` warns `HEAVY_WIDGET_EXPRESSION` when a widget `expression` / `condition` / `script` field is ≥ **400** characters. Heavy binding expressions are warned by `BindingCascadeAnalyzer` on rule save.
 
-**Rule:** if a widget expression needs branches, joins, or multi-step logic → `call(@/fn/…)` or a binding writing a display variable.
+**Rule:** if a widget needs branches or multi-step logic → hub function via expression `call(@/fn/…)` (or a binding that writes a display variable). See [expression-language](expression-language.md).
 
 ---
 
-## 2. Binding cascade / “queue of activations”
+## 2. Binding cascade / activation queue
 
 | Field pitfall | ISPF |
 |-----------|------|
-| Multiple bindings on one event run **strictly sequential**; later rules see mid-wave writes; easy to lock out conditions | Rules on one object: sorted by **`order`**, **multi-pass** until stable (`MAX_PASSES=8`), **depth** limit `16` for cross-object chains |
-| No static cycle detection | `BindingCascadeAnalyzer` warns on write↔activate cycles at save time; truncations are logged with counter |
+| Several rules on one change run as a strict queue; later rules see mid-wave writes and lock each other out | Per object: rules sorted by **`order`**; **multi-pass** until stable (`MAX_PASSES=8`); cross-object activation **`MAX_DEPTH=16`** |
+| No warning when write↔activate cycles exist | `BindingCascadeAnalyzer` warns on save; truncations are logged |
 
-**Rule:** one write “owner” per variable; use `activators.async=true` only for independent side effects; put branching in hub functions.
+**Rule:** one write owner per variable; set `activators.async=true` only for independent side effects; put branching in hub functions.
 
 Details: [bindings.md § Execution](bindings.md#execution).
 
@@ -40,10 +40,10 @@ Details: [bindings.md § Execution](bindings.md#execution).
 
 | Field pitfall | ISPF |
 |-----------|------|
-| MQTT device stores every `message` event by default → UI/DB melt | Default `eventToVariable=false` (last-value variables); **`eventJournalEnabled` off** unless audit is explicit |
-| Manual retention rule after the fire | Opt-in journal + retention properties; high-rate ingress uses coalesce/FIFO buffers |
+| High-rate ingress kept as a full event history → UI/DB melt | MQTT driver default **`eventToVariable=false`** (last-value / coalesce). New objects keep **`eventJournalEnabled=false`** |
+| Journal turned on for catch-all topics without retention | Enable journal only with an explicit audit + retention plan (ADR-0061) |
 
-**Rule:** never enable object event journal for catch-all MQTT topics in production without a retention plan.
+**Rule:** do not enable object event journal on flood paths in production without retention.
 
 ---
 
@@ -51,42 +51,42 @@ Details: [bindings.md § Execution](bindings.md#execution).
 
 | Field pitfall | ISPF |
 |-----------|------|
-| `updated.oldValue` opt-in (off by default for load) | `Variable.includePreviousValueInEvent` opt-in; WS/automation get `previousValue` when enabled |
+| Previous sample attached to every update (payload and load cost) | **`Variable.includePreviousValueInEvent`** is opt-in; when enabled, WS/automation payloads may include `previousValue` |
 
-**Rule:** enable previous value only on variables that rules/audit need; do not turn on globally.
+**Rule:** enable only on variables that rules or audit need; do not turn on globally.
 
 ---
 
-## 5. “Granulation” / time buckets
+## 5. Hand-rolled time buckets as events
 
 | Field pitfall | ISPF |
 |-----------|------|
-| Device-level granules as events with custom bucket expressions | Historian **materialized rollups** (`variable_rollups`, `rollupBuckets` on historian binding rules) + aggregate API |
+| Custom “granules” stored as device events with ad-hoc bucket expressions | Historian **materialized rollups**: binding rules with `kind: historian`, `windowBucket` / **`rollupBuckets`**, plus aggregate query APIs |
 
-Prefer `kind: historian` rules with `windowBucket` / `rollupBuckets` over hand-rolled event granules. See [analytics-historian-cookbook](analytics-historian-cookbook.md).
+Prefer historian rules over inventing event streams for time buckets. See [analytics-historian-cookbook](analytics-historian-cookbook.md).
 
 ---
 
-## 6. Solution snapshot / Application export
+## 6. Hand-copied trees instead of a ship artifact
 
 | Field pitfall | ISPF |
 |-----------|------|
-| Save whole app via Application context | **Solution-as-repo**: `ispf pack|validate|diff|deploy` → `bundle.json` + ui-pack; tree pull via bundle sections |
+| Whole-solution snapshot by copying live trees / ad-hoc export | **Solution-as-repo**: `ispf pack` / `validate` / `diff` / `deploy` → `bundle.json` (+ optional ui-pack) |
 
-Do not hand-copy trees. SHIP layer = bundle (ADR-0060 W4). Guide: [solution-developer-guide](solution-developer-guide.md).
+Do not hand-copy trees between environments. SHIP layer = bundle ([ADR-0060](decisions/0060-solution-authoring-constraints.md)). Guide: [solution-developer-guide](solution-developer-guide.md).
 
 ---
 
-## 7. Authoring naming (coding standard)
+## 7. Authoring naming
 
 | Practice | Why |
 |----------|-----|
 | `lowerCamelCase` for variables, functions, rule ids | Sortable, expression-friendly |
 | Verbs for functions (`getTelemetry`, `ackAlarm`) | Intent at call site |
-| No type prefix in names (`pump01`, not `devicePump01`) | Type is in object path / `ObjectType` |
-| Descriptions filled on functions and non-obvious variables | AI + humans |
+| No type prefix in names (`pump01`, not `devicePump01`) | Type is object path / `ObjectType` |
+| Descriptions on functions and non-obvious variables | Operators + AI tools |
 
-Logic hosts stay **SINGLETON / INSTANCE**, never `DEVICE` ([application-principles](application-principles.md) § Logic objects vs DEVICE).
+Logic hosts stay **SINGLETON / INSTANCE**, never `ObjectType.DEVICE` ([application-principles](application-principles.md) § Logic objects vs DEVICE). Bundle validate warns `LOGIC_HOST_DEVICE`.
 
 ---
 
@@ -94,12 +94,12 @@ Logic hosts stay **SINGLETON / INSTANCE**, never `DEVICE` ([application-principl
 
 Before finishing a solution:
 
-1. No `LOGIC_HOST_DEVICE` / prefer hub functions over widget scripts.
-2. No `HEAVY_WIDGET_EXPRESSION` / heavy binding expressions without a hub function.
-3. MQTT / flood paths: journal off; last-value or coalesce ingress.
-4. Binding cycles: resolve warnings; keep `order` intentional.
-5. Ship artifact: `ispf pack` / `validate_bundle` green.
+1. No `LOGIC_HOST_DEVICE` — hub functions over widget scripts.
+2. No unresolved `HEAVY_WIDGET_EXPRESSION` — move logic to the hub.
+3. Flood paths: `eventJournalEnabled=false`; MQTT `eventToVariable=false` unless a designed fan-out is required.
+4. Binding cycles: clear `BindingCascadeAnalyzer` warnings; keep `order` intentional.
+5. Ship artifact: `ispf pack` / agent `validate_bundle` green.
 
 ---
 
-*Update when a new field pain maps to a platform constraint or validator code.*
+*Add a row only when a field pain maps to shipping validator code, engine limits, or an accepted ADR — not when a prior-platform recipe has no ISPF counterpart.*
