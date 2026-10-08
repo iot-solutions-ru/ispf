@@ -38,11 +38,11 @@ class ModelUpgradeApiTest {
     private ObjectManager objectManager;
 
     @Autowired
-    private BlueprintApplicationRunner BlueprintApplicationRunner;
+    private BlueprintApplicationRunner blueprintApplicationRunner;
 
     @Test
     void vendorDemoDeviceExistsAndBulkUpgradeSucceeds() throws Exception {
-        BlueprintApplicationRunner.applyDemoBlueprints();
+        blueprintApplicationRunner.applyDemoBlueprints();
 
         var vendorModel = blueprintRegistry.requireByName(DemoFixtureBootstrap.VENDOR_SENSOR_EXT_MODEL);
         objectManager.require(VENDOR_PATH);
@@ -62,7 +62,7 @@ class ModelUpgradeApiTest {
 
     @Test
     void singlePathUpgradeApi() throws Exception {
-        BlueprintApplicationRunner.applyDemoBlueprints();
+        blueprintApplicationRunner.applyDemoBlueprints();
         var vendorModel = blueprintRegistry.requireByName(DemoFixtureBootstrap.VENDOR_SENSOR_EXT_MODEL);
 
         mockMvc.perform(post("/api/v1/blueprints/{id}/upgrade", vendorModel.id())

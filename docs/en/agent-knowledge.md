@@ -8,7 +8,7 @@ Reference document for the **tree-first agent**, AI Studio, and MCP clients. It 
 
 **How to read this:** `search_context(query=..., topic=...)` returns full slices from ContextPack. This file is a **router**: what to choose and where to go next.
 
-See also [application-principles](application-principles.md) (canonical P1-P10 set), [ai-development](ai-development.md), [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md), [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md).
+See also [application-principles](application-principles.md) (canonical P1-P10 set), [anti-patterns](anti-patterns.md) (field pain → ISPF constraints), [ai-development](ai-development.md), [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md), [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md).
 
 ---
 

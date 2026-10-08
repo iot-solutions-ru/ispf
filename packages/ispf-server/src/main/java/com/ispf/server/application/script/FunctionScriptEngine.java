@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.util.Locale;
 /**
  * Executes JSON step scripts for application-deployed functions (REQ-PF-01).
  */
@@ -530,7 +531,7 @@ public class FunctionScriptEngine {
 
     private static Map<String, Object> normalizeRow(Map<String, Object> row) {
         Map<String, Object> normalized = new LinkedHashMap<>();
-        row.forEach((key, value) -> normalized.put(key.toLowerCase(), value));
+        row.forEach((key, value) -> normalized.put(key.toLowerCase(Locale.ROOT), value));
         return normalized;
     }
 

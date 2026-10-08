@@ -201,7 +201,7 @@ public class TelemetryIngressDispatcher {
         if (workers == null || activeWorkers.get() >= properties.resolvedIngressWorkerThreadsMax()) {
             return;
         }
-        workers.submit(this::workerLoop);
+        var _ = workers.submit(this::workerLoop);
     }
 
     private void adjustWorkers() {

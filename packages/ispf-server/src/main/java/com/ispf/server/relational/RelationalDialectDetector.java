@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 
+import java.util.Locale;
 public class RelationalDialectDetector {
 
     private final Map<RelationalDbKind, RelationalDialect> dialectsByKind;
@@ -40,7 +41,7 @@ public class RelationalDialectDetector {
     }
 
     static RelationalDbKind detectFromConnection(Connection connection) throws SQLException {
-        String product = connection.getMetaData().getDatabaseProductName().toLowerCase();
+        String product = connection.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT);
         if (product.contains("postgresql")) {
             return RelationalDbKind.POSTGRESQL;
         }

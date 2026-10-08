@@ -210,14 +210,14 @@ class UdsDeviceDriverTest {
         }
 
         void start() {
-            executor.submit(this::acceptLoop);
+            var _ = executor.submit(this::acceptLoop);
         }
 
         private void acceptLoop() {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
+                    var _ = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (serverSocket.isClosed()) {
                         return;

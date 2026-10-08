@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import java.util.Locale;
 /**
  * Per-session mutable state: bundle validation gates and in-flight agent continuation.
  */
@@ -48,7 +49,7 @@ public final class AgentRunState {
         if (packs != null) {
             for (String pack : packs) {
                 if (pack != null && !pack.isBlank()) {
-                    activeToolPacks.add(pack.trim().toLowerCase());
+                    activeToolPacks.add(pack.trim().toLowerCase(Locale.ROOT));
                 }
             }
         }
@@ -56,7 +57,7 @@ public final class AgentRunState {
 
     public void enableToolPack(String pack) {
         if (pack != null && !pack.isBlank()) {
-            activeToolPacks.add(pack.trim().toLowerCase());
+            activeToolPacks.add(pack.trim().toLowerCase(Locale.ROOT));
         }
     }
 
@@ -81,7 +82,7 @@ public final class AgentRunState {
     }
 
     public void setClientChannel(String channel) {
-        this.clientChannel = channel == null ? "" : channel.trim().toLowerCase();
+        this.clientChannel = channel == null ? "" : channel.trim().toLowerCase(Locale.ROOT);
     }
 
     public void clearClientChannel() {
@@ -418,7 +419,7 @@ public final class AgentRunState {
         if (packsRaw instanceof Iterable<?> iterable) {
             for (Object item : iterable) {
                 if (item != null && !String.valueOf(item).isBlank()) {
-                    activeToolPacks.add(String.valueOf(item).trim().toLowerCase());
+                    activeToolPacks.add(String.valueOf(item).trim().toLowerCase(Locale.ROOT));
                 }
             }
         }

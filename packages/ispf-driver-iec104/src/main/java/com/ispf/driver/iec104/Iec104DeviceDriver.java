@@ -24,6 +24,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import java.util.Locale;
 /**
  * IEC 60870-5-104 client driver — polls information objects via read commands.
  * <p>
@@ -188,7 +189,7 @@ public class Iec104DeviceDriver implements DeviceDriver {
         if (raw == null) {
             throw new DriverPermanentException("IEC104 write requires boolean value field");
         }
-        String text = String.valueOf(raw).trim().toLowerCase();
+        String text = String.valueOf(raw).trim().toLowerCase(Locale.ROOT);
         return "true".equals(text) || "1".equals(text) || "on".equals(text);
     }
 

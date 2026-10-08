@@ -33,17 +33,17 @@ public class HaystackBlueprintBootstrap {
             .field("value", FieldType.STRING)
             .build();
 
-    private final BlueprintEngine BlueprintEngine;
-    private final BlueprintRegistry BlueprintRegistry;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintRegistry blueprintRegistry;
 
-    public HaystackBlueprintBootstrap(BlueprintEngine BlueprintEngine, BlueprintRegistry BlueprintRegistry) {
-        this.BlueprintEngine = BlueprintEngine;
-        this.BlueprintRegistry = BlueprintRegistry;
+    public HaystackBlueprintBootstrap(BlueprintEngine blueprintEngine, BlueprintRegistry blueprintRegistry) {
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintRegistry = blueprintRegistry;
     }
 
     public void ensureHaystackModel() {
-        if (BlueprintRegistry.findByName(HAYSTACK_METADATA_MODEL).isEmpty()) {
-            BlueprintEngine.createBlueprint(buildHaystackMetadataModel());
+        if (blueprintRegistry.findByName(HAYSTACK_METADATA_MODEL).isEmpty()) {
+            blueprintEngine.createBlueprint(buildHaystackMetadataModel());
         }
     }
 

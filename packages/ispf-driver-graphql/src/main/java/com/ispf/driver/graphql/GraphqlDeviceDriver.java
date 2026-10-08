@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.Locale;
 /**
  * GraphQL driver — HTTP POST queries and optional mutations against a GraphQL endpoint.
  * <p>
@@ -149,7 +150,7 @@ public class GraphqlDeviceDriver implements DeviceDriver {
         GraphqlPoint mapped = points.get(pointId);
         if (mutation == null || mutation.isBlank()) {
             if (mapped != null && GraphqlPoint.looksLikeDocument(mapped.document())
-                    && mapped.document().toLowerCase().trim().startsWith("mutation")) {
+                    && mapped.document().toLowerCase(Locale.ROOT).trim().startsWith("mutation")) {
                 mutation = mapped.document();
             } else if (mapped != null) {
                 mutation = mapped.document();

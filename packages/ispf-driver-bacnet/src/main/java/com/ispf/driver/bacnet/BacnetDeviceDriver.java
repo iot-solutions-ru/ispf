@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.Locale;
 /**
  * BACnet/IP driver backed by the ISPF clean-room UDP codec.
  * <p>
@@ -192,7 +193,7 @@ public class BacnetDeviceDriver implements DeviceDriver {
         if (raw instanceof Boolean bool) {
             return bool;
         }
-        String text = String.valueOf(raw).trim().toLowerCase();
+        String text = String.valueOf(raw).trim().toLowerCase(Locale.ROOT);
         return "true".equals(text) || "1".equals(text) || "on".equals(text) || "active".equals(text);
     }
 

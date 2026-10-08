@@ -1,5 +1,7 @@
 package com.ispf.driver.graphql;
 
+
+import java.util.Locale;
 /**
  * Point mapping for GraphQL reads and optional mutation writes.
  * <p>
@@ -42,7 +44,7 @@ public record GraphqlPoint(String document, String fieldPath) {
         if (text.startsWith("{")) {
             return true;
         }
-        String lower = text.toLowerCase();
+        String lower = text.toLowerCase(Locale.ROOT);
         return lower.startsWith("query")
                 || lower.startsWith("mutation")
                 || lower.startsWith("fragment");

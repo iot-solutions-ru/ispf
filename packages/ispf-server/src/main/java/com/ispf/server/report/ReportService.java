@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import java.util.Locale;
 @Service
 public class ReportService {
 
@@ -51,8 +52,8 @@ public class ReportService {
             .build();
 
     private final ObjectManager objectManager;
-    private final BlueprintRegistry BlueprintRegistry;
-    private final BlueprintEngine BlueprintEngine;
+    private final BlueprintRegistry blueprintRegistry;
+    private final BlueprintEngine blueprintEngine;
     private final SystemObjectStructureService structureService;
     private final ApplicationSchemaSession schemaSession;
     private final ApplicationReportStore reportStore;
@@ -68,8 +69,8 @@ public class ReportService {
 
     public ReportService(
             ObjectManager objectManager,
-            BlueprintRegistry BlueprintRegistry,
-            BlueprintEngine BlueprintEngine,
+            BlueprintRegistry blueprintRegistry,
+            BlueprintEngine blueprintEngine,
             SystemObjectStructureService structureService,
             ApplicationSchemaSession schemaSession,
             ApplicationReportStore reportStore,
@@ -84,8 +85,8 @@ public class ReportService {
             TreeVariablesReportRows treeVariablesReportRows
     ) {
         this.objectManager = objectManager;
-        this.BlueprintRegistry = BlueprintRegistry;
-        this.BlueprintEngine = BlueprintEngine;
+        this.blueprintRegistry = blueprintRegistry;
+        this.blueprintEngine = blueprintEngine;
         this.structureService = structureService;
         this.schemaSession = schemaSession;
         this.reportStore = reportStore;
@@ -185,8 +186,8 @@ public class ReportService {
         if (node.getVariable("reportType").isPresent()) {
             return;
         }
-        BlueprintRegistry.findByName(LabBlueprintBootstrap.TREE_VARIABLES_REPORT_MODEL).ifPresent(model -> {
-            BlueprintEngine.applyBlueprint(model.id(), path);
+        blueprintRegistry.findByName(LabBlueprintBootstrap.TREE_VARIABLES_REPORT_MODEL).ifPresent(model -> {
+            blueprintEngine.applyBlueprint(model.id(), path);
             objectManager.persistNodeTree(path);
         });
     }
@@ -411,7 +412,7 @@ public class ReportService {
         }
         ReportTemplateStore.validateFormat(format);
         templateStore.save(resolved, format, content);
-        setString(resolved, "templateFormat", format.trim().toLowerCase());
+        setString(resolved, "templateFormat", format.trim().toLowerCase(Locale.ROOT));
         return getReport(resolved);
     }
 

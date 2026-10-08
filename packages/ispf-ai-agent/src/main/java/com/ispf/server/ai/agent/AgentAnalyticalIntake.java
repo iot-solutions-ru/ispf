@@ -282,7 +282,7 @@ public final class AgentAnalyticalIntake {
             return false;
         }
         for (int i = 0; i < text.length(); i++) {
-            if (Character.UnicodeBlock.of(text.charAt(i)) == Character.UnicodeBlock.CYRILLIC) {
+            if (Character.UnicodeBlock.CYRILLIC.equals(Character.UnicodeBlock.of(text.charAt(i)))) {
                 return true;
             }
         }

@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.regex.Pattern;
 
+import java.util.Locale;
 /**
  * Applies / clears PostgreSQL RLS GUC session variables on a connection (BL-155).
  * Uses {@code set_config(..., false)} for session-level (not transaction-LOCAL) scope.
@@ -44,7 +45,7 @@ public final class TenantRlsSession {
         if (tenantId == null || tenantId.isBlank()) {
             return "";
         }
-        String normalized = tenantId.trim().toLowerCase();
+        String normalized = tenantId.trim().toLowerCase(Locale.ROOT);
         return TENANT_ID_PATTERN.matcher(normalized).matches() ? normalized : "";
     }
 

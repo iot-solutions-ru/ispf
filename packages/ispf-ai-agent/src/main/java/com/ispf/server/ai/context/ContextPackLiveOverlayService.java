@@ -44,7 +44,7 @@ public class ContextPackLiveOverlayService {
     private final DriverCatalog driverCatalog;
     private final ApplicationDataStore applicationDataStore;
     private final ApplicationBundleSnapshotStore bundleSnapshotStore;
-    private final ObjectTreePort ObjectTreePort;
+    private final ObjectTreePort objectTreePort;
     private final PlatformBriefingCacheEpoch briefingCacheEpoch;
     private final Optional<BuildProperties> buildProperties;
 
@@ -52,14 +52,14 @@ public class ContextPackLiveOverlayService {
             DriverCatalog driverCatalog,
             ApplicationDataStore applicationDataStore,
             ApplicationBundleSnapshotStore bundleSnapshotStore,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             PlatformBriefingCacheEpoch briefingCacheEpoch,
             Optional<BuildProperties> buildProperties
     ) {
         this.driverCatalog = driverCatalog;
         this.applicationDataStore = applicationDataStore;
         this.bundleSnapshotStore = bundleSnapshotStore;
-        this.ObjectTreePort = ObjectTreePort;
+        this.objectTreePort = objectTreePort;
         this.briefingCacheEpoch = briefingCacheEpoch;
         this.buildProperties = buildProperties;
     }
@@ -93,7 +93,7 @@ public class ContextPackLiveOverlayService {
         Map<String, Integer> objectCounts = new LinkedHashMap<>();
         try {
             Map<ObjectType, Integer> counts = new EnumMap<>(ObjectType.class);
-            for (PlatformObject object : ObjectTreePort.tree().all()) {
+            for (PlatformObject object : objectTreePort.tree().all()) {
                 if (COUNT_TYPES.contains(object.type())) {
                     counts.merge(object.type(), 1, Integer::sum);
                 }

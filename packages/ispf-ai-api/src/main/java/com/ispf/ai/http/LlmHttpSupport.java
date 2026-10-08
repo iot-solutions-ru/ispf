@@ -569,7 +569,10 @@ public final class LlmHttpSupport {
             return message;
         }
         Throwable cause = ex.getCause();
-        if (cause != null && cause != ex) {
+        // Identity: do not recurse into a self-cause loop.
+        @SuppressWarnings("ReferenceEquality")
+        boolean distinctCause = cause != null && cause != ex;
+        if (distinctCause) {
             String causeDetail = exceptionDetail(cause);
             if (!causeDetail.equals(cause.getClass().getSimpleName())) {
                 return ex.getClass().getSimpleName() + " (" + cause.getClass().getSimpleName() + ": " + causeDetail + ")";

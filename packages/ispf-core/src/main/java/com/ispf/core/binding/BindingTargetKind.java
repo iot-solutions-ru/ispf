@@ -1,5 +1,7 @@
 package com.ispf.core.binding;
 
+
+import java.util.Locale;
 /**
  * Effect kind for a platform rule ({@link BindingRule}).
  */
@@ -18,7 +20,7 @@ public final class BindingTargetKind {
         if (kind == null || kind.isBlank()) {
             return VARIABLE;
         }
-        return switch (kind.trim().toLowerCase()) {
+        return switch (kind.trim().toLowerCase(Locale.ROOT)) {
             case CONTEXT -> CONTEXT;
             case EVENT -> EVENT;
             case ACTION -> ACTION;

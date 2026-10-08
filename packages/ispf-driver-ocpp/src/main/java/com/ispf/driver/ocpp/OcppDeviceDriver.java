@@ -378,16 +378,20 @@ public class OcppDeviceDriver implements DeviceDriver {
                 if (hi < 0 || lo < 0) {
                     throw new IOException("EOF reading extended length");
                 }
-                len = ((hi & 0xFF) << 8) | (lo & 0xFF);
+                len = ((hi & 0xFFL) << 8) | (lo & 0xFFL);
             } else if (len == 127) {
-                len = 0;
+                long extended = 0L;
                 for (int i = 0; i < 8; i++) {
                     int b = in.read();
                     if (b < 0) {
                         throw new IOException("EOF reading 64-bit length");
                     }
-                    len = (len << 8) | (b & 0xFF);
+                    extended = (extended << 8) | (b & 0xFFL);
                 }
+                if (extended > Integer.MAX_VALUE) {
+                    throw new IOException("WebSocket frame too large: " + extended);
+                }
+                len = extended;
             }
             if (len > 1_000_000) {
                 throw new IOException("WebSocket frame too large");

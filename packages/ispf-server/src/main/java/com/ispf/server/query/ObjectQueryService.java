@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Set;
 
+import java.util.Locale;
 @Service
 public class ObjectQueryService {
 
@@ -72,7 +73,7 @@ public class ObjectQueryService {
 
     public Object executeAggregate(ObjectQuerySpec spec, String aggregate, String field, String ruleObjectPath) {
         List<Map<String, Object>> rows = executeMatchedRows(spec, ruleObjectPath);
-        String fn = aggregate != null ? aggregate.trim().toLowerCase() : "count";
+        String fn = aggregate != null ? aggregate.trim().toLowerCase(Locale.ROOT) : "count";
         return switch (fn) {
             case "count" -> rows.size();
             case "sum" -> sumField(rows, requireField(field));
@@ -155,7 +156,7 @@ public class ObjectQueryService {
             if (join.alias() == null || join.alias().isBlank()) {
                 continue;
             }
-            String joinType = join.type() != null ? join.type().trim().toLowerCase() : "left";
+            String joinType = join.type() != null ? join.type().trim().toLowerCase(Locale.ROOT) : "left";
             Optional<String> joinedPath = joinResolver.resolveJoin(join, aliasPaths, drivingAlias, ruleObjectPath);
             if (joinedPath.isPresent()) {
                 aliasPaths.put(join.alias(), joinedPath.get());
@@ -184,7 +185,10 @@ public class ObjectQueryService {
                     drivingNode,
                     projected
             );
-            if (value != OMIT_FIELD) {
+            // Sentinel identity: OMIT_FIELD marks "do not project this key".
+            @SuppressWarnings("ReferenceEquality")
+            boolean omit = value == OMIT_FIELD;
+            if (!omit) {
                 projected.put(field.name(), value);
             }
         }
@@ -421,7 +425,7 @@ public class ObjectQueryService {
     }
 
     private static Object aggregateBucket(List<Map<String, Object>> bucket, ObjectQueryAggregateSpec aggregate) {
-        String fn = aggregate.fn() != null ? aggregate.fn().trim().toLowerCase() : "count";
+        String fn = aggregate.fn() != null ? aggregate.fn().trim().toLowerCase(Locale.ROOT) : "count";
         String field = aggregate.field();
         return switch (fn) {
             case "count" -> bucket.size();

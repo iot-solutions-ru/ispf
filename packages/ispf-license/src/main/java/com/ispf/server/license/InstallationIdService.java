@@ -12,6 +12,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.UUID;
 
+import java.util.Locale;
 @Service
 public class InstallationIdService {
 
@@ -36,7 +37,7 @@ public class InstallationIdService {
             try {
                 Files.createDirectories(file.getParent());
                 if (Files.exists(file)) {
-                    cachedId = Files.readString(file, StandardCharsets.UTF_8).trim().toLowerCase();
+                    cachedId = Files.readString(file, StandardCharsets.UTF_8).trim().toLowerCase(Locale.ROOT);
                     return cachedId;
                 }
                 String generated = fingerprint();

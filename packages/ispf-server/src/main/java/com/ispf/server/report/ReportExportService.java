@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import java.util.Locale;
 @Service
 public class ReportExportService {
 
@@ -71,7 +72,7 @@ public class ReportExportService {
             return table(path, parameters, targetFormat);
         }
 
-        String templateFormat = template.get().format().toLowerCase();
+        String templateFormat = template.get().format().toLowerCase(Locale.ROOT);
         if (!"xls".equals(templateFormat) && !"xlsx".equals(templateFormat)) {
             return table(path, parameters, targetFormat);
         }
@@ -131,7 +132,7 @@ public class ReportExportService {
             return pdfFromTable(path, parameters);
         }
 
-        String templateFormat = template.get().format().toLowerCase();
+        String templateFormat = template.get().format().toLowerCase(Locale.ROOT);
         if ("xlsx".equals(templateFormat) || "xls".equals(templateFormat)) {
             return exportPdfFromExcelTemplate(path, parameters, template.get());
         }
@@ -144,7 +145,7 @@ public class ReportExportService {
             Map<String, Object> parameters,
             ReportTemplateStore.StoredTemplate template
     ) {
-        String templateFormat = template.format().toLowerCase();
+        String templateFormat = template.format().toLowerCase(Locale.ROOT);
         try {
             Map<String, Object> runResult = reportService.run(path, parameters);
             @SuppressWarnings("unchecked")

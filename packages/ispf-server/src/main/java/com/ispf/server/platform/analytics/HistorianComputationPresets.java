@@ -6,6 +6,7 @@ import com.ispf.core.binding.BindingVariableRef;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Locale;
 /**
  * Static historian computation presets — documentation-backed recipes, not object-tree templates (ADR-0041).
  */
@@ -135,7 +136,7 @@ public final class HistorianComputationPresets {
                 "name", preset.displayName(),
                 "enabled", true,
                 "order", 0,
-                "kind", BindingRuleKind.HISTORIAN.name().toLowerCase(),
+                "kind", BindingRuleKind.HISTORIAN.name().toLowerCase(Locale.ROOT),
                 "activators", Map.of(
                         "onStartup", false,
                         "onVariableChange", List.of(Map.of("ref", activatorRef)),

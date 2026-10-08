@@ -45,7 +45,7 @@ final class LoopbackRadiusAuthServer implements AutoCloseable {
     }
 
     void start() {
-        executor.submit(this::serve);
+        var _ = executor.submit(this::serve);
     }
 
     boolean awaitStarted(long timeout, TimeUnit unit) throws InterruptedException {

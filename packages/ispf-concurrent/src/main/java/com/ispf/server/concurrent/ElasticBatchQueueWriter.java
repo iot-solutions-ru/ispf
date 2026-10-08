@@ -111,7 +111,7 @@ public final class ElasticBatchQueueWriter<T> {
         if (workers == null || activeWorkers.get() >= settings.resolvedMaxWorkers()) {
             return;
         }
-        workers.submit(this::writerLoop);
+        var _ = workers.submit(this::writerLoop);
     }
 
     private void adjustWorkers() {

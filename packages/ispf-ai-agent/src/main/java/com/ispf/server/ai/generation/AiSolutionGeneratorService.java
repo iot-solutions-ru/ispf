@@ -59,7 +59,7 @@ public class AiSolutionGeneratorService {
     private final ApplicationBundleDeployService bundleDeployService;
     private final CommercialBundleLicenseSigner bundleLicenseSigner;
     private final OperatorAppUiService operatorAppUiService;
-    private final ObjectTreePort ObjectTreePort;
+    private final ObjectTreePort objectTreePort;
     private final AutomationTreeService automationTreeService;
 
     public AiSolutionGeneratorService(
@@ -69,7 +69,7 @@ public class AiSolutionGeneratorService {
             ApplicationBundleDeployService bundleDeployService,
             CommercialBundleLicenseSigner bundleLicenseSigner,
             OperatorAppUiService operatorAppUiService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             AutomationTreeService automationTreeService
     ) {
         this.llmProviderRegistry = llmProviderRegistry;
@@ -78,7 +78,7 @@ public class AiSolutionGeneratorService {
         this.bundleDeployService = bundleDeployService;
         this.bundleLicenseSigner = bundleLicenseSigner;
         this.operatorAppUiService = operatorAppUiService;
-        this.ObjectTreePort = ObjectTreePort;
+        this.objectTreePort = objectTreePort;
         this.automationTreeService = automationTreeService;
     }
 
@@ -350,7 +350,7 @@ public class AiSolutionGeneratorService {
         ensureMonitorVariable(hubPath);
         String alertName = slug + "-monitor";
         String alertPath = AutomationTreeService.rulePathForName(alertName);
-        if (ObjectTreePort.tree().findByPath(alertPath).isEmpty()) {
+        if (objectTreePort.tree().findByPath(alertPath).isEmpty()) {
             automationTreeService.createAlertRule(
                     alertName,
                     hubPath,
@@ -401,14 +401,14 @@ public class AiSolutionGeneratorService {
     }
 
     private void ensureMonitorVariable(String hubPath) {
-        if (ObjectTreePort.tree().findByPath(hubPath).isEmpty()) {
+        if (objectTreePort.tree().findByPath(hubPath).isEmpty()) {
             throw new IllegalStateException("hub device missing after deploy: " + hubPath);
         }
-        if (ObjectTreePort.require(hubPath).getVariable("status").isPresent()) {
+        if (objectTreePort.require(hubPath).getVariable("status").isPresent()) {
             return;
         }
         DataSchema schema = DataSchema.builder("status").field("value", FieldType.DOUBLE).build();
-        ObjectTreePort.createVariable(
+        objectTreePort.createVariable(
                 hubPath,
                 "status",
                 schema,

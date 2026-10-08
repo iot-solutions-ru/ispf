@@ -4,11 +4,14 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.analytics.engine.AnalyticsTagDefinition;
 import com.ispf.core.binding.BindingActivators;
+import com.ispf.core.binding.BindingCascadeAnalyzer;
 import com.ispf.core.binding.BindingRule;
 import com.ispf.core.binding.BindingRuleKind;
 import com.ispf.core.binding.BindingRulesConstants;
 import com.ispf.core.binding.BindingTarget;
 import com.ispf.core.binding.BindingVariableRef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
@@ -42,6 +45,8 @@ import java.util.Objects;
 
 @Service
 public class BindingRulesService {
+
+    private static final Logger log = LoggerFactory.getLogger(BindingRulesService.class);
 
     private static final DataSchema RULES_SCHEMA = DataSchema.builder("bindingRulesJson")
             .field("value", FieldType.STRING)
@@ -113,6 +118,9 @@ public class BindingRulesService {
                     .toList();
             for (BindingRule rule : normalized) {
                 validateRule(objectPath, rule);
+            }
+            for (String warning : BindingCascadeAnalyzer.warnings(normalized)) {
+                log.warn("[binding:{}] {}", objectPath, warning);
             }
             boolean historianChanged = normalized.stream().anyMatch(BindingRule::isHistorian);
             writeRules(objectPath, normalized);

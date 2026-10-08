@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import java.util.Locale;
 @Service
 public class PlatformRoleService {
 
@@ -299,7 +300,7 @@ public class PlatformRoleService {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Role name is required");
         }
-        String normalized = name.trim().toLowerCase();
+        String normalized = name.trim().toLowerCase(Locale.ROOT);
         if (!normalized.matches("[a-z0-9._-]{2,64}")) {
             throw new IllegalArgumentException("Invalid role name format");
         }

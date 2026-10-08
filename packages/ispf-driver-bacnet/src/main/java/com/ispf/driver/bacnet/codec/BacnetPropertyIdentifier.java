@@ -1,5 +1,7 @@
 package com.ispf.driver.bacnet.codec;
 
+
+import java.util.Locale;
 /**
  * BACnet property identifiers used by the driver.
  */
@@ -33,7 +35,7 @@ public enum BacnetPropertyIdentifier {
     }
 
     public static BacnetPropertyIdentifier fromName(String name) {
-        String normalized = name.trim().toLowerCase().replace('_', '-');
+        String normalized = name.trim().toLowerCase(Locale.ROOT).replace('_', '-');
         for (BacnetPropertyIdentifier property : values()) {
             if (property.protocolName.equals(normalized)) {
                 return property;

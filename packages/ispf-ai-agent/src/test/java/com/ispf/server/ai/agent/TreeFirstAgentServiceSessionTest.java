@@ -77,7 +77,7 @@ class TreeFirstAgentServiceSessionTest {
     @Mock
     private AgentSessionDocumentService sessionDocumentService;
     @Mock
-    private ObjectTreePort ObjectTreePort;
+    private ObjectTreePort objectTreePort;
 
     private TreeFirstAgentService agentService;
     private AiProperties aiProperties;
@@ -114,7 +114,7 @@ class TreeFirstAgentServiceSessionTest {
                 new AgentTurnRateLimiter(aiProperties),
                 new AgentMetricsRecorder(java.util.Optional.empty()),
                 sessionDocumentService,
-                ObjectTreePort
+                objectTreePort
         );
 
         lenient().when(sessionDocumentService.count(anyString())).thenReturn(0);

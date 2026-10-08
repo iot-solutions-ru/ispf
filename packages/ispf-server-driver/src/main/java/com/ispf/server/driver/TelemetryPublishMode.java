@@ -1,5 +1,7 @@
 package com.ispf.server.driver;
 
+
+import java.util.Locale;
 /**
  * Controls whether coalesced driver telemetry enters the automation lane (alerts, workflows).
  */
@@ -15,7 +17,7 @@ public enum TelemetryPublishMode {
         if (raw == null || raw.isBlank()) {
             return FULL;
         }
-        return switch (raw.trim().toUpperCase()) {
+        return switch (raw.trim().toUpperCase(Locale.ROOT)) {
             case "TELEMETRY_ONLY", "TELEMETRY", "HISTORY_ONLY" -> TELEMETRY_ONLY;
             case "EVENT_JOURNAL_ONLY", "EVENT_JOURNAL", "EVENTS_ONLY" -> EVENT_JOURNAL_ONLY;
             default -> FULL;
@@ -26,7 +28,7 @@ public enum TelemetryPublishMode {
         if (raw == null || raw.isBlank() || "INHERIT".equalsIgnoreCase(raw.trim())) {
             return;
         }
-        String normalized = raw.trim().toUpperCase();
+        String normalized = raw.trim().toUpperCase(Locale.ROOT);
         if (normalized.equals("FULL")
                 || normalized.equals("TELEMETRY_ONLY")
                 || normalized.equals("EVENT_JOURNAL_ONLY")) {

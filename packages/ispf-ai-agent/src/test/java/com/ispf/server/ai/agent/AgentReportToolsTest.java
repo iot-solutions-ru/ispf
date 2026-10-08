@@ -30,7 +30,7 @@ class AgentReportToolsTest {
     @Mock
     private ReportService reportService;
     @Mock
-    private ObjectTreePort ObjectTreePort;
+    private ObjectTreePort objectTreePort;
     @Mock
     private ObjectTree objectTree;
     @Mock
@@ -44,7 +44,7 @@ class AgentReportToolsTest {
 
     private PlatformAgentTool tool(String name) {
         return AgentReportTools.all(
-                reportService, ObjectTreePort, objectAccessService, tenantScopeService
+                reportService, objectTreePort, objectAccessService, tenantScopeService
         ).stream().filter(t -> name.equals(t.name())).findFirst().orElseThrow();
     }
 
@@ -95,7 +95,7 @@ class AgentReportToolsTest {
         when(tenantScopeService.isPathVisible(eq(ReportService.REPORTS_ROOT), any())).thenReturn(true);
         when(tenantScopeService.isPathVisible(eq("root.platform.reports.demo"), any())).thenReturn(true);
         doNothing().when(reportService).ensureReportsCatalog();
-        when(ObjectTreePort.tree()).thenReturn(objectTree);
+        when(objectTreePort.tree()).thenReturn(objectTree);
         when(objectTree.childrenOf(ReportService.REPORTS_ROOT)).thenReturn(List.of(reportNode));
         when(reportNode.type()).thenReturn(ObjectType.REPORT);
         when(reportNode.path()).thenReturn("root.platform.reports.demo");
@@ -131,9 +131,9 @@ class AgentReportToolsTest {
         String path = "root.platform.reports.lab-status";
         when(tenantScopeService.isPathVisible(eq(path), any())).thenReturn(true);
         doNothing().when(reportService).ensureReportsCatalog();
-        when(ObjectTreePort.tree()).thenReturn(objectTree);
+        when(objectTreePort.tree()).thenReturn(objectTree);
         when(objectTree.findByPath(path)).thenReturn(java.util.Optional.empty());
-        when(ObjectTreePort.create(
+        when(objectTreePort.create(
                 eq(ReportService.REPORTS_ROOT),
                 eq("lab-status"),
                 eq(ObjectType.REPORT),

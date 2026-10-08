@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import java.util.Locale;
 /**
  * Windows WMI driver — PowerShell {@code Get-CimInstance} when running on Windows.
  */
@@ -48,7 +49,7 @@ public class WmiDeviceDriver implements DeviceDriver {
     private int timeoutMs = 10_000;
     private final Map<String, WmiPoint> points = new ConcurrentHashMap<>();
     private volatile boolean connected;
-    private final boolean windowsHost = System.getProperty("os.name", "").toLowerCase().contains("windows");
+    private final boolean windowsHost = System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("windows");
 
     @Override
     public DriverMetadata metadata() {
@@ -168,7 +169,7 @@ public class WmiDeviceDriver implements DeviceDriver {
     }
 
     private static String guessScalarProperty(String query) {
-        String upper = query.toUpperCase();
+        String upper = query.toUpperCase(Locale.ROOT);
         int select = upper.indexOf("SELECT ");
         int from = upper.indexOf(" FROM ");
         if (select >= 0 && from > select + 7) {

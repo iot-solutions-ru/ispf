@@ -57,12 +57,10 @@ public class AmqpDeviceDriver implements DeviceDriver {
     private static final int CONNECTION_OPEN = 40;
     private static final int CONNECTION_OPEN_OK = 41;
     private static final int CONNECTION_CLOSE = 50;
-    private static final int CONNECTION_CLOSE_OK = 51;
 
     private static final int CHANNEL_OPEN = 10;
     private static final int CHANNEL_OPEN_OK = 11;
     private static final int CHANNEL_CLOSE = 40;
-    private static final int CHANNEL_CLOSE_OK = 41;
 
     private static final int BASIC_PUBLISH = 40;
     private static final int BASIC_GET = 70;
@@ -179,12 +177,14 @@ public class AmqpDeviceDriver implements DeviceDriver {
                         Frame closeOk = readFrame();
                         // drain optional reply
                         if (closeOk != null) {
-                            // no-op
+                            // no-op — close handshake complete
                         }
                     } catch (IOException ignored) {
+                        // teardown
                     }
                 }
             } catch (IOException ignored) {
+                // teardown
             }
         }
         closeQuietly(socket);
@@ -545,6 +545,7 @@ public class AmqpDeviceDriver implements DeviceDriver {
             try {
                 socket.close();
             } catch (IOException ignored) {
+                // best-effort close
             }
         }
     }

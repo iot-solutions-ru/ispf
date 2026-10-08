@@ -3,6 +3,7 @@ package com.ispf.driver.snmp;
 import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 
+import java.util.Locale;
 /**
  * Parsed SNMP OID mapping. Format: {@code oid}, {@code oid:VALUE_KIND}, or {@code oid:VALUE_KIND:optional}.
  * VALUE_KIND: AUTO (default), INTEGER, STRING, BOOLEAN.
@@ -39,7 +40,7 @@ record SnmpPoint(String oid, ValueKind valueKind, boolean optional) {
             return new SnmpPoint(oid, ValueKind.AUTO, true);
         }
         try {
-            return new SnmpPoint(oid, ValueKind.valueOf(kindRaw.toUpperCase()), optional);
+            return new SnmpPoint(oid, ValueKind.valueOf(kindRaw.toUpperCase(Locale.ROOT)), optional);
         } catch (IllegalArgumentException e) {
             throw new DriverConfigurationException("Unknown SNMP value kind in mapping: " + mapping, e);
         }

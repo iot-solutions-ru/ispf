@@ -63,7 +63,9 @@ public class TenantRlsHikariDataSource extends HikariDataSource {
                 return iface.isInstance(proxy) || delegate.isWrapperFor(iface);
             }
             if ("equals".equals(name)) {
-                return proxy == args[0];
+                @SuppressWarnings("ReferenceEquality")
+                boolean same = proxy == args[0];
+                return same;
             }
             if ("hashCode".equals(name)) {
                 return System.identityHashCode(proxy);

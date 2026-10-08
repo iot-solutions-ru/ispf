@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
+import java.util.Locale;
 @Component
 public class DataSourceConnectionResolver {
 
@@ -142,7 +143,7 @@ public class DataSourceConnectionResolver {
     }
 
     private static String inferDriverClass(String jdbcUrl) {
-        String url = jdbcUrl.toLowerCase();
+        String url = jdbcUrl.toLowerCase(Locale.ROOT);
         if (url.startsWith("jdbc:postgresql:")) {
             return "org.postgresql.Driver";
         }

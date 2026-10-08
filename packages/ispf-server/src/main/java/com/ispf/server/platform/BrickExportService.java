@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import java.util.Locale;
 @Service
 public class BrickExportService {
 
@@ -279,7 +280,7 @@ public class BrickExportService {
         if (format == null || format.isBlank()) {
             return "jsonld";
         }
-        String normalized = format.trim().toLowerCase();
+        String normalized = format.trim().toLowerCase(Locale.ROOT);
         if (!normalized.equals("jsonld") && !normalized.equals("turtle") && !normalized.equals("ttl")) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,

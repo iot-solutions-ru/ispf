@@ -33,11 +33,11 @@ import static org.mockito.Mockito.when;
 class AgentBlueprintToolsTest {
 
     @Mock
-    private BlueprintRegistry BlueprintRegistry;
+    private BlueprintRegistry blueprintRegistry;
     @Mock
-    private BlueprintApplicationService BlueprintApplicationService;
+    private BlueprintApplicationService blueprintApplicationService;
     @Mock
-    private ObjectTreePort ObjectTreePort;
+    private ObjectTreePort objectTreePort;
     @Mock
     private ObjectAccessService objectAccessService;
     @Mock
@@ -49,9 +49,9 @@ class AgentBlueprintToolsTest {
     @BeforeEach
     void setUp() {
         tools = AgentBlueprintTools.all(
-                BlueprintRegistry,
-                BlueprintApplicationService,
-                ObjectTreePort,
+                blueprintRegistry,
+                blueprintApplicationService,
+                objectTreePort,
                 objectAccessService,
                 tenantScopeService
         );
@@ -69,7 +69,7 @@ class AgentBlueprintToolsTest {
     void listRelativeModelsFiltersByType() throws Exception {
         BlueprintDefinition relative = sampleModel("virtual-lab-v1", BlueprintType.MIXIN);
         BlueprintDefinition instance = sampleModel("base-sensor-v1", BlueprintType.INSTANCE);
-        when(BlueprintRegistry.all()).thenReturn(List.of(relative, instance));
+        when(blueprintRegistry.all()).thenReturn(List.of(relative, instance));
 
         PlatformAgentTool tool = tools.stream()
                 .filter(t -> "list_mixin_blueprints".equals(t.name()))
@@ -86,7 +86,7 @@ class AgentBlueprintToolsTest {
     void listInstanceTypesFiltersByType() throws Exception {
         BlueprintDefinition relative = sampleModel("virtual-lab-v1", BlueprintType.MIXIN);
         BlueprintDefinition instance = sampleModel("base-sensor-v1", BlueprintType.INSTANCE);
-        when(BlueprintRegistry.all()).thenReturn(List.of(relative, instance));
+        when(blueprintRegistry.all()).thenReturn(List.of(relative, instance));
 
         PlatformAgentTool tool = tools.stream()
                 .filter(t -> "list_instance_types".equals(t.name()))
@@ -107,11 +107,11 @@ class AgentBlueprintToolsTest {
         BlueprintDefinition model = sampleModel("base-sensor-v1", BlueprintType.INSTANCE);
         PlatformObject instance = new PlatformObject("1", fullPath, ObjectType.DEVICE, name, "", "base-sensor-v1");
 
-        when(BlueprintRegistry.findByName("base-sensor-v1")).thenReturn(Optional.of(model));
+        when(blueprintRegistry.findByName("base-sensor-v1")).thenReturn(Optional.of(model));
         when(tenantScopeService.isPathVisible(parent, context.authentication())).thenReturn(true);
-        when(ObjectTreePort.tree()).thenReturn(new com.ispf.core.object.ObjectTree());
-        when(ObjectTreePort.require(fullPath)).thenReturn(instance);
-        when(BlueprintApplicationService.instantiateWithRules(model.id(), parent, name, Map.of()))
+        when(objectTreePort.tree()).thenReturn(new com.ispf.core.object.ObjectTree());
+        when(objectTreePort.require(fullPath)).thenReturn(instance);
+        when(blueprintApplicationService.instantiateWithRules(model.id(), parent, name, Map.of()))
                 .thenReturn(new BlueprintApplyResult(
                         new BlueprintAttachment("att-1", model.id(), model.name(), BlueprintType.INSTANCE, fullPath, Instant.now()),
                         List.of()
@@ -129,7 +129,7 @@ class AgentBlueprintToolsTest {
 
         assertEquals("OK", result.get("status"));
         assertEquals(fullPath, result.get("path"));
-        verify(BlueprintApplicationService).instantiateWithRules(model.id(), parent, name, Map.of());
+        verify(blueprintApplicationService).instantiateWithRules(model.id(), parent, name, Map.of());
     }
 
     @Test
@@ -141,11 +141,11 @@ class AgentBlueprintToolsTest {
         PlatformObject instance = new PlatformObject("1", fullPath, ObjectType.DEVICE, name, "", "oil-control-tank-v1");
         Map<String, String> parameters = Map.of("code", "RVS-1");
 
-        when(BlueprintRegistry.findByName("oil-control-tank-v1")).thenReturn(Optional.of(model));
+        when(blueprintRegistry.findByName("oil-control-tank-v1")).thenReturn(Optional.of(model));
         when(tenantScopeService.isPathVisible(parent, context.authentication())).thenReturn(true);
-        when(ObjectTreePort.tree()).thenReturn(new com.ispf.core.object.ObjectTree());
-        when(ObjectTreePort.require(fullPath)).thenReturn(instance);
-        when(BlueprintApplicationService.instantiateWithRules(model.id(), parent, name, parameters))
+        when(objectTreePort.tree()).thenReturn(new com.ispf.core.object.ObjectTree());
+        when(objectTreePort.require(fullPath)).thenReturn(instance);
+        when(blueprintApplicationService.instantiateWithRules(model.id(), parent, name, parameters))
                 .thenReturn(new BlueprintApplyResult(
                         new BlueprintAttachment("att-1", model.id(), model.name(), BlueprintType.INSTANCE, fullPath, Instant.now()),
                         List.of()
@@ -167,7 +167,7 @@ class AgentBlueprintToolsTest {
         );
 
         assertEquals("OK", result.get("status"));
-        verify(BlueprintApplicationService).instantiateWithRules(model.id(), parent, name, parameters);
+        verify(blueprintApplicationService).instantiateWithRules(model.id(), parent, name, parameters);
     }
 
     @Test
@@ -184,10 +184,10 @@ class AgentBlueprintToolsTest {
                 null
         ));
 
-        when(BlueprintRegistry.findByName("virtual-lab-v1")).thenReturn(Optional.of(model));
+        when(blueprintRegistry.findByName("virtual-lab-v1")).thenReturn(Optional.of(model));
         when(tenantScopeService.isPathVisible(path, context.authentication())).thenReturn(true);
-        when(ObjectTreePort.require(path)).thenReturn(before, after);
-        when(BlueprintApplicationService.applyBlueprintWithRules(eq(model.id()), eq(path)))
+        when(objectTreePort.require(path)).thenReturn(before, after);
+        when(blueprintApplicationService.applyBlueprintWithRules(eq(model.id()), eq(path)))
                 .thenReturn(new BlueprintApplyResult(
                         new BlueprintAttachment("att-1", model.id(), model.name(), BlueprintType.MIXIN, path, Instant.now()),
                         List.of()
@@ -203,7 +203,7 @@ class AgentBlueprintToolsTest {
         assertEquals("OK", result.get("status"));
         assertEquals(path, result.get("objectPath"));
         verify(objectAccessService).requireWrite(path, context.authentication());
-        verify(BlueprintApplicationService).applyBlueprintWithRules(model.id(), path);
+        verify(blueprintApplicationService).applyBlueprintWithRules(model.id(), path);
     }
 
     @Test
@@ -213,10 +213,10 @@ class AgentBlueprintToolsTest {
         PlatformObject before = new PlatformObject("1", path, ObjectType.DEVICE, "Pump", "", null);
         PlatformObject after = new PlatformObject("1", path, ObjectType.DEVICE, "Pump", "", "virtual-lab-v1");
 
-        when(BlueprintRegistry.findByName("virtual-lab-v1")).thenReturn(Optional.of(model));
+        when(blueprintRegistry.findByName("virtual-lab-v1")).thenReturn(Optional.of(model));
         when(tenantScopeService.isPathVisible(path, context.authentication())).thenReturn(true);
-        when(ObjectTreePort.require(path)).thenReturn(before, after);
-        when(BlueprintApplicationService.applyBlueprintWithRules(eq(model.id()), eq(path)))
+        when(objectTreePort.require(path)).thenReturn(before, after);
+        when(blueprintApplicationService.applyBlueprintWithRules(eq(model.id()), eq(path)))
                 .thenReturn(new BlueprintApplyResult(
                         new BlueprintAttachment("att-1", model.id(), model.name(), BlueprintType.MIXIN, path, Instant.now()),
                         List.of()

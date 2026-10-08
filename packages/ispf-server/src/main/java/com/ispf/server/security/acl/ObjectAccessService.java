@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import java.util.Locale;
 @Service
 public class ObjectAccessService {
 
@@ -251,8 +252,8 @@ public class ObjectAccessService {
         if (granted == null || required == null) {
             return false;
         }
-        String normalizedGranted = granted.toUpperCase();
-        String normalizedRequired = required.toUpperCase();
+        String normalizedGranted = granted.toUpperCase(Locale.ROOT);
+        String normalizedRequired = required.toUpperCase(Locale.ROOT);
         if (normalizedGranted.equals(normalizedRequired)) {
             return true;
         }
@@ -277,11 +278,11 @@ public class ObjectAccessService {
     }
 
     private static void validateDraft(ObjectAclStore.ObjectAclEntryDraft draft) {
-        if (!Set.of("ROLE", "USER").contains(draft.principalType().toUpperCase())) {
+        if (!Set.of("ROLE", "USER").contains(draft.principalType().toUpperCase(Locale.ROOT))) {
             throw new IllegalArgumentException("principalType must be ROLE or USER");
         }
         if (!Set.of("READ", "WRITE", "INVOKE", "OWNER", "EDITOR", "VIEWER")
-                .contains(draft.permission().toUpperCase())) {
+                .contains(draft.permission().toUpperCase(Locale.ROOT))) {
             throw new IllegalArgumentException(
                     "permission must be READ, WRITE, INVOKE, OWNER, EDITOR, or VIEWER"
             );

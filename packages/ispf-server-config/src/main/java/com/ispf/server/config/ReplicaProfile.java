@@ -7,6 +7,7 @@ import java.util.Set;
 /**
  * ADR-0032: named presets expanding to {@link ReplicaCapability} sets.
  */
+@SuppressWarnings("ImmutableEnumChecker") // capabilities() returns a defensive EnumSet copy
 public enum ReplicaProfile {
     UNIFIED("unified", EnumSet.allOf(ReplicaCapability.class)),
     EDGE_API("edge-api", EnumSet.of(

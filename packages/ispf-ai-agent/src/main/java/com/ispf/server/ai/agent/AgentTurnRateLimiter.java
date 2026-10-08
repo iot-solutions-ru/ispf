@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import java.util.Locale;
 /**
  * Per-user agent turn quotas: concurrent runs and hourly turn budget.
  */
@@ -63,7 +64,7 @@ public class AgentTurnRateLimiter {
         if (username == null || username.isBlank()) {
             return "anonymous";
         }
-        return username.trim().toLowerCase();
+        return username.trim().toLowerCase(Locale.ROOT);
     }
 
     public static final class AgentRateLimitException extends RuntimeException {

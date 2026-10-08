@@ -90,7 +90,11 @@ public class WorkflowEventTriggerIndex implements WorkflowTriggerLookup {
         Snapshot current = snapshot;
         Map<String, List<String>> events = withoutPath(current.eventWorkflowPathsByTarget(), workflowPath);
         Map<String, List<String>> variables = withoutPath(current.variableWorkflowPathsByTarget(), workflowPath);
-        if (events == current.eventWorkflowPathsByTarget() && variables == current.variableWorkflowPathsByTarget()) {
+        // Snapshot map identity: skip publish when withoutPath returned the same instances.
+        @SuppressWarnings("ReferenceEquality")
+        boolean unchanged = events == current.eventWorkflowPathsByTarget()
+                && variables == current.variableWorkflowPathsByTarget();
+        if (unchanged) {
             return;
         }
         snapshot = new Snapshot(events, variables);

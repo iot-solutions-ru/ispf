@@ -111,13 +111,13 @@ class IoLinkDeviceDriverTest {
         int port() { return serverSocket.getLocalPort(); }
         void put(int port, int index, int sub, float v) { values.put(key(port, index, sub), v); }
         float get(int port, int index, int sub) { return values.getOrDefault(key(port, index, sub), 0f); }
-        void start() { executor.submit(this::acceptLoop); }
+        void start() { var _ = executor.submit(this::acceptLoop); }
 
         private void acceptLoop() {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
+                    var _ = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (serverSocket.isClosed()) return;
                 }

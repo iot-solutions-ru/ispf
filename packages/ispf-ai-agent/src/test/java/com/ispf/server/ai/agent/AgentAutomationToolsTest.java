@@ -40,7 +40,7 @@ class AgentAutomationToolsTest {
     @Mock
     private OperatorAppUiService operatorAppUiService;
     @Mock
-    private ObjectTreePort ObjectTreePort;
+    private ObjectTreePort objectTreePort;
     @Mock
     private ObjectAccessService objectAccessService;
     @Mock
@@ -62,7 +62,7 @@ class AgentAutomationToolsTest {
         tools = AgentAutomationTools.all(
                 automationTreeService,
                 operatorAppUiService,
-                ObjectTreePort,
+                objectTreePort,
                 objectAccessService,
                 tenantScopeService,
                 bindingRulesService,
@@ -157,7 +157,7 @@ class AgentAutomationToolsTest {
     void configureAlertUpdatesExistingRule() throws Exception {
         String path = "root.platform.alert-rules.test-rule";
         PlatformObject node = new PlatformObject("1", path, ObjectType.ALERT, "Test rule", "", null);
-        when(ObjectTreePort.require(path)).thenReturn(node);
+        when(objectTreePort.require(path)).thenReturn(node);
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
         when(automationTreeService.updateAlertRule(
                 eq(path),
@@ -277,7 +277,7 @@ class AgentAutomationToolsTest {
     void createBindingRuleHistorianSkipsReactiveCelValidation() throws Exception {
         String path = "root.platform.singleton-blueprints.virt-cluster-hub";
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
-        when(ObjectTreePort.require(path)).thenReturn(
+        when(objectTreePort.require(path)).thenReturn(
                 new PlatformObject("1", path, ObjectType.CUSTOM, "hub", "", null)
         );
         com.ispf.core.binding.BindingRule saved = new com.ispf.core.binding.BindingRule(
@@ -336,7 +336,7 @@ class AgentAutomationToolsTest {
                 null
         );
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
-        when(ObjectTreePort.updateVariableHistory(path, "sineWave", true, null, null, null, null, null)).thenReturn(
+        when(objectTreePort.updateVariableHistory(path, "sineWave", true, null, null, null, null, null)).thenReturn(
                 sine.withHistorySettings(true, null)
         );
 
@@ -349,7 +349,7 @@ class AgentAutomationToolsTest {
         ), context);
 
         assertEquals("OK", result.get("status"));
-        verify(ObjectTreePort).updateVariableHistory(path, "sineWave", true, null, null, null, null, null);
+        verify(objectTreePort).updateVariableHistory(path, "sineWave", true, null, null, null, null, null);
     }
 
     @Test

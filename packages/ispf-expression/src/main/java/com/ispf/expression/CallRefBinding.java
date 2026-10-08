@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.util.Locale;
 /**
  * Platform binding: {@code call(<functionRef>[, <inputRef>])}.
  */
@@ -30,7 +31,7 @@ public final class CallRefBinding implements PlatformBinding {
             return false;
         }
         String trimmed = expression.trim();
-        if (!trimmed.toLowerCase().startsWith("call(")) {
+        if (!trimmed.toLowerCase(Locale.ROOT).startsWith("call(")) {
             return false;
         }
         Matcher matcher = PATTERN.matcher(trimmed);

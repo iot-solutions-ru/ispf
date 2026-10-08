@@ -24,6 +24,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import java.util.Locale;
 /**
  * Async dispatcher for {@link ObjectChangeEvent} handlers.
  *
@@ -211,7 +212,7 @@ public class ObjectChangeEventBus {
             return;
         }
         coalesceFlushScheduled = true;
-        coalesceScheduler.schedule(() -> {
+        var _ = coalesceScheduler.schedule(() -> {
             coalesceFlushScheduled = false;
             flushCoalesce(lane);
         }, 50, TimeUnit.MILLISECONDS);
@@ -327,7 +328,7 @@ public class ObjectChangeEventBus {
             this.scaleUpQueueThreshold = scaleUpQueueThreshold;
             this.scaleDownSteps = scaleDownSteps;
             this.workers = Executors.newCachedThreadPool(runnable -> {
-                Thread thread = new Thread(runnable, "object-change-bus-" + id.name().toLowerCase());
+                Thread thread = new Thread(runnable, "object-change-bus-" + id.name().toLowerCase(Locale.ROOT));
                 thread.setDaemon(true);
                 return thread;
             });
@@ -338,7 +339,7 @@ public class ObjectChangeEventBus {
             for (int i = 0; i < initial; i++) {
                 spawnWorker();
             }
-            automationMetricsRecorder.bindObjectChangeWorkers(id.name().toLowerCase(), activeWorkers);
+            automationMetricsRecorder.bindObjectChangeWorkers(id.name().toLowerCase(Locale.ROOT), activeWorkers);
         }
 
         private void adjustWorkers() {
@@ -355,7 +356,7 @@ public class ObjectChangeEventBus {
             if (activeWorkers.get() >= maxWorkers) {
                 return;
             }
-            workers.submit(this::workerLoop);
+            var _ = workers.submit(this::workerLoop);
         }
 
         private boolean hasHandlers() {
@@ -371,7 +372,7 @@ public class ObjectChangeEventBus {
                 automationMetricsRecorder.recordObjectChangeQueueDropped();
                 log.warn(
                         "Object change {} queue full (capacity={}); processing on publisher thread for {}",
-                        id.name().toLowerCase(),
+                        id.name().toLowerCase(Locale.ROOT),
                         queueCapacity,
                         event.path()
                 );
@@ -462,7 +463,7 @@ public class ObjectChangeEventBus {
         }
 
         private void shutdown() {
-            workers.shutdownNow();
+            var _ = workers.shutdownNow();
         }
     }
 }

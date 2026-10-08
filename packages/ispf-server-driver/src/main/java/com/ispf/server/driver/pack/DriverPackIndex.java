@@ -44,6 +44,10 @@ public class DriverPackIndex {
         return Optional.ofNullable(byDriverId.get(driverId)).map(DriverPackIndexEntry::packId);
     }
 
+    public Optional<DriverPackIndexEntry> findByPackId(String packId) {
+        return Optional.ofNullable(byPackId.get(packId));
+    }
+
     public List<DriverPackIndexEntry> entries() {
         return List.copyOf(byDriverId.values());
     }

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import java.util.Locale;
 @Service
 public class PlatformChangeSetService {
 
@@ -75,7 +76,7 @@ public class PlatformChangeSetService {
                 ORDER BY updated_at DESC
                 """,
                 (rs, rowNum) -> summaryFromRow(rs),
-                status.toUpperCase()
+                status.toUpperCase(Locale.ROOT)
         );
     }
 

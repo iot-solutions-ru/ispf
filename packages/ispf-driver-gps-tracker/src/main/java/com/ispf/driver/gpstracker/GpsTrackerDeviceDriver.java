@@ -95,7 +95,7 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
             // Mark connected before accept loop starts — otherwise the loop can exit
             // immediately on overloaded CI runners (submit races ahead of this flag).
             connected = true;
-            acceptExecutor.submit(this::acceptLoop);
+            var _ = acceptExecutor.submit(this::acceptLoop);
             driverObject.log(DriverLogLevel.INFO, "GPS tracker listening on port " + listenPort);
         } catch (IOException e) {
             releaseResources();
@@ -123,7 +123,7 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
                     break;
                 }
                 try {
-                    executor.submit(() -> handleClient(client));
+                    var _ = executor.submit(() -> handleClient(client));
                 } catch (RejectedExecutionException e) {
                     // Shutting down — close the accepted socket ourselves.
                     try {

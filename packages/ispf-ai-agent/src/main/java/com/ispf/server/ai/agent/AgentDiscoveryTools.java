@@ -31,7 +31,7 @@ final class AgentDiscoveryTools {
     }
 
     static List<PlatformAgentTool> all(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService,
@@ -40,12 +40,12 @@ final class AgentDiscoveryTools {
             ObjectMapper objectMapper
     ) {
         return List.of(
-                listFunctionsTool(ObjectTreePort, objectAccessService, tenantScopeService, functionStore),
-                getFunctionTool(ObjectTreePort, objectAccessService, tenantScopeService, functionStore, objectMapper),
+                listFunctionsTool(objectTreePort, objectAccessService, tenantScopeService, functionStore),
+                getFunctionTool(objectTreePort, objectAccessService, tenantScopeService, functionStore, objectMapper),
                 listEventCatalogTool(eventCatalogService),
-                getEventSchemaTool(ObjectTreePort, objectAccessService, tenantScopeService, eventCatalogService),
+                getEventSchemaTool(objectTreePort, objectAccessService, tenantScopeService, eventCatalogService),
                 describeVariablesTool(
-                        ObjectTreePort,
+                        objectTreePort,
                         objectAccessService,
                         variableMemberAccessService,
                         tenantScopeService
@@ -54,7 +54,7 @@ final class AgentDiscoveryTools {
     }
 
     private static PlatformAgentTool listFunctionsTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ApplicationFunctionStore functionStore
@@ -86,7 +86,7 @@ final class AgentDiscoveryTools {
                 String appFilter = stringArg(arguments, "appId");
                 String query = stringArg(arguments, "query").toLowerCase(Locale.ROOT);
 
-                PlatformObject node = ObjectTreePort.require(objectPath);
+                PlatformObject node = objectTreePort.require(objectPath);
                 List<Map<String, Object>> functions = new ArrayList<>();
                 for (FunctionDescriptor fn : node.functions().values()) {
                     if (!matchesQuery(query, fn.name(), fn.description())) {
@@ -128,7 +128,7 @@ final class AgentDiscoveryTools {
     }
 
     private static PlatformAgentTool getFunctionTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ApplicationFunctionStore functionStore,
@@ -159,7 +159,7 @@ final class AgentDiscoveryTools {
                 }
                 objectAccessService.requireRead(objectPath, auth);
 
-                PlatformObject node = ObjectTreePort.require(objectPath);
+                PlatformObject node = objectTreePort.require(objectPath);
                 FunctionDescriptor treeFn = node.functions().get(functionName);
                 if (treeFn != null) {
                     Map<String, Object> result = new LinkedHashMap<>();
@@ -244,7 +244,7 @@ final class AgentDiscoveryTools {
     }
 
     private static PlatformAgentTool getEventSchemaTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ApplicationEventCatalogService eventCatalogService
@@ -274,7 +274,7 @@ final class AgentDiscoveryTools {
                 }
                 objectAccessService.requireRead(objectPath, auth);
 
-                PlatformObject node = ObjectTreePort.require(objectPath);
+                PlatformObject node = objectTreePort.require(objectPath);
                 EventDescriptor treeEvent = node.events().get(eventName);
                 if (treeEvent == null) {
                     return Map.of(
@@ -309,7 +309,7 @@ final class AgentDiscoveryTools {
     }
 
     private static PlatformAgentTool describeVariablesTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService
@@ -339,7 +339,7 @@ final class AgentDiscoveryTools {
                 objectAccessService.requireRead(objectPath, auth);
 
                 String nameFilter = stringArg(arguments, "name").toLowerCase(Locale.ROOT);
-                PlatformObject node = ObjectTreePort.require(objectPath);
+                PlatformObject node = objectTreePort.require(objectPath);
                 List<Map<String, Object>> variables = new ArrayList<>();
                 for (Variable variable : variableMemberAccessService.filterReadable(
                         objectPath,

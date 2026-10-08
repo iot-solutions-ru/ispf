@@ -48,7 +48,7 @@ class AiSolutionGeneratorServiceTest {
     @Mock
     private OperatorAppUiService operatorAppUiService;
     @Mock
-    private ObjectTreePort ObjectTreePort;
+    private ObjectTreePort objectTreePort;
     @Mock
     private AutomationTreeService automationTreeService;
     @Mock
@@ -75,7 +75,7 @@ class AiSolutionGeneratorServiceTest {
                 bundleDeployService,
                 bundleLicenseSigner,
                 operatorAppUiService,
-                ObjectTreePort,
+                objectTreePort,
                 automationTreeService
         );
     }
@@ -187,9 +187,9 @@ class AiSolutionGeneratorServiceTest {
         ));
         when(bundleLicenseSigner.isConfigured()).thenReturn(false);
         when(bundleDeployService.deploy(anyString(), any(), eq(true))).thenReturn(Map.of("status", "OK"));
-        when(ObjectTreePort.tree()).thenReturn(objectTree);
+        when(objectTreePort.tree()).thenReturn(objectTree);
         when(objectTree.findByPath(anyString())).thenReturn(Optional.of(hubNode));
-        when(ObjectTreePort.require(anyString())).thenReturn(hubNode);
+        when(objectTreePort.require(anyString())).thenReturn(hubNode);
         when(hubNode.getVariable("status")).thenReturn(Optional.of(statusVariable));
 
         Map<String, Object> result = service.generate(
@@ -223,9 +223,9 @@ class AiSolutionGeneratorServiceTest {
         });
         ArgumentCaptor<Boolean> trustCaptor = ArgumentCaptor.forClass(Boolean.class);
         when(bundleDeployService.deploy(anyString(), any(), trustCaptor.capture())).thenReturn(Map.of("status", "OK"));
-        when(ObjectTreePort.tree()).thenReturn(objectTree);
+        when(objectTreePort.tree()).thenReturn(objectTree);
         when(objectTree.findByPath(anyString())).thenReturn(Optional.of(hubNode));
-        when(ObjectTreePort.require(anyString())).thenReturn(hubNode);
+        when(objectTreePort.require(anyString())).thenReturn(hubNode);
         when(hubNode.getVariable("status")).thenReturn(Optional.of(statusVariable));
 
         Map<String, Object> result = service.generate(

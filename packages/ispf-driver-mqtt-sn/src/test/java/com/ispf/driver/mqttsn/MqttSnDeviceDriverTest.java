@@ -141,7 +141,7 @@ class MqttSnDeviceDriverTest {
 
         void start() {
             running = true;
-            executor.submit(this::loop);
+            var _ = executor.submit(this::loop);
         }
 
         private void loop() {

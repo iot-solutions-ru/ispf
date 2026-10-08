@@ -103,6 +103,7 @@ public record BindingActivators(
     }
 
     /** @deprecated use {@link #matchesEvent(String, String, String)} */
+    @Deprecated
     public boolean matchesEvent(String eventName) {
         return onEvent != null && !onEvent.isBlank() && onEvent.equals(eventName);
     }
