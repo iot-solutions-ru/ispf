@@ -6,6 +6,9 @@ plugins {
 extra["protobuf-java.version"] = "4.36.0"
 // Keep in sync with ispf-server (ADR-0059 registry): Tomcat CVE fix above the Boot 4.1.1 BOM.
 extra["tomcat.version"] = "11.0.26"
+// Keep in sync with ispf-server (Boot 4 Jackson 2 + Jackson 3 BOM properties).
+extra["jackson-2-bom.version"] = "2.22.3"
+extra["jackson-bom.version"] = "3.2.3"
 
 dependencyManagement {
     imports {

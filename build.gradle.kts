@@ -171,26 +171,61 @@ subprojects {
                 // commons-configuration2 2.10.1 (CVE-2026-45205). Drop when the parents move.
                 "at.yawk.lz4:lz4-java:1.12.0",
                 "org.apache.commons:commons-configuration2:2.15.1",
-                // Dependabot GHSA stream (attributed to settings.gradle.kts): Jackson / Log4j
-                // transitives still resolve below the patched lines. Drop when Boot BOM / parents catch up.
+                // Dependabot / Trivy GHSA stream: Jackson / Log4j / Tomcat. Boot 4.1.1 still
+                // manages jackson-2-bom 2.21.5 / jackson-bom (tools.jackson) 3.1.5 and Tomcat
+                // 11.0.24; Boot modules override those extras, and force+rules here keep non-Boot
+                // classpaths aligned. Drop pins when Boot catches up.
+                "com.fasterxml.jackson:jackson-bom:2.22.3",
                 "com.fasterxml.jackson.core:jackson-core:2.22.3",
                 "com.fasterxml.jackson.core:jackson-databind:2.22.3",
+                // annotations tracks major.minor only (no 2.22.3 artifact on Central).
+                "com.fasterxml.jackson.core:jackson-annotations:2.22",
+                "tools.jackson:jackson-bom:3.2.3",
                 "tools.jackson.core:jackson-core:3.2.3",
                 "tools.jackson.core:jackson-databind:3.2.3",
+                "org.apache.tomcat.embed:tomcat-embed-core:11.0.26",
+                "org.apache.tomcat.embed:tomcat-embed-el:11.0.26",
+                "org.apache.tomcat.embed:tomcat-embed-websocket:11.0.26",
                 "org.apache.logging.log4j:log4j-api:2.25.5",
             )
             eachDependency {
-                val current = requested.version ?: return@eachDependency
                 when (requested.group) {
-                    "org.eclipse.jetty" -> when {
-                        // 9.4.x is timestamped on Central (no 9.4.63). Latest 9.4 line is 9.4.58.v20250814.
-                        current.startsWith("9.4") -> useVersion("9.4.58.v20250814")
-                        current.startsWith("12.0") -> useVersion("12.0.12")
+                    "com.fasterxml.jackson", "com.fasterxml.jackson.core",
+                    "com.fasterxml.jackson.datatype", "com.fasterxml.jackson.module",
+                    "com.fasterxml.jackson.dataformat" -> {
+                        // Keep Jackson 2 on the patched 2.22.x line (nightly Trivy CRITICAL/HIGH).
+                        // jackson-annotations releases as 2.22 (no patch builds on Central).
+                        when {
+                            requested.name == "jackson-annotations" -> useVersion("2.22")
+                            requested.name == "jackson-bom" ||
+                                requested.name.startsWith("jackson-") -> useVersion("2.22.3")
+                        }
+                    }
+                    "tools.jackson", "tools.jackson.core",
+                    "tools.jackson.datatype", "tools.jackson.module",
+                    "tools.jackson.dataformat" -> {
+                        if (requested.name == "jackson-bom" ||
+                            requested.name.startsWith("jackson-")
+                        ) {
+                            useVersion("3.2.3")
+                        }
+                    }
+                    "org.apache.tomcat.embed" -> useVersion("11.0.26")
+                    "org.eclipse.jetty" -> {
+                        val current = requested.version ?: return@eachDependency
+                        when {
+                            // 9.4.x has no patched Central release past 9.4.58.v20250814; parquet
+                            // excludes Jetty from hadoop-common instead (see ispf-export-parquet).
+                            current.startsWith("9.4") -> useVersion("9.4.58.v20250814")
+                            current.startsWith("12.0") -> useVersion("12.0.40")
+                            current.startsWith("12.1") -> useVersion("12.1.14")
+                        }
                     }
                     "io.netty" -> {
                         if (!requested.name.startsWith("netty-")) {
                             return@eachDependency
                         }
+                        val current = requested.version ?: return@eachDependency
                         when {
                             current.startsWith("4.1") -> useVersion("4.1.137.Final")
                             current.startsWith("4.2") -> useVersion("4.2.18.Final")

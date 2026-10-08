@@ -9,6 +9,10 @@ extra["protobuf-java.version"] = "4.36.0"
 extra["kafka.version"] = "4.3.1"
 // Pin (ADR-0059 registry): Boot 4.1.1 manages Tomcat 11.0.24 (CVE-2026-65182/65905/68525); drop when the BOM catches up.
 extra["tomcat.version"] = "11.0.26"
+// Boot 4 splits Jackson: jackson-2-bom = com.fasterxml 2.x, jackson-bom = tools.jackson 3.x.
+// Drop when Boot BOM >= these (nightly Trivy CRITICAL/HIGH).
+extra["jackson-2-bom.version"] = "2.22.3"
+extra["jackson-bom.version"] = "3.2.3"
 
 configurations.all {
     exclude(group = "org.slf4j", module = "slf4j-reload4j")
