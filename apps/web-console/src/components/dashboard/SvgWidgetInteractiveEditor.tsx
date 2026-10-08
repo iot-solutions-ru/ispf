@@ -15,6 +15,7 @@ import type { TopologySvgHitArea } from "../../scada/topologySvgConfig";
 import SymbolBehaviorsEditor from "../scada/SymbolBehaviorsEditor";
 import MimicBindingSlotEditor from "../scada/MimicBindingSlotEditor";
 import WidgetMediaUploadField from "./WidgetMediaUploadField";
+import { HintCaption } from "./widgetEditorStructured";
 import { SelectionKeyInput } from "./widgetFields/widgetFieldPrimitives";
 
 interface SvgWidgetInteractiveEditorProps {
@@ -132,7 +133,11 @@ export default function SvgWidgetInteractiveEditor({
 
   return (
     <div className="svg-widget-interactive-editor scada-editor-panel">
-      <h3 className="scada-props-section-title">{t("editor.section.svgInteractive", { ns: "widgets", defaultValue: "Интерактивный SVG (как SCADA-символ)" })}</h3>
+      <h3 className="scada-props-section-title">
+        <HintCaption className="">
+          {t("editor.section.svgInteractive", { ns: "widgets" })}
+        </HintCaption>
+      </h3>
       <p className="scada-props-hint scada-props-hint-compact">
         {t("props.behaviorsHint", { ns: "scada" })}
       </p>

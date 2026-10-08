@@ -53,6 +53,7 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
           code="rowParamsJson"
           keyCaption={t("editor.col.sessionParam")}
           valueCaption={t("editor.col.value")}
+          keySuggestions={ctx.sessionParams}
           value={mw.rowParamsJson}
           onChange={(v) => update({ rowParamsJson: v })}
         />
@@ -99,6 +100,7 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
           code="rowParamsJson"
           keyCaption={t("editor.col.sessionParam")}
           valueCaption={t("editor.col.value")}
+          keySuggestions={ctx.sessionParams}
           value={tw.rowParamsJson}
           onChange={(v) => update({ rowParamsJson: v })}
         />
@@ -145,6 +147,7 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
           code="cardParamsJson"
           keyCaption={t("editor.col.sessionParam")}
           valueCaption={t("editor.col.value")}
+          keySuggestions={ctx.sessionParams}
           value={cw.cardParamsJson}
           onChange={(v) => update({ cardParamsJson: v })}
         />

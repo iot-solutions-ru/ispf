@@ -61,7 +61,8 @@ export default function ScadaMimicWidgetEditorFields({
         value={widget.mimicPath ?? ""}
         onChange={(path) => update({ mimicPath: path || undefined })}
         filterTypes={["MIMIC"]}
-        placeholder="root.platform.mimics.my-mimic"
+        hint="root.platform.mimics.my-mimic"
+        placeholder=""
       />
       {mimicPath ? (
         <p className="hint">{t("editor.scadaMimic.mimicPathHint")}</p>

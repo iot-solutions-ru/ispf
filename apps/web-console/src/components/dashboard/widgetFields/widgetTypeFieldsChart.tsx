@@ -2,7 +2,9 @@
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { type NetworkGraphWidget, WIDGET_HISTORY_RANGE_OPTIONS } from "../../../types/dashboard";
-import { AdvancedJsonField, VariableSelect } from "../widgetEditorStructured";
+import { AdvancedJsonField, HintCaption, VariableSelect } from "../widgetEditorStructured";
+import { variableListAllowCustom } from "../widgetEditorHelpers";
+import { RecordFieldGroup } from "./widgetBoundChoices";
 import { Section, type WidgetFieldContextFor, type WidgetTypeFieldsRegistry } from "./widgetFieldPrimitives";
 import { rowNavigationFields } from "./widgetRowNavigationFields";
 
@@ -60,6 +62,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
             value={widget.bubbleXVariable ?? ""}
             onChange={(v) => update({ bubbleXVariable: v || undefined })}
             variables={ctx.variables}
+            allowCustom={variableListAllowCustom(widget)}
             disabled={!ctx.variableSelectEnabled}
           />
           <VariableSelect
@@ -67,6 +70,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
             value={widget.bubbleYVariable ?? ""}
             onChange={(v) => update({ bubbleYVariable: v || undefined })}
             variables={ctx.variables}
+            allowCustom={variableListAllowCustom(widget)}
             disabled={!ctx.variableSelectEnabled}
           />
           <VariableSelect
@@ -74,6 +78,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
             value={widget.bubbleSizeVariable ?? ""}
             onChange={(v) => update({ bubbleSizeVariable: v || undefined })}
             variables={ctx.variables}
+            allowCustom={variableListAllowCustom(widget)}
             disabled={!ctx.variableSelectEnabled}
           />
           <label>
@@ -206,7 +211,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
       <label>
-        unitField
+        {t("editor.unitField")}
         <input
           value={widget.unitField ?? ""}
           onChange={(e) => update({ unitField: e.target.value || undefined })}
@@ -288,19 +293,17 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
         />
       </label>
       <label>
-        mapStyleUrl
+        <HintCaption hint={t("editor.placeholder.vectorStyle")}>mapStyleUrl</HintCaption>
         <input
           value={widget.mapStyleUrl ?? ""}
           onChange={(e) => update({ mapStyleUrl: e.target.value || undefined })}
-          placeholder={t("editor.placeholder.vectorStyle")}
         />
       </label>
       <label>
-        tileUrl
+        <HintCaption hint="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png">tileUrl</HintCaption>
         <input
           value={widget.tileUrl ?? ""}
           onChange={(e) => update({ tileUrl: e.target.value || undefined })}
-          placeholder="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
       </label>
       <label>
@@ -320,27 +323,28 @@ function ganttChartFields(ctx: WidgetFieldContextFor<"gantt-chart">, t: TFunctio
   return (
     <>
       <Section title={t("editor.section.gantt")} />
-      <label>
-        labelField
-        <input
-          value={widget.labelField ?? "label"}
-          onChange={(e) => update({ labelField: e.target.value })}
-        />
-      </label>
-      <label>
-        startField
-        <input
-          value={widget.startField ?? "start"}
-          onChange={(e) => update({ startField: e.target.value })}
-        />
-      </label>
-      <label>
-        endField
-        <input
-          value={widget.endField ?? "end"}
-          onChange={(e) => update({ endField: e.target.value })}
-        />
-      </label>
+      <RecordFieldGroup
+        objectPath={widget.objectPath ?? widget.modelHintPath}
+        variableName={widget.variableName}
+        allowCustom={variableListAllowCustom(widget)}
+        fields={[
+          {
+            label: t("editor.field.recordLabel"),
+            value: widget.labelField ?? "label",
+            onChange: (next) => update({ labelField: next }),
+          },
+          {
+            label: t("editor.field.recordStart"),
+            value: widget.startField ?? "start",
+            onChange: (next) => update({ startField: next }),
+          },
+          {
+            label: t("editor.field.recordEnd"),
+            value: widget.endField ?? "end",
+            onChange: (next) => update({ endField: next }),
+          },
+        ]}
+      />
       <label className="checkbox-row">
         <input
           type="checkbox"
@@ -367,47 +371,57 @@ function networkGraphFields(ctx: WidgetFieldContextFor<"network-graph">, t: TFun
     <>
       <Section title={t("editor.section.networkGraph")} />
       <VariableSelect
-        label="nodesVariable"
+        label={t("editor.field.nodesVariable")}
         value={widget.nodesVariable ?? ""}
         onChange={(v) => update({ nodesVariable: v || undefined })}
         variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
       />
       <VariableSelect
-        label="edgesVariable"
+        label={t("editor.field.edgesVariable")}
         value={widget.edgesVariable ?? ""}
         onChange={(v) => update({ edgesVariable: v || undefined })}
         variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
+      />
+      <RecordFieldGroup
+        objectPath={widget.objectPath ?? widget.modelHintPath}
+        variableName={widget.nodesVariable}
+        allowCustom={variableListAllowCustom(widget)}
+        fields={[
+          {
+            label: t("editor.field.recordLabel"),
+            value: widget.labelField ?? "name",
+            onChange: (next) => update({ labelField: next }),
+          },
+          {
+            label: t("editor.field.recordId"),
+            value: widget.idField ?? "id",
+            onChange: (next) => update({ idField: next }),
+          },
+        ]}
+      />
+      <RecordFieldGroup
+        objectPath={widget.objectPath ?? widget.modelHintPath}
+        variableName={widget.edgesVariable}
+        allowCustom={variableListAllowCustom(widget)}
+        fields={[
+          {
+            label: t("editor.field.edgeFrom"),
+            value: widget.edgeFromField ?? "from",
+            onChange: (next) => update({ edgeFromField: next }),
+          },
+          {
+            label: t("editor.field.edgeTo"),
+            value: widget.edgeToField ?? "to",
+            onChange: (next) => update({ edgeToField: next }),
+          },
+        ]}
       />
       <label>
-        labelField
-        <input
-          value={widget.labelField ?? "name"}
-          onChange={(e) => update({ labelField: e.target.value })}
-        />
-      </label>
-      <label>
-        idField
-        <input
-          value={widget.idField ?? "id"}
-          onChange={(e) => update({ idField: e.target.value })}
-        />
-      </label>
-      <label>
-        edgeFromField
-        <input
-          value={widget.edgeFromField ?? "from"}
-          onChange={(e) => update({ edgeFromField: e.target.value })}
-        />
-      </label>
-      <label>
-        edgeToField
-        <input
-          value={widget.edgeToField ?? "to"}
-          onChange={(e) => update({ edgeToField: e.target.value })}
-        />
-      </label>
-      <label>
-        layout
+        {t("editor.field.graphLayout")}
         <select
           value={widget.layout ?? "cose"}
           onChange={(e) =>

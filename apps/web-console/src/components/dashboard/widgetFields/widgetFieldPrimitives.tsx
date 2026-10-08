@@ -2,15 +2,16 @@
 import { useQuery } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
 import { AutoComplete } from "antd";
-import { Children, Fragment, isValidElement, type ReactNode } from "react";
+import { Children, Fragment, cloneElement, isValidElement, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { AnalyticsQueryTagInput } from "../../../api";
+import { fetchObjectEditor, type AnalyticsQueryTagInput } from "../../../api";
 import { fetchReport } from "../../../api/reports";
 import { parseAnalyticsQueryTags } from "../../../hooks/useAnalyticsMultiSeries";
 import type { ObjectType } from "../../../types";
 import type { ChartWidget, DashboardWidget } from "../../../types/dashboard";
 import { ObjectPathField } from "../../../ui";
-import { AdvancedJsonField } from "../widgetEditorStructured";
+import { splitCaptionDetail } from "../widgetEditorHelpers";
+import { AdvancedJsonField, HintCaption } from "../widgetEditorStructured";
 
 export type ObjectOption = { path: string; displayName: string; variableNames: string[] };
 export type DashboardOption = { path: string; displayName: string };
@@ -26,6 +27,8 @@ export interface WidgetFieldContext {
   variableSelectEnabled: boolean;
   /** Selection-slot names already used by widgets on this dashboard. */
   selectionKeys: string[];
+  /** session.params names already used by widgets on this dashboard. */
+  sessionParams: string[];
   update: (patch: Partial<DashboardWidget>) => void;
 }
 
@@ -45,12 +48,45 @@ export type WidgetTypeFieldsRenderer<K extends DashboardWidget["type"]> = (
 export type WidgetTypeFieldsRegistry = { [K in DashboardWidget["type"]]?: WidgetTypeFieldsRenderer<K> };
 
 export function Section({ title, hint }: { title: string; hint?: string }) {
+  const split = splitCaptionDetail(title);
+  const tooltip = [hint, split.detail].map((part) => part?.trim()).filter(Boolean).join("\n");
   return (
     <div className="widget-editor-section-block">
-      <h5 className="widget-editor-section">{title}</h5>
-      {hint && <p className="hint widget-editor-hint">{hint}</p>}
+      <h5 className="widget-editor-section">
+        {tooltip ? (
+          <HintCaption className="" hint={tooltip}>
+            {split.title}
+          </HintCaption>
+        ) : (
+          split.title
+        )}
+      </h5>
     </div>
   );
+}
+
+function withCaptionTooltip(node: ReactNode): ReactNode {
+  if (!isValidElement<{ children?: ReactNode }>(node)) return node;
+  if (node.type !== "label" && node.type !== "h5") return node;
+  const raw = Children.toArray(node.props.children);
+  const hasDetail = raw.some(
+    (child) => typeof child === "string" && Boolean(splitCaptionDetail(child).detail),
+  );
+  if (!hasDetail) return node;
+  const children = raw.map((child, index) => {
+    if (typeof child === "string") {
+      const split = splitCaptionDetail(child);
+      if (split.detail) {
+        return (
+          <HintCaption key={index} hint={split.detail}>
+            {split.title}
+          </HintCaption>
+        );
+      }
+    }
+    return <Fragment key={index}>{child}</Fragment>;
+  });
+  return cloneElement(node, undefined, children);
 }
 
 function flattenFieldChildren(children: ReactNode): ReactNode[] {
@@ -99,11 +135,12 @@ export function FieldPairs({ children }: { children: ReactNode }) {
   };
 
   for (const item of items) {
-    if (isFullWidthField(item)) {
+    const shown = withCaptionTooltip(item);
+    if (isFullWidthField(shown)) {
       flushPair();
-      result.push(item);
+      result.push(shown);
     } else {
-      pair.push(item);
+      pair.push(shown);
       if (pair.length === 2) flushPair();
     }
   }
@@ -113,7 +150,7 @@ export function FieldPairs({ children }: { children: ReactNode }) {
 }
 
 export function FormRow({ children }: { children: ReactNode }) {
-  return <div className="form-grid-row">{children}</div>;
+  return <div className="form-grid-row">{Children.map(children, withCaptionTooltip)}</div>;
 }
 
 export function StackedSlot({ children }: { children: ReactNode }) {
@@ -166,17 +203,19 @@ export function SelectionKeyInput({
 export function FieldLabel({
   caption,
   code,
+  hint,
   children,
   className,
 }: {
   caption: string;
   code?: string;
+  hint?: string;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <label className={className}>
-      <span className="field-caption">{caption}</span>
+      <HintCaption hint={hint}>{caption}</HintCaption>
       {code ? <span className="field-code">{code}</span> : null}
       {children}
     </label>
@@ -197,16 +236,75 @@ export function PathSelect({
   filterTypes?: ObjectType[];
 }) {
   const { t } = useTranslation(["widgets", "common"]);
+  const split = splitCaptionDetail(label);
+  const hint = [split.detail, placeholder ?? t("common:objectPath.placeholder")].filter(Boolean).join("\n");
   return (
     <ObjectPathField
       className="path-select-field"
-      label={label}
+      label={split.title}
       value={value}
       onChange={onChange}
       filterTypes={filterTypes}
-      placeholder={placeholder ?? t("common:objectPath.placeholder")}
-      pickerTitle={label}
+      hint={hint}
+      placeholder=""
+      pickerTitle={split.title}
     />
+  );
+}
+
+/** Function name limited to the functions declared on the widget's object. */
+export function ObjectFunctionSelect({
+  label,
+  code,
+  objectPath,
+  value,
+  onChange,
+}: {
+  label: string;
+  code?: string;
+  objectPath?: string;
+  value?: string;
+  onChange: (next: string) => void;
+}) {
+  const { t } = useTranslation("widgets");
+  const path = objectPath?.trim() ?? "";
+  const query = useQuery({
+    queryKey: ["widget-editor-object-functions", path],
+    queryFn: () => fetchObjectEditor(path),
+    enabled: Boolean(path),
+  });
+  const names = [
+    ...new Set(
+      (query.data?.functions ?? [])
+        .map((fn) => fn.name.trim())
+        .filter(Boolean),
+    ),
+  ].sort((a, b) => a.localeCompare(b));
+  const current = (value ?? "").trim();
+  const options = current && !names.includes(current) ? [current, ...names] : names;
+
+  return (
+    <label>
+      <HintCaption>{label}</HintCaption>
+      {code ? <span className="field-code">{code}</span> : null}
+      <select
+        aria-label={splitCaptionDetail(label).title}
+        value={current}
+        disabled={!path || query.isLoading}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">—</option>
+        {options.map((name) => (
+          <option key={name} value={name}>
+            {name}
+          </option>
+        ))}
+      </select>
+      {!path ? <p className="hint">{t("editor.functionNamesNeedObject")}</p> : null}
+      {path && query.isSuccess && names.length === 0 ? (
+        <p className="hint">{t("editor.functionNamesEmpty")}</p>
+      ) : null}
+    </label>
   );
 }
 
@@ -307,7 +405,8 @@ export function DashboardPathInput({
       objects={dashboards}
       onChange={onChange}
       filterTypes={["DASHBOARD"]}
-      placeholder="root.platform.dashboards.detail"
+      hint="root.platform.dashboards.detail"
+      placeholder=""
     />
   );
 }
@@ -337,7 +436,6 @@ export function ChartAnalyticsQueryTagsField({
 
   return (
     <div className="widget-editor-analytics-tags full">
-      <p className="hint widget-editor-type-hint">{t("editor.analyticsQueryTagsHint")}</p>
       {tags.length > 0 ? (
         <div className="widget-editor-analytics-tag-list">
           {tags.map((tag, index) => (
@@ -359,23 +457,24 @@ export function ChartAnalyticsQueryTagsField({
                 label={t("editor.objectPath")}
                 value={tag.path}
                 onChange={(path) => updateTag(index, { path })}
-                placeholder={t("editor.placeholder.orEnterPath")}
+                hint={t("editor.placeholder.orEnterPath")}
+                placeholder=""
                 pickerTitle={t("editor.objectPath")}
               />
               <label>
-                {t("editor.variableName")}
+                <HintCaption hint="temperature">{t("editor.variableName")}</HintCaption>
                 <input
                   value={tag.variable}
                   onChange={(e) => updateTag(index, { variable: e.target.value })}
-                  placeholder="temperature"
                 />
               </label>
               <label>
-                {t("editor.analyticsQueryTagLabel")}
+                <HintCaption hint={tag.path.split(".").pop() || undefined}>
+                  {t("editor.analyticsQueryTagLabel")}
+                </HintCaption>
                 <input
                   value={tag.label ?? ""}
                   onChange={(e) => updateTag(index, { label: e.target.value || undefined })}
-                  placeholder={tag.path.split(".").pop() ?? ""}
                 />
               </label>
             </div>

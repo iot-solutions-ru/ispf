@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { AutoComplete, Tooltip } from "antd";
 import { useTranslation } from "react-i18next";
+import { fetchObjectEditor, fetchVariablesBatch } from "../../api";
 import type {
   ObjectTableColumn,
   SheetConfig,
@@ -13,7 +16,116 @@ import {
 import { WIDGET_STYLE_KEYS_HINT, parseWidgetStyles } from "./widgetStyles";
 import type { WidgetStyleKey } from "./widgetStyles";
 import { parseJsonArray, parseJsonObject, stringifyJson } from "./widgetEditorJson";
+import { recordFieldNames, splitCaptionDetail } from "./widgetEditorHelpers";
 import { ObjectPathField } from "../../ui";
+
+function joinHints(...parts: Array<string | undefined>): string | undefined {
+  const text = parts.map((part) => part?.trim()).filter((part): part is string => Boolean(part));
+  return text.length > 0 ? text.join("\n") : undefined;
+}
+
+/** Caption that keeps a longer explanation on hover, not inside the control. */
+export function HintCaption({
+  hint,
+  children,
+  className = "field-caption",
+}: {
+  hint?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  const split = typeof children === "string" ? splitCaptionDetail(children) : null;
+  const shown = split?.detail ? split.title : children;
+  const title = joinHints(hint, split?.detail);
+  const classNames = [className, title ? "field-caption-hint" : ""].filter(Boolean).join(" ");
+  const caption = <span className={classNames}>{shown}</span>;
+  if (!title) return caption;
+  return (
+    <Tooltip title={title} overlayStyle={{ maxWidth: 420 }}>
+      {caption}
+    </Tooltip>
+  );
+}
+
+export function OptionsSelect({
+  value,
+  options,
+  ariaLabel,
+  disabled,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  ariaLabel: string;
+  disabled?: boolean;
+  onChange: (next: string) => void;
+}) {
+  const names = options.map((name) => name.trim()).filter(Boolean);
+  const choices = value.trim() && !names.includes(value) ? [value, ...names] : names;
+  return (
+    <select
+      aria-label={ariaLabel}
+      value={value}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">—</option>
+      {choices.map((name) => (
+        <option key={name} value={name}>
+          {name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function SuggestInput({
+  value,
+  suggestions,
+  ariaLabel,
+  onChange,
+}: {
+  value: string;
+  suggestions?: string[];
+  ariaLabel: string;
+  onChange: (next: string) => void;
+}) {
+  const names = (suggestions ?? []).filter((name) => name.trim());
+  if (names.length === 0) {
+    return <input value={value} aria-label={ariaLabel} onChange={(e) => onChange(e.target.value)} />;
+  }
+  return (
+    <AutoComplete
+      className="selection-key-input"
+      value={value}
+      options={names.map((name) => ({ value: name }))}
+      aria-label={ariaLabel}
+      filterOption={false}
+      virtual={false}
+      getPopupContainer={() => document.body}
+      onChange={onChange}
+    />
+  );
+}
+
+function MiniField({
+  caption,
+  hint,
+  children,
+}: {
+  caption: string;
+  hint?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="widget-editor-mini-field">
+      <HintCaption className="widget-editor-mini-caption" hint={hint}>
+        {caption}
+      </HintCaption>
+      {children}
+    </div>
+  );
+}
 
 function ListActions({
   onAdd,
@@ -38,6 +150,8 @@ export function StringListEditor({
   onChange,
   suggestions = [],
   placeholder,
+  options,
+  optionsDisabled,
 }: {
   label: string;
   code?: string;
@@ -45,6 +159,9 @@ export function StringListEditor({
   onChange: (next: string) => void;
   suggestions?: string[];
   placeholder?: string;
+  /** Closed list. Omit to keep a free-text row. */
+  options?: string[];
+  optionsDisabled?: boolean;
 }) {
   const { t } = useTranslation("widgets");
   const [items, setItems] = useState(() => itemsFromValue(value));
@@ -66,21 +183,34 @@ export function StringListEditor({
 
   return (
     <div className="widget-editor-structured full">
-      <span className="field-caption">{label}</span>
+      <HintCaption hint={placeholder}>{label}</HintCaption>
       {code ? <span className="field-code">{code}</span> : null}
       <div className="widget-editor-list">
         {items.map((item, index) => (
           <div key={index} className="widget-editor-list-row">
-            <input
-              list={suggestions.length ? `suggest-${label}` : undefined}
-              value={item}
-              placeholder={placeholder}
-              onChange={(e) => {
-                const next = [...items];
-                next[index] = e.target.value;
-                commit(next);
-              }}
-            />
+            {options ? (
+              <OptionsSelect
+                ariaLabel={splitCaptionDetail(label).title}
+                value={item}
+                options={options}
+                disabled={optionsDisabled}
+                onChange={(nextValue) => {
+                  const next = [...items];
+                  next[index] = nextValue;
+                  commit(next);
+                }}
+              />
+            ) : (
+              <input
+                list={suggestions.length ? `suggest-${label}` : undefined}
+                value={item}
+                onChange={(e) => {
+                  const next = [...items];
+                  next[index] = e.target.value;
+                  commit(next);
+                }}
+              />
+            )}
             <button
               type="button"
               className="btn small danger"
@@ -91,7 +221,7 @@ export function StringListEditor({
             </button>
           </div>
         ))}
-        {suggestions.length > 0 && (
+        {!options && suggestions.length > 0 && (
           <datalist id={`suggest-${label}`}>
             {suggestions.map((s) => (
               <option key={s} value={s} />
@@ -113,6 +243,12 @@ export function KeyValueEditor({
   valueCaption,
   keyPlaceholder,
   valuePlaceholder,
+  keySuggestions,
+  valueSuggestions,
+  keyOptions,
+  valueOptions,
+  keyDisabled,
+  valueDisabled,
 }: {
   label: string;
   code?: string;
@@ -122,6 +258,14 @@ export function KeyValueEditor({
   valueCaption?: string;
   keyPlaceholder?: string;
   valuePlaceholder?: string;
+  keySuggestions?: string[];
+  valueSuggestions?: string[];
+  /** When set, the key is chosen from this list and cannot be typed freely. */
+  keyOptions?: string[];
+  /** When set, the value is chosen from this list and cannot be typed freely. */
+  valueOptions?: string[];
+  keyDisabled?: boolean;
+  valueDisabled?: boolean;
 }) {
   const { t } = useTranslation("widgets");
   const [rows, setRows] = useState(() => rowsFromValue(value));
@@ -148,36 +292,70 @@ export function KeyValueEditor({
 
   return (
     <div className="widget-editor-structured full">
-      <span className="field-caption">{label}</span>
+      <HintCaption>{label}</HintCaption>
       {code ? <span className="field-code">{code}</span> : null}
-      {(keyCaption || valueCaption) && (
+      {(keyCaption || valueCaption || keyPlaceholder || valuePlaceholder) && (
         <div className="widget-editor-kv-head">
-          <span>{keyCaption}</span>
-          <span>{valueCaption}</span>
+          <HintCaption className="widget-editor-mini-caption" hint={keyPlaceholder}>
+            {keyCaption ?? keyPlaceholder}
+          </HintCaption>
+          <HintCaption className="widget-editor-mini-caption" hint={valuePlaceholder}>
+            {valueCaption ?? valuePlaceholder}
+          </HintCaption>
           <span />
         </div>
       )}
       <div className="widget-editor-list">
         {rows.map((row, index) => (
           <div key={index} className="widget-editor-list-row widget-editor-kv-row">
-            <input
-              value={row.key}
-              placeholder={keyPlaceholder ?? keyCaption ?? "key"}
-              onChange={(e) => {
-                const next = [...rows];
-                next[index] = { ...next[index], key: e.target.value };
-                commit(next);
-              }}
-            />
-            <input
-              value={row.val}
-              placeholder={valuePlaceholder ?? valueCaption ?? "value"}
-              onChange={(e) => {
-                const next = [...rows];
-                next[index] = { ...next[index], val: e.target.value };
-                commit(next);
-              }}
-            />
+            {keyOptions ? (
+              <OptionsSelect
+                value={row.key}
+                options={keyOptions}
+                ariaLabel={keyCaption ?? keyPlaceholder ?? "key"}
+                disabled={keyDisabled}
+                onChange={(nextValue) => {
+                  const next = [...rows];
+                  next[index] = { ...next[index], key: nextValue };
+                  commit(next);
+                }}
+              />
+            ) : (
+              <SuggestInput
+                value={row.key}
+                suggestions={keySuggestions}
+                ariaLabel={keyCaption ?? keyPlaceholder ?? "key"}
+                onChange={(nextValue) => {
+                  const next = [...rows];
+                  next[index] = { ...next[index], key: nextValue };
+                  commit(next);
+                }}
+              />
+            )}
+            {valueOptions ? (
+              <OptionsSelect
+                value={row.val}
+                options={valueOptions}
+                ariaLabel={valueCaption ?? valuePlaceholder ?? "value"}
+                disabled={valueDisabled}
+                onChange={(nextValue) => {
+                  const next = [...rows];
+                  next[index] = { ...next[index], val: nextValue };
+                  commit(next);
+                }}
+              />
+            ) : (
+              <SuggestInput
+                value={row.val}
+                suggestions={valueSuggestions}
+                ariaLabel={valueCaption ?? valuePlaceholder ?? "value"}
+                onChange={(nextValue) => {
+                  const next = [...rows];
+                  next[index] = { ...next[index], val: nextValue };
+                  commit(next);
+                }}
+              />
+            )}
             <button
               type="button"
               className="btn small danger"
@@ -228,7 +406,7 @@ export function VariableSelect({
   const { t } = useTranslation("widgets");
   return (
     <label>
-      <span className="field-caption">{label}</span>
+      <HintCaption hint={allowCustom ? t("editor.placeholder.orEnterVariable") : undefined}>{label}</HintCaption>
       <div className="field-controls">
         <select value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}>
           <option value="">—</option>
@@ -242,11 +420,13 @@ export function VariableSelect({
           <input
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={t("editor.placeholder.orEnterVariable")}
             disabled={disabled}
           />
         )}
       </div>
+      {!allowCustom && !disabled && variables.length === 0 ? (
+        <p className="hint">{t("editor.variableNamesEmpty")}</p>
+      ) : null}
     </label>
   );
 }
@@ -254,14 +434,47 @@ export function VariableSelect({
 export function ObjectTableColumnsEditor({
   value,
   onChange,
-  variableSuggestions = [],
+  parentPath,
+  objects = [],
 }: {
   value: string | undefined;
   onChange: (next: string) => void;
-  variableSuggestions?: string[];
+  parentPath?: string;
+  objects?: Array<{ path: string; variableNames: string[] }>;
 }) {
   const { t } = useTranslation("widgets");
   const columns = parseJsonArray<ObjectTableColumn>(value, []);
+  const parent = parentPath?.trim() ?? "";
+  const scoped = parent
+    ? objects.filter((object) => object.path === parent || object.path.startsWith(`${parent}.`))
+    : [];
+  const variableNames = [
+    ...new Set(scoped.flatMap((object) => object.variableNames).map((name) => name.trim()).filter(Boolean)),
+  ].sort((a, b) => a.localeCompare(b));
+  const variablesLocked = Boolean(parent);
+  const samplePaths = [
+    ...new Set(
+      columns.flatMap((column) => {
+        const name = column.variable?.trim();
+        if (!variablesLocked || !name) return [];
+        const source = scoped.find((object) => object.variableNames.includes(name));
+        return source ? [source.path] : [];
+      }),
+    ),
+  ].sort();
+  const schemaQuery = useQuery({
+    queryKey: ["widget-editor-object-table-fields", samplePaths],
+    queryFn: () => fetchVariablesBatch(samplePaths),
+    enabled: samplePaths.length > 0,
+  });
+
+  const fieldsFor = (variableName: string | undefined): string[] => {
+    const name = variableName?.trim();
+    if (!name) return [];
+    const source = scoped.find((object) => object.variableNames.includes(name));
+    if (!source) return [];
+    return recordFieldNames(schemaQuery.data?.[source.path], name);
+  };
 
   const setColumns = (next: ObjectTableColumn[]) => {
     onChange(stringifyJson(next));
@@ -269,26 +482,52 @@ export function ObjectTableColumnsEditor({
 
   return (
     <div className="widget-editor-structured full">
-      <span className="field-caption">{t("editor.structured.columns")}</span>
+      <HintCaption>{t("editor.structured.columns")}</HintCaption>
+      {!parent ? <p className="hint">{t("editor.objectTableVariablesNeedParent")}</p> : null}
+      {parent && variableNames.length === 0 ? (
+        <p className="hint">{t("editor.objectTableVariablesEmpty")}</p>
+      ) : null}
       <div className="widget-editor-table-editor">
         <div className="widget-editor-table-head">
-          <span>{t("editor.structured.colVariable")}</span>
+          <HintCaption className="widget-editor-mini-caption" hint="sysName">
+            {t("editor.structured.colVariable")}
+          </HintCaption>
           <span>{t("editor.structured.colLabel")}</span>
-          <span>{t("editor.structured.colField")}</span>
+          <HintCaption className="widget-editor-mini-caption" hint="value">
+            {t("editor.structured.colField")}
+          </HintCaption>
           <span />
         </div>
-        {columns.map((col, index) => (
+        {columns.map((col, index) => {
+          const recordFields = fieldsFor(col.variable);
+          const lockField =
+            variablesLocked &&
+            Boolean(col.variable?.trim()) &&
+            (schemaQuery.isLoading || recordFields.length > 0);
+          return (
           <div key={index} className="widget-editor-table-row">
-            <input
-              list="col-var-suggest"
-              value={col.variable ?? ""}
-              placeholder="sysName"
-              onChange={(e) => {
-                const next = [...columns];
-                next[index] = { ...next[index], variable: e.target.value || undefined };
-                setColumns(next);
-              }}
-            />
+            {variablesLocked ? (
+              <OptionsSelect
+                ariaLabel={t("editor.structured.colVariable")}
+                value={col.variable ?? ""}
+                options={variableNames}
+                onChange={(nextValue) => {
+                  const next = [...columns];
+                  next[index] = { ...next[index], variable: nextValue || undefined };
+                  setColumns(next);
+                }}
+              />
+            ) : (
+              <input
+                value={col.variable ?? ""}
+                aria-label={t("editor.structured.colVariable")}
+                onChange={(e) => {
+                  const next = [...columns];
+                  next[index] = { ...next[index], variable: e.target.value || undefined };
+                  setColumns(next);
+                }}
+              />
+            )}
             <input
               value={col.label}
               onChange={(e) => {
@@ -297,15 +536,29 @@ export function ObjectTableColumnsEditor({
                 setColumns(next);
               }}
             />
-            <input
-              value={col.field ?? ""}
-              placeholder="value"
-              onChange={(e) => {
-                const next = [...columns];
-                next[index] = { ...next[index], field: e.target.value || undefined };
-                setColumns(next);
-              }}
-            />
+            {lockField ? (
+              <OptionsSelect
+                ariaLabel={t("editor.structured.colField")}
+                value={col.field ?? ""}
+                options={recordFields}
+                disabled={schemaQuery.isLoading}
+                onChange={(nextValue) => {
+                  const next = [...columns];
+                  next[index] = { ...next[index], field: nextValue || undefined };
+                  setColumns(next);
+                }}
+              />
+            ) : (
+              <input
+                value={col.field ?? ""}
+                aria-label={t("editor.structured.colField")}
+                onChange={(e) => {
+                  const next = [...columns];
+                  next[index] = { ...next[index], field: e.target.value || undefined };
+                  setColumns(next);
+                }}
+              />
+            )}
             <button
               type="button"
               className="btn small danger"
@@ -314,12 +567,8 @@ export function ObjectTableColumnsEditor({
               ×
             </button>
           </div>
-        ))}
-        <datalist id="col-var-suggest">
-          {variableSuggestions.map((s) => (
-            <option key={s} value={s} />
-          ))}
-        </datalist>
+          );
+        })}
       </div>
       <ListActions
         onAdd={() => setColumns([...columns, { label: "", variable: "" }])}
@@ -355,14 +604,37 @@ export function FormFieldsEditor({
   mode,
   value,
   onChange,
+  objectPath,
+  functionName,
 }: {
   mode: "function-form" | "input-form";
   value: string | undefined;
   onChange: (next: string) => void;
+  /** Function-form field names are limited to this function's input schema. */
+  objectPath?: string;
+  functionName?: string;
 }) {
   const { t } = useTranslation("widgets");
+  const path = objectPath?.trim() ?? "";
+  const fnName = functionName?.trim() ?? "";
+  const inputsQuery = useQuery({
+    queryKey: ["widget-editor-object-functions", path],
+    queryFn: () => fetchObjectEditor(path),
+    enabled: mode === "function-form" && Boolean(path) && Boolean(fnName),
+  });
+  const inputNames = [
+    ...new Set(
+      (
+        inputsQuery.data?.functions.find((fn) => fn.name === fnName)?.inputSchema?.fields ?? []
+      )
+        .map((field) => field.name.trim())
+        .filter(Boolean),
+    ),
+  ].sort((a, b) => a.localeCompare(b));
   const types =
     mode === "function-form" ? FUNCTION_FORM_FIELD_TYPES : INPUT_FORM_FIELD_TYPES;
+  const namesLocked = mode === "function-form";
+  const namesDisabled = namesLocked && (!path || !fnName || inputsQuery.isLoading);
 
   if (mode === "function-form") {
     const fields = parseJsonArray<FunctionFormField>(value, []);
@@ -370,28 +642,37 @@ export function FormFieldsEditor({
 
     return (
       <div className="widget-editor-structured full">
-        <span className="field-caption">{t("editor.structured.formFields")}</span>
+        <HintCaption>{t("editor.structured.formFields")}</HintCaption>
+        {!path || !fnName ? <p className="hint">{t("editor.functionInputsNeedFunction")}</p> : null}
+        {path && fnName && inputsQuery.isSuccess && inputNames.length === 0 ? (
+          <p className="hint">{t("editor.functionInputsEmpty")}</p>
+        ) : null}
         {fields.map((field, index) => (
           <div key={index} className="widget-editor-field-card">
             <div className="widget-editor-list-row">
-              <input
-                value={field.name}
-                placeholder={t("editor.structured.fieldName")}
-                onChange={(e) => {
-                  const next = [...fields];
-                  next[index] = { ...next[index], name: e.target.value };
-                  setFields(next);
-                }}
-              />
-              <input
-                value={field.label}
-                placeholder={t("editor.structured.fieldLabel")}
-                onChange={(e) => {
-                  const next = [...fields];
-                  next[index] = { ...next[index], label: e.target.value };
-                  setFields(next);
-                }}
-              />
+              <MiniField caption={t("editor.structured.fieldName")}>
+                <OptionsSelect
+                  ariaLabel={t("editor.structured.fieldName")}
+                  value={field.name}
+                  options={inputNames}
+                  disabled={namesDisabled}
+                  onChange={(name) => {
+                    const next = [...fields];
+                    next[index] = { ...next[index], name };
+                    setFields(next);
+                  }}
+                />
+              </MiniField>
+              <MiniField caption={t("editor.structured.fieldLabel")}>
+                <input
+                  value={field.label}
+                  onChange={(e) => {
+                    const next = [...fields];
+                    next[index] = { ...next[index], label: e.target.value };
+                    setFields(next);
+                  }}
+                />
+              </MiniField>
               <select
                 value={field.type}
                 onChange={(e) => {
@@ -418,15 +699,16 @@ export function FormFieldsEditor({
               </button>
             </div>
             <div className="widget-editor-list-row">
-              <input
-                value={field.defaultValue ?? ""}
-                placeholder={t("editor.structured.defaultValue")}
-                onChange={(e) => {
-                  const next = [...fields];
-                  next[index] = { ...next[index], defaultValue: e.target.value || undefined };
-                  setFields(next);
-                }}
-              />
+              <MiniField caption={t("editor.structured.defaultValue")}>
+                <input
+                  value={field.defaultValue ?? ""}
+                  onChange={(e) => {
+                    const next = [...fields];
+                    next[index] = { ...next[index], defaultValue: e.target.value || undefined };
+                    setFields(next);
+                  }}
+                />
+              </MiniField>
               <label className="widget-editor-inline-check">
                 <input
                   type="checkbox"
@@ -457,28 +739,30 @@ export function FormFieldsEditor({
 
   return (
     <div className="widget-editor-structured full">
-      <span className="field-caption">{t("editor.structured.formFields")}</span>
+      <HintCaption>{t("editor.structured.formFields")}</HintCaption>
       {fields.map((field, index) => (
         <div key={index} className="widget-editor-field-card">
           <div className="widget-editor-list-row">
-            <input
-              value={field.name}
-              placeholder={t("editor.structured.fieldName")}
-              onChange={(e) => {
-                const next = [...fields];
-                next[index] = { ...next[index], name: e.target.value };
-                setFields(next);
-              }}
-            />
-            <input
-              value={field.label}
-              placeholder={t("editor.structured.fieldLabel")}
-              onChange={(e) => {
-                const next = [...fields];
-                next[index] = { ...next[index], label: e.target.value };
-                setFields(next);
-              }}
-            />
+            <MiniField caption={t("editor.structured.fieldName")}>
+              <input
+                value={field.name}
+                onChange={(e) => {
+                  const next = [...fields];
+                  next[index] = { ...next[index], name: e.target.value };
+                  setFields(next);
+                }}
+              />
+            </MiniField>
+            <MiniField caption={t("editor.structured.fieldLabel")}>
+              <input
+                value={field.label}
+                onChange={(e) => {
+                  const next = [...fields];
+                  next[index] = { ...next[index], label: e.target.value };
+                  setFields(next);
+                }}
+              />
+            </MiniField>
             <select
               value={field.type}
               onChange={(e) => {
@@ -502,24 +786,26 @@ export function FormFieldsEditor({
             </button>
           </div>
           <div className="widget-editor-list-row">
-            <input
-              value={field.variableName ?? ""}
-              placeholder={t("editor.structured.targetVariable")}
-              onChange={(e) => {
-                const next = [...fields];
-                next[index] = { ...next[index], variableName: e.target.value || undefined };
-                setFields(next);
-              }}
-            />
-            <input
-              value={field.defaultValue ?? ""}
-              placeholder={t("editor.structured.defaultValue")}
-              onChange={(e) => {
-                const next = [...fields];
-                next[index] = { ...next[index], defaultValue: e.target.value || undefined };
-                setFields(next);
-              }}
-            />
+            <MiniField caption={t("editor.structured.targetVariable")}>
+              <input
+                value={field.variableName ?? ""}
+                onChange={(e) => {
+                  const next = [...fields];
+                  next[index] = { ...next[index], variableName: e.target.value || undefined };
+                  setFields(next);
+                }}
+              />
+            </MiniField>
+            <MiniField caption={t("editor.structured.defaultValue")}>
+              <input
+                value={field.defaultValue ?? ""}
+                onChange={(e) => {
+                  const next = [...fields];
+                  next[index] = { ...next[index], defaultValue: e.target.value || undefined };
+                  setFields(next);
+                }}
+              />
+            </MiniField>
           </div>
         </div>
       ))}
@@ -551,29 +837,32 @@ export function NavMenuItemsEditor({
 
   return (
     <div className="widget-editor-structured full">
-      <span className="field-caption">{t("editor.structured.navItems")}</span>
+      <HintCaption>{t("editor.structured.navItems")}</HintCaption>
       {items.map((item, index) => (
         <div key={index} className="widget-editor-list-row">
-          <input
-            value={item.label}
-            placeholder={t("editor.structured.navLabel")}
-            onChange={(e) => {
-              const next = [...items];
-              next[index] = { ...next[index], label: e.target.value };
-              setItems(next);
-            }}
-          />
-          <ObjectPathField
-            value={item.dashboardPath}
-            objects={dashboards}
-            filterTypes={["DASHBOARD"]}
-            placeholder="root.platform.dashboards..."
-            onChange={(path) => {
-              const next = [...items];
-              next[index] = { ...next[index], dashboardPath: path };
-              setItems(next);
-            }}
-          />
+          <MiniField caption={t("editor.structured.navLabel")}>
+            <input
+              value={item.label}
+              onChange={(e) => {
+                const next = [...items];
+                next[index] = { ...next[index], label: e.target.value };
+                setItems(next);
+              }}
+            />
+          </MiniField>
+          <MiniField caption={t("editor.col.objectPath")} hint="root.platform.dashboards...">
+            <ObjectPathField
+              value={item.dashboardPath}
+              objects={dashboards}
+              filterTypes={["DASHBOARD"]}
+              placeholder=""
+              onChange={(path) => {
+                const next = [...items];
+                next[index] = { ...next[index], dashboardPath: path };
+                setItems(next);
+              }}
+            />
+          </MiniField>
           <button
             type="button"
             className="btn small danger"
@@ -614,28 +903,29 @@ export function IdLabelListEditor({
 
   return (
     <div className="widget-editor-structured full">
-      <span className="field-caption">{label}</span>
-      <p className="hint">{t("editor.structured.nestedWidgetsHint")}</p>
+      <HintCaption hint={t("editor.structured.nestedWidgetsHint")}>{label}</HintCaption>
       {items.map((item, index) => (
         <div key={index} className="widget-editor-list-row">
-          <input
-            value={item.id}
-            placeholder="id"
-            onChange={(e) => {
-              const next = [...items];
-              next[index] = { ...next[index], id: e.target.value };
-              setItems(next);
-            }}
-          />
-          <input
-            value={item.label}
-            placeholder={t("editor.structured.fieldLabel")}
-            onChange={(e) => {
-              const next = [...items];
-              next[index] = { ...next[index], label: e.target.value };
-              setItems(next);
-            }}
-          />
+          <MiniField caption="id">
+            <input
+              value={item.id}
+              onChange={(e) => {
+                const next = [...items];
+                next[index] = { ...next[index], id: e.target.value };
+                setItems(next);
+              }}
+            />
+          </MiniField>
+          <MiniField caption={t("editor.structured.fieldLabel")}>
+            <input
+              value={item.label}
+              onChange={(e) => {
+                const next = [...items];
+                next[index] = { ...next[index], label: e.target.value };
+                setItems(next);
+              }}
+            />
+          </MiniField>
           <button
             type="button"
             className="btn small danger"
@@ -678,7 +968,7 @@ export function SheetGridSizeEditor({
 
   return (
     <div className="widget-editor-structured full">
-      <span className="field-caption">{t("editor.spreadsheet.gridSize")}</span>
+      <HintCaption>{t("editor.spreadsheet.gridSize")}</HintCaption>
       <div className="widget-editor-list-row">
         <label>
           rows
@@ -757,7 +1047,7 @@ export function WidgetStylesEditor({
 
   return (
     <div className="widget-editor-structured full">
-      <span className="field-caption">{t("editor.styling")}</span>
+      <HintCaption>{t("editor.styling")}</HintCaption>
       <label>
         {t("editor.structured.styleElement")}
         <select value={activeKey} onChange={(e) => setActiveKey(e.target.value as WidgetStyleKey)}>
@@ -769,14 +1059,12 @@ export function WidgetStylesEditor({
         </select>
       </label>
       <div className="widget-editor-list-row">
-        <label>
-          fontSize
+        <MiniField caption="fontSize" hint="0.88rem">
           <input
             value={String(current.fontSize ?? "")}
             onChange={(e) => patchStyle("fontSize", e.target.value)}
-            placeholder="0.88rem"
           />
-        </label>
+        </MiniField>
         <label>
           color
           <input
@@ -812,7 +1100,11 @@ export function WidgetStylesEditor({
         </label>
       </div>
       <details className="widget-editor-advanced-json">
-        <summary>{t("editor.structured.stylesJsonAdvanced")}</summary>
+        <summary>
+          <HintCaption className="widget-editor-mini-caption">
+            {t("editor.structured.stylesJsonAdvanced")}
+          </HintCaption>
+        </summary>
         <textarea
           rows={4}
           className="mono"
@@ -841,27 +1133,29 @@ export function TabPanelMetaEditor({
 
   return (
     <div className="widget-editor-structured full">
-      <span className="field-caption">{t("editor.structured.tabs")}</span>
+      <HintCaption>{t("editor.structured.tabs")}</HintCaption>
       {tabs.map((tab, index) => (
         <div key={index} className="widget-editor-list-row">
-          <input
-            value={tab.id}
-            placeholder="id"
-            onChange={(e) => {
-              const next = [...tabs];
-              next[index] = { ...next[index], id: e.target.value };
-              setTabs(next);
-            }}
-          />
-          <input
-            value={tab.label}
-            placeholder={t("editor.structured.fieldLabel")}
-            onChange={(e) => {
-              const next = [...tabs];
-              next[index] = { ...next[index], label: e.target.value };
-              setTabs(next);
-            }}
-          />
+          <MiniField caption="id">
+            <input
+              value={tab.id}
+              onChange={(e) => {
+                const next = [...tabs];
+                next[index] = { ...next[index], id: e.target.value };
+                setTabs(next);
+              }}
+            />
+          </MiniField>
+          <MiniField caption={t("editor.structured.fieldLabel")}>
+            <input
+              value={tab.label}
+              onChange={(e) => {
+                const next = [...tabs];
+                next[index] = { ...next[index], label: e.target.value };
+                setTabs(next);
+              }}
+            />
+          </MiniField>
           <button
             type="button"
             className="btn small danger"
@@ -895,12 +1189,18 @@ export function AdvancedJsonField({
   const { t } = useTranslation("widgets");
   return (
     <details className="widget-editor-advanced-json full">
-      <summary>{label} ({t("editor.structured.jsonAdvanced")})</summary>
+      <summary>
+        <HintCaption
+          className="widget-editor-mini-caption"
+          hint={joinHints(placeholder, t("editor.structured.jsonAdvanced"))}
+        >
+          {label}
+        </HintCaption>
+      </summary>
       <textarea
         rows={rows}
         className="mono"
         value={value ?? ""}
-        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value || undefined)}
       />
     </details>

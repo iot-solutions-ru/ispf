@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Input, Select } from "antd";
+import { Button, Input, Select, Tooltip } from "antd";
 import type { ObjectType } from "../types";
 import ObjectTreePickerDialog from "./ObjectTreePickerDialog";
 
@@ -18,6 +18,8 @@ export interface ObjectPathFieldProps {
   filterTypes?: ObjectType[];
   rootPath?: string;
   placeholder?: string;
+  /** Shown on the caption. The input itself stays empty. */
+  hint?: string;
   disabled?: boolean;
   allowManual?: boolean;
   className?: string;
@@ -33,6 +35,7 @@ export default function ObjectPathField({
   filterTypes,
   rootPath,
   placeholder,
+  hint,
   disabled = false,
   allowManual = true,
   className = "",
@@ -44,7 +47,14 @@ export default function ObjectPathField({
   return (
     <>
       <label className={`object-path-field ${className}`.trim()} htmlFor={id}>
-        {label && <span className="field-caption">{label}</span>}
+        {label &&
+          (hint ? (
+            <Tooltip title={hint}>
+              <span className="field-caption field-caption-hint">{label}</span>
+            </Tooltip>
+          ) : (
+            <span className="field-caption">{label}</span>
+          ))}
         <div className="object-path-field-controls">
           {objects && objects.length > 0 && (
             <Select

@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { parseAnalyticsQueryTags } from "../../../hooks/useAnalyticsMultiSeries";
 import type { DashboardWidget } from "../../../types/dashboard";
 import { DATA_BINDING_HINT_KEYS, WIDGET_TYPE_HINT_KEYS, widgetDataBinding } from "../widgetEditorBinding";
+import { variableListAllowCustom } from "../widgetEditorHelpers";
+import { RecordFieldGroup } from "./widgetBoundChoices";
 import {
   ChartAnalyticsQueryTagsField,
   FieldLabel,
@@ -35,7 +37,10 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
 
       {chartWidget && (
         <>
-          <Section title={t("editor.section.analyticsQueryTags")} />
+          <Section
+            title={t("editor.section.analyticsQueryTags")}
+            hint={t("editor.analyticsQueryTagsHint")}
+          />
           <ChartAnalyticsQueryTagsField widget={chartWidget} objects={objects} update={update} />
         </>
       )}
@@ -48,23 +53,25 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
               value={widget.objectPath ?? ""}
               onChange={(path) => update({ objectPath: path || undefined, variableName: "" })}
             />
-            <FieldLabel caption={t("editor.selectionKey")} code="selectionKey">
+            <FieldLabel
+              caption={t("editor.selectionKey")}
+              code="selectionKey"
+              hint={t("editor.placeholder.selectionPath")}
+            >
               <div className="field-controls-slot field-controls-slot--stacked">
                 <SelectionKeyInput
                   value={widget.selectionKey ?? ""}
                   keys={selectionKeys}
-                  placeholder={t("editor.placeholder.selectionPath")}
                   onChange={(next) => update({ selectionKey: next || undefined })}
                 />
               </div>
             </FieldLabel>
           </FormRow>
           <FormRow>
-            <FieldLabel caption={t("editor.contextPathKey")}>
+            <FieldLabel caption={t("editor.contextPathKey")} hint={t("editor.placeholder.contextPathEmpty")}>
               <input
                 value={widget.contextPathKey ?? ""}
                 onChange={(e) => update({ contextPathKey: e.target.value || undefined })}
-                placeholder={t("editor.placeholder.contextPathEmpty")}
               />
             </FieldLabel>
             <FieldLabel caption={t("editor.modelHintPath")}>
@@ -93,7 +100,10 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
             (widget.chartType ?? widget.chartStyle) === "radar")
         ) && (
         <FormRow>
-          <FieldLabel caption={t("editor.variableName")}>
+          <FieldLabel
+            caption={t("editor.variableName")}
+            hint={!widget.objectPath && widget.selectionKey ? t("editor.placeholder.orEnterVariable") : undefined}
+          >
             <div
               className={
                 !widget.objectPath && widget.selectionKey
@@ -115,22 +125,24 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
               </select>
               {!widget.objectPath && widget.selectionKey && (
                 <input
-                  placeholder={t("editor.placeholder.orEnterVariable")}
                   value={widget.variableName ?? ""}
                   onChange={(e) => update({ variableName: e.target.value || undefined })}
                 />
               )}
             </div>
           </FieldLabel>
-          <FieldLabel caption={t("editor.valueField")}>
-            <div className="field-controls-slot field-controls-slot--stacked">
-              <input
-                value={widget.valueField ?? "value"}
-                onChange={(e) => update({ valueField: e.target.value || undefined })}
-                placeholder="value"
-              />
-            </div>
-          </FieldLabel>
+          <RecordFieldGroup
+            objectPath={widget.objectPath ?? widget.modelHintPath}
+            variableName={widget.variableName}
+            allowCustom={variableListAllowCustom(widget)}
+            fields={[
+              {
+                label: t("editor.valueField"),
+                value: widget.valueField ?? "value",
+                onChange: (next) => update({ valueField: next || undefined }),
+              },
+            ]}
+          />
         </FormRow>
       )}
 
@@ -146,12 +158,11 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
             onChange={(path) => update({ parentPath: path } as Partial<DashboardWidget>)}
             placeholder="root.platform.devices"
           />
-          <FieldLabel caption={t("editor.selectionKeyOnClick")} code="selectionKey">
+          <FieldLabel caption={t("editor.selectionKeyOnClick")} code="selectionKey" hint="device">
             <StackedSlot>
               <SelectionKeyInput
                 value={widget.selectionKey ?? ""}
                 keys={selectionKeys}
-                placeholder="device"
                 onChange={(next) => update({ selectionKey: next || undefined })}
               />
             </StackedSlot>

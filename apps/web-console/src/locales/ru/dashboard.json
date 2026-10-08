@@ -1,7 +1,7 @@
 {
   "editor.advanced": "Расширенное",
   "editor.containerDropHint": "Перетащите виджет сюда или добавьте из палитры, когда контейнер выбран.",
-  "editor.demoPreviewLabel": "demoPreviewJson (превью в редакторе)",
+  "editor.demoPreviewLabel": "Пример без данных (Показывается в редакторе, пока нет живых значений)",
   "editor.deprecation.payloadFilterExpr": "Устаревший mini-DSL, если в выражении нет payload. CEL вроде payload.int > 20 выполняется на сервере.",
   "editor.deprecation.requireSessionParamsJson": "Устаревшая проверка. Используйте Platform rules с CEL на context.params.*.",
   "editor.general": "Общее",
@@ -15,7 +15,7 @@
   "editor.layerZIndex": "Z-индекс",
   "editor.layerZIndexAuto": "авто",
   "editor.layoutHint": "Позицию и размер меняйте перетаскиванием на сетке.",
-  "editor.layoutGridBounds": "Fine grid: {{columns}} колонок; для этого виджета x ≤ {{maxX}}, w ≤ {{maxW}}.",
+  "editor.layoutGridBounds": "Сетка из {{columns}} колонок. Для этого виджета положение и ширина не выходят за сетку: x ≤ {{maxX}}, ширина ≤ {{maxW}}.",
   "editor.sampleZoneLabel": "Зона А",
   "editor.selectWidgetHint": "Выберите виджет на сетке или добавьте новый. Delete — удалить выбранный.",
   "editor.stylesHint": "Ключи элементов: {{keys}}. CSS в camelCase. Пусто — по умолчанию.",

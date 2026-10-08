@@ -8,9 +8,12 @@ import {
   NavMenuItemsEditor,
   StringListEditor,
   TabPanelMetaEditor,
+  VariableSelect,
 } from "../widgetEditorStructured";
+import { variableListAllowCustom } from "../widgetEditorHelpers";
 import {
   DashboardPathField,
+  ObjectFunctionSelect,
   Section,
   StackedSlot,
   type WidgetFieldContextFor,
@@ -61,7 +64,7 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
         </StackedSlot>
       </label>
       <label>
-        buttonLabel
+        {t("editor.field.buttonLabel")}
         <input
           value={widget.buttonLabel ?? ""}
           onChange={(e) => update({ buttonLabel: e.target.value })}
@@ -76,7 +79,7 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
         />
       </label>
       <label>
-        confirmMessage
+        {t("editor.field.confirmMessage")}
         <input
           value={widget.confirmMessage ?? ""}
           onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
@@ -95,6 +98,7 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
         code="contextParamsJson"
         keyCaption={t("editor.col.sessionParam")}
         valueCaption={t("editor.col.value")}
+        keySuggestions={ctx.sessionParams}
         value={widget.contextParamsJson}
         onChange={(v) => update({ contextParamsJson: v })}
       />
@@ -138,25 +142,26 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
         </select>
       </label>
       {widget.clickAction === "function" && (
-        <label>
-          functionName
-          <input
-            value={widget.functionName ?? ""}
-            onChange={(e) => update({ functionName: e.target.value })}
-          />
-        </label>
+        <ObjectFunctionSelect
+          label={t("editor.field.functionName")}
+          code="functionName"
+          objectPath={widget.objectPath}
+          value={widget.functionName ?? ""}
+          onChange={(next) => update({ functionName: next || undefined })}
+        />
       )}
       {widget.clickAction === "toggle" && (
-        <label>
-          toggleVariable
-          <input
-            value={widget.toggleVariable ?? widget.variableName ?? ""}
-            onChange={(e) => update({ toggleVariable: e.target.value })}
-          />
-        </label>
+        <VariableSelect
+          label="toggleVariable"
+          value={widget.toggleVariable ?? widget.variableName ?? ""}
+          onChange={(v) => update({ toggleVariable: v })}
+          variables={ctx.variables}
+          allowCustom={variableListAllowCustom(widget)}
+          disabled={!ctx.variableSelectEnabled}
+        />
       )}
       <label>
-        confirmMessage
+        {t("editor.field.confirmMessage")}
         <input
           value={widget.confirmMessage ?? ""}
           onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
