@@ -176,7 +176,7 @@ class ZigbeeDeviceDriverTest {
         }
 
         void start() {
-            var _ = executor.submit(this::acceptLoop);
+            var _ = var _ = executor.submit(this::acceptLoop);
         }
 
         private void acceptLoop() {

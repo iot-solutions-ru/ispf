@@ -123,7 +123,7 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
                     break;
                 }
                 try {
-                    executor.submit(() -> handleClient(client));
+                    var _ = executor.submit(() -> handleClient(client));
                 } catch (RejectedExecutionException e) {
                     // Shutting down — close the accepted socket ourselves.
                     try {

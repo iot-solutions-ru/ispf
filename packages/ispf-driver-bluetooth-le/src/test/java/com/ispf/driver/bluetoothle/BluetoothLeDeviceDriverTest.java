@@ -197,7 +197,7 @@ class BluetoothLeDeviceDriverTest {
         }
 
         void start() {
-            var unusedAccept = executor.submit(this::acceptLoop);
+            var unusedAccept = var _ = executor.submit(this::acceptLoop);
             ready.countDown();
         }
 
@@ -209,7 +209,7 @@ class BluetoothLeDeviceDriverTest {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    var unusedHandle = executor.submit(() -> handle(socket));
+                    var _ = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (serverSocket.isClosed()) {
                         return;

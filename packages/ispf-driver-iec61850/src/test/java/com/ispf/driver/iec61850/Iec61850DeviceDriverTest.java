@@ -151,7 +151,7 @@ class Iec61850DeviceDriverTest {
         }
 
         void start() {
-            executor.submit(this::acceptLoop);
+            var _ = executor.submit(this::acceptLoop);
             ready.countDown();
         }
 
@@ -163,7 +163,7 @@ class Iec61850DeviceDriverTest {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
+                    var _ = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (serverSocket.isClosed()) {
                         return;

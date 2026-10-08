@@ -110,13 +110,13 @@ class AsInterfaceDeviceDriverTest {
         int port() { return serverSocket.getLocalPort(); }
         void put(int addr, int value) { values.put(addr, value); }
         int get(int addr) { return values.getOrDefault(addr, 0); }
-        void start() { executor.submit(this::acceptLoop); }
+        void start() { var _ = executor.submit(this::acceptLoop); }
 
         private void acceptLoop() {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
+                    var _ = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (serverSocket.isClosed()) return;
                 }

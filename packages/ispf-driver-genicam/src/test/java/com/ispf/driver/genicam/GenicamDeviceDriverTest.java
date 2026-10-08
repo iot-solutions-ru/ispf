@@ -115,7 +115,7 @@ class GenicamDeviceDriverTest {
         }
 
         void start() {
-            executor.submit(this::serve);
+            var _ = executor.submit(this::serve);
         }
 
         private void serve() {

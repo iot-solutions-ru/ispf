@@ -150,7 +150,7 @@ class Iec61850SvDeviceDriverTest {
         }
 
         void start() {
-            executor.submit(this::loop);
+            var _ = executor.submit(this::loop);
             ready.countDown();
         }
 

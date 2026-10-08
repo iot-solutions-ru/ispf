@@ -155,7 +155,7 @@ class KnxDeviceDriverTest {
         }
 
         void start() {
-            executor.submit(this::loop);
+            var _ = executor.submit(this::loop);
         }
 
         private void loop() {

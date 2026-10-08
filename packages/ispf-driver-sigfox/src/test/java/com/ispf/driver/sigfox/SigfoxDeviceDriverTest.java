@@ -130,14 +130,14 @@ class SigfoxDeviceDriverTest {
         }
 
         void start() {
-            executor.submit(this::acceptLoop);
+            var _ = executor.submit(this::acceptLoop);
         }
 
         private void acceptLoop() {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket s = serverSocket.accept();
-                    executor.submit(() -> handle(s));
+                    var _ = executor.submit(() -> handle(s));
                 } catch (IOException e) {
                     return;
                 }

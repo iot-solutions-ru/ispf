@@ -112,13 +112,13 @@ class InterbusDeviceDriverTest {
         int port() { return serverSocket.getLocalPort(); }
         void put(int slot, int word, int value) { values.put(key(slot, word), value); }
         int get(int slot, int word) { return values.getOrDefault(key(slot, word), 0); }
-        void start() { executor.submit(this::acceptLoop); }
+        void start() { var _ = executor.submit(this::acceptLoop); }
 
         private void acceptLoop() {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
+                    var _ = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (serverSocket.isClosed()) return;
                 }

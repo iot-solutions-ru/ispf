@@ -150,7 +150,7 @@ class Iec61850GooseDeviceDriverTest {
         }
 
         void start() {
-            executor.submit(this::loop);
+            var _ = executor.submit(this::loop);
             ready.countDown();
         }
 
