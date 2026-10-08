@@ -103,6 +103,81 @@ class ExamplesBundleValidationTest {
     }
 
     @Test
+    void warnsWhenFunctionHostHasNoModelAndDoesNotBlock() throws Exception {
+        BundleValidationResult result = validator.validate("shapeless", manifestWithHost(null, null, false));
+        assertEquals(BundleValidationResult.OK, result.status(), String.join("; ", result.errors()));
+        List<BundleValidationIssue> shapeIssues = result.issues().stream()
+                .filter(i -> "LOGIC_HOST_NO_SHAPE".equals(i.code()))
+                .toList();
+        assertEquals(List.of("functions[0].objectPath"), shapeIssues.stream().map(BundleValidationIssue::path).toList());
+        assertEquals(BundleValidationIssue.WARNING, shapeIssues.get(0).severity());
+    }
+
+    @Test
+    void modelBlueprintClearsMissingShapeWarning() throws Exception {
+        String json = """
+                {
+                  "version":"1.0.0",
+                  "displayName":"Shaped",
+                  "tablePrefix":"s_",
+                  "schemaName":"app_shaped",
+                  "objects":[{"parentPath":"root.platform","name":"raw-host","type":"CUSTOM"}],
+                  "blueprints":[{"name":"raw-host-v1","type":"SINGLETON"}],
+                  "functions":[{
+                    "objectPath":"root.platform.raw-host",
+                    "functionName":"tick",
+                    "source":{"type":"script","body":"{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\"}}]}"}
+                  }]
+                }
+                """;
+        ApplicationBundleDeployService.BundleManifest manifest =
+                objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);
+        BundleValidationResult result = validator.validate("shaped", manifest);
+        assertEquals(BundleValidationResult.OK, result.status(), String.join("; ", result.errors()));
+        assertTrue(result.issues().stream().noneMatch(i -> "LOGIC_HOST_NO_SHAPE".equals(i.code())));
+    }
+
+    @Test
+    void templateIdClearsMissingShapeWarning() throws Exception {
+        BundleValidationResult result = validator.validate("templated", manifestWithHost("mqtt-sensor-v1", null, false));
+        assertEquals(BundleValidationResult.OK, result.status(), String.join("; ", result.errors()));
+        assertTrue(result.issues() == null || result.issues().stream().noneMatch(i -> "LOGIC_HOST_NO_SHAPE".equals(i.code())));
+    }
+
+    @Test
+    void labOptOutSkipsMissingShapeWarning() throws Exception {
+        BundleValidationResult result = validator.validate("lab", manifestWithHost(null, true, true));
+        assertEquals(BundleValidationResult.OK, result.status(), String.join("; ", result.errors()));
+        assertTrue(result.issues() == null || result.issues().stream().noneMatch(i -> "LOGIC_HOST_NO_SHAPE".equals(i.code())));
+    }
+
+    private ApplicationBundleDeployService.BundleManifest manifestWithHost(
+            String templateId,
+            Boolean allowLogicWithoutShape,
+            boolean includeMetadata
+    ) throws Exception {
+        String templateField = templateId == null ? "" : ",\"templateId\":\"" + templateId + "\"";
+        String metadataField = includeMetadata
+                ? ",\"metadata\":{\"allowLogicWithoutShape\":" + allowLogicWithoutShape + "}"
+                : "";
+        String json = """
+                {
+                  "version":"1.0.0",
+                  "displayName":"Host",
+                  "tablePrefix":"s_",
+                  "schemaName":"app_host"%s,
+                  "objects":[{"parentPath":"root.platform","name":"raw-host","type":"CUSTOM"%s}],
+                  "functions":[{
+                    "objectPath":"root.platform.raw-host",
+                    "functionName":"tick",
+                    "source":{"type":"script","body":"{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\"}}]}"}
+                  }]
+                }
+                """.formatted(metadataField, templateField);
+        return objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);
+    }
+
+    @Test
     void mesReferenceDispatchDashboardHostsBffOnSingletonHub() throws Exception {
         Path bundlePath = resolveExamplesRoot().resolve("mes-reference").resolve("bundle.json");
         var tree = objectMapper.readTree(Files.readString(bundlePath));

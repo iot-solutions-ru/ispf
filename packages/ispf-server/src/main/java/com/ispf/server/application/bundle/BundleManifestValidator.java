@@ -294,7 +294,9 @@ public class BundleManifestValidator {
     /**
      * ADR-0060: script functions and blueprint-hosted functions belong on a SINGLETON hub or INSTANCE twin.
      * A DEVICE host is a solution-logic warning, never a deploy blocker. SQL bindings[] on DEVICE telemetry
-     * remain allowed.
+     * remain allowed. A function on an objects[] host that has neither blueprints[] nor templateId is the
+     * same kind of warning ({@code LOGIC_HOST_NO_SHAPE}): the issue is reported, deploy is not blocked.
+     * {@code metadata.allowLogicWithoutShape=true} silences it for a lab manifest.
      */
     private void validateLogicHosts(
             ApplicationBundleDeployService.BundleManifest manifest,
@@ -327,6 +329,17 @@ public class BundleManifestValidator {
                                         + "or an INSTANCE twin; DEVICE is for drivers and telemetry.",
                                 BundleValidationIssue.DOC_LOGIC_HOST
                         ));
+                    } else if (functionHostLacksShape(objectPath, manifest)) {
+                        builder.addIssue(BundleValidationIssue.warning(
+                                "LOGIC_HOST_NO_SHAPE",
+                                issuePath,
+                                "Function '" + function.functionName() + "' is hosted on '" + objectPath
+                                        + "' without a model: no blueprints[] and no templateId "
+                                        + "(deploy is not blocked)",
+                                "Add blueprints[] or objects[].templateId. "
+                                        + "A lab manifest may set metadata.allowLogicWithoutShape=true.",
+                                BundleValidationIssue.DOC_LOGIC_HOST
+                        ));
                     }
                 }
                 index++;
@@ -350,6 +363,46 @@ public class BundleManifestValidator {
                 index++;
             }
         }
+    }
+
+    /**
+     * Shape is present when the host is a SINGLETON hub, the bundle ships blueprints[], the object has
+     * templateId, or the manifest opts out. Absence is reported; it does not fail validation.
+     */
+    private boolean functionHostLacksShape(
+            String objectPath,
+            ApplicationBundleDeployService.BundleManifest manifest
+    ) {
+        if (allowLogicWithoutShape(manifest)) {
+            return false;
+        }
+        if (objectPath.startsWith(BlueprintCatalogRoots.SINGLETON + ".")) {
+            return false;
+        }
+        if (manifest.blueprints() != null && !manifest.blueprints().isEmpty()) {
+            return false;
+        }
+        if (manifest.objects() == null) {
+            return false;
+        }
+        for (ApplicationBundleDeployService.BundleObject object : manifest.objects()) {
+            if (isBlank(object.parentPath()) || isBlank(object.name())) {
+                continue;
+            }
+            if (!objectPath.equals(object.parentPath() + "." + object.name())) {
+                continue;
+            }
+            return isBlank(object.templateId());
+        }
+        return false;
+    }
+
+    private static boolean allowLogicWithoutShape(ApplicationBundleDeployService.BundleManifest manifest) {
+        if (manifest.metadata() == null) {
+            return false;
+        }
+        Object flag = manifest.metadata().get("allowLogicWithoutShape");
+        return Boolean.TRUE.equals(flag) || "true".equalsIgnoreCase(String.valueOf(flag));
     }
 
     private Map<String, String> buildPathTypeMap(ApplicationBundleDeployService.BundleManifest manifest) {
