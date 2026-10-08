@@ -469,7 +469,7 @@ public class ObjectQueryService {
                     );
                 }
             } catch (RuntimeException ex) {
-                if (!VariableAclRequestContext.isMemberEnforced()) {
+                if (!shouldSkipHavingRowUnderMemberAcl(ex)) {
                     throw ex;
                 }
             }
@@ -655,6 +655,25 @@ public class ObjectQueryService {
 
     private static String typeLabel(Object value) {
         return value == null ? "null" : value.getClass().getSimpleName();
+    }
+
+    /**
+     * A non-boolean {@code having} result is a query error even under member ACL.
+     * Skip the row only for an access denial: explicit 403, or evaluation failed
+     * because a member-hidden field is absent from the row.
+     */
+    private static boolean shouldSkipHavingRowUnderMemberAcl(RuntimeException ex) {
+        if (!VariableAclRequestContext.isMemberEnforced()) {
+            return false;
+        }
+        if (containsResponseStatus(ex, HttpStatus.FORBIDDEN)) {
+            return true;
+        }
+        if (ex instanceof ExpressionException expressionEx) {
+            String message = expressionEx.getMessage();
+            return message != null && message.startsWith("Evaluation failed:");
+        }
+        return false;
     }
 
     /**
