@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.TelemetryQuality;
+import org.springframework.core.NestedExceptionUtils;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -36,6 +37,14 @@ public final class SqlBindingValues {
         }
     }
 
+    /** What a refresh does when the query itself throws. */
+    public enum OnQueryFailure {
+        /** The caller asked for this one binding (deploy, manual refresh) and gets the error. */
+        PROPAGATE,
+        /** One binding of a fan-out: the target keeps its last value with {@code quality=BAD}. */
+        MARK_BAD
+    }
+
     /** A converted value, or the failure that left the binding without one. */
     public record Extracted(Object value, Failure failure, String detail) {
 
@@ -49,6 +58,15 @@ public final class SqlBindingValues {
 
         public static Extracted badValue(String detail) {
             return new Extracted(null, Failure.BAD_VALUE, detail);
+        }
+
+        /** The detail is the most specific cause: Spring's bad-grammar exception names the statement, not the error. */
+        public static Extracted queryFailed(RuntimeException failure) {
+            Throwable cause = NestedExceptionUtils.getMostSpecificCause(failure);
+            String message = cause.getMessage() != null && !cause.getMessage().isBlank()
+                    ? cause.getMessage()
+                    : cause.getClass().getSimpleName();
+            return new Extracted(null, Failure.QUERY_FAILED, "query failed: " + message);
         }
 
         public boolean ok() {

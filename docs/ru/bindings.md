@@ -203,5 +203,5 @@ Web Console → Object inspector → вкладка **Computations** (reactive +
 
 ## Не путать с
 
-- **SQL bindings** (`ApplicationSqlBindingService`) — отдельный планировщик, не object binding rules. Обновление без пригодного значения (нет строк, SQL `NULL`, нет колонки, нечисловое значение) оставляет последнее значение с `quality=BAD` вместо записи `0`; счётчик `ispf.sql_binding.refresh_failures.total{reason}`.
+- **SQL bindings** (`ApplicationSqlBindingService`) — отдельный планировщик, не object binding rules. Обновление без пригодного значения (нет строк, SQL `NULL`, нет колонки, нечисловое значение) оставляет последнее значение с `quality=BAD` вместо записи `0`; счётчик `ispf.sql_binding.refresh_failures.total{reason}`. Так же обрабатывается запрос, упавший при обновлении по расписанию, по событию или после коммита функции (`reason=query_failed`). Каждая такая привязка выполняется вне общей транзакции, поэтому сбой одной не откатывает и не останавливает остальные. Деплой и ручное обновление одной привязки по-прежнему возвращают ошибку запроса; обновление внутри шага workflow идёт в транзакции шага, и ошибка роняет шаг.
 - **Alert rules**, correlators, workflows — отдельные подсистемы

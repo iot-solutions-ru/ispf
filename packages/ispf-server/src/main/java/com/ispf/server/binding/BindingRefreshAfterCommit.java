@@ -34,23 +34,40 @@ public class BindingRefreshAfterCommit implements WorkflowBindingRefresh {
 
     public void scheduleRefreshAfterFunction(String objectPath, String functionName) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            refreshNow(objectPath, functionName);
+            refreshCommitted(objectPath, functionName);
             return;
         }
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                refreshNow(objectPath, functionName);
+                refreshCommitted(objectPath, functionName);
             }
         });
     }
 
+    /** Workflow step: runs inside the step's transaction, before it commits. */
     @Override
     public void refreshNow(String objectPath, String functionName) {
         schemaSession.runWithPlatformCatalog(() -> {
             sqlBindingObjectService.refreshAfterFunction(objectPath, functionName);
             applicationFunctionStore.findLatest(objectPath, functionName)
                     .ifPresent(deployed -> applicationSqlBindingService.refreshAfterFunction(
+                            deployed.appId(),
+                            objectPath,
+                            functionName
+                    ));
+        });
+    }
+
+    /**
+     * After commit the finished transaction is still bound to the thread; a {@code REQUIRED} refresh would join it
+     * and its writes would never be committed.
+     */
+    private void refreshCommitted(String objectPath, String functionName) {
+        schemaSession.runWithPlatformCatalog(() -> {
+            sqlBindingObjectService.refreshAfterFunctionCommit(objectPath, functionName);
+            applicationFunctionStore.findLatest(objectPath, functionName)
+                    .ifPresent(deployed -> applicationSqlBindingService.refreshAfterFunctionCommit(
                             deployed.appId(),
                             objectPath,
                             functionName

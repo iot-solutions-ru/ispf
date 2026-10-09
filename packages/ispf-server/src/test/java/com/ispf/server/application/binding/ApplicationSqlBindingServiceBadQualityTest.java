@@ -21,7 +21,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.jdbc.BadSqlGrammarException;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,11 +32,13 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -159,6 +164,50 @@ class ApplicationSqlBindingServiceBadQualityTest {
         verifyAudit(true, true, null);
     }
 
+    @Test
+    void failingQueryOfAnEventRefreshKeepsTheLastValueMarkedBadAndAuditsTheFailure() {
+        targetHolds(doubleValue(42.5));
+        when(dataStore.queryForList(anyString())).thenThrow(new BadSqlGrammarException(
+                "StatementCallback", "SELECT oee AS value FROM kpi", new SQLException("relation \"kpi\" does not exist")));
+
+        service.refreshBinding(binding("value"));
+
+        assertThat(writtenRecord().firstRow()).containsEntry("value", 42.5).containsEntry("quality", "BAD");
+        verify(metricsRecorder).recordSqlBindingFailure(SqlBindingValues.Failure.QUERY_FAILED);
+        verify(store).markRefreshed(ID);
+        verify(alertRuleService).processVariableChange(TARGET, VARIABLE);
+        verifyAudit(false, true, "query failed: relation \"kpi\" does not exist");
+    }
+
+    @Test
+    void manualRefreshStillPropagatesAFailingQuery() {
+        when(store.listByApp("demo")).thenReturn(List.of(binding("value")));
+        when(dataStore.queryForList(anyString())).thenThrow(new DataAccessResourceFailureException("db down"));
+
+        assertThatThrownBy(() -> service.refresh("demo", TARGET, VARIABLE))
+                .isInstanceOf(DataAccessResourceFailureException.class);
+
+        verify(metricsRecorder).recordSqlBindingFailure(SqlBindingValues.Failure.QUERY_FAILED);
+        verify(objectManager, never()).setSystemVariableValue(any(), any(), any());
+        verify(store, never()).markRefreshed(any());
+        verifyAudit(false, false, "db down");
+    }
+
+    @Test
+    void scheduledRefreshContinuesAfterAnUnexpectedFailureOfOneBinding() {
+        UUID failingId = UUID.randomUUID();
+        ApplicationSqlBindingStore.SqlBinding failing = binding(failingId, "root.platform.devices.line0");
+        when(store.listEnabledForSchedule()).thenReturn(List.of(failing, binding("value")));
+        when(objectTree.findByPath(anyString())).thenReturn(Optional.empty());
+        when(dataStore.queryForList(anyString())).thenReturn(List.of(Map.of("value", 12.5)));
+        doThrow(new IllegalStateException("storage unavailable")).when(store).markRefreshed(failingId);
+
+        service.refreshScheduledBindings();
+
+        assertThat(writtenRecord().firstRow()).containsEntry("value", 12.5);
+        verify(store).markRefreshed(ID);
+    }
+
     private void targetHolds(DataRecord previous) {
         PlatformObject target = new PlatformObject("id-line1", TARGET, ObjectType.DEVICE, "line1", "", null);
         target.addVariable(new Variable(VARIABLE, previous.schema(), true, false, previous));
@@ -191,10 +240,18 @@ class ApplicationSqlBindingServiceBadQualityTest {
     }
 
     private static ApplicationSqlBindingStore.SqlBinding binding(String valueField) {
+        return binding(ID, TARGET, valueField);
+    }
+
+    private static ApplicationSqlBindingStore.SqlBinding binding(UUID id, String objectPath) {
+        return binding(id, objectPath, "value");
+    }
+
+    private static ApplicationSqlBindingStore.SqlBinding binding(UUID id, String objectPath, String valueField) {
         return new ApplicationSqlBindingStore.SqlBinding(
-                ID,
+                id,
                 "demo",
-                TARGET,
+                objectPath,
                 VARIABLE,
                 "SELECT oee AS value FROM kpi",
                 "on_schedule",

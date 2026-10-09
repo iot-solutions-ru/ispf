@@ -4,6 +4,8 @@ import com.ispf.server.binding.SqlBindingObjectService;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.PlatformLeaderLockService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -11,6 +13,8 @@ import java.time.Duration;
 
 @Component
 public class ApplicationSqlBindingScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(ApplicationSqlBindingScheduler.class);
 
     private static final String BINDING_LOCK = "application_sql_bindings";
 
@@ -43,8 +47,17 @@ public class ApplicationSqlBindingScheduler {
             return;
         }
         leaderLockService.runIfLeader(BINDING_LOCK, Duration.ofSeconds(20), () -> {
-            bindingService.refreshScheduledBindings();
-            sqlBindingObjectService.refreshScheduledBindings();
+            refreshSet("application", bindingService::refreshScheduledBindings);
+            refreshSet("tree", sqlBindingObjectService::refreshScheduledBindings);
         });
+    }
+
+    /** Application and tree bindings are independent: a failure in one set must not skip the other. */
+    private static void refreshSet(String kind, Runnable refresh) {
+        try {
+            refresh.run();
+        } catch (RuntimeException ex) {
+            log.error("Scheduled refresh of {} SQL bindings failed", kind, ex);
+        }
     }
 }

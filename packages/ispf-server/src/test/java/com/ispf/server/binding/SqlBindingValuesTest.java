@@ -5,8 +5,10 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,6 +53,22 @@ class SqlBindingValuesTest {
         String detail = SqlBindingValues.toDouble("oee", "x".repeat(500)).detail();
 
         assertThat(detail).hasSizeLessThan(120).endsWith("…'");
+    }
+
+    @Test
+    void queryFailureNamesTheDatabaseErrorRatherThanTheStatement() {
+        SqlBindingValues.Extracted failed = SqlBindingValues.Extracted.queryFailed(new BadSqlGrammarException(
+                "StatementCallback", "SELECT oee FROM kpi", new SQLException("relation \"kpi\" does not exist")));
+
+        assertThat(failed.failure()).isEqualTo(SqlBindingValues.Failure.QUERY_FAILED);
+        assertThat(failed.value()).isNull();
+        assertThat(failed.detail()).isEqualTo("query failed: relation \"kpi\" does not exist");
+    }
+
+    @Test
+    void queryFailureWithoutAMessageNamesTheExceptionType() {
+        assertThat(SqlBindingValues.Extracted.queryFailed(new IllegalStateException()).detail())
+                .isEqualTo("query failed: IllegalStateException");
     }
 
     @Test
