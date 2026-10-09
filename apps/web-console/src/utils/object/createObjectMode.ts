@@ -15,6 +15,16 @@ import { PROCESS_PROGRAMS_ROOT } from "../automation/processProgramPath";
 
 export const APPLICATIONS_ROOT = "root.platform.applications";
 export const REPORTS_ROOT = "root.platform.reports";
+const DEVICES_ROOT = "root.platform.devices";
+const DASHBOARDS_ROOT = "root.platform.dashboards";
+const WORKFLOWS_ROOT = "root.platform.workflows";
+const MIMICS_ROOT = "root.platform.mimics";
+const INSTANCES_ROOT = "root.platform.instances";
+const MES_ROOT = "root.platform.mes";
+
+function isPathUnder(path: string, root: string): boolean {
+  return path === root || path.startsWith(`${root}.`);
+}
 
 export type CreateDialogMode =
   | "object"
@@ -118,7 +128,7 @@ export function resolveCreateLabelKind(parentPath: string): string {
     case "BLUEPRINT":
       return "blueprint";
     default:
-      if (parentPath.endsWith(".instances")) {
+      if (parentPath.endsWith(".instances") || isPathUnder(parentPath, INSTANCES_ROOT)) {
         return "instance";
       }
       return "object";
@@ -256,20 +266,23 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
 }
 
 export function defaultObjectTypeForParent(parentPath: string): ObjectType {
-  if (parentPath.endsWith(".dashboards")) {
+  if (isPathUnder(parentPath, DASHBOARDS_ROOT) || parentPath.endsWith(".dashboards")) {
     return "DASHBOARD";
   }
-  if (parentPath.endsWith(".mimics")) {
+  if (isPathUnder(parentPath, MIMICS_ROOT) || parentPath.endsWith(".mimics")) {
     return "MIMIC";
   }
-  if (parentPath.endsWith(".reports")) {
+  if (isPathUnder(parentPath, REPORTS_ROOT) || parentPath.endsWith(".reports")) {
     return "REPORT";
   }
-  if (parentPath.endsWith(".workflows")) {
+  if (isPathUnder(parentPath, WORKFLOWS_ROOT) || parentPath.endsWith(".workflows")) {
     return "WORKFLOW";
   }
-  if (parentPath.endsWith(".devices")) {
+  if (isPathUnder(parentPath, DEVICES_ROOT) || parentPath.endsWith(".devices")) {
     return "DEVICE";
+  }
+  if (isPathUnder(parentPath, INSTANCES_ROOT) || isPathUnder(parentPath, MES_ROOT)) {
+    return "CUSTOM";
   }
   if (parentPath.endsWith(".queries")) {
     return "CUSTOM";
@@ -304,7 +317,6 @@ export function defaultObjectTypeForParent(parentPath: string): ObjectType {
 /** Types offered by the generic Create dialog. Federation does not use this list. */
 export const PLATFORM_CREATE_TYPES: readonly ObjectType[] = [
   "CUSTOM",
-  "VISUAL_GROUP",
   "DEVICE",
   "BLUEPRINT",
   "DASHBOARD",
@@ -346,22 +358,36 @@ export function blueprintKindForCatalog(parentPath: string): BlueprintCatalogKin
 
 /**
  * Platform types the manual Create dialog may offer under this parent.
- * A catalog folder offers its own child type plus {@code VISUAL_GROUP}.
- * {@code devices} also offers {@code CUSTOM} for a logic object next to drivers.
- * Unconstrained parents (for example {@code root.platform}) keep the full list.
+ * A visual group is created from the tree context menu, so it is not in this list.
+ * A catalog and every folder inside it offer that catalog's child types.
+ * Devices also offer {@code CUSTOM} for a logic object next to drivers.
+ * The instances catalog offers a plain object; device-shaped twins come from an instance type.
+ * Unconstrained parents ({@code root}, {@code root.platform}) keep the full list.
  */
 export function platformTypesForParent(parentPath: string): ObjectType[] {
-  if (parentPath.endsWith(".devices")) {
-    return ["DEVICE", "CUSTOM", "VISUAL_GROUP"];
+  if (isPathUnder(parentPath, DEVICES_ROOT)) {
+    return ["DEVICE", "CUSTOM"];
   }
-  const catalogType = instanceTypeFilterForParent(parentPath) ?? blueprintCatalogType(parentPath);
-  if (!catalogType || !PLATFORM_CREATE_TYPES.includes(catalogType)) {
-    return [...PLATFORM_CREATE_TYPES];
+  if (isPathUnder(parentPath, INSTANCES_ROOT) || isPathUnder(parentPath, MES_ROOT)) {
+    return ["CUSTOM"];
   }
-  if (catalogType === "VISUAL_GROUP") {
-    return ["VISUAL_GROUP"];
+  if (isPathUnder(parentPath, DASHBOARDS_ROOT)) {
+    return ["DASHBOARD"];
   }
-  return [catalogType, "VISUAL_GROUP"];
+  if (isPathUnder(parentPath, WORKFLOWS_ROOT)) {
+    return ["WORKFLOW"];
+  }
+  if (isPathUnder(parentPath, REPORTS_ROOT)) {
+    return ["REPORT"];
+  }
+  if (isPathUnder(parentPath, MIMICS_ROOT)) {
+    return ["MIMIC"];
+  }
+  const blueprintType = blueprintCatalogType(parentPath);
+  if (blueprintType) {
+    return [blueprintType];
+  }
+  return [...PLATFORM_CREATE_TYPES];
 }
 
 function blueprintCatalogType(parentPath: string): ObjectType | undefined {
@@ -375,33 +401,43 @@ function blueprintCatalogType(parentPath: string): ObjectType | undefined {
   return undefined;
 }
 
-/** Platform type filter for INSTANCE blueprints in create dialog (undefined = all types). */
-export function instanceTypeFilterForParent(parentPath: string): ObjectType | undefined {
-  if (parentPath.endsWith(".devices")) {
-    return "DEVICE";
+/**
+ * Instance-type targets the create dialog may offer.
+ * Undefined means every target (unconstrained parents such as {@code root.platform}).
+ * A one-element list is also sent to the API as {@code platformType}.
+ */
+export function instanceTypeTargetsForParent(parentPath: string): readonly ObjectType[] | undefined {
+  if (isPathUnder(parentPath, DEVICES_ROOT)) {
+    return ["DEVICE"];
   }
-  if (parentPath.endsWith(".dashboards")) {
-    return "DASHBOARD";
+  if (isPathUnder(parentPath, DASHBOARDS_ROOT)) {
+    return ["DASHBOARD"];
   }
-  if (parentPath.endsWith(".mimics")) {
-    return "MIMIC";
+  if (isPathUnder(parentPath, MIMICS_ROOT)) {
+    return ["MIMIC"];
   }
-  if (parentPath.endsWith(".reports")) {
-    return "REPORT";
+  if (isPathUnder(parentPath, REPORTS_ROOT) || parentPath.endsWith(".reports")) {
+    return ["REPORT"];
   }
-  if (parentPath.endsWith(".workflows")) {
-    return "WORKFLOW";
+  if (isPathUnder(parentPath, WORKFLOWS_ROOT)) {
+    return ["WORKFLOW"];
   }
-  if (
-    parentPath.endsWith(".work-orders")
-    || parentPath.endsWith(".operations")
-    || parentPath.endsWith(".lots")
-    || parentPath.endsWith(".shifts")
-    || parentPath.endsWith(".quality-records")
-  ) {
-    return "CUSTOM";
+  if (isPathUnder(parentPath, MES_ROOT)) {
+    return ["CUSTOM"];
+  }
+  if (isPathUnder(parentPath, INSTANCES_ROOT)) {
+    return ["CUSTOM", "DEVICE"];
   }
   return undefined;
+}
+
+/** Single platform type for the instance-types API. Undefined when the parent allows several or all. */
+export function instanceTypeFilterForParent(parentPath: string): ObjectType | undefined {
+  const targets = instanceTypeTargetsForParent(parentPath);
+  if (!targets || targets.length !== 1) {
+    return undefined;
+  }
+  return targets[0];
 }
 
 /** Tree node name for app id (same rules as server sanitizeNodeName). */

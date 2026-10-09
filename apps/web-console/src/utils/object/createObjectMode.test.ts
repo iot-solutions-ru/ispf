@@ -4,6 +4,7 @@ import {
   canCreateChildAt,
   defaultObjectTypeForParent,
   instanceTypeFilterForParent,
+  instanceTypeTargetsForParent,
   PLATFORM_CREATE_TYPES,
   platformTypesForParent,
   resolveCreateDialogMode,
@@ -54,19 +55,31 @@ describe("defaultObjectTypeForParent", () => {
     expect(defaultObjectTypeForParent("root.platform.process-programs")).toBe("PROCESS_PROGRAM");
     expect(defaultObjectTypeForParent("root.platform.mes.work-orders")).toBe("CUSTOM");
     expect(defaultObjectTypeForParent("root.platform.mes.lots")).toBe("CUSTOM");
+    expect(defaultObjectTypeForParent("root.platform.devices.tank-farm")).toBe("DEVICE");
+    expect(defaultObjectTypeForParent("root.platform.instances.site")).toBe("CUSTOM");
   });
 });
 
 describe("platformTypesForParent", () => {
-  it("offers the catalog child type and a visual group", () => {
-    expect(platformTypesForParent("root.platform.devices")).toEqual(["DEVICE", "CUSTOM", "VISUAL_GROUP"]);
-    expect(platformTypesForParent("root.platform.dashboards")).toEqual(["DASHBOARD", "VISUAL_GROUP"]);
-    expect(platformTypesForParent("root.platform.workflows")).toEqual(["WORKFLOW", "VISUAL_GROUP"]);
-    expect(platformTypesForParent("root.platform.singleton-blueprints")).toEqual(["BLUEPRINT", "VISUAL_GROUP"]);
-    expect(platformTypesForParent("root.platform.mes.work-orders")).toEqual(["CUSTOM", "VISUAL_GROUP"]);
+  it("offers the catalog child type without a visual group", () => {
+    expect(platformTypesForParent("root.platform.devices")).toEqual(["DEVICE", "CUSTOM"]);
+    expect(platformTypesForParent("root.platform.dashboards")).toEqual(["DASHBOARD"]);
+    expect(platformTypesForParent("root.platform.workflows")).toEqual(["WORKFLOW"]);
+    expect(platformTypesForParent("root.platform.singleton-blueprints")).toEqual(["BLUEPRINT"]);
+    expect(platformTypesForParent("root.platform.mes.work-orders")).toEqual(["CUSTOM"]);
+    expect(platformTypesForParent("root.platform.instances")).toEqual(["CUSTOM"]);
+    expect(platformTypesForParent("root.platform.instances.site-a")).toEqual(["CUSTOM"]);
+    expect(platformTypesForParent("root.platform.devices.tank-farm")).toEqual(["DEVICE", "CUSTOM"]);
+    expect(platformTypesForParent("root.platform.mes")).toEqual(["CUSTOM"]);
+    expect(platformTypesForParent("root.platform.mes.instances")).toEqual(["CUSTOM"]);
+    expect(platformTypesForParent("root.platform.dashboards.overview")).toEqual(["DASHBOARD"]);
+    expect(platformTypesForParent("root.platform.workflows.job")).toEqual(["WORKFLOW"]);
+    expect(platformTypesForParent("root")).not.toContain("VISUAL_GROUP");
+    expect(platformTypesForParent("root.platform")).not.toContain("VISUAL_GROUP");
   });
 
   it("keeps the full list for an unconstrained parent", () => {
+    expect(platformTypesForParent("root")).toEqual([...PLATFORM_CREATE_TYPES]);
     expect(platformTypesForParent("root.platform")).toEqual([...PLATFORM_CREATE_TYPES]);
   });
 });
@@ -75,6 +88,12 @@ describe("instanceTypeFilterForParent", () => {
   it("filters instance blueprints for MES parents", () => {
     expect(instanceTypeFilterForParent("root.platform.mes.work-orders")).toBe("CUSTOM");
     expect(instanceTypeFilterForParent("root.platform.mes.lots")).toBe("CUSTOM");
+    expect(instanceTypeFilterForParent("root.platform.mes.instances")).toBe("CUSTOM");
+    expect(instanceTypeFilterForParent("root.platform.devices.tank-farm")).toBe("DEVICE");
     expect(instanceTypeFilterForParent("root.platform.queries")).toBeUndefined();
+    expect(instanceTypeFilterForParent("root.platform.instances")).toBeUndefined();
+    expect(instanceTypeTargetsForParent("root.platform.instances")).toEqual(["CUSTOM", "DEVICE"]);
+    expect(instanceTypeTargetsForParent("root.platform.instances.meter")).toEqual(["CUSTOM", "DEVICE"]);
+    expect(instanceTypeTargetsForParent("root.platform")).toBeUndefined();
   });
 });
