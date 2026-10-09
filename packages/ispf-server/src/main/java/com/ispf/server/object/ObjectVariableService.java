@@ -2,6 +2,7 @@ package com.ispf.server.object;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
+import com.ispf.core.object.BlueprintOwnedMember;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.HistorySampleMode;
@@ -98,6 +99,7 @@ public class ObjectVariableService {
         assertUserVariable(name);
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
+        BlueprintOwnedMember.assertDeletableVariable(node, name);
         Optional<Variable> existing = node.getVariable(name);
         if (existing.isEmpty()) {
             return;
@@ -281,6 +283,7 @@ public class ObjectVariableService {
     public void deleteFunction(String path, String name) {
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
+        BlueprintOwnedMember.assertDeletableFunction(node, name);
         FunctionDescriptor before = node.functions().get(name);
         if (before == null) {
             return;
@@ -311,6 +314,7 @@ public class ObjectVariableService {
     public void deleteEvent(String path, String name) {
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
+        BlueprintOwnedMember.assertDeletableEvent(node, name);
         EventDescriptor before = node.events().get(name);
         if (before == null) {
             return;

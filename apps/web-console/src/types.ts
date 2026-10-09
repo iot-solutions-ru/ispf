@@ -213,11 +213,19 @@ export interface EventDescriptor {
   invokeRoles?: string[];
 }
 
+export interface BlueprintOwnershipDto {
+  variables: string[];
+  events: string[];
+  functions: string[];
+  bindingRuleIds: string[];
+}
+
 export interface ObjectEditorDto {
   object: ObjectSummary;
   variables: VariableDto[];
   events: EventDescriptor[];
   functions: FunctionDescriptor[];
+  ownership?: BlueprintOwnershipDto;
 }
 
 export interface EditorTab {
