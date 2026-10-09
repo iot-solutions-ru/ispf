@@ -89,7 +89,8 @@ public final class DashboardWidgetNormalizer {
             Map<String, Object> normalized = normalizeLayoutMap(root, objectMapper);
             return objectMapper.writeValueAsString(normalized);
         } catch (JacksonException ex) {
-            return layoutJson;
+            String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+            throw new IllegalArgumentException("Invalid layout JSON: " + detail, ex);
         }
     }
 
