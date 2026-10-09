@@ -83,7 +83,7 @@ class BindingActivatorsRuntimeTest {
     }
 
     @Test
-    void periodicRuleRunsOnSchedule() {
+    void periodicRuleRunsOnSchedule() throws InterruptedException {
         targetVariable = "bindPeriodicTarget" + System.nanoTime();
         ruleId = "rule-" + targetVariable;
         ensureDoubleVariable(targetVariable, 0.0);
@@ -100,9 +100,7 @@ class BindingActivatorsRuntimeTest {
         ));
         dependencyIndex.rebuild(DEVICE);
 
-        periodicScheduler.tick();
-
-        assertThat(readDouble(targetVariable)).isEqualTo(7.5);
+        assertThat(tickUntil(targetVariable, 7.5, 5_000)).isEqualTo(7.5);
     }
 
     @Test
@@ -143,6 +141,19 @@ class BindingActivatorsRuntimeTest {
         dependencyIndex.rebuild(DEVICE);
 
         periodicScheduler.tick();
+    }
+
+    /** A tick right after the save can find the new rule not yet due: the clock may not have passed its save time. */
+    private double tickUntil(String name, double expected, long timeoutMs) throws InterruptedException {
+        long deadline = System.nanoTime() + timeoutMs * 1_000_000L;
+        while (true) {
+            periodicScheduler.tick();
+            double value = readDouble(name);
+            if (value == expected || System.nanoTime() >= deadline) {
+                return value;
+            }
+            Thread.sleep(10);
+        }
     }
 
     private void ensureDoubleVariable(String name, double initial) {
