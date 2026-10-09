@@ -18,9 +18,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -74,8 +76,27 @@ class AlertRuleSoftFailTest {
 
         scheduler.tick();
 
-        verify(leaderLockService, never()).tryAcquire(any(), any());
+        verify(leaderLockService, never()).runIfLeader(any(), any(), any());
         verify(automationTreeService, never()).listEnabledPeriodicAlertRules();
+    }
+
+    @Test
+    void tickStopsBeforeTheNextRuleOnceTheLeaseIsLost() {
+        AlertRule first = sampleRule("root.automation.alert-rules.first", "root.platform.devices.a");
+        AlertRule second = sampleRule("root.automation.alert-rules.second", "root.platform.devices.b");
+        when(clusterProperties.isSchedulerActive()).thenReturn(true);
+        when(objectManager.isInitialized()).thenReturn(true);
+        when(leaderLockService.runIfLeader(eq("alert_rule_periodic"), any(), any())).thenAnswer(invocation -> {
+            invocation.<Runnable>getArgument(2).run();
+            return true;
+        });
+        when(leaderLockService.isHeld("alert_rule_periodic")).thenReturn(true, false);
+        when(automationTreeService.listEnabledPeriodicAlertRules()).thenReturn(List.of(first, second));
+
+        scheduler.tick();
+
+        verify(alertRuleService).evaluateRule(first);
+        verify(alertRuleService, never()).evaluateRule(second);
     }
 
     @Test

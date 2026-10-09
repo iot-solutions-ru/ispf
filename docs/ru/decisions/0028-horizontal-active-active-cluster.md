@@ -51,8 +51,17 @@ Clients → nginx (round-robin REST, sticky WS) → ispf-server × N
 | WebSocket `/ws/objects` | Active-active + sticky | Client pinned to one replica; NATS fan-out syncs other replicas |
 | Platform schedulers | Active-passive (one leader) | `platform_leader_locks` ([PlatformLeaderLockService](../../../packages/ispf-server/src/main/java/com/ispf/server/platform/PlatformLeaderLockService.java)) |
 | Device driver poll loops | **Exactly-one owner** | `platform_driver_locks` + `DriverOwnershipService` (BL-136) |
-| Binding periodic tick | Active-passive (one leader) | Existing leader lock on `binding_periodic_scheduler` |
+| Binding periodic tick | Active-passive (one leader) | Existing leader lock on `binding_periodic_rules` |
 | Event journal / historian writes | Active-active (DB) | Append to shared store; ClickHouse optional for scale ([roadmap](../roadmap.md#часть-e--полный-реестр-bl-01139)) |
+
+Аренда лидерства планировщиков (`LeaderLock.runIfLeader`):
+
+- **Липкая.** Лидер держит аренду между тиками, а не отпускает её после каждого. Лидерство переходит, только если лидер остановился (аренда освобождается сразу), упал (аренда истекает в пределах одного TTL) или перестал тикать (в пределах двух TTL).
+- **Продлевается держателем.** Фоновый поток продлевает аренды каждые TTL/3, в том числе во время длинного тика, поэтому тик дольше TTL не теряет аренду.
+- **Расхождение часов.** Срок аренды считается по часам реплик. Продлённую аренду может забрать только реплика, чьи часы спешат больше чем на 2/3 TTL.
+- **Остановка при потере.** `LeaderLock.isHeld` становится false через 2/3 TTL после последнего успешного продления (по монотонным часам держателя). Длинные циклы (process programs, периодические alert rules) проверяют его между элементами и останавливаются, а не работают параллельно с новым лидером.
+- SQL аренды выполняется вне транзакции вызывающего кода, поэтому другие реплики сразу видят строку.
+- Разовые замки (`tryAcquire` / `release`, например fixture bootstrap) сохраняют семантику с ограничением по TTL, без фонового продления.
 
 ### 3. Driver ownership
 

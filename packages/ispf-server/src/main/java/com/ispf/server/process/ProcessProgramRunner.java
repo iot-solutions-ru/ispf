@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 
 /**
  * Cyclic scheduler for PROCESS_PROGRAM objects (BL-172).
@@ -73,19 +74,19 @@ public class ProcessProgramRunner {
         if (!objectManager.isInitialized()) {
             return;
         }
-        if (!leaderLockService.tryAcquire(LOCK_NAME, LOCK_TTL)) {
-            return;
-        }
-        try {
-            runDuePrograms();
-        } finally {
-            leaderLockService.release(LOCK_NAME);
-        }
+        leaderLockService.runIfLeader(
+                LOCK_NAME,
+                LOCK_TTL,
+                () -> runDuePrograms(() -> leaderLockService.isHeld(LOCK_NAME))
+        );
     }
 
-    void runDuePrograms() {
+    void runDuePrograms(BooleanSupplier stillLeader) {
         Instant now = Instant.now();
         for (ProcessProgramObjectService.ProcessProgramDefinition program : processProgramObjectService.listEnabled()) {
+            if (!stillLeader.getAsBoolean()) {
+                return;
+            }
             if (program.lastCycleAt() != null
                     && program.lastCycleAt().plusMillis(program.cycleIntervalMs()).isAfter(now)) {
                 continue;

@@ -698,14 +698,7 @@ public class VariableHistoryService {
         if (!clusterProperties.isSchedulerActive()) {
             return;
         }
-        if (!leaderLockService.tryAcquire(RETENTION_LOCK, Duration.ofHours(1))) {
-            return;
-        }
-        try {
-            purgeExpiredSamplesInternal();
-        } finally {
-            leaderLockService.release(RETENTION_LOCK);
-        }
+        leaderLockService.runIfLeader(RETENTION_LOCK, Duration.ofHours(1), this::purgeExpiredSamplesInternal);
     }
 
     void purgeExpiredSamplesInternal() {

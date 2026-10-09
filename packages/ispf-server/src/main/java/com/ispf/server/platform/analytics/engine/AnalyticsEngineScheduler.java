@@ -127,36 +127,36 @@ public class AnalyticsEngineScheduler {
             reschedule();
             return;
         }
-        if (!leaderLockService.tryAcquire(LOCK_NAME, LOCK_TTL)) {
+        try {
+            leaderLockService.runIfLeader(LOCK_NAME, LOCK_TTL, this::evaluateDueTags);
+        } finally {
             reschedule();
+        }
+    }
+
+    private void evaluateDueTags() {
+        Instant now = Instant.now();
+        List<String> duePaths = scheduleRegistry.dueTagPaths(now);
+        if (duePaths.isEmpty()) {
             return;
         }
+        List<AnalyticsTagDefinition> dueTags = catalogService.listEnabledTags().stream()
+                .filter(tag -> duePaths.contains(tag.tagPath()))
+                .toList();
         try {
-            Instant now = Instant.now();
-            List<String> duePaths = scheduleRegistry.dueTagPaths(now);
-            if (!duePaths.isEmpty()) {
-                List<AnalyticsTagDefinition> dueTags = catalogService.listEnabledTags().stream()
-                        .filter(tag -> duePaths.contains(tag.tagPath()))
-                        .toList();
-                try {
-                    engineService.evaluateTags(dueTags);
-                    for (AnalyticsTagDefinition tag : dueTags) {
-                        scheduleRegistry.markRan(tag.tagPath(), tag.periodicMs(), now, null);
-                    }
-                } catch (RuntimeException ex) {
-                    log.warn(
-                            "Analytics due-tag evaluation failed ({} tag(s)): {}",
-                            dueTags.size(),
-                            ex.getMessage()
-                    );
-                    for (AnalyticsTagDefinition tag : dueTags) {
-                        scheduleRegistry.markRan(tag.tagPath(), tag.periodicMs(), now, ex.getMessage());
-                    }
-                }
+            engineService.evaluateTags(dueTags);
+            for (AnalyticsTagDefinition tag : dueTags) {
+                scheduleRegistry.markRan(tag.tagPath(), tag.periodicMs(), now, null);
             }
-        } finally {
-            leaderLockService.release(LOCK_NAME);
-            reschedule();
+        } catch (RuntimeException ex) {
+            log.warn(
+                    "Analytics due-tag evaluation failed ({} tag(s)): {}",
+                    dueTags.size(),
+                    ex.getMessage()
+            );
+            for (AnalyticsTagDefinition tag : dueTags) {
+                scheduleRegistry.markRan(tag.tagPath(), tag.periodicMs(), now, ex.getMessage());
+            }
         }
     }
 

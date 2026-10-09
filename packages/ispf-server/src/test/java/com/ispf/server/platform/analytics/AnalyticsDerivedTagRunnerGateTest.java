@@ -58,7 +58,7 @@ class AnalyticsDerivedTagRunnerGateTest {
 
         runner.tick();
 
-        verify(leaderLockService, never()).tryAcquire(any(), any());
+        verify(leaderLockService, never()).runIfLeader(any(), any(), any());
         verify(engineScheduler, never()).syncSchedules();
     }
 }

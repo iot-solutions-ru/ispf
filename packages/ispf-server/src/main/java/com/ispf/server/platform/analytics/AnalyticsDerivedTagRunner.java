@@ -62,14 +62,9 @@ public class AnalyticsDerivedTagRunner {
         if (!clusterProperties.isSchedulerActive()) {
             return;
         }
-        if (!leaderLockService.tryAcquire(LOCK_NAME, LOCK_TTL)) {
-            return;
-        }
-        try {
+        leaderLockService.runIfLeader(LOCK_NAME, LOCK_TTL, () -> {
             engineScheduler.syncSchedules();
             engineService.evaluateAllEnabled();
-        } finally {
-            leaderLockService.release(LOCK_NAME);
-        }
+        });
     }
 }
