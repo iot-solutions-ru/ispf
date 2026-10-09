@@ -209,14 +209,22 @@ public class SqlBindingObjectService {
         }
     }
 
-    /** The bindings of {@link #refreshAfterFunction} once the function's transaction has committed. */
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    /**
+     * The bindings of {@link #refreshAfterFunction} once the function's transaction has committed. Not a new
+     * transaction: the function may have run in {@code REQUIRES_NEW} inside a caller's transaction that is suspended on
+     * this thread, and a new transaction would wait for that caller's locks.
+     */
+    @Transactional(propagation = Propagation.SUPPORTS)
     public void refreshAfterFunctionCommit(String objectPath, String functionName) {
         for (BindingDefinition binding : listForFunctionSuccess(objectPath, functionName)) {
             refreshIsolated(binding);
         }
     }
 
+    /**
+     * Outside a transaction, so each binding's query and writes commit on their own: a failed statement, which aborts
+     * the whole transaction on PostgreSQL, cannot undo or block another binding.
+     */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void refreshScheduledBindings() {
         Instant now = Instant.now();
@@ -274,10 +282,7 @@ public class SqlBindingObjectService {
         return bindings;
     }
 
-    /**
-     * One binding of a fan-out. Called outside a transaction, so its query and writes commit on their own: a failed
-     * statement, which aborts the whole transaction on PostgreSQL, cannot undo or block another binding.
-     */
+    /** One binding of a fan-out: the bindings are independent, so no failure reaches the caller. */
     private void refreshIsolated(BindingDefinition binding) {
         try {
             executeRefresh(binding, SqlBindingValues.OnQueryFailure.MARK_BAD);

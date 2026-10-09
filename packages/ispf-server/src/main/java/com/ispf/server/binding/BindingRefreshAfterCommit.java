@@ -59,10 +59,7 @@ public class BindingRefreshAfterCommit implements WorkflowBindingRefresh {
         });
     }
 
-    /**
-     * After commit the finished transaction is still bound to the thread; a {@code REQUIRED} refresh would join it
-     * and its writes would never be committed.
-     */
+    /** The function has committed: a failing binding must not throw into its caller or skip the other bindings. */
     private void refreshCommitted(String objectPath, String functionName) {
         schemaSession.runWithPlatformCatalog(() -> {
             sqlBindingObjectService.refreshAfterFunctionCommit(objectPath, functionName);
