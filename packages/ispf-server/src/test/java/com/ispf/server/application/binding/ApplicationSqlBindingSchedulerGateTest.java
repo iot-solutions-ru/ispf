@@ -11,6 +11,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -51,5 +53,20 @@ class ApplicationSqlBindingSchedulerGateTest {
         verify(clusterProperties, never()).isSchedulerActive();
         verify(leaderLockService, never()).runIfLeader(any(), any(), any());
         verify(bindingService, never()).refreshScheduledBindings();
+    }
+
+    @Test
+    void treeBindingsAreRefreshedWhenTheApplicationBindingsFail() {
+        when(objectManager.isInitialized()).thenReturn(true);
+        when(clusterProperties.isSchedulerActive()).thenReturn(true);
+        when(leaderLockService.runIfLeader(eq("application_sql_bindings"), any(), any())).thenAnswer(invocation -> {
+            invocation.<Runnable>getArgument(2).run();
+            return true;
+        });
+        doThrow(new IllegalStateException("app_sql_bindings unavailable")).when(bindingService).refreshScheduledBindings();
+
+        scheduler.refreshScheduledBindings();
+
+        verify(sqlBindingObjectService).refreshScheduledBindings();
     }
 }

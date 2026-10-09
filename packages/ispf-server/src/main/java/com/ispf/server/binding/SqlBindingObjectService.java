@@ -17,6 +17,7 @@ import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -197,6 +198,10 @@ public class SqlBindingObjectService {
         return BINDINGS_ROOT + "." + sanitizeNodeName(bindingId);
     }
 
+    /**
+     * Joins the caller's transaction (a workflow step), so the queries see the function's uncommitted writes; a
+     * failing query fails the caller.
+     */
     @Transactional
     public void refreshAfterFunction(String objectPath, String functionName) {
         for (BindingDefinition binding : listForFunctionSuccess(objectPath, functionName)) {
@@ -204,7 +209,23 @@ public class SqlBindingObjectService {
         }
     }
 
-    @Transactional
+    /**
+     * The bindings of {@link #refreshAfterFunction} once the function's transaction has committed. Not a new
+     * transaction: the function may have run in {@code REQUIRES_NEW} inside a caller's transaction that is suspended on
+     * this thread, and a new transaction would wait for that caller's locks.
+     */
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public void refreshAfterFunctionCommit(String objectPath, String functionName) {
+        for (BindingDefinition binding : listForFunctionSuccess(objectPath, functionName)) {
+            refreshIsolated(binding);
+        }
+    }
+
+    /**
+     * Outside a transaction, so each binding's query and writes commit on their own: a failed statement, which aborts
+     * the whole transaction on PostgreSQL, cannot undo or block another binding.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void refreshScheduledBindings() {
         Instant now = Instant.now();
         for (BindingDefinition binding : listEnabledForSchedule()) {
@@ -213,7 +234,7 @@ public class SqlBindingObjectService {
                     && binding.lastRefreshedAt().plusMillis(intervalMs).isAfter(now)) {
                 continue;
             }
-            executeRefresh(binding);
+            refreshIsolated(binding);
         }
     }
 
@@ -261,14 +282,27 @@ public class SqlBindingObjectService {
         return bindings;
     }
 
+    /** One binding of a fan-out: the bindings are independent, so no failure reaches the caller. */
+    private void refreshIsolated(BindingDefinition binding) {
+        try {
+            executeRefresh(binding, SqlBindingValues.OnQueryFailure.MARK_BAD);
+        } catch (RuntimeException ex) {
+            log.error("SQL binding {} refresh failed", binding.path(), ex);
+        }
+    }
+
     /** Package-visible for unit tests (missing-target soft-fail). */
     void executeRefresh(BindingDefinition binding) {
+        executeRefresh(binding, SqlBindingValues.OnQueryFailure.PROPAGATE);
+    }
+
+    private void executeRefresh(BindingDefinition binding, SqlBindingValues.OnQueryFailure onQueryFailure) {
         if (disabledOrphanBindingPaths.contains(binding.path())) {
             return;
         }
         try {
             tenantLocalDataAccessGuard.requireAllowedDataSourcePath(binding.dataSourcePath());
-            SqlBindingValues.Extracted extracted = queryValue(binding);
+            SqlBindingValues.Extracted extracted = queryValue(binding, onQueryFailure);
             if (extracted.ok()) {
                 objectManager.setSystemVariableValue(
                         binding.targetObjectPath(),
@@ -310,7 +344,10 @@ public class SqlBindingObjectService {
         }
     }
 
-    private SqlBindingValues.Extracted queryValue(BindingDefinition binding) {
+    private SqlBindingValues.Extracted queryValue(
+            BindingDefinition binding,
+            SqlBindingValues.OnQueryFailure onQueryFailure
+    ) {
         String field = binding.valueField() != null && !binding.valueField().isBlank()
                 ? binding.valueField()
                 : "value";
@@ -330,6 +367,9 @@ public class SqlBindingObjectService {
                         : SqlBindingValues.Extracted.noData("column '" + field + "' not in result");
             });
         } catch (RuntimeException ex) {
+            if (onQueryFailure == SqlBindingValues.OnQueryFailure.MARK_BAD) {
+                return SqlBindingValues.Extracted.queryFailed(ex);
+            }
             metricsRecorder.recordSqlBindingFailure(SqlBindingValues.Failure.QUERY_FAILED);
             throw ex;
         }

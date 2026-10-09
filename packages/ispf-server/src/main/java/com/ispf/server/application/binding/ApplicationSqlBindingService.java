@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashMap;
@@ -127,16 +128,32 @@ public class ApplicationSqlBindingService {
     }
 
     public void refreshBinding(ApplicationSqlBindingStore.SqlBinding binding) {
-        executeRefresh(binding, triggerForRefreshMode(binding.refreshMode()));
+        refreshIsolated(binding, triggerForRefreshMode(binding.refreshMode()));
     }
 
+    /**
+     * Joins the caller's transaction (a workflow step), so the queries see the function's uncommitted writes; a
+     * failing query fails the caller.
+     */
     public void refreshAfterFunction(String appId, String objectPath, String functionName) {
         for (ApplicationSqlBindingStore.SqlBinding binding : store.listForFunctionSuccess(appId, objectPath, functionName)) {
             executeRefresh(binding, "FUNCTION_SUCCESS");
         }
     }
 
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
+    /**
+     * The bindings of {@link #refreshAfterFunction} once the function's transaction has committed. Not a new
+     * transaction: the function may have run in {@code REQUIRES_NEW} inside a caller's transaction that is suspended on
+     * this thread, and a new transaction would wait for that caller's locks.
+     */
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public void refreshAfterFunctionCommit(String appId, String objectPath, String functionName) {
+        for (ApplicationSqlBindingStore.SqlBinding binding : store.listForFunctionSuccess(appId, objectPath, functionName)) {
+            refreshIsolated(binding, "FUNCTION_SUCCESS");
+        }
+    }
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void refreshScheduledBindings() {
         for (ApplicationSqlBindingStore.SqlBinding binding : store.listEnabledForSchedule()) {
             long intervalMs = binding.refreshIntervalMs() != null ? binding.refreshIntervalMs() : 30_000L;
@@ -144,7 +161,7 @@ public class ApplicationSqlBindingService {
                     && binding.lastRefreshedAt().plusMillis(intervalMs).isAfter(java.time.Instant.now())) {
                 continue;
             }
-            executeRefresh(binding, "SCHEDULE");
+            refreshIsolated(binding, "SCHEDULE");
         }
     }
 
@@ -156,7 +173,24 @@ public class ApplicationSqlBindingService {
                 .ifPresent(binding -> executeRefresh(binding, "MANUAL"));
     }
 
+    /** One binding of a fan-out: the bindings are independent, so no failure reaches the caller. */
+    private void refreshIsolated(ApplicationSqlBindingStore.SqlBinding binding, String triggerKind) {
+        try {
+            executeRefresh(binding, triggerKind, SqlBindingValues.OnQueryFailure.MARK_BAD);
+        } catch (RuntimeException ex) {
+            log.error("Application SQL binding {} refresh failed", binding.id(), ex);
+        }
+    }
+
     private void executeRefresh(ApplicationSqlBindingStore.SqlBinding binding, String triggerKind) {
+        executeRefresh(binding, triggerKind, SqlBindingValues.OnQueryFailure.PROPAGATE);
+    }
+
+    private void executeRefresh(
+            ApplicationSqlBindingStore.SqlBinding binding,
+            String triggerKind,
+            SqlBindingValues.OnQueryFailure onQueryFailure
+    ) {
         if (disabledOrphanBindingIds.contains(binding.id().toString())) {
             return;
         }
@@ -168,7 +202,7 @@ public class ApplicationSqlBindingService {
         DataRecord next = null;
         try {
             FieldType fieldType = resolveValueFieldType(binding);
-            SqlBindingValues.Extracted extracted = queryValue(binding, fieldType);
+            SqlBindingValues.Extracted extracted = queryValue(binding, fieldType, onQueryFailure);
             previous = schemaSession.callWithPlatformCatalog(() ->
                     objectManager.tree().findByPath(binding.objectPath())
                             .flatMap(node -> node.getVariable(binding.variableName()))
@@ -276,7 +310,11 @@ public class ApplicationSqlBindingService {
         return normalized;
     }
 
-    private SqlBindingValues.Extracted queryValue(ApplicationSqlBindingStore.SqlBinding binding, FieldType fieldType) {
+    private SqlBindingValues.Extracted queryValue(
+            ApplicationSqlBindingStore.SqlBinding binding,
+            FieldType fieldType,
+            SqlBindingValues.OnQueryFailure onQueryFailure
+    ) {
         String schemaName = resolveSchemaName(binding.appId());
         String field = binding.valueField() != null ? binding.valueField() : "value";
         SqlBindingValues.Extracted[] extracted = new SqlBindingValues.Extracted[1];
@@ -298,6 +336,9 @@ public class ApplicationSqlBindingService {
                         : SqlBindingValues.Extracted.noData("column '" + field + "' not in result");
             });
         } catch (RuntimeException ex) {
+            if (onQueryFailure == SqlBindingValues.OnQueryFailure.MARK_BAD) {
+                return SqlBindingValues.Extracted.queryFailed(ex);
+            }
             metricsRecorder.recordSqlBindingFailure(SqlBindingValues.Failure.QUERY_FAILED);
             throw ex;
         }
