@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class EventCorrelatorListener implements ObjectChangeAsyncHandler {
 
-    private final EventCorrelatorService correlatorService;
+    private final CorrelatorDispatchService dispatchService;
 
-    public EventCorrelatorListener(EventCorrelatorService correlatorService) {
-        this.correlatorService = correlatorService;
+    public EventCorrelatorListener(CorrelatorDispatchService dispatchService) {
+        this.dispatchService = dispatchService;
     }
 
     @Override
@@ -24,6 +24,6 @@ public class EventCorrelatorListener implements ObjectChangeAsyncHandler {
         if (event.type() != ObjectChangeType.EVENT_FIRED || event.variableName() == null) {
             return;
         }
-        correlatorService.processEventFired(event.path(), event.variableName());
+        dispatchService.dispatchEventFired(event.path(), event.variableName(), event.timestamp());
     }
 }

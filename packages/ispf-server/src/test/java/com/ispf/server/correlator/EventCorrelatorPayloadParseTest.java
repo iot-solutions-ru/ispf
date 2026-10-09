@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -30,7 +29,6 @@ class EventCorrelatorPayloadParseTest {
     private JdbcTemplate jdbcTemplate;
 
     @Test
-    @Transactional
     void unreadablePayloadDoesNotTriggerAndDoesNotBlockSiblings() {
         // Filter forces a payload parse; blank filter skips parse when objectPath matches.
         EventCorrelator broken = index("bad-payload", "probe-bad", "true");
@@ -44,7 +42,6 @@ class EventCorrelatorPayloadParseTest {
     }
 
     @Test
-    @Transactional
     void blankPayloadStaysAnEmptyMap() {
         EventCorrelator created = index("blank-payload", "probe-blank", "true");
         insertJournal("probe-blank", "");

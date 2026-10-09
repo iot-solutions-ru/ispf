@@ -189,7 +189,7 @@ Example: MES dispatch — `workOrderCreated` + `workOrderReleased` + `workOrderS
 
 A = `thresholdExceeded`, B = `thresholdExceeded` (repeat), window = 60s → start `demo-alarm-handler`.
 
-`EventCorrelatorListener` on `EVENT_FIRED`. Hits in `correlator_hits` table.
+`EventCorrelatorListener` on `EVENT_FIRED` → `CorrelatorDispatchService` (keyed lanes by correlator id, `REQUIRES_NEW` per correlator). Hits in `correlator_hits` / Redis window store. See [ADR-0052](decisions/0052-correlator-keyed-dispatch.md).
 
 ### API
 
