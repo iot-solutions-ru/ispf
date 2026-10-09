@@ -37,6 +37,7 @@ import {
   platformTypesForParent,
   operatorAppObjectPath,
   resolveCreateDialogMode,
+  showsCreateTypeField,
 } from "../../utils/object/createObjectMode";
 import { DATA_SOURCES_ROOT } from "../../utils/platform/platformSqlPath";
 import { ObjectPathField } from "../../ui/index";
@@ -667,7 +668,11 @@ export default function CreateObjectDialog({
               </>
             )}
 
-            {mode === "object" && !isMimicCatalog && presetType !== "VISUAL_GROUP" && (
+            {showsCreateTypeField(parentPath, {
+              presetType,
+              instanceModelCount: instanceModels.length,
+              instanceTypesLoading: instanceTypesQuery.isLoading,
+            }) && (
               <Form.Item label={t("dialog.type")}>
                 <Select
                   value={typeSelection}
