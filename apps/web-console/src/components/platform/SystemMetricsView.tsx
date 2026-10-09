@@ -32,7 +32,7 @@ const METRIC_KEYS = [
   "telemetryCoalesceDropsTotal", "telemetryBindingBypassTotal", "telemetryHistorianOnlyTotal",
   "objectChangeQueueSize", "eventJournalQueueSize", "variableHistoryQueueSize",
   "objectChangeDroppedTotal", "objectChangeProcessedTotal", "eventsFiredTotal", "alertFiresTotal",
-  "correlatorTriggersTotal", "workflowStartsTotal", "eventJournalFlushedTotal",
+  "alertRuleFailuresTotal", "correlatorTriggersTotal", "workflowStartsTotal", "eventJournalFlushedTotal",
   "eventJournalSyncFallbackTotal", "variableHistoryFlushedTotal", "variableHistorySyncFallbackTotal",
   "processCpuPercent", "systemCpuPercent", "heapUsedPercent", "pressureScore", "topSuspect",
   "turnsStartedTotal", "turnsCompletedTotal", "turnsRateLimitedTotal", "turnsLastHour",

@@ -252,6 +252,7 @@
   "metrics.objectChangeProcessedTotal": "Object-change processed",
   "metrics.eventsFiredTotal": "Events fired (total)",
   "metrics.alertFiresTotal": "Alert fires (total)",
+  "metrics.alertRuleFailuresTotal": "告警规则失败",
   "metrics.correlatorTriggersTotal": "Correlator triggers",
   "metrics.workflowStartsTotal": "Workflow starts",
   "metrics.eventJournalFlushedTotal": "Journal flushed",

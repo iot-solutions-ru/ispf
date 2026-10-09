@@ -252,6 +252,7 @@
   "metrics.objectChangeProcessedTotal": "Обработано object-change",
   "metrics.eventsFiredTotal": "Сработавшие события (всего)",
   "metrics.alertFiresTotal": "Срабатывания алертов (всего)",
+  "metrics.alertRuleFailuresTotal": "Сбои правил алертов",
   "metrics.correlatorTriggersTotal": "Срабатывания корреляторов",
   "metrics.workflowStartsTotal": "Запуски workflow",
   "metrics.eventJournalFlushedTotal": "Сбросы журнала",
