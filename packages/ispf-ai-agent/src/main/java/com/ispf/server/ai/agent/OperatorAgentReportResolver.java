@@ -236,18 +236,23 @@ final class OperatorAgentReportResolver {
         }
         String title = entry.title().isBlank() ? entry.path() : entry.title();
         String query = userMessage != null ? userMessage.trim() : "";
-        boolean ru = AgentStepHumanizer.isRussian(uiLocale);
+        String qTitle = AgentUiText.quote(uiLocale, title);
+        String qQuery = AgentUiText.quote(uiLocale, query);
         if (containsAny(query.toLowerCase(Locale.ROOT), SHIFT_TOKENS)) {
-            return ru
-                    ? ("Точного отчёта «сменный» в каталоге нет. В этом приложении для сменной сводки "
-                    + "обычно используется «" + title + "».")
-                    : ("No exact \"shift\" report in the catalog. For a shift summary this app usually uses \""
-                    + title + "\".");
+            return AgentUiText.t(uiLocale,
+                    "No exact \"shift\" report in the catalog. For a shift summary this app usually uses "
+                            + qTitle + ".",
+                    "Точного отчёта «сменный» в каталоге нет. В этом приложении для сменной сводки "
+                            + "обычно используется " + qTitle + ".",
+                    "Kein genauer „Schicht“-Bericht im Katalog. Für die Schichtübersicht nutzt diese App meist "
+                            + qTitle + ".",
+                    "目录中没有精确的「班次」报告。本应用班次汇总通常使用 " + qTitle + "。");
         }
-        return ru
-                ? ("Запрос «" + query + "» не совпадает с названиями отчётов. "
-                + "Ближе всего подходит «" + title + "».")
-                : ("Request \"" + query + "\" does not match report titles. Closest match is \"" + title + "\".");
+        return AgentUiText.t(uiLocale,
+                "Request " + qQuery + " does not match report titles. Closest match is " + qTitle + ".",
+                "Запрос " + qQuery + " не совпадает с названиями отчётов. Ближе всего подходит " + qTitle + ".",
+                "Anfrage " + qQuery + " passt zu keinem Berichtstitel. Am nächsten: " + qTitle + ".",
+                "请求 " + qQuery + " 与报告名称不匹配。最接近的是 " + qTitle + "。");
     }
 
     private static int scoreEntry(ReportEntry entry, List<String> tokens, String query) {

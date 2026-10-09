@@ -79,7 +79,20 @@ class AgentStepHumanizerTest {
     void statusLabelsFollowLocale() {
         assertEquals("Preparing request…", AgentStepHumanizer.preparingRequest("en"));
         assertEquals("Подготовка запроса…", AgentStepHumanizer.preparingRequest("ru"));
+        assertEquals("Anfrage wird vorbereitet…", AgentStepHumanizer.preparingRequest("de"));
+        assertEquals("正在准备请求…", AgentStepHumanizer.preparingRequest("zh"));
         assertEquals("Failed to parse model response", AgentStepHumanizer.parseErrorLabel("en", false));
         assertEquals("Ответ обрезан", AgentStepHumanizer.parseErrorLabel("ru", true));
+    }
+
+    @Test
+    void listObjectsFollowsAllConsoleLocales() {
+        assertEquals(
+                "Listing contents of \"root\"",
+                AgentStepHumanizer.label("tool", "list_objects", Map.of("parent", "root"), null, null, "en"));
+        assertTrue(AgentStepHumanizer.label("tool", "list_objects", Map.of("parent", "root"), null, null, "de")
+                .contains("Liste Inhalt"));
+        assertTrue(AgentStepHumanizer.label("tool", "list_objects", Map.of("parent", "root"), null, null, "zh")
+                .contains("正在查看"));
     }
 }

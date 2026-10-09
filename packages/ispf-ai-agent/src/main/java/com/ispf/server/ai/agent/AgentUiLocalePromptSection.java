@@ -5,6 +5,7 @@ import java.util.Map;
 
 /**
  * Forces agent user-facing text to match the web-console UI locale (ADR-0051 / i18n).
+ * Supported tags match {@code apps/web-console} LocaleSwitcher: {@code en|ru|de|zh}.
  */
 public final class AgentUiLocalePromptSection {
 
