@@ -85,11 +85,15 @@ final class OperatorAgentReportResolver {
     }
 
     static String resolveBestPath(String userMessage, List<ReportEntry> catalog) {
-        MatchAnalysis analysis = analyze(userMessage, catalog);
+        MatchAnalysis analysis = analyze(userMessage, catalog, "");
         return analysis.bestPath();
     }
 
     static MatchAnalysis analyze(String userMessage, List<ReportEntry> catalog) {
+        return analyze(userMessage, catalog, "");
+    }
+
+    static MatchAnalysis analyze(String userMessage, List<ReportEntry> catalog, String uiLocale) {
         if (catalog == null || catalog.isEmpty()) {
             return new MatchAnalysis(null, null, 0, false, null, List.of());
         }
@@ -100,7 +104,7 @@ final class OperatorAgentReportResolver {
                     only.title(),
                     100,
                     hasTerminologyMismatch(userMessage, only),
-                    buildMismatchReason(userMessage, only),
+                    buildMismatchReason(userMessage, only, uiLocale),
                     List.of(new ScoredEntry(only, 100))
             );
         }
@@ -134,7 +138,7 @@ final class OperatorAgentReportResolver {
                 best.entry().title(),
                 bestScore,
                 hasTerminologyMismatch(userMessage, best.entry()),
-                buildMismatchReason(userMessage, best.entry()),
+                buildMismatchReason(userMessage, best.entry(), uiLocale),
                 ranked
         );
     }
@@ -226,18 +230,24 @@ final class OperatorAgentReportResolver {
         ).contains(token);
     }
 
-    private static String buildMismatchReason(String userMessage, ReportEntry entry) {
+    private static String buildMismatchReason(String userMessage, ReportEntry entry, String uiLocale) {
         if (!hasTerminologyMismatch(userMessage, entry)) {
             return null;
         }
         String title = entry.title().isBlank() ? entry.path() : entry.title();
         String query = userMessage != null ? userMessage.trim() : "";
+        boolean ru = AgentStepHumanizer.isRussian(uiLocale);
         if (containsAny(query.toLowerCase(Locale.ROOT), SHIFT_TOKENS)) {
-            return "Точного отчёта «сменный» в каталоге нет. В этом приложении для сменной сводки "
-                    + "обычно используется «" + title + "».";
+            return ru
+                    ? ("Точного отчёта «сменный» в каталоге нет. В этом приложении для сменной сводки "
+                    + "обычно используется «" + title + "».")
+                    : ("No exact \"shift\" report in the catalog. For a shift summary this app usually uses \""
+                    + title + "\".");
         }
-        return "Запрос «" + query + "» не совпадает с названиями отчётов. "
-                + "Ближе всего подходит «" + title + "».";
+        return ru
+                ? ("Запрос «" + query + "» не совпадает с названиями отчётов. "
+                + "Ближе всего подходит «" + title + "».")
+                : ("Request \"" + query + "\" does not match report titles. Closest match is \"" + title + "\".");
     }
 
     private static int scoreEntry(ReportEntry entry, List<String> tokens, String query) {

@@ -179,6 +179,67 @@ public final class AgentStepHumanizer {
                 : "Continue from where you left off";
     }
 
+    public static String cancelledByUser(String uiLocale, int stepsDone) {
+        return isRussian(uiLocale)
+                ? ("Выполнение остановлено пользователем после " + stepsDone + " шаг(ов).")
+                : ("Stopped by user after " + stepsDone + " step(s).");
+    }
+
+    public static String planApprovalRequiredLabel(String uiLocale) {
+        return isRussian(uiLocale) ? "Требуется утверждение плана" : "Plan approval required";
+    }
+
+    public static String askModeLabel(String uiLocale) {
+        return isRussian(uiLocale) ? "Режим «Спросить»" : "Ask mode";
+    }
+
+    public static String executeModeLabel(String uiLocale) {
+        return isRussian(uiLocale) ? "Режим «Выполнить»" : "Execute mode";
+    }
+
+    public static String planExecutionLabel(String uiLocale) {
+        return isRussian(uiLocale) ? "Выполнение плана" : "Plan execution";
+    }
+
+    public static String planRequiredLabel(String uiLocale) {
+        return isRussian(uiLocale) ? "Требуется план" : "Plan required";
+    }
+
+    public static String litePlanReadySummary(String uiLocale) {
+        return isRussian(uiLocale)
+                ? "Подготовлен эталонный LITE-план — утвердите и начнём выполнение."
+                : "Reference LITE plan is ready — approve it to start execution.";
+    }
+
+    public static String platformGuardStuckSummary(String uiLocale) {
+        return isRussian(uiLocale)
+                ? ("Проверка завершения повторялась — объекты, вероятно, уже созданы. "
+                + "Проверьте платформу вручную и при необходимости продолжите в новом сообщении.")
+                : ("Finish checks kept repeating — objects may already exist. "
+                + "Verify the platform manually and continue in a new message if needed.");
+    }
+
+    public static String modelParseFailedSummary(String uiLocale, boolean truncated) {
+        if (isRussian(uiLocale)) {
+            return truncated
+                    ? """
+                    Ответ модели обрезан — план слишком большой для одного сообщения. \
+                    Частичный план сохранён, если удалось извлечь данные. \
+                    Напишите «продолжи план» или «добавь следующие разделы» — план достраивается поэтапно."""
+                    : """
+                    Не удалось разобрать ответ модели после нескольких попыток. \
+                    Попробуйте переформулировать запрос короче или начните новый чат.""";
+        }
+        return truncated
+                ? """
+                Model response was truncated — the plan is too large for one message. \
+                A partial plan was kept if parsing succeeded. \
+                Send "continue plan" or "add the next sections" to extend it."""
+                : """
+                Could not parse the model response after several attempts. \
+                Try a shorter request or start a new chat.""";
+    }
+
     public static boolean isRussian(String uiLocale) {
         return "ru".equals(AgentUiLocalePromptSection.normalize(uiLocale));
     }
