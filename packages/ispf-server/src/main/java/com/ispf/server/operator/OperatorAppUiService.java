@@ -341,8 +341,12 @@ public class OperatorAppUiService {
                     return true;
                 }
             }
-        } catch (Exception ignored) {
-            return false;
+        } catch (RuntimeException ex) {
+            String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+            throw new IllegalArgumentException(
+                    "Invalid operator app dashboards JSON for " + record.appId() + ": " + detail,
+                    ex
+            );
         }
         return false;
     }
