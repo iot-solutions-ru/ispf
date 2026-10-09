@@ -1,6 +1,4 @@
-> **Language:** Canonical English. Russian edition: [ru/decisions/0052-correlator-keyed-dispatch.md](../../ru/decisions/0052-correlator-keyed-dispatch.md) (optional).
-
-# ADR-0052: Correlator keyed dispatch and per-correlator transactions
+# ADR-0062: Correlator keyed dispatch and per-correlator transactions
 
 > **Status:** Accepted — 2026-10-09. Hub: [doc-status.md](../doc-status.md).
 

@@ -109,6 +109,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0059-toolchain-version-policy](0059-toolchain-version-policy.md) | Toolchain / dependency version policy (N or N-1, pins with owners, heavy deps in modules) — **Accepted** |
 | [0060-solution-authoring-constraints](0060-solution-authoring-constraints.md) | AI-first solution authoring constraints (schema, SINGLETON hubs, W1–W6) — **Accepted** |
 | [0061-high-rate-telemetry-history-defaults](0061-high-rate-telemetry-history-defaults.md) | MQTT / journal / previousValue safe defaults (field pain) — **Accepted** |
+| [0062-correlator-keyed-dispatch](0062-correlator-keyed-dispatch.md) | Correlator keyed lanes, per-correlator `REQUIRES_NEW`, async actions, event time — **Accepted** |
 
 ## Topic chains (read in order)
 
