@@ -139,6 +139,8 @@ Same `@bindingRules` array; multiple rules per device; arbitrary output variable
 
 Rules with `periodicMs > 0` are parsed into JDBC index `platform_binding_periodic_rules` when `@bindingRules` is saved. **`BindingPeriodicScheduler`** wakes the JVM once at the nearest `next_run_at` and runs only due hits — no per-second full-tree scan. If no periodic rules exist, background wake is a no-op.
 
+A run that throws is retried after one period, then after twice the previous delay, up to `max(periodicMs, 5 min)` (`ispf.binding.periodic.max-backoff-ms`). The rule stays enabled; the first success restores the normal period, and saving `@bindingRules` retries at once.
+
 ### Target kinds (platform rule)
 
 Model extension — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). If `target.kind` is absent → **`variable`**.

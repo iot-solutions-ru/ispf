@@ -124,6 +124,8 @@
 
 Правила с `periodicMs > 0` парсятся в JDBC-индекс `platform_binding_periodic_rules` при сохранении `@bindingRules`. **`BindingPeriodicScheduler`** будит JVM один раз к ближайшему `next_run_at` и выполняет только due-хиты — без посекундного полного скана дерева. Если периодических правил нет, фоновое пробуждение — no-op.
 
+Запуск с исключением повторяется через один период, затем каждый раз через вдвое больший интервал, но не дольше `max(periodicMs, 5 мин)` (`ispf.binding.periodic.max-backoff-ms`). Правило остаётся включённым; первый успех возвращает обычный период, а сохранение `@bindingRules` запускает правило сразу.
+
 ### Типы цели (`target.kind`)
 
 Расширение модели — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). Если `target.kind` отсутствует → **`variable`**.
