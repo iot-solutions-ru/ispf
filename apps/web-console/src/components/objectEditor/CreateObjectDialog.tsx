@@ -33,6 +33,7 @@ import {
   blueprintKindForCatalog,
   defaultObjectTypeForParent,
   instanceTypeFilterForParent,
+  instanceTypeTargetsForParent,
   platformTypesForParent,
   operatorAppObjectPath,
   resolveCreateDialogMode,
@@ -153,22 +154,31 @@ export default function CreateObjectDialog({
     enabled: mode === "object",
   });
 
-  const instanceTypeFilter = useMemo(
-    () => instanceTypeFilterForParent(parentPath),
+  const instanceTargets = useMemo(
+    () => instanceTypeTargetsForParent(parentPath),
     [parentPath],
   );
+  const instanceTypeFilter = instanceTypeFilterForParent(parentPath);
 
   const instanceTypesQuery = useQuery({
-    queryKey: ["instance-types", parentPath, instanceTypeFilter],
+    queryKey: ["instance-types", parentPath, instanceTypeFilter ?? instanceTargets?.join(",")],
     queryFn: () => fetchInstanceTypes(instanceTypeFilter, parentPath),
     enabled: mode === "object",
   });
 
+  const instanceModels = useMemo(() => {
+    const models = instanceTypesQuery.data ?? [];
+    if (!instanceTargets) {
+      return models;
+    }
+    return models.filter((model) => instanceTargets.includes(model.targetObjectType ?? "CUSTOM"));
+  }, [instanceTargets, instanceTypesQuery.data]);
+
   useEffect(() => {
-    if (mode !== "object" || !instanceTypeFilter || instanceTypesQuery.isLoading) {
+    if (mode !== "object" || presetType || !instanceTypeFilter || instanceTypesQuery.isLoading) {
       return;
     }
-    const models = instanceTypesQuery.data ?? [];
+    const models = instanceModels;
     if (models.length !== 1) {
       return;
     }
@@ -178,15 +188,15 @@ export default function CreateObjectDialog({
     if (only.targetObjectType) {
       setType(only.targetObjectType);
     }
-  }, [mode, instanceTypeFilter, instanceTypesQuery.data, instanceTypesQuery.isLoading]);
+  }, [mode, presetType, instanceTypeFilter, instanceModels, instanceTypesQuery.isLoading]);
 
   const selectedInstanceModel = useMemo(() => {
     if (!typeSelection.startsWith(INSTANCE_TYPE_PREFIX)) {
       return null;
     }
     const modelId = typeSelection.slice(INSTANCE_TYPE_PREFIX.length);
-    return instanceTypesQuery.data?.find((model) => model.id === modelId) ?? null;
-  }, [typeSelection, instanceTypesQuery.data]);
+    return instanceModels.find((model) => model.id === modelId) ?? null;
+  }, [typeSelection, instanceModels]);
 
   const selectedDriver = useMemo(
     () => driversQuery.data?.find((driver) => driver.id === driverId),
@@ -657,7 +667,7 @@ export default function CreateObjectDialog({
               </>
             )}
 
-            {mode === "object" && !isMimicCatalog && (
+            {mode === "object" && !isMimicCatalog && presetType !== "VISUAL_GROUP" && (
               <Form.Item label={t("dialog.type")}>
                 <Select
                   value={typeSelection}
@@ -666,7 +676,7 @@ export default function CreateObjectDialog({
                     if (!next.startsWith(INSTANCE_TYPE_PREFIX)) {
                       setType(next as ObjectType);
                     } else {
-                      const model = instanceTypesQuery.data?.find(
+                      const model = instanceModels.find(
                         (item) => item.id === next.slice(INSTANCE_TYPE_PREFIX.length)
                       );
                       if (model?.targetObjectType) {
@@ -679,13 +689,13 @@ export default function CreateObjectDialog({
                       label: "Platform types",
                       options: platformTypesForParent(parentPath).map((objectType) => ({
                         value: objectType,
-                        label: objectType === "VISUAL_GROUP" ? t("dialog.typeVisualGroup") : objectType,
+                        label: objectType,
                       })),
                     },
-                    ...(instanceTypesQuery.data?.length
+                    ...(instanceModels.length
                       ? [{
                           label: t("dialog.instanceTypes"),
-                          options: (instanceTypesQuery.data ?? []).map((model: BlueprintDto) => ({
+                          options: instanceModels.map((model: BlueprintDto) => ({
                             value: `${INSTANCE_TYPE_PREFIX}${model.id}`,
                             label: `${model.name}${model.targetObjectType ? ` (${model.targetObjectType})` : ""}`,
                           })),
