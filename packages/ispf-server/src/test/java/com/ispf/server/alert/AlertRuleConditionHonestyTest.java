@@ -93,6 +93,24 @@ class AlertRuleConditionHonestyTest {
     }
 
     @Test
+    void anomalyHistoryFailureIsNotTreatedAsFalse() {
+        AlertRule rule = anomalyRule();
+        when(automationTreeService.getAlertRule(RULE_ID)).thenReturn(rule);
+        when(objectManager.require(TARGET)).thenReturn(deviceWithTemperature(90.0));
+        when(anomalyAlertRuleEvaluator.evaluate(TARGET, "temperature", "threshold-v1"))
+                .thenThrow(new IllegalStateException(
+                        "Anomaly history read failed for " + TARGET + "/temperature: history store down",
+                        new IllegalStateException("history store down")
+                ));
+
+        assertThatCode(() -> service.evaluateRule(rule)).doesNotThrowAnyException();
+
+        verify(eventService, never()).fireAutomation(anyString(), anyString(), any());
+        verify(automationTreeService, never()).setAlertRuleLastConditionMet(anyString(), anyBoolean());
+        verify(automationTreeService, never()).setAlertRuleEnabled(anyString(), anyBoolean());
+    }
+
+    @Test
     void falseConditionRemainsFalseAndDoesNotFire() {
         AlertRule rule = sampleRule("false");
         PlatformObject target = deviceWithTemperature(90.0);
@@ -106,6 +124,86 @@ class AlertRuleConditionHonestyTest {
 
         verify(eventService, never()).fireAutomation(anyString(), anyString(), any());
         verify(automationTreeService).setAlertRuleLastConditionMet(RULE_ID, false);
+    }
+
+    @Test
+    void webhookFailureIsVisibleAndDoesNotCancelTheFire() {
+        AlertRule rule = notificationRule("true", "http://127.0.0.1:9/hook", null);
+        PlatformObject target = deviceWithTemperature(90.0);
+        when(automationTreeService.getAlertRule(RULE_ID)).thenReturn(rule);
+        when(objectManager.require(TARGET)).thenReturn(target);
+        when(objectManager.require(RULE_ID)).thenReturn(alertNode());
+        when(expressionEngine.evaluateAlertCondition(eq("true"), eq(target), eq("temperature"))).thenReturn(true);
+        when(notificationDispatchService.baseContext(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(java.util.Map.of());
+        org.mockito.Mockito.doThrow(new IllegalStateException("Notification HTTP 500: down"))
+                .when(notificationDispatchService).sendWebhook(eq("http://127.0.0.1:9/hook"), any());
+
+        assertThatCode(() -> service.evaluateRule(rule)).doesNotThrowAnyException();
+
+        verify(eventService).fireAutomation(eq(RULE_ID), eq("raise"), any());
+        verify(automationTreeService).setAlertRuleLastConditionMet(RULE_ID, true);
+        verify(automationTreeService).setAlertRuleLastNotificationError(RULE_ID, "Notification HTTP 500: down");
+        verify(automationTreeService, never()).setAlertRuleEnabled(anyString(), anyBoolean());
+    }
+
+    @Test
+    void messageTemplateFailureIsADeliveryErrorAndDoesNotSend() {
+        AlertRule rule = notificationRule("true", "http://127.0.0.1:9/hook", "noSuchFunc(1)");
+        PlatformObject target = deviceWithTemperature(90.0);
+        when(automationTreeService.getAlertRule(RULE_ID)).thenReturn(rule);
+        when(objectManager.require(TARGET)).thenReturn(target);
+        when(objectManager.require(RULE_ID)).thenReturn(alertNode());
+        when(expressionEngine.evaluateAlertCondition(eq("true"), eq(target), eq("temperature"))).thenReturn(true);
+        when(expressionEngine.evaluateAlertCondition(eq("noSuchFunc(1)"), eq(target), eq("temperature")))
+                .thenThrow(new ExpressionException("unknown name"));
+        when(notificationDispatchService.baseContext(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(java.util.Map.of());
+
+        assertThatCode(() -> service.evaluateRule(rule)).doesNotThrowAnyException();
+
+        verify(notificationDispatchService, never()).sendWebhook(anyString(), any());
+        verify(eventService).fireAutomation(eq(RULE_ID), eq("raise"), any());
+        verify(automationTreeService).setAlertRuleLastNotificationError(
+                RULE_ID,
+                "Alert notification message failed: noSuchFunc(1): unknown name"
+        );
+    }
+
+    private static AlertRule notificationRule(String conditionExpr, String webhookUrl, String triggerMessage) {
+        Instant now = Instant.parse("2026-09-29T00:00:00Z");
+        return new AlertRule(
+                RULE_ID,
+                "honesty",
+                TARGET,
+                "temperature",
+                conditionExpr,
+                "raise",
+                null,
+                true,
+                true,
+                0,
+                false,
+                0,
+                "HIGH",
+                false,
+                null,
+                0,
+                1000,
+                triggerMessage,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                now,
+                now,
+                webhookUrl,
+                null,
+                null,
+                null
+        );
     }
 
     private static PlatformObject alertNode() {
@@ -153,7 +251,43 @@ class AlertRuleConditionHonestyTest {
                 now,
                 null,
                 null,
+                null,
                 null
+        );
+    }
+
+    private static AlertRule anomalyRule() {
+        Instant now = Instant.parse("2026-09-29T00:00:00Z");
+        return new AlertRule(
+                RULE_ID,
+                "honesty",
+                TARGET,
+                "temperature",
+                "",
+                "raise",
+                null,
+                true,
+                true,
+                0,
+                false,
+                0,
+                "HIGH",
+                false,
+                null,
+                0,
+                1000,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                now,
+                now,
+                null,
+                null,
+                null,
+                "threshold-v1"
         );
     }
 }

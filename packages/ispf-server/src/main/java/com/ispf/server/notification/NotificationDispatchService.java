@@ -104,8 +104,12 @@ public class NotificationDispatchService {
         } catch (IllegalStateException ex) {
             throw ex;
         } catch (Exception ex) {
-            log.warn("Notification dispatch failed for {}: {}", url, ex.getMessage());
-            throw new IllegalStateException("Notification dispatch failed: " + ex.getMessage(), ex);
+            String detail = ex.getMessage();
+            if (detail == null || detail.isBlank()) {
+                detail = ex.getClass().getSimpleName();
+            }
+            log.warn("Notification dispatch failed for {}: {}", url, detail);
+            throw new IllegalStateException("Notification dispatch failed: " + detail, ex);
         }
     }
 

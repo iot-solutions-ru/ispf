@@ -183,6 +183,56 @@ class ProcessProgramRunnerTest {
         assertThat(lastError).contains("interlock");
     }
 
+    @Test
+    @Transactional
+    void longOutputKeepsValueBeyondInt() {
+        processProgramObjectService.ensureCatalog();
+        String plantPath = "root.platform.devices.process-loop-plant-long";
+        if (objectManager.tree().findByPath(plantPath).isEmpty()) {
+            objectManager.create(
+                    "root.platform.devices",
+                    "process-loop-plant-long",
+                    ObjectType.DEVICE,
+                    "Long plant",
+                    "LONG output",
+                    null
+            );
+        }
+        DataSchema longSchema = DataSchema.builder("counter").field("value", FieldType.LONG).build();
+        ensureVar(plantPath, "counter", longSchema, 0L);
+
+        String path = ProcessProgramPaths.PROCESS_PROGRAMS_ROOT + ".long-output";
+        if (objectManager.tree().findByPath(path).isEmpty()) {
+            objectManager.create(
+                    ProcessProgramPaths.PROCESS_PROGRAMS_ROOT,
+                    "long-output",
+                    ObjectType.PROCESS_PROGRAM,
+                    "Long output",
+                    "Writes a long past Integer.MAX_VALUE",
+                    null
+            );
+        }
+        structureService.ensureProcessProgramStructure(path);
+        objectManager.setVariableValue(path, "programId", DataRecord.single(STRING_SCHEMA, Map.of("value", "long-output")));
+        objectManager.setVariableValue(path, "cycleIntervalMs", DataRecord.single(INTEGER_SCHEMA, Map.of("value", 1)));
+        objectManager.setVariableValue(path, "targetObjectPath", DataRecord.single(STRING_SCHEMA, Map.of("value", plantPath)));
+        objectManager.setVariableValue(path, "outputVariable", DataRecord.single(STRING_SCHEMA, Map.of("value", "counter")));
+        objectManager.setVariableValue(path, "controlExpression", DataRecord.single(STRING_SCHEMA, Map.of("value", "2147483648")));
+        objectManager.setVariableValue(path, "enabled", DataRecord.single(BOOLEAN_SCHEMA, Map.of("value", true)));
+
+        processProgramRunner.runDuePrograms();
+
+        Variable counter = objectManager.require(plantPath).getVariable("counter").orElseThrow();
+        assertThat(counter.schema().fields().get(0).type()).isEqualTo(FieldType.LONG);
+        DataRecord stored = counter.value().orElseThrow();
+        assertThat(stored.schema().fields().get(0).type()).isEqualTo(FieldType.LONG);
+        assertThat(stored.firstRow().get("value")).isEqualTo(2147483648L);
+        String lastError = objectManager.require(path).getVariable("lastError")
+                .flatMap(v -> v.value().map(r -> String.valueOf(r.firstRow().get("value"))))
+                .orElse("");
+        assertThat(lastError).isBlank();
+    }
+
     private void ensureVar(String path, String name, DataSchema schema, Object value) {
         var node = objectManager.require(path);
         if (node.getVariable(name).isEmpty()) {

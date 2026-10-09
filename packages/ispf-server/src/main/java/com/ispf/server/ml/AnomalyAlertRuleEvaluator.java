@@ -82,8 +82,11 @@ public class AnomalyAlertRuleEvaluator {
                         "timestamp", sample.ts().toString()
                 ));
             }
-        } catch (RuntimeException ignored) {
-            // Fall back to the live variable value when history is unavailable.
+        } catch (RuntimeException ex) {
+            throw new IllegalStateException(
+                    "Anomaly history read failed for " + objectPath + "/" + watchVariable + ": " + ex.getMessage(),
+                    ex
+            );
         }
 
         Double current = readCurrentValue(objectPath, watchVariable);

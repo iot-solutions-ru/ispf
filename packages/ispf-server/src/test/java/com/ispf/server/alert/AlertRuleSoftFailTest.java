@@ -157,6 +157,7 @@ class AlertRuleSoftFailTest {
                 now,
                 null,
                 null,
+                null,
                 null
         );
     }

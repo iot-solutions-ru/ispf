@@ -136,10 +136,10 @@ public class SystemObjectStructureService {
 
     @Transactional
     public void ensureAlertRuleStructure(String path) {
-        if (objectManager.require(path).getVariable("targetObjectPath").isPresent()) {
-            return;
+        if (objectManager.require(path).getVariable("targetObjectPath").isEmpty()) {
+            applyIntrinsic("alert-rule-v1", path);
         }
-        applyIntrinsic("alert-rule-v1", path);
+        ensureStringVariable(path, "lastNotificationError", "");
     }
 
     @Transactional

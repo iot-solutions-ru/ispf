@@ -196,9 +196,9 @@ public class AlertRuleService {
                 }
             }
         } catch (IllegalStateException ex) {
-            // Uncomputable condition/deactivate must not look like an honest false (and must not
-            // abort evaluation of the remaining rules in the same fan-out).
-            if (!(ex.getCause() instanceof ExpressionException)) {
+            // Uncomputable condition/deactivate and a failed anomaly history read must not look
+            // like an honest false (and must not abort the remaining rules in the same fan-out).
+            if (!(ex.getCause() instanceof ExpressionException) && !isAnomalyHistoryFailure(ex)) {
                 throw ex;
             }
             log.error("Alert rule {} condition failed (not treated as false): {}", rule.id(), ex.getMessage());
@@ -399,40 +399,49 @@ public class AlertRuleService {
         if (!rule.hasNotificationChannel()) {
             return;
         }
-        Map<String, Object> context = new HashMap<>(notificationDispatchService.baseContext(
-                "alert-rule",
-                rule.id(),
-                objectPath,
-                eventName
-        ));
-        String message = resolveTriggerMessage(rule, objectPath);
-        if (message != null) {
-            context.put("triggerMessage", message);
-        }
         try {
+            Map<String, Object> context = new HashMap<>(notificationDispatchService.baseContext(
+                    "alert-rule",
+                    rule.id(),
+                    objectPath,
+                    eventName
+            ));
+            String message = resolveTriggerMessage(rule);
+            if (message != null) {
+                context.put("triggerMessage", message);
+            }
             if (rule.notificationWebhookUrl() != null && !rule.notificationWebhookUrl().isBlank()) {
                 notificationDispatchService.sendWebhook(rule.notificationWebhookUrl(), context);
             }
             if (rule.notificationEmailTarget() != null && !rule.notificationEmailTarget().isBlank()) {
                 notificationDispatchService.sendEmail(rule.notificationEmailTarget(), context);
             }
-        } catch (Exception ex) {
-            log.warn("Alert rule {} notification failed: {}", rule.id(), ex.getMessage());
+            automationTreeService.setAlertRuleLastNotificationError(rule.id(), "");
+        } catch (RuntimeException ex) {
+            String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+            log.error(
+                    "Alert rule {} notification failed (delivery is not a successful fire): {}",
+                    rule.id(),
+                    detail
+            );
+            automationTreeService.setAlertRuleLastNotificationError(rule.id(), detail);
         }
     }
 
-    private String resolveTriggerMessage(AlertRule rule, String notificationObjectPath) {
+    private String resolveTriggerMessage(AlertRule rule) {
         String template = rule.triggerMessage();
         if (template == null || template.isBlank()) {
             return null;
         }
         try {
-            // Evaluate message template against the watched target object.
             PlatformObject node = objectManager.require(rule.objectPath());
             Object result = expressionEngine.evaluateAlertCondition(template, node, rule.watchVariable());
             return result != null ? String.valueOf(result) : null;
         } catch (ExpressionException ex) {
-            return template;
+            throw new IllegalStateException(
+                    "Alert notification message failed: " + template + ": " + ex.getMessage(),
+                    ex
+            );
         }
     }
 
@@ -481,6 +490,11 @@ public class AlertRuleService {
 
     private static boolean usesAnomalyModel(AlertRule rule) {
         return rule.anomalyModelId() != null && !rule.anomalyModelId().isBlank();
+    }
+
+    private static boolean isAnomalyHistoryFailure(IllegalStateException ex) {
+        String message = ex.getMessage();
+        return message != null && message.startsWith("Anomaly history read failed");
     }
 
     /** Validate target object exists and CEL expressions compile + formal-verify. Events live on the ALERT node. */
