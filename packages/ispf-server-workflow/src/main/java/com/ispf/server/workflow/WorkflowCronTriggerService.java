@@ -57,19 +57,15 @@ public class WorkflowCronTriggerService {
         if (!objects.isInitialized()) {
             return;
         }
-        if (!leaderLock.tryAcquire(LOCK_NAME, LOCK_TTL)) {
-            return;
-        }
-        try {
-            runDueCrons();
-        } finally {
-            leaderLock.release(LOCK_NAME);
-        }
+        leaderLock.runIfLeader(LOCK_NAME, LOCK_TTL, this::runDueCrons);
     }
 
     void runDueCrons() {
         try {
             for (PlatformObject child : objects.childrenOf("root.platform.workflows")) {
+                if (!leaderLock.isHeld(LOCK_NAME)) {
+                    return;
+                }
                 if (child.type() != ObjectType.WORKFLOW) {
                     continue;
                 }
