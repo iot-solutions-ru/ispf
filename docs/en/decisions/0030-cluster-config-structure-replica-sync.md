@@ -54,6 +54,16 @@ Structure and config events defer fan-out until transaction commit (existing `*A
 
 Config variables reload from PG on follower. Optional future optimization: include `value` in NATS like telemetry.
 
+### 5. Delivery: structure events are never silently dropped
+
+Follower ingress (`NatsReplicaEventProcessor`) treats structure events differently from live snapshots:
+
+- Structure events (`CREATED`, `UPDATED`, `DELETED`) are acked only **after** the PG reload is applied. `UPDATED` coalesces per path (the superseded message is acked); other paths are never evicted to make room.
+- When a lane is full (`ISPF_NATS_REPLICA_CONSUMER_QUEUE`) or the apply fails, the message is **nak'd** with backoff (1 s → 30 s) and JetStream redelivers it. Reloads are idempotent, so redelivery is safe.
+- Core NATS cannot redeliver: such a drop is counted and logged (`droppedWithoutRedelivery`). Enable JetStream (`ISPF_NATS_JETSTREAM_ENABLED=true`) for loss-free structure sync.
+- Structure events drain before live snapshots, so telemetry cannot starve them. `EVENT_FIRED` has no follower effect and is acked without queueing.
+- Live snapshots (ADR-0029) stay last-value-wins: acked on accept; under overload another key's pending snapshot may be evicted (its next change refreshes it).
+
 ## Pipeline
 
 ```text

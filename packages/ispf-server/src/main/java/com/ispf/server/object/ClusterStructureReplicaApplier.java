@@ -26,6 +26,14 @@ public class ClusterStructureReplicaApplier {
         this.structureSubscriptionRegistry = structureSubscriptionRegistry;
     }
 
+    /** Change types {@link #apply} acts on; replica ingress acks the rest without queueing them. */
+    public static boolean appliesTo(ObjectChangeType type) {
+        return switch (type) {
+            case CREATED, UPDATED, DELETED, VARIABLE_UPDATED -> true;
+            default -> false;
+        };
+    }
+
     public void apply(ObjectChangeType type, String path, String variableName) {
         if (path == null || path.isBlank()) {
             return;
