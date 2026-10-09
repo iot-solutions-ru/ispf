@@ -66,23 +66,15 @@ public final class MimicDiagramJsonSupport {
     }
 
     public static int countElements(String diagramJson, ObjectMapper objectMapper) {
-        try {
-            ObjectNode doc = parseToObjectNode(diagramJson, objectMapper);
-            JsonNode elements = doc.get("elements");
-            return elements != null && elements.isArray() ? elements.size() : 0;
-        } catch (RuntimeException ignored) {
-            return 0;
-        }
+        ObjectNode doc = parseToObjectNode(diagramJson, objectMapper);
+        JsonNode elements = doc.get("elements");
+        return elements != null && elements.isArray() ? elements.size() : 0;
     }
 
     public static int countConnections(String diagramJson, ObjectMapper objectMapper) {
-        try {
-            ObjectNode doc = parseToObjectNode(diagramJson, objectMapper);
-            JsonNode connections = doc.get("connections");
-            return connections != null && connections.isArray() ? connections.size() : 0;
-        } catch (RuntimeException ignored) {
-            return 0;
-        }
+        ObjectNode doc = parseToObjectNode(diagramJson, objectMapper);
+        JsonNode connections = doc.get("connections");
+        return connections != null && connections.isArray() ? connections.size() : 0;
     }
 
     @SuppressWarnings("unchecked")
