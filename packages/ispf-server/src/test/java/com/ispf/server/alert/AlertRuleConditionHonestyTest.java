@@ -287,7 +287,8 @@ class AlertRuleConditionHonestyTest {
                 null,
                 null,
                 null,
-                "threshold-v1"
+                "threshold-v1",
+                null
         );
     }
 }
