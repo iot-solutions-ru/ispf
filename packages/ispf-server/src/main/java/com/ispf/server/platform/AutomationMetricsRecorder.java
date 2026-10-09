@@ -42,6 +42,11 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
     private final AtomicLong alertEvaluationsCount = new AtomicLong();
     private final AtomicLong alertFiresCount = new AtomicLong();
     private final AtomicLong correlatorTriggersCount = new AtomicLong();
+    private final AtomicLong correlatorErrorsCount = new AtomicLong();
+    private final AtomicLong correlatorDispatchDroppedCount = new AtomicLong();
+    private final AtomicLong correlatorActionDroppedCount = new AtomicLong();
+    private final List<BlockingQueue<?>> correlatorDispatchQueues = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private volatile BlockingQueue<?> correlatorActionQueue;
     private final AtomicLong objectChangeDroppedCount = new AtomicLong();
     private final AtomicLong eventJournalSyncFallbackCount = new AtomicLong();
     private final AtomicLong eventJournalFlushedCount = new AtomicLong();
@@ -83,6 +88,9 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
         Counter.builder("ispf.alert.evaluations.total").register(registry);
         Counter.builder("ispf.alert.fires.total").register(registry);
         Counter.builder("ispf.correlator.triggers.total").register(registry);
+        Counter.builder("ispf.correlator.errors.total").register(registry);
+        Counter.builder("ispf.correlator.dispatch.dropped.total").register(registry);
+        Counter.builder("ispf.correlator.action.dropped.total").register(registry);
         Counter.builder("ispf.object_change.queue.dropped.total").register(registry);
         Counter.builder("ispf.event_journal.queue_full.sync_fallback.total").register(registry);
         Counter.builder("ispf.telemetry.binding_bypass.total").register(registry);
@@ -179,6 +187,42 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
     public void recordCorrelatorTrigger() {
         correlatorTriggersCount.incrementAndGet();
         meterRegistry.ifPresent(registry -> registry.counter("ispf.correlator.triggers.total").increment());
+    }
+
+    public void recordCorrelatorError() {
+        correlatorErrorsCount.incrementAndGet();
+        meterRegistry.ifPresent(registry -> registry.counter("ispf.correlator.errors.total").increment());
+    }
+
+    public void recordCorrelatorDispatchDropped() {
+        correlatorDispatchDroppedCount.incrementAndGet();
+        meterRegistry.ifPresent(registry -> registry.counter("ispf.correlator.dispatch.dropped.total").increment());
+    }
+
+    public void recordCorrelatorActionDropped() {
+        correlatorActionDroppedCount.incrementAndGet();
+        meterRegistry.ifPresent(registry -> registry.counter("ispf.correlator.action.dropped.total").increment());
+    }
+
+    public void bindCorrelatorDispatchQueue(int lane, BlockingQueue<?> queue) {
+        correlatorDispatchQueues.add(queue);
+        meterRegistry.ifPresent(registry -> io.micrometer.core.instrument.Gauge.builder(
+                        "ispf.correlator.dispatch.queue.size",
+                        queue,
+                        BlockingQueue::size
+                )
+                .tag("lane", String.valueOf(lane))
+                .register(registry));
+    }
+
+    public void bindCorrelatorActionQueue(BlockingQueue<?> queue) {
+        correlatorActionQueue = queue;
+        meterRegistry.ifPresent(registry -> io.micrometer.core.instrument.Gauge.builder(
+                        "ispf.correlator.action.queue.size",
+                        queue,
+                        BlockingQueue::size
+                )
+                .register(registry));
     }
 
     @Override
@@ -292,6 +336,15 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
         section.put("eventsFiredTotal", eventsFiredTotal());
         section.put("alertFiresTotal", alertFiresCount.get());
         section.put("correlatorTriggersTotal", correlatorTriggersCount.get());
+        section.put("correlatorErrorsTotal", correlatorErrorsCount.get());
+        section.put("correlatorDispatchDroppedTotal", correlatorDispatchDroppedCount.get());
+        section.put("correlatorActionDroppedTotal", correlatorActionDroppedCount.get());
+        int dispatchQueueSize = 0;
+        for (BlockingQueue<?> queue : correlatorDispatchQueues) {
+            dispatchQueueSize += queue.size();
+        }
+        section.put("correlatorDispatchQueueSize", dispatchQueueSize);
+        section.put("correlatorActionQueueSize", correlatorActionQueue == null ? 0 : correlatorActionQueue.size());
         section.put("workflowStartsTotal", workflowStartsTotal());
         section.put("objectChangeQueueSize", objectChangeQueueSize());
         section.put("objectChangeDroppedTotal", objectChangeDroppedCount.get());

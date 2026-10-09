@@ -184,7 +184,7 @@ CEL-правило изменения переменной. При истинн�
 
 A = `thresholdExceeded`, B = `thresholdExceeded` (повтор), window = 60s → запуск `demo-alarm-handler`.
 
-`EventCorrelatorListener` на `EVENT_FIRED`. Хиты в таблице `correlator_hits`.
+`EventCorrelatorListener` на `EVENT_FIRED` → `CorrelatorDispatchService` (keyed-lanes по id correlator, `REQUIRES_NEW` на каждый). Хиты в `correlator_hits` / Redis window store. См. [ADR-0062](../en/decisions/0062-correlator-keyed-dispatch.md).
 
 ### API
 

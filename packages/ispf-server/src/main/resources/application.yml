@@ -441,6 +441,13 @@ ispf:
     scale-scheduler-scale-up-threshold: ${ISPF_OBJECT_CHANGE_SCALE_SCHEDULER_SCALE_UP:2}
     scale-scheduler-scale-down-steps: ${ISPF_OBJECT_CHANGE_SCALE_SCHEDULER_SCALE_DOWN:6}
     scale-scheduler-scale-check-interval-ms: ${ISPF_OBJECT_CHANGE_SCALE_SCHEDULER_SCALE_CHECK_MS:500}
+  correlator:
+    async-dispatch: ${ISPF_CORRELATOR_ASYNC_DISPATCH:true}
+    dispatch-lanes: ${ISPF_CORRELATOR_DISPATCH_LANES:8}
+    dispatch-queue-capacity: ${ISPF_CORRELATOR_DISPATCH_QUEUE_CAPACITY:10000}
+    async-actions: ${ISPF_CORRELATOR_ASYNC_ACTIONS:true}
+    action-workers: ${ISPF_CORRELATOR_ACTION_WORKERS:4}
+    action-queue-capacity: ${ISPF_CORRELATOR_ACTION_QUEUE_CAPACITY:2000}
   alert-rule:
     runtime:
       flush-enabled: ${ISPF_ALERT_RULE_RUNTIME_FLUSH_ENABLED:true}
