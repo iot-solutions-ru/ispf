@@ -5,5 +5,6 @@ public enum ObjectChangeType {
     UPDATED,
     DELETED,
     VARIABLE_UPDATED,
-    EVENT_FIRED
+    EVENT_FIRED,
+    FUNCTION_SUCCEEDED
 }

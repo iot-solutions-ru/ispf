@@ -157,6 +157,16 @@ public record ObjectChangeEvent(
         );
     }
 
+    /**
+     * A function's transaction committed. Submitted straight to this replica's object-change bus: as an application
+     * event it would also reach the synchronous listeners (WebSocket, NATS, federation).
+     */
+    public static ObjectChangeEvent functionSucceeded(String path, String functionName) {
+        return new ObjectChangeEvent(
+                ObjectChangeType.FUNCTION_SUCCEEDED, path, functionName, Instant.now(), null, null, false, true, null, false, null, null
+        );
+    }
+
     /** Follower RAM/WS refresh after NATS structure sync (ADR-0030) — no NATS re-fan-out. */
     public static ObjectChangeEvent structureReplicaIngress(ObjectChangeType type, String path) {
         return new ObjectChangeEvent(type, path, null, Instant.now(), null, null, false, false, null, true, null, null);

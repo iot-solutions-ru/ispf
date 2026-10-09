@@ -210,9 +210,10 @@ public class SqlBindingObjectService {
     }
 
     /**
-     * The bindings of {@link #refreshAfterFunction} once the function's transaction has committed. Not a new
-     * transaction: the function may have run in {@code REQUIRES_NEW} inside a caller's transaction that is suspended on
-     * this thread, and a new transaction would wait for that caller's locks.
+     * The bindings of {@link #refreshAfterFunction} once the function's transaction has committed. On a bus worker
+     * there is no transaction, so each binding's writes commit on their own. Not a new transaction: when the bus runs
+     * this on the caller's thread, the function may have run in {@code REQUIRES_NEW} inside a caller's transaction
+     * that is suspended there, and a new transaction would wait for that caller's locks.
      */
     @Transactional(propagation = Propagation.SUPPORTS)
     public void refreshAfterFunctionCommit(String objectPath, String functionName) {
