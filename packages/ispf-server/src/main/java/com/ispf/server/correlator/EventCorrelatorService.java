@@ -521,8 +521,10 @@ public class EventCorrelatorService {
             }
             return Boolean.parseBoolean(String.valueOf(result));
         } catch (ExpressionException e) {
-            log.warn("Payload filter evaluation failed: {}", e.getMessage());
-            return false;
+            throw new IllegalStateException(
+                    "Correlator payload filter failed: " + filterExpr + ": " + e.getMessage(),
+                    e
+            );
         }
     }
 
