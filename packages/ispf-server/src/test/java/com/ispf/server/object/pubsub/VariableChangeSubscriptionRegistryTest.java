@@ -197,6 +197,7 @@ class VariableChangeSubscriptionRegistryTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
     }
