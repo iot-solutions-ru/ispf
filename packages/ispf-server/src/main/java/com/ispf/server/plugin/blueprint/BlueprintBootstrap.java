@@ -328,6 +328,14 @@ public class BlueprintBootstrap {
                                 STRING_VALUE_SCHEMA,
                                 true,
                                 false, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "lastNotificationError",
+                                "Runtime: last webhook or email delivery error (empty = delivered or not sent)",
+                                "runtime",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                false, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         )
                 ),
                 List.of(),

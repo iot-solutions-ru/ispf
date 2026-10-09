@@ -399,40 +399,49 @@ public class AlertRuleService {
         if (!rule.hasNotificationChannel()) {
             return;
         }
-        Map<String, Object> context = new HashMap<>(notificationDispatchService.baseContext(
-                "alert-rule",
-                rule.id(),
-                objectPath,
-                eventName
-        ));
-        String message = resolveTriggerMessage(rule, objectPath);
-        if (message != null) {
-            context.put("triggerMessage", message);
-        }
         try {
+            Map<String, Object> context = new HashMap<>(notificationDispatchService.baseContext(
+                    "alert-rule",
+                    rule.id(),
+                    objectPath,
+                    eventName
+            ));
+            String message = resolveTriggerMessage(rule);
+            if (message != null) {
+                context.put("triggerMessage", message);
+            }
             if (rule.notificationWebhookUrl() != null && !rule.notificationWebhookUrl().isBlank()) {
                 notificationDispatchService.sendWebhook(rule.notificationWebhookUrl(), context);
             }
             if (rule.notificationEmailTarget() != null && !rule.notificationEmailTarget().isBlank()) {
                 notificationDispatchService.sendEmail(rule.notificationEmailTarget(), context);
             }
-        } catch (Exception ex) {
-            log.warn("Alert rule {} notification failed: {}", rule.id(), ex.getMessage());
+            automationTreeService.setAlertRuleLastNotificationError(rule.id(), "");
+        } catch (RuntimeException ex) {
+            String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+            log.error(
+                    "Alert rule {} notification failed (delivery is not a successful fire): {}",
+                    rule.id(),
+                    detail
+            );
+            automationTreeService.setAlertRuleLastNotificationError(rule.id(), detail);
         }
     }
 
-    private String resolveTriggerMessage(AlertRule rule, String notificationObjectPath) {
+    private String resolveTriggerMessage(AlertRule rule) {
         String template = rule.triggerMessage();
         if (template == null || template.isBlank()) {
             return null;
         }
         try {
-            // Evaluate message template against the watched target object.
             PlatformObject node = objectManager.require(rule.objectPath());
             Object result = expressionEngine.evaluateAlertCondition(template, node, rule.watchVariable());
             return result != null ? String.valueOf(result) : null;
         } catch (ExpressionException ex) {
-            return template;
+            throw new IllegalStateException(
+                    "Alert notification message failed: " + template + ": " + ex.getMessage(),
+                    ex
+            );
         }
     }
 

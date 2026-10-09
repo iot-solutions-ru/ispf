@@ -31,7 +31,8 @@ public record AlertRule(
         Instant updatedAt,
         String notificationWebhookUrl,
         String notificationEmailTarget,
-        String anomalyModelId
+        String anomalyModelId,
+        String lastNotificationError
 ) {
     public AlertPriority resolvedPriority() {
         return AlertPriority.parse(priority);
