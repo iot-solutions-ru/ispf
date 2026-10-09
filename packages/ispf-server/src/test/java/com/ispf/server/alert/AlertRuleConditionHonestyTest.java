@@ -93,6 +93,24 @@ class AlertRuleConditionHonestyTest {
     }
 
     @Test
+    void anomalyHistoryFailureIsNotTreatedAsFalse() {
+        AlertRule rule = anomalyRule();
+        when(automationTreeService.getAlertRule(RULE_ID)).thenReturn(rule);
+        when(objectManager.require(TARGET)).thenReturn(deviceWithTemperature(90.0));
+        when(anomalyAlertRuleEvaluator.evaluate(TARGET, "temperature", "threshold-v1"))
+                .thenThrow(new IllegalStateException(
+                        "Anomaly history read failed for " + TARGET + "/temperature: history store down",
+                        new IllegalStateException("history store down")
+                ));
+
+        assertThatCode(() -> service.evaluateRule(rule)).doesNotThrowAnyException();
+
+        verify(eventService, never()).fireAutomation(anyString(), anyString(), any());
+        verify(automationTreeService, never()).setAlertRuleLastConditionMet(anyString(), anyBoolean());
+        verify(automationTreeService, never()).setAlertRuleEnabled(anyString(), anyBoolean());
+    }
+
+    @Test
     void falseConditionRemainsFalseAndDoesNotFire() {
         AlertRule rule = sampleRule("false");
         PlatformObject target = deviceWithTemperature(90.0);
@@ -154,6 +172,41 @@ class AlertRuleConditionHonestyTest {
                 null,
                 null,
                 null
+        );
+    }
+
+    private static AlertRule anomalyRule() {
+        Instant now = Instant.parse("2026-09-29T00:00:00Z");
+        return new AlertRule(
+                RULE_ID,
+                "honesty",
+                TARGET,
+                "temperature",
+                "",
+                "raise",
+                null,
+                true,
+                true,
+                0,
+                false,
+                0,
+                "HIGH",
+                false,
+                null,
+                0,
+                1000,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                now,
+                now,
+                null,
+                null,
+                null,
+                "threshold-v1"
         );
     }
 }

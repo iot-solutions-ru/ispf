@@ -196,9 +196,9 @@ public class AlertRuleService {
                 }
             }
         } catch (IllegalStateException ex) {
-            // Uncomputable condition/deactivate must not look like an honest false (and must not
-            // abort evaluation of the remaining rules in the same fan-out).
-            if (!(ex.getCause() instanceof ExpressionException)) {
+            // Uncomputable condition/deactivate and a failed anomaly history read must not look
+            // like an honest false (and must not abort the remaining rules in the same fan-out).
+            if (!(ex.getCause() instanceof ExpressionException) && !isAnomalyHistoryFailure(ex)) {
                 throw ex;
             }
             log.error("Alert rule {} condition failed (not treated as false): {}", rule.id(), ex.getMessage());
@@ -481,6 +481,11 @@ public class AlertRuleService {
 
     private static boolean usesAnomalyModel(AlertRule rule) {
         return rule.anomalyModelId() != null && !rule.anomalyModelId().isBlank();
+    }
+
+    private static boolean isAnomalyHistoryFailure(IllegalStateException ex) {
+        String message = ex.getMessage();
+        return message != null && message.startsWith("Anomaly history read failed");
     }
 
     /** Validate target object exists and CEL expressions compile + formal-verify. Events live on the ALERT node. */
