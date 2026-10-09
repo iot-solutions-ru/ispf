@@ -166,6 +166,22 @@ public class ObjectEntityMapper {
         }
     }
 
+    /**
+     * Same parse as {@link #readDataRecord(String)}, but a non-blank value that cannot be read
+     * fails with the parser text instead of a null record.
+     */
+    public DataRecord readDataRecordStrict(String json) {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(json, DataRecord.class);
+        } catch (JacksonException e) {
+            String detail = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            throw new IllegalArgumentException(detail, e);
+        }
+    }
+
     public String writeDataRecord(DataRecord record) {
         return writeJson(record);
     }

@@ -526,15 +526,20 @@ public class EventCorrelatorService {
         }
     }
 
+    private static IllegalStateException payloadParseFailed(Exception e) {
+        String detail = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+        return new IllegalStateException("Correlator payload parse failed: " + detail, e);
+    }
+
     private Map<String, Object> payloadMap(EventJournalRecord record) {
         if (record.payloadJson() == null || record.payloadJson().isBlank()) {
             return Map.of();
         }
         try {
-            DataRecord dataRecord = entityMapper.readDataRecord(record.payloadJson());
+            DataRecord dataRecord = entityMapper.readDataRecordStrict(record.payloadJson());
             return payloadMap(dataRecord);
         } catch (Exception e) {
-            return Map.of();
+            throw payloadParseFailed(e);
         }
     }
 
@@ -543,10 +548,10 @@ public class EventCorrelatorService {
             return Map.of();
         }
         try {
-            DataRecord record = entityMapper.readDataRecord(entity.getPayloadJson());
+            DataRecord record = entityMapper.readDataRecordStrict(entity.getPayloadJson());
             return payloadMap(record);
         } catch (Exception e) {
-            return Map.of();
+            throw payloadParseFailed(e);
         }
     }
 
