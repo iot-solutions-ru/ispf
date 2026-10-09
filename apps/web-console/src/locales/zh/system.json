@@ -245,6 +245,7 @@
   "metrics.telemetryCoalesceDropsTotal": "Coalesce drops",
   "metrics.telemetryBindingBypassTotal": "Binding bypass",
   "metrics.telemetryHistorianOnlyTotal": "Historian-only",
+  "metrics.sqlBindingRefreshFailuresTotal": "SQL 绑定刷新失败",
   "metrics.objectChangeQueueSize": "Object-change queue",
   "metrics.eventJournalQueueSize": "Event journal queue",
   "metrics.variableHistoryQueueSize": "Variable history queue",

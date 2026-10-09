@@ -30,7 +30,7 @@ const METRIC_KEYS = [
   "alertRules", "eventCorrelators", "applicationFunctions", "applicationFunctionVersions",
   "platformSchedules", "platformSchedulesEnabled",
   "telemetryCoalesceDropsTotal", "telemetryBindingBypassTotal", "telemetryHistorianOnlyTotal",
-  "objectChangeQueueSize", "eventJournalQueueSize", "variableHistoryQueueSize",
+  "sqlBindingRefreshFailuresTotal", "objectChangeQueueSize", "eventJournalQueueSize", "variableHistoryQueueSize",
   "objectChangeDroppedTotal", "objectChangeProcessedTotal", "eventsFiredTotal", "alertFiresTotal",
   "correlatorTriggersTotal", "workflowStartsTotal", "eventJournalFlushedTotal",
   "eventJournalSyncFallbackTotal", "variableHistoryFlushedTotal", "variableHistorySyncFallbackTotal",

@@ -8,6 +8,7 @@ import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.binding.BindingInvokeAuditService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectEntityMapper;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,6 +55,8 @@ class ApplicationSqlBindingServiceMissingTargetTest {
     ApplicationSqlBindingEventIndex sqlBindingEventIndex;
     @Mock
     ObjectTree objectTree;
+    @Mock
+    AutomationMetricsRecorder metricsRecorder;
 
     private ApplicationSqlBindingService service;
 
@@ -67,7 +70,8 @@ class ApplicationSqlBindingServiceMissingTargetTest {
                 alertRuleService,
                 bindingAuditService,
                 entityMapper,
-                sqlBindingEventIndex
+                sqlBindingEventIndex,
+                metricsRecorder
         );
     }
 
