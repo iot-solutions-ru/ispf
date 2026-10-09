@@ -667,8 +667,6 @@ export function FormFieldsEditor({
         .filter(Boolean),
     ),
   ].sort((a, b) => a.localeCompare(b));
-  const types =
-    mode === "function-form" ? FUNCTION_FORM_FIELD_TYPES : INPUT_FORM_FIELD_TYPES;
   const namesLocked = mode === "function-form";
   const namesDisabled = namesLocked && (!path || !fnName || inputsQuery.isLoading);
 
@@ -711,7 +709,7 @@ export function FormFieldsEditor({
               </MiniField>
               <FormFieldTypeSelect
                 value={field.type}
-                types={types}
+                types={FUNCTION_FORM_FIELD_TYPES}
                 onChange={(type) => {
                   const next = [...fields];
                   next[index] = { ...next[index], type };
@@ -787,7 +785,7 @@ export function FormFieldsEditor({
             </MiniField>
             <FormFieldTypeSelect
               value={field.type}
-              types={types}
+              types={INPUT_FORM_FIELD_TYPES}
               onChange={(type) => {
                 const next = [...fields];
                 next[index] = { ...next[index], type };
