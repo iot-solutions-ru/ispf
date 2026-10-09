@@ -11,6 +11,7 @@ import com.ispf.server.datasource.DataSourceSqlSession;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.slf4j.Logger;
@@ -56,17 +57,20 @@ public class SqlBindingObjectService {
     private final SystemObjectStructureService structureService;
     private final DataSourceSqlSession dataSourceSqlSession;
     private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
+    private final AutomationMetricsRecorder metricsRecorder;
 
     public SqlBindingObjectService(
             ObjectManager objectManager,
             SystemObjectStructureService structureService,
             DataSourceSqlSession dataSourceSqlSession,
-            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard,
+            AutomationMetricsRecorder metricsRecorder
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
         this.dataSourceSqlSession = dataSourceSqlSession;
         this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
+        this.metricsRecorder = metricsRecorder;
     }
 
     @Transactional
@@ -264,36 +268,16 @@ public class SqlBindingObjectService {
         }
         try {
             tenantLocalDataAccessGuard.requireAllowedDataSourcePath(binding.dataSourcePath());
-            Object[] extracted = new Object[1];
-            dataSourceSqlSession.runWithDataSource(binding.dataSourcePath(), jdbc -> {
-                ApplicationSchemaSupport.validateSelectQuery(binding.query(), "Binding query");
-                List<Map<String, Object>> rows = jdbc.queryForList(binding.query());
-                if (rows.isEmpty()) {
-                    extracted[0] = null;
-                    return;
-                }
-                Map<String, Object> row = rows.get(0);
-                String field = binding.valueField() != null && !binding.valueField().isBlank()
-                        ? binding.valueField()
-                        : "value";
-                Object value = row.get(field);
-                if (value == null) {
-                    for (Map.Entry<String, Object> entry : row.entrySet()) {
-                        if (entry.getKey().equalsIgnoreCase(field)) {
-                            value = entry.getValue();
-                            break;
-                        }
-                    }
-                }
-                extracted[0] = value;
-            });
-            Object value = extracted[0];
-            double numeric = value instanceof Number number ? number.doubleValue() : 0.0;
-            objectManager.setSystemVariableValue(
-                    binding.targetObjectPath(),
-                    binding.variable(),
-                    DataRecord.single(DOUBLE_SCHEMA, Map.of("value", numeric))
-            );
+            SqlBindingValues.Extracted extracted = queryValue(binding);
+            if (extracted.ok()) {
+                objectManager.setSystemVariableValue(
+                        binding.targetObjectPath(),
+                        binding.variable(),
+                        DataRecord.single(DOUBLE_SCHEMA, Map.of("value", extracted.value()))
+                );
+            } else {
+                markBadQuality(binding, extracted);
+            }
             setString(binding.path(), "lastRefreshedAt", Instant.now().toString());
         } catch (ObjectNotFoundException ex) {
             // Orphan target must not abort the refresh fan-out for remaining bindings (H4 parity).
@@ -324,6 +308,67 @@ public class SqlBindingObjectService {
             }
             throw ex;
         }
+    }
+
+    private SqlBindingValues.Extracted queryValue(BindingDefinition binding) {
+        String field = binding.valueField() != null && !binding.valueField().isBlank()
+                ? binding.valueField()
+                : "value";
+        SqlBindingValues.Extracted[] extracted = new SqlBindingValues.Extracted[1];
+        try {
+            dataSourceSqlSession.runWithDataSource(binding.dataSourcePath(), jdbc -> {
+                ApplicationSchemaSupport.validateSelectQuery(binding.query(), "Binding query");
+                List<Map<String, Object>> rows = jdbc.queryForList(binding.query());
+                if (rows.isEmpty()) {
+                    extracted[0] = SqlBindingValues.Extracted.noData("query returned no rows");
+                    return;
+                }
+                Map<String, Object> row = rows.get(0);
+                String column = findColumn(row, field);
+                extracted[0] = column != null
+                        ? SqlBindingValues.toDouble(field, row.get(column))
+                        : SqlBindingValues.Extracted.noData("column '" + field + "' not in result");
+            });
+        } catch (RuntimeException ex) {
+            metricsRecorder.recordSqlBindingFailure(SqlBindingValues.Failure.QUERY_FAILED);
+            throw ex;
+        }
+        return extracted[0];
+    }
+
+    private static String findColumn(Map<String, Object> row, String field) {
+        if (row.containsKey(field)) {
+            return field;
+        }
+        for (String column : row.keySet()) {
+            if (column.equalsIgnoreCase(field)) {
+                return column;
+            }
+        }
+        return null;
+    }
+
+    private void markBadQuality(BindingDefinition binding, SqlBindingValues.Extracted extracted) {
+        metricsRecorder.recordSqlBindingFailure(extracted.failure());
+        DataRecord previous = objectManager.require(binding.targetObjectPath())
+                .getVariable(binding.variable())
+                .flatMap(Variable::value)
+                .orElse(null);
+        if (SqlBindingValues.isBadQuality(previous)) {
+            return;
+        }
+        log.warn(
+                "SQL binding {} returned no usable value ({}); {} / {} keeps its last value with quality=BAD",
+                binding.path(),
+                extracted.detail(),
+                binding.targetObjectPath(),
+                binding.variable()
+        );
+        objectManager.setSystemVariableValue(
+                binding.targetObjectPath(),
+                binding.variable(),
+                SqlBindingValues.badQuality(previous, FieldType.DOUBLE)
+        );
     }
 
     static boolean isMissingVariable(IllegalArgumentException ex) {

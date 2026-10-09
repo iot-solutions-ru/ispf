@@ -245,6 +245,7 @@
   "metrics.telemetryCoalesceDropsTotal": "Отбросы coalesce",
   "metrics.telemetryBindingBypassTotal": "Обход bindings",
   "metrics.telemetryHistorianOnlyTotal": "Только historian",
+  "metrics.sqlBindingRefreshFailuresTotal": "Сбои обновления SQL-биндингов",
   "metrics.objectChangeQueueSize": "Очередь object-change",
   "metrics.eventJournalQueueSize": "Очередь журнала событий",
   "metrics.variableHistoryQueueSize": "Очередь истории переменных",

@@ -216,5 +216,5 @@ For **variable** or **event** targets: choose **Effect type**, then either a loc
 
 ## Not to be confused with
 
-- **SQL bindings** (`SqlBindingObjectService` / bundle `bindings[]`) — separate scheduler, not object binding rules. Prefer **blueprint `sqlBindings`** with `${code}` / `${self.path}` parameters when many instances share one query shape (see [blueprints](blueprints.md) § Parametrized SHAPE).
+- **SQL bindings** (`SqlBindingObjectService` / bundle `bindings[]`) — separate scheduler, not object binding rules. Prefer **blueprint `sqlBindings`** with `${code}` / `${self.path}` parameters when many instances share one query shape (see [blueprints](blueprints.md) § Parametrized SHAPE). A refresh with no usable value (no rows, SQL `NULL`, missing column, non-numeric value) keeps the last value marked `quality=BAD` instead of writing `0`; `ispf.sql_binding.refresh_failures.total{reason}` counts it.
 - **Alert rules**, correlators, workflows — separate subsystems; blueprint `alertRules` templates materialize alert nodes with an absolute target object path.

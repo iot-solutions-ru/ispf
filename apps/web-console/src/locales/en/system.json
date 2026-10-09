@@ -355,6 +355,7 @@
   "metrics.telemetryCoalesceDropsTotal": "Coalesce drops",
   "metrics.telemetryBindingBypassTotal": "Binding bypass",
   "metrics.telemetryHistorianOnlyTotal": "Historian-only writes",
+  "metrics.sqlBindingRefreshFailuresTotal": "SQL binding refresh failures",
   "metrics.objectChangeQueueSize": "Object-change queue",
   "metrics.eventJournalQueueSize": "Event journal queue",
   "metrics.variableHistoryQueueSize": "Variable history queue",

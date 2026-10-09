@@ -12,8 +12,10 @@ import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.expression.BindingExpressionEvaluator;
 import com.ispf.server.binding.BindingInvokeAuditService;
+import com.ispf.server.binding.SqlBindingValues;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectEntityMapper;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -49,6 +51,7 @@ public class ApplicationSqlBindingService {
     private final BindingInvokeAuditService bindingAuditService;
     private final ObjectEntityMapper entityMapper;
     private final ApplicationSqlBindingEventIndex sqlBindingEventIndex;
+    private final AutomationMetricsRecorder metricsRecorder;
 
     public ApplicationSqlBindingService(
             ApplicationSqlBindingStore store,
@@ -58,7 +61,8 @@ public class ApplicationSqlBindingService {
             @Lazy AlertRuleService alertRuleService,
             BindingInvokeAuditService bindingAuditService,
             ObjectEntityMapper entityMapper,
-            ApplicationSqlBindingEventIndex sqlBindingEventIndex
+            ApplicationSqlBindingEventIndex sqlBindingEventIndex,
+            AutomationMetricsRecorder metricsRecorder
     ) {
         this.store = store;
         this.schemaSession = schemaSession;
@@ -68,6 +72,7 @@ public class ApplicationSqlBindingService {
         this.bindingAuditService = bindingAuditService;
         this.entityMapper = entityMapper;
         this.sqlBindingEventIndex = sqlBindingEventIndex;
+        this.metricsRecorder = metricsRecorder;
     }
 
     public void deploy(String appId, DeploySqlBindingRequest request) {
@@ -162,41 +167,45 @@ public class ApplicationSqlBindingService {
         DataRecord previous = null;
         DataRecord next = null;
         try {
-            String schemaName = resolveSchemaName(binding.appId());
-            Object[] extractedHolder = new Object[1];
-            schemaSession.runInSchema(schemaName, () -> {
-                ApplicationSchemaSupport.validateSelectQuery(binding.querySql(), "Binding query");
-                List<Map<String, Object>> rows = dataStore.queryForList(binding.querySql());
-                if (rows.isEmpty()) {
-                    extractedHolder[0] = 0;
-                    return;
-                }
-                Map<String, Object> row = normalizeRow(rows.getFirst());
-                String field = binding.valueField() != null ? binding.valueField() : "value";
-                Object value = row.get(field.toLowerCase(Locale.ROOT));
-                if (value == null) {
-                    value = row.get(field);
-                }
-                if (value == null && row.size() == 1) {
-                    value = row.values().iterator().next();
-                }
-                extractedHolder[0] = value;
-            });
-            DataRecord record = toValueRecord(extractedHolder[0], binding);
-            next = record;
+            FieldType fieldType = resolveValueFieldType(binding);
+            SqlBindingValues.Extracted extracted = queryValue(binding, fieldType);
             previous = schemaSession.callWithPlatformCatalog(() ->
                     objectManager.tree().findByPath(binding.objectPath())
                             .flatMap(node -> node.getVariable(binding.variableName()))
                             .flatMap(Variable::value)
                             .orElse(null));
+            DataRecord record = extracted.ok()
+                    ? toValueRecord(extracted.value(), fieldType)
+                    : SqlBindingValues.badQuality(previous, fieldType);
+            next = record;
             changed = !BindingExpressionEvaluator.recordsEqual(previous, record);
-            schemaSession.runWithPlatformCatalog(() ->
-                    objectManager.setSystemVariableValue(binding.objectPath(), binding.variableName(), record)
-            );
+            if (!extracted.ok()) {
+                success = false;
+                error = extracted.detail();
+                metricsRecorder.recordSqlBindingFailure(extracted.failure());
+                if (changed) {
+                    log.warn(
+                            "Application SQL binding {} returned no usable value ({}); {} / {} keeps its last value"
+                                    + " with quality=BAD",
+                            binding.id(),
+                            extracted.detail(),
+                            binding.objectPath(),
+                            binding.variableName()
+                    );
+                }
+            }
+            boolean write = extracted.ok() || changed;
+            if (write) {
+                schemaSession.runWithPlatformCatalog(() ->
+                        objectManager.setSystemVariableValue(binding.objectPath(), binding.variableName(), record)
+                );
+            }
             store.markRefreshed(binding.id());
-            schemaSession.runWithPlatformCatalog(() ->
-                    alertRuleService.processVariableChange(binding.objectPath(), binding.variableName())
-            );
+            if (write) {
+                schemaSession.runWithPlatformCatalog(() ->
+                        alertRuleService.processVariableChange(binding.objectPath(), binding.variableName())
+                );
+            }
         } catch (ObjectNotFoundException ex) {
             success = false;
             changed = false;
@@ -267,42 +276,51 @@ public class ApplicationSqlBindingService {
         return normalized;
     }
 
-    private static DataRecord toValueRecord(Object value, ApplicationSqlBindingStore.SqlBinding binding) {
-        com.ispf.core.model.FieldType fieldType = resolveValueFieldType(binding);
+    private SqlBindingValues.Extracted queryValue(ApplicationSqlBindingStore.SqlBinding binding, FieldType fieldType) {
+        String schemaName = resolveSchemaName(binding.appId());
+        String field = binding.valueField() != null ? binding.valueField() : "value";
+        SqlBindingValues.Extracted[] extracted = new SqlBindingValues.Extracted[1];
+        try {
+            schemaSession.runInSchema(schemaName, () -> {
+                ApplicationSchemaSupport.validateSelectQuery(binding.querySql(), "Binding query");
+                List<Map<String, Object>> rows = dataStore.queryForList(binding.querySql());
+                if (rows.isEmpty()) {
+                    extracted[0] = SqlBindingValues.Extracted.noData("query returned no rows");
+                    return;
+                }
+                Map<String, Object> row = normalizeRow(rows.getFirst());
+                String column = field.toLowerCase(Locale.ROOT);
+                if (!row.containsKey(column) && row.size() == 1) {
+                    column = row.keySet().iterator().next();
+                }
+                extracted[0] = row.containsKey(column)
+                        ? convert(field, row.get(column), fieldType)
+                        : SqlBindingValues.Extracted.noData("column '" + field + "' not in result");
+            });
+        } catch (RuntimeException ex) {
+            metricsRecorder.recordSqlBindingFailure(SqlBindingValues.Failure.QUERY_FAILED);
+            throw ex;
+        }
+        return extracted[0];
+    }
+
+    private static SqlBindingValues.Extracted convert(String field, Object value, FieldType fieldType) {
         return switch (fieldType) {
-            case STRING -> DataRecord.single(
-                    DataSchema.builder("sqlBindingValue").field("value", FieldType.STRING).build(),
-                    Map.of("value", value != null ? String.valueOf(value) : "")
+            case STRING -> value != null
+                    ? SqlBindingValues.Extracted.of(String.valueOf(value))
+                    : SqlBindingValues.Extracted.noData("column '" + field + "' is NULL");
+            case INTEGER, LONG -> SqlBindingValues.toLong(field, value);
+            default -> SqlBindingValues.toDouble(field, value);
+        };
+    }
+
+    private static DataRecord toValueRecord(Object value, FieldType fieldType) {
+        return switch (fieldType) {
+            case STRING, INTEGER, LONG -> DataRecord.single(
+                    DataSchema.builder("sqlBindingValue").field("value", fieldType).build(),
+                    Map.of("value", value)
             );
-            case INTEGER, LONG -> {
-                long numeric = 0L;
-                if (value instanceof Number number) {
-                    numeric = number.longValue();
-                } else if (value != null) {
-                    try {
-                        numeric = Long.parseLong(value.toString());
-                    } catch (NumberFormatException ignored) {
-                        numeric = 0L;
-                    }
-                }
-                yield DataRecord.single(
-                        DataSchema.builder("sqlBindingValue").field("value", fieldType).build(),
-                        Map.of("value", numeric)
-                );
-            }
-            default -> {
-                double numeric = 0.0;
-                if (value instanceof Number number) {
-                    numeric = number.doubleValue();
-                } else if (value != null) {
-                    try {
-                        numeric = Double.parseDouble(value.toString());
-                    } catch (NumberFormatException ignored) {
-                        numeric = 0.0;
-                    }
-                }
-                yield DataRecord.single(SINGLE_VALUE_SCHEMA, Map.of("value", numeric));
-            }
+            default -> DataRecord.single(SINGLE_VALUE_SCHEMA, Map.of("value", value));
         };
     }
 
@@ -318,10 +336,6 @@ public class ApplicationSqlBindingService {
             return FieldType.STRING;
         }
         return FieldType.DOUBLE;
-    }
-
-    private static DataRecord toValueRecord(Object value) {
-        return toValueRecord(value, null);
     }
 
     private String resolveSchemaName(String appId) {
