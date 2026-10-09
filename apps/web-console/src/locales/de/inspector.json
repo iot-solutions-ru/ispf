@@ -123,6 +123,8 @@
   "blueprint.upgradeNoVersion": "kein Version-Tag",
   "blueprint.variablesColumn": "Variablen",
   "blueprint.variablesTitle": "Variablen ({{count}})",
+  "blueprint.addObjectVariablePlaceholder": "Objektvariable",
+  "blueprint.addObjectVariableEmpty": "Legen Sie die Variable zuerst in den Eigenschaften dieses Blueprint-Objekts an. Die Definition bietet nur diese Variablen an.",
   "brick.applySuggestion": "Vorschlag anwenden",
   "brick.classUri": "Brick-Klassen-URI",
   "brick.classUriPlaceholder": "https://brickschema.org/schema/Brick#Sensor",
