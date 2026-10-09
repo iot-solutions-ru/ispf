@@ -179,28 +179,40 @@ public class EventCorrelatorService {
 
         Instant now = Instant.now();
         for (EventCorrelator correlator : correlators.values()) {
-            // Alert raises fire on the ALERT node; payload.targetObjectPath carries the watched device.
-            Optional<String> actionPath = resolveCorrelatorActionPath(correlator, objectPath, eventName);
-            if (actionPath.isEmpty()) {
-                continue;
-            }
-            if (isInCooldown(correlator, now)) {
-                continue;
-            }
-            if (!passesPayloadFilter(correlator, objectPath, eventName)) {
-                continue;
-            }
-            boolean triggered = switch (correlator.patternType()) {
-                case COUNT -> processCountPattern(correlator, objectPath, eventName, now);
-                case SEQUENCE -> processSequencePattern(correlator, objectPath, eventName, now);
-                case EVENT_CHAIN -> processEventChainPattern(correlator, objectPath, eventName, now);
-                case WINDOW -> processWindowPattern(correlator, objectPath, eventName, now);
-            };
-            if (triggered) {
-                automationMetricsRecorder.recordCorrelatorTrigger();
-                executeAction(correlator, actionPath.get());
-                automationTreeService.setCorrelatorLastTriggeredAt(correlator.id(), now);
-                windowStore.clearCorrelator(correlator.id());
+            try {
+                // Alert raises fire on the ALERT node; payload.targetObjectPath carries the watched device.
+                Optional<String> actionPath = resolveCorrelatorActionPath(correlator, objectPath, eventName);
+                if (actionPath.isEmpty()) {
+                    continue;
+                }
+                if (isInCooldown(correlator, now)) {
+                    continue;
+                }
+                if (!passesPayloadFilter(correlator, objectPath, eventName)) {
+                    continue;
+                }
+                boolean triggered = switch (correlator.patternType()) {
+                    case COUNT -> processCountPattern(correlator, objectPath, eventName, now);
+                    case SEQUENCE -> processSequencePattern(correlator, objectPath, eventName, now);
+                    case EVENT_CHAIN -> processEventChainPattern(correlator, objectPath, eventName, now);
+                    case WINDOW -> processWindowPattern(correlator, objectPath, eventName, now);
+                };
+                if (triggered) {
+                    automationMetricsRecorder.recordCorrelatorTrigger();
+                    executeAction(correlator, actionPath.get());
+                    automationTreeService.setCorrelatorLastTriggeredAt(correlator.id(), now);
+                    windowStore.clearCorrelator(correlator.id());
+                }
+            } catch (RuntimeException e) {
+                // Fail one correlator loudly without aborting siblings on the same event.
+                log.error(
+                        "Correlator {} failed for event {} on {}: {}",
+                        correlator.id(),
+                        eventName,
+                        objectPath,
+                        e.getMessage(),
+                        e
+                );
             }
         }
         windowStore.purgeOlderThan(now.minus(1, ChronoUnit.HOURS));
@@ -521,9 +533,16 @@ public class EventCorrelatorService {
             }
             return Boolean.parseBoolean(String.valueOf(result));
         } catch (ExpressionException e) {
-            log.warn("Payload filter evaluation failed: {}", e.getMessage());
-            return false;
+            throw new IllegalStateException(
+                    "Correlator payload filter failed: " + filterExpr + ": " + e.getMessage(),
+                    e
+            );
         }
+    }
+
+    private static IllegalStateException payloadParseFailed(Exception e) {
+        String detail = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+        return new IllegalStateException("Correlator payload parse failed: " + detail, e);
     }
 
     private Map<String, Object> payloadMap(EventJournalRecord record) {
@@ -531,10 +550,10 @@ public class EventCorrelatorService {
             return Map.of();
         }
         try {
-            DataRecord dataRecord = entityMapper.readDataRecord(record.payloadJson());
+            DataRecord dataRecord = entityMapper.readDataRecordStrict(record.payloadJson());
             return payloadMap(dataRecord);
         } catch (Exception e) {
-            return Map.of();
+            throw payloadParseFailed(e);
         }
     }
 
@@ -543,10 +562,10 @@ public class EventCorrelatorService {
             return Map.of();
         }
         try {
-            DataRecord record = entityMapper.readDataRecord(entity.getPayloadJson());
+            DataRecord record = entityMapper.readDataRecordStrict(entity.getPayloadJson());
             return payloadMap(record);
         } catch (Exception e) {
-            return Map.of();
+            throw payloadParseFailed(e);
         }
     }
 
