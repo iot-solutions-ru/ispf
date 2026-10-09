@@ -6,6 +6,8 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.server.config.ClusterProperties;
+import com.ispf.server.spi.LeaderLock;
 import com.ispf.server.spi.WorkflowObjectAccess;
 import com.ispf.server.spi.WorkflowStartTrigger;
 import org.junit.jupiter.api.Test;
@@ -37,6 +39,10 @@ class WorkflowCronDueTest {
     private WorkflowService workflowService;
     @Mock
     private WorkflowDeadLetterService deadLetterService;
+    @Mock
+    private LeaderLock leaderLock;
+    @Mock
+    private ClusterProperties clusterProperties;
 
     @Test
     void everyFiveMinutesIsDueAfterTheInterval() {
@@ -62,7 +68,7 @@ class WorkflowCronDueTest {
         when(due.path()).thenReturn(PATH + "-5");
         when(objects.childrenOf("root.platform.workflows")).thenReturn(List.of(due, fresh));
 
-        new WorkflowCronTriggerService(objects, workflowService, deadLetterService).poll();
+        leaderService().poll();
 
         verify(workflowService).runWorkflow(
                 eq(PATH + "-5"),
@@ -84,9 +90,15 @@ class WorkflowCronDueTest {
         PlatformObject node = workflow("not-a-cron", null);
         when(objects.childrenOf("root.platform.workflows")).thenReturn(List.of(node));
 
-        new WorkflowCronTriggerService(objects, workflowService, deadLetterService).poll();
+        leaderService().poll();
 
         verify(workflowService, never()).runWorkflow(any(), any(), any(), any());
+    }
+
+    private WorkflowCronTriggerService leaderService() {
+        when(clusterProperties.isSchedulerActive()).thenReturn(true);
+        when(leaderLock.tryAcquire(eq(WorkflowCronTriggerService.LOCK_NAME), any())).thenReturn(true);
+        return new WorkflowCronTriggerService(objects, workflowService, deadLetterService, leaderLock, clusterProperties);
     }
 
     private PlatformObject workflow(String cron, String lastRunAt) {
