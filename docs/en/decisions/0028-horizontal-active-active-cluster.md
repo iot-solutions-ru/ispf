@@ -57,7 +57,7 @@ Scheduler leader leases (`LeaderLock.runIfLeader`):
 - **Sticky.** The leader keeps the lease between ticks instead of releasing it after each one. Leadership moves only when the leader shuts down (the lease is released at once), dies (the lease lapses within one TTL), or stops ticking (within two TTLs).
 - **Renewed by the holder.** A background thread renews held leases every TTL/3, also while a long tick runs, so a tick that outlives the TTL keeps its lease.
 - **Clock skew.** Expiry times come from replica clocks. A renewed lease can be taken only by a replica whose clock runs more than 2/3 TTL ahead.
-- **Stop on loss.** `LeaderLock.isHeld` turns false 2/3 TTL after the last successful renewal, judged on the holder's monotonic clock. Long loops (process programs, periodic alert rules) check it between items and stop instead of overlapping with a new leader.
+- **Stop on loss.** `LeaderLock.isHeld` turns false 2/3 TTL after the last successful renewal, judged on the holder's monotonic clock. Long loops (process programs, periodic alert rules, workflow cron triggers) check it between items and stop instead of overlapping with a new leader.
 - Lease SQL runs outside the caller's transaction, so other replicas see the row at once.
 - One-shot locks (`tryAcquire` / `release`, e.g. fixture bootstrap) keep TTL-bounded semantics without background renewal.
 

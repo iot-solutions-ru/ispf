@@ -97,7 +97,11 @@ class WorkflowCronDueTest {
 
     private WorkflowCronTriggerService leaderService() {
         when(clusterProperties.isSchedulerActive()).thenReturn(true);
-        when(leaderLock.tryAcquire(eq(WorkflowCronTriggerService.LOCK_NAME), any())).thenReturn(true);
+        when(leaderLock.runIfLeader(eq(WorkflowCronTriggerService.LOCK_NAME), any(), any())).thenAnswer(invocation -> {
+            invocation.<Runnable>getArgument(2).run();
+            return true;
+        });
+        when(leaderLock.isHeld(WorkflowCronTriggerService.LOCK_NAME)).thenReturn(true);
         return new WorkflowCronTriggerService(objects, workflowService, deadLetterService, leaderLock, clusterProperties);
     }
 
