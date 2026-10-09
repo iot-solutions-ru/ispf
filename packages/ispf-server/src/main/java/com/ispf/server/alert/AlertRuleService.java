@@ -35,6 +35,12 @@ public class AlertRuleService {
     /** Rule ids already soft-disabled after a missing watch/ALERT target; skip re-evaluation for JVM lifetime. */
     private final Set<String> disabledOrphanRuleIds = ConcurrentHashMap.newKeySet();
 
+    /**
+     * Object-change workers, the poll scheduler and SQL refreshes can reach one rule at the same time; its edge,
+     * sustain and latch state is read, decided on and written back as one step per rule.
+     */
+    private final Map<String, Object> ruleLocks = new ConcurrentHashMap<>();
+
     private final AutomationTreeService automationTreeService;
     private final ObjectManager objectManager;
     private final ExpressionEngine expressionEngine;
@@ -182,6 +188,13 @@ public class AlertRuleService {
         if (disabledOrphanRuleIds.contains(rule.id())) {
             return;
         }
+        synchronized (ruleLocks.computeIfAbsent(rule.id(), ignored -> new Object())) {
+            evaluateIsolated(rule);
+        }
+    }
+
+    /** A failing rule is logged and counted; it must not abort the remaining rules of the same fan-out. */
+    private void evaluateIsolated(AlertRule rule) {
         try {
             evaluateRuleInternal(rule);
         } catch (ObjectNotFoundException ex) {
@@ -195,13 +208,15 @@ public class AlertRuleService {
                     log.warn("Could not disable alert rule {}: {}", rule.id(), disableEx.getMessage());
                 }
             }
-        } catch (IllegalStateException ex) {
-            // Uncomputable condition/deactivate and a failed anomaly history read must not look
-            // like an honest false (and must not abort the remaining rules in the same fan-out).
-            if (!(ex.getCause() instanceof ExpressionException) && !isAnomalyHistoryFailure(ex)) {
-                throw ex;
+        } catch (RuntimeException ex) {
+            if (isConditionFailure(ex)) {
+                // Uncomputable condition/deactivate and a failed anomaly history read must not look like an honest false.
+                automationMetricsRecorder.recordAlertRuleFailure(AutomationMetricsRecorder.AlertRuleFailure.CONDITION);
+                log.error("Alert rule {} condition failed (not treated as false): {}", rule.id(), ex.getMessage());
+                return;
             }
-            log.error("Alert rule {} condition failed (not treated as false): {}", rule.id(), ex.getMessage());
+            automationMetricsRecorder.recordAlertRuleFailure(AutomationMetricsRecorder.AlertRuleFailure.ERROR);
+            log.error("Alert rule {} evaluation failed", rule.id(), ex);
         }
     }
 
@@ -490,6 +505,11 @@ public class AlertRuleService {
 
     private static boolean usesAnomalyModel(AlertRule rule) {
         return rule.anomalyModelId() != null && !rule.anomalyModelId().isBlank();
+    }
+
+    private static boolean isConditionFailure(RuntimeException ex) {
+        return ex instanceof IllegalStateException state
+                && (state.getCause() instanceof ExpressionException || isAnomalyHistoryFailure(state));
     }
 
     private static boolean isAnomalyHistoryFailure(IllegalStateException ex) {

@@ -37,10 +37,27 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
         }
     }
 
+    public enum AlertRuleFailure {
+        /** Condition or deactivate expression not computable, or anomaly history unreadable. */
+        CONDITION("condition"),
+        ERROR("error");
+
+        private final String tag;
+
+        AlertRuleFailure(String tag) {
+            this.tag = tag;
+        }
+
+        String tag() {
+            return tag;
+        }
+    }
+
     private final Optional<MeterRegistry> meterRegistry;
     private final AtomicLong objectChangeProcessed = new AtomicLong();
     private final AtomicLong alertEvaluationsCount = new AtomicLong();
     private final AtomicLong alertFiresCount = new AtomicLong();
+    private final AtomicLong alertRuleFailuresCount = new AtomicLong();
     private final AtomicLong correlatorTriggersCount = new AtomicLong();
     private final AtomicLong correlatorErrorsCount = new AtomicLong();
     private final AtomicLong correlatorDispatchDroppedCount = new AtomicLong();
@@ -87,6 +104,11 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
     private void registerMeters(MeterRegistry registry) {
         Counter.builder("ispf.alert.evaluations.total").register(registry);
         Counter.builder("ispf.alert.fires.total").register(registry);
+        for (AlertRuleFailure failure : AlertRuleFailure.values()) {
+            Counter.builder("ispf.alert.rule_failures.total")
+                    .tag("reason", failure.tag())
+                    .register(registry);
+        }
         Counter.builder("ispf.correlator.triggers.total").register(registry);
         Counter.builder("ispf.correlator.errors.total").register(registry);
         Counter.builder("ispf.correlator.dispatch.dropped.total").register(registry);
@@ -182,6 +204,16 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
     public void recordAlertFire() {
         alertFiresCount.incrementAndGet();
         meterRegistry.ifPresent(registry -> registry.counter("ispf.alert.fires.total").increment());
+    }
+
+    /** Alert rule evaluation that failed; the remaining rules of the same fan-out still run. */
+    public void recordAlertRuleFailure(AlertRuleFailure failure) {
+        alertRuleFailuresCount.incrementAndGet();
+        meterRegistry.ifPresent(registry -> registry.counter(
+                "ispf.alert.rule_failures.total",
+                "reason",
+                failure.tag()
+        ).increment());
     }
 
     public void recordCorrelatorTrigger() {
@@ -335,6 +367,7 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
         Map<String, Object> section = new LinkedHashMap<>();
         section.put("eventsFiredTotal", eventsFiredTotal());
         section.put("alertFiresTotal", alertFiresCount.get());
+        section.put("alertRuleFailuresTotal", alertRuleFailuresCount.get());
         section.put("correlatorTriggersTotal", correlatorTriggersCount.get());
         section.put("correlatorErrorsTotal", correlatorErrorsCount.get());
         section.put("correlatorDispatchDroppedTotal", correlatorDispatchDroppedCount.get());

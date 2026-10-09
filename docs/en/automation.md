@@ -113,6 +113,8 @@ Object: `demo-sensor-01`, watch: `temperature`, activate: `self.temperature["val
 
 `AlertRuleListener` reacts to `VARIABLE_UPDATED`; rules with `pollIntervalMs > 0` are also evaluated by `AlertRulePeriodicScheduler`.
 
+Evaluations of one rule never overlap: variable-change workers, the poll scheduler, and SQL binding refreshes take the rule's lock, so its edge, sustain, and latch state is not read twice before it is written (no double raise). A rule that fails — an uncomputable condition or any other error — is logged, counted in `ispf.alert.rule_failures.total{reason=condition|error}` (System metrics → *Alert rule failures*), and skipped; the other rules of the same variable change or poll tick still run, and the failing rule stays enabled. Runtime state is flushed every `ispf.alert-rule.runtime.flush-interval-ms` (30 s); a change made while a flush is writing the rule is written by the next flush.
+
 ### API
 
 | Method | Path | Roles |
