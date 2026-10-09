@@ -42,13 +42,6 @@ public class HistorianRollupMaterializerRunner {
         if (!clusterProperties.isSchedulerActive()) {
             return;
         }
-        if (!leaderLockService.tryAcquire(LOCK_NAME, LOCK_TTL)) {
-            return;
-        }
-        try {
-            materializerService.materializeTick();
-        } finally {
-            leaderLockService.release(LOCK_NAME);
-        }
+        leaderLockService.runIfLeader(LOCK_NAME, LOCK_TTL, materializerService::materializeTick);
     }
 }

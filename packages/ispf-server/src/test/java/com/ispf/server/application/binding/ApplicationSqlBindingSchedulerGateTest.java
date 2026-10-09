@@ -49,7 +49,7 @@ class ApplicationSqlBindingSchedulerGateTest {
         scheduler.refreshScheduledBindings();
 
         verify(clusterProperties, never()).isSchedulerActive();
-        verify(leaderLockService, never()).tryAcquire(any(), any());
+        verify(leaderLockService, never()).runIfLeader(any(), any(), any());
         verify(bindingService, never()).refreshScheduledBindings();
     }
 }

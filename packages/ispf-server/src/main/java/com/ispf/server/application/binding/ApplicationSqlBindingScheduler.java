@@ -42,14 +42,9 @@ public class ApplicationSqlBindingScheduler {
         if (!clusterProperties.isSchedulerActive()) {
             return;
         }
-        if (!leaderLockService.tryAcquire(BINDING_LOCK, Duration.ofSeconds(20))) {
-            return;
-        }
-        try {
+        leaderLockService.runIfLeader(BINDING_LOCK, Duration.ofSeconds(20), () -> {
             bindingService.refreshScheduledBindings();
             sqlBindingObjectService.refreshScheduledBindings();
-        } finally {
-            leaderLockService.release(BINDING_LOCK);
-        }
+        });
     }
 }

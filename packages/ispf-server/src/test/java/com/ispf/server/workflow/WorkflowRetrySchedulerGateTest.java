@@ -54,7 +54,7 @@ class WorkflowRetrySchedulerGateTest {
 
         scheduler.poll();
 
-        verify(leaderLockService, never()).tryAcquire(any(), any());
+        verify(leaderLockService, never()).runIfLeader(any(), any(), any());
         verify(retryService, never()).listDue(any());
     }
 

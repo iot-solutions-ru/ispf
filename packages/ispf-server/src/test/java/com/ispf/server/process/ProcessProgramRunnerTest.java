@@ -67,7 +67,7 @@ class ProcessProgramRunnerTest {
         objectManager.setVariableValue(path, "controlExpression", DataRecord.single(STRING_SCHEMA, Map.of("value", "true")));
         objectManager.setVariableValue(path, "enabled", DataRecord.single(BOOLEAN_SCHEMA, Map.of("value", true)));
 
-        processProgramRunner.runDuePrograms();
+        processProgramRunner.runDuePrograms(() -> true);
 
         String lastCycleAt = objectManager.require(path).getVariable("lastCycleAt")
                 .flatMap(v -> v.value().map(r -> String.valueOf(r.firstRow().get("value"))))
@@ -116,7 +116,7 @@ class ProcessProgramRunnerTest {
         objectManager.setVariableValue(path, "interlockExpression", DataRecord.single(STRING_SCHEMA, Map.of("value", "self.mode.value == \"AUTO\"")));
         objectManager.setVariableValue(path, "enabled", DataRecord.single(BOOLEAN_SCHEMA, Map.of("value", true)));
 
-        processProgramRunner.runDuePrograms();
+        processProgramRunner.runDuePrograms(() -> true);
 
         double sp = objectManager.require(plantPath).getVariable("sp")
                 .flatMap(v -> v.value().map(r -> ((Number) r.firstRow().get("value")).doubleValue()))
@@ -171,7 +171,7 @@ class ProcessProgramRunnerTest {
         objectManager.setVariableValue(path, "interlockExpression", DataRecord.single(STRING_SCHEMA, Map.of("value", "self.mode.value == \"AUTO\"")));
         objectManager.setVariableValue(path, "enabled", DataRecord.single(BOOLEAN_SCHEMA, Map.of("value", true)));
 
-        processProgramRunner.runDuePrograms();
+        processProgramRunner.runDuePrograms(() -> true);
 
         double sp = objectManager.require(plantPath).getVariable("sp")
                 .flatMap(v -> v.value().map(r -> ((Number) r.firstRow().get("value")).doubleValue()))
@@ -220,7 +220,7 @@ class ProcessProgramRunnerTest {
         objectManager.setVariableValue(path, "controlExpression", DataRecord.single(STRING_SCHEMA, Map.of("value", "2147483648")));
         objectManager.setVariableValue(path, "enabled", DataRecord.single(BOOLEAN_SCHEMA, Map.of("value", true)));
 
-        processProgramRunner.runDuePrograms();
+        processProgramRunner.runDuePrograms(() -> true);
 
         Variable counter = objectManager.require(plantPath).getVariable("counter").orElseThrow();
         assertThat(counter.schema().fields().get(0).type()).isEqualTo(FieldType.LONG);

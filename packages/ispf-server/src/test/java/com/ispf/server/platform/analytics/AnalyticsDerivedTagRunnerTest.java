@@ -14,6 +14,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,14 +61,16 @@ class AnalyticsDerivedTagRunnerTest {
         when(engineService.isEnabled()).thenReturn(true);
         when(analyticsClusterWorkloadService.isAnalyticsWorkloadActive()).thenReturn(true);
         when(clusterProperties.isSchedulerActive()).thenReturn(true);
-        when(leaderLockService.tryAcquire("analytics_derived_tag_runner", Duration.ofSeconds(90)))
-                .thenReturn(true);
+        when(leaderLockService.runIfLeader(eq("analytics_derived_tag_runner"), eq(Duration.ofSeconds(90)), any()))
+                .thenAnswer(invocation -> {
+                    invocation.<Runnable>getArgument(2).run();
+                    return true;
+                });
 
         runner.tick();
 
         verify(engineScheduler).syncSchedules();
         verify(engineService).evaluateAllEnabled();
-        verify(leaderLockService).release("analytics_derived_tag_runner");
     }
 
     @Test
@@ -78,10 +83,7 @@ class AnalyticsDerivedTagRunnerTest {
 
         verify(engineScheduler, never()).syncSchedules();
         verify(engineService, never()).evaluateAllEnabled();
-        verify(leaderLockService, never()).tryAcquire(
-                org.mockito.ArgumentMatchers.anyString(),
-                org.mockito.ArgumentMatchers.any()
-        );
+        verify(leaderLockService, never()).runIfLeader(anyString(), any(), any());
     }
 
     @Test
@@ -100,12 +102,11 @@ class AnalyticsDerivedTagRunnerTest {
         when(engineService.isEnabled()).thenReturn(true);
         when(analyticsClusterWorkloadService.isAnalyticsWorkloadActive()).thenReturn(true);
         when(clusterProperties.isSchedulerActive()).thenReturn(true);
-        when(leaderLockService.tryAcquire("analytics_derived_tag_runner", Duration.ofSeconds(90)))
+        when(leaderLockService.runIfLeader(eq("analytics_derived_tag_runner"), eq(Duration.ofSeconds(90)), any()))
                 .thenReturn(false);
 
         runner.tick();
 
         verify(engineService, never()).evaluateAllEnabled();
-        verify(leaderLockService, never()).release("analytics_derived_tag_runner");
     }
 }
