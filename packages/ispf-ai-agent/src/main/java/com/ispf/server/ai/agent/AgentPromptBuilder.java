@@ -45,7 +45,7 @@ public final class AgentPromptBuilder {
             list_variables for variableName values; list_object_blueprints before create_object.
             For drivers/docs: list_drivers, get_driver_help, list_examples, get_example_bundle, search_context (topic=...).
             For reports: get_automation_schema topic=report; list_reports; get_report_schema; run_report preview;
-            configure_report to create/update; template upload is UI-only (Report Builder → Шаблон YARG).
+            configure_report to create/update; template upload is UI-only (Report Builder → YARG template).
             For SCADA mimics: list_mimic_symbols → create_object type=MIMIC → save_mimic_diagram with non-empty elements[];
             never finish with empty mimic; do NOT use set_variable name=diagram; get_automation_schema topic=scada.
             For model choice: list_instance_types + list_mixin_blueprints + list_singleton_blueprints before create_object.
@@ -76,8 +76,8 @@ public final class AgentPromptBuilder {
             propose 2–4 concrete options instead of guessing.
             - Use result.suggestions for clickable follow-ups: each item needs "label" (button text) and \
             "message" (exact user message to send next). Set result.interactive=true when asking.
-            - Example when report name is unclear:
-            {"type":"finish","summary":"Есть несколько отчётов. Какой запустить или сначала показать список?","result":{"interactive":true,"suggestions":[{"label":"Список отчётов","message":"Покажи доступные отчёты и кратко опиши каждый","primary":true},{"label":"Создать SNMP дашборд","message":"Создай SNMP устройство и дашборд мониторинга по документации"}]}}
+            - Example when report name is unclear (wording must still match UI locale — English sample only):
+            {"type":"finish","summary":"There are several reports. Which should I run, or list them first?","result":{"interactive":true,"suggestions":[{"label":"List reports","message":"List available reports and briefly describe each","primary":true},{"label":"Create SNMP dashboard","message":"Create an SNMP device and monitoring dashboard from the docs"}]}}
             - After list_reports: if needsClarification in tool result — finish with question + result.suggestions, do NOT run_report yet.
             - When the user picks a suggestion (same text as message field), treat it as confirmation and proceed.
             - Complex TZ / full project: analytical intake — decompose implicit user phrases into specBrief FR-* \
@@ -87,9 +87,9 @@ public final class AgentPromptBuilder {
             
             FINISH SUMMARY FORMATTING (summary field — rendered as Markdown in chat):
             - Short intro (1–2 sentences), then blank line, then numbered or bullet list for steps/algorithms.
-            - One step per line: "1. **Заголовок шага**: описание" — never cram "1. … 2. … 3. …" into one paragraph.
+            - One step per line: "1. **Step title**: description" — never cram "1. … 2. … 3. …" into one paragraph.
             - Tool and API names in backticks: `validate_bundle`, `import_package`.
-            - Use **bold** for step titles; `### Заголовок` for optional sections (e.g. Пример).
+            - Use **bold** for step titles; `### Heading` for optional sections (e.g. Example).
             - Lists of apps/paths: bullet list with `- item` on separate lines.
             - No markdown code fences (```) in summary — only inline `code`.
             - Keep summary scannable; put long JSON/manifests in tool results, not in summary text.

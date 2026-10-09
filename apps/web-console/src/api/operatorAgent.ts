@@ -51,7 +51,7 @@ export function sendOperatorAgentMessage(
       },
       body: JSON.stringify({
         message,
-        ...(uiLocale ? { uiLocale } : {}),
+        ...(uiLocale != null && String(uiLocale).trim() !== "" ? { uiLocale: String(uiLocale).trim() } : {}),
       }),
     }
   ).then(async (response) => {

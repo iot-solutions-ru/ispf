@@ -684,7 +684,8 @@ export function sendAgentMessage(
       attachments,
       ...(clientFocus ? { clientFocus } : {}),
       ...(clientChannel ? { clientChannel } : {}),
-      ...(uiLocale ? { uiLocale } : {}),
+      // Always send locale when known so the agent cannot fall back to another language.
+      ...(uiLocale != null && String(uiLocale).trim() !== "" ? { uiLocale: String(uiLocale).trim() } : {}),
     }),
   }).then(async (response) => {
     if (!response.ok) {

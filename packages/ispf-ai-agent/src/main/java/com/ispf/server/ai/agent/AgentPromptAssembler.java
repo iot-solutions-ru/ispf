@@ -137,6 +137,10 @@ final class AgentPromptAssembler {
             }
             systemPrompt = lead + systemPrompt;
         }
+        String localeReminder = AgentUiLocalePromptSection.formatReminder(session.runState().uiLocale());
+        if (!localeReminder.isBlank()) {
+            systemPrompt = systemPrompt + localeReminder;
+        }
         messages.add(new LlmMessage("system", systemPrompt));
 
         boolean copilotHereAndNow = "copilot".equalsIgnoreCase(session.runState().clientChannel());
@@ -228,6 +232,10 @@ final class AgentPromptAssembler {
         );
         if (!prefix.isBlank()) {
             text = text.isBlank() ? prefix : prefix + "\n\n" + text;
+        }
+        String localeHint = AgentUiLocalePromptSection.userTurnLocaleHint(session.runState().uiLocale());
+        if (!localeHint.isBlank()) {
+            text = (text == null ? "" : text) + localeHint;
         }
         if (prepared.imageParts().isEmpty()) {
             return new LlmMessage("user", text);

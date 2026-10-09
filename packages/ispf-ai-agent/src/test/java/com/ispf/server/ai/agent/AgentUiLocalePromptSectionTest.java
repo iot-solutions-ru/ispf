@@ -20,7 +20,18 @@ class AgentUiLocalePromptSectionTest {
         String block = AgentUiLocalePromptSection.format("ru");
         assertThat(block).contains("Russian");
         assertThat(block).contains("`ru`");
-        assertThat(block).contains("Do NOT answer in another language");
+        assertThat(block).contains("UI locale wins");
+    }
+
+    @Test
+    void englishLocaleForbidsRussianGreeting() {
+        String block = AgentUiLocalePromptSection.format("en");
+        assertThat(block).contains("English");
+        assertThat(block).contains("no Russian");
+        assertThat(AgentUiLocalePromptSection.formatReminder("en")).contains("English");
+        assertThat(AgentUiLocalePromptSection.userTurnLocaleHint("en-US"))
+                .contains("UI locale=en")
+                .contains("English");
     }
 
     @Test
