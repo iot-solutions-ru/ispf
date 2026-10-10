@@ -362,6 +362,8 @@
   "blueprint.saveMetadata": "Save metadata",
   "blueprint.definitionChanged": "Blueprint definition changed — save your changes.",
   "blueprint.variablesTitle": "Variables ({{count}})",
+  "blueprint.addObjectVariablePlaceholder": "Object variable",
+  "blueprint.addObjectVariableEmpty": "Create the variable on this blueprint object first. The definition list only offers those variables.",
   "blueprint.bindingsTitle": "Binding rules ({{count}})",
   "blueprint.eventsTitle": "Events ({{count}})",
   "blueprint.functionsTitle": "Functions ({{count}})",

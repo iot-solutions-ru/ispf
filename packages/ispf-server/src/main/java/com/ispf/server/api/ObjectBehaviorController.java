@@ -65,6 +65,8 @@ public class ObjectBehaviorController {
         writeGuard.beginWrite(path, authentication, headers);
         try {
             objectManager.deleteFunction(path, name);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } finally {
             writeGuard.endWrite();
         }
@@ -100,6 +102,8 @@ public class ObjectBehaviorController {
         writeGuard.beginWrite(path, authentication, headers);
         try {
             objectManager.deleteEvent(path, name);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } finally {
             writeGuard.endWrite();
         }

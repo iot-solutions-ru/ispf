@@ -26,6 +26,7 @@ class ObjectEditorApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.object.path").value("root.platform.devices.demo-sensor-01"))
                 .andExpect(jsonPath("$.variables[?(@.name=='temperature')]").exists())
-                .andExpect(jsonPath("$.events[?(@.name=='thresholdExceeded')]").exists());
+                .andExpect(jsonPath("$.events[?(@.name=='thresholdExceeded')]").exists())
+                .andExpect(jsonPath("$.ownership.bindingRuleIds[?(@=='alarm-active')]").exists());
     }
 }

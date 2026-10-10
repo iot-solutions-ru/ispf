@@ -103,7 +103,8 @@ public class TenantVirtualRootService {
                 remapped,
                 editor.variables(),
                 editor.events(),
-                editor.functions()
+                editor.functions(),
+                editor.ownership()
         );
     }
 }

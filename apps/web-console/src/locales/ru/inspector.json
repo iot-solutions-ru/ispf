@@ -125,6 +125,8 @@
   "blueprint.upgradeNoVersion": "без version tag",
   "blueprint.variablesColumn": "Переменные",
   "blueprint.variablesTitle": "Переменные ({{count}})",
+  "blueprint.addObjectVariablePlaceholder": "Переменная объекта",
+  "blueprint.addObjectVariableEmpty": "Сначала создайте переменную в свойствах этого объекта blueprint. В определение попадают только такие переменные.",
   "brick.applySuggestion": "Применить подсказку",
   "brick.classUri": "URI класса Brick",
   "brick.classUriPlaceholder": "https://brickschema.org/schema/Brick#Sensor",

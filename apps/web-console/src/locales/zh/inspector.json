@@ -123,6 +123,8 @@
   "blueprint.upgradeNoVersion": "无 version tag",
   "blueprint.variablesColumn": "变量",
   "blueprint.variablesTitle": "变量 ({{count}})",
+  "blueprint.addObjectVariablePlaceholder": "对象变量",
+  "blueprint.addObjectVariableEmpty": "请先在此蓝图对象的属性中创建变量。定义列表只提供这些变量。",
   "brick.applySuggestion": "采纳建议",
   "brick.classUri": "砖类 URI",
   "brick.classUriPlaceholder": "https://brickschema.org/schema/Brick#Sensor",

@@ -1,5 +1,6 @@
 package com.ispf.server.api.dto;
 
+import com.ispf.core.object.BlueprintContribution;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
@@ -11,6 +12,7 @@ import com.ispf.server.security.acl.VariableMemberAccessService;
 import org.springframework.security.core.Authentication;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
@@ -20,7 +22,8 @@ public record ObjectEditorDto(
         ObjectDto object,
         List<VariableDto> variables,
         List<EventDescriptor> events,
-        List<FunctionDescriptor> functions
+        List<FunctionDescriptor> functions,
+        BlueprintOwnershipDto ownership
 ) {
     public static ObjectEditorDto from(PlatformObject node) {
         return from(node, null);
@@ -72,7 +75,34 @@ public record ObjectEditorDto(
                 ).toList(),
                 node.functions().values().stream().sorted(
                         (a, b) -> a.name().compareTo(b.name())
-                ).toList()
+                ).toList(),
+                BlueprintOwnershipDto.from(node)
         );
+    }
+
+    public record BlueprintOwnershipDto(
+            List<String> variables,
+            List<String> events,
+            List<String> functions,
+            List<String> bindingRuleIds
+    ) {
+        public static BlueprintOwnershipDto from(PlatformObject node) {
+            LinkedHashSet<String> variables = new LinkedHashSet<>();
+            LinkedHashSet<String> events = new LinkedHashSet<>();
+            LinkedHashSet<String> functions = new LinkedHashSet<>();
+            LinkedHashSet<String> bindingRuleIds = new LinkedHashSet<>();
+            for (BlueprintContribution contribution : node.blueprintContributions().values()) {
+                variables.addAll(contribution.variables());
+                events.addAll(contribution.events());
+                functions.addAll(contribution.functions());
+                bindingRuleIds.addAll(contribution.bindingRuleIds());
+            }
+            return new BlueprintOwnershipDto(
+                    List.copyOf(variables),
+                    List.copyOf(events),
+                    List.copyOf(functions),
+                    List.copyOf(bindingRuleIds)
+            );
+        }
     }
 }
