@@ -16,21 +16,30 @@ class AgentOperatorVisibleUtf8Test {
 
     @Test
     void treeFirstAgentServiceUsesCyrillicNotMojibake() throws Exception {
-        String src = readMainSource("com/ispf/server/ai/agent/TreeFirstAgentService.java");
+        String humanizer = readMainSource("com/ispf/server/ai/agent/AgentStepHumanizer.java");
+        String turnService = readMainSource("com/ispf/server/ai/agent/TreeFirstAgentService.java");
 
-        assertThat(src)
-                .as("status label")
+        assertThat(humanizer)
+                .as("status label (localized in humanizer)")
                 .contains("Подготовка запроса…")
                 .doesNotContain("РџРѕРґРіРѕС‚РѕРІРєР°");
 
-        assertThat(src)
+        assertThat(turnService)
                 .as("soft step-limit summary")
                 .contains("мягкий лимит")
-                .contains("Продолжай")
                 .doesNotContain("РјСЏРіРєРёР№");
 
-        assertThat(src)
+        assertThat(humanizer)
+                .as("continue suggestion")
+                .contains("Продолжай")
+                .doesNotContain("РџСЂРѕРґРѕР»Р¶Р°Р№");
+
+        assertThat(humanizer)
                 .as("no classic UTF-8-as-CP1251 punctuation mojibake")
+                .doesNotContain("вЂ")
+                .doesNotContain("в‰");
+        assertThat(turnService)
+                .as("turn service mojibake guard")
                 .doesNotContain("вЂ")
                 .doesNotContain("в‰");
     }

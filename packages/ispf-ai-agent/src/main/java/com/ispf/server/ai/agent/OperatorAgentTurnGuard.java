@@ -60,6 +60,17 @@ final class OperatorAgentTurnGuard {
             String userMessage,
             OperatorAgentScope scope
     ) {
+        return checkBeforeTool(toolName, toolArgs, steps, userMessage, scope, "");
+    }
+
+    static BlockDecision checkBeforeTool(
+            String toolName,
+            Map<String, Object> toolArgs,
+            List<Map<String, Object>> steps,
+            String userMessage,
+            OperatorAgentScope scope,
+            String uiLocale
+    ) {
         if (toolName == null || toolName.isBlank()) {
             return BlockDecision.allow();
         }
@@ -69,7 +80,8 @@ final class OperatorAgentTurnGuard {
 
         if ("list_reports".equals(normalized)) {
             if (listReportsCount >= 1) {
-                var clarification = OperatorAgentClarificationBuilder.onRepeatListReports(steps, userMessage);
+                var clarification = OperatorAgentClarificationBuilder.onRepeatListReports(
+                        steps, userMessage, uiLocale);
                 if (clarification.isPresent()) {
                     return BlockDecision.clarify(clarification.get());
                 }
@@ -87,7 +99,8 @@ final class OperatorAgentTurnGuard {
                 var clarification = OperatorAgentClarificationBuilder.onInvalidReportPath(
                         steps,
                         userMessage,
-                        path
+                        path,
+                        uiLocale
                 );
                 if (clarification.isPresent()) {
                     return BlockDecision.clarify(clarification.get());
@@ -208,6 +221,14 @@ final class OperatorAgentTurnGuard {
             Map<String, Object> toolResult,
             String userMessage
     ) {
+        return enrichListReportsResult(toolResult, userMessage, "");
+    }
+
+    static Map<String, Object> enrichListReportsResult(
+            Map<String, Object> toolResult,
+            String userMessage,
+            String uiLocale
+    ) {
         if (!isReportRunIntent(userMessage) || toolResult == null) {
             return toolResult;
         }
@@ -230,7 +251,7 @@ final class OperatorAgentTurnGuard {
         enriched.put("hint", "Call run_report next with suggestedReportPath — do not call list_reports again.");
         List<OperatorAgentReportResolver.ReportEntry> catalogForHint = catalog;
         OperatorAgentReportResolver.MatchAnalysis analysis =
-                OperatorAgentReportResolver.analyze(userMessage, catalogForHint);
+                OperatorAgentReportResolver.analyze(userMessage, catalogForHint, uiLocale);
         if (analysis.needsClarification()) {
             enriched.put("needsClarification", true);
             if (analysis.mismatchReason() != null) {

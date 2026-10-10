@@ -240,6 +240,7 @@ public class TreeFirstAgentService {
             }
         }
         AgentRunCancellationRegistry.RunHandle localHandle = null;
+        String uiLocale = session.runState().uiLocale();
         try {
             if (!runPreReserved) {
                 localHandle = cancellationRegistry.start(
@@ -254,7 +255,7 @@ public class TreeFirstAgentService {
             publishStep(sessionId, Map.of(
                     "step", 0,
                     "type", "status",
-                    "label", "Подготовка запроса…",
+                    "label", AgentStepHumanizer.preparingRequest(uiLocale),
                     "result", Map.of("status", "RUNNING")
             ));
 
@@ -348,8 +349,7 @@ public class TreeFirstAgentService {
             while (steps.size() < maxStepsTotal) {
                 if (cancellationRegistry.isCancelled(session.sessionId())) {
                     finalStatus = AgentTurnStatus.CANCELLED;
-                    finishSummary = "Выполнение остановлено пользователем после "
-                            + steps.size() + " шаг(ов).";
+                    finishSummary = AgentStepHumanizer.cancelledByUser(uiLocale, steps.size());
                     break;
                 }
 
@@ -369,7 +369,8 @@ public class TreeFirstAgentService {
                                 !askMode && session.runState().isPlanningActive(),
                                 session.runState().isPlanApproved(),
                                 askMode,
-                                AgentPhasedPlanIntake.resolveStage(session.runState())
+                                AgentPhasedPlanIntake.resolveStage(session.runState()),
+                                uiLocale
                         )
                 );
                 LlmResponse response = parsed.response();
@@ -391,19 +392,12 @@ public class TreeFirstAgentService {
                     boolean truncated = response != null
                             && (response.truncatedByLength()
                             || AgentJsonProtocol.looksLikeTruncatedContent(response.content()));
-                    finishSummary = truncated
-                            ? """
-                            Ответ модели обрезан — план слишком большой для одного сообщения. \
-                            Частичный план сохранён, если удалось извлечь данные. \
-                            Напишите «продолжи план» или «добавь следующие разделы» — план достраивается поэтапно."""
-                            : """
-                            Не удалось разобрать ответ модели после нескольких попыток. \
-                            Попробуйте переформулировать запрос короче или начните новый чат.""";
+                    finishSummary = AgentStepHumanizer.modelParseFailedSummary(uiLocale, truncated);
                     finalStatus = AgentTurnStatus.ERROR;
                     Map<String, Object> errorStep = new LinkedHashMap<>();
                     errorStep.put("step", stepNumber);
                     errorStep.put("type", "error");
-                    errorStep.put("label", truncated ? "Ответ обрезан" : "Ошибка разбора ответа модели");
+                    errorStep.put("label", AgentStepHumanizer.parseErrorLabel(uiLocale, truncated));
                     errorStep.put("error", parsed.error() != null ? parsed.error() : "parse failed");
                     errorStep.put("rawPreview", preview(response != null ? response.content() : null));
                     if (truncated) {
@@ -465,7 +459,7 @@ public class TreeFirstAgentService {
                                 "step", stepNumber,
                                 "type", "finish",
                                 "summary", finishSummary != null ? finishSummary : "",
-                                "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary),
+                                "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary, uiLocale),
                                 "result", finishResult
                         );
                         steps.add(finishStep);
@@ -496,7 +490,7 @@ public class TreeFirstAgentService {
                                 "step", stepNumber,
                                 "type", "finish",
                                 "summary", finishSummary != null ? finishSummary : "",
-                                "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary),
+                                "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary, uiLocale),
                                 "result", finishResult
                         );
                         steps.add(finishStep);
@@ -530,14 +524,14 @@ public class TreeFirstAgentService {
                                 || planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_APPROVAL) {
                             boolean executeMode = session.runState().interactionMode() == AgentInteractionMode.EXECUTE;
                             String guardLabel = planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_APPROVAL
-                                    ? "Требуется утверждение плана"
+                                    ? AgentStepHumanizer.planApprovalRequiredLabel(uiLocale)
                                     : askMode
-                                            ? "Режим «Спросить»"
+                                            ? AgentStepHumanizer.askModeLabel(uiLocale)
                                             : executeMode
-                                                    ? "Режим «Выполнить»"
+                                                    ? AgentStepHumanizer.executeModeLabel(uiLocale)
                                                     : runStateAntiReplanHint(session.runState(), candidateResult)
-                                                            ? "Выполнение плана"
-                                                            : "Требуется план";
+                                                            ? AgentStepHumanizer.planExecutionLabel(uiLocale)
+                                                            : AgentStepHumanizer.planRequiredLabel(uiLocale);
                             String guardError = planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_APPROVAL
                                     ? "Execution finish blocked: plan not approved yet."
                                     : askMode
@@ -554,13 +548,13 @@ public class TreeFirstAgentService {
                                     finishResult = new LinkedHashMap<>(recovered.get());
                                     AgentPlanGuard.capturePlan(session.runState(), finishResult);
                                     syncRunPlanState(session);
-                                    finishSummary = "Подготовлен эталонный LITE-план — утвердите и начнём выполнение.";
+                                    finishSummary = AgentStepHumanizer.litePlanReadySummary(uiLocale);
                                     finalStatus = AgentTurnStatus.OK;
                                     Map<String, Object> finishStep = Map.of(
                                             "step", stepNumber,
                                             "type", "finish",
                                             "summary", finishSummary,
-                                            "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary),
+                                            "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary, uiLocale),
                                             "result", finishResult,
                                             "litePlanRecovered", true
                                     );
@@ -634,7 +628,7 @@ public class TreeFirstAgentService {
                                 Map<String, Object> guardStep = Map.of(
                                         "step", stepNumber,
                                         "type", "guard",
-                                        "label", "Проверка SIF-плана",
+                                        "label", AgentStepHumanizer.sifPlanCheckLabel(uiLocale),
                                         "error", "Plan validation failed",
                                         "hint", AgentSpecPlanValidator.formatValidationHint(specValidation)
                                 );
@@ -663,8 +657,7 @@ public class TreeFirstAgentService {
                             if (block.isPresent()) {
                                 AgentPlatformTurnGuard.BlockDecision decision = block.get();
                                 if (AgentPlatformTurnGuard.isStuckGuardLoop(steps, decision.error())) {
-                                    finishSummary = "Проверка завершения повторялась — объекты, вероятно, уже созданы. "
-                                            + "Проверьте платформу вручную и при необходимости продолжите в новом сообщении.";
+                                    finishSummary = AgentStepHumanizer.platformGuardStuckSummary(uiLocale);
                                     finishResult = new LinkedHashMap<>();
                                     finishResult.put("interactive", true);
                                     finishResult.put("platformGuardStuck", true);
@@ -674,7 +667,7 @@ public class TreeFirstAgentService {
                                             "step", stepNumber,
                                             "type", "finish",
                                             "summary", finishSummary,
-                                            "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary),
+                                            "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary, uiLocale),
                                             "result", finishResult,
                                             "platformGuardStuck", true
                                     );
@@ -685,7 +678,7 @@ public class TreeFirstAgentService {
                                 Map<String, Object> guardStep = new LinkedHashMap<>();
                                 guardStep.put("step", stepNumber);
                                 guardStep.put("type", "guard");
-                                guardStep.put("label", "Проверка перед завершением");
+                                guardStep.put("label", AgentStepHumanizer.preFinishCheckLabel(uiLocale));
                                 guardStep.put("error", decision.error());
                                 guardStep.put("hint", decision.hint() != null ? decision.hint() : "");
                                 guardStep.put("checkId", decision.checkId());
@@ -711,7 +704,7 @@ public class TreeFirstAgentService {
                     finishStep.put("step", stepNumber);
                     finishStep.put("type", "finish");
                     finishStep.put("summary", finishSummary != null ? finishSummary : "");
-                    finishStep.put("label", AgentStepHumanizer.label("finish", null, null, null, finishSummary));
+                    finishStep.put("label", AgentStepHumanizer.label("finish", null, null, null, finishSummary, uiLocale));
                     finishStep.put("result", finishResult);
                     if (executionAcceptance != null) {
                         finishStep.put("acceptance", executionAcceptance.toMap());
@@ -746,7 +739,8 @@ public class TreeFirstAgentService {
                             toolArgs,
                             steps,
                             userMessage,
-                            operatorScope
+                            operatorScope,
+                            uiLocale
                     );
                     if (block.hasClarification()) {
                         if (applyClarificationFinish(
@@ -760,7 +754,8 @@ public class TreeFirstAgentService {
                         }
                     }
                     if (block.blocked() && "list_reports".equals(toolName)) {
-                        var clarification = OperatorAgentClarificationBuilder.onRepeatListReports(steps, userMessage);
+                        var clarification = OperatorAgentClarificationBuilder.onRepeatListReports(
+                                steps, userMessage, uiLocale);
                         if (clarification.isPresent()) {
                             if (applyClarificationFinish(
                                     session, steps, stepNumber, userMessage, clarification.get(),
@@ -792,7 +787,8 @@ public class TreeFirstAgentService {
                     } else {
                         toolResult = executeToolWithTransientRetry(toolName, toolArgs, context);
                         if ("list_reports".equals(toolName)) {
-                            toolResult = OperatorAgentTurnGuard.enrichListReportsResult(toolResult, userMessage);
+                            toolResult = OperatorAgentTurnGuard.enrichListReportsResult(
+                                    toolResult, userMessage, uiLocale);
                         }
                         executedTool = toolName;
                     }
@@ -883,7 +879,8 @@ public class TreeFirstAgentService {
                             } else {
                                 toolResult = executeToolWithTransientRetry(toolName, toolArgs, context);
                                 if ("list_reports".equals(toolName)) {
-                                    toolResult = OperatorAgentTurnGuard.enrichListReportsResult(toolResult, userMessage);
+                                    toolResult = OperatorAgentTurnGuard.enrichListReportsResult(
+                                    toolResult, userMessage, uiLocale);
                                 }
                                 if ("OK".equals(String.valueOf(toolResult.get("status")))) {
                                     session.runState().resetReworkRounds();
@@ -900,7 +897,7 @@ public class TreeFirstAgentService {
                 toolStep.put("step", stepNumber);
                 toolStep.put("type", "tool");
                 toolStep.put("tool", executedTool);
-                toolStep.put("label", AgentStepHumanizer.label("tool", executedTool, toolArgs, toolResult, null));
+                toolStep.put("label", AgentStepHumanizer.label("tool", executedTool, toolArgs, toolResult, null, uiLocale));
                 toolStep.put("arguments", toolArgs);
                 toolStep.put("result", toolResult);
                 toolStep.put("latencyMs", toolLatencyMs);
@@ -910,7 +907,8 @@ public class TreeFirstAgentService {
 
                 if ("list_reports".equals(executedTool)
                         && "OK".equals(String.valueOf(toolResult.get("status")))) {
-                    var clarification = OperatorAgentClarificationBuilder.maybeAfterListReports(steps, userMessage);
+                    var clarification = OperatorAgentClarificationBuilder.maybeAfterListReports(
+                            steps, userMessage, uiLocale);
                     if (clarification.isPresent()) {
                         if (applyClarificationFinish(
                                 session, steps, stepNumber + 1, userMessage, clarification.get(),
@@ -975,16 +973,19 @@ public class TreeFirstAgentService {
             if (finishSummary == null && !AgentTurnStatus.CANCELLED.equals(finalStatus)) {
                 finalStatus = AgentTurnStatus.OK;
                 int completed = steps.size();
-                finishSummary = "В этом turn выполнено " + completed + " шаг(ов) — достигнут мягкий лимит "
-                        + maxStepsTotal + ". План и сессия сохранены; отправьте «Продолжай» для следующей порции.";
+                finishSummary = AgentStepHumanizer.isRussian(uiLocale)
+                        ? ("В этом turn выполнено " + completed + " шаг(ов) — достигнут мягкий лимит "
+                        + maxStepsTotal + ". План и сессия сохранены; отправьте «Продолжай» для следующей порции.")
+                        : ("Completed " + completed + " step(s) this turn — soft limit "
+                        + maxStepsTotal + " reached. Plan and session are kept; send \"Continue\" for the next batch.");
                 finishResult = new LinkedHashMap<>();
                 finishResult.put("interactive", true);
                 finishResult.put("stepLimitReached", true);
                 finishResult.put("stepsCompleted", completed);
                 finishResult.put("suggestions", List.of(
                         Map.of(
-                                "label", "Продолжить",
-                                "message", "Продолжай выполнение с того места, где остановился",
+                                "label", AgentStepHumanizer.continueLabel(uiLocale),
+                                "message", AgentStepHumanizer.continueMessage(uiLocale),
                                 "primary", true
                         )
                 ));
@@ -1047,7 +1048,7 @@ public class TreeFirstAgentService {
             Map<String, Object> errorStep = Map.of(
                     "step", 1,
                     "type", "error",
-                    "label", "Ошибка выполнения",
+                    "label", AgentStepHumanizer.executionErrorLabel(session.runState().uiLocale()),
                     "error", summary
             );
             Map<String, Object> result = new LinkedHashMap<>();
@@ -1420,7 +1421,8 @@ public class TreeFirstAgentService {
                 "step", stepNumber,
                 "type", "finish",
                 "summary", clarification.summary(),
-                "label", AgentStepHumanizer.label("finish", null, null, null, clarification.summary()),
+                "label", AgentStepHumanizer.label(
+                        "finish", null, null, null, clarification.summary(), session.runState().uiLocale()),
                 "result", clarification.result(),
                 "clarification", true
         );
