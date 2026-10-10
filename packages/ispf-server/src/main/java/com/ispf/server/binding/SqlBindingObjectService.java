@@ -267,8 +267,11 @@ public class SqlBindingObjectService {
         return disabled;
     }
 
+    /**
+     * Hot path (every scheduler tick and function call) — read-only; the catalog is ensured by {@link #ensureCatalog()}
+     * at bootstrap and by {@link #upsert}.
+     */
     private List<BindingDefinition> listAll() {
-        ensureCatalogInternal();
         List<BindingDefinition> bindings = new ArrayList<>();
         if (objectManager.tree().findByPath(BINDINGS_ROOT).isEmpty()) {
             return bindings;
