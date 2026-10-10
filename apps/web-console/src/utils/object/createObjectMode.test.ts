@@ -8,6 +8,7 @@ import {
   PLATFORM_CREATE_TYPES,
   platformTypesForParent,
   resolveCreateDialogMode,
+  showsCreateTypeField,
 } from "./createObjectMode";
 
 describe("canCreateChildAt — platform catalogs", () => {
@@ -81,6 +82,60 @@ describe("platformTypesForParent", () => {
   it("keeps the full list for an unconstrained parent", () => {
     expect(platformTypesForParent("root")).toEqual([...PLATFORM_CREATE_TYPES]);
     expect(platformTypesForParent("root.platform")).toEqual([...PLATFORM_CREATE_TYPES]);
+  });
+});
+
+describe("showsCreateTypeField", () => {
+  const ready = { instanceModelCount: 0, instanceTypesLoading: false };
+
+  it("hides a single catalog type when no instance templates exist", () => {
+    expect(showsCreateTypeField("root.platform.dashboards", ready)).toBe(false);
+    expect(showsCreateTypeField("root.platform.dashboards.overview", ready)).toBe(false);
+    expect(showsCreateTypeField("root.platform.workflows", ready)).toBe(false);
+    expect(showsCreateTypeField("root.platform.mes", ready)).toBe(false);
+    expect(showsCreateTypeField("root.platform.mes.work-orders", ready)).toBe(false);
+    expect(showsCreateTypeField("root.platform.instances", ready)).toBe(false);
+    expect(showsCreateTypeField("root.platform.mimics.area", ready)).toBe(false);
+    expect(showsCreateTypeField("root.platform.dashboards", {
+      instanceModelCount: 0,
+      instanceTypesLoading: true,
+    })).toBe(false);
+  });
+
+  it("shows the field when a single-type catalog has instance templates", () => {
+    expect(showsCreateTypeField("root.platform.dashboards", {
+      instanceModelCount: 2,
+      instanceTypesLoading: false,
+    })).toBe(true);
+    expect(showsCreateTypeField("root.platform.instances", {
+      instanceModelCount: 1,
+      instanceTypesLoading: false,
+    })).toBe(true);
+    expect(showsCreateTypeField("root.platform.workflows", {
+      instanceModelCount: 1,
+      instanceTypesLoading: false,
+    })).toBe(true);
+  });
+
+  it("keeps the field when several platform types are offered", () => {
+    expect(showsCreateTypeField("root.platform.devices", ready)).toBe(true);
+    expect(showsCreateTypeField("root.platform.devices.tank-farm", ready)).toBe(true);
+    expect(showsCreateTypeField("root", ready)).toBe(true);
+    expect(showsCreateTypeField("root.platform", ready)).toBe(true);
+    expect(showsCreateTypeField("root.platform.devices", {
+      instanceModelCount: 0,
+      instanceTypesLoading: true,
+    })).toBe(true);
+  });
+
+  it("hides specialized dialogs, mimic catalogs, and the visual-group preset", () => {
+    expect(showsCreateTypeField("root.platform.reports", ready)).toBe(false);
+    expect(showsCreateTypeField("root.platform.mimics", ready)).toBe(false);
+    expect(showsCreateTypeField("root.platform.queries", ready)).toBe(false);
+    expect(showsCreateTypeField("root.platform.dashboards", {
+      ...ready,
+      presetType: "VISUAL_GROUP",
+    })).toBe(false);
   });
 });
 

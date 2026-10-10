@@ -390,6 +390,33 @@ export function platformTypesForParent(parentPath: string): ObjectType[] {
   return [...PLATFORM_CREATE_TYPES];
 }
 
+/**
+ * The create dialog shows the type list when the parent still offers a real choice:
+ * several platform types, or one platform type plus instance templates.
+ * A single fixed catalog type stays implicit. Specialized dialogs, mimic catalogs,
+ * and the visual-group preset do not show the list.
+ */
+export function showsCreateTypeField(
+  parentPath: string,
+  options: {
+    presetType?: ObjectType | null;
+    instanceModelCount: number;
+    instanceTypesLoading: boolean;
+  },
+): boolean {
+  if (resolveCreateDialogMode(parentPath) !== "object") {
+    return false;
+  }
+  if (parentPath.endsWith(".mimics") || options.presetType === "VISUAL_GROUP") {
+    return false;
+  }
+  const platformTypeCount = platformTypesForParent(parentPath).length;
+  if (options.instanceTypesLoading) {
+    return platformTypeCount > 1;
+  }
+  return platformTypeCount + options.instanceModelCount > 1;
+}
+
 function blueprintCatalogType(parentPath: string): ObjectType | undefined {
   if (
     parentPath.endsWith(".mixin-blueprints")
