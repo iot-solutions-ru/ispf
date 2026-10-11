@@ -176,6 +176,13 @@ export function getSystemFolderListMeta(
   displayName?: string,
   description?: string,
 ): SystemFolderListMeta {
+  if (objectType === "VISUAL_GROUP") {
+    return {
+      title: displayName?.trim() || path.split(".").pop() || path,
+      description: description?.trim() || "",
+      idColumnLabel: t("objectTree:idColumn.id"),
+    };
+  }
   const catalogType = resolveCatalogType(path, objectType);
   const idColumnFallback = (catalogType && ID_COLUMN_BY_TYPE[catalogType]) || "id";
   return localizedSystemFolderMeta(t, path, displayName, description, idColumnFallback);

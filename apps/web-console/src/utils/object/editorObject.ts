@@ -9,6 +9,11 @@ export function isSpecializedEditorObject(
   type?: ObjectType,
   templateId?: string | null,
 ): boolean {
+  // Bundle/catalog VISUAL_GROUP nodes sit under data-sources.* etc.; path heuristics must not
+  // treat them as DATA_SOURCE / report / … editors — Explorer shows a child list instead.
+  if (type === "VISUAL_GROUP") {
+    return false;
+  }
   if (
     type === "DASHBOARD"
     || type === "REPORT"
@@ -52,6 +57,9 @@ export function resolveEditorObjectType(
   type?: ObjectType,
   templateId?: string | null,
 ): ObjectType | undefined {
+  if (type === "VISUAL_GROUP") {
+    return type;
+  }
   if (
     type === "DASHBOARD"
     || type === "REPORT"

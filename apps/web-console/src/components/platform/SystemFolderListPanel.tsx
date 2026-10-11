@@ -288,7 +288,11 @@ export default function SystemFolderListPanel({
       {!childrenQuery.isLoading && !childrenQuery.error && (childrenQuery.data?.length ?? 0) === 0 && (
         <EmptyState
           title={t("folderList.empty")}
-          hint={t("folderList.emptyCreate")}
+          hint={
+            folderType === "VISUAL_GROUP"
+              ? t("folderList.emptyGroup")
+              : t("folderList.emptyCreate")
+          }
           action={
             canManage && createAction ? (
               <Button type="primary" onClick={createAction}>

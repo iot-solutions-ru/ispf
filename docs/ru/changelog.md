@@ -19,6 +19,7 @@ Changelog отдельных application bundles — в манифестах п�
 ### Исправлено
 
 - Free install marketplace на demostand с подписью: при `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM` unsigned free-download не подписывался (trusted оставался false) → 403 при `require-signed-bundles=true` (например Building HVAC Reference). Снова trusted для unsigned free-download, чтобы платформа подписала перед verify.
+- Explorer: VISUAL_GROUP в каталогах (Data Sources и др.) открывается списком участников, как корневая папка, а не редактором data source по path-эвристике («Not a data source object»). Состав группы по-прежнему через контекстное меню дерева («Добавить в группу»).
 - `createdAt` и audit-флаги при загрузке: в `PlatformObject` подставлялся `Instant.now()`, а `bindingAuditEnabled` / `functionAuditEnabled` / `eventJournalEnabled` не восстанавливались — следующий persist затирал `created_at` и мог сбросить флаги. Теперь берётся timestamp из сущности, флаги восстанавливаются, update не затирает уже записанный `created_at`.
 - Равенство BINARY / LONG: `DataRecordValues.equal` сравнивал `byte[]` по ссылке (лишние записи historian при CHANGES_ONLY); LONG хранил сырой `Integer`. BINARY сравнивается по содержимому; LONG приводится к `Long`.
 - Висячие кавычки в historian / PlatformRef: одиночная `'` или `"` в `unquote` давала `StringIndexOutOfBoundsException` (500). Добавлена проверка длины в парсере и компиляторе historian.
