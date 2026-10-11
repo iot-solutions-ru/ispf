@@ -63,9 +63,11 @@ public class ApplicationBundleSnapshotStore {
         );
 
         if (count != null && count > 0) {
+            // Clear git provenance — a non-git redeploy of the same version must not keep stale sha.
             jdbcTemplate.update("""
                     UPDATE %s
-                    SET manifest_json = ?, operator_manifest_json = ?, deployed_at = ?, is_active = ?
+                    SET manifest_json = ?, operator_manifest_json = ?, deployed_at = ?, is_active = ?,
+                        deploy_source = NULL, git_ref = NULL, git_sha = NULL
                     WHERE app_id = ? AND bundle_version = ?
                     """.formatted(deploymentsTable),
                     manifestJson,
@@ -90,6 +92,21 @@ public class ApplicationBundleSnapshotStore {
                 operatorManifestJson,
                 Timestamp.from(Instant.now()),
                 active
+        );
+    }
+
+    /** Attach Git provenance after a deploy attempt (ADR-0063 Pull release). */
+    public void updateGitProvenance(String appId, String bundleVersion, String gitRef, String gitSha) {
+        jdbcTemplate.update("""
+                UPDATE %s
+                SET deploy_source = ?, git_ref = ?, git_sha = ?
+                WHERE app_id = ? AND bundle_version = ?
+                """.formatted(deploymentsTable),
+                "git",
+                gitRef,
+                gitSha,
+                appId,
+                bundleVersion
         );
     }
 
@@ -122,7 +139,7 @@ public class ApplicationBundleSnapshotStore {
 
     public List<Map<String, Object>> listHistory(String appId) {
         return jdbcTemplate.query("""
-                SELECT bundle_version, deployed_at, is_active
+                SELECT bundle_version, deployed_at, is_active, deploy_source, git_ref, git_sha
                 FROM %s
                 WHERE app_id = ?
                 ORDER BY deployed_at DESC
@@ -132,6 +149,18 @@ public class ApplicationBundleSnapshotStore {
                     row.put("version", rs.getString("bundle_version"));
                     row.put("deployedAt", rs.getTimestamp("deployed_at"));
                     row.put("active", rs.getBoolean("is_active"));
+                    String source = rs.getString("deploy_source");
+                    if (source != null && !source.isBlank()) {
+                        row.put("source", source);
+                    }
+                    String gitRef = rs.getString("git_ref");
+                    if (gitRef != null && !gitRef.isBlank()) {
+                        row.put("gitRef", gitRef);
+                    }
+                    String gitSha = rs.getString("git_sha");
+                    if (gitSha != null && !gitSha.isBlank()) {
+                        row.put("gitSha", gitSha);
+                    }
                     return row;
                 },
                 appId

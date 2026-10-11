@@ -364,9 +364,22 @@ POST /api/v1/applications/{appId}/bundle/pull-from-tree
 }
 ```
 
-Собирает манифест из **дерева живых объектов** (визуальные группы + магазины приложений). `paths` — опционально, только проверенные узлы; без `paths` — все участники объединяют визуальные группы. `models[]` не занимается реверс-инжинирингом (остается из базового манифеста).
+Собирает манифест из **дерева живых объектов** (визуальные группы + магазины приложений). `paths` — опционально, только перечисленные узлы; без `paths` — все участники visual groups. `displayName` / `tablePrefix` / `schemaName` обновляются из регистрации приложения; `operatorUi`, `metadata`, `license`, `requires` берутся из активного snapshot (не reverse-engineering из дерева). `blueprints[]` обновляются из registry по именам базового манифеста. `models[]` не reverse-engineering (остаётся из base).
 
 Дерево объектов Поддерево (JSON, `formatVersion: 1`): `GET /api/v1/platform/backup/export?rootPath=root.platform.devices.demo-sensor-01` — вкладка **Экспорт JSON** в Инспекторе.
+
+## Application Git (ADR-0063)
+
+Вкладка **Git** на APPLICATION связывает **тот же полный bundle** с git команды. ISPF не хостит `.git`: binding + credential.
+
+| Действие | Статус | Поведение |
+|----------|--------|-----------|
+| Connect / Disconnect | **Сейчас** | Remote URL (https, без userinfo / private hosts), provider (`github` \| `gitlab`), ветка, путь к `bundle.json`, PAT в vault |
+| Status | **Сейчас** | Binding + deploy snapshot + наличие credential; drift/reachability — позже |
+| Pull release | **Сейчас** | `POST …/git/pull` с опциональным `{ "ref" }` → fetch `bundle.json` → validate → deploy; history `source=git` + sha |
+| Push tree | План | Full pull-from-tree → feature branch → **open PR** |
+
+Подробнее: [ADR-0063](../en/decisions/0063-application-git-lifecycle.md). API сейчас: `GET/PUT/DELETE /api/v1/applications/{appId}/git`, `GET …/git/status`, `POST …/git/pull`.
 
 ## Отчёты (REQ-PF-12)
 

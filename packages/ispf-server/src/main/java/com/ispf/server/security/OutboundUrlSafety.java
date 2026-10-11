@@ -29,6 +29,26 @@ public final class OutboundUrlSafety {
     }
 
     public static URI requireSafeHttpUrl(String rawUrl, String allowlistCsv, boolean blockLoopback) {
+        return requireSafeHttpUrl(rawUrl, allowlistCsv, blockLoopback, false);
+    }
+
+    /**
+     * HTTPS-only outbound URL that also blocks RFC1918 / ULA hosts (git pull / push SSRF).
+     */
+    public static URI requireSafePublicHttpsUrl(String rawUrl) {
+        URI uri = requireSafeHttpUrl(rawUrl, "", true, true);
+        if (!"https".equalsIgnoreCase(uri.getScheme())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "URL scheme must be https");
+        }
+        return uri;
+    }
+
+    public static URI requireSafeHttpUrl(
+            String rawUrl,
+            String allowlistCsv,
+            boolean blockLoopback,
+            boolean blockPrivateAddresses
+    ) {
         if (rawUrl == null || rawUrl.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "URL is required");
         }
@@ -66,10 +86,16 @@ public final class OutboundUrlSafety {
                     "URL host is blocked for outbound federation calls: " + host
             );
         }
-        if (resolvesToBlockedAddress(normalizedHost, blockLoopback, allowlist)) {
+        if (blockPrivateAddresses && isPrivateHostnameLiteral(normalizedHost)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "URL host resolves to a blocked address for outbound federation calls: " + host
+                    "URL host is a private address and is blocked for outbound git calls: " + host
+            );
+        }
+        if (resolvesToBlockedAddress(normalizedHost, blockLoopback, allowlist, blockPrivateAddresses)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "URL host resolves to a blocked address for outbound calls: " + host
             );
         }
         return rebuild(scheme, normalizedHost, uri.getPort(), uri.getRawPath(), uri.getRawQuery(), uri.getRawFragment());
@@ -119,6 +145,34 @@ public final class OutboundUrlSafety {
     }
 
     /**
+     * Like {@link #resolvePath} but keeps already-percent-encoded segments
+     * ({@code %2F} stays {@code %2F}; the multi-arg URI constructor would double-encode).
+     * Returns {@link URI#create} result after a same-origin check — do not rebuild.
+     */
+    public static URI resolveEncodedPath(URI safeBase, String encodedPathAndQuery) {
+        if (safeBase == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "URL is required");
+        }
+        if (encodedPathAndQuery == null || encodedPathAndQuery.isBlank()) {
+            return safeBase;
+        }
+        String base = safeBase.toASCIIString();
+        if (!base.endsWith("/")) {
+            base = base + "/";
+        }
+        String relative = encodedPathAndQuery.startsWith("/")
+                ? encodedPathAndQuery.substring(1)
+                : encodedPathAndQuery;
+        URI resolved = URI.create(base + relative);
+        if (!Objects.equals(safeBase.getScheme(), resolved.getScheme())
+                || !Objects.equals(safeBase.getHost(), resolved.getHost())
+                || safeBase.getPort() != resolved.getPort()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Resolved URL must keep the validated host");
+        }
+        return resolved;
+    }
+
+    /**
      * Rebuild from discrete components after validation — breaks CodeQL taint into HTTP sinks.
      */
     private static URI rebuild(String scheme, String host, int port, String path, String query, String fragment) {
@@ -136,6 +190,15 @@ public final class OutboundUrlSafety {
     }
 
     static boolean resolvesToBlockedAddress(String host, boolean blockLoopback, Set<String> allowlist) {
+        return resolvesToBlockedAddress(host, blockLoopback, allowlist, false);
+    }
+
+    static boolean resolvesToBlockedAddress(
+            String host,
+            boolean blockLoopback,
+            Set<String> allowlist,
+            boolean blockPrivateAddresses
+    ) {
         if (!allowlist.isEmpty() && hostAllowed(host, allowlist) && isLoopbackHostname(host)) {
             // Explicit allowlist can permit loopback for lab federation.
             return false;
@@ -152,12 +215,57 @@ public final class OutboundUrlSafety {
                 if (address.isLinkLocalAddress() || address.isMulticastAddress()) {
                     return true;
                 }
+                if (blockPrivateAddresses && isPrivateInetAddress(address)) {
+                    return true;
+                }
             }
             return false;
         } catch (UnknownHostException ex) {
             // Unresolvable hostnames are allowed at config time; connect will fail later.
             // Still apply hostname-level loopback block when requested.
             return blockLoopback && isLoopbackHostname(host);
+        }
+    }
+
+    static boolean isPrivateHostnameLiteral(String host) {
+        return isPrivateInetLiteral(host);
+    }
+
+    private static boolean isPrivateInetAddress(InetAddress address) {
+        if (address.isSiteLocalAddress() || address.isLoopbackAddress() || address.isAnyLocalAddress()) {
+            return true;
+        }
+        return isPrivateInetLiteral(address.getHostAddress());
+    }
+
+    /** RFC-1918 IPv4 (10/8, 172.16/12, 192.168/16) and IPv6 ULA (fc00::/7). */
+    private static boolean isPrivateInetLiteral(String host) {
+        String h = host == null ? "" : host.toLowerCase(Locale.ROOT);
+        if (h.startsWith("::ffff:")) {
+            h = h.substring("::ffff:".length());
+        }
+        if (h.startsWith("[") && h.endsWith("]")) {
+            h = h.substring(1, h.length() - 1);
+        }
+        if (h.matches("f[cd][0-9a-f]{0,2}:.*")) {
+            return true;
+        }
+        String[] parts = h.split("\\.");
+        if (parts.length != 4) {
+            return false;
+        }
+        try {
+            int a = Integer.parseInt(parts[0]);
+            int b = Integer.parseInt(parts[1]);
+            for (String part : parts) {
+                int value = Integer.parseInt(part);
+                if (value < 0 || value > 255) {
+                    return false;
+                }
+            }
+            return a == 10 || (a == 172 && b >= 16 && b <= 31) || (a == 192 && b == 168);
+        } catch (NumberFormatException ex) {
+            return false;
         }
     }
 

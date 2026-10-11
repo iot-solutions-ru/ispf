@@ -83,6 +83,7 @@ public class ApplicationDataStore {
         String id = appId.trim();
         // Child tables reference applications(app_id) without ON DELETE CASCADE.
         for (String table : List.of(
+                "application_git_bindings",
                 "application_bundle_deployments",
                 "application_data_migrations",
                 "application_data_seeds",

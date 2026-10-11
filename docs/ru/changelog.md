@@ -11,6 +11,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Изменено
 
+- Git lifecycle приложения (ADR-0063): Connect / Disconnect / Status / Pull release → deploy (GitHub/GitLab Contents API, PAT в vault, history `source=git` + sha). Вкладка Git в Console. Push tree → PR — план. Docs: applications, learn Path B, anti-patterns.
 - Binding `target.kind`: неизвестный kind отклоняется, а не молча становится `variable`.
 - Канон решения в валидации bundle: `LOGIC_HOST_DEVICE` (функция на DEVICE или SINGLETON blueprint с `targetObjectType=DEVICE`) был ERROR — validate/deploy отвечали `status: ERROR`, и судья агента отправлял рабочее решение на REWORK. Теперь это WARNING с указанием канонического хоста (SINGLETON-хаб или INSTANCE-двойник); деплой не блокируется. Bundle в `examples/` по-прежнему не должны давать `LOGIC_HOST_DEVICE` (`ExamplesBundleValidationTest`). ADR-0060 W1 дополнен.
 - В редакторе mixin блок Actions показывает объекты из `GET /api/v1/blueprints/attachments` (фильтр по текущему blueprint): пустой список «нигде не применён», клик по пути, `attachedAt` и merge warnings. `/instances` остаётся только для Upgrade у INSTANCE. В инспекторе объекта Applied blueprints для MIXIN дополняются `attachedAt` / warnings через `?objectPath=`.
@@ -19,7 +20,9 @@ Changelog отдельных application bundles — в манифестах п�
 ### Исправлено
 
 - Free install marketplace на demostand с подписью: при `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM` unsigned free-download не подписывался (trusted оставался false) → 403 при `require-signed-bundles=true` (например Building HVAC Reference). Снова trusted для unsigned free-download, чтобы платформа подписала перед verify.
+- SCADA mimic: выпадающий список Category (и другие Select/Tooltip редактора) открывался за полноэкранным оверлеем и выглядел «мёртвым» — попапы Ant Design теперь монтируются внутри оверлея.
 - Explorer: VISUAL_GROUP в каталогах (Data Sources и др.) открывается списком участников, как корневая папка, а не редактором data source по path-эвристике («Not a data source object»). То же для групп в Operator Apps; path-эвристика больше не перекрывает известный не-editor тип. Состав группы — через контекстное меню дерева («Добавить в группу»).
+- pull-from-tree: обновляются `displayName` / `tablePrefix` / `schemaName` из регистрации приложения и `blueprints[]` из registry по имени (round-trip ADR-0063).
 - `createdAt` и audit-флаги при загрузке: в `PlatformObject` подставлялся `Instant.now()`, а `bindingAuditEnabled` / `functionAuditEnabled` / `eventJournalEnabled` не восстанавливались — следующий persist затирал `created_at` и мог сбросить флаги. Теперь берётся timestamp из сущности, флаги восстанавливаются, update не затирает уже записанный `created_at`.
 - Равенство BINARY / LONG: `DataRecordValues.equal` сравнивал `byte[]` по ссылке (лишние записи historian при CHANGES_ONLY); LONG хранил сырой `Integer`. BINARY сравнивается по содержимому; LONG приводится к `Long`.
 - Висячие кавычки в historian / PlatformRef: одиночная `'` или `"` в `unquote` давала `StringIndexOutOfBoundsException` (500). Добавлена проверка длины в парсере и компиляторе historian.
