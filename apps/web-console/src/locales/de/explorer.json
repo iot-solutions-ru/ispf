@@ -112,6 +112,7 @@
   "empty.selectObject": "Wählen Sie ein Objekt im Baum aus",
   "folderList.empty": "Liste ist leer.",
   "folderList.emptyCreate": "Noch keine Objekte. Erstellen Sie das erste hier oder über das Kontextmenü im Baum.",
+  "folderList.emptyGroup": "Noch keine Mitglieder. Objekte über das Kontextmenü im Baum hinzufügen (Zur Gruppe hinzufügen).",
   "folderList.template": "Vorlage",
   "folderList.create": "Erstellen",
   "folderList.searchPlaceholder": "Suche nach Name, Typ, Vorlage…",

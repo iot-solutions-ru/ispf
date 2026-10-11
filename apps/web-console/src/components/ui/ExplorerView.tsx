@@ -12,9 +12,7 @@ import FederationPeersPanel from "../federation/FederationPeersPanel";
 import TenantsPanel from "../platform/TenantsPanel";
 import { isBlueprintsPath } from "../../types/blueprints";
 import type { ObjectSummary } from "../../types";
-import {
-  isOperatorAppChildPath,
-} from "../../utils/operator/operatorAppsPath";
+import { isOperatorAppChildPath } from "../../utils/operator/operatorAppsPath";
 import { isSecurityUserPath, isSecurityUsersRoot } from "../../utils/security/securityUserPath";
 import { isSecurityRolePath, isSecurityRolesRoot, isSecurityRoot } from "../../utils/security/securityRolePath";
 import {
@@ -36,6 +34,10 @@ import AutomationRulesListPanel from "../automation/AutomationRulesListPanel";
 import CorrelatorInspector from "../automation/CorrelatorInspector";
 import ProcessProgramInspector from "../automation/ProcessProgramInspector";
 import { isSpecializedEditorObject } from "../../utils/object/editorObject";
+import {
+  isTypedCatalogObject,
+  opensCatalogChildList,
+} from "../../utils/object/explorerViewRouting";
 import { isSystemCatalogFolder } from "../../utils/platform/systemFolderConfig";
 import { isPlatformSqlObjectPath } from "../../utils/platform/platformSqlPath";
 import PlatformSqlObjectPanel from "../platform/PlatformSqlObjectPanel";
@@ -52,8 +54,6 @@ interface ExplorerViewProps {
   onOpenOperatorApp?: (path: string) => void;
   onDeleted: () => void;
   onSelectPath: (path: string) => void;
-  onMembersChanged?: () => void;
-  allObjects?: ObjectSummary[];
   canConfigure: boolean;
   /** Global admin — tenants, federation, system. */
   isPlatformAdmin: boolean;
@@ -72,8 +72,6 @@ export default function ExplorerView({
   onOpenOperatorApp,
   onDeleted,
   onSelectPath,
-  onMembersChanged: _onMembersChanged,
-  allObjects: _allObjects = [],
   canConfigure,
   isPlatformAdmin,
   canManageTenantSecurity,
@@ -94,21 +92,22 @@ export default function ExplorerView({
   const isSecurityFolder = isSecurityRoot(selectedPath);
   const isRolesRoot = isSecurityRolesRoot(selectedPath);
   const isRoleObject = isSecurityRolePath(selectedPath);
-  const isAlertRule = isAlertRulePath(selectedPath);
-  const isCorrelator = isCorrelatorPath(selectedPath);
-  const isProcessProgram = isProcessProgramPath(selectedPath);
+  const objectType = selectedObject?.type;
+  const isVisualGroup = objectType === "VISUAL_GROUP";
+  const isAlertRule = isTypedCatalogObject(objectType, isAlertRulePath(selectedPath));
+  const isCorrelator = isTypedCatalogObject(objectType, isCorrelatorPath(selectedPath));
+  const isProcessProgram = isTypedCatalogObject(objectType, isProcessProgramPath(selectedPath));
   const isAlertRulesFolder = isAlertRulesRoot(selectedPath);
   const isCorrelatorsFolder = isCorrelatorsRoot(selectedPath);
   const isProcessProgramsFolder = isProcessProgramsRoot(selectedPath);
-  const isEventFilter = isEventFilterPath(selectedPath);
+  const isEventFilter = isTypedCatalogObject(objectType, isEventFilterPath(selectedPath));
   const isEventFiltersFolder = isEventFiltersRoot(selectedPath);
   const isAnalyticsTag = isAnalyticsTagDevice(selectedObject);
   const isFederation = isFederationRoot(selectedPath);
   const isTenants = isTenantsRoot(selectedPath);
-  const isCatalogFolder = isSystemCatalogFolder(selectedPath, selectedObject?.type);
-  const isVisualGroup = selectedObject?.type === "VISUAL_GROUP";
-  // Path-only SQL heuristics match VISUAL_GROUP under data-sources.* — exclude groups.
-  const isPlatformSqlObject = !isVisualGroup && isPlatformSqlObjectPath(selectedPath);
+  const isCatalogFolder = isSystemCatalogFolder(selectedPath, objectType);
+  const isPlatformSqlObject = isTypedCatalogObject(objectType, isPlatformSqlObjectPath(selectedPath));
+  const showCatalogChildList = opensCatalogChildList(objectType, isCatalogFolder);
   const isApplicationObject =
     selectedObject?.type === "APPLICATION"
     && isApplicationObjectPath(selectedPath);
@@ -207,7 +206,7 @@ export default function ExplorerView({
           description={selectedObject?.description}
           canManage={canConfigure}
         />
-      ) : isVisualGroup || isCatalogFolder ? (
+      ) : showCatalogChildList ? (
         <SystemFolderListPanel
           key={selectedPath}
           folderPath={selectedPath}

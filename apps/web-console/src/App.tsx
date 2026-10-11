@@ -892,8 +892,6 @@ function AppShell() {
                   }
                 }}
                 onSelectPath={selectPathInExplorer}
-                onMembersChanged={() => void invalidateAll()}
-                allObjects={objectList}
                 canConfigure={canConfigure}
                 isPlatformAdmin={isAdmin}
                 canManageTenantSecurity={canManageSecurity}

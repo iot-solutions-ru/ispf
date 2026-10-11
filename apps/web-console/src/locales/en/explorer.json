@@ -153,6 +153,7 @@
   "icons.screens": "Screens",
   "folderList.empty": "List is empty.",
   "folderList.emptyCreate": "No objects yet. Create the first one here or via the tree context menu.",
+  "folderList.emptyGroup": "No members yet. Add objects via the tree context menu (Add to group).",
   "folderList.template": "Template",
   "folderList.create": "Create",
   "folderList.searchPlaceholder": "Search by name, type, template…",
