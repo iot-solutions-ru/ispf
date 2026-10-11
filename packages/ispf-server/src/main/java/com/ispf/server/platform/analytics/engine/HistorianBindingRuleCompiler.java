@@ -318,8 +318,9 @@ public final class HistorianBindingRuleCompiler {
             return "";
         }
         String trimmed = value.trim();
-        if ((trimmed.startsWith("'") && trimmed.endsWith("'"))
-                || (trimmed.startsWith("\"") && trimmed.endsWith("\""))) {
+        if (trimmed.length() >= 2
+                && ((trimmed.startsWith("'") && trimmed.endsWith("'"))
+                || (trimmed.startsWith("\"") && trimmed.endsWith("\"")))) {
             return trimmed.substring(1, trimmed.length() - 1);
         }
         return trimmed;

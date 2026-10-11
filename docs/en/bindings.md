@@ -143,7 +143,7 @@ A run that throws is retried after one period, then after twice the previous del
 
 ### Target kinds (platform rule)
 
-Model extension — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). If `target.kind` is absent → **`variable`**.
+Model extension — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). If `target.kind` is absent → **`variable`**. An unknown `kind` is **rejected** (not silently remapped to `variable`).
 
 | `kind` | Fields | Purpose |
 |--------|------|------------|

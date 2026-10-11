@@ -128,7 +128,7 @@
 
 ### Типы цели (`target.kind`)
 
-Расширение модели — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). Если `target.kind` отсутствует → **`variable`**.
+Расширение модели — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). Если `target.kind` отсутствует → **`variable`**. Неизвестный `kind` **отклоняется** (не подменяется молча на `variable`).
 
 | `kind` | Поля | Назначение |
 |--------|------|------------|

@@ -80,6 +80,19 @@ class DataRecordTest {
     }
 
     @Test
+    void storesIntegerInLongFieldAsLong() {
+        DataSchema schema = DataSchema.builder("counter")
+                .field("value", FieldType.LONG)
+                .build();
+
+        assertThat(DataRecord.single(schema, Map.of("value", 7)).get("value", 0)).isEqualTo(7L);
+        assertThat(DataRecord.single(schema, Map.of("value", 7L)).get("value", 0)).isEqualTo(7L);
+        assertThatThrownBy(() -> DataRecord.single(schema, Map.of("value", 1.5)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must be long");
+    }
+
+    @Test
     void rejectsFractionAndOutOfRangeIntegerField() {
         DataSchema schema = DataSchema.builder("counter")
                 .field("value", FieldType.INTEGER)

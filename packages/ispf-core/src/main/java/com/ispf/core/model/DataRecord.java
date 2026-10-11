@@ -95,6 +95,9 @@ public final class DataRecord {
         if (field.type() == FieldType.INTEGER) {
             return IntegerValues.requireInt(field.name(), value);
         }
+        if (field.type() == FieldType.LONG) {
+            return longValue(field, value);
+        }
         if (field.type() == FieldType.DATETIME) {
             return datetimeValue(field, value);
         }
@@ -106,6 +109,16 @@ public final class DataRecord {
         }
         validateType(field, value);
         return value;
+    }
+
+    private static Long longValue(FieldDefinition field, Object value) {
+        if (value instanceof Long longValue) {
+            return longValue;
+        }
+        if (value instanceof Integer intValue) {
+            return intValue.longValue();
+        }
+        throw new IllegalArgumentException(field.name() + " must be long");
     }
 
     private static Instant datetimeValue(FieldDefinition field, Object value) {
@@ -174,11 +187,7 @@ public final class DataRecord {
                     throw new IllegalArgumentException(field.name() + " must be integer");
                 }
             }
-            case LONG -> {
-                if (!(value instanceof Long) && !(value instanceof Integer)) {
-                    throw new IllegalArgumentException(field.name() + " must be long");
-                }
-            }
+            case LONG -> throw new IllegalStateException("long is stored by longValue");
             case DOUBLE -> throw new IllegalStateException("double is stored by finiteDouble");
             case STRING -> {
                 if (!(value instanceof String)) {

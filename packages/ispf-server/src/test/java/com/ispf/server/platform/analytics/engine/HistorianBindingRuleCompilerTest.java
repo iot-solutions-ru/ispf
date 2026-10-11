@@ -43,6 +43,32 @@ class HistorianBindingRuleCompilerTest {
     }
 
     @Test
+    void danglingQuoteInSourceDoesNotThrow() {
+        BindingRule rule = new BindingRule(
+                "rule-bad-quote",
+                "rule-bad-quote",
+                true,
+                0,
+                BindingRuleKind.HISTORIAN,
+                new BindingActivators(false, List.of(new BindingVariableRef("root.dev.a", "temperature")), null, 60_000L, false, false),
+                "",
+                "avg(')",
+                new BindingTarget("variable", "avg-a", "value", null, null),
+                "1h",
+                null
+        );
+        AnalyticsProperties properties = new AnalyticsProperties(
+                60_000L, true, true, 60_000L, false, 60_000L, 7, 20, 3_000L, 0
+        );
+        Optional<AnalyticsTagDefinition> compiled = HistorianBindingRuleCompiler.compile(
+                "root.platform.devices.analytics-catalog-a",
+                rule,
+                properties
+        );
+        assertThat(compiled).isEmpty();
+    }
+
+    @Test
     void compilesExtensionHelperWhenRegistered() {
         BindingRule rule = new BindingRule(
                 "rule-energy",
