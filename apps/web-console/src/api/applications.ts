@@ -467,6 +467,92 @@ export async function deployApplicationFunction(
   return response.json() as Promise<Record<string, unknown>>;
 }
 
+export interface ApplicationGitBinding {
+  appId: string;
+  configured?: boolean;
+  provider?: string;
+  remoteUrl?: string;
+  defaultBranch?: string;
+  bundlePath?: string;
+  credentialObjectPath?: string;
+  lastSyncedSha?: string | null;
+  lastSyncedVersion?: string | null;
+  lastSyncedAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface ApplicationGitStatus {
+  appId: string;
+  configured: boolean;
+  binding?: ApplicationGitBinding;
+  hasDeploy?: boolean;
+  deployedVersion?: string;
+  deployedAt?: string | null;
+  credentialConfigured?: boolean;
+  remoteReachable?: boolean | null;
+  drift?: Record<string, string>;
+  note?: string;
+}
+
+export async function fetchApplicationGitBinding(appId: string): Promise<ApplicationGitBinding> {
+  const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/git`, {
+    headers: { ...getAuthHeaders() },
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Git binding failed: ${response.status}`);
+  }
+  return response.json() as Promise<ApplicationGitBinding>;
+}
+
+export async function upsertApplicationGitBinding(
+  appId: string,
+  body: {
+    provider: string;
+    remoteUrl: string;
+    defaultBranch?: string;
+    bundlePath?: string;
+    token?: string;
+  }
+): Promise<ApplicationGitBinding> {
+  const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/git`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Git connect failed: ${response.status}`);
+  }
+  return response.json() as Promise<ApplicationGitBinding>;
+}
+
+export async function deleteApplicationGitBinding(appId: string): Promise<ApplicationGitBinding> {
+  const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/git`, {
+    method: "DELETE",
+    headers: { ...getAuthHeaders() },
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Git disconnect failed: ${response.status}`);
+  }
+  return response.json() as Promise<ApplicationGitBinding>;
+}
+
+export async function fetchApplicationGitStatus(appId: string): Promise<ApplicationGitStatus> {
+  const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/git/status`, {
+    headers: { ...getAuthHeaders() },
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Git status failed: ${response.status}`);
+  }
+  return response.json() as Promise<ApplicationGitStatus>;
+}
+
 export async function pullApplicationBundleFromTree(
   appId: string,
   options?: {
