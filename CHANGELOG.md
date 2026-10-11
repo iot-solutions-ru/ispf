@@ -26,6 +26,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Explorer catalog VISUAL_GROUP** — selecting a bundle group under Data Sources (or other catalogs) opened the SQL object / data-source editor by path heuristic and failed with “Not a data source object”. Groups now open the same child list panel as the catalog root (membership edits stay on the tree context menu “Add to group”).
 - **Object `createdAt` and audit flags on load** — load reconstructed `PlatformObject` with `Instant.now()` and skipped `bindingAuditEnabled` / `functionAuditEnabled` / `eventJournalEnabled`, so the next persist rewrote `created_at` and could clear those flags. Load now passes `entity.getCreatedAt()` and restores the three flags; updates no longer overwrite a non-null `created_at`.
 - **BINARY / LONG value equality** — `DataRecordValues.equal` compared `byte[]` by reference (CHANGES_ONLY historian flood); LONG fields stored raw `Integer` without coerce. Binary compares by content; LONG stores `Long`.
 - **Historian / PlatformRef dangling quotes** — a single `'` or `"` in `unquote` threw `StringIndexOutOfBoundsException` (500). Length-guarded in the parser and historian compiler.
