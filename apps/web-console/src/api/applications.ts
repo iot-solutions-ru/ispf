@@ -553,6 +553,25 @@ export async function fetchApplicationGitStatus(appId: string): Promise<Applicat
   return response.json() as Promise<ApplicationGitStatus>;
 }
 
+export async function pullApplicationGitRelease(
+  appId: string,
+  body?: { ref?: string }
+): Promise<Record<string, unknown>> {
+  const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/git/pull`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(body ?? {}),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Git pull failed: ${response.status}`);
+  }
+  return response.json() as Promise<Record<string, unknown>>;
+}
+
 export async function pullApplicationBundleFromTree(
   appId: string,
   options?: {

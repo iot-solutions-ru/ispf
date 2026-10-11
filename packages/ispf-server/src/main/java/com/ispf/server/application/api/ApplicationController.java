@@ -10,6 +10,7 @@ import com.ispf.server.application.bundle.ApplicationBundlePullFromTreeService.P
 import com.ispf.server.application.data.ApplicationDataService;
 import com.ispf.server.application.git.ApplicationGitService;
 import com.ispf.server.application.git.ApplicationGitService.GitBindingRequest;
+import com.ispf.server.application.git.ApplicationGitService.PullRequest;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.report.ApplicationReportService;
@@ -114,6 +115,22 @@ public class ApplicationController {
     @GetMapping("/{appId}/git/status")
     public Map<String, Object> gitStatus(@PathVariable String appId) {
         return applicationGitService.status(appId);
+    }
+
+    @PostMapping("/{appId}/git/pull")
+    public Map<String, Object> pullGitRelease(
+            @PathVariable String appId,
+            @RequestBody(required = false) PullRequest request
+    ) {
+        try {
+            return applicationGitService.pullRelease(appId, request);
+        } catch (CommercialLicenseException ex) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
+        } catch (BundleDependencyException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
     }
 
     @PostMapping("/{appId}/deploy")

@@ -48,7 +48,7 @@ Quick-start spine (device → data → viz → automation → ship):
 | 3 | Binding rule or hub function | [Bindings](bindings.md)#execution · [Expression language](expression-language.md) |
 | 4 | Dashboard / SCADA widget | [Dashboards](dashboards.md) · [Widgets](widgets.md) |
 | 5 | Alert → optional workflow | [Automation](automation.md) · [Workflows](workflows.md) |
-| 6 | Pack & validate (APPLICATION Git Connect/Status shipped; Push/Pull planned — ADR-0063) | [Solution developer guide](solution-developer-guide.md) § solution-as-repo · [Applications — Git](applications.md#application-git-adr-0063) |
+| 6 | Pack & validate (APPLICATION Git Connect/Status/Pull shipped; Push PR planned — ADR-0063) | [Solution developer guide](solution-developer-guide.md) § solution-as-repo · [Applications — Git](applications.md#application-git-adr-0063) |
 
 **Done when:** `validate_bundle` is green and operator UI opens without Admin Explorer.
 

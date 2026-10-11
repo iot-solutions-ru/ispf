@@ -1,43 +1,69 @@
 package com.ispf.server.application.git;
 
+import com.ispf.server.application.bundle.ApplicationBundleDeployService;
 import com.ispf.server.application.bundle.ApplicationBundleSnapshotStore;
+import com.ispf.server.application.bundle.BundleManifestValidator;
+import com.ispf.server.application.bundle.BundleValidationResult;
 import com.ispf.server.application.data.ApplicationDataStore;
+import com.ispf.server.license.CommercialBundleLicenseVerifier;
+import com.ispf.server.license.CommercialLicenseException;
+import com.ispf.server.security.OutboundUrlSafety;
 import com.ispf.server.security.PlatformCredentialService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
- * APPLICATION ↔ team git binding (ADR-0063). Pull/push providers land in follow-up PRs;
- * this service owns Connect / Status.
+ * APPLICATION ↔ team git binding (ADR-0063). Connect / Status / Pull release;
+ * Push PR is a follow-up.
  */
 @Service
 public class ApplicationGitService {
 
     private static final Set<String> PROVIDERS = Set.of("github", "gitlab");
+    private static final Pattern SAFE_REF = Pattern.compile("^[A-Za-z0-9._/-]{1,255}$");
 
     private final ApplicationGitBindingStore bindingStore;
     private final ApplicationDataStore dataStore;
     private final ApplicationBundleSnapshotStore snapshotStore;
     private final PlatformCredentialService credentialService;
+    private final ApplicationGitRemoteClient remoteClient;
+    private final ApplicationBundleDeployService bundleDeployService;
+    private final BundleManifestValidator bundleManifestValidator;
+    private final CommercialBundleLicenseVerifier licenseVerifier;
+    private final ObjectMapper objectMapper;
 
     public ApplicationGitService(
             ApplicationGitBindingStore bindingStore,
             ApplicationDataStore dataStore,
             ApplicationBundleSnapshotStore snapshotStore,
-            PlatformCredentialService credentialService
+            PlatformCredentialService credentialService,
+            ApplicationGitRemoteClient remoteClient,
+            ApplicationBundleDeployService bundleDeployService,
+            BundleManifestValidator bundleManifestValidator,
+            CommercialBundleLicenseVerifier licenseVerifier,
+            ObjectMapper objectMapper
     ) {
         this.bindingStore = bindingStore;
         this.dataStore = dataStore;
         this.snapshotStore = snapshotStore;
         this.credentialService = credentialService;
+        this.remoteClient = remoteClient;
+        this.bundleDeployService = bundleDeployService;
+        this.bundleManifestValidator = bundleManifestValidator;
+        this.licenseVerifier = licenseVerifier;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional(readOnly = true)
@@ -124,9 +150,92 @@ public class ApplicationGitService {
         ));
         status.put(
                 "note",
-                "Connect/Status available now. Pull release and Push PR are planned follow-ups (ADR-0063)."
+                "Connect/Status/Pull available. Push PR is a planned follow-up (ADR-0063)."
         );
         return status;
+    }
+
+    /**
+     * Fetch full bundle from the bound remote at {@code ref} (or default branch), validate, deploy.
+     */
+    public Map<String, Object> pullRelease(String appId, PullRequest request) {
+        requireApp(appId);
+        Map<String, Object> binding = bindingStore.find(appId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Git is not connected for application: " + appId
+                ));
+        String provider = String.valueOf(binding.get("provider"));
+        String remoteUrl = String.valueOf(binding.get("remoteUrl"));
+        String bundlePath = String.valueOf(binding.get("bundlePath"));
+        String defaultBranch = String.valueOf(binding.getOrDefault("defaultBranch", "main"));
+        String credentialPath = String.valueOf(binding.get("credentialObjectPath"));
+        String ref = validateRef(
+                request != null && request.ref() != null && !request.ref().isBlank()
+                        ? request.ref()
+                        : defaultBranch
+        );
+
+        String token = credentialService.resolveSecret(credentialPath)
+                .filter(value -> value != null && !value.isBlank())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "git credential is missing; reconnect with a token"
+                ));
+
+        ApplicationGitRemoteClient.FetchedBundle fetched =
+                remoteClient.fetchBundle(provider, remoteUrl, bundlePath, ref, token);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> raw;
+        ApplicationBundleDeployService.BundleManifest manifest;
+        try {
+            raw = objectMapper.readValue(fetched.contentJson(), Map.class);
+            manifest = objectMapper.convertValue(raw, ApplicationBundleDeployService.BundleManifest.class);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "remote bundle is not valid JSON: " + ex.getMessage(),
+                    ex
+            );
+        }
+
+        // License must be verified on the raw JSON map (same as POST /deploy). The typed
+        // BundleManifest path used by validate() can break contentSha256 for signed bundles.
+        try {
+            licenseVerifier.verifyOrWarn(appId, raw, false);
+        } catch (CommercialLicenseException ex) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
+        }
+
+        BundleValidationResult validation = bundleManifestValidator.validate(appId, manifest);
+        if (BundleValidationResult.ERROR.equals(validation.status())) {
+            List<String> errors = validation.errors() == null ? List.of() : validation.errors().stream()
+                    .filter(err -> err == null || !err.startsWith("license:"))
+                    .toList();
+            if (!errors.isEmpty()) {
+                Map<String, Object> failed = new LinkedHashMap<>();
+                failed.put("appId", appId);
+                failed.put("status", "ERROR");
+                Map<String, Object> validationMap = validation.toMap();
+                validationMap.put("errors", errors);
+                failed.put("validation", validationMap);
+                failed.put("git", gitMeta(provider, remoteUrl, bundlePath, fetched));
+                return failed;
+            }
+        }
+
+        Map<String, Object> deployResult = bundleDeployService.deploy(appId, manifest, false, false);
+        Map<String, Object> response = new LinkedHashMap<>(deployResult);
+        response.put("git", gitMeta(provider, remoteUrl, bundlePath, fetched));
+
+        boolean activated = Boolean.TRUE.equals(deployResult.get("snapshotActive"));
+        String version = String.valueOf(deployResult.getOrDefault("version", manifest.version()));
+        snapshotStore.updateGitProvenance(appId, version, fetched.ref(), fetched.commitSha());
+        if (activated) {
+            bindingStore.updateLastSynced(appId, fetched.commitSha(), version, Instant.now());
+        }
+        return response;
     }
 
     static String defaultCredentialPath(String appId) {
@@ -135,31 +244,26 @@ public class ApplicationGitService {
 
     static String validateRemoteUrl(String raw) {
         String value = requireText(raw, "remoteUrl");
-        URI uri;
+        URI parsed;
         try {
-            uri = URI.create(value);
+            parsed = URI.create(value);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "remoteUrl is not a valid URI", ex);
         }
-        String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
-        if (!"https".equals(scheme)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "remoteUrl must use https");
-        }
-        if (uri.getHost() == null || uri.getHost().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "remoteUrl host is required");
-        }
-        if (uri.getUserInfo() != null && !uri.getUserInfo().isBlank()) {
+        if (parsed.getUserInfo() != null && !parsed.getUserInfo().isBlank()) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "remoteUrl must not embed credentials; use the token field"
             );
         }
-        if (uri.getQuery() != null || uri.getFragment() != null) {
+        if (parsed.getQuery() != null || parsed.getFragment() != null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "remoteUrl must not include query or fragment"
             );
         }
+        // SSRF: https + public host (rebuild drops userInfo, so check it above first).
+        OutboundUrlSafety.requireSafePublicHttpsUrl(value);
         return value;
     }
 
@@ -171,6 +275,35 @@ public class ApplicationGitService {
             );
         }
         return path;
+    }
+
+    static String validateRef(String ref) {
+        String value = requireText(ref, "ref");
+        if (value.contains("..") || value.startsWith("/") || value.contains("\\") || value.contains(" ")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ref is invalid");
+        }
+        if (!SAFE_REF.matcher(value).matches()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "ref must be a branch, tag, or sha (A-Za-z0-9._/-)"
+            );
+        }
+        return value;
+    }
+
+    private static Map<String, Object> gitMeta(
+            String provider,
+            String remoteUrl,
+            String bundlePath,
+            ApplicationGitRemoteClient.FetchedBundle fetched
+    ) {
+        Map<String, Object> git = new LinkedHashMap<>();
+        git.put("provider", provider);
+        git.put("remoteUrl", remoteUrl);
+        git.put("bundlePath", bundlePath);
+        git.put("ref", fetched.ref());
+        git.put("sha", fetched.commitSha());
+        return git;
     }
 
     private Map<String, Object> publicBinding(Map<String, Object> row) {
@@ -240,5 +373,8 @@ public class ApplicationGitService {
             String bundlePath,
             String token
     ) {
+    }
+
+    public record PullRequest(String ref) {
     }
 }

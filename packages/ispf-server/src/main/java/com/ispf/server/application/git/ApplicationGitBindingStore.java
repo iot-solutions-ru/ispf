@@ -98,4 +98,19 @@ public class ApplicationGitBindingStore {
     public void clear(String appId) {
         jdbcTemplate.update("DELETE FROM " + table + " WHERE app_id = ?", appId);
     }
+
+    public void updateLastSynced(String appId, String sha, String version, Instant at) {
+        jdbcTemplate.update(
+                """
+                        UPDATE %s
+                        SET last_synced_sha = ?, last_synced_version = ?, last_synced_at = ?, updated_at = ?
+                        WHERE app_id = ?
+                        """.formatted(table),
+                sha,
+                version,
+                Timestamp.from(at),
+                Timestamp.from(at),
+                appId
+        );
+    }
 }
