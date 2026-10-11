@@ -79,6 +79,23 @@ public class PlatformObject {
             String lastChangedBy,
             Instant lastChangedAt
     ) {
+        this(id, path, type, displayName, description, templateId, sortOrder, revision, lastChangedBy, lastChangedAt, null);
+    }
+
+    /** Reconstruct from persistence; {@code createdAt == null} means {@link Instant#now()}. */
+    public PlatformObject(
+            String id,
+            String path,
+            ObjectType type,
+            String displayName,
+            String description,
+            String templateId,
+            int sortOrder,
+            long revision,
+            String lastChangedBy,
+            Instant lastChangedAt,
+            Instant createdAt
+    ) {
         this.id = id;
         this.path = path;
         this.type = type;
@@ -86,7 +103,7 @@ public class PlatformObject {
         this.description = description != null ? description : "";
         this.templateId = templateId;
         this.sortOrder = sortOrder;
-        this.createdAt = Instant.now();
+        this.createdAt = createdAt != null ? createdAt : Instant.now();
         this.revision = revision;
         this.lastChangedBy = lastChangedBy;
         this.lastChangedAt = lastChangedAt;

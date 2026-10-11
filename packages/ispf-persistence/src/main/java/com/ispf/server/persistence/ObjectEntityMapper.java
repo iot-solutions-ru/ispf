@@ -14,14 +14,19 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.persistence.entity.ObjectNodeEntity;
 import com.ispf.server.persistence.entity.ObjectVariableEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 @Component
 public class ObjectEntityMapper {
+
+    private static final Logger log = LoggerFactory.getLogger(ObjectEntityMapper.class);
 
     private final ObjectMapper objectMapper;
 
@@ -45,7 +50,11 @@ public class ObjectEntityMapper {
         entity.setTemplateId(node.templateId().orElse(null));
         entity.setappliedBlueprintIdsJson(writeappliedBlueprintIds(node.appliedBlueprintIds()));
         entity.setBlueprintContributionsJson(writeBlueprintContributions(node.blueprintContributions()));
-        entity.setCreatedAt(node.createdAt());
+        // Never overwrite a persisted creation timestamp on update.
+        if (entity.getCreatedAt() == null) {
+            Instant createdAt = node.createdAt() != null ? node.createdAt() : Instant.now();
+            entity.setCreatedAt(createdAt);
+        }
         entity.setSortOrder(node.sortOrder());
         entity.setEventsJson(writeJson(node.events().values().toArray(new EventDescriptor[0])));
         entity.setFunctionsJson(writeJson(node.functions().values().toArray(new FunctionDescriptor[0])));
@@ -94,13 +103,43 @@ public class ObjectEntityMapper {
                 readDataRecord(entity.getValueJson()),
                 entity.isHistoryEnabled(),
                 entity.getHistoryRetentionDays(),
-                HistorySampleMode.parse(entity.getHistorySampleMode()),
+                parseHistorySampleMode(entity),
                 entity.isIncludePreviousValueInEvent(),
-                VariableStorageMode.parse(entity.getStorageMode()),
+                parseStorageMode(entity),
                 entity.getTelemetryPublishMode(),
                 readStringList(entity.getReadRolesJson()),
                 readStringList(entity.getWriteRolesJson())
         );
+    }
+
+    private HistorySampleMode parseHistorySampleMode(ObjectVariableEntity entity) {
+        String raw = entity.getHistorySampleMode();
+        try {
+            return HistorySampleMode.parse(raw);
+        } catch (IllegalArgumentException ex) {
+            log.warn(
+                    "Invalid historySampleMode '{}' on {}/{} — using CHANGES_ONLY",
+                    raw,
+                    entity.getObjectPath(),
+                    entity.getName()
+            );
+            return HistorySampleMode.CHANGES_ONLY;
+        }
+    }
+
+    private VariableStorageMode parseStorageMode(ObjectVariableEntity entity) {
+        String raw = entity.getStorageMode();
+        try {
+            return VariableStorageMode.parse(raw);
+        } catch (IllegalArgumentException ex) {
+            log.warn(
+                    "Invalid storageMode '{}' on {}/{} — using PERSISTENT",
+                    raw,
+                    entity.getObjectPath(),
+                    entity.getName()
+            );
+            return VariableStorageMode.PERSISTENT;
+        }
     }
 
     public List<String> readStringList(String json) {

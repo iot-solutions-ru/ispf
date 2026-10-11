@@ -91,6 +91,19 @@ class PlatformRefParserTest {
     }
 
     @Test
+    void parseHistorianSourceHandlesDanglingQuotesWithoutCrash() {
+        assertThatThrownBy(() -> PlatformRefParser.parseHistorianSource("'", null))
+                .isInstanceOf(PlatformRefParseException.class);
+        assertThatThrownBy(() -> PlatformRefParser.parseHistorianSource("\"", null))
+                .isInstanceOf(PlatformRefParseException.class);
+        PlatformRef quoted = PlatformRefParser.parseHistorianSource(
+                "'root.platform.devices.a/temperature'",
+                null
+        );
+        assertThat(quoted.name()).isEqualTo("temperature");
+    }
+
+    @Test
     void fromJsonFields() {
         PlatformRef ref = PlatformRefConfig.requireVariable(
                 null,
