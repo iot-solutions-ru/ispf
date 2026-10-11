@@ -32,5 +32,6 @@
 | [0054-hosted-ui-packs](0054-hosted-ui-packs.md) | Hosted UI packs (`/apps/<appId>/`) для SPA из marketplace — **Accepted** |
 | [0058-mixin-reevaluation-and-detach](0058-mixin-reevaluation-and-detach.md) | Opt-in reevaluation MIXIN + ownership-aware detach — **Accepted** |
 | [0059-toolchain-version-policy](0059-toolchain-version-policy.md) | Политика версий тулчейна и зависимостей (N или N-1, пины с владельцами, тяжёлые зависимости в модулях) — **Accepted** |
+| [0063-application-git-lifecycle](0063-application-git-lifecycle.md) | Git-вкладка APPLICATION: Connect/Status сейчас; Pull→deploy / Push→PR — план — **Accepted** |
 
 **Цепочки тем (порядок чтения):** [en/decisions/readme.md § Topic chains](../../en/decisions/readme.md#topic-chains-read-in-order).
