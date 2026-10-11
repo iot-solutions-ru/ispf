@@ -374,12 +374,12 @@ The APPLICATION **Git** tab (Deploy panel) connects the **same full bundle** to 
 
 | Action | Status | Behaviour |
 |--------|--------|-----------|
-| Connect / Disconnect | **Shipped** | Remote URL (https, no embedded userinfo), provider (`github` \| `gitlab`), default branch, path to `bundle.json`, PAT via credential vault |
+| Connect / Disconnect | **Shipped** | Remote URL (https, no embedded userinfo / private hosts), provider (`github` \| `gitlab`), default branch, path to `bundle.json`, PAT via credential vault |
 | Status | **Shipped** | Binding + deploy snapshot + credential present; drift/remote reachability reserved |
-| Pull release | Planned | Fetch full manifest at ref → validate → deploy (history: version + git SHA) |
+| Pull release | **Shipped** | `POST …/git/pull` with optional `{ "ref" }` → fetch `bundle.json` → validate → deploy; history `source=git` + sha |
 | Push tree | Planned | Full pull-from-tree → feature branch → **open PR** (no force-push to default) |
 
-See [0063-application-git-lifecycle](decisions/0063-application-git-lifecycle.md). API today: `GET/PUT/DELETE /api/v1/applications/{appId}/git`, `GET …/git/status`.
+See [0063-application-git-lifecycle](decisions/0063-application-git-lifecycle.md). API today: `GET/PUT/DELETE /api/v1/applications/{appId}/git`, `GET …/git/status`, `POST …/git/pull`.
 
 ## Reports (REQ-PF-12)
 

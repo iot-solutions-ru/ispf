@@ -374,12 +374,12 @@ POST /api/v1/applications/{appId}/bundle/pull-from-tree
 
 | Действие | Статус | Поведение |
 |----------|--------|-----------|
-| Connect / Disconnect | **Сейчас** | Remote URL (https, без userinfo), provider (`github` \| `gitlab`), ветка, путь к `bundle.json`, PAT в vault |
+| Connect / Disconnect | **Сейчас** | Remote URL (https, без userinfo / private hosts), provider (`github` \| `gitlab`), ветка, путь к `bundle.json`, PAT в vault |
 | Status | **Сейчас** | Binding + deploy snapshot + наличие credential; drift/reachability — позже |
-| Pull release | План | Fetch манифеста → validate → deploy (version + git SHA) |
+| Pull release | **Сейчас** | `POST …/git/pull` с опциональным `{ "ref" }` → fetch `bundle.json` → validate → deploy; history `source=git` + sha |
 | Push tree | План | Full pull-from-tree → feature branch → **open PR** |
 
-Подробнее: [ADR-0063](../en/decisions/0063-application-git-lifecycle.md). API сейчас: `GET/PUT/DELETE /api/v1/applications/{appId}/git`, `GET …/git/status`.
+Подробнее: [ADR-0063](../en/decisions/0063-application-git-lifecycle.md). API сейчас: `GET/PUT/DELETE /api/v1/applications/{appId}/git`, `GET …/git/status`, `POST …/git/pull`.
 
 ## Отчёты (REQ-PF-12)
 

@@ -39,9 +39,9 @@ Version identity is a triple:
 
 | Action | Status | Behaviour |
 |--------|--------|-----------|
-| **Connect / Disconnect** | Shipped | Remote URL (`https` only; no embedded userinfo), provider (`github` \| `gitlab`), default branch, path to `bundle.json`, PAT via `PlatformCredentialService` at a fixed app-scoped path |
-| **Status** | Shipped (partial) | Binding + active deploy + credential present; remote reachability and drift are reserved (`unknown` until providers land) |
-| **Pull release** | Planned | Fetch full manifest (or pack from solution layout) → validate → deploy; history records `source=git`, ref, sha |
+| **Connect / Disconnect** | Shipped | Remote URL (`https` only; no embedded userinfo; public hosts), provider (`github` \| `gitlab`), default branch, path to `bundle.json`, PAT via `PlatformCredentialService` at a fixed app-scoped path |
+| **Status** | Shipped (partial) | Binding + active deploy + credential present; remote reachability and drift are reserved (`unknown` until Push lands) |
+| **Pull release** | Shipped | Fetch full manifest via GitHub/GitLab Contents API → validate → deploy; history records `source=git`, ref, sha; binding `last_synced_*` updated on activate |
 | **Push tree** | Planned | Full-section pull-from-tree (plus root fields / blueprints refresh) → commit on a feature branch → **open PR** (never force-push default branch) |
 
 ### Round-trip completeness

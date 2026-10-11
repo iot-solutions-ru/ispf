@@ -11,7 +11,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Изменено
 
-- Git lifecycle приложения (ADR-0063): Connect / Disconnect / Status API и вкладка Git в Console — binding APPLICATION к git remote команды (цель полного sync бандла). Pull release → deploy и Push tree → PR — в следующих итерациях. Docs: applications, learn Path B, anti-patterns.
+- Git lifecycle приложения (ADR-0063): Connect / Disconnect / Status / Pull release → deploy (GitHub/GitLab Contents API, PAT в vault, history `source=git` + sha). Вкладка Git в Console. Push tree → PR — план. Docs: applications, learn Path B, anti-patterns.
 - Binding `target.kind`: неизвестный kind отклоняется, а не молча становится `variable`.
 - Канон решения в валидации bundle: `LOGIC_HOST_DEVICE` (функция на DEVICE или SINGLETON blueprint с `targetObjectType=DEVICE`) был ERROR — validate/deploy отвечали `status: ERROR`, и судья агента отправлял рабочее решение на REWORK. Теперь это WARNING с указанием канонического хоста (SINGLETON-хаб или INSTANCE-двойник); деплой не блокируется. Bundle в `examples/` по-прежнему не должны давать `LOGIC_HOST_DEVICE` (`ExamplesBundleValidationTest`). ADR-0060 W1 дополнен.
 - В редакторе mixin блок Actions показывает объекты из `GET /api/v1/blueprints/attachments` (фильтр по текущему blueprint): пустой список «нигде не применён», клик по пути, `attachedAt` и merge warnings. `/instances` остаётся только для Upgrade у INSTANCE. В инспекторе объекта Applied blueprints для MIXIN дополняются `attachedAt` / warnings через `?objectPath=`.
