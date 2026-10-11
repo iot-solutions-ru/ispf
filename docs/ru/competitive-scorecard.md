@@ -90,7 +90,7 @@ Program wave 8 (~9.8) по-прежнему **отозвана**.
 
 | Проблема | Где |
 |----------|-----|
-| DNP3 poll-only (BETA) — `writePoint` не реализован | `Dnp3DeviceDriver.writePoint()` |
+| DNP3 PRODUCTION poll-only — `writePoint` не реализован (ADR-0057) | `Dnp3DeviceDriver.writePoint()` — матрица `PRODUCTION` + только `POLL`; запись открыта |
 | Partner Portal external | portal sync вне repo |
 | OT field pilots incomplete | [ot-trust](../evidence/ot-trust/) — lab soak ≠ customer sign-off |
 

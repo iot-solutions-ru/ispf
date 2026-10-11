@@ -89,7 +89,7 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 
 | Issue | Location |
 |-------|----------|
-| DNP3 poll-only (BETA) — `writePoint` not implemented | `Dnp3DeviceDriver.writePoint()` — maturity honest; write still open |
+| DNP3 PRODUCTION poll-only — `writePoint` not implemented (ADR-0057) | `Dnp3DeviceDriver.writePoint()` — matrix `PRODUCTION` + `POLL` only; write still open |
 | Partner Portal still external | `PartnerProgramService` persists directory/enroll (`source=db`); portal sync out of repo |
 | OT field pilots incomplete | [ot-trust](../evidence/ot-trust/) — lab soaks in progress; not customer plant sign-off |
 

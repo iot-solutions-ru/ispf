@@ -30,25 +30,26 @@ ISPF хранит конфигурацию платформы (дерево об
 ### 2. Flyway migration packs
 
 ```
-db/migration/postgresql/   — V1__baseline.sql (greenfield; incremental V1–V70 squashed)
-db/migration/h2/           — overrides для edge (при необходимости; по умолчанию H2 использует postgresql pack в MODE=PostgreSQL)
-db/migration/mssql/        — enterprise POC: один greenfield baseline
-db/migration/mysql/
-db/migration/oracle/
+db/migration/postgresql/   — V1__baseline.sql + инкрементальные V71+ (prod-путь)
+db/migration/h2/           — только README; по умолчанию H2 использует postgresql pack в MODE=PostgreSQL
+db/migration/mssql/        — только README, пока нет сертифицированного greenfield baseline
+db/migration/mysql/        — только README (план)
+db/migration/oracle/       — только README (план)
 ```
 
 `FlywayConfigurationCustomizer` выбирает `locations` по активному dialect.
 
-#### Greenfield policy (до v1.0)
+#### Поправка (2026-10-11) — PostgreSQL после squash V1–V70
 
-**Не поддерживаем** перенос relational core между движками (PG → MSSQL и т.д.) и **не поддерживаем** Flyway upgrade с legacy incremental migrations (V1–V70 удалены).
+Старые инкременты **V1–V70 схлопнуты** в `V1__baseline.sql` (2026-07-07). **После этого squash** PostgreSQL снова использует **инкрементальные скрипты Flyway** (`V71__…` и далее). Новая установка применяет `V1`, затем каждую следующую версию по порядку. Пакет **не** считать «только baseline навсегда».
 
 | Сценарий | Действие |
 |----------|----------|
-| Новая установка | Пустая БД + `V1__baseline.sql` активного dialect |
-| Смена `ISPF_METADATA_DB_KIND` | Новая пустая БД/схема с нуля; конфигурация — через **бандлы** (`package import`) |
-| Обновление версии ISPF на том же PostgreSQL | Тот же `V1__baseline.sql`; schema уже применена — Flyway no-op. DDL-изменения — через новые baseline-ревизии или ручной maintenance |
-| Legacy DB с историей V1–V70 | Однократно `deploy/vps-flyway-repair.sh` — squash history до V1 + repair checksum |
+| Новая установка PostgreSQL | Пустая БД → Flyway применяет `V1__baseline.sql`, затем `V71+` |
+| Обновление версии ISPF на том же PostgreSQL | Flyway применяет новые `Vnn__*.sql`, которых ещё нет в `flyway_schema_history` |
+| Смена `ISPF_METADATA_DB_KIND` | Новая пустая БД/схема; конфигурация через **бандлы** (`package import`) — **без** in-place смены движка |
+| Legacy DB всё ещё на истории V1–V70 до squash | Однократно `deploy/vps-flyway-repair.sh` — squash history до V1 + repair checksum, затем применить `V71+` |
+| MSSQL / MySQL / Oracle | **Не начато** — только README-заглушки; не ставить `ISPF_METADATA_DB_KIND` на эти движки в production |
 
 Конфигурация решения (объекты, приложения, мимики) живёт в **export/import бандлов**, не в «переносе» строк metadata между СУБД.
 
@@ -73,11 +74,11 @@ db/migration/oracle/
 
 | Tier | Engine | Prod | Migrations | Notes |
 |------|--------|------|------------|-------|
-| 0 | PostgreSQL 16 + Timescale | Yes | `postgresql/V1__baseline.sql` | Primary; реестр ПО |
+| 0 | PostgreSQL 16 + Timescale | Yes | `postgresql/V1` + `V71+` | Primary; реестр ПО |
 | 1 | PG-compatible (Yugabyte, Cockroach) | On request | `postgresql/` | Тестировать per vendor |
 | 2 | H2 (edge/dev) | Edge only | `postgresql/` + PG compat mode | `application-local.yml` |
-| 3 | MS SQL Server | POC | `mssql/` | Первый enterprise target |
-| 4 | MySQL, Oracle | Planned | `mysql/`, `oracle/` | После MSSQL POC |
+| 3 | MS SQL Server | Not started | только `mssql/README.md` | Первый enterprise target, когда появится baseline |
+| 4 | MySQL, Oracle | Not started | только README | После MSSQL |
 
 ## Последствия
 

@@ -2,8 +2,7 @@
 
 # ADR-0031: Cluster replica roles and platform job queue
 
-Статус: **Принято**  
-Дата: 2026-07-05
+Статус: **Принято** (2026-07-05) — **частично заменено** в именовании ролей решением [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md): `ISPF_REPLICA_ROLE` остаётся алиасом совместимости; предпочтительны `ISPF_REPLICA_PROFILE` / `ISPF_REPLICA_CAPABILITIES`. Разделы про очередь jobs ниже по-прежнему действуют.
 
 ## Контекст
 

@@ -4,7 +4,7 @@
 
 ## Status
 
-**Proposed** (2026-07-09)
+**Accepted** (2026-07-09; implementation landed — engine, rollups, multi-tag query; historian computations via ADR-0041)
 
 ## Context
 
