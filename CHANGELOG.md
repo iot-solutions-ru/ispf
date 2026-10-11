@@ -26,6 +26,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Marketplace free install under signed-bundle demostands** — when `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM` was set, free installs never signed the downloaded manifest (trusted flag stayed false), so reinstall of unsigned listings (e.g. Building HVAC Reference) returned 403 under `require-signed-bundles=true`. Unsigned free downloads are trusted again so the platform can sign them before verify.
 - **Object `createdAt` and audit flags on load** — load reconstructed `PlatformObject` with `Instant.now()` and skipped `bindingAuditEnabled` / `functionAuditEnabled` / `eventJournalEnabled`, so the next persist rewrote `created_at` and could clear those flags. Load now passes `entity.getCreatedAt()` and restores the three flags; updates no longer overwrite a non-null `created_at`.
 - **BINARY / LONG value equality** — `DataRecordValues.equal` compared `byte[]` by reference (CHANGES_ONLY historian flood); LONG fields stored raw `Integer` without coerce. Binary compares by content; LONG stores `Long`.
 - **Historian / PlatformRef dangling quotes** — a single `'` or `"` in `unquote` threw `StringIndexOutOfBoundsException` (500). Length-guarded in the parser and historian compiler.

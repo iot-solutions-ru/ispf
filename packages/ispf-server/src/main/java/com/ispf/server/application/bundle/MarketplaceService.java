@@ -352,12 +352,15 @@ public class MarketplaceService {
         return result;
     }
 
+    /** True when the free-download manifest has no license (signer path or trusted bypass). */
     private boolean resolveTrustedFreeInstall(String manifestJson) throws Exception {
         ApplicationBundleDeployService.BundleManifest manifest =
                 BundleManifestJsonSupport.parse(objectMapper, manifestJson);
         @SuppressWarnings("unchecked")
         Map<String, Object> root = objectMapper.convertValue(manifest, Map.class);
-        return root.get("license") == null && !bundleLicenseSigner.isConfigured();
+        // Must stay true when a signing key is configured — deployManifest signs then clears trust.
+        // Gating on !signer.isConfigured() skipped signing and 403'd under require-signed-bundles.
+        return root.get("license") == null;
     }
 
     private void assertListingCompatible(Map<String, Object> detail) {
