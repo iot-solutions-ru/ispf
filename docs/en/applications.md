@@ -364,9 +364,22 @@ POST /api/v1/applications/{appId}/bundle/pull-from-tree
 }
 ```
 
-Builds manifest from **live object tree** (visual groups + app stores). `paths` — optional, only listed nodes; without `paths` — all members of bundle visual groups. `models[]` is not reverse-engineered (stays from base manifest).
+Builds manifest from **live object tree** (visual groups + app stores). `paths` — optional, only listed nodes; without `paths` — all members of bundle visual groups. `displayName` / `tablePrefix` / `schemaName` are refreshed from the app registration; `operatorUi`, `metadata`, `license`, and `requires` are kept from the active snapshot (not reverse-engineered from the tree). `blueprints[]` are refreshed from the blueprint registry when names are known on the base manifest. `models[]` is not reverse-engineered (stays from base manifest).
 
 Object tree subtree (JSON, `formatVersion: 1`): `GET /api/v1/platform/backup/export?rootPath=root.platform.devices.demo-sensor-01` — **JSON export** tab in Inspector.
+
+## Application Git (ADR-0063)
+
+The APPLICATION **Git** tab (Deploy panel) connects the **same full bundle** to the team's git host. ISPF does not host `.git`; it stores a binding + credential.
+
+| Action | Status | Behaviour |
+|--------|--------|-----------|
+| Connect / Disconnect | **Shipped** | Remote URL (https, no embedded userinfo / private hosts), provider (`github` \| `gitlab`), default branch, path to `bundle.json`, PAT via credential vault |
+| Status | **Shipped** | Binding + deploy snapshot + credential present; drift/remote reachability reserved |
+| Pull release | **Shipped** | `POST …/git/pull` with optional `{ "ref" }` → fetch `bundle.json` → validate → deploy; history `source=git` + sha |
+| Push tree | Planned | Full pull-from-tree → feature branch → **open PR** (no force-push to default) |
+
+See [0063-application-git-lifecycle](decisions/0063-application-git-lifecycle.md). API today: `GET/PUT/DELETE /api/v1/applications/{appId}/git`, `GET …/git/status`, `POST …/git/pull`.
 
 ## Reports (REQ-PF-12)
 

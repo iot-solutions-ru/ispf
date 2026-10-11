@@ -86,4 +86,17 @@ public class PlatformCredentialService implements CredentialLookup {
                 })
                 .orElse(Map.of("status", "NOT_FOUND", "objectPath", objectPath));
     }
+
+    @Transactional
+    public boolean deleteByObjectPath(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return false;
+        }
+        return repository.findByObjectPath(objectPath)
+                .map(entity -> {
+                    repository.delete(entity);
+                    return true;
+                })
+                .orElse(false);
+    }
 }

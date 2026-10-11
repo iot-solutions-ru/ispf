@@ -177,7 +177,7 @@ A complete tree-first project has **8 layers** (see `get_automation_schema topic
 | Reports | `list_reports`, `get_report_schema`, `run_report`, `configure_report` |
 | Automation | `configure_alert`, `configure_correlator`, `list_automation`, `get_automation_schema` |
 | Workflows | `get_workflow`, `save_workflow_bpmn`, `run_workflow`, `update_workflow_status`, `list_workflow_instances`, `signal_workflow_instance`, `cancel_workflow_instance` |
-| Applications | `register_application`, `application_data_*`, `deploy_app_binding`, `deploy_app_function`, `validate_bundle`, `dry_run_deploy`, `import_package`, `export_application_bundle`, `rollback_application_deploy`, `pull_application_from_tree` |
+| Applications | `register_application`, `application_data_*`, `deploy_app_binding`, `deploy_app_function`, `validate_bundle`, `dry_run_deploy`, `import_package`, `export_application_bundle`, `rollback_application_deploy`, `pull_application_from_tree` — after MCP tree edits, sync Catalog via pull-from-tree / pack; APPLICATION Git Connect/Status/Pull shipped, Push PR planned (ADR-0063) |
 | Functions/events | `list_functions`, `get_function`, `invoke_bff`, `invoke_tree_function`, `fire_event`, `list_events`, `list_event_catalog`, `get_event_schema` |
 | Tree functions | `get_function_template`, `deploy_tree_function` (script **or java**), `invoke_tree_function`; app BFF: `deploy_app_function` (script) |
 | Operator HMI | `configure_operator_ui` |

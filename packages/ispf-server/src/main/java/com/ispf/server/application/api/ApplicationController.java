@@ -8,6 +8,9 @@ import com.ispf.server.application.bundle.ApplicationBundleDeployService;
 import com.ispf.server.application.bundle.ApplicationBundlePullFromTreeService;
 import com.ispf.server.application.bundle.ApplicationBundlePullFromTreeService.PullFromTreeOptions;
 import com.ispf.server.application.data.ApplicationDataService;
+import com.ispf.server.application.git.ApplicationGitService;
+import com.ispf.server.application.git.ApplicationGitService.GitBindingRequest;
+import com.ispf.server.application.git.ApplicationGitService.PullRequest;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.report.ApplicationReportService;
@@ -26,9 +29,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -57,6 +62,7 @@ public class ApplicationController {
     private final ObjectMapper objectMapper;
     private final CommercialBundleLicenseVerifier licenseVerifier;
     private final ObjectAccessService objectAccessService;
+    private final ApplicationGitService applicationGitService;
 
     public ApplicationController(
             ApplicationDataService dataService,
@@ -70,7 +76,8 @@ public class ApplicationController {
             BundleManifestValidator bundleManifestValidator,
             ObjectMapper objectMapper,
             CommercialBundleLicenseVerifier licenseVerifier,
-            ObjectAccessService objectAccessService
+            ObjectAccessService objectAccessService,
+            ApplicationGitService applicationGitService
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
@@ -84,6 +91,46 @@ public class ApplicationController {
         this.objectMapper = objectMapper;
         this.licenseVerifier = licenseVerifier;
         this.objectAccessService = objectAccessService;
+        this.applicationGitService = applicationGitService;
+    }
+
+    @GetMapping("/{appId}/git")
+    public Map<String, Object> getGitBinding(@PathVariable String appId) {
+        return applicationGitService.getBinding(appId);
+    }
+
+    @PutMapping("/{appId}/git")
+    public Map<String, Object> putGitBinding(
+            @PathVariable String appId,
+            @RequestBody GitBindingRequest request
+    ) {
+        return applicationGitService.upsertBinding(appId, request);
+    }
+
+    @DeleteMapping("/{appId}/git")
+    public Map<String, Object> deleteGitBinding(@PathVariable String appId) {
+        return applicationGitService.disconnect(appId);
+    }
+
+    @GetMapping("/{appId}/git/status")
+    public Map<String, Object> gitStatus(@PathVariable String appId) {
+        return applicationGitService.status(appId);
+    }
+
+    @PostMapping("/{appId}/git/pull")
+    public Map<String, Object> pullGitRelease(
+            @PathVariable String appId,
+            @RequestBody(required = false) PullRequest request
+    ) {
+        try {
+            return applicationGitService.pullRelease(appId, request);
+        } catch (CommercialLicenseException ex) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
+        } catch (BundleDependencyException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
     }
 
     @PostMapping("/{appId}/deploy")

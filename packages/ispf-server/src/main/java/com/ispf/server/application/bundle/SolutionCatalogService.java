@@ -1,6 +1,7 @@
 package com.ispf.server.application.bundle;
 
 import com.ispf.server.application.data.ApplicationDataStore;
+import com.ispf.server.application.git.ApplicationGitService;
 import com.ispf.server.platform.analytics.pack.DropInAnalyticsPackLoader;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
@@ -20,6 +21,7 @@ public class SolutionCatalogService {
     private final ApplicationDataStore dataStore;
     private final ApplicationBundleSnapshotStore snapshotStore;
     private final ApplicationBundleDeployService deployService;
+    private final ApplicationGitService applicationGitService;
     private final DropInAnalyticsPackLoader analyticsPackLoader;
     private final ObjectMapper objectMapper;
 
@@ -27,12 +29,14 @@ public class SolutionCatalogService {
             ApplicationDataStore dataStore,
             ApplicationBundleSnapshotStore snapshotStore,
             ApplicationBundleDeployService deployService,
+            ApplicationGitService applicationGitService,
             DropInAnalyticsPackLoader analyticsPackLoader,
             ObjectMapper objectMapper
     ) {
         this.dataStore = dataStore;
         this.snapshotStore = snapshotStore;
         this.deployService = deployService;
+        this.applicationGitService = applicationGitService;
         this.analyticsPackLoader = analyticsPackLoader;
         this.objectMapper = objectMapper;
     }
@@ -82,6 +86,8 @@ public class SolutionCatalogService {
             result.put("errors", List.of());
         }
         snapshotStore.deleteAll(normalized);
+        // Clear Git binding + vault PAT before the app row disappears (ADR-0063).
+        applicationGitService.disconnect(normalized);
         dataStore.deleteApp(normalized);
         return result;
     }

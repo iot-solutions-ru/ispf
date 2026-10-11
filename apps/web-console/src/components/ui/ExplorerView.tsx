@@ -86,14 +86,15 @@ export default function ExplorerView({
     return <div className="inspector-empty">{t("explorer:empty.selectObject")}</div>;
   }
 
-  const isOperatorAppChild = isOperatorAppChildPath(selectedPath);
+  const objectType = selectedObject?.type;
+  const isVisualGroup = objectType === "VISUAL_GROUP";
+  // Same rule everywhere: path prefixes must not steal VISUAL_GROUP from the child list.
+  const isOperatorAppChild = isTypedCatalogObject(objectType, isOperatorAppChildPath(selectedPath));
   const isUsersRoot = isSecurityUsersRoot(selectedPath);
   const isUserObject = isSecurityUserPath(selectedPath);
   const isSecurityFolder = isSecurityRoot(selectedPath);
   const isRolesRoot = isSecurityRolesRoot(selectedPath);
   const isRoleObject = isSecurityRolePath(selectedPath);
-  const objectType = selectedObject?.type;
-  const isVisualGroup = objectType === "VISUAL_GROUP";
   const isAlertRule = isTypedCatalogObject(objectType, isAlertRulePath(selectedPath));
   const isCorrelator = isTypedCatalogObject(objectType, isCorrelatorPath(selectedPath));
   const isProcessProgram = isTypedCatalogObject(objectType, isProcessProgramPath(selectedPath));
@@ -102,7 +103,7 @@ export default function ExplorerView({
   const isProcessProgramsFolder = isProcessProgramsRoot(selectedPath);
   const isEventFilter = isTypedCatalogObject(objectType, isEventFilterPath(selectedPath));
   const isEventFiltersFolder = isEventFiltersRoot(selectedPath);
-  const isAnalyticsTag = isAnalyticsTagDevice(selectedObject);
+  const isAnalyticsTag = !isVisualGroup && isAnalyticsTagDevice(selectedObject);
   const isFederation = isFederationRoot(selectedPath);
   const isTenants = isTenantsRoot(selectedPath);
   const isCatalogFolder = isSystemCatalogFolder(selectedPath, objectType);
