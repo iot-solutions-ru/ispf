@@ -13,6 +13,10 @@ describe("explorerViewRouting", () => {
     expect(isTypedCatalogObject("VISUAL_GROUP", false)).toBe(false);
   });
 
+  it("blocks Operator Apps panel for bundle VISUAL_GROUP under operator-apps", () => {
+    expect(isTypedCatalogObject("VISUAL_GROUP", true)).toBe(false);
+  });
+
   it("opens the child list for groups and catalog folders", () => {
     expect(opensCatalogChildList("VISUAL_GROUP", false)).toBe(true);
     expect(opensCatalogChildList("DATA_SOURCES", true)).toBe(true);
