@@ -1,6 +1,8 @@
 package com.ispf.server.application.git;
 
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
+import com.ispf.server.application.bundle.ApplicationBundlePullFromTreeService;
+import com.ispf.server.application.bundle.ApplicationBundlePullFromTreeService.PullFromTreeOptions;
 import com.ispf.server.application.bundle.ApplicationBundleSnapshotStore;
 import com.ispf.server.application.bundle.BundleManifestValidator;
 import com.ispf.server.application.bundle.BundleValidationResult;
@@ -17,6 +19,8 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -25,14 +29,15 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * APPLICATION ↔ team git binding (ADR-0063). Connect / Status / Pull release;
- * Push PR is a follow-up.
+ * APPLICATION ↔ team git binding (ADR-0063): Connect / Status / Pull release / Push tree → PR.
  */
 @Service
 public class ApplicationGitService {
 
     private static final Set<String> PROVIDERS = Set.of("github", "gitlab");
     private static final Pattern SAFE_REF = Pattern.compile("^[A-Za-z0-9._/-]{1,255}$");
+    private static final DateTimeFormatter BRANCH_TS =
+            DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
 
     private final ApplicationGitBindingStore bindingStore;
     private final ApplicationDataStore dataStore;
@@ -40,6 +45,7 @@ public class ApplicationGitService {
     private final PlatformCredentialService credentialService;
     private final ApplicationGitRemoteClient remoteClient;
     private final ApplicationBundleDeployService bundleDeployService;
+    private final ApplicationBundlePullFromTreeService pullFromTreeService;
     private final BundleManifestValidator bundleManifestValidator;
     private final CommercialBundleLicenseVerifier licenseVerifier;
     private final ObjectMapper objectMapper;
@@ -51,6 +57,7 @@ public class ApplicationGitService {
             PlatformCredentialService credentialService,
             ApplicationGitRemoteClient remoteClient,
             ApplicationBundleDeployService bundleDeployService,
+            ApplicationBundlePullFromTreeService pullFromTreeService,
             BundleManifestValidator bundleManifestValidator,
             CommercialBundleLicenseVerifier licenseVerifier,
             ObjectMapper objectMapper
@@ -61,6 +68,7 @@ public class ApplicationGitService {
         this.credentialService = credentialService;
         this.remoteClient = remoteClient;
         this.bundleDeployService = bundleDeployService;
+        this.pullFromTreeService = pullFromTreeService;
         this.bundleManifestValidator = bundleManifestValidator;
         this.licenseVerifier = licenseVerifier;
         this.objectMapper = objectMapper;
@@ -150,7 +158,7 @@ public class ApplicationGitService {
         ));
         status.put(
                 "note",
-                "Connect/Status/Pull available. Push PR is a planned follow-up (ADR-0063)."
+                "Connect/Status/Pull/Push PR available (ADR-0063)."
         );
         return status;
     }
@@ -238,6 +246,176 @@ public class ApplicationGitService {
         return response;
     }
 
+    /**
+     * Full-section pull-from-tree → feature branch → open PR/MR against default branch (never force-push).
+     */
+    public Map<String, Object> pushTreePullRequest(String appId, PushPrRequest request) {
+        requireApp(appId);
+        Map<String, Object> binding = bindingStore.find(appId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Git is not connected for application: " + appId
+                ));
+        String provider = String.valueOf(binding.get("provider"));
+        String remoteUrl = String.valueOf(binding.get("remoteUrl"));
+        String bundlePath = String.valueOf(binding.get("bundlePath"));
+        String defaultBranch = String.valueOf(binding.getOrDefault("defaultBranch", "main"));
+        String credentialPath = String.valueOf(binding.get("credentialObjectPath"));
+
+        String featureBranch = request != null && request.branchName() != null && !request.branchName().isBlank()
+                ? validateFeatureBranch(request.branchName(), defaultBranch)
+                : defaultFeatureBranch(appId);
+
+        String token = credentialService.resolveSecret(credentialPath)
+                .filter(value -> value != null && !value.isBlank())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "git credential is missing; reconnect with a token that can write + open PRs"
+                ));
+
+        Map<String, Object> pulled;
+        try {
+            pulled = pullFromTreeService.pullFromTree(appId, PullFromTreeOptions.defaults());
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "pull-from-tree failed: " + ex.getMessage(),
+                    ex
+            );
+        }
+        @SuppressWarnings("unchecked")
+        Map<String, Object> manifestMap = pulled.get("manifest") instanceof Map<?, ?> map
+                ? (Map<String, Object>) map
+                : null;
+        if (manifestMap == null || manifestMap.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "pull-from-tree returned no manifest");
+        }
+
+        ApplicationBundleDeployService.BundleManifest typed =
+                objectMapper.convertValue(manifestMap, ApplicationBundleDeployService.BundleManifest.class);
+        BundleValidationResult validation = bundleManifestValidator.validate(appId, typed);
+        List<String> errors = validation.errors() == null ? List.of() : validation.errors().stream()
+                .filter(err -> err == null || !err.startsWith("license:"))
+                .toList();
+        if (BundleValidationResult.ERROR.equals(validation.status()) && !errors.isEmpty()) {
+            Map<String, Object> failed = new LinkedHashMap<>();
+            failed.put("appId", appId);
+            failed.put("status", "ERROR");
+            Map<String, Object> validationMap = validation.toMap();
+            validationMap.put("errors", errors);
+            failed.put("validation", validationMap);
+            return failed;
+        }
+
+        @SuppressWarnings("unchecked")
+        List<String> treeWarnings = pulled.get("warnings") instanceof List<?> list
+                ? list.stream().map(String::valueOf).toList()
+                : List.of();
+
+        String contentJson;
+        try {
+            contentJson = prettyBundleJson(manifestMap);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "failed to serialize manifest: " + ex.getMessage(),
+                    ex
+            );
+        }
+
+        String version = typed.version() == null ? "unknown" : typed.version();
+        String title = request != null && request.title() != null && !request.title().isBlank()
+                ? request.title().trim()
+                : "ispf: " + appId + " bundle " + version;
+        if (title.length() > 256) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "title must be at most 256 characters");
+        }
+
+        String baseSha = resolvePushBaseSha(binding);
+        List<String> pushWarnings = new java.util.ArrayList<>(treeWarnings);
+        if (validation.warnings() != null) {
+            for (String warning : validation.warnings()) {
+                if (warning != null && !warning.isBlank() && !pushWarnings.contains(warning)) {
+                    pushWarnings.add(warning);
+                }
+            }
+        }
+        if (baseSha == null || baseSha.isBlank()) {
+            pushWarnings.add(
+                    "No last-synced git SHA for this app; feature branch is cut from the current default-branch tip. "
+                            + "Pull release first when possible so Push does not silently overwrite teammate commits."
+            );
+        }
+
+        String body = buildPushPrBody(
+                request != null ? request.body() : null,
+                appId,
+                version,
+                pushWarnings
+        );
+        String commitMessage = "ispf: push " + appId + " bundle " + version;
+
+        ApplicationGitRemoteClient.PushPrResult pushed = remoteClient.pushBundleAndOpenPr(
+                provider,
+                remoteUrl,
+                bundlePath,
+                defaultBranch,
+                featureBranch,
+                baseSha,
+                contentJson,
+                commitMessage,
+                title,
+                body,
+                token
+        );
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("appId", appId);
+        response.put("status", "OK");
+        response.put("bundlePath", bundlePath);
+        response.put("version", version);
+        response.putAll(pushed.toMap());
+        if (pulled.get("pulled") != null) {
+            response.put("pulled", pulled.get("pulled"));
+        }
+        if (!pushWarnings.isEmpty()) {
+            response.put("warnings", pushWarnings);
+        }
+        return response;
+    }
+
+    private String resolvePushBaseSha(Map<String, Object> binding) {
+        Object sha = binding.get("lastSyncedSha");
+        if (sha == null) {
+            return null;
+        }
+        String value = String.valueOf(sha).trim();
+        return value.isBlank() || "null".equals(value) ? null : value;
+    }
+
+    private String prettyBundleJson(Map<String, Object> manifestMap) throws Exception {
+        return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(manifestMap) + "\n";
+    }
+
+    private static String buildPushPrBody(String userBody, String appId, String version, List<String> warnings) {
+        StringBuilder sb = new StringBuilder();
+        if (userBody != null && !userBody.isBlank()) {
+            sb.append(userBody.trim()).append("\n\n");
+        } else {
+            sb.append("Full application bundle from live tree (ADR-0063 Push tree).\n\n");
+        }
+        sb.append("App: `").append(appId).append("` · bundle version: `").append(version).append("`\n");
+        if (warnings != null && !warnings.isEmpty()) {
+            sb.append("\n### Warnings from pull-from-tree / base selection\n");
+            for (String warning : warnings) {
+                sb.append("- ").append(warning).append('\n');
+            }
+        }
+        return sb.toString();
+    }
+
     static String defaultCredentialPath(String appId) {
         return "root.platform.applications." + appId + ".git-credential";
     }
@@ -286,6 +464,36 @@ public class ApplicationGitService {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "ref must be a branch, tag, or sha (A-Za-z0-9._/-)"
+            );
+        }
+        return value;
+    }
+
+    static String validateFeatureBranch(String branchName, String defaultBranch) {
+        String value = validateRef(branchName);
+        String lower = value.toLowerCase(Locale.ROOT);
+        if ("head".equals(lower)
+                || lower.startsWith("refs/")
+                || lower.startsWith("heads/")
+                || value.startsWith("-")
+                || value.startsWith(".")
+                || value.endsWith(".")
+                || value.endsWith("/")
+                || value.endsWith(".lock")
+                || value.contains("//")
+                || value.contains("@{")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "feature branch name is invalid");
+        }
+        if (!value.startsWith("ispf/")) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "feature branch must start with ispf/"
+            );
+        }
+        if (defaultBranch != null && value.equalsIgnoreCase(defaultBranch.trim())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "feature branch must not equal default branch"
             );
         }
         return value;
@@ -376,5 +584,16 @@ public class ApplicationGitService {
     }
 
     public record PullRequest(String ref) {
+    }
+
+    public record PushPrRequest(String title, String body, String branchName) {
+    }
+
+    static String defaultFeatureBranch(String appId) {
+        String safeApp = appId == null ? "app" : appId.replaceAll("[^A-Za-z0-9._-]", "-");
+        if (safeApp.isBlank()) {
+            safeApp = "app";
+        }
+        return "ispf/app-" + safeApp + "-" + BRANCH_TS.format(Instant.now());
     }
 }

@@ -98,7 +98,7 @@
 2. Нет неразрешённого `HEAVY_WIDGET_EXPRESSION` — логика на hub.
 3. Flood-пути: `eventJournalEnabled=false`; MQTT `eventToVariable=false`, если не нужен осознанный fan-out.
 4. Циклы биндингов: предупреждения `BindingCascadeAnalyzer` закрыты; `order` осмысленный.
-5. Артефакт: `ispf pack` / `validate_bundle` зелёный — или (когда будет) APPLICATION **Git → Push tree** (PR); не оставлять правки только в дереве без sync в Catalog ([ADR-0063](../en/decisions/0063-application-git-lifecycle.md)).
+5. Артефакт: `ispf pack` / `validate_bundle` зелёный — или APPLICATION **Git → Push tree** (PR); не оставлять правки только в дереве без sync в Catalog ([ADR-0063](../en/decisions/0063-application-git-lifecycle.md)).
 
 ---
 

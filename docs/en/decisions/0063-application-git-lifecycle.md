@@ -40,9 +40,9 @@ Version identity is a triple:
 | Action | Status | Behaviour |
 |--------|--------|-----------|
 | **Connect / Disconnect** | Shipped | Remote URL (`https` only; no embedded userinfo; public hosts), provider (`github` \| `gitlab`), default branch, path to `bundle.json`, PAT via `PlatformCredentialService` at a fixed app-scoped path |
-| **Status** | Shipped (partial) | Binding + active deploy + credential present; remote reachability and drift are reserved (`unknown` until Push lands) |
+| **Status** | Shipped (partial) | Binding + active deploy + credential present; remote reachability and drift remain reserved (`unknown`) |
 | **Pull release** | Shipped | Fetch full manifest via GitHub/GitLab Contents API → validate → deploy; history records `source=git`, ref, sha; binding `last_synced_*` updated on activate |
-| **Push tree** | Planned | Full-section pull-from-tree (plus root fields / blueprints refresh) → commit on a feature branch → **open PR** (never force-push default branch) |
+| **Push tree** | Shipped | Full-section pull-from-tree → pretty-printed `bundlePath` on `ispf/…` feature branch (base = `lastSyncedSha` when set, else default tip + warning) → **open PR/MR** against default branch (never force-push default). PAT: GitHub Contents R/W + Pull requests; GitLab personal access token with **`api`** scope |
 
 ### Round-trip completeness
 
@@ -57,7 +57,7 @@ Repo-side CI (validate / dry-run) remains a complementary gate. It is not requir
 - New table / API under `/api/v1/applications/{appId}/git`.
 - Console Deploy panel gains a **Git** tab.
 - Agent tools later: status / pull / push_pr.
-- Security: least-privilege PAT; secrets never returned by GET; credential path fixed per app; disconnect and app uninstall delete the vault entry; changing provider or remote host requires a fresh token; outbound SSRF guards and branch-name validation land with Pull/Push.
+- Security: least-privilege PAT (GitHub: Contents R/W + Pull requests; GitLab: `api` only); secrets never returned by GET; credential path fixed per app; disconnect and app uninstall delete the vault entry; changing provider or remote host requires a fresh token; outbound SSRF guards; feature branches must start with `ispf/` and must not alias the default branch.
 
 ## References
 
