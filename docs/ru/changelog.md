@@ -19,6 +19,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
+- SCADA mimic: выпадающий список Category (и другие Select/Tooltip редактора) открывался за полноэкранным оверлеем и выглядел «мёртвым» — попапы Ant Design теперь монтируются внутри оверлея.
 - Explorer: VISUAL_GROUP в каталогах (Data Sources и др.) открывается списком участников, как корневая папка, а не редактором data source по path-эвристике («Not a data source object»). То же для групп в Operator Apps; path-эвристика больше не перекрывает известный не-editor тип. Состав группы — через контекстное меню дерева («Добавить в группу»).
 - pull-from-tree: обновляются `displayName` / `tablePrefix` / `schemaName` из регистрации приложения и `blueprints[]` из registry по имени (round-trip ADR-0063).
 - `createdAt` и audit-флаги при загрузке: в `PlatformObject` подставлялся `Instant.now()`, а `bindingAuditEnabled` / `functionAuditEnabled` / `eventJournalEnabled` не восстанавливались — следующий persist затирал `created_at` и мог сбросить флаги. Теперь берётся timestamp из сущности, флаги восстанавливаются, update не затирает уже записанный `created_at`.

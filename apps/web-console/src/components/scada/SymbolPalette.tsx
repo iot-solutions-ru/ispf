@@ -130,11 +130,12 @@ export default function SymbolPalette({
           />
         </div>
 
-        <label className="scada-palette-category-select">
+        <div className="scada-palette-category-select">
           <span className="scada-palette-category-label">{t("palette.category")}</span>
           <Select
             className="scada-palette-category-control"
             style={{ width: "100%" }}
+            aria-label={t("palette.category")}
             value={category}
             onChange={(value) => {
               setCategory(value);
@@ -143,7 +144,7 @@ export default function SymbolPalette({
             disabled={Boolean(search.trim())}
             options={categoryOptions}
           />
-        </label>
+        </div>
 
         {category === "custom" && onUploadCustomSymbol && (
           <>
