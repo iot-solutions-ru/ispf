@@ -38,7 +38,6 @@ import ProcessProgramInspector from "../automation/ProcessProgramInspector";
 import { isSpecializedEditorObject } from "../../utils/object/editorObject";
 import { isSystemCatalogFolder } from "../../utils/platform/systemFolderConfig";
 import { isPlatformSqlObjectPath } from "../../utils/platform/platformSqlPath";
-import VisualGroupInspector from "../objectEditor/VisualGroupInspector";
 import PlatformSqlObjectPanel from "../platform/PlatformSqlObjectPanel";
 import ApplicationObjectPanel from "../platform/ApplicationObjectPanel";
 import { isApplicationObjectPath } from "../../utils/platform/applicationPath";
@@ -73,8 +72,8 @@ export default function ExplorerView({
   onOpenOperatorApp,
   onDeleted,
   onSelectPath,
-  onMembersChanged,
-  allObjects = [],
+  onMembersChanged: _onMembersChanged,
+  allObjects: _allObjects = [],
   canConfigure,
   isPlatformAdmin,
   canManageTenantSecurity,
@@ -107,7 +106,9 @@ export default function ExplorerView({
   const isFederation = isFederationRoot(selectedPath);
   const isTenants = isTenantsRoot(selectedPath);
   const isCatalogFolder = isSystemCatalogFolder(selectedPath, selectedObject?.type);
-  const isPlatformSqlObject = isPlatformSqlObjectPath(selectedPath);
+  const isVisualGroup = selectedObject?.type === "VISUAL_GROUP";
+  // Path-only SQL heuristics match VISUAL_GROUP under data-sources.* — exclude groups.
+  const isPlatformSqlObject = !isVisualGroup && isPlatformSqlObjectPath(selectedPath);
   const isApplicationObject =
     selectedObject?.type === "APPLICATION"
     && isApplicationObjectPath(selectedPath);
@@ -115,7 +116,6 @@ export default function ExplorerView({
     selectedObject
     && isSpecializedEditorObject(selectedPath, selectedObject.type, selectedObject.templateId),
   );
-  const isVisualGroup = selectedObject?.type === "VISUAL_GROUP";
   const hideToolbar =
     isOperatorAppChild
     ||     isUsersRoot
@@ -199,15 +199,6 @@ export default function ExplorerView({
         <TenantsPanel canManage={isPlatformAdmin} onSelectPath={onSelectPath} />
       ) : isPlatformSqlObject ? (
         <PlatformSqlObjectPanel key={selectedPath} path={selectedPath} onOpenEditor={onOpenEditor} />
-      ) : isVisualGroup ? (
-        <VisualGroupInspector
-          key={selectedPath}
-          path={selectedPath}
-          canManage={canConfigure}
-          allObjects={allObjects}
-          onSelectPath={onSelectPath}
-          onMembersChanged={onMembersChanged}
-        />
       ) : isApplicationObject ? (
         <ApplicationObjectPanel
           key={selectedPath}
@@ -216,7 +207,7 @@ export default function ExplorerView({
           description={selectedObject?.description}
           canManage={canConfigure}
         />
-      ) : isCatalogFolder ? (
+      ) : isVisualGroup || isCatalogFolder ? (
         <SystemFolderListPanel
           key={selectedPath}
           folderPath={selectedPath}
@@ -230,7 +221,10 @@ export default function ExplorerView({
             selectedPath === APPLICATIONS_ROOT && canConfigure ? onCreateApplication : undefined
           }
           onCreate={
-            selectedPath !== APPLICATIONS_ROOT && canConfigure && onCreateInFolder
+            !isVisualGroup
+            && selectedPath !== APPLICATIONS_ROOT
+            && canConfigure
+            && onCreateInFolder
               ? () => onCreateInFolder(selectedPath)
               : undefined
           }
