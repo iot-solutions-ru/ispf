@@ -429,6 +429,8 @@
   "objectEditor.leaseBlocked": "Subtree {{prefix}} is locked by {{holder}} until {{until}}.",
   "objectEditor.emptyVariableSchema": "Schema has no fields. Schema is fixed after creation — delete this variable and create a new one with a type preset (DOUBLE / BOOLEAN / …).",
   "objectEditor.historyBtn": "History",
+  "driverMaturity.CERTIFIED.hint": "Field-proven plus protocol conformance / formal cert evidence",
+  "driverMaturity.FIELD.hint": "Named-site soak and OT sign-off (above lab Production)",
   "driverMaturity.PRODUCTION.hint": "Supported for typical scenarios",
   "driverMaturity.BETA.hint": "Works with limitations — see the driver description",
   "driverMaturity.STUB.hint": "Stub or connectivity check only — not for production",

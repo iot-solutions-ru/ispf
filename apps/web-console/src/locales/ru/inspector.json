@@ -289,6 +289,8 @@
   "driver.write.valueRequired": "Введите значение",
   "driver.write.writing": "Запись…",
   "driverMaturity.BETA.hint": "Работает с ограничениями — см. описание драйвера",
+  "driverMaturity.CERTIFIED.hint": "Полевое подтверждение плюс conformance / формальный сертификат",
+  "driverMaturity.FIELD.hint": "Именованная площадка, soak и OT sign-off (выше lab Production)",
   "driverMaturity.PRODUCTION.hint": "Поддерживается для типичных сценариев",
   "driverMaturity.STUB.hint": "Только заглушка или проверка подключения — не для рабочей среды",
   "events.add": "+ Событие",
