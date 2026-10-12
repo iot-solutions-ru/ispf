@@ -582,7 +582,9 @@ public class ApplicationBundleDeployService {
             Map<String, Object> license,
             Map<String, Object> metadata,
             Map<String, Object> operatorUi,
-            Map<String, Object> operatorManifest
+            Map<String, Object> operatorManifest,
+            /** Manifest wire format (ADR-0064). Null means {@link BundleFormatVersions#CURRENT}. */
+            Integer formatVersion
     ) {
     }
 

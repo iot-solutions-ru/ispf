@@ -14,8 +14,9 @@
 1. **Единый manifest** — `POST /api/v1/applications/{appId}/deploy` принимает JSON с секциями `objects`, `models`, `variables`, `functions`, `workflows`, `dashboards`, `events`, `alertRules`, `correlators`, `operatorUi`, `migrations`, optional `license`.
 2. **Tree-first** — после deploy узлы появляются под `root.platform.*` (и app-specific paths); бизнес-логика вызывается через object tree (`BFF invoke`, tree functions), не через hardcoded routes в `main`.
 3. **App schema отдельно** — SQL migrations приложения (`migrations[]`) применяются к app schema (`schemaName`, `tablePrefix`), не к platform Flyway.
-4. **Версионирование bundle** — поле `version` (semver); история deploy хранится per `appId`; зависимости через `requires[]` с `minVersion`.
-5. **Commercial** — optional секция `license` (см. [0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md)); Apache reference bundles без `license`.
+4. **Версионирование продукта bundle** — поле `version` (semver); история deploy хранится per `appId`; зависимости через `requires[]` с `minVersion`.
+5. **Формат провода bundle** — опциональное целое `formatVersion` (нет поля ⇒ `1`); см. [0064-release-compatibility-lts](0064-release-compatibility-lts.md). Отдельно от продуктового `version`.
+6. **Commercial** — optional секция `license` (см. [0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md)); Apache reference bundles без `license`.
 
 ## Последствия
 
@@ -26,4 +27,5 @@
 ## Связанные материалы
 
 - REQ-PF-01, Phase 5 tree-first — [roadmap](../roadmap.md)
+- [0064-release-compatibility-lts](0064-release-compatibility-lts.md) — formatVersion, LTS, Flyway expand/contract
 - [examples/](../../../examples/) — reference bundles

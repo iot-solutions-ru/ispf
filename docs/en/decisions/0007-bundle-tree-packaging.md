@@ -13,8 +13,9 @@ Solution developers deliver configuration through a single JSON manifest (`bundl
 1. **Single manifest** — `POST /api/v1/applications/{appId}/deploy` accepts JSON with sections `objects`, `models`, `variables`, `functions`, `workflows`, `dashboards`, `events`, `alertRules`, `correlators`, `operatorUi`, `migrations`, optional `license`.
 2. **Tree-first** — after deploy, nodes appear under `root.platform.*` (and app-specific paths); business logic is invoked through the object tree (`BFF invoke`, tree functions), not hardcoded routes in `main`.
 3. **App schema separate** — application SQL migrations (`migrations[]`) apply to the app schema (`schemaName`, `tablePrefix`), not platform Flyway.
-4. **Bundle versioning** — `version` field (semver); deploy history stored per `appId`; dependencies via `requires[]` with `minVersion`.
-5. **Commercial** — optional `license` section (see [0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md)); Apache reference bundles without `license`.
+4. **Bundle product versioning** — `version` field (semver); deploy history stored per `appId`; dependencies via `requires[]` with `minVersion`.
+5. **Bundle wire format** — optional integer `formatVersion` (omit ⇒ `1`); see [0064-release-compatibility-lts](0064-release-compatibility-lts.md). Distinct from product `version`.
+6. **Commercial** — optional `license` section (see [0003-commercial-bundle-licensing](0003-commercial-bundle-licensing.md)); Apache reference bundles without `license`.
 
 ## Consequences
 
@@ -25,4 +26,5 @@ Solution developers deliver configuration through a single JSON manifest (`bundl
 ## Related
 
 - REQ-PF-01, Phase 5 tree-first — [roadmap](../roadmap.md)
+- [0064-release-compatibility-lts](0064-release-compatibility-lts.md) — formatVersion, LTS, Flyway expand/contract
 - [examples/](../../../examples/) — reference bundles

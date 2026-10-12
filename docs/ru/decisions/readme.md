@@ -39,5 +39,6 @@
 | [0061-high-rate-telemetry-history-defaults](0061-high-rate-telemetry-history-defaults.md) | Безопасные defaults истории high-rate телеметрии (MQTT / journal / previousValue) — **Accepted** |
 | [0062-correlator-keyed-dispatch](0062-correlator-keyed-dispatch.md) | Полосы коррелятора по ключу, `REQUIRES_NEW` на коррелятор, async-действия, время события — **Accepted** |
 | [0063-application-git-lifecycle](0063-application-git-lifecycle.md) | Git-вкладка APPLICATION: Connect/Status/Pull/Push→PR — **Accepted** |
+| [0064-release-compatibility-lts](0064-release-compatibility-lts.md) | Релизы, совместимость, LTS; `formatVersion` bundle — **Accepted** |
 
 **Цепочки тем (порядок чтения):** [en/decisions/readme.md § Topic chains](../../en/decisions/readme.md#topic-chains-read-in-order).

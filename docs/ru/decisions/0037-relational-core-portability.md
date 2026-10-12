@@ -39,9 +39,9 @@ db/migration/oracle/       — только README (план)
 
 `FlywayConfigurationCustomizer` выбирает `locations` по активному dialect.
 
-#### Поправка (2026-10-11) — PostgreSQL после squash V1–V70
+#### Поправка (2026-10-12) — PostgreSQL после squash V1–V70 + expand/contract
 
-Старые инкременты **V1–V70 схлопнуты** в `V1__baseline.sql` (2026-07-07). **После этого squash** PostgreSQL снова использует **инкрементальные скрипты Flyway** (`V71__…` и далее). Новая установка применяет `V1`, затем каждую следующую версию по порядку. Пакет **не** считать «только baseline навсегда».
+Старые инкременты **V1–V70 схлопнуты** в `V1__baseline.sql` (2026-07-07). **После этого squash** PostgreSQL снова использует **инкрементальные скрипты Flyway** (`V71__…` и далее). Новая установка применяет `V1`, затем каждую следующую версию по порядку. Предпочтителен DDL в стиле **expand/contract** ([0064-release-compatibility-lts](0064-release-compatibility-lts.md)). Пакет **не** считать «только baseline навсегда».
 
 | Сценарий | Действие |
 |----------|----------|
@@ -95,4 +95,5 @@ Risks:
 - [storage-portability-inventory](../storage-portability-inventory.md)
 - [deployment](../deployment.md) § Storage deployment modes
 - [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md), [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md)
+- [0064-release-compatibility-lts](0064-release-compatibility-lts.md) — expand/contract + LTS платформы
 - [BLUEPRINTS](../BLUEPRINTS.md) — `data-source-v1`

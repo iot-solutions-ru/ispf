@@ -5,6 +5,11 @@
   "type": "object",
   "additionalProperties": true,
   "properties": {
+    "formatVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Bundle manifest wire format (ADR-0064). Distinct from product semver `version`. Omit to mean 1."
+    },
     "version": {
       "type": "string"
     },

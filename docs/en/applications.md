@@ -134,9 +134,11 @@ SQL parameters: `"${input.orderId}"` or `"$input.orderId"`.
 
 ## Bundle deploy (REQ-PF-03)
 
-### Semver contract (BL-97)
+### Semver and format contract (BL-97 / ADR-0064)
 
 `manifest.version` is **required** and must be strict semver `MAJOR.MINOR.PATCH` (e.g. `1.0.0`). Invalid values are rejected at parse, validate, and deploy.
+
+`manifest.formatVersion` is an optional **integer** for the JSON wire shape (not the solution semver). Omit ⇒ `1`. Unsupported values are rejected. Pull-from-tree writes `formatVersion: 1`. See [0064-release-compatibility-lts](decisions/0064-release-compatibility-lts.md).
 
 Optional fields:
 
