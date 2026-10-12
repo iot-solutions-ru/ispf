@@ -9,6 +9,10 @@ Changelog отдельных application bundles — в манифестах п�
 
 ## [Unreleased]
 
+### Добавлено
+
+- Envelope secrets-key + ротация (ADR-0065): ciphertext `ispf1.<keyId>.…`; legacy Base64 читается; `secrets-previous-key` для dual-read; `POST /api/v1/federation/secrets-key/reencrypt`; смена DATABASE-ключа из UI перешифровывает vault/federation на месте.
+
 ### Изменено
 
 - `formatVersion` bundle + политика релизов (ADR-0064): опциональное целое в манифесте (нет поля ⇒ `1`); validate/deploy отклоняет неподдерживаемые форматы; pull-from-tree пишет `1`. ADR про совместимость/LTS и Flyway expand/contract.
