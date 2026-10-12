@@ -1,9 +1,12 @@
-# PostgreSQL migration pack (ADR-0037)
+# PostgreSQL Flyway pack
 
-**Greenfield only:** single `V1__baseline.sql` — full platform schema for new installations.
+**Greenfield + incremental (post-squash):**
 
-Incremental scripts V1–V70 were squashed (2026-07-07). There is **no Flyway upgrade path** from legacy versioned migrations; existing databases must run `deploy/vps-flyway-repair.sh` once after rollout to reconcile `flyway_schema_history`.
+1. `V1__baseline.sql` — full platform schema after the 2026-07-07 squash of legacy V1–V70.
+2. `V71__*.sql` … onward — normal Flyway upgrades on existing databases.
 
-New install: empty database → Flyway applies `V1__baseline.sql` → import solution bundles for configuration.
+There is **no** upgrade path that replays the removed pre-squash V2–V70 scripts. Databases that still have that history must run `deploy/vps-flyway-repair.sh` once (reconcile `flyway_schema_history` to V1), then apply `V71+`.
 
-See [ADR-0037](../../../../../../../../docs/en/decisions/0037-relational-core-portability.md).
+New install: empty database → Flyway applies `V1__baseline.sql` and all later versions → import solution bundles for configuration.
+
+Policy: [ADR-0037](../../../../../../../../docs/en/decisions/0037-relational-core-portability.md).

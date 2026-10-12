@@ -23,7 +23,8 @@
    - использовать **stateless** single tool calls (без chat history), или
    - передать `sessionId` в tool arguments для привязки к persistent DB sessions ([`agent_sessions`](../../../packages/ispf-server/src/main/resources/db/migration/postgresql/V1__baseline.sql) (section formerly `V38__agent_sessions`)).
 5. **Transport**: начать с **stdio** MCP для local dev и **SSE/HTTP** для remote hub; по умолчанию не в core JAR (profile `mcp`).
-6. **Вне scope v1**: MCP resources/prompts для ContextPack (только tools); auto-import без validate/dry-run gates.
+6. **MCP resources:** срезы ContextPack как MCP `resources` — **поставлены** (`McpResourceAdapter`, URI `contextpack://<slice>`). MCP prompts остаются вне scope. Auto-import без гейтов validate/dry-run по-прежнему запрещён ([0004](0004-ai-artifact-generation-gates.md)).
+7. **Схемы инструментов:** `tools/list` публикует `inputSchema` каждого инструмента из registry ([0051](0051-poka-yoke-constraints-over-guards.md)); заглушки `GENERIC_INPUT_SCHEMA` нет.
 
 ## Operator scope (BL-109)
 
@@ -56,14 +57,12 @@ McpServer (profile mcp)
               └── existing Java handlers + ObjectAccessService
 ```
 
-Оценка: **1 sprint** (stdio + HTTP SSE, auth, integration test с mock MCP client).
-
 ## Последствия
 
 - Cursor и другие MCP hosts могут управлять platform без custom REST glue.
 - Поведение tools идентично Web Console agent и audit (`ai_tool_audit` entries tagged `source=mcp`).
 - Дополнительная зависимость (MCP SDK) изолирована за profile `mcp` — AGPL core default без изменений.
-- Будущее: ContextPack slices как MCP `resources` — **Done** (Phase 17.3, `McpResourceAdapter`, URIs `contextpack://<slice>`).
+- Срезы ContextPack — MCP `resources` (`McpResourceAdapter`); live tree как MCP resources остаётся вне scope.
 
 ## Рассмотренные альтернативы
 
@@ -71,7 +70,7 @@ McpServer (profile mcp)
 |-------------|------------------|
 | Только MCP, убрать in-server agent | Studio и CI нуждаются в server orchestration (0005) |
 | Дублировать tools как REST wrappers для MCP | Две реализации расходятся; баги ACL |
-| Полные MCP resources для live tree | Больший scope; ContextPack + sessions достаточны для v1 |
+| Полные MCP resources для live tree | Больший scope; ContextPack + sessions достаточны |
 
 ## Связанные материалы
 

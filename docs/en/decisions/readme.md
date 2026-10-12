@@ -8,6 +8,8 @@ English ADRs for ISPF. Russian mirror: [../../ru/decisions/readme.md](../../ru/d
 
 Engineering record — not marketing. Prefer Status / Context / Decision / Consequences / Related; use `Risks:` bullets under Consequences. Avoid hype scores and template **Positive** / **Negative** blocks.
 
+**Number uniqueness:** new ADRs must use the next free number (**0064+**). Historical collisions **0016** and **0025** keep dual files; cite them as **0016a/b** and **0025a/b** (or by filename). Do not renumber existing files.
+
 Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slang.py), then [`polish-docs.py`](../../../tools/docs-audit/polish-docs.py).
 
 ## Index
@@ -31,7 +33,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 |----|-------|
 | [0009-timescaledb-retention](0009-timescaledb-retention.md) | TimescaleDB retention |
 | [0010-binding-rules-only](0010-binding-rules-only.md) | Binding rules only |
-| [0011-model-type-semantics](0011-model-type-semantics.md) | Model type semantics |
+| [0011-model-type-semantics](0011-model-type-semantics.md) | Blueprint kinds MIXIN / INSTANCE / SINGLETON |
 | [0012-visual-groups](0012-visual-groups.md) | Visual groups |
 | [0013-web-console-i18n](0013-web-console-i18n.md) | Web console i18n |
 
@@ -41,8 +43,8 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 |----|-------|
 | [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) | Automation pipeline evolution |
 | [0015-event-history-timescale](0015-event-history-timescale.md) | Event history (Timescale) |
-| [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md) | ClickHouse event journal |
-| [0016-agpl-dual-licensing](0016-agpl-dual-licensing.md) | AGPL dual licensing |
+| [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md) | **0016a** ClickHouse event journal |
+| [0016-agpl-dual-licensing](0016-agpl-dual-licensing.md) | **0016b** AGPL dual licensing |
 | [0017-telemetry-ingest-pipeline](0017-telemetry-ingest-pipeline.md) | Telemetry ingest pipeline |
 | [0018-fixture-models-and-cel-applicability](0018-fixture-models-and-cel-applicability.md) | Fixture models and CEL applicability |
 | [0019-platform-rule-unification](0019-platform-rule-unification.md) | Platform rule unification |
@@ -56,8 +58,8 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0022-driver-production-matrix](0022-driver-production-matrix.md) | Driver production matrix |
 | [0023-haystack-query-runtime](0023-haystack-query-runtime.md) | Haystack query runtime |
 | [0024-demand-driven-variable-change-pubsub](0024-demand-driven-variable-change-pubsub.md) | Demand-driven variable pub/sub |
-| [0025-telemetry-quality-flags](0025-telemetry-quality-flags.md) | Telemetry quality flags |
-| [0025-cassandra-scylla-timeseries-store](0025-cassandra-scylla-timeseries-store.md) | Cassandra/Scylla timeseries store |
+| [0025-telemetry-quality-flags](0025-telemetry-quality-flags.md) | **0025a** Telemetry quality flags |
+| [0025-cassandra-scylla-timeseries-store](0025-cassandra-scylla-timeseries-store.md) | **0025b** Cassandra/Scylla timeseries (experimental) |
 
 ### Ingress, cluster, historian (0026–0037)
 
@@ -80,8 +82,8 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 
 | ID | Title |
 |----|-------|
-| [0038-analytics-platform-architecture](0038-analytics-platform-architecture.md) | Analytics platform architecture |
-| [0039-unified-alarm-architecture](0039-unified-alarm-architecture.md) | Alert rule evolution (`alert-rule-v1`) |
+| [0038-analytics-platform-architecture](0038-analytics-platform-architecture.md) | Analytics platform architecture — **Accepted** |
+| [0039-unified-alarm-architecture](0039-unified-alarm-architecture.md) | Alert rule evolution (`alert-rule-v1`) — **Accepted** |
 | [0040-unified-computations-ui](0040-unified-computations-ui.md) | Unified Computations tab |
 | [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) | Multi-tag historian binding rules |
 | [0042-analytics-function-catalog](0042-analytics-function-catalog.md) | Analytics function catalog |

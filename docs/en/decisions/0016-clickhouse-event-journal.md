@@ -1,5 +1,7 @@
 # ADR-0016: ClickHouse SPI for event journal (P3b)
 
+> **Number alias:** **0016a** (ClickHouse event journal). The same numeric id also labels [0016-agpl-dual-licensing](0016-agpl-dual-licensing.md) (**0016b**). Prefer the filename or alias in new links; do not renumber files.
+
 ## Status
 
 Accepted (2026-06-25)

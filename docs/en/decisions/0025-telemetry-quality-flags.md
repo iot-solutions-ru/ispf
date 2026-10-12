@@ -1,5 +1,7 @@
 # ADR-0025: Telemetry quality flags
 
+> **Number alias:** **0025a** (telemetry quality). The same numeric id also labels [0025-cassandra-scylla-timeseries-store](0025-cassandra-scylla-timeseries-store.md) (**0025b**). Prefer the filename or alias in new links; do not renumber files.
+
 **Status:** Accepted  
 **Date:** 2026-07-03  
 **Context:** BL-82 (REQ-EX Wave J). Industrial protocols expose status/quality (OPC UA StatusCode, BACnet status-flags). ISPF needs a normalized contract for HMI charts and future historian gaps.

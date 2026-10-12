@@ -137,7 +137,7 @@ JSON на `root.platform` (`@analyticsFormulas`) или в bundle приложе
 
 
 
-Это **не bytecode UDF** — декларативные выражения (helper + CEL). Процедурная логика: application functions (reactive) или Java-пакет (historian).
+Это **не bytecode UDF** — декларативные выражения (helper + CEL). Процедурная логика на reactive-пути — **JSON step-script** функции платформы и приложения (`FunctionScriptEngine`: `exec` / `map` / `if` / `invoke_function` / …) через `callFunction(...)` (сразу, без опоры на historian). Это не JS-runtime браузера. Historian: только новый Java `AnalyticsEvaluator` и деплой сервера, без пользовательского UDF. Правила historian не вызывают произвольный JS на каждый bucket: Tier B остаётся декларативным, функции Tier C реализуют `AnalyticsEvaluator` с явным historian port.
 
 
 
@@ -195,7 +195,7 @@ Pack deliverable: `analytics-pack.json` + JAR + `META-INF/services/...AnalyticsF
 
 | Цепочка KPI | Несколько binding rules | Да |
 
-| Процедурная логика / external IO | Tree function + `callFunction` (reactive) | Нет |
+| Процедурная логика / external IO | **JSON step-script** функция дерева + `callFunction` (reactive) | Нет (только live) |
 
 | Тяжёлый / сертифицированный KPI | Tier C Java pack | Да |
 
