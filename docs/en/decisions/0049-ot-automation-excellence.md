@@ -11,7 +11,7 @@
 | **1** | Landed — `workflow_execution_steps`, REST/UI timeline, tool contracts, `invoke_workflow_tool` |
 | **2** | Landed — `LLM_COMPLETE` / `INVOKE_AGENT`, analytics analysis functions + AI summarize path |
 | **3** | **Landed** — webhook (`POST /api/v1/webhooks/workflows/{slug}` + `WorkflowWebhookIndex`), cron poller (`cronExpression=every:1m`), async retry schedule (`workflow_retry_schedule` + `WorkflowRetryScheduler`, driven by `retryMaxAttempts` / `retryBackoffSeconds`), then DLQ (`workflow_dead_letters`) + `errorWorkflowPath` after exhaustion; DLQ list/resolve REST. |
-| **4** | **Partial** — credentials vault encrypts secrets (`PlatformCredentialService` / `IspfSecretCipher`); marketplace `workflow-template` installer still open. Key rotation / key-id envelope encryption remain follow-ups. |
+| **4** | **Partial** — credentials vault encrypts secrets (`PlatformCredentialService` / `IspfSecretCipher`); key-id envelope + rotation landed in [0065](0065-secrets-key-rotation.md). Marketplace `workflow-template` installer still open. |
 | **5** | Not started — Aggregate MCP publish of workflow + analytics tools |
 
 ## Context

@@ -8,7 +8,7 @@ English ADRs for ISPF. Russian mirror: [../../ru/decisions/readme.md](../../ru/d
 
 Engineering record — not marketing. Prefer Status / Context / Decision / Consequences / Related; use `Risks:` bullets under Consequences. Avoid hype scores and template **Positive** / **Negative** blocks.
 
-**Number uniqueness:** new ADRs must use the next free number (**0064+**). Historical collisions **0016** and **0025** keep dual files; cite them as **0016a/b** and **0025a/b** (or by filename). Do not renumber existing files.
+**Number uniqueness:** new ADRs must use the next free number (**0065+**). Historical collisions **0016** and **0025** keep dual files; cite them as **0016a/b** and **0025a/b** (or by filename). Do not renumber existing files.
 
 Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slang.py), then [`polish-docs.py`](../../../tools/docs-audit/polish-docs.py).
 
@@ -114,6 +114,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0062-correlator-keyed-dispatch](0062-correlator-keyed-dispatch.md) | Correlator keyed lanes, per-correlator `REQUIRES_NEW`, async actions, event time — **Accepted** |
 | [0063-application-git-lifecycle](0063-application-git-lifecycle.md) | APPLICATION Git tab: Connect/Status/Pull/Push→PR shipped — **Accepted** |
 | [0064-release-compatibility-lts](0064-release-compatibility-lts.md) | Release, compatibility, LTS; bundle `formatVersion` — **Accepted** |
+| [0065-secrets-key-rotation](0065-secrets-key-rotation.md) | Secrets-key envelope (`ispf1.<kid>.…`), previous-key, re-encrypt — **Accepted** |
 
 ## Topic chains (read in order)
 
@@ -126,5 +127,6 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | Server modularization | [0048-server-modularization-seams](0048-server-modularization-seams.md) → [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) | — |
 | Manufacturing solutions | [0001-app-platform-boundary](0001-app-platform-boundary.md) → [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) → [0050-manufacturing-patterns-as-solutions](0050-manufacturing-patterns-as-solutions.md) | [manufacturing-patterns](../manufacturing-patterns.md), [mes](../mes.md) |
 | Release / compatibility | [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) → [0037-relational-core-portability](0037-relational-core-portability.md) → [0064-release-compatibility-lts](0064-release-compatibility-lts.md) | [applications](../applications.md), [deployment](../deployment.md) |
+| Secrets / credentials | [0049-ot-automation-excellence](0049-ot-automation-excellence.md) → [0065-secrets-key-rotation](0065-secrets-key-rotation.md) | [security](../security.md), [tutorial-ot-credentials-vault](../tutorial-ot-credentials-vault.md) |
 | Agent quality (poka-yoke) | [0004-ai-artifact-generation-gates](0004-ai-artifact-generation-gates.md) → [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) → [0006-mcp-agent-tool-adapter](0006-mcp-agent-tool-adapter.md) → [0051-poka-yoke-constraints-over-guards](0051-poka-yoke-constraints-over-guards.md) → [0055-cel-formal-verification-ai-gate](0055-cel-formal-verification-ai-gate.md) | [application-principles](../application-principles.md) P7, [ai-development](../ai-development.md), [agent-regression](../agent-regression.md) |
 | Haystack | [0021-haystack-semantic-overlay](0021-haystack-semantic-overlay.md) → [0023-haystack-query-runtime](0023-haystack-query-runtime.md) | [semantic-demo](../semantic-demo.md) |

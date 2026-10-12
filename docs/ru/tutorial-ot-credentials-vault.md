@@ -8,7 +8,7 @@
 
 Сохранить зашифрованный API key и указать его в BPMN через `modelRef`.
 
-Нужен secrets key: `ISPF_SECURITY_SECRETS_KEY` / `ispf.security.secrets-key`, либо разово `POST /api/v1/federation/secrets-key`. Иначе upsert → **409**.
+Нужен secrets key: `ISPF_SECURITY_SECRETS_KEY` / `ispf.security.secrets-key`, либо разово `POST /api/v1/federation/secrets-key`. Иначе upsert → **409**. Новые записи — envelope `ispf1.<keyId>.…`; ротация YAML-ключа: `ISPF_SECURITY_SECRETS_PREVIOUS_KEY` → restart → `POST /api/v1/federation/secrets-key/reencrypt` ([ADR-0065](0065-secrets-key-rotation.md)).
 
 ## Шаги
 

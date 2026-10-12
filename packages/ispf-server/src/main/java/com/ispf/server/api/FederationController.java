@@ -23,6 +23,7 @@ import com.ispf.server.federation.FederationSecretsKeyService;
 import com.ispf.server.federation.FederationService;
 import com.ispf.server.federation.FederationTunnelHubService;
 import com.ispf.server.federation.FederationTunnelSessionStore;
+import com.ispf.server.security.SecretVaultReencryptService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
@@ -38,6 +39,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
@@ -56,6 +58,7 @@ public class FederationController {
     private final FederationInboundRegistrationService inboundRegistrationService;
     private final FederationOutboundAgentService outboundAgentService;
     private final FederationSecretsKeyService secretsKeyService;
+    private final SecretVaultReencryptService secretVaultReencryptService;
     private final FederationTunnelHubService tunnelHubService;
     private final FederationTunnelSessionStore tunnelSessionStore;
     private final FederationPeerHealthService peerHealthService;
@@ -70,6 +73,7 @@ public class FederationController {
             FederationInboundRegistrationService inboundRegistrationService,
             FederationOutboundAgentService outboundAgentService,
             FederationSecretsKeyService secretsKeyService,
+            SecretVaultReencryptService secretVaultReencryptService,
             FederationTunnelHubService tunnelHubService,
             FederationTunnelSessionStore tunnelSessionStore,
             FederationPeerHealthService peerHealthService,
@@ -83,6 +87,7 @@ public class FederationController {
         this.inboundRegistrationService = inboundRegistrationService;
         this.outboundAgentService = outboundAgentService;
         this.secretsKeyService = secretsKeyService;
+        this.secretVaultReencryptService = secretVaultReencryptService;
         this.tunnelHubService = tunnelHubService;
         this.tunnelSessionStore = tunnelSessionStore;
         this.peerHealthService = peerHealthService;
@@ -408,8 +413,28 @@ public class FederationController {
             @Valid @RequestBody ConfigureSecretsKeyRequest request
     ) {
         federationAccessService.requireAdmin(authentication);
-        secretsKeyService.setUiKey(request.secretsKey());
+        try {
+            secretsKeyService.setUiKey(request.secretsKey());
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage(), ex);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
         return SecretsKeyStatusDto.from(secretsKeyService);
+    }
+
+    /**
+     * Re-encrypt vault + federation ciphertext under the active secrets-key (ADR-0065).
+     * Used after YAML key rotation with {@code ispf.security.secrets-previous-key} set.
+     */
+    @PostMapping("/secrets-key/reencrypt")
+    public Map<String, Object> reencryptSecrets(Authentication authentication) {
+        federationAccessService.requireAdmin(authentication);
+        try {
+            return secretVaultReencryptService.reencryptAll();
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage(), ex);
+        }
     }
 
     @GetMapping("/outbound/agents")
@@ -722,13 +747,17 @@ public class FederationController {
     public record SecretsKeyStatusDto(
             boolean configured,
             String source,
-            boolean uiConfigurable
+            boolean uiConfigurable,
+            String activeKeyId,
+            boolean previousKeyConfigured
     ) {
         static SecretsKeyStatusDto from(FederationSecretsKeyService service) {
             return new SecretsKeyStatusDto(
                     service.isConfigured(),
                     service.source().name(),
-                    service.isUiConfigurable()
+                    service.isUiConfigurable(),
+                    service.isConfigured() ? service.resolveActiveKeyId() : null,
+                    service.isPreviousKeyConfigured()
             );
         }
     }

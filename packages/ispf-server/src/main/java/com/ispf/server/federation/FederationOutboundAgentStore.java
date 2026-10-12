@@ -123,6 +123,19 @@ public class FederationOutboundAgentStore {
         );
     }
 
+    public void updateEncryptedSecrets(UUID id, String registrationCodeEnc, String sessionTokenEnc) {
+        jdbcTemplate.update("""
+                UPDATE federation_outbound_agents
+                SET registration_code_enc = ?, session_token_enc = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                registrationCodeEnc,
+                sessionTokenEnc,
+                Timestamp.from(Instant.now()),
+                id
+        );
+    }
+
     public void delete(UUID id) {
         jdbcTemplate.update("DELETE FROM federation_outbound_agents WHERE id = ?", id);
     }
