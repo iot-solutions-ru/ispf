@@ -103,16 +103,10 @@ class BindingPeriodicScheduleRegistryTest {
     }
 
     @Test
-    void fireDueDoesNotAdvanceScheduleOnRuntimeException() {
+    void fireDueKeepsScheduleAfterRuntimeException() {
         registry.syncObject(DEVICE, List.of(periodicRule("rule-runtime-skip", 100)));
         Instant before = registry.nextWakeAt();
         assertThat(before).isNotNull();
-        Timestamp lastRunBefore = jdbcTemplate.queryForObject(
-                "SELECT last_run_at FROM platform_binding_periodic_rules WHERE object_path = ? AND rule_id = ?",
-                Timestamp.class,
-                DEVICE,
-                "rule-runtime-skip"
-        );
 
         BindingRuleEngine flakyEngine = mock(BindingRuleEngine.class);
         doThrow(new RuntimeException("engine failure"))
@@ -122,15 +116,10 @@ class BindingPeriodicScheduleRegistryTest {
         registry.fireDue(Instant.now().plusSeconds(1), flakyEngine);
 
         Instant after = registry.nextWakeAt();
-        assertThat(after).isEqualTo(before);
-        Timestamp lastRunAfter = jdbcTemplate.queryForObject(
-                "SELECT last_run_at FROM platform_binding_periodic_rules WHERE object_path = ? AND rule_id = ?",
-                Timestamp.class,
-                DEVICE,
-                "rule-runtime-skip"
-        );
-        assertThat(lastRunAfter).isEqualTo(lastRunBefore);
+        assertThat(after).isAfter(before);
         assertThat(registry.countEnabled()).isEqualTo(1);
+        assertThat(registry.consecutiveFailureCount(DEVICE, "rule-runtime-skip")).isEqualTo(1);
+        assertThat(registry.isDisabledAfterFailures(DEVICE, "rule-runtime-skip")).isFalse();
     }
 
     private static BindingRule periodicRule(String id, long periodicMs) {

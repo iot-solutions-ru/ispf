@@ -33,12 +33,6 @@ public class BindingPeriodicScheduleRegistry {
     private final int maxConsecutiveFailures;
     /** Consecutive {@link RuntimeException}s from {@code onPeriodic} per objectPath+ruleId. */
     private final ConcurrentHashMap<String, Integer> consecutiveFailures = new ConcurrentHashMap<>();
-    /**
-     * Rules disabled after N consecutive failures for this JVM.
-     * Persist {@code enabled=false} via {@link BindingRulesService} when available;
-     * this set is the fallback so a re-synced schedule row cannot hot-loop until restart.
-     */
-    private final Set<String> disabledAfterFailures = ConcurrentHashMap.newKeySet();
 
     /** Test / minimal construction without Spring. */
     public BindingPeriodicScheduleRegistry(JdbcTemplate jdbcTemplate) {
@@ -95,13 +89,11 @@ public class BindingPeriodicScheduleRegistry {
                 objectPath + ".%"
         );
         consecutiveFailures.keySet().removeIf(key -> keyPathMatchesSubtree(key, objectPath));
-        disabledAfterFailures.removeIf(key -> keyPathMatchesSubtree(key, objectPath));
     }
 
     public void clearAll() {
         jdbcTemplate.update("DELETE FROM platform_binding_periodic_rules");
         consecutiveFailures.clear();
-        disabledAfterFailures.clear();
     }
 
     public List<String> objectPathsWithBindingRules() {
@@ -156,10 +148,6 @@ public class BindingPeriodicScheduleRegistry {
         );
         for (DueRule dueRule : dueRules) {
             String key = scheduleKey(dueRule.objectPath(), dueRule.ruleId());
-            if (disabledAfterFailures.contains(key)) {
-                deleteScheduleRow(dueRule.objectPath(), dueRule.ruleId());
-                continue;
-            }
             try {
                 bindingRuleEngine.onPeriodic(dueRule.objectPath(), dueRule.ruleId());
             } catch (ObjectNotFoundException ex) {
@@ -175,17 +163,25 @@ public class BindingPeriodicScheduleRegistry {
                 continue;
             } catch (RuntimeException ex) {
                 int failures = consecutiveFailures.merge(key, 1, Integer::sum);
-                log.warn(
-                        "Skipping periodic binding {}.{} (consecutiveFailures={}/{}): {}",
+                log.error(
+                        "Periodic binding {}.{} failed (consecutiveFailures={}, schedule kept): {}",
                         dueRule.objectPath(),
                         dueRule.ruleId(),
                         failures,
-                        maxConsecutiveFailures,
                         ex.getMessage()
                 );
-                if (failures >= maxConsecutiveFailures) {
-                    disableAfterConsecutiveFailures(dueRule);
-                }
+                Instant nextRun = now.plusMillis(dueRule.periodicMs());
+                jdbcTemplate.update(
+                        """
+                                UPDATE platform_binding_periodic_rules
+                                SET last_run_at = ?, next_run_at = ?
+                                WHERE object_path = ? AND rule_id = ?
+                                """,
+                        Timestamp.from(now),
+                        Timestamp.from(nextRun),
+                        dueRule.objectPath(),
+                        dueRule.ruleId()
+                );
                 continue;
             }
             consecutiveFailures.remove(key);
@@ -211,51 +207,7 @@ public class BindingPeriodicScheduleRegistry {
 
     /** Visible for tests. */
     boolean isDisabledAfterFailures(String objectPath, String ruleId) {
-        return disabledAfterFailures.contains(scheduleKey(objectPath, ruleId));
-    }
-
-    private void disableAfterConsecutiveFailures(DueRule dueRule) {
-        String key = scheduleKey(dueRule.objectPath(), dueRule.ruleId());
-        boolean firstDisable = disabledAfterFailures.add(key);
-        deleteScheduleRow(dueRule.objectPath(), dueRule.ruleId());
-        consecutiveFailures.remove(key);
-        if (firstDisable) {
-            log.warn(
-                    "Disabling periodic binding {}.{} after {} consecutive failures",
-                    dueRule.objectPath(),
-                    dueRule.ruleId(),
-                    maxConsecutiveFailures
-            );
-        }
-        tryPersistRuleDisabled(dueRule);
-    }
-
-    private void tryPersistRuleDisabled(DueRule dueRule) {
-        if (bindingRulesService == null) {
-            return;
-        }
-        try {
-            List<BindingRule> rules = bindingRulesService.listRules(dueRule.objectPath());
-            BindingRule match = null;
-            for (BindingRule rule : rules) {
-                if (dueRule.ruleId().equals(rule.id())) {
-                    match = rule;
-                    break;
-                }
-            }
-            if (match == null || !match.enabled()) {
-                return;
-            }
-            bindingRulesService.upsertRule(dueRule.objectPath(), match.withEnabled(false));
-        } catch (RuntimeException ex) {
-            // Follow-up: ensure enabled=false always persists; JVM skip set prevents re-fire until restart.
-            log.warn(
-                    "Could not persist enabled=false for periodic binding {}.{} (JVM skip set active): {}",
-                    dueRule.objectPath(),
-                    dueRule.ruleId(),
-                    ex.getMessage()
-            );
-        }
+        return false;
     }
 
     private void deleteScheduleRow(String objectPath, String ruleId) {
@@ -272,7 +224,6 @@ public class BindingPeriodicScheduleRegistry {
     private void clearFailureState(String objectPath, String ruleId) {
         String key = scheduleKey(objectPath, ruleId);
         consecutiveFailures.remove(key);
-        disabledAfterFailures.remove(key);
     }
 
     private static String scheduleKey(String objectPath, String ruleId) {

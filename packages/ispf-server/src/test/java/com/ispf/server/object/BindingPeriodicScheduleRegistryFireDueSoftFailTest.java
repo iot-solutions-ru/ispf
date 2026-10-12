@@ -30,7 +30,7 @@ class BindingPeriodicScheduleRegistryFireDueSoftFailTest {
     BindingRuleEngine bindingRuleEngine;
 
     @Test
-    void fireDueDoesNotAdvanceScheduleOnRuntimeException() throws Exception {
+    void fireDueKeepsScheduleAfterRuntimeException() throws Exception {
         BindingPeriodicScheduleRegistry registry = new BindingPeriodicScheduleRegistry(jdbcTemplate);
         Instant now = Instant.parse("2026-08-31T12:00:00Z");
         String objectPath = "root.platform.devices.flaky-periodic";
@@ -48,12 +48,15 @@ class BindingPeriodicScheduleRegistryFireDueSoftFailTest {
             when(rs.getLong("periodic_ms")).thenReturn(500L);
             return List.of(mapper.mapRow(rs, 0));
         });
+        when(jdbcTemplate.update(anyString(), any(), any(), eq(objectPath), eq(ruleId))).thenReturn(1);
         doThrow(new RuntimeException("engine failure"))
                 .when(bindingRuleEngine).onPeriodic(objectPath, ruleId);
 
         registry.fireDue(now, bindingRuleEngine);
 
-        verify(jdbcTemplate).query(anyString(), any(RowMapper.class), eq(Timestamp.from(now)));
-        org.mockito.Mockito.verifyNoMoreInteractions(jdbcTemplate);
+        verify(jdbcTemplate).update(anyString(), any(), any(), eq(objectPath), eq(ruleId));
+        verify(jdbcTemplate, org.mockito.Mockito.never()).update(anyString(), eq(objectPath), eq(ruleId));
+        org.assertj.core.api.Assertions.assertThat(registry.consecutiveFailureCount(objectPath, ruleId)).isEqualTo(1);
+        org.assertj.core.api.Assertions.assertThat(registry.isDisabledAfterFailures(objectPath, ruleId)).isFalse();
     }
 }
