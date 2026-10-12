@@ -73,7 +73,7 @@ Program wave 8 (~9.8) по-прежнему **отозвана**.
 |---|-----------|:-----:|---------|-------------------------|
 | 1 | Unified data model | 8.5 | **REAL** | Object tree, CEL, blueprints; correlators в `EventCorrelatorService` |
 | 2 | SCADA / HMI | 8.0 | **PARTIAL** | 218 PID symbols; demostand FPS + 500-el unmocked; lab offline 2h/8h CDP. Остаток: on-site tablet (**P-HMI-FIELD**) |
-| 3 | OT/IT drivers | 7.0 | **PARTIAL** | Lab catalog Waves 1–11 (**162/162**); BL-140 **lab** soaks Consumed ([ot-trust](../evidence/ot-trust/)). [ADR-0067](decisions/0067-field-certified-maturity.md): driver **FIELD/CERTIFIED evidence = 0** (named plant C1) — **не** значит, что marketplace/solution пилоты сломаны (HVAC, tank-farm, MES, twins — REAL). DNP3 `writePoint` still throws |
+| 3 | OT/IT drivers | 7.0 | **PARTIAL** | Lab catalog Waves 1–11 (**162/162**); BL-140 **lab** soaks Consumed ([ot-trust](../evidence/ot-trust/)). [ADR-0067](decisions/0067-field-certified-maturity.md): driver **FIELD/CERTIFIED matrix = 0** (named plant C1) — **не** значит, что marketplace/solution пилоты сломаны (HVAC, tank-farm, MES, twins — REAL). DNP3 `writePoint` still throws |
 | 4 | Historian | 9.5 | **REAL (lab SLO)** | Enterprise L lab 2026-09-05 ([evidence](../evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md)). Honesty: synthetic CH fill |
 | 5 | Automation / alarms | 7.5 | **PARTIAL** | Alert rules + correlators; shelving persisted (BL-158) |
 | 6 | Workflow / BPMN | 7.5 | **REAL** | SubProcess/Message tests; не полная BPMN 2.0; **P-BPMN** parked |
@@ -92,7 +92,7 @@ Program wave 8 (~9.8) по-прежнему **отозвана**.
 |----------|-----|
 | DNP3 PRODUCTION poll-only — `writePoint` не реализован (ADR-0057) | `Dnp3DeviceDriver.writePoint()` — матрица `PRODUCTION` + только `POLL`; запись открыта |
 | Partner Portal external | portal sync вне repo |
-| Driver FIELD evidence = 0 (named plant C1) | [ADR-0067](decisions/0067-field-certified-maturity.md) — не путать с рабочими marketplace-пилотами |
+| Driver FIELD matrix = 0 (named plant C1) | [ADR-0067](decisions/0067-field-certified-maturity.md) — не путать с рабочими marketplace-пилотами |
 
 ---
 
