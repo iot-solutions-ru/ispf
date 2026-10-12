@@ -714,6 +714,7 @@ export default function EditDescriptorDialog({
                   <FunctionScriptStepsEditor
                     value={sourceBody || defaultScriptBody()}
                     onChange={setSourceBody}
+                    callerObjectPath={objectPath}
                   />
                 </Form.Item>
               )}

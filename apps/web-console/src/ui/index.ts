@@ -1,6 +1,7 @@
 export { default as Modal } from "./Modal";
 export type { ModalProps } from "./Modal";
 export { default as ModalPortal } from "./ModalPortal";
+export { default as ObjectFunctionSelect, resolveScriptInvokeObjectPath } from "./ObjectFunctionSelect";
 export { default as ObjectPathField } from "./ObjectPathField";
 export type { ObjectPathFieldProps, ObjectPathOption } from "./ObjectPathField";
 export { default as ObjectTreePickerDialog } from "./ObjectTreePickerDialog";

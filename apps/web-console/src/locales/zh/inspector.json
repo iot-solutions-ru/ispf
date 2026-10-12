@@ -547,6 +547,8 @@
   "scriptSteps.field.field": "数据记录字段",
   "scriptSteps.field.fields": "领域",
   "scriptSteps.field.functionName": "函数名称",
+  "scriptSteps.functionNamesNeedObject": "请先设置对象路径（或 self）——列表来自该对象的函数。",
+  "scriptSteps.functionNamesEmpty": "目标对象没有函数。",
   "scriptSteps.field.input": "输入（地图）",
   "scriptSteps.field.instanceName": "实例名称",
   "scriptSteps.field.modelName": "蓝图名称",
