@@ -12,15 +12,25 @@
 
 ## Решение
 
-### Тиры
+### Тиры драйвера
 
 | Тир | Где | Смысл |
 |-----|-----|--------|
-| STUB / BETA / PRODUCTION | `DriverMaturity` | Как в 0022 |
-| **FIELD** | Evidence + playbook (волна 1) | Именованная площадка + soak ≥7д + OT sign-off |
-| **CERTIFIED** | Evidence (волна 1) | FIELD (или явный waiver) + conformance / сертификат |
+| STUB / BETA / PRODUCTION | `DriverMaturity` | Как в 0022 (lab CI для PRODUCTION) |
+| **FIELD** | Evidence + playbook (волна 1) | Именованная **заводская** площадка + soak ≥7д + OT sign-off **по драйверу** |
+| **CERTIFIED** | Evidence (волна 1) | FIELD (или waiver) + conformance / сертификат |
 
 В волне 1 enum **не** расширяется.
+
+### Не путать с marketplace-пилотами
+
+| Полоса | Что это | Сегодня |
+|--------|---------|---------|
+| **Marketplace / solution pilots** | Бандлы в `examples/marketplace-catalog/` (HVAC, tank-farm, oil-control, MES, twins, …) | **Рабочие / REAL** |
+| **Lab OT Trust** (BL-140) | Lab VLAN soak Modbus/MQTT/OPC UA | Lab evidence; не customer-plant FIELD |
+| **Driver FIELD/CERTIFIED** | Evidence (+ later enum) протокола на named plant | **0** |
+
+Рабочий marketplace-пилот **не** повышает драйвер до FIELD. Ноль driver FIELD **не** значит «нет рабочих пилотов».
 
 ### Гейт FIELD
 
@@ -38,7 +48,7 @@ FIELD (или waiver) + артефакт conformance/сертификации, �
 
 ### Честность (2026-10-12)
 
-FIELD = **0** драйверов; CERTIFIED = **0**; enum FIELD/CERTIFIED — **ещё нет**.
+Marketplace / solution pilots — **много, рабочие**. Driver FIELD = **0**; CERTIFIED = **0**; enum FIELD/CERTIFIED — **ещё нет**.
 
 ## Последствия
 
@@ -46,4 +56,4 @@ FIELD = **0** драйверов; CERTIFIED = **0**; enum FIELD/CERTIFIED — **
 
 ## Связанное
 
-- [0022](0022-driver-production-matrix.md), [0057](0057-ot-trust-wave1-dnp3-poll-only.md), [field-pilot-playbook](../field-pilot-playbook.md)
+- [0022](0022-driver-production-matrix.md), [0057](0057-ot-trust-wave1-dnp3-poll-only.md), [field-pilot-playbook](../field-pilot-playbook.md), [marketplace](../marketplace.md)

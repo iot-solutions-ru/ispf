@@ -4,6 +4,8 @@
 
 > **Статус: Готово (BL-183).** Просмотр remote catalog, free/paid install, подпись, версионирование, offline local install, multi-endpoint partner catalogs и CI validate каталога — реальны. Symbol **packs** — Done (BL-185, `ISPF_SYMBOL_PACKS_DIR` + scada API); `GET /api/v1/marketplace/symbols` отдаёт bundled/local (`source`: `bundled` | `local`), не remote partner store. Partner **directory** (3 seeded DB partners) — Done (BL-184) — см. [partner-program](partner-program.md). Seeded `marketplaceUrl` партнёров — плейсхолдеры `.example`; реальные partner hosts настраиваются через `ispf.marketplace.endpoints`. Sync Partner Portal остаётся external.
 
+**Industry / solution пилоты** в `examples/marketplace-catalog/` (HVAC, tank-farm, oil-control, MES, twins, …) — **рабочие reference installs** (CI validate + dogfood). Это отдельная полоса от **driver** `FIELD` / `CERTIFIED` в [ADR-0067](decisions/0067-field-certified-maturity.md): рабочий marketplace-solution не поднимает протокол-драйвер до FIELD.
+
 Платформа ISPF может просматривать **удалённые серверы маркетплейса**, устанавливать бесплатные bundle и активировать платные листинги с ключом entitlement.
 
 URL маркетплейса по умолчанию **настраивается** (`ISPF_MARKETPLACE_DEFAULT_URL`). Для production укажите свой совместимый хост.

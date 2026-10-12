@@ -24,6 +24,18 @@ Related: [0057](0057-ot-trust-wave1-dnp3-poll-only.md) (capability honesty), [fi
 
 Wave 1 does **not** add `FIELD` / `CERTIFIED` to `DriverMaturity`. Catalog stays PRODUCTION/BETA/STUB. Promotion to FIELD/CERTIFIED is recorded in docs/evidence + playbook/status tables until a follow-up ships enum + matrix columns.
 
+### 1b. Do not confuse with marketplace / solution pilots
+
+These are **different products of “pilot”**:
+
+| Lane | What it is | Status today |
+|------|------------|--------------|
+| **Marketplace / solution pilots** | Installable industry bundles under `examples/marketplace-catalog/` (HVAC, tank-farm, oil-control, MES refs, twins, …) + demostand | **Working / REAL** — CI catalog validate, dogfood, operator UIs |
+| **Lab OT Trust driver pilots** (BL-140) | Modbus / MQTT / OPC UA lab VLAN soaks + journals | Lab evidence **Consumed**; not customer-plant FIELD |
+| **Driver FIELD / CERTIFIED** (this ADR) | Evidence (+ later enum) for a **protocol driver** at a **named plant** | **Zero** — C1 named plant still open |
+
+A working marketplace solution does **not** auto-promote its drivers to FIELD. Conversely, zero driver FIELD evidence does **not** mean “ISPF has no working pilots.”
+
 ### 2. FIELD gate (driver or pilot scenario)
 
 All of the following are required; missing any → remain **playbook-ready** / lab PRODUCTION only:
@@ -48,16 +60,18 @@ Lab VLAN soaks **without** a named plant / C1 site do **not** satisfy FIELD (hon
 |---------|------------------------|-------|
 | Drivers | This ADR | Primary |
 | HMI / PWA offline | **P-HMI-FIELD** (on-site tablet / airplane) | Lab 2h/8h CDP ≠ FIELD |
-| Solutions / MES | MES field soak journals | Playbook-ready until named site |
+| Solutions / marketplace | Working reference pilots (catalog) | Real installs; not driver FIELD |
+| Solutions / MES plant soak | MES field soak journals | Named MES site ≠ driver FIELD |
 
 ### 5. Honesty snapshot (2026-10-12)
 
 | Claim | Status |
 |-------|--------|
+| Marketplace / solution pilots (catalog + demostand) | **Many — working** |
 | Drivers with `DriverMaturity.PRODUCTION` | Many (lab CI) |
-| Drivers with **FIELD** evidence complete | **Zero** (C1 named site still open on BL-140 pilots) |
+| Drivers with **FIELD** evidence complete | **Zero** (named plant C1 still open) |
 | Drivers with **CERTIFIED** evidence complete | **Zero** |
-| Enum exposes FIELD/CERTIFIED | **Not yet** |
+| Enum exposes FIELD/CERTIFIED | **Not yet** (follow-up) |
 
 ## Consequences
 
@@ -68,7 +82,8 @@ Lab VLAN soaks **without** a named plant / C1 site do **not** satisfy FIELD (hon
 
 ### Risks
 
-- Pressure to stamp FIELD after lab soak alone — mitigated by C1 named-site requirement.
+- Pressure to stamp driver FIELD after lab soak or marketplace demo alone — mitigated by C1 named-**plant** requirement and §1b.
+- Readers equate “no FIELD drivers” with “no working pilots” — mitigated by the marketplace lane in §1b / §5.
 - Enum lag vs docs tiers may confuse the console — mitigated by keeping API labels unchanged until follow-up.
 
 ## Related
@@ -76,4 +91,4 @@ Lab VLAN soaks **without** a named plant / C1 site do **not** satisfy FIELD (hon
 - [0022-driver-production-matrix](0022-driver-production-matrix.md)
 - [0057-ot-trust-wave1-dnp3-poll-only](0057-ot-trust-wave1-dnp3-poll-only.md)
 - [field-pilot-playbook](../field-pilot-playbook.md), [driver-promotion](../driver-promotion.md)
-- [competitive-scorecard](../competitive-scorecard.md)
+- [marketplace](../marketplace.md), [competitive-scorecard](../competitive-scorecard.md)
