@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -80,12 +81,125 @@ public class ExpressionEngine {
     /**
      * Rewrites {@code foo["bar"]} to {@code foo.bar} when {@code bar} is a CEL identifier so map
      * field access stays {@code dyn} under type-check (see {@link #MAP_INDEX_IDENT}).
+     * Matches inside CEL string and bytes literals, and inside {@code //} comments, stay as written.
      */
     static String normalizeMapIndexSelects(String expression) {
         if (expression == null || expression.isBlank() || expression.indexOf('[') < 0) {
             return expression;
         }
-        return MAP_INDEX_IDENT.matcher(expression).replaceAll(".$1");
+        StringBuilder out = new StringBuilder(expression.length());
+        int i = 0;
+        int n = expression.length();
+        while (i < n) {
+            int literalEnd = celLiteralEnd(expression, i);
+            if (literalEnd > i) {
+                out.append(expression, i, literalEnd);
+                i = literalEnd;
+                continue;
+            }
+            if (expression.charAt(i) == '/' && i + 1 < n && expression.charAt(i + 1) == '/') {
+                int end = expression.indexOf('\n', i);
+                end = end < 0 ? n : end + 1;
+                out.append(expression, i, end);
+                i = end;
+                continue;
+            }
+            i = appendMapIndexOrChar(expression, i, out);
+        }
+        return out.toString();
+    }
+
+    /**
+     * Exclusive end of a CEL string or bytes literal starting at {@code i}, or {@code -1}.
+     * Recognizes quoted, triple-quoted, raw ({@code r}/{@code R}) and bytes ({@code b}/{@code B}) forms.
+     */
+    private static int celLiteralEnd(String expression, int i) {
+        int n = expression.length();
+        if (i > 0 && isIdentChar(expression.charAt(i - 1))) {
+            return -1;
+        }
+        for (int len = Math.min(2, n - i); len >= 0; len--) {
+            if (len > 0 && !isCelLiteralPrefix(expression.substring(i, i + len))) {
+                continue;
+            }
+            int quotePos = i + len;
+            if (quotePos >= n) {
+                continue;
+            }
+            char quote = expression.charAt(quotePos);
+            if (quote != '"' && quote != '\'') {
+                continue;
+            }
+            boolean raw = false;
+            for (int k = 0; k < len; k++) {
+                char prefix = expression.charAt(i + k);
+                if (prefix == 'r' || prefix == 'R') {
+                    raw = true;
+                }
+            }
+            return scanQuoted(expression, quotePos, quote, raw);
+        }
+        return -1;
+    }
+
+    private static boolean isCelLiteralPrefix(String prefix) {
+        return switch (prefix) {
+            case "r", "R", "b", "B", "rb", "rB", "Rb", "RB", "br", "bR", "Br", "BR" -> true;
+            default -> false;
+        };
+    }
+
+    private static int scanQuoted(String expression, int quotePos, char quote, boolean raw) {
+        int n = expression.length();
+        boolean triple = quotePos + 2 < n
+                && expression.charAt(quotePos + 1) == quote
+                && expression.charAt(quotePos + 2) == quote;
+        int i = triple ? quotePos + 3 : quotePos + 1;
+        if (triple) {
+            while (i < n) {
+                if (!raw && expression.charAt(i) == '\\') {
+                    i += 2;
+                    continue;
+                }
+                if (expression.charAt(i) == quote
+                        && i + 2 < n
+                        && expression.charAt(i + 1) == quote
+                        && expression.charAt(i + 2) == quote) {
+                    return i + 3;
+                }
+                i++;
+            }
+            return n;
+        }
+        while (i < n) {
+            char c = expression.charAt(i);
+            if (!raw && c == '\\') {
+                i += 2;
+                continue;
+            }
+            if (c == quote) {
+                return i + 1;
+            }
+            if (c == '\n' || c == '\r') {
+                return i;
+            }
+            i++;
+        }
+        return n;
+    }
+
+    private static int appendMapIndexOrChar(String expression, int i, StringBuilder out) {
+        Matcher matcher = MAP_INDEX_IDENT.matcher(expression);
+        if (matcher.find(i) && matcher.start() == i) {
+            out.append('.').append(matcher.group(1));
+            return matcher.end();
+        }
+        out.append(expression.charAt(i));
+        return i + 1;
+    }
+
+    private static boolean isIdentChar(char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
     }
 
     public Object evaluate(String expression, PlatformObject platformObject) {
