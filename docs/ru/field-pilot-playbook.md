@@ -14,6 +14,8 @@
 
 До этого статус **playbook-ready**: есть lab dry-run, чеклисты и шаблон sign-off; **полевой soak и promotion evidence не заявляются**.
 
+Формальные evidence-тиры (**FIELD** / **CERTIFIED** выше lab **PRODUCTION**): [0067-field-certified-maturity](decisions/0067-field-certified-maturity.md). Playbook **ready-for-field** = гейт **FIELD**; lab VLAN без C1 named site остаётся playbook-ready.
+
 ### Kickoff-пакет Pilot #1 (Modbus)
 
 Рабочие артефакты рекомендованного первого пилота (Workstream C):

@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **FIELD / CERTIFIED maturity (ADR-0067)** — evidence tiers above lab `PRODUCTION`: named-site FIELD gate (soak ≥7d + OT sign-off) and CERTIFIED (conformance); honesty: zero drivers FIELD/CERTIFIED today; API enum unchanged. Pointers from driver-promotion, field-pilot playbook, ADR-0022.
 - **Platform security model (ADR-0066)** — accepted decision record for auth → RBAC → tenancy → object/MEMBER ACL → federation channel ceiling → secrets layers; hard rules and honesty table; pointers from `security.md` / `multi-tenant.md` (no runtime change).
 - **Secrets-key envelope + rotation (ADR-0065)** — new ciphertext uses `ispf1.<keyId>.<base64>`; legacy Base64 still decrypts; `ispf.security.secrets-previous-key` for dual-read; `POST /api/v1/federation/secrets-key/reencrypt` rewrites vault + federation rows; DATABASE UI key change re-encrypts in place instead of requiring agent deletion.
 

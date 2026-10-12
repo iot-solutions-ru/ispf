@@ -1,0 +1,79 @@
+# ADR-0067: FIELD and CERTIFIED maturity (above PRODUCTION)
+
+## Status
+
+**Accepted** (2026-10-12) — defines evidence tiers and gates; **no driver is labeled FIELD or CERTIFIED today**. API enum extension is a follow-up.
+
+## Context
+
+[ADR-0022](0022-driver-production-matrix.md) made `PRODUCTION` mean **lab CI** (loopback / integration test + docs + honest capabilities). That bar is necessary and insufficient for plant trust. The field-pilot playbook already distinguishes **playbook-ready** vs **ready-for-field**, but the driver matrix enum only has `PRODUCTION` / `BETA` / `STUB`. Scorecard OT / HMI residuals (`P-OT`, `P-HMI-FIELD`) need named tiers so agents and tenders cannot oversell lab PRODUCTION as field-proven.
+
+Related: [0057](0057-ot-trust-wave1-dnp3-poll-only.md) (capability honesty), [field-pilot-playbook](../field-pilot-playbook.md), [driver-promotion](../driver-promotion.md).
+
+## Decision
+
+### 1. Four maturity stories (only three in the API today)
+
+| Tier | Where it lives | Meaning |
+|------|----------------|---------|
+| **STUB** | `DriverMaturity` | Connectivity / placeholder — not for production telemetry |
+| **BETA** | `DriverMaturity` | Works with declared limits; coverage partial or hardware-dependent |
+| **PRODUCTION** | `DriverMaturity` | Lab CI gate per [0022](0022-driver-production-matrix.md) |
+| **FIELD** | Evidence + playbook status (Wave 1) | Named site soak + OT sign-off for claimed capabilities |
+| **CERTIFIED** | Evidence (Wave 1) | FIELD (or explicit waiver) + protocol conformance / formal cert artifact |
+
+Wave 1 does **not** add `FIELD` / `CERTIFIED` to `DriverMaturity`. Catalog stays PRODUCTION/BETA/STUB. Promotion to FIELD/CERTIFIED is recorded in docs/evidence + playbook/status tables until a follow-up ships enum + matrix columns.
+
+### 2. FIELD gate (driver or pilot scenario)
+
+All of the following are required; missing any → remain **playbook-ready** / lab PRODUCTION only:
+
+1. **Named field task** — customer or internal site, protocol, integrator ticket, and scope to harden the path for that site ([ready-for-field policy](../field-pilot-playbook.md#ready-for-field-gate-policy)).
+2. **Prerequisite maturity** — driver(s) already **PRODUCTION** for every capability claimed in the pilot (`POLL` / `WRITE` / …); no stub shells.
+3. **Soak** — ≥ **7 days** continuous or scheduled poll with a soak journal under `docs/evidence/` (incidents logged; stop note if aborted).
+4. **Round-trip** — if `WRITE` is claimed, documented successful write (or explicit POLL-only scope like DNP3 per [0057](0057-ot-trust-wave1-dnp3-poll-only.md)).
+5. **Sign-off** — completed OT / site-owner sign-off using the playbook template (or equivalent dated artifact linked from the journal).
+
+Lab VLAN soaks **without** a named plant / C1 site do **not** satisfy FIELD (honest lab evidence only).
+
+### 3. CERTIFIED gate
+
+1. **FIELD** satisfied for the same driver id and capability set, **or** a written waiver that CERTIFIED is protocol-lab-only (rare; must say so on the scorecard).
+2. **Conformance evidence** — vendor suite, ISPF-owned conformance pack, or third-party cert report covering the claimed capabilities, linked from `docs/evidence/` (or pack README).
+3. **Honesty** — capabilities in `DriverProductionMatrix` must not exceed what the conformance artifact covers.
+
+### 4. Parallel surfaces (same vocabulary, separate evidence)
+
+| Surface | FIELD-equivalent today | Notes |
+|---------|------------------------|-------|
+| Drivers | This ADR | Primary |
+| HMI / PWA offline | **P-HMI-FIELD** (on-site tablet / airplane) | Lab 2h/8h CDP ≠ FIELD |
+| Solutions / MES | MES field soak journals | Playbook-ready until named site |
+
+### 5. Honesty snapshot (2026-10-12)
+
+| Claim | Status |
+|-------|--------|
+| Drivers with `DriverMaturity.PRODUCTION` | Many (lab CI) |
+| Drivers with **FIELD** evidence complete | **Zero** (C1 named site still open on BL-140 pilots) |
+| Drivers with **CERTIFIED** evidence complete | **Zero** |
+| Enum exposes FIELD/CERTIFIED | **Not yet** |
+
+## Consequences
+
+- Amend [0022](0022-driver-production-matrix.md): FIELD/CERTIFIED are defined here, not “future undefined”.
+- [driver-promotion](../driver-promotion.md) and [field-pilot-playbook](../field-pilot-playbook.md) point at these gates.
+- Scorecard OT / HMI must not claim 9+ / 9.5 without FIELD (and CERTIFIED where conformance is advertised).
+- Follow-up (optional): `DriverMaturity.FIELD` / `.CERTIFIED` + matrix evidence paths + CI that FIELD rows resolve evidence files.
+
+### Risks
+
+- Pressure to stamp FIELD after lab soak alone — mitigated by C1 named-site requirement.
+- Enum lag vs docs tiers may confuse the console — mitigated by keeping API labels unchanged until follow-up.
+
+## Related
+
+- [0022-driver-production-matrix](0022-driver-production-matrix.md)
+- [0057-ot-trust-wave1-dnp3-poll-only](0057-ot-trust-wave1-dnp3-poll-only.md)
+- [field-pilot-playbook](../field-pilot-playbook.md), [driver-promotion](../driver-promotion.md)
+- [competitive-scorecard](../competitive-scorecard.md)

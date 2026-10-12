@@ -42,5 +42,6 @@
 | [0064-release-compatibility-lts](0064-release-compatibility-lts.md) | Релизы, совместимость, LTS; `formatVersion` bundle — **Accepted** |
 | [0065-secrets-key-rotation](0065-secrets-key-rotation.md) | Envelope secrets-key (`ispf1.<kid>.…`), previous-key, re-encrypt — **Accepted** |
 | [0066-security-model](0066-security-model.md) | Модель безопасности (auth, RBAC, tenancy, MEMBER ACL, secrets) — **Accepted** |
+| [0067-field-certified-maturity](0067-field-certified-maturity.md) | Тиры FIELD / CERTIFIED выше PRODUCTION — **Accepted** |
 
 **Цепочки тем (порядок чтения):** [en/decisions/readme.md § Topic chains](../../en/decisions/readme.md#topic-chains-read-in-order).
