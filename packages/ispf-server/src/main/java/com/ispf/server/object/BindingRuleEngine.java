@@ -290,9 +290,7 @@ public class BindingRuleEngine {
             }
             ResolvedVariableTarget target = resolveVariableTarget(object.path(), rule.target());
             if (target == null) {
-                success = false;
-                error = "Unknown target variable: " + describeVariableTarget(rule.target());
-                return false;
+                throw new IllegalStateException("Unknown target variable: " + describeVariableTarget(rule.target()));
             }
             Optional<DataRecord> computed = expressionEvaluator.evaluate(
                     object,
