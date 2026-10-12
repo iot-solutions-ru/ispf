@@ -196,15 +196,17 @@ public class ObjectBindingStatePort implements BindingStatePort {
     }
 
     private ObjectNode parseRoot(String json) {
+        final JsonNode node;
         try {
-            JsonNode node = objectMapper.readTree(json);
-            if (node instanceof ObjectNode objectNode) {
-                return objectNode.deepCopy();
-            }
-        } catch (Exception ignored) {
-            // fall through
+            node = objectMapper.readTree(json);
+        } catch (RuntimeException ex) {
+            String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+            throw new IllegalArgumentException("Invalid binding state JSON: " + detail, ex);
         }
-        return objectMapper.createObjectNode();
+        if (node instanceof ObjectNode objectNode) {
+            return objectNode.deepCopy();
+        }
+        throw new IllegalArgumentException("Invalid binding state JSON: expected object");
     }
 
     private void persistUnlocked(String objectPath) {
