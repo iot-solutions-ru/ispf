@@ -11,6 +11,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Добавлено
 
+- Модель безопасности платформы (ADR-0066): auth → RBAC → tenancy → object/MEMBER ACL → federation ceiling → secrets; жёсткие правила и таблица честности; ссылки из `security.md` / `multi-tenant.md` (без смены runtime).
 - Envelope secrets-key + ротация (ADR-0065): ciphertext `ispf1.<keyId>.…`; legacy Base64 читается; `secrets-previous-key` для dual-read; `POST /api/v1/federation/secrets-key/reencrypt`; смена DATABASE-ключа из UI перешифровывает vault/federation на месте.
 
 ### Изменено
