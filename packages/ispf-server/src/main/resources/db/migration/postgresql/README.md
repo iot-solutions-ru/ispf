@@ -9,4 +9,4 @@ There is **no** upgrade path that replays the removed pre-squash V2–V70 script
 
 New install: empty database → Flyway applies `V1__baseline.sql` and all later versions → import solution bundles for configuration.
 
-Policy: [ADR-0037](../../../../../../../../docs/en/decisions/0037-relational-core-portability.md).
+Policy: [ADR-0037](../../../../../../../../docs/en/decisions/0037-relational-core-portability.md), [ADR-0064](../../../../../../../../docs/en/decisions/0064-release-compatibility-lts.md).

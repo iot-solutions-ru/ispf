@@ -134,9 +134,11 @@ Content-Type: application/json
 
 ## Развертывание пакета (REQ-PF-03)
 
-### Семверский контракт (БЛ-97)
+### Semver и формат (БЛ-97 / ADR-0064)
 
 `manifest.version` является **обязательным** и должно быть строгим значением `MAJOR.MINOR.PATCH` (например, `1.0.0`). Недопустимые значения отклоняются при анализе, проверке и развертывании.
+
+`manifest.formatVersion` — опциональное **целое** для формы JSON (не semver решения). Нет поля ⇒ `1`. Неподдерживаемые значения отклоняются. Pull-from-tree пишет `formatVersion: 1`. См. [0064-release-compatibility-lts](../en/decisions/0064-release-compatibility-lts.md).
 
 Необязательные поля:
 

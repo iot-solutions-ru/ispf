@@ -38,9 +38,9 @@ db/migration/oracle/       — README only (planned)
 
 `FlywayConfigurationCustomizer` selects `locations` by active dialect.
 
-#### Amendment (2026-10-11) — PostgreSQL after the V1–V70 squash
+#### Amendment (2026-10-12) — PostgreSQL after the V1–V70 squash + expand/contract
 
-Legacy increments **V1–V70 were squashed** into `V1__baseline.sql` (2026-07-07). **After that squash**, PostgreSQL again uses **incremental Flyway scripts** (`V71__…` onward). New installs apply `V1` then every later version in order. Do **not** treat the pack as “baseline only forever”.
+Legacy increments **V1–V70 were squashed** into `V1__baseline.sql` (2026-07-07). **After that squash**, PostgreSQL again uses **incremental Flyway scripts** (`V71__…` onward). New installs apply `V1` then every later version in order. Prefer **expand/contract** DDL ([0064-release-compatibility-lts](0064-release-compatibility-lts.md)). Do **not** treat the pack as “baseline only forever”.
 
 | Scenario | Action |
 |----------|--------|
@@ -94,4 +94,5 @@ Risks:
 - [storage-portability-inventory](../storage-portability-inventory.md)
 - [deployment](../deployment.md) § Storage deployment modes
 - [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md), [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md)
+- [0064-release-compatibility-lts](0064-release-compatibility-lts.md) — expand/contract + platform LTS
 - [blueprints](../blueprints.md) — `data-source-v1`

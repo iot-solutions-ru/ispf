@@ -375,7 +375,8 @@ public class ApplicationBundlePullFromTreeService {
                 base.license(),
                 base.metadata(),
                 base.operatorUi(),
-                base.operatorManifest()
+                base.operatorManifest(),
+                BundleFormatVersions.CURRENT
         );
 
         pulledCounts.put("objects", size(manifest.objects()));
@@ -527,7 +528,8 @@ public class ApplicationBundlePullFromTreeService {
                 null,
                 null,
                 null,
-                null
+                null,
+                BundleFormatVersions.CURRENT
         );
     }
 
