@@ -30,7 +30,7 @@ These are **different products of “pilot”**:
 
 | Lane | What it is | Status today |
 |------|------------|--------------|
-| **Marketplace / solution pilots** | Installable industry bundles under `examples/marketplace-catalog/` (HVAC, tank-farm, oil-control, MES refs, twins, …) + demostand | **Working / REAL** — CI catalog validate, dogfood, operator UIs |
+| **Marketplace / solution pilots** | Installable industry bundles under `examples/marketplace-catalog/` (HVAC, tank-farm, oil-control, MES refs, twins, …) + demostand — [marketplace-pilots](../marketplace-pilots.md) | **Working / REAL** — CI catalog validate, dogfood, operator UIs |
 | **Lab OT Trust driver pilots** (BL-140) | Modbus / MQTT / OPC UA lab VLAN soaks + journals | Lab evidence **Consumed**; not customer-plant FIELD |
 | **Driver FIELD / CERTIFIED** (this ADR) | Evidence (+ later enum) for a **protocol driver** at a **named plant** | **Zero** — C1 named plant still open |
 
@@ -91,4 +91,4 @@ Lab VLAN soaks **without** a named plant / C1 site do **not** satisfy FIELD (hon
 - [0022-driver-production-matrix](0022-driver-production-matrix.md)
 - [0057-ot-trust-wave1-dnp3-poll-only](0057-ot-trust-wave1-dnp3-poll-only.md)
 - [field-pilot-playbook](../field-pilot-playbook.md), [driver-promotion](../driver-promotion.md)
-- [marketplace](../marketplace.md), [competitive-scorecard](../competitive-scorecard.md)
+- [marketplace](../marketplace.md), [marketplace-pilots](../marketplace-pilots.md), [competitive-scorecard](../competitive-scorecard.md)

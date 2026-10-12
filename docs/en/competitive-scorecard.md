@@ -81,7 +81,7 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 | 9 | AI-assisted development | 9.0 | **REAL** | BL-178 **52/52 @100%**; BL-177/180 live smoke harness; soft re-soaks under [`docs/evidence/ai-generator/`](../evidence/ai-generator/). Residual for 10: optional multi-day plant journal — soft archives do **not** mint new scores |
 | 10 | Security / RBAC | 8.5 | **PARTIAL** | Contract: [ADR-0066](decisions/0066-security-model.md). TOTP MFA GA (BL-153); ACL + trusted-channel (BL-154); SaaS tenant-admin + PG RLS (BL-155); secrets rotation (ADR-0065); SIEM audit (BL-156). Residual: hired pen-test (**G-01** / **P-PENTEST**), optional hard schema routing, WebAuthn (BL-194 / ADR-0056) |
 | 11 | Deploy / scale / edge | 7.5 | **PARTIAL** | Federation MoM (BL-188); Helm + ARM edge (BL-186/187); no CI load proof for cluster / 10+ peer scale |
-| 12 | Ecosystem / marketplace | 6.5 | **PARTIAL** | Marketplace GA + CI catalog gate (BL-183); **working industry pilots** in `examples/marketplace-catalog/` (HVAC, tank-farm, oil-control, MES, twins, … — REAL installs, not stubs). Partner directory `source=db` (BL-184); Partner Portal sync still external |
+| 12 | Ecosystem / marketplace | 6.5 | **PARTIAL** | Marketplace GA + CI catalog gate (BL-183); **working industry pilots** — [marketplace-pilots](marketplace-pilots.md) (HVAC, tank-farm, oil-control, MES, twins, … — REAL). Partner directory `source=db` (BL-184); Partner Portal sync still external |
 | 13 | Documentation / DX | 8.5 | **REAL** | Docs + ADRs; stub honesty in code; evidence folders under `docs/evidence/` |
 | 14 | Stack modernity | 9.5 | **REAL** | Spring Boot 4, React 19, ClickHouse option in `gradle.properties` / `application.yml` |
 
