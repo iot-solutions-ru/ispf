@@ -7,6 +7,7 @@ import {
   fetchApplicationGitBinding,
   fetchApplicationGitStatus,
   pullApplicationGitRelease,
+  pushApplicationGitPr,
   upsertApplicationGitBinding,
 } from "../../api/applications";
 
@@ -84,10 +85,22 @@ export default function ApplicationGitPanel({ appId, canManage }: ApplicationGit
     },
   });
 
+  const pushMutation = useMutation({
+    mutationFn: () => pushApplicationGitPr(appId, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["application-git-binding", appId] });
+      queryClient.invalidateQueries({ queryKey: ["application-git-status", appId] });
+    },
+  });
+
   const pullStatus = typeof pullMutation.data?.status === "string" ? String(pullMutation.data.status) : "";
   const pullOk = pullMutation.isSuccess && pullStatus === "OK";
   const pullPartial = pullMutation.isSuccess && pullStatus === "PARTIAL";
   const pullValidationFailed = pullMutation.isSuccess && pullStatus === "ERROR";
+  const pushStatus = typeof pushMutation.data?.status === "string" ? String(pushMutation.data.status) : "";
+  const pushOk = pushMutation.isSuccess && pushStatus === "OK";
+  const pushValidationFailed = pushMutation.isSuccess && pushStatus === "ERROR";
+  const pushPrUrl = typeof pushMutation.data?.prUrl === "string" ? String(pushMutation.data.prUrl) : "";
 
   const status = statusQuery.data;
   const configured = Boolean(status?.configured ?? bindingQuery.data?.configured);
@@ -186,6 +199,19 @@ export default function ApplicationGitPanel({ appId, canManage }: ApplicationGit
           )}
           {configured && (
             <Button
+              disabled={!canManage}
+              loading={pushMutation.isPending}
+              onClick={() => {
+                if (window.confirm(t("git.pushConfirm"))) {
+                  pushMutation.mutate();
+                }
+              }}
+            >
+              {t("git.push")}
+            </Button>
+          )}
+          {configured && (
+            <Button
               danger
               disabled={!canManage}
               loading={disconnectMutation.isPending}
@@ -207,6 +233,22 @@ export default function ApplicationGitPanel({ appId, canManage }: ApplicationGit
       {pullOk && <Alert type="success" showIcon title={t("git.pullSuccess")} />}
       {pullPartial && <Alert type="warning" showIcon title={t("git.pullPartial")} />}
       {pullValidationFailed && <Alert type="error" showIcon title={t("git.pullValidationFailed")} />}
+      {pushMutation.error && <Alert type="error" showIcon title={String(pushMutation.error)} />}
+      {pushOk && (
+        <Alert
+          type="success"
+          showIcon
+          title={t("git.pushSuccess")}
+          description={
+            pushPrUrl ? (
+              <a href={pushPrUrl} target="_blank" rel="noreferrer">
+                {pushPrUrl}
+              </a>
+            ) : undefined
+          }
+        />
+      )}
+      {pushValidationFailed && <Alert type="error" showIcon title={t("git.pushValidationFailed")} />}
       {disconnectMutation.error && (
         <Alert type="error" showIcon title={String(disconnectMutation.error)} />
       )}

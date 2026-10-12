@@ -38,6 +38,6 @@
 | [0060-solution-authoring-constraints](0060-solution-authoring-constraints.md) | Constraints авторства solution (схема, хабы SINGLETON, W1–W6) — **Accepted** |
 | [0061-high-rate-telemetry-history-defaults](0061-high-rate-telemetry-history-defaults.md) | Безопасные defaults истории high-rate телеметрии (MQTT / journal / previousValue) — **Accepted** |
 | [0062-correlator-keyed-dispatch](0062-correlator-keyed-dispatch.md) | Полосы коррелятора по ключу, `REQUIRES_NEW` на коррелятор, async-действия, время события — **Accepted** |
-| [0063-application-git-lifecycle](0063-application-git-lifecycle.md) | Git-вкладка APPLICATION: Connect/Status/Pull сейчас; Push→PR — план — **Accepted** |
+| [0063-application-git-lifecycle](0063-application-git-lifecycle.md) | Git-вкладка APPLICATION: Connect/Status/Pull/Push→PR — **Accepted** |
 
 **Цепочки тем (порядок чтения):** [en/decisions/readme.md § Topic chains](../../en/decisions/readme.md#topic-chains-read-in-order).

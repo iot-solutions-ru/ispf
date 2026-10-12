@@ -572,6 +572,25 @@ export async function pullApplicationGitRelease(
   return response.json() as Promise<Record<string, unknown>>;
 }
 
+export async function pushApplicationGitPr(
+  appId: string,
+  body?: { title?: string; body?: string; branchName?: string }
+): Promise<Record<string, unknown>> {
+  const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/git/push-pr`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(body ?? {}),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Git push PR failed: ${response.status}`);
+  }
+  return response.json() as Promise<Record<string, unknown>>;
+}
+
 export async function pullApplicationBundleFromTree(
   appId: string,
   options?: {

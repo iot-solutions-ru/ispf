@@ -11,6 +11,7 @@ import com.ispf.server.application.data.ApplicationDataService;
 import com.ispf.server.application.git.ApplicationGitService;
 import com.ispf.server.application.git.ApplicationGitService.GitBindingRequest;
 import com.ispf.server.application.git.ApplicationGitService.PullRequest;
+import com.ispf.server.application.git.ApplicationGitService.PushPrRequest;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.report.ApplicationReportService;
@@ -128,6 +129,18 @@ public class ApplicationController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
         } catch (BundleDependencyException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
+    @PostMapping("/{appId}/git/push-pr")
+    public Map<String, Object> pushGitPullRequest(
+            @PathVariable String appId,
+            @RequestBody(required = false) PushPrRequest request
+    ) {
+        try {
+            return applicationGitService.pushTreePullRequest(appId, request);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }
