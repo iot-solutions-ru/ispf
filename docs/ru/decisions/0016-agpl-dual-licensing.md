@@ -2,6 +2,8 @@
 
 # ADR-0016: AGPL platform + driver packs + dual licensing
 
+> **Алиас номера:** **0016b** (AGPL + dual licensing). Тот же числовой id у [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md) (**0016a**). В новых ссылках указывайте имя файла или алиас; файлы не перенумеровывать.
+
 Статус: **Принято**  
 Дата: 2026-06-27
 

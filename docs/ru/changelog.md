@@ -11,6 +11,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Изменено
 
+- Гигиена реестра ADR: алиасы дублей (**0016a/b**, **0025a/b**); терминология 0011 → MIXIN/INSTANCE/SINGLETON; 0037 и README Flyway PostgreSQL — `V1` + инкременты `V71+`; статусы 0038/0039 Accepted; волна 4 в 0049 (vault) — partial; 0053 — YARG/docx4j удалены; закрыты устаревшие «future» по MCP/ClickHouse; scorecard DNP3 BETA → PRODUCTION poll-only (ADR-0057); добавлены RU-зеркала 0055–0057 и 0060–0062; снят Dependabot ignore для docx4j.
 - Git lifecycle приложения (ADR-0063): Connect / Disconnect / Status / Pull release → deploy / Push tree → PR (GitHub/GitLab Contents + Pulls/MR, PAT в vault, history `source=git` + sha). Вкладка Git в Console. Docs: applications, learn Path B, anti-patterns.
 - Binding `target.kind`: неизвестный kind отклоняется, а не молча становится `variable`.
 - Канон решения в валидации bundle: `LOGIC_HOST_DEVICE` (функция на DEVICE или SINGLETON blueprint с `targetObjectType=DEVICE`) был ERROR — validate/deploy отвечали `status: ERROR`, и судья агента отправлял рабочее решение на REWORK. Теперь это WARNING с указанием канонического хоста (SINGLETON-хаб или INSTANCE-двойник); деплой не блокируется. Bundle в `examples/` по-прежнему не должны давать `LOGIC_HOST_DEVICE` (`ExamplesBundleValidationTest`). ADR-0060 W1 дополнен.
@@ -19,6 +20,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
+- Free install marketplace на demostand с подписью: при `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM` unsigned free-download не подписывался (trusted оставался false) → 403 при `require-signed-bundles=true` (например Building HVAC Reference). Снова trusted для unsigned free-download, чтобы платформа подписала перед verify.
 - SCADA mimic: выпадающий список Category (и другие Select/Tooltip редактора) открывался за полноэкранным оверлеем и выглядел «мёртвым» — попапы Ant Design теперь монтируются внутри оверлея.
 - Explorer: VISUAL_GROUP в каталогах (Data Sources и др.) открывается списком участников, как корневая папка, а не редактором data source по path-эвристике («Not a data source object»). То же для групп в Operator Apps; path-эвристика больше не перекрывает известный не-editor тип. Состав группы — через контекстное меню дерева («Добавить в группу»).
 - pull-from-tree: обновляются `displayName` / `tablePrefix` / `schemaName` из регистрации приложения и `blueprints[]` из registry по имени (round-trip ADR-0063).

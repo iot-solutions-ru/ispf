@@ -21,7 +21,8 @@ We need a thin bridge so MCP clients reuse the **same** ACL-aware platform tools
    - use **stateless** single tool calls (no chat history), or
    - pass `sessionId` in tool arguments to attach to persistent DB sessions (`agent_sessions`, migration V38).
 5. **Transport**: start with **stdio** MCP for local dev and **SSE/HTTP** for remote hub; not bundled into core JAR by default (profile `mcp`).
-6. **Out of scope for v1**: MCP resources/prompts for ContextPack (only tools); auto-import without validate/dry-run gates.
+6. **MCP resources:** ContextPack slices as MCP `resources` — **shipped** (`McpResourceAdapter`, URIs `contextpack://<slice>`). MCP prompts remain out of scope. Auto-import without validate/dry-run gates stays forbidden ([0004](0004-ai-artifact-generation-gates.md)).
+7. **Tool schemas:** `tools/list` publishes per-tool `inputSchema` from the registry ([0051](0051-poka-yoke-constraints-over-guards.md)); no `GENERIC_INPUT_SCHEMA` stub.
 
 ### Operator scope (BL-109)
 
@@ -54,14 +55,12 @@ McpServer (profile mcp)
               └── existing Java handlers + ObjectAccessService
 ```
 
-Estimated effort: **1 sprint** (stdio + HTTP SSE, auth, integration test with mock MCP client).
-
 ## Consequences
 
 - Cursor and other MCP hosts can operate the platform without custom REST glue.
 - Tool behaviour stays identical to Web Console agent and audit (`ai_tool_audit` entries tagged `source=mcp`).
 - Additional dependency (MCP SDK) isolated behind `mcp` profile — AGPL core default unchanged.
-- Future: expose ContextPack slices as MCP `resources` — **Done** (Phase 17.3, `McpResourceAdapter`, URIs `contextpack://<slice>`).
+- ContextPack slices are MCP `resources` (`McpResourceAdapter`); live tree as MCP resources remains out of scope.
 
 ## Alternatives considered
 
@@ -69,7 +68,7 @@ Estimated effort: **1 sprint** (stdio + HTTP SSE, auth, integration test with mo
 |-------------|------------------|
 | MCP-only, remove in-server agent | Studio and CI need server orchestration (0005) |
 | Duplicate tools as REST wrappers for MCP | Two implementations diverge; ACL bugs |
-| Full MCP resources for live tree | Higher scope; ContextPack + sessions sufficient for v1 |
+| Full MCP resources for live tree | Higher scope; ContextPack + sessions sufficient |
 
 ## Related
 

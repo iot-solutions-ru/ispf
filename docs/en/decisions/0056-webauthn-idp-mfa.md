@@ -26,12 +26,10 @@ Enterprise tenders increasingly ask for phishing-resistant MFA (passkeys / WebAu
 
 ## Consequences
 
-### Positive
-
 - Clear split: air-gap TOTP vs enterprise IdP / passkeys.
 - Tender language can point at BL-194 without overselling TOTP as WebAuthn.
 
-### Negative / work
+Risks:
 
 - New browser ceremonies + attestation policy choices.
 - Test matrix: Chrome/Safari/Android; recover-when-device-lost.

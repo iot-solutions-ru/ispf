@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Changed
 
+- **ADR registry hygiene** — duplicate numbers tagged as aliases (**0016a/b**, **0025a/b**); ADR-0011 terminology aligned to MIXIN/INSTANCE/SINGLETON; ADR-0037 + PostgreSQL Flyway README document `V1` + incremental `V71+`; statuses for 0038/0039 Accepted; ADR-0049 wave 4 vault marked partial; ADR-0053 records YARG/docx4j removal; stale MCP/ClickHouse “future” claims closed; scorecard DNP3 BETA → PRODUCTION poll-only (ADR-0057); RU mirrors added for 0055–0057 and 0060–0062; Dependabot docx4j ignore removed.
 - **Application Git lifecycle (ADR-0063)** — Connect / Disconnect / Status / Pull release → deploy / Push tree → PR (GitHub/GitLab Contents + Pulls/MR APIs, vault PAT, deploy history `source=git` + sha). Console Git tab. Docs: `applications.md`, learn Path B, anti-patterns ship checklist.
 - **Binding `target.kind`** — unknown kinds are rejected instead of silently becoming `variable`.
 - **Solution canon in bundle validation** — `LOGIC_HOST_DEVICE` (a function hosted on a DEVICE, or a SINGLETON blueprint with `targetObjectType=DEVICE`) was an ERROR, so validate/deploy returned `status: ERROR` and the agent judge sent a working solution back to REWORK. It is now a WARNING that names the canonical host (SINGLETON hub or INSTANCE twin) and does not block deploy. Bundles under `examples/` still must carry no `LOGIC_HOST_DEVICE` (`ExamplesBundleValidationTest`). ADR-0060 W1 amended.
@@ -27,6 +28,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Marketplace free install under signed-bundle demostands** — when `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM` was set, free installs never signed the downloaded manifest (trusted flag stayed false), so reinstall of unsigned listings (e.g. Building HVAC Reference) returned 403 under `require-signed-bundles=true`. Unsigned free downloads are trusted again so the platform can sign them before verify.
 - **SCADA mimic symbol category Select** — Ant Design popups (Category dropdown, property Selects, toolbar tooltips) were portaled to `document.body` under the fullscreen editor overlay (`z-index` 15000), so the menu opened behind the dialog and looked like a dead click. Popups now mount inside the overlay.
 - **Explorer catalog VISUAL_GROUP** — selecting a bundle group under Data Sources (or other catalogs) opened the SQL object / data-source editor by path heuristic and failed with “Not a data source object”. Groups now open the same child list panel as the catalog root (membership edits stay on the tree context menu “Add to group”), including Operator Apps `bundle-*` groups; path heuristics no longer override a known non-editor type.
 - **Bundle pull-from-tree root / blueprints** — pull now refreshes `displayName` / `tablePrefix` / `schemaName` from the app registration and reloads `blueprints[]` from the registry by name (ADR-0063 round-trip).
