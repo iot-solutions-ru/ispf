@@ -46,7 +46,7 @@ dependencies {
     implementation(project(":packages:ispf-ai-openai-compatible"))
     implementation(project(":packages:ispf-ai-ollama"))
 
-    implementation("io.nats:jnats:2.26.3")
+    implementation("io.nats:jnats:2.26.4")
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
@@ -89,10 +89,10 @@ dependencies {
     // Embedded Kafka for BL-142 KafkaDriverRuntimeIntegrationTest (matches ispf-driver-kafka).
     testImplementation("org.apache.kafka:kafka-clients:4.3.1")
     testImplementation("io.github.embeddedkafka:embedded-kafka_2.13:4.3.1")
-    testRuntimeOnly("org.scala-lang:scala-library:3.9.0")
+    testRuntimeOnly("org.scala-lang:scala-library:3.10.0")
     // Moquette + Paho for BL-142 MqttDriverRuntimeIntegrationTest (matches ispf-driver-mqtt).
     // Pin (ADR-0059 registry): Moquette declares Netty 4.1.x; lift to the patched 4.2 line.
-    testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.18.Final"))
+    testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.19.Final"))
     testImplementation("io.moquette:moquette-broker:0.17")
     testImplementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
     testRuntimeOnly("com.h2database:h2")
