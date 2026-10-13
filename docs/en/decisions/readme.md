@@ -12,6 +12,8 @@ Engineering record — not marketing. Prefer Status / Context / Decision / Conse
 
 Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slang.py), then [`polish-docs.py`](../../../tools/docs-audit/polish-docs.py).
 
+**Tension resolution:** claim-boundary program — [adr-tension-resolution](../adr-tension-resolution.md) (Closed vs Planned waves for contradictions between ADRs / AGENTS / scorecard).
+
 ## Index
 
 ### Platform boundary, licensing, AI (0001–0008)
