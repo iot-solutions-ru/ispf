@@ -88,5 +88,22 @@
     "planGoal": "Deploy calc-kpi function",
     "planSteps": ["list_objects", "save_application_function", "deploy_application_function"],
     "validateTools": ["list_objects", "describe_object"]
+  },
+  {
+    "id": "virtual-cluster-operator",
+    "title": "Virtual cluster operator HMI",
+    "prompt": "Connect 3 virtual devices into a logical cluster, cluster ERROR when all sine > 0, overview + detail dashboards, operator UI on login, alarm on error",
+    "assignmentType": "MONITORING_LAB",
+    "planGoal": "Virtual cluster hub + dashboards + operator UI + alert",
+    "planSteps": [
+      "create_virtual_device",
+      "ensure_singleton_instance",
+      "create_variable",
+      "create_binding_rule",
+      "configure_alert",
+      "set_dashboard_layout",
+      "configure_operator_ui"
+    ],
+    "validateTools": ["list_variables", "get_dashboard_layout", "configure_operator_ui"]
   }
 ]

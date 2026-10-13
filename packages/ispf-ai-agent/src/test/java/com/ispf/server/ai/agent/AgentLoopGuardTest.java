@@ -247,6 +247,54 @@ class AgentLoopGuardTest {
         assertTrue(block.isEmpty());
     }
 
+    @Test
+    void hardBlocksListVariablesGetObjectOscillation() {
+        String cluster = "root.platform.devices.virt-cluster";
+        String alert = "root.platform.alert-rules.virt-cluster-error-alert";
+        List<Map<String, Object>> steps = List.of(
+                toolOnPath("list_variables", cluster),
+                toolOnPath("get_object", alert),
+                toolOnPath("list_variables", cluster),
+                toolOnPath("get_object", alert),
+                toolOnPath("list_variables", cluster)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "get_object",
+                Map.of("path", alert),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
+        assertTrue(block.get().error().toLowerCase(Locale.ROOT).contains("oscillat"));
+    }
+
+    @Test
+    void doesNotBlockShortAlternation() {
+        List<Map<String, Object>> steps = List.of(
+                toolOnPath("list_variables", "root.a"),
+                toolOnPath("get_object", "root.b"),
+                toolOnPath("list_variables", "root.a")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "get_object",
+                Map.of("path", "root.b"),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
+    void hintsConfigureOperatorUiAfterLayoutVariableMiss() {
+        List<Map<String, Object>> steps = List.of(Map.of(
+                "type", "tool",
+                "tool", "set_variable",
+                "arguments", Map.of("path", "root.platform.operator-apps.x", "name", "layout"),
+                "result", Map.of("status", "ERROR", "error", "Variable not found: layout")
+        ));
+        String hint = AgentLoopGuard.continuationHint("set_variable", steps, 96);
+        assertTrue(hint.toLowerCase(Locale.ROOT).contains("configure_operator_ui"));
+    }
+
     private static Map<String, Object> step(String tool) {
         return Map.of("type", "tool", "tool", tool);
     }
@@ -289,6 +337,15 @@ class AgentLoopGuardTest {
                 "tool", tool,
                 "arguments", Map.of(),
                 "result", Map.of("status", "ERROR", "error", error)
+        );
+    }
+
+    private static Map<String, Object> toolOnPath(String tool, String path) {
+        return Map.of(
+                "type", "tool",
+                "tool", tool,
+                "arguments", Map.of("path", path),
+                "result", Map.of("status", "OK")
         );
     }
 }

@@ -22,6 +22,10 @@ final class AgentLoopGuard {
     private static final int READ_SPAM_HARD_BLOCK = 3;
     /** Safety net: any tool with the same fingerprint this many times → stop (prevents UI log floods). */
     private static final int IDENTICAL_CALL_HARD_BLOCK = 5;
+    /** Last N tool names inspected for A↔B oscillation (e.g. list_variables ↔ get_object). */
+    private static final int OSCILLATION_WINDOW = 8;
+    /** Minimum alternating steps (proposed call included) before hard-block — 3 full A/B cycles. */
+    private static final int OSCILLATION_MIN_STEPS = 6;
 
     private static final Set<String> DISCOVERY_LOOP_TOOLS = Set.of(
             "get_driver_help",
@@ -168,6 +172,17 @@ final class AgentLoopGuard {
                     Do NOT embed manifest JSON in summary (no ``` fences) or in result.plan.sections. \
                     Re-calling get_example_bundle is unnecessary unless the user asks for another appId/sections.""";
         }
+        if ("set_variable".equals(lastTool) && lastStepErrorContains(steps, "Variable not found: layout")) {
+            return """
+                    Operator HMI layout is NOT a tree variable. Use configure_operator_ui \
+                    appId=<short-id> title=... defaultDashboard=<dashboardPath> \
+                    dashboards=[{path,title}]. Do NOT set_variable name=layout.""";
+        }
+        if (isReadToolOscillation(steps)) {
+            return """
+                    Stop read ping-pong (alternating list_*/get_*). Use prior tool results. \
+                    Next: one mutate (configure_operator_ui / configure_alert / set_dashboard_layout) or finish.""";
+        }
         String batchHint = batchIncrementalHint(lastTool, steps);
         if (batchHint != null) {
             return batchHint;
@@ -244,6 +259,10 @@ final class AgentLoopGuard {
         Optional<BlockDecision> sameError = checkRepeatedIdenticalError(toolName, steps);
         if (sameError.isPresent()) {
             return sameError;
+        }
+        Optional<BlockDecision> oscillation = checkToolOscillation(toolName, steps);
+        if (oscillation.isPresent()) {
+            return oscillation;
         }
         String normalized = normalize(toolName);
         if (DISCOVERY_LOOP_TOOLS.contains(normalized)
@@ -362,6 +381,74 @@ final class AgentLoopGuard {
     }
 
     /**
+     * A↔B tool oscillation (e.g. list_variables ↔ get_object) floods the Studio log.
+     * Blocks when the proposed call would continue a strict alternation of length ≥ {@link #OSCILLATION_MIN_STEPS}.
+     */
+    private static Optional<BlockDecision> checkToolOscillation(
+            String toolName,
+            List<Map<String, Object>> steps
+    ) {
+        List<String> recent = recentToolNames(steps, OSCILLATION_WINDOW - 1);
+        if (recent.size() < OSCILLATION_MIN_STEPS - 1) {
+            return Optional.empty();
+        }
+        List<String> sequence = new java.util.ArrayList<>(recent);
+        sequence.add(normalize(toolName));
+        if (sequence.size() > OSCILLATION_WINDOW) {
+            sequence = sequence.subList(sequence.size() - OSCILLATION_WINDOW, sequence.size());
+        }
+        if (!isStrictTwoToolAlternation(sequence)) {
+            return Optional.empty();
+        }
+        return Optional.of(new BlockDecision(
+                "Hard block: tools '" + sequence.get(0) + "' ↔ '" + sequence.get(1)
+                        + "' oscillating " + sequence.size() + " steps — stop flooding the step log",
+                """
+                Stop read ping-pong. Use prior results or finish. \
+                Prefer one mutate: configure_operator_ui / configure_alert / set_dashboard_layout / create_binding_rule.""",
+                true
+        ));
+    }
+
+    private static boolean isReadToolOscillation(List<Map<String, Object>> steps) {
+        List<String> recent = recentToolNames(steps, OSCILLATION_WINDOW);
+        return recent.size() >= OSCILLATION_MIN_STEPS && isStrictTwoToolAlternation(recent);
+    }
+
+    private static List<String> recentToolNames(List<Map<String, Object>> steps, int max) {
+        if (steps == null || max <= 0) {
+            return List.of();
+        }
+        List<String> names = new java.util.ArrayList<>();
+        for (int i = steps.size() - 1; i >= 0 && names.size() < max; i--) {
+            Map<String, Object> step = steps.get(i);
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            names.add(0, normalize(String.valueOf(step.get("tool"))));
+        }
+        return names;
+    }
+
+    private static boolean isStrictTwoToolAlternation(List<String> sequence) {
+        if (sequence == null || sequence.size() < OSCILLATION_MIN_STEPS) {
+            return false;
+        }
+        String a = sequence.get(0);
+        String b = sequence.get(1);
+        if (a == null || b == null || a.isBlank() || b.isBlank() || a.equals(b)) {
+            return false;
+        }
+        for (int i = 0; i < sequence.size(); i++) {
+            String expected = (i % 2 == 0) ? a : b;
+            if (!expected.equals(sequence.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Same tool + same ERROR text ≥2 times → stop turn (missing-arg loops, etc.).
      */
     private static Optional<BlockDecision> checkRepeatedIdenticalError(
@@ -426,6 +513,11 @@ final class AgentLoopGuard {
             return """
                     configure_operator_ui needs title, defaultDashboard, dashboards=[{path,title}]. \
                     appId is a short id (virt-cluster), not a tree path. Do NOT create_object APPLICATION.""";
+        }
+        if ("set_variable".equals(toolName) && lower.contains("layout")) {
+            return """
+                    Do NOT set_variable name=layout on operator-apps. \
+                    Use configure_operator_ui with title, defaultDashboard, dashboards=[].""";
         }
         return "Fix the error using the tool description / describe_agent_tool, or finish. "
                 + "Do not repeat the identical failing call.";

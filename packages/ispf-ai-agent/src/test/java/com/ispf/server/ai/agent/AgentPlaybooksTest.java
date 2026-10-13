@@ -54,6 +54,16 @@ class AgentPlaybooksTest {
     }
 
     @Test
+    void virtualClusterPlaybookPrefersSingletonAndOperatorUiArgs() {
+        String playbook = AgentPlaybooks.virtualClusterMonitoring();
+        assertTrue(playbook.contains("ensure_singleton_instance"));
+        assertTrue(playbook.contains("appId=virt-cluster"));
+        assertTrue(playbook.contains("configure_operator_ui"));
+        assertTrue(playbook.contains("dashboards=["));
+        assertFalse(playbook.contains("%s"));
+    }
+
+    @Test
     void endToEndDeployPlaybookFormatsWithoutPlaceholderErrors() {
         String playbook = AgentDeployPlaybook.referenceText();
         assertTrue(playbook.contains("validate_bundle"));

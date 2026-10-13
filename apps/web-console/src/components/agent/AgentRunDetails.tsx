@@ -2,6 +2,7 @@ import { Button } from "antd";
 import { lazy, Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AiAgentStep } from "../../api/ai";
+import { collapseConsecutiveToolSteps } from "../../utils/agent/collapseConsecutiveToolSteps";
 
 const AgentTurnGraph = lazy(() => import("./AgentTurnGraph"));
 const AgentTracePanel = lazy(() => import("./AgentTracePanel"));
@@ -51,6 +52,10 @@ export function AgentRunDetails({
     toolSteps: steps.filter((step) => step.type === "tool"),
     diagnosticSteps: steps.filter((step) => step.type === "error" || step.type === "guard"),
   }), [steps]);
+  const collapsedToolSteps = useMemo(
+    () => collapseConsecutiveToolSteps(toolSteps),
+    [toolSteps]
+  );
   const isRunning = status === "RUNNING";
   const detailCount = toolSteps.length + diagnosticSteps.length;
 
@@ -133,31 +138,40 @@ export function AgentRunDetails({
           ))}
         </ul>
       )}
-      {detailsView === "list" && toolSteps.length > 0 && (
+      {detailsView === "list" && collapsedToolSteps.length > 0 && (
         <ol className="ai-agent-step-list">
-          {toolSteps.map((step) => (
-            <li key={step.step}>
-              <code>{step.tool}</code>
-              {" "}
-              {step.label || ""}
-              {" "}
-              {stepStatusBadge(
-                step.result?.status === "ERROR"
-                  ? "ERROR"
-                  : step.result?.status === "OK"
-                    ? "OK"
-                    : isRunning
-                      ? "RUNNING"
-                      : undefined
-              )}
-              {step.result?.status === "ERROR" && (
-                <span className="ai-agent-step-error">
-                  {" "}
-                  — {String(step.result.error ?? t("agent.stepError"))}
-                </span>
-              )}
-            </li>
-          ))}
+          {collapsedToolSteps.map((row) => {
+            const step = row.step;
+            return (
+              <li key={row.key}>
+                <code>{step.tool}</code>
+                {" "}
+                {step.label || ""}
+                {row.count > 1 ? (
+                  <span className="badge hist" title={t("agent.details.collapsedCount", { count: row.count })}>
+                    {" "}
+                    ×{row.count}
+                  </span>
+                ) : null}
+                {" "}
+                {stepStatusBadge(
+                  step.result?.status === "ERROR"
+                    ? "ERROR"
+                    : step.result?.status === "OK"
+                      ? "OK"
+                      : isRunning
+                        ? "RUNNING"
+                        : undefined
+                )}
+                {step.result?.status === "ERROR" && (
+                  <span className="ai-agent-step-error">
+                    {" "}
+                    — {String(step.result.error ?? t("agent.stepError"))}
+                  </span>
+                )}
+              </li>
+            );
+          })}
         </ol>
       )}
       {!isRunning && (

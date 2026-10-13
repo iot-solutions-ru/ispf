@@ -938,9 +938,11 @@ final class AgentAutomationTools {
             @SuppressWarnings("unchecked")
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
                 try {
-                    String appId = stringArg(arguments, "appId");
-                    if (appId.isBlank()) {
-                        appId = "platform";
+                    String appId;
+                    try {
+                        appId = normalizeOperatorAppId(stringArg(arguments, "appId"));
+                    } catch (IllegalArgumentException ex) {
+                        return Map.of("status", "ERROR", "error", ex.getMessage());
                     }
                     String title = stringArg(arguments, "title");
                     String defaultDashboard = stringArg(arguments, "defaultDashboard");
@@ -1150,6 +1152,33 @@ final class AgentAutomationTools {
             return DataRecord.single(schema, parsed);
         }
         return DataRecord.single(schema, Map.of("value", raw));
+    }
+
+    /**
+     * Operator UI uses a short appId, not a tree path. Strip known prefixes; reject other dotted paths.
+     */
+    static String normalizeOperatorAppId(String rawAppId) {
+        String id = rawAppId == null ? "" : rawAppId.trim();
+        if (id.isBlank()) {
+            return "platform";
+        }
+        String lower = id.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("root.platform.operator-apps.")
+                || lower.startsWith("root.platform.applications.")) {
+            int dot = id.lastIndexOf('.');
+            String shortId = id.substring(dot + 1).trim();
+            if (shortId.isBlank()) {
+                throw new IllegalArgumentException(
+                        "appId tree path has empty leaf; use short id e.g. virt-cluster");
+            }
+            return shortId;
+        }
+        if (id.contains(".")) {
+            throw new IllegalArgumentException(
+                    "appId must be a short id (e.g. virt-cluster), not a tree path: " + id
+                            + ". Example: appId=virt-cluster title=... defaultDashboard=... dashboards=[...]");
+        }
+        return id;
     }
 
     private static String stringArg(Map<String, Object> args, String key) {

@@ -24,6 +24,7 @@
   "agent.details.running": "Текущие шаги",
   "agent.details.truncated": "Ответ обрезан",
   "agent.details.waiting": "Ожидание первого шага…",
+  "agent.details.collapsedCount": "Свернуто {{count}} одинаковых OK шагов",
   "agent.documents.delete": "Удалить",
   "agent.documents.description": "Описание",
   "agent.documents.descriptionPlaceholder": "Необязательно",

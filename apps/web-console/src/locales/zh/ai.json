@@ -24,6 +24,7 @@
   "agent.details.running": "当前步骤",
   "agent.details.truncated": "响应被截断",
   "agent.details.waiting": "等待第一个步骤…",
+  "agent.details.collapsedCount": "已折叠 {{count}} 个相同的 OK 步骤",
   "agent.documents.delete": "删除",
   "agent.documents.description": "描述",
   "agent.documents.descriptionPlaceholder": "可选备注",
