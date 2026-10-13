@@ -26,7 +26,7 @@
 
 | Полоса | Что это | Сегодня |
 |--------|---------|---------|
-| **Marketplace / solution pilots** | Бандлы в `examples/marketplace-catalog/` (HVAC, tank-farm, oil-control, MES, twins, …) | **Рабочие / REAL** |
+| **Marketplace / solution pilots** | Бандлы в `examples/marketplace-catalog/` — [marketplace-pilots](../marketplace-pilots.md) | **Рабочие / REAL** |
 | **Lab OT Trust** (BL-140) | Lab VLAN soak Modbus/MQTT/OPC UA | Lab evidence; не customer-plant FIELD |
 | **Driver FIELD/CERTIFIED** | Evidence (+ later enum) протокола на named plant | **0** |
 

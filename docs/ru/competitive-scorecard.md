@@ -82,7 +82,7 @@ Program wave 8 (~9.8) по-прежнему **отозвана**.
 | 9 | AI-assisted dev | 9.0 | **REAL** | BL-178 52/52; soft evidence не поднимает оценку |
 | 10 | Security / RBAC | 8.5 | **PARTIAL** | MFA/ACL/RLS Done; **G-01** pen-test open; WebAuthn parked |
 | 11 | Deploy / scale / edge | 7.5 | **PARTIAL** | MoM + Helm + ARM; нет CI cluster load proof |
-| 12 | Ecosystem / marketplace | 6.5 | **PARTIAL** | Marketplace GA + CI; **рабочие industry-пилоты** в `examples/marketplace-catalog/` (HVAC, tank-farm, MES, twins, …). Partner Portal sync external |
+| 12 | Ecosystem / marketplace | 6.5 | **PARTIAL** | Marketplace GA + CI; **рабочие industry-пилоты** — [marketplace-pilots](marketplace-pilots.md) (HVAC, tank-farm, MES, twins, …). Partner Portal sync external |
 | 13 | Documentation / DX | 8.5 | **REAL** | Docs + ADR + evidence folders |
 | 14 | Stack modernity | 9.5 | **REAL** | Spring Boot 4, React 19, ClickHouse option |
 
