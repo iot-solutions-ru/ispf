@@ -230,7 +230,7 @@ export default function OperatorAgentPanel({
             onPick={(text) => void sendMessage(text)}
           />
         )}
-        {messages.map((message) => (
+        {messages.map((message, index) => (
           <div
             key={message.id}
             className={message.role === "user" ? "ai-agent-bubble user" : "ai-agent-bubble agent"}
@@ -247,6 +247,7 @@ export default function OperatorAgentPanel({
                 result={message.result}
                 onSuggestMessage={(text) => void sendMessage(text)}
                 onAppendToInput={appendToInput}
+                autoContinueEnabled={!isPending && index === messages.length - 1}
                 onOpenDashboard={(path) => {
                   onOpenDashboard?.(path);
                   onClose();

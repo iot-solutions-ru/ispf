@@ -290,7 +290,7 @@ export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelPr
             onPick={(text) => void handleSend(text)}
           />
         )}
-        {messages.map((message) => (
+        {messages.map((message, index) => (
           <div
             key={message.id}
             className={message.role === "user" ? "ai-agent-bubble user" : "ai-agent-bubble agent"}
@@ -307,6 +307,7 @@ export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelPr
                 result={message.result}
                 onSuggestMessage={(text: string) => void handleSend(text)}
                 onAppendToInput={appendToInput}
+                autoContinueEnabled={!isPending && index === messages.length - 1}
               />
             )}
             {message.steps && message.steps.length > 0 && (

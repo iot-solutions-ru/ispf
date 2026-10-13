@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   buildFunctionInput,
+  DISPATCH_STATUS_COLORS,
+  formatDispatchStatus,
   formatObjectTableCell,
   matchesNamePattern,
   objectTableValueField,
@@ -45,6 +47,14 @@ describe("parseWidgetJsonArray", () => {
     ]);
     expect(cols).toHaveLength(1);
     expect(cols[0]?.variable).toBe("currencyName");
+  });
+});
+
+describe("status badge colors", () => {
+  it("maps ERROR to red and OK to green", () => {
+    expect(DISPATCH_STATUS_COLORS.ERROR).toBe("#f85149");
+    expect(DISPATCH_STATUS_COLORS.OK).toBe("#3fb950");
+    expect(formatDispatchStatus("ERROR")).toBe("ERROR");
   });
 });
 

@@ -59,16 +59,23 @@ public final class AgentPlanPromptSection {
         }
         return """
                 
-                ## EXECUTE MODE — act immediately, do not ask first
+                ## EXECUTE MODE — act, but pause when guessing
                 
-                Execute the user's request with tools right away. Pick reasonable defaults when details are missing.
-                Run minimal discovery (list_objects, list_variables) only when required for ground truth, then mutate.
+                Execute with tools when the request is clear. Run minimal discovery for ground truth, then mutate.
                 
-                FORBIDDEN in result:
-                - phase=plan, plan, questions[]
-                - clarifying suggestions before acting («Какой сценарий?», «Утвердить полный план»)
+                When a detail is ambiguous or missing (paths, which dashboard/app, hub vs devices, alert condition), \
+                STOP and finish with a short question — do NOT invent and spam tools.
+                Clarification finish (no phase=plan):
+                {"type":"finish","summary":"<question>","result":{"interactive":true,"awaitingUser":true,
+                "autoContinueSeconds":45,"suggestions":[
+                  {"label":"<recommended>","message":"<exact next user message>","primary":true},
+                  {"label":"<alt>","message":"..."}
+                ]}}
+                Mark exactly one suggestion primary=true (recommended default). Studio auto-sends it if the user \
+                does not answer within autoContinueSeconds (default 45).
                 
-                Optional: result.suggestions only AFTER successful execution (open device, open dashboard).
+                FORBIDDEN: phase=plan / full plan panel / «Утвердить полный план» in Execute mode.
+                After success you may still offer open-device / open-dashboard suggestions.
                 """;
     }
 
@@ -86,6 +93,8 @@ public final class AgentPlanPromptSection {
                 (phase=plan) + questions — do NOT create objects until the user approves. \
                 Default scope = complete TZ / 8-layer blueprint — never auto-shrink to MVP unless the user explicitly asks. \
                 Simple read-only or single-step tasks may execute immediately.
+                Mid-task ambiguity (even after approval): pause with interactive suggestions + one primary recommended \
+                option and autoContinueSeconds=45 — do not guess and loop tools.
                 """;
     }
 
@@ -188,7 +197,9 @@ public final class AgentPlanPromptSection {
                 + """
                 
                 Execute the approved plan step-by-step with tools.
-                FORBIDDEN in this phase: phase=plan, questions[], suggestions[] — unless user explicitly changes scope.
+                FORBIDDEN: phase=plan / replan — unless user explicitly changes scope.
+                If a step is ambiguous, pause with interactive suggestions (one primary, autoContinueSeconds=45) \
+                instead of guessing.
                 Ground truth rules still apply — list_objects before create_object, list_variables before bindings.
                 Never claim success for tool steps that returned ERROR.
                 """;

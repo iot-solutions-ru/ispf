@@ -5,8 +5,16 @@
     "prompt": "Подключи SNMP localhost и создай dashboard мониторинга",
     "assignmentType": "MONITORING_LAB",
     "planGoal": "SNMP localhost monitoring dashboard",
-    "planSteps": ["list_objects", "create_virtual_device", "set_dashboard_layout", "dry_run_deploy"],
-    "validateTools": ["validate_bundle", "dry_run_deploy"]
+    "planSteps": [
+      "list_objects",
+      "create_virtual_device",
+      "set_dashboard_layout",
+      "dry_run_deploy"
+    ],
+    "validateTools": [
+      "validate_bundle",
+      "dry_run_deploy"
+    ]
   },
   {
     "id": "mes-bundle-deploy",
@@ -14,8 +22,16 @@
     "prompt": "Разверни MES demo mes-reference и покажи orders",
     "assignmentType": "APPLICATION_BUNDLE",
     "planGoal": "Deploy mes-reference bundle",
-    "planSteps": ["search_context", "validate_bundle", "dry_run_deploy", "deploy_bundle"],
-    "validateTools": ["validate_bundle", "dry_run_deploy"]
+    "planSteps": [
+      "search_context",
+      "validate_bundle",
+      "dry_run_deploy",
+      "deploy_bundle"
+    ],
+    "validateTools": [
+      "validate_bundle",
+      "dry_run_deploy"
+    ]
   },
   {
     "id": "pump-station-scada",
@@ -23,8 +39,16 @@
     "prompt": "Создай SCADA мнемосхему насосной станции с дашбордом",
     "assignmentType": "INDUSTRIAL_FACILITY",
     "planGoal": "Pump station SCADA + dashboard",
-    "planSteps": ["list_objects", "create_virtual_device", "save_mimic_diagram", "set_dashboard_layout"],
-    "validateTools": ["list_objects", "get_mimic_diagram"]
+    "planSteps": [
+      "list_objects",
+      "create_virtual_device",
+      "save_mimic_diagram",
+      "set_dashboard_layout"
+    ],
+    "validateTools": [
+      "list_objects",
+      "get_mimic_diagram"
+    ]
   },
   {
     "id": "workflow-hydro-impact",
@@ -32,8 +56,16 @@
     "prompt": "Создай workflow для симуляции гидроудара",
     "assignmentType": "AUTOMATION_RULES",
     "planGoal": "Hydro-impact BPMN workflow",
-    "planSteps": ["get_automation_schema", "create_object", "save_workflow_bpmn", "run_workflow"],
-    "validateTools": ["get_automation_schema", "dry_run_deploy"]
+    "planSteps": [
+      "get_automation_schema",
+      "create_object",
+      "save_workflow_bpmn",
+      "run_workflow"
+    ],
+    "validateTools": [
+      "get_automation_schema",
+      "dry_run_deploy"
+    ]
   },
   {
     "id": "virtual-device-lab",
@@ -41,8 +73,15 @@
     "prompt": "SNMP virtual lab: создай виртуальный насос lab-pump-01 с тегами давления",
     "assignmentType": "MONITORING_LAB",
     "planGoal": "Virtual pump device",
-    "planSteps": ["list_virtual_profiles", "create_virtual_device", "configure_device"],
-    "validateTools": ["list_virtual_profiles", "list_objects"]
+    "planSteps": [
+      "list_virtual_profiles",
+      "create_virtual_device",
+      "configure_device"
+    ],
+    "validateTools": [
+      "list_virtual_profiles",
+      "list_objects"
+    ]
   },
   {
     "id": "alert-automation",
@@ -50,8 +89,15 @@
     "prompt": "Настрой alert rule для high pressure на lab-pump-01",
     "assignmentType": "AUTOMATION_RULES",
     "planGoal": "Pressure alert rule",
-    "planSteps": ["list_objects", "get_variable_history", "configure_alert"],
-    "validateTools": ["list_objects", "get_variable_history"]
+    "planSteps": [
+      "list_objects",
+      "get_variable_history",
+      "configure_alert"
+    ],
+    "validateTools": [
+      "list_objects",
+      "get_variable_history"
+    ]
   },
   {
     "id": "dashboard-monitoring",
@@ -59,8 +105,15 @@
     "prompt": "Создай SCADA dashboard overview для root.platform.devices",
     "assignmentType": "SCADA_HMI",
     "planGoal": "Devices overview dashboard",
-    "planSteps": ["list_objects", "create_object", "set_dashboard_layout"],
-    "validateTools": ["list_objects", "get_dashboard_layout"]
+    "planSteps": [
+      "list_objects",
+      "create_object",
+      "set_dashboard_layout"
+    ],
+    "validateTools": [
+      "list_objects",
+      "get_dashboard_layout"
+    ]
   },
   {
     "id": "bundle-validate-dry-run",
@@ -68,8 +121,15 @@
     "prompt": "Проверь bundle mes-reference без деплоя",
     "assignmentType": "APPLICATION_BUNDLE",
     "planGoal": "Validate bundle only",
-    "planSteps": ["search_context", "validate_bundle", "dry_run_deploy"],
-    "validateTools": ["validate_bundle", "dry_run_deploy"]
+    "planSteps": [
+      "search_context",
+      "validate_bundle",
+      "dry_run_deploy"
+    ],
+    "validateTools": [
+      "validate_bundle",
+      "dry_run_deploy"
+    ]
   },
   {
     "id": "operator-report-readonly",
@@ -77,8 +137,16 @@
     "prompt": "Сформируй report YARG по насосной станции и KPI ОПЭ",
     "assignmentType": "REPORTING",
     "planGoal": "List and run reports",
-    "planSteps": ["list_reports", "run_report", "get_variable_history"],
-    "validateTools": ["list_reports", "run_report", "get_variable_history"]
+    "planSteps": [
+      "list_reports",
+      "run_report",
+      "get_variable_history"
+    ],
+    "validateTools": [
+      "list_reports",
+      "run_report",
+      "get_variable_history"
+    ]
   },
   {
     "id": "tree-function-deploy",
@@ -86,7 +154,35 @@
     "prompt": "Modbus driver skeleton: разверни tree function calc-kpi для application demo",
     "assignmentType": "INTEGRATION_SKELETON",
     "planGoal": "Deploy calc-kpi function",
-    "planSteps": ["list_objects", "save_application_function", "deploy_application_function"],
-    "validateTools": ["list_objects", "describe_object"]
+    "planSteps": [
+      "list_objects",
+      "save_application_function",
+      "deploy_application_function"
+    ],
+    "validateTools": [
+      "list_objects",
+      "describe_object"
+    ]
+  },
+  {
+    "id": "virtual-cluster-operator",
+    "title": "Virtual cluster operator HMI",
+    "prompt": "Connect 3 virtual devices into a virtual cluster, cluster ERROR when all sine > 0, overview + detail dashboards, operator UI on login, alarm on error",
+    "assignmentType": "MONITORING_LAB",
+    "planGoal": "Virtual cluster hub + dashboards + operator UI + alert",
+    "planSteps": [
+      "create_virtual_device",
+      "ensure_singleton_instance",
+      "create_variable",
+      "create_binding_rule",
+      "configure_alert",
+      "set_dashboard_layout",
+      "configure_operator_ui"
+    ],
+    "validateTools": [
+      "list_variables",
+      "get_dashboard_layout",
+      "list_objects"
+    ]
   }
 ]

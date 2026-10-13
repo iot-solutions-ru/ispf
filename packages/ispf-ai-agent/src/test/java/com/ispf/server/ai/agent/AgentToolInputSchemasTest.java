@@ -53,6 +53,51 @@ class AgentToolInputSchemasTest {
     }
 
     @Test
+    void createVariableAndBindingSchemasMatchToolContracts() {
+        Map<String, Object> variable = AgentToolInputSchemas.forTool("create_variable");
+        assertThat(variable.get("required")).asList().contains("path", "name", "valueType");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> variableProps = (Map<String, Object>) variable.get("properties");
+        assertThat(variableProps).containsKeys("valueType", "path", "name");
+        assertThat(variableProps).doesNotContainKey("dataType");
+
+        Map<String, Object> binding = AgentToolInputSchemas.forTool("create_binding_rule");
+        assertThat(binding.get("required")).asList().contains("path", "id", "expression");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> bindingProps = (Map<String, Object>) binding.get("properties");
+        assertThat(bindingProps).containsKeys("id", "expression", "targetVariable");
+        assertThat(bindingProps).doesNotContainKey("ruleJson");
+
+        Map<String, Object> operatorUi = AgentToolInputSchemas.forTool("configure_operator_ui");
+        assertThat(operatorUi.get("required")).asList().contains("title", "defaultDashboard", "dashboards");
+
+        Map<String, Object> eventSchema = AgentToolInputSchemas.forTool("get_event_schema");
+        assertThat(eventSchema.get("required")).asList().contains("objectPath", "eventName");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> eventProps = (Map<String, Object>) eventSchema.get("properties");
+        assertThat(eventProps).containsKeys("objectPath", "eventName");
+        assertThat(eventProps).doesNotContainKey("eventType");
+
+        Map<String, Object> blueprint = AgentToolInputSchemas.forTool("get_object_blueprint");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> blueprintProps = (Map<String, Object>) blueprint.get("properties");
+        assertThat(blueprintProps).containsKeys("blueprintName", "blueprintId");
+        assertThat(blueprintProps).doesNotContainKeys("id", "name");
+
+        Map<String, Object> mimicSymbols = AgentToolInputSchemas.forTool("list_mimic_symbols");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> mimicProps = (Map<String, Object>) mimicSymbols.get("properties");
+        assertThat(mimicProps).containsKey("category");
+
+        Map<String, Object> acl = AgentToolInputSchemas.forTool("set_object_acl");
+        assertThat(acl.get("required")).asList().contains("path", "entries");
+        Map<String, Object> createObject = AgentToolInputSchemas.forTool("create_object");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> createProps = (Map<String, Object>) createObject.get("properties");
+        assertThat(createProps).containsKeys("password", "roles");
+    }
+
+    @Test
     void executeRejectsInvalidArgsBeforeHandler() {
         Map<String, Object> result = null;
         try {

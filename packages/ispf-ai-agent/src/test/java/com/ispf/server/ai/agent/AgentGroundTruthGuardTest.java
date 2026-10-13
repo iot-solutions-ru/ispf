@@ -305,6 +305,38 @@ class AgentGroundTruthGuardTest {
     }
 
     @Test
+    void groundsBlueprintFromGetObjectBlueprintNestedModel() {
+        String filterPath = "root.platform.event-filters.event2-filter";
+        List<Map<String, Object>> steps = List.of(
+                Map.of(
+                        "type", "tool",
+                        "tool", "get_object",
+                        "arguments", Map.of("path", filterPath),
+                        "result", Map.of("status", "OK", "path", filterPath)
+                ),
+                Map.of(
+                        "type", "tool",
+                        "tool", "get_object_blueprint",
+                        "arguments", Map.of("blueprintName", "event-filter-v1"),
+                        "result", Map.of(
+                                "status", "OK",
+                                "model", Map.of(
+                                        "blueprintName", "event-filter-v1",
+                                        "blueprintId", "event-filter-v1"
+                                )
+                        )
+                )
+        );
+        assertThat(AgentGroundTruthGuard.isBlueprintGrounded(steps, "event-filter-v1")).isTrue();
+        var block = AgentGroundTruthGuard.checkBeforeTool(
+                "apply_mixin_blueprint",
+                Map.of("objectPath", filterPath, "blueprintName", "event-filter-v1"),
+                steps
+        );
+        assertThat(block).isEmpty();
+    }
+
+    @Test
     void isParentGroundedFalseForUnlistedDeepPath() {
         List<Map<String, Object>> steps = List.of(
                 listObjectsStep("root.platform.devices", List.of(
