@@ -425,10 +425,23 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
         if (tool == null) {
             return unknownToolResult(toolName);
         }
-        Map<String, Object> args = arguments != null ? arguments : Map.of();
+        Map<String, Object> args = AgentToolArgCoercion.coerce(toolName, arguments != null ? arguments : Map.of());
         var schemaViolation = AgentToolSchemaValidator.validate(tool.inputSchema(), args);
         if (schemaViolation.isPresent()) {
-            return schemaViolation.get().toErrorResult();
+            Map<String, Object> error = new LinkedHashMap<>(schemaViolation.get().toErrorResult());
+            if ("enable_agent_tool_pack".equals(toolName)
+                    && "pack".equals(String.valueOf(error.get("path")))) {
+                error.put(
+                        "hint",
+                        "REQUIRED: pack=<id>. Valid packs: "
+                                + String.join(", ", AgentToolPackCatalog.ALL_PACKS)
+                                + ". Example: {\"type\":\"tool\",\"name\":\"enable_agent_tool_pack\","
+                                + "\"arguments\":{\"pack\":\"devices\"}}. "
+                                + "For image-only turns: finish with a description first — do not call this tool with empty args."
+                );
+                error.put("packs", AgentToolPackCatalog.packIndex());
+            }
+            return error;
         }
         return tool.execute(args, context);
     }

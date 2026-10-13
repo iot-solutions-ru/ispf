@@ -506,9 +506,10 @@ final class AgentLoopGuard {
             }
             if (streak >= 2) {
                 String hint = identicalErrorHint(normalized, lastError);
-                // Missing-arg loops: block the spam call but keep the turn open so the model
-                // can retry once with corrected args (course / alarm tasks must not stall).
-                boolean stopTurn = !isMissingRequiredArgError(lastError);
+                // Missing-arg loops: usually keep the turn open so the model can retry with fixed args.
+                // Exception: enable_agent_tool_pack without pack (common on vision turns) never self-corrects.
+                boolean stopTurn = !isMissingRequiredArgError(lastError)
+                        || "enable_agent_tool_pack".equals(normalized);
                 return Optional.of(new BlockDecision(
                         "Hard block: '" + normalized + "' failed " + streak
                                 + " times with the same error — stop flooding the step log",
@@ -536,6 +537,14 @@ final class AgentLoopGuard {
 
     private static String identicalErrorHint(String toolName, String error) {
         String lower = error == null ? "" : error.toLowerCase(Locale.ROOT);
+        if ("enable_agent_tool_pack".equals(toolName) || lower.contains("required_arg_missing at pack")) {
+            return """
+                    enable_agent_tool_pack REQUIRES arguments.pack. Example: \
+                    {"type":"tool","name":"enable_agent_tool_pack","arguments":{"pack":"devices"}}. \
+                    Valid packs: core, discovery, devices, dashboards, automation, bundles, scada, analytics, security, misc. \
+                    If the user only pasted an image: finish with a short description of the image — \
+                    do NOT call enable_agent_tool_pack with empty {}.""";
+        }
         if ("get_event_schema".equals(toolName) || lower.contains("objectpath and eventname")) {
             return """
                     get_event_schema needs objectPath=<device path> and eventName=<name on that object>. \

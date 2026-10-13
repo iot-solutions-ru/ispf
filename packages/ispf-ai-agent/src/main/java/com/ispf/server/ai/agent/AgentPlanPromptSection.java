@@ -263,7 +263,9 @@ public final class AgentPlanPromptSection {
                 ## IMAGE ATTACHMENT (this turn)
                 
                 The user attached one or more images (P&ID, SCADA sketch, dashboard mockup, etc.).
-                - Describe visible equipment, layout, labels, and connections from the image.
+                - First: describe what you see (equipment, layout, labels, connections) and finish with type=finish summary.
+                - Do NOT call enable_agent_tool_pack with empty arguments {}. If you need a pack later, pass pack explicitly \
+                (e.g. arguments: {"pack":"devices"} or {"pack":"dashboards"}).
                 - Propose a tree-first plan for mimic (save_mimic_diagram) and/or dashboard (set_dashboard_layout) — do NOT invent paths.
                 - Run list_objects / list_variables discovery before mutations; finish with phase=plan when scope is complex.
                 """;
