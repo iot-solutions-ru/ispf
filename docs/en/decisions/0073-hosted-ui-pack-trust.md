@@ -18,7 +18,8 @@ Ui-packs are served under `/apps/<appId>/` on the console origin ([0054](0054-ho
 | Service worker denylist for `/apps/` | **Done** |
 | Bundle / pack signing when `require-signed-bundles` | **Partial** (platform paths) |
 | **Separate origin** for untrusted partner packs | **Not claimed** |
-| **CSP / COOP / CORP** defaults on `/apps/*` | **Gap** — follow-up |
+| **CSP / COOP / CORP** defaults on `/apps/*` | **Partial** — `HostedUiPackFilter` sets CSP + COOP/CORP (Wave 2A); nginx may still add `unsafe-inline` styles |
+| **Pack-scoped token** (`ROLE_UI_PACK`) | **Partial** — `UiPackScopedAccessFilter` denies admin APIs; BFF-only allowlist. Mint UX / partner login ban remain follow-up |
 
 ### 2. Hard rules
 
