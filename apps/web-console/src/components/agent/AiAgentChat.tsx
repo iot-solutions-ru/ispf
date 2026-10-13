@@ -12,6 +12,8 @@ import { AgentChatMessageBody } from "../../utils/agent/AgentChatMessageBody";
 import AgentSessionKnowledgePanel from "./AgentSessionKnowledgePanel";
 import { AgentRunDetails } from "./AgentRunDetails";
 import {
+  addAttachmentsFromFiles,
+  filesFromClipboardData,
   type AgentChatAttachment,
 } from "../../utils/agent/agentChatAttachments";
 import { formatUserDateTime } from "../../utils/ui/formatDateTime";
@@ -346,7 +348,23 @@ export default function AiAgentChat() {
             const text = input;
             setInput("");
             void submitMessage(text);
-          }}        >
+          }}
+          onPaste={(e) => {
+            if (sending || !chatEnabled) {
+              return;
+            }
+            const imageFiles = filesFromClipboardData(e.clipboardData);
+            if (imageFiles.length === 0) {
+              return;
+            }
+            // Keep screenshot paste from also dumping binary/file names into the textarea.
+            e.preventDefault();
+            clearAttachmentRejectHint();
+            setPendingAttachments((current) =>
+              addAttachmentsFromFiles(current, imageFiles, provider, rejectAttachment)
+            );
+          }}
+        >
           <label className={`ai-agent-mode-select ai-agent-mode-select--compose ai-agent-mode-select--${interactionMode}`}>
             <span className="ai-agent-mode-label">{t("agent.mode.label")}</span>
             <select

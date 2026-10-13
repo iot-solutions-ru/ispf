@@ -51,6 +51,8 @@ class AgentInputCapabilitiesTest {
     @Test
     void nameHeuristicStillDetectsKnownVisionModels() {
         assertThat(AgentInputCapabilities.modelSupportsVision("gpt-4o-mini")).isTrue();
-        assertThat(AgentInputCapabilities.modelSupportsVision("unsloth/Qwen3.6-35B-A3B-NVFP4")).isFalse();
+        assertThat(AgentInputCapabilities.modelSupportsVision("qwen36")).isTrue();
+        assertThat(AgentInputCapabilities.modelSupportsVision("unsloth/Qwen3.6-35B-A3B-NVFP4")).isTrue();
+        assertThat(AgentInputCapabilities.modelSupportsVision("llama-3.1-8b-instruct")).isFalse();
     }
 }
