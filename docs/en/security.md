@@ -4,6 +4,8 @@
 
 > **Status:** Stable — RBAC, MFA. Hub: [doc-status.md](doc-status.md).
 
+Product claim boundary (layers, hard rules, honesty): [0066-security-model](decisions/0066-security-model.md). Secrets rotation: [0065](decisions/0065-secrets-key-rotation.md). MFA follow-up: [0056](decisions/0056-webauthn-idp-mfa.md).
+
 ## Model
 
 ![Security branch in the object tree](../assets/ispf-security.png)

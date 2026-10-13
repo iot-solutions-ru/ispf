@@ -56,6 +56,8 @@ Inventory source: `packages/**/build.gradle.kts`, `:packages:ispf-server:runtime
 | Apache POI | 5.5.1 | Apache-2.0 | Spreadsheet Band1 Template Filler + table export |
 | Micrometer / OpenTelemetry | via BOM | Apache-2.0 | Observability |
 | JNATS | 2.26.0 | Apache-2.0 | NATS |
+| `dev.cel:cel` | 0.14.0 | Apache-2.0 | CEL compiler and runtime, package `ispf-expression`. Copyright Google LLC. |
+| `dev.cel:verifier` | 0.14.0 | Apache-2.0 | Formal CEL verification, package `ispf-expression`. Copyright Google LLC. |
 
 ### Protocol Drivers (ISPF codecs — no third-party protocol stacks)
 
