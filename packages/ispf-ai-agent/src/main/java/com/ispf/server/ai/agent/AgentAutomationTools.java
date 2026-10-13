@@ -606,7 +606,18 @@ final class AgentAutomationTools {
                 try {
                     PlatformObject node = objectTreePort.require(path);
                     if (node.getVariable(name).isPresent()) {
-                        return Map.of("status", "ERROR", "error", "Variable already exists: " + name);
+                        Map<String, Object> reused = new LinkedHashMap<>();
+                        reused.put("status", "OK");
+                        reused.put("reused", true);
+                        reused.put("path", path);
+                        reused.put("variable", Map.of("name", name));
+                        reused.put(
+                                "hint",
+                                "Variable already exists — reuse it. For computed sums use create_binding_rule "
+                                        + "expression=read(\"self/<a>\")+read(\"self/<b>\") targetVariable=" + name
+                                        + ". Do not recreate."
+                        );
+                        return reused;
                     }
                     DataSchema schema = schemaForValueType(valueType);
                     boolean writable = boolArg(arguments, "writable", false);
@@ -634,7 +645,19 @@ final class AgentAutomationTools {
                     preview.put("writable", created.writable());
                     return Map.of("status", "OK", "path", path, "variable", preview);
                 } catch (Exception ex) {
-                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                    Map<String, Object> err = new LinkedHashMap<>();
+                    err.put("status", "ERROR");
+                    err.put("error", ex.getMessage() == null ? "create_variable failed" : ex.getMessage());
+                    String msg = String.valueOf(err.get("error")).toLowerCase(Locale.ROOT);
+                    if (msg.contains("must be double") || msg.contains("must be long") || msg.contains("must be int")) {
+                        err.put(
+                                "hint",
+                                "For DOUBLE use initialValue=0 or 0.0 (number), or omit initialValue. "
+                                        + "Do NOT send boolean/object/array. Example: "
+                                        + "path=... name=waveSum valueType=DOUBLE writable=false — then create_binding_rule."
+                        );
+                    }
+                    return err;
                 }
             }
         };
@@ -1144,14 +1167,73 @@ final class AgentAutomationTools {
     @SuppressWarnings("unchecked")
     private static DataRecord toInitialRecord(ObjectMapper objectMapper, DataSchema schema, Object raw)
             throws Exception {
+        FieldType fieldType = schema.fields().isEmpty()
+                ? FieldType.DOUBLE
+                : schema.fields().get(0).type();
+        Object scalar = unwrapInitialScalar(objectMapper, raw);
+        Object coerced = coerceInitialScalar(fieldType, scalar);
+        return DataRecord.single(schema, Map.of("value", coerced));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object unwrapInitialScalar(ObjectMapper objectMapper, Object raw) throws Exception {
         if (raw instanceof Map<?, ?> map) {
-            return DataRecord.single(schema, (Map<String, Object>) map);
+            if (map.containsKey("value")) {
+                return map.get("value");
+            }
+            if (map.size() == 1) {
+                return map.values().iterator().next();
+            }
+            throw new IllegalArgumentException(
+                    "initialValue map must be {\"value\": <scalar>} or a single-entry map; got keys=" + map.keySet()
+            );
         }
-        if (raw instanceof String text && text.trim().startsWith("{")) {
-            Map<String, Object> parsed = objectMapper.readValue(text, Map.class);
-            return DataRecord.single(schema, parsed);
+        if (raw instanceof String text) {
+            String trimmed = text.trim();
+            if (trimmed.startsWith("{")) {
+                Map<String, Object> parsed = objectMapper.readValue(trimmed, Map.class);
+                return unwrapInitialScalar(objectMapper, parsed);
+            }
+            return trimmed;
         }
-        return DataRecord.single(schema, Map.of("value", raw));
+        return raw;
+    }
+
+    private static Object coerceInitialScalar(FieldType fieldType, Object raw) {
+        if (raw == null) {
+            return switch (fieldType) {
+                case BOOLEAN -> false;
+                case INTEGER -> 0;
+                case LONG -> 0L;
+                case DOUBLE -> 0.0;
+                default -> "";
+            };
+        }
+        if (raw instanceof Boolean bool) {
+            return switch (fieldType) {
+                case BOOLEAN -> bool;
+                case INTEGER, LONG -> bool ? 1 : 0;
+                case DOUBLE -> bool ? 1.0 : 0.0;
+                default -> String.valueOf(bool);
+            };
+        }
+        if (raw instanceof Number number) {
+            return switch (fieldType) {
+                case BOOLEAN -> number.doubleValue() != 0.0;
+                case INTEGER -> number.intValue();
+                case LONG -> number.longValue();
+                case DOUBLE -> number.doubleValue();
+                default -> String.valueOf(number);
+            };
+        }
+        String text = String.valueOf(raw).trim();
+        return switch (fieldType) {
+            case BOOLEAN -> Boolean.parseBoolean(text) || "1".equals(text) || "true".equalsIgnoreCase(text);
+            case INTEGER -> (int) Double.parseDouble(text);
+            case LONG -> (long) Double.parseDouble(text);
+            case DOUBLE -> Double.parseDouble(text);
+            default -> text;
+        };
     }
 
     /**

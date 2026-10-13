@@ -83,6 +83,11 @@ class AgentToolInputSchemasTest {
         Map<String, Object> blueprintProps = (Map<String, Object>) blueprint.get("properties");
         assertThat(blueprintProps).containsKeys("blueprintName", "blueprintId");
         assertThat(blueprintProps).doesNotContainKeys("id", "name");
+
+        Map<String, Object> mimicSymbols = AgentToolInputSchemas.forTool("list_mimic_symbols");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> mimicProps = (Map<String, Object>) mimicSymbols.get("properties");
+        assertThat(mimicProps).containsKey("category");
     }
 
     @Test

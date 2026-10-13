@@ -522,7 +522,10 @@ final class AgentLoopGuard {
         return lower.contains("required")
                 || lower.contains("are required")
                 || lower.contains("is required")
-                || lower.contains("missing");
+                || lower.contains("missing")
+                || lower.contains("must be ")
+                || lower.contains("unknown_arg")
+                || lower.contains("invalid");
     }
 
     private static String identicalErrorHint(String toolName, String error) {
@@ -546,10 +549,17 @@ final class AgentLoopGuard {
                     && read(".../virt-device-2/sineWave") > 0 && read(".../virt-device-3/sineWave") > 0 \
                     ? "ERROR" : "OK". Do NOT send ruleJson. Call describe_agent_tool name=create_binding_rule once.""";
         }
+        if ("create_variable".equals(toolName) && (lower.contains("must be double") || lower.contains("must be"))) {
+            return """
+                    create_variable initialValue must match valueType: for DOUBLE use 0 or 0.0 (number), \
+                    or omit initialValue. Then create_binding_rule for sine+sawtooth sum. \
+                    Do NOT send boolean/object/array as initialValue.""";
+        }
         if ("create_variable".equals(toolName) || lower.contains("valuetype")) {
             return """
                     create_variable needs path, name, valueType (DOUBLE|BOOLEAN|STRING|INTEGER). \
-                    Do NOT use dataType. Prefer SINGLETON hub under singleton-blueprints for cluster status.""";
+                    Optional initialValue scalar (0 / 0.0 / \"\"). Do NOT use dataType. \
+                    Computed waves sum: create_variable then create_binding_rule expression=read(\"self/sineWave\")+read(\"self/sawtoothWave\").""";
         }
         if ("configure_operator_ui".equals(toolName) || lower.contains("defaultdashboard")) {
             return """

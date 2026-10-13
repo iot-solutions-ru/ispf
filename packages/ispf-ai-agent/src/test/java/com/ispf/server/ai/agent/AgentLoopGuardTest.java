@@ -230,6 +230,19 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void createVariableDoubleTypeErrorKeepsTurnOpen() {
+        List<Map<String, Object>> steps = List.of(
+                errorStep("create_variable", "value must be double"),
+                errorStep("create_variable", "value must be double")
+        );
+        var block = AgentLoopGuard.checkHardBlock("create_variable", Map.of(), steps);
+        assertTrue(block.isPresent());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("0.0")
+                || block.get().hint().toLowerCase(Locale.ROOT).contains("initialvalue"));
+    }
+
+    @Test
     void missingEventSchemaArgsBlockKeepsTurnOpenWithHint() {
         List<Map<String, Object>> steps = List.of(
                 errorStep("get_event_schema", "objectPath and eventName are required"),

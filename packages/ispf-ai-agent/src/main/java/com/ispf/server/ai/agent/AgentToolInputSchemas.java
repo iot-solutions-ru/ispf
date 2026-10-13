@@ -708,7 +708,13 @@ public final class AgentToolInputSchemas {
                 true
         ));
         catalog.put("list_instance_types", emptyObject());
-        catalog.put("list_mimic_symbols", emptyObject());
+        catalog.put("list_mimic_symbols", objectSchema(
+                props(
+                        "category", stringProp("Optional: process|pipe|sensor|electrical|annotation|all")
+                ),
+                List.of(),
+                true
+        ));
         catalog.put("list_object_blueprints", objectSchema(
                 props(
                         "objectType", stringProp("Filter by ObjectType")
