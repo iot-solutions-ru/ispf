@@ -86,7 +86,7 @@
 | Без префикса типа в имени (`pump01`, не `devicePump01`) | Тип — path / `ObjectType` |
 | Descriptions у функций и неочевидных переменных | Операторы + AI |
 
-Хост логики — **SINGLETON / INSTANCE**, никогда `ObjectType.DEVICE` ([application-principles](application-principles.md) § Logic objects vs DEVICE). Bundle: предупреждение `LOGIC_HOST_DEVICE`.
+Хост логики — **SINGLETON / INSTANCE**, никогда `ObjectType.DEVICE` ([application-principles](application-principles.md) § Logic objects vs DEVICE). Authoring validate **предупреждает** `LOGIC_HOST_DEVICE`; ship/`--strict`/catalog — **ошибка** ([adr-tension-resolution](adr-tension-resolution.md)).
 
 ---
 

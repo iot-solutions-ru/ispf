@@ -1,6 +1,6 @@
 # Agent guidance (ISPF)
 
-## Logic objects (hard rule)
+## Logic objects (hard rule — canon)
 
 The object that holds application / orchestration / twin logic must **not** be `ObjectType.DEVICE`. DEVICE = drivers and telemetry only.
 
@@ -11,6 +11,13 @@ The object that holds application / orchestration / twin logic must **not** be `
 | Telemetry / I/O | — | **DEVICE** children under hub or plant folder |
 
 Cluster layout (hub parent + DEVICE children under `devices.*`) is an **implementation choice**; the hub’s **type** must not be DEVICE.
+
+**Enforcement modes** ([0060](docs/en/decisions/0060-solution-authoring-constraints.md), [adr-tension-resolution](docs/en/adr-tension-resolution.md)):
+
+| Mode | `LOGIC_HOST_DEVICE` |
+|------|---------------------|
+| Authoring validate/deploy (default) | **WARNING** — does not alone set `status: ERROR` |
+| Ship: `examples/`, `ispf validate --strict`, marketplace catalog | **ERROR** |
 
 Details: `docs/en/application-principles.md` § Logic objects vs DEVICE, `docs/en/blueprints.md`, `docs/en/agent-knowledge.md`.
 
