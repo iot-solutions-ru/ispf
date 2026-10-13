@@ -323,6 +323,7 @@ public class VariableHistoryService {
             ));
             sample.setObservedAt(effectiveObserved);
             sample.setValueDouble(numeric.get());
+            applyRowQuality(sample, record);
             samples.put(debounceKey, sample);
         }
         appendRecordSnapshot(objectPath, variableName, record, observedAt, now, samples);
@@ -357,7 +358,14 @@ public class VariableHistoryService {
         ));
         sample.setObservedAt(effectiveObserved);
         sample.setValueText(json);
+        applyRowQuality(sample, record);
         samples.put(debounceKey, sample);
+    }
+
+    /** Copies the live row {@code quality} field. Absent or unrecognized stays null, not GOOD. */
+    private static void applyRowQuality(VariableSampleEntity sample, DataRecord record) {
+        Object raw = record.firstRow().get("quality");
+        sample.setQuality(raw instanceof String text ? VariableHistoryWriteRecord.normalizeQuality(text) : null);
     }
 
     private String serializeRecordSnapshot(DataRecord record) {
@@ -784,9 +792,19 @@ public class VariableHistoryService {
         return Optional.empty();
     }
 
-    public record VariableHistorySample(Instant ts, Double value, String text, Instant ingestedAt) {
+    public record VariableHistorySample(
+            Instant ts,
+            Double value,
+            String text,
+            Instant ingestedAt,
+            String quality
+    ) {
         public VariableHistorySample(Instant ts, Double value, String text) {
-            this(ts, value, text, null);
+            this(ts, value, text, null, null);
+        }
+
+        public VariableHistorySample(Instant ts, Double value, String text, Instant ingestedAt) {
+            this(ts, value, text, ingestedAt, null);
         }
     }
 
