@@ -30,7 +30,7 @@ Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 | **1B** | Code | Effective configuration surface + 0033 docs (**shipped**) |
 | **1C** | Code | Cluster fail-closed JetStream/Redis |
 | **2A** | Code | Ui-pack CSP + scoped token |
-| **2B** | Code | Historian quality TCK + dual-write metric |
+| **2B** | Code | Historian quality TCK (jdbc **Done**, ClickHouse container **Partial**) + dual-write secondary failure counter |
 | **3A** | Ops | [field-c1-evidence-checklist](field-c1-evidence-checklist.md) + [evidence/field-c1/](../evidence/field-c1/README.md) template (FIELD=0 until named plant pack + matrix PR) |
 | **3B** | Policy | [0076](decisions/0076-external-secrets-providers.md) non-claim closed; SPI deferred to named tender |
 

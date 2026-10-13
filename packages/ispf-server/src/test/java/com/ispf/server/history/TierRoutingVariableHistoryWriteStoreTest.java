@@ -103,6 +103,7 @@ class TierRoutingVariableHistoryWriteStoreTest {
                 sampledAt,
                 observedAt,
                 42.0,
+                null,
                 null
         );
     }

@@ -18,7 +18,7 @@ BL-82 (REQ-EX Wave J). Industrial protocols expose status/quality (OPC UA Status
    - OPC UA: Milo `StatusCode` → GOOD / UNCERTAIN / BAD.
    - Virtual demo: cycles quality on `temperature` for lab HMI.
 4. **HMI charts** — trend/chart widgets **omit** `BAD` samples (line gap via `null` value, `connectNulls={false}`). `UNCERTAIN` remains plottable (future: dashed segment).
-5. **Historian** — v1 stores numeric samples only on the hot path; quality gaps apply to **live** binding and driver payloads. Persist + TCK: [0074](0074-historian-quality-persistence.md).
+5. **Historian** — jdbc persists nullable `quality` beside the value ([0074](0074-historian-quality-persistence.md)). Null means unknown / pre-v2, not GOOD. ClickHouse bootstrap includes the column; a container round-trip is still open. Cassandra/Scylla does not store quality.
 
 ### Honesty — Done / Partial / Gap
 
@@ -28,7 +28,7 @@ BL-82 (REQ-EX Wave J). Industrial protocols expose status/quality (OPC UA Status
 | HMI omit BAD | **Done** |
 | OPC UA + virtual mapping | **Done** |
 | BACnet status-flags mapping | **Partial** / deferred driver change |
-| Historian column + dual-backend TCK | **Gap** until [0074](0074-historian-quality-persistence.md) green |
+| Historian column + dual-backend TCK | **Partial** — jdbc TCK green ([0074](0074-historian-quality-persistence.md)); ClickHouse container round-trip and Cassandra/Scylla still open |
 
 Do **not** claim PI-class historian quality from 0025a alone.
 

@@ -14,7 +14,7 @@
 | Ручки vs профили | Closed (Wave 1B) | 1B |
 | Тихая деградация кластера | Closed (Wave 1C) | 1C |
 | Ui-pack origin | Closed Partial (Wave 2A) | 2A |
-| Пять TS stores | Planned | 2B |
+| Пять TS stores | Closed Partial (Wave 2B) | 2B |
 | Широта vs глубина | Planned (C1 customer plant + matrix) | 3A |
 | KMS / ГОСТ | Closed (0076 non-claim, SPI по тендеру) | 3B |
 
