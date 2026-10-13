@@ -211,6 +211,7 @@ class AgentAutomationToolsTest {
                 null,
                 null,
                 null,
+                null,
                 null
         ));
 

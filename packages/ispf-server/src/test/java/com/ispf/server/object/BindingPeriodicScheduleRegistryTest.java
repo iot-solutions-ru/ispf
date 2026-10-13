@@ -10,8 +10,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -103,23 +103,23 @@ class BindingPeriodicScheduleRegistryTest {
     }
 
     @Test
-    void fireDueKeepsScheduleAfterRuntimeException() {
+    void failedRunMovesNextRunAtByTheBackoffAndKeepsTheRule() {
         registry.syncObject(DEVICE, List.of(periodicRule("rule-runtime-skip", 100)));
-        Instant before = registry.nextWakeAt();
-        assertThat(before).isNotNull();
-
         BindingRuleEngine flakyEngine = mock(BindingRuleEngine.class);
         doThrow(new RuntimeException("engine failure"))
                 .when(flakyEngine)
                 .onPeriodic(DEVICE, "rule-runtime-skip");
+        Instant firstTick = Instant.now().plusSeconds(1).truncatedTo(ChronoUnit.MILLIS);
 
-        registry.fireDue(Instant.now().plusSeconds(1), flakyEngine);
+        registry.fireDue(firstTick, flakyEngine);
 
-        Instant after = registry.nextWakeAt();
-        assertThat(after).isAfter(before);
+        assertThat(registry.nextWakeAt()).isEqualTo(firstTick.plusMillis(100));
+
+        Instant secondTick = firstTick.plusMillis(100);
+        registry.fireDue(secondTick, flakyEngine);
+
+        assertThat(registry.nextWakeAt()).isEqualTo(secondTick.plusMillis(200));
         assertThat(registry.countEnabled()).isEqualTo(1);
-        assertThat(registry.consecutiveFailureCount(DEVICE, "rule-runtime-skip")).isEqualTo(1);
-        assertThat(registry.isDisabledAfterFailures(DEVICE, "rule-runtime-skip")).isFalse();
     }
 
     private static BindingRule periodicRule(String id, long periodicMs) {

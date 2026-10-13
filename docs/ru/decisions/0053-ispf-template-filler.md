@@ -1,34 +1,36 @@
-# ADR-0053: ISPF Template Filler вместо YARG для spreadsheet-шаблонов
+> **Язык:** русская версия. Канонический английский: [en/decisions/0053-ispf-template-filler.md](../../en/decisions/0053-ispf-template-filler.md).
 
-## Status
+# ADR-0053: ISPF Template Filler (POI) заменяет YARG для spreadsheet-шаблонов
 
-**Accepted** (2026-07-31)
+## Статус
 
-## Context
+**Accepted** (2026-07-31) — **Done** (2026-10): YARG и `docx4j` удалены из classpath сервера; заполнение spreadsheet Band1 — только POI.
 
-Экспорт отчётов использует [YARG](https://github.com/cuba-platform/yarg) 2.2.22 для Office-шаблонов Band1. XLSX зависит от `docx4j-JAXB-ReferenceImpl` 8.3.x + JAXB. Мажор docx4j 17 ломает `IncomesXlsxTemplateTest`. Апстрим YARG/JAXB для этого стека фактически не обновляется.
+## Контекст
 
-ISPF уже владеет SQL/tree → rows, табличным CSV/HTML/XLSX и LibreOffice. YARG — только filler шаблона.
+Экспорт отчётов раньше использовал [YARG](https://github.com/cuba-platform/yarg) 2.2.22 для Office-шаблонов Band1. Оформление XLSX зависело от `docx4j-JAXB-ReferenceImpl` 8.3.x + JAXB. Мажорные обновления Dependabot до docx4j 17 ломали тесты шаблонов; апстрим YARG для этого стека не сопровождался.
 
-## Decision
+ISPF уже владел путём SQL/tree → rows, табличным экспортом CSV/HTML/XLSX и конвертацией LibreOffice. YARG был только filler шаблона.
 
-1. **Pin** YARG 2.2.22 и `docx4j-JAXB-ReferenceImpl:8.3.11`; ignore Dependabot major для этого артефакта.
-2. SPI **`ReportTemplateEngine`**: POI для `.xls`/`.xlsx` Band1; YARG — временно для DOCX/HTML и fallback `ispf.reports.template-engine=yarg`.
-3. Default `template-engine=poi` для spreadsheet; PDF из xlsx = POI → LibreOffice.
-4. Не строить «свой Jasper» и не мигрировать на JasperReports.
-5. Полное удаление YARG/docx4j — после замены DOCX/HTML (отдельный этап).
+## Решение
 
-## Consequences
+1. SPI **`ReportTemplateEngine`** с `PoiSpreadsheetTemplateEngine` — заполнение Band1 `${Band1.FIELD}` для `.xls` / `.xlsx` через Apache POI.
+2. Validate и fill spreadsheet по умолчанию через POI; PDF из xlsx = заполнение POI → PDF LibreOffice.
+3. **Не** строить дизайнер в духе Jasper, вложенные bands и **не** брать JasperReports (другой DSL шаблонов).
+4. **Удалить** YARG / docx4j из сборки после завершения перехода spreadsheet (сделано). Пути шаблонов DOCX/HTML, которым ещё нужен движок не на POI, — отдельный follow-up, если появится спрос продукта, а не пин YARG.
 
-- Spreadsheet без docx4j; UI/docs без бренда «YARG» где возможно.
-- Сопровождение POI Band1 на ISPF.
+## Последствия
 
-### Risks
+- Spreadsheet-шаблоны не тянут docx4j; контракт Band1 и API загрузки Report Builder остаются стабильными.
+- Сопровождение расширения POI Band1 (named range + placeholders) на ISPF; экзотические возможности Excel только из YARG не поддерживаются.
+- Устаревшие правила ignore Dependabot для `org.docx4j:docx4j-JAXB-ReferenceImpl` нужно снять, если они ещё есть.
 
-- Формулы под Band1 требуют явного расширения диапазона — тесты на fixtures.
-- DOCX пока на YARG.
+### Риски
 
-## Related
+- Диапазоны формул под Band1 (например `SUM` по однострочному band) нужно расширять явно — это закрыто тестами на фикстурах Band1.
+
+## Связанные
 
 - [reports](../reports.md)
-- [0053 EN](../../en/decisions/0053-ispf-template-filler.md)
+- [third-party-notices](../third-party-notices.md)
+- [0050-manufacturing-patterns-as-solutions](0050-manufacturing-patterns-as-solutions.md) — реестр документов ≠ этот filler

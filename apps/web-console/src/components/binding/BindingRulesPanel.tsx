@@ -4,6 +4,8 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteBindingRule, fetchBindingRules, saveBindingRules } from "../../api";
+import { useInspectorObjectEditor } from "../../hooks/useInspectorQueries";
+import { isBlueprintOwned } from "../../utils/platform/blueprintOwnership";
 import type { BindingRule, BindingRuleKind, BindingTargetKind, VariableDto } from "../../types";
 import BindingActivatorsEditor from "./BindingActivatorsEditor";
 import { activatorsSummary } from "./bindingActivatorsUtils";
@@ -71,6 +73,7 @@ export default function BindingRulesPanel({
     queryKey: ["binding-rules", path],
     queryFn: () => fetchBindingRules(path),
   });
+  const editorQuery = useInspectorObjectEditor(path);
 
   const saveMutation = useMutation({
     mutationFn: (rule: BindingRule) => {
@@ -285,14 +288,16 @@ export default function BindingRulesPanel({
                     >
                       {t("inspector:bindings.edit")}
                     </Button>
-                    <Button
-                      size="small"
-                      danger
-                      loading={deleteMutation.isPending}
-                      onClick={() => deleteMutation.mutate(rule.id)}
-                    >
-                      {t("common:action.delete")}
-                    </Button>
+                    {!isBlueprintOwned(editorQuery.data?.ownership, "bindingRuleIds", rule.id) && (
+                      <Button
+                        size="small"
+                        danger
+                        loading={deleteMutation.isPending}
+                        onClick={() => deleteMutation.mutate(rule.id)}
+                      >
+                        {t("common:action.delete")}
+                      </Button>
+                    )}
                   </>
                 )}
               </Space>

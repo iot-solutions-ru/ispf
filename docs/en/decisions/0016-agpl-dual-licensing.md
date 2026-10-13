@@ -1,5 +1,7 @@
 # ADR-0016: AGPL platform + driver packs + dual licensing
 
+> **Number alias:** **0016b** (AGPL + dual licensing). The same numeric id also labels [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md) (**0016a**). Prefer the filename or alias in new links; do not renumber files.
+
 ## Status
 
 Accepted (2026-06-27)

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Alert, Button, Form, Input, Modal, Space, Typography } from "antd";
 import { invokeFunction } from "../../api";
 import { proxyFederationFunctionInvoke } from "../../api/federation";
-import type { DataRecord, FunctionDescriptor } from "../../types";
+import type { DataRecord, DataSchema, FunctionDescriptor } from "../../types";
 import DataRecordValueEditor from "../schema/DataRecordValueEditor";
 import { emptyRecord } from "../../utils/ui/record";
 import { cloneSchema } from "../../utils/schema/dataSchema";
@@ -20,6 +20,11 @@ interface InvokeFunctionDialogProps {
   federationRemotePath?: string | null;
 }
 
+type InvokeFunctionResult = {
+  schema: unknown;
+  rows: Array<Record<string, unknown>>;
+};
+
 function defaultInputRecord(fn: FunctionDescriptor): DataRecord {
   return emptyRecord(cloneSchema(fn.inputSchema));
 }
@@ -29,6 +34,33 @@ function isEmptyInput(input: DataRecord): boolean {
     return true;
   }
   return input.rows.every((row) => Object.keys(row).length === 0);
+}
+
+function schemaFromUnknown(raw: unknown): DataSchema | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const candidate = raw as DataSchema;
+  if (!Array.isArray(candidate.fields)) {
+    return null;
+  }
+  return candidate;
+}
+
+function invokeResultToRecord(
+  result: InvokeFunctionResult,
+  descriptorOutputSchema: DataSchema
+): DataRecord {
+  const fromApi = schemaFromUnknown(result.schema);
+  const schema =
+    fromApi && fromApi.fields.length > 0
+      ? cloneSchema(fromApi)
+      : cloneSchema(descriptorOutputSchema);
+  const rows =
+    result.rows && result.rows.length > 0
+      ? result.rows.map((row) => ({ ...row }))
+      : [{}];
+  return { schema, rows };
 }
 
 export default function InvokeFunctionDialog({
@@ -42,21 +74,30 @@ export default function InvokeFunctionDialog({
 }: InvokeFunctionDialogProps) {
   const { t } = useTranslation(["runtime", "common", "inspector"]);
   const [record, setRecord] = useState<DataRecord>(() => defaultInputRecord(fn));
-  const [showJson, setShowJson] = useState(false);
+  const [showInputJson, setShowInputJson] = useState(false);
   const [inputJson, setInputJson] = useState(() => JSON.stringify(defaultInputRecord(fn), null, 2));
+  const [resultRecord, setResultRecord] = useState<DataRecord | null>(null);
   const [resultJson, setResultJson] = useState<string | null>(null);
+  const [showResultJson, setShowResultJson] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const hasInputFields = useMemo(() => fn.inputSchema.fields.length > 0, [fn.inputSchema.fields.length]);
 
   const hasImplementation = useMemo(() => functionHasImplementation(fn), [fn]);
 
+  const resultStructuredView = useMemo(() => {
+    if (!resultRecord) {
+      return false;
+    }
+    return resultRecord.schema.fields.length > 0;
+  }, [resultRecord]);
+
   const mutation = useMutation({
     mutationFn: () => {
       let input: DataRecord | undefined;
       if (hasInputFields) {
         try {
-          input = showJson ? (JSON.parse(inputJson) as DataRecord) : record;
+          input = showInputJson ? (JSON.parse(inputJson) as DataRecord) : record;
         } catch {
           throw new Error(t("common:error.invalidJsonInput"));
         }
@@ -70,16 +111,20 @@ export default function InvokeFunctionDialog({
             federationRemotePath,
             fn.name,
             input as Record<string, unknown> | undefined
-          ).then((result) => result as unknown as DataRecord)
+          ).then((result) => result as unknown as InvokeFunctionResult)
         : invokeFunction(objectPath, fn.name, input);
     },
     onSuccess: (result) => {
+      const normalized = invokeResultToRecord(result, fn.outputSchema);
+      setResultRecord(normalized);
       setResultJson(JSON.stringify(result, null, 2));
+      setShowResultJson(normalized.schema.fields.length === 0);
       setError(null);
       onInvoked();
     },
     onError: (err: Error) => {
       setError(err.message);
+      setResultRecord(null);
       setResultJson(null);
     },
   });
@@ -124,11 +169,11 @@ export default function InvokeFunctionDialog({
           <Space orientation="vertical" size="small" style={{ width: "100%" }}>
             <Space style={{ justifyContent: "space-between", width: "100%" }}>
               <Typography.Text strong>{t("runtime:invokeFunction.input")}</Typography.Text>
-              <Button size="small" onClick={() => setShowJson((v) => !v)}>
-                JSON
+              <Button size="small" onClick={() => setShowInputJson((v) => !v)}>
+                {t("runtime:invokeFunction.jsonToggle")}
               </Button>
             </Space>
-            {showJson ? (
+            {showInputJson ? (
               <Input.TextArea
                 rows={8}
                 className="json-editor"
@@ -151,11 +196,37 @@ export default function InvokeFunctionDialog({
         {!hasImplementation && <Alert type="error" showIcon title={t("descriptor.notInvocable")} />}
         {error && <Alert type="error" showIcon title={error} />}
         {resultJson && (
-          <Form layout="vertical">
-            <Form.Item label={t("runtime:invokeFunction.result")} style={{ marginBottom: 0 }}>
-              <Input.TextArea rows={8} readOnly value={resultJson} spellCheck={false} className="json-editor" />
-            </Form.Item>
-          </Form>
+          <Space orientation="vertical" size="small" style={{ width: "100%" }}>
+            <Space style={{ justifyContent: "space-between", width: "100%" }}>
+              <Typography.Text strong>{t("runtime:invokeFunction.result")}</Typography.Text>
+              {resultStructuredView && (
+                <Button size="small" onClick={() => setShowResultJson((v) => !v)}>
+                  {t("runtime:invokeFunction.jsonToggle")}
+                </Button>
+              )}
+            </Space>
+            {showResultJson || !resultStructuredView ? (
+              <Form layout="vertical">
+                <Form.Item style={{ marginBottom: 0 }}>
+                  <Input.TextArea rows={8} readOnly value={resultJson} spellCheck={false} className="json-editor" />
+                </Form.Item>
+              </Form>
+            ) : (
+              resultRecord && (
+                <DataRecordValueEditor
+                  record={resultRecord}
+                  onChange={() => {}}
+                  disabled
+                  allowMultipleRows={resultRecord.rows.length > 1}
+                />
+              )
+            )}
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+              {resultStructuredView && !showResultJson
+                ? t("runtime:invokeFunction.resultHint")
+                : t("runtime:invokeFunction.resultJsonHint")}
+            </Typography.Paragraph>
+          </Space>
         )}
       </Space>
     </Modal>

@@ -46,7 +46,8 @@ Fixture MIXIN model (registered when `ispf.bootstrap.fixtures-enabled=true`). Se
 |-------|----------------|-----|
 | `jdbc` (default) | `JdbcVariableHistoryWriteStore` — `JdbcTemplate.batchUpdate` | Prod high throughput |
 | `jpa` | `JpaVariableHistoryWriteStore` — `saveAll` | Legacy / debug |
-| `clickhouse` | Planned | Future ADR |
+| `clickhouse` | `ClickHouseVariableHistoryStore` (+ dual-write) | Opt-in warm tier — [0016a](0016-clickhouse-event-journal.md), [0035](0035-historian-dual-write.md) |
+| `cassandra` / `scylla` | CQL SPI | **Experimental** — [0025b](0025-cassandra-scylla-timeseries-store.md) |
 
 Defaults: `batch-size=500`, `flush-interval-ms=50`, `writer-threads=4`.  
 PostgreSQL URL: `reWriteBatchedInserts=true`.

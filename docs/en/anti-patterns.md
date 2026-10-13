@@ -98,7 +98,7 @@ Before finishing a solution:
 2. No unresolved `HEAVY_WIDGET_EXPRESSION` — move logic to the hub.
 3. Flood paths: `eventJournalEnabled=false`; MQTT `eventToVariable=false` unless a designed fan-out is required.
 4. Binding cycles: clear `BindingCascadeAnalyzer` warnings; keep `order` intentional.
-5. Ship artifact: `ispf pack` / agent `validate_bundle` green.
+5. Ship artifact: `ispf pack` / agent `validate_bundle` green — or APPLICATION **Git → Push tree** (PR); never leave tree-only edits without Catalog sync ([ADR-0063](decisions/0063-application-git-lifecycle.md)).
 
 ---
 

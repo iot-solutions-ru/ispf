@@ -15,6 +15,8 @@ import com.ispf.server.binding.SqlBindingObjectService;
 import com.ispf.server.correlator.EventCorrelator;
 import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.datasource.DataSourceObjectService;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.server.migration.MigrationObjectService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.VisualGroupService;
@@ -48,7 +50,8 @@ public class ApplicationBundlePullFromTreeService {
             "correlators",
             "schedules",
             "migrations",
-            "events"
+            "events",
+            "blueprints"
     );
 
     private final ApplicationBundleSnapshotStore snapshotStore;
@@ -65,6 +68,7 @@ public class ApplicationBundlePullFromTreeService {
     private final ApplicationFunctionStore functionStore;
     private final ApplicationEventCatalogService eventCatalogService;
     private final DataSourceObjectService dataSourceObjectService;
+    private final BlueprintRegistry blueprintRegistry;
     private final ObjectMapper objectMapper;
 
     public ApplicationBundlePullFromTreeService(
@@ -82,6 +86,7 @@ public class ApplicationBundlePullFromTreeService {
             ApplicationFunctionStore functionStore,
             ApplicationEventCatalogService eventCatalogService,
             DataSourceObjectService dataSourceObjectService,
+            BlueprintRegistry blueprintRegistry,
             ObjectMapper objectMapper
     ) {
         this.snapshotStore = snapshotStore;
@@ -98,6 +103,7 @@ public class ApplicationBundlePullFromTreeService {
         this.functionStore = functionStore;
         this.eventCatalogService = eventCatalogService;
         this.dataSourceObjectService = dataSourceObjectService;
+        this.blueprintRegistry = blueprintRegistry;
         this.objectMapper = objectMapper;
     }
 
@@ -340,15 +346,21 @@ public class ApplicationBundlePullFromTreeService {
             }
         }
 
+        List<ApplicationBundleDeployService.BundleBlueprint> blueprints = sections.contains("blueprints")
+                ? refreshBlueprints(base.blueprints(), warnings)
+                : (base.blueprints() != null ? base.blueprints() : List.of());
+
+        RootFields root = refreshRootFields(appId, base);
+
         ApplicationBundleDeployService.BundleManifest manifest = new ApplicationBundleDeployService.BundleManifest(
                 base.version(),
-                base.displayName(),
-                base.tablePrefix(),
-                base.schemaName(),
+                root.displayName(),
+                root.tablePrefix(),
+                root.schemaName(),
                 pick(sections.contains("objects"), objects, base.objects()),
                 pick(sections.contains("dashboards"), dashboards, base.dashboards()),
                 pick(sections.contains("workflows"), workflows, base.workflows()),
-                base.blueprints(),
+                blueprints,
                 pick(sections.contains("migrations"), migrations, base.migrations()),
                 pick(sections.contains("functions"), functions, base.functions()),
                 pick(sections.contains("bindings"), bindings, base.bindings()),
@@ -363,7 +375,8 @@ public class ApplicationBundlePullFromTreeService {
                 base.license(),
                 base.metadata(),
                 base.operatorUi(),
-                base.operatorManifest()
+                base.operatorManifest(),
+                BundleFormatVersions.CURRENT
         );
 
         pulledCounts.put("objects", size(manifest.objects()));
@@ -377,6 +390,7 @@ public class ApplicationBundlePullFromTreeService {
         pulledCounts.put("schedules", size(manifest.schedules()));
         pulledCounts.put("migrations", size(manifest.migrations()));
         pulledCounts.put("events", size(manifest.events()));
+        pulledCounts.put("blueprints", size(manifest.blueprints()));
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("appId", appId);
@@ -386,7 +400,82 @@ public class ApplicationBundlePullFromTreeService {
         response.put("discoveredPaths", List.copyOf(discoveredPaths));
         response.put("pulled", pulledCounts);
         response.put("warnings", warnings);
+        response.put("rootRefreshed", Map.of(
+                "displayName", root.displayName() != null ? root.displayName() : "",
+                "tablePrefix", root.tablePrefix() != null ? root.tablePrefix() : "",
+                "schemaName", root.schemaName() != null ? root.schemaName() : ""
+        ));
         return response;
+    }
+
+    private RootFields refreshRootFields(String appId, ApplicationBundleDeployService.BundleManifest base) {
+        Map<String, Object> app = dataStore.findApp(appId).orElse(Map.of());
+        String displayName = stringOr(
+                app.get("display_name"),
+                base.displayName() != null && !base.displayName().isBlank() ? base.displayName() : appId
+        );
+        String schemaName = stringOr(
+                app.get("schema_name"),
+                base.schemaName() != null && !base.schemaName().isBlank()
+                        ? base.schemaName()
+                        : "app_" + appId.replace('-', '_')
+        );
+        String tablePrefix = stringOr(
+                app.get("table_prefix"),
+                base.tablePrefix() != null ? base.tablePrefix() : ""
+        );
+        return new RootFields(displayName, tablePrefix, schemaName);
+    }
+
+    private List<ApplicationBundleDeployService.BundleBlueprint> refreshBlueprints(
+            List<ApplicationBundleDeployService.BundleBlueprint> baseBlueprints,
+            List<String> warnings
+    ) {
+        if (baseBlueprints == null || baseBlueprints.isEmpty()) {
+            return List.of();
+        }
+        List<ApplicationBundleDeployService.BundleBlueprint> refreshed = new ArrayList<>();
+        for (ApplicationBundleDeployService.BundleBlueprint entry : baseBlueprints) {
+            if (entry == null || entry.name() == null || entry.name().isBlank()) {
+                continue;
+            }
+            Optional<BlueprintDefinition> fromRegistry = blueprintRegistry.findByName(entry.name());
+            if (fromRegistry.isPresent()) {
+                refreshed.add(toBundleBlueprint(fromRegistry.get()));
+            } else {
+                warnings.add("blueprint:" + entry.name() + ": not found in registry — kept from base manifest");
+                refreshed.add(entry);
+            }
+        }
+        return refreshed;
+    }
+
+    static ApplicationBundleDeployService.BundleBlueprint toBundleBlueprint(BlueprintDefinition definition) {
+        return new ApplicationBundleDeployService.BundleBlueprint(
+                definition.name(),
+                definition.description(),
+                definition.type(),
+                definition.targetObjectType(),
+                definition.suitabilityExpression(),
+                definition.variables(),
+                definition.events(),
+                definition.functions(),
+                definition.bindingRules(),
+                definition.sqlBindings(),
+                definition.alertRules(),
+                definition.parameters()
+        );
+    }
+
+    private static String stringOr(Object primary, String fallback) {
+        if (primary == null) {
+            return fallback;
+        }
+        String text = String.valueOf(primary);
+        return text.isBlank() ? fallback : text;
+    }
+
+    private record RootFields(String displayName, String tablePrefix, String schemaName) {
     }
 
     private ApplicationBundleDeployService.BundleManifest loadBaseManifest(
@@ -439,7 +528,8 @@ public class ApplicationBundlePullFromTreeService {
                 null,
                 null,
                 null,
-                null
+                null,
+                BundleFormatVersions.CURRENT
         );
     }
 

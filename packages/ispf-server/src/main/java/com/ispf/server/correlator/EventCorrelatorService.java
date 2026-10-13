@@ -18,11 +18,15 @@ import com.ispf.server.notification.NotificationDispatchService;
 import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.security.OutboundUrlSafety;
 import com.ispf.server.workflow.WorkflowService;
+import com.ispf.server.config.CorrelatorProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -64,6 +68,9 @@ public class EventCorrelatorService {
     private final AutomationMetricsRecorder automationMetricsRecorder;
     private final RecentEventCache recentEventCache;
     private final NotificationDispatchService notificationDispatchService;
+    private final CorrelatorProperties correlatorProperties;
+    private final CorrelatorActionExecutor actionExecutor;
+    private final TransactionTemplate requiresNewTx;
 
     public EventCorrelatorService(
             AutomationTreeService automationTreeService,
@@ -76,7 +83,10 @@ public class EventCorrelatorService {
             ObjectEntityMapper entityMapper,
             AutomationMetricsRecorder automationMetricsRecorder,
             RecentEventCache recentEventCache,
-            NotificationDispatchService notificationDispatchService
+            NotificationDispatchService notificationDispatchService,
+            CorrelatorProperties correlatorProperties,
+            CorrelatorActionExecutor actionExecutor,
+            PlatformTransactionManager transactionManager
     ) {
         this.automationTreeService = automationTreeService;
         this.windowStore = windowStore;
@@ -89,6 +99,11 @@ public class EventCorrelatorService {
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.recentEventCache = recentEventCache;
         this.notificationDispatchService = notificationDispatchService;
+        this.correlatorProperties = correlatorProperties;
+        this.actionExecutor = actionExecutor;
+        TransactionTemplate tx = new TransactionTemplate(transactionManager);
+        tx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.requiresNewTx = tx;
     }
 
     @Transactional(readOnly = true)
@@ -170,40 +185,110 @@ public class EventCorrelatorService {
         automationTreeService.deleteCorrelator(id);
     }
 
-    @Transactional
+    /**
+     * Synchronous fan-out used by tests and by sync dispatch mode.
+     * Each correlator runs in its own {@code REQUIRES_NEW} transaction.
+     */
     public void processEventFired(String objectPath, String eventName) {
+        processEventFired(objectPath, eventName, Instant.now());
+    }
+
+    public void processEventFired(String objectPath, String eventName, Instant occurredAt) {
+        Instant eventTime = occurredAt != null ? occurredAt : Instant.now();
         LinkedHashMap<String, EventCorrelator> correlators = new LinkedHashMap<>();
         for (EventCorrelator correlator : automationTreeService.findEnabledCorrelatorsForEvent(eventName)) {
             correlators.put(correlator.id(), correlator);
         }
-
-        Instant now = Instant.now();
         for (EventCorrelator correlator : correlators.values()) {
-            // Alert raises fire on the ALERT node; payload.targetObjectPath carries the watched device.
-            Optional<String> actionPath = resolveCorrelatorActionPath(correlator, objectPath, eventName);
-            if (actionPath.isEmpty()) {
-                continue;
-            }
-            if (isInCooldown(correlator, now)) {
-                continue;
-            }
-            if (!passesPayloadFilter(correlator, objectPath, eventName)) {
-                continue;
-            }
-            boolean triggered = switch (correlator.patternType()) {
-                case COUNT -> processCountPattern(correlator, objectPath, eventName, now);
-                case SEQUENCE -> processSequencePattern(correlator, objectPath, eventName, now);
-                case EVENT_CHAIN -> processEventChainPattern(correlator, objectPath, eventName, now);
-                case WINDOW -> processWindowPattern(correlator, objectPath, eventName, now);
-            };
-            if (triggered) {
-                automationMetricsRecorder.recordCorrelatorTrigger();
-                executeAction(correlator, actionPath.get());
-                automationTreeService.setCorrelatorLastTriggeredAt(correlator.id(), now);
-                windowStore.clearCorrelator(correlator.id());
-            }
+            processOneCorrelator(correlator.id(), objectPath, eventName, eventTime);
         }
-        windowStore.purgeOlderThan(now.minus(1, ChronoUnit.HOURS));
+        purgeWindows(eventTime);
+    }
+
+    /**
+     * Evaluate a single correlator. Safe to call from a keyed lane; siblings never share a transaction.
+     */
+    public void processOneCorrelator(String correlatorId, String objectPath, String eventName, Instant occurredAt) {
+        Instant eventTime = occurredAt != null ? occurredAt : Instant.now();
+        try {
+            PendingAction pending = requiresNewTx.execute(status -> evaluateInNewTransaction(
+                    correlatorId,
+                    objectPath,
+                    eventName,
+                    eventTime
+            ));
+            if (pending != null) {
+                dispatchAction(pending);
+            }
+        } catch (RuntimeException e) {
+            automationMetricsRecorder.recordCorrelatorError();
+            log.error(
+                    "Correlator {} failed for event {} on {}: {}",
+                    correlatorId,
+                    eventName,
+                    objectPath,
+                    e.getMessage(),
+                    e
+            );
+        }
+    }
+
+    public void purgeWindows(Instant eventTime) {
+        Instant cutoff = (eventTime != null ? eventTime : Instant.now()).minus(1, ChronoUnit.HOURS);
+        requiresNewTx.executeWithoutResult(status -> windowStore.purgeOlderThan(cutoff));
+    }
+
+    private PendingAction evaluateInNewTransaction(
+            String correlatorId,
+            String objectPath,
+            String eventName,
+            Instant eventTime
+    ) {
+        EventCorrelator correlator = automationTreeService.getCorrelator(correlatorId);
+        if (!correlator.enabled()) {
+            return null;
+        }
+        // Alert raises fire on the ALERT node; payload.targetObjectPath carries the watched device.
+        Optional<String> actionPath = resolveCorrelatorActionPath(correlator, objectPath, eventName);
+        if (actionPath.isEmpty()) {
+            return null;
+        }
+        if (isInCooldown(correlator, eventTime)) {
+            return null;
+        }
+        if (!passesPayloadFilter(correlator, objectPath, eventName)) {
+            return null;
+        }
+        boolean triggered = switch (correlator.patternType()) {
+            case COUNT -> processCountPattern(correlator, objectPath, eventName, eventTime);
+            case SEQUENCE -> processSequencePattern(correlator, objectPath, eventName, eventTime);
+            case EVENT_CHAIN -> processEventChainPattern(correlator, objectPath, eventName, eventTime);
+            case WINDOW -> processWindowPattern(correlator, objectPath, eventName, eventTime);
+        };
+        if (!triggered) {
+            return null;
+        }
+        automationMetricsRecorder.recordCorrelatorTrigger();
+        automationTreeService.setCorrelatorLastTriggeredAt(correlator.id(), eventTime);
+        windowStore.clearCorrelator(correlator.id());
+        return new PendingAction(correlator, actionPath.get());
+    }
+
+    private void dispatchAction(PendingAction pending) {
+        if (isAsyncNotification(pending.correlator().actionType()) && correlatorProperties.isAsyncActions()) {
+            actionExecutor.execute(() -> executeAction(pending.correlator(), pending.actionPath()));
+            return;
+        }
+        executeAction(pending.correlator(), pending.actionPath());
+    }
+
+    private static boolean isAsyncNotification(CorrelatorActionType actionType) {
+        return actionType == CorrelatorActionType.SEND_WEBHOOK
+                || actionType == CorrelatorActionType.SEND_EMAIL
+                || actionType == CorrelatorActionType.SEND_SMS;
+    }
+
+    private record PendingAction(EventCorrelator correlator, String actionPath) {
     }
 
     /**
@@ -459,6 +544,7 @@ public class EventCorrelatorService {
                 );
             }
         } catch (Exception e) {
+            automationMetricsRecorder.recordCorrelatorError();
             log.warn("Correlator {} action failed: {}", correlator.id(), e.getMessage());
         }
     }
@@ -521,9 +607,16 @@ public class EventCorrelatorService {
             }
             return Boolean.parseBoolean(String.valueOf(result));
         } catch (ExpressionException e) {
-            log.warn("Payload filter evaluation failed: {}", e.getMessage());
-            return false;
+            throw new IllegalStateException(
+                    "Correlator payload filter failed: " + filterExpr + ": " + e.getMessage(),
+                    e
+            );
         }
+    }
+
+    private static IllegalStateException payloadParseFailed(Exception e) {
+        String detail = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+        return new IllegalStateException("Correlator payload parse failed: " + detail, e);
     }
 
     private Map<String, Object> payloadMap(EventJournalRecord record) {
@@ -531,10 +624,10 @@ public class EventCorrelatorService {
             return Map.of();
         }
         try {
-            DataRecord dataRecord = entityMapper.readDataRecord(record.payloadJson());
+            DataRecord dataRecord = entityMapper.readDataRecordStrict(record.payloadJson());
             return payloadMap(dataRecord);
         } catch (Exception e) {
-            return Map.of();
+            throw payloadParseFailed(e);
         }
     }
 
@@ -543,10 +636,10 @@ public class EventCorrelatorService {
             return Map.of();
         }
         try {
-            DataRecord record = entityMapper.readDataRecord(entity.getPayloadJson());
+            DataRecord record = entityMapper.readDataRecordStrict(entity.getPayloadJson());
             return payloadMap(record);
         } catch (Exception e) {
-            return Map.of();
+            throw payloadParseFailed(e);
         }
     }
 

@@ -9,6 +9,11 @@ export function isSpecializedEditorObject(
   type?: ObjectType,
   templateId?: string | null,
 ): boolean {
+  // Bundle/catalog VISUAL_GROUP nodes sit under data-sources.* etc.; path heuristics must not
+  // treat them as DATA_SOURCE / report / … editors — Explorer shows a child list instead.
+  if (type === "VISUAL_GROUP") {
+    return false;
+  }
   if (
     type === "DASHBOARD"
     || type === "REPORT"
@@ -38,6 +43,11 @@ export function isSpecializedEditorObject(
   if (isBlueprintsPath(path)) {
     return true;
   }
+  // Path heuristics only while type is still unknown (lazy tree). A known type that is not
+  // specialized above (DEVICE, VISUAL_GROUP, CUSTOM, …) must not open by path alone.
+  if (type != null) {
+    return false;
+  }
   return (
     path.startsWith("root.platform.reports.")
     || path.startsWith("root.platform.dashboards.")
@@ -52,6 +62,9 @@ export function resolveEditorObjectType(
   type?: ObjectType,
   templateId?: string | null,
 ): ObjectType | undefined {
+  if (type === "VISUAL_GROUP") {
+    return type;
+  }
   if (
     type === "DASHBOARD"
     || type === "REPORT"
@@ -75,6 +88,9 @@ export function resolveEditorObjectType(
   if (templateId === "schedule-v1") return "SCHEDULE";
   if (templateId === "mimic-v1") return "MIMIC";
   if (isBlueprintsPath(path)) return "BLUEPRINT";
+  if (type != null) {
+    return type;
+  }
   if (path.startsWith("root.platform.reports.")) return "REPORT";
   if (path.startsWith("root.platform.dashboards.")) return "DASHBOARD";
   if (path.startsWith("root.platform.workflows.")) return "WORKFLOW";

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (2026-07-05)
+Accepted (2026-07-05) — **partially superseded** for role naming by [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md): `ISPF_REPLICA_ROLE` remains a compatibility alias; prefer `ISPF_REPLICA_PROFILE` / `ISPF_REPLICA_CAPABILITIES`. Job queue sections below still apply.
 
 ## Context
 

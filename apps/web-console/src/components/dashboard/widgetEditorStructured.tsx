@@ -594,6 +594,48 @@ const INPUT_FORM_FIELD_TYPES = [
   "time",
 ] as const;
 
+function FormFieldTypeSelect<T extends string>({
+  value,
+  types,
+  onChange,
+}: {
+  value: T;
+  types: readonly T[];
+  onChange: (next: T) => void;
+}) {
+  const { t } = useTranslation("widgets");
+  const caption = t("editor.structured.fieldType");
+  return (
+    <MiniField caption={caption} hint={t("editor.hint.formFieldType")}>
+      <select
+        value={value}
+        aria-label={caption}
+        onChange={(e) => onChange(e.target.value as T)}
+      >
+        {types.map((tp) => (
+          <option key={tp} value={tp}>
+            {t(`editor.formFieldType.${tp}`, { defaultValue: tp })}
+          </option>
+        ))}
+      </select>
+    </MiniField>
+  );
+}
+
+function FormFieldRemoveButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation("widgets");
+  return (
+    <button
+      type="button"
+      className="btn small danger widget-editor-form-field-remove"
+      aria-label={t("editor.structured.removeRow")}
+      onClick={onClick}
+    >
+      ×
+    </button>
+  );
+}
+
 export function FormFieldsEditor({
   mode,
   value,
@@ -625,8 +667,6 @@ export function FormFieldsEditor({
         .filter(Boolean),
     ),
   ].sort((a, b) => a.localeCompare(b));
-  const types =
-    mode === "function-form" ? FUNCTION_FORM_FIELD_TYPES : INPUT_FORM_FIELD_TYPES;
   const namesLocked = mode === "function-form";
   const namesDisabled = namesLocked && (!path || !fnName || inputsQuery.isLoading);
 
@@ -643,7 +683,7 @@ export function FormFieldsEditor({
         ) : null}
         {fields.map((field, index) => (
           <div key={index} className="widget-editor-field-card">
-            <div className="widget-editor-list-row">
+            <div className="widget-editor-list-row widget-editor-form-field-row">
               <MiniField caption={t("editor.structured.fieldName")}>
                 <OptionsSelect
                   ariaLabel={t("editor.structured.fieldName")}
@@ -667,32 +707,18 @@ export function FormFieldsEditor({
                   }}
                 />
               </MiniField>
-              <select
+              <FormFieldTypeSelect
                 value={field.type}
-                onChange={(e) => {
+                types={FUNCTION_FORM_FIELD_TYPES}
+                onChange={(type) => {
                   const next = [...fields];
-                  next[index] = {
-                    ...next[index],
-                    type: e.target.value as FunctionFormField["type"],
-                  };
+                  next[index] = { ...next[index], type };
                   setFields(next);
                 }}
-              >
-                {types.map((tp) => (
-                  <option key={tp} value={tp}>
-                    {tp}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className="btn small danger"
-                onClick={() => setFields(fields.filter((_, i) => i !== index))}
-              >
-                ×
-              </button>
+              />
+              <FormFieldRemoveButton onClick={() => setFields(fields.filter((_, i) => i !== index))} />
             </div>
-            <div className="widget-editor-list-row">
+            <div className="widget-editor-list-row widget-editor-form-field-meta-row">
               <MiniField caption={t("editor.structured.defaultValue")}>
                 <input
                   value={field.defaultValue ?? ""}
@@ -736,7 +762,7 @@ export function FormFieldsEditor({
       <HintCaption>{t("editor.structured.formFields")}</HintCaption>
       {fields.map((field, index) => (
         <div key={index} className="widget-editor-field-card">
-          <div className="widget-editor-list-row">
+          <div className="widget-editor-list-row widget-editor-form-field-row">
             <MiniField caption={t("editor.structured.fieldName")}>
               <input
                 value={field.name}
@@ -757,29 +783,18 @@ export function FormFieldsEditor({
                 }}
               />
             </MiniField>
-            <select
+            <FormFieldTypeSelect
               value={field.type}
-              onChange={(e) => {
+              types={INPUT_FORM_FIELD_TYPES}
+              onChange={(type) => {
                 const next = [...fields];
-                next[index] = { ...next[index], type: e.target.value as InputFormField["type"] };
+                next[index] = { ...next[index], type };
                 setFields(next);
               }}
-            >
-              {types.map((tp) => (
-                <option key={tp} value={tp}>
-                  {tp}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="btn small danger"
-              onClick={() => setFields(fields.filter((_, i) => i !== index))}
-            >
-              ×
-            </button>
+            />
+            <FormFieldRemoveButton onClick={() => setFields(fields.filter((_, i) => i !== index))} />
           </div>
-          <div className="widget-editor-list-row">
+          <div className="widget-editor-list-row widget-editor-form-field-meta-row widget-editor-form-field-meta-row--pair">
             <MiniField caption={t("editor.structured.targetVariable")}>
               <input
                 value={field.variableName ?? ""}

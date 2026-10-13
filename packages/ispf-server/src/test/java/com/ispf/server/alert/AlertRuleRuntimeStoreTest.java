@@ -31,7 +31,32 @@ class AlertRuleRuntimeStoreTest {
         assertEquals(3.0, snapshot.lastWatchValue());
         assertEquals(Instant.parse("2026-06-25T11:00:00Z"), snapshot.lastFiredAt());
 
-        store.markClean(path);
+        store.markClean(path, snapshot);
+        assertFalse(store.isDirty(path));
+    }
+
+    @Test
+    void writeAfterThePersistSnapshotKeepsTheRuleDirty() {
+        String path = "root.platform.alert-rules.mid-flush";
+        store.setLastConditionMet(path, true);
+        AlertRuleRuntimeState persisted = store.snapshotForPersist(path);
+
+        store.setLatchedActive(path, true);
+        store.markClean(path, persisted);
+
+        assertTrue(store.isDirty(path));
+        assertEquals(true, store.snapshotForPersist(path).latchedActive());
+    }
+
+    @Test
+    void rewritingThePersistedValueDoesNotKeepTheRuleDirty() {
+        String path = "root.platform.alert-rules.same-value";
+        store.setLastConditionMet(path, true);
+        AlertRuleRuntimeState persisted = store.snapshotForPersist(path);
+
+        store.setLastConditionMet(path, true);
+        store.markClean(path, persisted);
+
         assertFalse(store.isDirty(path));
     }
 
@@ -40,7 +65,7 @@ class AlertRuleRuntimeStoreTest {
         String path = "root.platform.alert-rules.reset-me";
         store.setLastConditionMet(path, true);
         store.setLastWatchValue(path, 9.0);
-        store.markClean(path);
+        store.markClean(path, store.snapshotForPersist(path));
 
         store.reset(path);
 
@@ -56,7 +81,7 @@ class AlertRuleRuntimeStoreTest {
     void drainDirtyPathsReturnsOnlyDirtyEntries() {
         store.setLastConditionMet("root.platform.alert-rules.a", true);
         store.setLastConditionMet("root.platform.alert-rules.b", false);
-        store.markClean("root.platform.alert-rules.b");
+        store.markClean("root.platform.alert-rules.b", store.snapshotForPersist("root.platform.alert-rules.b"));
         store.setLastWatchValue("root.platform.alert-rules.c", 1.0);
 
         assertEquals(

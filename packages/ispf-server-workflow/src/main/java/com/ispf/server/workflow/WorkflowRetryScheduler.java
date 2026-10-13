@@ -55,14 +55,7 @@ public class WorkflowRetryScheduler {
         if (!objects.isInitialized()) {
             return;
         }
-        if (!leaderLockService.tryAcquire(LOCK_NAME, LOCK_TTL)) {
-            return;
-        }
-        try {
-            runDueRetries();
-        } finally {
-            leaderLockService.release(LOCK_NAME);
-        }
+        leaderLockService.runIfLeader(LOCK_NAME, LOCK_TTL, this::runDueRetries);
     }
 
     void runDueRetries() {

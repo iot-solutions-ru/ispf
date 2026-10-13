@@ -5,6 +5,8 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.plugin.workflow.WorkflowException;
+import com.ispf.server.config.ClusterProperties;
+import com.ispf.server.spi.LeaderLock;
 import com.ispf.server.spi.WorkflowObjectAccess;
 import com.ispf.server.spi.WorkflowStartTrigger;
 import org.junit.jupiter.api.Test;
@@ -40,9 +42,19 @@ class WorkflowCronStartFailureTest {
     private WorkflowService workflowService;
     @Mock
     private WorkflowDeadLetterService deadLetterService;
+    @Mock
+    private LeaderLock leaderLock;
+    @Mock
+    private ClusterProperties clusterProperties;
 
     @Test
     void failedCronStartIsStoredAndTheNextWorkflowStillRuns() throws Exception {
+        when(clusterProperties.isSchedulerActive()).thenReturn(true);
+        when(leaderLock.runIfLeader(eq(WorkflowCronTriggerService.LOCK_NAME), any(), any())).thenAnswer(invocation -> {
+            invocation.<Runnable>getArgument(2).run();
+            return true;
+        });
+        when(leaderLock.isHeld(WorkflowCronTriggerService.LOCK_NAME)).thenReturn(true);
         when(objects.isInitialized()).thenReturn(true);
         PlatformObject failed = workflow(FAILED);
         PlatformObject next = workflow(NEXT);
@@ -54,7 +66,7 @@ class WorkflowCronStartFailureTest {
                 eq(Map.of("cronExpression", "every:1m"))
         );
 
-        new WorkflowCronTriggerService(objects, workflowService, deadLetterService).poll();
+        new WorkflowCronTriggerService(objects, workflowService, deadLetterService, leaderLock, clusterProperties).poll();
 
         verify(deadLetterService).recordCommitted(
                 eq("cron-start"),

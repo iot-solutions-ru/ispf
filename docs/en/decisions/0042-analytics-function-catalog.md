@@ -22,7 +22,7 @@ ISPF after ADR-0041 has a working but **fragmented** surface:
 
 Custom logic today:
 
-- **Reactive:** platform/application **JavaScript functions** via `callFunction(...)` (instant, not historian-backed).
+- **Reactive:** platform/application **JSON step-script functions** (`FunctionScriptEngine`: `exec` / `map` / `if` / `invoke_function` / …) via `callFunction(...)` (instant, not historian-backed). Not a browser JS runtime.
 - **Historian:** only **new Java** `AnalyticsEvaluator` + server deploy — no end-user UDF.
 
 Goal: **catalog browse and extensibility comparable to PI AF** without abandoning ISPF’s **tree-first** model ([0001-app-platform-boundary](0001-app-platform-boundary.md), [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md)).

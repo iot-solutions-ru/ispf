@@ -105,6 +105,8 @@ public class BindingRulesController {
             bindingRulesService.deleteRule(path, ruleId);
             dependencyIndex.rebuild(path);
             return bindingRulesService.listRules(path);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } finally {
             endWrite();
         }

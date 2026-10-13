@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (phases 0–2 implemented; phase 3 — deprecation of legacy mini-DSL)
+Accepted (2026-06) — phases 0–2 implemented; phase 3 (deprecation of legacy mini-DSL) still open
 
 ## Context
 

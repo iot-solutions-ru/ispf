@@ -46,7 +46,7 @@
 | 3 | Binding / функция хаба | [Привязки](bindings.md) · [Язык выражений](expression-language.md) |
 | 4 | Dashboard / SCADA | [Дашборды](dashboards.md) · [Виджеты](widgets.md) |
 | 5 | Alert → workflow | [Автоматизация](automation.md) · [Workflows](workflows.md) |
-| 6 | Pack & validate | [Разработчик решений](solution-developer-guide.md) |
+| 6 | Pack & validate (или APPLICATION Git: Pull release / Push tree → PR — ADR-0063) | [Разработчик решений](solution-developer-guide.md) · [Applications — Git](applications.md#application-git-adr-0063) |
 
 ---
 

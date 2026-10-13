@@ -100,14 +100,9 @@ public class BindingPeriodicScheduler {
             reschedule();
             return;
         }
-        if (!leaderLockService.tryAcquire(LOCK_NAME, LOCK_TTL)) {
-            reschedule();
-            return;
-        }
         try {
-            registry.fireDue(Instant.now(), bindingRuleEngine);
+            leaderLockService.runIfLeader(LOCK_NAME, LOCK_TTL, () -> registry.fireDue(Instant.now(), bindingRuleEngine));
         } finally {
-            leaderLockService.release(LOCK_NAME);
             reschedule();
         }
     }

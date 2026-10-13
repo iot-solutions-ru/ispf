@@ -290,9 +290,7 @@ public class BindingRuleEngine {
             }
             ResolvedVariableTarget target = resolveVariableTarget(object.path(), rule.target());
             if (target == null) {
-                success = false;
-                error = "Unknown target variable: " + describeVariableTarget(rule.target());
-                return false;
+                throw new IllegalStateException("Unknown target variable: " + describeVariableTarget(rule.target()));
             }
             Optional<DataRecord> computed = expressionEvaluator.evaluate(
                     object,
@@ -479,15 +477,11 @@ public class BindingRuleEngine {
             }
             ResolvedEventTarget target = resolveEventTarget(object.path(), rule.target());
             if (target == null) {
-                success = false;
-                error = "Unknown event target: " + describeEventTarget(rule.target());
-                return false;
+                throw new IllegalStateException("Unknown event target: " + describeEventTarget(rule.target()));
             }
             PlatformObject targetObject = objectManager.tree().findByPath(target.objectPath()).orElse(null);
             if (targetObject == null || targetObject.events().get(target.eventName()) == null) {
-                success = false;
-                error = "Unknown event: " + target.eventName() + " on " + target.objectPath();
-                return false;
+                throw new IllegalStateException("Unknown event: " + target.eventName() + " on " + target.objectPath());
             }
             Object computed = expressionEngine.evaluate(rule.expression(), object, readContextMap(object));
             DataRecord payload = payloadFromExpressionResult(computed);

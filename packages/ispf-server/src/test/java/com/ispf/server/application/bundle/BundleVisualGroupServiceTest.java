@@ -156,6 +156,7 @@ class BundleVisualGroupServiceTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
     }

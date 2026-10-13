@@ -134,9 +134,11 @@ Content-Type: application/json
 
 ## Развертывание пакета (REQ-PF-03)
 
-### Семверский контракт (БЛ-97)
+### Semver и формат (БЛ-97 / ADR-0064)
 
 `manifest.version` является **обязательным** и должно быть строгим значением `MAJOR.MINOR.PATCH` (например, `1.0.0`). Недопустимые значения отклоняются при анализе, проверке и развертывании.
+
+`manifest.formatVersion` — опциональное **целое** для формы JSON (не semver решения). Нет поля ⇒ `1`. Неподдерживаемые значения отклоняются. Pull-from-tree пишет `formatVersion: 1`. См. [0064-release-compatibility-lts](decisions/0064-release-compatibility-lts.md) и lab-гейт [release-upgrade](release-upgrade.md) (не cluster N→N+1).
 
 Необязательные поля:
 
@@ -364,9 +366,22 @@ POST /api/v1/applications/{appId}/bundle/pull-from-tree
 }
 ```
 
-Собирает манифест из **дерева живых объектов** (визуальные группы + магазины приложений). `paths` — опционально, только проверенные узлы; без `paths` — все участники объединяют визуальные группы. `models[]` не занимается реверс-инжинирингом (остается из базового манифеста).
+Собирает манифест из **дерева живых объектов** (визуальные группы + магазины приложений). `paths` — опционально, только перечисленные узлы; без `paths` — все участники visual groups. `displayName` / `tablePrefix` / `schemaName` обновляются из регистрации приложения; `operatorUi`, `metadata`, `license`, `requires` берутся из активного snapshot (не reverse-engineering из дерева). `blueprints[]` обновляются из registry по именам базового манифеста. `models[]` не reverse-engineering (остаётся из base).
 
 Дерево объектов Поддерево (JSON, `formatVersion: 1`): `GET /api/v1/platform/backup/export?rootPath=root.platform.devices.demo-sensor-01` — вкладка **Экспорт JSON** в Инспекторе.
+
+## Application Git (ADR-0063)
+
+Вкладка **Git** на APPLICATION связывает **тот же полный bundle** с git команды. ISPF не хостит `.git`: binding + credential.
+
+| Действие | Статус | Поведение |
+|----------|--------|-----------|
+| Connect / Disconnect | **Сейчас** | Remote URL (https, без userinfo / private hosts), provider (`github` \| `gitlab`), ветка, путь к `bundle.json`, PAT в vault |
+| Status | **Сейчас** | Binding + deploy snapshot + наличие credential; drift/reachability — позже |
+| Pull release | **Сейчас** | `POST …/git/pull` с опциональным `{ "ref" }` → fetch `bundle.json` → validate → deploy; history `source=git` + sha |
+| Push tree | **Сейчас** | `POST …/git/push-pr` → full pull-from-tree → ветка `ispf/…` (от `lastSyncedSha`, если есть) → **open PR/MR**. PAT: GitHub Contents R/W + Pull requests; GitLab только scope **`api`** |
+
+Подробнее: [ADR-0063](../en/decisions/0063-application-git-lifecycle.md). API сейчас: `GET/PUT/DELETE /api/v1/applications/{appId}/git`, `GET …/git/status`, `POST …/git/pull`, `POST …/git/push-pr`.
 
 ## Отчёты (REQ-PF-12)
 

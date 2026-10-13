@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Button, Input, Segmented, Space, Tooltip } from "antd";
+import { Button, ConfigProvider, Input, Segmented, Space, Tooltip } from "antd";
 import { useTranslation } from "react-i18next";
 import type { MimicConnection, MimicCustomSymbol, MimicElement, MimicLayer, ScadaMimicDocument } from "../../types/scadaMimic";
 import { useMimicHistory } from "../../hooks/useMimicHistory";
@@ -71,6 +71,15 @@ const CANVAS_MAX = 10000;
 function clampCanvasDimension(value: number, fallback: number): number {
   if (!Number.isFinite(value) || value <= 0) return fallback;
   return Math.max(CANVAS_MIN, Math.min(CANVAS_MAX, Math.round(value)));
+}
+
+// Overlay z-index 15000 sits above antd's body-level popups (~1050); mount popups inside it.
+function getEditorPopupContainer(triggerNode?: HTMLElement): HTMLElement {
+  return (
+    triggerNode?.closest<HTMLElement>(".scada-mimic-editor-overlay") ??
+    globalThis.document.querySelector<HTMLElement>(".scada-mimic-editor-overlay") ??
+    globalThis.document.body
+  );
 }
 
 interface ScadaMimicEditorProps {
@@ -1010,5 +1019,8 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     </div>
   );
 
-  return createPortal(overlay, globalThis.document.body);
+  return createPortal(
+    <ConfigProvider getPopupContainer={getEditorPopupContainer}>{overlay}</ConfigProvider>,
+    globalThis.document.body
+  );
 }

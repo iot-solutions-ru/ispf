@@ -1,5 +1,6 @@
 package com.ispf.server.platform;
 
+import com.ispf.server.binding.SqlBindingValues;
 import com.ispf.server.spi.WorkflowMetrics;
 import com.ispf.server.spi.WorkflowStartTrigger;
 import io.micrometer.core.instrument.Counter;
@@ -36,11 +37,33 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
         }
     }
 
+    public enum AlertRuleFailure {
+        /** Condition or deactivate expression not computable, or anomaly history unreadable. */
+        CONDITION("condition"),
+        ERROR("error");
+
+        private final String tag;
+
+        AlertRuleFailure(String tag) {
+            this.tag = tag;
+        }
+
+        String tag() {
+            return tag;
+        }
+    }
+
     private final Optional<MeterRegistry> meterRegistry;
     private final AtomicLong objectChangeProcessed = new AtomicLong();
     private final AtomicLong alertEvaluationsCount = new AtomicLong();
     private final AtomicLong alertFiresCount = new AtomicLong();
+    private final AtomicLong alertRuleFailuresCount = new AtomicLong();
     private final AtomicLong correlatorTriggersCount = new AtomicLong();
+    private final AtomicLong correlatorErrorsCount = new AtomicLong();
+    private final AtomicLong correlatorDispatchDroppedCount = new AtomicLong();
+    private final AtomicLong correlatorActionDroppedCount = new AtomicLong();
+    private final List<BlockingQueue<?>> correlatorDispatchQueues = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private volatile BlockingQueue<?> correlatorActionQueue;
     private final AtomicLong objectChangeDroppedCount = new AtomicLong();
     private final AtomicLong eventJournalSyncFallbackCount = new AtomicLong();
     private final AtomicLong eventJournalFlushedCount = new AtomicLong();
@@ -55,6 +78,8 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
     private final AtomicLong variableHistoryFlushedCount = new AtomicLong();
     private final EnumMap<EventFireSource, AtomicLong> eventsFiredBySource = new EnumMap<>(EventFireSource.class);
     private final EnumMap<WorkflowStartTrigger, AtomicLong> workflowStartsByTrigger = new EnumMap<>(WorkflowStartTrigger.class);
+    private final EnumMap<SqlBindingValues.Failure, AtomicLong> sqlBindingFailuresByReason =
+            new EnumMap<>(SqlBindingValues.Failure.class);
     private final List<BlockingQueue<?>> objectChangeQueues = new java.util.concurrent.CopyOnWriteArrayList<>();
     private final Map<String, BlockingQueue<?>> objectChangeQueuesByLane = new java.util.concurrent.ConcurrentHashMap<>();
     private final Map<String, java.util.concurrent.atomic.AtomicInteger> objectChangeWorkersByLane =
@@ -70,13 +95,24 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
         for (WorkflowStartTrigger trigger : WorkflowStartTrigger.values()) {
             workflowStartsByTrigger.put(trigger, new AtomicLong());
         }
+        for (SqlBindingValues.Failure failure : SqlBindingValues.Failure.values()) {
+            sqlBindingFailuresByReason.put(failure, new AtomicLong());
+        }
         meterRegistry.ifPresent(this::registerMeters);
     }
 
     private void registerMeters(MeterRegistry registry) {
         Counter.builder("ispf.alert.evaluations.total").register(registry);
         Counter.builder("ispf.alert.fires.total").register(registry);
+        for (AlertRuleFailure failure : AlertRuleFailure.values()) {
+            Counter.builder("ispf.alert.rule_failures.total")
+                    .tag("reason", failure.tag())
+                    .register(registry);
+        }
         Counter.builder("ispf.correlator.triggers.total").register(registry);
+        Counter.builder("ispf.correlator.errors.total").register(registry);
+        Counter.builder("ispf.correlator.dispatch.dropped.total").register(registry);
+        Counter.builder("ispf.correlator.action.dropped.total").register(registry);
         Counter.builder("ispf.object_change.queue.dropped.total").register(registry);
         Counter.builder("ispf.event_journal.queue_full.sync_fallback.total").register(registry);
         Counter.builder("ispf.telemetry.binding_bypass.total").register(registry);
@@ -95,6 +131,11 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
         for (WorkflowStartTrigger trigger : WorkflowStartTrigger.values()) {
             Counter.builder("ispf.workflow.starts.total")
                     .tag("trigger", trigger.tag())
+                    .register(registry);
+        }
+        for (SqlBindingValues.Failure failure : SqlBindingValues.Failure.values()) {
+            Counter.builder("ispf.sql_binding.refresh_failures.total")
+                    .tag("reason", failure.tag())
                     .register(registry);
         }
     }
@@ -165,9 +206,55 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
         meterRegistry.ifPresent(registry -> registry.counter("ispf.alert.fires.total").increment());
     }
 
+    /** Alert rule evaluation that failed; the remaining rules of the same fan-out still run. */
+    public void recordAlertRuleFailure(AlertRuleFailure failure) {
+        alertRuleFailuresCount.incrementAndGet();
+        meterRegistry.ifPresent(registry -> registry.counter(
+                "ispf.alert.rule_failures.total",
+                "reason",
+                failure.tag()
+        ).increment());
+    }
+
     public void recordCorrelatorTrigger() {
         correlatorTriggersCount.incrementAndGet();
         meterRegistry.ifPresent(registry -> registry.counter("ispf.correlator.triggers.total").increment());
+    }
+
+    public void recordCorrelatorError() {
+        correlatorErrorsCount.incrementAndGet();
+        meterRegistry.ifPresent(registry -> registry.counter("ispf.correlator.errors.total").increment());
+    }
+
+    public void recordCorrelatorDispatchDropped() {
+        correlatorDispatchDroppedCount.incrementAndGet();
+        meterRegistry.ifPresent(registry -> registry.counter("ispf.correlator.dispatch.dropped.total").increment());
+    }
+
+    public void recordCorrelatorActionDropped() {
+        correlatorActionDroppedCount.incrementAndGet();
+        meterRegistry.ifPresent(registry -> registry.counter("ispf.correlator.action.dropped.total").increment());
+    }
+
+    public void bindCorrelatorDispatchQueue(int lane, BlockingQueue<?> queue) {
+        correlatorDispatchQueues.add(queue);
+        meterRegistry.ifPresent(registry -> io.micrometer.core.instrument.Gauge.builder(
+                        "ispf.correlator.dispatch.queue.size",
+                        queue,
+                        BlockingQueue::size
+                )
+                .tag("lane", String.valueOf(lane))
+                .register(registry));
+    }
+
+    public void bindCorrelatorActionQueue(BlockingQueue<?> queue) {
+        correlatorActionQueue = queue;
+        meterRegistry.ifPresent(registry -> io.micrometer.core.instrument.Gauge.builder(
+                        "ispf.correlator.action.queue.size",
+                        queue,
+                        BlockingQueue::size
+                )
+                .register(registry));
     }
 
     @Override
@@ -177,6 +264,16 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
                 "ispf.workflow.starts.total",
                 "trigger",
                 trigger.tag()
+        ).increment());
+    }
+
+    /** SQL binding refresh that left its target without a fresh value. */
+    public void recordSqlBindingFailure(SqlBindingValues.Failure failure) {
+        sqlBindingFailuresByReason.get(failure).incrementAndGet();
+        meterRegistry.ifPresent(registry -> registry.counter(
+                "ispf.sql_binding.refresh_failures.total",
+                "reason",
+                failure.tag()
         ).increment());
     }
 
@@ -270,7 +367,17 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
         Map<String, Object> section = new LinkedHashMap<>();
         section.put("eventsFiredTotal", eventsFiredTotal());
         section.put("alertFiresTotal", alertFiresCount.get());
+        section.put("alertRuleFailuresTotal", alertRuleFailuresCount.get());
         section.put("correlatorTriggersTotal", correlatorTriggersCount.get());
+        section.put("correlatorErrorsTotal", correlatorErrorsCount.get());
+        section.put("correlatorDispatchDroppedTotal", correlatorDispatchDroppedCount.get());
+        section.put("correlatorActionDroppedTotal", correlatorActionDroppedCount.get());
+        int dispatchQueueSize = 0;
+        for (BlockingQueue<?> queue : correlatorDispatchQueues) {
+            dispatchQueueSize += queue.size();
+        }
+        section.put("correlatorDispatchQueueSize", dispatchQueueSize);
+        section.put("correlatorActionQueueSize", correlatorActionQueue == null ? 0 : correlatorActionQueue.size());
         section.put("workflowStartsTotal", workflowStartsTotal());
         section.put("objectChangeQueueSize", objectChangeQueueSize());
         section.put("objectChangeDroppedTotal", objectChangeDroppedCount.get());
@@ -290,11 +397,16 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
         section.put("telemetryBindingBypassTotal", telemetryBindingBypassCount.get());
         section.put("telemetryHistorianOnlyTotal", telemetryHistorianOnlyCount.get());
         section.put("telemetryCoalesceDropsTotal", telemetryCoalesceDropCount.get());
+        section.put("sqlBindingRefreshFailuresTotal", sqlBindingRefreshFailuresTotal());
         return section;
     }
 
     public long eventsFiredTotal() {
         return eventsFiredBySource.values().stream().mapToLong(AtomicLong::get).sum();
+    }
+
+    public long sqlBindingRefreshFailuresTotal() {
+        return sqlBindingFailuresByReason.values().stream().mapToLong(AtomicLong::get).sum();
     }
 
     public long workflowStartsTotal() {

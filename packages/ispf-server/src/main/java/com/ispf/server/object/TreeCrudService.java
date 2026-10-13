@@ -177,7 +177,8 @@ public class TreeCrudService {
                 entity.getSortOrder(),
                 entity.getRevision(),
                 entity.getLastChangedBy(),
-                entity.getLastChangedAt()
+                entity.getLastChangedAt(),
+                entity.getCreatedAt()
         );
         node.setappliedBlueprintIds(mapper.readappliedBlueprintIds(entity.getappliedBlueprintIdsJson()));
         node.setBindingAuditEnabled(entity.isBindingAuditEnabled());

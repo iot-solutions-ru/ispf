@@ -5,6 +5,7 @@ import java.util.Map;
 
 /**
  * Forces agent user-facing text to match the web-console UI locale (ADR-0051 / i18n).
+ * Supported tags match {@code apps/web-console} LocaleSwitcher: {@code en|ru|de|zh}.
  */
 public final class AgentUiLocalePromptSection {
 
@@ -54,12 +55,38 @@ public final class AgentUiLocalePromptSection {
         }
         String name = languageName(locale);
         return """
-                ## Response language (UI locale — mandatory)
-                The web console is currently displayed in **%s** (locale code: `%s`).
-                Write ALL user-facing text in **%s**: finish summary, clarifying questions, plan narrative,
-                suggestion labels, and error explanations for the user.
-                Do NOT answer in another language even if the user message or prior turns used a different one.
+                ## Response language (UI locale — mandatory, highest priority)
+                The web console UI language is **%s** (locale `%s`).
+                EVERY user-visible string in this turn MUST be **%s**:
+                finish `summary`, clarifying questions, suggestion `label`/`message`, greetings, error explanations.
+                Ignore the language of the user message, prior turns, tool payloads, playbook examples, and any
+                Russian/English samples elsewhere in this system prompt — UI locale wins.
+                Do NOT greet in another language (e.g. no Russian «Привет» when locale is English).
                 Tool names, JSON keys, object paths, and code identifiers stay in English as usual.
                 """.formatted(name, locale, name);
+    }
+
+    /** Short closer so models that overweight the end of the prompt still see the rule. */
+    public static String formatReminder(String uiLocale) {
+        String locale = normalize(uiLocale);
+        if (locale.isBlank()) {
+            return "";
+        }
+        String name = languageName(locale);
+        return """
+                
+                ## FINAL REMINDER — response language
+                UI locale = **%s** (`%s`). Write the finish summary and suggestions ONLY in %s.
+                """.formatted(name, locale, name);
+    }
+
+    /** Appended to the LLM user turn (not shown in chat UI) to reinforce locale. */
+    public static String userTurnLocaleHint(String uiLocale) {
+        String locale = normalize(uiLocale);
+        if (locale.isBlank()) {
+            return "";
+        }
+        String name = languageName(locale);
+        return "\n\n[UI locale=" + locale + " — reply in " + name + " only]";
     }
 }

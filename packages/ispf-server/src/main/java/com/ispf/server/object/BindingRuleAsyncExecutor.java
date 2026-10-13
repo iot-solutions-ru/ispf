@@ -111,7 +111,13 @@ public class BindingRuleAsyncExecutor {
             try {
                 task.run();
             } catch (Exception ex) {
-                log.warn("Async binding {} failed: {}", key, ex.getMessage());
+                String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+                IllegalStateException failure = new IllegalStateException(
+                        "Async binding " + key + " failed: " + detail,
+                        ex
+                );
+                log.error(failure.getMessage());
+                throw failure;
             }
             boolean hasMore = properties.isAsyncCoalesceEnabled()
                     ? pending.get() != null

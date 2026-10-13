@@ -29,25 +29,26 @@ Package `com.ispf.server.relational`:
 ### 2. Flyway migration packs
 
 ```
-db/migration/postgresql/   — V1__baseline.sql (greenfield; incremental V1–V70 squashed)
-db/migration/h2/           — edge overrides (if needed; default H2 uses postgresql pack in MODE=PostgreSQL)
-db/migration/mssql/        — enterprise POC: one greenfield baseline
-db/migration/mysql/
-db/migration/oracle/
+db/migration/postgresql/   — V1__baseline.sql + incremental V71+ (prod path)
+db/migration/h2/           — README only; default H2 uses postgresql pack in MODE=PostgreSQL
+db/migration/mssql/        — README only until certified greenfield baseline
+db/migration/mysql/        — README only (planned)
+db/migration/oracle/       — README only (planned)
 ```
 
 `FlywayConfigurationCustomizer` selects `locations` by active dialect.
 
-#### Greenfield policy (until v1.0)
+#### Amendment (2026-10-12) — PostgreSQL after the V1–V70 squash + expand/contract
 
-**We do not support** moving the relational core between engines (PG → MSSQL, etc.) and **do not support** Flyway upgrade from legacy incremental migrations (V1–V70 removed).
+Legacy increments **V1–V70 were squashed** into `V1__baseline.sql` (2026-07-07). **After that squash**, PostgreSQL again uses **incremental Flyway scripts** (`V71__…` onward). New installs apply `V1` then every later version in order. Prefer **expand/contract** DDL ([0064-release-compatibility-lts](0064-release-compatibility-lts.md)). Do **not** treat the pack as “baseline only forever”.
 
 | Scenario | Action |
 |----------|--------|
-| New installation | Empty DB + `V1__baseline.sql` of active dialect |
-| Change `ISPF_METADATA_DB_KIND` | New empty DB/schema from scratch; configuration via **bundles** (`package import`) |
-| ISPF version upgrade on same PostgreSQL | Same `V1__baseline.sql`; schema already applied — Flyway no-op. DDL changes — via new baseline revisions or manual maintenance |
-| Legacy DB with V1–V70 history | One-time `deploy/vps-flyway-repair.sh` — squash history to V1 + repair checksum |
+| New PostgreSQL install | Empty DB → Flyway applies `V1__baseline.sql` then `V71+` |
+| ISPF version upgrade on same PostgreSQL | Flyway applies new `Vnn__*.sql` not yet in `flyway_schema_history` |
+| Change `ISPF_METADATA_DB_KIND` | New empty DB/schema; configuration via **bundles** (`package import`) — **no** in-place engine migration |
+| Legacy DB still on pre-squash V1–V70 history | One-time `deploy/vps-flyway-repair.sh` — squash history to V1 + repair checksum, then apply `V71+` |
+| MSSQL / MySQL / Oracle | **Not started** — README placeholders only; do not set `ISPF_METADATA_DB_KIND` to those engines in production |
 
 Solution configuration (objects, applications, mimics) lives in **bundle export/import**, not in «moving» metadata rows between DBMS engines.
 
@@ -72,11 +73,11 @@ Default mode: `ISPF_EVENT_JOURNAL_STORE=jdbc`, `ISPF_VARIABLE_HISTORY_STORE=jdbc
 
 | Tier | Engine | Prod | Migrations | Notes |
 |------|--------|------|------------|-------|
-| 0 | PostgreSQL 16 + Timescale | Yes | `postgresql/V1__baseline.sql` | Primary; software registry |
+| 0 | PostgreSQL 16 + Timescale | Yes | `postgresql/V1` + `V71+` | Primary; software registry |
 | 1 | PG-compatible (Yugabyte, Cockroach) | On request | `postgresql/` | Test per vendor |
 | 2 | H2 (edge/dev) | Edge only | `postgresql/` + PG compat mode | `application-local.yml` |
-| 3 | MS SQL Server | POC | `mssql/` | First enterprise target |
-| 4 | MySQL, Oracle | Planned | `mysql/`, `oracle/` | After MSSQL POC |
+| 3 | MS SQL Server | Not started | `mssql/README.md` only | First enterprise target when baseline lands |
+| 4 | MySQL, Oracle | Not started | README only | After MSSQL |
 
 ## Consequences
 
@@ -93,4 +94,5 @@ Risks:
 - [storage-portability-inventory](../storage-portability-inventory.md)
 - [deployment](../deployment.md) § Storage deployment modes
 - [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md), [0016-clickhouse-event-journal](0016-clickhouse-event-journal.md)
+- [0064-release-compatibility-lts](0064-release-compatibility-lts.md) — expand/contract + platform LTS
 - [blueprints](../blueprints.md) — `data-source-v1`

@@ -91,7 +91,7 @@ public class AlertRuleRuntimeFlusher {
         AlertRuleRuntimeState state = runtimeStore.snapshotForPersist(path);
         applyRuntimeState(path, state);
         objectManager.persistNodeTree(path);
-        runtimeStore.markClean(path);
+        runtimeStore.markClean(path, state);
         return true;
     }
 

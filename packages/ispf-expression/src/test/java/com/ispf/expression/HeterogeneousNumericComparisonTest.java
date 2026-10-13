@@ -104,6 +104,56 @@ class HeterogeneousNumericComparisonTest {
         assertEquals("self.x.value", ExpressionEngine.normalizeMapIndexSelects("self.x[\"value\"]"));
         assertEquals("m[\"a-b\"]", ExpressionEngine.normalizeMapIndexSelects("m[\"a-b\"]"));
         assertEquals("true", ExpressionEngine.normalizeMapIndexSelects("true"));
+        assertEquals(
+                "self.msg == \"use [\\\"code\\\"] here\"",
+                ExpressionEngine.normalizeMapIndexSelects("self.msg == \"use [\\\"code\\\"] here\"")
+        );
+        assertEquals(
+                "self.x.value == \"use [\\\"code\\\"] here\"",
+                ExpressionEngine.normalizeMapIndexSelects("self.x[\"value\"] == \"use [\\\"code\\\"] here\"")
+        );
+        assertEquals(
+                "self.msg == 'use [\"code\"] here'",
+                ExpressionEngine.normalizeMapIndexSelects("self.msg == 'use [\"code\"] here'")
+        );
+        assertEquals(
+                "self.x.value == 'keep [\"code\"]'",
+                ExpressionEngine.normalizeMapIndexSelects("self.x[\"value\"] == 'keep [\"code\"]'")
+        );
+        assertEquals(
+                "self.msg == \"\"\"use [\"code\"] here\"\"\"",
+                ExpressionEngine.normalizeMapIndexSelects("self.msg == \"\"\"use [\"code\"] here\"\"\"")
+        );
+        assertEquals(
+                "self.msg == r'use [\"code\"] here'",
+                ExpressionEngine.normalizeMapIndexSelects("self.msg == r'use [\"code\"] here'")
+        );
+        assertEquals(
+                "// self.x[\"value\"]",
+                ExpressionEngine.normalizeMapIndexSelects("// self.x[\"value\"]")
+        );
+        assertEquals(
+                "// self.x[\"value\"]\nself.x.value",
+                ExpressionEngine.normalizeMapIndexSelects("// self.x[\"value\"]\nself.x[\"value\"]")
+        );
+    }
+
+    @Test
+    void stringLiteralKeepsMapIndexTextWhileRealIndexStillSelects() {
+        PlatformObject obj = objectWithValue(2.0);
+        DataSchema text = DataSchema.builder("t").field("value", FieldType.STRING).build();
+        obj.addVariable(new Variable(
+                "msg",
+                text,
+                true,
+                false,
+                DataRecord.single(text, Map.of("value", "use [\"code\"] here"))
+        ));
+
+        assertTrue((Boolean) engine.evaluate(
+                "self.msg.value == \"use [\\\"code\\\"] here\" && self.x[\"value\"] > 0",
+                obj
+        ));
     }
 
     private static PlatformObject objectWithValue(double value) {

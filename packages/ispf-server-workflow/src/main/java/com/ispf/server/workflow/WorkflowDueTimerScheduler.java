@@ -59,14 +59,7 @@ public class WorkflowDueTimerScheduler {
         if (!objects.isInitialized()) {
             return;
         }
-        if (!leaderLockService.tryAcquire(LOCK_NAME, LOCK_TTL)) {
-            return;
-        }
-        try {
-            fireDueTimers();
-        } finally {
-            leaderLockService.release(LOCK_NAME);
-        }
+        leaderLockService.runIfLeader(LOCK_NAME, LOCK_TTL, this::fireDueTimers);
     }
 
     void fireDueTimers() {

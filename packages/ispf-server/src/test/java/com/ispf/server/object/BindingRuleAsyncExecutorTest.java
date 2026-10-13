@@ -75,6 +75,48 @@ class BindingRuleAsyncExecutorTest {
         executor.shutdown();
     }
 
+    @Test
+    void ruleFailureIsNotSwallowedAsAWarning() throws Exception {
+        BindingRuleAsyncExecutor executor = new BindingRuleAsyncExecutor(new BindingProperties());
+        ch.qos.logback.classic.Logger logger =
+                (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(BindingRuleAsyncExecutor.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> appender =
+                new ch.qos.logback.core.read.ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            executor.schedule("root.test.device", sampleRule(), () -> {
+                throw new IllegalStateException("binding boom");
+            });
+            org.assertj.core.api.Assertions.assertThat(waitForError(appender)).isTrue();
+            assertThat(appender.list)
+                    .anyMatch(event -> event.getLevel() == ch.qos.logback.classic.Level.ERROR
+                            && event.getFormattedMessage().contains(
+                                    "Async binding root.test.device|test-rule failed: binding boom"));
+            assertThat(appender.list)
+                    .noneMatch(event -> event.getLevel() == ch.qos.logback.classic.Level.WARN
+                            && event.getFormattedMessage().contains("Async binding"));
+        } finally {
+            logger.detachAppender(appender);
+            executor.shutdown();
+        }
+    }
+
+    private static boolean waitForError(
+            ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> appender
+    ) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
+        while (System.nanoTime() < deadline) {
+            for (ch.qos.logback.classic.spi.ILoggingEvent event : appender.list) {
+                if (event.getLevel() == ch.qos.logback.classic.Level.ERROR) {
+                    return true;
+                }
+            }
+            Thread.sleep(20);
+        }
+        return false;
+    }
+
     private static BindingRule sampleRule() {
         return new BindingRule(
                 "test-rule",

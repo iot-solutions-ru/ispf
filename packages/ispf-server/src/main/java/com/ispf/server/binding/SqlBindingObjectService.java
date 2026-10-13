@@ -11,11 +11,13 @@ import com.ispf.server.datasource.DataSourceSqlSession;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -56,17 +58,20 @@ public class SqlBindingObjectService {
     private final SystemObjectStructureService structureService;
     private final DataSourceSqlSession dataSourceSqlSession;
     private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
+    private final AutomationMetricsRecorder metricsRecorder;
 
     public SqlBindingObjectService(
             ObjectManager objectManager,
             SystemObjectStructureService structureService,
             DataSourceSqlSession dataSourceSqlSession,
-            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard,
+            AutomationMetricsRecorder metricsRecorder
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
         this.dataSourceSqlSession = dataSourceSqlSession;
         this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
+        this.metricsRecorder = metricsRecorder;
     }
 
     @Transactional
@@ -193,6 +198,10 @@ public class SqlBindingObjectService {
         return BINDINGS_ROOT + "." + sanitizeNodeName(bindingId);
     }
 
+    /**
+     * Joins the caller's transaction (a workflow step), so the queries see the function's uncommitted writes; a
+     * failing query fails the caller.
+     */
     @Transactional
     public void refreshAfterFunction(String objectPath, String functionName) {
         for (BindingDefinition binding : listForFunctionSuccess(objectPath, functionName)) {
@@ -200,7 +209,24 @@ public class SqlBindingObjectService {
         }
     }
 
-    @Transactional
+    /**
+     * The bindings of {@link #refreshAfterFunction} once the function's transaction has committed. On a bus worker
+     * there is no transaction, so each binding's writes commit on their own. Not a new transaction: when the bus runs
+     * this on the caller's thread, the function may have run in {@code REQUIRES_NEW} inside a caller's transaction
+     * that is suspended there, and a new transaction would wait for that caller's locks.
+     */
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public void refreshAfterFunctionCommit(String objectPath, String functionName) {
+        for (BindingDefinition binding : listForFunctionSuccess(objectPath, functionName)) {
+            refreshIsolated(binding);
+        }
+    }
+
+    /**
+     * Outside a transaction, so each binding's query and writes commit on their own: a failed statement, which aborts
+     * the whole transaction on PostgreSQL, cannot undo or block another binding.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void refreshScheduledBindings() {
         Instant now = Instant.now();
         for (BindingDefinition binding : listEnabledForSchedule()) {
@@ -209,7 +235,7 @@ public class SqlBindingObjectService {
                     && binding.lastRefreshedAt().plusMillis(intervalMs).isAfter(now)) {
                 continue;
             }
-            executeRefresh(binding);
+            refreshIsolated(binding);
         }
     }
 
@@ -242,8 +268,11 @@ public class SqlBindingObjectService {
         return disabled;
     }
 
+    /**
+     * Hot path (every scheduler tick and function call) — read-only; the catalog is ensured by {@link #ensureCatalog()}
+     * at bootstrap and by {@link #upsert}.
+     */
     private List<BindingDefinition> listAll() {
-        ensureCatalogInternal();
         List<BindingDefinition> bindings = new ArrayList<>();
         if (objectManager.tree().findByPath(BINDINGS_ROOT).isEmpty()) {
             return bindings;
@@ -257,43 +286,36 @@ public class SqlBindingObjectService {
         return bindings;
     }
 
+    /** One binding of a fan-out: the bindings are independent, so no failure reaches the caller. */
+    private void refreshIsolated(BindingDefinition binding) {
+        try {
+            executeRefresh(binding, SqlBindingValues.OnQueryFailure.MARK_BAD);
+        } catch (RuntimeException ex) {
+            log.error("SQL binding {} refresh failed", binding.path(), ex);
+        }
+    }
+
     /** Package-visible for unit tests (missing-target soft-fail). */
     void executeRefresh(BindingDefinition binding) {
+        executeRefresh(binding, SqlBindingValues.OnQueryFailure.PROPAGATE);
+    }
+
+    private void executeRefresh(BindingDefinition binding, SqlBindingValues.OnQueryFailure onQueryFailure) {
         if (disabledOrphanBindingPaths.contains(binding.path())) {
             return;
         }
         try {
             tenantLocalDataAccessGuard.requireAllowedDataSourcePath(binding.dataSourcePath());
-            Object[] extracted = new Object[1];
-            dataSourceSqlSession.runWithDataSource(binding.dataSourcePath(), jdbc -> {
-                ApplicationSchemaSupport.validateSelectQuery(binding.query(), "Binding query");
-                List<Map<String, Object>> rows = jdbc.queryForList(binding.query());
-                if (rows.isEmpty()) {
-                    extracted[0] = null;
-                    return;
-                }
-                Map<String, Object> row = rows.get(0);
-                String field = binding.valueField() != null && !binding.valueField().isBlank()
-                        ? binding.valueField()
-                        : "value";
-                Object value = row.get(field);
-                if (value == null) {
-                    for (Map.Entry<String, Object> entry : row.entrySet()) {
-                        if (entry.getKey().equalsIgnoreCase(field)) {
-                            value = entry.getValue();
-                            break;
-                        }
-                    }
-                }
-                extracted[0] = value;
-            });
-            Object value = extracted[0];
-            double numeric = value instanceof Number number ? number.doubleValue() : 0.0;
-            objectManager.setSystemVariableValue(
-                    binding.targetObjectPath(),
-                    binding.variable(),
-                    DataRecord.single(DOUBLE_SCHEMA, Map.of("value", numeric))
-            );
+            SqlBindingValues.Extracted extracted = queryValue(binding, onQueryFailure);
+            if (extracted.ok()) {
+                objectManager.setSystemVariableValue(
+                        binding.targetObjectPath(),
+                        binding.variable(),
+                        DataRecord.single(DOUBLE_SCHEMA, Map.of("value", extracted.value()))
+                );
+            } else {
+                markBadQuality(binding, extracted);
+            }
             setString(binding.path(), "lastRefreshedAt", Instant.now().toString());
         } catch (ObjectNotFoundException ex) {
             // Orphan target must not abort the refresh fan-out for remaining bindings (H4 parity).
@@ -324,6 +346,73 @@ public class SqlBindingObjectService {
             }
             throw ex;
         }
+    }
+
+    private SqlBindingValues.Extracted queryValue(
+            BindingDefinition binding,
+            SqlBindingValues.OnQueryFailure onQueryFailure
+    ) {
+        String field = binding.valueField() != null && !binding.valueField().isBlank()
+                ? binding.valueField()
+                : "value";
+        SqlBindingValues.Extracted[] extracted = new SqlBindingValues.Extracted[1];
+        try {
+            dataSourceSqlSession.runWithDataSource(binding.dataSourcePath(), jdbc -> {
+                ApplicationSchemaSupport.validateSelectQuery(binding.query(), "Binding query");
+                List<Map<String, Object>> rows = jdbc.queryForList(binding.query());
+                if (rows.isEmpty()) {
+                    extracted[0] = SqlBindingValues.Extracted.noData("query returned no rows");
+                    return;
+                }
+                Map<String, Object> row = rows.get(0);
+                String column = findColumn(row, field);
+                extracted[0] = column != null
+                        ? SqlBindingValues.toDouble(field, row.get(column))
+                        : SqlBindingValues.Extracted.noData("column '" + field + "' not in result");
+            });
+        } catch (RuntimeException ex) {
+            if (onQueryFailure == SqlBindingValues.OnQueryFailure.MARK_BAD) {
+                return SqlBindingValues.Extracted.queryFailed(ex);
+            }
+            metricsRecorder.recordSqlBindingFailure(SqlBindingValues.Failure.QUERY_FAILED);
+            throw ex;
+        }
+        return extracted[0];
+    }
+
+    private static String findColumn(Map<String, Object> row, String field) {
+        if (row.containsKey(field)) {
+            return field;
+        }
+        for (String column : row.keySet()) {
+            if (column.equalsIgnoreCase(field)) {
+                return column;
+            }
+        }
+        return null;
+    }
+
+    private void markBadQuality(BindingDefinition binding, SqlBindingValues.Extracted extracted) {
+        metricsRecorder.recordSqlBindingFailure(extracted.failure());
+        DataRecord previous = objectManager.require(binding.targetObjectPath())
+                .getVariable(binding.variable())
+                .flatMap(Variable::value)
+                .orElse(null);
+        if (SqlBindingValues.isBadQuality(previous)) {
+            return;
+        }
+        log.warn(
+                "SQL binding {} returned no usable value ({}); {} / {} keeps its last value with quality=BAD",
+                binding.path(),
+                extracted.detail(),
+                binding.targetObjectPath(),
+                binding.variable()
+        );
+        objectManager.setSystemVariableValue(
+                binding.targetObjectPath(),
+                binding.variable(),
+                SqlBindingValues.badQuality(previous, FieldType.DOUBLE)
+        );
     }
 
     static boolean isMissingVariable(IllegalArgumentException ex) {

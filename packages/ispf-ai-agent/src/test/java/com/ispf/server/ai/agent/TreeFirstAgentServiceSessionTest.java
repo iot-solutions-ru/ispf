@@ -216,6 +216,7 @@ class TreeFirstAgentServiceSessionTest {
         ));
 
         AgentSession session = AgentSession.create("admin", "root");
+        session.runState().setUiLocale("ru");
         var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
         Map<String, Object> result = agentService.runTurn(session, "do something", auth, "admin");
 
@@ -234,6 +235,7 @@ class TreeFirstAgentServiceSessionTest {
 
         aiProperties.setAgentMaxSteps(8);
         AgentSession session = AgentSession.create("admin", "root");
+        session.runState().setUiLocale("ru");
         var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
 
         Map<String, Object> result = agentService.runTurn(session, "long task", auth, "admin");
@@ -277,6 +279,7 @@ class TreeFirstAgentServiceSessionTest {
     @Test
     void cooperativeCancelStopsInFlightRun() throws Exception {
         AgentSession sessionForCancel = AgentSession.create("admin", "root");
+        sessionForCancel.runState().setUiLocale("ru");
         AtomicInteger calls = new AtomicInteger();
         when(llmProviderRegistry.complete(any())).thenAnswer(invocation -> {
             int n = calls.incrementAndGet();

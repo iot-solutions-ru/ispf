@@ -2610,6 +2610,35 @@ body.scada-mimic-editor-open {
   grid-template-columns: 1fr 1fr auto;
 }
 
+.widget-editor-field-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+}
+
+.widget-editor-list-row.widget-editor-form-field-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.72fr) auto;
+  align-items: end;
+}
+
+.widget-editor-list-row.widget-editor-form-field-meta-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.widget-editor-list-row.widget-editor-form-field-meta-row--pair {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.widget-editor-form-field-remove {
+  align-self: end;
+  flex-shrink: 0;
+}
+
 .widget-editor-list-row input,
 .widget-editor-list-row select {
   min-width: 0;

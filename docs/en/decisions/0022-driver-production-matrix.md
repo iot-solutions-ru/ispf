@@ -30,7 +30,9 @@
 | bacnet | PRODUCTION | connectivity | network test + observedAt |
 | flexible | PRODUCTION | connectivity | Template driver |
 
-`jdbc` / `kafka` ingress drivers are **out of scope** for driver-pack matrix; telemetry ingress is Wave O (ADR-0024 planned).
+`jdbc` / `kafka` ingress drivers are **out of scope** for driver-pack matrix; telemetry ingress is covered by [0017](0017-telemetry-ingest-pipeline.md) and [0026](0026-elastic-telemetry-ingress.md) (not ADR-0024 — that number is demand-driven pub/sub).
+
+**Note:** PRODUCTION here means **lab CI** (loopback / integration test). Field site sign-off and protocol conformance suites are tracked separately (scorecard OT dimension; future FIELD / CERTIFIED maturity levels).
 
 ## Consequences
 

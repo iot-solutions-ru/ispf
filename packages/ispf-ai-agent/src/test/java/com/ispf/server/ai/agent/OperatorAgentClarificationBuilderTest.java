@@ -32,7 +32,8 @@ class OperatorAgentClarificationBuilderTest {
         );
         var clarification = OperatorAgentClarificationBuilder.maybeAfterListReports(
                 steps,
-                "Запусти сменный отчёт и кратко опиши цифры"
+                "Запусти сменный отчёт и кратко опиши цифры",
+                "ru"
         );
         assertTrue(clarification.isPresent());
         assertTrue(clarification.get().summary().contains("смен"));
@@ -66,7 +67,8 @@ class OperatorAgentClarificationBuilderTest {
         );
         var clarification = OperatorAgentClarificationBuilder.maybeAfterListReports(
                 steps,
-                "Запусти отчёт Наработка ГПУ"
+                "Запусти отчёт Наработка ГПУ",
+                "ru"
         );
         assertTrue(clarification.isEmpty());
     }

@@ -67,8 +67,11 @@ class AnalyticsEngineSchedulerFailureTest {
         when(objectManager.isInitialized()).thenReturn(true);
         when(engineService.isEnabled()).thenReturn(true);
         when(clusterProperties.isSchedulerActive()).thenReturn(true);
-        when(leaderLockService.tryAcquire("analytics_engine_scheduler", Duration.ofSeconds(30)))
-                .thenReturn(true);
+        when(leaderLockService.runIfLeader(eq("analytics_engine_scheduler"), eq(Duration.ofSeconds(30)), any()))
+                .thenAnswer(invocation -> {
+                    invocation.<Runnable>getArgument(2).run();
+                    return true;
+                });
         when(scheduleRegistry.dueTagPaths(any())).thenReturn(List.of(TAG_PATH));
         when(catalogService.listEnabledTags()).thenReturn(List.of(tag));
         doThrow(new RuntimeException("historian unavailable"))
@@ -80,7 +83,6 @@ class AnalyticsEngineSchedulerFailureTest {
         ArgumentCaptor<String> errorCaptor = ArgumentCaptor.forClass(String.class);
         verify(scheduleRegistry).markRan(eq(TAG_PATH), eq(PERIODIC_MS), any(Instant.class), errorCaptor.capture());
         assertThat(errorCaptor.getValue()).isEqualTo("historian unavailable");
-        verify(leaderLockService).release("analytics_engine_scheduler");
     }
 
     private static AnalyticsTagDefinition sampleTag() {

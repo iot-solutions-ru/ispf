@@ -72,7 +72,7 @@ class PlatformSchedulerServiceGateTest {
 
         scheduler.tick();
 
-        verify(leaderLockService, never()).tryAcquire(any(), any());
+        verify(leaderLockService, never()).runIfLeader(any(), any(), any());
     }
 
     @Test

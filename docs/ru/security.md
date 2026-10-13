@@ -143,6 +143,8 @@ Docker Compose поднимает Keycloak на порт **8180**.
 | `ispf.security.token-auth-enabled` | Bearer-сессии (local) |
 | `ispf.security.local-default-role` | Роль по умолчанию без токена (local, dev only) |
 | `ispf.security.trusted-proxy-ips` | IP reverse-proxy, чей `X-Forwarded-For` доверен для rate-limiting логина; пусто = заголовок игнорируется |
+| `ispf.security.secrets-key` | Master-ключ AES-GCM для vault + federation (`ISPF_SECURITY_SECRETS_KEY`) |
+| `ispf.security.secrets-previous-key` | Предыдущий ключ только для decrypt при ротации (`ISPF_SECURITY_SECRETS_PREVIOUS_KEY`); см. [ADR-0065](decisions/0065-secrets-key-rotation.md) |
 | `ispf.security.mfa.enabled` | Включить TOTP enrollment API (`/api/v1/security/mfa/**`) |
 
 ## MFA (TOTP)

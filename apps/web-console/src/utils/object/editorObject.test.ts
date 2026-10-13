@@ -14,3 +14,28 @@ describe("editorObject APPLICATION", () => {
     expect(resolveEditorObjectType(path, "REPORTS")).toBe("REPORTS");
   });
 });
+
+describe("editorObject VISUAL_GROUP", () => {
+  it("does not open specialized editors for catalog bundle groups", () => {
+    const path = "root.platform.data-sources.bundle-building-hvac";
+    expect(isSpecializedEditorObject(path, "VISUAL_GROUP")).toBe(false);
+    expect(resolveEditorObjectType(path, "VISUAL_GROUP")).toBe("VISUAL_GROUP");
+  });
+
+  it("does not open dashboard/report editors for groups under those catalogs", () => {
+    expect(isSpecializedEditorObject("root.platform.dashboards.bundle-mes", "VISUAL_GROUP")).toBe(false);
+    expect(isSpecializedEditorObject("root.platform.reports.bundle-lab-training", "VISUAL_GROUP")).toBe(false);
+    expect(isSpecializedEditorObject("root.platform.workflows.bundle-oil-control", "VISUAL_GROUP")).toBe(false);
+  });
+
+  it("still opens DATA_SOURCE editors for real data-source children", () => {
+    const path = "root.platform.data-sources.building-hvac";
+    expect(isSpecializedEditorObject(path, "DATA_SOURCE")).toBe(true);
+    expect(resolveEditorObjectType(path, "DATA_SOURCE")).toBe("DATA_SOURCE");
+  });
+
+  it("keeps path heuristics only when type is unknown", () => {
+    expect(isSpecializedEditorObject("root.platform.dashboards.comfort", undefined)).toBe(true);
+    expect(isSpecializedEditorObject("root.platform.dashboards.comfort", "CUSTOM")).toBe(false);
+  });
+});

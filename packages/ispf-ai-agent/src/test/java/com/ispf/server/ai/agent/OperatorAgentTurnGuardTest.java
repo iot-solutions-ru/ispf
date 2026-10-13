@@ -61,7 +61,8 @@ class OperatorAgentTurnGuardTest {
                 Map.of("path", "root.platform.reports.mini-tec-shift-report"),
                 steps,
                 "mini-tec-shift-report - покажи отчет",
-                scope
+                scope,
+                "ru"
         );
         assertTrue(decision.hasClarification());
         assertTrue(decision.clarification().summary().contains("недоступен"));

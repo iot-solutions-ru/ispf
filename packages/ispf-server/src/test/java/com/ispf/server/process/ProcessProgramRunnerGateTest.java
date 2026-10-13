@@ -56,7 +56,7 @@ class ProcessProgramRunnerGateTest {
 
         runner.tick();
 
-        verify(leaderLockService, never()).tryAcquire(any(), any());
+        verify(leaderLockService, never()).runIfLeader(any(), any(), any());
         verify(processProgramObjectService, never()).listEnabled();
     }
 
@@ -92,12 +92,37 @@ class ProcessProgramRunnerGateTest {
                 ));
         when(objectManager.require(missingTarget)).thenThrow(new ObjectNotFoundException(missingTarget));
 
-        assertThatCode(() -> runner.runDuePrograms()).doesNotThrowAnyException();
+        assertThatCode(() -> runner.runDuePrograms(() -> true)).doesNotThrowAnyException();
 
         verify(processProgramObjectService).recordCycle(
                 eq(programPath),
                 any(Instant.class),
                 eq("Object not found: " + missingTarget)
+        );
+    }
+
+    @Test
+    void tickStopsBeforeTheNextProgramOnceTheLeaseIsLost() {
+        String first = ProcessProgramPaths.PROCESS_PROGRAMS_ROOT + ".first";
+        String second = ProcessProgramPaths.PROCESS_PROGRAMS_ROOT + ".second";
+        when(clusterProperties.isSchedulerActive()).thenReturn(true);
+        when(objectManager.isInitialized()).thenReturn(true);
+        when(leaderLockService.runIfLeader(eq("process_program_runner"), any(), any())).thenAnswer(invocation -> {
+            invocation.<Runnable>getArgument(2).run();
+            return true;
+        });
+        when(leaderLockService.isHeld("process_program_runner")).thenReturn(true, false);
+        when(processProgramObjectService.listEnabled()).thenReturn(List.of(idleProgram(first), idleProgram(second)));
+
+        runner.tick();
+
+        verify(processProgramObjectService).recordCycle(eq(first), any(Instant.class), isNull());
+        verify(processProgramObjectService, never()).recordCycle(eq(second), any(Instant.class), any());
+    }
+
+    private static ProcessProgramObjectService.ProcessProgramDefinition idleProgram(String path) {
+        return new ProcessProgramObjectService.ProcessProgramDefinition(
+                path, "idle", 1, "", null, null, null, true, null, null, null
         );
     }
 }

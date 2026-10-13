@@ -114,14 +114,7 @@ public class PlatformSchedulerService {
         if (!objectManager.isInitialized()) {
             return;
         }
-        if (!leaderLockService.tryAcquire(SCHEDULER_LOCK, Duration.ofSeconds(30))) {
-            return;
-        }
-        try {
-            tickSchedules();
-        } finally {
-            leaderLockService.release(SCHEDULER_LOCK);
-        }
+        leaderLockService.runIfLeader(SCHEDULER_LOCK, Duration.ofSeconds(30), this::tickSchedules);
     }
 
     void tickSchedules() {

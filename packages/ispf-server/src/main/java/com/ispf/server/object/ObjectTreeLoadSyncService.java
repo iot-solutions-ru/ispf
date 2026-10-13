@@ -146,10 +146,14 @@ public class ObjectTreeLoadSyncService {
                 entity.getSortOrder(),
                 entity.getRevision(),
                 entity.getLastChangedBy(),
-                entity.getLastChangedAt()
+                entity.getLastChangedAt(),
+                entity.getCreatedAt()
         );
         node.setappliedBlueprintIds(mapper.readappliedBlueprintIds(entity.getappliedBlueprintIdsJson()));
         node.setBlueprintContributions(mapper.readBlueprintContributions(entity.getBlueprintContributionsJson()));
+        node.setBindingAuditEnabled(entity.isBindingAuditEnabled());
+        node.setFunctionAuditEnabled(entity.isFunctionAuditEnabled());
+        node.setEventJournalEnabled(entity.isEventJournalEnabled());
         for (EventDescriptor event : mapper.readEvents(entity.getEventsJson())) {
             node.addEvent(event);
         }

@@ -60,6 +60,14 @@ public final class AgentJsonProtocol {
      */
     @SuppressWarnings("unchecked")
     public static Optional<AgentAction> trySalvageTruncatedFinish(ObjectMapper objectMapper, String content) {
+        return trySalvageTruncatedFinish(objectMapper, content, "");
+    }
+
+    public static Optional<AgentAction> trySalvageTruncatedFinish(
+            ObjectMapper objectMapper,
+            String content,
+            String uiLocale
+    ) {
         if (!looksLikeTruncatedContent(content)) {
             return Optional.empty();
         }
@@ -101,7 +109,9 @@ public final class AgentJsonProtocol {
         }
         String effectiveSummary = summary != null && !summary.isBlank()
                 ? summary
-                : "Частичный план сохранён (ответ модели был обрезан). Продолжите расширение плана на следующем сообщении.";
+                : (AgentStepHumanizer.isRussian(uiLocale)
+                ? "Частичный план сохранён (ответ модели был обрезан). Продолжите расширение плана на следующем сообщении."
+                : "Partial plan saved (model response was truncated). Continue expanding the plan in the next message.");
         return Optional.of(new AgentAction("finish", null, null, effectiveSummary, result));
     }
 

@@ -85,6 +85,19 @@ public class BundleManifestValidator {
         if (appId == null || appId.isBlank()) {
             builder.addError("appId is required");
         }
+        int formatVersion = BundleFormatVersions.resolve(manifest.formatVersion());
+        if (!BundleFormatVersions.isSupported(formatVersion)) {
+            builder.addError(
+                    "manifest.formatVersion " + formatVersion
+                            + " is not supported (supported "
+                            + BundleFormatVersions.MIN_SUPPORTED
+                            + "…"
+                            + BundleFormatVersions.MAX_SUPPORTED
+                            + "; current "
+                            + BundleFormatVersions.CURRENT
+                            + ")"
+            );
+        }
         if (manifest.version() == null || manifest.version().isBlank()) {
             builder.addError("manifest.version is required");
         } else if (!BundleSemverSupport.isValid(manifest.version())) {

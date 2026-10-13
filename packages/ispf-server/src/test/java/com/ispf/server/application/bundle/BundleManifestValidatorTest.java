@@ -87,6 +87,7 @@ class BundleManifestValidatorTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
         BundleValidationResult result = validator.validate("invalid", manifest);
@@ -97,6 +98,7 @@ class BundleManifestValidatorTest {
     void rejectsVersionOnlyManifest() {
         ApplicationBundleDeployService.BundleManifest manifest = new ApplicationBundleDeployService.BundleManifest(
                 "1",
+                null,
                 null,
                 null,
                 null,
@@ -150,6 +152,7 @@ class BundleManifestValidatorTest {
                         layoutJson,
                         5000
                 )),
+                null,
                 null,
                 null,
                 null,

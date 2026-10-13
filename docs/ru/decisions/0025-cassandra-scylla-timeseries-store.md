@@ -2,6 +2,10 @@
 
 # ADR-0025: Cassandra/Scylla SPI для time-series хранилищ
 
+> **Алиас номера:** **0025b** (Cassandra/Scylla timeseries). Тот же числовой id у [0025-telemetry-quality-flags](0025-telemetry-quality-flags.md) (**0025a**). В новых ссылках указывайте имя файла или алиас; файлы не перенумеровывать.
+>
+> **Уровень поддержки:** **experimental** — доступно через конфиг store; это не сертифицированный production default. Предпочтительны `jdbc` (Timescale) или `clickhouse`, если на площадке ещё нет CQL.
+
 Статус: **Принято**  
 Дата: 2026-07-04
 

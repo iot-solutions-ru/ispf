@@ -42,6 +42,22 @@ public class IspfSecurityProperties {
     private String secretsKey = "";
 
     /**
+     * Optional explicit key id for {@link #secretsKey} (ADR-0065). Blank ⇒ derived from the key material.
+     */
+    private String secretsKeyId = "";
+
+    /**
+     * Previous master key retained only for decrypt during rotation (ADR-0065).
+     * After {@code POST /api/v1/federation/secrets-key/reencrypt}, clear this and restart.
+     */
+    private String secretsPreviousKey = "";
+
+    /**
+     * Optional explicit key id for {@link #secretsPreviousKey}. Blank ⇒ derived from the previous key.
+     */
+    private String secretsPreviousKeyId = "";
+
+    /**
      * Reverse-proxy IPs whose {@code X-Forwarded-For} header is trusted when resolving the
      * client IP for login rate limiting. Empty (default) = never trust XFF; the direct peer
      * address is used, so clients cannot rotate XFF to bypass {@link Login} lockouts.
@@ -104,6 +120,30 @@ public class IspfSecurityProperties {
 
     public void setSecretsKey(String secretsKey) {
         this.secretsKey = secretsKey;
+    }
+
+    public String getSecretsKeyId() {
+        return secretsKeyId;
+    }
+
+    public void setSecretsKeyId(String secretsKeyId) {
+        this.secretsKeyId = secretsKeyId;
+    }
+
+    public String getSecretsPreviousKey() {
+        return secretsPreviousKey;
+    }
+
+    public void setSecretsPreviousKey(String secretsPreviousKey) {
+        this.secretsPreviousKey = secretsPreviousKey;
+    }
+
+    public String getSecretsPreviousKeyId() {
+        return secretsPreviousKeyId;
+    }
+
+    public void setSecretsPreviousKeyId(String secretsPreviousKeyId) {
+        this.secretsPreviousKeyId = secretsPreviousKeyId;
     }
 
     public List<String> getTrustedProxyIps() {

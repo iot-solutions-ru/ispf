@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -618,7 +619,7 @@ public class WorkflowService {
         return instanceControl.deliverMessageByWorkflowPath(workflowPath, messageName, operatorId);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void handleVariableTrigger(String objectPath, String variableName) {
         List<String> failures = new ArrayList<>();
         for (String workflowPath : eventTriggerIndex.findVariableWorkflows(objectPath, variableName)) {
@@ -636,21 +637,12 @@ public class WorkflowService {
             if (!isTriggerConditionMet(node, objectPath, variableName)) {
                 continue;
             }
-            try {
-                runWorkflow(
-                        workflowPath,
-                        objectPath,
-                        WorkflowStartTrigger.VARIABLE
-                );
-            } catch (WorkflowException e) {
-                recordTriggerStartFailure(workflowPath, "variable", objectPath, e);
-                failures.add(workflowPath + ": " + e.getMessage());
-            }
+            startTriggeredWorkflow(workflowPath, objectPath, WorkflowStartTrigger.VARIABLE, "variable", failures);
         }
         failTriggerStart(failures);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void handleEventTrigger(String objectPath, String eventName) {
         List<String> failures = new ArrayList<>();
         for (String workflowPath : eventTriggerIndex.findEventWorkflows(objectPath, eventName)) {
@@ -665,31 +657,51 @@ public class WorkflowService {
             if (readLifecycleStatus(node) != WorkflowLifecycleStatus.ACTIVE) {
                 continue;
             }
-            try {
-                runWorkflow(
-                        workflowPath,
-                        objectPath,
-                        WorkflowStartTrigger.EVENT
-                );
-            } catch (WorkflowException e) {
-                recordTriggerStartFailure(workflowPath, "event", objectPath, e);
-                failures.add(workflowPath + ": " + e.getMessage());
-            }
+            startTriggeredWorkflow(workflowPath, objectPath, WorkflowStartTrigger.EVENT, "event", failures);
         }
         failTriggerStart(failures);
+    }
+
+    /**
+     * One triggered start per transaction. Must be called through {@code self} so a failing
+     * sibling cannot roll back a workflow that already started (and ran its side effects).
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void runTriggeredWorkflow(
+            String workflowPath,
+            String sourcePath,
+            WorkflowStartTrigger trigger
+    ) throws WorkflowException {
+        runWorkflow(workflowPath, sourcePath, trigger);
+    }
+
+    private void startTriggeredWorkflow(
+            String workflowPath,
+            String sourcePath,
+            WorkflowStartTrigger trigger,
+            String triggerKind,
+            List<String> failures
+    ) {
+        try {
+            self.getObject().runTriggeredWorkflow(workflowPath, sourcePath, trigger);
+        } catch (WorkflowException | RuntimeException e) {
+            String message = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            recordTriggerStartFailure(workflowPath, triggerKind, sourcePath, message);
+            failures.add(workflowPath + ": " + message);
+        }
     }
 
     private void recordTriggerStartFailure(
             String workflowPath,
             String triggerKind,
             String sourcePath,
-            WorkflowException error
+            String message
     ) {
         deadLetterService.recordCommitted(
                 "trigger-start",
                 workflowPath,
                 1,
-                error.getMessage(),
+                message,
                 "{\"trigger\":\"" + triggerKind + "\",\"sourcePath\":\"" + escapeJson(sourcePath) + "\"}"
         );
     }
