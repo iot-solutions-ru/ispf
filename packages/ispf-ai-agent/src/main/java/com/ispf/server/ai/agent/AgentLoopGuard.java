@@ -140,6 +140,12 @@ final class AgentLoopGuard {
                     For platform docs: use prior search_context / get_driver_help results — do NOT re-call them. \
                     Before invoke_bff: use list_functions and get_function instead of guessing function names.""";
         }
+        if ("search_context".equals(normalize(lastTool))) {
+            return """
+                    search_context returned short hits — do NOT call it again with the same query. \
+                    Use the snippets: enable_agent_tool_pack if needed, list_objects on real parents, \
+                    create/configure, or finish with Markdown. Full docs are not inlined in the prompt.""";
+        }
         long recentSearch = recentToolCount(steps, "search_context");
         if (recentSearch >= REPEAT_THRESHOLD) {
             return """

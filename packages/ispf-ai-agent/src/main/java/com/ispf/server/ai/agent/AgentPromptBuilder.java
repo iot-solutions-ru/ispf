@@ -52,6 +52,8 @@ public final class AgentPromptBuilder {
             For complex tasks: get_automation_schema topic=platformMaster first; then area-specific tools (workflow, lifecycle, dashboard, scada).
             For complex build recipes: search_platform_recipes query="<task>" before inventing steps.
             Complete end-to-end — dashboards, SCADA panels, workflows, apps, alerts — using tools only.
+            search_context returns short snippets (hybrid retrieval) — do NOT paste full docs into finish.
+            Call search_context at most 1–2 times with distinct queries, then list_objects / mutate / finish.
             Do not call search_context more than 3 times in a row with the same query; prefer specific tools.
             
             TOOL SURFACE (progressive): only Active tools below are callable until you enable more packs.

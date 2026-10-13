@@ -1,8 +1,8 @@
 package com.ispf.server.ai.context;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -18,8 +18,15 @@ class ContextPackSearchServiceExampleAliasTest {
     @Mock
     private ContextPackService contextPackService;
 
-    @InjectMocks
+    @Mock
+    private ContextPackEmbeddingClient embeddingClient;
+
     private ContextPackSearchService searchService;
+
+    @BeforeEach
+    void setUp() {
+        searchService = new ContextPackSearchService(contextPackService, embeddingClient);
+    }
 
     @Test
     void resolvesVirtualAliasToLabTraining() {

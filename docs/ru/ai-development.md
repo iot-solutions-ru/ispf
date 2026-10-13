@@ -44,6 +44,10 @@ python tools/ai-pack/build.py
 
 Пакет включает поля схемы пакета, шаги сценария, типы виджетов, фрагменты документации API, справочные примеры, **driverCatalog**, **featureIndex**, **exampleSummaries**, **docCatalog** (индекс всех `docs/*.md`), **docChunks** для оцениваемого поиска и **competitiveGapIndex** (индекс readiness gaps — BL-182).
 
+### Hybrid retrieval (ADR-0077)
+
+`search_context` ранжирует **docChunks** гибридом lexical + cosine по embeddings (по умолчанию `mode=hybrid`). В ответе — короткие snippets, не полные md. По умолчанию в pack пишется offline `ispf-hash-v1` (см. EN [ai-development](../en/ai-development.md) и [ADR-0077](../en/decisions/0077-contextpack-hybrid-retrieval.md)).
+
 Primary agent router doc: [agent-knowledge](agent-knowledge.md) (`search_context topic=agent-knowledge`). Gaps: `search_context topic=gaps`.
 
 ### Context pack v2 (BL-182)
