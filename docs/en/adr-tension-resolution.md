@@ -18,8 +18,8 @@ Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 | Silent cluster degradation | **Planned → Wave 1C** | [0069](decisions/0069-cluster-consistency.md) × [0029](decisions/0029-cluster-live-variable-replica-sync.md)/[0030](decisions/0030-cluster-config-structure-replica-sync.md) | 1C | Cluster start fail-closed without JetStream (structure) / Redis when live mirror required |
 | Ui-pack on console origin | **Planned → Wave 2A** | [0073](decisions/0073-hosted-ui-pack-trust.md) × [0054](decisions/0054-hosted-ui-packs.md) | 2A | CSP on `/apps/`; partner pack cannot mint full-privilege console token |
 | Five time-series stores | **Planned → Wave 2B** | [0074](decisions/0074-historian-quality-persistence.md) × [0025b](decisions/0025-cassandra-scylla-timeseries-store.md)/[0035](decisions/0035-historian-dual-write.md) | 2B | Quality TCK green on jdbc + ClickHouse; Scylla stays experimental; dual-write secondary failure metric |
-| Breadth vs depth (OT) | **Planned → Wave 3A** | [0067](decisions/0067-field-certified-maturity.md) × [0022](decisions/0022-driver-production-matrix.md) | 3A | First FIELD row + C1 named-plant evidence; OT score moves only then |
-| External KMS / GOST | **Planned → Wave 3B** | [0076](decisions/0076-external-secrets-providers.md) | 3B | SPI only under named tender; until then explicit non-claim |
+| Breadth vs depth (OT) | **Planned** | [0067](decisions/0067-field-certified-maturity.md) × [0022](decisions/0022-driver-production-matrix.md) | 3A | **Done when (ops):** first customer-plant C1 pack complete per [field-c1-evidence-checklist](field-c1-evidence-checklist.md) + `FIELD_EVIDENCE_PATHS` matrix row merged (**FIELD=0** until then). Wave 3A ops shipped: [docs/evidence/field-c1/](../evidence/field-c1/README.md) template |
+| External KMS / GOST | **Closed** (Wave 3B policy) | [0076](decisions/0076-external-secrets-providers.md) | 3B | Policy non-claim without code: provider SPI **only** under named tender; envelope stays **Closed** on [0065](decisions/0065-secrets-key-rotation.md) |
 
 ## Wave summary
 
@@ -31,8 +31,8 @@ Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 | **1C** | Code | Cluster fail-closed JetStream/Redis |
 | **2A** | Code | Ui-pack CSP + scoped token |
 | **2B** | Code | Historian quality TCK + dual-write metric |
-| **3A** | Ops | C1 plant FIELD evidence |
-| **3B** | Policy | No KMS SPI without tender |
+| **3A** | Ops | [field-c1-evidence-checklist](field-c1-evidence-checklist.md) + [evidence/field-c1/](../evidence/field-c1/README.md) template (FIELD=0 until named plant pack + matrix PR) |
+| **3B** | Policy | [0076](decisions/0076-external-secrets-providers.md) non-claim closed; SPI deferred to named tender |
 
 ## Logic-host enforcement modes (Wave 0 align)
 
@@ -44,16 +44,11 @@ Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 
 ## Wave 3A — C1 FIELD checklist (ops)
 
-Do not promote a driver to FIELD until all of:
+Full checklist: [field-c1-evidence-checklist.md](field-c1-evidence-checklist.md). Evidence folder template: [docs/evidence/field-c1/README.md](../evidence/field-c1/README.md).
 
-1. Named plant / site + protocol + integrator ticket ([field-pilot-playbook](field-pilot-playbook.md)).
-2. Driver already PRODUCTION for claimed capabilities.
-3. ≥7 day soak journal under `docs/evidence/`.
-4. WRITE round-trip if WRITE claimed (or explicit POLL-only).
-5. OT / site-owner sign-off artifact.
-6. Matrix row + resolvable `FIELD_EVIDENCE_PATHS` entry; CI green.
+Do not promote a driver to FIELD until all checklist sections pass for a **named customer plant** ([field-pilot-playbook](field-pilot-playbook.md), [0067](decisions/0067-field-certified-maturity.md) §1b). Marketplace REAL installs and lab VLAN soaks never substitute.
 
-Marketplace REAL installs never substitute for this checklist ([0067](decisions/0067-field-certified-maturity.md) §1b).
+**Wave 3A docs status:** checklist + template **Done**; matrix FIELD count remains **0** until the first plant pack and code path above land.
 
 ## Related
 
