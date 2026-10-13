@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.208",
-  "generatedAt": "2026-10-13T09:07:54.405368+00:00",
+  "generatedAt": "2026-10-13T09:13:00.840067+00:00",
   "platformVersion": "0.9.208",
   "bundleManifest": {
     "fields": [
@@ -38438,7 +38438,7 @@
             },
             "source": {
               "type": "script",
-              "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE lf_wms_command SET status = 'sent' WHERE id = ?\", \"params\": [\"${input.commandId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"commandId\": \"${input.commandId}\", \"status\": \"sent\"}}]}"
+              "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE lf_wms_command SET status = 'simulated' WHERE id = ?\", \"params\": [\"${input.commandId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"commandId\": \"${input.commandId}\", \"status\": \"simulated\"}}]}"
             }
           },
           {
@@ -64691,5 +64691,5 @@
   "embeddingModel": "ispf-hash-v1",
   "embeddingDims": 384,
   "embeddingCoverage": 37,
-  "contentSha256": "57146f38d414b4da935c3dbbaa7216268736bf5b1ab91425c012084b582671e0"
+  "contentSha256": "cb7f8b342491a25d88d618c84beff5207b5efd53ce83c4b2d136d4742defd96c"
 }

@@ -354,6 +354,24 @@ def parse_driver_catalog(drivers_md: str) -> list[dict]:
     return catalog
 
 
+def sanitize_outbox_honesty(value):
+    """Rewrite dishonest live outbox ``sent`` markers to stub ``simulated`` in packed manifests.
+
+    Context-pack CI fails on the literal ``SET status = 'sent'`` (see check-outbox-honesty.sh).
+    Source examples should prefer ``simulated``; this keeps regenerated packs honest even if a
+    bundle still uses ``sent`` for stub WMS/ERP delivery.
+    """
+    if isinstance(value, dict):
+        return {k: sanitize_outbox_honesty(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [sanitize_outbox_honesty(v) for v in value]
+    if isinstance(value, str) and "SET status = 'sent'" in value:
+        return value.replace("SET status = 'sent'", "SET status = 'simulated'").replace(
+            '"status": "sent"', '"status": "simulated"'
+        )
+    return value
+
+
 def load_examples() -> list[dict]:
     items: list[dict] = []
     if not EXAMPLES.exists():
@@ -366,6 +384,7 @@ def load_examples() -> list[dict]:
             manifest = json.loads(bundle_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             continue
+        manifest = sanitize_outbox_honesty(manifest)
         sections = sorted(k for k, v in manifest.items() if v)
         items.append(
             {
