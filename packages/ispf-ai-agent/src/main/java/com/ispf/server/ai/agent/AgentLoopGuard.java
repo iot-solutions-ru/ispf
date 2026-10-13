@@ -269,15 +269,20 @@ final class AgentLoopGuard {
             return oscillation;
         }
         String normalized = normalize(toolName);
-        if (DISCOVERY_LOOP_TOOLS.contains(normalized)
-                && totalToolCount(steps, normalized) >= DISCOVERY_HARD_BLOCK) {
-            return Optional.of(new BlockDecision(
-                    "Hard block: discovery tool '" + normalized + "' called "
-                            + totalToolCount(steps, normalized)
-                            + " times this turn — stop looping",
-                    snmpOrDriverExecuteHint(),
-                    false
-            ));
+        if (DISCOVERY_LOOP_TOOLS.contains(normalized)) {
+            // Same tool with different args (e.g. get_automation_schema topic=dashboard vs workflow) is not a loop.
+            String discoveryFp = discoveryArgFingerprint(normalized, toolArgs);
+            long sameCallCount = totalToolCountWithFingerprint(steps, normalized, discoveryFp);
+            if (sameCallCount >= DISCOVERY_HARD_BLOCK) {
+                return Optional.of(new BlockDecision(
+                        "Hard block: discovery tool '" + normalized + "'"
+                                + (discoveryFp.isBlank() ? "" : " (" + discoveryFp + ")")
+                                + " called " + sameCallCount
+                                + " times this turn with the same arguments — stop looping",
+                        snmpOrDriverExecuteHint(),
+                        false
+                ));
+            }
         }
 
         String fingerprint = callFingerprint(normalized, toolArgs);
@@ -311,6 +316,58 @@ final class AgentLoopGuard {
             ));
         }
         return Optional.empty();
+    }
+
+    /**
+     * Discriminator for "same discovery call" — topic/query/path style args, not the tool name alone.
+     */
+    static String discoveryArgFingerprint(String toolName, Map<String, Object> toolArgs) {
+        String normalized = normalize(toolName);
+        Map<String, Object> args = toolArgs == null ? Map.of() : toolArgs;
+        return switch (normalized) {
+            case "get_automation_schema" -> keyArgs(args, "topic");
+            case "search_context" -> keyArgs(args, "topic", "query");
+            case "search_platform_recipes" -> keyArgs(args, "query");
+            case "get_driver_help" -> keyArgs(args, "driverId", "driver", "name");
+            case "get_example_bundle" -> keyArgs(args, "appId", "exampleId");
+            case "get_widget_catalog" -> keyArgs(args, "type", "widgetType");
+            case "get_deploy_playbook" -> keyArgs(args, "playbook", "id", "name");
+            case "list_examples" -> keyArgs(args, "query", "tag");
+            case "list_drivers" -> "";
+            default -> keyArgs(args, "topic", "query", "path", "name");
+        };
+    }
+
+    private static String keyArgs(Map<String, Object> args, String... keys) {
+        StringBuilder sb = new StringBuilder();
+        for (String key : keys) {
+            String value = stringArg(args, key);
+            if (value.isBlank()) {
+                continue;
+            }
+            if (!sb.isEmpty()) {
+                sb.append('|');
+            }
+            sb.append(key).append('=').append(value.toLowerCase(Locale.ROOT));
+        }
+        return sb.toString();
+    }
+
+    private static long totalToolCountWithFingerprint(
+            List<Map<String, Object>> steps,
+            String toolName,
+            String fingerprint
+    ) {
+        if (steps == null || toolName == null) {
+            return 0;
+        }
+        String normalized = normalize(toolName);
+        String want = fingerprint == null ? "" : fingerprint;
+        return steps.stream()
+                .filter(step -> "tool".equals(String.valueOf(step.get("type"))))
+                .filter(step -> normalized.equals(normalize(String.valueOf(step.get("tool")))))
+                .filter(step -> want.equals(discoveryArgFingerprint(normalized, stepMap(step, "arguments"))))
+                .count();
     }
 
     static String callFingerprint(String toolName, Map<String, Object> toolArgs) {

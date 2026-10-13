@@ -28,6 +28,8 @@
 
 **Главное правило:** значения по умолчанию ([0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md)) — для **производительности** и нагрузочного теста. Профиль **demo-idle** (`prod-idle.env`) — **не** заменяет prod при реальной нагрузке. Для продукта с малым фоном на одной JVM можно сознательно вырезать пулы, но не копировать оверлей без анализа очередей.
 
+**Предпочтительны именованные профили.** Выберите строку выше и примените её оверлей (`ISPF_DEPLOY_PROFILE` = `production` | `demo-idle` | `edge` | `throughput`). Отдельные `ISPF_*_WORKERS` / `ISPF_*_THREADS` — **устаревший escape hatch** для разбора бага профиля ([0033](decisions/0033-prod-idle-demostand-tuning.md)). После recreate оператор читает `GET /api/v1/platform/effective-config`: `profile` и `resolvedPools` (снимок min/max, не дамп окружения).
+
 ---
 
 ## Профиль: Производство (промышленная эксплуатация)

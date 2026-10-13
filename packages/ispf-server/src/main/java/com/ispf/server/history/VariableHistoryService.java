@@ -323,6 +323,7 @@ public class VariableHistoryService {
             ));
             sample.setObservedAt(effectiveObserved);
             sample.setValueDouble(numeric.get());
+            applyRowQuality(sample, record);
             samples.put(debounceKey, sample);
         }
         appendRecordSnapshot(objectPath, variableName, record, observedAt, now, samples);
@@ -340,9 +341,6 @@ public class VariableHistoryService {
             return;
         }
         String json = serializeRecordSnapshot(record);
-        if (json == null) {
-            return;
-        }
         String debounceKey = objectPath + "|" + variableName + "|" + RECORD_SNAPSHOT_FIELD;
         Instant effectiveObserved = observedAt != null ? observedAt : now;
         VariableSampleEntity sample = new VariableSampleEntity();
@@ -357,19 +355,36 @@ public class VariableHistoryService {
         ));
         sample.setObservedAt(effectiveObserved);
         sample.setValueText(json);
+        applyRowQuality(sample, record);
         samples.put(debounceKey, sample);
     }
 
+    /** Copies the live row {@code quality} field. Absent or unrecognized stays null, not GOOD. */
+    private static void applyRowQuality(VariableSampleEntity sample, DataRecord record) {
+        Object raw = record.firstRow().get("quality");
+        sample.setQuality(raw instanceof String text ? VariableHistoryWriteRecord.normalizeQuality(text) : null);
+    }
+
     private String serializeRecordSnapshot(DataRecord record) {
+        String json;
         try {
-            String json = objectMapper.writeValueAsString(record);
-            if (json.length() > RECORD_SNAPSHOT_MAX_CHARS) {
-                return json.substring(0, RECORD_SNAPSHOT_MAX_CHARS);
-            }
-            return json;
+            json = objectMapper.writeValueAsString(record);
         } catch (RuntimeException ex) {
-            return null;
+            throw new IllegalStateException("record snapshot serialization failed", ex);
         }
+        return requireCompleteSnapshot(json);
+    }
+
+    static String requireCompleteSnapshot(String json) {
+        if (json == null) {
+            throw new IllegalStateException("record snapshot serialization failed");
+        }
+        if (json.length() > RECORD_SNAPSHOT_MAX_CHARS) {
+            throw new IllegalArgumentException(
+                    "record snapshot exceeds " + RECORD_SNAPSHOT_MAX_CHARS + " characters"
+            );
+        }
+        return json;
     }
 
     private void appendSamplesFromDataRecord(
@@ -784,9 +799,19 @@ public class VariableHistoryService {
         return Optional.empty();
     }
 
-    public record VariableHistorySample(Instant ts, Double value, String text, Instant ingestedAt) {
+    public record VariableHistorySample(
+            Instant ts,
+            Double value,
+            String text,
+            Instant ingestedAt,
+            String quality
+    ) {
         public VariableHistorySample(Instant ts, Double value, String text) {
-            this(ts, value, text, null);
+            this(ts, value, text, null, null);
+        }
+
+        public VariableHistorySample(Instant ts, Double value, String text, Instant ingestedAt) {
+            this(ts, value, text, ingestedAt, null);
         }
     }
 

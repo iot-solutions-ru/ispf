@@ -36,14 +36,15 @@ public final class AgentDeployPlaybook {
                     "validate",
                     3,
                     "Validate bundle manifest",
-                    "validate_bundle appId=... manifest={...} → status OK before any deploy",
+                    "deploy_step_validate appId=... manifest={...} → ship canon OK "
+                            + "(LOGIC_HOST_DEVICE is ERROR). Interactive validate_bundle may only warn.",
                     List.of("validate_bundle", "deploy_step_validate")
             ),
             new DeployStep(
                     "dry_run",
                     4,
                     "Dry-run deploy",
-                    "dry_run_deploy appId=... manifest={...} → review wouldApply paths",
+                    "deploy_step_dry_run appId=... manifest={...} → wouldApply, ship canon still ERROR on LOGIC_HOST_DEVICE",
                     List.of("dry_run_deploy", "deploy_step_dry_run")
             ),
             new DeployStep(
@@ -120,9 +121,10 @@ public final class AgentDeployPlaybook {
                 Otherwise:
                 1. **Discover** — list_objects, search_context, get_automation_schema topic=all
                 2. **Blueprint** — get_example_bundle appId=<from spec or recipes> sections=[manifest,migrations,functions,operatorUi]
-                3. **Validate** — validate_bundle appId=... manifest={...} → status OK (fix errors before proceed)
-                4. **Dry run** — dry_run_deploy appId=... manifest={...} → review wouldApply paths
-                5. **Deploy** — import_package appId=... manifest={...}
+                3. **Validate** — deploy_step_validate appId=... manifest={...} → ship canon OK.
+                   LOGIC_HOST_DEVICE is ERROR on this path. Interactive validate_bundle may only warn and does not authorize import.
+                4. **Dry run** — deploy_step_dry_run appId=... manifest={...} → review wouldApply; same ship canon
+                5. **Deploy** — import_package / deploy_step_import re-check ship canon, then apply
                 6. **Operator shell** — configure_operator_ui from manifest operatorUi (title, dashboards, reports, alarmBar)
                 7. **SCADA/MES verify** — list_objects parentPath=root.platform; list_variables on device paths;
                    invoke_bff / invoke_tree_function for BFF smoke; run_report when reports shipped

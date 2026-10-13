@@ -6,6 +6,7 @@ import type { EventDescriptor, FunctionDescriptor } from "../../types";
 import { renderWithInspector } from "../../test/renderWithInspector";
 import EditDescriptorDialog from "./EditDescriptorDialog";
 import * as api from "../../api";
+import { buildObjectQueryRunFunction } from "../../utils/object/objectQueryDefaults";
 
 vi.mock("../../api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../api")>();
@@ -45,6 +46,12 @@ vi.mock("../functionScript/FunctionScriptStepsEditor", () => ({
 vi.mock("../functionScript/JavaFunctionEditor", () => ({
   default: ({ value, onChange }: { value: string; onChange: (next: string) => void }) => (
     <textarea aria-label="Java source" value={value} onChange={(event) => onChange(event.target.value)} />
+  ),
+}));
+
+vi.mock("./ObjectQuerySpecField", () => ({
+  default: ({ value }: { value: string }) => (
+    <div data-testid="object-query-spec" data-value={value} />
   ),
 }));
 
@@ -300,6 +307,68 @@ describe("EditDescriptorDialog", () => {
       ...initial,
       invokeRoles: [],
     });
+  });
+
+  it("locks query catalog functions to object-query source type", async () => {
+    const user = userEvent.setup();
+    const runFn = buildObjectQueryRunFunction();
+    renderWithInspector(
+      <QueryClientProvider client={queryClient}>
+        <EditDescriptorDialog
+          objectPath="root.platform.queries.device-scan"
+          kind="function"
+          initial={runFn}
+          onClose={vi.fn()}
+          onSaved={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByRole("combobox", { name: "Source type" })).not.toBeInTheDocument();
+    expect(screen.getByText(/Query catalog objects use Object Query only/i)).toBeInTheDocument();
+    expect(screen.getByTestId("object-query-spec")).toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "Edit as JSON (advanced)" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(api.upsertFunction).toHaveBeenCalled());
+    expect(api.upsertFunction).toHaveBeenCalledWith(
+      "root.platform.queries.device-scan",
+      expect.objectContaining({
+        name: "run",
+        sourceType: "object-query",
+        sourceBody: runFn.sourceBody,
+      }),
+    );
+  });
+
+  it("coerces a non-OQ function on a query catalog object when saved", async () => {
+    const user = userEvent.setup();
+    renderWithInspector(
+      <QueryClientProvider client={queryClient}>
+        <EditDescriptorDialog
+          objectPath="root.platform.queries.legacy"
+          kind="function"
+          initial={{
+            ...javaFunction,
+            name: "legacy",
+            sourceType: "java",
+          }}
+          onClose={vi.fn()}
+          onSaved={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByRole("combobox", { name: "Source type" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(api.upsertFunction).toHaveBeenCalled());
+    expect(api.upsertFunction).toHaveBeenCalledWith(
+      "root.platform.queries.legacy",
+      expect.objectContaining({
+        name: "legacy",
+        sourceType: "object-query",
+      }),
+    );
   });
 
   it("does not leave advanced mode while its JSON is invalid", async () => {

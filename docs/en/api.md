@@ -14,6 +14,7 @@ Role matrix: [security](security.md).
 | Method | Path | Roles | Description |
 |--------|------|-------|-------------|
 | GET | `/api/v1/info` | public | Name, version, `javaVersion`, `springBootVersion`, `capabilities[]` |
+| GET | `/api/v1/platform/effective-config` | operator+ | Resolved replica profile + `resolvedPools` min/max snapshot ([0033](decisions/0033-prod-idle-demostand-tuning.md)) |
 | GET | `/api/v1/platform/metrics` | admin | Platform summary metrics (runtime, DB, tree, drivers, connections, security, historian, automation) |
 | GET | `/api/v1/platform/haystack/export` | operator+ | Haystack grid export for a subtree (`rootPath`, `includePoints`) |
 | GET | `/api/v1/platform/haystack/search` | operator+ | AND tag search (`tags`, `rootPath`, `entityKind`, `limit`) |

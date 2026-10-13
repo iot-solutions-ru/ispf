@@ -263,7 +263,9 @@ DONE    = validate → dry-run/preview → apply  (P10)
 
 **Жёсткое правило:** объект с логикой приложения / оркестрации / twin **не** должен иметь `ObjectType.DEVICE`. DEVICE — только драйверы и телеметрия.
 
-**Сообщается (ADR-0060):** `BundleManifestValidator` предупреждает о `functions[]` на DEVICE (`LOGIC_HOST_DEVICE`), но не блокирует деплой — это ошибка логики построения решения, а не платформы. Предпочтительно `root.platform.singleton-blueprints.{name}` через SINGLETON blueprint.
+**Жёсткое правило (канон):** объект с application / orchestration / twin logic — не `ObjectType.DEVICE`. DEVICE только для драйверов и телеметрии.
+
+**Применение (ADR-0060):** authoring validate/deploy сообщает `LOGIC_HOST_DEVICE` как **WARNING** (само по себе не ставит `status: ERROR`). Ship-поверхности делают тот же код **ERROR**: CI `examples/`, `ispf validate --strict`, marketplace catalog gate. Предпочтительно `root.platform.singleton-blueprints.{name}` через SINGLETON. Программа: [adr-tension-resolution](adr-tension-resolution.md).
 
 | Нужно | Вид blueprint | Типичное размещение | Заметки |
 |-------|---------------|---------------------|---------|

@@ -70,6 +70,20 @@ class DropInUiPackLoaderTest {
     }
 
     @Test
+    void readsPartnerTrustFromManifest() throws Exception {
+        Path source = tempDir.resolve("partner");
+        Files.createDirectories(source);
+        Files.writeString(source.resolve("ui-pack.json"), """
+                {"appId":"partner-app","entry":"index.html","uiPackTrust":"signedPartner"}
+                """);
+        Files.writeString(source.resolve("index.html"), "<html></html>");
+        loader.installPackDirectory(source, "partner-app");
+        assertThat(loader.uiPackTrust("partner-app")).isEqualTo("signedPartner");
+        assertThat(loader.packSummary("partner-app").get("uiPackTrust")).isEqualTo("signedPartner");
+        assertThat(loader.uiPackTrust("missing")).isEqualTo("firstParty");
+    }
+
+    @Test
     void rejectsPathEscapeEntry() {
         assertThatThrownBy(() -> {
             Path source = tempDir.resolve("bad");
