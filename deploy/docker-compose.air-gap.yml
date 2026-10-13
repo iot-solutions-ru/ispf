@@ -34,10 +34,12 @@ services:
       ISPF_SERVER_PORT: "8080"
       ISPF_BOOTSTRAP_FIXTURES_ENABLED: "false"
       ISPF_DRIVER_PACKS_DIR: /opt/ispf/drivers
-      ISPF_LICENSE_ENFORCE: ${ISPF_LICENSE_ENFORCE:-false}
-      ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES: ${ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES:-false}
+      # Air-gap default = prod license posture (RSA app-bundle gate). Override to false for lab-only.
+      # Cosign / image publisher signatures are NOT implemented — see docs/evidence/air-gap-signing/.
+      ISPF_LICENSE_ENFORCE: ${ISPF_LICENSE_ENFORCE:-true}
+      ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES: ${ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES:-true}
       ISPF_LICENSE_PUBLIC_KEY_PEM: ${ISPF_LICENSE_PUBLIC_KEY_PEM:-}
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
     volumes:
       - ./artifacts/ispf-server.jar:/opt/ispf/ispf-server.jar:ro
       - ./artifacts/drivers:/opt/ispf/drivers:ro

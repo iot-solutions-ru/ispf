@@ -109,10 +109,10 @@ Program wave 8 (~9.8) по-прежнему **отозвана**.
 | Единая модель | 0.20 | **8.5** | 9.5 | Глубина ontology vs peers |
 | AI-авторинг | 0.25 | **9.0** | 9.5 | Multi-day plant journal |
 | Формальные гарантии | 0.25 | **8.3** | 9.5 | `deploy?strict=true` Done; авторский validate / голый HTTP deploy без `strict` — WARNING by design |
-| Открытость | 0.15 | **8.7** | 9.5 | ui-pack same-origin (0073) Done; Partner Portal external; Cosign Partial; separate origin не заявлен |
-| Air-gap / суверенитет | 0.15 | **7.7** | 9.5 | **Partial** — playbook `ISPF_AI_BASE_URL` и заготовка evidence; Cosign нет; датированного прогона нет |
+| Открытость | 0.15 | **8.7** | 9.5 | RSA require-signed на air-gap compose Done; Cosign image signing **Gap**; Partner Portal; separate origin не заявлен |
+| Air-gap / суверенитет | 0.15 | **7.8** | 9.5 | **Partial** — RSA air-gap gate default + [air-gap-signing](../evidence/air-gap-signing/README.md); Cosign Gap; нет dated LLM soak |
 
-**Weighted today:** **8.49** (было **8.38**). Подъём скромный и честно Partial: гарантии 8.0→8.3, air-gap 7.5→7.7.
+**Weighted today:** **8.51** (было **8.49**). Air-gap +0.1 за RSA gate default; Cosign без claim.
 
 ---
 

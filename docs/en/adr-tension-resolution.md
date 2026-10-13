@@ -7,7 +7,7 @@ Program to remove contradictions between Accepted ADRs, `AGENTS.md`, and scoreca
 
 Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 
-**Program status (2026-10-13):** Waves **1A–2B** Closed on `main` (stack via [#499](https://github.com/iot-solutions-ru/ispf/pull/499); CH opt-in [#503](https://github.com/iot-solutions-ru/ispf/pull/503); ui-pack cookie gate [#505](https://github.com/iot-solutions-ru/ispf/pull/505)). Ship path: `POST .../deploy?strict=true` / `ispf deploy --strict` refuse `LOGIC_HOST_DEVICE` before apply; unqualified HTTP deploy stays authoring WARNING. Open claim work: Wave **3A** customer-plant FIELD; Cosign / signed air-gap evidence; separate ui-pack origin **not claimed**. KMS/GOST stays [0076](decisions/0076-external-secrets-providers.md) non-claim until a named tender.
+**Program status (2026-10-13):** Waves **1A–2B** Closed on `main` (stack via [#499](https://github.com/iot-solutions-ru/ispf/pull/499); CH opt-in [#503](https://github.com/iot-solutions-ru/ispf/pull/503); ui-pack cookie gate [#505](https://github.com/iot-solutions-ru/ispf/pull/505); ship deploy [#513](https://github.com/iot-solutions-ru/ispf/pull/513)). Ship path: `POST .../deploy?strict=true` / `ispf deploy --strict`. Air-gap RSA require-signed default **Done** ([air-gap-signing](../evidence/air-gap-signing/README.md)); **Cosign** image signing remains **Gap**. Open claim work: Wave **3A** customer-plant FIELD; Cosign verify evidence; separate ui-pack origin **not claimed**. KMS/GOST stays [0076](decisions/0076-external-secrets-providers.md) non-claim until a named tender.
 
 ## Resolution table
 
