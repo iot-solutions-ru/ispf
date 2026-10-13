@@ -38,8 +38,10 @@ Operators and agents choose a **named profile**, then apply the matching env ove
 | Named profiles + `prod-idle` env overlay | **Done** |
 | Docs as primary guide ([demostands](../demostands.md)) | **Done** |
 | Autodetect profile from hardware / device count | **Gap** |
-| Effective-config API (“what is actually applied”) | **Gap** |
-| Deprecate ad-hoc per-tier env in favor of profile only | **Partial** — profiles documented; knobs still exist for escape hatches |
+| Effective-config API (“what is actually applied”) | **Done** — `GET /api/v1/platform/effective-config` (operator read): resolved replica profile, capabilities, `clusterEnabled`, named deploy hint when set, and a `resolvedPools` min/max snapshot. Not a full environment dump. |
+| Deprecate ad-hoc per-tier env in favor of profile only | **Partial** — docs mark per-tier env as a **deprecated escape hatch**. Knobs still resolve at runtime. Prefer the named profile overlay and confirm with the effective-config API. |
+
+Operators confirm the running JVM with `GET /api/v1/platform/effective-config` (same read role as other operator APIs, not anonymous `/info`). The body has `profile` (resolved `replicaProfile`, `replicaCapabilities`, `clusterEnabled`, and a named deploy hint when one is set) and `resolvedPools` (min/max from `resolved*Workers` / `resolved*Threads` on cluster, object-change, runtime telemetry, variable history, and event journal). Optional `profile.deployProfile` is `ispf.deploy.profile` / `ISPF_DEPLOY_PROFILE` (`production`, `demo-idle`, `edge`, `throughput`). `profile.historianDeployProfile` is `ispf.historian.deploy-profile` when set. Spring `activeProfiles` is included when the process has any.
 
 ### 2. `prod-idle` profile (env overlay for demo / idle)
 
@@ -51,9 +53,9 @@ File [`deploy/ispf-server.prod-idle.env`](../../../deploy/ispf-server.prod-idle.
 - `ISPF_PLATFORM_METRICS_PROBE_ENABLED=false` at boot;
 - `ISPF_CLUSTER_JOB_CONSUMER_ENABLED=false` on single-node without async job queue.
 
-**Convention:** when `elastic=false`, Spring `*Properties.resolved*()` uses the **fixed** `*WORKERS`/`*THREADS` field.
+**Convention:** when `elastic=false`, Spring `*Properties.resolved*()` uses the **fixed** `*WORKERS`/`*THREADS` field. The effective-config `resolvedPools` map reports those numbers.
 
-Apply: merge into `ispf-server.env` + **recreate** container ([`deploy/vps-apply-prod-idle-env.sh`](../../../deploy/vps-apply-prod-idle-env.sh) — template for any host).
+Apply the **named overlay** (merge into `ispf-server.env` + **recreate** container — [`deploy/vps-apply-prod-idle-env.sh`](../../../deploy/vps-apply-prod-idle-env.sh)). Set `ISPF_DEPLOY_PROFILE=demo-idle` (or `edge` / `production` / `throughput`) so the API can name the overlay. Copying individual per-tier `ISPF_*_WORKERS` / `ISPF_*_THREADS` keys outside that overlay is a **deprecated escape hatch** for diagnosing a profile bug, not the operator interface.
 
 ### 3. Driver publish modes
 
