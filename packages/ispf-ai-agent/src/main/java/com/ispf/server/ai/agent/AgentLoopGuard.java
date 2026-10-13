@@ -14,10 +14,14 @@ final class AgentLoopGuard {
     /** After this many prior calls of the same discovery tool, the next call is hard-blocked. */
     private static final int DISCOVERY_HARD_BLOCK = 2;
     /**
-     * Per-dashboard/mimic path: after this many {@code add_dashboard_widget} / {@code add_mimic_elements}
-     * calls, hard-block and force a batch layout/diagram tool.
+     * Incremental UI builders (widget/element adds): after this many prior same-target calls,
+     * hard-block and stop the turn — batch tools must be used instead.
      */
-    private static final int MUTATE_SPAM_HARD_BLOCK = 4;
+    private static final int BATCH_INCREMENTAL_HARD_BLOCK = 2;
+    /** Same read/list fingerprint (tool + target): hard-block and stop the turn. */
+    private static final int READ_SPAM_HARD_BLOCK = 3;
+    /** Safety net: any tool with the same fingerprint this many times → stop (prevents UI log floods). */
+    private static final int IDENTICAL_CALL_HARD_BLOCK = 5;
 
     private static final Set<String> DISCOVERY_LOOP_TOOLS = Set.of(
             "get_driver_help",
@@ -31,9 +35,39 @@ final class AgentLoopGuard {
             "get_deploy_playbook"
     );
 
-    private static final Set<String> MUTATE_SPAM_TOOLS = Set.of(
+    /** Prefer one batch write over many incremental adds — noisy in Studio step log. */
+    private static final Set<String> BATCH_INCREMENTAL_TOOLS = Set.of(
             "add_dashboard_widget",
             "add_mimic_elements"
+    );
+
+    private static final Set<String> READ_SPAM_TOOLS = Set.of(
+            "list_objects",
+            "get_object",
+            "list_variables",
+            "describe_variables",
+            "get_dashboard_layout",
+            "get_mimic_diagram",
+            "list_mimic_symbols",
+            "list_functions",
+            "get_function"
+    );
+
+    /** Args that identify the target of a call (body payloads intentionally excluded). */
+    private static final List<String> FINGERPRINT_KEYS = List.of(
+            "path",
+            "parent",
+            "parentPath",
+            "dashboardPath",
+            "mimicPath",
+            "devicePath",
+            "name",
+            "query",
+            "topic",
+            "type",
+            "pack",
+            "templateId",
+            "driverId"
     );
 
     private AgentLoopGuard() {
@@ -134,22 +168,9 @@ final class AgentLoopGuard {
                     Do NOT embed manifest JSON in summary (no ``` fences) or in result.plan.sections. \
                     Re-calling get_example_bundle is unnecessary unless the user asks for another appId/sections.""";
         }
-        if ("add_dashboard_widget".equals(lastTool)) {
-            long adds = totalToolCount(steps, "add_dashboard_widget");
-            if (adds >= 2) {
-                return """
-                        Stop add_dashboard_widget loops. Prefer ONE set_dashboard_layout path=<dashboard> \
-                        template= or layoutJson with all widgets (columns=84). Then finish. \
-                        Do NOT call add_dashboard_widget again for every KPI/chart.""";
-            }
-        }
-        if ("add_mimic_elements".equals(lastTool)) {
-            long adds = totalToolCount(steps, "add_mimic_elements");
-            if (adds >= 2) {
-                return """
-                        Stop add_mimic_elements loops. Prefer ONE save_mimic_diagram path=<mimic> \
-                        with the full elements[] array, then get_mimic_diagram to verify, then finish.""";
-            }
+        String batchHint = batchIncrementalHint(lastTool, steps);
+        if (batchHint != null) {
+            return batchHint;
         }
         if (isRepeatedTool(lastTool, steps)) {
             if (DISCOVERY_LOOP_TOOLS.contains(normalize(lastTool))) {
@@ -227,34 +248,65 @@ final class AgentLoopGuard {
                     "Hard block: discovery tool '" + normalized + "' called "
                             + totalToolCount(steps, normalized)
                             + " times this turn — stop looping",
-                    snmpOrDriverExecuteHint()
+                    snmpOrDriverExecuteHint(),
+                    false
             ));
         }
-        if (MUTATE_SPAM_TOOLS.contains(normalized)) {
-            String pathKey = mutateTargetPath(normalized, toolArgs);
-            long prior = totalToolCountOnPath(steps, normalized, pathKey);
-            if (prior >= MUTATE_SPAM_HARD_BLOCK) {
-                String hint = "add_dashboard_widget".equals(normalized)
-                        ? """
-                        Hard block: too many add_dashboard_widget on the same dashboard. \
-                        Call set_dashboard_layout path=<dashboard> template= or one layoutJson with all widgets, \
-                        then finish. Do not add widgets one-by-one."""
-                        : """
-                        Hard block: too many add_mimic_elements on the same mimic. \
-                        Call save_mimic_diagram path=<mimic> with full elements[], then finish.""";
-                return Optional.of(new BlockDecision(
-                        "Hard block: '" + normalized + "' called " + prior
-                                + " times this turn"
-                                + (pathKey.isBlank() ? "" : " on " + pathKey)
-                                + " — stop looping",
-                        hint
-                ));
-            }
+
+        String fingerprint = callFingerprint(normalized, toolArgs);
+        long priorSame = totalFingerprintCount(steps, fingerprint);
+
+        if (BATCH_INCREMENTAL_TOOLS.contains(normalized) && priorSame >= BATCH_INCREMENTAL_HARD_BLOCK) {
+            return Optional.of(new BlockDecision(
+                    "Hard block: '" + normalized + "' repeated " + priorSame
+                            + " times on the same target — stop flooding the step log",
+                    batchIncrementalHardHint(normalized),
+                    true
+            ));
+        }
+        if (READ_SPAM_TOOLS.contains(normalized) && priorSame >= READ_SPAM_HARD_BLOCK) {
+            return Optional.of(new BlockDecision(
+                    "Hard block: '" + normalized + "' repeated " + priorSame
+                            + " times with the same arguments — stop looping",
+                    "Use the prior tool result. Change path/parent/query or finish with a summary. "
+                            + "Do not re-list the same folder.",
+                    true
+            ));
+        }
+        if (priorSame >= IDENTICAL_CALL_HARD_BLOCK) {
+            return Optional.of(new BlockDecision(
+                    "Hard block: identical '" + normalized + "' call repeated " + priorSame
+                            + " times this turn — stop flooding the step log",
+                    "Change strategy (different tool/args) or finish. "
+                            + "Batch writes (set_dashboard_layout / save_mimic_diagram / one create_object) "
+                            + "beat dozens of tiny OK steps.",
+                    true
+            ));
         }
         return Optional.empty();
     }
 
-    static String mutateTargetPath(String toolName, Map<String, Object> toolArgs) {
+    static String callFingerprint(String toolName, Map<String, Object> toolArgs) {
+        String normalized = normalize(toolName);
+        Map<String, Object> args = toolArgs == null ? Map.of() : toolArgs;
+        StringBuilder sb = new StringBuilder(normalized);
+        for (String key : FINGERPRINT_KEYS) {
+            String value = stringArg(args, key);
+            if (!value.isBlank()) {
+                sb.append('|').append(key).append('=').append(value.toLowerCase(Locale.ROOT));
+            }
+        }
+        // Batch-incremental: ignore widget/element body — same dashboard/mimic path is the spam signal.
+        if (BATCH_INCREMENTAL_TOOLS.contains(normalized) && sb.indexOf("|path=") < 0) {
+            String path = mutateTargetPath(args);
+            if (!path.isBlank()) {
+                sb.append("|path=").append(path);
+            }
+        }
+        return sb.toString();
+    }
+
+    static String mutateTargetPath(Map<String, Object> toolArgs) {
         Map<String, Object> args = toolArgs == null ? Map.of() : toolArgs;
         String path = stringArg(args, "path");
         if (path.isBlank()) {
@@ -263,33 +315,57 @@ final class AgentLoopGuard {
         if (path.isBlank()) {
             path = stringArg(args, "mimicPath");
         }
+        if (path.isBlank()) {
+            path = stringArg(args, "devicePath");
+        }
         return path.toLowerCase(Locale.ROOT);
     }
 
-    private static long totalToolCountOnPath(
-            List<Map<String, Object>> steps,
-            String toolName,
-            String pathKey
-    ) {
-        if (steps == null || toolName == null) {
+    private static long totalFingerprintCount(List<Map<String, Object>> steps, String fingerprint) {
+        if (steps == null || fingerprint == null || fingerprint.isBlank()) {
             return 0;
         }
-        String normalized = normalize(toolName);
-        String want = pathKey == null ? "" : pathKey;
         return steps.stream()
                 .filter(step -> "tool".equals(String.valueOf(step.get("type"))))
-                .filter(step -> normalized.equals(normalize(String.valueOf(step.get("tool")))))
-                .filter(step -> {
-                    String stepPath = mutateTargetPath(normalized, stepMap(step, "arguments"));
-                    if (want.isBlank() && stepPath.isBlank()) {
-                        return true;
-                    }
-                    return !want.isBlank() && want.equals(stepPath);
-                })
+                .filter(step -> fingerprint.equals(callFingerprint(
+                        String.valueOf(step.get("tool")),
+                        stepMap(step, "arguments")
+                )))
                 .count();
     }
 
-    record BlockDecision(String error, String hint) {
+    private static String batchIncrementalHint(String lastTool, List<Map<String, Object>> steps) {
+        String normalized = normalize(lastTool);
+        if (!BATCH_INCREMENTAL_TOOLS.contains(normalized)) {
+            return null;
+        }
+        if (totalToolCount(steps, normalized) < 1) {
+            return null;
+        }
+        return batchIncrementalHardHint(normalized);
+    }
+
+    private static String batchIncrementalHardHint(String normalized) {
+        if ("add_dashboard_widget".equals(normalized)) {
+            return """
+                    Stop add_dashboard_widget noise. Prefer ONE set_dashboard_layout path=<dashboard> \
+                    template= or layoutJson with all widgets (columns=84). Then finish. \
+                    Do NOT call add_dashboard_widget for every KPI/chart.""";
+        }
+        return """
+                Stop add_mimic_elements noise. Prefer ONE save_mimic_diagram path=<mimic> \
+                with the full elements[] array, then get_mimic_diagram to verify, then finish.""";
+    }
+
+    /**
+     * @param stopTurn when true, TreeFirstAgentService ends the turn after recording the block
+     *                 (avoids ERROR spam in the Studio step log).
+     */
+    record BlockDecision(String error, String hint, boolean stopTurn) {
+        BlockDecision(String error, String hint) {
+            this(error, hint, false);
+        }
+
         boolean blocked() {
             return error != null && !error.isBlank();
         }

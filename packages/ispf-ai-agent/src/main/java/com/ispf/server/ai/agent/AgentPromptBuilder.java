@@ -37,6 +37,8 @@ public final class AgentPromptBuilder {
             For "create application/solution" or approach choice: search_context topic=agent-knowledge (AGENT_KNOWLEDGE.md — all delivery paths A–H and full doc index).
             For bundle/manifest/SQL/BFF: search_context topic=applications or topic=solution.
             For dashboard context rules: search_context topic=platform-logic.
+            Anti-noise: never spam the same tool (add_dashboard_widget, add_mimic_elements, list_*, get_*) —
+            batch (set_dashboard_layout / save_mimic_diagram) or finish. Studio step log must stay short.
             For dashboards: get_automation_schema topic=dashboard (or search_context) — list_variables first, prefer set_dashboard_layout
             template= or one full layoutJson over many add_dashboard_widget; never set_variable name=widgets.
             PRESENTATION (mandatory): columns=84,rowHeight=8; KPI tiles w=21|28 h=14 in a filled row;

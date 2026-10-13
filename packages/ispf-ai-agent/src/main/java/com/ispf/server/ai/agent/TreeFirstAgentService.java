@@ -733,6 +733,8 @@ public class TreeFirstAgentService {
                 long toolStartNanos = System.nanoTime();
                 String executedTool = toolName;
                 Map<String, Object> toolResult;
+                boolean stopTurnForLoopNoise = false;
+                String loopNoiseHint = null;
                 if (profile == AgentProfile.OPERATOR) {
                     OperatorAgentTurnGuard.BlockDecision block = OperatorAgentTurnGuard.checkBeforeTool(
                             toolName,
@@ -800,8 +802,13 @@ public class TreeFirstAgentService {
                             toolResult.put("status", "ERROR");
                             toolResult.put("error", loopBlock.get().error());
                             toolResult.put("hint", loopBlock.get().hint());
+                            toolResult.put("loopGuardBlocked", true);
                             executedTool = toolName;
                             agentMetrics.recordGuardBlock("loopGuard");
+                            if (loopBlock.get().stopTurn()) {
+                                stopTurnForLoopNoise = true;
+                                loopNoiseHint = loopBlock.get().hint();
+                            }
                         } else if (!toolRegistry.isKnownTool(toolName)) {
                             toolResult = new LinkedHashMap<>(toolRegistry.unknownToolResult(toolName));
                             executedTool = toolName;
@@ -904,6 +911,31 @@ public class TreeFirstAgentService {
                 steps.add(toolStep);
                 publishStep(session.sessionId(), toolStep);
                 syncRunPlanState(session);
+
+                if (stopTurnForLoopNoise) {
+                    finishSummary = AgentStepHumanizer.isRussian(uiLocale)
+                            ? ("Остановил повтор одних и тех же шагов — так лог Studio не засоряется. "
+                            + "Продолжите с пакетным инструментом или уточните задачу.")
+                            : ("Stopped repeating the same steps so the Studio log stays readable. "
+                            + "Continue with a batch tool or clarify the next goal.");
+                    finishResult = new LinkedHashMap<>();
+                    finishResult.put("interactive", true);
+                    finishResult.put("loopNoiseStopped", true);
+                    if (loopNoiseHint != null && !loopNoiseHint.isBlank()) {
+                        finishResult.put("hint", loopNoiseHint);
+                    }
+                    finishResult.put("suggestions", List.of(
+                            Map.of(
+                                    "label", AgentStepHumanizer.continueLabel(uiLocale),
+                                    "message", AgentStepHumanizer.isRussian(uiLocale)
+                                            ? "Продолжай: set_dashboard_layout или save_mimic_diagram одним вызовом, без серии мелких add_*."
+                                            : "Continue: use set_dashboard_layout or save_mimic_diagram in one call — no add_* spam.",
+                                    "primary", true
+                            )
+                    ));
+                    finalStatus = AgentTurnStatus.OK;
+                    break;
+                }
 
                 if ("list_reports".equals(executedTool)
                         && "OK".equals(String.valueOf(toolResult.get("status")))) {

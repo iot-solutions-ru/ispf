@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentLoopGuardTest {
@@ -21,6 +22,7 @@ class AgentLoopGuardTest {
         var block = AgentLoopGuard.checkHardBlock("get_driver_help", steps);
         assertTrue(block.isPresent());
         assertTrue(block.get().blocked());
+        assertFalse(block.get().stopTurn());
         assertTrue(block.get().error().contains("stop looping"));
         assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("create_object"));
         assertTrue(block.get().hint().contains("snmp-agent-v1"));
@@ -121,34 +123,30 @@ class AgentLoopGuardTest {
     }
 
     @Test
-    void hintsSetDashboardLayoutAfterRepeatedAddWidget() {
+    void hintsSetDashboardLayoutAfterFirstAddWidget() {
         String dash = "root.platform.dashboards.virt-cluster-dashboard";
-        List<Map<String, Object>> steps = List.of(
-                widgetStep(dash),
-                widgetStep(dash)
-        );
+        List<Map<String, Object>> steps = List.of(widgetStep(dash));
         String hint = AgentLoopGuard.continuationHint("add_dashboard_widget", steps, 96);
         assertTrue(hint.toLowerCase(Locale.ROOT).contains("set_dashboard_layout"));
         assertTrue(hint.toLowerCase(Locale.ROOT).contains("add_dashboard_widget"));
     }
 
     @Test
-    void hardBlocksFifthAddDashboardWidgetOnSamePath() {
+    void hardBlocksThirdAddDashboardWidgetOnSamePathAndStopsTurn() {
         String dash = "root.platform.dashboards.virt-cluster-dashboard";
         List<Map<String, Object>> steps = List.of(
-                widgetStep(dash),
-                widgetStep(dash),
                 widgetStep(dash),
                 widgetStep(dash)
         );
         var block = AgentLoopGuard.checkHardBlock(
                 "add_dashboard_widget",
-                Map.of("path", dash),
+                Map.of("path", dash, "widget", Map.of("id", "kpi-3")),
                 steps
         );
         assertTrue(block.isPresent());
         assertTrue(block.get().blocked());
-        assertTrue(block.get().error().contains("stop looping"));
+        assertTrue(block.get().stopTurn());
+        assertTrue(block.get().error().toLowerCase(Locale.ROOT).contains("flood"));
         assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("set_dashboard_layout"));
     }
 
@@ -156,24 +154,20 @@ class AgentLoopGuardTest {
     void doesNotHardBlockAddWidgetOnDifferentDashboards() {
         List<Map<String, Object>> steps = List.of(
                 widgetStep("root.platform.dashboards.a"),
-                widgetStep("root.platform.dashboards.b"),
-                widgetStep("root.platform.dashboards.c"),
-                widgetStep("root.platform.dashboards.d")
+                widgetStep("root.platform.dashboards.b")
         );
         var block = AgentLoopGuard.checkHardBlock(
                 "add_dashboard_widget",
-                Map.of("path", "root.platform.dashboards.e"),
+                Map.of("path", "root.platform.dashboards.c"),
                 steps
         );
         assertTrue(block.isEmpty());
     }
 
     @Test
-    void hardBlocksFifthAddMimicElementsOnSamePath() {
+    void hardBlocksThirdAddMimicElementsOnSamePath() {
         String mimic = "root.platform.mimics.plant";
         List<Map<String, Object>> steps = List.of(
-                mimicStep(mimic),
-                mimicStep(mimic),
                 mimicStep(mimic),
                 mimicStep(mimic)
         );
@@ -183,7 +177,62 @@ class AgentLoopGuardTest {
                 steps
         );
         assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
         assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("save_mimic_diagram"));
+    }
+
+    @Test
+    void hardBlocksRepeatedListObjectsOnSameParent() {
+        String parent = "root.platform.devices";
+        List<Map<String, Object>> steps = List.of(
+                listStep(parent),
+                listStep(parent),
+                listStep(parent)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "list_objects",
+                Map.of("parent", parent),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
+    }
+
+    @Test
+    void hardBlocksIdenticalSetVariableSafetyNet() {
+        String path = "root.platform.devices.demo";
+        List<Map<String, Object>> steps = List.of(
+                setVarStep(path, "x"),
+                setVarStep(path, "x"),
+                setVarStep(path, "x"),
+                setVarStep(path, "x"),
+                setVarStep(path, "x")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "set_variable",
+                Map.of("path", path, "name", "x", "value", "6"),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
+    }
+
+    @Test
+    void allowsDistinctSetVariableNamesOnSamePath() {
+        String path = "root.platform.devices.demo";
+        List<Map<String, Object>> steps = List.of(
+                setVarStep(path, "a"),
+                setVarStep(path, "b"),
+                setVarStep(path, "c"),
+                setVarStep(path, "d"),
+                setVarStep(path, "e")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "set_variable",
+                Map.of("path", path, "name", "f", "value", "1"),
+                steps
+        );
+        assertTrue(block.isEmpty());
     }
 
     private static Map<String, Object> step(String tool) {
@@ -203,6 +252,22 @@ class AgentLoopGuardTest {
                 "type", "tool",
                 "tool", "add_mimic_elements",
                 "arguments", Map.of("path", path)
+        );
+    }
+
+    private static Map<String, Object> listStep(String parent) {
+        return Map.of(
+                "type", "tool",
+                "tool", "list_objects",
+                "arguments", Map.of("parent", parent)
+        );
+    }
+
+    private static Map<String, Object> setVarStep(String path, String name) {
+        return Map.of(
+                "type", "tool",
+                "tool", "set_variable",
+                "arguments", Map.of("path", path, "name", name, "value", "1")
         );
     }
 }
