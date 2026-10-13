@@ -2,7 +2,8 @@
 
 ## Status
 
-**Accepted** (2026-08-05) — Runtime shipped: `DropInUiPackLoader`, `HostedUiPackFilter` (`/apps/<appId>/`), marketplace `artifactKind: ui-pack`, companion `uiPackSlug` on application install. Dogfood demo: `examples/marketplace-ui-pack-demo/`. Oil Control SPA (`oil-control-azs-web`) remains the first production acceptance candidate.
+**Accepted** (2026-08-05) — packaging/serving runtime shipped.  
+**Trust residual** (same-origin, CSP, partner isolation) is owned by [0073-hosted-ui-pack-trust](0073-hosted-ui-pack-trust.md) — do not read 0054 as “browser isolation Done”.
 
 ## Context
 
@@ -26,7 +27,7 @@ Introduce a generic platform capability **hosted UI packs**, parallel to symbol/
 4. Operator launcher: **Open app UI** → `hostedUiUrl` (`/apps/<appId>/`) or bridge `externalSpaUrl`.
 5. Optional listing field: `uiPackSlug` — free application install also downloads the companion ui-pack.
 6. Optional bundle field: `operatorUi.uiPack = { packId, version, entry }` / `externalSpaUrl` / `spaNav` — **persisted** into operator UI extras on deploy and returned by `GET …/operator-apps/{appId}/ui`.
-7. Security: path sandbox, size limits (`ispf.ui-pack.max-zip-bytes`); **no** server-side JS execution of pack content.
+7. Security (server): path sandbox, size limits (`ispf.ui-pack.max-zip-bytes`); **no** server-side JS execution of pack content. **Browser trust** (CSP, capability token, partner class) — [0073](0073-hosted-ui-pack-trust.md).
 8. Signing / `minIspfVersion` follow existing marketplace pack rules.
 9. **Shared-origin PWA:** web-console Service Worker `navigateFallbackDenylist` **must** include `/^\/apps(?:\/|$)/` so an active console SW cannot replace ui-pack documents with `index.html`. Server-side `WebConsoleSpaFallbackFilter` already skips `/apps/`.
 10. **Open app UI without hard refresh:** Operator launcher temporarily unregisters the console SW before opening same-origin `/apps/…` (then re-registers). First load of a build that includes the denylist also runs a one-shot SW migration reload so stale workers are dropped without Ctrl+F5.
@@ -82,9 +83,18 @@ This is a **generic packaging/serving primitive** (like symbol packs), not an Oi
 - **Nginx SPA fallback steals `/apps/`** on split VPS deploy — always keep `location ^~ /apps/` → JVM (see above). Symptom: public URL shows Admin Console; `curl :8080/apps/...` shows the real pack.
 - Subpath base URL mistakes break asset loading — document pack contract clearly.
 - Large SPA zips increase marketplace artifact size — enforce limits.
+- **Same-origin SPA** shares cookies/storage with the console; login inside the pack can mint a token with the user’s full rights — honesty and hardening path in [0073](0073-hosted-ui-pack-trust.md).
 - Iframe embedding in operator shell needs CSP review; default to top-level navigation.
 - Catalog `installed` for ui-pack must key off **`appId`** (install directory), not listing `packId` / slug when they differ (e.g. slug `oil-control-ui`, appId `oil-control`).
 - Console PWA without `/apps` in `navigateFallbackDenylist` hijacks hosted UI navigations after visiting Admin/Operator (same-origin SW).
+
+### Honesty — Done / Partial / Gap (serving vs trust)
+
+| Claim | Status | Owner |
+|-------|--------|-------|
+| Install + serve `/apps/<appId>/` | **Done** | This ADR |
+| Marketplace `ui-pack` + SW denylist | **Done** | This ADR |
+| CSP / partner isolation / scoped app token | **Gap** | [0073](0073-hosted-ui-pack-trust.md) |
 
 ## Acceptance (dogfood)
 

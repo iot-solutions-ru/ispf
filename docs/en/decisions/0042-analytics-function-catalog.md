@@ -22,7 +22,7 @@ ISPF after ADR-0041 has a working but **fragmented** surface:
 
 Custom logic today:
 
-- **Reactive:** platform/application **JSON step-script functions** (`FunctionScriptEngine`: `exec` / `map` / `if` / `invoke_function` / …) via `callFunction(...)` (instant, not historian-backed). Not a browser JS runtime.
+- **Reactive:** platform/application **JSON step-script functions** (`FunctionScriptEngine`: `exec` / `map` / `if` / `invoke_function` / …) via `callFunction(...)` (instant, not historian-backed). **Not** a browser JavaScript runtime and **not** Node/V8 inside the historian.
 - **Historian:** only **new Java** `AnalyticsEvaluator` + server deploy — no end-user UDF.
 
 Goal: **catalog browse and extensibility comparable to PI AF** without abandoning ISPF’s **tree-first** model ([0001-app-platform-boundary](0001-app-platform-boundary.md), [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md)).
@@ -176,6 +176,8 @@ Future (out of BL-212–214): **sandboxed** app functions invoked from historian
 
 ## Implementation phases
 
+Track progress in [analytics-platform-roadmap](../analytics-platform-roadmap.md) (BL-212+). Phases below are the contract; calendar estimates belong only in the roadmap.
+
 | Phase | BL | Deliverable |
 |-------|-----|-------------|
 | **1** | BL-212a | Catalog API from Java registry + CEL metadata; wire `totalizer`/`min`/`max`/`last` |
@@ -185,7 +187,13 @@ Future (out of BL-212–214): **sandboxed** app functions invoked from historian
 | **5** | BL-215 | Blueprint/marketplace sharing; `formulaRef` on binding rules |
 | **6** | BL-216 | Marketplace `analytics-pack` install + `ISPF_ANALYTICS_PACKS_DIR` loader |
 
-Estimated: **4–6 weeks** after ADR-0041 stabilization for phases 1–2; phases 3–5 parallel with OLAP (BL-205).
+### Honesty
+
+| Claim | Status |
+|-------|--------|
+| One catalog API + tiers A/B/C decision | **Done** (this ADR) |
+| “JavaScript functions” as product surface | **Rejected wording** — step-scripts / CEL / Java evaluators only |
+| Phases 1–6 calendar complete | **Partial** — see roadmap, not this file |
 
 ## Consequences
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (2026-06) — phases 0–2 implemented; phase 3 (deprecation of legacy mini-DSL) still open
+**Accepted** (2026-06-28) — phases **0–2 Done**; phase **3** (legacy mini-DSL removal) **Partial / open**.
 
 ## Context
 
@@ -21,6 +21,8 @@ Operators and engineers cannot remember ten DSLs. AI can; humans cannot.
 
 ADR [0010-binding-rules-only](0010-binding-rules-only.md) already fixed **binding rules** as the sole variable computation mechanism. We must **extend the same model** to dashboard UI logic and events without parallel systems.
 
+**Industry bar:** leaders converge on one expression language for compute + UI conditions (vs widget-local scripting sprawl). ISPF’s differentiator is **tree-first Platform Rules** (CEL + BindingRule) shared by bindings, dashboards, and agents — not a second “UI script” runtime.
+
 ## Decision
 
 1. **Platform Rule = BindingRule** with extended `target` and activator `onContextChange`. One form: **when → if (CEL) → then (effect)**.
@@ -29,58 +31,43 @@ ADR [0010-binding-rules-only](0010-binding-rules-only.md) already fixed **bindin
 
    | `kind` | Purpose |
    |--------|---------|
-   | `variable` | as today — write to an object variable (`variableName`, `field`) |
-   | `context` | write to `@dashboardContext` on `DASHBOARD` object (`path`, dot-notation) |
+   | `variable` | write to an object variable (`variableName`, `field`) |
+   | `context` | write to `@dashboardContext` on `DASHBOARD` (`path`, dot-notation) |
    | `event` | publish platform event (`eventName`, optional payload from `expression`) |
 
-   Backward compatibility: if `kind` is absent → `variable` (current JSON `{ "variableName", "field" }`).
+   Backward compatibility: if `kind` is absent → `variable`.
 
-3. **Dashboard context** — reserved variable `@dashboardContext` (JSON) on `DASHBOARD` object:
+3. **Dashboard context** — reserved variable `@dashboardContext` (JSON) on `DASHBOARD`; web-console session is a **cache**; source of truth is server + WebSocket.
 
-   ```json
-   {
-     "selection": { "device": "root.platform.devices.snmp-01" },
-     "params": { "mode": "normal" },
-     "widgets": { "alarm-panel": { "visible": true } },
-     "updatedAt": "...",
-     "updatedBy": "operator"
-   }
-   ```
+4. **Activator `onContextChange`** — rules on `DASHBOARD` recalculate on PUT `@dashboardContext`.
 
-   Web-console `DashboardSession` is a **cache** of this variable + optimistic update; source of truth is server + WebSocket.
+5. **Widgets contain no logic** — only layout and data addresses. Show/hide and mode switches are **rules** writing `context.widgets.*` / `context.params.*` ([anti-patterns](../anti-patterns.md)).
 
-4. **Activator `onContextChange`** in `BindingActivators` — rule on `DASHBOARD` object recalculates on PUT `@dashboardContext` (table click, form, nav).
+6. **One editor** — Bindings / Rules tab (including Dashboard Builder).
 
-5. **Widgets contain no logic** — only layout and data addresses (`selectionKey`, `paramKey`, `contextPathKey`). Show/hide, switch mode — **rules** writing to `context.widgets.*` or `context.params.*`.
+7. **Legacy migration** (phase 3): prefer CEL Platform Rules for new work; do not add `behaviorJson` on widgets. `showWhenJson` and client mini-DSL `payloadFilterExpr` remain for compatibility until removed.
 
-6. **One editor** — existing Bindings tab / `BindingRulesPanel`; for dashboards — same Rules tab in Dashboard Builder.
+### Honesty — Done / Partial / Gap
 
-7. **Legacy migration** (phases 3+): `showWhenJson`, `payloadFilterExpr` → CEL rules; do not add `behaviorJson` on widgets.
+| Phase | Content | Status |
+|-------|---------|--------|
+| 0 | ADR + [platform-logic](../platform-logic.md) | **Done** |
+| 1 | `@dashboardContext`, `target.kind`, `onContextChange`, engine, WS | **Done** |
+| 2 | Rules tab in Dashboard Builder, demos | **Done** |
+| 3 | Deprecate / remove legacy mini-DSL (`showWhenJson`, non-CEL `payloadFilterExpr`) | **Partial** — still accepted at runtime; new authoring must prefer CEL rules |
+
+Do **not** claim “zero widget DSLs in the product” until phase 3 closes. Do claim “one canonical rule model for new solutions.”
 
 ## Consequences
 
 - One language (CEL), one engine, one documentation set ([bindings](../bindings.md), [platform-logic](../platform-logic.md)).
 - Dashboard context is durable, multi-client via WS; events in journal.
-- Table→details remains, but semantics = «context change», not a separate subsystem.
-
-Risks:
-
-- UI latency: rules on server; optimistic session + reconcile via WS required (phase 1).
-- Extending `BindingRuleEngine` and deserializing `BindingTarget` — breaking-safe only with default `kind=variable`.
-- CEL is harder for operators than JSON predicates — mitigated by rule templates and AI agent.
-
-## Implementation plan
-
-| Phase | Content |
-|-------|---------|
-| 0 | ADR, [platform-logic](../platform-logic.md), update BINDINGS/DASHBOARDS |
-| 1 | `@dashboardContext`, `target.kind`, `onContextChange`, engine, WS sync |
-| 2 | Rules tab in Dashboard Builder, demo layout |
-| 3 | Deprecate legacy mini-DSL |
+- Fitness: reject unknown `target.kind`; examples and agent prompts teach rules, not `behaviorJson`.
+- Risks: UI latency (optimistic session + WS reconcile); CEL harder than JSON predicates — templates + AI mitigate.
 
 ## Related
 
 - [0010-binding-rules-only](0010-binding-rules-only.md)
-- [bindings](../bindings.md)
-- [dashboards](../dashboards.md)
-- [platform-logic](../platform-logic.md)
+- [0040-unified-computations-ui](0040-unified-computations-ui.md)
+- [bindings](../bindings.md), [dashboards](../dashboards.md), [platform-logic](../platform-logic.md)
+- [anti-patterns](../anti-patterns.md) — no heavy logic in widgets

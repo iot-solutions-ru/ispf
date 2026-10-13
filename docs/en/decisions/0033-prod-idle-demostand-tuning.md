@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (2026-07-06)
+**Accepted** (2026-07-06) — **profiles are the primary configuration interface** for demostand / edge / idle vs throughput. Per-tier env keys from [0026](0026-elastic-telemetry-ingress.md) / [0027](0027-event-journal-ingress-fast-path.md) are overlays, not the preferred operator story.
 
 ## Context
 
@@ -20,14 +20,26 @@ General guide: [DEMOSTANDS](../DEMOSTANDS.md).
 
 ## Decision
 
-### 1. Three deployment profiles (+ throughput bench)
+### 1. Deployment profiles (primary interface)
+
+Operators and agents choose a **named profile**, then apply the matching env overlay. Do not start from elastic min/max knobs unless diagnosing a profile bug.
 
 | Profile | Elastic | Topology | Documentation |
 |---------|---------|-----------|---------------|
-| **Production** | ON (defaults) | 1–N replicas, PG + TS/CH | [DEMOSTANDS.md § Production](../DEMOSTANDS.md) |
-| **Demo / idle** | OFF, fixed pools | single unified node | [DEMOSTANDS.md § Demo](../DEMOSTANDS.md) |
-| **Edge** | OFF, minimal 1 | single node, coalesce↑ | [DEMOSTANDS.md § Edge](../DEMOSTANDS.md) |
+| **Production** | ON (defaults) | 1–N replicas, PG + TS/CH | [demostands](../demostands.md) § Production |
+| **Demo / idle** | OFF, fixed pools | single unified node | [demostands](../demostands.md) § Demo |
+| **Edge** | OFF, minimal 1 | single node, coalesce↑ | [demostands](../demostands.md) § Edge |
 | **Throughput** | ON (peak tuning) | benchmark | [load-testing](../load-testing.md) |
+
+### Honesty — Done / Partial / Gap
+
+| Claim | Status |
+|-------|--------|
+| Named profiles + `prod-idle` env overlay | **Done** |
+| Docs as primary guide ([demostands](../demostands.md)) | **Done** |
+| Autodetect profile from hardware / device count | **Gap** |
+| Effective-config API (“what is actually applied”) | **Gap** |
+| Deprecate ad-hoc per-tier env in favor of profile only | **Partial** — profiles documented; knobs still exist for escape hatches |
 
 ### 2. `prod-idle` profile (env overlay for demo / idle)
 
@@ -80,14 +92,16 @@ Risks:
 
 **Documentation**
 
-- [DEMOSTANDS](../DEMOSTANDS.md) — primary guide
+- [demostands](../demostands.md) — primary guide
 - [vps-demostand](../vps-demostand.md) — example ops on one host
 - [deployment](../deployment.md), [cluster](../cluster.md)
+- Edge profile lane also cited from [0072](0072-edge-fleet-rollout.md)
 
 ## Related
 
-- [0026-elastic-telemetry-ingress](0026-elastic-telemetry-ingress.md) — elastic ingress defaults (throughput)
+- [0026-elastic-telemetry-ingress](0026-elastic-telemetry-ingress.md) — elastic ingress defaults (throughput overlays)
 - [0027-event-journal-ingress-fast-path](0027-event-journal-ingress-fast-path.md) — journal fast path
 - [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) — cluster vs single
+- [0072-edge-fleet-rollout](0072-edge-fleet-rollout.md) — edge profile lane
 - [load-testing](../load-testing.md) — throughput
 - [observability](../observability.md) — load diagnostics

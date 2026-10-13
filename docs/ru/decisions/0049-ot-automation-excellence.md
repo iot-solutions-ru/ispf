@@ -1,9 +1,15 @@
+> **Язык:** русская версия. Канон: [../../en/decisions/0049-ot-automation-excellence.md](../../en/decisions/0049-ot-automation-excellence.md).
+
 # ADR-0049: OT Automation Excellence
 
-Канонический текст: [../../en/decisions/0049-ot-automation-excellence.md](../../en/decisions/0049-ot-automation-excellence.md).
+## Статус
 
-**Кратко (Accepted 2026-07-19):** программа OT Automation Excellence — journal шагов BPMN, typed workflow tools, AI service tasks (`LLM_COMPLETE` / `INVOKE_AGENT`), analytics analysis functions + AI tools, webhook/cron + retry/DLQ, credentials vault, template gallery, MCP publish. Wave 1 — foundation. Не меняет freeze element types ADR-0047; расширяет `serviceTask` actions. Forecast/ML inference — вне scope (BL-175+).
+**Accepted** (2026-07-19) — программный ADR. Волны 1–3 **Done**; волна 4 **Partial** (vault/0065 Done, marketplace `workflow-template` open); волна 5 **Gap** (MCP).
 
-**Прогресс волн (2026-07-19):** Wave 1–2 landed; Wave 3 **landed** — webhook + cron `every:1m` + async retry (`workflow_retry_schedule` / `retryMaxAttempts` / `retryBackoffSeconds`) + DLQ/`errorWorkflowPath` после исчерпания + REST list/resolve dead letters. Wave 4 **частично** — credentials vault шифрует секреты (`PlatformCredentialService` / `IspfSecretCipher`); key-id envelope + ротация — [0065](0065-secrets-key-rotation.md); установщик marketplace `workflow-template` ещё открыт. Wave 5 не начата — публикация workflow и analytics tools в Aggregate MCP. Канон: [en/0049](../../en/decisions/0049-ot-automation-excellence.md).
+## Суть
 
-**Практика:** [OT Automation туториалы](../ot-automation-excellence-tutorials.md) (EN канон: [en/…](../../en/ot-automation-excellence-tutorials.md)).
+Пять волн над freeze BPMN subset ([0047](../../en/decisions/0047-custom-bpmn-subset-engine.md)): journal → AI serviceTask → triggers/DLQ → vault → MCP. Инварианты и non-goals — в EN. Практика: [ot-automation-excellence-tutorials](../ot-automation-excellence-tutorials.md).
+
+## Связанное
+
+[readme](readme.md) · [en/0049](../../en/decisions/0049-ot-automation-excellence.md) · [0065](0065-secrets-key-rotation.md)

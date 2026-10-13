@@ -2,27 +2,36 @@
 
 ## Status
 
-Accepted (2026-06-21)
+**Accepted** (2026-06-21) — MCP bridge **shipped**; this record is the contract, not a sprint estimate.
 
-> **License note:** Platform core is **AGPL v3** (+ optional commercial dual-license). Historical Apache wording in this ADR is superseded — see [license.md](../license.md).
+> **License note:** Platform core is **AGPL v3** (+ optional commercial dual-license). Historical Apache wording is superseded — see [license.md](../license.md).
 
 ## Context
 
-[0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) delivers an in-server tree-first agent (`TreeFirstAgentService`) with a bounded ReAct loop and Java tool handlers in `PlatformAgentToolRegistry`. External clients (Cursor IDE, CI pipelines, custom assistants) increasingly speak the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for tool discovery and invocation.
+[0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) delivers an in-server tree-first agent (`TreeFirstAgentService`) with a bounded ReAct loop and Java tool handlers in `PlatformAgentToolRegistry`. External clients (Cursor IDE, CI pipelines, custom assistants) speak the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for tool discovery and invocation.
 
-We need a thin bridge so MCP clients reuse the **same** ACL-aware platform tools without duplicating business logic or bypassing 0004 validation gates.
+We need a thin bridge so MCP clients reuse the **same** ACL-aware platform tools without duplicating business logic or bypassing [0004](0004-ai-artifact-generation-gates.md) validation gates.
 
 ## Decision
 
-1. Add an optional **MCP server module** (`com.ispf.server.ai.mcp`) that exposes `PlatformAgentToolRegistry` as MCP tools.
+1. Optional **MCP server module** (`com.ispf.server.ai.mcp`) exposes `PlatformAgentToolRegistry` as MCP tools.
 2. **No second tool implementation** — MCP `tools/list` maps registry `name()` + `description()`; `tools/call` delegates to `PlatformAgentTool.execute(arguments, context)`.
-3. **Auth**: MCP connections require the same admin credentials as `/api/v1/ai/agent/**` (Bearer token or configured API key header). Actor identity flows into `AgentContext`.
-4. **Session model**: MCP clients may either:
-   - use **stateless** single tool calls (no chat history), or
-   - pass `sessionId` in tool arguments to attach to persistent DB sessions (`agent_sessions`, migration V38).
-5. **Transport**: start with **stdio** MCP for local dev and **SSE/HTTP** for remote hub; not bundled into core JAR by default (profile `mcp`).
-6. **MCP resources:** ContextPack slices as MCP `resources` — **shipped** (`McpResourceAdapter`, URIs `contextpack://<slice>`). MCP prompts remain out of scope. Auto-import without validate/dry-run gates stays forbidden ([0004](0004-ai-artifact-generation-gates.md)).
-7. **Tool schemas:** `tools/list` publishes per-tool `inputSchema` from the registry ([0051](0051-poka-yoke-constraints-over-guards.md)); no `GENERIC_INPUT_SCHEMA` stub.
+3. **Auth**: same admin credentials as `/api/v1/ai/agent/**` (Bearer or configured API key). Actor identity flows into `AgentContext`.
+4. **Session model**: MCP clients may use **stateless** single tool calls, or pass `sessionId` to attach to persistent DB sessions (`agent_sessions`).
+5. **Transport**: **stdio** (local) and **SSE/HTTP** (remote hub); profile `mcp`.
+6. **MCP resources:** ContextPack slices as MCP `resources` — **Done** (`McpResourceAdapter`, URIs `contextpack://<slice>`). MCP prompts remain out of scope. Auto-import without validate/dry-run stays forbidden ([0004](0004-ai-artifact-generation-gates.md)).
+7. **Tool schemas:** `tools/list` publishes per-tool `inputSchema` from the registry ([0051](0051-poka-yoke-constraints-over-guards.md) Wave 1); no `GENERIC_INPUT_SCHEMA` stub.
+
+### Honesty — Done / Partial / Gap
+
+| Slice | Status |
+|-------|--------|
+| Tool bridge = registry (no duplicate handlers) | **Done** |
+| Real `inputSchema` on `tools/list` | **Done** ([0051](0051-poka-yoke-constraints-over-guards.md)) |
+| ContextPack MCP resources | **Done** |
+| Operator allowlist on MCP | **Done** (`OperatorAgentToolAllowlist`) |
+| Live object tree as MCP resources | **Gap** (out of scope) |
+| MCP prompts library | **Gap** (out of scope) |
 
 ### Operator scope (BL-109)
 
@@ -73,5 +82,7 @@ McpServer (profile mcp)
 ## Related
 
 - [ai-development](../ai-development.md)
+- [0004-ai-artifact-generation-gates](0004-ai-artifact-generation-gates.md)
 - [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md)
-- `PlatformAgentToolRegistry.java`
+- [0051-poka-yoke-constraints-over-guards](0051-poka-yoke-constraints-over-guards.md) — schemas + allowlists
+- `PlatformAgentToolRegistry.java`, `McpResourceAdapter.java`
