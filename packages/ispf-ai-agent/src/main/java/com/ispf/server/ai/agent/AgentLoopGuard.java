@@ -15,9 +15,13 @@ final class AgentLoopGuard {
     private static final int DISCOVERY_HARD_BLOCK = 2;
     /**
      * Incremental UI builders (widget/element adds): after this many prior same-target calls,
-     * hard-block and stop the turn — batch tools must be used instead.
+     * soft-block with a batch-tool hint (turn continues so the model can switch strategy).
      */
     private static final int BATCH_INCREMENTAL_HARD_BLOCK = 2;
+    /**
+     * After this many prior same-target incremental adds, stop the turn — the Studio log is flooded.
+     */
+    private static final int BATCH_INCREMENTAL_STOP_TURN = 10;
     /** Same read/list fingerprint (tool + target): hard-block and stop the turn. */
     private static final int READ_SPAM_HARD_BLOCK = 3;
     /** Safety net: any tool with the same fingerprint this many times → stop (prevents UI log floods). */
@@ -284,11 +288,13 @@ final class AgentLoopGuard {
         long priorSame = totalFingerprintCount(steps, fingerprint);
 
         if (BATCH_INCREMENTAL_TOOLS.contains(normalized) && priorSame >= BATCH_INCREMENTAL_HARD_BLOCK) {
+            boolean stopTurn = priorSame >= BATCH_INCREMENTAL_STOP_TURN;
             return Optional.of(new BlockDecision(
-                    "Hard block: '" + normalized + "' repeated " + priorSame
-                            + " times on the same target — stop flooding the step log",
+                    (stopTurn ? "Hard block: '" : "Batch hint: '") + normalized + "' repeated " + priorSame
+                            + " times on the same target — "
+                            + (stopTurn ? "stop flooding the step log" : "switch to a batch write"),
                     batchIncrementalHardHint(normalized),
-                    true
+                    stopTurn
             ));
         }
         if (READ_SPAM_TOOLS.contains(normalized) && priorSame >= READ_SPAM_HARD_BLOCK) {

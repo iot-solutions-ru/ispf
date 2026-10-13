@@ -214,7 +214,8 @@ final class AgentTreeTools {
             public String description() {
                 return "Create object tree node. Args: parentPath, name, type (DEVICE|DASHBOARD|USER|CUSTOM|...), "
                         + "displayName, description?, templateId?, driverId?, driverPollIntervalMs?, autoStartDriver?. "
-                        + "For USER: also password? (default ChangeMe!123), roles? (list or comma string, default OPERATOR). "
+                        + "For USER: also password? (default ChangeMe!123), roles? (list or comma string, default operator). "
+                        + "Role ids are lowercase: operator, developer, admin, tenant-admin (not OPERATOR). "
                         + "USER goes through PlatformUserService (creates login + roles variable) — do NOT apply_mixin platform-user-v1.";
             }
 
@@ -1077,7 +1078,7 @@ final class AgentTreeTools {
         }
         List<String> roles = parseRolesArg(arguments.get("roles"));
         if (roles.isEmpty()) {
-            roles = List.of("OPERATOR");
+            roles = List.of(com.ispf.server.config.IspfRoles.OPERATOR);
         }
         String path = PlatformUserService.USERS_PATH_PREFIX + username.trim();
         try {
@@ -1113,6 +1114,15 @@ final class AgentTreeTools {
                 );
                 return reused;
             }
+            if (message.toLowerCase(Locale.ROOT).contains("unknown role")) {
+                return Map.of(
+                        "status", "ERROR",
+                        "error", message,
+                        "hint",
+                        "Use lowercase role ids: operator, developer, admin, tenant-admin, operator-readonly. "
+                                + "Retry create_object type=USER roles=operator (not OPERATOR)."
+                );
+            }
             return Map.of("status", "ERROR", "error", message);
         } catch (Exception ex) {
             return Map.of("status", "ERROR", "error", ex.getMessage());
@@ -1128,7 +1138,7 @@ final class AgentTreeTools {
             List<String> out = new ArrayList<>();
             for (Object item : list) {
                 if (item != null && !String.valueOf(item).isBlank()) {
-                    out.add(String.valueOf(item).trim());
+                    out.add(canonicalizeRoleName(String.valueOf(item)));
                 }
             }
             return out;
@@ -1144,10 +1154,30 @@ final class AgentTreeTools {
         List<String> out = new ArrayList<>();
         for (String part : text.split("[,;\\s]+")) {
             if (!part.isBlank()) {
-                out.add(part.trim());
+                out.add(canonicalizeRoleName(part));
             }
         }
         return out;
+    }
+
+    /** Map common agent aliases (OPERATOR, ROLE_ADMIN) onto platform role ids. */
+    static String canonicalizeRoleName(String role) {
+        if (role == null || role.isBlank()) {
+            return "";
+        }
+        String normalized = role.trim();
+        if (normalized.regionMatches(true, 0, "ROLE_", 0, 5)) {
+            normalized = normalized.substring(5);
+        }
+        String lower = normalized.toLowerCase(Locale.ROOT).replace('_', '-');
+        return switch (lower) {
+            case "operator", "operators", "hmi" -> com.ispf.server.config.IspfRoles.OPERATOR;
+            case "admin", "administrator", "admins" -> com.ispf.server.config.IspfRoles.ADMIN;
+            case "developer", "dev", "developers" -> com.ispf.server.config.IspfRoles.DEVELOPER;
+            case "tenant-admin", "tenantadmin" -> com.ispf.server.config.IspfRoles.TENANT_ADMIN;
+            case "operator-readonly", "operatorreadonly", "readonly" -> "operator-readonly";
+            default -> lower;
+        };
     }
 
     private static String stringArg(Map<String, Object> args, String key) {

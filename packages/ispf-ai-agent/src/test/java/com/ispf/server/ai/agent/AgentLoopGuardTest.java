@@ -132,7 +132,7 @@ class AgentLoopGuardTest {
     }
 
     @Test
-    void hardBlocksThirdAddDashboardWidgetOnSamePathAndStopsTurn() {
+    void softBlocksThirdAddDashboardWidgetOnSamePathWithoutStoppingTurn() {
         String dash = "root.platform.dashboards.virt-cluster-dashboard";
         List<Map<String, Object>> steps = List.of(
                 widgetStep(dash),
@@ -145,8 +145,25 @@ class AgentLoopGuardTest {
         );
         assertTrue(block.isPresent());
         assertTrue(block.get().blocked());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("set_dashboard_layout"));
+    }
+
+    @Test
+    void hardStopsTurnAfterManyAddDashboardWidgetOnSamePath() {
+        String dash = "root.platform.dashboards.virt-cluster-dashboard";
+        List<Map<String, Object>> steps = new java.util.ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            steps.add(widgetStep(dash));
+        }
+        var block = AgentLoopGuard.checkHardBlock(
+                "add_dashboard_widget",
+                Map.of("path", dash, "widget", Map.of("id", "kpi-11")),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().blocked());
         assertTrue(block.get().stopTurn());
-        assertTrue(block.get().error().toLowerCase(Locale.ROOT).contains("flood"));
         assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("set_dashboard_layout"));
     }
 
@@ -165,7 +182,7 @@ class AgentLoopGuardTest {
     }
 
     @Test
-    void hardBlocksThirdAddMimicElementsOnSamePath() {
+    void softBlocksThirdAddMimicElementsOnSamePathWithoutStoppingTurn() {
         String mimic = "root.platform.mimics.plant";
         List<Map<String, Object>> steps = List.of(
                 mimicStep(mimic),
@@ -177,7 +194,7 @@ class AgentLoopGuardTest {
                 steps
         );
         assertTrue(block.isPresent());
-        assertTrue(block.get().stopTurn());
+        assertFalse(block.get().stopTurn());
         assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("save_mimic_diagram"));
     }
 
