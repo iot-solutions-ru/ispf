@@ -83,7 +83,8 @@ final class AgentPromptAssembler {
             systemPrompt = AgentCopilotPromptBuilder.build(
                     session.rootPath(),
                     toolRegistry.toolCatalog(profile),
-                    prepared.hasImages()
+                    prepared.hasImages(),
+                    session.runState().clientFocus()
             );
             if (hasTextAttachment(prepared.attachmentMetadata())) {
                 systemPrompt += AgentAttachmentPromptSection.forTextAttachments();

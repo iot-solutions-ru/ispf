@@ -38,6 +38,25 @@ public final class AgentCopilotPromptBuilder {
             "list_functions"
     );
 
+    /** Tree/doc discovery — unnecessary on System/Settings where LIVE UI already lists rows. */
+    private static final Set<String> SETTINGS_SCREEN_SKIP_TOOLS = Set.of(
+            "list_objects",
+            "get_object",
+            "search_context",
+            "list_variables",
+            "describe_variables",
+            "list_binding_rules",
+            "list_events",
+            "list_automation",
+            "list_functions",
+            "get_function",
+            "get_widget_catalog",
+            "get_dashboard_layout",
+            "list_mimic_symbols",
+            "get_mimic_diagram",
+            "explain_error"
+    );
+
     private static final String HEADER = """
             You are Admin Copilot — a HERE-AND-NOW screen helper for ISPF administrators.
             You are NOT AI Studio. You have no Ask / Plan / Execute modes and must NEVER mention those modes,
@@ -53,16 +72,13 @@ public final class AgentCopilotPromptBuilder {
               NOT reactive CEL with invent read()/derivedValue/casts. Thresholds stay reactive on the avg var.
             - Prefer doing the work over meta UX advice.
             
-            EXPLAIN-SCREEN (highest priority): if the user asks to explain / describe / «что это» / «объясни экран»
-            for the focused System/Settings (or any screen with visibleSettingIds / systemTab / settingsTab):
-            - Finish IMMEDIATELY with Markdown — ZERO tools (no list_objects, search_context, get_object, …).
-            - Walk visibleSettingIds / fields in plain language (what each row does, typical values, Save/Refresh).
-            - Never invent devices, dashboards, or “finish checks”. Never say objects may already exist.
-            
-            Workflow:
-            1) Prefer finish from the snapshot with concrete Markdown when no apply is needed (default for explain).
-            2) Gather with 1–3 read tools using focus paths ONLY when live tree values are required for configure.
-            3) Mutate with tools when the user wants the change applied on the current screen.
+            Workflow (understand first, then tools):
+            1) Read the user question + LIVE UI SNAPSHOT and decide what they need.
+            2) If the snapshot already answers (explain this screen / what a setting means / how Save-Refresh works):
+               finish with Markdown — walk visibleSettingIds / fields in plain language. No Studio discovery tools.
+            3) If you need live tree values to configure something on this focus path: 1–3 read tools, then mutate.
+            4) Never invent devices, dashboards, or “finish checks”. Never call get_automation_schema /
+               search_context / list_objects just to “look around” when the snapshot already has the screen.
             
             Answer ONLY in the UI locale from the Response language block (and FINAL REMINDER) in this prompt.
             You are Admin Copilot — never introduce yourself as the "ISPF platform agent" / Studio builder,
@@ -88,8 +104,17 @@ public final class AgentCopilotPromptBuilder {
             List<Map<String, Object>> fullToolCatalog,
             boolean hasImages
     ) {
+        return build(rootPath, fullToolCatalog, hasImages, null);
+    }
+
+    public static String build(
+            String rootPath,
+            List<Map<String, Object>> fullToolCatalog,
+            boolean hasImages,
+            Map<String, Object> clientFocus
+    ) {
         String effectiveRoot = rootPath == null || rootPath.isBlank() ? "root" : rootPath.trim();
-        List<Map<String, Object>> tools = filterTools(fullToolCatalog);
+        List<Map<String, Object>> tools = filterTools(fullToolCatalog, clientFocus);
         StringBuilder prompt = new StringBuilder(HEADER.length() + 2048);
         prompt.append(HEADER);
         prompt.append("\nDefault tree root: ").append(effectiveRoot).append("\n");
@@ -112,10 +137,18 @@ public final class AgentCopilotPromptBuilder {
     }
 
     static List<Map<String, Object>> filterTools(List<Map<String, Object>> fullToolCatalog) {
+        return filterTools(fullToolCatalog, null);
+    }
+
+    static List<Map<String, Object>> filterTools(
+            List<Map<String, Object>> fullToolCatalog,
+            Map<String, Object> clientFocus
+    ) {
         List<Map<String, Object>> out = new ArrayList<>();
         if (fullToolCatalog == null) {
             return out;
         }
+        boolean settingsScreen = isSettingsScreenFocus(clientFocus);
         for (Map<String, Object> tool : fullToolCatalog) {
             if (tool == null) {
                 continue;
@@ -125,10 +158,50 @@ public final class AgentCopilotPromptBuilder {
                 continue;
             }
             String key = String.valueOf(name).trim().toLowerCase(Locale.ROOT);
-            if (ALLOWED_TOOLS.contains(key)) {
-                out.add(tool);
+            if (!ALLOWED_TOOLS.contains(key)) {
+                continue;
             }
+            if (settingsScreen && SETTINGS_SCREEN_SKIP_TOOLS.contains(key)) {
+                continue;
+            }
+            out.add(tool);
         }
         return out;
+    }
+
+    static boolean isAllowedTool(String toolName) {
+        return isAllowedTool(toolName, null);
+    }
+
+    static boolean isAllowedTool(String toolName, Map<String, Object> clientFocus) {
+        if (toolName == null || toolName.isBlank()) {
+            return false;
+        }
+        String key = toolName.trim().toLowerCase(Locale.ROOT);
+        if (!ALLOWED_TOOLS.contains(key)) {
+            return false;
+        }
+        return !(isSettingsScreenFocus(clientFocus) && SETTINGS_SCREEN_SKIP_TOOLS.contains(key));
+    }
+
+    static boolean isSettingsScreenFocus(Map<String, Object> clientFocus) {
+        if (clientFocus == null || clientFocus.isEmpty()) {
+            return false;
+        }
+        Object detail = clientFocus.get("detail");
+        if (!(detail instanceof Map<?, ?> detailMap)) {
+            return false;
+        }
+        String systemTab = stringVal(detailMap.get("systemTab"));
+        String settingsTab = stringVal(detailMap.get("settingsTab"));
+        if (!settingsTab.isBlank() || "settings".equalsIgnoreCase(systemTab)) {
+            return true;
+        }
+        Object ids = detailMap.get("visibleSettingIds");
+        return ids instanceof List<?> list && !list.isEmpty();
+    }
+
+    private static String stringVal(Object raw) {
+        return raw == null ? "" : String.valueOf(raw).trim();
     }
 }

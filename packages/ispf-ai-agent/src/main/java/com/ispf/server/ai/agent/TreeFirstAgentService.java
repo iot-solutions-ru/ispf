@@ -330,57 +330,6 @@ public class TreeFirstAgentService {
                     operatorScope,
                     sessionId
             );
-            List<Map<String, Object>> attachmentMetadata = prepared.attachmentMetadata();
-
-            // Explain-screen: answer from LIVE UI focus — never enter the LLM tool loop.
-            if (copilotChannel
-                    && AgentCopilotExplainIntent.isExplainOnly(llmUserText, session.runState().clientFocus())) {
-                String directSummary = AgentCopilotExplainResponder.buildSummary(
-                        session.runState().clientFocus(),
-                        uiLocale
-                );
-                Map<String, Object> directResult = AgentCopilotExplainResponder.buildFinishResult();
-                List<Map<String, Object>> directSteps = new ArrayList<>();
-                Map<String, Object> finishStep = new LinkedHashMap<>();
-                finishStep.put("step", 1);
-                finishStep.put("type", "finish");
-                finishStep.put("summary", directSummary);
-                finishStep.put(
-                        "label",
-                        AgentStepHumanizer.label("finish", null, null, null, directSummary, uiLocale)
-                );
-                finishStep.put("result", directResult);
-                directSteps.add(finishStep);
-                publishStep(sessionId, finishStep);
-                recordTurnAudit(
-                        session,
-                        turnId,
-                        1,
-                        "agent_finish",
-                        actor,
-                        userMessage,
-                        AgentTurnStatus.OK,
-                        null,
-                        List.of(),
-                        null,
-                        null,
-                        profile
-                );
-                agentMetrics.recordGuardBlock("copilotExplainDirect");
-                return persistCompletedTurn(
-                        session,
-                        turnId,
-                        userMessage,
-                        directSummary,
-                        AgentTurnStatus.OK,
-                        directSteps,
-                        directResult,
-                        attachmentMetadata,
-                        actor,
-                        profile
-                );
-            }
-
             List<Map<String, Object>> steps = new ArrayList<>();
             List<LlmMessage> messages = promptAssembler.buildMessagesWithHistory(
                     session,
@@ -388,6 +337,8 @@ public class TreeFirstAgentService {
                     profile,
                     operatorScope
             );
+
+            List<Map<String, Object>> attachmentMetadata = prepared.attachmentMetadata();
 
             int maxStepsTotal = Math.max(1, aiProperties.getAgentMaxSteps());
 
@@ -786,22 +737,23 @@ public class TreeFirstAgentService {
                 long toolStartNanos = System.nanoTime();
                 String executedTool = toolName;
                 Map<String, Object> toolResult;
-                // Copilot explain can run as OPERATOR profile — block discovery on both branches.
+                // Admin Copilot: only the screen-helper allowlist (native catalog was wider).
                 if (copilotChannel
-                        && AgentCopilotExplainIntent.shouldBlockDiscoveryTool(
+                        && !AgentCopilotPromptBuilder.isAllowedTool(
                                 toolName,
-                                llmUserText,
                                 session.runState().clientFocus()
                         )) {
                     toolResult = new LinkedHashMap<>();
                     toolResult.put("status", "ERROR");
-                    toolResult.put("error", "Explain-screen turn: discovery tools are blocked");
+                    toolResult.put("error", "Tool not available in Admin Copilot: " + toolName);
                     toolResult.put(
                             "hint",
-                            AgentCopilotExplainIntent.discoveryBlockHint(session.runState().clientFocus())
+                            "Understand the user request from LIVE UI SNAPSHOT first. "
+                                    + "Finish with Markdown when the snapshot is enough; "
+                                    + "otherwise use only Copilot screen-helper tools on the focus path."
                     );
                     executedTool = toolName;
-                    agentMetrics.recordGuardBlock("copilotExplain");
+                    agentMetrics.recordGuardBlock("copilotAllowlist");
                 } else if (profile == AgentProfile.OPERATOR) {
                     OperatorAgentTurnGuard.BlockDecision block = OperatorAgentTurnGuard.checkBeforeTool(
                             toolName,
@@ -861,22 +813,6 @@ public class TreeFirstAgentService {
                         }
                         executedTool = toolName;
                     }
-                        } else {
-                        if (copilotChannel
-                                && AgentCopilotExplainIntent.shouldBlockDiscoveryTool(
-                                        toolName,
-                                        llmUserText,
-                                        session.runState().clientFocus()
-                                )) {
-                            toolResult = new LinkedHashMap<>();
-                            toolResult.put("status", "ERROR");
-                            toolResult.put("error", "Explain-screen turn: discovery tools are blocked");
-                            toolResult.put(
-                                    "hint",
-                                    AgentCopilotExplainIntent.discoveryBlockHint(session.runState().clientFocus())
-                            );
-                            executedTool = toolName;
-                            agentMetrics.recordGuardBlock("copilotExplain");
                         } else {
                         Optional<AgentLoopGuard.BlockDecision> loopBlock =
                                 AgentLoopGuard.checkHardBlock(toolName, steps);
@@ -973,7 +909,6 @@ public class TreeFirstAgentService {
                                 }
                                 executedTool = toolName;
                             }
-                        }
                         }
                         }
                     }
@@ -1360,14 +1295,17 @@ public class TreeFirstAgentService {
         Map<String, Object> providerOptions = aiProperties.isAgentDisableThinking()
                 ? Map.of("chat_template_kwargs", Map.of("enable_thinking", false))
                 : Map.of();
+        List<Map<String, Object>> catalog = AgentToolSurface.filterCatalog(
+                toolRegistry.toolCatalog(profile),
+                runState,
+                false
+        );
+        // Native tool calling previously exposed the full Studio catalog to Copilot.
+        if ("copilot".equalsIgnoreCase(runState.clientChannel())) {
+            catalog = AgentCopilotPromptBuilder.filterTools(catalog, runState.clientFocus());
+        }
         List<LlmToolSpec> tools = nativeToolCallingEnabled()
-                ? nativeToolSpecs(
-                        AgentToolSurface.filterCatalog(
-                                toolRegistry.toolCatalog(profile),
-                                runState,
-                                false
-                        )
-                )
+                ? nativeToolSpecs(catalog)
                 : List.of();
         return new LlmRequest(
                 aiProperties.getModel(),
