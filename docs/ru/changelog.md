@@ -32,6 +32,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
+- Cluster fail-closed JetStream/Redis (волна 1C): при live mirror / path interest старт отказывается продолжать, пока JetStream не включён, нужный stream не ready и Redis не отвечает на PING (`ClusterDependencyValidator`). Cluster compose-профили выставляют флаг требования JetStream. Docs: cluster, 0069.
 - Free install marketplace на demostand с подписью: при `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM` unsigned free-download не подписывался (trusted оставался false) → 403 при `require-signed-bundles=true` (например Building HVAC Reference). Снова trusted для unsigned free-download, чтобы платформа подписала перед verify.
 - SCADA mimic: выпадающий список Category (и другие Select/Tooltip редактора) открывался за полноэкранным оверлеем и выглядел «мёртвым» — попапы Ant Design теперь монтируются внутри оверлея.
 - Explorer: VISUAL_GROUP в каталогах (Data Sources и др.) открывается списком участников, как корневая папка, а не редактором data source по path-эвристике («Not a data source object»). То же для групп в Operator Apps; path-эвристика больше не перекрывает известный не-editor тип. Состав группы — через контекстное меню дерева («Добавить в группу»).
