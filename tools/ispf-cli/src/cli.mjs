@@ -11,11 +11,11 @@ function usage() {
   ispf unpack <bundle.json> <dir>
   ispf validate <dir|bundle.json> [--app id] [--local] [--strict]
   ispf diff <dir> --app <id>
-  ispf deploy <dir> --app <id>
+  ispf deploy <dir> --app <id> [--strict]
 
 Environment: ISPF_BASE_URL, ISPF_API_TOKEN
 
-  --strict  Ship-canon: LOGIC_HOST_DEVICE is ERROR (ADR-0060); local + remote ?strict=true`);
+  --strict  Ship-canon: LOGIC_HOST_DEVICE is ERROR (ADR-0060); validate + deploy use ?strict=true`);
 }
 
 function parseArgs(argv) {
@@ -109,8 +109,11 @@ export async function runCli(argv) {
     case "deploy": {
       const dir = positional[1];
       if (!dir || !flags.app) throw new Error("deploy requires <dir> --app <id>");
-      const result = await deployDirectory(path.resolve(dir), flags.app);
-      console.log("dry-run OK wouldApply:", (result.dryRun.wouldApply ?? []).join(", "));
+      const result = await deployDirectory(path.resolve(dir), flags.app, { strict: !!flags.strict });
+      console.log(
+        flags.strict ? "dry-run ship-canon OK wouldApply:" : "dry-run OK wouldApply:",
+        (result.dryRun.wouldApply ?? []).join(", ")
+      );
       console.log("deploy OK version:", result.deploy.version ?? result.deploy.bundleVersion ?? "—");
       break;
     }

@@ -21,6 +21,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Изменено
 
+- Ship-canon на HTTP deploy (ADR-0060): `POST .../deploy?strict=true` валидирует перед apply и отвечает **400** (`shipCanon`) при `LOGIC_HOST_DEVICE`; без `strict` поведение авторства без изменений. CLI: `ispf deploy --strict`.
 - Синхронизация claim boundaries: [adr-tension-resolution](adr-tension-resolution.md) — волны 1B/1C/2A/2B Closed (2B Closed Partial); убран устаревший residual «без Referer логин возможен»; scorecard openness / 0054 / 0073 выровнены. Оценки без изменений.
 - Honesty-проход ADR «поправить» → сильные контракты: 0003, 0006, 0008, 0013, 0025a, 0031, 0033, 0035, 0039, 0042, 0045, 0054, 0056, 0060 (Done/Partial/Gap, без оверсейла).
 - Honesty-проход ADR «статус» → сильные: 0016a/b (алиасы + sales honesty), 0019 (дата + phase 3 Partial), 0025b (experimental tier); 0066/0067 усилены в своих PR.

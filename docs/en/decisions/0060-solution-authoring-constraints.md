@@ -40,12 +40,13 @@ Logic-bearing objects must be SINGLETON or INSTANCE, never `ObjectType.DEVICE`. 
 |------|----------|--------|
 | Authoring validate / deploy | `LOGIC_HOST_DEVICE` → **WARNING** (does not alone set `status: ERROR`) | **Done** |
 | `examples/` CI (`ExamplesBundleValidationTest`) | `LOGIC_HOST_DEVICE` → **hard fail** | **Done** |
-| `ispf validate --strict` / API `?strict=true` | Ship-canon codes → **ERROR** | **Done** (Wave 1A) |
+| `ispf validate --strict` / API validate `?strict=true` | Ship-canon codes → **ERROR** | **Done** (Wave 1A) |
+| `POST .../deploy?strict=true` / `ispf deploy --strict` | Validate with ship-canon **before apply**; HTTP **400** + `shipCanon: true` on ERROR | **Done** |
 | Marketplace / catalog ship gate | Same as `--strict` (`catalogShipCanonFailures` / `findLogicHostDeviceIssues`) | **Done** (Wave 1A) |
-| **ship-default** (agent final acceptance) | Playbook validate, dry-run, and import promote ship canon; judge **REWORK** on `LOGIC_HOST_DEVICE` for `APPLICATION_BUNDLE` or those ship tools | **Partial** |
+| **ship-default** (agent final acceptance) | Playbook validate, dry-run, and import promote ship canon; judge **REWORK** on `LOGIC_HOST_DEVICE` for `APPLICATION_BUNDLE` or those ship tools | **Done** (ship tools) |
 | Function host tools | `hostKind` enum `SINGLETON` \| `INSTANCE` (no DEVICE default); live `ObjectType.DEVICE` → `LOGIC_HOST_DEVICE`; acceptance check `logic.host` | **Done** |
 
-**What remains on ship-default (Partial):** unqualified `POST /api/v1/applications/{appId}/deploy` and interactive `validate_bundle` / `dry_run_deploy` still do **not** promote unless the caller passes `strict=true` or uses the agent ship tools above. That split is intentional for authoring; it is not a platform-wide default of `--strict` on every HTTP deploy.
+**Authoring residual (intentional):** unqualified `POST /api/v1/applications/{appId}/deploy` (no `strict`) and interactive `validate_bundle` / `dry_run_deploy` still **WARNING** only. Ship callers must pass `strict=true`, use `ispf deploy --strict`, catalog CI, or agent `deploy_step_*` / `import_package`. Not a silent flip of every HTTP deploy.
 
 **0051 tension resolution:** canon stays hard in docs; **authoring** warns; **ship** errors. Program: [adr-tension-resolution](../adr-tension-resolution.md).
 
