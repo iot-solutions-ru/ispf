@@ -12,6 +12,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Routes historian writes: hot (JDBC) for recent samples, warm (ClickHouse) for older observedAt (BL-159).
@@ -27,6 +29,7 @@ class TierRoutingVariableHistoryWriteStore implements VariableHistoryWriteStore 
     private final HistorianTierProperties tierProperties;
     private final JdbcVariableHistoryWriteStore hotStore;
     private final ClickHouseWarmTierWriteStore warmStore;
+    private final Set<String> hotAheadOfWarm = ConcurrentHashMap.newKeySet();
 
     TierRoutingVariableHistoryWriteStore(
             HistorianTierProperties tierProperties,
@@ -54,9 +57,33 @@ class TierRoutingVariableHistoryWriteStore implements VariableHistoryWriteStore 
             }
         }
         if (!hotRecords.isEmpty()) {
-            hotStore.appendBatch(hotRecords);
-            if (tierProperties.hotTier().isDualWriteEnabled() && warmStore.isConfigured()) {
-                warmStore.appendBestEffort(hotRecords);
+            boolean mirrorToWarm = tierProperties.hotTier().isDualWriteEnabled() && warmStore.isConfigured();
+            if (mirrorToWarm) {
+                List<VariableHistoryWriteRecord> missingOnHot = new ArrayList<>();
+                for (VariableHistoryWriteRecord record : hotRecords) {
+                    if (!hotAheadOfWarm.contains(sampleKey(record))) {
+                        missingOnHot.add(record);
+                    }
+                }
+                if (!missingOnHot.isEmpty()) {
+                    hotStore.appendBatch(missingOnHot);
+                    for (VariableHistoryWriteRecord record : missingOnHot) {
+                        hotAheadOfWarm.add(sampleKey(record));
+                    }
+                }
+                try {
+                    warmStore.appendBestEffort(hotRecords);
+                } catch (RuntimeException ex) {
+                    throw new IllegalStateException(
+                            "warm-tier append failed; warm store is behind hot",
+                            ex
+                    );
+                }
+                for (VariableHistoryWriteRecord record : hotRecords) {
+                    hotAheadOfWarm.remove(sampleKey(record));
+                }
+            } else {
+                hotStore.appendBatch(hotRecords);
             }
         }
         if (!warmRecords.isEmpty()) {
@@ -75,6 +102,15 @@ class TierRoutingVariableHistoryWriteStore implements VariableHistoryWriteStore 
     @Override
     public void appendOne(VariableHistoryWriteRecord record) {
         appendBatch(List.of(record));
+    }
+
+    private static String sampleKey(VariableHistoryWriteRecord record) {
+        return record.objectPath()
+                + "\n" + record.variableName()
+                + "\n" + record.fieldName()
+                + "\n" + record.sampledAt()
+                + "\n" + record.valueDouble()
+                + "\n" + record.valueText();
     }
 
     static boolean isWarmTierSample(VariableHistoryWriteRecord record, Instant hotCutoff) {

@@ -120,11 +120,7 @@ class ClickHouseWarmTierWriteStore implements VariableHistoryWriteStore {
         if (records.isEmpty()) {
             return;
         }
-        try {
-            appendBatch(records);
-        } catch (RuntimeException ex) {
-            log.warn("Warm-tier ClickHouse append failed ({} records): {}", records.size(), ex.getMessage());
-        }
+        appendBatch(records);
     }
 
     private String toJsonLine(VariableHistoryWriteRecord record) {
