@@ -337,6 +337,26 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void allowsCreateObjectDashboardThenSetLayoutOscillation() {
+        // Course builds many dashboards: create_object ↔ set_dashboard_layout on new paths.
+        List<Map<String, Object>> steps = List.of(
+                createDashboardStep("sine-history-dashboard"),
+                layoutStep("root.platform.dashboards.sine-history-dashboard"),
+                createDashboardStep("table-piechart-dashboard"),
+                layoutStep("root.platform.dashboards.table-piechart-dashboard"),
+                createDashboardStep("button-dashboard"),
+                layoutStep("root.platform.dashboards.button-dashboard"),
+                createDashboardStep("event-grid-dashboard")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "set_dashboard_layout",
+                Map.of("path", "root.platform.dashboards.event-grid-dashboard"),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
     void doesNotBlockShortAlternation() {
         List<Map<String, Object>> steps = List.of(
                 toolOnPath("list_variables", "root.a"),
@@ -376,6 +396,28 @@ class AgentLoopGuardTest {
                 "type", "tool",
                 "tool", "add_dashboard_widget",
                 "arguments", Map.of("path", path)
+        );
+    }
+
+    private static Map<String, Object> layoutStep(String path) {
+        return Map.of(
+                "type", "tool",
+                "tool", "set_dashboard_layout",
+                "arguments", Map.of("path", path),
+                "result", Map.of("status", "OK")
+        );
+    }
+
+    private static Map<String, Object> createDashboardStep(String name) {
+        return Map.of(
+                "type", "tool",
+                "tool", "create_object",
+                "arguments", Map.of(
+                        "parentPath", "root.platform.dashboards",
+                        "name", name,
+                        "type", "DASHBOARD"
+                ),
+                "result", Map.of("status", "OK", "path", "root.platform.dashboards." + name)
         );
     }
 
