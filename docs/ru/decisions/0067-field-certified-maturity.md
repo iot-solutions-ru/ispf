@@ -2,25 +2,25 @@
 
 ## Статус
 
-**Accepted** (2026-10-12) — задаёт evidence-тиры и гейты; **ни один драйвер сегодня не помечен FIELD/CERTIFIED**. Расширение API enum — follow-up.
+**Accepted** (2026-10-12) — задаёт evidence-тиры и гейты; **ни один драйвер сегодня не помечен FIELD/CERTIFIED**. Enum `FIELD` / `CERTIFIED` + пустые evidence maps + CI — landed как follow-up волны 1.
 
 Канон: [../../en/decisions/0067-field-certified-maturity.md](../../en/decisions/0067-field-certified-maturity.md).
 
 ## Контекст
 
-[ADR-0022](0022-driver-production-matrix.md): `PRODUCTION` = **lab CI**. Для полевого доверия этого мало. Playbook уже делит **playbook-ready** и **ready-for-field**, но enum драйвера — только PRODUCTION/BETA/STUB.
+[ADR-0022](0022-driver-production-matrix.md): `PRODUCTION` = **lab CI**. Для полевого доверия этого мало. Playbook уже делит **playbook-ready** и **ready-for-field**; enum драйвера теперь включает FIELD/CERTIFIED (строк в матрице пока нет).
 
 ## Решение
 
 ### Тиры драйвера
 
-| Тир | Где | Смысл |
-|-----|-----|--------|
-| STUB / BETA / PRODUCTION | `DriverMaturity` | Как в 0022 (lab CI для PRODUCTION) |
-| **FIELD** | Evidence + playbook (волна 1) | Именованная **заводская** площадка + soak ≥7д + OT sign-off **по драйверу** |
-| **CERTIFIED** | Evidence (волна 1) | FIELD (или waiver) + conformance / сертификат |
+| Тир | Смысл |
+|-----|--------|
+| STUB / BETA / PRODUCTION | Как в 0022 (lab CI для PRODUCTION) |
+| **FIELD** | Именованная **заводская** площадка + soak ≥7д + OT sign-off **по драйверу** |
+| **CERTIFIED** | FIELD (или waiver) + conformance / сертификат |
 
-В волне 1 enum **не** расширяется.
+Enum `FIELD` / `CERTIFIED` есть; строк в матрице с ними пока нет.
 
 ### Не путать с marketplace-пилотами
 
@@ -28,9 +28,9 @@
 |--------|---------|---------|
 | **Marketplace / solution pilots** | Бандлы в `examples/marketplace-catalog/` — [marketplace-pilots](../marketplace-pilots.md) | **Рабочие / REAL** |
 | **Lab OT Trust** (BL-140) | Lab VLAN soak Modbus/MQTT/OPC UA | Lab evidence; не customer-plant FIELD |
-| **Driver FIELD/CERTIFIED** | Evidence (+ later enum) протокола на named plant | **0** |
+| **Driver FIELD/CERTIFIED** | Enum + evidence map протокола на named plant | **0 строк** |
 
-Рабочий marketplace-пилот **не** повышает драйвер до FIELD. Ноль driver FIELD **не** значит «нет рабочих пилотов».
+Рабочий marketplace-пилот **не** повышает драйвер до `FIELD`. `FIELD count = 0` **не** значит «нет рабочих пилотов».
 
 ### Гейт FIELD
 
@@ -48,11 +48,11 @@ FIELD (или waiver) + артефакт conformance/сертификации, �
 
 ### Честность (2026-10-12)
 
-Marketplace / solution pilots — **много, рабочие**. Driver FIELD = **0**; CERTIFIED = **0**; enum FIELD/CERTIFIED — **ещё нет**.
+Marketplace / solution pilots — **много, рабочие**. Driver FIELD = **0**; CERTIFIED = **0**; enum есть, строк в матрице нет.
 
 ## Последствия
 
-Правки 0022, driver-promotion, field-pilot-playbook, scorecard. Follow-up: enum + CI на evidence paths.
+Правки 0022, driver-promotion, field-pilot-playbook, scorecard. Follow-up: заполнить evidence maps после named-plant gate.
 
 ## Связанное
 

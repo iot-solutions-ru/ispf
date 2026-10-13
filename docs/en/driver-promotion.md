@@ -14,12 +14,12 @@ How to move drivers from **stub** / **beta** to **production** (Phase 3.2). Evid
 | `BETA` | Working protocol with limitations (platform, auth, partial stack) |
 | `STUB` | Connectivity shell — not for production telemetry |
 
-| Evidence tier (docs, not API yet) | Meaning |
+| Evidence tier (API + matrix) | Meaning |
 |-----------------------------------|----------|
-| **FIELD** | Named site soak ≥7d + OT sign-off ([0067](decisions/0067-field-certified-maturity.md)) |
-| **CERTIFIED** | FIELD (or waiver) + protocol conformance / cert artifact |
+| **FIELD** | Named site soak ≥7d + OT sign-off; requires `FIELD_EVIDENCE_PATHS` entry ([0067](decisions/0067-field-certified-maturity.md)) |
+| **CERTIFIED** | FIELD (or waiver) + conformance; requires `CERTIFIED_EVIDENCE_PATHS` |
 
-API label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/drivers`.
+No driver uses FIELD/CERTIFIED yet (evidence maps empty). API label is set in `DriverMaturityRegistry` / matrix and returned in `GET /api/v1/drivers`.
 
 ## Promotion checklist
 

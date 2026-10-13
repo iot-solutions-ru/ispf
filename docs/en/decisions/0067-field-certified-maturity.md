@@ -2,27 +2,27 @@
 
 ## Status
 
-**Accepted** (2026-10-12) — defines evidence tiers and gates; **no driver is labeled FIELD or CERTIFIED today**. API enum extension is a follow-up.
+**Accepted** (2026-10-12) — defines evidence tiers and gates; **no driver is labeled FIELD or CERTIFIED today**. `DriverMaturity.FIELD` / `.CERTIFIED` enum values + empty evidence maps + CI gates landed as the Wave 1 follow-up.
 
 ## Context
 
-[ADR-0022](0022-driver-production-matrix.md) made `PRODUCTION` mean **lab CI** (loopback / integration test + docs + honest capabilities). That bar is necessary and insufficient for plant trust. The field-pilot playbook already distinguishes **playbook-ready** vs **ready-for-field**, but the driver matrix enum only has `PRODUCTION` / `BETA` / `STUB`. Scorecard OT / HMI residuals (`P-OT`, `P-HMI-FIELD`) need named tiers so agents and tenders cannot oversell lab PRODUCTION as field-proven.
+[ADR-0022](0022-driver-production-matrix.md) made `PRODUCTION` mean **lab CI** (loopback / integration test + docs + honest capabilities). That bar is necessary and insufficient for plant trust. The field-pilot playbook already distinguishes **playbook-ready** vs **ready-for-field**, but the driver matrix enum only had `PRODUCTION` / `BETA` / `STUB`. Scorecard OT / HMI residuals (`P-OT`, `P-HMI-FIELD`) need named tiers so agents and tenders cannot oversell lab PRODUCTION as field-proven.
 
 Related: [0057](0057-ot-trust-wave1-dnp3-poll-only.md) (capability honesty), [field-pilot-playbook](../field-pilot-playbook.md), [driver-promotion](../driver-promotion.md).
 
 ## Decision
 
-### 1. Four maturity stories (only three in the API today)
+### 1. Driver maturity tiers (API)
 
-| Tier | Where it lives | Meaning |
-|------|----------------|---------|
-| **STUB** | `DriverMaturity` | Connectivity / placeholder — not for production telemetry |
-| **BETA** | `DriverMaturity` | Works with declared limits; coverage partial or hardware-dependent |
-| **PRODUCTION** | `DriverMaturity` | Lab CI gate per [0022](0022-driver-production-matrix.md) |
-| **FIELD** | Evidence + playbook status (Wave 1) | Named site soak + OT sign-off for claimed capabilities |
-| **CERTIFIED** | Evidence (Wave 1) | FIELD (or explicit waiver) + protocol conformance / formal cert artifact |
+| Tier | Meaning |
+|------|---------|
+| **STUB** | Connectivity / placeholder — not for production telemetry |
+| **BETA** | Works with declared limits; coverage partial or hardware-dependent |
+| **PRODUCTION** | Lab CI gate per [0022](0022-driver-production-matrix.md) |
+| **FIELD** | Named **plant/site** soak + OT sign-off for that **driver’s** claimed capabilities |
+| **CERTIFIED** | FIELD (or explicit waiver) + protocol conformance / formal cert artifact |
 
-Wave 1 does **not** add `FIELD` / `CERTIFIED` to `DriverMaturity`. Catalog stays PRODUCTION/BETA/STUB. Promotion to FIELD/CERTIFIED is recorded in docs/evidence + playbook/status tables until a follow-up ships enum + matrix columns.
+`DriverMaturity` includes `FIELD` and `CERTIFIED`. Matrix rows stay PRODUCTION until evidence maps are filled; `FIELD_EVIDENCE_PATHS` / `CERTIFIED_EVIDENCE_PATHS` in `DriverProductionMatrix` are empty. CI fails if a row is labeled FIELD/CERTIFIED without a resolvable evidence file.
 
 ### 1b. Do not confuse with marketplace / solution pilots
 
@@ -32,9 +32,9 @@ These are **different products of “pilot”**:
 |------|------------|--------------|
 | **Marketplace / solution pilots** | Installable industry bundles under `examples/marketplace-catalog/` (HVAC, tank-farm, oil-control, MES refs, twins, …) + demostand — [marketplace-pilots](../marketplace-pilots.md) | **Working / REAL** — CI catalog validate, dogfood, operator UIs |
 | **Lab OT Trust driver pilots** (BL-140) | Modbus / MQTT / OPC UA lab VLAN soaks + journals | Lab evidence **Consumed**; not customer-plant FIELD |
-| **Driver FIELD / CERTIFIED** (this ADR) | Evidence (+ later enum) for a **protocol driver** at a **named plant** | **Zero** — C1 named plant still open |
+| **Driver `FIELD` / `CERTIFIED`** (this ADR) | Enum + evidence map for a **protocol driver** at a **named plant** | **Zero rows** — C1 named plant still open |
 
-A working marketplace solution does **not** auto-promote its drivers to FIELD. Conversely, zero driver FIELD evidence does **not** mean “ISPF has no working pilots.”
+A working marketplace solution does **not** auto-promote its drivers to `FIELD`. Conversely, `FIELD count = 0` does **not** mean “ISPF has no working pilots.”
 
 ### 2. FIELD gate (driver or pilot scenario)
 
@@ -58,10 +58,10 @@ Lab VLAN soaks **without** a named plant / C1 site do **not** satisfy FIELD (hon
 
 | Surface | FIELD-equivalent today | Notes |
 |---------|------------------------|-------|
-| Drivers | This ADR | Primary |
+| Drivers | This ADR | Primary; matrix enum |
 | HMI / PWA offline | **P-HMI-FIELD** (on-site tablet / airplane) | Lab 2h/8h CDP ≠ FIELD |
-| Solutions / marketplace | Working reference pilots (catalog) | Real installs; not driver FIELD |
-| Solutions / MES plant soak | MES field soak journals | Named MES site ≠ driver FIELD |
+| Solutions / marketplace | Working reference pilots (catalog) | Real installs; not driver `FIELD` |
+| Solutions / MES plant soak | MES field soak journals | Named MES site ≠ driver enum |
 
 ### 5. Honesty snapshot (2026-10-12)
 
@@ -69,22 +69,21 @@ Lab VLAN soaks **without** a named plant / C1 site do **not** satisfy FIELD (hon
 |-------|--------|
 | Marketplace / solution pilots (catalog + demostand) | **Many — working** |
 | Drivers with `DriverMaturity.PRODUCTION` | Many (lab CI) |
-| Drivers with **FIELD** evidence complete | **Zero** (named plant C1 still open) |
-| Drivers with **CERTIFIED** evidence complete | **Zero** |
-| Enum exposes FIELD/CERTIFIED | **Not yet** (follow-up) |
+| Drivers with **FIELD** matrix evidence | **Zero** (named plant C1 still open) |
+| Drivers with **CERTIFIED** matrix evidence | **Zero** |
+| Enum exposes FIELD/CERTIFIED | **Yes** (no matrix rows use them yet) |
 
 ## Consequences
 
 - Amend [0022](0022-driver-production-matrix.md): FIELD/CERTIFIED are defined here, not “future undefined”.
 - [driver-promotion](../driver-promotion.md) and [field-pilot-playbook](../field-pilot-playbook.md) point at these gates.
 - Scorecard OT / HMI must not claim 9+ / 9.5 without FIELD (and CERTIFIED where conformance is advertised).
-- Follow-up (optional): `DriverMaturity.FIELD` / `.CERTIFIED` + matrix evidence paths + CI that FIELD rows resolve evidence files.
+- Follow-up: fill `FIELD_EVIDENCE_PATHS` / promote a row only after a named-site gate; optional console filter by FIELD/CERTIFIED.
 
 ### Risks
 
 - Pressure to stamp driver FIELD after lab soak or marketplace demo alone — mitigated by C1 named-**plant** requirement and §1b.
 - Readers equate “no FIELD drivers” with “no working pilots” — mitigated by the marketplace lane in §1b / §5.
-- Enum lag vs docs tiers may confuse the console — mitigated by keeping API labels unchanged until follow-up.
 
 ## Related
 

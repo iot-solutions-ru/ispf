@@ -15,4 +15,11 @@ describe("driverMaturity", () => {
     expect(driverMaturityLabel("STUB")).toBe("Stub");
     expect(driverMaturityClass("BETA")).toBe("driver-maturity-badge beta");
   });
+
+  it("recognizes FIELD and CERTIFIED", () => {
+    expect(normalizeDriverMaturity("FIELD")).toBe("FIELD");
+    expect(normalizeDriverMaturity("CERTIFIED")).toBe("CERTIFIED");
+    expect(driverMaturityLabel("FIELD")).toBe("Field");
+    expect(driverMaturityClass("CERTIFIED")).toBe("driver-maturity-badge certified");
+  });
 });

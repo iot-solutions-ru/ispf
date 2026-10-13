@@ -72,7 +72,7 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 |---|-----------|:-----:|---------|--------------|
 | 1 | Unified data model | 8.5 | **REAL** | Object tree, CEL, blueprints; `AlertRuleListener` → `AlertRuleService`; correlators in `EventCorrelatorService` |
 | 2 | SCADA / HMI | 8.0 | **PARTIAL** | `ispf-pid-v1` `totalSymbols: 218`; `ScadaMimicEditor.tsx`; demostand FPS [`hmi-fps/2026-09-04-…ui-pump-station`](../evidence/hmi-fps/2026-09-04-ispf-vps-0.9.207-ui-pump-station.json); unmocked 500-el [`…hmi-stress-500`](../evidence/hmi-fps/2026-09-04-ispf-vps-0.9.207-hmi-stress-500.json) (~47 FPS median); lab offline **2h** + **8h** CDP [`hmi-offline/…`](../evidence/hmi-offline/). Residual: on-site tablet (**P-HMI-FIELD**) |
-| 3 | OT/IT drivers | 7.0 | **PARTIAL** | Lab `PRODUCTION` catalog Waves 1–11 (**162/162**); BL-191 honesty Done; TOP-20 fixtures **14/20**; BL-140 **lab** soaks Consumed ([ot-trust](../evidence/ot-trust/)). [ADR-0067](decisions/0067-field-certified-maturity.md): driver **FIELD/CERTIFIED evidence = 0** (named plant C1 open) — **not** a claim that marketplace/solution pilots are broken (HVAC, tank-farm, MES, twins, … are REAL). DNP3 `writePoint` still throws |
+| 3 | OT/IT drivers | 7.0 | **PARTIAL** | Lab \PRODUCTION\ catalog Waves 1–11 (**162/162**); BL-191 honesty Done; TOP-20 fixtures **14/20**; BL-140 **lab** soaks Consumed ([ot-trust](../evidence/ot-trust/)). [ADR-0067](decisions/0067-field-certified-maturity.md): driver **FIELD/CERTIFIED matrix = 0** (named plant C1 open) — **not** a claim that marketplace/solution pilots are broken (HVAC, tank-farm, MES, twins, … are REAL). DNP3 \writePoint\ still throws |
 | 4 | Historian | 9.5 | **REAL (lab SLO)** | JVM gates PASS ([`historian-scale/2026-09-04-jvm-…`](../evidence/historian-scale/2026-09-04-jvm-analytics-scale-gate.md)); Enterprise L lab ([`2026-09-05-lab-192.168.100.10-enterprise-l.md`](../evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md)): 50k history-enabled + ≥1B CH + multi-tag p95≈49 ms. **Honesty:** synthetic CH fill; demostand is not the L catalog |
 | 5 | Automation / alarms | 7.5 | **PARTIAL** | Alert rules + correlators **REAL**; alarm shelving approval **persisted** (BL-158) |
 | 6 | Workflow / BPMN | 7.5 | **REAL** | `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`; not full BPMN 2.0; **P-BPMN** parked |
@@ -91,7 +91,7 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 |-------|----------|
 | DNP3 PRODUCTION poll-only — `writePoint` not implemented (ADR-0057) | `Dnp3DeviceDriver.writePoint()` — matrix `PRODUCTION` + `POLL` only; write still open |
 | Partner Portal still external | `PartnerProgramService` persists directory/enroll (`source=db`); portal sync out of repo |
-| Driver FIELD evidence = 0 (named plant C1 open) | [ADR-0067](decisions/0067-field-certified-maturity.md) — separate from working marketplace/solution pilots |
+| Driver FIELD matrix = 0 (named plant C1 open) | [ADR-0067](decisions/0067-field-certified-maturity.md) — separate from working marketplace/solution pilots |
 
 ---
 
