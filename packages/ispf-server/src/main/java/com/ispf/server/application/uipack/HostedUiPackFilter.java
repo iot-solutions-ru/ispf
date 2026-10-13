@@ -92,6 +92,15 @@ public class HostedUiPackFilter extends OncePerRequestFilter {
         }
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("X-Content-Type-Options", "nosniff");
+        // ADR-0073 Wave 2A: default CSP on hosted packs (hostile-JS assumption for partner class).
+        response.setHeader(
+                "Content-Security-Policy",
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+                        + "img-src 'self' data:; connect-src 'self'; font-src 'self' data:; "
+                        + "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+        );
+        response.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+        response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
         if ("HEAD".equalsIgnoreCase(request.getMethod())) {
             response.setContentLengthLong(Files.size(asset));
             return;
