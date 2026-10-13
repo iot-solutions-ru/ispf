@@ -87,7 +87,60 @@ class PlatformScriptBridgeTest {
                 Map.of("value", 22.0, "unit", "C")
         );
         var temperature = objectManager.require(INSTANCE_PATH).getVariable("temperature").orElseThrow().value().orElseThrow();
+        assertThat(temperature.schema().name()).isEqualTo("temperature");
         assertThat(temperature.firstRow().get("value")).isEqualTo(22.0);
+        assertThat(temperature.firstRow().get("unit")).isEqualTo("C");
+    }
+
+    @Test
+    void setDriverTelemetryKeepsNamedVariableSchema() {
+        String name = "script-bridge-humidity-" + System.nanoTime();
+        aclObjectPath = "root.platform.devices." + name;
+        objectManager.create(
+                "root.platform.devices",
+                name,
+                ObjectType.DEVICE,
+                "Humidity telemetry",
+                "",
+                null
+        );
+        DataSchema schema = DataSchema.builder("humidity")
+                .field("value", FieldType.DOUBLE)
+                .field("unit", FieldType.STRING)
+                .build();
+        objectManager.createVariable(
+                aclObjectPath,
+                "humidity",
+                schema,
+                true,
+                true,
+                DataRecord.single(schema, Map.of("value", 10.0, "unit", "%")),
+                false,
+                null,
+                List.of(),
+                List.of()
+        );
+
+        bridge.setDriverTelemetry(aclObjectPath, "humidity", Map.of("value", 55.0));
+
+        var humidity = objectManager.require(aclObjectPath).getVariable("humidity").orElseThrow().value().orElseThrow();
+        assertThat(humidity.schema().name()).isEqualTo("humidity");
+        assertThat(humidity.firstRow()).containsEntry("value", 55.0).containsEntry("unit", "%");
+        assertThat(objectManager.require(aclObjectPath).getVariable("temperature")).isEmpty();
+    }
+
+    @Test
+    void setDriverTelemetryRejectsBlankOrMissingVariable() {
+        assertThatThrownBy(() -> bridge.setDriverTelemetry("root.platform.devices.demo-sensor-01", " ", Map.of("value", 1)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("variable is required");
+        assertThatThrownBy(() -> bridge.setDriverTelemetry(
+                "root.platform.devices.demo-sensor-01",
+                "not-a-variable",
+                Map.of("value", 1)
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Variable not found");
     }
 
     @Test
