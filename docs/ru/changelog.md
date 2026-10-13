@@ -11,6 +11,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Добавлено
 
+- Lab-гейт upgrade bundle (ADR-0064 волна 2): `BundleUpgradeCompatGateTest` — catalog `marketplace-demo` с `formatVersion: 1`, reject неподдерживаемого формата, redeploy local marketplace; docs [release-upgrade](release-upgrade.md). Честность: только lab, не cluster N→N+1.
 - Envelope secrets-key + ротация (ADR-0065): ciphertext `ispf1.<keyId>.…`; legacy Base64 читается; `secrets-previous-key` для dual-read; `POST /api/v1/federation/secrets-key/reencrypt`; смена DATABASE-ключа из UI перешифровывает vault/federation на месте.
 
 ### Изменено

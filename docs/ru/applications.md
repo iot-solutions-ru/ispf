@@ -138,7 +138,7 @@ Content-Type: application/json
 
 `manifest.version` является **обязательным** и должно быть строгим значением `MAJOR.MINOR.PATCH` (например, `1.0.0`). Недопустимые значения отклоняются при анализе, проверке и развертывании.
 
-`manifest.formatVersion` — опциональное **целое** для формы JSON (не semver решения). Нет поля ⇒ `1`. Неподдерживаемые значения отклоняются. Pull-from-tree пишет `formatVersion: 1`. См. [0064-release-compatibility-lts](../en/decisions/0064-release-compatibility-lts.md).
+`manifest.formatVersion` — опциональное **целое** для формы JSON (не semver решения). Нет поля ⇒ `1`. Неподдерживаемые значения отклоняются. Pull-from-tree пишет `formatVersion: 1`. См. [0064-release-compatibility-lts](decisions/0064-release-compatibility-lts.md) и lab-гейт [release-upgrade](release-upgrade.md) (не cluster N→N+1).
 
 Необязательные поля:
 
