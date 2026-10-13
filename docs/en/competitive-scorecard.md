@@ -79,7 +79,7 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 | 7 | MES / ISA-95 | 6.5 | **PARTIAL** | Marketplace `mes-platform`; stub ERP marks **`simulated`** (not live 1C/SAP — **P-ERP** / BL-169 parked). No production field MES site |
 | 8 | Low-code velocity | 8.0 | **REAL** | Dashboard builder, bundle deploy (`MarketplaceLocalBundleService.installLocalBundle`), spreadsheets |
 | 9 | AI-assisted development | 9.0 | **REAL** | BL-178 **52/52 @100%**; BL-177/180 live smoke harness; soft re-soaks under [`docs/evidence/ai-generator/`](../evidence/ai-generator/). Residual for 10: optional multi-day plant journal — soft archives do **not** mint new scores |
-| 10 | Security / RBAC | 8.5 | **PARTIAL** | TOTP MFA GA (BL-153); ACL + trusted-channel (BL-154); SaaS tenant-admin + PG RLS (BL-155); SIEM audit (BL-156). Residual: hired pen-test (**G-01** / **P-PENTEST**), optional hard schema routing, WebAuthn (BL-194) |
+| 10 | Security / RBAC | 8.5 | **PARTIAL** | Contract: [ADR-0066](decisions/0066-security-model.md). TOTP MFA GA (BL-153); ACL + trusted-channel (BL-154); SaaS tenant-admin + PG RLS (BL-155); secrets rotation (ADR-0065); SIEM audit (BL-156). Residual: hired pen-test (**G-01** / **P-PENTEST**), optional hard schema routing, WebAuthn (BL-194 / ADR-0056) |
 | 11 | Deploy / scale / edge | 7.5 | **PARTIAL** | Federation MoM (BL-188); Helm + ARM edge (BL-186/187); no CI load proof for cluster / 10+ peer scale |
 | 12 | Ecosystem / marketplace | 6.5 | **PARTIAL** | Marketplace GA + CI catalog gate (BL-183); partner directory `source=db` (BL-184); Partner Portal sync still external |
 | 13 | Documentation / DX | 8.5 | **REAL** | Docs + ADRs; stub honesty in code; evidence folders under `docs/evidence/` |

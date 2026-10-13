@@ -70,6 +70,7 @@ When secrets-key is **not** set in YAML/env, `POST /api/v1/federation/secrets-ke
 
 ## Related
 
+- [0066-security-model](0066-security-model.md) — platform security claim boundary
 - [0049-ot-automation-excellence](0049-ot-automation-excellence.md)
 - [tutorial-ot-credentials-vault](../tutorial-ot-credentials-vault.md)
 - [security](../security.md), [federation](../federation.md)
