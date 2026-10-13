@@ -8,11 +8,13 @@
 
 ## Профиль
 
-**Демо/холостой** из [DEMOSTANDS.md § Демо/холостой](demostands.md):
+**Демо/холостой** из [DEMOSTANDS.md § Демо/холостой](demostands.md). Берите именованный оверлей; собирать потировые worker-env вручную — устаревший escape hatch.
 
 - `ISPF_CLUSTER_ENABLED=false`, unified role `all`
+- `ISPF_DEPLOY_PROFILE=demo-idle`
 - Overlay [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env)
 - 2 РАБОТАЮЩИХ драйвера (остальные ОСТАНОВЛЕНЫ): SNMP `TELEMETRY_ONLY`, один виртуальный `FULL` для демонстрационной автоматизации.
+- Проверка: `GET /api/v1/platform/effective-config` (роль чтения) → `profile.deployProfile` и `resolvedPools`
 
 ## Типовая топология (одноузловой Docker)
 

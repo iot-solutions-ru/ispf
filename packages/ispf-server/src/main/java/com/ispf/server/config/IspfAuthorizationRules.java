@@ -174,6 +174,9 @@ public final class IspfAuthorizationRules {
                         "/api/v1/platform/analytics/query/export")
                 .hasAnyRole(IspfRoles.ROLES_READ);
 
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/platform/effective-config")
+                .hasAnyRole(IspfRoles.ROLES_READ);
+
         auth.requestMatchers(HttpMethod.GET, "/api/v1/platform/jobs/**")
                 .hasAnyRole(IspfRoles.ROLES_READ);
 

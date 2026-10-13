@@ -11,7 +11,7 @@
 | Secrets envelope | Closed (0065) | — |
 | FIELD vs marketplace | Closed (0067 §1b) | — |
 | Poka-yoke vs WARNING | Closed (Wave 1A) | 1A |
-| Ручки vs профили | Planned | 1B |
+| Ручки vs профили | Closed (Wave 1B) | 1B |
 | Тихая деградация кластера | Planned | 1C |
 | Ui-pack origin | Planned | 2A |
 | Пять TS stores | Planned | 2B |
