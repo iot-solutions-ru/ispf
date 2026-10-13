@@ -6,7 +6,7 @@
 
 ## Context
 
-Live variables carry quality flags (0025). Historian path today is value-centric; `object-model` / 0025 already call historian quality a follow-up. Phase 28 closed query SLO tiers without quality columns.
+Live variables carry quality flags (0025a). Before this slice the historian path was value-centric. Phase 28 closed query SLO tiers without quality columns.
 
 ## Decision
 

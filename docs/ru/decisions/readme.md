@@ -48,7 +48,7 @@
 | [0071-northbound-uns](0071-northbound-uns.md) | Northbound / UNS scope — **Accepted** |
 | [0072-edge-fleet-rollout](0072-edge-fleet-rollout.md) | Edge / S&F / fleet lanes — **Accepted** |
 | [0073-hosted-ui-pack-trust](0073-hosted-ui-pack-trust.md) | Доверие ui-pack (amends 0054) — **Accepted** |
-| [0074-historian-quality-persistence](0074-historian-quality-persistence.md) | Quality в историке + TCK — **Accepted** |
+| [0074-historian-quality-persistence](0074-historian-quality-persistence.md) | Quality в историке + jdbc TCK — **Accepted**, implementation **Partial** |
 | [0075-observability-slo-otel](0075-observability-slo-otel.md) | SLO / OTel taxonomy — **Accepted** |
 | [0076-external-secrets-providers](0076-external-secrets-providers.md) | KMS/HSM/Vault/GOST non-claims — **Accepted** |
 
