@@ -1,12 +1,14 @@
 package com.ispf.server.federation;
 
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.server.security.UiPackScopedAccessFilter;
 import com.ispf.server.security.acl.VariableAclRequestContext;
 import com.ispf.server.tenant.TenantScopeService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -48,6 +50,13 @@ public class FederationOnBehalfOfFilter extends OncePerRequestFilter {
 
         Authentication channelAuthentication =
                 SecurityContextHolder.getContext().getAuthentication();
+        if (UiPackScopedAccessFilter.isUiPackScoped(channelAuthentication)) {
+            writeError(response, new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "ui-pack scoped token cannot delegate a console principal"
+            ));
+            return;
+        }
         Authentication delegatedAuthentication;
         try {
             delegatedAuthentication = FederationDelegatedPrincipal.installFromHttpChannel(

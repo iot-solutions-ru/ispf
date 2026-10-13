@@ -1,5 +1,6 @@
 package com.ispf.server.history;
 
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
@@ -21,14 +22,17 @@ public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteS
 
     private final JdbcVariableHistoryWriteStore primary;
     private final ClickHouseVariableHistorySecondaryWriteStore secondary;
+    private final AutomationMetricsRecorder metrics;
     private final Set<String> primaryAheadOfSecondary = ConcurrentHashMap.newKeySet();
 
     public DualWriteVariableHistoryWriteStore(
             JdbcVariableHistoryWriteStore primary,
-            ClickHouseVariableHistorySecondaryWriteStore secondary
+            ClickHouseVariableHistorySecondaryWriteStore secondary,
+            AutomationMetricsRecorder metrics
     ) {
         this.primary = primary;
         this.secondary = secondary;
+        this.metrics = metrics;
     }
 
     @Override
@@ -73,6 +77,7 @@ public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteS
         try {
             secondary.appendBatch(records);
         } catch (RuntimeException ex) {
+            metrics.recordHistorianDualWriteSecondaryFailure();
             throw new IllegalStateException(
                     "variable history secondary write failed; secondary store is behind primary",
                     ex

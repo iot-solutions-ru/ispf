@@ -51,21 +51,21 @@ public class AiToolRegistry {
             ApplicationBundleDeployService.BundleManifest manifest,
             String actor
     ) {
-        BundleValidationResult result = manifestValidator.validate(appId, manifest);
-        long auditId = auditService.record(
-                "validate_bundle",
-                appId,
-                actor,
-                writeManifest(manifest),
-                result.status(),
-                null,
-                null,
-                contextPackService.contextPackVersion(),
-                result.errors()
-        );
-        Map<String, Object> response = result.toMap();
-        response.put("auditId", auditId);
-        return response;
+        return validateBundle(appId, manifest, actor, false);
+    }
+
+    /**
+     * @param shipCanon when true, {@code LOGIC_HOST_DEVICE} warnings become errors (ADR-0060 ship path).
+     *                  Authoring {@code validate_bundle} keeps this false.
+     */
+    public Map<String, Object> validateBundle(
+            String appId,
+            ApplicationBundleDeployService.BundleManifest manifest,
+            String actor,
+            boolean shipCanon
+    ) {
+        BundleValidationResult result = manifestValidator.validate(appId, manifest, shipCanon);
+        return auditedBundle("validate_bundle", appId, manifest, actor, result, shipCanon);
     }
 
     public Map<String, Object> dryRunDeploy(
@@ -73,9 +73,35 @@ public class AiToolRegistry {
             ApplicationBundleDeployService.BundleManifest manifest,
             String actor
     ) {
+        return dryRunDeploy(appId, manifest, actor, false);
+    }
+
+    /**
+     * @param shipCanon when true, promote ship-canon warnings after the dry-run plan is collected
+     */
+    public Map<String, Object> dryRunDeploy(
+            String appId,
+            ApplicationBundleDeployService.BundleManifest manifest,
+            String actor,
+            boolean shipCanon
+    ) {
         BundleValidationResult result = manifestValidator.dryRun(appId, manifest);
+        if (shipCanon) {
+            result = BundleManifestValidator.promoteShipCanon(result);
+        }
+        return auditedBundle("dry_run_deploy", appId, manifest, actor, result, shipCanon);
+    }
+
+    private Map<String, Object> auditedBundle(
+            String tool,
+            String appId,
+            ApplicationBundleDeployService.BundleManifest manifest,
+            String actor,
+            BundleValidationResult result,
+            boolean shipCanon
+    ) {
         long auditId = auditService.record(
-                "dry_run_deploy",
+                tool,
                 appId,
                 actor,
                 writeManifest(manifest),
@@ -87,6 +113,9 @@ public class AiToolRegistry {
         );
         Map<String, Object> response = result.toMap();
         response.put("auditId", auditId);
+        if (shipCanon) {
+            response.put("shipCanon", true);
+        }
         return response;
     }
 

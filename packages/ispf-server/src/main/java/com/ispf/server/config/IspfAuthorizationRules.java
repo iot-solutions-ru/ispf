@@ -1,5 +1,7 @@
 package com.ispf.server.config;
 
+import com.ispf.server.application.uipack.UiPackSupport;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -69,6 +71,7 @@ public final class IspfAuthorizationRules {
         auth.requestMatchers(HttpMethod.POST, "/api/v1/objects/by-path/functions/invoke-batch")
                 .hasAnyRole(IspfRoles.ROLES_READ);
 
+        // Pack-scoped tokens (claim uiPackAppId) are further limited by deniesPackScopedApi.
         auth.requestMatchers(HttpMethod.POST, "/api/v1/bff/**")
                 .hasAnyRole(IspfRoles.ROLES_READ);
 
@@ -174,6 +177,9 @@ public final class IspfAuthorizationRules {
                         "/api/v1/platform/analytics/query/export")
                 .hasAnyRole(IspfRoles.ROLES_READ);
 
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/platform/effective-config")
+                .hasAnyRole(IspfRoles.ROLES_READ);
+
         auth.requestMatchers(HttpMethod.GET, "/api/v1/platform/jobs/**")
                 .hasAnyRole(IspfRoles.ROLES_READ);
 
@@ -196,5 +202,70 @@ public final class IspfAuthorizationRules {
                 .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers("/api/v1/**").hasAnyRole(IspfRoles.ROLES_CONFIG);
+    }
+
+    /**
+     * ADR-0073 allowlist for a principal that carries {@code uiPackAppId} / {@code ROLE_UI_PACK}.
+     * Enforced by {@code UiPackScopedAccessFilter} because a request matcher cannot abstain
+     * and then fall through to the role matrix.
+     */
+    public static boolean isPackScopedPathAllowed(String path) {
+        if (path == null) {
+            return false;
+        }
+        if (path.startsWith("/api/v1/bff/")) {
+            return true;
+        }
+        if ("/api/v1/auth/me".equals(path) || "/api/v1/auth/logout".equals(path)) {
+            return true;
+        }
+        if ("/api/v1/info".equals(path) || path.startsWith("/actuator/health")) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @return true when a pack-scoped principal must be rejected for this request
+     */
+    public static boolean deniesPackScopedApi(HttpServletRequest request, String uiPackAppId) {
+        String path = requestPath(request);
+        if (!path.startsWith("/api/") && !path.startsWith("/actuator/")) {
+            return false;
+        }
+        if (!isPackScopedPathAllowed(path)) {
+            return true;
+        }
+        if (path.startsWith("/api/v1/bff/")) {
+            return !bffMatchesApp(request, uiPackAppId);
+        }
+        return false;
+    }
+
+    private static boolean bffMatchesApp(HttpServletRequest request, String uiPackAppId) {
+        if (uiPackAppId == null || uiPackAppId.isBlank()) {
+            return true;
+        }
+        String header = request.getHeader(UiPackSupport.APP_HEADER);
+        if (header != null && !header.isBlank() && !uiPackAppId.equals(header.trim())) {
+            return false;
+        }
+        String refererApp = UiPackSupport.refererAppId(request.getHeader("Referer"));
+        return refererApp == null || uiPackAppId.equals(refererApp);
+    }
+
+    private static String requestPath(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        String context = request.getContextPath();
+        if (context != null && !context.isEmpty() && path != null && path.startsWith(context)) {
+            path = path.substring(context.length());
+        }
+        if (path == null || path.isEmpty()) {
+            return "/";
+        }
+        if (path.length() > 1 && path.endsWith("/")) {
+            path = path.substring(0, path.length() - 1);
+        }
+        return path;
     }
 }

@@ -20,6 +20,8 @@ Turnkey **hot → warm → cold** profile. Config: `ispf.historian.tiers` in `ap
 
 Hot tier may enable **dual-write** to warm ClickHouse (`dual-write-enabled: true`) while recent samples stay on JDBC; with tier routing enabled, aged samples route to warm automatically.
 
+**Flagship stores** are jdbc (PostgreSQL/Timescale) and ClickHouse. Cassandra/Scylla ([0025b](decisions/0025-cassandra-scylla-timeseries-store.md)) stays **experimental** and does not persist sample `quality`. A failed ClickHouse dual-write increments `ispf.historian.dual_write.secondary_failures` and does not fail the jdbc primary write.
+
 ---
 
 ## Tier routing enforcement (BL-202)

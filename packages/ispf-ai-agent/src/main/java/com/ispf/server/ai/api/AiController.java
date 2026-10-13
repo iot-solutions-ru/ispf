@@ -363,6 +363,8 @@ public class AiController {
         session.runState().setClientFocus(AgentClientFocusPromptSection.sanitize(request.clientFocus()));
         session.runState().setClientChannel(request.clientChannel());
         session.runState().setUiLocale(request.uiLocale());
+        // Persist before async worker reloads the session (channel/focus used to be memory-only).
+        agentSessionStore.persistState(session);
         boolean hasAttachments = request.attachments() != null && !request.attachments().isEmpty();
         if ((request.message() == null || request.message().isBlank()) && !hasAttachments) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "message is required");

@@ -113,7 +113,7 @@ public final class LlmHttpSupport {
         ObjectNode root = MAPPER.createObjectNode();
         root.put("model", request.model() != null ? request.model() : "");
         ArrayNode messages = root.putArray("messages");
-        for (LlmMessage message : request.messages()) {
+        for (LlmMessage message : normalizeMessagesForOpenAiCompatible(request.messages())) {
             ObjectNode item = chatMessageNode(message, false);
             messages.add(item);
         }
@@ -128,6 +128,41 @@ public final class LlmHttpSupport {
             mergeProviderOptions(root, request.providerOptions());
         }
         return root;
+    }
+
+    /**
+     * Many OpenAI-compatible backends (vLLM / Qwen) reject {@code system} anywhere except index 0.
+     * Fold every system message into a single leading system; keep other roles in order.
+     */
+    static List<LlmMessage> normalizeMessagesForOpenAiCompatible(List<LlmMessage> messages) {
+        if (messages == null || messages.isEmpty()) {
+            return List.of();
+        }
+        StringBuilder system = new StringBuilder();
+        List<LlmMessage> rest = new ArrayList<>();
+        for (LlmMessage message : messages) {
+            if (message == null || message.role() == null) {
+                continue;
+            }
+            if ("system".equalsIgnoreCase(message.role().trim())) {
+                String content = message.content() == null ? "" : message.content().trim();
+                if (!content.isBlank()) {
+                    if (!system.isEmpty()) {
+                        system.append("\n\n");
+                    }
+                    system.append(content);
+                }
+                continue;
+            }
+            rest.add(message);
+        }
+        if (system.isEmpty()) {
+            return List.copyOf(rest);
+        }
+        List<LlmMessage> out = new ArrayList<>(rest.size() + 1);
+        out.add(new LlmMessage("system", system.toString()));
+        out.addAll(rest);
+        return List.copyOf(out);
     }
 
     private static ObjectNode chatMessageNode(LlmMessage message, boolean ollamaArgumentsAsObject) {
@@ -224,7 +259,7 @@ public final class LlmHttpSupport {
         ObjectNode root = chatCompletionBody(request);
         if (request.tools() != null && !request.tools().isEmpty()) {
             ArrayNode messages = root.putArray("messages");
-            for (LlmMessage message : request.messages()) {
+            for (LlmMessage message : normalizeMessagesForOpenAiCompatible(request.messages())) {
                 messages.add(chatMessageNode(message, true));
             }
         }

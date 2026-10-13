@@ -81,6 +81,7 @@ public final class AcceptanceVerdict {
         add(checks, mimic(steps, userMessage));
         add(checks, dashboard(steps));
         add(checks, bundleTests(steps, assignmentType));
+        add(checks, logicHost(steps, assignmentType));
         return new Result(aggregate(checks), List.copyOf(checks));
     }
 
@@ -302,6 +303,116 @@ public final class AcceptanceVerdict {
                 "Cannot finish: APPLICATION_BUNDLE requires PASS from test_function or run_bundle_tests.",
                 "Run test_function or run_bundle_tests and finish only after status PASS."
         );
+    }
+
+    /**
+     * Ship / host-tool acceptance (ADR-0051 × ADR-0004 × ADR-0060).
+     * Interactive {@code validate_bundle} may keep {@code LOGIC_HOST_DEVICE} as WARNING;
+     * accepting a shipped solution or calling a function-host tool fails the check.
+     */
+    private static Check logicHost(List<Map<String, Object>> steps, String assignmentType) {
+        boolean bundleAcceptance = assignmentType != null
+                && !assignmentType.isBlank()
+                && AgentAssignmentType.fromString(assignmentType) == AgentAssignmentType.APPLICATION_BUNDLE;
+        boolean sawShipTool = false;
+        boolean sawHostTool = false;
+        for (Map<String, Object> step : steps) {
+            if (!isToolStep(step)) {
+                continue;
+            }
+            String tool = toolName(step);
+            if (isShipAcceptanceTool(tool)) {
+                sawShipTool = true;
+            }
+            if (isFunctionHostTool(tool)) {
+                sawHostTool = true;
+            }
+        }
+        if (!bundleAcceptance && !sawShipTool && !sawHostTool) {
+            return null;
+        }
+        String violation = logicHostViolation(steps, bundleAcceptance || sawShipTool);
+        if (violation != null) {
+            return failed(
+                    "logic.host",
+                    "Cannot finish: " + violation,
+                    "Move functions to a SINGLETON hub or INSTANCE twin (hostKind SINGLETON|INSTANCE). "
+                            + "Ship acceptance rejects LOGIC_HOST_DEVICE (ADR-0060 / ADR-0004). "
+                            + "Interactive validate_bundle may only warn."
+            );
+        }
+        return passed(
+                "logic.host",
+                "Logic-host canon holds for this acceptance (no LOGIC_HOST_DEVICE, hostKind is SINGLETON or INSTANCE)."
+        );
+    }
+
+    private static String logicHostViolation(List<Map<String, Object>> steps, boolean scanBundleResults) {
+        for (Map<String, Object> step : steps) {
+            if (!isToolStep(step)) {
+                continue;
+            }
+            String tool = toolName(step);
+            Map<String, Object> args = stepMap(step, "arguments");
+            Map<String, Object> result = stepMap(step, "result");
+            if (isFunctionHostTool(tool)) {
+                String kind = String.valueOf(args.getOrDefault("hostKind", ""));
+                String code = String.valueOf(result.getOrDefault("code", ""));
+                String path = String.valueOf(result.getOrDefault("path", ""));
+                boolean schemaBlockedHost = ("REQUIRED_ARG_MISSING".equals(code) || "ARG_ENUM_MISMATCH".equals(code))
+                        && "hostKind".equals(path);
+                if (!LogicHostGuard.allowedKind(kind) || schemaBlockedHost || "LOGIC_HOST_DEVICE".equals(code)) {
+                    return "function host tool " + tool + " is not SINGLETON or INSTANCE"
+                            + (code.isBlank() ? "" : " (" + code + ")");
+                }
+            }
+            boolean scan = scanBundleResults && (isShipAcceptanceTool(tool) || isAuthoringBundleTool(tool));
+            if ((scan || isFunctionHostTool(tool)) && containsLogicHostDevice(result)) {
+                return "LOGIC_HOST_DEVICE in " + tool + " result";
+            }
+        }
+        return null;
+    }
+
+    private static boolean isFunctionHostTool(String tool) {
+        return "deploy_tree_function".equals(tool)
+                || "deploy_app_function".equals(tool)
+                || "create_function".equals(tool);
+    }
+
+    private static boolean isShipAcceptanceTool(String tool) {
+        return "deploy_step_validate".equals(tool)
+                || "deploy_step_dry_run".equals(tool)
+                || "deploy_step_import".equals(tool)
+                || "import_package".equals(tool)
+                || "run_deploy_playbook".equals(tool);
+    }
+
+    private static boolean isAuthoringBundleTool(String tool) {
+        return "validate_bundle".equals(tool) || "dry_run_deploy".equals(tool);
+    }
+
+    private static boolean containsLogicHostDevice(Object node) {
+        if (node instanceof Map<?, ?> map) {
+            if ("LOGIC_HOST_DEVICE".equals(String.valueOf(map.get("code")))) {
+                return true;
+            }
+            for (Object value : map.values()) {
+                if (containsLogicHostDevice(value)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (node instanceof List<?> list) {
+            for (Object item : list) {
+                if (containsLogicHostDevice(item)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return node instanceof String text && text.contains("LOGIC_HOST_DEVICE");
     }
 
     private static boolean alertRequired(List<Map<String, Object>> steps, String userMessage) {
