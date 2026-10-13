@@ -26,8 +26,39 @@ public final class AgentToolSurface {
         LinkedHashSet<String> packs = new LinkedHashSet<>(AgentToolPackCatalog.defaultPacks(mode));
         if (mode != null && mode != AgentInteractionMode.ASK) {
             packs.addAll(AgentToolPackCatalog.hintPacks(userMessage));
+            // Continue / Approve turns often have short messages — keep packs implied by the stored plan.
+            packs.addAll(AgentToolPackCatalog.hintPacks(planHintText(runState)));
+            if (runState.isPlanApproved() || looksLikeContinue(userMessage)) {
+                packs.addAll(AgentToolPackCatalog.executionPacks());
+            }
         }
         runState.setActiveToolPacks(packs);
+    }
+
+    /**
+     * If the tool's pack is inactive, enable it for the rest of the turn and return true.
+     * Returns false when the tool was already active (or always allowed).
+     */
+    public static boolean autoEnablePackForTool(AgentRunState runState, String toolName) {
+        if (runState == null || toolName == null || toolName.isBlank()) {
+            return false;
+        }
+        if (isToolActive(runState, toolName)) {
+            return false;
+        }
+        String pack = AgentToolPackCatalog.packFor(toolName);
+        if (pack == null || pack.isBlank()) {
+            return false;
+        }
+        runState.enableToolPack(pack);
+        // Mutations usually need create_object (devices pack) alongside domain packs.
+        if (AgentToolPackCatalog.DASHBOARDS.equals(pack)
+                || AgentToolPackCatalog.SCADA.equals(pack)
+                || AgentToolPackCatalog.AUTOMATION.equals(pack)
+                || AgentToolPackCatalog.SECURITY.equals(pack)) {
+            runState.enableToolPack(AgentToolPackCatalog.DEVICES);
+        }
+        return true;
     }
 
     public static boolean isToolActive(AgentRunState runState, String toolName) {
@@ -58,6 +89,51 @@ public final class AgentToolSurface {
         result.put("pack", pack);
         result.put("activePacks", runState == null ? List.of() : List.copyOf(runState.activeToolPacks()));
         return result;
+    }
+
+    private static String planHintText(AgentRunState runState) {
+        if (runState == null) {
+            return "";
+        }
+        Map<String, Object> plan = runState.storedPlan();
+        if (plan == null || plan.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        Object goal = plan.get("goal");
+        if (goal != null) {
+            sb.append(goal).append(' ');
+        }
+        Object steps = plan.get("steps");
+        if (steps instanceof List<?> list) {
+            for (Object step : list) {
+                sb.append(step).append(' ');
+            }
+        }
+        Object sections = plan.get("sections");
+        if (sections instanceof List<?> list) {
+            for (Object section : list) {
+                sb.append(section).append(' ');
+            }
+        }
+        return sb.toString();
+    }
+
+    private static boolean looksLikeContinue(String userMessage) {
+        if (userMessage == null || userMessage.isBlank()) {
+            return false;
+        }
+        String text = userMessage.trim().toLowerCase(Locale.ROOT);
+        return text.equals("continue")
+                || text.equals("продолжить")
+                || text.equals("продолжай")
+                || text.startsWith("continue ")
+                || text.startsWith("продолж")
+                || text.contains("утверждаю")
+                || text.contains("начинай")
+                || text.contains("начинаем")
+                || text.equals("ok")
+                || text.equals("ок");
     }
 
     public static List<Map<String, Object>> filterCatalog(

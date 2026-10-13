@@ -101,6 +101,9 @@ public final class DataRecord {
         if (field.type() == FieldType.DATETIME) {
             return datetimeValue(field, value);
         }
+        if (field.type() == FieldType.BOOLEAN) {
+            return BooleanValues.requireBoolean(field.name(), value);
+        }
         if (field.type() == FieldType.RECORD) {
             return nestedRecordValue(field, value);
         }
