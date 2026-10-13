@@ -10,6 +10,19 @@ export const DEFAULT_OBJECT_QUERY_SPEC = JSON.stringify({
   limit: 1000,
 });
 
+/** Defaults for a function on a child of {@code root.platform.queries.*}. */
+export function defaultQueryCatalogFunction(
+  name = "",
+  specJson: string = DEFAULT_OBJECT_QUERY_SPEC,
+): FunctionDescriptor {
+  const run = buildObjectQueryRunFunction(specJson);
+  return {
+    ...run,
+    name: name || "fn",
+    invokeRoles: [],
+  };
+}
+
 export function buildObjectQueryRunFunction(specJson: string = DEFAULT_OBJECT_QUERY_SPEC): FunctionDescriptor {
   return {
     name: "run",

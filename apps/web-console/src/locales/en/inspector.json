@@ -538,6 +538,7 @@
   "descriptor.sourceTypeObjectQuery": "Object Query (OQ JSON)",
   "descriptor.objectQueryEditor": "Object Query spec",
   "descriptor.objectQueryHint": "OQ spec in sourceBody. Invoke returns rows (JSON) + rowCount. Optional patch input for writeback.",
+  "descriptor.queryCatalogFunctionHint": "Query catalog objects use Object Query only. Configure the OQ spec below; script/Java handlers belong on a hub or device object.",
   "descriptor.objectQueryInvalid": "Invalid Object Query spec JSON",
   "descriptor.expressionEditor": "Function expression",
   "descriptor.expressionHint": "Expression is evaluated on invoke. Use context.field or input.field for input schema fields; object variables are available in platform bindings and self.* in CEL.",

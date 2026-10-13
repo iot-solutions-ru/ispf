@@ -209,6 +209,7 @@
   "descriptor.notInvocable": "У функции нет реализации: выберите Script или Java и сохраните код.",
   "descriptor.objectQueryEditor": "Спецификация Object Query",
   "descriptor.objectQueryHint": "OQ spec в sourceBody. Invoke возвращает rows (JSON) + rowCount. Опциональный patch для writeback.",
+  "descriptor.queryCatalogFunctionHint": "Объекты каталога Queries — только Object Query. Настройте OQ spec ниже; script/Java размещайте на hub или device.",
   "descriptor.objectQueryInvalid": "Некорректный JSON Object Query spec",
   "descriptor.outputSchema": "Схема выхода",
   "descriptor.payloadSchema": "Схема payload",

@@ -207,6 +207,7 @@
   "descriptor.notInvocable": "Funktion ohne Implementierung: Script oder Java wählen und Code speichern.",
   "descriptor.objectQueryEditor": "Object Query spec",
   "descriptor.objectQueryHint": "OQ spec in sourceBody. Invoke returns rows (JSON) + rowCount. Optional patch input for writeback.",
+  "descriptor.queryCatalogFunctionHint": "Query-Katalogobjekte nutzen nur Object Query. OQ-Spec unten konfigurieren; Script/Java gehören auf ein Hub- oder Device-Objekt.",
   "descriptor.objectQueryInvalid": "Invalid Object Query spec JSON",
   "descriptor.outputSchema": "Ausgabe-Schema",
   "descriptor.payloadSchema": "Payload-Schema",
