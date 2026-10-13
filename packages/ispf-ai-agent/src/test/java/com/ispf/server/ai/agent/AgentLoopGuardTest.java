@@ -225,8 +225,33 @@ class AgentLoopGuardTest {
         );
         var block = AgentLoopGuard.checkHardBlock("create_binding_rule", Map.of(), steps);
         assertTrue(block.isPresent());
-        assertTrue(block.get().stopTurn());
+        assertFalse(block.get().stopTurn());
         assertTrue(block.get().hint().contains("path, id, expression"));
+    }
+
+    @Test
+    void missingEventSchemaArgsBlockKeepsTurnOpenWithHint() {
+        List<Map<String, Object>> steps = List.of(
+                errorStep("get_event_schema", "objectPath and eventName are required"),
+                errorStep("get_event_schema", "objectPath and eventName are required")
+        );
+        var block = AgentLoopGuard.checkHardBlock("get_event_schema", Map.of(), steps);
+        assertTrue(block.isPresent());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("objectpath"));
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("eventname"));
+    }
+
+    @Test
+    void missingBlueprintArgsBlockKeepsTurnOpenWithHint() {
+        List<Map<String, Object>> steps = List.of(
+                errorStep("get_object_blueprint", "blueprintName or blueprintId required; use list_mixin_blueprints"),
+                errorStep("get_object_blueprint", "blueprintName or blueprintId required; use list_mixin_blueprints")
+        );
+        var block = AgentLoopGuard.checkHardBlock("get_object_blueprint", Map.of(), steps);
+        assertTrue(block.isPresent());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().hint().contains("blueprintName"));
     }
 
     @Test

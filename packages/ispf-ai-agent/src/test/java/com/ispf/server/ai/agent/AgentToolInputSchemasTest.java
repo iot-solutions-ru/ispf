@@ -70,6 +70,19 @@ class AgentToolInputSchemasTest {
 
         Map<String, Object> operatorUi = AgentToolInputSchemas.forTool("configure_operator_ui");
         assertThat(operatorUi.get("required")).asList().contains("title", "defaultDashboard", "dashboards");
+
+        Map<String, Object> eventSchema = AgentToolInputSchemas.forTool("get_event_schema");
+        assertThat(eventSchema.get("required")).asList().contains("objectPath", "eventName");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> eventProps = (Map<String, Object>) eventSchema.get("properties");
+        assertThat(eventProps).containsKeys("objectPath", "eventName");
+        assertThat(eventProps).doesNotContainKey("eventType");
+
+        Map<String, Object> blueprint = AgentToolInputSchemas.forTool("get_object_blueprint");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> blueprintProps = (Map<String, Object>) blueprint.get("properties");
+        assertThat(blueprintProps).containsKeys("blueprintName", "blueprintId");
+        assertThat(blueprintProps).doesNotContainKeys("id", "name");
     }
 
     @Test

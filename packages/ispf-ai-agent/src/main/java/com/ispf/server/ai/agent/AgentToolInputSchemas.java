@@ -484,10 +484,11 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("get_event_schema", objectSchema(
                 props(
-                        "eventType", stringProp("Event type"),
-                        "appId", stringProp("Application id")
+                        "objectPath", stringProp("Device/object path that owns the event"),
+                        "eventName", stringProp("Event name on that object (e.g. Event1)"),
+                        "appId", stringProp("Optional application id for catalog merge")
                 ),
-                List.of(),
+                req("objectPath", "eventName"),
                 true
         ));
         catalog.put("get_example_bundle", objectSchema(
@@ -530,8 +531,8 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("get_object_blueprint", objectSchema(
                 props(
-                        "id", stringProp("Blueprint id"),
-                        "name", stringProp("Blueprint name")
+                        "blueprintName", stringProp("Blueprint name (e.g. virtual-lab-v1)"),
+                        "blueprintId", stringProp("Blueprint id when name is unknown")
                 ),
                 List.of(),
                 true

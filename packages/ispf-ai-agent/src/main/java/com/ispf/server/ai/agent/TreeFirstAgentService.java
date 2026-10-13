@@ -917,23 +917,24 @@ public class TreeFirstAgentService {
                 syncRunPlanState(session);
 
                 if (stopTurnForLoopNoise) {
+                    String continueMessage = loopNoiseContinueMessage(loopNoiseHint, uiLocale);
                     finishSummary = AgentStepHumanizer.isRussian(uiLocale)
                             ? ("Остановил повтор одних и тех же шагов — так лог Studio не засоряется. "
-                            + "Продолжите с пакетным инструментом или уточните задачу.")
+                            + "Исправьте аргументы инструмента и продолжите задание (не уходите в нерелевантный clarify).")
                             : ("Stopped repeating the same steps so the Studio log stays readable. "
-                            + "Continue with a batch tool or clarify the next goal.");
+                            + "Fix the tool args and continue the assignment (do not switch to an unrelated clarify).");
                     finishResult = new LinkedHashMap<>();
                     finishResult.put("interactive", true);
                     finishResult.put("loopNoiseStopped", true);
+                    finishResult.put("awaitingUser", true);
+                    finishResult.put("autoContinueSeconds", 45);
                     if (loopNoiseHint != null && !loopNoiseHint.isBlank()) {
                         finishResult.put("hint", loopNoiseHint);
                     }
                     finishResult.put("suggestions", List.of(
                             Map.of(
                                     "label", AgentStepHumanizer.continueLabel(uiLocale),
-                                    "message", AgentStepHumanizer.isRussian(uiLocale)
-                                            ? "Продолжай: set_dashboard_layout или save_mimic_diagram одним вызовом, без серии мелких add_*."
-                                            : "Continue: use set_dashboard_layout or save_mimic_diagram in one call — no add_* spam.",
+                                    "message", continueMessage,
                                     "primary", true
                             )
                     ));
@@ -1116,6 +1117,27 @@ public class TreeFirstAgentService {
             return preferred;
         }
         return fallback;
+    }
+
+    /**
+     * Primary auto-continue message after a loop-noise stop. Prefer the guard hint so course/alarm
+     * tasks get tool-arg recovery instead of a hard-coded dashboard suggestion.
+     */
+    static String loopNoiseContinueMessage(String loopNoiseHint, String uiLocale) {
+        String hint = loopNoiseHint == null ? "" : loopNoiseHint.trim().replaceAll("\\s+", " ");
+        if (!hint.isBlank()) {
+            String prefix = AgentStepHumanizer.isRussian(uiLocale)
+                    ? "Продолжай задание. "
+                    : "Continue the assignment. ";
+            if (hint.length() > 420) {
+                hint = hint.substring(0, 419) + "…";
+            }
+            return prefix + hint;
+        }
+        boolean ru = AgentStepHumanizer.isRussian(uiLocale);
+        return ru
+                ? "Продолжай следующее подзадание курса с корректными аргументами инструментов (без повтора тех же ERROR)."
+                : "Continue the next assignment step with corrected tool arguments (do not repeat the same ERROR).";
     }
 
     private void publishStep(String sessionId, Map<String, Object> step) {

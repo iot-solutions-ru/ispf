@@ -484,19 +484,45 @@ final class AgentLoopGuard {
             }
             if (streak >= 2) {
                 String hint = identicalErrorHint(normalized, lastError);
+                // Missing-arg loops: block the spam call but keep the turn open so the model
+                // can retry once with corrected args (course / alarm tasks must not stall).
+                boolean stopTurn = !isMissingRequiredArgError(lastError);
                 return Optional.of(new BlockDecision(
                         "Hard block: '" + normalized + "' failed " + streak
                                 + " times with the same error — stop flooding the step log",
                         hint,
-                        true
+                        stopTurn
                 ));
             }
         }
         return Optional.empty();
     }
 
+    private static boolean isMissingRequiredArgError(String error) {
+        if (error == null || error.isBlank()) {
+            return false;
+        }
+        String lower = error.toLowerCase(Locale.ROOT);
+        return lower.contains("required")
+                || lower.contains("are required")
+                || lower.contains("is required")
+                || lower.contains("missing");
+    }
+
     private static String identicalErrorHint(String toolName, String error) {
         String lower = error == null ? "" : error.toLowerCase(Locale.ROOT);
+        if ("get_event_schema".equals(toolName) || lower.contains("objectpath and eventname")) {
+            return """
+                    get_event_schema needs objectPath=<device path> and eventName=<name on that object>. \
+                    Example: objectPath=root.platform.devices.lab-virtual-device eventName=Event1. \
+                    First list_events path=<device> or get_object to see events[]. Do NOT use eventType.""";
+        }
+        if ("get_object_blueprint".equals(toolName) || lower.contains("blueprintname or blueprintid")) {
+            return """
+                    get_object_blueprint needs blueprintName or blueprintId (e.g. virtual-lab-v1). \
+                    Call list_mixin_blueprints or list_object_blueprints first; pass the name from the result. \
+                    Do NOT send empty id/name.""";
+        }
         if ("create_binding_rule".equals(toolName) || lower.contains("path, id, expression")) {
             return """
                     create_binding_rule needs flat args: path, id, expression, targetVariable=<local var>. \
@@ -519,8 +545,8 @@ final class AgentLoopGuard {
                     Do NOT set_variable name=layout on operator-apps. \
                     Use configure_operator_ui with title, defaultDashboard, dashboards=[].""";
         }
-        return "Fix the error using the tool description / describe_agent_tool, or finish. "
-                + "Do not repeat the identical failing call.";
+        return "Fix the error using the tool description / describe_agent_tool, then retry with corrected args. "
+                + "Do not repeat the identical failing call. Prefer the next course/task step over clarify.";
     }
 
     /**
