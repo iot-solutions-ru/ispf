@@ -247,21 +247,27 @@ public final class AgentJsonProtocol {
                 }
             } catch (IllegalArgumentException ignored) {
                 // fall through to array / scan extraction
+            } catch (Exception ignored) {
+                // Trailing junk (e.g. </tool_call>) or non-JSON prefix — scan for a valid action object.
             }
         }
         if (trimmed.startsWith("[")) {
-            JsonNode array = objectMapper.readTree(trimmed);
-            if (array.isArray()) {
-                for (JsonNode element : array) {
-                    if (element.isObject()) {
-                        try {
-                            parseActionNode(objectMapper, element);
-                            return element;
-                        } catch (IllegalArgumentException ignored) {
-                            // try next array element
+            try {
+                JsonNode array = objectMapper.readTree(trimmed);
+                if (array.isArray()) {
+                    for (JsonNode element : array) {
+                        if (element.isObject()) {
+                            try {
+                                parseActionNode(objectMapper, element);
+                                return element;
+                            } catch (IllegalArgumentException ignored) {
+                                // try next array element
+                            }
                         }
                     }
                 }
+            } catch (Exception ignored) {
+                // fall through to scan extraction
             }
         }
         String json = extractJsonObject(objectMapper, trimmed);
@@ -321,7 +327,27 @@ public final class AgentJsonProtocol {
                 }
             }
         }
+        // Qwen / plan-mode models sometimes emit the finish payload without wrapping type=finish.
+        if (type.isEmpty() && looksLikeBareFinishResult(node)) {
+            return new AgentAction(
+                    "finish",
+                    null,
+                    null,
+                    textOrNull(node, "summary"),
+                    objectMapper.convertValue(node, Map.class)
+            );
+        }
         throw new IllegalArgumentException("Agent action must be {\"type\":\"tool\",...} or {\"type\":\"finish\",...}");
+    }
+
+    private static boolean looksLikeBareFinishResult(JsonNode node) {
+        if (node == null || !node.isObject()) {
+            return false;
+        }
+        if (node.has("phase") || node.has("plan") || node.has("questions") || node.has("interactive")) {
+            return true;
+        }
+        return node.has("summary") && (node.has("result") || node.has("status") || node.has("path"));
     }
 
     private static AgentAction toolAction(
@@ -383,6 +409,7 @@ public final class AgentJsonProtocol {
         if (redactedEnd >= 0) {
             trimmed = trimmed.substring(redactedEnd + "</think>".length()).trim();
         }
+        trimmed = stripToolCallXmlWrappers(trimmed);
         // Outer agent action JSON must win over ```json fences embedded in finish summary strings.
         if (findActionJsonStart(trimmed) == 0) {
             return trimmed;
@@ -415,6 +442,48 @@ public final class AgentJsonProtocol {
             return trimmed.substring(actionStart).trim();
         }
         return trimmed;
+    }
+
+    /**
+     * Qwen / vLLM chat templates sometimes wrap or trail JSON with {@code <tool_call>} XML tags.
+     * Strip those so Jackson / action extraction see only the JSON payload.
+     */
+    private static String stripToolCallXmlWrappers(String content) {
+        String trimmed = content != null ? content.trim() : "";
+        if (trimmed.isEmpty()) {
+            return trimmed;
+        }
+        // <tool_call> ... </tool_call> (possibly around JSON)
+        if (trimmed.regionMatches(true, 0, "<tool_call>", 0, "<tool_call>".length())) {
+            int close = indexOfIgnoreCase(trimmed, "</tool_call>");
+            String inner = close >= 0
+                    ? trimmed.substring("<tool_call>".length(), close)
+                    : trimmed.substring("<tool_call>".length());
+            trimmed = inner.trim();
+        }
+        // Trailing close tag after a complete JSON object/array
+        int closeTrail = indexOfIgnoreCase(trimmed, "</tool_call>");
+        if (closeTrail > 0) {
+            String before = trimmed.substring(0, closeTrail).trim();
+            if (before.endsWith("}") || before.endsWith("]")) {
+                trimmed = before;
+            }
+        }
+        // Orphan open tag before JSON
+        int open = indexOfIgnoreCase(trimmed, "<tool_call>");
+        if (open >= 0 && open < 8) {
+            trimmed = trimmed.substring(open + "<tool_call>".length()).trim();
+        }
+        return trimmed;
+    }
+
+    private static int indexOfIgnoreCase(String haystack, String needle) {
+        if (haystack == null || needle == null || needle.isEmpty()) {
+            return -1;
+        }
+        String lowerHay = haystack.toLowerCase(Locale.ROOT);
+        String lowerNeedle = needle.toLowerCase(Locale.ROOT);
+        return lowerHay.indexOf(lowerNeedle);
     }
 
     private static int findActionJsonStart(String content) {
@@ -472,6 +541,9 @@ public final class AgentJsonProtocol {
                         && (node.has("arguments") || node.has("parameters"))) {
                     score += 90;
                 }
+                if (type.isEmpty() && looksLikeBareFinishResult(node)) {
+                    score += 85;
+                }
                 if (node.has("name") || node.has("tool")) {
                     score += 10;
                 }
@@ -503,7 +575,8 @@ public final class AgentJsonProtocol {
             }
             String type = node.path("type").asString("").trim();
             if (isAgentActionType(type)
-                    || (type.isEmpty() && (node.has("name") || node.has("tool")))) {
+                    || (type.isEmpty() && (node.has("name") || node.has("tool")))
+                    || (type.isEmpty() && looksLikeBareFinishResult(node))) {
                 return candidate;
             }
         } catch (Exception ignored) {
