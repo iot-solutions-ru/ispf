@@ -21,6 +21,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Изменено
 
+- Плейбук показа заказчику: [customer-demo-playbook](customer-demo-playbook.md) (MES / OT+HMI+air-gap, 30–60 мин).
 - Air-gap RSA signed gate по умолчанию: compose `require-signed`/`enforce=true`, profile `prod`; evidence [air-gap-signing](../evidence/air-gap-signing/README.md); Cosign по-прежнему Gap. Scorecard air-gap 7.7→7.8.
 - Ship-canon на HTTP deploy (ADR-0060): `POST .../deploy?strict=true` валидирует перед apply и отвечает **400** (`shipCanon`) при `LOGIC_HOST_DEVICE`; без `strict` поведение авторства без изменений. CLI: `ispf deploy --strict`.
 - Синхронизация claim boundaries: [adr-tension-resolution](adr-tension-resolution.md) — волны 1B/1C/2A/2B Closed (2B Closed Partial); убран устаревший residual «без Referer логин возможен»; scorecard openness / 0054 / 0073 выровнены. Оценки без изменений.

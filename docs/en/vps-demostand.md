@@ -2,7 +2,8 @@
 
 # VPS demostand (example host)
 
-> **General guide:** [demostands](demostands.md) — production, throughput, demo-idle, edge.
+> **General guide:** [demostands](demostands.md) — production, throughput, demo-idle, edge.  
+> **Customer show:** [customer-demo-playbook](customer-demo-playbook.md) — 30–60 min agenda on this host type.
 
 This page is **operational notes** for one prod example: single-node Docker behind nginx. Use as a template; replace container names and hosts with your own.
 
