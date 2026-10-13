@@ -1,15 +1,16 @@
 package com.ispf.server.history;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * BL-116: PostgreSQL/Timescale primary + best-effort ClickHouse secondary append.
+ * BL-116: PostgreSQL/Timescale primary, then ClickHouse secondary. A secondary failure is an error of that history write.
  */
 @Service
 @Primary
@@ -18,10 +19,9 @@ import java.util.List;
 @ConditionalOnProperty(name = "ispf.variable-history.store", havingValue = "jdbc", matchIfMissing = true)
 public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteStore {
 
-    private static final Logger log = LoggerFactory.getLogger(DualWriteVariableHistoryWriteStore.class);
-
     private final JdbcVariableHistoryWriteStore primary;
     private final ClickHouseVariableHistorySecondaryWriteStore secondary;
+    private final Set<String> primaryAheadOfSecondary = ConcurrentHashMap.newKeySet();
 
     public DualWriteVariableHistoryWriteStore(
             JdbcVariableHistoryWriteStore primary,
@@ -33,14 +33,37 @@ public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteS
 
     @Override
     public void appendBatch(List<VariableHistoryWriteRecord> records) {
-        primary.appendBatch(records);
+        writePrimary(records, false);
         appendSecondary(records);
     }
 
     @Override
     public void appendOne(VariableHistoryWriteRecord record) {
-        primary.appendOne(record);
+        writePrimary(List.of(record), true);
         appendSecondary(List.of(record));
+    }
+
+    private void writePrimary(List<VariableHistoryWriteRecord> records, boolean single) {
+        if (records.isEmpty()) {
+            return;
+        }
+        List<VariableHistoryWriteRecord> missingOnPrimary = new ArrayList<>();
+        for (VariableHistoryWriteRecord record : records) {
+            if (!primaryAheadOfSecondary.contains(primaryKey(record))) {
+                missingOnPrimary.add(record);
+            }
+        }
+        if (missingOnPrimary.isEmpty()) {
+            return;
+        }
+        if (single && missingOnPrimary.size() == 1) {
+            primary.appendOne(missingOnPrimary.getFirst());
+        } else {
+            primary.appendBatch(missingOnPrimary);
+        }
+        for (VariableHistoryWriteRecord record : missingOnPrimary) {
+            primaryAheadOfSecondary.add(primaryKey(record));
+        }
     }
 
     private void appendSecondary(List<VariableHistoryWriteRecord> records) {
@@ -50,7 +73,22 @@ public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteS
         try {
             secondary.appendBatch(records);
         } catch (RuntimeException ex) {
-            log.warn("ClickHouse dual-write append failed ({} records): {}", records.size(), ex.getMessage());
+            throw new IllegalStateException(
+                    "variable history secondary write failed; secondary store is behind primary",
+                    ex
+            );
         }
+        for (VariableHistoryWriteRecord record : records) {
+            primaryAheadOfSecondary.remove(primaryKey(record));
+        }
+    }
+
+    private static String primaryKey(VariableHistoryWriteRecord record) {
+        return record.objectPath()
+                + "\n" + record.variableName()
+                + "\n" + record.fieldName()
+                + "\n" + record.sampledAt()
+                + "\n" + record.valueDouble()
+                + "\n" + record.valueText();
     }
 }
