@@ -38,10 +38,11 @@ Logic-bearing objects must be SINGLETON or INSTANCE, never `ObjectType.DEVICE`. 
 |------|----------|--------|
 | Authoring validate / deploy | `LOGIC_HOST_DEVICE` → **WARNING** (does not alone set `status: ERROR`) | **Done** |
 | `examples/` CI (`ExamplesBundleValidationTest`) | `LOGIC_HOST_DEVICE` → **hard fail** | **Done** |
-| Marketplace / catalog ship gate (`ispf validate --strict` or equivalent) | Same hard fail as examples | **Gap** |
-| Tool schema forbids DEVICE as function host | Prefer create on SINGLETON/INSTANCE | **Partial** — prompts + docs; schema poka-yoke follow-up |
+| `ispf validate --strict` / API `?strict=true` | Ship-canon codes → **ERROR** | **Wave 1A** ([adr-tension-resolution](../adr-tension-resolution.md)) |
+| Marketplace / catalog ship gate | Same as `--strict` | **Wave 1A** |
+| Tool schema forbids DEVICE as function host | Prefer create on SINGLETON/INSTANCE | **Wave 1A** |
 
-**0051 tension:** poka-yoke wants the bad state impossible. W1 chooses **warn-on-authoring** so agents are not blocked mid-build, and **hard-fail on shipped reference / (future) catalog**. Do not claim “hard rule everywhere” until `--strict` / catalog gate lands. AGENTS.md hard rule remains the **authoring canon**; runtime still allows DEVICE functions as a capability.
+**0051 tension resolution:** canon stays hard in docs; **authoring** warns; **ship** errors. Tracked under [adr-tension-resolution](../adr-tension-resolution.md) Wave 1A.
 
 ## Related
 
