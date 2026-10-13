@@ -42,10 +42,13 @@
   "functionJournal.subtitle": "Вызовы функций (когда audit включён для объекта)",
   "functionJournal.title": "Журнал вызовов функций",
   "invokeFunction.federatedHint": "Вызов передаётся на federation peer через proxy API.",
-  "invokeFunction.input": "Ввод (запись данных JSON)",
+  "invokeFunction.input": "Ввод",
   "invokeFunction.inputHint": "Пустой rows — платформа подставит inputSchema из descriptor.",
   "invokeFunction.invoke": "Вызвать",
   "invokeFunction.invoking": "Вызов…",
+  "invokeFunction.jsonToggle": "JSON",
   "invokeFunction.result": "Результат",
+  "invokeFunction.resultHint": "Поля только для чтения по outputSchema. JSON — полный DataRecord.",
+  "invokeFunction.resultJsonHint": "Полный ответ invoke (schema и rows).",
   "invokeFunction.title": "Вызов функции"
 }

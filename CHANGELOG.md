@@ -17,6 +17,11 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ## [Unreleased]
 
+### Added
+
+- **Bundle upgrade lab gate (ADR-0064 Wave 2)** — `BundleUpgradeCompatGateTest` validates catalog `marketplace-demo` at `formatVersion: 1`, rejects unsupported formats, and redeploys via local marketplace install; docs [release-upgrade](docs/en/release-upgrade.md). Honesty: lab only — not cluster image N→N+1.
+- **Secrets-key envelope + rotation (ADR-0065)** — new ciphertext uses `ispf1.<keyId>.<base64>`; legacy Base64 still decrypts; `ispf.security.secrets-previous-key` for dual-read; `POST /api/v1/federation/secrets-key/reencrypt` rewrites vault + federation rows; DATABASE UI key change re-encrypts in place instead of requiring agent deletion.
+
 ### Changed
 
 - **Bundle `formatVersion` + release policy (ADR-0064)** — optional integer `formatVersion` on application manifests (omit ⇒ `1`); validate/deploy reject unsupported formats; pull-from-tree writes `1`. ADR covers platform compatibility / LTS intent and Flyway expand/contract.

@@ -138,7 +138,7 @@ SQL parameters: `"${input.orderId}"` or `"$input.orderId"`.
 
 `manifest.version` is **required** and must be strict semver `MAJOR.MINOR.PATCH` (e.g. `1.0.0`). Invalid values are rejected at parse, validate, and deploy.
 
-`manifest.formatVersion` is an optional **integer** for the JSON wire shape (not the solution semver). Omit ⇒ `1`. Unsupported values are rejected. Pull-from-tree writes `formatVersion: 1`. See [0064-release-compatibility-lts](decisions/0064-release-compatibility-lts.md).
+`manifest.formatVersion` is an optional **integer** for the JSON wire shape (not the solution semver). Omit ⇒ `1`. Unsupported values are rejected. Pull-from-tree writes `formatVersion: 1`. See [0064-release-compatibility-lts](decisions/0064-release-compatibility-lts.md) and the lab upgrade gate in [release-upgrade](release-upgrade.md) (not cluster N→N+1).
 
 Optional fields:
 

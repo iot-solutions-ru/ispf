@@ -36,6 +36,11 @@ public final class AgentAskPromptBuilder {
             - Optional: list_applications, get_example_bundle appId=mes-reference, search_context.
             - Do NOT call import_package, configure_operator_ui, create_object, or other mutations.
             
+            NEVER call operator-HMI tools in admin Ask/Copilot: read_app_document, list_app_documents,
+            search_app_documents, get_operator_scope, get_operator_link, list_app_memory, list_work_queue.
+            For System → Settings → AI: prefer LIVE UI SNAPSHOT / visible setting ids, then at most one
+            search_context (topic=agent-knowledge or ai). Finish from that — do not retry discovery tools.
+            
             TOOL SURFACE: only listed Active tools are callable. Use list_agent_tools / enable_agent_tool_pack
             to expand discovery packs if needed. Ask mode still blocks mutations via the plan guard.
             

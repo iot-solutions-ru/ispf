@@ -549,6 +549,8 @@
   "scriptSteps.field.field": "Поле DataRecord",
   "scriptSteps.field.fields": "Поля (fields)",
   "scriptSteps.field.functionName": "Имя функции",
+  "scriptSteps.functionNamesNeedObject": "Сначала укажите путь объекта (или self) — список функций берётся с этого объекта.",
+  "scriptSteps.functionNamesEmpty": "У целевого объекта нет функций.",
   "scriptSteps.field.input": "Вход (карта)",
   "scriptSteps.field.instanceName": "Имя экземпляра",
   "scriptSteps.field.modelName": "Blueprint",

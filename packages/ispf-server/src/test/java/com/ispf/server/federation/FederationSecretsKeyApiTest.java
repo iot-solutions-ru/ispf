@@ -34,7 +34,9 @@ class FederationSecretsKeyApiTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.configured").value(true))
-                .andExpect(jsonPath("$.source").value("YAML"));
+                .andExpect(jsonPath("$.source").value("YAML"))
+                .andExpect(jsonPath("$.activeKeyId").isString())
+                .andExpect(jsonPath("$.previousKeyConfigured").value(false));
 
         mockMvc.perform(post("/api/v1/federation/secrets-key")
                         .header("Authorization", "Bearer " + token)
@@ -43,6 +45,12 @@ class FederationSecretsKeyApiTest {
                                 { "secretsKey": "another-test-secrets-key-value" }
                                 """))
                 .andExpect(status().isConflict());
+
+        mockMvc.perform(post("/api/v1/federation/secrets-key/reencrypt")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OK"))
+                .andExpect(jsonPath("$.activeKeyId").isString());
     }
 
     private String loginAdmin() throws Exception {

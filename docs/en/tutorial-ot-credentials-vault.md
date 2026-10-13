@@ -12,7 +12,7 @@ Store an encrypted API key in the platform credentials vault and reference it fr
 
 [Hub](ot-automation-excellence-tutorials.md#prerequisites). Admin rights. Do **not** commit secrets to git.
 
-Vault encryption needs a secrets key: env `ISPF_SECURITY_SECRETS_KEY` / `ispf.security.secrets-key`, or once via `POST /api/v1/federation/secrets-key` when not already configured. Without it, credential upsert returns **409**.
+Vault encryption needs a secrets key: env `ISPF_SECURITY_SECRETS_KEY` / `ispf.security.secrets-key`, or once via `POST /api/v1/federation/secrets-key` when not already configured. Without it, credential upsert returns **409**. New writes use a keyed envelope (`ispf1.<keyId>.…`); to rotate a YAML key set `ISPF_SECURITY_SECRETS_PREVIOUS_KEY`, restart, then `POST /api/v1/federation/secrets-key/reencrypt` ([ADR-0065](decisions/0065-secrets-key-rotation.md)).
 
 ## Steps
 

@@ -10,13 +10,19 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.process.ProcessProgramPaths;
 import com.ispf.server.query.ObjectQueryCatalog;
 import com.ispf.server.schedule.ScheduleObjectService;
+import com.ispf.server.spi.ObjectTreeReadyOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -60,22 +66,77 @@ public class TenantPlatformCatalogBootstrap {
 
     private final ObjectManager objectManager;
     private final TenantStore tenantStore;
+    private final TransactionTemplate tenantTransaction;
 
-    public TenantPlatformCatalogBootstrap(ObjectManager objectManager, TenantStore tenantStore) {
+    /** Empty when every existing tenant was catalogued. There is no switch that turns this contour off. */
+    private volatile String backfillFailure = "";
+
+    public TenantPlatformCatalogBootstrap(
+            ObjectManager objectManager,
+            TenantStore tenantStore,
+            PlatformTransactionManager transactionManager
+    ) {
         this.objectManager = objectManager;
         this.tenantStore = tenantStore;
+        this.tenantTransaction = new TransactionTemplate(transactionManager);
+        this.tenantTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
+    /**
+     * One transaction per tenant. A failure is recorded for health and readiness and is not thrown:
+     * this listener shares {@link ObjectTreeReadyOrder#AFTER_OBJECT_TREE_READY_ORDER} with driver
+     * auto-start and the binding index, so an exception would skip the remaining listeners.
+     * {@code markObjectTreeReady} is one step earlier ({@code Integer.MAX_VALUE - 1}).
+     */
     @EventListener(ApplicationReadyEvent.class)
-    @Transactional
+    @Order(ObjectTreeReadyOrder.AFTER_OBJECT_TREE_READY_ORDER)
     public void backfillExistingTenants() {
-        for (Tenant tenant : tenantStore.listAll()) {
+        List<Tenant> tenants;
+        try {
+            tenants = tenantStore.listAll();
+        } catch (RuntimeException ex) {
+            backfillFailure = failureText(ex);
+            log.error(
+                    "Tenant platform catalog backfill failed, readiness is down, startup continues: {}",
+                    backfillFailure
+            );
+            return;
+        }
+        List<String> failed = new ArrayList<>();
+        for (Tenant tenant : tenants) {
             try {
-                ensureTenantPlatformCatalog(tenant.tenantId(), tenant.displayName());
+                tenantTransaction.executeWithoutResult(status ->
+                        ensureTenantPlatformCatalog(tenant.tenantId(), tenant.displayName()));
             } catch (RuntimeException ex) {
-                log.warn("Tenant platform catalog backfill failed for {}: {}", tenant.tenantId(), ex.getMessage());
+                String detail = tenant.tenantId() + ": " + failureText(ex);
+                failed.add(detail);
+                log.error("Tenant platform catalog backfill failed for {}", detail);
             }
         }
+        if (failed.isEmpty()) {
+            backfillFailure = "";
+            log.info("Tenant platform catalog backfill ready ({} tenants)", tenants.size());
+            return;
+        }
+        backfillFailure = String.join("; ", failed);
+        log.error(
+                "Tenant platform catalog backfill incomplete, readiness is down, startup continues: {}",
+                backfillFailure
+        );
+    }
+
+    public boolean isContourReady() {
+        return backfillFailure.isEmpty();
+    }
+
+    public String backfillFailure() {
+        return backfillFailure;
+    }
+
+    private static String failureText(RuntimeException ex) {
+        return ex.getMessage() == null || ex.getMessage().isBlank()
+                ? ex.getClass().getSimpleName()
+                : ex.getMessage();
     }
 
     /**

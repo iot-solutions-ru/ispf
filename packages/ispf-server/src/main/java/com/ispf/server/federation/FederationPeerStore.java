@@ -122,6 +122,18 @@ public class FederationPeerStore {
         return findById(id).orElseThrow();
     }
 
+    public void updateAuthSecretEnc(UUID id, String authSecretEnc) {
+        jdbcTemplate.update("""
+                UPDATE federation_peers
+                SET auth_secret_enc = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                blankToNull(authSecretEnc),
+                Timestamp.from(Instant.now()),
+                id
+        );
+    }
+
     public void updateAuthState(
             UUID id,
             String authToken,

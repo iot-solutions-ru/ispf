@@ -100,6 +100,8 @@ export interface FederationSecretsKeyStatus {
   configured: boolean;
   source: "NONE" | "YAML" | "DATABASE";
   uiConfigurable: boolean;
+  activeKeyId?: string | null;
+  previousKeyConfigured?: boolean;
 }
 
 export function fetchFederationSecretsKeyStatus(): Promise<FederationSecretsKeyStatus> {

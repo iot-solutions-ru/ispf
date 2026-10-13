@@ -1,15 +1,16 @@
 # ISPF — Open-source industrial IoT / SCADA
 
-**Self-hosted platform for devices, HMI, alarms, historian, and workflows — one object tree, one API, one UI.**
+**Self-hosted industrial IoT / SCADA application platform** — devices, HMI, alarms, historian, digital twins, and workflows on **one object tree, one API, one UI**.
 
-Website: [ispf.ai](https://ispf.ai) · Repo: [github.com/iot-solutions-ru/ispf](https://github.com/iot-solutions-ru/ispf)
+Website: [ispf.ai](https://ispf.ai) · Demo: [demo.iot-solutions.ru](https://demo.iot-solutions.ru/) · Repo: [github.com/iot-solutions-ru/ispf](https://github.com/iot-solutions-ru/ispf)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-English%20%7C%20Русский-0A7EA4)](docs/README.md)
+[![Learn](https://img.shields.io/badge/learn-Path%20A%20%2B%20B-0A7EA4)](docs/en/learn.md)
 [![Changelog](https://img.shields.io/badge/changelog-Keep%20a%20Changelog-orange)](CHANGELOG.md)
 [![Stack](https://img.shields.io/badge/stack-Spring%20Boot%204%20%2B%20React%2019-informational)](docs/en/architecture.md)
 
-Most SCADA stacks glue together OPC, historian, HMI, alarms, and workflow as separate products. **ISPF** puts them on a hierarchical **object tree**: a device, dashboard, alert rule, correlator, and BPMN workflow are all nodes with the same API.
+Most SCADA stacks glue together OPC, historian, HMI, alarms, and workflow as separate products. **ISPF** puts them on a hierarchical **object tree**: a device, dashboard, alert rule, correlator, and BPMN workflow are all nodes with the same API. Orchestration and twin logic live on **SINGLETON** / **INSTANCE** hubs — never on `DEVICE` (drivers and telemetry only).
 
 <!-- Hero: when ready, drop docs/assets/ispf-hero.gif and change src below (script: docs/assets/README.md). -->
 
@@ -75,9 +76,10 @@ Industry apps ship as React SPAs at `/apps/<appId>/` — not pages inside the ad
 | You want… | ISPF gives you… |
 | ----------- | ---------------- |
 | One model instead of tag soup + side systems | Object tree + CEL bindings |
-| Real HMI, not only a device gateway | Admin Explorer + operator mode |
+| Real HMI, not only a device gateway | Admin Explorer + operator mode + SCADA mimics |
 | Alarms that do something | CEL alert rules → correlators → BPMN |
-| Industry solutions without forking the core | Declarative **bundles** |
+| Industry solutions without forking the core | Declarative **bundles** + hosted **ui-packs** |
+| Ship from the live tree / team git | `ispf pack` or APPLICATION **Git** (Pull release / Push → PR) |
 | Modern self-hosted stack | Spring Boot 4, Java 25, React 19, PostgreSQL/TimescaleDB |
 
 Honest positioning: closer to an **open Ignition-class application platform** than to a pure MQTT broker or Node-RED flow tool. See the [competitive scorecard](docs/en/competitive-scorecard.md).
@@ -88,9 +90,11 @@ Honest positioning: closer to an **open Ignition-class application platform** th
 - **162 driver packs** — Modbus, OPC UA, MQTT, SNMP, JDBC, and more; top-20 industrial protocols run in the interop lab, the long tail is lab-codec grade (see maturity notes in [drivers](docs/en/drivers.md))
 - **HMI** — dashboard builder, charts with variable history, SCADA mimics
 - **Automation** — alert rules, correlators, BPMN workflows as tree nodes
-- **Applications** — bundle deploy, reports, BFF functions, scheduler
+- **Applications** — bundle deploy, reports, BFF functions, scheduler; **Application Git** (Connect / Pull / Push → PR — [ADR-0063](docs/en/decisions/0063-application-git-lifecycle.md))
+- **Digital twins & MES-style apps** — INSTANCE hubs + ui-packs at `/apps/<appId>/` (gallery above)
 - **Storage** — H2 for local; PostgreSQL + TimescaleDB for prod; Redis/NATS optional
 - **AI-assisted solution tooling** — agent / generator paths in docs ([ai-development](docs/en/ai-development.md))
+- **Learn path** — first hour → first solution: [docs/en/learn.md](docs/en/learn.md) · [docs/ru/learn.md](docs/ru/learn.md)
 
 ## Quick start
 
@@ -147,21 +151,23 @@ Full guide: [Getting started](docs/en/getting-started.md) · [Начать ра�
 
 ## Documentation
 
-**Start here:** [Try ISPF (≈15 min)](docs/en/getting-started.md#try-ispf-15-minutes) · [Docs hub by role](docs/en/readme.md)
+**Start here:** [Learn ISPF](docs/en/learn.md) · [Try ISPF (≈15 min)](docs/en/getting-started.md#try-ispf-15-minutes) · [Docs hub by role](docs/en/readme.md)
 
 | | English (canonical) | Русский |
 | --- | ------------------- | ------- |
+| Learn | [learn.md](docs/en/learn.md) | [learn.md](docs/ru/learn.md) |
 | Hub | [docs/en/readme.md](docs/en/readme.md) | [docs/ru/readme.md](docs/ru/readme.md) |
 | Product | [product.md](docs/en/product.md) | [product.md](docs/ru/product.md) |
 | Getting started | [getting-started.md](docs/en/getting-started.md) | [getting-started.md](docs/ru/getting-started.md) |
 | Architecture | [architecture.md](docs/en/architecture.md) | [architecture.md](docs/ru/architecture.md) |
 | Drivers | [drivers.md](docs/en/drivers.md) | [drivers.md](docs/ru/drivers.md) |
+| Applications / Git | [applications.md](docs/en/applications.md#application-git-adr-0063) | [applications.md](docs/ru/applications.md#application-git-adr-0063) |
 | Solution developer | [solution-developer-guide.md](docs/en/solution-developer-guide.md) | [solution-developer-guide.md](docs/ru/solution-developer-guide.md) |
 | API | [api.md](docs/en/api.md) | [api.md](docs/ru/api.md) |
 | License | [license.md](docs/en/license.md) | [license.md](docs/ru/license.md) |
 | Roadmap | [roadmap.md](docs/en/roadmap.md) | [roadmap.md](docs/ru/roadmap.md) |
 
-More: [operator guide](docs/en/operator-guide.md) · [glossary](docs/en/glossary.md) · [ADRs](docs/en/decisions/readme.md) · [doc hub](docs/README.md)
+More: [operator guide](docs/en/operator-guide.md) · [anti-patterns](docs/en/anti-patterns.md) · [glossary](docs/en/glossary.md) · [ADRs](docs/en/decisions/readme.md) · [doc hub](docs/README.md)
 
 ## Repository layout
 
