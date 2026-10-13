@@ -25,6 +25,7 @@ class ClickHouseWarmTierAppendTest {
                 now,
                 now,
                 21.5,
+                null,
                 null
         );
 
