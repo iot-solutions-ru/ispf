@@ -1,24 +1,27 @@
 package com.ispf.server.security;
 
+import com.ispf.server.config.IspfAuthorizationRules;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
 /**
- * ADR-0073 Wave 2A: pack-scoped principals may call BFF (+ auth/me) only — not admin APIs.
+ * ADR-0073: a principal with claim {@code uiPackAppId} (or {@code ROLE_UI_PACK}) may call
+ * BFF invoke for that app, {@code /auth/me}, and logout. Admin and other APIs are rejected
+ * even when realm roles include {@code admin}.
+ * Registered inside the security chain by {@code SecurityConfig} / {@code LocalSecurityConfig}
+ * so the check runs while the security context is still populated.
  */
-@Component
-@Order(Ordered.LOWEST_PRECEDENCE - 40)
 public class UiPackScopedAccessFilter extends OncePerRequestFilter {
 
     @Override
@@ -28,20 +31,24 @@ public class UiPackScopedAccessFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && isUiPackScoped(auth)) {
-            String path = request.getRequestURI();
-            if (!isAllowedForPack(path)) {
-                response.sendError(
-                        HttpServletResponse.SC_FORBIDDEN,
-                        "ui-pack scoped token cannot call admin APIs (ADR-0073); use BFF invoke"
-                );
-                return;
-            }
+        if (isUiPackScoped(auth)
+                && IspfAuthorizationRules.deniesPackScopedApi(request, uiPackAppId(auth))) {
+            response.sendError(
+                    HttpServletResponse.SC_FORBIDDEN,
+                    "ui-pack scoped token cannot call this API"
+            );
+            return;
         }
         filterChain.doFilter(request, response);
     }
 
-    static boolean isUiPackScoped(Authentication auth) {
+    public static boolean isUiPackScoped(Authentication auth) {
+        if (!isUser(auth)) {
+            return false;
+        }
+        if (uiPackAppId(auth) != null) {
+            return true;
+        }
         for (GrantedAuthority authority : auth.getAuthorities()) {
             if (UiPackScopedAuthority.ROLE.equals(authority.getAuthority())) {
                 return true;
@@ -50,19 +57,46 @@ public class UiPackScopedAccessFilter extends OncePerRequestFilter {
         return false;
     }
 
+    public static String uiPackAppId(Authentication auth) {
+        if (!isUser(auth)) {
+            return null;
+        }
+        if (auth.getDetails() instanceof UiPackScope scope
+                && scope.appId() != null
+                && !scope.appId().isBlank()) {
+            return scope.appId().trim();
+        }
+        Jwt jwt = jwtOf(auth);
+        if (jwt == null) {
+            return null;
+        }
+        Object claim = jwt.getClaim(UiPackScopedAuthority.CLAIM);
+        if (claim == null || claim.toString().isBlank()) {
+            return null;
+        }
+        return claim.toString().trim();
+    }
+
+    /**
+     * Path allowlist used by tests and {@link IspfAuthorizationRules#isPackScopedPathAllowed}.
+     */
     static boolean isAllowedForPack(String path) {
-        if (path == null) {
-            return false;
+        return IspfAuthorizationRules.isPackScopedPathAllowed(path);
+    }
+
+    private static boolean isUser(Authentication auth) {
+        return auth != null
+                && auth.isAuthenticated()
+                && !(auth instanceof AnonymousAuthenticationToken);
+    }
+
+    private static Jwt jwtOf(Authentication auth) {
+        if (auth.getPrincipal() instanceof Jwt jwt) {
+            return jwt;
         }
-        if (path.startsWith("/api/v1/bff/")) {
-            return true;
+        if (auth instanceof JwtAuthenticationToken token) {
+            return token.getToken();
         }
-        if (path.equals("/api/v1/auth/me") || path.equals("/api/v1/auth/logout")) {
-            return true;
-        }
-        if (path.equals("/api/v1/info") || path.startsWith("/actuator/health")) {
-            return true;
-        }
-        return false;
+        return null;
     }
 }

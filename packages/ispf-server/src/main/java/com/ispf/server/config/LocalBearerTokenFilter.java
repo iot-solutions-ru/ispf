@@ -1,7 +1,8 @@
 package com.ispf.server.config;
 
-import com.ispf.server.config.IspfRoles;
 import com.ispf.server.security.PlatformUserService;
+import com.ispf.server.security.UiPackScope;
+import com.ispf.server.security.UiPackScopedAuthority;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -57,14 +59,21 @@ public class LocalBearerTokenFilter extends OncePerRequestFilter {
                     resolvedRoles.add(IspfRoles.OPERATOR);
                 }
                 resolvedRoles.addAll(user.roles());
-                List<SimpleGrantedAuthority> authorities = resolvedRoles.stream()
+                List<SimpleGrantedAuthority> authorities = new ArrayList<>(resolvedRoles.stream()
                         .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                        .toList();
+                        .toList());
+                String packApp = user.uiPackAppId();
+                if (packApp != null && !packApp.isBlank()) {
+                    authorities.add(new SimpleGrantedAuthority(UiPackScopedAuthority.ROLE));
+                }
                 var authentication = new UsernamePasswordAuthenticationToken(
                         user.username(),
                         null,
                         authorities
                 );
+                if (packApp != null && !packApp.isBlank()) {
+                    authentication.setDetails(new UiPackScope(packApp.trim()));
+                }
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             });
         }

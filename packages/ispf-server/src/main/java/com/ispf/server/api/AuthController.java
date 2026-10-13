@@ -1,8 +1,11 @@
 package com.ispf.server.api;
 
+import com.ispf.server.application.uipack.UiPackPartnerLoginGuard;
 import com.ispf.server.audit.AuditEventService;
 import com.ispf.server.security.LoginAttemptLimiter;
 import com.ispf.server.security.PlatformUserService;
+import com.ispf.server.security.UiPackScopedAccessFilter;
+import com.ispf.server.security.UiPackScopedAuthority;
 import com.ispf.server.config.IspfSecurityProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -36,6 +39,7 @@ public class AuthController {
     private final String oauthIssuerUri;
     private final AuditEventService auditEventService;
     private final LoginAttemptLimiter loginAttemptLimiter;
+    private final UiPackPartnerLoginGuard uiPackPartnerLoginGuard;
 
     public AuthController(
             PlatformUserService userService,
@@ -43,7 +47,8 @@ public class AuthController {
             Environment environment,
             @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}") String oauthIssuerUri,
             AuditEventService auditEventService,
-            LoginAttemptLimiter loginAttemptLimiter
+            LoginAttemptLimiter loginAttemptLimiter,
+            UiPackPartnerLoginGuard uiPackPartnerLoginGuard
     ) {
         this.userService = userService;
         this.securityProperties = securityProperties;
@@ -51,6 +56,7 @@ public class AuthController {
         this.oauthIssuerUri = oauthIssuerUri;
         this.auditEventService = auditEventService;
         this.loginAttemptLimiter = loginAttemptLimiter;
+        this.uiPackPartnerLoginGuard = uiPackPartnerLoginGuard;
     }
 
     @GetMapping("/config")
@@ -75,6 +81,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public Map<String, Object> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        uiPackPartnerLoginGuard.rejectIfPartnerPack(httpRequest);
         String username = request.username().trim().toLowerCase(Locale.ROOT);
         String clientIp = clientIp(httpRequest);
         try {
@@ -117,6 +124,10 @@ public class AuthController {
         response.put("authenticated", true);
         response.put("principal", authentication.getName());
         response.put("roles", roles);
+        String uiPackAppId = UiPackScopedAccessFilter.uiPackAppId(authentication);
+        if (uiPackAppId != null) {
+            response.put(UiPackScopedAuthority.CLAIM, uiPackAppId);
+        }
         userService.findTimeZone(authentication.getName())
                 .ifPresent(timeZone -> response.put("timeZone", timeZone));
         return response;

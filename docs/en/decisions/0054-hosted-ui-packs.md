@@ -94,7 +94,7 @@ This is a **generic packaging/serving primitive** (like symbol packs), not an Oi
 |-------|--------|-------|
 | Install + serve `/apps/<appId>/` | **Done** | This ADR |
 | Marketplace `ui-pack` + SW denylist | **Done** | This ADR |
-| CSP / partner isolation / scoped app token | **Gap** | [0073](0073-hosted-ui-pack-trust.md) |
+| CSP / partner isolation / scoped app token | **Partial** | [0073](0073-hosted-ui-pack-trust.md) Wave 2A: CSP + scoped `uiPackAppId` **Done**; partner login-in-pack is Referer-only |
 
 ## Acceptance (dogfood)
 
