@@ -1,20 +1,26 @@
 import { packDirectory } from "./pack.mjs";
+import { applyStrictShipCanon } from "./shipCanon.mjs";
 import { compactStringify } from "./util.mjs";
 import { validateLocal, validateRemote } from "./validate.mjs";
 import { defaultSchemaPath } from "./util.mjs";
 
-export async function deployDirectory(dir, appId, { schemaPath } = {}) {
+export async function deployDirectory(dir, appId, { schemaPath, strict = false } = {}) {
   const manifest = packDirectory(dir);
-  const local = validateLocal(manifest, schemaPath ?? defaultSchemaPath());
+  let local = validateLocal(manifest, schemaPath ?? defaultSchemaPath());
+  if (strict && local.status === "OK") {
+    local = applyStrictShipCanon(local, manifest);
+  }
   if (local.status !== "OK") {
-    const err = new Error("Local schema validation failed");
+    const err = new Error(strict ? "Local schema/ship-canon validation failed" : "Local schema validation failed");
     err.details = local.errors;
     throw err;
   }
 
-  const dryRun = await validateRemote(appId, manifest, { dryRun: true });
+  const dryRun = await validateRemote(appId, manifest, { dryRun: true, strict: !!strict });
   if (dryRun.status !== "OK") {
-    const err = new Error("Server dry-run validation failed");
+    const err = new Error(
+      strict ? "Server dry-run ship-canon validation failed" : "Server dry-run validation failed"
+    );
     err.details = dryRun.errors;
     throw err;
   }
@@ -26,8 +32,9 @@ export async function deployDirectory(dir, appId, { schemaPath } = {}) {
     headers.Authorization = `Bearer ${token}`;
   }
 
+  const qs = strict ? "?strict=true" : "";
   const response = await fetch(
-    `${baseUrl}/api/v1/applications/${encodeURIComponent(appId)}/deploy`,
+    `${baseUrl}/api/v1/applications/${encodeURIComponent(appId)}/deploy${qs}`,
     {
       method: "POST",
       headers,
@@ -42,7 +49,9 @@ export async function deployDirectory(dir, appId, { schemaPath } = {}) {
     throw new Error(`deploy failed (${response.status}): ${text}`);
   }
   if (!response.ok) {
-    throw new Error(`deploy failed (${response.status}): ${text}`);
+    const err = new Error(`deploy failed (${response.status}): ${text}`);
+    err.details = json;
+    throw err;
   }
   return { dryRun, deploy: json };
 }

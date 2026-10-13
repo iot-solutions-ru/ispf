@@ -352,8 +352,11 @@ POST /api/v1/applications/{appId}/deploy/rollback
 ```http
 GET  /api/v1/applications/{appId}/export
 GET  /api/v1/applications/{appId}/export?version=1.0.0
-POST /api/v1/applications/{appId}/bundle/validate?dryRun=true|false
+POST /api/v1/applications/{appId}/bundle/validate?dryRun=true|false&strict=true|false
+POST /api/v1/applications/{appId}/deploy?strict=true|false
 ```
+
+По умолчанию `strict=false` — авторский режим (`LOGIC_HOST_DEVICE` = WARNING, deploy не блокируется). С `strict=true` коды ship-canon становятся **ERROR**: validate сообщает их; deploy отвечает **400** (`shipCanon: true`, `deployed: false`) и не применяет бандл ([0060](decisions/0060-solution-authoring-constraints.md)). CLI: `ispf validate --strict`, `ispf deploy --strict`.
 
 `export` возвращает активный (или указанный) манифест моментального снимка из `application_bundle_deployments`. Веб-консоль: вкладка **Deploy** на узле `APPLICATION` — редактор JSON, проверка, развертывание, таблица ресурсов (добавление/удаление в манифесте).
 

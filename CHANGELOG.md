@@ -29,6 +29,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Changed
 
+- **Ship-canon HTTP deploy gate (ADR-0060)** — `POST /api/v1/applications/{appId}/deploy?strict=true` validates with ship-canon before apply and returns **400** (`shipCanon: true`, `deployed: false`) when `LOGIC_HOST_DEVICE` is ERROR. Default deploy unchanged (authoring WARNING). CLI: `ispf deploy --strict` (dry-run + deploy `?strict=true`).
 - **ADR tension claim sync** — [adr-tension-resolution](docs/en/adr-tension-resolution.md) marks Waves **1B / 1C / 2A / 2B** Closed (2B Closed Partial for CH opt-in); drops stale “omitted Referer still logs in” residual; scorecard openness gap text and 0054/0073 honesty align. Scores unchanged.
 - **ADR tension Wave 3 (ops/docs)** — [field-c1-evidence-checklist](docs/en/field-c1-evidence-checklist.md) and [docs/evidence/field-c1/](docs/evidence/field-c1/README.md) template (FIELD=0 until named customer plant); [0076](docs/en/decisions/0076-external-secrets-providers.md) reaffirms provider SPI only under named tender; [adr-tension-resolution](docs/en/adr-tension-resolution.md): breadth vs depth stays Planned with ops Done-when, external KMS Closed as policy non-claim.
 - **ADR honesty pass («поправить» → strong)** — Accepted/Proposed ADRs 0003, 0006, 0008, 0013, 0025a, 0031, 0033, 0035, 0039, 0042, 0045, 0054, 0056, 0060 gain Done/Partial/Gap tables, stale claim cleanup, and links to successor ADRs (0072–0074, 0032, 0051). Docs-only; no runtime change.

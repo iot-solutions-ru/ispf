@@ -33,7 +33,7 @@
 
 > **Поправка (2026-10-06):** на **авторском** validate/deploy замечания канона сообщаются и не блокируют применение. Интерактивный `validate_bundle` и HTTP validate/deploy без `strict` оставляют `LOGIC_HOST_DEVICE` как WARNING.
 >
-> **Поправка (2026-10-13) — ship-default (Partial):** финальная приёмка поставки другая. `deploy_step_validate` / `deploy_step_dry_run` / `import_package` / `deploy_step_import` поднимают канон до **ERROR** и не применяют бандл. Judge возвращает **REWORK** (`logic.host`). Остаётся: голый `POST .../deploy` без `strict` по-прежнему WARNING. Инструменты `deploy_tree_function` / `deploy_app_function` требуют `hostKind` = `SINGLETON` | `INSTANCE` (DEVICE в enum нет). Канон: [EN ADR-0060](../../en/decisions/0060-solution-authoring-constraints.md).
+> **Поправка (2026-10-13) — ship-default:** финальная приёмка поставки другая. `deploy_step_*` / `import_package`, `ispf validate|deploy --strict`, `POST .../deploy?strict=true` поднимают канон до **ERROR** и не применяют бандл (HTTP 400 + `shipCanon`). Judge — **REWORK** (`logic.host`). Голый `POST .../deploy` без `strict` остаётся WARNING (авторство). Канон: [EN ADR-0060](../../en/decisions/0060-solution-authoring-constraints.md).
 
 ## Связанные
 
