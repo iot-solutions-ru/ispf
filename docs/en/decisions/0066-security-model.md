@@ -2,13 +2,16 @@
 
 ## Status
 
-**Accepted** (2026-10-12) — consolidates the shipped security contract; does not change runtime behaviour.
+**Accepted** (2026-10-12) — consolidates the shipped security contract; does not change runtime behaviour.  
+**Citation:** until merge to `main`, treat this record as the security claim boundary from PR #476.
 
 ## Context
 
 Security behaviour is documented across [security](../security.md), [multi-tenant](../multi-tenant.md), federation on-behalf-of notes, and ADRs [0056](0056-webauthn-idp-mfa.md) / [0065](0065-secrets-key-rotation.md). Tenders and agents need **one decision record** that states what ISPF claims today, what is optional, and what remains Proposed — without inventing a new stack.
 
 Related field evidence: BL-153 (TOTP), BL-154 (per-variable ACL + trusted channel), BL-155 (tenant-admin + RLS), ADR-0065 (secrets-key rotation).
+
+**Industry bar:** mature IIoT platforms publish a layered auth → RBAC → tenancy → ACL → secrets model with fail-closed defaults. ISPF’s differentiator is **tree-scoped MEMBER ACL + federation ceiling + envelope secrets** in one claim table — not a parallel “security product.”
 
 ## Decision
 
@@ -56,11 +59,21 @@ Denial order: unauthenticated → RBAC → tenant path visibility → object ACL
 
 Admin MCP / AI sessions use the full tool catalog under the caller's RBAC + MEMBER ACL. Operator copilot / `AgentProfile.OPERATOR` is further restricted by `OperatorAgentToolAllowlist` ([0006](0006-mcp-agent-tool-adapter.md)) — mutating platform tools stay out of operator mode.
 
+### 6. Adjacent honesty (not owned here)
+
+| Topic | Owner | Claim from 0066 |
+|-------|-------|-----------------|
+| Secrets envelope + rotation | [0065](0065-secrets-key-rotation.md) | In-process AES-GCM Done |
+| External KMS / HSM / GOST | Follow-up (0076 when merged) | **Non-claim** |
+| Ui-pack same-origin / CSP | Follow-up (0073 when merged) | **Non-claim** |
+| WebAuthn / IdP OTP | [0056](0056-webauthn-idp-mfa.md) | Proposed |
+
 ## Consequences
 
 - Runbooks stay authoritative for how-to; this ADR is the **product claim boundary** for tenders, scorecard Security row, and agent teaching.
 - New security features must amend this ADR (or add a child ADR and link it here) when they change a hard rule or honesty cell.
 - Docs: short pointers from [security](../security.md) and [multi-tenant](../multi-tenant.md).
+- Scorecard Security may cite this layered model; do not jump to 10/10 without pen-test G-01 evidence and without clearing adjacent Gaps above.
 
 ### Risks
 
