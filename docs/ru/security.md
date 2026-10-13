@@ -4,6 +4,8 @@
 
 > **Статус:** Stable — RBAC, MFA. Теги: [doc-status](../en/doc-status.md).
 
+Граница продуктовых заявлений (слои, жёсткие правила, честность): [0066-security-model](decisions/0066-security-model.md). Ротация secrets: [0065](decisions/0065-secrets-key-rotation.md). MFA follow-up: [0056](decisions/0056-webauthn-idp-mfa.md).
+
 ## Модель
 
 ![Ветка Security в дереве объектов](../assets/ispf-security.png)

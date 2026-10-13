@@ -8,7 +8,7 @@ English ADRs for ISPF. Russian mirror: [../../ru/decisions/readme.md](../../ru/d
 
 Engineering record — not marketing. Prefer Status / Context / Decision / Consequences / Related; use `Risks:` bullets under Consequences. Avoid hype scores and template **Positive** / **Negative** blocks.
 
-**Number uniqueness:** new ADRs must use the next free number (**0077+**; **0066/0067** reserved for open PRs #476/#477). Historical collisions **0016** and **0025** keep dual files; cite them as **0016a/b** and **0025a/b** (or by filename). Do not renumber existing files.
+**Number uniqueness:** new ADRs must use the next free number (**0077+**; **0067** reserved / gap until FIELD maturity ADR lands on main). Historical collisions **0016** and **0025** keep dual files; cite them as **0016a/b** and **0025a/b** (or by filename). Do not renumber existing files.
 
 Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slang.py), then [`polish-docs.py`](../../../tools/docs-audit/polish-docs.py).
 
@@ -117,6 +117,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0063-application-git-lifecycle](0063-application-git-lifecycle.md) | APPLICATION Git tab: Connect/Status/Pull/Push→PR shipped — **Accepted** |
 | [0064-release-compatibility-lts](0064-release-compatibility-lts.md) | Release, compatibility, LTS; bundle `formatVersion` — **Accepted** |
 | [0065-secrets-key-rotation](0065-secrets-key-rotation.md) | Secrets-key envelope (`ispf1.<kid>.…`), previous-key, re-encrypt — **Accepted** |
+| [0066-security-model](0066-security-model.md) | Platform security model (auth, RBAC, tenancy, MEMBER ACL, secrets) — **Accepted** |
 | [0068-backup-and-dr](0068-backup-and-dr.md) | Backup tiers T1–T4 and RPO/RTO honesty — **Accepted** |
 | [0069-cluster-consistency](0069-cluster-consistency.md) | Cluster consistency contract (not linearizable live) — **Accepted** |
 | [0070-cluster-rolling-upgrade](0070-cluster-rolling-upgrade.md) | Cluster image N→N+1 Wave 3 gate — **Accepted** |
@@ -139,6 +140,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | Manufacturing solutions | [0001-app-platform-boundary](0001-app-platform-boundary.md) → [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) → [0050-manufacturing-patterns-as-solutions](0050-manufacturing-patterns-as-solutions.md) | [manufacturing-patterns](../manufacturing-patterns.md), [mes](../mes.md) |
 | Release / compatibility | [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) → [0037-relational-core-portability](0037-relational-core-portability.md) → [0064-release-compatibility-lts](0064-release-compatibility-lts.md) → [0070-cluster-rolling-upgrade](0070-cluster-rolling-upgrade.md) | [applications](../applications.md), [deployment](../deployment.md), [release-upgrade](../release-upgrade.md) |
 | Secrets / credentials | [0049-ot-automation-excellence](0049-ot-automation-excellence.md) → [0065-secrets-key-rotation](0065-secrets-key-rotation.md) → [0076-external-secrets-providers](0076-external-secrets-providers.md) | [security](../security.md), [tutorial-ot-credentials-vault](../tutorial-ot-credentials-vault.md) |
+| Security model | [0066-security-model](0066-security-model.md) → [0056-webauthn-idp-mfa](0056-webauthn-idp-mfa.md) → [0065-secrets-key-rotation](0065-secrets-key-rotation.md) | [security](../security.md), [multi-tenant](../multi-tenant.md) |
 | Backup / DR | [0068-backup-and-dr](0068-backup-and-dr.md) | [deployment](../deployment.md), [air-gap-deployment](../air-gap-deployment.md) |
 | Northbound / UNS | [0071-northbound-uns](0071-northbound-uns.md) → [0022-driver-production-matrix](0022-driver-production-matrix.md) | [drivers](../drivers.md) |
 | Edge / fleet | [0072-edge-fleet-rollout](0072-edge-fleet-rollout.md) → [0063-application-git-lifecycle](0063-application-git-lifecycle.md) | [federation](../federation.md), [demostands](../demostands.md) |
