@@ -630,6 +630,11 @@ final class AgentLoopGuard {
                 || lower.contains("missing")
                 || lower.contains("must be ")
                 || lower.contains("unknown_arg")
+                || lower.contains("unknown role")
+                || lower.contains("formal verification")
+                || lower.contains("tautology")
+                || lower.contains("unsatisfiable")
+                || lower.contains("never discriminates")
                 || lower.contains("invalid");
     }
 
@@ -675,6 +680,22 @@ final class AgentLoopGuard {
             return """
                     Do NOT set_variable name=layout on operator-apps. \
                     Use configure_operator_ui with title, defaultDashboard, dashboards=[].""";
+        }
+        if (lower.contains("unknown role")) {
+            return """
+                    USER roles must be lowercase platform ids: admin, developer, operator (or tenant-admin). \
+                    Example: create_object type=USER name=user1 roles=operator password=ChangeMe!123. \
+                    Do NOT send OPERATOR / ROLE_OPERATOR.""";
+        }
+        if ("configure_alert".equals(toolName)
+                || lower.contains("formal verification")
+                || lower.contains("tautology")
+                || lower.contains("never discriminates")) {
+            return """
+                    conditionExpr must discriminate — formal verify rejects tautologies (true, 1==1, true||…). \
+                    Example: watchVariable=sineWave conditionExpr=self.sineWave[\"value\"] > 0 \
+                    or watchVariable=clusterError conditionExpr=self.clusterError[\"value\"] == true. \
+                    Retry configure_alert with a threshold/boolean compare on the watched variable.""";
         }
         return "Fix the error using the tool description / describe_agent_tool, then retry with corrected args. "
                 + "Do not repeat the identical failing call. Prefer the next course/task step over clarify.";

@@ -217,7 +217,7 @@ public final class AgentToolInputSchemas {
                         "driverPollIntervalMs", integerProp("Driver poll interval"),
                         "autoStartDriver", booleanProp("Auto-start driver after create"),
                         "password", stringProp("USER only: login password (default ChangeMe!123)"),
-                        "roles", stringProp("USER only: roles list or comma string (default OPERATOR)")
+                        "roles", stringProp("USER only: roles list or comma string (default operator; ids: admin|developer|operator)")
                 ),
                 req("parentPath", "name", "type", "displayName"),
                 true

@@ -214,7 +214,7 @@ final class AgentTreeTools {
             public String description() {
                 return "Create object tree node. Args: parentPath, name, type (DEVICE|DASHBOARD|USER|CUSTOM|...), "
                         + "displayName, description?, templateId?, driverId?, driverPollIntervalMs?, autoStartDriver?. "
-                        + "For USER: also password? (default ChangeMe!123), roles? (list or comma string, default OPERATOR). "
+                        + "For USER: also password? (default ChangeMe!123), roles? (list or comma string, default operator). "
                         + "USER goes through PlatformUserService (creates login + roles variable) — do NOT apply_mixin platform-user-v1.";
             }
 
@@ -1084,7 +1084,8 @@ final class AgentTreeTools {
         }
         List<String> roles = parseRolesArg(arguments.get("roles"));
         if (roles.isEmpty()) {
-            roles = List.of("OPERATOR");
+            // Platform roles are lowercase ids (admin|developer|operator), not Spring ROLE_* names.
+            roles = List.of("operator");
         }
         String path = PlatformUserService.USERS_PATH_PREFIX + username.trim();
         try {
@@ -1135,7 +1136,7 @@ final class AgentTreeTools {
             List<String> out = new ArrayList<>();
             for (Object item : list) {
                 if (item != null && !String.valueOf(item).isBlank()) {
-                    out.add(String.valueOf(item).trim());
+                    out.add(normalizePlatformRole(String.valueOf(item).trim()));
                 }
             }
             return out;
@@ -1151,10 +1152,29 @@ final class AgentTreeTools {
         List<String> out = new ArrayList<>();
         for (String part : text.split("[,;\\s]+")) {
             if (!part.isBlank()) {
-                out.add(part.trim());
+                out.add(normalizePlatformRole(part.trim()));
             }
         }
         return out;
+    }
+
+    /** Map common LLM variants onto platform role ids (admin|developer|operator|tenant-admin). */
+    private static String normalizePlatformRole(String role) {
+        if (role == null || role.isBlank()) {
+            return role;
+        }
+        String stripped = role.trim();
+        if (stripped.regionMatches(true, 0, "ROLE_", 0, 5)) {
+            stripped = stripped.substring(5);
+        }
+        String lower = stripped.toLowerCase(Locale.ROOT);
+        return switch (lower) {
+            case "admin", "administrator" -> "admin";
+            case "developer", "dev", "configurator" -> "developer";
+            case "operator", "ops", "user" -> "operator";
+            case "tenant-admin", "tenant_admin", "tenantadmin" -> "tenant-admin";
+            default -> lower;
+        };
     }
 
     /**
