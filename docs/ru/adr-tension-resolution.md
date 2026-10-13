@@ -15,8 +15,8 @@
 | Тихая деградация кластера | Planned | 1C |
 | Ui-pack origin | Planned | 2A |
 | Пять TS stores | Planned | 2B |
-| Широта vs глубина | Planned | 3A |
-| KMS / ГОСТ | Planned (non-claim до тендера) | 3B |
+| Широта vs глубина | Planned (C1 customer plant + matrix) | 3A |
+| KMS / ГОСТ | Closed (0076 non-claim, SPI по тендеру) | 3B |
 
 ## Связанное
 

@@ -26,6 +26,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Changed
 
+- **ADR tension Wave 3 (ops/docs)** — [field-c1-evidence-checklist](docs/en/field-c1-evidence-checklist.md) and [docs/evidence/field-c1/](docs/evidence/field-c1/README.md) template (FIELD=0 until named customer plant); [0076](docs/en/decisions/0076-external-secrets-providers.md) reaffirms provider SPI only under named tender; [adr-tension-resolution](docs/en/adr-tension-resolution.md): breadth vs depth stays Planned with ops Done-when, external KMS Closed as policy non-claim.
 - **ADR honesty pass («поправить» → strong)** — Accepted/Proposed ADRs 0003, 0006, 0008, 0013, 0025a, 0031, 0033, 0035, 0039, 0042, 0045, 0054, 0056, 0060 gain Done/Partial/Gap tables, stale claim cleanup, and links to successor ADRs (0072–0074, 0032, 0051). Docs-only; no runtime change.
 - **ADR status pass («статус» → strong)** — 0016a/b alias citation + commercial packaging honesty; 0019 dated status + phase-3 Partial; 0025b explicit **experimental** support tier; industry-bar framing without oversell.
 - **ADR unload pass («разгрузить» → strong)** — 0005, 0017, 0026, 0027, 0046, 0049 slimmed to decisions + honesty; pool/bench/wave journals pointed at runbooks (`ai-agent`, `load-testing`, `lab-event-journal-stress`, tutorials).
