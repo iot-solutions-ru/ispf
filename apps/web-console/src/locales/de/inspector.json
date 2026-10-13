@@ -547,6 +547,8 @@
   "scriptSteps.field.field": "DataRecord-Feld",
   "scriptSteps.field.fields": "Felder",
   "scriptSteps.field.functionName": "Funktionsname",
+  "scriptSteps.functionNamesNeedObject": "Zuerst Objektpfad (oder self) angeben — Liste = Funktionen dieses Objekts.",
+  "scriptSteps.functionNamesEmpty": "Das Zielobjekt hat keine Funktionen.",
   "scriptSteps.field.input": "Eingabe (Karte)",
   "scriptSteps.field.instanceName": "Instanzname",
   "scriptSteps.field.modelName": "Blueprint-Name",
