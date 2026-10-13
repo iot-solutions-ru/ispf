@@ -9,6 +9,9 @@ public final class UiPackSupport {
 
     public static final String APP_HEADER = "X-ISPF-Ui-Pack-App";
 
+    /** Set on partner pack HTML responses; Path=/ so login can see it even without Referer. */
+    public static final String CONTEXT_COOKIE = "ISPF_UI_PACK_CTX";
+
     private UiPackSupport() {
     }
 

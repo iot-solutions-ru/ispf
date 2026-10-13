@@ -149,6 +149,41 @@ class UiPackScopedTokenAuthorizationTest {
                 .andExpect(jsonPath("$.roles", hasItem("admin")));
     }
 
+    @Test
+    void partnerPackContextCookieWithoutRefererCannotMintConsoleLogin() throws Exception {
+        mockMvc.perform(get("/apps/partner-app/")
+                        .accept(MediaType.TEXT_HTML))
+                .andExpect(status().isOk())
+                .andExpect(result -> {
+                    String setCookie = String.join(",", result.getResponse().getHeaders("Set-Cookie"));
+                    org.junit.jupiter.api.Assertions.assertTrue(
+                            setCookie.contains("ISPF_UI_PACK_CTX=partner-app"),
+                            "expected partner context cookie, got: " + setCookie
+                    );
+                });
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .cookie(new jakarta.servlet.http.Cookie("ISPF_UI_PACK_CTX", "partner-app"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"admin","password":"admin"}
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.detail", containsString("Partner")));
+    }
+
+    @Test
+    void partnerPackAppHeaderWithoutRefererCannotMintConsoleLogin() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .header("X-ISPF-Ui-Pack-App", "partner-app")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"admin","password":"admin"}
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.detail", containsString("Partner")));
+    }
+
     private String login(String referer) throws Exception {
         var request = post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)

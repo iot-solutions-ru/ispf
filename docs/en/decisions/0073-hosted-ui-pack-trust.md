@@ -3,7 +3,7 @@
 ## Status
 
 **Accepted** (2026-10-13) — amends [0054](0054-hosted-ui-packs.md) with an explicit trust residual and hardening direction.  
-**Wave 2A** (2026-10-13) ships CSP/COOP/CORP on `/apps/` and a BFF-scoped `uiPackAppId` token. Partner login-in-pack is **Partial** (Referer only).
+**Wave 2A** (2026-10-13) ships CSP/COOP/CORP on `/apps/` and a BFF-scoped `uiPackAppId` token. Partner login-in-pack is **Done** for same-origin signals (Referer, `X-ISPF-Ui-Pack-App`, `ISPF_UI_PACK_CTX` cookie). Separate pack origin remains **Not claimed**.
 
 ## Context
 
@@ -21,7 +21,7 @@ Ui-packs are served under `/apps/<appId>/` on the console origin ([0054](0054-ho
 | **Separate origin** for untrusted partner packs | **Not claimed** |
 | **CSP / COOP / CORP** defaults on `/apps/*` | **Done** — see §4. `style-src` still allows `'unsafe-inline'`. Script nonce/hash is not shipped. |
 | **Scoped token** claim `uiPackAppId` | **Done** — see §5. Local/test mint plus OIDC claim enforcement. This server does not mint Keycloak tokens. |
-| **Partner login-in-pack** | **Partial** — see §6. 403 only when `Referer` is `/apps/<appId>/` and trust is partner. Omitting `Referer` still reaches `/api/v1/auth/login`. |
+| **Partner login-in-pack** | **Done** (same-origin) — see §6. 403 when Referer, `X-ISPF-Ui-Pack-App`, or partner context cookie identifies a partner pack. Separate origin **Not claimed**. |
 
 ### 2. Hard rules
 
@@ -33,7 +33,7 @@ Ui-packs are served under `/apps/<appId>/` on the console origin ([0054](0054-ho
 ### 3. Hardening order
 
 1. Default CSP on `/apps/<appId>/` — **shipped** (conservative policy below). Follow-up: script nonce/hash and dropping `style-src 'unsafe-inline'`.
-2. `uiPackTrust` on `ui-pack.json`: `firstParty` (default) | `partner` | `signedPartner` | `devOnly`. Partner class blocks in-pack login when `Referer` is present. **Partial.**
+2. `uiPackTrust` on `ui-pack.json`: `firstParty` (default) | `partner` | `signedPartner` | `devOnly`. Partner class blocks in-pack login via Referer / app header / context cookie. **Done** (same-origin).
 3. Longer-term: optional dedicated pack host / subdomain. **Not claimed.**
 
 ### 4. CSP (Wave 2A)
@@ -73,9 +73,11 @@ Packs must not call `POST /api/v1/auth/login` to obtain a console token.
 | Value | In-pack `POST /api/v1/auth/login` |
 |-------|-----------------------------------|
 | `firstParty` (default), `devOnly` | Allowed (same as console login; token has the user’s roles) |
-| `partner`, `signedPartner` | **Forbidden.** 403 when `Referer` is `/apps/<appId>/`. |
+| `partner`, `signedPartner` | **Forbidden.** 403 when any signal identifies the pack: `Referer` `/apps/<appId>/`, header `X-ISPF-Ui-Pack-App`, or cookie `ISPF_UI_PACK_CTX` (set on partner HTML responses). |
 
-**Residual:** browsers let a page set `referrerPolicy: no-referrer`. That request is indistinguishable from the console and can still mint a full token. A separate origin is the real fix and is **not claimed**.
+Serving partner HTML sets `ISPF_UI_PACK_CTX=<appId>; Path=/; HttpOnly; SameSite=Lax` so omitting Referer still fails. Successful console login clears the cookie.
+
+**Residual:** a partner page that never loaded HTML through `HostedUiPackFilter` (no cookie) and strips Referer and the app header still looks like the console — rare without prior pack navigation. A separate origin is the remaining isolation and is **not claimed**.
 
 ## Consequences
 

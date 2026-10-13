@@ -1,6 +1,7 @@
 package com.ispf.server.api;
 
 import com.ispf.server.application.uipack.UiPackPartnerLoginGuard;
+import com.ispf.server.application.uipack.UiPackSupport;
 import com.ispf.server.audit.AuditEventService;
 import com.ispf.server.security.LoginAttemptLimiter;
 import com.ispf.server.security.PlatformUserService;
@@ -8,6 +9,7 @@ import com.ispf.server.security.UiPackScopedAccessFilter;
 import com.ispf.server.security.UiPackScopedAuthority;
 import com.ispf.server.config.IspfSecurityProperties;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Value;
@@ -80,7 +82,11 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Map<String, Object> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+    public Map<String, Object> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
         uiPackPartnerLoginGuard.rejectIfPartnerPack(httpRequest);
         String username = request.username().trim().toLowerCase(Locale.ROOT);
         String clientIp = clientIp(httpRequest);
@@ -93,6 +99,8 @@ public class AuthController {
             );
             loginAttemptLimiter.recordSuccess(username, clientIp);
             auditEventService.logLoginSuccess(username);
+            // Drop partner pack context after a successful (non-partner) console login.
+            clearUiPackContextCookie(httpResponse);
             return response;
         } catch (LoginAttemptLimiter.LoginLockedException ex) {
             auditEventService.logLoginFailure(username);
@@ -154,6 +162,13 @@ public class AuthController {
             return header.substring("Bearer ".length()).trim();
         }
         return null;
+    }
+
+    private static void clearUiPackContextCookie(HttpServletResponse response) {
+        response.addHeader(
+                "Set-Cookie",
+                UiPackSupport.CONTEXT_COOKIE + "=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"
+        );
     }
 
     /**

@@ -6,6 +6,7 @@ import com.ispf.server.config.IspfSecurityProperties;
 import com.ispf.server.security.LoginAttemptLimiter;
 import com.ispf.server.security.PlatformUserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.Environment;
@@ -45,7 +46,7 @@ class AuthControllerTest {
     void ignoresForwardedForWhenPeerIsNotTrusted() {
         HttpServletRequest request = request("203.0.113.10", "198.51.100.7, 203.0.113.10");
 
-        controller.login(new AuthController.LoginRequest("admin", "secret", null), request);
+        controller.login(new AuthController.LoginRequest("admin", "secret", null), request, mock(HttpServletResponse.class));
 
         verify(loginAttemptLimiter).checkAllowed("admin", "203.0.113.10");
         verify(loginAttemptLimiter).recordSuccess("admin", "203.0.113.10");
@@ -56,7 +57,7 @@ class AuthControllerTest {
         securityProperties.setTrustedProxyIps(List.of("10.0.0.1"));
         HttpServletRequest request = request("10.0.0.1", "198.51.100.7, 10.0.0.1");
 
-        controller.login(new AuthController.LoginRequest("admin", "secret", null), request);
+        controller.login(new AuthController.LoginRequest("admin", "secret", null), request, mock(HttpServletResponse.class));
 
         verify(loginAttemptLimiter).checkAllowed("admin", "198.51.100.7");
         verify(loginAttemptLimiter).recordSuccess("admin", "198.51.100.7");
@@ -67,7 +68,7 @@ class AuthControllerTest {
         securityProperties.setTrustedProxyIps(List.of("10.0.0.1"));
         HttpServletRequest request = request("10.0.0.1", null);
 
-        controller.login(new AuthController.LoginRequest("admin", "secret", null), request);
+        controller.login(new AuthController.LoginRequest("admin", "secret", null), request, mock(HttpServletResponse.class));
 
         verify(loginAttemptLimiter).checkAllowed("admin", "10.0.0.1");
         verify(loginAttemptLimiter).recordSuccess("admin", "10.0.0.1");
