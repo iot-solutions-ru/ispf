@@ -2,7 +2,7 @@
 
 # ADR-0019: Единая модель Platform Rule (dashboard + bindings)
 
-Статус: **Принято** (2026-06) — фазы 0–2 реализованы; фаза 3 (deprecation legacy mini-DSL) ещё открыта
+Статус: **Accepted** (2026-06-28) — фазы 0–2 **Done**; фаза 3 (legacy mini-DSL) **Partial**. Канон: EN.
 
 ## Контекст
 
