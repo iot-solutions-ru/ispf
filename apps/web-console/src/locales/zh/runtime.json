@@ -42,10 +42,13 @@
   "functionJournal.subtitle": "函数调用（对象启用 audit 时）",
   "functionJournal.title": "函数调用日志",
   "invokeFunction.federatedHint": "调用通过 proxy API 转发到 federation peer。",
-  "invokeFunction.input": "输入 (JSON DataRecord)",
+  "invokeFunction.input": "输入",
   "invokeFunction.inputHint": "空 rows — 平台从描述符填充 inputSchema。",
   "invokeFunction.invoke": "调用",
   "invokeFunction.invoking": "正在调用…",
+  "invokeFunction.jsonToggle": "JSON",
   "invokeFunction.result": "结果",
+  "invokeFunction.resultHint": "按 outputSchema 只读字段。JSON 为完整 DataRecord。",
+  "invokeFunction.resultJsonHint": "完整 invoke 响应（schema 与 rows）。",
   "invokeFunction.title": "调用函数"
 }
