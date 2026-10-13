@@ -109,7 +109,7 @@ Program wave 8 (~9.8) по-прежнему **отозвана**.
 | Единая модель | 0.20 | **8.5** | 9.5 | Глубина ontology vs peers |
 | AI-авторинг | 0.25 | **9.0** | 9.5 | Multi-day plant journal |
 | Формальные гарантии | 0.25 | **8.3** | 9.5 | **Partial** — авторский validate и HTTP deploy без `strict` всё ещё WARNING |
-| Открытость | 0.15 | **8.7** | 9.5 | Partner Portal external; ui-pack trust Partial |
+| Открытость | 0.15 | **8.7** | 9.5 | ui-pack same-origin (0073) Done; Partner Portal external; Cosign Partial; separate origin не заявлен |
 | Air-gap / суверенитет | 0.15 | **7.7** | 9.5 | **Partial** — playbook `ISPF_AI_BASE_URL` и заготовка evidence; Cosign нет; датированного прогона нет |
 
 **Weighted today:** **8.49** (было **8.38**). Подъём скромный и честно Partial: гарантии 8.0→8.3, air-gap 7.5→7.7.

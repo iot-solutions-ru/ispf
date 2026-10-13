@@ -83,7 +83,7 @@ Serving partner HTML sets `ISPF_UI_PACK_CTX=<appId>; Path=/; HttpOnly; SameSite=
 
 - Amends 0054 Consequences with this residual.
 - Security scorecard 9+ still needs hired pen-test (G-01); CSP alone is not a cert.
-- Wave 2A closes the CSP gap and the “scoped token cannot call admin APIs” gap. It does **not** close “a partner pack can never mint a full console token.”
+- Wave 2A closes CSP, scoped-token admin denial, and same-origin partner login (Referer / header / context cookie). Remaining isolation is separate pack origin (**not claimed**) plus the rare no-cookie stripped-signal residual in §6.
 
 ## Related
 

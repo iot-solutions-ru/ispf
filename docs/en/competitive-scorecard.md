@@ -109,7 +109,7 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 | Unified model (tree / blueprints / CEL) | 0.20 | **8.5** | 9.5 | Classic #1 | Agent-queryable depth vs ontology peers |
 | AI authoring (tree-first / MCP / Studio) | 0.25 | **9.0** | 9.5 | Classic #9; BL-178 52/52 | Multi-day plant journal. Logic-host acceptance is on the guarantees axis |
 | Formal guarantees (ship / poka-yoke) | 0.25 | **8.3** | 9.5 | 0051, 0004, 0060; `--strict`, catalog, agent ship REWORK, `hostKind` enum | **Partial.** Authoring `validate_bundle` and HTTP deploy without `strict` still WARNING |
-| Openness (OSS / API / MCP / docs) | 0.15 | **8.7** | 9.5 | AGPL+dual; #13–14; MCP | Partner Portal external; ui-pack trust Partial |
+| Openness (OSS / API / MCP / docs) | 0.15 | **8.7** | 9.5 | AGPL+dual; #13–14; MCP; ui-pack same-origin trust (0073) Done | Partner Portal external; Cosign / `require-signed-bundles` Partial; separate pack origin not claimed |
 | Air-gap / sovereignty | 0.15 | **7.7** | 9.5 | On-prem + `ISPF_AI_BASE_URL` demostand playbook + [evidence stub](../evidence/air-gap-llm/README.md) | **Partial.** No Cosign (not in repo). No dated site soak |
 
 **Weighted today:** \(0.20×8.5 + 0.25×9.0 + 0.25×8.3 + 0.15×8.7 + 0.15×7.7\) = **8.49**  
