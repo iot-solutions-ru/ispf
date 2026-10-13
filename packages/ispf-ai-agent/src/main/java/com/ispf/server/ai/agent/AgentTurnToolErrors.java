@@ -208,4 +208,19 @@ final class AgentTurnToolErrors {
         return step.get(key) instanceof Map<?, ?> map ? (Map<String, Object>) map : Map.of();
     }
 
-    private static String stringArg(Map<String, Object
+    private static String stringArg(Map<String, Object> arguments, String key) {
+        Object value = arguments.get(key);
+        return value == null ? "" : String.valueOf(value).trim();
+    }
+
+    private static boolean pathsEqual(String a, String b) {
+        return normalizePath(a).equalsIgnoreCase(normalizePath(b));
+    }
+
+    private static String normalizePath(String path) {
+        if (path == null) {
+            return "";
+        }
+        return path.trim().replaceAll("\\.+", ".").replaceAll("\\.$", "");
+    }
+}

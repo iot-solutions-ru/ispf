@@ -757,4 +757,26 @@ final class AgentGroundTruthGuard {
 
     /** Virtual device profiles must not be passed to ensure_singleton_instance. */
     static boolean looksLikeVirtualDeviceProfile(String modelRef) {
-        if (modelRef == null || modelRef
+        if (modelRef == null || modelRef.isBlank()) {
+            return false;
+        }
+        String lower = modelRef.trim().toLowerCase(Locale.ROOT);
+        return lower.startsWith("virtual-")
+                || lower.contains("virtual-lab")
+                || lower.contains("virtual-unified")
+                || "virtual".equals(lower);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> stepMap(Map<String, Object> step, String key) {
+        return step.get(key) instanceof Map<?, ?> map ? (Map<String, Object>) map : Map.of();
+    }
+
+    private static String stringArg(Map<String, Object> arguments, String key) {
+        if (arguments == null) {
+            return "";
+        }
+        Object value = arguments.get(key);
+        return value == null ? "" : String.valueOf(value).trim();
+    }
+}
