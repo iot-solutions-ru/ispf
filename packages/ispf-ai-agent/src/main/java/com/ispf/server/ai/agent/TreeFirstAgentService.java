@@ -144,10 +144,17 @@ public class TreeFirstAgentService {
             reserved.close();
             throw ex;
         }
+        final String turnChannel = session.runState().clientChannel();
+        final Map<String, Object> turnFocus = session.runState().clientFocus();
+        final String turnLocale = session.runState().uiLocale();
         agentRunExecutor.execute(() -> {
             try {
                 AgentSession live = sessionStore.require(sessionId, actor)
                         .orElseThrow(() -> new IllegalStateException("Session not found: " + sessionId));
+                // Ephemeral UI context is set on the controller session before submit; re-apply after reload.
+                live.runState().setClientChannel(turnChannel);
+                live.runState().setClientFocus(turnFocus);
+                live.runState().setUiLocale(turnLocale);
                 runTurn(live, message, attachments, authentication, actor, interactionMode);
             } catch (Exception ex) {
                 log.warn("Async agent turn failed for session {}: {}", sessionId, ex.getMessage(), ex);
