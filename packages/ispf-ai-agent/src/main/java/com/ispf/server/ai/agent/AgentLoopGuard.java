@@ -92,6 +92,10 @@ final class AgentLoopGuard {
                     + " (exact folder — listing parent=root does NOT ground root.platform.* paths). "
                     + "Verify objects[].path in the result, then retry create_object.";
         }
+        String objectExistsHint = objectAlreadyExistsHint(lastTool, steps);
+        if (objectExistsHint != null) {
+            return objectExistsHint;
+        }
         if ("save_workflow_bpmn".equals(lastTool) && lastStepErrorContains(steps, "not discovered in this turn")) {
             return """
                     save_workflow_bpmn blocked: WORKFLOW object must exist first. \
@@ -400,12 +404,24 @@ final class AgentLoopGuard {
         if (!isStrictTwoToolAlternation(sequence)) {
             return Optional.empty();
         }
+        String existsPath = latestExistingObjectPath(steps);
+        String hint;
+        if (!existsPath.isBlank()
+                && sequence.contains("create_object")
+                && sequence.contains("get_object")) {
+            hint = "Object(s) already exist (e.g. " + existsPath + "). "
+                    + "Stop create_object↔get_object. "
+                    + "Next: configure_alert / set_dashboard_layout / list_variables / configure_* on that path, "
+                    + "or continue the next assignment step. Do NOT recreate.";
+        } else {
+            hint = """
+                    Stop read ping-pong. Use prior results or finish. \
+                    Prefer one mutate: configure_operator_ui / configure_alert / set_dashboard_layout / create_binding_rule.""";
+        }
         return Optional.of(new BlockDecision(
                 "Hard block: tools '" + sequence.get(0) + "' ↔ '" + sequence.get(1)
                         + "' oscillating " + sequence.size() + " steps — stop flooding the step log",
-                """
-                Stop read ping-pong. Use prior results or finish. \
-                Prefer one mutate: configure_operator_ui / configure_alert / set_dashboard_layout / create_binding_rule.""",
+                hint,
                 true
         ));
     }
@@ -651,6 +667,74 @@ final class AgentLoopGuard {
         return "";
     }
 
+    private static String objectAlreadyExistsHint(String lastTool, List<Map<String, Object>> steps) {
+        if (steps == null || steps.isEmpty() || lastTool == null) {
+            return null;
+        }
+        String tool = normalize(lastTool);
+        if (!"create_object".equals(tool) && !"create_virtual_device".equals(tool)) {
+            return null;
+        }
+        Map<String, Object> last = steps.get(steps.size() - 1);
+        if (!tool.equals(normalize(String.valueOf(last.get("tool"))))) {
+            return null;
+        }
+        Map<String, Object> result = stepMap(last, "result");
+        Map<String, Object> args = stepMap(last, "arguments");
+        String type = "create_virtual_device".equals(tool)
+                ? "DEVICE"
+                : stringArg(args, "type").toUpperCase(Locale.ROOT);
+        if (Boolean.TRUE.equals(result.get("reused"))
+                || "true".equalsIgnoreCase(String.valueOf(result.get("reused")))) {
+            String path = firstNonBlank(
+                    stringArg(result, "path"),
+                    stringArg(result, "existingPath")
+            );
+            String hint = stringArg(result, "hint");
+            return !hint.isBlank() ? hint : AgentObjectReuse.nextStepHint(path, type);
+        }
+        if (lastStepErrorContains(steps, "object exists:")) {
+            String path = latestExistingObjectPath(steps);
+            return AgentObjectReuse.nextStepHint(path, type);
+        }
+        return null;
+    }
+
+    private static String latestExistingObjectPath(List<Map<String, Object>> steps) {
+        if (steps == null) {
+            return "";
+        }
+        for (int i = steps.size() - 1; i >= 0; i--) {
+            Map<String, Object> step = steps.get(i);
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            Map<String, Object> result = stepMap(step, "result");
+            String path = firstNonBlank(
+                    stringArg(result, "existingPath"),
+                    stringArg(result, "path")
+            );
+            if (!path.isBlank()) {
+                return path;
+            }
+            String error = String.valueOf(result.get("error"));
+            if (error.startsWith("Object exists:")) {
+                return error.substring("Object exists:".length()).trim();
+            }
+        }
+        return "";
+    }
+
+    private static String firstNonBlank(String a, String b) {
+        if (a != null && !a.isBlank()) {
+            return a.trim();
+        }
+        if (b != null && !b.isBlank()) {
+            return b.trim();
+        }
+        return "";
+    }
+
     private static String createObjectTypeHint(List<Map<String, Object>> steps) {
         if (steps.isEmpty()) {
             return null;
@@ -659,8 +743,16 @@ final class AgentLoopGuard {
         if (!"create_object".equals(String.valueOf(last.get("tool")))) {
             return null;
         }
-        if (!"OK".equals(String.valueOf(stepMap(last, "result").get("status")))) {
+        Map<String, Object> result = stepMap(last, "result");
+        if (!"OK".equals(String.valueOf(result.get("status")))) {
             return null;
+        }
+        if (Boolean.TRUE.equals(result.get("reused"))
+                || "true".equalsIgnoreCase(String.valueOf(result.get("reused")))) {
+            String hint = stringArg(result, "hint");
+            if (!hint.isBlank()) {
+                return hint;
+            }
         }
         Map<String, Object> args = stepMap(last, "arguments");
         String type = stringArg(args, "type").toUpperCase(Locale.ROOT);
@@ -678,6 +770,7 @@ final class AgentLoopGuard {
                     DEVICE created. Next: configure_driver, list_variables — verify telemetry before dashboard/SCADA bindings.""";
             case "ALERT" -> "ALERT created. Next: configure_alert path=<path from create_object result>.";
             case "REPORT" -> "REPORT created. Next: configure_report path=<path from create_object result>.";
+            case "EVENT_FILTER" -> "EVENT_FILTER created. Reuse path for filter fields; continue the assignment — do not recreate.";
             default -> null;
         };
     }

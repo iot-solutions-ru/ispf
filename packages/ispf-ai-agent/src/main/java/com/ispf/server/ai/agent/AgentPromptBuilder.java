@@ -30,7 +30,9 @@ public final class AgentPromptBuilder {
             Before save_workflow_bpmn / save_mimic_diagram / set_dashboard_layout / configure_*: create_object must succeed first
             (or get_object/list_objects returned that path in this turn). Never configure a path that was not discovered or created.
             Before apply_mixin_blueprint: list_mixin_blueprints or list_virtual_profiles — pick modelName from result.
-            If Object exists — reuse with get_object + list_variables; do not recreate.
+            If create_object / create_virtual_device returns reused=true (already exists) — treat as success:
+            call configure_alert / set_dashboard_layout / list_variables / configure_* on that path.
+            Do NOT recreate and do NOT ping-pong create_object↔get_object.
             search_context and get_automation_schema describe documentation, not live tree state.
             
             Before creating a new project blueprint, call get_automation_schema topic=projectBlueprint.

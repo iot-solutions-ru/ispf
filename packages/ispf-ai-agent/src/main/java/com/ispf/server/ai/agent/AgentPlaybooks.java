@@ -473,7 +473,8 @@ public final class AgentPlaybooks {
                 - list_variables path=<существующий DEVICE> — имена переменных для виджетов
                 
                 **Переиспользование:** если list_objects показал папку/устройство — работай с этим path.
-                Если create_object вернул «Object exists» — get_object + list_variables, не дублируй.
+                Если create_object вернул reused=true / already exists — это успех: configure_* / set_* / list_variables \
+                на том же path. Не создавай снова и не чередуй create_object↔get_object.
                 
                 **Recipes:** search_platform_recipes даёт последовательность; подставляй пути из list_objects,
                 не копируй примерные имена из catalog буквально.

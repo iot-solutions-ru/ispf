@@ -237,13 +237,7 @@ final class AgentTreeTools {
                 federationBindService.assertParentAllowsChildren(parentPath);
                 String fullPath = objectTreePort.tree().resolveChildPath(parentPath, name);
                 if (objectTreePort.tree().findByPath(fullPath).isPresent()) {
-                    return Map.of(
-                            "status", "ERROR",
-                            "error", "Object exists: " + fullPath,
-                            "hint", "Reuse this object: get_object path=" + fullPath
-                                    + " and list_variables — do not create a duplicate.",
-                            "existingPath", fullPath
-                    );
+                    return AgentObjectReuse.alreadyExistsOk(fullPath, typeRaw);
                 }
                 String templateId = optionalString(arguments, "templateId");
                 String description = optionalString(arguments, "description");
