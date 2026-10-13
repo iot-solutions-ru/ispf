@@ -174,10 +174,15 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("configure_report", objectSchema(
                 props(
-                        "path", stringProp("Object tree path"),
+                        "path", stringProp("REPORT object path (root.platform.reports.<id>)"),
+                        "reportId", stringProp("Short id; path = root.platform.reports.<reportId> when path omitted"),
+                        "reportType", stringProp("sql|tree-variables"),
+                        "title", stringProp("Report title"),
+                        "devicePathPattern", stringProp("tree-variables: device path glob"),
+                        "variableName", stringProp("tree-variables: variable id"),
                         "configJson", stringProp("JSON string payload")
                 ),
-                req("path"),
+                List.of(),
                 true
         ));
         catalog.put("configure_variable_history", objectSchema(

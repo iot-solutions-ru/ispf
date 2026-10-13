@@ -39,9 +39,19 @@ final class AgentLoopGuard {
             "search_platform_recipes",
             "list_examples",
             "get_example_bundle",
-            "get_widget_catalog",
             "get_deploy_playbook"
     );
+
+    /**
+     * Catalog lookups keyed by {@code type} (fingerprint). Different widget types must be allowed
+     * in one course turn; only repeating the same type is spam.
+     */
+    private static final Set<String> TYPED_CATALOG_TOOLS = Set.of(
+            "get_widget_catalog"
+    );
+
+    /** After this many prior identical create_object OK/reused, stop — do not flood the step log. */
+    private static final int CREATE_REUSE_HARD_BLOCK = 2;
 
     /** Prefer one batch write over many incremental adds — noisy in Studio step log. */
     private static final Set<String> BATCH_INCREMENTAL_TOOLS = Set.of(
@@ -287,6 +297,32 @@ final class AgentLoopGuard {
         String fingerprint = callFingerprint(normalized, toolArgs);
         long priorSame = totalFingerprintCount(steps, fingerprint);
 
+        if (TYPED_CATALOG_TOOLS.contains(normalized) && priorSame >= DISCOVERY_HARD_BLOCK) {
+            return Optional.of(new BlockDecision(
+                    "Hard block: '" + normalized + "' repeated " + priorSame
+                            + " times for the same type — stop looping",
+                    "Reuse the prior catalog result for this widget type. "
+                            + "Call get_widget_catalog only when the type argument changes, "
+                            + "then set_dashboard_layout / add_dashboard_widget.",
+                    false
+            ));
+        }
+
+        if ("create_object".equals(normalized)
+                && priorSame >= CREATE_REUSE_HARD_BLOCK
+                && fingerprintHasReusedOk(steps, fingerprint)) {
+            Map<String, Object> args = toolArgs == null ? Map.of() : toolArgs;
+            String type = stringArg(args, "type").toUpperCase(Locale.ROOT);
+            String path = resolveCreateObjectPath(args, steps, fingerprint);
+            return Optional.of(new BlockDecision(
+                    "Hard block: identical 'create_object' already reused " + priorSame
+                            + " times — stop flooding the step log",
+                    AgentObjectReuse.nextStepHint(path, type)
+                            + " Do NOT call create_object again for this name.",
+                    true
+            ));
+        }
+
         if (BATCH_INCREMENTAL_TOOLS.contains(normalized) && priorSame >= BATCH_INCREMENTAL_HARD_BLOCK) {
             boolean stopTurn = priorSame >= BATCH_INCREMENTAL_STOP_TURN;
             return Optional.of(new BlockDecision(
@@ -365,6 +401,61 @@ final class AgentLoopGuard {
                         stepMap(step, "arguments")
                 )))
                 .count();
+    }
+
+    /** True when at least one prior identical create returned reused=true (object already exists). */
+    private static boolean fingerprintHasReusedOk(List<Map<String, Object>> steps, String fingerprint) {
+        if (steps == null || fingerprint == null || fingerprint.isBlank()) {
+            return false;
+        }
+        for (Map<String, Object> step : steps) {
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            if (!fingerprint.equals(callFingerprint(String.valueOf(step.get("tool")), stepMap(step, "arguments")))) {
+                continue;
+            }
+            Map<String, Object> result = stepMap(step, "result");
+            boolean ok = "OK".equalsIgnoreCase(String.valueOf(result.get("status")));
+            boolean reused = Boolean.TRUE.equals(result.get("reused"))
+                    || "true".equalsIgnoreCase(String.valueOf(result.get("reused")));
+            if (ok && reused) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String resolveCreateObjectPath(
+            Map<String, Object> args,
+            List<Map<String, Object>> steps,
+            String fingerprint
+    ) {
+        if (steps != null) {
+            for (int i = steps.size() - 1; i >= 0; i--) {
+                Map<String, Object> step = steps.get(i);
+                if (!"tool".equals(String.valueOf(step.get("type")))) {
+                    continue;
+                }
+                if (!fingerprint.equals(callFingerprint(String.valueOf(step.get("tool")), stepMap(step, "arguments")))) {
+                    continue;
+                }
+                Map<String, Object> result = stepMap(step, "result");
+                String path = firstNonBlank(stringArg(result, "path"), stringArg(result, "existingPath"));
+                if (!path.isBlank()) {
+                    return path;
+                }
+            }
+        }
+        String parent = stringArg(args, "parentPath");
+        if (parent.isBlank()) {
+            parent = stringArg(args, "parent");
+        }
+        String name = stringArg(args, "name");
+        if (!parent.isBlank() && !name.isBlank()) {
+            return parent + "." + name;
+        }
+        return "";
     }
 
     private static String batchIncrementalHint(String lastTool, List<Map<String, Object>> steps) {

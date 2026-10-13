@@ -34,4 +34,14 @@ class AgentToolArgCoercionTest {
         );
         assertThat(coerced.containsKey("pack")).isFalse();
     }
+
+    @Test
+    void mapsReportIdToPathForConfigureReport() {
+        Map<String, Object> coerced = AgentToolArgCoercion.coerce(
+                "configure_report",
+                Map.of("reportId", "report-table-all", "reportType", "tree-variables")
+        );
+        assertThat(coerced.get("path")).isEqualTo("root.platform.reports.report-table-all");
+        assertThat(coerced.get("reportId")).isEqualTo("report-table-all");
+    }
 }
