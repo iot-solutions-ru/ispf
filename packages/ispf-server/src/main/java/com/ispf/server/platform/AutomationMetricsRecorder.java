@@ -76,6 +76,7 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
     private final AtomicLong telemetryHistorianOnlyCount = new AtomicLong();
     private final AtomicLong telemetryCoalesceDropCount = new AtomicLong();
     private final AtomicLong variableHistoryFlushedCount = new AtomicLong();
+    private final AtomicLong historianDualWriteSecondaryFailures = new AtomicLong();
     private final EnumMap<EventFireSource, AtomicLong> eventsFiredBySource = new EnumMap<>(EventFireSource.class);
     private final EnumMap<WorkflowStartTrigger, AtomicLong> workflowStartsByTrigger = new EnumMap<>(WorkflowStartTrigger.class);
     private final EnumMap<SqlBindingValues.Failure, AtomicLong> sqlBindingFailuresByReason =
@@ -118,6 +119,9 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
         Counter.builder("ispf.telemetry.binding_bypass.total").register(registry);
         Counter.builder("ispf.telemetry.historian_only.total").register(registry);
         Counter.builder("ispf.telemetry.coalesce_drops.total").register(registry);
+        Counter.builder("ispf.historian.dual_write.secondary_failures")
+                .description("ClickHouse dual-write appends that failed after the JDBC primary succeeded")
+                .register(registry);
         registry.gauge(
                 "ispf.object_change.processed.total",
                 objectChangeProcessed,
@@ -359,8 +363,19 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
         meterRegistry.ifPresent(registry -> registry.counter("ispf.telemetry.coalesce_drops.total").increment());
     }
 
+    /** One failed ClickHouse secondary append. The JDBC primary write already succeeded. */
+    public void recordHistorianDualWriteSecondaryFailure() {
+        historianDualWriteSecondaryFailures.incrementAndGet();
+        meterRegistry.ifPresent(registry ->
+                registry.counter("ispf.historian.dual_write.secondary_failures").increment());
+    }
+
     public void recordVariableHistoryFlushed(long count) {
         variableHistoryFlushedCount.addAndGet(count);
+    }
+
+    public long historianDualWriteSecondaryFailures() {
+        return historianDualWriteSecondaryFailures.get();
     }
 
     public Map<String, Object> automationSnapshot() {
@@ -394,6 +409,7 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
         section.put("variableHistoryQueueSize", variableHistoryQueueSize());
         section.put("variableHistoryFlushedTotal", variableHistoryFlushedCount.get());
         section.put("variableHistorySyncFallbackTotal", variableHistorySyncFallbackCount.get());
+        section.put("historianDualWriteSecondaryFailures", historianDualWriteSecondaryFailures.get());
         section.put("telemetryBindingBypassTotal", telemetryBindingBypassCount.get());
         section.put("telemetryHistorianOnlyTotal", telemetryHistorianOnlyCount.get());
         section.put("telemetryCoalesceDropsTotal", telemetryCoalesceDropCount.get());

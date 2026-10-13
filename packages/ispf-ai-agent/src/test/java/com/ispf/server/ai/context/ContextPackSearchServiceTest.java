@@ -9,8 +9,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -19,11 +23,14 @@ class ContextPackSearchServiceTest {
     @Mock
     private ContextPackService contextPackService;
 
+    @Mock
+    private ContextPackEmbeddingClient embeddingClient;
+
     private ContextPackSearchService searchService;
 
     @BeforeEach
     void setUp() {
-        searchService = new ContextPackSearchService(contextPackService);
+        searchService = new ContextPackSearchService(contextPackService, embeddingClient);
     }
 
     @Test
@@ -65,6 +72,52 @@ class ContextPackSearchServiceTest {
         List<?> hits = (List<?>) result.get("hits");
         assertTrue(hits.size() >= 1);
         assertTrue(hits.getFirst().toString().contains("Ecosystem"));
+    }
+
+    @Test
+    void hybridDocSearchUsesEmbeddingsWhenPresent() {
+        float[] queryVec = ContextPackHashEmbedder.embed("snmp monitoring");
+        float[] snmpVec = ContextPackHashEmbedder.embed("snmp agent device monitoring dashboard");
+        float[] otherVec = ContextPackHashEmbedder.embed("workflow bpmn correlator");
+        when(embeddingClient.embedQuery(anyString(), anyString(), anyInt())).thenReturn(Optional.of(queryVec));
+        when(contextPackService.loadPack()).thenReturn(Map.of(
+                "contextPackVersion", "ispf-test",
+                "embeddingModel", ContextPackHashEmbedder.MODEL_ID,
+                "embeddingDims", ContextPackHashEmbedder.DIMS,
+                "docChunks", List.of(
+                        Map.of(
+                                "id", "drivers",
+                                "title", "Device drivers",
+                                "topic", "drivers",
+                                "keywords", "drivers snmp",
+                                "text", "SNMP agent device monitoring",
+                                "embedding", toList(snmpVec)
+                        ),
+                        Map.of(
+                                "id", "workflows",
+                                "title", "Workflows",
+                                "topic", "workflows",
+                                "keywords", "bpmn",
+                                "text", "BPMN correlator",
+                                "embedding", toList(otherVec)
+                        )
+                )
+        ));
+
+        Map<String, Object> result = searchService.search("snmp monitoring", "all", "hybrid");
+        assertEquals("OK", result.get("status"));
+        assertEquals("hybrid", result.get("mode"));
+        List<?> hits = (List<?>) result.get("hits");
+        assertTrue(hits.size() >= 1);
+        assertTrue(hits.getFirst().toString().contains("drivers"));
+    }
+
+    private static List<Float> toList(float[] vec) {
+        java.util.ArrayList<Float> out = new java.util.ArrayList<>(vec.length);
+        for (float v : vec) {
+            out.add(v);
+        }
+        return out;
     }
 
     @Test
