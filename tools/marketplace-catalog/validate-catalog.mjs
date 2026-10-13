@@ -6,7 +6,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { findLogicHostDeviceIssues } from "../ispf-cli/src/shipCanon.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -129,8 +129,8 @@ function validateApplicationListing(name, dir, listing) {
   }
 
   // ADR-0060 Wave 1A: marketplace catalog = ship gate (same as ispf validate --strict)
-  for (const issue of findLogicHostDeviceIssues(bundle)) {
-    fail(`${name}: [${issue.code}] ${issue.path}: ${issue.message}`);
+  for (const message of catalogShipCanonFailures(name, bundle)) {
+    fail(message);
   }
 
   listings += 1;
@@ -191,52 +191,71 @@ function validateUiPackListing(name, dir, listing) {
   ok(`${name} ui-pack (${listing.appId}@${listing.latestVersion})`);
 }
 
-if (!fs.existsSync(catalogDir)) {
-  console.error(`Catalog directory missing: ${catalogDir}`);
-  process.exit(1);
+/** Ship-canon messages for one bundle. Empty when the listing may publish. */
+export function catalogShipCanonFailures(listingName, bundle) {
+  return findLogicHostDeviceIssues(bundle).map(
+    (issue) => `${listingName}: [${issue.code}] ${issue.path}: ${issue.message}`
+  );
 }
 
-const dirs = fs
-  .readdirSync(catalogDir, { withFileTypes: true })
-  .filter((d) => d.isDirectory())
-  .map((d) => d.name)
-  .sort();
-
-if (dirs.length < 10) {
-  fail(`expected ≥10 listing folders, found ${dirs.length}`);
+function isDirectRun() {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  return import.meta.url === pathToFileURL(path.resolve(entry)).href;
 }
 
-for (const name of dirs) {
-  const dir = path.join(catalogDir, name);
-  const manifestPath = path.join(dir, "listing.manifest.json");
-
-  if (!fs.existsSync(manifestPath)) {
-    fail(`${name}: listing.manifest.json missing`);
-    continue;
+function main() {
+  if (!fs.existsSync(catalogDir)) {
+    console.error(`Catalog directory missing: ${catalogDir}`);
+    process.exit(1);
   }
 
-  let listing;
-  try {
-    listing = readJson(manifestPath);
-  } catch (e) {
-    fail(`${name}: listing.manifest.json invalid JSON (${e.message})`);
-    continue;
+  const dirs = fs
+    .readdirSync(catalogDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name)
+    .sort();
+
+  if (dirs.length < 10) {
+    fail(`expected ≥10 listing folders, found ${dirs.length}`);
   }
 
-  if (isUiPackListing(listing)) {
-    validateUiPackListing(name, dir, listing);
-  } else {
-    validateApplicationListing(name, dir, listing);
+  for (const name of dirs) {
+    const dir = path.join(catalogDir, name);
+    const manifestPath = path.join(dir, "listing.manifest.json");
+
+    if (!fs.existsSync(manifestPath)) {
+      fail(`${name}: listing.manifest.json missing`);
+      continue;
+    }
+
+    let listing;
+    try {
+      listing = readJson(manifestPath);
+    } catch (e) {
+      fail(`${name}: listing.manifest.json invalid JSON (${e.message})`);
+      continue;
+    }
+
+    if (isUiPackListing(listing)) {
+      validateUiPackListing(name, dir, listing);
+    } else {
+      validateApplicationListing(name, dir, listing);
+    }
   }
+
+  console.log(`\nValidated ${listings} marketplace-catalog listings`);
+  if (failures > 0) {
+    console.error(`\n${failures} failure(s)`);
+    process.exit(1);
+  }
+  if (listings < 10) {
+    console.error(`Expected ≥10 valid listings, got ${listings}`);
+    process.exit(1);
+  }
+  console.log("marketplace-catalog validate OK (BL-183 item 12)");
 }
 
-console.log(`\nValidated ${listings} marketplace-catalog listings`);
-if (failures > 0) {
-  console.error(`\n${failures} failure(s)`);
-  process.exit(1);
+if (isDirectRun()) {
+  main();
 }
-if (listings < 10) {
-  console.error(`Expected ≥10 valid listings, got ${listings}`);
-  process.exit(1);
-}
-console.log("marketplace-catalog validate OK (BL-183 item 12)");

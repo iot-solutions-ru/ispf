@@ -255,11 +255,15 @@ public final class AgentToolInputSchemas {
                                 "Host path — SINGLETON hub (prefer root.platform.singleton-blueprints.*) "
                                         + "or INSTANCE twin; never DEVICE (ADR-0060)"
                         ),
+                        "hostKind", enumProp(
+                                "Logic host kind. DEVICE is not a valid value and is not the default.",
+                                LogicHostGuard.HOST_KINDS
+                        ),
                         "functionName", stringProp("Function name"),
                         "sourceType", stringProp("Must be script for application BFF"),
                         "sourceBody", stringProp("JSON steps string")
                 ),
-                req("appId", "objectPath", "functionName", "sourceBody"),
+                req("appId", "objectPath", "hostKind", "functionName", "sourceBody"),
                 true
         ));
         catalog.put("deploy_step_dry_run", objectSchema(
@@ -336,13 +340,17 @@ public final class AgentToolInputSchemas {
                                 "Host object path — SINGLETON hub or INSTANCE twin; "
                                         + "do not host solution logic on DEVICE"
                         ),
+                        "hostKind", enumProp(
+                                "Logic host kind. DEVICE is not a valid value and is not the default.",
+                                LogicHostGuard.HOST_KINDS
+                        ),
                         "functionName", stringProp("Function name"),
                         "sourceType", stringProp("script or java"),
                         "sourceBody", stringProp("JSON steps string or Java source"),
                         "inputSchema", objectProp("Input schema"),
                         "outputSchema", objectProp("Output schema")
                 ),
-                req("path", "functionName", "sourceType", "sourceBody"),
+                req("path", "hostKind", "functionName", "sourceType", "sourceBody"),
                 true
         ));
         catalog.put("describe_variables", objectSchema(

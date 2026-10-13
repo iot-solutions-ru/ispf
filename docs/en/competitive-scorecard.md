@@ -95,6 +95,34 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 
 ---
 
+## AI-authoring lane (second scorecard)
+
+> **Not a pin audit.** Weighted judgment. **Do not average** this lane with the classic 14-dim mean.  
+> The 8.38 figure lived on `main` (PR #498). This revision moves two axes only, and only where this branch adds evidence. Classic OT mean stays **~8.0**.
+
+**Goal:** AI authoring with formal guarantees · unified model · openness · air-gap.  
+**Peer set:** PlantPulse (on-prem LLM / MCP), SymphonyAI IRIS Forge — not Ignition/PI as primary bar.  
+**OT/MES/HMI** stay on the classic matrix; C1 FIELD is optional for this lane’s overall DoD.
+
+| Axis | Weight | Today | Target | Maps from / evidence | Gap to 9.5 |
+|------|:------:|:-----:|:------:|----------------------|------------|
+| Unified model (tree / blueprints / CEL) | 0.20 | **8.5** | 9.5 | Classic #1 | Agent-queryable depth vs ontology peers |
+| AI authoring (tree-first / MCP / Studio) | 0.25 | **9.0** | 9.5 | Classic #9; BL-178 52/52 | Multi-day plant journal. Logic-host acceptance is on the guarantees axis |
+| Formal guarantees (ship / poka-yoke) | 0.25 | **8.3** | 9.5 | 0051, 0004, 0060; `--strict`, catalog, agent ship REWORK, `hostKind` enum | **Partial.** Authoring `validate_bundle` and HTTP deploy without `strict` still WARNING |
+| Openness (OSS / API / MCP / docs) | 0.15 | **8.7** | 9.5 | AGPL+dual; #13–14; MCP | Partner Portal external; ui-pack trust Partial |
+| Air-gap / sovereignty | 0.15 | **7.7** | 9.5 | On-prem + `ISPF_AI_BASE_URL` demostand playbook + [evidence stub](../evidence/air-gap-llm/README.md) | **Partial.** No Cosign (not in repo). No dated site soak |
+
+**Weighted today:** \(0.20×8.5 + 0.25×9.0 + 0.25×8.3 + 0.15×8.7 + 0.15×7.7\) = **8.49**  
+**Previous judgment (main, before this P0):** **8.38** (guarantees 8.0, air-gap 7.5).  
+**Weighted target:** **9.50** (all axes at target)  
+**Classic OT mean (unchanged):** **~8.0**
+
+Bumps are modest and Partial: guarantees +0.3 because ship-playbook validate/import and the judge now fail `LOGIC_HOST_DEVICE`, and `hostKind` cannot default to DEVICE; air-gap +0.2 because the local-LLM demostand playbook and evidence stub exist. Signed install evidence and a recorded site run are still open.
+
+Related: [adr-tension-resolution](adr-tension-resolution.md), [0051](decisions/0051-poka-yoke-constraints-over-guards.md), [0004](decisions/0004-ai-artifact-generation-gates.md), [0060](decisions/0060-solution-authoring-constraints.md), [air-gap-deployment](air-gap-deployment.md).
+
+---
+
 ## Gaps to target
 
 Priority fixes that move **code verified** scores toward 10/10 (not marketing claims). Full domain audit: [roadmap.md § Domain gap audit](roadmap.md#domain-gap-audit--iot--scada--mes--erp-2026-07-09).
@@ -148,3 +176,4 @@ Wave 8 program mean ~9.8 — **retracted** after code audit 2026-07-08.
 4. Link evidence to tests, `packages/` paths, and evidence JSON/MD — not roadmap claims alone.
 5. Lab PASS items in [parked-backlog](parked-backlog.md) become scorecard inputs only on a **named full audit** (this document).
 6. Refresh AI `competitiveGapIndex` via `python tools/ai-pack/build.py` after matrix edits.
+7. **AI-authoring lane** weights/scores: update only with an explicit note (not folded into the classic 14-dim mean). A named pin audit may later replace the judgment column. 2026-10-13: guarantees 8.0→8.3 and air-gap 7.5→7.7 are **Partial** (see the lane section).

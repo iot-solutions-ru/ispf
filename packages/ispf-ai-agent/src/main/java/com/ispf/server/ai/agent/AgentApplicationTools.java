@@ -7,6 +7,7 @@ import com.ispf.server.application.data.ApplicationDataService;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.core.model.DataSchema;
+import com.ispf.server.object.ObjectTreePort;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import tools.jackson.databind.ObjectMapper;
@@ -33,7 +34,8 @@ final class AgentApplicationTools {
             ApplicationFunctionStore functionStore,
             ObjectMapper objectMapper,
             ObjectAccessService objectAccessService,
-            TenantScopeService tenantScopeService
+            TenantScopeService tenantScopeService,
+            ObjectTreePort objectTreePort
     ) {
         return List.of(
                 registerApplicationTool(dataService),
@@ -45,7 +47,7 @@ final class AgentApplicationTools {
                 exportApplicationBundleTool(bundleDeployService),
                 rollbackApplicationDeployTool(bundleDeployService),
                 pullApplicationFromTreeTool(pullFromTreeService),
-                deployAppFunctionTool(functionStore, objectMapper)
+                deployAppFunctionTool(functionStore, objectMapper, objectTreePort)
         );
     }
 
@@ -371,7 +373,8 @@ final class AgentApplicationTools {
 
     private static PlatformAgentTool deployAppFunctionTool(
             ApplicationFunctionStore functionStore,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            ObjectTreePort objectTreePort
     ) {
         return new PlatformAgentTool() {
             @Override
@@ -382,6 +385,7 @@ final class AgentApplicationTools {
             @Override
             public String description() {
                 return "Deploy application BFF function (script engine with SQL steps). Args: appId, objectPath, "
+                        + "hostKind (required enum SINGLETON|INSTANCE — DEVICE is rejected; no DEVICE default), "
                         + "functionName, sourceType=script, sourceBody (JSON steps), optional version, inputSchema, outputSchema. "
                         + "objectPath host must be SINGLETON hub or INSTANCE twin — never DEVICE (ADR-0060). "
                         + "sourceBody MUST use keys sql+var (not query), and end with return.fields. "
@@ -419,6 +423,14 @@ final class AgentApplicationTools {
                             "",
                             ""
                     );
+                }
+                Map<String, Object> hostError = LogicHostGuard.rejectDeviceHost(
+                        stringArg(arguments, "hostKind"),
+                        objectPath,
+                        LogicHostGuard.liveType(objectTreePort, objectPath)
+                );
+                if (hostError != null) {
+                    return hostError;
                 }
                 try {
                     String version = stringArg(arguments, "version");

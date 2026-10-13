@@ -96,6 +96,26 @@ Program wave 8 (~9.8) по-прежнему **отозвана**.
 
 ---
 
+## Полоса AI-authoring (второй scorecard)
+
+> **Не pin-audit.** Взвешенная оценка. **Не усреднять** с классическим mean по 14 измерениям.  
+> 8.38 — суждение на `main` (PR #498). Здесь сдвинуты только две оси, где есть новое evidence. Классическое среднее **~8.0** без изменений.
+
+**Цель:** AI-авторинг с формальными гарантиями · единая модель · открытость · air-gap.  
+Канон таблицы: [en/competitive-scorecard.md](../en/competitive-scorecard.md) § AI-authoring lane.
+
+| Ось | Вес | Today | Target | Gap до 9.5 |
+|-----|:---:|:-----:|:------:|------------|
+| Единая модель | 0.20 | **8.5** | 9.5 | Глубина ontology vs peers |
+| AI-авторинг | 0.25 | **9.0** | 9.5 | Multi-day plant journal |
+| Формальные гарантии | 0.25 | **8.3** | 9.5 | **Partial** — авторский validate и HTTP deploy без `strict` всё ещё WARNING |
+| Открытость | 0.15 | **8.7** | 9.5 | Partner Portal external; ui-pack trust Partial |
+| Air-gap / суверенитет | 0.15 | **7.7** | 9.5 | **Partial** — playbook `ISPF_AI_BASE_URL` и заготовка evidence; Cosign нет; датированного прогона нет |
+
+**Weighted today:** **8.49** (было **8.38**). Подъём скромный и честно Partial: гарантии 8.0→8.3, air-gap 7.5→7.7.
+
+---
+
 ## Разрыв до цели
 
 1. **OT drivers (7.0 → 9+):** field pilot sign-off + DNP3 write; lab ≠ OT 10/10.
@@ -147,3 +167,4 @@ Wave 8 program mean ~9.8 — **отозвано** после аудита код
 4. Связывать доказательства с тестами, путями в `packages/` и evidence JSON/MD.
 5. Lab PASS из [parked-backlog](parked-backlog.md) входят в scorecard только на **именованном полном audit**.
 6. После правок матрицы: `python tools/ai-pack/build.py` (обновить `competitiveGapIndex`).
+7. Полоса AI-authoring не входит в среднее по 14 измерениям. 2026-10-13: гарантии 8.3 и air-gap 7.7 — **Partial** (см. раздел выше и EN-канон).
