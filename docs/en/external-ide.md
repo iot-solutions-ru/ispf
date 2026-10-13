@@ -251,7 +251,8 @@ Paste into the SPA workspace so the model does not treat ISPF as “a React mono
 This is an ISPF hosted UI pack (ADR-0054), not the admin console.
 
 Stack: Vite + React, base and Router basename '/apps/<appId>/'.
-Data: only POST /api/v1/auth/login and POST /api/v1/bff/invoke on the hub.
+Data: POST /api/v1/bff/invoke on the hub. First-party packs may call POST /api/v1/auth/login.
+Partner uiPackTrust (partner / signedPartner) must not call login; use a BFF-scoped token with claim uiPackAppId (ADR-0073).
 Do not add Java to ispf-server or pages to apps/web-console.
 A new screen = route + spaNav entry + BFF function with the app prefix.
 Contract: openapi.yaml (enum functionName). Optional VITE_DATA_SOURCE=mock.
@@ -265,7 +266,8 @@ For the platform checkout, a second agent session with ISPF MCP owns migrations,
 
 ## 8. Acceptance
 
-- [ ] Login on `/apps/<appId>/` succeeds; BFF `error_code=OK` on every `spaNav` route
+- [ ] First-party: login on `/apps/<appId>/` succeeds; BFF `error_code=OK` on every `spaNav` route
+- [ ] Partner `uiPackTrust` (`partner` / `signedPartner`): no `/api/v1/auth/login` inside the pack; BFF uses a scoped token (`uiPackAppId`)
 - [ ] Writes (ack, create) persist in the app schema and refresh the UI
 - [ ] Operator `/?mode=operator&app=<appId>` → **Open app UI** opens the pack (not the console shell)
 - [ ] `curl /apps/<appId>/` is the SPA, not `<title>ISPF Admin Console</title>`

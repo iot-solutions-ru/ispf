@@ -260,9 +260,9 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 
 ### Logic objects vs DEVICE (mandatory)
 
-**Hard rule:** the object that holds application / orchestration / twin logic must **not** be `ObjectType.DEVICE`. DEVICE is for drivers and telemetry only.
+**Hard rule (canon):** the object that holds application / orchestration / twin logic must **not** be `ObjectType.DEVICE`. DEVICE is for drivers and telemetry only.
 
-**Reported (ADR-0060):** `BundleManifestValidator` warns on `functions[]` hosted on DEVICE (`LOGIC_HOST_DEVICE`) without blocking deploy — it is a solution-logic issue, not a platform error. Prefer `root.platform.singleton-blueprints.{name}` via a SINGLETON blueprint.
+**Enforcement (ADR-0060):** default authoring validate/deploy reports `LOGIC_HOST_DEVICE` as **WARNING** (does not alone set `status: ERROR`). Ship surfaces treat the same code as **ERROR**: `examples/` CI, `ispf validate --strict`, marketplace catalog gate. Prefer `root.platform.singleton-blueprints.{name}` via a SINGLETON blueprint. Program: [adr-tension-resolution](adr-tension-resolution.md).
 
 | Need | Blueprint kind | Typical placement | Notes |
 |------|----------------|-------------------|-------|

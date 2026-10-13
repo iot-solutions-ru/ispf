@@ -41,7 +41,7 @@ final class AgentDeployPlaybookTools {
                 deployStepTool("deploy_step_blueprint", "blueprint", null, null, null, null),
                 deployStepValidateTool(objectMapper, aiToolRegistry),
                 deployStepDryRunTool(objectMapper, aiToolRegistry),
-                deployStepImportTool(objectMapper, bundleDeployService),
+                deployStepImportTool(objectMapper, aiToolRegistry, bundleDeployService),
                 deployStepOperatorUiTool(operatorAppUiService),
                 deployStepVerifyTool(),
                 deployStepTool("deploy_step_automation", "automation", null, null, null, null),
@@ -162,7 +162,7 @@ final class AgentDeployPlaybookTools {
                     return failPipeline(appId, pipeline, "dry_run");
                 }
 
-                Map<String, Object> imported = deployStepImportTool(objectMapper, bundleDeployService)
+                Map<String, Object> imported = deployStepImportTool(objectMapper, aiToolRegistry, bundleDeployService)
                         .execute(Map.of("appId", appId, "manifest", manifest), context);
                 pipeline.add(named("import", imported));
                 if (!ok(imported)) {
@@ -261,8 +261,9 @@ final class AgentDeployPlaybookTools {
 
             @Override
             public String description() {
-                return "Deploy playbook validate step — runs validate_bundle when appId+manifest provided; "
-                        + "otherwise returns step guidance.";
+                return "Deploy playbook validate step — ship-canon validation when appId+manifest provided "
+                        + "(LOGIC_HOST_DEVICE is ERROR). Interactive validate_bundle may only warn. "
+                        + "Without args, returns step guidance.";
             }
 
             @Override
@@ -274,7 +275,7 @@ final class AgentDeployPlaybookTools {
                     return guidanceResult("validate", context, "Provide appId and manifest to run validation");
                 }
                 var parsed = BundleManifestJsonSupport.parse(objectMapper, (Map<String, Object>) manifestMap);
-                Map<String, Object> result = aiToolRegistry.validateBundle(appId, parsed, context.actor());
+                Map<String, Object> result = aiToolRegistry.validateBundle(appId, parsed, context.actor(), true);
                 if (BundleValidationResult.OK.equals(result.get("status"))) {
                     context.runState().markBundleValidated(appId);
                     context.runState().markCompletedPlanStep("deploy:validate");
@@ -294,7 +295,8 @@ final class AgentDeployPlaybookTools {
 
             @Override
             public String description() {
-                return "Deploy playbook dry-run step — runs dry_run_deploy when appId+manifest provided.";
+                return "Deploy playbook dry-run step — dry-run plus ship-canon promotion "
+                        + "(LOGIC_HOST_DEVICE is ERROR) when appId+manifest provided.";
             }
 
             @Override
@@ -306,7 +308,7 @@ final class AgentDeployPlaybookTools {
                     return guidanceResult("dry_run", context, "Provide appId and manifest for dry-run");
                 }
                 var parsed = BundleManifestJsonSupport.parse(objectMapper, (Map<String, Object>) manifestMap);
-                Map<String, Object> result = aiToolRegistry.dryRunDeploy(appId, parsed, context.actor());
+                Map<String, Object> result = aiToolRegistry.dryRunDeploy(appId, parsed, context.actor(), true);
                 if (BundleValidationResult.OK.equals(result.get("status"))) {
                     context.runState().markBundleValidated(appId);
                     context.runState().markCompletedPlanStep("deploy:dry_run");
@@ -319,6 +321,7 @@ final class AgentDeployPlaybookTools {
 
     private static PlatformAgentTool deployStepImportTool(
             ObjectMapper objectMapper,
+            AiToolRegistry aiToolRegistry,
             ApplicationBundleDeployService bundleDeployService
     ) {
         return new PlatformAgentTool() {
@@ -329,7 +332,8 @@ final class AgentDeployPlaybookTools {
 
             @Override
             public String description() {
-                return "Deploy playbook import step — runs import_package when appId+manifest provided "
+                return "Deploy playbook import step — re-checks ship canon (LOGIC_HOST_DEVICE is ERROR) "
+                        + "then imports when appId+manifest provided "
                         + "(requires prior validate/dry-run OK in this run).";
             }
 
@@ -352,6 +356,15 @@ final class AgentDeployPlaybookTools {
                     );
                 }
                 var parsed = BundleManifestJsonSupport.parse(objectMapper, (Map<String, Object>) manifestMap);
+                Map<String, Object> ship = aiToolRegistry.validateBundle(appId, parsed, context.actor(), true);
+                if (!BundleValidationResult.OK.equals(ship.get("status"))) {
+                    Map<String, Object> blocked = new LinkedHashMap<>(ship);
+                    blocked.put("status", BundleValidationResult.ERROR);
+                    blocked.put("playbookStep", "import");
+                    blocked.put("shipCanon", true);
+                    blocked.putIfAbsent("error", "Ship canon validation failed");
+                    return blocked;
+                }
                 Map<String, Object> result = new LinkedHashMap<>(bundleDeployService.deploy(appId, parsed));
                 result.put("playbookStep", "import");
                 // preserve deploy status; only markCompletedPlanStep if status is OK

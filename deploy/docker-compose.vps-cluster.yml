@@ -23,6 +23,7 @@ x-ispf-server: &ispf-server
     # Credentials must match the nats service below; keep them URL-safe (embedded in the URL).
     ISPF_NATS_URL: nats://${NATS_USER:?NATS_USER is required}:${NATS_PASSWORD:?NATS_PASSWORD is required}@127.0.0.1:4222
     ISPF_NATS_REPLICA_EVENTS: "true"
+    ISPF_NATS_JETSTREAM_ENABLED: "true"
     ISPF_REDIS_ENABLED: "true"
     ISPF_REDIS_HOST: 127.0.0.1
     ISPF_CLUSTER_LIVE_VARIABLE_SYNC: "true"
