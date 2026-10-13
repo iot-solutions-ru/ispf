@@ -383,6 +383,7 @@ final class AgentApplicationTools {
             public String description() {
                 return "Deploy application BFF function (script engine with SQL steps). Args: appId, objectPath, "
                         + "functionName, sourceType=script, sourceBody (JSON steps), optional version, inputSchema, outputSchema. "
+                        + "objectPath host must be SINGLETON hub or INSTANCE twin — never DEVICE (ADR-0060). "
                         + "sourceBody MUST use keys sql+var (not query), and end with return.fields. "
                         + "Example list: {\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"SELECT id, fio FROM emp_employees ORDER BY id\"},"
                         + "{\"type\":\"return\",\"fields\":{\"rows\":\"${rows}\"}}]}. "

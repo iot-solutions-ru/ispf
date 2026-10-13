@@ -7,6 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { findLogicHostDeviceIssues } from "../ispf-cli/src/shipCanon.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "../..");
@@ -125,6 +126,11 @@ function validateApplicationListing(name, dir, listing) {
     if (typeof bundle !== "object" || bundle === null) {
       fail(`${name}: bundle.json is empty`);
     }
+  }
+
+  // ADR-0060 Wave 1A: marketplace catalog = ship gate (same as ispf validate --strict)
+  for (const issue of findLogicHostDeviceIssues(bundle)) {
+    fail(`${name}: [${issue.code}] ${issue.path}: ${issue.message}`);
   }
 
   listings += 1;
