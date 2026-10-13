@@ -1,5 +1,6 @@
 package com.ispf.server.api;
 
+import com.ispf.server.application.uipack.UiPackPartnerLoginGuard;
 import com.ispf.server.audit.AuditEventService;
 import com.ispf.server.config.IspfSecurityProperties;
 import com.ispf.server.security.LoginAttemptLimiter;
@@ -34,7 +35,8 @@ class AuthControllerTest {
                 mock(Environment.class),
                 "",
                 mock(AuditEventService.class),
-                loginAttemptLimiter
+                loginAttemptLimiter,
+                mock(UiPackPartnerLoginGuard.class)
         );
         when(userService.login(any(), any(), any())).thenReturn(Map.of("token", "t"));
     }

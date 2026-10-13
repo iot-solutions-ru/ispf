@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **Hosted ui-pack CSP and scoped token (ADR-0073 Wave 2A)** — `GET`/`HEAD /apps/<appId>/` sends a conservative `Content-Security-Policy` plus `COOP`/`CORP`. Claim `uiPackAppId` (local mint `POST /api/v1/security/ui-pack-tokens`, or an OIDC access-token claim) may call `POST /api/v1/bff/**` for that app and cannot call admin APIs. Partner `uiPackTrust` login from a `/apps/<appId>/` Referer is 403. Residual: a partner pack that omits Referer can still call `/api/v1/auth/login`; a separate pack origin is not claimed.
 - **Excellence gap ADRs 0068–0076** — backup/DR tiers, cluster consistency, N→N+1 upgrade gate, northbound/UNS, edge fleet lanes, ui-pack trust, historian quality persistence, OTel/SLO taxonomy, external secrets providers (KMS/HSM/GOST non-claims). Docs-only honesty contracts; implementation residuals explicit.
 - **Bundle upgrade lab gate (ADR-0064 Wave 2)** — `BundleUpgradeCompatGateTest` validates catalog `marketplace-demo` at `formatVersion: 1`, rejects unsupported formats, and redeploys via local marketplace install; docs [release-upgrade](docs/en/release-upgrade.md). Honesty: lab only — not cluster image N→N+1.
 - **Secrets-key envelope + rotation (ADR-0065)** — new ciphertext uses `ispf1.<keyId>.<base64>`; legacy Base64 still decrypts; `ispf.security.secrets-previous-key` for dual-read; `POST /api/v1/federation/secrets-key/reencrypt` rewrites vault + federation rows; DATABASE UI key change re-encrypts in place instead of requiring agent deletion.

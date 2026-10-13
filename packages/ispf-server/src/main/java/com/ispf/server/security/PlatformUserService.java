@@ -185,13 +185,14 @@ public class PlatformUserService {
             return Optional.empty();
         }
         return sessionStore.findValid(token.trim(), Instant.now())
-                .flatMap(session -> userStore.findByUsername(session.username()))
-                .filter(PlatformUserStore.PlatformUser::enabled)
-                .map(user -> new AuthenticatedUser(
-                        user.username(),
-                        user.displayName(),
-                        deserializeRoles(user.rolesJson())
-                ));
+                .flatMap(session -> userStore.findByUsername(session.username())
+                        .filter(PlatformUserStore.PlatformUser::enabled)
+                        .map(user -> new AuthenticatedUser(
+                                user.username(),
+                                user.displayName(),
+                                deserializeRoles(user.rolesJson()),
+                                session.uiPackAppId()
+                        )));
     }
 
     @Transactional
@@ -622,6 +623,14 @@ public class PlatformUserService {
         return row.values().stream().findFirst().map(String::valueOf).orElse("");
     }
 
-    public record AuthenticatedUser(String username, String displayName, List<String> roles) {
+    public record AuthenticatedUser(
+            String username,
+            String displayName,
+            List<String> roles,
+            String uiPackAppId
+    ) {
+        public AuthenticatedUser(String username, String displayName, List<String> roles) {
+            this(username, displayName, roles, null);
+        }
     }
 }

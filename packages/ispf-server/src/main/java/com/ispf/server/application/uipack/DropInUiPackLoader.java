@@ -261,9 +261,37 @@ public class DropInUiPackLoader {
         row.put("entry", manifest.getOrDefault("entry", "index.html"));
         row.put("basePath", manifest.getOrDefault("basePath", "/apps/" + appId + "/"));
         row.put("hostedUiUrl", "/apps/" + appId + "/");
+        row.put("uiPackTrust", trustValue(manifest));
         row.put("path", packDir.toString());
         row.put("installed", true);
         return row;
+    }
+
+    /**
+     * Manifest {@code uiPackTrust} (fallback {@code trust}). Missing or unreadable → {@code firstParty}.
+     * Partner values are {@code partner} and {@code signedPartner}.
+     */
+    public String uiPackTrust(String appId) {
+        if (appId == null || appId.isBlank()) {
+            return "firstParty";
+        }
+        Path dir = resolvePackDir(appId.trim());
+        if (dir == null || !Files.isRegularFile(dir.resolve(MANIFEST_FILE))) {
+            return "firstParty";
+        }
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> manifest =
+                    objectMapper.readValue(Files.readString(dir.resolve(MANIFEST_FILE)), Map.class);
+            return trustValue(manifest);
+        } catch (Exception ex) {
+            return "firstParty";
+        }
+    }
+
+    private static String trustValue(Map<String, Object> manifest) {
+        String trust = firstNonBlank(stringValue(manifest.get("uiPackTrust")), stringValue(manifest.get("trust")));
+        return trust.isBlank() ? "firstParty" : trust;
     }
 
     private Path findPackRoot(Path extracted) throws IOException {
