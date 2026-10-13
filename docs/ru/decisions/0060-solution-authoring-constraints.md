@@ -31,7 +31,9 @@
 6. Схема в `schema/bundle.schema.json`; MCP `contextpack://bundle-schema`
 7. Бандлы `examples/` не содержат `LOGIC_HOST_DEVICE` (`ExamplesBundleValidationTest`) — это эталонный материал для агента
 
-> **Поправка (2026-10-06):** замечания канона сообщаются и не блокируют применение. `LOGIC_HOST_DEVICE` был ERROR и стал WARNING: сам по себе он больше не переводит validate/deploy в `status: ERROR`, поэтому judge агента не отправляет рабочее решение обратно в REWORK. Функции на любом объекте остаются возможностью платформы; канон указывает автору, где должна находиться логика.
+> **Поправка (2026-10-06):** на **авторском** validate/deploy замечания канона сообщаются и не блокируют применение. Интерактивный `validate_bundle` и HTTP validate/deploy без `strict` оставляют `LOGIC_HOST_DEVICE` как WARNING.
+>
+> **Поправка (2026-10-13) — ship-default (Partial):** финальная приёмка поставки другая. `deploy_step_validate` / `deploy_step_dry_run` / `import_package` / `deploy_step_import` поднимают канон до **ERROR** и не применяют бандл. Judge возвращает **REWORK** (`logic.host`). Остаётся: голый `POST .../deploy` без `strict` по-прежнему WARNING. Инструменты `deploy_tree_function` / `deploy_app_function` требуют `hostKind` = `SINGLETON` | `INSTANCE` (DEVICE в enum нет). Канон: [EN ADR-0060](../../en/decisions/0060-solution-authoring-constraints.md).
 
 ## Связанные
 
