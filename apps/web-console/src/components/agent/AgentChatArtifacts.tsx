@@ -32,7 +32,10 @@ export interface AgentChatArtifactsProps {
   onAppendToInput?: (text: string) => void;
   onOpenDashboard?: (path: string) => void;
   onOpenReport?: (path: string) => void;
-  /** Only the latest agent message should auto-continue. */
+  /**
+   * Autopilot (AI Studio mode=auto) only. Copilot panels must leave this false —
+   * recommended options stay clickable without a countdown auto-send.
+   */
   autoContinueEnabled?: boolean;
 }
 
