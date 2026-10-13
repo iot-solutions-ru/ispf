@@ -23,8 +23,9 @@ Cluster behaviour is split across [0028](0028-horizontal-active-active-cluster.m
 ### 2. Hard rules
 
 1. **Do not claim linearizable live reads** across replicas without sticky session / owner affinity.
-2. Core NATS **without** JetStream: structure loss is **logged**, not magically repaired — production clusters should run JetStream (or accept the honesty gap).
-3. Failover SLOs are **ops evidence**, not product certificates, until a dated chaos/restore journal exists.
+2. Core NATS **without** JetStream: structure loss is **logged**, not magically repaired — production clusters must enable JetStream.
+3. **Fail-closed startup (Wave 1C):** when `ispf.cluster.enabled=true`, `ClusterDependencyValidator` aborts JVM start if NATS/JetStream is unavailable for structure sync, or if Redis is disabled while live mirror / path interest is active. Silent no-op bridge is not allowed.
+4. Failover SLOs are **ops evidence**, not product certificates, until a dated chaos/restore journal exists.
 
 ### 3. Failover honesty
 
@@ -37,7 +38,7 @@ Cluster behaviour is split across [0028](0028-horizontal-active-active-cluster.m
 ## Consequences
 
 - Amends reading of 0028–0032: this ADR is the tender-facing consistency summary.
-- Follow-up: optional CI assert “no dual owner” + JetStream required flag for `prod` cluster profile.
+- Follow-up: optional CI assert “no dual owner”; compose profiles should set `ISPF_NATS_JETSTREAM_ENABLED=true` when NATS runs with `-js`.
 
 ## Related
 
