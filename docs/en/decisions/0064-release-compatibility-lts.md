@@ -62,7 +62,7 @@ PostgreSQL metadata DB:
 
 - Fitness: `BundleFormatVersionTest`, `BundleUpgradeCompatGateTest` (catalog pilot validate + redeploy), `BundleSemverContractTest`, schema validation via `bundle.schema.json`.
 - Docs: [applications](../applications.md), [release-upgrade](../release-upgrade.md), [0007](0007-bundle-tree-packaging.md), [0037](0037-relational-core-portability.md).
-- **Wave 2 (lab):** format accept/reject + marketplace-demo install/redeploy — [release-upgrade](../release-upgrade.md). **Cluster image N → N+1** rolling upgrade remains a follow-up (not claimed by Wave 2).
+- **Wave 2 (lab):** format accept/reject + marketplace-demo install/redeploy — [release-upgrade](../release-upgrade.md). **Wave 3** cluster image N→N+1 gate: [0070-cluster-rolling-upgrade](0070-cluster-rolling-upgrade.md) (evidence still open).
 
 ### Risks
 
@@ -75,4 +75,5 @@ PostgreSQL metadata DB:
 - [0037-relational-core-portability](0037-relational-core-portability.md)
 - [0054-hosted-ui-packs](0054-hosted-ui-packs.md)
 - [0059-toolchain-version-policy](0059-toolchain-version-policy.md)
+- [0070-cluster-rolling-upgrade](0070-cluster-rolling-upgrade.md)
 - [release-upgrade](../release-upgrade.md)

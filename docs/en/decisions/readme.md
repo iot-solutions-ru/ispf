@@ -8,7 +8,7 @@ English ADRs for ISPF. Russian mirror: [../../ru/decisions/readme.md](../../ru/d
 
 Engineering record — not marketing. Prefer Status / Context / Decision / Consequences / Related; use `Risks:` bullets under Consequences. Avoid hype scores and template **Positive** / **Negative** blocks.
 
-**Number uniqueness:** new ADRs must use the next free number (**0065+**). Historical collisions **0016** and **0025** keep dual files; cite them as **0016a/b** and **0025a/b** (or by filename). Do not renumber existing files.
+**Number uniqueness:** new ADRs must use the next free number (**0077+**; **0066/0067** reserved for open PRs #476/#477). Historical collisions **0016** and **0025** keep dual files; cite them as **0016a/b** and **0025a/b** (or by filename). Do not renumber existing files.
 
 Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slang.py), then [`polish-docs.py`](../../../tools/docs-audit/polish-docs.py).
 
@@ -115,18 +115,32 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0063-application-git-lifecycle](0063-application-git-lifecycle.md) | APPLICATION Git tab: Connect/Status/Pull/Push→PR shipped — **Accepted** |
 | [0064-release-compatibility-lts](0064-release-compatibility-lts.md) | Release, compatibility, LTS; bundle `formatVersion` — **Accepted** |
 | [0065-secrets-key-rotation](0065-secrets-key-rotation.md) | Secrets-key envelope (`ispf1.<kid>.…`), previous-key, re-encrypt — **Accepted** |
+| [0068-backup-and-dr](0068-backup-and-dr.md) | Backup tiers T1–T4 and RPO/RTO honesty — **Accepted** |
+| [0069-cluster-consistency](0069-cluster-consistency.md) | Cluster consistency contract (not linearizable live) — **Accepted** |
+| [0070-cluster-rolling-upgrade](0070-cluster-rolling-upgrade.md) | Cluster image N→N+1 Wave 3 gate — **Accepted** |
+| [0071-northbound-uns](0071-northbound-uns.md) | Northbound / UNS scope vs lab drivers — **Accepted** |
+| [0072-edge-fleet-rollout](0072-edge-fleet-rollout.md) | Edge profile vs S&F vs fleet GitOps lanes — **Accepted** |
+| [0073-hosted-ui-pack-trust](0073-hosted-ui-pack-trust.md) | Ui-pack trust / CSP residual (amends 0054) — **Accepted** |
+| [0074-historian-quality-persistence](0074-historian-quality-persistence.md) | Historian quality column + TCK (amends 0025) — **Accepted** |
+| [0075-observability-slo-otel](0075-observability-slo-otel.md) | First-party metrics + OTel taxonomy / SLO honesty — **Accepted** |
+| [0076-external-secrets-providers](0076-external-secrets-providers.md) | External KMS/HSM/Vault/GOST non-claims (amends 0065) — **Accepted** |
 
 ## Topic chains (read in order)
 
 | Topic | ADRs | Runbook |
 |-------|------|---------|
-| Cluster HA | [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) → [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) → [0030-cluster-config-structure-replica-sync](0030-cluster-config-structure-replica-sync.md) → [0031-cluster-replica-roles-platform-jobs](0031-cluster-replica-roles-platform-jobs.md) → [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md) | [cluster](../cluster.md), [deployment](../deployment.md) |
-| Historian / analytics | [0035-historian-dual-write](0035-historian-dual-write.md) → [0038-analytics-platform-architecture](0038-analytics-platform-architecture.md) → [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) → [0042-analytics-function-catalog](0042-analytics-function-catalog.md) | [historian-tiers](../historian-tiers.md), [analytics-platform-roadmap](../analytics-platform-roadmap.md) |
+| Cluster HA | [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) → [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) → [0030-cluster-config-structure-replica-sync](0030-cluster-config-structure-replica-sync.md) → [0031-cluster-replica-roles-platform-jobs](0031-cluster-replica-roles-platform-jobs.md) → [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md) → [0069-cluster-consistency](0069-cluster-consistency.md) → [0070-cluster-rolling-upgrade](0070-cluster-rolling-upgrade.md) | [cluster](../cluster.md), [deployment](../deployment.md), [release-upgrade](../release-upgrade.md) |
+| Historian / analytics | [0035-historian-dual-write](0035-historian-dual-write.md) → [0038-analytics-platform-architecture](0038-analytics-platform-architecture.md) → [0041-multi-tag-historian-computations](0041-multi-tag-historian-computations.md) → [0042-analytics-function-catalog](0042-analytics-function-catalog.md) → [0074-historian-quality-persistence](0074-historian-quality-persistence.md) | [historian-tiers](../historian-tiers.md), [analytics-platform-roadmap](../analytics-platform-roadmap.md) |
 | Automation / alarms | [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) → [0039-unified-alarm-architecture](0039-unified-alarm-architecture.md) | [automation](../automation.md) |
 | Workflow / BPMN | [0047-custom-bpmn-subset-engine](0047-custom-bpmn-subset-engine.md) → [0049-ot-automation-excellence](0049-ot-automation-excellence.md) → [0052-ispf-workflow-diagram-editor](0052-ispf-workflow-diagram-editor.md) | [workflows](../workflows.md) |
 | Server modularization | [0048-server-modularization-seams](0048-server-modularization-seams.md) → [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) | — |
 | Manufacturing solutions | [0001-app-platform-boundary](0001-app-platform-boundary.md) → [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) → [0050-manufacturing-patterns-as-solutions](0050-manufacturing-patterns-as-solutions.md) | [manufacturing-patterns](../manufacturing-patterns.md), [mes](../mes.md) |
-| Release / compatibility | [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) → [0037-relational-core-portability](0037-relational-core-portability.md) → [0064-release-compatibility-lts](0064-release-compatibility-lts.md) | [applications](../applications.md), [deployment](../deployment.md) |
-| Secrets / credentials | [0049-ot-automation-excellence](0049-ot-automation-excellence.md) → [0065-secrets-key-rotation](0065-secrets-key-rotation.md) | [security](../security.md), [tutorial-ot-credentials-vault](../tutorial-ot-credentials-vault.md) |
+| Release / compatibility | [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md) → [0037-relational-core-portability](0037-relational-core-portability.md) → [0064-release-compatibility-lts](0064-release-compatibility-lts.md) → [0070-cluster-rolling-upgrade](0070-cluster-rolling-upgrade.md) | [applications](../applications.md), [deployment](../deployment.md), [release-upgrade](../release-upgrade.md) |
+| Secrets / credentials | [0049-ot-automation-excellence](0049-ot-automation-excellence.md) → [0065-secrets-key-rotation](0065-secrets-key-rotation.md) → [0076-external-secrets-providers](0076-external-secrets-providers.md) | [security](../security.md), [tutorial-ot-credentials-vault](../tutorial-ot-credentials-vault.md) |
+| Backup / DR | [0068-backup-and-dr](0068-backup-and-dr.md) | [deployment](../deployment.md), [air-gap-deployment](../air-gap-deployment.md) |
+| Northbound / UNS | [0071-northbound-uns](0071-northbound-uns.md) → [0022-driver-production-matrix](0022-driver-production-matrix.md) | [drivers](../drivers.md) |
+| Edge / fleet | [0072-edge-fleet-rollout](0072-edge-fleet-rollout.md) → [0063-application-git-lifecycle](0063-application-git-lifecycle.md) | [federation](../federation.md), [demostands](../demostands.md) |
+| Hosted UI trust | [0054-hosted-ui-packs](0054-hosted-ui-packs.md) → [0073-hosted-ui-pack-trust](0073-hosted-ui-pack-trust.md) | [marketplace](../marketplace.md), [external-ide](../external-ide.md) |
+| Observability | [0075-observability-slo-otel](0075-observability-slo-otel.md) → [0034-agent-observability-and-session-knowledge](0034-agent-observability-and-session-knowledge.md) | [observability](../observability.md) |
 | Agent quality (poka-yoke) | [0004-ai-artifact-generation-gates](0004-ai-artifact-generation-gates.md) → [0005-tree-first-ai-agent](0005-tree-first-ai-agent.md) → [0006-mcp-agent-tool-adapter](0006-mcp-agent-tool-adapter.md) → [0051-poka-yoke-constraints-over-guards](0051-poka-yoke-constraints-over-guards.md) → [0055-cel-formal-verification-ai-gate](0055-cel-formal-verification-ai-gate.md) | [application-principles](../application-principles.md) P7, [ai-development](../ai-development.md), [agent-regression](../agent-regression.md) |
 | Haystack | [0021-haystack-semantic-overlay](0021-haystack-semantic-overlay.md) → [0023-haystack-query-runtime](0023-haystack-query-runtime.md) | [semantic-demo](../semantic-demo.md) |

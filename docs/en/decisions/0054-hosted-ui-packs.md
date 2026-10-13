@@ -103,6 +103,7 @@ This is a **generic packaging/serving primitive** (like symbol packs), not an Oi
 - [0001-app-platform-boundary](0001-app-platform-boundary.md)
 - [0002-dogfooding-gate](0002-dogfooding-gate.md)
 - [0007-bundle-tree-packaging](0007-bundle-tree-packaging.md)
+- [0073-hosted-ui-pack-trust](0073-hosted-ui-pack-trust.md) — CSP / partner-pack trust residual
 - [marketplace](../marketplace.md)
 - [external-ide](../external-ide.md) — Cursor / VS Code how-to (SPA, MCP, pack zip)
 - [applications](../applications.md)
