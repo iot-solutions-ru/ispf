@@ -908,8 +908,9 @@ final class AgentAutomationTools {
             @Override
             public String description() {
                 return "Enable or disable historian for an existing variable (required for chart/sparkline widgets). "
-                        + "Args: path (object path), name (variable name), historyEnabled (boolean), "
-                        + "optional historyRetentionDays (integer).";
+                        + "Args: path (object path), name (exact variable id from list_variables — "
+                        + "virtual-unified: sineWave/intValue/floatValue/table, not Int/Float), "
+                        + "historyEnabled (boolean), optional historyRetentionDays (integer).";
             }
 
             @Override
@@ -929,10 +930,15 @@ final class AgentAutomationTools {
                 }
                 objectAccessService.requireWrite(path, auth);
                 try {
+                    PlatformObject host = objectTreePort.require(path);
+                    String resolvedName = AgentVariableNames.resolve(host, name);
+                    if (host.getVariable(resolvedName).isEmpty()) {
+                        return AgentVariableNames.unknownVariableError(host, name);
+                    }
                     Integer retentionDays = intArg(arguments, "historyRetentionDays", null);
                     Variable updated = objectTreePort.updateVariableHistory(
                             path,
-                            name,
+                            resolvedName,
                             historyEnabled,
                             retentionDays,
                             null,
@@ -949,9 +955,25 @@ final class AgentAutomationTools {
                     preview.put("storageMode", updated.storageMode().name());
                     updated.telemetryPublishModeOverride()
                             .ifPresent(mode -> preview.put("telemetryPublishMode", mode));
-                    return Map.of("status", "OK", "path", path, "variable", preview);
+                    Map<String, Object> ok = new LinkedHashMap<>();
+                    ok.put("status", "OK");
+                    ok.put("path", path);
+                    ok.put("variable", preview);
+                    if (!resolvedName.equals(name)) {
+                        ok.put("resolvedName", resolvedName);
+                        ok.put("requestedName", name);
+                    }
+                    return ok;
                 } catch (Exception ex) {
-                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                    String message = ex.getMessage() == null ? "" : ex.getMessage();
+                    if (message.toLowerCase(Locale.ROOT).contains("unknown variable")) {
+                        try {
+                            return AgentVariableNames.unknownVariableError(objectTreePort.require(path), name);
+                        } catch (Exception ignored) {
+                            // fall through
+                        }
+                    }
+                    return Map.of("status", "ERROR", "error", message);
                 }
             }
         };
