@@ -120,7 +120,89 @@ class AgentLoopGuardTest {
         assertTrue(hint.contains("create_object"));
     }
 
+    @Test
+    void hintsSetDashboardLayoutAfterRepeatedAddWidget() {
+        String dash = "root.platform.dashboards.virt-cluster-dashboard";
+        List<Map<String, Object>> steps = List.of(
+                widgetStep(dash),
+                widgetStep(dash)
+        );
+        String hint = AgentLoopGuard.continuationHint("add_dashboard_widget", steps, 96);
+        assertTrue(hint.toLowerCase(Locale.ROOT).contains("set_dashboard_layout"));
+        assertTrue(hint.toLowerCase(Locale.ROOT).contains("add_dashboard_widget"));
+    }
+
+    @Test
+    void hardBlocksFifthAddDashboardWidgetOnSamePath() {
+        String dash = "root.platform.dashboards.virt-cluster-dashboard";
+        List<Map<String, Object>> steps = List.of(
+                widgetStep(dash),
+                widgetStep(dash),
+                widgetStep(dash),
+                widgetStep(dash)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "add_dashboard_widget",
+                Map.of("path", dash),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().blocked());
+        assertTrue(block.get().error().contains("stop looping"));
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("set_dashboard_layout"));
+    }
+
+    @Test
+    void doesNotHardBlockAddWidgetOnDifferentDashboards() {
+        List<Map<String, Object>> steps = List.of(
+                widgetStep("root.platform.dashboards.a"),
+                widgetStep("root.platform.dashboards.b"),
+                widgetStep("root.platform.dashboards.c"),
+                widgetStep("root.platform.dashboards.d")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "add_dashboard_widget",
+                Map.of("path", "root.platform.dashboards.e"),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
+    void hardBlocksFifthAddMimicElementsOnSamePath() {
+        String mimic = "root.platform.mimics.plant";
+        List<Map<String, Object>> steps = List.of(
+                mimicStep(mimic),
+                mimicStep(mimic),
+                mimicStep(mimic),
+                mimicStep(mimic)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "add_mimic_elements",
+                Map.of("path", mimic),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("save_mimic_diagram"));
+    }
+
     private static Map<String, Object> step(String tool) {
         return Map.of("type", "tool", "tool", tool);
+    }
+
+    private static Map<String, Object> widgetStep(String path) {
+        return Map.of(
+                "type", "tool",
+                "tool", "add_dashboard_widget",
+                "arguments", Map.of("path", path)
+        );
+    }
+
+    private static Map<String, Object> mimicStep(String path) {
+        return Map.of(
+                "type", "tool",
+                "tool", "add_mimic_elements",
+                "arguments", Map.of("path", path)
+        );
     }
 }

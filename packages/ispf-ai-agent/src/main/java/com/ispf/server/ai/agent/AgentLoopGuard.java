@@ -13,6 +13,11 @@ final class AgentLoopGuard {
     private static final int REPEAT_THRESHOLD = 3;
     /** After this many prior calls of the same discovery tool, the next call is hard-blocked. */
     private static final int DISCOVERY_HARD_BLOCK = 2;
+    /**
+     * Per-dashboard/mimic path: after this many {@code add_dashboard_widget} / {@code add_mimic_elements}
+     * calls, hard-block and force a batch layout/diagram tool.
+     */
+    private static final int MUTATE_SPAM_HARD_BLOCK = 4;
 
     private static final Set<String> DISCOVERY_LOOP_TOOLS = Set.of(
             "get_driver_help",
@@ -24,6 +29,11 @@ final class AgentLoopGuard {
             "get_example_bundle",
             "get_widget_catalog",
             "get_deploy_playbook"
+    );
+
+    private static final Set<String> MUTATE_SPAM_TOOLS = Set.of(
+            "add_dashboard_widget",
+            "add_mimic_elements"
     );
 
     private AgentLoopGuard() {
@@ -124,6 +134,23 @@ final class AgentLoopGuard {
                     Do NOT embed manifest JSON in summary (no ``` fences) or in result.plan.sections. \
                     Re-calling get_example_bundle is unnecessary unless the user asks for another appId/sections.""";
         }
+        if ("add_dashboard_widget".equals(lastTool)) {
+            long adds = totalToolCount(steps, "add_dashboard_widget");
+            if (adds >= 2) {
+                return """
+                        Stop add_dashboard_widget loops. Prefer ONE set_dashboard_layout path=<dashboard> \
+                        template= or layoutJson with all widgets (columns=84). Then finish. \
+                        Do NOT call add_dashboard_widget again for every KPI/chart.""";
+            }
+        }
+        if ("add_mimic_elements".equals(lastTool)) {
+            long adds = totalToolCount(steps, "add_mimic_elements");
+            if (adds >= 2) {
+                return """
+                        Stop add_mimic_elements loops. Prefer ONE save_mimic_diagram path=<mimic> \
+                        with the full elements[] array, then get_mimic_diagram to verify, then finish.""";
+            }
+        }
         if (isRepeatedTool(lastTool, steps)) {
             if (DISCOVERY_LOOP_TOOLS.contains(normalize(lastTool))) {
                 return snmpOrDriverExecuteHint();
@@ -177,6 +204,14 @@ final class AgentLoopGuard {
     }
 
     static Optional<BlockDecision> checkHardBlock(String toolName, List<Map<String, Object>> steps) {
+        return checkHardBlock(toolName, Map.of(), steps);
+    }
+
+    static Optional<BlockDecision> checkHardBlock(
+            String toolName,
+            Map<String, Object> toolArgs,
+            List<Map<String, Object>> steps
+    ) {
         if (repeatGroundTruthError(toolName, steps) >= 2) {
             String parent = blockedParentPath(steps);
             return Optional.of(new BlockDecision(
@@ -195,7 +230,63 @@ final class AgentLoopGuard {
                     snmpOrDriverExecuteHint()
             ));
         }
+        if (MUTATE_SPAM_TOOLS.contains(normalized)) {
+            String pathKey = mutateTargetPath(normalized, toolArgs);
+            long prior = totalToolCountOnPath(steps, normalized, pathKey);
+            if (prior >= MUTATE_SPAM_HARD_BLOCK) {
+                String hint = "add_dashboard_widget".equals(normalized)
+                        ? """
+                        Hard block: too many add_dashboard_widget on the same dashboard. \
+                        Call set_dashboard_layout path=<dashboard> template= or one layoutJson with all widgets, \
+                        then finish. Do not add widgets one-by-one."""
+                        : """
+                        Hard block: too many add_mimic_elements on the same mimic. \
+                        Call save_mimic_diagram path=<mimic> with full elements[], then finish.""";
+                return Optional.of(new BlockDecision(
+                        "Hard block: '" + normalized + "' called " + prior
+                                + " times this turn"
+                                + (pathKey.isBlank() ? "" : " on " + pathKey)
+                                + " — stop looping",
+                        hint
+                ));
+            }
+        }
         return Optional.empty();
+    }
+
+    static String mutateTargetPath(String toolName, Map<String, Object> toolArgs) {
+        Map<String, Object> args = toolArgs == null ? Map.of() : toolArgs;
+        String path = stringArg(args, "path");
+        if (path.isBlank()) {
+            path = stringArg(args, "dashboardPath");
+        }
+        if (path.isBlank()) {
+            path = stringArg(args, "mimicPath");
+        }
+        return path.toLowerCase(Locale.ROOT);
+    }
+
+    private static long totalToolCountOnPath(
+            List<Map<String, Object>> steps,
+            String toolName,
+            String pathKey
+    ) {
+        if (steps == null || toolName == null) {
+            return 0;
+        }
+        String normalized = normalize(toolName);
+        String want = pathKey == null ? "" : pathKey;
+        return steps.stream()
+                .filter(step -> "tool".equals(String.valueOf(step.get("type"))))
+                .filter(step -> normalized.equals(normalize(String.valueOf(step.get("tool")))))
+                .filter(step -> {
+                    String stepPath = mutateTargetPath(normalized, stepMap(step, "arguments"));
+                    if (want.isBlank() && stepPath.isBlank()) {
+                        return true;
+                    }
+                    return !want.isBlank() && want.equals(stepPath);
+                })
+                .count();
     }
 
     record BlockDecision(String error, String hint) {
