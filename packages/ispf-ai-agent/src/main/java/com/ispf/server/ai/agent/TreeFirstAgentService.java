@@ -330,6 +330,57 @@ public class TreeFirstAgentService {
                     operatorScope,
                     sessionId
             );
+            List<Map<String, Object>> attachmentMetadata = prepared.attachmentMetadata();
+
+            // Explain-screen: answer from LIVE UI focus — never enter the LLM tool loop.
+            if (copilotChannel
+                    && AgentCopilotExplainIntent.isExplainOnly(llmUserText, session.runState().clientFocus())) {
+                String directSummary = AgentCopilotExplainResponder.buildSummary(
+                        session.runState().clientFocus(),
+                        uiLocale
+                );
+                Map<String, Object> directResult = AgentCopilotExplainResponder.buildFinishResult();
+                List<Map<String, Object>> directSteps = new ArrayList<>();
+                Map<String, Object> finishStep = new LinkedHashMap<>();
+                finishStep.put("step", 1);
+                finishStep.put("type", "finish");
+                finishStep.put("summary", directSummary);
+                finishStep.put(
+                        "label",
+                        AgentStepHumanizer.label("finish", null, null, null, directSummary, uiLocale)
+                );
+                finishStep.put("result", directResult);
+                directSteps.add(finishStep);
+                publishStep(sessionId, finishStep);
+                recordTurnAudit(
+                        session,
+                        turnId,
+                        1,
+                        "agent_finish",
+                        actor,
+                        userMessage,
+                        AgentTurnStatus.OK,
+                        null,
+                        List.of(),
+                        null,
+                        null,
+                        profile
+                );
+                agentMetrics.recordGuardBlock("copilotExplainDirect");
+                return persistCompletedTurn(
+                        session,
+                        turnId,
+                        userMessage,
+                        directSummary,
+                        AgentTurnStatus.OK,
+                        directSteps,
+                        directResult,
+                        attachmentMetadata,
+                        actor,
+                        profile
+                );
+            }
+
             List<Map<String, Object>> steps = new ArrayList<>();
             List<LlmMessage> messages = promptAssembler.buildMessagesWithHistory(
                     session,
@@ -337,8 +388,6 @@ public class TreeFirstAgentService {
                     profile,
                     operatorScope
             );
-
-            List<Map<String, Object>> attachmentMetadata = prepared.attachmentMetadata();
 
             int maxStepsTotal = Math.max(1, aiProperties.getAgentMaxSteps());
 
@@ -737,7 +786,23 @@ public class TreeFirstAgentService {
                 long toolStartNanos = System.nanoTime();
                 String executedTool = toolName;
                 Map<String, Object> toolResult;
-                if (profile == AgentProfile.OPERATOR) {
+                // Copilot explain can run as OPERATOR profile — block discovery on both branches.
+                if (copilotChannel
+                        && AgentCopilotExplainIntent.shouldBlockDiscoveryTool(
+                                toolName,
+                                llmUserText,
+                                session.runState().clientFocus()
+                        )) {
+                    toolResult = new LinkedHashMap<>();
+                    toolResult.put("status", "ERROR");
+                    toolResult.put("error", "Explain-screen turn: discovery tools are blocked");
+                    toolResult.put(
+                            "hint",
+                            AgentCopilotExplainIntent.discoveryBlockHint(session.runState().clientFocus())
+                    );
+                    executedTool = toolName;
+                    agentMetrics.recordGuardBlock("copilotExplain");
+                } else if (profile == AgentProfile.OPERATOR) {
                     OperatorAgentTurnGuard.BlockDecision block = OperatorAgentTurnGuard.checkBeforeTool(
                             toolName,
                             toolArgs,

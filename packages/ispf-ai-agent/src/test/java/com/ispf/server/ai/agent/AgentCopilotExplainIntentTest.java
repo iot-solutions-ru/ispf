@@ -70,10 +70,25 @@ class AgentCopilotExplainIntentTest {
                 "Explain this screen",
                 SYSTEM_AI_FOCUS
         ));
+        assertTrue(AgentCopilotExplainIntent.shouldBlockDiscoveryTool(
+                "get_automation_schema",
+                "Explain this screen",
+                SYSTEM_AI_FOCUS
+        ));
         assertFalse(AgentCopilotExplainIntent.shouldBlockDiscoveryTool(
                 "list_objects",
                 "Add a dashboard widget here",
                 SYSTEM_AI_FOCUS
         ));
+    }
+
+    @Test
+    void directResponderListsVisibleSettings() {
+        String summary = AgentCopilotExplainResponder.buildSummary(SYSTEM_AI_FOCUS, "en");
+        assertTrue(summary.contains("ai.enabled"));
+        assertTrue(summary.contains("ai.provider"));
+        assertTrue(summary.contains("restart required") || summary.contains("Restart server"));
+        String ru = AgentCopilotExplainResponder.buildSummary(SYSTEM_AI_FOCUS, "ru");
+        assertTrue(ru.contains("Что на этом экране") || ru.contains("Видимые параметры"));
     }
 }
