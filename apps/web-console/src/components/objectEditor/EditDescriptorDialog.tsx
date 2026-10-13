@@ -11,7 +11,11 @@ import RoleMultiSelect from "../security/RoleMultiSelect";
 import { cloneSchema, emptySchema, normalizeFunctionDescriptor } from "../../utils/schema/dataSchema";
 import { DEFAULT_JAVA_FUNCTION_TEMPLATE } from "../../utils/functionScript/javaFunctionTemplate";
 import { defaultScriptBody, scriptHasSqlStep } from "../../utils/functionScript/functionScriptSteps";
-import { DEFAULT_OBJECT_QUERY_SPEC } from "../../utils/object/objectQueryDefaults";
+import {
+  DEFAULT_OBJECT_QUERY_SPEC,
+  defaultQueryCatalogFunction,
+} from "../../utils/object/objectQueryDefaults";
+import { isQueryPath } from "../../utils/ui/queryPath";
 import { prettyObjectQuerySpec, validateObjectQuerySpec } from "../../utils/object/objectQuerySpecUtils";
 import ObjectQuerySpecField from "./ObjectQuerySpecField";
 import { isTechnicalIdentifier } from "../../utils/ui/technicalIdentifier";
@@ -101,6 +105,7 @@ export default function EditDescriptorDialog({
 }: EditDescriptorDialogProps) {
   const { t } = useTranslation(["inspector", "common"]);
   const isFunction = kind === "function";
+  const queryCatalogFunction = isFunction && isQueryPath(objectPath);
   const expressionCatalog = useFunctionExpressionCatalog();
   const rolesQuery = useQuery({ queryKey: ["security-roles"], queryFn: fetchSecurityRoles });
   const [name, setName] = useState(initial?.name ?? "");
@@ -146,11 +151,14 @@ export default function EditDescriptorDialog({
   const executeQueryNeedsDataSourcePath =
     executeQueryHandler && !functionHostIsDataSourceObject(objectPath) && !dataSourcePath.trim();
   const nameEmpty = !name.trim();
+  const effectiveSourceTypeForValidation = queryCatalogFunction ? "object-query" : sourceType;
   const sourceBodyMissing =
     isFunction &&
     !showAdvancedJson &&
-    ((sourceType === "expression" && !expressionText.trim()) ||
-      ((sourceType === "script" || sourceType === "java" || sourceType === "object-query") &&
+    ((effectiveSourceTypeForValidation === "expression" && !expressionText.trim()) ||
+      ((effectiveSourceTypeForValidation === "script" ||
+        effectiveSourceTypeForValidation === "java" ||
+        effectiveSourceTypeForValidation === "object-query") &&
         !sourceBody.trim()));
   const dataSourceOptions = useMemo(() => {
     const options = [
@@ -185,7 +193,16 @@ export default function EditDescriptorDialog({
     setShowAdvancedJson(false);
     setParseError(null);
     if (isFunction) {
-      const fn = (initial as FunctionDescriptor | undefined) ?? defaultFunction();
+      let fn = (initial as FunctionDescriptor | undefined) ?? (
+        queryCatalogFunction ? defaultQueryCatalogFunction() : defaultFunction()
+      );
+      if (queryCatalogFunction && fn.sourceType !== "object-query") {
+        fn = {
+          ...defaultQueryCatalogFunction(fn.name),
+          description: fn.description,
+          invokeRoles: fn.invokeRoles ?? [],
+        };
+      }
       setInputSchema(cloneSchema(fn.inputSchema));
       setOutputSchema(cloneSchema(fn.outputSchema));
       const parsedExpression =
@@ -234,7 +251,7 @@ export default function EditDescriptorDialog({
         )
       );
     }
-  }, [initial, isFunction]);
+  }, [initial, isFunction, queryCatalogFunction]);
 
   function structuredJson(): string {
     if (!isFunction) {
@@ -384,21 +401,22 @@ export default function EditDescriptorDialog({
             description: description.trim(),
             inputSchema: parsed.inputSchema,
             outputSchema: parsed.outputSchema,
-            sourceType: parsed.sourceType,
+            sourceType: queryCatalogFunction ? "object-query" : parsed.sourceType,
             sourceBody: parsed.sourceBody,
             dataSourcePath: parsed.dataSourcePath,
             version: parsed.version,
             invokeRoles: parsed.invokeRoles ?? invokeRoles,
           });
         } else {
+          const effectiveSourceType = queryCatalogFunction ? "object-query" : sourceType || null;
           fn = normalizeFunctionDescriptor({
             name: name.trim(),
             description: description.trim(),
             inputSchema,
             outputSchema,
-            sourceType: sourceType || null,
+            sourceType: effectiveSourceType,
             sourceBody:
-              sourceType === "object-query" && sourceBody.trim()
+              effectiveSourceType === "object-query" && sourceBody.trim()
                 ? JSON.stringify(JSON.parse(sourceBody))
                 : sourceBody || null,
             dataSourcePath: dataSourcePath || null,
@@ -441,7 +459,7 @@ export default function EditDescriptorDialog({
         JSON.parse(schemaJson);
       }
       if (isFunction && !showAdvancedJson) {
-        const st = sourceType.trim();
+        const st = queryCatalogFunction ? "object-query" : sourceType.trim();
         if ((st === "java" || st === "script" || st === "expression" || st === "object-query") && !sourceBody.trim()) {
           setParseError(t("descriptor.sourceBodyRequired"));
           return;
@@ -588,24 +606,30 @@ export default function EditDescriptorDialog({
             </section>
             <Form layout="vertical" className="modal-section antd-control-grid">
               <Typography.Title level={4} className="full">{t("descriptor.scriptSection")}</Typography.Title>
-              <Form.Item label={t("descriptor.sourceType")}>
-                <Select
-                  aria-label={t("descriptor.sourceType")}
-                  value={sourceType}
-                  onChange={changeSourceType}
-                  // Small fixed option list — disable virtualization so jsdom tests can select options.
-                  virtual={false}
-                  options={[
-                    { value: "", label: t("descriptor.sourceTypeHandler") },
-                    { value: "pulse", label: t("descriptor.sourceTypePulse") },
-                    { value: "script", label: t("descriptor.sourceTypeScript") },
-                    { value: "java", label: t("descriptor.sourceTypeJava") },
-                    { value: "expression", label: t("descriptor.sourceTypeExpression") },
-                    { value: "object-query", label: t("descriptor.sourceTypeObjectQuery") },
-                  ]}
-                />
-              </Form.Item>
-              {presetUsesBuiltinSource(sourceType) && (
+              {queryCatalogFunction ? (
+                <Typography.Paragraph type="secondary" className="full">
+                  {t("descriptor.queryCatalogFunctionHint")}
+                </Typography.Paragraph>
+              ) : (
+                <Form.Item label={t("descriptor.sourceType")}>
+                  <Select
+                    aria-label={t("descriptor.sourceType")}
+                    value={sourceType}
+                    onChange={changeSourceType}
+                    // Small fixed option list — disable virtualization so jsdom tests can select options.
+                    virtual={false}
+                    options={[
+                      { value: "", label: t("descriptor.sourceTypeHandler") },
+                      { value: "pulse", label: t("descriptor.sourceTypePulse") },
+                      { value: "script", label: t("descriptor.sourceTypeScript") },
+                      { value: "java", label: t("descriptor.sourceTypeJava") },
+                      { value: "expression", label: t("descriptor.sourceTypeExpression") },
+                      { value: "object-query", label: t("descriptor.sourceTypeObjectQuery") },
+                    ]}
+                  />
+                </Form.Item>
+              )}
+              {!queryCatalogFunction && presetUsesBuiltinSource(sourceType) && (
                 <>
                   <Form.Item label={t("descriptor.builtinFunctionPreset")} className="full">
                     <Select
@@ -689,7 +713,7 @@ export default function EditDescriptorDialog({
                   />
                 </Form.Item>
               )}
-              {sourceType === "object-query" && (
+              {(queryCatalogFunction || sourceType === "object-query") && (
                 <Form.Item
                   className="full"
                   validateStatus={sourceBodyMissing ? "error" : undefined}
@@ -789,25 +813,27 @@ export default function EditDescriptorDialog({
           </section>
         )}
 
-        <section className="modal-section">
-          <Space>
-            <Switch
-              checked={showAdvancedJson}
-              onChange={setAdvancedMode}
-              aria-label={t("descriptor.advancedJson")}
-            />
-            <Typography.Text>{t("descriptor.advancedJson")}</Typography.Text>
-          </Space>
-          {showAdvancedJson && (
-            <Input.TextArea
-              className="json-editor"
-              rows={14}
-              value={schemaJson}
-              onChange={(e) => setSchemaJson(e.target.value)}
-              spellCheck={false}
-            />
-          )}
-        </section>
+        {!queryCatalogFunction && (
+          <section className="modal-section">
+            <Space>
+              <Switch
+                checked={showAdvancedJson}
+                onChange={setAdvancedMode}
+                aria-label={t("descriptor.advancedJson")}
+              />
+              <Typography.Text>{t("descriptor.advancedJson")}</Typography.Text>
+            </Space>
+            {showAdvancedJson && (
+              <Input.TextArea
+                className="json-editor"
+                rows={14}
+                value={schemaJson}
+                onChange={(e) => setSchemaJson(e.target.value)}
+                spellCheck={false}
+              />
+            )}
+          </section>
+        )}
 
         {parseError && <Alert type="error" showIcon title={parseError} />}
         {mutation.error && <Alert type="error" showIcon title={(mutation.error as Error).message} />}

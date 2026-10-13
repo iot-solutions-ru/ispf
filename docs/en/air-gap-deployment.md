@@ -171,9 +171,59 @@ If you cannot run `air-gap-pack.sh` on Linux, assemble the same layout manually:
 
 ---
 
+## Local LLM demostand (air-gapped site)
+
+Playbook for pointing the agent at an **OpenAI-compatible model that stays on the site**. Status: **Partial**. The server already reads `ISPF_AI_BASE_URL` (`ispf.ai.base-url` in `application.yml`). This section does not add image signing or a dated site soak.
+
+### Claim boundary — "data never leaves the site"
+
+- **In scope:** agent LLM calls go to the configured base URL (`OpenAiCompatibleLlmProvider` → `{base}/chat/completions`, or `OllamaLlmProvider` → `{base}/api/chat`). If that URL is a host on the site LAN, prompts and completions for the agent do not need a path to the public internet.
+- **Not a claim:** ISPF does not prove that model weights, the OS, or the Docker images were built with no network. `CHECKSUMS.sha256` inside the air-gap bundle detects corruption. It is not a publisher signature. **Cosign / sigstore signing is not in this repository** (Gap).
+- **Not a claim:** marketplace sync, license issuance, and any other client still follow their own URLs. An air-gapped host should not set `ISPF_AI_BASE_URL` (or `ISPF_MARKETPLACE_DEFAULT_URL`) to a public endpoint. A wrong base URL sends prompts wherever that URL points.
+- **Not a claim:** a dated air-gapped demostand journal is not archived yet. Record one under [docs/evidence/air-gap-llm/](../evidence/air-gap-llm/README.md). Until that folder has a real run, the scorecard air-gap axis stays **Partial**.
+
+### Offline install
+
+1. On a connected build machine, create the platform bundle with `deploy/air-gap-pack.sh` (checklist above) and move `ispf-airgap-<version>.tar.gz` by sneakernet.
+2. Move the local model runtime and weights the same way. The air-gap tar does **not** contain model weights.
+3. On the target: `deploy/air-gap-apply.sh`, then start the local server so it listens only on the site network.
+
+### Point the agent at the local model
+
+`ISPF_AI_BASE_URL` maps to `ispf.ai.base-url`. A host-only OpenAI-compatible URL (no path) receives `/v1` from `LlmHttpSupport.normalizeOpenAiCompatibleBaseUrl`. Ollama's native API does not use `/v1`.
+
+OpenAI-compatible server on the site (vLLM, llama.cpp, Ollama's OpenAI shim, …):
+
+```bash
+export ISPF_AI_ENABLED=true
+export ISPF_AI_PROVIDER=openai-compatible
+export ISPF_AI_BASE_URL=http://127.0.0.1:8000/v1
+export ISPF_AI_MODEL=<model-id-served-locally>
+export ISPF_AI_API_KEY=local-not-used
+```
+
+Native Ollama on the site:
+
+```bash
+export ISPF_AI_ENABLED=true
+export ISPF_AI_PROVIDER=ollama
+export ISPF_AI_BASE_URL=http://127.0.0.1:11434
+export ISPF_AI_MODEL=<model-tag>
+```
+
+Provider details: [ai-development](ai-development.md) § LlmProvider SPI. Do not point `ISPF_AI_BASE_URL` at a public vendor API when the site rule is that prompts stay on premises.
+
+### What to record
+
+After a real run, add a dated folder next to the stub [docs/evidence/air-gap-llm/README.md](../evidence/air-gap-llm/README.md): base URL host (redacted), provider, model id, and whether the NIC had a default route. Do not commit API keys.
+
+---
+
 ## Related documents
 
 - [deployment](deployment.md) — online deploy, bundle signing, ClickHouse
 - [commercial-licensing](commercial-licensing.md) — license claims, enforce flags
 - [licensed-driver-packs](licensed-driver-packs.md) — driver pack layout
 - [tools/license-builder/README.md](readme.md) — sign bundles offline on vendor side
+- [ai-development](ai-development.md) — `ISPF_AI_BASE_URL` / provider SPI
+- [evidence/air-gap-llm](../evidence/air-gap-llm/README.md) — local-LLM demostand evidence stub (**Partial**)

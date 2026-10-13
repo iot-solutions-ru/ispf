@@ -739,7 +739,24 @@ public class TreeFirstAgentService {
                 Map<String, Object> toolResult;
                 boolean stopTurnForLoopNoise = false;
                 String loopNoiseHint = null;
-                if (profile == AgentProfile.OPERATOR) {
+                // Admin Copilot: only the screen-helper allowlist (native catalog was wider).
+                if (copilotChannel
+                        && !AgentCopilotPromptBuilder.isAllowedTool(
+                                toolName,
+                                session.runState().clientFocus()
+                        )) {
+                    toolResult = new LinkedHashMap<>();
+                    toolResult.put("status", "ERROR");
+                    toolResult.put("error", "Tool not available in Admin Copilot: " + toolName);
+                    toolResult.put(
+                            "hint",
+                            "Understand the user request from LIVE UI SNAPSHOT first. "
+                                    + "Finish with Markdown when the snapshot is enough; "
+                                    + "otherwise use only Copilot screen-helper tools on the focus path."
+                    );
+                    executedTool = toolName;
+                    agentMetrics.recordGuardBlock("copilotAllowlist");
+                } else if (profile == AgentProfile.OPERATOR) {
                     OperatorAgentTurnGuard.BlockDecision block = OperatorAgentTurnGuard.checkBeforeTool(
                             toolName,
                             toolArgs,

@@ -226,11 +226,14 @@ class TreeFirstAgentServiceSessionTest {
 
     @Test
     void runsManyToolStepsWithoutPausing() throws Exception {
-        when(llmProviderRegistry.complete(any())).thenReturn(new LlmResponse(
-                "{\"type\":\"tool\",\"name\":\"list_objects\",\"arguments\":{}}",
-                "test-model",
-                new LlmUsage(1, 1, 2)
-        ));
+        AtomicInteger calls = new AtomicInteger();
+        when(llmProviderRegistry.complete(any())).thenAnswer(invocation -> {
+            int n = calls.getAndIncrement();
+            // Vary parent so READ_SPAM / identical-call hard-block does not stop the turn early.
+            String payload = "{\"type\":\"tool\",\"name\":\"list_objects\","
+                    + "\"arguments\":{\"parent\":\"root.step" + n + "\"}}";
+            return new LlmResponse(payload, "test-model", new LlmUsage(1, 1, 2));
+        });
         when(toolRegistry.execute(anyString(), any(), any())).thenReturn(Map.of("status", "OK"));
 
         aiProperties.setAgentMaxSteps(8);

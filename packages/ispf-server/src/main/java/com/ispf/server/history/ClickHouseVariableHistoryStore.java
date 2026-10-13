@@ -37,7 +37,7 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
     private static final Logger log = LoggerFactory.getLogger(ClickHouseVariableHistoryStore.class);
 
     private static final String SELECT_COLUMNS = """
-            coalesce(observed_at, sampled_at) AS effective_ts, sampled_at, value_double, value_text
+            coalesce(observed_at, sampled_at) AS effective_ts, sampled_at, value_double, value_text, quality
             """;
 
     private final VariableHistoryProperties properties;
@@ -71,7 +71,8 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                         sampled_at DateTime64(3, 'UTC'),
                         observed_at DateTime64(3, 'UTC'),
                         value_double Nullable(Float64),
-                        value_text Nullable(String)
+                        value_text Nullable(String),
+                        quality Nullable(String)
                     ) ENGINE = MergeTree()
                     PARTITION BY toYYYYMM(sampled_at)
                     ORDER BY (object_path, variable_name, field_name, sampled_at)%s
@@ -79,6 +80,10 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                     """, qualifiedTable, ttlClause));
             executeStatement(String.format(
                     "ALTER TABLE %s ADD COLUMN IF NOT EXISTS observed_at DateTime64(3, 'UTC') DEFAULT sampled_at",
+                    qualifiedTable
+            ));
+            executeStatement(String.format(
+                    "ALTER TABLE %s ADD COLUMN IF NOT EXISTS quality Nullable(String)",
                     qualifiedTable
             ));
         });
@@ -225,7 +230,8 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                         ClickHouseDateTimes.parse(node.path("effective_ts").asText()),
                         value,
                         text,
-                        ClickHouseDateTimes.parseOrNull(node.path("sampled_at").asText(null))
+                        ClickHouseDateTimes.parseOrNull(node.path("sampled_at").asText(null)),
+                        qualityFrom(node)
                 ));
             } catch (IOException ex) {
                 throw new IllegalStateException("Failed to parse ClickHouse JSONEachRow line: " + line, ex);
@@ -259,6 +265,14 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
         return buckets;
     }
 
+    private static String qualityFrom(JsonNode node) {
+        JsonNode qualityNode = node.path("quality");
+        if (qualityNode.isMissingNode() || qualityNode.isNull()) {
+            return null;
+        }
+        return VariableHistoryWriteRecord.normalizeQuality(qualityNode.asText(null));
+    }
+
     private String toJsonLine(VariableHistoryWriteRecord record) {
         try {
             Map<String, Object> row = new LinkedHashMap<>();
@@ -269,6 +283,7 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             row.put("observed_at", ClickHouseDateTimes.WRITE.format(record.observedAt()));
             row.put("value_double", record.valueDouble());
             row.put("value_text", record.valueText());
+            row.put("quality", record.quality());
             return objectMapper.writeValueAsString(row);
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to serialize variable history record", ex);

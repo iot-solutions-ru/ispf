@@ -42,6 +42,7 @@ public class AnalyticsEngineScheduler {
     private final ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
     private final AtomicReference<ScheduledFuture<?>> wakeTask = new AtomicReference<>();
     private final AtomicBoolean catalogSyncedAfterReady = new AtomicBoolean(false);
+    private final AtomicReference<Instant> retryNotBefore = new AtomicReference<>();
 
     public AnalyticsEngineScheduler(
             AnalyticsEngineService engineService,
@@ -92,7 +93,11 @@ public class AnalyticsEngineScheduler {
             return;
         }
         long delayMs = Math.max(1L, Duration.between(Instant.now(), nextWakeAt).toMillis());
-        wakeTask.set(taskScheduler.schedule(this::runDueAndReschedule, Instant.now().plusMillis(delayMs)));
+        Instant hold = retryNotBefore.get();
+        if (hold != null) {
+            delayMs = Math.max(delayMs, Duration.between(Instant.now(), hold).toMillis());
+        }
+        wakeTask.set(taskScheduler.schedule(this::runDueAndReschedule, Instant.now().plusMillis(Math.max(delayMs, 1L))));
     }
 
     public void syncSchedules() {
@@ -145,18 +150,22 @@ public class AnalyticsEngineScheduler {
                 .toList();
         try {
             engineService.evaluateTags(dueTags);
+            retryNotBefore.set(null);
             for (AnalyticsTagDefinition tag : dueTags) {
                 scheduleRegistry.markRan(tag.tagPath(), tag.periodicMs(), now, null);
             }
         } catch (RuntimeException ex) {
-            log.warn(
-                    "Analytics due-tag evaluation failed ({} tag(s)): {}",
+            long waitMs = dueTags.stream()
+                    .mapToLong(AnalyticsTagDefinition::periodicMs)
+                    .filter(ms -> ms > 0)
+                    .min()
+                    .orElse(1_000L);
+            retryNotBefore.set(Instant.now().plusMillis(waitMs));
+            log.error(
+                    "Analytics due-tag evaluation failed ({} tag(s)); due was not advanced",
                     dueTags.size(),
-                    ex.getMessage()
+                    ex
             );
-            for (AnalyticsTagDefinition tag : dueTags) {
-                scheduleRegistry.markRan(tag.tagPath(), tag.periodicMs(), now, ex.getMessage());
-            }
         }
     }
 

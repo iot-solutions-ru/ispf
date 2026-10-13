@@ -87,6 +87,18 @@ describe("CreateVariableDialog", () => {
     expect(onSaved).toHaveBeenCalled();
   });
 
+  it("uses DataSchemaEditor only (no schema preset shortcuts)", () => {
+    renderDialog();
+
+    expect(document.querySelector(".data-schema-editor")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "+ Field" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Default: one field value \(DOUBLE\)/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Integer" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Boolean" })).not.toBeInTheDocument();
+  });
+
   it("calls onClose from cancel button", async () => {
     const user = userEvent.setup();
     renderDialog();
@@ -96,31 +108,11 @@ describe("CreateVariableDialog", () => {
     expect(api.createVariable).not.toHaveBeenCalled();
   });
 
-  it("replaces the stock value field when a preset is chosen", async () => {
-    const user = userEvent.setup();
-    renderDialog();
-
-    await user.click(screen.getByText("Integer"));
-    await user.type(screen.getByPlaceholderText("myVariable"), "temperature");
-    await user.click(screen.getByRole("button", { name: "Create" }));
-
-    await waitFor(() => expect(api.createVariable).toHaveBeenCalled());
-    expect(api.createVariable).toHaveBeenCalledWith(
-      "root.platform.devices.lab",
-      expect.objectContaining({
-        schema: expect.objectContaining({
-          fields: [expect.objectContaining({ name: "value", type: "INTEGER" })],
-        }),
-      }),
-    );
-  });
-
-  it("sets the last field type after a field is added, including the previously selected preset", async () => {
+  it("creates a variable with an added field", async () => {
     const user = userEvent.setup();
     renderDialog();
 
     await user.click(screen.getByRole("button", { name: "+ Field" }));
-    await user.click(screen.getByText("Number (DOUBLE)"));
     await user.type(screen.getByPlaceholderText("myVariable"), "reading");
     await user.click(screen.getByRole("button", { name: "Create" }));
 
@@ -131,14 +123,14 @@ describe("CreateVariableDialog", () => {
         schema: expect.objectContaining({
           fields: [
             expect.objectContaining({ name: "value", type: "DOUBLE" }),
-            expect.objectContaining({ name: "field2", type: "DOUBLE" }),
+            expect.objectContaining({ name: "field2", type: "STRING" }),
           ],
         }),
       }),
     );
   });
 
-  it("keeps a renamed field when a preset is applied", async () => {
+  it("keeps a renamed field when creating", async () => {
     const user = userEvent.setup();
     renderDialog();
 
@@ -146,7 +138,6 @@ describe("CreateVariableDialog", () => {
     expect(fieldName).toBeTruthy();
     await user.clear(fieldName!);
     await user.type(fieldName!, "exists");
-    await user.click(screen.getByText("Boolean"));
     await user.type(screen.getByPlaceholderText("myVariable"), "fileMeta");
     await user.click(screen.getByRole("button", { name: "Create" }));
 
@@ -155,7 +146,7 @@ describe("CreateVariableDialog", () => {
       "root.platform.devices.lab",
       expect.objectContaining({
         schema: expect.objectContaining({
-          fields: [expect.objectContaining({ name: "exists", type: "BOOLEAN" })],
+          fields: [expect.objectContaining({ name: "exists", type: "DOUBLE" })],
         }),
       }),
     );

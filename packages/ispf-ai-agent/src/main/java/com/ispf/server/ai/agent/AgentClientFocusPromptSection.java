@@ -121,8 +121,9 @@ public final class AgentClientFocusPromptSection {
             );
             case "system" -> sb.append(
                     "Guidance: System console is open. detail.systemTab / settingsTab / screenTitle / "
-                            + "visibleSettingIds describe THIS screen. Explain what the admin can do here "
-                            + "(Refresh/Save, toggles, sections). Never ask which screen they mean.\n"
+                            + "visibleSettingIds describe THIS screen. For «explain this screen» finish from "
+                            + "those fields immediately (zero tools) — plain language for each setting id. "
+                            + "Never ask which screen; never run platform discovery / finish checks.\n"
             );
             case "ai-studio" -> sb.append(
                     "Guidance: AI Studio (build workspace) is open — separate from Admin Copilot. "

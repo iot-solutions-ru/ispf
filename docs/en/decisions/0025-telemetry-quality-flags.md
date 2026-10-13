@@ -18,7 +18,7 @@ BL-82 (REQ-EX Wave J). Industrial protocols expose status/quality (OPC UA Status
    - OPC UA: Milo `StatusCode` → GOOD / UNCERTAIN / BAD.
    - Virtual demo: cycles quality on `temperature` for lab HMI.
 4. **HMI charts** — trend/chart widgets **omit** `BAD` samples (line gap via `null` value, `connectNulls={false}`). `UNCERTAIN` remains plottable (future: dashed segment).
-5. **Historian** — v1 stores numeric samples only on the hot path; quality gaps apply to **live** binding and driver payloads. Persist + TCK: [0074](0074-historian-quality-persistence.md).
+5. **Historian** — jdbc and ClickHouse persist nullable `quality` beside the value ([0074](0074-historian-quality-persistence.md)). Null means unknown / pre-v2, not GOOD. The ClickHouse proof is an opt-in container test (`ISPF_CLICKHOUSE_QUALITY_TCK=true`), not a default CI job. Cassandra/Scylla does not store quality.
 
 ### Honesty — Done / Partial / Gap
 
@@ -28,7 +28,7 @@ BL-82 (REQ-EX Wave J). Industrial protocols expose status/quality (OPC UA Status
 | HMI omit BAD | **Done** |
 | OPC UA + virtual mapping | **Done** |
 | BACnet status-flags mapping | **Partial** / deferred driver change |
-| Historian column + dual-backend TCK | **Gap** until [0074](0074-historian-quality-persistence.md) green |
+| Historian column + flagship TCK | **Done** for jdbc + ClickHouse ([0074](0074-historian-quality-persistence.md); ClickHouse is opt-in, not default CI). Cassandra/Scylla **Gap** (experimental, quality-incapable) |
 
 Do **not** claim PI-class historian quality from 0025a alone.
 
@@ -36,7 +36,7 @@ Do **not** claim PI-class historian quality from 0025a alone.
 
 - `DriverProductionMatrix` adds `QUALITY` capability for `virtual` and `opcua`.
 - Chart widgets read `quality` from bound variable row when present.
-- Scorecard Historian 10/10 blocked on quality persist evidence ([0074](0074-historian-quality-persistence.md)).
+- Scorecard Historian stays **9.5**. jdbc and ClickHouse quality round-trips are in place (ClickHouse opt-in, not default CI). Cassandra/Scylla stays experimental ([0074](0074-historian-quality-persistence.md)).
 
 ## Related
 

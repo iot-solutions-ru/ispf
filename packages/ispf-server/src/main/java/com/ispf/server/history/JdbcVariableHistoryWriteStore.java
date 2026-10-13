@@ -18,8 +18,8 @@ import java.util.List;
 public class JdbcVariableHistoryWriteStore implements VariableHistoryWriteStore {
 
     private static final String INSERT_SQL = """
-            INSERT INTO variable_samples (object_path, variable_name, field_name, sampled_at, observed_at, value_double, value_text)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO variable_samples (object_path, variable_name, field_name, sampled_at, observed_at, value_double, value_text, quality)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     private final JdbcTemplate jdbcTemplate;
@@ -53,7 +53,8 @@ public class JdbcVariableHistoryWriteStore implements VariableHistoryWriteStore 
                 Timestamp.from(record.sampledAt()),
                 Timestamp.from(record.observedAt()),
                 record.valueDouble(),
-                record.valueText()
+                record.valueText(),
+                record.quality()
         );
     }
 
@@ -73,6 +74,11 @@ public class JdbcVariableHistoryWriteStore implements VariableHistoryWriteStore 
             statement.setString(7, record.valueText());
         } else {
             statement.setNull(7, Types.VARCHAR);
+        }
+        if (record.quality() != null) {
+            statement.setString(8, record.quality());
+        } else {
+            statement.setNull(8, Types.VARCHAR);
         }
     }
 }

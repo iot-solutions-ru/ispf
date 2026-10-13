@@ -87,6 +87,7 @@ Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in t
 | [Roadmap](roadmap.md) | Charter | Phases and backlog |
 | [Competitive scorecard](competitive-scorecard.md) | Stable | Code-verified readiness |
 | [ADR index](decisions/readme.md) | Stable | Architecture decision records |
+| [ADR tension resolution](adr-tension-resolution.md) | Charter | Claim-boundary waves (Closed / Planned) |
 | [Doc status tags](doc-status.md) | Stable | Status vocabulary |
 
 </details>

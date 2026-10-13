@@ -1,7 +1,10 @@
 package com.ispf.server.ai.agent;
 
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -54,5 +57,27 @@ class AgentRunStateTest {
         state.resetReworkRounds();
 
         assertEquals(0, state.reworkRoundCount());
+    }
+
+    @Test
+    void snapshotRestoresClientChannelAndFocus() {
+        AgentRunState original = new AgentRunState();
+        original.setClientChannel("copilot");
+        original.setUiLocale("ru");
+        original.setClientFocus(Map.of(
+                "surface", "system",
+                "detail", Map.of(
+                        "settingsTab", "ai",
+                        "visibleSettingIds", List.of("ai.enabled", "ai.model")
+                )
+        ));
+
+        AgentRunState restored = new AgentRunState();
+        restored.restore(JsonMapper.builder().build(), original.snapshot(JsonMapper.builder().build()));
+
+        assertEquals("copilot", restored.clientChannel());
+        assertEquals("ru", restored.uiLocale());
+        assertEquals("system", restored.clientFocus().get("surface"));
+        assertTrue(AgentCopilotPromptBuilder.isSettingsScreenFocus(restored.clientFocus()));
     }
 }

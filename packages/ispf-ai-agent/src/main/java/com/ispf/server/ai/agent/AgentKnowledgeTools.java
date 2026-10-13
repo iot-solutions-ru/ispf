@@ -45,15 +45,19 @@ final class AgentKnowledgeTools {
             @Override
             public String description() {
                 return "Search ISPF platform knowledge (docs, drivers, features, examples, readiness gaps). "
+                        + "Returns short snippets — do not load full docs into the prompt. "
                         + "Args: query (string), optional topic "
-                        + "(drivers|workflows|dashboards|examples|features|gaps|readiness|agent-knowledge|all).";
+                        + "(drivers|workflows|dashboards|examples|features|gaps|readiness|agent-knowledge|all), "
+                        + "optional mode (hybrid|lexical|vector; default hybrid). "
+                        + "Call once with a specific query, then act on hits (list_objects / mutate / finish).";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
                 return searchService.search(
                         stringArg(arguments, "query"),
-                        optionalString(arguments, "topic")
+                        optionalString(arguments, "topic"),
+                        optionalString(arguments, "mode")
                 );
             }
         };

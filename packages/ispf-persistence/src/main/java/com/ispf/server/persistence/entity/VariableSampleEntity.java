@@ -47,6 +47,10 @@ public class VariableSampleEntity {
     @Column(name = "value_text", columnDefinition = "TEXT")
     private String valueText;
 
+    /** ADR-0074: GOOD / UNCERTAIN / BAD, or null when unknown (pre-v2). */
+    @Column(name = "quality", length = 32)
+    private String quality;
+
     public Long getId() {
         return id;
     }
@@ -114,5 +118,13 @@ public class VariableSampleEntity {
 
     public void setValueText(String valueText) {
         this.valueText = valueText;
+    }
+
+    public String getQuality() {
+        return quality;
+    }
+
+    public void setQuality(String quality) {
+        this.quality = quality;
     }
 }
