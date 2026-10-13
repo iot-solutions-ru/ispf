@@ -134,17 +134,18 @@ final class AgentAutomationTools {
             public String description() {
                 return "Create or update ALERT rule under root.platform.alert-rules. "
                         + "Args: path (existing) OR name (creates under alert-rules), targetObjectPath, watchVariable, "
-                        + "conditionExpr (CEL, e.g. self.temperature[\"value\"] > 85), eventName, "
-                        + "payloadVariable?, enabled?, edgeTrigger?, delaySeconds?, sustainWhileTrue?. "
+                        + "conditionExpr (CEL that DISCRIMINATES — e.g. self.sineWave[\"value\"] > 0 or "
+                        + "self.clusterError[\"value\"] == true; NEVER true / 1==1 — formal verify rejects tautologies), "
+                        + "eventName, payloadVariable?, enabled?, edgeTrigger?, delaySeconds?, sustainWhileTrue?. "
                         + "Condition evaluates on targetObjectPath; eventName is auto-created and fired on the ALERT rule node. "
                         + "Operator alarmBar objectPathPrefix should be root.platform.alert-rules (or rule path). "
-                        + "CEL conditions are formally verified (unsatisfiable/tautology rejected). "
                         + "Use get_automation_schema for field names.";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
                 var auth = context.authentication();
+                String watchVariable = null;
                 try {
                     String path = stringArg(arguments, "path");
                     String name = stringArg(arguments, "name");
@@ -177,7 +178,7 @@ final class AgentAutomationTools {
                     automationTreeService.ensureAlertRuleStructure(path);
 
                     String targetObjectPath = optionalString(arguments, "targetObjectPath");
-                    String watchVariable = optionalString(arguments, "watchVariable");
+                    watchVariable = optionalString(arguments, "watchVariable");
                     String conditionExpr = optionalString(arguments, "conditionExpr");
                     String eventName = optionalString(arguments, "eventName");
                     String payloadVariable = optionalString(arguments, "payloadVariable");
@@ -198,7 +199,7 @@ final class AgentAutomationTools {
                         );
                     }
                     String requestedCondition = conditionExpr;
-                    conditionExpr = AgentExpressionCoercion.coerceCelCondition(conditionExpr);
+                    conditionExpr = AgentExpressionCoercion.coerceCelCondition(conditionExpr, watchVariable);
 
                     FormalVerificationReport verification =
                             formalVerificationService.requireSafeConditionForApply(conditionExpr);
@@ -241,7 +242,14 @@ final class AgentAutomationTools {
                     }
                     return ok;
                 } catch (Exception ex) {
-                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                    Map<String, Object> err = new LinkedHashMap<>();
+                    err.put("status", "ERROR");
+                    err.put("error", ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName());
+                    String hint = alertConditionHint(watchVariable, ex.getMessage());
+                    if (hint != null) {
+                        err.put("hint", hint);
+                    }
+                    return err;
                 }
             }
         };
@@ -1120,6 +1128,26 @@ final class AgentAutomationTools {
         };
     }
 
+    private static String alertConditionHint(String watchVariable, String error) {
+        if (error == null) {
+            return null;
+        }
+        String lower = error.toLowerCase(Locale.ROOT);
+        if (!lower.contains("formal verification")
+                && !lower.contains("tautology")
+                && !lower.contains("unsatisfiable")) {
+            return null;
+        }
+        String watch = watchVariable != null && watchVariable.matches("[A-Za-z_][A-Za-z0-9_]*")
+                ? watchVariable
+                : "sineWave";
+        String example = AgentExpressionCoercion.discriminatingConditionForWatch(watch);
+        return "conditionExpr must discriminate on state — never true / 1==1 / true||…. "
+                + "Retry configure_alert with conditionExpr=" + example
+                + " (watchVariable=" + watch + "). "
+                + "Boolean watches: self.<name>[\"value\"] == true; numeric: self.<name>[\"value\"] > 0.";
+    }
+
     private static Map<String, Object> alertPreview(AlertRule rule) {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("path", rule.id());
@@ -1152,7 +1180,8 @@ final class AgentAutomationTools {
                         "targetObjectPath", "watchVariable", "conditionExpr", "eventName",
                         "payloadVariable", "enabled", "edgeTrigger", "delaySeconds", "sustainWhileTrue"
                 ),
-                "conditionExample", "self.temperature[\"value\"] > 85",
+                "conditionExample", "self.sineWave[\"value\"] > 0",
+                "conditionForbidden", "true | 1==1 | true||… (tautology — formal verify rejects)",
                 "firePath", "ALERT rule node (rule path), not targetObjectPath",
                 "alarmBarHint", "objectPathPrefix=root.platform.alert-rules, eventNames=[eventName]",
                 "tool", "configure_alert"

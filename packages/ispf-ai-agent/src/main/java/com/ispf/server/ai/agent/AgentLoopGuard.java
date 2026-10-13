@@ -712,10 +712,10 @@ final class AgentLoopGuard {
             }
             if (streak >= 2) {
                 String hint = identicalErrorHint(normalized, lastError);
-                // Missing-arg loops: usually keep the turn open so the model can retry with fixed args.
+                // Missing-arg / formal-verify loops: keep turn open so the model can retry with fixed args.
                 // Exception: enable_agent_tool_pack without pack (common on vision turns) never self-corrects.
-                boolean stopTurn = !isMissingRequiredArgError(lastError)
-                        || "enable_agent_tool_pack".equals(normalized);
+                boolean fixable = isMissingRequiredArgError(lastError) || isFormalVerificationError(lastError);
+                boolean stopTurn = !fixable || "enable_agent_tool_pack".equals(normalized);
                 return Optional.of(new BlockDecision(
                         "Hard block: '" + normalized + "' failed " + streak
                                 + " times with the same error — stop flooding the step log",
@@ -739,6 +739,17 @@ final class AgentLoopGuard {
                 || lower.contains("must be ")
                 || lower.contains("unknown_arg")
                 || lower.contains("invalid");
+    }
+
+    private static boolean isFormalVerificationError(String error) {
+        if (error == null || error.isBlank()) {
+            return false;
+        }
+        String lower = error.toLowerCase(Locale.ROOT);
+        return lower.contains("formal verification")
+                || lower.contains("tautology")
+                || lower.contains("unsatisfiable")
+                || lower.contains("never discriminates");
     }
 
     private static String identicalErrorHint(String toolName, String error) {
@@ -791,6 +802,13 @@ final class AgentLoopGuard {
             return """
                     Do NOT set_variable name=layout on operator-apps. \
                     Use configure_operator_ui with title, defaultDashboard, dashboards=[].""";
+        }
+        if ("configure_alert".equals(toolName) || isFormalVerificationError(error)) {
+            return """
+                    conditionExpr must discriminate — formal verify rejects tautologies (true, 1==1, true||…). \
+                    Example: watchVariable=sineWave conditionExpr=self.sineWave[\"value\"] > 0 \
+                    or watchVariable=clusterError conditionExpr=self.clusterError[\"value\"] == true. \
+                    Retry configure_alert with a threshold/boolean compare on the watched variable.""";
         }
         return "Fix the error using the tool description / describe_agent_tool, then retry with corrected args. "
                 + "Do not repeat the identical failing call. Prefer the next course/task step over clarify.";

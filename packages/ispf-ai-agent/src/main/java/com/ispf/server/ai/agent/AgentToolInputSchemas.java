@@ -120,7 +120,8 @@ public final class AgentToolInputSchemas {
                         "alertId", stringProp("Short id; path = root.platform.alert-rules.<alertId> when path omitted"),
                         "targetObjectPath", stringProp("Device/hub path the condition watches"),
                         "watchVariable", stringProp("Variable name on targetObjectPath"),
-                        "conditionExpr", stringProp("CEL condition"),
+                        "conditionExpr", stringProp(
+                                "CEL that discriminates (self.<watch>[\"value\"] > 0 or == true; never true/1==1)"),
                         "eventName", stringProp("Event fired on the ALERT node"),
                         "configJson", stringProp("JSON string payload")
                 ),

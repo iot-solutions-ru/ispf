@@ -26,6 +26,24 @@ class AgentExpressionCoercionTest {
     }
 
     @Test
+    void rewritesObviousTautologyUsingWatchVariable() {
+        assertEquals(
+                "self.sineWave[\"value\"] > 0",
+                AgentExpressionCoercion.coerceCelCondition("true", "sineWave")
+        );
+        assertEquals(
+                "self.clusterError[\"value\"] == true",
+                AgentExpressionCoercion.coerceCelCondition("1 == 1", "clusterError")
+        );
+        assertEquals(
+                "self.temperature[\"value\"] > 0",
+                AgentExpressionCoercion.coerceCelCondition("true || false", "temperature")
+        );
+        // Without watch, leave as-is (formal verify will reject).
+        assertEquals("true", AgentExpressionCoercion.coerceCelCondition("true"));
+    }
+
+    @Test
     void coercesInventedTableSumToSumRecordField() {
         PlatformObject host = hostWithTable();
 

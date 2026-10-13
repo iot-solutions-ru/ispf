@@ -18,12 +18,67 @@ final class AgentExpressionCoercion {
 
     /** CEL alert conditions: {@code and}/{@code or} → {@code &&}/{@code ||}. */
     static String coerceCelCondition(String expression) {
+        return coerceCelCondition(expression, null);
+    }
+
+    /**
+     * CEL alert conditions: word {@code and}/{@code or}, plus rewrite of obvious tautologies
+     * ({@code true}, {@code 1==1}, {@code true || …}) to a discriminating watch comparison.
+     */
+    static String coerceCelCondition(String expression, String watchVariable) {
         if (expression == null || expression.isBlank()) {
             return expression;
         }
         String out = WORD_AND.matcher(expression.trim()).replaceAll(" && ");
         out = WORD_OR.matcher(out).replaceAll(" || ");
+        if (isObviousTautology(out) && watchVariable != null && !watchVariable.isBlank()) {
+            String rewritten = discriminatingConditionForWatch(watchVariable);
+            if (rewritten != null) {
+                return rewritten;
+            }
+        }
         return out;
+    }
+
+    /** {@code true}, {@code 1==1}, {@code true || …} — rejected by formal verification as tautology. */
+    static boolean isObviousTautology(String expression) {
+        if (expression == null || expression.isBlank()) {
+            return false;
+        }
+        String n = expression.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", "");
+        if ("true".equals(n) || "1==1".equals(n) || "!false".equals(n) || "!(!true)".equals(n)) {
+            return true;
+        }
+        if ("true||false".equals(n) || "false||true".equals(n)) {
+            return true;
+        }
+        return n.startsWith("true||") || n.endsWith("||true");
+    }
+
+    static String discriminatingConditionForWatch(String watchVariable) {
+        if (watchVariable == null || watchVariable.isBlank()) {
+            return null;
+        }
+        String w = watchVariable.trim();
+        if (!w.matches("[A-Za-z_][A-Za-z0-9_]*")) {
+            return null;
+        }
+        String lower = w.toLowerCase(Locale.ROOT);
+        if (looksBooleanWatch(lower)) {
+            return "self." + w + "[\"value\"] == true";
+        }
+        return "self." + w + "[\"value\"] > 0";
+    }
+
+    private static boolean looksBooleanWatch(String lowerName) {
+        return lowerName.contains("error")
+                || lowerName.contains("alarm")
+                || lowerName.contains("enabled")
+                || lowerName.contains("active")
+                || lowerName.endsWith("flag")
+                || lowerName.startsWith("is")
+                || lowerName.equals("status")
+                || lowerName.equals("ok");
     }
 
     /**

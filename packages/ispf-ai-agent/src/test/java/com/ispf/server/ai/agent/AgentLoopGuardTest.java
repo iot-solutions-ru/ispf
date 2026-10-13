@@ -459,6 +459,33 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void softBlocksRepeatedConfigureAlertTautologyWithoutStoppingTurn() {
+        String tautologyError = "Formal verification rejected condition: satisfiable witness: "
+                + "Condition is satisfiable. (The expression is satisfiable unconditionally, "
+                + "regardless of input state); tautology: expression is always true "
+                + "(condition never discriminates)";
+        List<Map<String, Object>> steps = List.of(
+                errorStep("configure_alert", tautologyError),
+                errorStep("configure_alert", tautologyError)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "configure_alert",
+                Map.of(
+                        "name", "demo-alert",
+                        "targetObjectPath", "root.platform.devices.virt-device-1",
+                        "watchVariable", "sineWave",
+                        "conditionExpr", "true",
+                        "eventName", "demo"
+                ),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().blocked());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("discriminat"));
+    }
+
+    @Test
     void hardBlocksListVariablesGetObjectOscillation() {
         String cluster = "root.platform.devices.virt-cluster";
         String alert = "root.platform.alert-rules.virt-cluster-error-alert";
