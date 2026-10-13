@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Alert, Button, Form, Input, InputNumber, Modal, Select, Space, Switch, Typography } from "antd";
+import { Alert, Button, Form, Input, InputNumber, Modal, Select, Space, Typography } from "antd";
 import { createObject, createEventFilter, upsertFunction } from "../../api";
 import { buildObjectQueryRunFunction } from "../../utils/object/objectQueryDefaults";
-import { createBlueprint, fetchInstanceTypes, instantiateBlueprint } from "../../api/blueprints";
+import {
+  createBlueprint,
+  fetchInstanceTypes,
+  fetchMixinBlueprints,
+  instantiateBlueprint,
+} from "../../api/blueprints";
 import { registerApplication } from "../../api/applications";
 import { saveReportDefinition } from "../../api/reports";
 import { createOperatorApp } from "../../api/operatorApps";
@@ -49,6 +54,24 @@ const INSTANCE_TYPE_PREFIX = "instance:";
 
 const DEFAULT_POLL_INTERVAL_MS = 5000;
 
+function mixinOptionsForVirtualDevice(models: BlueprintDto[]): BlueprintDto[] {
+  return models
+    .filter(
+      (model) =>
+        model.type === "MIXIN"
+        && (!model.targetObjectType
+          || model.targetObjectType === "DEVICE"
+          || model.targetObjectType === "CUSTOM"),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function defaultVirtualMixinName(models: BlueprintDto[]): string {
+  const options = mixinOptionsForVirtualDevice(models);
+  const preferred = options.find((model) => model.name === "virtual-lab-v1");
+  return preferred?.name ?? options[0]?.name ?? "";
+}
+
 interface CreateObjectDialogProps {
   parentPath: string;
   presetType?: ObjectType;
@@ -79,7 +102,7 @@ export default function CreateObjectDialog({
     setTypeSelection(defaultType);
   }, [parentPath, presetType]);
   const [driverId, setDriverId] = useState("virtual");
-  const [applyVirtualLab, setApplyVirtualLab] = useState(true);
+  const [virtualMixinTemplateName, setVirtualMixinTemplateName] = useState("");
   const [pollIntervalMs, setPollIntervalMs] = useState(DEFAULT_POLL_INTERVAL_MS);
   const [configPreview, setConfigPreview] = useState("{}");
   const [reportDataSourcePath, setReportDataSourcePath] = useState("root.platform.data-sources.demo");
@@ -167,6 +190,23 @@ export default function CreateObjectDialog({
     enabled: mode === "object",
   });
 
+  const mixinBlueprintsQuery = useQuery({
+    queryKey: ["mixin-blueprints", "create-virtual-device"],
+    queryFn: fetchMixinBlueprints,
+    enabled: mode === "object" && type === "DEVICE" && driverId === "virtual",
+    staleTime: 60_000,
+  });
+
+  const virtualDeviceMixinOptions = useMemo(
+    () => mixinOptionsForVirtualDevice(mixinBlueprintsQuery.data ?? []),
+    [mixinBlueprintsQuery.data],
+  );
+
+  const selectedVirtualMixin = useMemo(
+    () => virtualDeviceMixinOptions.find((model) => model.name === virtualMixinTemplateName),
+    [virtualDeviceMixinOptions, virtualMixinTemplateName],
+  );
+
   const instanceModels = useMemo(() => {
     const models = instanceTypesQuery.data ?? [];
     if (!instanceTargets) {
@@ -210,6 +250,21 @@ export default function CreateObjectDialog({
     }
     setConfigPreview(formatDriverConfigJson(selectedDriver));
   }, [type, selectedDriver]);
+
+  useEffect(() => {
+    if (driverId !== "virtual" || virtualMixinTemplateName || mixinBlueprintsQuery.isLoading) {
+      return;
+    }
+    const defaultName = defaultVirtualMixinName(mixinBlueprintsQuery.data ?? []);
+    if (defaultName) {
+      setVirtualMixinTemplateName(defaultName);
+    }
+  }, [
+    driverId,
+    virtualMixinTemplateName,
+    mixinBlueprintsQuery.data,
+    mixinBlueprintsQuery.isLoading,
+  ]);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -383,8 +438,8 @@ export default function CreateObjectDialog({
                 ? "report-v1"
                 : type === "WORKFLOW"
                   ? "workflow-v1"
-                  : type === "DEVICE" && driverId === "virtual" && applyVirtualLab
-                    ? "virtual-lab-v1"
+                  : type === "DEVICE" && driverId === "virtual" && virtualMixinTemplateName.trim()
+                    ? virtualMixinTemplateName.trim()
                     : undefined,
         driverId: type === "DEVICE" ? driverId : undefined,
         driverPollIntervalMs: type === "DEVICE" ? pollIntervalMs : undefined,
@@ -408,9 +463,9 @@ export default function CreateObjectDialog({
     const driver = driversQuery.data?.find((item) => item.id === nextDriverId);
     setConfigPreview(formatDriverConfigJson(driver));
     if (nextDriverId !== "virtual") {
-      setApplyVirtualLab(false);
+      setVirtualMixinTemplateName("");
     } else {
-      setApplyVirtualLab(true);
+      setVirtualMixinTemplateName(defaultVirtualMixinName(mixinBlueprintsQuery.data ?? []));
     }
   };
 
@@ -760,13 +815,31 @@ export default function CreateObjectDialog({
                   />
                 </Form.Item>
                 {driverId === "virtual" && (
-                  <Space className="full">
-                    <Switch
-                      checked={applyVirtualLab}
-                      onChange={setApplyVirtualLab}
+                  <Form.Item
+                    label={t("dialog.virtualDeviceMixinTemplate")}
+                    className="full"
+                    extra={
+                      selectedVirtualMixin?.description
+                        || t("dialog.virtualDeviceMixinTemplateHint")
+                    }
+                  >
+                    <Select
+                      value={virtualMixinTemplateName}
+                      onChange={setVirtualMixinTemplateName}
+                      disabled={mixinBlueprintsQuery.isLoading}
+                      options={[
+                        { value: "", label: t("dialog.virtualDeviceMixinNone") },
+                        ...virtualDeviceMixinOptions.map((model) => ({
+                          value: model.name,
+                          label: model.name,
+                        })),
+                        ...(virtualMixinTemplateName
+                        && !virtualDeviceMixinOptions.some((model) => model.name === virtualMixinTemplateName)
+                          ? [{ value: virtualMixinTemplateName, label: virtualMixinTemplateName }]
+                          : []),
+                      ]}
                     />
-                    <Typography.Text>{t("dialog.applyVirtualLab")}</Typography.Text>
-                  </Space>
+                  </Form.Item>
                 )}
                 {selectedDriver?.description && (
                   <Typography.Paragraph type="secondary" className="full">{selectedDriver.description}</Typography.Paragraph>
@@ -781,9 +854,7 @@ export default function CreateObjectDialog({
                   />
                 </Form.Item>
                 <Typography.Paragraph type="secondary" className="full">
-                  {driverId === "virtual" && applyVirtualLab
-                    ? t("dialog.virtualLabHint")
-                    : t("dialog.deviceDriverHint")}
+                  {t("dialog.deviceDriverHint")}
                 </Typography.Paragraph>
               </>
             )}
