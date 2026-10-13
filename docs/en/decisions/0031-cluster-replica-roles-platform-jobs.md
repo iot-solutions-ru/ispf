@@ -2,7 +2,15 @@
 
 ## Status
 
-Accepted (2026-07-05) — **partially superseded** for role naming by [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md): `ISPF_REPLICA_ROLE` remains a compatibility alias; prefer `ISPF_REPLICA_PROFILE` / `ISPF_REPLICA_CAPABILITIES`. Job queue sections below still apply.
+**Accepted** (2026-07-05) — **partially superseded** for role **naming** by [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md).
+
+| Topic | Owner after 0032 |
+|-------|------------------|
+| `ISPF_REPLICA_ROLE` enum (`all` / `api` / `worker`) | **Compatibility alias only** — prefer `ISPF_REPLICA_PROFILE` + `ISPF_REPLICA_CAPABILITIES` |
+| `platform_jobs` queue, async reports API, SKIP LOCKED claim | **Still this ADR (0031)** — unchanged |
+| Composable capability bits | **0032** |
+
+New docs and Helm charts must not present `replica_role` as the primary knobs.
 
 ## Context
 
@@ -88,5 +96,6 @@ On a small cluster without a dedicated worker, all replicas are `all` — jobs r
 
 - [0028-horizontal-active-active-cluster](0028-horizontal-active-active-cluster.md) — base cluster
 - [0029-cluster-live-variable-replica-sync](0029-cluster-live-variable-replica-sync.md) — live sync
+- [0032-replica-profiles-and-capabilities](0032-replica-profiles-and-capabilities.md) — supersedes role naming
 - [cluster](../cluster.md) — roles and jobs runbook
 - [roadmap](../roadmap.md) — replica roles + platform jobs

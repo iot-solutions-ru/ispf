@@ -42,5 +42,14 @@
 | [0064-release-compatibility-lts](0064-release-compatibility-lts.md) | Релизы, совместимость, LTS; `formatVersion` bundle — **Accepted** |
 | [0065-secrets-key-rotation](0065-secrets-key-rotation.md) | Envelope secrets-key (`ispf1.<kid>.…`), previous-key, re-encrypt — **Accepted** |
 | [0066-security-model](0066-security-model.md) | Модель безопасности (auth, RBAC, tenancy, MEMBER ACL, secrets) — **Accepted** |
+| [0068-backup-and-dr](0068-backup-and-dr.md) | Backup T1–T4 и RPO/RTO honesty — **Accepted** |
+| [0069-cluster-consistency](0069-cluster-consistency.md) | Контракт консистентности кластера — **Accepted** |
+| [0070-cluster-rolling-upgrade](0070-cluster-rolling-upgrade.md) | Cluster N→N+1 Wave 3 — **Accepted** |
+| [0071-northbound-uns](0071-northbound-uns.md) | Northbound / UNS scope — **Accepted** |
+| [0072-edge-fleet-rollout](0072-edge-fleet-rollout.md) | Edge / S&F / fleet lanes — **Accepted** |
+| [0073-hosted-ui-pack-trust](0073-hosted-ui-pack-trust.md) | Доверие ui-pack (amends 0054) — **Accepted** |
+| [0074-historian-quality-persistence](0074-historian-quality-persistence.md) | Quality в историке + TCK — **Accepted** |
+| [0075-observability-slo-otel](0075-observability-slo-otel.md) | SLO / OTel taxonomy — **Accepted** |
+| [0076-external-secrets-providers](0076-external-secrets-providers.md) | KMS/HSM/Vault/GOST non-claims — **Accepted** |
 
 **Цепочки тем (порядок чтения):** [en/decisions/readme.md § Topic chains](../../en/decisions/readme.md#topic-chains-read-in-order).

@@ -72,5 +72,6 @@ When secrets-key is **not** set in YAML/env, `POST /api/v1/federation/secrets-ke
 
 - [0066-security-model](0066-security-model.md) — platform security claim boundary
 - [0049-ot-automation-excellence](0049-ot-automation-excellence.md)
+- [0076-external-secrets-providers](0076-external-secrets-providers.md) — KMS/HSM/Vault/GOST out of 0065
 - [tutorial-ot-credentials-vault](../tutorial-ot-credentials-vault.md)
 - [security](../security.md), [federation](../federation.md)

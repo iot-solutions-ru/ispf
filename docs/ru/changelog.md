@@ -11,12 +11,16 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Добавлено
 
+- ADR 0068–0076 (excellence gaps): backup/DR, consistency кластера, N→N+1, UNS, edge fleet, ui-pack trust, historian quality, OTel/SLO, external secrets — honesty-контракты; код-остатки явные.
 - Модель безопасности платформы (ADR-0066): auth → RBAC → tenancy → object/MEMBER ACL → federation ceiling → secrets; жёсткие правила и таблица честности; ссылки из `security.md` / `multi-tenant.md` (без смены runtime).
 - Lab-гейт upgrade bundle (ADR-0064 волна 2): `BundleUpgradeCompatGateTest` — catalog `marketplace-demo` с `formatVersion: 1`, reject неподдерживаемого формата, redeploy local marketplace; docs [release-upgrade](release-upgrade.md). Честность: только lab, не cluster N→N+1.
 - Envelope secrets-key + ротация (ADR-0065): ciphertext `ispf1.<keyId>.…`; legacy Base64 читается; `secrets-previous-key` для dual-read; `POST /api/v1/federation/secrets-key/reencrypt`; смена DATABASE-ключа из UI перешифровывает vault/federation на месте.
 
 ### Изменено
 
+- Honesty-проход ADR «поправить» → сильные контракты: 0003, 0006, 0008, 0013, 0025a, 0031, 0033, 0035, 0039, 0042, 0045, 0054, 0056, 0060 (Done/Partial/Gap, без оверсейла).
+- Honesty-проход ADR «статус» → сильные: 0016a/b (алиасы + sales honesty), 0019 (дата + phase 3 Partial), 0025b (experimental tier); 0066/0067 усилены в своих PR.
+- Разгрузка ADR «разгрузить» → сильные: 0005, 0017, 0026, 0027, 0046, 0049 — решение в ADR, knobs/бенчи в runbook.
 - `formatVersion` bundle + политика релизов (ADR-0064): опциональное целое в манифесте (нет поля ⇒ `1`); validate/deploy отклоняет неподдерживаемые форматы; pull-from-tree пишет `1`. ADR про совместимость/LTS и Flyway expand/contract.
 - Гигиена реестра ADR: алиасы дублей (**0016a/b**, **0025a/b**); терминология 0011 → MIXIN/INSTANCE/SINGLETON; 0037 и README Flyway PostgreSQL — `V1` + инкременты `V71+`; статусы 0038/0039 Accepted; волна 4 в 0049 (vault) — partial; 0053 — YARG/docx4j удалены; закрыты устаревшие «future» по MCP/ClickHouse; scorecard DNP3 BETA → PRODUCTION poll-only (ADR-0057); добавлены RU-зеркала 0055–0057 и 0060–0062; снят Dependabot ignore для docx4j.
 - Git lifecycle приложения (ADR-0063): Connect / Disconnect / Status / Pull release → deploy / Push tree → PR (GitHub/GitLab Contents + Pulls/MR, PAT в vault, history `source=git` + sha). Вкладка Git в Console. Docs: applications, learn Path B, anti-patterns.

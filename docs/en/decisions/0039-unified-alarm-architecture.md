@@ -2,7 +2,20 @@
 
 ## Status
 
-**Accepted** (2026-07-09; phase B landed — `deactivateExpr` / `clearEventName` in `AlertRuleService`; later phases incremental). Full ISA-18.2 state model / KPI surface remains a follow-up amendment.
+**Accepted** (2026-07-09) — evolve `alert-rule-v1` in place; phase **B landed**.  
+Full **ISA-18.2** state / KPI / flood surface is an explicit **Gap**, not implied by Accepted.
+
+### Honesty — Done / Partial / Gap
+
+| Slice | Status | Notes |
+|-------|--------|-------|
+| One mechanism: additive fields on `alert-rule-v1` | **Done** (decision) | No parallel alarm object type |
+| Phase B latch (`deactivateExpr`, `clearEventName`, …) | **Done** | `AlertRuleService` |
+| Phases C–F (instances, event trigger, mask, escalation fields) | **Partial** / incremental | See §8 |
+| ISA-18.2 states (unack, ack, RTN, shelved, suppressed, OOS) + flood/chatter KPI | **Gap** | Shelf exists separately; not a full ISA-18.2 model |
+| Operator rationalization report / KPI dashboard | **Gap** | Program item, not this ADR’s Done bar |
+
+Do **not** claim “ISA-18.2 complete” from phase B alone.
 
 ## Context
 
@@ -192,4 +205,5 @@ Risks:
 
 - [automation](../automation.md)
 - [0014-automation-pipeline-evolution](0014-automation-pipeline-evolution.md) — indexes and lanes
+- [0062-correlator-keyed-dispatch](0062-correlator-keyed-dispatch.md) — correlator lanes (CEP stays separate)
 - [reference-escalation-templates](../reference-escalation-templates.md)

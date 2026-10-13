@@ -23,7 +23,7 @@ Evidence note: [release-compat/2026-10-12-bundle-upgrade-lab-gate.md](../evidenc
 
 | Gap | Why |
 |-----|-----|
-| **Cluster image N → N+1** rolling upgrade | Needs two platform images, shared DB, and a soak job — still ADR-0064 follow-up |
+| **Cluster image N → N+1** rolling upgrade | Gate defined in [0070-cluster-rolling-upgrade](decisions/0070-cluster-rolling-upgrade.md); dual-image CI soak still open |
 | Live customer plant upgrade journals | Field evidence, not CI |
 | Bundle `formatVersion: 2` dual-read | No format bump yet; tighten `additionalProperties` only with a bump |
 
@@ -39,6 +39,8 @@ Do **not** claim scorecard Deploy/scale 10/10 or “zero-downtime upgrade” fro
 ## Related
 
 - [0064-release-compatibility-lts](decisions/0064-release-compatibility-lts.md)
+- [0070-cluster-rolling-upgrade](decisions/0070-cluster-rolling-upgrade.md)
+- [0069-cluster-consistency](decisions/0069-cluster-consistency.md)
 - [applications](applications.md) — deploy / format contract
 - [deployment](deployment.md) — install / Helm
 - [marketplace](marketplace.md) — catalog pilots
