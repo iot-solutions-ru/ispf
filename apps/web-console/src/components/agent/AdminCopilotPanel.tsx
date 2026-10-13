@@ -290,7 +290,7 @@ export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelPr
             onPick={(text) => void handleSend(text)}
           />
         )}
-        {messages.map((message, index) => (
+        {messages.map((message) => (
           <div
             key={message.id}
             className={message.role === "user" ? "ai-agent-bubble user" : "ai-agent-bubble agent"}
