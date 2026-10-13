@@ -1,22 +1,29 @@
-Задания по курсу AggreGate. Выполни ВСЕ пункты по порядку на live tree (mode=auto). Не задавай clarify — действуй инструментами. Используй create_virtual_device (модель virtual-unified / virtual-lab), не ObjectType.DEVICE для логики. Имена: virt-device-1 (и при необходимости virt-device-2). Условие тревоги — дискриминирующее CEL (self.<watch>["value"] > 0 или == true), никогда true/1==1. Для mimic — save_mimic_diagram с непустым elements[]. Для дашбордов — create_object DASHBOARD затем set_dashboard_layout (можно много дашбордов подряд).
+Выполни ВСЕ задания ниже на live ISPF tree (it-demo, interactionMode=execute). Не задавай clarify — только инструменты. В конце finish со списком созданных путей.
 
-1) Создать двух пользователей и дать первому доступ ко всем устройствам второго (set_object_acl).
-2) Тревога: Event1 ON, Event2 (Int>20) OFF на виртуальном устройстве.
-3) Тревога через 10с если sum(Int+Float) в [50,100] (delaySeconds=10, sustainWhileTrue).
-4) Тревога если sumRecordField(table,int) > 100; корректирующее действие — отчёт/таблица оператору.
-5) EVENT_FILTER: Event2 где Integer>10 или String содержит "abc".
-6) Форма в виджете (grid layout) как в документации.
-7) Функция calculator на устройстве через calculate().
-8) Относительная модель / mixin: сумма Sine Wave + Sawtooth Wave на каждом виртуальном устройстве.
-9) Калькулятор-виджет (grid layout).
-10) QUERIES: все переменные виртуального устройства, редактируемые.
-11) Относительный отчёт по table всех виртуальных устройств.
+Правила платформы (обязательно):
+- Телеметрия/симулятор: create_virtual_device (virtual-unified / virtual-lab). Имена: virt-device-1, virt-device-2.
+- Логика/функции/калькулятор: НЕ ObjectType.DEVICE. Сначала list_singleton_blueprints, затем ensure_singleton_instance с blueprintName ТОЛЬКО из результата каталога. virtual-lab / virtual-unified — DEVICE-профили, не singleton.
+- USER: roles=operator (lowercase, не OPERATOR).
+- Тревоги: дискриминирующий CEL (self.<var>["value"] …), никогда true / 1==1.
+- Дашборды: create_object DASHBOARD → set_dashboard_layout (можно много подряд).
+- Mimic: save_mimic_diagram с непустым elements[].
+
+Задания:
+1) Создать двух пользователей и дать первому пользователю доступ ко всем устройствам другого пользователя (set_object_acl).
+2) Тревога: срабатывает на Event 1 виртуального устройства и деактивируется при Event 2, если Int данных Event 2 > 20.
+3) Тревога через 10 секунд после того, как сумма Int+Float виртуального устройства попадает в [50,100] (delaySeconds=10, sustainWhileTrue).
+4) Тревога если сумма чисел в колонке Int переменной Table > 100; корректирующее действие — отчёт/таблица оператору при срабатывании.
+5) Фильтр событий: Event 2 где Integer > 10; или в поле String встречается "abc".
+6) Форма в виджете (grid layout) как в главе Grid Layout документации.
+7) Функция калькулятора на hub (не DEVICE), два числа через calculate() виртуального устройства.
+8) Относительная модель/mixin: в каждом виртуальном устройстве сумма Sine Wave + Sawtooth Wave.
+9) Калькулятор в виде виджета (grid layout).
+10) Запрос: все переменные виртуального устройства, редактируемые значения.
+11) Относительный отчёт: table всех виртуальных устройств.
 12) Посекундный график Sine Wave и Sawtooth Wave.
-13) Pie Chart по table.
+13) Pie Chart по табличной переменной.
 14) Виджет: сверху форма генерации событий, снизу лог обоих типов.
 15) Виджет с кнопкой, открывающей другой виджет.
 16) История sine за 5 минут: таблица + среднее (configure_variable_history).
 17) Два SVG-виджета кнопка и вентилятор; запуск вентилятора по кнопке (composite/subwidget или mimic).
 18) Дашборд виртуальных устройств: график Sine, свойства, лог событий, отчёт Table.
-
-В конце finish с кратким списком созданных путей. Не останавливайся на clarify.

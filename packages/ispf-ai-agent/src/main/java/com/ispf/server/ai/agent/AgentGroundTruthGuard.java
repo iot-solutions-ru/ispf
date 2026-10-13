@@ -149,7 +149,23 @@ final class AgentGroundTruthGuard {
             return checkObjectPathDiscovered(objectPath, tool, steps, objectExists);
         }
         if ("ensure_singleton_instance".equals(tool)) {
-            return checkBlueprintDiscovered(arguments, steps, "blueprintName", "blueprintId");
+            Optional<BlockDecision> missing = checkBlueprintDiscovered(
+                    arguments, steps, "blueprintName", "blueprintId");
+            if (missing.isEmpty()) {
+                return Optional.empty();
+            }
+            String modelRef = firstNonBlankArg(arguments, "blueprintName", "blueprintId");
+            if (looksLikeVirtualDeviceProfile(modelRef)) {
+                return Optional.of(new BlockDecision(
+                        "Cannot ensure_singleton_instance: \"" + modelRef
+                                + "\" is a virtual DEVICE profile, not a SINGLETON blueprint",
+                        "For devices use create_virtual_device profile=" + modelRef
+                                + ". For calculator/hub logic: list_singleton_blueprints, then "
+                                + "ensure_singleton_instance blueprintName=<name from that list>. "
+                                + "Never pass virtual-lab / virtual-unified to ensure_singleton_instance."
+                ));
+            }
+            return missing;
         }
         return Optional.empty();
     }
@@ -729,16 +745,16 @@ final class AgentGroundTruthGuard {
         return String.valueOf(step.get("tool")).toLowerCase(Locale.ROOT);
     }
 
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> stepMap(Map<String, Object> step, String key) {
-        return step.get(key) instanceof Map<?, ?> map ? (Map<String, Object>) map : Map.of();
+    private static String firstNonBlankArg(Map<String, Object> arguments, String... keys) {
+        for (String key : keys) {
+            String value = stringArg(arguments, key);
+            if (!value.isBlank()) {
+                return value;
+            }
+        }
+        return "";
     }
 
-    private static String stringArg(Map<String, Object> arguments, String key) {
-        if (arguments == null) {
-            return "";
-        }
-        Object value = arguments.get(key);
-        return value == null ? "" : String.valueOf(value).trim();
-    }
-}
+    /** Virtual device profiles must not be passed to ensure_singleton_instance. */
+    static boolean looksLikeVirtualDeviceProfile(String modelRef) {
+        if (modelRef == null || modelRef
