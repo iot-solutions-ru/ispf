@@ -17,6 +17,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Изменено
 
+- Honesty-проход ADR «поправить» → сильные контракты: 0003, 0006, 0008, 0013, 0025a, 0031, 0033, 0035, 0039, 0042, 0045, 0054, 0056, 0060 (Done/Partial/Gap, без оверсейла).
 - `formatVersion` bundle + политика релизов (ADR-0064): опциональное целое в манифесте (нет поля ⇒ `1`); validate/deploy отклоняет неподдерживаемые форматы; pull-from-tree пишет `1`. ADR про совместимость/LTS и Flyway expand/contract.
 - Гигиена реестра ADR: алиасы дублей (**0016a/b**, **0025a/b**); терминология 0011 → MIXIN/INSTANCE/SINGLETON; 0037 и README Flyway PostgreSQL — `V1` + инкременты `V71+`; статусы 0038/0039 Accepted; волна 4 в 0049 (vault) — partial; 0053 — YARG/docx4j удалены; закрыты устаревшие «future» по MCP/ClickHouse; scorecard DNP3 BETA → PRODUCTION poll-only (ADR-0057); добавлены RU-зеркала 0055–0057 и 0060–0062; снят Dependabot ignore для docx4j.
 - Git lifecycle приложения (ADR-0063): Connect / Disconnect / Status / Pull release → deploy / Push tree → PR (GitHub/GitLab Contents + Pulls/MR, PAT в vault, history `source=git` + sha). Вкладка Git в Console. Docs: applications, learn Path B, anti-patterns.

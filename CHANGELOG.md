@@ -25,6 +25,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Changed
 
+- **ADR honesty pass («поправить» → strong)** — Accepted/Proposed ADRs 0003, 0006, 0008, 0013, 0025a, 0031, 0033, 0035, 0039, 0042, 0045, 0054, 0056, 0060 gain Done/Partial/Gap tables, stale claim cleanup, and links to successor ADRs (0072–0074, 0032, 0051). Docs-only; no runtime change.
 - **Bundle `formatVersion` + release policy (ADR-0064)** — optional integer `formatVersion` on application manifests (omit ⇒ `1`); validate/deploy reject unsupported formats; pull-from-tree writes `1`. ADR covers platform compatibility / LTS intent and Flyway expand/contract.
 - **ADR registry hygiene** — duplicate numbers tagged as aliases (**0016a/b**, **0025a/b**); ADR-0011 terminology aligned to MIXIN/INSTANCE/SINGLETON; ADR-0037 + PostgreSQL Flyway README document `V1` + incremental `V71+`; statuses for 0038/0039 Accepted; ADR-0049 wave 4 vault marked partial; ADR-0053 records YARG/docx4j removal; stale MCP/ClickHouse “future” claims closed; scorecard DNP3 BETA → PRODUCTION poll-only (ADR-0057); RU mirrors added for 0055–0057 and 0060–0062; Dependabot docx4j ignore removed.
 - **Application Git lifecycle (ADR-0063)** — Connect / Disconnect / Status / Pull release → deploy / Push tree → PR (GitHub/GitLab Contents + Pulls/MR APIs, vault PAT, deploy history `source=git` + sha). Console Git tab. Docs: `applications.md`, learn Path B, anti-patterns ship checklist.
