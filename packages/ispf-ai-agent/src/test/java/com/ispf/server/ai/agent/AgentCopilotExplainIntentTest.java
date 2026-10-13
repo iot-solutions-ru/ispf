@@ -33,6 +33,24 @@ class AgentCopilotExplainIntentTest {
     }
 
     @Test
+    void explainNotVetoedByEnabledSettingIdsInFocusDump() {
+        String enriched = """
+                Explain what to do on this System/Settings screen
+
+                UI focus screen: System > Settings
+                System tab: settings
+                Settings section: ai
+                Hint: Settings section «ai» — runtime platform config rows
+                Visible settings: ai.enabled, ai.provider, ai.model, mcp.enabled
+                """;
+        assertTrue(AgentCopilotExplainIntent.isExplainOnly(enriched, SYSTEM_AI_FOCUS));
+        assertTrue(AgentCopilotExplainIntent.shouldBlockDiscoveryTool(
+                "get_automation_schema", enriched, SYSTEM_AI_FOCUS));
+        assertTrue(AgentCopilotExplainIntent.shouldBlockDiscoveryTool(
+                "search_context", enriched, SYSTEM_AI_FOCUS));
+    }
+
+    @Test
     void doesNotTreatConfigureAsExplain() {
         assertFalse(AgentCopilotExplainIntent.isExplainOnly(
                 "Configure ai.model to gpt-4",

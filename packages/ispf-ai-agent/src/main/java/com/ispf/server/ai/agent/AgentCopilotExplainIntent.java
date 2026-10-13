@@ -16,6 +16,7 @@ final class AgentCopilotExplainIntent {
             "get_object",
             "search_objects",
             "search_context",
+            "get_automation_schema",
             "list_variables",
             "describe_variables",
             "list_binding_rules",
@@ -34,46 +35,19 @@ final class AgentCopilotExplainIntent {
     }
 
     static boolean isExplainOnly(String userMessage, Map<String, Object> clientFocus) {
-        if (!hasScreenFocus(clientFocus)) {
-            return false;
-        }
         String text = userMessage == null ? "" : userMessage.toLowerCase(Locale.ROOT);
         if (text.isBlank()) {
             return false;
         }
-        if (looksLikeMutate(text)) {
+        // Focus dump often lists ids like ai.enabled / mcp.enabled — never let those veto explain.
+        String intent = userIntentPortion(text);
+        if (!looksLikeExplain(intent) && !looksLikeExplain(text)) {
             return false;
         }
-        return containsAny(
-                text,
-                "explain",
-                "what is",
-                "what's",
-                "whats",
-                "what does",
-                "what do",
-                "how does",
-                "tell me about",
-                "describe",
-                "объясн",
-                "расскаж",
-                "что это",
-                "что тут",
-                "что на",
-                "зачем",
-                "как работ",
-                "для чего",
-                "что означа",
-                "что делает",
-                "что значат",
-                "erklä",
-                "was ist",
-                "was macht",
-                "说明",
-                "解释",
-                "这是什么",
-                "做什么"
-        );
+        if (looksLikeMutate(intent)) {
+            return false;
+        }
+        return hasScreenFocus(clientFocus) || mentionsFocusedScreen(text);
     }
 
     static boolean shouldBlockDiscoveryTool(String toolName, String userMessage, Map<String, Object> clientFocus) {
@@ -83,7 +57,8 @@ final class AgentCopilotExplainIntent {
         if (toolName == null || toolName.isBlank()) {
             return false;
         }
-        return DISCOVERY_TOOLS.contains(toolName.trim().toLowerCase(Locale.ROOT));
+        String key = toolName.trim().toLowerCase(Locale.ROOT);
+        return DISCOVERY_TOOLS.contains(key) || "get_automation_schema".equals(key);
     }
 
     static String discoveryBlockHint(Map<String, Object> clientFocus) {
@@ -130,21 +105,83 @@ final class AgentCopilotExplainIntent {
                 || (detailMap.get("visibleSettingIds") instanceof List<?> ids && !ids.isEmpty());
     }
 
+    private static boolean looksLikeExplain(String text) {
+        return containsAny(
+                text,
+                "explain",
+                "what is",
+                "what's",
+                "whats",
+                "what does",
+                "what do",
+                "how does",
+                "tell me about",
+                "describe",
+                "объясн",
+                "расскаж",
+                "что это",
+                "что тут",
+                "что на",
+                "зачем",
+                "как работ",
+                "для чего",
+                "что означа",
+                "что делает",
+                "что значат",
+                "erklä",
+                "was ist",
+                "was macht",
+                "说明",
+                "解释",
+                "这是什么",
+                "做什么"
+        );
+    }
+
+    /**
+     * Only the user question — strip appended UI focus / setting-id dumps so ids like
+     * {@code ai.enabled} do not look like «enable» mutate intents.
+     */
+    static String userIntentPortion(String lowerText) {
+        if (lowerText == null || lowerText.isBlank()) {
+            return "";
+        }
+        String cut = lowerText;
+        for (String marker : new String[]{
+                "\nui focus",
+                "\n[ui context",
+                "\nhint:",
+                "\nvisible settings:",
+                "\nsystem tab:",
+                "\nsettings section:",
+                "\nlive ui snapshot"
+        }) {
+            int idx = cut.indexOf(marker);
+            if (idx >= 0) {
+                cut = cut.substring(0, idx);
+            }
+        }
+        String firstLine = cut.lines().findFirst().orElse(cut).trim();
+        return firstLine.isBlank() ? cut.trim() : firstLine;
+    }
+
     private static boolean looksLikeMutate(String text) {
         return containsAny(
                 text,
-                "create",
+                "create ",
+                "create\n",
                 "add ",
                 "set ",
-                "enable",
-                "disable",
-                "configure",
-                "change",
-                "update",
-                "save",
-                "apply",
-                "fill",
-                "deploy",
+                "enable ",
+                "disable ",
+                "configure ",
+                "configure\n",
+                "change ",
+                "update ",
+                "save ",
+                "apply ",
+                "fill ",
+                "deploy ",
                 "созда",
                 "добав",
                 "настро",
@@ -154,6 +191,19 @@ final class AgentCopilotExplainIntent {
                 "сохран",
                 "заполни",
                 "примен"
+        );
+    }
+
+    private static boolean mentionsFocusedScreen(String text) {
+        return containsAny(
+                text,
+                "system/settings",
+                "system > settings",
+                "settings section",
+                "visible settings",
+                "ui focus screen",
+                "система/настройки",
+                "экран система"
         );
     }
 
