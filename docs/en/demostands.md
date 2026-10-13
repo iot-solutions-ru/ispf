@@ -28,6 +28,8 @@ See also: [deployment](deployment.md), [security](security.md), [cluster](cluste
 
 **Key rule:** defaults ([0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md)) target **production throughput** and load testing. The **demo-idle** profile (`prod-idle.env`) **does not** replace production under real load. For production with low background load on a single JVM, you may deliberately trim pools, but do not copy the demostand overlay without analyzing queue behavior.
 
+**Prefer the named profile.** Choose a row above and apply that overlay (`prod-idle.env` for demo/idle; production defaults; edge is the idle overlay trimmed to 1 worker). Set `ISPF_DEPLOY_PROFILE` to `production`, `demo-idle`, `edge`, or `throughput`. Per-tier `ISPF_*_WORKERS` / `ISPF_*_THREADS` keys listed later are a **deprecated escape hatch** for diagnosing a profile bug ([0033](decisions/0033-prod-idle-demostand-tuning.md)). After recreate, an operator read of `GET /api/v1/platform/effective-config` returns `profile` and `resolvedPools` (effective min/max). That payload is a snapshot, not an environment dump.
+
 ---
 
 ## Profile: Production (industrial operations)
@@ -245,7 +247,7 @@ Peak tuning: [`deploy/vps-event-journal-peak-tuning.sh`](../../deploy/vps-event-
 
 ### Elastic pools — **disabled**, fixed size
 
-With `ISPF_*_ELASTIC=false`, Spring uses **fixed** `*_WORKERS` / `*_THREADS`, not min/max:
+Apply [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) as the profile (`ISPF_DEPLOY_PROFILE=demo-idle`). With `ISPF_*_ELASTIC=false`, Spring uses **fixed** `*_WORKERS` / `*_THREADS`, not min/max. The table is what that overlay sets; editing the keys one by one is a **deprecated escape hatch**:
 
 | Subsystem | Example env |
 |-----------|-------------|
@@ -329,7 +331,7 @@ ISPF on the device polls PLCs/sensors and serves HMI or syncs to a hub ([federat
 | Fixtures bootstrap | `ISPF_BOOTSTRAP_FIXTURES_ENABLED=false` |
 | Process | **systemd** preferred over Docker on weak ARM (lower overhead) |
 
-Minimal env fragment (idle baseline, even more aggressive):
+Minimal env fragment (idle baseline trimmed to 1). Prefer the edge profile as a whole. Hand-editing these keys is a **deprecated escape hatch**:
 
 ```properties
 ISPF_OBJECT_CHANGE_TELEMETRY_WORKERS=1
