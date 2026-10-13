@@ -96,6 +96,28 @@ Program wave 8 (~9.8) по-прежнему **отозвана**.
 
 ---
 
+## Полоса AI-authoring (второй scorecard)
+
+> **Не pin-audit.** Взвешенная оценка as-of tension stack + evidence 0.9.207. **Не усреднять** с классическим mean по 14 измерениям.
+
+**Цель:** AI-авторинг с формальными гарантиями · единая модель · открытость · air-gap.  
+**Peers:** PlantPulse (on-prem LLM / MCP), SymphonyAI IRIS Forge — не Ignition/PI как главный бар.  
+**OT/MES/HMI** остаются в классической матрице; C1 FIELD не обязателен для overall DoD этой полосы.
+
+| Ось | Вес | Today | Target | Откуда / evidence | Gap до 9.5 |
+|-----|:---:|:-----:|:------:|-------------------|------------|
+| Единая модель (tree / blueprints / CEL) | 0.20 | **8.5** | 9.5 | Классика #1 | Глубина ontology vs peers |
+| AI-авторинг (tree-first / MCP / Studio) | 0.25 | **9.0** | 9.5 | Классика #9; BL-178 52/52 | Multi-day plant journal; acceptance gate |
+| Формальные гарантии (ship / poka-yoke) | 0.25 | **8.0** | 9.5 | 0051, 0004, 0060; `--strict` / catalog | Ship-default ERROR; агент не обходит host canon |
+| Открытость (OSS / API / MCP / docs) | 0.15 | **8.7** | 9.5 | AGPL+dual; #13–14; MCP | Partner Portal external; ui-pack trust Partial |
+| Air-gap / суверенитет | 0.15 | **7.5** | 9.5 | On-prem + local LLM API | Signed air-gap install; demostand local-LLM playbook |
+
+**Weighted today:** **8.38** · **Weighted target:** **9.50** · **Classic OT mean:** **~8.0** (без изменений).
+
+Канон EN: [en/competitive-scorecard.md § AI-authoring lane](../en/competitive-scorecard.md#ai-authoring-lane-second-scorecard).
+
+---
+
 ## Разрыв до цели
 
 1. **OT drivers (7.0 → 9+):** field pilot sign-off + DNP3 write; lab ≠ OT 10/10.

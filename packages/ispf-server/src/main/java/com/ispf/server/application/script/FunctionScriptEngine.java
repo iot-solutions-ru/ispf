@@ -263,7 +263,7 @@ public class FunctionScriptEngine {
                 String objectPath = String.valueOf(resolveStepValue(step.get("objectPath"), vars));
                 platformScriptBridge.setDriverTelemetry(
                         objectPath,
-                        step.path("variable").asText("temperature"),
+                        step.path("variable").asText(""),
                         resolveFields(step.get("fields"), vars)
                 );
                 yield null;

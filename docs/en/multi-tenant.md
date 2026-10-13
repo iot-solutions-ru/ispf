@@ -4,6 +4,8 @@
 
 Logical separation of object trees by tenant in a single ISPF instance, with a **tenant-admin** local owner per customer branch.
 
+Security-model contract (tenancy hard rules + honesty table): [0066-security-model](decisions/0066-security-model.md).
+
 ## Actors
 
 | Actor | Role | `tenant_id` | Capabilities |
