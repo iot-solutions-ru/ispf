@@ -331,6 +331,16 @@ public final class AgentRunState {
         if (!activeToolPacks.isEmpty()) {
             map.put("activeToolPacks", Set.copyOf(activeToolPacks));
         }
+        // Turn UI context — must survive async reload (submitRunTurn re-fetches session).
+        if (clientChannel != null && !clientChannel.isBlank()) {
+            map.put("clientChannel", clientChannel);
+        }
+        if (clientFocus != null && !clientFocus.isEmpty()) {
+            map.put("clientFocus", Map.copyOf(clientFocus));
+        }
+        if (uiLocale != null && !uiLocale.isBlank()) {
+            map.put("uiLocale", uiLocale);
+        }
         if (pending != null) {
             map.put("pending", pending.toMap(objectMapper));
         }
@@ -423,6 +433,36 @@ public final class AgentRunState {
                 }
             }
         }
+        Object channelRaw = raw.get("clientChannel");
+        if (channelRaw != null && !String.valueOf(channelRaw).isBlank()) {
+            setClientChannel(String.valueOf(channelRaw));
+        } else {
+            clearClientChannel();
+        }
+        Object focusRaw = raw.get("clientFocus");
+        if (focusRaw instanceof Map<?, ?> focusMap) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> focus = new LinkedHashMap<>((Map<String, Object>) focusMap);
+            setClientFocus(focus);
+        } else {
+            clearClientFocus();
+        }
+        Object localeRaw = raw.get("uiLocale");
+        if (localeRaw != null && !String.valueOf(localeRaw).isBlank()) {
+            setUiLocale(String.valueOf(localeRaw));
+        } else {
+            clearUiLocale();
+        }
+    }
+
+    /** Copy per-turn UI context from another run state (async submit reload). */
+    public void copyTurnUiContextFrom(AgentRunState other) {
+        if (other == null) {
+            return;
+        }
+        setClientChannel(other.clientChannel());
+        setClientFocus(other.clientFocus());
+        setUiLocale(other.uiLocale());
     }
 
     /** @deprecated use {@link #snapshot(ObjectMapper)} */
