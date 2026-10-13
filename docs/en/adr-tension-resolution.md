@@ -17,7 +17,7 @@ Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 | Knobs vs profiles | **Closed** (Wave 1B) | [0033](decisions/0033-prod-idle-demostand-tuning.md) × [0026](decisions/0026-elastic-telemetry-ingress.md) | 1B | Effective-config API + profile-first docs ([#493](https://github.com/iot-solutions-ru/ispf/pull/493)) |
 | Silent cluster degradation | **Closed** (Wave 1C) | [0069](decisions/0069-cluster-consistency.md) × [0029](decisions/0029-cluster-live-variable-replica-sync.md)/[0030](decisions/0030-cluster-config-structure-replica-sync.md) | 1C | Fail-closed JetStream/Redis ([#494](https://github.com/iot-solutions-ru/ispf/pull/494)) |
 | Ui-pack on console origin | **Closed** (Wave 2A Partial) | [0073](decisions/0073-hosted-ui-pack-trust.md) × [0054](decisions/0054-hosted-ui-packs.md) | 2A | CSP + scoped deny Partial ([#495](https://github.com/iot-solutions-ru/ispf/pull/495)); full partner token mint may remain Gap per 0073 |
-| Five time-series stores | **Closed** (Wave 2B Partial) | [0074](decisions/0074-historian-quality-persistence.md) × [0025b](decisions/0025-cassandra-scylla-timeseries-store.md)/[0035](decisions/0035-historian-dual-write.md) | 2B | jdbc quality + dual-write `secondary_failures`; CH TCK Partial; Scylla experimental ([#496](https://github.com/iot-solutions-ru/ispf/pull/496)) |
+| Five time-series stores | **Closed** (Wave 2B) | [0074](decisions/0074-historian-quality-persistence.md) × [0025b](decisions/0025-cassandra-scylla-timeseries-store.md)/[0035](decisions/0035-historian-dual-write.md) | 2B | jdbc + ClickHouse quality (CH TCK opt-in, not default CI) + dual-write `secondary_failures`; Scylla experimental ([#496](https://github.com/iot-solutions-ru/ispf/pull/496)) |
 | Breadth vs depth (OT) | **Planned** | [0067](decisions/0067-field-certified-maturity.md) × [0022](decisions/0022-driver-production-matrix.md) | 3A | **Done when (ops):** first customer-plant C1 pack complete per [field-c1-evidence-checklist](field-c1-evidence-checklist.md) + `FIELD_EVIDENCE_PATHS` matrix row merged (**FIELD=0** until then). Wave 3A ops shipped: [docs/evidence/field-c1/](../evidence/field-c1/README.md) template |
 | External KMS / GOST | **Closed** (Wave 3B policy) | [0076](decisions/0076-external-secrets-providers.md) | 3B | Policy non-claim without code: provider SPI **only** under named tender; envelope stays **Closed** on [0065](decisions/0065-secrets-key-rotation.md) |
 
@@ -30,7 +30,7 @@ Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 | **1B** | Code | Effective configuration surface + 0033 docs (**shipped**) |
 | **1C** | Code | Cluster fail-closed JetStream/Redis |
 | **2A** | Code | Ui-pack CSP + scoped token |
-| **2B** | Code | Historian quality TCK (jdbc **Done**, ClickHouse container **Partial**) + dual-write secondary failure counter |
+| **2B** | Code | Historian quality TCK (jdbc **Done**, ClickHouse container **Done** opt-in) + dual-write secondary failure counter |
 | **3A** | Ops | [field-c1-evidence-checklist](field-c1-evidence-checklist.md) + [evidence/field-c1/](../evidence/field-c1/README.md) template (FIELD=0 until named plant pack + matrix PR) |
 | **3B** | Policy | [0076](decisions/0076-external-secrets-providers.md) non-claim closed; SPI deferred to named tender |
 

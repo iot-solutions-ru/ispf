@@ -4,7 +4,7 @@
 
 ## Статус
 
-**Accepted / implementation Partial** (Wave 2B) — см. канонический EN-текст. jdbc TCK зелёный; ClickHouse container round-trip и Cassandra/Scylla ещё открыты.
+**Accepted** (Wave 2B) — см. канонический EN-текст. jdbc и ClickHouse (opt-in `ISPF_CLICKHOUSE_QUALITY_TCK=true`, не default CI) гоняют `GOOD` / `UNCERTAIN` / `BAD`. Cassandra/Scylla остаётся experimental.
 
 ## Суть
 

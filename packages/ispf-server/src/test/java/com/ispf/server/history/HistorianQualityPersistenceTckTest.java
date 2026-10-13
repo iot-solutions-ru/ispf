@@ -19,8 +19,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * ADR-0074: jdbc historian quality round-trip. ClickHouse container round-trip is a follow-up
- * (no Testcontainers profile in this repo). Cassandra/Scylla stays quality-incapable.
+ * ADR-0074: jdbc historian quality round-trip. ClickHouse proof is
+ * {@link HistorianQualityClickHouseTckTest} (opt-in; default CI does not start Docker).
+ * Cassandra/Scylla stays quality-incapable.
  */
 class HistorianQualityPersistenceTckTest {
 

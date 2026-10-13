@@ -18,7 +18,7 @@ BL-82 (REQ-EX Wave J). Industrial protocols expose status/quality (OPC UA Status
    - OPC UA: Milo `StatusCode` → GOOD / UNCERTAIN / BAD.
    - Virtual demo: cycles quality on `temperature` for lab HMI.
 4. **HMI charts** — trend/chart widgets **omit** `BAD` samples (line gap via `null` value, `connectNulls={false}`). `UNCERTAIN` remains plottable (future: dashed segment).
-5. **Historian** — jdbc persists nullable `quality` beside the value ([0074](0074-historian-quality-persistence.md)). Null means unknown / pre-v2, not GOOD. ClickHouse bootstrap includes the column; a container round-trip is still open. Cassandra/Scylla does not store quality.
+5. **Historian** — jdbc and ClickHouse persist nullable `quality` beside the value ([0074](0074-historian-quality-persistence.md)). Null means unknown / pre-v2, not GOOD. The ClickHouse proof is an opt-in container test (`ISPF_CLICKHOUSE_QUALITY_TCK=true`), not a default CI job. Cassandra/Scylla does not store quality.
 
 ### Honesty — Done / Partial / Gap
 
@@ -28,7 +28,7 @@ BL-82 (REQ-EX Wave J). Industrial protocols expose status/quality (OPC UA Status
 | HMI omit BAD | **Done** |
 | OPC UA + virtual mapping | **Done** |
 | BACnet status-flags mapping | **Partial** / deferred driver change |
-| Historian column + dual-backend TCK | **Partial** — jdbc TCK green ([0074](0074-historian-quality-persistence.md)); ClickHouse container round-trip and Cassandra/Scylla still open |
+| Historian column + flagship TCK | **Done** for jdbc + ClickHouse ([0074](0074-historian-quality-persistence.md); ClickHouse is opt-in, not default CI). Cassandra/Scylla **Gap** (experimental, quality-incapable) |
 
 Do **not** claim PI-class historian quality from 0025a alone.
 
@@ -36,7 +36,7 @@ Do **not** claim PI-class historian quality from 0025a alone.
 
 - `DriverProductionMatrix` adds `QUALITY` capability for `virtual` and `opcua`.
 - Chart widgets read `quality` from bound variable row when present.
-- Scorecard Historian stays **9.5**. jdbc quality TCK is green; ClickHouse container round-trip and Cassandra/Scylla quality are still open ([0074](0074-historian-quality-persistence.md)).
+- Scorecard Historian stays **9.5**. jdbc and ClickHouse quality round-trips are in place (ClickHouse opt-in, not default CI). Cassandra/Scylla stays experimental ([0074](0074-historian-quality-persistence.md)).
 
 ## Related
 
