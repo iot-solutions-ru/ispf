@@ -254,11 +254,12 @@ With `ISPF_*_ELASTIC=false`, Spring uses **fixed** `*_WORKERS` / `*_THREADS`, no
 | L3 ingress | `ISPF_RUNTIME_TELEMETRY_INGRESS_ELASTIC_WORKERS=false`, min/max 1–2 |
 | Driver I/O / ingress buffer | `ISPF_DRIVER_IO_THREADS=2`, `ISPF_DRIVER_INGRESS_BUFFER_THREADS=1` |
 
-Ready overlay: [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env). Apply (merge + **recreate** container): [`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh).
+Apply the overlay (merge + **recreate** container): [`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh).
 
 Additional idle settings:
 
 ```properties
+ISPF_DEPLOY_PROFILE=demo-idle
 ISPF_VARIABLE_HISTORY_STORE=jdbc
 ISPF_EVENT_JOURNAL_STORE=jdbc
 ISPF_EVENT_JOURNAL_ELASTIC_WRITER=false

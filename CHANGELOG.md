@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **Effective configuration (Wave 1B)** — `GET /api/v1/platform/effective-config` exposes resolved replica profile and pool min/max snapshot ([0033](docs/en/decisions/0033-prod-idle-demostand-tuning.md)); demostand docs prefer named profiles over ad-hoc per-tier env.
 - **Excellence gap ADRs 0068–0076** — backup/DR tiers, cluster consistency, N→N+1 upgrade gate, northbound/UNS, edge fleet lanes, ui-pack trust, historian quality persistence, OTel/SLO taxonomy, external secrets providers (KMS/HSM/GOST non-claims). Docs-only honesty contracts; implementation residuals explicit.
 - **Platform security model (ADR-0066)** — accepted decision record for auth → RBAC → tenancy → object/MEMBER ACL → federation channel ceiling → secrets layers; hard rules and honesty table; pointers from `security.md` / `multi-tenant.md` (no runtime change).
 - **Bundle upgrade lab gate (ADR-0064 Wave 2)** — `BundleUpgradeCompatGateTest` validates catalog `marketplace-demo` at `formatVersion: 1`, rejects unsupported formats, and redeploys via local marketplace install; docs [release-upgrade](docs/en/release-upgrade.md). Honesty: lab only — not cluster image N→N+1.
