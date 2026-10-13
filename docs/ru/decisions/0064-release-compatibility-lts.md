@@ -62,9 +62,9 @@ ISPF на `0.9.x`. Нужен письменный контракт для:
 
 ## Последствия
 
-- Fitness: `BundleFormatVersionTest`, `BundleSemverContractTest`, schema `bundle.schema.json`.
-- Docs: [applications](../applications.md), [0007](0007-bundle-tree-packaging.md), [0037](0037-relational-core-portability.md).
-- Доказательство rolling-upgrade кластера N → N+1 в CI — follow-up, не волна 1.
+- Fitness: `BundleFormatVersionTest`, `BundleUpgradeCompatGateTest`, `BundleSemverContractTest`, schema `bundle.schema.json`.
+- Docs: [applications](../applications.md), [release-upgrade](../release-upgrade.md), [0007](0007-bundle-tree-packaging.md), [0037](0037-relational-core-portability.md).
+- **Волна 2 (lab):** accept/reject format + install/redeploy marketplace-demo — [release-upgrade](../release-upgrade.md). **Cluster N → N+1** — всё ещё follow-up.
 
 ### Риски
 

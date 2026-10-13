@@ -682,6 +682,8 @@
   "scriptSteps.field.parentPath": "Parent path",
   "scriptSteps.field.instanceName": "Instance name",
   "scriptSteps.field.functionName": "Function name",
+  "scriptSteps.functionNamesNeedObject": "Set object path (or self) first — the list is that object's functions.",
+  "scriptSteps.functionNamesEmpty": "The target object has no functions.",
   "scriptSteps.field.input": "Input (map)",
   "scriptSteps.field.workflowPath": "Workflow path",
   "scriptSteps.field.statusIn": "Statuses",

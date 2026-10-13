@@ -42,10 +42,13 @@
   "functionJournal.subtitle": "Funktionsaufrufe (wenn Audit für das Objekt aktiv ist)",
   "functionJournal.title": "Funktionsaufrufjournal",
   "invokeFunction.federatedHint": "Der Aufruf wird über die Proxy-API an den Verbund-Peer weitergeleitet.",
-  "invokeFunction.input": "Eingabe (JSON DataRecord)",
+  "invokeFunction.input": "Eingabe",
   "invokeFunction.inputHint": "Leere rows — Plattform füllt inputSchema aus Deskriptor.",
   "invokeFunction.invoke": "Aufrufen",
   "invokeFunction.invoking": "Aufruf…",
+  "invokeFunction.jsonToggle": "JSON",
   "invokeFunction.result": "Ergebnis",
+  "invokeFunction.resultHint": "Schreibgeschützte Felder laut outputSchema. JSON zeigt den vollen DataRecord.",
+  "invokeFunction.resultJsonHint": "Vollständige Invoke-Antwort (schema und rows).",
   "invokeFunction.title": "Funktion aufrufen"
 }

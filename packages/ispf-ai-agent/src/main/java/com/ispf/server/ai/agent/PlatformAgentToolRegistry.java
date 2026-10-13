@@ -71,6 +71,22 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
 
     static final Set<String> OPERATOR_TOOLS = OperatorAgentToolAllowlist.ALLOWED_TOOLS;
 
+    /**
+     * Tools that hard-require {@link OperatorAgentScope}. They must not appear in the ADMIN
+     * catalog (Admin Copilot) — otherwise the model calls them, gets "Operator scope not configured",
+     * then burns discovery budget on {@code search_context} retries.
+     */
+    static final Set<String> OPERATOR_SCOPED_ONLY_TOOLS = Set.of(
+            "get_operator_scope",
+            "list_app_memory",
+            "remember_app_memory",
+            "list_app_documents",
+            "read_app_document",
+            "search_app_documents",
+            "get_operator_link",
+            "list_work_queue"
+    );
+
     private final Map<String, PlatformAgentTool> toolsByName;
     private final OperatorAgentToolPolicy operatorAgentToolPolicy;
     private final WorkflowService workflowService;
@@ -344,7 +360,7 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 ? operatorAgentToolPolicy.allowedTools(authentication)
                 : Set.of();
         return toolsByName.values().stream()
-                .filter(tool -> profile != AgentProfile.OPERATOR || operatorAllowed.contains(tool.name()))
+                .filter(tool -> isVisibleForProfile(tool.name(), profile, operatorAllowed))
                 .map(tool -> {
                     Map<String, Object> row = new LinkedHashMap<>();
                     row.put("name", tool.name());
@@ -353,6 +369,16 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                     return row;
                 })
                 .toList();
+    }
+
+    static boolean isVisibleForProfile(String toolName, AgentProfile profile, Set<String> operatorAllowed) {
+        if (toolName == null || toolName.isBlank()) {
+            return false;
+        }
+        if (profile == AgentProfile.OPERATOR) {
+            return operatorAllowed != null && operatorAllowed.contains(toolName);
+        }
+        return !OPERATOR_SCOPED_ONLY_TOOLS.contains(toolName);
     }
 
     public boolean isKnownTool(String toolName) {
@@ -380,6 +406,13 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                         "error", "Tool not allowed in operator mode: " + toolName
                 );
             }
+        } else if (OPERATOR_SCOPED_ONLY_TOOLS.contains(toolName)) {
+            return Map.of(
+                    "status", "ERROR",
+                    "error", "Tool requires operator app scope (not available in admin/copilot mode)",
+                    "hint", "Use search_context / get_automation_schema / LIVE UI SNAPSHOT for admin Q&A. "
+                            + "Operator document tools only work in the operator HMI copilot."
+            );
         }
         if (context.isOperator()) {
             try {

@@ -91,6 +91,41 @@ class PlatformScriptBridgeTest {
     }
 
     @Test
+    void writeVariableKeepsOmittedFields() {
+        String name = "script-bridge-partial-" + System.nanoTime();
+        aclObjectPath = "root.platform.devices." + name;
+        objectManager.create(
+                "root.platform.devices",
+                name,
+                ObjectType.DEVICE,
+                "Partial write",
+                "",
+                null
+        );
+        DataSchema schema = DataSchema.builder("reading")
+                .field("value", FieldType.INTEGER)
+                .field("label", FieldType.STRING)
+                .build();
+        objectManager.createVariable(
+                aclObjectPath,
+                "reading",
+                schema,
+                true,
+                true,
+                DataRecord.single(schema, Map.of("value", 1, "label", "room")),
+                false,
+                null,
+                List.of(),
+                List.of()
+        );
+
+        bridge.writeVariableFields(aclObjectPath, "reading", Map.of("value", 9));
+
+        var reading = objectManager.require(aclObjectPath).getVariable("reading").orElseThrow().value().orElseThrow();
+        assertThat(reading.firstRow()).containsEntry("value", 9).containsEntry("label", "room");
+    }
+
+    @Test
     void queryRowsReturnsDeviceInventory() {
         List<Map<String, Object>> rows = bridge.queryRows("""
                 {

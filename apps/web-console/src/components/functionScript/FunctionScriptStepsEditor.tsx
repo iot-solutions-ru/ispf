@@ -24,18 +24,21 @@ import {
   type WhenConditionKind,
 } from "../../utils/functionScript/functionScriptSteps";
 import type { ObjectType } from "../../types";
-import { ObjectPathField } from "../../ui";
+import { ObjectFunctionSelect, ObjectPathField, resolveScriptInvokeObjectPath } from "../../ui";
 import { FOLDER_OBJECT_TYPES } from "../../ui/objectPathFilters";
 
 interface FunctionScriptStepsEditorProps {
   value: string;
   onChange: (next: string) => void;
+  /** Object that owns the script function (for invoke_function path `self`). */
+  callerObjectPath?: string;
 }
 
 interface StepListEditorProps {
   steps: EditableScriptStep[];
   onChange: (next: EditableScriptStep[]) => void;
   nested?: boolean;
+  callerObjectPath?: string;
 }
 
 function patchStep(items: EditableScriptStep[], id: string, patch: Partial<ScriptStep>): EditableScriptStep[] {
@@ -270,10 +273,12 @@ function KeyValueField({
 }
 
 function NestedStepsField({
+  callerObjectPath,
   label,
   value,
   onChange,
 }: {
+  callerObjectPath?: string;
   label: string;
   value: unknown;
   onChange: (next: ScriptStep[]) => void;
@@ -290,7 +295,12 @@ function NestedStepsField({
   return (
     <div className="script-step-nested-block">
       <span className="field-caption">{label}</span>
-      <ScriptStepListEditor nested steps={nestedSteps} onChange={commit} />
+      <ScriptStepListEditor
+        nested
+        steps={nestedSteps}
+        onChange={commit}
+        callerObjectPath={callerObjectPath}
+      />
     </div>
   );
 }
@@ -364,9 +374,11 @@ function WhenConditionFields({
 function StepFields({
   step,
   onPatch,
+  callerObjectPath,
 }: {
   step: ScriptStep;
   onPatch: (patch: Partial<ScriptStep>) => void;
+  callerObjectPath?: string;
 }) {
   const { t } = useTranslation("inspector");
   const type = step.type;
@@ -376,11 +388,13 @@ function StepFields({
       <>
         <WhenConditionFields step={step} onPatch={onPatch} />
         <NestedStepsField
+          callerObjectPath={callerObjectPath}
           label={t("scriptSteps.field.thenSteps")}
           value={step.then}
           onChange={(then) => onPatch({ then })}
         />
         <NestedStepsField
+          callerObjectPath={callerObjectPath}
           label={t("scriptSteps.field.elseSteps")}
           value={step.else}
           onChange={(elseSteps) => onPatch({ else: elseSteps })}
@@ -557,11 +571,15 @@ function StepFields({
             onChange={(next) => onPatch({ objectPath: next })}
             placeholder="self"
           />
-          <TextField
+          <ObjectFunctionSelect
             label={t("scriptSteps.field.functionName")}
+            objectPath={resolveScriptInvokeObjectPath(
+              String(step.objectPath ?? ""),
+              callerObjectPath ?? ""
+            )}
             value={String(step.functionName ?? "")}
             onChange={(next) => onPatch({ functionName: next })}
-            placeholder="acknowledgeAlarm"
+            hintNamespace="inspector"
           />
           <KeyValueField
             label={t("scriptSteps.field.input")}
@@ -653,7 +671,12 @@ function StepTypeSelect({
   );
 }
 
-function ScriptStepListEditor({ steps, onChange, nested = false }: StepListEditorProps) {
+function ScriptStepListEditor({
+  steps,
+  onChange,
+  nested = false,
+  callerObjectPath,
+}: StepListEditorProps) {
   const { t } = useTranslation("inspector");
 
   function updateStep(id: string, patch: Partial<ScriptStep>) {
@@ -717,7 +740,11 @@ function ScriptStepListEditor({ steps, onChange, nested = false }: StepListEdito
               </button>
             </div>
           </header>
-          <StepFields step={item.step} onPatch={(patch) => updateStep(item.id, patch)} />
+          <StepFields
+            step={item.step}
+            onPatch={(patch) => updateStep(item.id, patch)}
+            callerObjectPath={callerObjectPath}
+          />
         </article>
       ))}
       <div className="script-step-list-actions">
@@ -734,7 +761,11 @@ function ScriptStepListEditor({ steps, onChange, nested = false }: StepListEdito
   );
 }
 
-export default function FunctionScriptStepsEditor({ value, onChange }: FunctionScriptStepsEditorProps) {
+export default function FunctionScriptStepsEditor({
+  value,
+  onChange,
+  callerObjectPath = "",
+}: FunctionScriptStepsEditorProps) {
   const { t } = useTranslation("inspector");
   const parsed = useMemo(() => parseScriptBody(value), [value]);
   const [steps, setSteps] = useState(parsed.steps);
@@ -834,7 +865,7 @@ export default function FunctionScriptStepsEditor({ value, onChange }: FunctionS
       )}
 
       {!showJson ? (
-        <ScriptStepListEditor steps={steps} onChange={commitSteps} />
+        <ScriptStepListEditor steps={steps} onChange={commitSteps} callerObjectPath={callerObjectPath} />
       ) : (
         <>
           <textarea

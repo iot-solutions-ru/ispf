@@ -20,6 +20,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 ### Added
 
 - **Platform security model (ADR-0066)** — accepted decision record for auth → RBAC → tenancy → object/MEMBER ACL → federation channel ceiling → secrets layers; hard rules and honesty table; pointers from `security.md` / `multi-tenant.md` (no runtime change).
+- **Bundle upgrade lab gate (ADR-0064 Wave 2)** — `BundleUpgradeCompatGateTest` validates catalog `marketplace-demo` at `formatVersion: 1`, rejects unsupported formats, and redeploys via local marketplace install; docs [release-upgrade](docs/en/release-upgrade.md). Honesty: lab only — not cluster image N→N+1.
 - **Secrets-key envelope + rotation (ADR-0065)** — new ciphertext uses `ispf1.<keyId>.<base64>`; legacy Base64 still decrypts; `ispf.security.secrets-previous-key` for dual-read; `POST /api/v1/federation/secrets-key/reencrypt` rewrites vault + federation rows; DATABASE UI key change re-encrypts in place instead of requiring agent deletion.
 
 ### Changed
