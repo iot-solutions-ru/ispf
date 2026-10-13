@@ -230,7 +230,7 @@ export default function OperatorAgentPanel({
             onPick={(text) => void sendMessage(text)}
           />
         )}
-        {messages.map((message, index) => (
+        {messages.map((message) => (
           <div
             key={message.id}
             className={message.role === "user" ? "ai-agent-bubble user" : "ai-agent-bubble agent"}
