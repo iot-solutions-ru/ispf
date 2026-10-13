@@ -862,6 +862,12 @@ final class AgentLoopGuard {
                     Example: create_object type=USER name=user1 roles=operator password=ChangeMe!123. \
                     Do NOT send OPERATOR / ROLE_OPERATOR.""";
         }
+        if ("set_dashboard_layout".equals(toolName) && (lower.contains("invalid layout") || lower.contains("json"))) {
+            return """
+                    layoutJson must be valid JSON (no trailing commas, all strings closed). \
+                    Prefer template= from get_dashboard_layout / catalog, or pass layout as a JSON object \
+                    (not a broken string). Retry set_dashboard_layout once with corrected layoutJson.""";
+        }
         if ("configure_alert".equals(toolName) || isFormalVerificationError(error)) {
             return """
                     conditionExpr must discriminate — formal verify rejects tautologies (true, 1==1, true||…). \
