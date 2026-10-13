@@ -52,6 +52,8 @@ final class AgentFunctionTools {
                         + "sourceType (script|java), sourceBody (JSON steps string OR Java class source), "
                         + "inputSchema, outputSchema ({name?, fields:[{name,type,nullable?}]}), "
                         + "optional description, dataSourcePath (script SQL), version. "
+                        + "Host path must be a SINGLETON hub (root.platform.singleton-blueprints.*) or INSTANCE twin — "
+                        + "never DEVICE (solution logic canon / ADR-0060). "
                         + "Java: public class implementing ObjectJavaFunction, compiled on save. "
                         + "Use get_function_template topic=java|script for skeleton. "
                         + "Test with invoke_tree_function. Application SQL functions: deploy_app_function sourceType=script.";

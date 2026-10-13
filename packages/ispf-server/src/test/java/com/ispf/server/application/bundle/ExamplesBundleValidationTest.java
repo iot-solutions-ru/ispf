@@ -103,6 +103,33 @@ class ExamplesBundleValidationTest {
     }
 
     @Test
+    void strictModePromotesLogicHostDeviceToError() throws Exception {
+        String json = """
+                {
+                  "version":"1.0.0",
+                  "displayName":"Bad Hub",
+                  "tablePrefix":"b_",
+                  "schemaName":"app_bad",
+                  "objects":[{"parentPath":"root.platform.devices","name":"bad-hub","type":"DEVICE"}],
+                  "functions":[{
+                    "objectPath":"root.platform.devices.bad-hub",
+                    "functionName":"listItems",
+                    "source":{"type":"script","body":"{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\"}}]}"}
+                  }]
+                }
+                """;
+        ApplicationBundleDeployService.BundleManifest manifest =
+                objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);
+        BundleValidationResult soft = validator.validate("bad-strict", manifest, false);
+        assertEquals(BundleValidationResult.OK, soft.status());
+        BundleValidationResult hard = validator.validate("bad-strict", manifest, true);
+        assertEquals(BundleValidationResult.ERROR, hard.status());
+        assertTrue(hard.issues().stream().anyMatch(i ->
+                "LOGIC_HOST_DEVICE".equals(i.code())
+                        && BundleValidationIssue.ERROR.equals(i.severity())));
+    }
+
+    @Test
     void warnsWhenFunctionHostHasNoModelAndDoesNotBlock() throws Exception {
         BundleValidationResult result = validator.validate("shapeless", manifestWithHost(null, null, false));
         assertEquals(BundleValidationResult.OK, result.status(), String.join("; ", result.errors()));
