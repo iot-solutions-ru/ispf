@@ -12,6 +12,7 @@ Changelog отдельных application bundles — в манифестах п�
 ### Добавлено
 
 - ADR 0068–0076 (excellence gaps): backup/DR, consistency кластера, N→N+1, UNS, edge fleet, ui-pack trust, historian quality, OTel/SLO, external secrets — honesty-контракты; код-остатки явные.
+- Модель безопасности платформы (ADR-0066): auth → RBAC → tenancy → object/MEMBER ACL → federation ceiling → secrets; жёсткие правила и таблица честности; ссылки из `security.md` / `multi-tenant.md` (без смены runtime).
 - Lab-гейт upgrade bundle (ADR-0064 волна 2): `BundleUpgradeCompatGateTest` — catalog `marketplace-demo` с `formatVersion: 1`, reject неподдерживаемого формата, redeploy local marketplace; docs [release-upgrade](release-upgrade.md). Честность: только lab, не cluster N→N+1.
 - Envelope secrets-key + ротация (ADR-0065): ciphertext `ispf1.<keyId>.…`; legacy Base64 читается; `secrets-previous-key` для dual-read; `POST /api/v1/federation/secrets-key/reencrypt`; смена DATABASE-ключа из UI перешифровывает vault/federation на месте.
 

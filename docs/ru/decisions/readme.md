@@ -41,6 +41,7 @@
 | [0063-application-git-lifecycle](0063-application-git-lifecycle.md) | Git-вкладка APPLICATION: Connect/Status/Pull/Push→PR — **Accepted** |
 | [0064-release-compatibility-lts](0064-release-compatibility-lts.md) | Релизы, совместимость, LTS; `formatVersion` bundle — **Accepted** |
 | [0065-secrets-key-rotation](0065-secrets-key-rotation.md) | Envelope secrets-key (`ispf1.<kid>.…`), previous-key, re-encrypt — **Accepted** |
+| [0066-security-model](0066-security-model.md) | Модель безопасности (auth, RBAC, tenancy, MEMBER ACL, secrets) — **Accepted** |
 | [0068-backup-and-dr](0068-backup-and-dr.md) | Backup T1–T4 и RPO/RTO honesty — **Accepted** |
 | [0069-cluster-consistency](0069-cluster-consistency.md) | Контракт консистентности кластера — **Accepted** |
 | [0070-cluster-rolling-upgrade](0070-cluster-rolling-upgrade.md) | Cluster N→N+1 Wave 3 — **Accepted** |

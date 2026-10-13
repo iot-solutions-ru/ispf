@@ -28,6 +28,10 @@ public class ClusterPlatformBootstrapService {
     private final ObjectNodeRepository nodeRepository;
     private final AtomicBoolean fixtureLeaderResolved = new AtomicBoolean();
     private volatile boolean fixtureBootstrapLeader;
+    private int fixtureWaitAttempts = 120;
+    private Duration fixtureWaitPoll = Duration.ofSeconds(2);
+    /** Empty when this replica did not time out, or cluster fixture wait does not apply. */
+    private volatile String fixtureBootstrapFailure = "";
 
     public ClusterPlatformBootstrapService(
             ClusterProperties clusterProperties,
@@ -103,11 +107,12 @@ public class ClusterPlatformBootstrapService {
         log.info("Waiting for cluster fixture bootstrap to complete in shared database...");
         long lastCount = -1;
         int stablePolls = 0;
-        for (int attempt = 0; attempt < 120; attempt++) {
+        for (int attempt = 0; attempt < fixtureWaitAttempts; attempt++) {
             long deviceNodes = countDeviceNodesInDatabase();
             if (deviceNodes > 0 && deviceNodes == lastCount) {
                 stablePolls++;
                 if (stablePolls >= 3) {
+                    fixtureBootstrapFailure = "";
                     log.info("Cluster fixture bootstrap complete ({} device nodes in DB)", deviceNodes);
                     return;
                 }
@@ -115,9 +120,25 @@ public class ClusterPlatformBootstrapService {
                 stablePolls = 0;
             }
             lastCount = deviceNodes;
-            sleepQuietly(Duration.ofSeconds(2));
+            sleepQuietly(fixtureWaitPoll);
         }
-        log.warn("Timed out waiting for cluster fixture bootstrap; proceeding with {} device nodes in DB", lastCount);
+        fixtureBootstrapFailure = "Timed out waiting for cluster fixture bootstrap ("
+                + lastCount + " device nodes)";
+        log.error("{}, readiness is down, startup continues", fixtureBootstrapFailure);
+    }
+
+    public boolean isFixtureBootstrapReady() {
+        return fixtureBootstrapFailure.isEmpty();
+    }
+
+    public String fixtureBootstrapFailure() {
+        return fixtureBootstrapFailure;
+    }
+
+    /** Tests shorten the follower wait. Production keeps 120 polls of 2 seconds. */
+    void setFixtureWait(int attempts, Duration poll) {
+        this.fixtureWaitAttempts = attempts;
+        this.fixtureWaitPoll = poll;
     }
 
     long countDeviceNodesInDatabase() {
