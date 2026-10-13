@@ -897,6 +897,7 @@ public final class AgentToolInputSchemas {
                 props(
                         "query", stringProp("Search query"),
                         "topic", stringProp("ContextPack topic id"),
+                        "mode", stringProp("hybrid|lexical|vector (default hybrid)"),
                         "limit", integerProp("Max slices")
                 ),
                 List.of(),

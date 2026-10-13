@@ -8,27 +8,41 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
  * Scored search over ContextPack indices (doc chunks, features, examples, drivers).
+ * Hybrid mode blends lexical scores with cosine similarity on pack chunk embeddings.
  */
 @Service
 public class ContextPackSearchService {
 
-    private static final int MAX_HITS = 5;
+    private static final int MAX_HITS = 8;
+    private static final double LEXICAL_WEIGHT = 0.45;
+    private static final double VECTOR_WEIGHT = 0.55;
 
     private final ContextPackService contextPackService;
+    private final ContextPackEmbeddingClient embeddingClient;
 
-    public ContextPackSearchService(ContextPackService contextPackService) {
+    public ContextPackSearchService(
+            ContextPackService contextPackService,
+            ContextPackEmbeddingClient embeddingClient
+    ) {
         this.contextPackService = contextPackService;
+        this.embeddingClient = embeddingClient;
     }
 
     public Map<String, Object> search(String query, String topic) {
+        return search(query, topic, "hybrid");
+    }
+
+    public Map<String, Object> search(String query, String topic, String mode) {
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         if (q.isBlank()) {
             return Map.of("status", "ERROR", "error", "query is required");
         }
+        String searchMode = normalizeMode(mode);
         Map<String, Object> pack = contextPackService.loadPack();
         List<Map<String, Object>> hits = new ArrayList<>();
         String normalizedTopic = topic == null || topic.isBlank() ? "all" : topic.trim().toLowerCase(Locale.ROOT);
@@ -45,7 +59,7 @@ public class ContextPackSearchService {
         if (matchesTopic(normalizedTopic, "gaps", "readiness", "all")) {
             collectGapHits(pack, q, hits);
         }
-        collectDocChunkHits(pack, q, hits, normalizedTopic);
+        collectDocChunkHits(pack, q, hits, normalizedTopic, searchMode);
         if (matchesTopic(normalizedTopic, "agent-knowledge", "all")) {
             collectDocCatalogHits(pack, q, hits);
         }
@@ -53,16 +67,23 @@ public class ContextPackSearchService {
             collectLegacyDocHits(pack, q, hits);
         }
 
-        hits.sort(Comparator.comparingInt(row -> -((Number) row.get("score")).intValue()));
+        hits.sort(Comparator.comparingDouble(row -> -((Number) row.get("score")).doubleValue()));
         List<Map<String, Object>> top = hits.stream().limit(MAX_HITS).toList();
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "OK");
         result.put("query", query);
         result.put("topic", normalizedTopic);
+        result.put("mode", searchMode);
         result.put("contextPackVersion", pack.getOrDefault("contextPackVersion", "unknown"));
+        result.put("embeddingModel", pack.getOrDefault("embeddingModel", ""));
         result.put("hits", top);
         result.put("hitCount", top.size());
+        result.put(
+                "hint",
+                "Use these short hits — do not re-call search_context with the same query. "
+                        + "Next: list_objects / mutate tools, or finish with Markdown."
+        );
         return result;
     }
 
@@ -223,7 +244,6 @@ public class ContextPackSearchService {
     private void collectGapHits(Map<String, Object> pack, String q, List<Map<String, Object>> hits) {
         for (Map<String, Object> row : ContextPackService.competitiveGaps(pack)) {
             int score = scoreRow(row, q, Set.of("dimension", "phaseRef", "keywords"));
-            // Broad readiness queries should still surface the largest gaps.
             if (q.contains("gap") || q.contains("readiness") || q.contains("scorecard") || q.contains("competitive")) {
                 score += 10 + (int) Math.round(gapBoost(row));
             }
@@ -251,12 +271,22 @@ public class ContextPackSearchService {
             Map<String, Object> pack,
             String q,
             List<Map<String, Object>> hits,
-            String topic
+            String topic,
+            String searchMode
     ) {
         Object chunks = pack.get("docChunks");
         if (!(chunks instanceof List<?> list)) {
             return;
         }
+        String embeddingModel = String.valueOf(pack.getOrDefault("embeddingModel", ""));
+        int embeddingDims = pack.get("embeddingDims") instanceof Number n ? n.intValue() : 0;
+        boolean hybrid = "hybrid".equals(searchMode) || "vector".equals(searchMode);
+        Optional<float[]> queryEmbedding = Optional.empty();
+        if (hybrid) {
+            queryEmbedding = embeddingClient.embedQuery(q, embeddingModel, embeddingDims);
+        }
+        boolean useVector = queryEmbedding.isPresent();
+
         for (Object item : list) {
             if (!(item instanceof Map<?, ?> row)) {
                 continue;
@@ -265,15 +295,42 @@ public class ContextPackSearchService {
             if (!topic.equals("all") && !chunkTopic.equals(topic) && !chunkTopic.equals("all")) {
                 continue;
             }
-            int score = scoreRow(row, q, Set.of("id", "title", "keywords", "text"));
-            if (score > 0) {
-                Map<String, Object> payload = new LinkedHashMap<>();
-                payload.put("chunkId", row.get("id"));
-                payload.put("title", row.get("title"));
-                payload.put("topic", row.get("topic"));
-                payload.put("snippet", snippet(String.valueOf(row.get("text")), q));
-                hits.add(hit("doc", String.valueOf(row.get("id")), score, payload));
+            int lexical = scoreRow(row, q, Set.of("id", "title", "keywords", "text"));
+            double vectorScore = 0.0;
+            if (useVector) {
+                float[] chunkVec = ContextPackHashEmbedder.toFloatArray(row.get("embedding"));
+                if (chunkVec != null) {
+                    vectorScore = ContextPackHashEmbedder.cosine(queryEmbedding.get(), chunkVec);
+                }
             }
+            double combined;
+            if ("vector".equals(searchMode) && useVector) {
+                combined = Math.max(0.0, vectorScore) * 100.0;
+            } else if (useVector && "hybrid".equals(searchMode)) {
+                double lexNorm = Math.min(1.0, lexical / 40.0);
+                double vecNorm = Math.max(0.0, vectorScore);
+                combined = (LEXICAL_WEIGHT * lexNorm + VECTOR_WEIGHT * vecNorm) * 100.0;
+                // Keep weak lexical-only docs discoverable when vector is near zero.
+                if (lexical > 0 && combined < lexical) {
+                    combined = lexical;
+                }
+            } else {
+                combined = lexical;
+            }
+            if (combined <= 0) {
+                continue;
+            }
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("chunkId", row.get("id"));
+            payload.put("title", row.get("title"));
+            payload.put("topic", row.get("topic"));
+            payload.put("docRef", row.get("id"));
+            payload.put("snippet", snippet(String.valueOf(row.get("text")), q));
+            if (useVector) {
+                payload.put("vectorScore", Math.round(vectorScore * 1000.0) / 1000.0);
+                payload.put("lexicalScore", lexical);
+            }
+            hits.add(hit("doc", String.valueOf(row.get("id")), combined, payload));
         }
     }
 
@@ -334,11 +391,11 @@ public class ContextPackSearchService {
         return score;
     }
 
-    private static Map<String, Object> hit(String kind, String id, int score, Map<String, Object> payload) {
+    private static Map<String, Object> hit(String kind, String id, double score, Map<String, Object> payload) {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("kind", kind);
         row.put("id", id);
-        row.put("score", score);
+        row.put("score", Math.round(score * 10.0) / 10.0);
         row.put("payload", payload);
         return row;
     }
@@ -363,6 +420,18 @@ public class ContextPackSearchService {
             }
         }
         return false;
+    }
+
+    private static String normalizeMode(String mode) {
+        if (mode == null || mode.isBlank()) {
+            return "hybrid";
+        }
+        String key = mode.trim().toLowerCase(Locale.ROOT);
+        return switch (key) {
+            case "lexical", "keyword", "text" -> "lexical";
+            case "vector", "embedding", "semantic" -> "vector";
+            default -> "hybrid";
+        };
     }
 
     @SuppressWarnings("unchecked")
