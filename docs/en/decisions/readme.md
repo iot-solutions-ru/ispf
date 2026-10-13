@@ -123,7 +123,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0071-northbound-uns](0071-northbound-uns.md) | Northbound / UNS scope vs lab drivers — **Accepted** |
 | [0072-edge-fleet-rollout](0072-edge-fleet-rollout.md) | Edge profile vs S&F vs fleet GitOps lanes — **Accepted** |
 | [0073-hosted-ui-pack-trust](0073-hosted-ui-pack-trust.md) | Ui-pack trust / CSP residual (amends 0054) — **Accepted** |
-| [0074-historian-quality-persistence](0074-historian-quality-persistence.md) | Historian quality column + TCK (amends 0025) — **Accepted** |
+| [0074-historian-quality-persistence](0074-historian-quality-persistence.md) | Historian quality column + jdbc TCK (amends 0025a) — **Accepted**, implementation **Partial** |
 | [0075-observability-slo-otel](0075-observability-slo-otel.md) | First-party metrics + OTel taxonomy / SLO honesty — **Accepted** |
 | [0076-external-secrets-providers](0076-external-secrets-providers.md) | External KMS/HSM/Vault/GOST non-claims (amends 0065) — **Accepted** |
 

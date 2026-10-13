@@ -77,7 +77,6 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
     private final AtomicLong telemetryCoalesceDropCount = new AtomicLong();
     private final AtomicLong variableHistoryFlushedCount = new AtomicLong();
     private final AtomicLong historianDualWriteSecondaryFailures = new AtomicLong();
-    private final AtomicLong historianDualWriteSecondaryFailures = new AtomicLong();
     private final EnumMap<EventFireSource, AtomicLong> eventsFiredBySource = new EnumMap<>(EventFireSource.class);
     private final EnumMap<WorkflowStartTrigger, AtomicLong> workflowStartsByTrigger = new EnumMap<>(WorkflowStartTrigger.class);
     private final EnumMap<SqlBindingValues.Failure, AtomicLong> sqlBindingFailuresByReason =
@@ -373,13 +372,6 @@ public class AutomationMetricsRecorder implements WorkflowMetrics {
 
     public void recordVariableHistoryFlushed(long count) {
         variableHistoryFlushedCount.addAndGet(count);
-    }
-
-    /** ADR-0035 / 0074: ClickHouse (or other) secondary append failed; primary already succeeded. */
-    public void recordHistorianDualWriteSecondaryFailure() {
-        historianDualWriteSecondaryFailures.incrementAndGet();
-        meterRegistry.ifPresent(registry ->
-                registry.counter("ispf.historian.dual_write.secondary_failures").increment());
     }
 
     public long historianDualWriteSecondaryFailures() {

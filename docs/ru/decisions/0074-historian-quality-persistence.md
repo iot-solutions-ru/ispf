@@ -4,7 +4,7 @@
 
 ## Статус
 
-**Accepted** (2026-10-13) — см. канонический EN-текст.
+**Accepted / implementation Partial** (Wave 2B) — см. канонический EN-текст. jdbc TCK зелёный; ClickHouse container round-trip и Cassandra/Scylla ещё открыты.
 
 ## Суть
 

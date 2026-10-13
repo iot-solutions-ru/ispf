@@ -36,7 +36,7 @@ Do **not** claim PI-class historian quality from 0025a alone.
 
 - `DriverProductionMatrix` adds `QUALITY` capability for `virtual` and `opcua`.
 - Chart widgets read `quality` from bound variable row when present.
-- Scorecard Historian 10/10 blocked on quality persist evidence ([0074](0074-historian-quality-persistence.md)).
+- Scorecard Historian stays **9.5**. jdbc quality TCK is green; ClickHouse container round-trip and Cassandra/Scylla quality are still open ([0074](0074-historian-quality-persistence.md)).
 
 ## Related
 
