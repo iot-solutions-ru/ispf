@@ -307,6 +307,8 @@ export default function AdminCopilotPanel({ open, onClose }: AdminCopilotPanelPr
                 result={message.result}
                 onSuggestMessage={(text: string) => void handleSend(text)}
                 onAppendToInput={appendToInput}
+                /* Copilot is assistive — never auto-pick recommended actions (drawer). */
+                autoContinueEnabled={false}
               />
             )}
             {message.steps && message.steps.length > 0 && (

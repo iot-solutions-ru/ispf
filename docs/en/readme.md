@@ -166,6 +166,7 @@ Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in t
 |----------|--------|-------------|
 | [Deployment](deployment.md) | Stable | Docker, env vars |
 | [Demostand profiles](demostands.md) | Lab | Prod, lab, edge topologies |
+| [Customer demostand playbook](customer-demo-playbook.md) | Lab | 30–60 min show-the-customer agenda (MES / OT+HMI+air-gap) |
 | [Air-gap deployment](air-gap-deployment.md) | Stable | Offline installs |
 | [Federation](federation.md) | Beta | Hub / edge (maturity caveats) |
 | [Security](security.md) | Stable | RBAC, MFA |

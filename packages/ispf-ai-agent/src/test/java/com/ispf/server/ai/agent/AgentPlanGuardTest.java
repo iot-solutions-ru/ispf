@@ -172,6 +172,34 @@ class AgentPlanGuardTest {
     }
 
     @Test
+    void executeModeAllowsClarificationWithRecommendedSuggestion() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.EXECUTE);
+        AgentPlanGuard.beginTurn(state, "Собери кластер из виртуальных устройств", AgentProfile.ADMIN);
+        Map<String, Object> finish = Map.of(
+                "interactive", true,
+                "awaitingUser", true,
+                "autoContinueSeconds", 45,
+                "suggestions", List.of(
+                        Map.of(
+                                "label", "Hub under singleton-blueprints",
+                                "message", "Сделай hub как SINGLETON под singleton-blueprints",
+                                "primary", true
+                        ),
+                        Map.of(
+                                "label", "Folder under devices",
+                                "message", "Оставь virt-cluster папкой под devices"
+                        )
+                )
+        );
+        var outcome = AgentPlanGuard.evaluateFinish(
+                state, finish, List.of(), "Собери кластер из виртуальных устройств", AgentProfile.ADMIN
+        );
+        assertThat(outcome).isEqualTo(AgentPlanGuard.FinishOutcome.ALLOW_EXECUTION);
+        assertThat(AgentPlanGuard.isClarificationOnlyFinish(finish)).isTrue();
+    }
+
+    @Test
     void executeModeSkipsPlanningGateForComplexTask() {
         AgentRunState state = new AgentRunState();
         state.setInteractionMode(AgentInteractionMode.EXECUTE);

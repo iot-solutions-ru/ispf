@@ -32,8 +32,11 @@ export default function StatusBadgeWidgetView({
     refreshIntervalMs
   );
 
-  const status = bound.rawValue != null ? String(bound.rawValue) : "";
-  const color = DISPATCH_STATUS_COLORS[status] ?? "var(--text-muted)";
+  const status = bound.rawValue != null ? String(bound.rawValue).trim() : "";
+  const color =
+    DISPATCH_STATUS_COLORS[status]
+    ?? DISPATCH_STATUS_COLORS[status.toUpperCase()]
+    ?? "var(--text-muted)";
 
   return (
     <DashWidgetShell

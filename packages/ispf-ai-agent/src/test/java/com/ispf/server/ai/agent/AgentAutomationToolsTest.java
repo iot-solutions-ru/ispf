@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -73,6 +74,34 @@ class AgentAutomationToolsTest {
                 new ExpressionFormalVerificationService(new ExpressionFormalVerificationProperties())
         );
         context = new AgentContext("admin", null, new AgentRunState());
+    }
+
+    @Test
+    void createVariableCoercesBooleanInitialValueForDouble() throws Exception {
+        String path = "root.platform.mixin-blueprints.virtual-waves-sum-v1";
+        PlatformObject node = new PlatformObject("1", path, ObjectType.CUSTOM, "waves", "", null);
+        when(tenantScopeService.isPathVisible(eq(path), any())).thenReturn(true);
+        when(objectTreePort.require(path)).thenReturn(node);
+        when(objectTreePort.createVariable(eq(path), eq("waveSum"), any(), eq(true), eq(false), any(), eq(false), isNull()))
+                .thenAnswer(inv -> {
+                    Variable v = org.mockito.Mockito.mock(Variable.class);
+                    when(v.name()).thenReturn("waveSum");
+                    when(v.writable()).thenReturn(false);
+                    return v;
+                });
+
+        PlatformAgentTool tool = requireTool("create_variable");
+        Map<String, Object> result = tool.execute(
+                Map.of(
+                        "path", path,
+                        "name", "waveSum",
+                        "valueType", "DOUBLE",
+                        "initialValue", Map.of("value", false)
+                ),
+                context
+        );
+        assertEquals("OK", result.get("status"));
+        verify(objectTreePort).createVariable(eq(path), eq("waveSum"), any(), eq(true), eq(false), any(), eq(false), isNull());
     }
 
     @Test
@@ -271,6 +300,20 @@ class AgentAutomationToolsTest {
                 eq("Platform HMI"),
                 eq("root.platform.dashboards.virt-cluster-overview"),
                 any()
+        );
+    }
+
+    @Test
+    void normalizeOperatorAppIdStripsTreePrefix() {
+        assertEquals(
+                "virt-cluster-operator-app",
+                AgentAutomationTools.normalizeOperatorAppId(
+                        "root.platform.operator-apps.virt-cluster-operator-app"
+                )
+        );
+        assertEquals("platform", AgentAutomationTools.normalizeOperatorAppId(""));
+        assertThrows(IllegalArgumentException.class, () ->
+                AgentAutomationTools.normalizeOperatorAppId("root.platform.devices.foo")
         );
     }
 

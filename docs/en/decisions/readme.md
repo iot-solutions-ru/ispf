@@ -127,6 +127,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0074-historian-quality-persistence](0074-historian-quality-persistence.md) | Historian quality on jdbc + ClickHouse (CH TCK opt-in; amends 0025a) — **Accepted**; Scylla experimental |
 | [0075-observability-slo-otel](0075-observability-slo-otel.md) | First-party metrics + OTel taxonomy / SLO honesty — **Accepted** |
 | [0076-external-secrets-providers](0076-external-secrets-providers.md) | External KMS/HSM/Vault/GOST non-claims (amends 0065) — **Accepted** |
+| [0077-contextpack-hybrid-retrieval](0077-contextpack-hybrid-retrieval.md) | ContextPack hybrid lexical+embedding `search_context` — **Accepted** |
 
 ## Topic chains (read in order)
 

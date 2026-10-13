@@ -537,7 +537,8 @@ public class TreeFirstAgentService {
                                     : askMode
                                             ? "Ask mode: finish with a plain answer only — no phase=plan, plan, questions, or approval."
                                             : executeMode
-                                                    ? "Execute mode: act with tools — no phase=plan, plan, or clarifying questions."
+                                                    ? "Execute mode: act with tools — no phase=plan / full plan. "
+                                                            + "Clarifying questions+suggestions (interactive) are allowed when guessing."
                                                     : runStateAntiReplanHint(session.runState(), candidateResult)
                                                             ? "Execution phase: do not emit phase=plan — execute the next approved step."
                                                             : AgentLitePlanBootstrap.PLANNING_GUARD_ERROR;
@@ -583,8 +584,9 @@ public class TreeFirstAgentService {
                                             ? "Use read-only discovery tools, then finish with summary only "
                                                     + "(optional read-only suggestions — no plan panel)."
                                             : executeMode
-                                                    ? "Run discovery if needed, mutate with tools, then finish with summary "
-                                                            + "(optional open-device/open-dashboard suggestions)."
+                                                    ? "If details are ambiguous: finish with interactive suggestions "
+                                                            + "(one primary recommended + autoContinueSeconds). "
+                                                            + "Otherwise mutate with tools, then finish with summary."
                                                     : runStateAntiReplanHint(session.runState(), candidateResult)
                                                             ? "Follow the approved plan checklist step-by-step with tools."
                                                             : "Run discovery tools, then finish with result.phase=plan, "
@@ -607,8 +609,10 @@ public class TreeFirstAgentService {
                                                     + "result.questions, or approval suggestions. "
                                                     + "Run list_*/get_*/search_* if needed, then finish with a plain summary."
                                             : executeMode
-                                                    ? "Execute mode: do NOT emit phase=plan, result.plan, or result.questions. "
-                                                            + "Use tools to complete the task, then finish with a plain summary."
+                                                    ? "Execute mode: do NOT emit phase=plan or result.plan. "
+                                                            + "If you must ask: finish with interactive=true, suggestions "
+                                                            + "(one primary), autoContinueSeconds=45 — no blind tool spam. "
+                                                            + "Otherwise use tools and finish with a plain summary."
                                             : "Finish blocked during planning phase. "
                                                     + "Do NOT claim objects were created. "
                                                     + "Use read-only tools if needed, then finish with phase=plan, "
@@ -733,7 +737,26 @@ public class TreeFirstAgentService {
                 long toolStartNanos = System.nanoTime();
                 String executedTool = toolName;
                 Map<String, Object> toolResult;
-                if (profile == AgentProfile.OPERATOR) {
+                boolean stopTurnForLoopNoise = false;
+                String loopNoiseHint = null;
+                // Admin Copilot: only the screen-helper allowlist (native catalog was wider).
+                if (copilotChannel
+                        && !AgentCopilotPromptBuilder.isAllowedTool(
+                                toolName,
+                                session.runState().clientFocus()
+                        )) {
+                    toolResult = new LinkedHashMap<>();
+                    toolResult.put("status", "ERROR");
+                    toolResult.put("error", "Tool not available in Admin Copilot: " + toolName);
+                    toolResult.put(
+                            "hint",
+                            "Understand the user request from LIVE UI SNAPSHOT first. "
+                                    + "Finish with Markdown when the snapshot is enough; "
+                                    + "otherwise use only Copilot screen-helper tools on the focus path."
+                    );
+                    executedTool = toolName;
+                    agentMetrics.recordGuardBlock("copilotAllowlist");
+                } else if (profile == AgentProfile.OPERATOR) {
                     OperatorAgentTurnGuard.BlockDecision block = OperatorAgentTurnGuard.checkBeforeTool(
                             toolName,
                             toolArgs,
@@ -794,14 +817,19 @@ public class TreeFirstAgentService {
                     }
                         } else {
                         Optional<AgentLoopGuard.BlockDecision> loopBlock =
-                                AgentLoopGuard.checkHardBlock(toolName, steps);
+                                AgentLoopGuard.checkHardBlock(toolName, toolArgs, steps);
                         if (loopBlock.isPresent() && loopBlock.get().blocked()) {
                             toolResult = new LinkedHashMap<>();
                             toolResult.put("status", "ERROR");
                             toolResult.put("error", loopBlock.get().error());
                             toolResult.put("hint", loopBlock.get().hint());
+                            toolResult.put("loopGuardBlocked", true);
                             executedTool = toolName;
                             agentMetrics.recordGuardBlock("loopGuard");
+                            if (loopBlock.get().stopTurn()) {
+                                stopTurnForLoopNoise = true;
+                                loopNoiseHint = loopBlock.get().hint();
+                            }
                         } else if (!toolRegistry.isKnownTool(toolName)) {
                             toolResult = new LinkedHashMap<>(toolRegistry.unknownToolResult(toolName));
                             executedTool = toolName;
@@ -904,6 +932,32 @@ public class TreeFirstAgentService {
                 steps.add(toolStep);
                 publishStep(session.sessionId(), toolStep);
                 syncRunPlanState(session);
+
+                if (stopTurnForLoopNoise) {
+                    String continueMessage = loopNoiseContinueMessage(loopNoiseHint, uiLocale);
+                    finishSummary = AgentStepHumanizer.isRussian(uiLocale)
+                            ? ("Остановил повтор одних и тех же шагов — так лог Studio не засоряется. "
+                            + "Исправьте аргументы инструмента и продолжите задание (не уходите в нерелевантный clarify).")
+                            : ("Stopped repeating the same steps so the Studio log stays readable. "
+                            + "Fix the tool args and continue the assignment (do not switch to an unrelated clarify).");
+                    finishResult = new LinkedHashMap<>();
+                    finishResult.put("interactive", true);
+                    finishResult.put("loopNoiseStopped", true);
+                    finishResult.put("awaitingUser", true);
+                    finishResult.put("autoContinueSeconds", 45);
+                    if (loopNoiseHint != null && !loopNoiseHint.isBlank()) {
+                        finishResult.put("hint", loopNoiseHint);
+                    }
+                    finishResult.put("suggestions", List.of(
+                            Map.of(
+                                    "label", AgentStepHumanizer.continueLabel(uiLocale),
+                                    "message", continueMessage,
+                                    "primary", true
+                            )
+                    ));
+                    finalStatus = AgentTurnStatus.OK;
+                    break;
+                }
 
                 if ("list_reports".equals(executedTool)
                         && "OK".equals(String.valueOf(toolResult.get("status")))) {
@@ -1080,6 +1134,27 @@ public class TreeFirstAgentService {
             return preferred;
         }
         return fallback;
+    }
+
+    /**
+     * Primary auto-continue message after a loop-noise stop. Prefer the guard hint so course/alarm
+     * tasks get tool-arg recovery instead of a hard-coded dashboard suggestion.
+     */
+    static String loopNoiseContinueMessage(String loopNoiseHint, String uiLocale) {
+        String hint = loopNoiseHint == null ? "" : loopNoiseHint.trim().replaceAll("\\s+", " ");
+        if (!hint.isBlank()) {
+            String prefix = AgentStepHumanizer.isRussian(uiLocale)
+                    ? "Продолжай задание. "
+                    : "Continue the assignment. ";
+            if (hint.length() > 420) {
+                hint = hint.substring(0, 419) + "…";
+            }
+            return prefix + hint;
+        }
+        boolean ru = AgentStepHumanizer.isRussian(uiLocale);
+        return ru
+                ? "Продолжай следующее подзадание курса с корректными аргументами инструментов (без повтора тех же ERROR)."
+                : "Continue the next assignment step with corrected tool arguments (do not repeat the same ERROR).";
     }
 
     private void publishStep(String sessionId, Map<String, Object> step) {

@@ -8,7 +8,7 @@
 
 Не привязано к конкретному хосту. Примеры скриптов и env — в [`deploy/`](../../deploy/).
 
-См. также: [deployment](deployment.md), [security](security.md), [cluster](cluster.md), [load-testing](load-testing.md), [observability](observability.md), [release-dogfood](release-dogfood.md), [operator-apps](operator-apps.md), [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
+См. также: [customer-demo-playbook](customer-demo-playbook.md) (показ заказчику 30–60 мин), [deployment](deployment.md), [security](security.md), [cluster](cluster.md), [load-testing](load-testing.md), [observability](observability.md), [release-dogfood](release-dogfood.md), [operator-apps](operator-apps.md), [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
 
 ## Как выбрать профиль
 

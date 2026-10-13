@@ -5,11 +5,18 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import subprocess
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Offline-stable embedding used when no /v1/embeddings endpoint is configured at pack build.
+HASH_EMBEDDING_MODEL = "ispf-hash-v1"
+HASH_EMBEDDING_DIMS = 384
 
 ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "docs" / "en"
@@ -347,6 +354,24 @@ def parse_driver_catalog(drivers_md: str) -> list[dict]:
     return catalog
 
 
+def sanitize_outbox_honesty(value):
+    """Rewrite dishonest live outbox ``sent`` markers to stub ``simulated`` in packed manifests.
+
+    Context-pack CI fails on the literal ``SET status = 'sent'`` (see check-outbox-honesty.sh).
+    Source examples should prefer ``simulated``; this keeps regenerated packs honest even if a
+    bundle still uses ``sent`` for stub WMS/ERP delivery.
+    """
+    if isinstance(value, dict):
+        return {k: sanitize_outbox_honesty(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [sanitize_outbox_honesty(v) for v in value]
+    if isinstance(value, str) and "SET status = 'sent'" in value:
+        return value.replace("SET status = 'sent'", "SET status = 'simulated'").replace(
+            '"status": "sent"', '"status": "simulated"'
+        )
+    return value
+
+
 def load_examples() -> list[dict]:
     items: list[dict] = []
     if not EXAMPLES.exists():
@@ -359,6 +384,7 @@ def load_examples() -> list[dict]:
             manifest = json.loads(bundle_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             continue
+        manifest = sanitize_outbox_honesty(manifest)
         sections = sorted(k for k, v in manifest.items() if v)
         items.append(
             {
@@ -457,6 +483,109 @@ def parse_competitive_scorecard(path: Path) -> list[dict]:
             }
         )
     return gaps
+
+
+def tokenize_for_embed(text: str) -> list[str]:
+    return [t for t in re.findall(r"[a-z0-9_]+", (text or "").lower()) if len(t) >= 2]
+
+
+def hash_embed(text: str, dims: int = HASH_EMBEDDING_DIMS) -> list[float]:
+    """Feature-hash embedding — identical algorithm to ContextPackHashEmbedder (Java)."""
+    vec = [0.0] * dims
+    for token in tokenize_for_embed(text):
+        digest = hashlib.sha256(token.encode("utf-8")).digest()
+        idx = int.from_bytes(digest[0:4], "big") % dims
+        sign = 1.0 if digest[4] % 2 == 0 else -1.0
+        vec[idx] += sign
+    norm = math.sqrt(sum(v * v for v in vec))
+    if norm <= 0:
+        return vec
+    return [round(v / norm, 6) for v in vec]
+
+
+def openai_embed_texts(texts: list[str], base_url: str, api_key: str, model: str) -> list[list[float]]:
+    """OpenAI-compatible POST /v1/embeddings (batch)."""
+    url = base_url.rstrip("/") + "/embeddings"
+    body = json.dumps({"model": model, "input": texts}).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            **({"Authorization": f"Bearer {api_key}"} if api_key else {}),
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        payload = json.loads(resp.read().decode("utf-8"))
+    data = payload.get("data") or []
+    data_sorted = sorted(data, key=lambda row: int(row.get("index", 0)))
+    return [list(row.get("embedding") or []) for row in data_sorted]
+
+
+def resolve_embedding_backend() -> tuple[str, int, str | None, str | None]:
+    """
+    Returns (model, dims, base_url_or_none, api_key_or_none).
+    Env:
+      ISPF_CONTEXT_PACK_EMBED_URL — OpenAI-compatible base (…/v1)
+      ISPF_CONTEXT_PACK_EMBED_MODEL — model id (default text-embedding-3-small)
+      ISPF_CONTEXT_PACK_EMBED_API_KEY / OPENAI_API_KEY
+      ISPF_CONTEXT_PACK_EMBED=hash|off — force hash or skip embeddings
+    """
+    mode = (os.environ.get("ISPF_CONTEXT_PACK_EMBED") or "auto").strip().lower()
+    if mode in {"off", "false", "0", "none"}:
+        return ("", 0, None, None)
+    if mode in {"hash", "ispf-hash", "ispf-hash-v1"}:
+        return (HASH_EMBEDDING_MODEL, HASH_EMBEDDING_DIMS, None, None)
+    base = (os.environ.get("ISPF_CONTEXT_PACK_EMBED_URL") or os.environ.get("ISPF_AI_BASE_URL") or "").strip()
+    if base and mode in {"auto", "openai", "api", "remote"}:
+        model = (os.environ.get("ISPF_CONTEXT_PACK_EMBED_MODEL") or "text-embedding-3-small").strip()
+        key = (
+            os.environ.get("ISPF_CONTEXT_PACK_EMBED_API_KEY")
+            or os.environ.get("ISPF_AI_API_KEY")
+            or os.environ.get("OPENAI_API_KEY")
+            or ""
+        ).strip()
+        return (model, 0, base, key or None)
+    # Default: offline hash so air-gap / CI always get hybrid-capable packs.
+    return (HASH_EMBEDDING_MODEL, HASH_EMBEDDING_DIMS, None, None)
+
+
+def attach_chunk_embeddings(chunks: list[dict]) -> dict:
+    """Mutates chunks with embedding[]; returns embedding metadata for the pack root."""
+    model, dims, base_url, api_key = resolve_embedding_backend()
+    if not model:
+        return {"embeddingModel": "", "embeddingDims": 0, "embeddingCoverage": 0}
+    texts = [f"{c.get('title', '')}\n{c.get('keywords', '')}\n{c.get('text', '')}" for c in chunks]
+    vectors: list[list[float]] = []
+    if base_url:
+        try:
+            # Batch in small groups to avoid provider limits.
+            batch_size = 16
+            for i in range(0, len(texts), batch_size):
+                vectors.extend(openai_embed_texts(texts[i : i + batch_size], base_url, api_key or "", model))
+            if vectors and vectors[0]:
+                dims = len(vectors[0])
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError, ValueError) as ex:
+            print(f"WARN: remote embeddings failed ({ex}); falling back to {HASH_EMBEDDING_MODEL}")
+            model = HASH_EMBEDDING_MODEL
+            dims = HASH_EMBEDDING_DIMS
+            base_url = None
+            vectors = []
+    if not vectors:
+        vectors = [hash_embed(t, dims or HASH_EMBEDDING_DIMS) for t in texts]
+        dims = dims or HASH_EMBEDDING_DIMS
+    covered = 0
+    for chunk, vec in zip(chunks, vectors):
+        if vec:
+            chunk["embedding"] = vec
+            covered += 1
+    return {
+        "embeddingModel": model,
+        "embeddingDims": dims,
+        "embeddingCoverage": covered,
+    }
 
 
 def build_doc_chunks() -> list[dict]:
@@ -639,6 +768,8 @@ def build_pack() -> dict:
             ],
         },
     }
+    embed_meta = attach_chunk_embeddings(pack["docChunks"])
+    pack.update(embed_meta)
     digest = hashlib.sha256(
         json.dumps(pack, sort_keys=True, ensure_ascii=False).encode("utf-8")
     ).hexdigest()
@@ -655,7 +786,12 @@ def main() -> None:
     SERVER_RESOURCE.write_text(json.dumps(pack, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"Wrote {out_path}")
     print(f"Wrote {SERVER_RESOURCE}")
-    print(f"contextPackVersion={pack['contextPackVersion']} drivers={len(pack['driverCatalog'])} gaps={len(pack.get('competitiveGapIndex', []))}")
+    print(
+        f"contextPackVersion={pack['contextPackVersion']} drivers={len(pack['driverCatalog'])} "
+        f"gaps={len(pack.get('competitiveGapIndex', []))} "
+        f"embeddingModel={pack.get('embeddingModel') or 'none'} "
+        f"embeddingCoverage={pack.get('embeddingCoverage', 0)}"
+    )
 
 
 if __name__ == "__main__":

@@ -8,11 +8,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 class DualWriteVariableHistoryWriteStoreTest {
 
@@ -47,7 +48,7 @@ class DualWriteVariableHistoryWriteStoreTest {
     }
 
     @Test
-    void secondaryFailureDoesNotPropagate() {
+    void secondaryFailureIsVisibleAndRetryDoesNotRewritePrimary() {
         JdbcVariableHistoryWriteStore primary = mock(JdbcVariableHistoryWriteStore.class);
         ClickHouseVariableHistorySecondaryWriteStore secondary =
                 mock(ClickHouseVariableHistorySecondaryWriteStore.class);
@@ -70,10 +71,14 @@ class DualWriteVariableHistoryWriteStoreTest {
         );
         doThrow(new IllegalStateException("CH down")).when(secondary).appendBatch(List.of(record));
 
-        store.appendOne(record);
+        assertThatThrownBy(() -> store.appendOne(record))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("variable history secondary write failed; secondary store is behind primary");
+        assertThatThrownBy(() -> store.appendOne(record))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("variable history secondary write failed; secondary store is behind primary");
 
-        verify(primary).appendOne(record);
-        verifyNoMoreInteractions(primary);
-        assertEquals(1.0, registry.get("ispf.historian.dual_write.secondary_failures").counter().count());
+        verify(primary, times(1)).appendOne(record);
+        assertEquals(2.0, registry.get("ispf.historian.dual_write.secondary_failures").counter().count());
     }
 }

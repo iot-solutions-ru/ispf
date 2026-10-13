@@ -143,11 +143,12 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("configure_operator_ui", objectSchema(
                 props(
-                        "appId", stringProp("Application id"),
-                        "uiJson", stringProp("JSON string payload"),
-                        "defaultDashboard", stringProp("Object tree path")
+                        "appId", stringProp("Operator app id (not a tree path); creates record if new"),
+                        "title", stringProp("HMI title shown in operator launcher"),
+                        "defaultDashboard", stringProp("Dashboard object path opened on login"),
+                        "dashboards", arrayProp("Menu entries: [{path, title}, ...]")
                 ),
-                List.of(),
+                req("title", "defaultDashboard", "dashboards"),
                 true
         ));
         catalog.put("configure_platform_context_rule", objectSchema(
@@ -190,10 +191,18 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("create_binding_rule", objectSchema(
                 props(
-                        "path", stringProp("Object tree path"),
-                        "ruleJson", stringProp("JSON string payload")
+                        "path", stringProp("Object that owns the rule (hub/device path)"),
+                        "id", stringProp("Stable rule id, e.g. cluster-status"),
+                        "expression", stringProp("CEL or historian expression"),
+                        "targetVariable", stringProp("Local variable name to write (targetKind=variable)"),
+                        "targetRef", stringProp("Slash ref for cross-object target"),
+                        "targetKind", stringProp("variable|action|context|event (default variable)"),
+                        "ruleKind", stringProp("reactive|historian (default reactive)"),
+                        "windowBucket", stringProp("Historian bucket, e.g. 1m"),
+                        "condition", stringProp("Optional CEL gate"),
+                        "eventName", stringProp("Required when targetKind=event")
                 ),
-                req("path"),
+                req("path", "id", "expression"),
                 true
         ));
         catalog.put("create_object", objectSchema(
@@ -206,20 +215,39 @@ public final class AgentToolInputSchemas {
                         "templateId", stringProp("Relative blueprint / template id"),
                         "driverId", stringProp("Driver id for DEVICE"),
                         "driverPollIntervalMs", integerProp("Driver poll interval"),
-                        "autoStartDriver", booleanProp("Auto-start driver after create")
+                        "autoStartDriver", booleanProp("Auto-start driver after create"),
+                        "password", stringProp("USER only: login password (default ChangeMe!123)"),
+                        "roles", stringProp("USER only: roles list or comma string (default OPERATOR)")
                 ),
                 req("parentPath", "name", "type", "displayName"),
                 true
         ));
+        catalog.put("list_object_acl", objectSchema(
+                props(
+                        "path", stringProp("Object tree path")
+                ),
+                req("path"),
+                true
+        ));
+        catalog.put("set_object_acl", objectSchema(
+                props(
+                        "path", stringProp("Object path to protect (e.g. DEVICE owned by user2)"),
+                        "entries", arrayProp("ACL rows [{principalType, principalId, permission}]")
+                ),
+                req("path", "entries"),
+                true
+        ));
         catalog.put("create_variable", objectSchema(
                 props(
-                        "path", stringProp("Object tree path"),
-                        "name", stringProp("Node or resource name"),
-                        "dataType", stringProp("Data type"),
-                        "value", stringProp("Initial value"),
-                        "writable", booleanProp("Writable")
+                        "path", stringProp("Object tree path (prefer SINGLETON/INSTANCE hub, not DEVICE)"),
+                        "name", stringProp("Variable name"),
+                        "valueType", enumProp("Value type", List.of("DOUBLE", "BOOLEAN", "STRING", "INTEGER")),
+                        "initialValue", stringProp("Optional initial value (scalar or JSON map)"),
+                        "value", stringProp("Alias of initialValue"),
+                        "writable", booleanProp("Writable (default false)"),
+                        "historyEnabled", booleanProp("Enable historian (default false)")
                 ),
-                req("path", "name"),
+                req("path", "name", "valueType"),
                 true
         ));
         catalog.put("create_virtual_device", objectSchema(
@@ -489,10 +517,11 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("get_event_schema", objectSchema(
                 props(
-                        "eventType", stringProp("Event type"),
-                        "appId", stringProp("Application id")
+                        "objectPath", stringProp("Device/object path that owns the event"),
+                        "eventName", stringProp("Event name on that object (e.g. Event1)"),
+                        "appId", stringProp("Optional application id for catalog merge")
                 ),
-                List.of(),
+                req("objectPath", "eventName"),
                 true
         ));
         catalog.put("get_example_bundle", objectSchema(
@@ -535,8 +564,8 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("get_object_blueprint", objectSchema(
                 props(
-                        "id", stringProp("Blueprint id"),
-                        "name", stringProp("Blueprint name")
+                        "blueprintName", stringProp("Blueprint name (e.g. virtual-lab-v1)"),
+                        "blueprintId", stringProp("Blueprint id when name is unknown")
                 ),
                 List.of(),
                 true
@@ -712,7 +741,13 @@ public final class AgentToolInputSchemas {
                 true
         ));
         catalog.put("list_instance_types", emptyObject());
-        catalog.put("list_mimic_symbols", emptyObject());
+        catalog.put("list_mimic_symbols", objectSchema(
+                props(
+                        "category", stringProp("Optional: process|pipe|sensor|electrical|annotation|all")
+                ),
+                List.of(),
+                true
+        ));
         catalog.put("list_object_blueprints", objectSchema(
                 props(
                         "objectType", stringProp("Filter by ObjectType")
@@ -897,6 +932,7 @@ public final class AgentToolInputSchemas {
                 props(
                         "query", stringProp("Search query"),
                         "topic", stringProp("ContextPack topic id"),
+                        "mode", stringProp("hybrid|lexical|vector (default hybrid)"),
                         "limit", integerProp("Max slices")
                 ),
                 List.of(),

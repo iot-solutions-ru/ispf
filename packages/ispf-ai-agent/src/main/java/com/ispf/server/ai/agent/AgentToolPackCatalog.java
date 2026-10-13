@@ -110,8 +110,10 @@ public final class AgentToolPackCatalog {
             packs.add(ANALYTICS);
         }
         if (containsAny(text,
-                "security", "role", "permission", "acl", "user", "mfa")) {
+                "security", "role", "permission", "acl", "user", "mfa",
+                "пользовател", "роль", "доступ", "права", "юзер")) {
             packs.add(SECURITY);
+            packs.add(DEVICES);
         }
         // Creating dashboards / SCADA / automation almost always needs create_object (devices pack).
         if (packs.contains(DASHBOARDS) || packs.contains(SCADA) || packs.contains(AUTOMATION)) {
@@ -279,8 +281,10 @@ public final class AgentToolPackCatalog {
         map.put("get_analytics_tag", ANALYTICS);
         map.put("list_analytics_catalog", ANALYTICS);
 
-        // security-ish operator memory write
+        // security
         map.put("remember_app_memory", SECURITY);
+        map.put("list_object_acl", SECURITY);
+        map.put("set_object_acl", SECURITY);
 
         return Map.copyOf(map);
     }

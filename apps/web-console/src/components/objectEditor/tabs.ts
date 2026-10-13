@@ -1,3 +1,8 @@
+import {
+  isQueryCatalogDefinition,
+  isQueryCatalogEntry,
+} from "../../utils/ui/queryPath";
+
 export type ObjectEditorTab =
   | "general"
   | "federation"
@@ -67,6 +72,13 @@ export function visibleObjectEditorTabs(ctx: ObjectEditorTabVisibility): ObjectE
   }
   if (showAccess) {
     list.push("access");
+  }
+  if (isQueryCatalogEntry(ctx.path, ctx.objectType)) {
+    if (isQueryCatalogDefinition(ctx.path)) {
+      list.push("functions");
+    }
+    list.push("history");
+    return list;
   }
   list.push("variables", "computations", "events", "functions", "history");
   return list;

@@ -135,12 +135,7 @@ final class AgentVirtualDeviceTools {
                 objectAccessService.requireWrite(parentPath, auth);
                 String fullPath = objectTreePort.tree().resolveChildPath(parentPath, name);
                 if (objectTreePort.tree().findByPath(fullPath).isPresent()) {
-                    return Map.of(
-                            "status", "ERROR",
-                            "error", "Object exists: " + fullPath,
-                            "hint", "Reuse: get_object path=" + fullPath + " and list_variables.",
-                            "existingPath", fullPath
-                    );
+                    return AgentObjectReuse.alreadyExistsOk(fullPath, "DEVICE");
                 }
 
                 try {

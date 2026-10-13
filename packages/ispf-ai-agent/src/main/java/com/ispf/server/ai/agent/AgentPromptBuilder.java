@@ -30,13 +30,24 @@ public final class AgentPromptBuilder {
             Before save_workflow_bpmn / save_mimic_diagram / set_dashboard_layout / configure_*: create_object must succeed first
             (or get_object/list_objects returned that path in this turn). Never configure a path that was not discovered or created.
             Before apply_mixin_blueprint: list_mixin_blueprints or list_virtual_profiles — pick modelName from result.
-            If Object exists — reuse with get_object + list_variables; do not recreate.
+            If create_object / create_virtual_device returns reused=true (already exists) — treat as success:
+            call configure_alert / set_dashboard_layout / list_variables / configure_* on that path.
+            Do NOT recreate and do NOT ping-pong create_object↔get_object.
+            Platform USER: create_object type=USER parentPath=root.platform.security.users name=... displayName=... \
+            (optional password, roles). This creates login + roles variable — never apply_mixin platform-user-v1.
+            Grant device access: set_object_acl path=<device> entries=[{principalType:USER, principalId:<user>, permission:EDITOR}].
             search_context and get_automation_schema describe documentation, not live tree state.
             
             Before creating a new project blueprint, call get_automation_schema topic=projectBlueprint.
             For "create application/solution" or approach choice: search_context topic=agent-knowledge (AGENT_KNOWLEDGE.md — all delivery paths A–H and full doc index).
             For bundle/manifest/SQL/BFF: search_context topic=applications or topic=solution.
             For dashboard context rules: search_context topic=platform-logic.
+            Anti-noise: never spam the same tool (add_dashboard_widget, add_mimic_elements, list_*, get_*) —
+            batch (set_dashboard_layout / save_mimic_diagram) or finish. Studio step log must stay short.
+            Cluster/app logic hub: SINGLETON (ensure_singleton_instance) or INSTANCE — never CUSTOM/DEVICE under devices.
+            create_variable needs valueType (not dataType); create_binding_rule needs path+id+expression+targetVariable (not ruleJson).
+            Operator HMI: configure_operator_ui appId=<short-id> title= defaultDashboard= dashboards=[{path,title}] —
+            do NOT create_object APPLICATION for the launcher.
             For dashboards: get_automation_schema topic=dashboard (or search_context) — list_variables first, prefer set_dashboard_layout
             template= or one full layoutJson over many add_dashboard_widget; never set_variable name=widgets.
             PRESENTATION (mandatory): columns=84,rowHeight=8; KPI tiles w=21|28 h=14 in a filled row;
@@ -52,6 +63,8 @@ public final class AgentPromptBuilder {
             For complex tasks: get_automation_schema topic=platformMaster first; then area-specific tools (workflow, lifecycle, dashboard, scada).
             For complex build recipes: search_platform_recipes query="<task>" before inventing steps.
             Complete end-to-end — dashboards, SCADA panels, workflows, apps, alerts — using tools only.
+            search_context returns short snippets (hybrid retrieval) — do NOT paste full docs into finish.
+            Call search_context at most 1–2 times with distinct queries, then list_objects / mutate / finish.
             Do not call search_context more than 3 times in a row with the same query; prefer specific tools.
             
             TOOL SURFACE (progressive): only Active tools below are callable until you enable more packs.
@@ -71,13 +84,15 @@ public final class AgentPromptBuilder {
             - Plan UI: result.plan renders in a dedicated plan panel — use plan.sections[] for MAXIMUM detail by layer; \
             summary stays 1–3 sentences; each section: title, summary (2–4 sentences), steps (concrete tools), deliverables.
             - If the request is vague, ambiguous, or missing key details (device name, path, driver type, report name), \
-            ask a short clarifying question BEFORE creating or changing objects.
+            ask a short clarifying question BEFORE creating or changing objects — do not invent and tool-spam.
             - When several valid approaches exist (SNMP vs Modbus, which dashboard template, which report), \
             propose 2–4 concrete options instead of guessing.
             - Use result.suggestions for clickable follow-ups: each item needs "label" (button text) and \
-            "message" (exact user message to send next). Set result.interactive=true when asking.
+            "message" (exact user message to send next). Set result.interactive=true and awaitingUser=true when asking.
+            - Mark exactly one suggestion primary=true (recommended default). Optional autoContinueSeconds (default 45): \
+            if the user does not answer, Studio sends the primary message and work continues.
             - Example when report name is unclear (wording must still match UI locale — English sample only):
-            {"type":"finish","summary":"There are several reports. Which should I run, or list them first?","result":{"interactive":true,"suggestions":[{"label":"List reports","message":"List available reports and briefly describe each","primary":true},{"label":"Create SNMP dashboard","message":"Create an SNMP device and monitoring dashboard from the docs"}]}}
+            {"type":"finish","summary":"There are several reports. Which should I run, or list them first?","result":{"interactive":true,"awaitingUser":true,"autoContinueSeconds":45,"suggestions":[{"label":"List reports","message":"List available reports and briefly describe each","primary":true},{"label":"Create SNMP dashboard","message":"Create an SNMP device and monitoring dashboard from the docs"}]}}
             - After list_reports: if needsClarification in tool result — finish with question + result.suggestions, do NOT run_report yet.
             - When the user picks a suggestion (same text as message field), treat it as confirmation and proceed.
             - Complex TZ / full project: analytical intake — decompose implicit user phrases into specBrief FR-* \

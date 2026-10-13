@@ -8,7 +8,7 @@ Guide to choosing a configuration based on your goal: **industrial production**,
 
 Not tied to a specific host. Example scripts and env files are in [`deploy/`](../../deploy/).
 
-See also: [deployment](deployment.md), [security](security.md), [cluster](cluster.md), [load-testing](load-testing.md), [observability](observability.md), [release-dogfood](release-dogfood.md), [operator-apps](operator-apps.md), [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
+See also: [customer-demo-playbook](customer-demo-playbook.md) (30–60 min show-the-customer agenda), [deployment](deployment.md), [security](security.md), [cluster](cluster.md), [load-testing](load-testing.md), [observability](observability.md), [release-dogfood](release-dogfood.md), [operator-apps](operator-apps.md), [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
 
 ## How to choose a profile
 

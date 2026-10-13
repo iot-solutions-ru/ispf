@@ -5,10 +5,11 @@
 #   bash deploy/air-gap-apply.sh /path/to/ispf-airgap-<version>.tar.gz
 #   bash deploy/air-gap-apply.sh /path/to/extracted/ispf-airgap-<version>/
 #
-# Optional env (commercial licensing):
-#   ISPF_LICENSE_PUBLIC_KEY_PEM
-#   ISPF_LICENSE_ENFORCE=true
-#   ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true
+# Commercial licensing (compose defaults enforce + require-signed = true):
+#   ISPF_LICENSE_PUBLIC_KEY_PEM   — PEM text or path content for RSA app-bundle verify
+#   ISPF_LICENSE_ENFORCE=true|false
+#   ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true|false  (lab override: false)
+# Cosign / image signatures are not verified here (Gap) — CHECKSUMS.sha256 only.
 set -euo pipefail
 
 INPUT="${1:-}"
@@ -100,6 +101,22 @@ if grep -q '"clickhouseIncluded"[[:space:]]*:[[:space:]]*true' MANIFEST.json; th
   COMPOSE_PROFILES=(--profile clickhouse)
 fi
 
+REQUIRE_SIGNED="${ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES:-true}"
+LICENSE_ENFORCE="${ISPF_LICENSE_ENFORCE:-true}"
+PUBLIC_KEY_PEM="${ISPF_LICENSE_PUBLIC_KEY_PEM:-}"
+
+if [[ "$REQUIRE_SIGNED" == "true" || "$LICENSE_ENFORCE" == "true" ]]; then
+  if [[ -z "$PUBLIC_KEY_PEM" ]]; then
+    echo "WARN: ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES/ENFORCE default on, but ISPF_LICENSE_PUBLIC_KEY_PEM is empty." >&2
+    echo "      Export the vendor public PEM before compose up, or set REQUIRE_SIGNED=false for lab-only." >&2
+    echo "      Docs: docs/en/air-gap-deployment.md § Commercial licensing / docs/evidence/air-gap-signing/" >&2
+  else
+    echo "==> License gate: enforce=$LICENSE_ENFORCE require-signed=$REQUIRE_SIGNED (public key set)"
+  fi
+else
+  echo "==> License gate: enforce=$LICENSE_ENFORCE require-signed=$REQUIRE_SIGNED (lab override)"
+fi
+
 echo "==> Starting stack"
 docker compose -f "$COMPOSE_FILE" "${COMPOSE_PROFILES[@]}" up -d
 
@@ -110,6 +127,7 @@ echo "Air-gap deployment ready:"
 echo "  API:  http://127.0.0.1:8080/api/v1/info"
 echo "  UI:   http://127.0.0.1:8088/"
 echo "  Stop: docker compose -f $COMPOSE_FILE down"
+echo "  App bundles: RSA require-signed default ON — Cosign image signing is Gap (not in this script)."
 echo
 echo "Updates without internet: transfer a newer ispf-airgap-*.tar.gz and re-run this script"
 echo "(docker compose down first; PostgreSQL volume ispf_airgap_pg retains data unless -v)."

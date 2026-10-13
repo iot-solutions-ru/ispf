@@ -6,6 +6,7 @@ interface OperatorAgentArtifactsViewProps {
   onOpenReport?: (path: string) => void;
   onSuggestMessage?: (message: string) => void;
   onAppendToInput?: (text: string) => void;
+  autoContinueEnabled?: boolean;
 }
 
 export default function OperatorAgentArtifactsView(props: OperatorAgentArtifactsViewProps) {
@@ -17,6 +18,7 @@ export default function OperatorAgentArtifactsView(props: OperatorAgentArtifacts
       onAppendToInput={props.onAppendToInput}
       onOpenDashboard={props.onOpenDashboard}
       onOpenReport={props.onOpenReport}
+      autoContinueEnabled={props.autoContinueEnabled}
     />
   );
 }

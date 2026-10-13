@@ -153,7 +153,8 @@ public class FunctionScriptEngine {
                 }
                 yield null;
             }
-            case "invoke_function" -> {
+            case "invoke_function", "invoke" -> {
+                // "invoke" is a common LLM alias for invoke_function (Studio agent course calculators).
                 com.ispf.core.ref.PlatformRef fnRef = resolveStepRef(
                         step,
                         com.ispf.core.ref.PlatformRefKind.FUNCTION,
