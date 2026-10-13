@@ -282,6 +282,39 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void hardBlocksConsecutiveSetDashboardLayoutSpam() {
+        String dash = "root.platform.dashboards.virtual-devices-dashboard";
+        List<Map<String, Object>> steps = List.of(
+                layoutStep(dash),
+                layoutStep(dash)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "set_dashboard_layout",
+                Map.of("path", dash),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
+        assertTrue(block.get().error().contains("consecutive"));
+    }
+
+    @Test
+    void allowsManyLayoutsAcrossTurnWhenNotConsecutive() {
+        String dash = "root.platform.dashboards.virtual-devices-dashboard";
+        List<Map<String, Object>> steps = new java.util.ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            steps.add(layoutStep(dash));
+            steps.add(widgetStep(dash));
+        }
+        var block = AgentLoopGuard.checkHardBlock(
+                "set_dashboard_layout",
+                Map.of("path", dash),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
     void doesNotTreatDifferentBindingExpressionsAsIdentical() {
         String path = "root.platform.devices.vd";
         List<Map<String, Object>> steps = List.of(

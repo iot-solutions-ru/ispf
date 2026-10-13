@@ -129,10 +129,15 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("configure_correlator", objectSchema(
                 props(
-                        "path", stringProp("Object tree path"),
+                        "path", stringProp("CORRELATOR path (root.platform.correlators.<id>)"),
+                        "name", stringProp("Creates under correlators when path omitted"),
+                        "correlatorId", stringProp("Short id; path = root.platform.correlators.<id> when path omitted"),
+                        "targetObjectPath", stringProp("Object that emits the watched events"),
+                        "patternType", stringProp("COUNT|SEQUENCE|EVENT_CHAIN|..."),
+                        "eventName", stringProp("Primary event name"),
                         "configJson", stringProp("JSON string payload")
                 ),
-                req("path"),
+                List.of(),
                 true
         ));
         catalog.put("configure_driver", objectSchema(

@@ -28,6 +28,9 @@ final class AgentToolArgCoercion {
         if ("configure_alert".equals(normalized)) {
             return coerceConfigureAlert(args);
         }
+        if ("configure_correlator".equals(normalized)) {
+            return coerceConfigureCorrelator(args);
+        }
         return args;
     }
 
@@ -78,6 +81,31 @@ final class AgentToolArgCoercion {
             // Keep name for create-on-configure; path helps schema/grounding tooling.
             copy.putIfAbsent("name", alertId);
             copy.put("path", "root.platform.alert-rules." + slugifyAlert(alertId));
+        }
+        return copy;
+    }
+
+    private static Map<String, Object> coerceConfigureCorrelator(Map<String, Object> args) {
+        Map<String, Object> copy = new LinkedHashMap<>(args);
+        String path = stringValue(copy.get("path"));
+        if (!path.isBlank()) {
+            return copy;
+        }
+        String correlatorId = stringValue(copy.get("correlatorId"));
+        if (correlatorId.isBlank()) {
+            correlatorId = stringValue(copy.get("name"));
+        }
+        if (correlatorId.isBlank()) {
+            correlatorId = stringValue(copy.get("id"));
+        }
+        if (correlatorId.isBlank()) {
+            return copy;
+        }
+        if (correlatorId.startsWith("root.")) {
+            copy.put("path", correlatorId);
+        } else {
+            copy.putIfAbsent("name", correlatorId);
+            copy.put("path", "root.platform.correlators." + slugifyAlert(correlatorId));
         }
         return copy;
     }

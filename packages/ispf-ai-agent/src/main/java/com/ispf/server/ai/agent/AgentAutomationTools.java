@@ -277,21 +277,24 @@ final class AgentAutomationTools {
                     if (path.isBlank() && name.isBlank()) {
                         return Map.of("status", "ERROR", "error", "path or name is required");
                     }
+                    automationTreeService.ensurePlatformFolders();
                     if (path.isBlank()) {
-                        automationTreeService.ensurePlatformFolders();
                         path = AutomationTreeService.correlatorPathForName(name);
-                        if (objectTreePort.tree().findByPath(path).isEmpty()) {
-                            objectAccessService.requireWrite(AutomationTreeService.CORRELATORS_ROOT, auth);
-                            objectTreePort.create(
-                                    AutomationTreeService.CORRELATORS_ROOT,
-                                    AutomationTreeService.slugify(name),
-                                    ObjectType.CORRELATOR,
-                                    name,
-                                    "",
-                                    null
-                            );
-                            automationTreeService.ensureCorrelatorStructure(path);
-                        }
+                    }
+                    if (objectTreePort.tree().findByPath(path).isEmpty()
+                            && path.startsWith(AutomationTreeService.CORRELATORS_ROOT + ".")) {
+                        objectAccessService.requireWrite(AutomationTreeService.CORRELATORS_ROOT, auth);
+                        String nodeName = path.substring(AutomationTreeService.CORRELATORS_ROOT.length() + 1);
+                        String display = !name.isBlank() ? name : nodeName;
+                        objectTreePort.create(
+                                AutomationTreeService.CORRELATORS_ROOT,
+                                nodeName,
+                                ObjectType.CORRELATOR,
+                                display,
+                                "",
+                                null
+                        );
+                        automationTreeService.ensureCorrelatorStructure(path);
                     }
                     if (!tenantScopeService.isPathVisible(path, auth)) {
                         return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);

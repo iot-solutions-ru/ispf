@@ -607,4 +607,15 @@ class AgentGroundTruthGuardTest {
         );
         assertThat(block).isEmpty();
     }
+
+    @Test
+    void allowsConfigureCorrelatorUnderCorrelatorsWhenFolderExists() {
+        var block = AgentGroundTruthGuard.checkBeforeTool(
+                "configure_correlator",
+                Map.of("path", "root.platform.correlators.delay-sum-alert"),
+                List.of(),
+                path -> path.equals("root.platform.correlators")
+        );
+        assertThat(block).isEmpty();
+    }
 }

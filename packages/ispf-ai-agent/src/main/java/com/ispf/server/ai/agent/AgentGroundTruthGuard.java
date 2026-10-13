@@ -62,7 +62,6 @@ final class AgentGroundTruthGuard {
             "save_workflow_bpmn",
             "update_workflow_status",
             "run_workflow",
-            "configure_correlator",
             "configure_report",
             "run_report",
             "create_variable",
@@ -125,25 +124,22 @@ final class AgentGroundTruthGuard {
             return checkBlueprintDiscovered(arguments, steps, "blueprintName", "blueprintId");
         }
         if ("configure_alert".equals(tool)) {
-            // Create-on-configure: name alone or a new path under alert-rules is allowed when the folder is known.
-            String objectPath = resolveObjectPath(arguments);
-            String name = stringArg(arguments, "name");
-            if (objectPath.isBlank() && !name.isBlank()) {
-                return Optional.empty();
-            }
-            if (!objectPath.isBlank() && isAlertRulesChild(objectPath)) {
-                if (isObjectPathGrounded(steps, objectPath) || existsInTree(objectExists, objectPath)) {
-                    return Optional.empty();
-                }
-                String folder = "root.platform.alert-rules";
-                if (isParentGrounded(steps, folder) || existsInTree(objectExists, folder)) {
-                    return Optional.empty();
-                }
-            }
-            if (!objectPath.isBlank()) {
-                return checkObjectPathDiscovered(objectPath, tool, steps, objectExists);
-            }
-            return Optional.empty();
+            return checkCreateOnConfigureFolder(
+                    arguments,
+                    steps,
+                    objectExists,
+                    tool,
+                    "root.platform.alert-rules"
+            );
+        }
+        if ("configure_correlator".equals(tool)) {
+            return checkCreateOnConfigureFolder(
+                    arguments,
+                    steps,
+                    objectExists,
+                    tool,
+                    "root.platform.correlators"
+            );
         }
         if (OBJECT_PATH_MUTATION_TOOLS.contains(tool)) {
             String objectPath = resolveObjectPath(arguments);
@@ -204,10 +200,37 @@ final class AgentGroundTruthGuard {
         }
     }
 
-    private static boolean isAlertRulesChild(String objectPath) {
+    private static Optional<BlockDecision> checkCreateOnConfigureFolder(
+            Map<String, Object> arguments,
+            List<Map<String, Object>> steps,
+            ObjectExists objectExists,
+            String tool,
+            String folder
+    ) {
+        String objectPath = resolveObjectPath(arguments);
+        String name = stringArg(arguments, "name");
+        if (objectPath.isBlank() && !name.isBlank()) {
+            return Optional.empty();
+        }
+        String folderNorm = normalizePath(folder);
+        if (!objectPath.isBlank() && isChildOfFolder(objectPath, folderNorm)) {
+            if (isObjectPathGrounded(steps, objectPath) || existsInTree(objectExists, objectPath)) {
+                return Optional.empty();
+            }
+            if (isParentGrounded(steps, folderNorm) || existsInTree(objectExists, folderNorm)) {
+                return Optional.empty();
+            }
+        }
+        if (!objectPath.isBlank()) {
+            return checkObjectPathDiscovered(objectPath, tool, steps, objectExists);
+        }
+        return Optional.empty();
+    }
+
+    private static boolean isChildOfFolder(String objectPath, String folder) {
         String path = normalizePath(objectPath);
-        return path.startsWith("root.platform.alert-rules.")
-                && path.length() > "root.platform.alert-rules.".length();
+        String prefix = folder.endsWith(".") ? folder : folder + ".";
+        return path.startsWith(prefix) && path.length() > prefix.length();
     }
 
     private static String mutationLabel(Map<String, Object> arguments, String toolName) {
@@ -320,7 +343,8 @@ final class AgentGroundTruthGuard {
             if ("create_object".equals(tool)
                     || "create_virtual_device".equals(tool)
                     || "configure_report".equals(tool)
-                    || "configure_alert".equals(tool)) {
+                    || "configure_alert".equals(tool)
+                    || "configure_correlator".equals(tool)) {
                 if (pathsEqual(objectPath, pathFromCreateResult(result))) {
                     return true;
                 }

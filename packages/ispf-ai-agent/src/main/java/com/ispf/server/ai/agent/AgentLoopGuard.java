@@ -54,14 +54,19 @@ final class AgentLoopGuard {
     private static final int CREATE_REUSE_HARD_BLOCK = 2;
     /**
      * Truly idempotent mutates with no progressive content: after this many prior identical OK calls
-     * on the same fingerprint, stop. Do NOT include set_dashboard_layout — course turns re-apply
-     * layout after add_dashboard_widget batch hints.
+     * on the same fingerprint, stop.
      */
     private static final int IDEMPOTENT_OK_HARD_BLOCK = 2;
 
     private static final Set<String> IDEMPOTENT_MUTATE_TOOLS = Set.of(
             "configure_report"
     );
+
+    /**
+     * Consecutive trailing OK set_dashboard_layout on the same path — stop spam loops (×25).
+     * Intervening add_dashboard_widget / get_widget_catalog resets the streak so course re-applies are OK.
+     */
+    private static final int LAYOUT_CONSECUTIVE_OK_HARD_BLOCK = 2;
 
     /** Prefer one batch write over many incremental adds — noisy in Studio step log. */
     private static final Set<String> BATCH_INCREMENTAL_TOOLS = Set.of(
@@ -364,6 +369,21 @@ final class AgentLoopGuard {
                     true
             ));
         }
+        if ("set_dashboard_layout".equals(normalized)) {
+            long consecutiveOk = consecutiveTrailingFingerprintOkCount(steps, fingerprint);
+            if (consecutiveOk >= LAYOUT_CONSECUTIVE_OK_HARD_BLOCK) {
+                return Optional.of(new BlockDecision(
+                        "Hard block: consecutive 'set_dashboard_layout' succeeded " + consecutiveOk
+                                + " times on the same dashboard — stop flooding the step log",
+                        "Layout already applied. Prefer ONE set_dashboard_layout with the full widgets[] "
+                                + "(after get_widget_catalog), or switch to another dashboard / finish. "
+                                + "Do not re-call set_dashboard_layout in a tight loop.",
+                        true
+                ));
+            }
+            // Lifetime IDENTICAL_CALL would block legitimate re-applies after add_dashboard_widget.
+            return Optional.empty();
+        }
         if (priorSame >= IDENTICAL_CALL_HARD_BLOCK) {
             return Optional.of(new BlockDecision(
                     "Hard block: identical '" + normalized + "' call repeated " + priorSame
@@ -441,6 +461,35 @@ final class AgentLoopGuard {
                         stepMap(step, "arguments")
                 )))
                 .count();
+    }
+
+    /**
+     * Count trailing tool steps that match fingerprint and returned OK — broken by any other tool/args.
+     */
+    private static long consecutiveTrailingFingerprintOkCount(
+            List<Map<String, Object>> steps,
+            String fingerprint
+    ) {
+        if (steps == null || fingerprint == null || fingerprint.isBlank()) {
+            return 0;
+        }
+        long count = 0;
+        for (int i = steps.size() - 1; i >= 0; i--) {
+            Map<String, Object> step = steps.get(i);
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            String fp = callFingerprint(String.valueOf(step.get("tool")), stepMap(step, "arguments"));
+            if (!fingerprint.equals(fp)) {
+                break;
+            }
+            Map<String, Object> result = stepMap(step, "result");
+            if (!"OK".equalsIgnoreCase(String.valueOf(result.get("status")))) {
+                break;
+            }
+            count++;
+        }
+        return count;
     }
 
     private static boolean fingerprintAllStatusOk(List<Map<String, Object>> steps, String fingerprint) {
@@ -560,6 +609,11 @@ final class AgentLoopGuard {
             sequence = sequence.subList(sequence.size() - OSCILLATION_WINDOW, sequence.size());
         }
         if (!isStrictTwoToolAlternation(sequence)) {
+            return Optional.empty();
+        }
+        // Dashboard course pattern: layout ↔ add_widget is progressive, not a stuck ping-pong.
+        if (sequence.contains("set_dashboard_layout")
+                && (sequence.contains("add_dashboard_widget") || sequence.contains("get_widget_catalog"))) {
             return Optional.empty();
         }
         String existsPath = latestExistingObjectPath(steps);
