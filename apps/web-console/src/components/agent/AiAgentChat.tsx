@@ -297,7 +297,11 @@ export default function AiAgentChat() {
                   i18nNs="ai"
                   onSuggestMessage={(text) => void submitMessage(text)}
                   onAppendToInput={appendToInput}
-                  autoContinueEnabled={!isPending && index === messages.length - 1}
+                  autoContinueEnabled={
+                    interactionMode === "auto"
+                    && !isPending
+                    && index === messages.length - 1
+                  }
                 />
               )}
               {message.steps && message.steps.length > 0 && (
