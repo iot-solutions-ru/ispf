@@ -173,6 +173,14 @@ If you cannot run `air-gap-pack.sh` on Linux, assemble the same layout manually:
 
 ---
 
+## Локальная LLM на демостенде (воздушный зазор)
+
+Кратко. Канон: [en/air-gap-deployment.md](../en/air-gap-deployment.md) § Local LLM demostand. Статус: **Partial**.
+
+- Агент ходит только на `ISPF_AI_BASE_URL` (`ispf.ai.base-url`). OpenAI-совместимый сервер на площадке: `ISPF_AI_PROVIDER=openai-compatible` и URL с `/v1` (или хост без пути — клиент дописывает `/v1`). Нативный Ollama: `ISPF_AI_PROVIDER=ollama`, `ISPF_AI_BASE_URL=http://127.0.0.1:11434` (это `/api/chat`, не `/v1`).
+- Офлайн-установка платформы — `deploy/air-gap-pack.sh` / `air-gap-apply.sh`. Веса модели в tar **не** входят; их переносят отдельно.
+- Граница утверждения «данные не покидают площадку»: промпты агента уходят на настроенный base URL. Это не доказательство нулевого egress для marketplace/лицензий и не подпись образов. **Cosign в репозитории нет** (Gap). Журнал прогона — заготовка [evidence/air-gap-llm](../evidence/air-gap-llm/README.md); пока там нет датированного прогона, ось air-gap в scorecard остаётся **Partial**.
+
 ## Сопутствующие документы
 
 - [deployment](deployment.md) — онлайн-развертывание, подписание бандла, ClickHouse

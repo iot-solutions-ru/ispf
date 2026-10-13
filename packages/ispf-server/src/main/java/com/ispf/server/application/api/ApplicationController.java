@@ -198,11 +198,15 @@ public class ApplicationController {
     public Map<String, Object> validateBundle(
             @PathVariable String appId,
             @RequestBody ApplicationBundleDeployService.BundleManifest manifest,
-            @RequestParam(defaultValue = "false") boolean dryRun
+            @RequestParam(defaultValue = "false") boolean dryRun,
+            @RequestParam(defaultValue = "false") boolean strict
     ) {
         BundleValidationResult result = dryRun
                 ? bundleManifestValidator.dryRun(appId, manifest)
-                : bundleManifestValidator.validate(appId, manifest);
+                : bundleManifestValidator.validate(appId, manifest, strict);
+        if (dryRun && strict) {
+            result = BundleManifestValidator.promoteShipCanon(result);
+        }
         return result.toMap();
     }
 

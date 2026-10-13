@@ -251,10 +251,11 @@ Ingress: [`deploy/nginx-cluster.conf`](../../deploy/nginx-cluster.conf).
 | `ISPF_CLUSTER_ENABLED` | `true` | Enables driver ownership + cluster health API |
 | `ISPF_NATS_ENABLED` | `true` | Cross-replica WS/object-change fan-out |
 | `ISPF_NATS_REPLICA_EVENTS` | `true` | Required for multi-replica UI sync |
+| `ISPF_NATS_JETSTREAM_ENABLED` | `true` | Structure sync fails startup without a ready JetStream stream ([0069](decisions/0069-cluster-consistency.md)) |
 | `ISPF_CLUSTER_LIVE_VARIABLE_SYNC` | `true` | NATS live-value RAM mirror ([0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md)) |
 | `ISPF_CLUSTER_PATH_INTEREST` | `true` | Redis global WS interest (requires Redis) |
 | `ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS` | `500` | NATS fan-out coalesce (separate from `ISPF_RUNTIME_TELEMETRY_COALESCE_MS`) |
-| `ISPF_REDIS_ENABLED` | `true` | Recommended (correlator windows, ACL cache, cluster path interest) |
+| `ISPF_REDIS_ENABLED` | `true` | Required when live mirror or path interest is on; also correlator windows and ACL cache |
 
 Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUSTER_DRIVER_LOCK_RENEW_MS` (default 10000).
 
@@ -283,8 +284,8 @@ Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUS
 
 - [ ] `ISPF_CLUSTER_ENABLED=true` and unique `ISPF_REPLICA_ID` on every replica
 - [ ] Shared PostgreSQL reachable from all nodes; Flyway migrations applied once
-- [ ] NATS enabled with `ISPF_NATS_REPLICA_EVENTS=true` for cross-replica UI sync
-- [ ] Redis enabled (recommended) for correlator windows / ACL cache
+- [ ] NATS enabled with `ISPF_NATS_REPLICA_EVENTS=true` and `ISPF_NATS_JETSTREAM_ENABLED=true` (NATS started with `-js`)
+- [ ] Redis enabled and reachable when live mirror or path interest is on
 - [ ] Nginx: API upstream round-robin (or least_conn); `/ws/` uses `ip_hash` (`deploy/nginx-cluster.conf`)
 - [ ] `GET /api/v1/platform/cluster/health` (admin) — all nodes `UP`, driver locks visible
 - [ ] Smoke: `bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag` (round-robin, REST failover, reclaim SLO, ADR-0030, ADR-0029 lag)
