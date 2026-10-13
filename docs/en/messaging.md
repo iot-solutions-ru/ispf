@@ -84,6 +84,8 @@ When `ispf.nats.jet-stream-enabled=true` (requires `ispf.nats.enabled=true`):
 
 Replica fan-out uses JetStream publish/subscribe instead of core NATS for `ispf.events.>` subjects. Per-replica durable consumers (`ispf-replica-{replicaId}`) allow catch-up after restarts. Object-level subjects (`ispf.object.*`) remain core NATS for external integrators.
 
+Cluster structure sync requires this stream: with `ispf.cluster.enabled=true` and NATS replica events, startup fails closed unless JetStream is up ([0069](decisions/0069-cluster-consistency.md)).
+
 **Ops:** live status (connection, stream messages/bytes, consumer pending, `PUBLISH_NATS` availability) — **System → Metrics** → NATS & JetStream card; API `GET /api/v1/platform/nats/health`.
 
 ### Redis correlator windows (optional, 0014)

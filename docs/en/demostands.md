@@ -147,6 +147,7 @@ ISPF_PLATFORM_METRICS_PROBE_ENABLED=false
 # Cluster (Prod M/L)
 ISPF_CLUSTER_ENABLED=true
 ISPF_NATS_ENABLED=true
+ISPF_NATS_JETSTREAM_ENABLED=true
 ISPF_REDIS_ENABLED=true
 
 # Elastic — defaults (do not set false without justification)
