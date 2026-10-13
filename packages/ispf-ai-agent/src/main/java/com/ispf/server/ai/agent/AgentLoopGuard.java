@@ -786,6 +786,11 @@ final class AgentLoopGuard {
                 || lower.contains("missing")
                 || lower.contains("must be ")
                 || lower.contains("unknown_arg")
+                || lower.contains("unknown role")
+                || lower.contains("formal verification")
+                || lower.contains("tautology")
+                || lower.contains("unsatisfiable")
+                || lower.contains("never discriminates")
                 || lower.contains("invalid");
     }
 
@@ -850,6 +855,12 @@ final class AgentLoopGuard {
             return """
                     Do NOT set_variable name=layout on operator-apps. \
                     Use configure_operator_ui with title, defaultDashboard, dashboards=[].""";
+        }
+        if (lower.contains("unknown role")) {
+            return """
+                    USER roles must be lowercase platform ids: admin, developer, operator (or tenant-admin). \
+                    Example: create_object type=USER name=user1 roles=operator password=ChangeMe!123. \
+                    Do NOT send OPERATOR / ROLE_OPERATOR.""";
         }
         if ("configure_alert".equals(toolName) || isFormalVerificationError(error)) {
             return """

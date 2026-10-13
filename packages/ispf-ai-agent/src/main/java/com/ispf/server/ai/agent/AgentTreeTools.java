@@ -1085,6 +1085,7 @@ final class AgentTreeTools {
         }
         List<String> roles = parseRolesArg(arguments.get("roles"));
         if (roles.isEmpty()) {
+            // Platform roles are lowercase ids (admin|developer|operator), not Spring ROLE_* names.
             roles = List.of(com.ispf.server.config.IspfRoles.OPERATOR);
         }
         String path = PlatformUserService.USERS_PATH_PREFIX + username.trim();
@@ -1178,9 +1179,9 @@ final class AgentTreeTools {
         }
         String lower = normalized.toLowerCase(Locale.ROOT).replace('_', '-');
         return switch (lower) {
-            case "operator", "operators", "hmi" -> com.ispf.server.config.IspfRoles.OPERATOR;
+            case "operator", "operators", "hmi", "ops", "user" -> com.ispf.server.config.IspfRoles.OPERATOR;
             case "admin", "administrator", "admins" -> com.ispf.server.config.IspfRoles.ADMIN;
-            case "developer", "dev", "developers" -> com.ispf.server.config.IspfRoles.DEVELOPER;
+            case "developer", "dev", "developers", "configurator" -> com.ispf.server.config.IspfRoles.DEVELOPER;
             case "tenant-admin", "tenantadmin" -> com.ispf.server.config.IspfRoles.TENANT_ADMIN;
             case "operator-readonly", "operatorreadonly", "readonly" -> "operator-readonly";
             default -> lower;
