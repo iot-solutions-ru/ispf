@@ -2861,6 +2861,23 @@
   padding: 0;
 }
 
+.agent-auto-continue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent, #58a6ff) 35%, transparent);
+  background: color-mix(in srgb, var(--accent, #58a6ff) 10%, transparent);
+}
+
+.agent-auto-continue .hint {
+  margin: 0;
+  flex: 1 1 12rem;
+}
+
 
 .ai-agent-step-error {
   color: #f85149;

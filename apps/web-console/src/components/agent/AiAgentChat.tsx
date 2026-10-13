@@ -271,7 +271,7 @@ export default function AiAgentChat() {
               onPick={(text) => void submitMessage(text)}
             />
           )}
-          {messages.map((message) => (
+          {messages.map((message, index) => (
             <div
               key={message.id}
               className={
@@ -297,6 +297,7 @@ export default function AiAgentChat() {
                   i18nNs="ai"
                   onSuggestMessage={(text) => void submitMessage(text)}
                   onAppendToInput={appendToInput}
+                  autoContinueEnabled={!isPending && index === messages.length - 1}
                 />
               )}
               {message.steps && message.steps.length > 0 && (

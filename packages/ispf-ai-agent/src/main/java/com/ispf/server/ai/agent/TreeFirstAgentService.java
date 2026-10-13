@@ -537,7 +537,8 @@ public class TreeFirstAgentService {
                                     : askMode
                                             ? "Ask mode: finish with a plain answer only — no phase=plan, plan, questions, or approval."
                                             : executeMode
-                                                    ? "Execute mode: act with tools — no phase=plan, plan, or clarifying questions."
+                                                    ? "Execute mode: act with tools — no phase=plan / full plan. "
+                                                            + "Clarifying questions+suggestions (interactive) are allowed when guessing."
                                                     : runStateAntiReplanHint(session.runState(), candidateResult)
                                                             ? "Execution phase: do not emit phase=plan — execute the next approved step."
                                                             : AgentLitePlanBootstrap.PLANNING_GUARD_ERROR;
@@ -583,8 +584,9 @@ public class TreeFirstAgentService {
                                             ? "Use read-only discovery tools, then finish with summary only "
                                                     + "(optional read-only suggestions — no plan panel)."
                                             : executeMode
-                                                    ? "Run discovery if needed, mutate with tools, then finish with summary "
-                                                            + "(optional open-device/open-dashboard suggestions)."
+                                                    ? "If details are ambiguous: finish with interactive suggestions "
+                                                            + "(one primary recommended + autoContinueSeconds). "
+                                                            + "Otherwise mutate with tools, then finish with summary."
                                                     : runStateAntiReplanHint(session.runState(), candidateResult)
                                                             ? "Follow the approved plan checklist step-by-step with tools."
                                                             : "Run discovery tools, then finish with result.phase=plan, "
@@ -607,8 +609,10 @@ public class TreeFirstAgentService {
                                                     + "result.questions, or approval suggestions. "
                                                     + "Run list_*/get_*/search_* if needed, then finish with a plain summary."
                                             : executeMode
-                                                    ? "Execute mode: do NOT emit phase=plan, result.plan, or result.questions. "
-                                                            + "Use tools to complete the task, then finish with a plain summary."
+                                                    ? "Execute mode: do NOT emit phase=plan or result.plan. "
+                                                            + "If you must ask: finish with interactive=true, suggestions "
+                                                            + "(one primary), autoContinueSeconds=45 — no blind tool spam. "
+                                                            + "Otherwise use tools and finish with a plain summary."
                                             : "Finish blocked during planning phase. "
                                                     + "Do NOT claim objects were created. "
                                                     + "Use read-only tools if needed, then finish with phase=plan, "

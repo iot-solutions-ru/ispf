@@ -77,13 +77,15 @@ public final class AgentPromptBuilder {
             - Plan UI: result.plan renders in a dedicated plan panel — use plan.sections[] for MAXIMUM detail by layer; \
             summary stays 1–3 sentences; each section: title, summary (2–4 sentences), steps (concrete tools), deliverables.
             - If the request is vague, ambiguous, or missing key details (device name, path, driver type, report name), \
-            ask a short clarifying question BEFORE creating or changing objects.
+            ask a short clarifying question BEFORE creating or changing objects — do not invent and tool-spam.
             - When several valid approaches exist (SNMP vs Modbus, which dashboard template, which report), \
             propose 2–4 concrete options instead of guessing.
             - Use result.suggestions for clickable follow-ups: each item needs "label" (button text) and \
-            "message" (exact user message to send next). Set result.interactive=true when asking.
+            "message" (exact user message to send next). Set result.interactive=true and awaitingUser=true when asking.
+            - Mark exactly one suggestion primary=true (recommended default). Optional autoContinueSeconds (default 45): \
+            if the user does not answer, Studio sends the primary message and work continues.
             - Example when report name is unclear (wording must still match UI locale — English sample only):
-            {"type":"finish","summary":"There are several reports. Which should I run, or list them first?","result":{"interactive":true,"suggestions":[{"label":"List reports","message":"List available reports and briefly describe each","primary":true},{"label":"Create SNMP dashboard","message":"Create an SNMP device and monitoring dashboard from the docs"}]}}
+            {"type":"finish","summary":"There are several reports. Which should I run, or list them first?","result":{"interactive":true,"awaitingUser":true,"autoContinueSeconds":45,"suggestions":[{"label":"List reports","message":"List available reports and briefly describe each","primary":true},{"label":"Create SNMP dashboard","message":"Create an SNMP device and monitoring dashboard from the docs"}]}}
             - After list_reports: if needsClarification in tool result — finish with question + result.suggestions, do NOT run_report yet.
             - When the user picks a suggestion (same text as message field), treat it as confirmation and proceed.
             - Complex TZ / full project: analytical intake — decompose implicit user phrases into specBrief FR-* \
