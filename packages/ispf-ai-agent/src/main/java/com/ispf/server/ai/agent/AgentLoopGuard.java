@@ -781,6 +781,11 @@ final class AgentLoopGuard {
             case "ALERT" -> "ALERT created. Next: configure_alert path=<path from create_object result>.";
             case "REPORT" -> "REPORT created. Next: configure_report path=<path from create_object result>.";
             case "EVENT_FILTER" -> "EVENT_FILTER created. Reuse path for filter fields; continue the assignment — do not recreate.";
+            case "USER" -> """
+                    Platform USER created (login + roles). Next assignment step: create the second user if needed, \
+                    then set_object_acl on the other user's devices \
+                    entries=[{principalType:USER, principalId=<firstUser>, permission:EDITOR}]. \
+                    Do NOT apply_mixin platform-user-v1 or spam list_variables on the user.""";
             default -> null;
         };
     }

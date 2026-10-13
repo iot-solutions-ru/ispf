@@ -215,9 +215,26 @@ public final class AgentToolInputSchemas {
                         "templateId", stringProp("Relative blueprint / template id"),
                         "driverId", stringProp("Driver id for DEVICE"),
                         "driverPollIntervalMs", integerProp("Driver poll interval"),
-                        "autoStartDriver", booleanProp("Auto-start driver after create")
+                        "autoStartDriver", booleanProp("Auto-start driver after create"),
+                        "password", stringProp("USER only: login password (default ChangeMe!123)"),
+                        "roles", stringProp("USER only: roles list or comma string (default OPERATOR)")
                 ),
                 req("parentPath", "name", "type", "displayName"),
+                true
+        ));
+        catalog.put("list_object_acl", objectSchema(
+                props(
+                        "path", stringProp("Object tree path")
+                ),
+                req("path"),
+                true
+        ));
+        catalog.put("set_object_acl", objectSchema(
+                props(
+                        "path", stringProp("Object path to protect (e.g. DEVICE owned by user2)"),
+                        "entries", arrayProp("ACL rows [{principalType, principalId, permission}]")
+                ),
+                req("path", "entries"),
                 true
         ));
         catalog.put("create_variable", objectSchema(

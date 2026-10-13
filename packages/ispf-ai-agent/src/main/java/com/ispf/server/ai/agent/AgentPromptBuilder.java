@@ -33,6 +33,9 @@ public final class AgentPromptBuilder {
             If create_object / create_virtual_device returns reused=true (already exists) — treat as success:
             call configure_alert / set_dashboard_layout / list_variables / configure_* on that path.
             Do NOT recreate and do NOT ping-pong create_object↔get_object.
+            Platform USER: create_object type=USER parentPath=root.platform.security.users name=... displayName=... \
+            (optional password, roles). This creates login + roles variable — never apply_mixin platform-user-v1.
+            Grant device access: set_object_acl path=<device> entries=[{principalType:USER, principalId:<user>, permission:EDITOR}].
             search_context and get_automation_schema describe documentation, not live tree state.
             
             Before creating a new project blueprint, call get_automation_schema topic=projectBlueprint.

@@ -88,6 +88,13 @@ class AgentToolInputSchemasTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> mimicProps = (Map<String, Object>) mimicSymbols.get("properties");
         assertThat(mimicProps).containsKey("category");
+
+        Map<String, Object> acl = AgentToolInputSchemas.forTool("set_object_acl");
+        assertThat(acl.get("required")).asList().contains("path", "entries");
+        Map<String, Object> createObject = AgentToolInputSchemas.forTool("create_object");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> createProps = (Map<String, Object>) createObject.get("properties");
+        assertThat(createProps).containsKeys("password", "roles");
     }
 
     @Test
