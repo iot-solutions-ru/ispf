@@ -394,7 +394,25 @@ final class AgentLoopGuard {
                 sb.append("|path=").append(path);
             }
         }
+        // Binding/alert: different expressions must not count as identical spam.
+        if ("create_binding_rule".equals(normalized)) {
+            appendFingerprintKey(sb, args, "id");
+            appendFingerprintKey(sb, args, "targetVariable");
+            appendFingerprintKey(sb, args, "expression");
+        }
+        if ("configure_alert".equals(normalized)) {
+            appendFingerprintKey(sb, args, "conditionExpr");
+            appendFingerprintKey(sb, args, "watchVariable");
+            appendFingerprintKey(sb, args, "eventName");
+        }
         return sb.toString();
+    }
+
+    private static void appendFingerprintKey(StringBuilder sb, Map<String, Object> args, String key) {
+        String value = stringArg(args, key);
+        if (!value.isBlank()) {
+            sb.append('|').append(key).append('=').append(value.toLowerCase(Locale.ROOT));
+        }
     }
 
     static String mutateTargetPath(Map<String, Object> toolArgs) {

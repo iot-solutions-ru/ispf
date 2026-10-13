@@ -197,6 +197,8 @@ final class AgentAutomationTools {
                                 "hint", "Provide targetObjectPath, watchVariable, conditionExpr, eventName to update"
                         );
                     }
+                    String requestedCondition = conditionExpr;
+                    conditionExpr = AgentExpressionCoercion.coerceCelCondition(conditionExpr);
 
                     FormalVerificationReport verification =
                             formalVerificationService.requireSafeConditionForApply(conditionExpr);
@@ -233,6 +235,10 @@ final class AgentAutomationTools {
                     ok.put("path", path);
                     ok.put("alert", alertPreview(updated));
                     ok.put("verification", verification);
+                    if (!requestedCondition.equals(conditionExpr)) {
+                        ok.put("requestedConditionExpr", requestedCondition);
+                        ok.put("resolvedConditionExpr", conditionExpr);
+                    }
                     return ok;
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());
@@ -752,6 +758,12 @@ final class AgentAutomationTools {
                         createdTargetVariable = targetVariable;
                         bindingHost = objectTreePort.require(path);
                     }
+                    String requestedExpression = expression;
+                    expression = AgentExpressionCoercion.coerceBindingExpression(expression, bindingHost);
+                    if (!expression.equals(requestedExpression)) {
+                        resolvedArgs = new LinkedHashMap<>(resolvedArgs);
+                        resolvedArgs.put("expression", expression);
+                    }
                     // Historian helpers (avg/min/max/…) are not plain CEL — skip reactive CEL compile.
                     if (ruleKind != BindingRuleKind.HISTORIAN) {
                         BindingExpressionValidator.validateOrThrow(expression);
@@ -798,6 +810,10 @@ final class AgentAutomationTools {
                     if (!createdTargetVariable.isBlank()) {
                         ok.put("createdTargetVariable", createdTargetVariable);
                     }
+                    if (!expression.equals(requestedExpression)) {
+                        ok.put("requestedExpression", requestedExpression);
+                        ok.put("resolvedExpression", expression);
+                    }
                     return ok;
                 } catch (Exception ex) {
                     String message = ex.getMessage() == null ? "" : ex.getMessage();
@@ -818,6 +834,13 @@ final class AgentAutomationTools {
                                         + " name=<targetVariable> valueType=DOUBLE writable=false, "
                                         + "then retry create_binding_rule."
                         );
+                    } else if (message.toLowerCase(Locale.ROOT).contains("invalid expression")
+                            || message.toLowerCase(Locale.ROOT).contains("undeclared reference")) {
+                        try {
+                            err.put("hint", AgentExpressionCoercion.tableSumHint(objectTreePort.require(path)));
+                        } catch (Exception ignored) {
+                            err.put("hint", AgentExpressionCoercion.tableSumHint(null));
+                        }
                     }
                     return err;
                 }

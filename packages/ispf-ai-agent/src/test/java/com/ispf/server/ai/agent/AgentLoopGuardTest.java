@@ -282,6 +282,28 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void doesNotTreatDifferentBindingExpressionsAsIdentical() {
+        String path = "root.platform.devices.vd";
+        List<Map<String, Object>> steps = List.of(
+                bindingStep(path, "sumRecordField(self.table.rows, value)"),
+                bindingStep(path, "self.table.rows.map(r | r.value).sum()"),
+                bindingStep(path, "sum(self.table.rows[*].value)"),
+                bindingStep(path, "self.table.rows.reduce(0, (acc, r) | acc + r.value)")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "create_binding_rule",
+                Map.of(
+                        "path", path,
+                        "id", "table-sum",
+                        "expression", "sumRecordField(table, int)",
+                        "targetVariable", "tableIntSum"
+                ),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
     void hardBlocksRepeatedConfigureReportAfterOk() {
         String path = "root.platform.reports.report-table-all";
         List<Map<String, Object>> steps = List.of(
@@ -470,6 +492,20 @@ class AgentLoopGuardTest {
                 "tool", "configure_report",
                 "arguments", Map.of("path", path),
                 "result", Map.of("status", "OK")
+        );
+    }
+
+    private static Map<String, Object> bindingStep(String path, String expression) {
+        return Map.of(
+                "type", "tool",
+                "tool", "create_binding_rule",
+                "arguments", Map.of(
+                        "path", path,
+                        "id", "table-sum",
+                        "expression", expression,
+                        "targetVariable", "tableIntSum"
+                ),
+                "result", Map.of("status", "ERROR", "error", "Invalid expression: " + expression)
         );
     }
 
