@@ -199,6 +199,7 @@ class HistorianAggregateQueryLoadTest {
                     sampledAt,
                     sampledAt,
                     20.0 + (i % 50),
+                    null,
                     null
             ));
             if (batch.size() >= BATCH_SIZE) {

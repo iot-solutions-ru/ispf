@@ -68,6 +68,22 @@ class ClickHouseVariableHistoryStoreTest {
         assertTrue(queries.stream().anyMatch(q -> q.contains("INSERT+INTO+ispf.variable_samples")));
         assertTrue(lastBody.get().contains("\"object_path\":\"root.platform.devices.sensor\""));
         assertTrue(lastBody.get().contains("\"value_double\":21.5"));
+        assertTrue(lastBody.get().contains("\"quality\":null"));
+    }
+
+    @Test
+    void appendBatchPostsQuality() {
+        store.appendOne(VariableHistoryWriteRecord.ingested(
+                "root.platform.devices.sensor",
+                "temperature",
+                "value",
+                Instant.parse("2025-06-25T12:00:00.123Z"),
+                21.5,
+                null,
+                "BAD"
+        ));
+
+        assertTrue(lastBody.get().contains("\"quality\":\"BAD\""));
     }
 
     @Test
@@ -76,6 +92,7 @@ class ClickHouseVariableHistoryStoreTest {
 
         assertTrue(queries.stream().anyMatch(q -> q.contains("CREATE+DATABASE")));
         assertTrue(queries.stream().anyMatch(q -> q.contains("CREATE+TABLE")));
+        assertTrue(queries.stream().anyMatch(q -> q.contains("quality")));
     }
 
     @Test

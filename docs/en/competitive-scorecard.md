@@ -40,7 +40,7 @@ Scale **1–10** vs leading platforms: Ignition, Kepware/KEPServerEX, OSIsoft PI
 | # | Dimension | 0.9.102 | **0.9.207** | Why |
 |---|-----------|:-------:|:-----------:|-----|
 | 2 | SCADA / HMI | 7.5 | **8.0** | Demostand live FPS + unmocked 500-el; lab CDP **2h + 8h** offline (**P-HMI-8H**). Not 9+: **P-HMI-FIELD** still parked. |
-| 4 | Historian | 7.0 | **9.5** | Enterprise L **Lab PASS** 2026-09-05 (50k history-enabled + ≥1B CH + multi-tag p95≈49 ms). Honesty: synthetic CH fill; demostand remains a small site. |
+| 4 | Historian | 7.0 | **9.5** | Enterprise L **Lab PASS** 2026-09-05 (50k history-enabled + ≥1B CH + multi-tag p95≈49 ms). Honesty: synthetic CH fill; demostand remains a small site. Flagship stores: **jdbc** + **ClickHouse**. Cassandra/Scylla stays **experimental** (0025b). |
 | 10 | Security / RBAC | 8.0 | **8.5** | Fold trusted-channel/OQ residual + PostgreSQL RLS Done. Not 9+: **G-01** pen-test still open; WebAuthn parked. |
 | 11 | Deploy / scale / edge | 7.0→7.5* | **7.5** | Fold Phase 32 Helm/ARM/MoM post-audit delta into top matrix (*evidence table already had 7.5). |
 | 12 | Ecosystem / marketplace | 5.0→6.5* | **6.5** | Fold Marketplace GA + CI catalog gate (*evidence table already had 6.5). |
@@ -73,7 +73,7 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 | 1 | Unified data model | 8.5 | **REAL** | Object tree, CEL, blueprints; `AlertRuleListener` → `AlertRuleService`; correlators in `EventCorrelatorService` |
 | 2 | SCADA / HMI | 8.0 | **PARTIAL** | `ispf-pid-v1` `totalSymbols: 218`; `ScadaMimicEditor.tsx`; demostand FPS [`hmi-fps/2026-09-04-…ui-pump-station`](../evidence/hmi-fps/2026-09-04-ispf-vps-0.9.207-ui-pump-station.json); unmocked 500-el [`…hmi-stress-500`](../evidence/hmi-fps/2026-09-04-ispf-vps-0.9.207-hmi-stress-500.json) (~47 FPS median); lab offline **2h** + **8h** CDP [`hmi-offline/…`](../evidence/hmi-offline/). Residual: on-site tablet (**P-HMI-FIELD**) |
 | 3 | OT/IT drivers | 7.0 | **PARTIAL** | Catalog closed lab Waves 1–11 (**162/162**); BL-191 honesty Done; TOP-20 fixtures **14/20**; BL-140 pilots **in progress** (P1 day4 / P2 day2 / P3 OPC UA loopback day2 — [ot-trust](../evidence/ot-trust/)). Lab VLAN / loopback ≠ customer plant. DNP3 `writePoint` still throws |
-| 4 | Historian | 9.5 | **REAL (lab SLO)** | JVM gates PASS ([`historian-scale/2026-09-04-jvm-…`](../evidence/historian-scale/2026-09-04-jvm-analytics-scale-gate.md)); Enterprise L lab ([`2026-09-05-lab-192.168.100.10-enterprise-l.md`](../evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md)): 50k history-enabled + ≥1B CH + multi-tag p95≈49 ms. **Honesty:** synthetic CH fill; demostand is not the L catalog |
+| 4 | Historian | 9.5 | **REAL (lab SLO)** | JVM gates PASS ([`historian-scale/2026-09-04-jvm-…`](../evidence/historian-scale/2026-09-04-jvm-analytics-scale-gate.md)); Enterprise L lab ([`2026-09-05-lab-192.168.100.10-enterprise-l.md`](../evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md)): 50k history-enabled + ≥1B CH + multi-tag p95≈49 ms. **Honesty:** synthetic CH fill; demostand is not the L catalog. Flagship path is **jdbc + ClickHouse**; **Scylla/Cassandra stays experimental** and does not store sample quality. jdbc quality TCK is green (ADR-0074); ClickHouse container round-trip is still open — score stays 9.5 |
 | 5 | Automation / alarms | 7.5 | **PARTIAL** | Alert rules + correlators **REAL**; alarm shelving approval **persisted** (BL-158) |
 | 6 | Workflow / BPMN | 7.5 | **REAL** | `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`; not full BPMN 2.0; **P-BPMN** parked |
 | 7 | MES / ISA-95 | 6.5 | **PARTIAL** | Marketplace `mes-platform`; stub ERP marks **`simulated`** (not live 1C/SAP — **P-ERP** / BL-169 parked). No production field MES site |
@@ -103,7 +103,7 @@ Priority fixes that move **code verified** scores toward 10/10 (not marketing cl
 2. **ERP L4 / MES (6.5 → 9+):** live 1C or SAP connector (**BL-169** / **P-ERP** parked); production MES sites. Lab marketplace Done; score stays until field site + live ERP.
 3. **AI (9.0 → 10):** harness bar Done. Residual: optional multi-day plant journal (not oneshot re-runs).
 4. **Ecosystem (6.5 → 9+):** Partner Portal sync + first external partner-hosted catalog.
-5. **Historian (9.5 → 10):** lab L gate met; residual is non-synthetic / demostand-scale honesty and ops playbooks for real customer L sites.
+5. **Historian (9.5 → 10):** lab L gate met; residual is non-synthetic / demostand-scale honesty, ops playbooks for real customer L sites, and the ClickHouse quality container round-trip (jdbc TCK is green; Scylla stays experimental).
 6. **HMI (8.0 → 9+):** on-site tablet / airplane-mode soak (**P-HMI-FIELD**); unmocked ≥60 FPS at 500-el still open.
 7. **Security (8.5 → 9+):** dated third-party pen-test + retest letter (**G-01**); optional hard schema table routing; WebAuthn if tender requires (BL-194). Prep/preflight and [internal engineering review](../evidence/security-pentest/2026-09-09-engineering-review/) under [`security-pentest/`](../evidence/security-pentest/) ≠ cert.
 8. **Compliance:** [compliance-tender-pack](compliance-tender-pack.md) docs Done (BL-192); no product certification claim.

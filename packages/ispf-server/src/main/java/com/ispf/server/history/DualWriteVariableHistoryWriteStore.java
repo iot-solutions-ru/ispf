@@ -1,5 +1,6 @@
 package com.ispf.server.history;
 
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,13 +23,16 @@ public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteS
 
     private final JdbcVariableHistoryWriteStore primary;
     private final ClickHouseVariableHistorySecondaryWriteStore secondary;
+    private final AutomationMetricsRecorder metrics;
 
     public DualWriteVariableHistoryWriteStore(
             JdbcVariableHistoryWriteStore primary,
-            ClickHouseVariableHistorySecondaryWriteStore secondary
+            ClickHouseVariableHistorySecondaryWriteStore secondary,
+            AutomationMetricsRecorder metrics
     ) {
         this.primary = primary;
         this.secondary = secondary;
+        this.metrics = metrics;
     }
 
     @Override
@@ -50,6 +54,7 @@ public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteS
         try {
             secondary.appendBatch(records);
         } catch (RuntimeException ex) {
+            metrics.recordHistorianDualWriteSecondaryFailure();
             log.warn("ClickHouse dual-write append failed ({} records): {}", records.size(), ex.getMessage());
         }
     }
