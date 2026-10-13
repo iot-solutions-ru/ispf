@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.208",
-  "generatedAt": "2026-10-13T13:11:03.245875+00:00",
+  "generatedAt": "2026-10-13T16:13:24.046164+00:00",
   "platformVersion": "0.9.208",
   "bundleManifest": {
     "fields": [
@@ -50400,5 +50400,8 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "105eaca5999dd23a4c53ee5749aeddbc16ddfe5863a54cdaa02c6b8e67b94167"
+  "embeddingModel": "ispf-hash-v1",
+  "embeddingDims": 384,
+  "embeddingCoverage": 37,
+  "contentSha256": "6b028aafac99be5d6fd5454f9197473ab279c3e74e1a793f00c1fa2af682ef42"
 }
