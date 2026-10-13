@@ -53,15 +53,14 @@ final class AgentLoopGuard {
     /** After this many prior identical create_object OK/reused, stop — do not flood the step log. */
     private static final int CREATE_REUSE_HARD_BLOCK = 2;
     /**
-     * Idempotent mutates (layout/report/mimic): after this many prior identical OK calls on the same
-     * fingerprint, stop — course agents otherwise ping-pong set_dashboard_layout ↔ configure_report.
+     * Truly idempotent mutates with no progressive content: after this many prior identical OK calls
+     * on the same fingerprint, stop. Do NOT include set_dashboard_layout — course turns re-apply
+     * layout after add_dashboard_widget batch hints.
      */
     private static final int IDEMPOTENT_OK_HARD_BLOCK = 2;
 
     private static final Set<String> IDEMPOTENT_MUTATE_TOOLS = Set.of(
-            "set_dashboard_layout",
-            "configure_report",
-            "save_mimic_diagram"
+            "configure_report"
     );
 
     /** Prefer one batch write over many incremental adds — noisy in Studio step log. */

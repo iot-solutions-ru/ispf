@@ -265,15 +265,32 @@ class AgentLoopGuardTest {
     }
 
     @Test
-    void hardBlocksRepeatedSetDashboardLayoutAfterOk() {
-        String dash = "root.platform.dashboards.dashboard-sine-history";
+    void allowsRepeatedSetDashboardLayoutAfterWidgetWork() {
+        String dash = "root.platform.dashboards.vd-dashboard";
         List<Map<String, Object>> steps = List.of(
                 layoutStep(dash),
+                widgetStep(dash),
+                widgetStep(dash),
                 layoutStep(dash)
         );
         var block = AgentLoopGuard.checkHardBlock(
                 "set_dashboard_layout",
                 Map.of("path", dash),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
+    void hardBlocksRepeatedConfigureReportAfterOk() {
+        String path = "root.platform.reports.report-table-all";
+        List<Map<String, Object>> steps = List.of(
+                reportStep(path),
+                reportStep(path)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "configure_report",
+                Map.of("path", path),
                 steps
         );
         assertTrue(block.isPresent());
@@ -442,6 +459,15 @@ class AgentLoopGuardTest {
         return Map.of(
                 "type", "tool",
                 "tool", "set_dashboard_layout",
+                "arguments", Map.of("path", path),
+                "result", Map.of("status", "OK")
+        );
+    }
+
+    private static Map<String, Object> reportStep(String path) {
+        return Map.of(
+                "type", "tool",
+                "tool", "configure_report",
                 "arguments", Map.of("path", path),
                 "result", Map.of("status", "OK")
         );
