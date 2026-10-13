@@ -52,9 +52,10 @@ final class AgentFunctionTools {
                         + "sourceType (script|java), sourceBody (JSON steps string OR Java class source), "
                         + "inputSchema, outputSchema ({name?, fields:[{name,type,nullable?}]}), "
                         + "optional description, dataSourcePath (script SQL), version. "
-                        + "Java: public class implementing ObjectJavaFunction, compiled on save. "
-                        + "Use get_function_template topic=java|script for skeleton. "
-                        + "Test with invoke_tree_function. Application SQL functions: deploy_app_function sourceType=script.";
+                        + "Prefer sourceType=script on demostand (JSON steps: setVar, invoke_function, return). "
+                        + "Java needs a JDK compiler on the server — often unavailable; use script + invoke_function "
+                        + "to call device calculate(). Use get_function_template topic=script. "
+                        + "Test with invoke_tree_function.";
             }
 
             @Override
@@ -114,12 +115,37 @@ final class AgentFunctionTools {
                     response.put("hint", "Test: invoke_tree_function path=" + path + " functionName=" + functionName);
                     return response;
                 } catch (IllegalArgumentException ex) {
-                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                    return deployError(ex.getMessage(), sourceType);
                 } catch (Exception ex) {
-                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                    return deployError(ex.getMessage(), sourceType);
                 }
             }
         };
+    }
+
+    private static Map<String, Object> deployError(String message, String sourceType) {
+        String error = message == null ? "deploy_tree_function failed" : message;
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", "ERROR");
+        result.put("error", error);
+        String lower = error.toLowerCase(Locale.ROOT);
+        if (lower.contains("compiler") || lower.contains("jdk") || "java".equals(sourceType)) {
+            result.put(
+                    "hint",
+                    "Demostand often has no JDK compiler. Retry deploy_tree_function sourceType=script "
+                            + "sourceBody={\"steps\":[{\"type\":\"invoke_function\",\"objectPath\":\"self\","
+                            + "\"function\":\"calculate\",\"input\":{...},\"var\":\"out\"},"
+                            + "{\"type\":\"return\",\"fields\":{...}}]}. "
+                            + "Step type is invoke_function (not invoke)."
+            );
+        } else if (lower.contains("unknown script step type")) {
+            result.put(
+                    "hint",
+                    "Use script step types: setVar, readVariable, invoke_function, return "
+                            + "(invoke is accepted as alias of invoke_function)."
+            );
+        }
+        return result;
     }
 
     private static PlatformAgentTool getFunctionTemplateTool() {
@@ -172,16 +198,17 @@ final class AgentFunctionTools {
                         response.put("rules", List.of(
                                 "sourceBody is JSON: {\"steps\":[...]}",
                                 "Must end with return step; vars: input, setVar, selectOne, readVariable, invoke_function",
+                                "Call device calculate via step type invoke_function (alias: invoke)",
                                 "Optional dataSourcePath for SQL steps",
                                 "Same engine as deploy_app_function / bundle functions[]"
                         ));
                         response.put("exampleSourceBody", SCRIPT_ECHO_TEMPLATE);
                     }
                     default -> {
-                        response.put("whenJava", "Complex logic, typed computation, no SQL — deploy_tree_function sourceType=java");
-                        response.put("whenScript", "SQL, readVariable, workflow steps, invoke_function — sourceType=script");
+                        response.put("whenJava", "Only when JDK compiler is available — prefer script on demostand");
+                        response.put("whenScript", "Default: readVariable / invoke_function / return — sourceType=script");
                         response.put("whenAppDeploy", "Application BFF with app schema — deploy_app_function sourceType=script");
-                        response.put("whenBuiltin", "Platform handlers (acknowledgeAlarm, calculate) — descriptor only, no sourceBody");
+                        response.put("whenBuiltin", "Platform handlers (acknowledgeAlarm, calculate) — call via invoke_function, do not redeploy");
                     }
                 }
                 return response;

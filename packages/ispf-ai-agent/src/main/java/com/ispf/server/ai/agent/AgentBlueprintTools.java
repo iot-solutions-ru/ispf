@@ -190,16 +190,35 @@ final class AgentBlueprintTools {
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String ref = firstBlueprintRef(arguments);
                 Optional<BlueprintDefinition> model = resolveBlueprint(blueprintRegistry, arguments);
                 if (model.isEmpty()) {
+                    if (ref.isBlank()) {
+                        return AgentToolErrors.error(
+                                "TOOL_ERROR",
+                                "blueprintName or blueprintId required; use list_mixin_blueprints or list_object_blueprints",
+                                "",
+                                ""
+                        );
+                    }
                     return AgentToolErrors.error(
                             "TOOL_ERROR",
-                            "blueprintName or blueprintId required; use list_mixin_blueprints or list_object_blueprints",
+                            "Blueprint not found: " + ref
+                                    + " — call list_mixin_blueprints / list_instance_types / list_object_blueprints "
+                                    + "and use an exact blueprintName from the result "
+                                    + "(platform-user-v1 is not a create templateId)",
                             "",
                             ""
                     );
                 }
-                return Map.of("status", "OK", "model", blueprintDetail(model.get()));
+                Map<String, Object> detail = blueprintDetail(model.get());
+                Map<String, Object> result = new LinkedHashMap<>();
+                result.put("status", "OK");
+                result.put("model", detail);
+                // Flat keys so ground-truth / compactors can ground without digging into model{}
+                result.put("blueprintName", detail.get("blueprintName"));
+                result.put("blueprintId", detail.get("blueprintId"));
+                return result;
             }
         };
     }
@@ -455,12 +474,20 @@ final class AgentBlueprintTools {
             Map<String, Object> arguments
     ) {
         String modelId = stringArg(arguments, "blueprintId");
+        if (modelId.isBlank()) {
+            modelId = stringArg(arguments, "id");
+        }
         if (!modelId.isBlank()) {
-            return blueprintRegistry.findById(modelId).or(() -> blueprintRegistry.findByName(modelId));
+            final String idRef = modelId;
+            return blueprintRegistry.findById(idRef).or(() -> blueprintRegistry.findByName(idRef));
         }
         String modelName = stringArg(arguments, "blueprintName");
+        if (modelName.isBlank()) {
+            modelName = stringArg(arguments, "name");
+        }
         if (!modelName.isBlank()) {
-            return blueprintRegistry.findByName(modelName).or(() -> blueprintRegistry.findById(modelName));
+            final String nameRef = modelName;
+            return blueprintRegistry.findByName(nameRef).or(() -> blueprintRegistry.findById(nameRef));
         }
         String model = stringArg(arguments, "model");
         if (!model.isBlank()) {
@@ -471,6 +498,16 @@ final class AgentBlueprintTools {
             return blueprintRegistry.findByName(templateId).or(() -> blueprintRegistry.findById(templateId));
         }
         return Optional.empty();
+    }
+
+    private static String firstBlueprintRef(Map<String, Object> arguments) {
+        for (String key : List.of("blueprintName", "blueprintId", "name", "id", "model", "templateId")) {
+            String value = stringArg(arguments, key);
+            if (!value.isBlank()) {
+                return value;
+            }
+        }
+        return "";
     }
 
     private static Map<String, Object> blueprintSummary(BlueprintDefinition model) {

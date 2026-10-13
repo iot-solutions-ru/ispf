@@ -412,13 +412,26 @@ final class AgentGroundTruthGuard {
                     || nestedMapFieldEquals(result, "defaults", "templateId", needle)
                     || nestedMapFieldEquals(result, "defaults", "driverId", needle);
         }
-        return listContainsField(result, "blueprints", "blueprintName", needle)
+        if (listContainsField(result, "blueprints", "blueprintName", needle)
                 || listContainsField(result, "blueprints", "name", needle)
                 || listContainsField(result, "blueprints", "blueprintId", needle)
                 || listContainsField(result, "instanceTypes", "blueprintName", needle)
                 || listContainsField(result, "instanceTypes", "name", needle)
                 || stringFieldEquals(result, "blueprintName", needle)
-                || stringFieldEquals(result, "name", needle);
+                || stringFieldEquals(result, "name", needle)
+                || stringFieldEquals(result, "blueprintId", needle)) {
+            return true;
+        }
+        // get_object_blueprint nests summary under result.model
+        Object modelObj = result.get("model");
+        if (modelObj instanceof Map<?, ?> modelMap) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> model = (Map<String, Object>) modelMap;
+            return stringFieldEquals(model, "blueprintName", needle)
+                    || stringFieldEquals(model, "name", needle)
+                    || stringFieldEquals(model, "blueprintId", needle);
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")
