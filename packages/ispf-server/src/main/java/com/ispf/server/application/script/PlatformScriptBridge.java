@@ -206,9 +206,18 @@ public class PlatformScriptBridge {
         if (!variable.writable()) {
             throw new IllegalArgumentException("Variable is not writable: " + variableName);
         }
+        Map<String, Object> current = variable.value()
+                .filter(value -> value.rowCount() > 0)
+                .map(DataRecord::firstRow)
+                .orElse(Map.of());
+        Map<String, Object> provided = fields != null ? fields : Map.of();
         Map<String, Object> coerced = new LinkedHashMap<>();
         for (com.ispf.core.model.FieldDefinition field : variable.schema().fields()) {
-            coerced.put(field.name(), ScriptFieldCoercion.coerce(field, fields.get(field.name())));
+            if (provided.containsKey(field.name())) {
+                coerced.put(field.name(), ScriptFieldCoercion.coerce(field, provided.get(field.name())));
+            } else if (current.containsKey(field.name())) {
+                coerced.put(field.name(), current.get(field.name()));
+            }
         }
         objectManager.setRuntimeVariableValue(
                 objectPath,
