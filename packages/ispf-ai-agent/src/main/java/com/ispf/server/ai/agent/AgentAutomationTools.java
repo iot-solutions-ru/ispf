@@ -952,7 +952,14 @@ final class AgentAutomationTools {
                         } catch (IllegalArgumentException ex) {
                             return AgentToolErrors.error(
                                     "TOOL_ERROR",
-                                    "title, defaultDashboard, dashboards[] are required (app not found: " + appId + ")",
+                                    "configure_operator_ui requires title, defaultDashboard (dashboard path), "
+                                            + "dashboards=[{path,title},...]. "
+                                            + "appId=" + appId + " is a short id (e.g. virt-cluster), NOT a tree path. "
+                                            + "Do NOT create_object APPLICATION — this tool creates the operator app record. "
+                                            + "Example: appId=virt-cluster title=\"Cluster\" "
+                                            + "defaultDashboard=root.platform.dashboards.virt-cluster-overview "
+                                            + "dashboards=[{\"path\":\"root.platform.dashboards.virt-cluster-overview\","
+                                            + "\"title\":\"Overview\"}]",
                                     "",
                                     ""
                             );

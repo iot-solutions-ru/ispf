@@ -332,8 +332,11 @@ final class AgentActionTools {
                 String query = stringArg(arguments, "query").toLowerCase(Locale.ROOT);
                 List<Map<String, Object>> rows = new ArrayList<>();
                 for (BlueprintDefinition model : blueprintRegistry.all()) {
-                    String haystack = (model.name() + " " + model.description() + " "
-                            + model.targetObjectType()).toLowerCase(Locale.ROOT);
+                    String targetType = model.targetObjectType() != null
+                            ? model.targetObjectType().name()
+                            : "";
+                    String haystack = (model.name() + " " + model.description() + " " + targetType)
+                            .toLowerCase(Locale.ROOT);
                     if (!query.isBlank() && !haystack.contains(query)) {
                         continue;
                     }
@@ -342,7 +345,7 @@ final class AgentActionTools {
                     row.put("blueprintId", model.id());
                     row.put("BlueprintType", model.type().name());
                     row.put("description", model.description());
-                    row.put("targetObjectType", model.targetObjectType().name());
+                    row.put("targetObjectType", targetType.isBlank() ? null : targetType);
                     row.put("variableCount", model.variables().size());
                     row.put("functionCount", model.functions().size());
                     rows.add(row);

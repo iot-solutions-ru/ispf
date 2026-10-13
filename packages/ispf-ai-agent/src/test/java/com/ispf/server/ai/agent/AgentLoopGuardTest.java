@@ -218,6 +218,18 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void hardBlocksRepeatedIdenticalBindingArgError() {
+        List<Map<String, Object>> steps = List.of(
+                errorStep("create_binding_rule", "path, id, expression are required"),
+                errorStep("create_binding_rule", "path, id, expression are required")
+        );
+        var block = AgentLoopGuard.checkHardBlock("create_binding_rule", Map.of(), steps);
+        assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
+        assertTrue(block.get().hint().contains("path, id, expression"));
+    }
+
+    @Test
     void allowsDistinctSetVariableNamesOnSamePath() {
         String path = "root.platform.devices.demo";
         List<Map<String, Object>> steps = List.of(
@@ -268,6 +280,15 @@ class AgentLoopGuardTest {
                 "type", "tool",
                 "tool", "set_variable",
                 "arguments", Map.of("path", path, "name", name, "value", "1")
+        );
+    }
+
+    private static Map<String, Object> errorStep(String tool, String error) {
+        return Map.of(
+                "type", "tool",
+                "tool", tool,
+                "arguments", Map.of(),
+                "result", Map.of("status", "ERROR", "error", error)
         );
     }
 }

@@ -227,14 +227,37 @@ export function formatDispatchStatus(status: unknown): string {
     filling: "Налив",
     completed: "Завершён",
     closed: "Закрыт",
+    OK: "OK",
+    ERROR: "ERROR",
+    WARN: "WARN",
+    WARNING: "WARNING",
+    ALARM: "ALARM",
+    FAULT: "FAULT",
   };
-  return labels[value] ?? value;
+  return labels[value] ?? labels[value.toUpperCase()] ?? value;
 }
 
+/** Color lookup for status-badge (dispatch + generic OK/ERROR cluster states). */
 export const DISPATCH_STATUS_COLORS: Record<string, string> = {
   planned: "#8b949e",
   ready: "#2f81f7",
   filling: "#d29922",
   completed: "#3fb950",
   closed: "#6e7681",
+  OK: "#3fb950",
+  ok: "#3fb950",
+  NORMAL: "#3fb950",
+  normal: "#3fb950",
+  ERROR: "#f85149",
+  error: "#f85149",
+  FAULT: "#f85149",
+  fault: "#f85149",
+  ALARM: "#f85149",
+  alarm: "#f85149",
+  CRITICAL: "#f85149",
+  critical: "#f85149",
+  WARN: "#d29922",
+  warn: "#d29922",
+  WARNING: "#d29922",
+  warning: "#d29922",
 };

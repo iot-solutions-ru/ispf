@@ -241,6 +241,10 @@ final class AgentLoopGuard {
                             + " — use exact paths from result, then retry. Problem Brief: do not replan — fix grounding."
             ));
         }
+        Optional<BlockDecision> sameError = checkRepeatedIdenticalError(toolName, steps);
+        if (sameError.isPresent()) {
+            return sameError;
+        }
         String normalized = normalize(toolName);
         if (DISCOVERY_LOOP_TOOLS.contains(normalized)
                 && totalToolCount(steps, normalized) >= DISCOVERY_HARD_BLOCK) {
@@ -355,6 +359,76 @@ final class AgentLoopGuard {
         return """
                 Stop add_mimic_elements noise. Prefer ONE save_mimic_diagram path=<mimic> \
                 with the full elements[] array, then get_mimic_diagram to verify, then finish.""";
+    }
+
+    /**
+     * Same tool + same ERROR text ≥2 times → stop turn (missing-arg loops, etc.).
+     */
+    private static Optional<BlockDecision> checkRepeatedIdenticalError(
+            String toolName,
+            List<Map<String, Object>> steps
+    ) {
+        if (steps == null || toolName == null || steps.isEmpty()) {
+            return Optional.empty();
+        }
+        String normalized = normalize(toolName);
+        String lastError = null;
+        int streak = 0;
+        for (int i = steps.size() - 1; i >= 0; i--) {
+            Map<String, Object> step = steps.get(i);
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            if (!normalized.equals(normalize(String.valueOf(step.get("tool"))))) {
+                break;
+            }
+            Map<String, Object> result = stepMap(step, "result");
+            if (!"ERROR".equals(String.valueOf(result.get("status")))) {
+                break;
+            }
+            String error = String.valueOf(result.get("error"));
+            if (lastError == null) {
+                lastError = error;
+                streak = 1;
+            } else if (lastError.equals(error)) {
+                streak++;
+            } else {
+                break;
+            }
+            if (streak >= 2) {
+                String hint = identicalErrorHint(normalized, lastError);
+                return Optional.of(new BlockDecision(
+                        "Hard block: '" + normalized + "' failed " + streak
+                                + " times with the same error — stop flooding the step log",
+                        hint,
+                        true
+                ));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static String identicalErrorHint(String toolName, String error) {
+        String lower = error == null ? "" : error.toLowerCase(Locale.ROOT);
+        if ("create_binding_rule".equals(toolName) || lower.contains("path, id, expression")) {
+            return """
+                    create_binding_rule needs flat args: path, id, expression, targetVariable=<local var>. \
+                    Example expression: read("root.platform.devices.virt-device-1/sineWave") > 0 \
+                    && read(".../virt-device-2/sineWave") > 0 && read(".../virt-device-3/sineWave") > 0 \
+                    ? "ERROR" : "OK". Do NOT send ruleJson. Call describe_agent_tool name=create_binding_rule once.""";
+        }
+        if ("create_variable".equals(toolName) || lower.contains("valuetype")) {
+            return """
+                    create_variable needs path, name, valueType (DOUBLE|BOOLEAN|STRING|INTEGER). \
+                    Do NOT use dataType. Prefer SINGLETON hub under singleton-blueprints for cluster status.""";
+        }
+        if ("configure_operator_ui".equals(toolName) || lower.contains("defaultdashboard")) {
+            return """
+                    configure_operator_ui needs title, defaultDashboard, dashboards=[{path,title}]. \
+                    appId is a short id (virt-cluster), not a tree path. Do NOT create_object APPLICATION.""";
+        }
+        return "Fix the error using the tool description / describe_agent_tool, or finish. "
+                + "Do not repeat the identical failing call.";
     }
 
     /**

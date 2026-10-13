@@ -53,6 +53,26 @@ class AgentToolInputSchemasTest {
     }
 
     @Test
+    void createVariableAndBindingSchemasMatchToolContracts() {
+        Map<String, Object> variable = AgentToolInputSchemas.forTool("create_variable");
+        assertThat(variable.get("required")).asList().contains("path", "name", "valueType");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> variableProps = (Map<String, Object>) variable.get("properties");
+        assertThat(variableProps).containsKeys("valueType", "path", "name");
+        assertThat(variableProps).doesNotContainKey("dataType");
+
+        Map<String, Object> binding = AgentToolInputSchemas.forTool("create_binding_rule");
+        assertThat(binding.get("required")).asList().contains("path", "id", "expression");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> bindingProps = (Map<String, Object>) binding.get("properties");
+        assertThat(bindingProps).containsKeys("id", "expression", "targetVariable");
+        assertThat(bindingProps).doesNotContainKey("ruleJson");
+
+        Map<String, Object> operatorUi = AgentToolInputSchemas.forTool("configure_operator_ui");
+        assertThat(operatorUi.get("required")).asList().contains("title", "defaultDashboard", "dashboards");
+    }
+
+    @Test
     void executeRejectsInvalidArgsBeforeHandler() {
         Map<String, Object> result = null;
         try {

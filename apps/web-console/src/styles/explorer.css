@@ -1267,6 +1267,16 @@
   color: var(--text-muted);
 }
 
+.badge.ok {
+  color: var(--success, #3fb950);
+  background: color-mix(in srgb, var(--success, #3fb950) 16%, transparent);
+}
+
+.badge.danger {
+  color: #f85149;
+  background: color-mix(in srgb, #f85149 16%, transparent);
+}
+
 .badge.w {
   color: var(--success);
 }

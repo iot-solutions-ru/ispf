@@ -39,6 +39,10 @@ public final class AgentPromptBuilder {
             For dashboard context rules: search_context topic=platform-logic.
             Anti-noise: never spam the same tool (add_dashboard_widget, add_mimic_elements, list_*, get_*) —
             batch (set_dashboard_layout / save_mimic_diagram) or finish. Studio step log must stay short.
+            Cluster/app logic hub: SINGLETON (ensure_singleton_instance) or INSTANCE — never CUSTOM/DEVICE under devices.
+            create_variable needs valueType (not dataType); create_binding_rule needs path+id+expression+targetVariable (not ruleJson).
+            Operator HMI: configure_operator_ui appId=<short-id> title= defaultDashboard= dashboards=[{path,title}] —
+            do NOT create_object APPLICATION for the launcher.
             For dashboards: get_automation_schema topic=dashboard (or search_context) — list_variables first, prefer set_dashboard_layout
             template= or one full layoutJson over many add_dashboard_widget; never set_variable name=widgets.
             PRESENTATION (mandatory): columns=84,rowHeight=8; KPI tiles w=21|28 h=14 in a filled row;

@@ -155,9 +155,11 @@ final class AgentBlueprintTools {
             if (excludeIntrinsic && SystemIntrinsicBlueprints.isIntrinsic(model)) {
                 continue;
             }
-            if (!targetFilter.isBlank()
-                    && !model.targetObjectType().name().equalsIgnoreCase(targetFilter)) {
-                continue;
+            if (!targetFilter.isBlank()) {
+                if (model.targetObjectType() == null
+                        || !model.targetObjectType().name().equalsIgnoreCase(targetFilter)) {
+                    continue;
+                }
             }
             String haystack = (model.name() + " " + model.description()).toLowerCase(Locale.ROOT);
             if (!query.isBlank() && !haystack.contains(query)) {
@@ -477,7 +479,7 @@ final class AgentBlueprintTools {
         row.put("blueprintId", model.id());
         row.put("blueprintType", model.type().name());
         row.put("description", model.description());
-        row.put("targetObjectType", model.targetObjectType().name());
+        row.put("targetObjectType", model.targetObjectType() != null ? model.targetObjectType().name() : null);
         row.put("variableCount", model.variables().size());
         row.put("eventCount", model.events().size());
         row.put("functionCount", model.functions().size());
