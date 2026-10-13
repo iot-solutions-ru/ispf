@@ -154,7 +154,7 @@ public class BundleManifestValidator {
     /**
      * Reclassify ship-canon WARNING issues as ERROR so status becomes ERROR (ADR-0060 / tension Wave 1A).
      */
-    static BundleValidationResult promoteShipCanon(BundleValidationResult result) {
+    public static BundleValidationResult promoteShipCanon(BundleValidationResult result) {
         if (result == null || result.issues() == null || result.issues().isEmpty()) {
             return result;
         }
