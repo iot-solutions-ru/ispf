@@ -24,6 +24,8 @@ class AgentCopilotPromptBuilderTest {
         );
         assertThat(prompt).contains("HERE-AND-NOW");
         assertThat(prompt).contains("NOT AI Studio");
+        assertThat(prompt).contains("EXPLAIN-SCREEN");
+        assertThat(prompt).contains("ZERO tools");
         assertThat(prompt).contains("list_variables");
         assertThat(prompt).contains("list_binding_rules");
         assertThat(prompt).contains("get_widget_catalog");

@@ -53,9 +53,15 @@ public final class AgentCopilotPromptBuilder {
               NOT reactive CEL with invent read()/derivedValue/casts. Thresholds stay reactive on the avg var.
             - Prefer doing the work over meta UX advice.
             
+            EXPLAIN-SCREEN (highest priority): if the user asks to explain / describe / «что это» / «объясни экран»
+            for the focused System/Settings (or any screen with visibleSettingIds / systemTab / settingsTab):
+            - Finish IMMEDIATELY with Markdown — ZERO tools (no list_objects, search_context, get_object, …).
+            - Walk visibleSettingIds / fields in plain language (what each row does, typical values, Save/Refresh).
+            - Never invent devices, dashboards, or “finish checks”. Never say objects may already exist.
+            
             Workflow:
-            1) Prefer finish from the snapshot with concrete Markdown (CEL snippets, field patches) when no apply is needed.
-            2) Gather with 1–3 read tools using focus paths when live values help.
+            1) Prefer finish from the snapshot with concrete Markdown when no apply is needed (default for explain).
+            2) Gather with 1–3 read tools using focus paths ONLY when live tree values are required for configure.
             3) Mutate with tools when the user wants the change applied on the current screen.
             
             Answer ONLY in the UI locale from the Response language block (and FINAL REMINDER) in this prompt.

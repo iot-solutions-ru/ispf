@@ -648,51 +648,55 @@ public class TreeFirstAgentService {
                             syncRunPlanState(session);
                         }
                         if (planOutcome == AgentPlanGuard.FinishOutcome.ALLOW_EXECUTION) {
-                            executionAcceptance = AcceptanceVerdict.evaluate(
-                                    steps,
-                                    userMessage,
-                                    session.runState().assignmentType()
-                            );
-                            var block = AgentPlatformTurnGuard.blockIfNeeded(executionAcceptance);
-                            if (block.isPresent()) {
-                                AgentPlatformTurnGuard.BlockDecision decision = block.get();
-                                if (AgentPlatformTurnGuard.isStuckGuardLoop(steps, decision.error())) {
-                                    finishSummary = AgentStepHumanizer.platformGuardStuckSummary(uiLocale);
-                                    finishResult = new LinkedHashMap<>();
-                                    finishResult.put("interactive", true);
-                                    finishResult.put("platformGuardStuck", true);
-                                    finishResult.put("guardError", decision.error());
-                                    finalStatus = AgentTurnStatus.OK;
-                                    Map<String, Object> finishStep = Map.of(
-                                            "step", stepNumber,
-                                            "type", "finish",
-                                            "summary", finishSummary,
-                                            "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary, uiLocale),
-                                            "result", finishResult,
-                                            "platformGuardStuck", true
-                                    );
-                                    steps.add(finishStep);
-                                    publishStep(session.sessionId(), finishStep);
-                                    break;
+                            // Admin Copilot is screen help, not Studio build — never run device/telemetry
+                            // AcceptanceVerdict finish checks (they produce «Finish checks kept repeating»).
+                            if (!copilotChannel) {
+                                executionAcceptance = AcceptanceVerdict.evaluate(
+                                        steps,
+                                        userMessage,
+                                        session.runState().assignmentType()
+                                );
+                                var block = AgentPlatformTurnGuard.blockIfNeeded(executionAcceptance);
+                                if (block.isPresent()) {
+                                    AgentPlatformTurnGuard.BlockDecision decision = block.get();
+                                    if (AgentPlatformTurnGuard.isStuckGuardLoop(steps, decision.error())) {
+                                        finishSummary = AgentStepHumanizer.platformGuardStuckSummary(uiLocale);
+                                        finishResult = new LinkedHashMap<>();
+                                        finishResult.put("interactive", true);
+                                        finishResult.put("platformGuardStuck", true);
+                                        finishResult.put("guardError", decision.error());
+                                        finalStatus = AgentTurnStatus.OK;
+                                        Map<String, Object> finishStep = Map.of(
+                                                "step", stepNumber,
+                                                "type", "finish",
+                                                "summary", finishSummary,
+                                                "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary, uiLocale),
+                                                "result", finishResult,
+                                                "platformGuardStuck", true
+                                        );
+                                        steps.add(finishStep);
+                                        publishStep(session.sessionId(), finishStep);
+                                        break;
+                                    }
+                                    Map<String, Object> guardStep = new LinkedHashMap<>();
+                                    guardStep.put("step", stepNumber);
+                                    guardStep.put("type", "guard");
+                                    guardStep.put("label", AgentStepHumanizer.preFinishCheckLabel(uiLocale));
+                                    guardStep.put("error", decision.error());
+                                    guardStep.put("hint", decision.hint() != null ? decision.hint() : "");
+                                    guardStep.put("checkId", decision.checkId());
+                                    guardStep.put("acceptance", executionAcceptance.toMap());
+                                    steps.add(guardStep);
+                                    publishStep(session.sessionId(), guardStep);
+                                    messages.add(new LlmMessage("assistant", response.content()));
+                                    messages.add(new LlmMessage(
+                                            "user",
+                                            "Finish blocked:\n" + decision.error()
+                                                    + (decision.hint() != null ? "\n\n" + decision.hint() : "")
+                                                    + "\n\nContinue with tools until devices have telemetry, then finish."
+                                    ));
+                                    continue;
                                 }
-                                Map<String, Object> guardStep = new LinkedHashMap<>();
-                                guardStep.put("step", stepNumber);
-                                guardStep.put("type", "guard");
-                                guardStep.put("label", AgentStepHumanizer.preFinishCheckLabel(uiLocale));
-                                guardStep.put("error", decision.error());
-                                guardStep.put("hint", decision.hint() != null ? decision.hint() : "");
-                                guardStep.put("checkId", decision.checkId());
-                                guardStep.put("acceptance", executionAcceptance.toMap());
-                                steps.add(guardStep);
-                                publishStep(session.sessionId(), guardStep);
-                                messages.add(new LlmMessage("assistant", response.content()));
-                                messages.add(new LlmMessage(
-                                        "user",
-                                        "Finish blocked:\n" + decision.error()
-                                                + (decision.hint() != null ? "\n\n" + decision.hint() : "")
-                                                + "\n\nContinue with tools until devices have telemetry, then finish."
-                                ));
-                                continue;
                             }
                             AgentPlanGuard.completeExecution(session.runState());
                         }
@@ -793,6 +797,22 @@ public class TreeFirstAgentService {
                         executedTool = toolName;
                     }
                         } else {
+                        if (copilotChannel
+                                && AgentCopilotExplainIntent.shouldBlockDiscoveryTool(
+                                        toolName,
+                                        llmUserText,
+                                        session.runState().clientFocus()
+                                )) {
+                            toolResult = new LinkedHashMap<>();
+                            toolResult.put("status", "ERROR");
+                            toolResult.put("error", "Explain-screen turn: discovery tools are blocked");
+                            toolResult.put(
+                                    "hint",
+                                    AgentCopilotExplainIntent.discoveryBlockHint(session.runState().clientFocus())
+                            );
+                            executedTool = toolName;
+                            agentMetrics.recordGuardBlock("copilotExplain");
+                        } else {
                         Optional<AgentLoopGuard.BlockDecision> loopBlock =
                                 AgentLoopGuard.checkHardBlock(toolName, steps);
                         if (loopBlock.isPresent() && loopBlock.get().blocked()) {
@@ -888,6 +908,7 @@ public class TreeFirstAgentService {
                                 }
                                 executedTool = toolName;
                             }
+                        }
                         }
                         }
                     }
