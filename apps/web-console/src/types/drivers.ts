@@ -1,4 +1,4 @@
-export type DriverMaturity = "PRODUCTION" | "BETA" | "STUB";
+export type DriverMaturity = "CERTIFIED" | "FIELD" | "PRODUCTION" | "BETA" | "STUB";
 
 export interface DriverMetadata {
   id: string;

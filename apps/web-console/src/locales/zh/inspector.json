@@ -287,6 +287,8 @@
   "driver.write.valueRequired": "请输入值",
   "driver.write.writing": "写入中…",
   "driverMaturity.BETA.hint": "工作有限制 - 请参阅驱动说明",
+  "driverMaturity.CERTIFIED.hint": "现场验证 + 协议一致性/正式证书证据",
+  "driverMaturity.FIELD.hint": "具名现场 soak 与 OT 签核（高于实验室 Production）",
   "driverMaturity.PRODUCTION.hint": "支持典型场景",
   "driverMaturity.STUB.hint": "仅存根或连接检查 - 不适用于生产",
   "events.add": "+ 事件",

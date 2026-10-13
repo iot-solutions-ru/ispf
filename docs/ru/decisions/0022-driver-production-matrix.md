@@ -34,7 +34,7 @@
 
 `jdbc` / `kafka` ingress driver'ы **вне scope** матрицы driver-pack; telemetry ingress покрыт [0017](0017-telemetry-ingest-pipeline.md) и [0026](0026-elastic-telemetry-ingress.md) (не ADR-0024 — этот номер у demand-driven pub/sub).
 
-**Примечание:** PRODUCTION здесь означает **lab CI** (loopback / integration test). Подпись площадки и наборы conformance протокола ведутся отдельно (измерение OT в scorecard; будущие уровни зрелости FIELD / CERTIFIED).
+**Примечание:** PRODUCTION здесь означает **lab CI** (loopback / integration test). Подпись площадки и conformance — тиры **FIELD** / **CERTIFIED**: [0067-field-certified-maturity](0067-field-certified-maturity.md) (в волне 1 ещё не значения API enum).
 
 ## Последствия
 

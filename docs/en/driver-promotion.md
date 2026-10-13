@@ -4,17 +4,22 @@
 
 > **Status:** Stable — PRODUCTION + ready-for-field. Hub: [doc-status.md](doc-status.md).
 
-How to move drivers from **stub** / **beta** to **production** (Phase 3.2).
+How to move drivers from **stub** / **beta** to **production** (Phase 3.2). Evidence tiers **above** PRODUCTION (**FIELD** / **CERTIFIED**): [0067-field-certified-maturity](decisions/0067-field-certified-maturity.md).
 
 ## Labels
 
-| `maturity` | Meaning |
+| `maturity` (API) | Meaning |
 |------------|----------|
-| `PRODUCTION` | Typical scenarios, documented config, tests |
+| `PRODUCTION` | Lab CI: typical scenarios, documented config, loopback/integration tests ([0022](decisions/0022-driver-production-matrix.md)) |
 | `BETA` | Working protocol with limitations (platform, auth, partial stack) |
 | `STUB` | Connectivity shell — not for production telemetry |
 
-Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/drivers`.
+| Evidence tier (API + matrix) | Meaning |
+|-----------------------------------|----------|
+| **FIELD** | Named site soak ≥7d + OT sign-off; requires `FIELD_EVIDENCE_PATHS` entry ([0067](decisions/0067-field-certified-maturity.md)) |
+| **CERTIFIED** | FIELD (or waiver) + conformance; requires `CERTIFIED_EVIDENCE_PATHS` |
+
+No driver uses FIELD/CERTIFIED yet (evidence maps empty). API label is set in `DriverMaturityRegistry` / matrix and returned in `GET /api/v1/drivers`.
 
 ## Promotion checklist
 

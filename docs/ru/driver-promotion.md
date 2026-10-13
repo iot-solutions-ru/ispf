@@ -4,17 +4,22 @@
 
 > **Статус:** Stable — PRODUCTION + ready-for-field. Хаб: [doc-status.md](doc-status.md).
 
-Как перевести драйверы из **stub** / **beta** в **production** (Phase 3.2).
+Как перевести драйверы из **stub** / **beta** в **production** (Phase 3.2). Тиры **выше** PRODUCTION (**FIELD** / **CERTIFIED**): [0067-field-certified-maturity](decisions/0067-field-certified-maturity.md).
 
 ## Метки
 
-| `maturity` | Значение |
+| `maturity` (API) | Значение |
 |------------|----------|
-| `PRODUCTION` | Типовые сценарии, документированный конфиг, тесты |
+| `PRODUCTION` | Lab CI: типовые сценарии, конфиг, loopback/integration ([0022](decisions/0022-driver-production-matrix.md)) |
 | `BETA` | Рабочий протокол с ограничениями (платформа, auth, partial stack) |
 | `STUB` | Connectivity shell — не для production-телеметрии |
 
-Метка задаётся в `DriverMaturityRegistry` (server) и отдаётся в `GET /api/v1/drivers`.
+| Evidence-тир (docs, пока не API) | Значение |
+|----------------------------------|----------|
+| **FIELD** | Именованная площадка, soak ≥7д, OT sign-off ([0067](decisions/0067-field-certified-maturity.md)) |
+| **CERTIFIED** | FIELD (или waiver) + conformance / сертификат |
+
+API-метка задаётся в `DriverMaturityRegistry` (server) и отдаётся в `GET /api/v1/drivers`.
 
 ## Чеклист продвижения
 

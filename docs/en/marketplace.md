@@ -4,6 +4,8 @@
 
 > **Status: Done (BL-183).** Remote catalog browse, free/paid install, signing, versioning, local offline install, multi-endpoint partner catalogs, and CI catalog validate are real. Symbol **packs** are Done under BL-185 (`ISPF_SYMBOL_PACKS_DIR` + scada API); `GET /api/v1/marketplace/symbols` lists bundled/local packs (`source`: `bundled` | `local`), not a remote partner symbol store. Partner **directory** (3 seeded DB partners) is Done under BL-184 — see [partner-program](partner-program.md). Seeded partner `marketplaceUrl` values are `.example` placeholders; operators configure real partner hosts via `ispf.marketplace.endpoints`. Partner Portal sync remains external.
 
+**Industry / solution pilots** under `examples/marketplace-catalog/` (HVAC, tank-farm, oil-control, MES packs, twins, …) are **working reference installs** (CI catalog validate + dogfood). Inventory: [marketplace-pilots](marketplace-pilots.md). That lane is separate from **driver** `FIELD` / `CERTIFIED` in [ADR-0067](decisions/0067-field-certified-maturity.md) — a working marketplace solution does not auto-promote protocol drivers to FIELD.
+
 ISPF platform can browse **remote marketplace servers**, install free bundles, and activate paid listings with an entitlement key.
 
 Default marketplace URL is **configurable** (`ISPF_MARKETPLACE_DEFAULT_URL`, often `https://marketplace.ispf.ai` in demos). Point it at your own compatible marketplace host for production.

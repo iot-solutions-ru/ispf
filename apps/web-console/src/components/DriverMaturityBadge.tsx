@@ -14,6 +14,7 @@ interface DriverMaturityBadgeProps {
 export default function DriverMaturityBadge({ maturity, compact = false }: DriverMaturityBadgeProps) {
   const { t } = useTranslation("inspector");
   const level = normalizeDriverMaturity(maturity);
+  // Compact lists hide lab Production only; FIELD/CERTIFIED stay visible.
   if (level === "PRODUCTION" && compact) {
     return null;
   }

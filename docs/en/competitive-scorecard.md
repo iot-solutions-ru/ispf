@@ -72,7 +72,7 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 |---|-----------|:-----:|---------|--------------|
 | 1 | Unified data model | 8.5 | **REAL** | Object tree, CEL, blueprints; `AlertRuleListener` → `AlertRuleService`; correlators in `EventCorrelatorService` |
 | 2 | SCADA / HMI | 8.0 | **PARTIAL** | `ispf-pid-v1` `totalSymbols: 218`; `ScadaMimicEditor.tsx`; demostand FPS [`hmi-fps/2026-09-04-…ui-pump-station`](../evidence/hmi-fps/2026-09-04-ispf-vps-0.9.207-ui-pump-station.json); unmocked 500-el [`…hmi-stress-500`](../evidence/hmi-fps/2026-09-04-ispf-vps-0.9.207-hmi-stress-500.json) (~47 FPS median); lab offline **2h** + **8h** CDP [`hmi-offline/…`](../evidence/hmi-offline/). Residual: on-site tablet (**P-HMI-FIELD**) |
-| 3 | OT/IT drivers | 7.0 | **PARTIAL** | Catalog closed lab Waves 1–11 (**162/162**); BL-191 honesty Done; TOP-20 fixtures **14/20**; BL-140 pilots **in progress** (P1 day4 / P2 day2 / P3 OPC UA loopback day2 — [ot-trust](../evidence/ot-trust/)). Lab VLAN / loopback ≠ customer plant. DNP3 `writePoint` still throws |
+| 3 | OT/IT drivers | 7.0 | **PARTIAL** | Lab \PRODUCTION\ catalog Waves 1–11 (**162/162**); BL-191 honesty Done; TOP-20 fixtures **14/20**; BL-140 **lab** soaks Consumed ([ot-trust](../evidence/ot-trust/)). [ADR-0067](decisions/0067-field-certified-maturity.md): driver **FIELD/CERTIFIED matrix = 0** (named plant C1 open) — **not** a claim that marketplace/solution pilots are broken (HVAC, tank-farm, MES, twins, … are REAL). DNP3 \writePoint\ still throws |
 | 4 | Historian | 9.5 | **REAL (lab SLO)** | JVM gates PASS ([`historian-scale/2026-09-04-jvm-…`](../evidence/historian-scale/2026-09-04-jvm-analytics-scale-gate.md)); Enterprise L lab ([`2026-09-05-lab-192.168.100.10-enterprise-l.md`](../evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md)): 50k history-enabled + ≥1B CH + multi-tag p95≈49 ms. **Honesty:** synthetic CH fill; demostand is not the L catalog |
 | 5 | Automation / alarms | 7.5 | **PARTIAL** | Alert rules + correlators **REAL**; alarm shelving approval **persisted** (BL-158) |
 | 6 | Workflow / BPMN | 7.5 | **REAL** | `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`; not full BPMN 2.0; **P-BPMN** parked |
@@ -81,7 +81,7 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 | 9 | AI-assisted development | 9.0 | **REAL** | BL-178 **52/52 @100%**; BL-177/180 live smoke harness; soft re-soaks under [`docs/evidence/ai-generator/`](../evidence/ai-generator/). Residual for 10: optional multi-day plant journal — soft archives do **not** mint new scores |
 | 10 | Security / RBAC | 8.5 | **PARTIAL** | Contract: [ADR-0066](decisions/0066-security-model.md). TOTP MFA GA (BL-153); ACL + trusted-channel (BL-154); SaaS tenant-admin + PG RLS (BL-155); secrets rotation (ADR-0065); SIEM audit (BL-156). Residual: hired pen-test (**G-01** / **P-PENTEST**), optional hard schema routing, WebAuthn (BL-194 / ADR-0056) |
 | 11 | Deploy / scale / edge | 7.5 | **PARTIAL** | Federation MoM (BL-188); Helm + ARM edge (BL-186/187); no CI load proof for cluster / 10+ peer scale |
-| 12 | Ecosystem / marketplace | 6.5 | **PARTIAL** | Marketplace GA + CI catalog gate (BL-183); partner directory `source=db` (BL-184); Partner Portal sync still external |
+| 12 | Ecosystem / marketplace | 6.5 | **PARTIAL** | Marketplace GA + CI catalog gate (BL-183); **working industry pilots** — [marketplace-pilots](marketplace-pilots.md) (HVAC, tank-farm, oil-control, MES, twins, … — REAL). Partner directory `source=db` (BL-184); Partner Portal sync still external |
 | 13 | Documentation / DX | 8.5 | **REAL** | Docs + ADRs; stub honesty in code; evidence folders under `docs/evidence/` |
 | 14 | Stack modernity | 9.5 | **REAL** | Spring Boot 4, React 19, ClickHouse option in `gradle.properties` / `application.yml` |
 
@@ -91,7 +91,7 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 |-------|----------|
 | DNP3 PRODUCTION poll-only — `writePoint` not implemented (ADR-0057) | `Dnp3DeviceDriver.writePoint()` — matrix `PRODUCTION` + `POLL` only; write still open |
 | Partner Portal still external | `PartnerProgramService` persists directory/enroll (`source=db`); portal sync out of repo |
-| OT field pilots incomplete | [ot-trust](../evidence/ot-trust/) — lab soaks in progress; not customer plant sign-off |
+| Driver FIELD matrix = 0 (named plant C1 open) | [ADR-0067](decisions/0067-field-certified-maturity.md) — separate from working marketplace/solution pilots |
 
 ---
 
@@ -99,7 +99,7 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 
 Priority fixes that move **code verified** scores toward 10/10 (not marketing claims). Full domain audit: [roadmap.md § Domain gap audit](roadmap.md#domain-gap-audit--iot--scada--mes--erp-2026-07-09).
 
-1. **OT drivers (7.0 → 9+):** matrix honesty **closed (BL-191)**; remaining gap is **field** pilot sign-offs (7-day + OT contact) + DNP3 write / full DA stacks after **named field driver task** (BL-140). Lab pilots ≠ OT 10/10.
+1. **OT drivers (7.0 → 9+):** matrix honesty **closed (BL-191)**; remaining gap is **FIELD** gate per [ADR-0067](decisions/0067-field-certified-maturity.md) (named site + 7-day soak + OT sign-off) then **CERTIFIED** where conformance is claimed; DNP3 write / full DA stacks only after named field driver task (BL-140). Lab pilots ≠ OT 10/10.
 2. **ERP L4 / MES (6.5 → 9+):** live 1C or SAP connector (**BL-169** / **P-ERP** parked); production MES sites. Lab marketplace Done; score stays until field site + live ERP.
 3. **AI (9.0 → 10):** harness bar Done. Residual: optional multi-day plant journal (not oneshot re-runs).
 4. **Ecosystem (6.5 → 9+):** Partner Portal sync + first external partner-hosted catalog.

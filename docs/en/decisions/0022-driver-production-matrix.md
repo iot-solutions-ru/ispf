@@ -32,7 +32,7 @@
 
 `jdbc` / `kafka` ingress drivers are **out of scope** for driver-pack matrix; telemetry ingress is covered by [0017](0017-telemetry-ingest-pipeline.md) and [0026](0026-elastic-telemetry-ingress.md) (not ADR-0024 — that number is demand-driven pub/sub).
 
-**Note:** PRODUCTION here means **lab CI** (loopback / integration test). Field site sign-off and protocol conformance suites are tracked separately (scorecard OT dimension; future FIELD / CERTIFIED maturity levels).
+**Note:** PRODUCTION here means **lab CI** (loopback / integration test). Field site sign-off and protocol conformance are **FIELD** / **CERTIFIED** evidence tiers — defined in [0067-field-certified-maturity](0067-field-certified-maturity.md) (not API enum values in wave 1).
 
 ## Consequences
 

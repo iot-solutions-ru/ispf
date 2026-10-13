@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -76,10 +77,10 @@ class DriverProductionMatrixTest {
     @Test
     void productionDriversDeclareLoopbackTestSource() {
         for (DriverProductionMatrix.Entry entry : DriverProductionMatrix.entries().values()) {
-            if (entry.maturity() != DriverMaturity.PRODUCTION) {
+            if (!entry.maturity().isAtLeastProduction()) {
                 continue;
             }
-            assertNotNull(entry.loopbackTestSourcePath(), entry.driverId() + " PRODUCTION requires loopback test");
+            assertNotNull(entry.loopbackTestSourcePath(), entry.driverId() + " PRODUCTION+ requires loopback test");
             assertTrue(
                     DriverProductionMatrix.loopbackTestSourceExists(entry),
                     entry.driverId() + " missing loopback test source: " + entry.loopbackTestSourcePath()
@@ -90,7 +91,7 @@ class DriverProductionMatrixTest {
     @Test
     void productionDriversMustNotBeDocumentedStubs() throws IOException {
         for (DriverProductionMatrix.Entry entry : DriverProductionMatrix.entries().values()) {
-            if (entry.maturity() != DriverMaturity.PRODUCTION) {
+            if (!entry.maturity().isAtLeastProduction()) {
                 continue;
             }
             Path driverSource = resolveDeviceDriverSource(entry);
@@ -217,7 +218,7 @@ class DriverProductionMatrixTest {
     /**
      * Honesty gate (code-analysis F-03): the maturity counts published in
      * {@code docs/en/drivers.md} must match the registry. The doc line is
-     * {@code <!-- maturity-counts: production=N beta=M stub=K -->} and is the single
+     * {@code <!-- maturity-counts: production=N beta=M stub=K field=F certified=C -->} and is the single
      * source for the human-readable sentence right below it.
      */
     @Test
@@ -228,18 +229,22 @@ class DriverProductionMatrixTest {
         );
         assertNotNull(doc, "docs/en/drivers.md not found");
         Matcher m = Pattern
-                .compile("<!--\\s*maturity-counts:\\s*production=(\\d+)\\s+beta=(\\d+)\\s+stub=(\\d+)\\s*-->")
+                .compile("<!--\\s*maturity-counts:\\s*production=(\\d+)\\s+beta=(\\d+)\\s+stub=(\\d+)\\s+field=(\\d+)\\s+certified=(\\d+)\\s*-->")
                 .matcher(Files.readString(doc));
-        assertTrue(m.find(), "docs/en/drivers.md must carry a <!-- maturity-counts: ... --> marker");
+        assertTrue(m.find(), "docs/en/drivers.md must carry a <!-- maturity-counts: ... field=F certified=C --> marker");
 
         long production = 0;
         long beta = 0;
         long stub = 0;
+        long field = 0;
+        long certified = 0;
         for (String driverId : DriverProductionMatrix.entries().keySet()) {
             switch (DriverProductionMatrix.resolveMaturity(driverId)) {
                 case PRODUCTION -> production++;
                 case BETA -> beta++;
                 case STUB -> stub++;
+                case FIELD -> field++;
+                case CERTIFIED -> certified++;
             }
         }
         stub += DriverProductionMatrix.protocolStubIds().stream()
@@ -249,6 +254,38 @@ class DriverProductionMatrixTest {
         assertEquals(production, Long.parseLong(m.group(1)), "PRODUCTION count in docs/en/drivers.md is stale");
         assertEquals(beta, Long.parseLong(m.group(2)), "BETA count in docs/en/drivers.md is stale");
         assertEquals(stub, Long.parseLong(m.group(3)), "STUB count in docs/en/drivers.md is stale");
+        assertEquals(field, Long.parseLong(m.group(4)), "FIELD count in docs/en/drivers.md is stale");
+        assertEquals(certified, Long.parseLong(m.group(5)), "CERTIFIED count in docs/en/drivers.md is stale");
+    }
+
+    @Test
+    void fieldAndCertifiedRowsRequireEvidencePaths() {
+        for (DriverProductionMatrix.Entry entry : DriverProductionMatrix.entries().values()) {
+            DriverMaturity maturity = entry.maturity();
+            if (maturity == DriverMaturity.FIELD || maturity == DriverMaturity.CERTIFIED) {
+                Optional<String> fieldPath = DriverProductionMatrix.fieldEvidencePath(entry.driverId());
+                assertTrue(fieldPath.isPresent(), entry.driverId() + " FIELD/CERTIFIED requires field evidence path");
+                assertTrue(
+                        DriverProductionMatrix.evidenceSourceExists(fieldPath.get()),
+                        entry.driverId() + " missing field evidence: " + fieldPath.get()
+                );
+            }
+            if (maturity == DriverMaturity.CERTIFIED) {
+                Optional<String> certPath = DriverProductionMatrix.certifiedEvidencePath(entry.driverId());
+                assertTrue(certPath.isPresent(), entry.driverId() + " CERTIFIED requires certified evidence path");
+                assertTrue(
+                        DriverProductionMatrix.evidenceSourceExists(certPath.get()),
+                        entry.driverId() + " missing certified evidence: " + certPath.get()
+                );
+            }
+        }
+        // Honesty (ADR-0067): no FIELD/CERTIFIED labels until evidence maps are filled.
+        assertEquals(
+                0,
+                DriverProductionMatrix.entries().values().stream()
+                        .filter(e -> e.maturity() == DriverMaturity.FIELD || e.maturity() == DriverMaturity.CERTIFIED)
+                        .count()
+        );
     }
 
     /**
@@ -262,7 +299,7 @@ class DriverProductionMatrixTest {
         Path repoRoot = repoRoot();
         List<String> violations = new ArrayList<>();
         for (DriverProductionMatrix.Entry entry : DriverProductionMatrix.entries().values()) {
-            if (entry.maturity() != DriverMaturity.PRODUCTION) {
+            if (!entry.maturity().isAtLeastProduction()) {
                 continue;
             }
             DriverMaturityEvidence.Verdict verdict = DriverMaturityEvidence.evaluate(entry, repoRoot);

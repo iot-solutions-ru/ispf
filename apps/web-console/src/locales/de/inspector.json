@@ -287,6 +287,8 @@
   "driver.write.valueRequired": "Wert eingeben",
   "driver.write.writing": "Schreiben…",
   "driverMaturity.BETA.hint": "Funktioniert mit Einschränkungen – siehe Treiberbeschreibung",
+  "driverMaturity.CERTIFIED.hint": "Feldgeprüft plus Protokoll-Conformance / formales Zertifikat",
+  "driverMaturity.FIELD.hint": "Benannte Anlage, Soak und OT-Freigabe (über Lab Production)",
   "driverMaturity.PRODUCTION.hint": "Wird für typische Szenarien unterstützt",
   "driverMaturity.STUB.hint": "Nur Stub- oder Konnektivitätsprüfung – nicht für die Produktion",
   "events.add": "+ Event",

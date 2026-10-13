@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Authoritative production-readiness matrix (ADR-0022, BL-78).
+ * Authoritative production-readiness matrix (ADR-0022, BL-78; FIELD/CERTIFIED evidence ADR-0067).
  */
 final class DriverProductionMatrix {
 
@@ -90,6 +90,17 @@ final class DriverProductionMatrix {
     private static final Set<Capability> POLL_WRITE = EnumSet.of(Capability.POLL, Capability.WRITE);
     private static final Set<Capability> POLL_OBSERVED = EnumSet.of(Capability.POLL, Capability.OBSERVED_AT);
     private static final Set<Capability> POLL_ONLY = EnumSet.of(Capability.POLL);
+
+    /**
+     * Repo-relative FIELD evidence paths (ADR-0067). Empty until a named-site gate closes.
+     * Key = driver id; value = path under the repo root (typically {@code docs/evidence/...}).
+     */
+    private static final Map<String, String> FIELD_EVIDENCE_PATHS = Map.of();
+
+    /**
+     * Repo-relative CERTIFIED evidence paths (ADR-0067). Empty until conformance artifacts land.
+     */
+    private static final Map<String, String> CERTIFIED_EVIDENCE_PATHS = Map.of();
 
     private static final Map<String, Entry> ENTRIES = Map.ofEntries(
             entry("virtual", DriverMaturity.PRODUCTION, POLL_OBSERVED_QUALITY,
@@ -681,11 +692,27 @@ final class DriverProductionMatrix {
     }
 
     static boolean loopbackTestSourceExists(Entry entry) {
-        if (entry.loopbackTestSourcePath() == null || entry.loopbackTestSourcePath().isBlank()) {
+        return repoRelativeExists(entry.loopbackTestSourcePath());
+    }
+
+    static Optional<String> fieldEvidencePath(String driverId) {
+        return Optional.ofNullable(FIELD_EVIDENCE_PATHS.get(driverId)).filter(s -> !s.isBlank());
+    }
+
+    static Optional<String> certifiedEvidencePath(String driverId) {
+        return Optional.ofNullable(CERTIFIED_EVIDENCE_PATHS.get(driverId)).filter(s -> !s.isBlank());
+    }
+
+    static boolean evidenceSourceExists(String repoRelativePath) {
+        return repoRelativeExists(repoRelativePath);
+    }
+
+    private static boolean repoRelativeExists(String repoRelativePath) {
+        if (repoRelativePath == null || repoRelativePath.isBlank()) {
             return false;
         }
-        Path relative = Path.of(entry.loopbackTestSourcePath());
-        Path fromModule = Path.of("..", "..", entry.loopbackTestSourcePath()).normalize();
+        Path relative = Path.of(repoRelativePath);
+        Path fromModule = Path.of("..", "..", repoRelativePath).normalize();
         return Files.exists(relative) || Files.exists(fromModule);
     }
 }

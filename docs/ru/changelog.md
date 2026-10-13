@@ -11,6 +11,8 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Добавлено
 
+- `DriverMaturity` FIELD / CERTIFIED (follow-up ADR-0067): значения enum + пустые evidence maps + CI на наличие evidence; бейджи/i18n; счётчик по-прежнему 0.
+- Тиры FIELD / CERTIFIED (ADR-0067): выше lab `PRODUCTION` — гейт FIELD (именованная площадка, soak ≥7д, OT sign-off) и CERTIFIED (conformance); честность: 0 драйверов FIELD/CERTIFIED. Ссылки из driver-promotion, field-pilot, ADR-0022.
 - Модель безопасности платформы (ADR-0066): auth → RBAC → tenancy → object/MEMBER ACL → federation ceiling → secrets; жёсткие правила и таблица честности; ссылки из `security.md` / `multi-tenant.md` (без смены runtime).
 - Lab-гейт upgrade bundle (ADR-0064 волна 2): `BundleUpgradeCompatGateTest` — catalog `marketplace-demo` с `formatVersion: 1`, reject неподдерживаемого формата, redeploy local marketplace; docs [release-upgrade](release-upgrade.md). Честность: только lab, не cluster N→N+1.
 - Envelope secrets-key + ротация (ADR-0065): ciphertext `ispf1.<keyId>.…`; legacy Base64 читается; `secrets-previous-key` для dual-read; `POST /api/v1/federation/secrets-key/reencrypt`; смена DATABASE-ключа из UI перешифровывает vault/federation на месте.

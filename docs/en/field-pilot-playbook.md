@@ -12,6 +12,8 @@ Prerequisites: ISPF ≥ 0.9.32, [driver-interop-lab](driver-interop-lab.md) gree
 
 Until then, status is **playbook-ready**: lab dry-run scripts, checklists, and sign-off templates exist; **no field soak or promotion evidence** is claimed.
 
+Formal **driver** evidence tiers (**FIELD** / **CERTIFIED** above lab **PRODUCTION**): [0067-field-certified-maturity](decisions/0067-field-certified-maturity.md). Playbook **ready-for-field** maps to the **driver FIELD** gate (named **plant** + soak + sign-off). Lab VLAN without C1 stays playbook-ready. Working **marketplace / solution** pilots (`examples/marketplace-catalog/`) are a separate lane — they do not auto-promote drivers to FIELD.
+
 ### Pilot #1 kickoff pack (Modbus)
 
 Working artifacts for the recommended first plant pilot (Workstream C):

@@ -130,7 +130,7 @@ def parse_matrix(java_text: str) -> tuple[list[str], list[str], dict[str, dict]]
     top20 = list_const("TOP_20_INDUSTRIAL")
     entries: dict[str, dict] = {}
     for m in re.finditer(
-        r'entry\(\s*"([^"]+)"\s*,\s*DriverMaturity\.(PRODUCTION|BETA|STUB)\s*,\s*'
+        r'entry\(\s*"([^"]+)"\s*,\s*DriverMaturity\.(CERTIFIED|FIELD|PRODUCTION|BETA|STUB)\s*,\s*'
         r"([A-Z0-9_]+|EnumSet\.of\([^)]+\))\s*,\s*"
         r'testPath\("([^"]+)"\s*,\s*"([^"]+)"\)\s*(?:,\s*"([^"]+)")?\s*\)',
         java_text,
