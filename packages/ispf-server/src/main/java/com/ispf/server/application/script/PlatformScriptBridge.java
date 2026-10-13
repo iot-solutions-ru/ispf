@@ -2,8 +2,9 @@ package com.ispf.server.application.script;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
-import com.ispf.core.model.FieldType;
+import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.core.object.Variable;
 import com.ispf.core.object.Variable;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
 import com.ispf.plugin.blueprint.BlueprintException;
@@ -28,15 +29,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Component
 public class PlatformScriptBridge {
-
-    private static final DataSchema TEMPERATURE_SCHEMA = DataSchema.builder("temperature")
-            .field("value", FieldType.DOUBLE)
-            .field("unit", FieldType.STRING)
-            .build();
 
     private final ObjectMapper objectMapper;
     private final ObjectManager objectManager;
@@ -184,13 +179,13 @@ public class PlatformScriptBridge {
         if (objectPath == null || objectPath.isBlank()) {
             throw new IllegalArgumentException("setDriverTelemetry objectPath is required");
         }
-        objectManager.require(objectPath);
-        String name = variableName == null || variableName.isBlank() ? "temperature" : variableName;
-        Object valueRaw = fields.get("value");
-        double value = parseFiniteDouble(valueRaw);
-        String unit = Optional.ofNullable(fields.get("unit")).map(String::valueOf).filter(s -> !s.isBlank()).orElse("C");
-        DataRecord record = DataRecord.single(TEMPERATURE_SCHEMA, Map.of("value", value, "unit", unit));
-        objectManager.setDriverTelemetryValue(objectPath, name, record);
+        if (variableName == null || variableName.isBlank()) {
+            throw new IllegalArgumentException("setDriverTelemetry variable is required");
+        }
+        PlatformObject node = objectManager.require(objectPath);
+        Variable variable = node.getVariable(variableName)
+                .orElseThrow(() -> new IllegalArgumentException("Variable not found: " + variableName));
+        objectManager.setDriverTelemetryValue(objectPath, variableName, recordFromFields(variable, fields));
     }
 
     public void writeVariableFields(String objectPath, String variableName, Map<String, Object> fields) {
@@ -227,19 +222,25 @@ public class PlatformScriptBridge {
         }
     }
 
-    static double parseFiniteDouble(Object raw) {
-        if (raw == null) {
-            throw new IllegalArgumentException("temperature value is required");
-        }
-        try {
-            double value = raw instanceof Number number ? number.doubleValue() : Double.parseDouble(String.valueOf(raw).trim());
-            if (!Double.isFinite(value)) {
-                throw new IllegalArgumentException("temperature is not finite: " + raw);
+    /**
+     * Writes only fields present in {@code fields}. Omitted fields keep the current row.
+     * Missing required fields stay missing so the schema rejects them instead of inventing defaults.
+     */
+    private static DataRecord recordFromFields(Variable variable, Map<String, Object> fields) {
+        Map<String, Object> current = variable.value()
+                .filter(value -> value.rowCount() > 0)
+                .map(DataRecord::firstRow)
+                .orElse(Map.of());
+        Map<String, Object> provided = fields != null ? fields : Map.of();
+        Map<String, Object> row = new LinkedHashMap<>();
+        for (FieldDefinition field : variable.schema().fields()) {
+            if (provided.containsKey(field.name())) {
+                row.put(field.name(), ScriptFieldCoercion.coerce(field, provided.get(field.name())));
+            } else if (current.containsKey(field.name())) {
+                row.put(field.name(), current.get(field.name()));
             }
-            return value;
-        } catch (NumberFormatException ex) {
-            throw new IllegalArgumentException("temperature is not numeric: " + raw, ex);
         }
+        return DataRecord.single(variable.schema(), row);
     }
 
     static List<String> readStringFields(JsonNode fieldsNode) {
