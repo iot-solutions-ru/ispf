@@ -62,7 +62,6 @@ final class AgentGroundTruthGuard {
             "save_workflow_bpmn",
             "update_workflow_status",
             "run_workflow",
-            "configure_alert",
             "configure_correlator",
             "configure_report",
             "run_report",
@@ -125,6 +124,27 @@ final class AgentGroundTruthGuard {
             }
             return checkBlueprintDiscovered(arguments, steps, "blueprintName", "blueprintId");
         }
+        if ("configure_alert".equals(tool)) {
+            // Create-on-configure: name alone or a new path under alert-rules is allowed when the folder is known.
+            String objectPath = resolveObjectPath(arguments);
+            String name = stringArg(arguments, "name");
+            if (objectPath.isBlank() && !name.isBlank()) {
+                return Optional.empty();
+            }
+            if (!objectPath.isBlank() && isAlertRulesChild(objectPath)) {
+                if (isObjectPathGrounded(steps, objectPath) || existsInTree(objectExists, objectPath)) {
+                    return Optional.empty();
+                }
+                String folder = "root.platform.alert-rules";
+                if (isParentGrounded(steps, folder) || existsInTree(objectExists, folder)) {
+                    return Optional.empty();
+                }
+            }
+            if (!objectPath.isBlank()) {
+                return checkObjectPathDiscovered(objectPath, tool, steps, objectExists);
+            }
+            return Optional.empty();
+        }
         if (OBJECT_PATH_MUTATION_TOOLS.contains(tool)) {
             String objectPath = resolveObjectPath(arguments);
             if (objectPath.isBlank()) {
@@ -182,6 +202,12 @@ final class AgentGroundTruthGuard {
         } catch (RuntimeException ignored) {
             return false;
         }
+    }
+
+    private static boolean isAlertRulesChild(String objectPath) {
+        String path = normalizePath(objectPath);
+        return path.startsWith("root.platform.alert-rules.")
+                && path.length() > "root.platform.alert-rules.".length();
     }
 
     private static String mutationLabel(Map<String, Object> arguments, String toolName) {
@@ -291,7 +317,10 @@ final class AgentGroundTruthGuard {
             Map<String, Object> args = stepMap(step, "arguments");
             Map<String, Object> result = stepMap(step, "result");
 
-            if ("create_object".equals(tool) || "create_virtual_device".equals(tool) || "configure_report".equals(tool)) {
+            if ("create_object".equals(tool)
+                    || "create_virtual_device".equals(tool)
+                    || "configure_report".equals(tool)
+                    || "configure_alert".equals(tool)) {
                 if (pathsEqual(objectPath, pathFromCreateResult(result))) {
                     return true;
                 }

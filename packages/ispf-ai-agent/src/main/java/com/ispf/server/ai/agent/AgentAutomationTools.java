@@ -151,21 +151,24 @@ final class AgentAutomationTools {
                     if (path.isBlank() && name.isBlank()) {
                         return Map.of("status", "ERROR", "error", "path or name is required");
                     }
+                    automationTreeService.ensurePlatformFolders();
                     if (path.isBlank()) {
-                        automationTreeService.ensurePlatformFolders();
                         path = AutomationTreeService.rulePathForName(name);
-                        if (objectTreePort.tree().findByPath(path).isEmpty()) {
-                            objectAccessService.requireWrite(AutomationTreeService.ALERT_RULES_ROOT, auth);
-                            objectTreePort.create(
-                                    AutomationTreeService.ALERT_RULES_ROOT,
-                                    AutomationTreeService.slugify(name),
-                                    ObjectType.ALERT,
-                                    name,
-                                    "",
-                                    null
-                            );
-                            automationTreeService.ensureAlertRuleStructure(path);
-                        }
+                    }
+                    if (objectTreePort.tree().findByPath(path).isEmpty()
+                            && path.startsWith(AutomationTreeService.ALERT_RULES_ROOT + ".")) {
+                        objectAccessService.requireWrite(AutomationTreeService.ALERT_RULES_ROOT, auth);
+                        String nodeName = path.substring(AutomationTreeService.ALERT_RULES_ROOT.length() + 1);
+                        String display = !name.isBlank() ? name : nodeName;
+                        objectTreePort.create(
+                                AutomationTreeService.ALERT_RULES_ROOT,
+                                nodeName,
+                                ObjectType.ALERT,
+                                display,
+                                "",
+                                null
+                        );
+                        automationTreeService.ensureAlertRuleStructure(path);
                     }
                     if (!tenantScopeService.isPathVisible(path, auth)) {
                         return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
@@ -729,6 +732,26 @@ final class AgentAutomationTools {
                     PlatformObject bindingHost = objectTreePort.require(path);
                     Map<String, Object> resolvedArgs = coerceEventBindingArgs(arguments, bindingHost);
                     targetRef = stringArg(resolvedArgs, "targetRef");
+                    targetVariable = stringArg(resolvedArgs, "targetVariable");
+                    String createdTargetVariable = "";
+                    if (com.ispf.core.binding.BindingTargetKind.VARIABLE.equals(targetKind)
+                            && !targetVariable.isBlank()
+                            && targetRef.isBlank()
+                            && bindingHost.getVariable(targetVariable).isEmpty()) {
+                        // Course agents invent sum targets before create_variable — create DOUBLE sink.
+                        objectTreePort.createVariable(
+                                path,
+                                targetVariable,
+                                DataSchema.builder(targetVariable).field("value", FieldType.DOUBLE).build(),
+                                true,
+                                false,
+                                null,
+                                false,
+                                null
+                        );
+                        createdTargetVariable = targetVariable;
+                        bindingHost = objectTreePort.require(path);
+                    }
                     // Historian helpers (avg/min/max/…) are not plain CEL — skip reactive CEL compile.
                     if (ruleKind != BindingRuleKind.HISTORIAN) {
                         BindingExpressionValidator.validateOrThrow(expression);
@@ -772,6 +795,9 @@ final class AgentAutomationTools {
                     if (conditionVerification != null) {
                         ok.put("conditionVerification", conditionVerification);
                     }
+                    if (!createdTargetVariable.isBlank()) {
+                        ok.put("createdTargetVariable", createdTargetVariable);
+                    }
                     return ok;
                 } catch (Exception ex) {
                     String message = ex.getMessage() == null ? "" : ex.getMessage();
@@ -784,6 +810,13 @@ final class AgentAutomationTools {
                                 "hint",
                                 "Event targets need slash refs: targetRef=@/evt/event1 (or eventName=event1). "
                                         + "virtual-unified events are event1/event2 — not Event1 or /evt/Event 1."
+                        );
+                    } else if (message.toLowerCase(Locale.ROOT).contains("unknown target variable")) {
+                        err.put(
+                                "hint",
+                                "Create the target first: create_variable path=" + path
+                                        + " name=<targetVariable> valueType=DOUBLE writable=false, "
+                                        + "then retry create_binding_rule."
                         );
                     }
                     return err;

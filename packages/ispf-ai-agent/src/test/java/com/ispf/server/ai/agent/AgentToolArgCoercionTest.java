@@ -44,4 +44,14 @@ class AgentToolArgCoercionTest {
         assertThat(coerced.get("path")).isEqualTo("root.platform.reports.report-table-all");
         assertThat(coerced.get("reportId")).isEqualTo("report-table-all");
     }
+
+    @Test
+    void mapsAlertNameToPathForConfigureAlert() {
+        Map<String, Object> coerced = AgentToolArgCoercion.coerce(
+                "configure_alert",
+                Map.of("name", "alert-event1-event2-virt-lab")
+        );
+        assertThat(coerced.get("path")).isEqualTo("root.platform.alert-rules.alert-event1-event2-virt-lab");
+        assertThat(coerced.get("name")).isEqualTo("alert-event1-event2-virt-lab");
+    }
 }

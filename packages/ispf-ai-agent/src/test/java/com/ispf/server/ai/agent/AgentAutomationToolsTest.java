@@ -186,6 +186,9 @@ class AgentAutomationToolsTest {
     void configureAlertUpdatesExistingRule() throws Exception {
         String path = "root.platform.alert-rules.test-rule";
         PlatformObject node = new PlatformObject("1", path, ObjectType.ALERT, "Test rule", "", null);
+        com.ispf.core.object.ObjectTree tree = org.mockito.Mockito.mock(com.ispf.core.object.ObjectTree.class);
+        when(objectTreePort.tree()).thenReturn(tree);
+        when(tree.findByPath(path)).thenReturn(java.util.Optional.of(node));
         when(objectTreePort.require(path)).thenReturn(node);
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
         when(automationTreeService.updateAlertRule(

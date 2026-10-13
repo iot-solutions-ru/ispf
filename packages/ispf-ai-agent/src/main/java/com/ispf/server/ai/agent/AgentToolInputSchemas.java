@@ -115,11 +115,16 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("configure_alert", objectSchema(
                 props(
-                        "path", stringProp("Object tree path"),
-                        "configJson", stringProp("JSON string payload"),
-                        "name", stringProp("Node or resource name")
+                        "path", stringProp("ALERT path (root.platform.alert-rules.<id>)"),
+                        "name", stringProp("Creates under alert-rules when path omitted"),
+                        "alertId", stringProp("Short id; path = root.platform.alert-rules.<alertId> when path omitted"),
+                        "targetObjectPath", stringProp("Device/hub path the condition watches"),
+                        "watchVariable", stringProp("Variable name on targetObjectPath"),
+                        "conditionExpr", stringProp("CEL condition"),
+                        "eventName", stringProp("Event fired on the ALERT node"),
+                        "configJson", stringProp("JSON string payload")
                 ),
-                req("path"),
+                List.of(),
                 true
         ));
         catalog.put("configure_correlator", objectSchema(

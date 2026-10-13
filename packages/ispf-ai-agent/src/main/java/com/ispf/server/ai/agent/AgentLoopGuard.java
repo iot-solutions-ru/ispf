@@ -52,6 +52,17 @@ final class AgentLoopGuard {
 
     /** After this many prior identical create_object OK/reused, stop — do not flood the step log. */
     private static final int CREATE_REUSE_HARD_BLOCK = 2;
+    /**
+     * Idempotent mutates (layout/report/mimic): after this many prior identical OK calls on the same
+     * fingerprint, stop — course agents otherwise ping-pong set_dashboard_layout ↔ configure_report.
+     */
+    private static final int IDEMPOTENT_OK_HARD_BLOCK = 2;
+
+    private static final Set<String> IDEMPOTENT_MUTATE_TOOLS = Set.of(
+            "set_dashboard_layout",
+            "configure_report",
+            "save_mimic_diagram"
+    );
 
     /** Prefer one batch write over many incremental adds — noisy in Studio step log. */
     private static final Set<String> BATCH_INCREMENTAL_TOOLS = Set.of(
@@ -323,6 +334,18 @@ final class AgentLoopGuard {
             ));
         }
 
+        if (IDEMPOTENT_MUTATE_TOOLS.contains(normalized)
+                && priorSame >= IDEMPOTENT_OK_HARD_BLOCK
+                && fingerprintAllStatusOk(steps, fingerprint)) {
+            return Optional.of(new BlockDecision(
+                    "Hard block: identical '" + normalized + "' already succeeded " + priorSame
+                            + " times — stop flooding the step log",
+                    "Reuse the prior OK result. Continue the next course/assignment step "
+                            + "(different dashboard/report/mimic path) or finish — do not re-apply the same layout.",
+                    true
+            ));
+        }
+
         if (BATCH_INCREMENTAL_TOOLS.contains(normalized) && priorSame >= BATCH_INCREMENTAL_HARD_BLOCK) {
             boolean stopTurn = priorSame >= BATCH_INCREMENTAL_STOP_TURN;
             return Optional.of(new BlockDecision(
@@ -401,6 +424,27 @@ final class AgentLoopGuard {
                         stepMap(step, "arguments")
                 )))
                 .count();
+    }
+
+    private static boolean fingerprintAllStatusOk(List<Map<String, Object>> steps, String fingerprint) {
+        if (steps == null || fingerprint == null || fingerprint.isBlank()) {
+            return false;
+        }
+        boolean saw = false;
+        for (Map<String, Object> step : steps) {
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            if (!fingerprint.equals(callFingerprint(String.valueOf(step.get("tool")), stepMap(step, "arguments")))) {
+                continue;
+            }
+            saw = true;
+            Map<String, Object> result = stepMap(step, "result");
+            if (!"OK".equalsIgnoreCase(String.valueOf(result.get("status")))) {
+                return false;
+            }
+        }
+        return saw;
     }
 
     /** True when at least one prior identical create returned reused=true (object already exists). */

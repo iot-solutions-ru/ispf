@@ -265,6 +265,23 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void hardBlocksRepeatedSetDashboardLayoutAfterOk() {
+        String dash = "root.platform.dashboards.dashboard-sine-history";
+        List<Map<String, Object>> steps = List.of(
+                layoutStep(dash),
+                layoutStep(dash)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "set_dashboard_layout",
+                Map.of("path", dash),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
+        assertTrue(block.get().error().contains("already succeeded"));
+    }
+
+    @Test
     void hardBlocksCreateObjectAfterReuseFlood() {
         String parent = "root.platform.mimics";
         String name = "mimic-button-fan-svg";
@@ -419,6 +436,15 @@ class AgentLoopGuardTest {
 
     private static Map<String, Object> step(String tool) {
         return Map.of("type", "tool", "tool", tool);
+    }
+
+    private static Map<String, Object> layoutStep(String path) {
+        return Map.of(
+                "type", "tool",
+                "tool", "set_dashboard_layout",
+                "arguments", Map.of("path", path),
+                "result", Map.of("status", "OK")
+        );
     }
 
     private static Map<String, Object> widgetCatalogStep(String type) {
