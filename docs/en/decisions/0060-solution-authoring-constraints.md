@@ -38,11 +38,11 @@ Logic-bearing objects must be SINGLETON or INSTANCE, never `ObjectType.DEVICE`. 
 |------|----------|--------|
 | Authoring validate / deploy | `LOGIC_HOST_DEVICE` → **WARNING** (does not alone set `status: ERROR`) | **Done** |
 | `examples/` CI (`ExamplesBundleValidationTest`) | `LOGIC_HOST_DEVICE` → **hard fail** | **Done** |
-| `ispf validate --strict` / API `?strict=true` | Ship-canon codes → **ERROR** | **Wave 1A** ([adr-tension-resolution](../adr-tension-resolution.md)) |
-| Marketplace / catalog ship gate | Same as `--strict` | **Wave 1A** |
-| Tool schema forbids DEVICE as function host | Prefer create on SINGLETON/INSTANCE | **Wave 1A** |
+| `ispf validate --strict` / API `?strict=true` | Ship-canon codes → **ERROR** | **Done** (Wave 1A) |
+| Marketplace / catalog ship gate | Same as `--strict` (`findLogicHostDeviceIssues`) | **Done** (Wave 1A) |
+| Tool schema host hint | `deploy_tree_function` / `deploy_app_function` describe SINGLETON/INSTANCE, not DEVICE | **Done** (Wave 1A) |
 
-**0051 tension resolution:** canon stays hard in docs; **authoring** warns; **ship** errors. Tracked under [adr-tension-resolution](../adr-tension-resolution.md) Wave 1A.
+**0051 tension resolution:** canon stays hard in docs; **authoring** warns; **ship** errors. Program: [adr-tension-resolution](../adr-tension-resolution.md).
 
 ## Related
 
