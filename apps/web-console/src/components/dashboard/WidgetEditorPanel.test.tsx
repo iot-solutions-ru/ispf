@@ -189,6 +189,23 @@ describe("WidgetEditorPanel", () => {
     );
   });
 
+  it("shows object-table column editor under the data source section", () => {
+    const widget = { ...newWidget("object-table", 0), id: "devices-table" };
+    renderWithDashboard(
+      <WidgetEditorPanel
+        widget={widget}
+        widgets={[widget]}
+        objects={[]}
+        onChange={onChange}
+        onWidgetsChange={onWidgetsChange}
+        onDelete={onDelete}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Add column" })).toBeInTheDocument();
+    expect(screen.getByText("Columns")).toBeInTheDocument();
+  });
+
   it("suggests selection keys already set on the dashboard and still accepts a new name", async () => {
     const widget = { ...newWidget("value", 0), id: "value" };
     const table = { ...newWidget("object-table", 1), id: "table", selectionKey: "order" };

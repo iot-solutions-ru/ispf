@@ -1,7 +1,9 @@
 // Type-specific editor fields — data widgets (12 types).
 import type { TFunction } from "i18next";
-import type { ReactNode } from "react";
-import { HISTORY_TABLE_RANGE_IDS } from "../../../types/dashboard";
+import { useMemo, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchVariables } from "../../../api";
+import { HISTORY_TABLE_RANGE_IDS, type VariableEditorWidget } from "../../../types/dashboard";
 import {
   CALCULATOR_SHEET_CONFIG,
   DEFAULT_SHEET_CONFIG,
@@ -13,7 +15,6 @@ import {
   FormFieldsEditor,
   HintCaption,
   KeyValueEditor,
-  ObjectTableColumnsEditor,
   SheetGridSizeEditor,
   StringListEditor,
 } from "../widgetEditorStructured";
@@ -178,7 +179,7 @@ function functionFormFields(ctx: WidgetFieldContextFor<"function-form">, t: TFun
 }
 
 function objectTableFields(ctx: WidgetFieldContextFor<"object-table">, t: TFunction): ReactNode {
-  const { widget, update, objects } = ctx;
+  const { widget, update } = ctx;
   return (
     <>
       <Section title={t("editor.section.objectTable")} />
@@ -206,12 +207,6 @@ function objectTableFields(ctx: WidgetFieldContextFor<"object-table">, t: TFunct
           <option value="CUSTOM">{t("common:objectType.CUSTOM")}</option>
         </select>
       </label>
-      <ObjectTableColumnsEditor
-        value={widget.columnsJson}
-        onChange={(v) => update({ columnsJson: v })}
-        parentPath={widget.parentPath}
-        objects={objects}
-      />
       {rowNavigationFields(ctx, "row", t)}
     </>
   );
@@ -495,21 +490,62 @@ function historyTableFields(ctx: WidgetFieldContextFor<"history-table">, t: TFun
   );
 }
 
-function variableEditorFields(ctx: WidgetFieldContextFor<"variable-editor">, t: TFunction): ReactNode {
-  const { widget, update, variables } = ctx;
-  const objectKnown = Boolean(widget.objectPath?.trim() || widget.modelHintPath?.trim());
+function VariableEditorVariablesField({
+  widget,
+  update,
+  t,
+  fallbackSuggestions,
+}: {
+  widget: VariableEditorWidget;
+  update: (patch: Partial<VariableEditorWidget>) => void;
+  t: TFunction;
+  fallbackSuggestions: string[];
+}) {
+  const path = (widget.objectPath || widget.modelHintPath)?.trim() ?? "";
+  const variablesQuery = useQuery({
+    queryKey: ["widget-editor-variable-names", path],
+    queryFn: () => fetchVariables(path),
+    enabled: Boolean(path),
+  });
+  const variableNames = useMemo(() => {
+    const list = variablesQuery.data ?? [];
+    return list
+      .filter((variable) => variable.readable)
+      .map((variable) => variable.name)
+      .sort((left, right) => left.localeCompare(right));
+  }, [variablesQuery.data]);
+
   return (
     <>
-      <Section title={t("editor.section.variableEditor")} />
-      {objectKnown && variables.length === 0 ? (
+      {!path ? <p className="hint">{t("scada:props.bindingSelectObjectFirst")}</p> : null}
+      {path && variablesQuery.isError ? (
+        <p className="hint">{t("scada:props.bindingVariablesError")}</p>
+      ) : null}
+      {path && variablesQuery.isSuccess && variableNames.length === 0 ? (
         <p className="hint">{t("editor.variableNamesEmpty")}</p>
       ) : null}
       <StringListEditor
         label={t("editor.variablesJsonAll")}
         value={widget.variablesJson}
         onChange={(v) => update({ variablesJson: v || undefined })}
-        suggestions={objectKnown ? undefined : variables}
-        options={objectKnown ? variables : undefined}
+        suggestions={path ? undefined : fallbackSuggestions}
+        options={path ? variableNames : undefined}
+        optionsDisabled={Boolean(path) && variablesQuery.isLoading}
+      />
+    </>
+  );
+}
+
+function variableEditorFields(ctx: WidgetFieldContextFor<"variable-editor">, t: TFunction): ReactNode {
+  const { widget, update, allVariableNames } = ctx;
+  return (
+    <>
+      <Section title={t("editor.section.variableEditor")} />
+      <VariableEditorVariablesField
+        widget={widget}
+        update={update}
+        t={t}
+        fallbackSuggestions={allVariableNames}
       />
     </>
   );

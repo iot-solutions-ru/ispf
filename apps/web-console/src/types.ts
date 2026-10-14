@@ -120,6 +120,8 @@ export interface DataRecord {
 export interface VariableDto {
   name: string;
   value: DataRecord | null;
+  /** Definition schema from the server (when exposed). */
+  schema?: DataSchema | null;
   readable: boolean;
   writable: boolean;
   updatedAt: string | null;

@@ -1,8 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AutoComplete, Tooltip } from "antd";
+import { AutoComplete, Button, Tooltip } from "antd";
 import { useTranslation } from "react-i18next";
-import { fetchObjectEditor, fetchVariablesBatch } from "../../api";
+import { fetchObjectEditor, fetchObjects, fetchVariables, fetchVariablesBatch } from "../../api";
 import type {
   ObjectTableColumn,
   SheetConfig,
@@ -136,9 +136,9 @@ function ListActions({
 }) {
   return (
     <div className="widget-editor-list-actions">
-      <button type="button" className="btn small" onClick={onAdd}>
+      <Button size="small" type="dashed" block onClick={onAdd}>
         {addLabel}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -430,11 +430,13 @@ export function ObjectTableColumnsEditor({
   onChange,
   parentPath,
   objects = [],
+  hint,
 }: {
   value: string | undefined;
   onChange: (next: string) => void;
   parentPath?: string;
   objects?: Array<{ path: string; variableNames: string[] }>;
+  hint?: string;
 }) {
   const { t } = useTranslation("widgets");
   const columns = parseJsonArray<ObjectTableColumn>(value, []);
@@ -442,44 +444,118 @@ export function ObjectTableColumnsEditor({
   const scoped = parent
     ? objects.filter((object) => object.path === parent || object.path.startsWith(`${parent}.`))
     : [];
-  const variableNames = [
-    ...new Set(scoped.flatMap((object) => object.variableNames).map((name) => name.trim()).filter(Boolean)),
-  ].sort((a, b) => a.localeCompare(b));
   const variablesLocked = Boolean(parent);
-  const samplePaths = [
-    ...new Set(
-      columns.flatMap((column) => {
-        const name = column.variable?.trim();
-        if (!variablesLocked || !name) return [];
-        const source = scoped.find((object) => object.variableNames.includes(name));
-        return source ? [source.path] : [];
-      }),
-    ),
-  ].sort();
-  const schemaQuery = useQuery({
-    queryKey: ["widget-editor-object-table-fields", samplePaths],
-    queryFn: () => fetchVariablesBatch(samplePaths),
-    enabled: samplePaths.length > 0,
+
+  const childrenQuery = useQuery({
+    queryKey: ["widget-editor-object-table-children", parent],
+    queryFn: () => fetchObjects(parent, false),
+    enabled: Boolean(parent),
   });
+
+  const childPaths = useMemo(
+    () => [...new Set((childrenQuery.data ?? []).map((child) => child.path))].sort(),
+    [childrenQuery.data],
+  );
+
+  const parentVariablesQuery = useQuery({
+    queryKey: ["widget-editor-object-table-parent-vars", parent],
+    queryFn: () => fetchVariables(parent),
+    enabled: Boolean(parent),
+  });
+
+  const variablesBatchQuery = useQuery({
+    queryKey: ["widget-editor-object-table-vars", childPaths],
+    queryFn: () => fetchVariablesBatch(childPaths),
+    enabled: childPaths.length > 0,
+  });
+
+  const sampleObjectPath = childPaths[0] ?? "";
+  const sampleVariablesQuery = useQuery({
+    queryKey: ["widget-editor-object-table-sample-vars", sampleObjectPath],
+    queryFn: () => fetchVariables(sampleObjectPath),
+    enabled: Boolean(parent) && sampleObjectPath.length > 0,
+  });
+
+  const variableNames = useMemo(() => {
+    const names = new Set(
+      scoped.flatMap((object) => object.variableNames).map((name) => name.trim()).filter(Boolean),
+    );
+    if (variablesBatchQuery.data) {
+      for (const variables of Object.values(variablesBatchQuery.data)) {
+        for (const variable of variables) {
+          if (variable.readable !== false) {
+            names.add(variable.name);
+          }
+        }
+      }
+    }
+    for (const variable of sampleVariablesQuery.data ?? []) {
+      if (variable.readable !== false) {
+        names.add(variable.name);
+      }
+    }
+    for (const variable of parentVariablesQuery.data ?? []) {
+      if (variable.readable !== false) {
+        names.add(variable.name);
+      }
+    }
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [parent, scoped, variablesBatchQuery.data, sampleVariablesQuery.data, parentVariablesQuery.data]);
+
+  const variablesLoading =
+    Boolean(parent)
+    && (childrenQuery.isLoading
+      || parentVariablesQuery.isLoading
+      || (childPaths.length > 0 && variablesBatchQuery.isLoading)
+      || sampleVariablesQuery.isLoading);
 
   const fieldsFor = (variableName: string | undefined): string[] => {
     const name = variableName?.trim();
     if (!name) return [];
-    const source = scoped.find((object) => object.variableNames.includes(name));
-    if (!source) return [];
-    return recordFieldNames(schemaQuery.data?.[source.path], name);
+    const merged = new Set<string>();
+    const absorb = (variables: Parameters<typeof recordFieldNames>[0]) => {
+      for (const field of recordFieldNames(variables, name)) {
+        merged.add(field);
+      }
+    };
+    if (variablesBatchQuery.data) {
+      for (const variables of Object.values(variablesBatchQuery.data)) {
+        absorb(variables);
+      }
+    }
+    absorb(sampleVariablesQuery.data);
+    absorb(parentVariablesQuery.data);
+    return [...merged].sort((a, b) => a.localeCompare(b));
+  };
+
+  const defaultFieldForVariable = (variableName: string | undefined): string => {
+    const fields = fieldsFor(variableName);
+    if (fields.includes("value")) {
+      return "value";
+    }
+    return fields[0] ?? "value";
   };
 
   const setColumns = (next: ObjectTableColumn[]) => {
     onChange(stringifyJson(next));
   };
 
+  const needsManualFieldHint =
+    !variablesLoading
+    && columns.some((col) => {
+      const variable = col.variable?.trim();
+      return Boolean(variable) && fieldsFor(variable).length === 0;
+    });
+
   return (
     <div className="widget-editor-structured full">
-      <HintCaption>{t("editor.structured.columns")}</HintCaption>
+      <HintCaption hint={hint}>{t("editor.structured.columns")}</HintCaption>
       {!parent ? <p className="hint">{t("editor.objectTableVariablesNeedParent")}</p> : null}
-      {parent && variableNames.length === 0 ? (
+      {parent && !variablesLoading && variableNames.length === 0 ? (
         <p className="hint">{t("editor.objectTableVariablesEmpty")}</p>
+      ) : null}
+      {parent && !variablesLoading && childPaths.length === 0 ? (
+        <p className="hint">{t("editor.objectTableNeedChildObjects")}</p>
       ) : null}
       <div className="widget-editor-table-editor">
         <div className="widget-editor-table-head">
@@ -494,10 +570,8 @@ export function ObjectTableColumnsEditor({
         </div>
         {columns.map((col, index) => {
           const recordFields = fieldsFor(col.variable);
-          const lockField =
-            variablesLocked &&
-            Boolean(col.variable?.trim()) &&
-            (schemaQuery.isLoading || recordFields.length > 0);
+          const variableChosen = Boolean(col.variable?.trim());
+          const showFieldSelect = variablesLocked && variableChosen;
           return (
           <div key={index} className="widget-editor-table-row">
             {variablesLocked ? (
@@ -505,9 +579,16 @@ export function ObjectTableColumnsEditor({
                 ariaLabel={t("editor.structured.colVariable")}
                 value={col.variable ?? ""}
                 options={variableNames}
+                disabled={variablesLoading}
                 onChange={(nextValue) => {
                   const next = [...columns];
-                  next[index] = { ...next[index], variable: nextValue || undefined };
+                  const variable = nextValue || undefined;
+                  next[index] = {
+                    ...next[index],
+                    variable,
+                    label: next[index].label?.trim() || variable || "",
+                    field: next[index].field?.trim() || defaultFieldForVariable(variable),
+                  };
                   setColumns(next);
                 }}
               />
@@ -530,28 +611,39 @@ export function ObjectTableColumnsEditor({
                 setColumns(next);
               }}
             />
-            {lockField ? (
-              <OptionsSelect
-                ariaLabel={t("editor.structured.colField")}
-                value={col.field ?? ""}
-                options={recordFields}
-                disabled={schemaQuery.isLoading}
-                onChange={(nextValue) => {
-                  const next = [...columns];
-                  next[index] = { ...next[index], field: nextValue || undefined };
-                  setColumns(next);
-                }}
-              />
+            {showFieldSelect ? (
+              recordFields.length > 0 ? (
+                <OptionsSelect
+                  ariaLabel={t("editor.structured.colField")}
+                  value={col.field?.trim() || defaultFieldForVariable(col.variable)}
+                  options={recordFields}
+                  disabled={variablesLoading}
+                  onChange={(nextValue) => {
+                    const next = [...columns];
+                    next[index] = { ...next[index], field: nextValue || undefined };
+                    setColumns(next);
+                  }}
+                />
+              ) : variablesLoading ? (
+                <select aria-label={t("editor.structured.colField")} disabled value="">
+                  <option value="">…</option>
+                </select>
+              ) : (
+                <SuggestInput
+                  ariaLabel={t("editor.structured.colField")}
+                  value={col.field?.trim() || defaultFieldForVariable(col.variable)}
+                  suggestions={undefined}
+                  onChange={(nextValue) => {
+                    const next = [...columns];
+                    next[index] = { ...next[index], field: nextValue || undefined };
+                    setColumns(next);
+                  }}
+                />
+              )
             ) : (
-              <input
-                value={col.field ?? ""}
-                aria-label={t("editor.structured.colField")}
-                onChange={(e) => {
-                  const next = [...columns];
-                  next[index] = { ...next[index], field: e.target.value || undefined };
-                  setColumns(next);
-                }}
-              />
+              <select aria-label={t("editor.structured.colField")} disabled value="">
+                <option value="">—</option>
+              </select>
             )}
             <button
               type="button"
@@ -564,6 +656,9 @@ export function ObjectTableColumnsEditor({
           );
         })}
       </div>
+      {needsManualFieldHint ? (
+        <p className="hint">{t("editor.objectTableFieldManualHint")}</p>
+      ) : null}
       <ListActions
         onAdd={() => setColumns([...columns, { label: "", variable: "" }])}
         addLabel={t("editor.structured.addColumn")}

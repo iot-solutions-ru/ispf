@@ -25,10 +25,13 @@ import {
   WidgetEditorCaption,
   type WidgetFieldContext,
 } from "./widgetFieldPrimitives";
+import { ObjectTableColumnsEditor } from "../widgetEditorStructured";
+import type { ObjectTableWidget } from "../../../types/dashboard";
 
 export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
   const { t } = useTranslation(["widgets", "common"]);
   const { widget, objects, variables, variableSelectEnabled, selectionKeys, update } = ctx;
+  const objectTableWidget = widget.type === "object-table" ? (widget as ObjectTableWidget) : null;
   const binding = widgetDataBinding(widget.type);
   const bindingHint = t(DATA_BINDING_HINT_KEYS[binding], { defaultValue: "" });
   const typeHintKey = WIDGET_TYPE_HINT_KEYS[widget.type];
@@ -170,23 +173,34 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
       )}
 
       {binding === "parent-catalog" && (
-        <FormRow>
-          <PathSelect
-            label={t("editor.parentPath")}
-            value={(widget as { parentPath?: string }).parentPath ?? ""}
-            onChange={(path) => update({ parentPath: path } as Partial<DashboardWidget>)}
-            placeholder={t("editor.hint.exampleFolder")}
-          />
-          <FieldLabel caption={t("editor.selectionKeyOnClick")} hint={t("editor.hint.selectionKeyOnClick")}>
-            <StackedSlot>
-              <SelectionKeyInput
-                value={widget.selectionKey ?? ""}
-                keys={selectionKeys}
-                onChange={(next) => update({ selectionKey: next || undefined })}
-              />
-            </StackedSlot>
-          </FieldLabel>
-        </FormRow>
+        <>
+          <FormRow>
+            <PathSelect
+              label={t("editor.parentPath")}
+              value={(widget as { parentPath?: string }).parentPath ?? ""}
+              onChange={(path) => update({ parentPath: path } as Partial<DashboardWidget>)}
+              placeholder={t("editor.hint.exampleFolder")}
+            />
+            <FieldLabel caption={t("editor.selectionKeyOnClick")} hint={t("editor.hint.selectionKeyOnClick")}>
+              <StackedSlot>
+                <SelectionKeyInput
+                  value={widget.selectionKey ?? ""}
+                  keys={selectionKeys}
+                  onChange={(next) => update({ selectionKey: next || undefined })}
+                />
+              </StackedSlot>
+            </FieldLabel>
+          </FormRow>
+          {objectTableWidget ? (
+            <ObjectTableColumnsEditor
+              value={objectTableWidget.columnsJson}
+              onChange={(columnsJson) => update({ columnsJson } as Partial<DashboardWidget>)}
+              parentPath={objectTableWidget.parentPath}
+              objects={objects}
+              hint={t("editor.objectTableColumnsHint")}
+            />
+          ) : null}
+        </>
       )}
 
       {(binding === "session" || widget.paramKey) && (
