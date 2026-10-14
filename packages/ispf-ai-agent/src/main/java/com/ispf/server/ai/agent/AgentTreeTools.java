@@ -1221,6 +1221,17 @@ final class AgentTreeTools {
         return out;
     }
 
+
+    private static boolean isQueriesCatalogChild(String parentPath) {
+        if (parentPath == null || parentPath.isBlank()) {
+            return false;
+        }
+        String normalized = parentPath.trim();
+        String root = ObjectQueryCatalog.QUERIES_ROOT;
+        return root.equalsIgnoreCase(normalized)
+                || normalized.toLowerCase(Locale.ROOT).startsWith(root.toLowerCase(Locale.ROOT) + ".");
+    }
+
     /** Map common agent aliases (OPERATOR, ROLE_ADMIN) onto platform role ids. */
     static String canonicalizeRoleName(String role) {
         if (role == null || role.isBlank()) {
