@@ -83,7 +83,8 @@ final class AgentPromptAssembler {
             systemPrompt = AgentCopilotPromptBuilder.build(
                     session.rootPath(),
                     toolRegistry.toolCatalog(profile),
-                    prepared.hasImages()
+                    prepared.hasImages(),
+                    session.runState().clientFocus()
             );
             if (hasTextAttachment(prepared.attachmentMetadata())) {
                 systemPrompt += AgentAttachmentPromptSection.forTextAttachments();
@@ -141,6 +142,14 @@ final class AgentPromptAssembler {
         if (!localeReminder.isBlank()) {
             systemPrompt = systemPrompt + localeReminder;
         }
+        // OpenAI-compatible providers reject a second system mid-list ("System message must be at the beginning").
+        String liveSnapshot = AgentClientFocusPromptSection.formatLiveSnapshotReminder(
+                session.runState().clientChannel(),
+                session.runState().clientFocus()
+        );
+        if (!liveSnapshot.isBlank()) {
+            systemPrompt = systemPrompt + "\n\n" + liveSnapshot.trim();
+        }
         messages.add(new LlmMessage("system", systemPrompt));
 
         boolean copilotHereAndNow = "copilot".equalsIgnoreCase(session.runState().clientChannel());
@@ -167,13 +176,6 @@ final class AgentPromptAssembler {
                 messages.add(new LlmMessage("user", truncateHistoryUserMessage(turn.userMessage())));
                 messages.add(new LlmMessage("assistant", truncateForHistory(turn.assistantSummary())));
             }
-        }
-        String liveSnapshot = AgentClientFocusPromptSection.formatLiveSnapshotReminder(
-                session.runState().clientChannel(),
-                session.runState().clientFocus()
-        );
-        if (!liveSnapshot.isBlank()) {
-            messages.add(new LlmMessage("system", liveSnapshot));
         }
         messages.add(buildCurrentUserMessage(prepared, session));
         return messages;

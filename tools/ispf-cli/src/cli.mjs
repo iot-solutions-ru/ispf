@@ -9,11 +9,13 @@ function usage() {
   console.log(`Usage:
   ispf pack <dir> [-o bundle.json]
   ispf unpack <bundle.json> <dir>
-  ispf validate <dir|bundle.json> [--app id] [--local]
+  ispf validate <dir|bundle.json> [--app id] [--local] [--strict]
   ispf diff <dir> --app <id>
-  ispf deploy <dir> --app <id>
+  ispf deploy <dir> --app <id> [--strict]
 
-Environment: ISPF_BASE_URL, ISPF_API_TOKEN`);
+Environment: ISPF_BASE_URL, ISPF_API_TOKEN
+
+  --strict  Ship-canon: LOGIC_HOST_DEVICE is ERROR (ADR-0060); validate + deploy use ?strict=true`);
 }
 
 function parseArgs(argv) {
@@ -28,6 +30,8 @@ function parseArgs(argv) {
       flags.output = args[++i];
     } else if (a === "--local") {
       flags.local = true;
+    } else if (a === "--strict") {
+      flags.strict = true;
     } else if (a === "--help" || a === "-h") {
       flags.help = true;
     } else if (a.startsWith("-")) {
@@ -71,12 +75,13 @@ export async function runCli(argv) {
       const results = await runValidate(path.resolve(input), {
         appId: flags.app,
         localOnly: flags.local,
+        strict: flags.strict,
       });
       if (results.local) {
         if (results.local.status === "OK") {
-          console.log("local schema OK");
+          console.log(flags.strict ? "local schema + ship-canon OK" : "local schema OK");
         } else {
-          console.error("local schema errors:");
+          console.error(flags.strict ? "local validate errors (--strict):" : "local schema errors:");
           for (const e of results.local.errors) console.error(" ", e);
           process.exit(1);
         }
@@ -104,8 +109,11 @@ export async function runCli(argv) {
     case "deploy": {
       const dir = positional[1];
       if (!dir || !flags.app) throw new Error("deploy requires <dir> --app <id>");
-      const result = await deployDirectory(path.resolve(dir), flags.app);
-      console.log("dry-run OK wouldApply:", (result.dryRun.wouldApply ?? []).join(", "));
+      const result = await deployDirectory(path.resolve(dir), flags.app, { strict: !!flags.strict });
+      console.log(
+        flags.strict ? "dry-run ship-canon OK wouldApply:" : "dry-run OK wouldApply:",
+        (result.dryRun.wouldApply ?? []).join(", ")
+      );
       console.log("deploy OK version:", result.deploy.version ?? result.deploy.bundleVersion ?? "—");
       break;
     }

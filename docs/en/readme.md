@@ -87,6 +87,7 @@ Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in t
 | [Roadmap](roadmap.md) | Charter | Phases and backlog |
 | [Competitive scorecard](competitive-scorecard.md) | Stable | Code-verified readiness |
 | [ADR index](decisions/readme.md) | Stable | Architecture decision records |
+| [ADR tension resolution](adr-tension-resolution.md) | Charter | Claim-boundary waves (Closed / Planned) |
 | [Doc status tags](doc-status.md) | Stable | Status vocabulary |
 
 </details>
@@ -165,6 +166,7 @@ Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in t
 |----------|--------|-------------|
 | [Deployment](deployment.md) | Stable | Docker, env vars |
 | [Demostand profiles](demostands.md) | Lab | Prod, lab, edge topologies |
+| [Customer demostand playbook](customer-demo-playbook.md) | Lab | 30–60 min show-the-customer agenda (MES / OT+HMI+air-gap) |
 | [Air-gap deployment](air-gap-deployment.md) | Stable | Offline installs |
 | [Federation](federation.md) | Beta | Hub / edge (maturity caveats) |
 | [Security](security.md) | Stable | RBAC, MFA |

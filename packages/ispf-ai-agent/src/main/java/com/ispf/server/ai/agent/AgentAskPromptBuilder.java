@@ -50,7 +50,8 @@ public final class AgentAskPromptBuilder {
             {"type":"finish","summary":"Markdown answer for the user","result":{}}
             
             result may include optional read-only suggestions (label + message) — never primary approval buttons.
-            Do not call search_context more than 3 times in a row with the same query.
+            search_context returns short hybrid-retrieval snippets — use them, then finish or call tree tools.
+            Do not call search_context more than 2 times with the same query.
             
             """;
 

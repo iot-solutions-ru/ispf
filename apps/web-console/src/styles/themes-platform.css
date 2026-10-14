@@ -2313,6 +2313,9 @@
 
 .ai-agent-bubble.agent {
   margin-right: auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
   background: rgba(110, 118, 129, 0.12);
   border: 1px solid rgba(110, 118, 129, 0.25);
 }
@@ -2711,9 +2714,11 @@
 
 .operator-agent-drawer-log {
   flex: 1;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 0.75rem;
   background: var(--surface-elevated, var(--surface, #161b22));
+  min-width: 0;
 }
 
 .operator-agent-drawer-compose {
@@ -2845,6 +2850,8 @@
 
 .operator-agent-suggestions-inline {
   margin-bottom: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .operator-agent-suggestions-inline ul {
@@ -2854,28 +2861,58 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  min-width: 0;
+}
+
+.operator-agent-suggestions-inline li {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.operator-agent-suggestions-inline .btn.link,
+.operator-agent-suggestions-inline .ant-btn {
+  display: inline-flex;
+  align-items: flex-start;
+  max-width: 100%;
+  height: auto;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.35;
+  padding-block: 0.35rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .operator-agent-suggestions-inline .btn.link {
-  text-align: left;
-  padding: 0;
+  padding-inline: 0;
 }
 
 .agent-auto-continue {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45rem;
   margin-top: 0.5rem;
   padding: 0.45rem 0.55rem;
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--accent, #58a6ff) 35%, transparent);
   background: color-mix(in srgb, var(--accent, #58a6ff) 10%, transparent);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .agent-auto-continue .hint {
   margin: 0;
-  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.agent-auto-continue .ant-btn,
+.agent-auto-continue .btn {
+  align-self: flex-start;
+  flex-shrink: 0;
 }
 
 

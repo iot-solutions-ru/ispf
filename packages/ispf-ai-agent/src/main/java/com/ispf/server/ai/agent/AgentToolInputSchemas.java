@@ -217,7 +217,7 @@ public final class AgentToolInputSchemas {
                         "driverPollIntervalMs", integerProp("Driver poll interval"),
                         "autoStartDriver", booleanProp("Auto-start driver after create"),
                         "password", stringProp("USER only: login password (default ChangeMe!123)"),
-                        "roles", stringProp("USER only: roles list or comma string (default operator; lowercase ids)")
+                        "roles", stringProp("USER only: roles list or comma string (default operator; lowercase ids: admin|developer|operator)")
                 ),
                 req("parentPath", "name", "type", "displayName"),
                 true
@@ -279,10 +279,19 @@ public final class AgentToolInputSchemas {
         catalog.put("deploy_app_function", objectSchema(
                 props(
                         "appId", stringProp("Application id"),
+                        "objectPath", stringProp(
+                                "Host path — SINGLETON hub (prefer root.platform.singleton-blueprints.*) "
+                                        + "or INSTANCE twin; never DEVICE (ADR-0060)"
+                        ),
+                        "hostKind", enumProp(
+                                "Logic host kind. DEVICE is not a valid value and is not the default.",
+                                LogicHostGuard.HOST_KINDS
+                        ),
                         "functionName", stringProp("Function name"),
-                        "sourceBody", stringProp("JSON string payload")
+                        "sourceType", stringProp("Must be script for application BFF"),
+                        "sourceBody", stringProp("JSON steps string")
                 ),
-                req("appId", "functionName"),
+                req("appId", "objectPath", "hostKind", "functionName", "sourceBody"),
                 true
         ));
         catalog.put("deploy_step_dry_run", objectSchema(
@@ -355,14 +364,21 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("deploy_tree_function", objectSchema(
                 props(
-                        "path", stringProp("Object tree path"),
+                        "path", stringProp(
+                                "Host object path — SINGLETON hub or INSTANCE twin; "
+                                        + "do not host solution logic on DEVICE"
+                        ),
+                        "hostKind", enumProp(
+                                "Logic host kind. DEVICE is not a valid value and is not the default.",
+                                LogicHostGuard.HOST_KINDS
+                        ),
                         "functionName", stringProp("Function name"),
-                        "sourceType", stringProp("Source type"),
-                        "sourceBody", stringProp("JSON string payload"),
+                        "sourceType", stringProp("script or java"),
+                        "sourceBody", stringProp("JSON steps string or Java source"),
                         "inputSchema", objectProp("Input schema"),
                         "outputSchema", objectProp("Output schema")
                 ),
-                req("path", "functionName", "sourceType", "sourceBody"),
+                req("path", "hostKind", "functionName", "sourceType", "sourceBody"),
                 true
         ));
         catalog.put("describe_variables", objectSchema(
@@ -916,6 +932,7 @@ public final class AgentToolInputSchemas {
                 props(
                         "query", stringProp("Search query"),
                         "topic", stringProp("ContextPack topic id"),
+                        "mode", stringProp("hybrid|lexical|vector (default hybrid)"),
                         "limit", integerProp("Max slices")
                 ),
                 List.of(),

@@ -239,7 +239,7 @@ public final class AgentPlaybooks {
                 | SCHEDULE | under application or platform | create_object type=SCHEDULE when TZ mentions cron/jobs |
                 | DATA_SOURCE | root.platform.data-sources | create_object when SQL/report needs JDBC |
                 | APPLICATION | register_application / import_package | bundle deploy when TZ is app-level |
-                | FUNCTION | on DEVICE/CUSTOM/APPLICATION | create_function / deploy_app_function |
+                | FUNCTION | SINGLETON hub or INSTANCE twin — never DEVICE | deploy_tree_function / deploy_app_function hostKind=SINGLETON|INSTANCE |
                 | MODEL strategy | relative / instance / absolute catalogs | pick catalog entry OR instantiate_instance_type OR \
                 apply_mixin_blueprint OR ensure_singleton_instance — do NOT ask user to create types manually in UI |
                 
@@ -555,7 +555,8 @@ public final class AgentPlaybooks {
                 + "| SCHEDULE | root.platform.schedules or app tree | schedule-v1 | create_object, configure_schedule |\n"
                 + "| DATA_SOURCE | root.platform.data-sources | data-source-v1 | create_object, test connection |\n"
                 + "| APPLICATION | root.platform.applications | bundle manifest | register_application, import_package |\n"
-                + "| FUNCTION | on parent object | script/java | create_function, deploy_app_function |\n";
+                + "| FUNCTION | SINGLETON hub or INSTANCE twin — never DEVICE | script/java | "
+                + "deploy_tree_function / deploy_app_function hostKind=SINGLETON|INSTANCE |\n";
     }
 
     public static String platformObjectTypesGuide() {

@@ -141,9 +141,10 @@ ${DIGEST_LINES}
     "driverPacksTar": "artifacts/driver-packs.tar.gz"
   },
   "licensing": {
-    "notes": "Set ISPF_LICENSE_PUBLIC_KEY_PEM, ISPF_LICENSE_ENFORCE, ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES on target host before apply.",
+    "notes": "Compose defaults enforce+require-signed=true (prod). Export ISPF_LICENSE_PUBLIC_KEY_PEM before apply. Cosign image signing is Gap — see docs/evidence/air-gap-signing/.",
     "signTool": "tools/license-builder/sign-bundle.py",
-    "docs": "docs/en/air-gap-deployment.md"
+    "docs": "docs/en/air-gap-deployment.md",
+    "evidence": "docs/evidence/air-gap-signing/README.md"
   }
 }
 EOF

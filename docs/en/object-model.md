@@ -116,7 +116,7 @@ Field types (`FieldType`): `BOOLEAN`, `INTEGER`, `LONG`, `DOUBLE`, `STRING`, `DA
 
 ### Telemetry quality (BL-82)
 
-Optional `quality` field on telemetry rows: `GOOD`, `UNCERTAIN`, `BAD` ([0025-telemetry-quality-flags](decisions/0025-telemetry-quality-flags.md)). Drivers map protocol status (e.g. OPC UA StatusCode) to these levels. Chart widgets skip `BAD` samples (line gap); historian quality column is follow-up work.
+Optional `quality` field on telemetry rows: `GOOD`, `UNCERTAIN`, `BAD` ([0025-telemetry-quality-flags](decisions/0025-telemetry-quality-flags.md)). Drivers map protocol status (e.g. OPC UA StatusCode) to these levels. Chart widgets skip `BAD` samples (line gap). The jdbc historian stores the same flag on each sample ([0074-historian-quality-persistence](decisions/0074-historian-quality-persistence.md)); null means unknown / pre-v2, not GOOD. Flagship stores are jdbc and ClickHouse. Cassandra/Scylla stays experimental and does not persist quality.
 
 ### DataRecord
 
