@@ -6,7 +6,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7" apply false
     id("net.ltgt.errorprone") version "5.1.1" apply false
     // SBOM for the nightly dependency vulnerability scan (Trivy): ./gradlew cyclonedxBom
-    id("org.cyclonedx.bom") version "3.5.0"
+    id("org.cyclonedx.bom") version "3.5.1"
 }
 
 // Aggregate CycloneDX SBOM over every module's runtimeClasspath (server + all driver packs + AI
