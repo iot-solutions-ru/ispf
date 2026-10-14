@@ -77,7 +77,8 @@ public class PlatformLeaderLockService implements LeaderLock {
             return thread;
         });
         // scheduleWithFixedDelay drops the schedule after the first uncaught exception.
-        var unused = renewer.scheduleWithFixedDelay(() -> {
+        // The future is unnamed so it is not discarded; shutdownNow cancels the schedule.
+        var _ = renewer.scheduleWithFixedDelay(() -> {
             try {
                 renewHeldLeases();
             } catch (RuntimeException ex) {

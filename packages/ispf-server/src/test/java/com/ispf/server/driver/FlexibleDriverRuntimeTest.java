@@ -69,7 +69,7 @@ class FlexibleDriverRuntimeTest {
         echoServer = new ServerSocket(0);
         echoPort = echoServer.getLocalPort();
         echoExecutor = Executors.newSingleThreadExecutor();
-        echoExecutor.submit(() -> {
+        echoExecutor.execute(() -> {
             while (!echoServer.isClosed()) {
                 try (Socket client = echoServer.accept()) {
                     InputStream in = client.getInputStream();
