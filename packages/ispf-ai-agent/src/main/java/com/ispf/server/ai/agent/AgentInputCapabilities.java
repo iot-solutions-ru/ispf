@@ -44,7 +44,7 @@ public final class AgentInputCapabilities {
     );
 
     private static final Pattern VISION_MODEL_PATTERN = Pattern.compile(
-            "(gpt-4o|gpt-4\\.1|gpt-4-vision|claude-3|gemini-.*|qwen.*vl|llava|pixtral|vision|moondream|idefics|internvl|minicpm-v)",
+            "(gpt-4o|gpt-4\\.1|gpt-4-vision|claude-3|gemini-.*|qwen.*vl|qwen3\\.?6|qwen36|qwen.*3\\.6|llava|pixtral|vision|moondream|idefics|internvl|minicpm-v)",
             Pattern.CASE_INSENSITIVE
     );
 

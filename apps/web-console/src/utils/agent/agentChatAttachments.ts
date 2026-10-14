@@ -126,3 +126,89 @@ export function createAttachmentFromFile(
     previewUrl,
   };
 }
+
+export function addAttachmentsFromFiles(
+  current: AgentChatAttachment[],
+  files: FileList | File[],
+  provider: AiProviderStatus | undefined,
+  onReject?: (reason: "unsupported" | "vision-not-supported") => void
+): AgentChatAttachment[] {
+  const next = [...current];
+  for (const file of Array.from(files)) {
+    const created = createAttachmentFromFile(file, provider);
+    if (created === "unsupported" || created === "vision-not-supported") {
+      onReject?.(created);
+      continue;
+    }
+    if (!next.some((item) => item.name === created.name && item.file.size === created.file.size)) {
+      next.push(created);
+    }
+  }
+  return next;
+}
+
+function extensionForImageMime(mimeType: string): string {
+  const mime = (mimeType || "").toLowerCase();
+  if (mime.includes("jpeg") || mime.includes("jpg")) {
+    return "jpg";
+  }
+  if (mime.includes("webp")) {
+    return "webp";
+  }
+  if (mime.includes("gif")) {
+    return "gif";
+  }
+  return "png";
+}
+
+/** Give clipboard screenshots a stable filename (browsers often use "image.png"). */
+export function normalizeClipboardImageFile(file: File): File {
+  const mime = file.type || "image/png";
+  const ext = extensionForImageMime(mime);
+  const genericName = !file.name || /^(image|blob|untitled)(\.\w+)?$/i.test(file.name);
+  if (!genericName && file.type) {
+    return file;
+  }
+  return new File([file], `clipboard-${Date.now()}.${ext}`, {
+    type: mime,
+    lastModified: file.lastModified || Date.now(),
+  });
+}
+
+/**
+ * Extract image files from a paste/drop DataTransfer (Ctrl+V screenshot, etc.).
+ * Prefers clipboard items; falls back to files list.
+ */
+export function filesFromClipboardData(data: DataTransfer | null | undefined): File[] {
+  if (!data) {
+    return [];
+  }
+  const fromItems: File[] = [];
+  if (data.items && data.items.length > 0) {
+    for (const item of Array.from(data.items)) {
+      if (item.kind !== "file") {
+        continue;
+      }
+      const type = (item.type || "").toLowerCase();
+      if (type && !type.startsWith("image/")) {
+        continue;
+      }
+      const file = item.getAsFile();
+      if (!file) {
+        continue;
+      }
+      const fileType = (file.type || type || "").toLowerCase();
+      const looksImage =
+        fileType.startsWith("image/") || /\.(png|jpe?g|webp|gif)$/i.test(file.name || "");
+      if (looksImage) {
+        fromItems.push(normalizeClipboardImageFile(file));
+      }
+    }
+  }
+  if (fromItems.length > 0) {
+    return fromItems;
+  }
+  return Array.from(data.files ?? [])
+    .filter((file) => (file.type || "").startsWith("image/") || /\.(png|jpe?g|webp|gif)$/i.test(file.name))
+    .map(normalizeClipboardImageFile);
+}

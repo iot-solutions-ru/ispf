@@ -57,6 +57,30 @@ final class AgentLoopGuard {
             "get_function"
     );
 
+    /**
+     * Tools that participate in read/discovery ping-pong. Mutate pairs
+     * (e.g. create_object ↔ set_dashboard_layout for many course dashboards) are not noise.
+     */
+    private static final Set<String> OSCILLATION_READ_TOOLS = Set.of(
+            "list_objects",
+            "get_object",
+            "list_variables",
+            "describe_variables",
+            "get_dashboard_layout",
+            "get_mimic_diagram",
+            "list_mimic_symbols",
+            "list_functions",
+            "get_function",
+            "get_widget_catalog",
+            "search_context",
+            "get_automation_schema",
+            "list_drivers",
+            "get_driver_help",
+            "list_instance_types",
+            "list_mixin_blueprints",
+            "get_object_blueprint"
+    );
+
     /** Args that identify the target of a call (body payloads intentionally excluded). */
     private static final List<String> FINGERPRINT_KEYS = List.of(
             "path",
@@ -461,6 +485,12 @@ final class AgentLoopGuard {
         if (!isStrictTwoToolAlternation(sequence)) {
             return Optional.empty();
         }
+        String a = sequence.get(0);
+        String b = sequence.get(1);
+        if (!isNoiseOscillationPair(a, b)) {
+            // Productive course pattern: create_object DASHBOARD ↔ set_dashboard_layout (new path each cycle).
+            return Optional.empty();
+        }
         String existsPath = latestExistingObjectPath(steps);
         String hint;
         if (!existsPath.isBlank()
@@ -476,7 +506,7 @@ final class AgentLoopGuard {
                     Prefer one mutate: configure_operator_ui / configure_alert / set_dashboard_layout / create_binding_rule.""";
         }
         return Optional.of(new BlockDecision(
-                "Hard block: tools '" + sequence.get(0) + "' ↔ '" + sequence.get(1)
+                "Hard block: tools '" + a + "' ↔ '" + b
                         + "' oscillating " + sequence.size() + " steps — stop flooding the step log",
                 hint,
                 true
@@ -485,7 +515,25 @@ final class AgentLoopGuard {
 
     private static boolean isReadToolOscillation(List<Map<String, Object>> steps) {
         List<String> recent = recentToolNames(steps, OSCILLATION_WINDOW);
-        return recent.size() >= OSCILLATION_MIN_STEPS && isStrictTwoToolAlternation(recent);
+        if (recent.size() < OSCILLATION_MIN_STEPS || !isStrictTwoToolAlternation(recent)) {
+            return false;
+        }
+        return isNoiseOscillationPair(recent.get(0), recent.get(1));
+    }
+
+    /**
+     * True only for stuck loops: read↔read, or create_object↔get_object.
+     * create_object↔set_dashboard_layout (multi-dashboard course builds) is productive.
+     */
+    private static boolean isNoiseOscillationPair(String a, String b) {
+        if (a == null || b == null || a.equals(b)) {
+            return false;
+        }
+        if (("create_object".equals(a) && "get_object".equals(b))
+                || ("get_object".equals(a) && "create_object".equals(b))) {
+            return true;
+        }
+        return OSCILLATION_READ_TOOLS.contains(a) && OSCILLATION_READ_TOOLS.contains(b);
     }
 
     private static List<String> recentToolNames(List<Map<String, Object>> steps, int max) {
@@ -582,6 +630,11 @@ final class AgentLoopGuard {
                 || lower.contains("missing")
                 || lower.contains("must be ")
                 || lower.contains("unknown_arg")
+                || lower.contains("unknown role")
+                || lower.contains("formal verification")
+                || lower.contains("tautology")
+                || lower.contains("unsatisfiable")
+                || lower.contains("never discriminates")
                 || lower.contains("invalid");
     }
 
@@ -627,6 +680,22 @@ final class AgentLoopGuard {
             return """
                     Do NOT set_variable name=layout on operator-apps. \
                     Use configure_operator_ui with title, defaultDashboard, dashboards=[].""";
+        }
+        if (lower.contains("unknown role")) {
+            return """
+                    USER roles must be lowercase platform ids: admin, developer, operator (or tenant-admin). \
+                    Example: create_object type=USER name=user1 roles=operator password=ChangeMe!123. \
+                    Do NOT send OPERATOR / ROLE_OPERATOR.""";
+        }
+        if ("configure_alert".equals(toolName)
+                || lower.contains("formal verification")
+                || lower.contains("tautology")
+                || lower.contains("never discriminates")) {
+            return """
+                    conditionExpr must discriminate — formal verify rejects tautologies (true, 1==1, true||…). \
+                    Example: watchVariable=sineWave conditionExpr=self.sineWave[\"value\"] > 0 \
+                    or watchVariable=clusterError conditionExpr=self.clusterError[\"value\"] == true. \
+                    Retry configure_alert with a threshold/boolean compare on the watched variable.""";
         }
         return "Fix the error using the tool description / describe_agent_tool, then retry with corrected args. "
                 + "Do not repeat the identical failing call. Prefer the next course/task step over clarify.";
