@@ -62,6 +62,25 @@ class FederationPeerHealthServiceTest {
     }
 
     @Test
+    void registrationFailureIsVisibleOnPeerHealth() {
+        FederationPeer peer = peer(
+                peerId,
+                FederationConnectionMode.HTTP_PULL,
+                FederationAuthStatus.OK
+        );
+        when(peerStore.findById(peerId)).thenReturn(Optional.of(peer));
+        when(tunnelHubService.isConnected(peerId)).thenReturn(false);
+        when(tunnelHubService.registrationFailure(peerId)).thenReturn("Invalid session token");
+        when(outboundAgentStore.listAll()).thenReturn(List.of());
+        healthService.recordProxySuccess(peerId, 10);
+
+        FederationPeerHealth health = healthService.health(peerId);
+        assertThat(health.level()).isEqualTo(FederationPeerHealthLevel.RED);
+        assertThat(health.tunnelConnected()).isFalse();
+        assertThat(health.summary()).isEqualTo("Invalid session token");
+    }
+
+    @Test
     void recentProxySuccessIsGreen() {
         FederationPeer peer = peer(
                 peerId,

@@ -38,6 +38,7 @@ public class FederationTunnelHubService {
     private final FederationPeerHealthService peerHealthService;
     private final TenantScopeService tenantScopeService;
     private final Map<UUID, WebSocketSession> sessionsByPeer = new ConcurrentHashMap<>();
+    private final Map<UUID, String> registrationErrors = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<FederationTunnelProxyResult>> pending = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastEventSeqByPeer = new ConcurrentHashMap<>();
 
@@ -56,6 +57,7 @@ public class FederationTunnelHubService {
     }
 
     public void registerSession(UUID peerId, WebSocketSession session) {
+        registrationErrors.remove(peerId);
         WebSocketSession previous = sessionsByPeer.put(peerId, session);
         @SuppressWarnings("ReferenceEquality")
         boolean replaceOpen = previous != null && previous.isOpen() && previous != session;
@@ -74,6 +76,18 @@ public class FederationTunnelHubService {
             boolean same = current == session;
             return same ? null : current;
         });
+    }
+
+    public void recordRegistrationFailure(UUID peerId, String error) {
+        if (peerId == null) {
+            return;
+        }
+        String message = error == null || error.isBlank() ? "Tunnel registration failed" : error;
+        registrationErrors.put(peerId, message);
+    }
+
+    public String registrationFailure(UUID peerId) {
+        return peerId == null ? null : registrationErrors.get(peerId);
     }
 
     public boolean isConnected(UUID peerId) {

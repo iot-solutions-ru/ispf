@@ -61,7 +61,8 @@ public class FederationTunnelWebSocketHandler extends TextWebSocketHandler {
                     objectMapper
             )));
         } catch (Exception e) {
-            log.warn("Tunnel registration failed: {}", e.getMessage());
+            log.error("Tunnel registration failed: {}", e.getMessage());
+            failRegistration(session, e.getMessage());
             session.close(CloseStatus.BAD_DATA.withReason(e.getMessage()));
         }
     }
@@ -79,9 +80,19 @@ public class FederationTunnelWebSocketHandler extends TextWebSocketHandler {
                     objectMapper
             )));
         } catch (Exception e) {
-            log.warn("Tunnel reconnect failed: {}", e.getMessage());
+            log.error("Tunnel reconnect failed: {}", e.getMessage());
+            failRegistration(session, e.getMessage());
             session.close(CloseStatus.NOT_ACCEPTABLE.withReason(e.getMessage()));
         }
+    }
+
+    private void failRegistration(WebSocketSession session, String error) {
+        UUID peerId = FederationTunnelHubService.peerId(session);
+        if (peerId == null) {
+            return;
+        }
+        hubService.unregisterSession(peerId, session);
+        hubService.recordRegistrationFailure(peerId, error);
     }
 
     private void attachPeer(WebSocketSession session, FederationPeer peer, UUID registrationId) {
