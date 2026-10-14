@@ -313,7 +313,21 @@ final class AgentBlueprintTools {
                     }
                     return result;
                 } catch (Exception ex) {
-                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                    String message = ex.getMessage() == null ? "" : ex.getMessage();
+                    Map<String, Object> err = new LinkedHashMap<>();
+                    err.put("status", "ERROR");
+                    err.put("error", message);
+                    String lower = message.toLowerCase(Locale.ROOT);
+                    if (lower.contains("pass limit") || lower.contains("truncated")) {
+                        err.put(
+                                "hint",
+                                "Binding engine hit the pass/depth stop-loss — this device already has overlapping "
+                                        + "rules (e.g. virtual-unified sum bindings). Skip apply_mixin_blueprint on "
+                                        + objectPath + " and continue the course; do not retry the same mixin."
+                        );
+                        err.put("skipRecommended", true);
+                    }
+                    return err;
                 }
             }
         };

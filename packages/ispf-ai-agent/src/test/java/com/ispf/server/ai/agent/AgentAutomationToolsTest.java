@@ -379,7 +379,12 @@ class AgentAutomationToolsTest {
                 false,
                 null
         );
+        PlatformObject host = new PlatformObject(
+                "dev-01", path, ObjectType.DEVICE, "dev-01", "", "virtual-unified-v1"
+        );
+        host.addVariable(sine);
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
+        when(objectTreePort.require(path)).thenReturn(host);
         when(objectTreePort.updateVariableHistory(path, "sineWave", true, null, null, null, null, null)).thenReturn(
                 sine.withHistorySettings(true, null)
         );
@@ -394,6 +399,40 @@ class AgentAutomationToolsTest {
 
         assertEquals("OK", result.get("status"));
         verify(objectTreePort).updateVariableHistory(path, "sineWave", true, null, null, null, null, null);
+    }
+
+    @Test
+    void configureVariableHistoryResolvesIntCourseLabel() throws Exception {
+        String path = "root.platform.devices.virt-dev-1";
+        Variable intValue = new Variable(
+                "intValue",
+                com.ispf.core.model.DataSchema.builder("v").field("value", com.ispf.core.model.FieldType.INTEGER).build(),
+                true,
+                true,
+                null,
+                false,
+                null
+        );
+        PlatformObject host = new PlatformObject(
+                "virt-dev-1", path, ObjectType.DEVICE, "virt-dev-1", "", "virtual-unified-v1"
+        );
+        host.addVariable(intValue);
+        when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
+        when(objectTreePort.require(path)).thenReturn(host);
+        when(objectTreePort.updateVariableHistory(path, "intValue", true, null, null, null, null, null)).thenReturn(
+                intValue.withHistorySettings(true, null)
+        );
+
+        PlatformAgentTool tool = requireTool("configure_variable_history");
+        Map<String, Object> result = tool.execute(Map.of(
+                "path", path,
+                "name", "Int",
+                "historyEnabled", true
+        ), context);
+
+        assertEquals("OK", result.get("status"));
+        assertEquals("intValue", result.get("resolvedName"));
+        verify(objectTreePort).updateVariableHistory(path, "intValue", true, null, null, null, null, null);
     }
 
     @Test

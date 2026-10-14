@@ -641,11 +641,14 @@ final class AgentTreeTools {
                 }
                 var auth = context.authentication();
                 PlatformObject node = objectTreePort.require(path);
-                Variable existing = node.getVariable(name)
-                        .orElseThrow(() -> new IllegalArgumentException("Variable not found: " + name));
+                String resolvedName = AgentVariableNames.resolve(node, name);
+                Variable existing = node.getVariable(resolvedName).orElse(null);
+                if (existing == null) {
+                    return AgentVariableNames.unknownVariableError(node, name);
+                }
                 variableMemberAccessService.requireWrite(existing, path, auth);
                 if (!existing.writable()) {
-                    return Map.of("status", "ERROR", "error", "Variable is not writable: " + name);
+                    return Map.of("status", "ERROR", "error", "Variable is not writable: " + resolvedName);
                 }
                 Object rawValue = arguments.containsKey("value")
                         ? arguments.get("value")
@@ -655,13 +658,17 @@ final class AgentTreeTools {
                 }
                 try {
                     DataRecord record = toDataRecord(objectMapper, existing, rawValue);
-                    Variable updated = objectTreePort.setVariableValue(path, name, record);
-                    return Map.of(
-                            "status", "OK",
-                            "path", path,
-                            "name", name,
-                            "variable", VariableDto.from(updated)
-                    );
+                    Variable updated = objectTreePort.setVariableValue(path, resolvedName, record);
+                    Map<String, Object> ok = new LinkedHashMap<>();
+                    ok.put("status", "OK");
+                    ok.put("path", path);
+                    ok.put("name", resolvedName);
+                    ok.put("variable", VariableDto.from(updated));
+                    if (!resolvedName.equals(name)) {
+                        ok.put("resolvedName", resolvedName);
+                        ok.put("requestedName", name);
+                    }
+                    return ok;
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());
                 }

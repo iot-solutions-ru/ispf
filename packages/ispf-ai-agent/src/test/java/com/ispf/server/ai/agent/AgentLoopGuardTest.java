@@ -263,6 +263,56 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void allowsGetWidgetCatalogForDistinctTypes() {
+        List<Map<String, Object>> steps = List.of(
+                widgetCatalogStep("chart"),
+                widgetCatalogStep("function-form"),
+                widgetCatalogStep("svg-widget"),
+                widgetCatalogStep("pie-chart")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "get_widget_catalog",
+                Map.of("type", "dashboard-link"),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
+    void hardBlocksRepeatedGetWidgetCatalogSameType() {
+        List<Map<String, Object>> steps = List.of(
+                widgetCatalogStep("pie-chart"),
+                widgetCatalogStep("pie-chart")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "get_widget_catalog",
+                Map.of("type", "pie-chart"),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().error().contains("same type"));
+    }
+
+    @Test
+    void hardBlocksCreateObjectAfterReuseFlood() {
+        String parent = "root.platform.mimics";
+        String name = "mimic-button-fan-svg";
+        List<Map<String, Object>> steps = List.of(
+                createObjectStep(parent, name, "MIMIC", false),
+                createObjectStep(parent, name, "MIMIC", true)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "create_object",
+                Map.of("parentPath", parent, "name", name, "type", "MIMIC", "displayName", name),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("save_mimic_diagram"));
+    }
+
+    @Test
     void hardBlocksIdenticalSetVariableSafetyNet() {
         String path = "root.platform.devices.demo";
         List<Map<String, Object>> steps = List.of(
@@ -423,6 +473,40 @@ class AgentLoopGuardTest {
 
     private static Map<String, Object> step(String tool, Map<String, Object> arguments) {
         return Map.of("type", "tool", "tool", tool, "arguments", arguments);
+    }
+
+    private static Map<String, Object> widgetCatalogStep(String type) {
+        return Map.of(
+                "type", "tool",
+                "tool", "get_widget_catalog",
+                "arguments", Map.of("type", type),
+                "result", Map.of("status", "OK")
+        );
+    }
+
+    private static Map<String, Object> createObjectStep(
+            String parent,
+            String name,
+            String objectType,
+            boolean reused
+    ) {
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("status", "OK");
+        result.put("path", parent + "." + name);
+        if (reused) {
+            result.put("reused", true);
+        }
+        return Map.of(
+                "type", "tool",
+                "tool", "create_object",
+                "arguments", Map.of(
+                        "parentPath", parent,
+                        "name", name,
+                        "type", objectType,
+                        "displayName", name
+                ),
+                "result", result
+        );
     }
 
     private static Map<String, Object> widgetStep(String path) {

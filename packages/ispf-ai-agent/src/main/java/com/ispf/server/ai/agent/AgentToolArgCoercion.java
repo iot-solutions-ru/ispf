@@ -22,7 +22,35 @@ final class AgentToolArgCoercion {
         if ("enable_agent_tool_pack".equals(normalized)) {
             return coerceEnableAgentToolPack(args);
         }
+        if ("configure_report".equals(normalized)) {
+            return coerceConfigureReport(args);
+        }
         return args;
+    }
+
+    private static Map<String, Object> coerceConfigureReport(Map<String, Object> args) {
+        Map<String, Object> copy = new LinkedHashMap<>(args);
+        String path = stringValue(copy.get("path"));
+        if (!path.isBlank()) {
+            return copy;
+        }
+        String reportId = stringValue(copy.get("reportId"));
+        if (reportId.isBlank()) {
+            reportId = stringValue(copy.get("name"));
+        }
+        if (reportId.isBlank()) {
+            reportId = stringValue(copy.get("id"));
+        }
+        if (reportId.isBlank()) {
+            return copy;
+        }
+        if (reportId.startsWith("root.")) {
+            copy.put("path", reportId);
+        } else {
+            copy.put("path", "root.platform.reports." + reportId);
+            copy.putIfAbsent("reportId", reportId);
+        }
+        return copy;
     }
 
     private static Map<String, Object> coerceEnableAgentToolPack(Map<String, Object> args) {
