@@ -137,6 +137,8 @@
   "editor.variableNamesEmpty": "所选对象没有变量。",
   "editor.objectTableVariablesNeedParent": "请先选择父文件夹——列表来自其中对象的变量。",
   "editor.objectTableVariablesEmpty": "此文件夹下的对象没有变量。",
+  "editor.objectTableNeedChildObjects": "此路径没有子对象 — 仪表板表格将为空。仍可使用对象自身的变量配置列。",
+  "editor.objectTableFieldManualHint": "未加载字段 schema — 请手动输入字段名（常见 value、unit、raw）。",
   "editor.col.functionInput": "函数输入",
   "editor.field.functionName": "函数 (调用哪个函数)",
   "editor.field.validateFunctionName": "步骤检查 (在下一步和提交前运行。错误码不是 OK 时停止该步骤)",

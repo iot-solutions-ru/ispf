@@ -441,9 +441,13 @@ export function ObjectTableColumnsEditor({
   const { t } = useTranslation("widgets");
   const columns = parseJsonArray<ObjectTableColumn>(value, []);
   const parent = parentPath?.trim() ?? "";
-  const scoped = parent
-    ? objects.filter((object) => object.path === parent || object.path.startsWith(`${parent}.`))
-    : [];
+  const scoped = useMemo(
+    () =>
+      parent
+        ? objects.filter((object) => object.path === parent || object.path.startsWith(`${parent}.`))
+        : [],
+    [objects, parent],
+  );
   const variablesLocked = Boolean(parent);
 
   const childrenQuery = useQuery({
@@ -500,7 +504,7 @@ export function ObjectTableColumnsEditor({
       }
     }
     return [...names].sort((a, b) => a.localeCompare(b));
-  }, [parent, scoped, variablesBatchQuery.data, sampleVariablesQuery.data, parentVariablesQuery.data]);
+  }, [scoped, variablesBatchQuery.data, sampleVariablesQuery.data, parentVariablesQuery.data]);
 
   const variablesLoading =
     Boolean(parent)
