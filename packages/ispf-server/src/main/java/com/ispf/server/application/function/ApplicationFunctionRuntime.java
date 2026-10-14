@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class ApplicationFunctionRuntime {
@@ -120,17 +121,33 @@ public class ApplicationFunctionRuntime {
     private void ensureDescriptor(String objectPath, String functionName, ApplicationFunctionHandler.DeployedFunction deployed) {
         schemaSession.runWithPlatformCatalog(() -> {
             var node = objectManager.require(objectPath);
-            if (!node.functions().containsKey(functionName)) {
-                DataSchema inputSchema = readSchema(deployed.inputSchemaJson());
-                node.addFunction(new FunctionDescriptor(
-                        functionName,
-                        "Application function " + functionName,
-                        inputSchema,
-                        readSchema(deployed.outputSchemaJson())
-                ));
+            DataSchema inputSchema = readSchema(deployed.inputSchemaJson());
+            DataSchema outputSchema = readSchema(deployed.outputSchemaJson());
+            FunctionDescriptor desired = new FunctionDescriptor(
+                    functionName,
+                    "Application function " + functionName,
+                    inputSchema,
+                    outputSchema
+            );
+            FunctionDescriptor existing = node.functions().get(functionName);
+            if (existing == null || !schemasEqual(existing.inputSchema(), inputSchema)
+                    || !schemasEqual(existing.outputSchema(), outputSchema)) {
+                node.addFunction(desired);
                 objectManager.persistNodeTree(objectPath);
             }
         });
+    }
+
+    private static boolean schemasEqual(DataSchema left, DataSchema right) {
+        if (left == right) {
+            return true;
+        }
+        if (left == null || right == null) {
+            return false;
+        }
+        // DataSchema is not a value-equals type; compare name + field definitions.
+        return Objects.equals(left.name(), right.name())
+                && left.fields().equals(right.fields());
     }
 
     private DataSchema readSchema(String json) {
