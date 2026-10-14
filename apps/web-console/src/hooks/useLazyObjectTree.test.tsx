@@ -65,16 +65,17 @@ describe("useLazyObjectTree", () => {
     trackObjectPathSubscriptions.mockClear();
   });
 
-  it("subscribes bootstrap parents for WS structure events", async () => {
+  it("does not path-wide subscribe bootstrap roots (avoids platform telemetry flood)", async () => {
     renderHook(() => useLazyObjectTree(true));
     await waitFor(() => {
       expect(trackObjectPathSubscriptions).toHaveBeenCalled();
     });
-    const last = trackObjectPathSubscriptions.mock.calls.at(-1)?.[0] as string[];
-    expect(last).toEqual(expect.arrayContaining(["root", "root.platform"]));
+    const last = (trackObjectPathSubscriptions.mock.calls.at(-1)?.[0] as string[]) ?? [];
+    expect(last).not.toContain("root");
+    expect(last).not.toContain("root.platform");
   });
 
-  it("adds expanded folders to WS interest paths", async () => {
+  it("adds expanded non-bootstrap folders to WS interest paths", async () => {
     const { result } = renderHook(() => useLazyObjectTree(true));
     await waitFor(() => {
       expect(result.current.objects.length).toBeGreaterThan(0);
@@ -83,8 +84,9 @@ describe("useLazyObjectTree", () => {
       await result.current.loadChildren("root.platform.devices", true);
     });
     await waitFor(() => {
-      const last = trackObjectPathSubscriptions.mock.calls.at(-1)?.[0] as string[];
-      expect(last).toEqual(expect.arrayContaining(["root.platform.devices"]));
+      const last = (trackObjectPathSubscriptions.mock.calls.at(-1)?.[0] as string[]) ?? [];
+      expect(last).toContain("root.platform.devices");
+      expect(last).not.toContain("root.platform");
     });
   });
 

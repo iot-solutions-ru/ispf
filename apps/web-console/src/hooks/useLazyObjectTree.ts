@@ -8,6 +8,13 @@ import type { ObjectWsMessage } from "./useObjectWebSocket";
 import { OBJECT_WS_EVENT, useObjectPathsSubscription } from "./useObjectWebSocket";
 
 const BOOTSTRAP_PARENTS = ["root", "root.platform"];
+/**
+ * Path-wide WS interest fans VARIABLE_UPDATED for every descendant (ADR-0024).
+ * Never subscribe bootstrap roots — that would stream the whole platform.
+ * Cap expanded folders; skip very large folders (HTTP refresh on expand / invalidate).
+ */
+const MAX_TREE_WS_INTEREST = 24;
+const TREE_WS_CHILD_CAP = 64;
 
 /** Full sidebar tree reload (create/delete outside WS interest, agent turns, …). */
 export const TREE_INVALIDATE_EVENT = "ispf-tree-invalidate";
@@ -16,13 +23,22 @@ export function requestObjectTreeInvalidate(): void {
   window.dispatchEvent(new Event(TREE_INVALIDATE_EVENT));
 }
 
+function rememberWsInterest(prev: string[], parentPath: string): string[] {
+  const without = prev.filter((path) => path !== parentPath);
+  without.push(parentPath);
+  if (without.length <= MAX_TREE_WS_INTEREST) {
+    return without;
+  }
+  return without.slice(without.length - MAX_TREE_WS_INTEREST);
+}
+
 export function useLazyObjectTree(enabled = true) {
   const objectsRef = useRef(new Map<string, ObjectSummary>());
   const loadedParentsRef = useRef(new Set<string>());
   const loadingParentsRef = useRef(new Set<string>());
   const [version, setVersion] = useState(0);
-  /** Path-wide WS interest so CREATED/DELETED under expanded folders reach this client. */
-  const [wsInterestPaths, setWsInterestPaths] = useState<string[]>(() => [...BOOTSTRAP_PARENTS]);
+  /** Path-wide WS interest for recently expanded *non-bootstrap* folders only. */
+  const [wsInterestPaths, setWsInterestPaths] = useState<string[]>([]);
 
   const bump = useCallback(() => setVersion((v) => v + 1), []);
 
@@ -62,7 +78,10 @@ export function useLazyObjectTree(enabled = true) {
         const children = await fetchObjects(parentPath, true);
         mergeObjects(children, parentPath);
         loadedParentsRef.current.add(parentPath);
-        setWsInterestPaths((prev) => (prev.includes(parentPath) ? prev : [...prev, parentPath]));
+        const isBootstrap = BOOTSTRAP_PARENTS.includes(parentPath);
+        if (!isBootstrap && children.length <= TREE_WS_CHILD_CAP) {
+          setWsInterestPaths((prev) => rememberWsInterest(prev, parentPath));
+        }
       } catch (error) {
         loadedParentsRef.current.delete(parentPath);
         console.error(`Failed to load tree children for ${parentPath}`, error);
@@ -144,7 +163,7 @@ export function useLazyObjectTree(enabled = true) {
   const invalidateAll = useCallback(async () => {
     loadedParentsRef.current.clear();
     objectsRef.current.clear();
-    setWsInterestPaths([...BOOTSTRAP_PARENTS]);
+    setWsInterestPaths([]);
     bump();
     for (const parent of BOOTSTRAP_PARENTS) {
       await loadChildren(parent, true);
@@ -159,7 +178,7 @@ export function useLazyObjectTree(enabled = true) {
     return () => window.removeEventListener(TREE_INVALIDATE_EVENT, onInvalidate);
   }, [invalidateAll]);
 
-  // Empty interest ⇒ server silence (ADR-0024). Keep every loaded folder subscribed.
+  // Structure live-updates only for capped expanded folders (not whole platform).
   useObjectPathsSubscription(enabled ? wsInterestPaths : []);
 
   // `version` is the change counter of the ref-backed store; it is the real dependency here.
