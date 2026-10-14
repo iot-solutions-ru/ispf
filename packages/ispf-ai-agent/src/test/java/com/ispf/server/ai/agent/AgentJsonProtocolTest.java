@@ -210,4 +210,43 @@ class AgentJsonProtocolTest {
         assertEquals("finish", action.type());
         assertTrue(action.result().isEmpty());
     }
+
+    @Test
+    void parsesToolActionWithTrailingToolCallCloseTag() throws Exception {
+        // Qwen/vLLM sometimes appends </tool_call> after a valid JSON action.
+        String content = "{\"type\":\"tool\",\"name\":\"enable_agent_tool_pack\",\"arguments\":{\"pack\":\"devices\"}}\n</tool_call>";
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("tool", action.type());
+        assertEquals("enable_agent_tool_pack", action.toolName());
+        assertEquals("devices", action.arguments().get("pack"));
+    }
+
+    @Test
+    void parsesToolActionWrappedInToolCallXml() throws Exception {
+        String content = "<tool_call>\n{\"type\":\"tool\",\"name\":\"list_objects\",\"arguments\":{\"parent\":\"root.platform.devices\"}}\n</tool_call>";
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("list_objects", action.toolName());
+        assertEquals("root.platform.devices", action.arguments().get("parent"));
+    }
+
+    @Test
+    void coercesBarePlanPayloadToFinish() throws Exception {
+        String content = """
+                {
+                  "phase": "plan",
+                  "interactive": true,
+                  "plan": {
+                    "goal": "Create two users and virtual devices"
+                  },
+                  "summary": "Plan ready"
+                }
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("finish", action.type());
+        assertEquals("Plan ready", action.summary());
+        assertEquals("plan", action.result().get("phase"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> plan = (Map<String, Object>) action.result().get("plan");
+        assertEquals("Create two users and virtual devices", plan.get("goal"));
+    }
 }
