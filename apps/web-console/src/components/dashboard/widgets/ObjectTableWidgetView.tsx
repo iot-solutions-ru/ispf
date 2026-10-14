@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { fetchObjects } from "../../../api";
+import { resolveVariablesBatchEntry } from "../../../utils/object/variablesBatchLookup";
 import { readFieldValue } from "../../../types/dashboard";
 import type { ObjectTableColumn, ObjectTableWidget } from "../../../types/dashboard";
 import type { VariableDto } from "../../../types";
@@ -38,6 +39,20 @@ export default function ObjectTableWidgetView({
     () => parseWidgetJsonArray<ObjectTableColumn>(widget.columnsJson),
     [widget.columnsJson]
   );
+
+  const columnHeader = (col: ObjectTableColumn) => {
+    const label = col.label?.trim();
+    if (label) {
+      return label;
+    }
+    if (col.variable?.trim()) {
+      return col.variable.trim();
+    }
+    if (col.objectField?.trim()) {
+      return col.objectField.trim();
+    }
+    return "—";
+  };
 
   const children = useQuery({
     queryKey: ["objects", widget.parentPath],
@@ -181,7 +196,11 @@ export default function ObjectTableWidgetView({
       path={obj.path}
       displayName={obj.displayName}
       columns={parsedColumns}
-      variables={variablesBatch.data?.[obj.path]}
+      variables={
+        variablesBatch.data
+          ? resolveVariablesBatchEntry(variablesBatch.data, obj.path)
+          : undefined
+      }
       selected={selectedPath === obj.path}
       trendEnabled={!editable && trendColumns.length > 0}
       onSelect={() => {
@@ -230,8 +249,8 @@ export default function ObjectTableWidgetView({
     >
       {!widget.parentPath ? (
         <p className="hint">{t("view.specifyParentPath")}</p>
-      ) : children.isLoading ? (
-        <p className="hint">{t("common:action.loading")}</p>
+      ) : parsedColumns.length === 0 ? (
+        <p className="hint">{t("view.objectTableNeedColumns")}</p>
       ) : (
         <div className="dash-table-wrap" ref={tableWrapRef} style={styles.body}>
           <table className="dash-object-table" style={styles.table}>
@@ -239,23 +258,41 @@ export default function ObjectTableWidgetView({
               <tr>
                 <th>{t("view.objectColumn")}</th>
                 {parsedColumns.map((col) => (
-                  <th key={col.variable ?? col.objectField ?? col.label}>{col.label}</th>
+                  <th key={`${col.variable ?? col.objectField ?? col.label}-${col.field ?? "value"}`}>
+                    {columnHeader(col)}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {shouldVirtualize && paddingTop > 0 && (
-                <tr aria-hidden="true" className="dash-table-spacer">
-                  <td colSpan={columnCount} style={{ height: paddingTop, padding: 0, border: 0 }} />
+              {children.isLoading ? (
+                <tr>
+                  <td colSpan={columnCount} className="hint">
+                    {t("common:action.loading")}
+                  </td>
                 </tr>
-              )}
-              {shouldVirtualize
-                ? virtualRows.map((virtualRow) => renderRow(rows[virtualRow.index]))
-                : rows.map((obj) => renderRow(obj))}
-              {shouldVirtualize && paddingBottom > 0 && (
-                <tr aria-hidden="true" className="dash-table-spacer">
-                  <td colSpan={columnCount} style={{ height: paddingBottom, padding: 0, border: 0 }} />
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={columnCount} className="hint">
+                    {t("view.objectTableEmpty")}
+                  </td>
                 </tr>
+              ) : (
+                <>
+                  {shouldVirtualize && paddingTop > 0 && (
+                    <tr aria-hidden="true" className="dash-table-spacer">
+                      <td colSpan={columnCount} style={{ height: paddingTop, padding: 0, border: 0 }} />
+                    </tr>
+                  )}
+                  {shouldVirtualize
+                    ? virtualRows.map((virtualRow) => renderRow(rows[virtualRow.index]))
+                    : rows.map((obj) => renderRow(obj))}
+                  {shouldVirtualize && paddingBottom > 0 && (
+                    <tr aria-hidden="true" className="dash-table-spacer">
+                      <td colSpan={columnCount} style={{ height: paddingBottom, padding: 0, border: 0 }} />
+                    </tr>
+                  )}
+                </>
               )}
             </tbody>
           </table>

@@ -444,8 +444,8 @@ export default function DashboardBuilder({
   };
 
   const updateWidget = useCallback((widget: DashboardWidget) => {
-    commitLayout(updateWidgetInLayout(layout, widget));
-  }, [layout, commitLayout]);
+    commitLayout(updateWidgetInLayout(layoutRef.current, widget));
+  }, [commitLayout]);
 
   const setChildrenAtSlotDraft = useCallback(
     (slot: import("./widgetLayoutTree").WidgetSlotRef, children: DashboardWidget[]) => {

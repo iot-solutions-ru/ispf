@@ -1,6 +1,6 @@
 import { cleanup, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchObjectEditor, fetchVariables, fetchVariablesBatch } from "../../../api";
+import { fetchObjectEditor, fetchObjects, fetchVariables, fetchVariablesBatch } from "../../../api";
 import { fetchReport } from "../../../api/reports";
 import { renderWithDashboard } from "../../../test/renderWithDashboard";
 import type { VariableDto } from "../../../types";
@@ -17,6 +17,7 @@ vi.mock("../../../api", async (importOriginal) => {
   return {
     ...actual,
     fetchObjectEditor: vi.fn(),
+    fetchObjects: vi.fn(),
     fetchVariables: vi.fn(),
     fetchVariablesBatch: vi.fn(),
   };
@@ -46,6 +47,7 @@ describe("widget editor dependent choices", () => {
 
   beforeEach(() => {
     vi.mocked(fetchObjectEditor).mockReset();
+    vi.mocked(fetchObjects).mockReset();
     vi.mocked(fetchVariables).mockReset();
     vi.mocked(fetchVariablesBatch).mockReset();
     vi.mocked(fetchReport).mockReset();
@@ -159,9 +161,18 @@ describe("widget editor dependent choices", () => {
   });
 
   it("limits an object-table column to variables under the parent and that variable's fields", async () => {
+    vi.mocked(fetchObjects).mockResolvedValue([
+      {
+        path: "root.devices.pump",
+        displayName: "Pump",
+        type: "DEVICE",
+        variableNames: [],
+      } as never,
+    ]);
     vi.mocked(fetchVariablesBatch).mockResolvedValue({
       "root.devices.pump": [temperature],
     });
+    vi.mocked(fetchVariables).mockResolvedValue([temperature]);
     renderWithDashboard(
       <ObjectTableColumnsEditor
         parentPath="root.devices"
@@ -174,9 +185,114 @@ describe("widget editor dependent choices", () => {
     expect(screen.getByRole("option", { name: "temperature" })).toBeInTheDocument();
     expect(variable).toHaveValue("temperature");
     await waitFor(() => {
-      expect(screen.getByRole("combobox", { name: "Field" })).toBeEnabled();
+      expect(screen.getByRole("option", { name: "raw" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "value" })).toBeInTheDocument();
     });
-    expect(screen.getByRole("option", { name: "value" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "raw" })).toBeInTheDocument();
+  });
+
+  it("offers field names in a list after the column variable is chosen", async () => {
+    vi.mocked(fetchObjects).mockResolvedValue([
+      {
+        path: "root.devices.pump",
+        displayName: "Pump",
+        type: "DEVICE",
+        variableNames: [],
+      } as never,
+    ]);
+    const pressure = {
+      name: "pressure",
+      value: {
+        schema: {
+          name: "pressure",
+          fields: [
+            { name: "value", type: "DOUBLE" },
+            { name: "raw", type: "DOUBLE" },
+          ],
+        },
+        rows: [{ value: 1, raw: 1.01 }],
+      },
+    } as VariableDto;
+    vi.mocked(fetchVariablesBatch).mockResolvedValue({
+      "root.devices.pump": [pressure],
+    });
+    vi.mocked(fetchVariables).mockResolvedValue([pressure]);
+    renderWithDashboard(
+      <ObjectTableColumnsEditor
+        parentPath="root.devices"
+        objects={[]}
+        value={JSON.stringify([{ label: "P", variable: "pressure", field: "" }])}
+        onChange={() => {}}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: "value" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "raw" })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("combobox", { name: "Field" })).toHaveValue("value");
+  });
+
+  it("loads object-table column variables from child objects when catalog summaries are empty", async () => {
+    vi.mocked(fetchObjects).mockResolvedValue([
+      {
+        path: "root.devices.pump",
+        displayName: "Pump",
+        type: "DEVICE",
+        variableNames: [],
+      } as never,
+    ]);
+    vi.mocked(fetchVariablesBatch).mockResolvedValue({
+      "root.devices.pump": [temperature],
+    });
+    vi.mocked(fetchVariables).mockResolvedValue([temperature]);
+    renderWithDashboard(
+      <ObjectTableColumnsEditor
+        parentPath="root.devices"
+        objects={[]}
+        value={JSON.stringify([{ label: "Temp", variable: "", field: "" }])}
+        onChange={() => {}}
+      />,
+    );
+    const variable = await screen.findByRole("combobox", { name: "Variable" });
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: "temperature" })).toBeInTheDocument();
+    });
+    expect(variable).toBeEnabled();
+  });
+
+  it("loads field schema from the parent object when it has no children", async () => {
+    vi.mocked(fetchObjects).mockResolvedValue([]);
+    const test2 = {
+      name: "test2",
+      readable: true,
+      writable: true,
+      schema: {
+        name: "test2",
+        fields: [
+          { name: "id1", type: "STRING" },
+          { name: "id2", type: "STRING" },
+          { name: "id3", type: "STRING" },
+        ],
+      },
+      value: null,
+    } as VariableDto;
+    vi.mocked(fetchVariables).mockImplementation(async (path: string) => {
+      if (path === "root.platform.singleton-blueprints.test1") {
+        return [test2];
+      }
+      return [];
+    });
+    renderWithDashboard(
+      <ObjectTableColumnsEditor
+        parentPath="root.platform.singleton-blueprints.test1"
+        objects={[]}
+        value={JSON.stringify([{ label: "ID", variable: "test2", field: "" }])}
+        onChange={() => {}}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: "id1" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "id2" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "id3" })).toBeInTheDocument();
+    });
   });
 });

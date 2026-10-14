@@ -85,6 +85,23 @@ describe("ObjectTableWidgetView selection", () => {
     vi.clearAllMocks();
   });
 
+  it("shows a column header from the variable name when the label is empty", async () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const widget = {
+      ...table("table-cols", "Columns"),
+      columnsJson: JSON.stringify([{ variable: "temperature", label: "" }]),
+    };
+    renderWithDashboard(
+      <QueryClientProvider client={client}>
+        <ObjectTableWidgetView widget={widget} refreshIntervalMs={60_000} />
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByRole("columnheader", { name: "temperature" })).toBeInTheDocument();
+  });
+
   it("does not highlight a row until one is clicked", async () => {
     renderTables();
 
