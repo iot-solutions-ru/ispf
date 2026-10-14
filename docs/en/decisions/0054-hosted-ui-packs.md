@@ -40,13 +40,18 @@ Production often serves `web-console` as **static files** from nginx (`root /opt
 location / { try_files $uri $uri/ /index.html; }
 ```
 
-will answer `GET /apps/<appId>/` with the **admin console** SPA (title “ISPF Admin Console”), even when the ui-pack is correctly installed under `ISPF_UI_PACKS_DIR/<appId>/` and Java serves it on `:8080`.
+will answer `GET /apps/<appId>/` with the **admin console** SPA (title “ISPF Admin Console”), even when the ui-pack is correctly installed under `ISPF_UI_PACKS_DIR/<appId>/` and Java serves it on the JVM port.
 
-**Required:** proxy hosted UI packs to the JVM (same as `/api/`), before the SPA fallback. Templates: [`deploy/nginx-ispf.conf`](../../deploy/nginx-ispf.conf), [`deploy/nginx-vps-ssl.conf`](../../deploy/nginx-vps-ssl.conf):
+**Required:** proxy hosted UI packs to the JVM (same as `/api/`), before the SPA fallback — at **every** nginx layer that has a console SPA `try_files` fallback:
+
+| Layer | Templates |
+|-------|-----------|
+| Public TLS | [`deploy/nginx-ispf.conf`](../../deploy/nginx-ispf.conf), [`deploy/nginx-vps-ssl.conf`](../../deploy/nginx-vps-ssl.conf) → inner `:8080` |
+| Inner LB (`docker-compose.vps-single` / cluster) | [`deploy/nginx-vps-single.conf`](../../deploy/nginx-vps-single.conf), [`deploy/nginx-vps-cluster.conf`](../../deploy/nginx-vps-cluster.conf) → JVM `:8081` (edge-api) |
 
 ```nginx
 location ^~ /apps/ {
-    proxy_pass http://127.0.0.1:8080;
+    proxy_pass http://ispf_single;   # or 127.0.0.1:8080 / edge upstream
     # … Host / X-Forwarded-* / Authorization as for /api/
 }
 ```
@@ -56,7 +61,8 @@ Smoke after every nginx or platform deploy:
 ```bash
 curl -fsS "https://<host>/apps/<appId>/" | grep -q '<app title or ui-pack marker>'
 # Must NOT contain: <title>ISPF Admin Console</title>
-curl -fsS -o /dev/null -w '%{http_code}\n' "http://127.0.0.1:8080/apps/<appId>/"   # expect 200 when pack installed
+curl -fsS -o /dev/null -w '%{http_code}\n' "http://127.0.0.1:8081/apps/<appId>/"   # JVM direct — expect 200 when pack installed
+curl -fsS -o /dev/null -w '%{http_code}\n' "http://127.0.0.1:8080/apps/<appId>/"   # inner nginx — expect 200 (not console HTML)
 ```
 
 All-in-one JAR (UI embedded, no separate nginx static root) does not need this location — `HostedUiPackFilter` handles `/apps/` on the same port.
@@ -80,7 +86,7 @@ This is a **generic packaging/serving primitive** (like symbol packs), not an Oi
 
 ### Risks
 
-- **Nginx SPA fallback steals `/apps/`** on split VPS deploy — always keep `location ^~ /apps/` → JVM (see above). Symptom: public URL shows Admin Console; `curl :8080/apps/...` shows the real pack.
+- **Nginx SPA fallback steals `/apps/`** on split VPS deploy — keep `location ^~ /apps/` → JVM on **both** public and inner LB templates (see above). Symptom: public URL shows Admin Console; `curl :8081/apps/...` (JVM) still shows the real pack.
 - Subpath base URL mistakes break asset loading — document pack contract clearly.
 - Large SPA zips increase marketplace artifact size — enforce limits.
 - **Same-origin SPA** shares cookies/storage with the console; login inside the pack can mint a token with the user’s full rights — honesty and hardening path in [0073](0073-hosted-ui-pack-trust.md).
