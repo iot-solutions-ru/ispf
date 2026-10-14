@@ -258,7 +258,8 @@ final class AgentDiscoveryTools {
             @Override
             public String description() {
                 return "Get event payload schema for fire_event. "
-                        + "Args: objectPath, eventName (required), optional appId for bundle catalog merge.";
+                        + "Args: objectPath, eventName (required; virtual-unified uses event1/event2, not Event1). "
+                        + "optional appId for bundle catalog merge.";
             }
 
             @Override
@@ -275,18 +276,24 @@ final class AgentDiscoveryTools {
                 objectAccessService.requireRead(objectPath, auth);
 
                 PlatformObject node = objectTreePort.require(objectPath);
-                EventDescriptor treeEvent = node.events().get(eventName);
+                final String resolvedEvent = resolveEventName(node, eventName);
+                EventDescriptor treeEvent = node.events().get(resolvedEvent);
                 if (treeEvent == null) {
                     return Map.of(
                             "status", "ERROR",
-                            "error", "Unknown event on object: " + eventName
+                            "error", "Unknown event on object: " + eventName,
+                            "hint",
+                            "Use exact event ids from the object model (virtual-unified: event1, event2). "
+                                    + "Available: " + String.join(", ", node.events().keySet())
+                                    + ". For bindings use targetRef=@/evt/" + (node.events().isEmpty() ? "event1" : node.events().keySet().iterator().next())
+                                    + " or eventName=<id>."
                     );
                 }
 
                 Map<String, Object> result = new LinkedHashMap<>();
                 result.put("status", "OK");
                 result.put("objectPath", objectPath);
-                result.put("eventName", eventName);
+                result.put("eventName", resolvedEvent);
                 result.put("level", treeEvent.level().name());
                 result.put("description", treeEvent.description());
                 result.put("payloadSchema", schemaPreview(treeEvent.payloadSchema()));
@@ -294,7 +301,7 @@ final class AgentDiscoveryTools {
                 String appId = optionalString(arguments, "appId");
                 if (appId != null) {
                     eventCatalogService.listEvents(appId).stream()
-                            .filter(entry -> eventName.equals(String.valueOf(entry.get("id"))))
+                            .filter(entry -> resolvedEvent.equals(String.valueOf(entry.get("id"))))
                             .findFirst()
                             .ifPresent(catalog -> {
                                 result.put("catalogRoles", catalog.get("roles"));
@@ -423,6 +430,32 @@ final class AgentDiscoveryTools {
             objectPath = stringArg(arguments, "path");
         }
         return objectPath.isBlank() ? null : objectPath;
+    }
+
+    /**
+     * Map display-ish names (Event1, Event 1) onto exact event ids on the object (event1).
+     */
+    static String resolveEventName(PlatformObject node, String requested) {
+        if (node == null || requested == null || requested.isBlank()) {
+            return requested;
+        }
+        if (node.events().containsKey(requested)) {
+            return requested;
+        }
+        String compact = requested.replaceAll("[\\s_-]+", "").toLowerCase(Locale.ROOT);
+        for (String key : node.events().keySet()) {
+            if (key.equalsIgnoreCase(requested)) {
+                return key;
+            }
+            String keyCompact = key.replaceAll("[\\s_-]+", "").toLowerCase(Locale.ROOT);
+            if (keyCompact.equals(compact)) {
+                return key;
+            }
+        }
+        if (node.events().containsKey(compact)) {
+            return compact;
+        }
+        return requested;
     }
 
     private static String stringArg(Map<String, Object> args, String key) {

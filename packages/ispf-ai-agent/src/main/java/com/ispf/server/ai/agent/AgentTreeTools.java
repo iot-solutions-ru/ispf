@@ -215,6 +215,7 @@ final class AgentTreeTools {
                 return "Create object tree node. Args: parentPath, name, type (DEVICE|DASHBOARD|USER|CUSTOM|...), "
                         + "displayName, description?, templateId?, driverId?, driverPollIntervalMs?, autoStartDriver?. "
                         + "For USER: also password? (default ChangeMe!123), roles? (list or comma string, default operator). "
+                        + "Role ids are lowercase: operator, developer, admin, tenant-admin (not OPERATOR). "
                         + "USER goes through PlatformUserService (creates login + roles variable) — do NOT apply_mixin platform-user-v1.";
             }
 
@@ -1085,7 +1086,7 @@ final class AgentTreeTools {
         List<String> roles = parseRolesArg(arguments.get("roles"));
         if (roles.isEmpty()) {
             // Platform roles are lowercase ids (admin|developer|operator), not Spring ROLE_* names.
-            roles = List.of("operator");
+            roles = List.of(com.ispf.server.config.IspfRoles.OPERATOR);
         }
         String path = PlatformUserService.USERS_PATH_PREFIX + username.trim();
         try {
@@ -1121,6 +1122,15 @@ final class AgentTreeTools {
                 );
                 return reused;
             }
+            if (message.toLowerCase(Locale.ROOT).contains("unknown role")) {
+                return Map.of(
+                        "status", "ERROR",
+                        "error", message,
+                        "hint",
+                        "Use lowercase role ids: operator, developer, admin, tenant-admin, operator-readonly. "
+                                + "Retry create_object type=USER roles=operator (not OPERATOR)."
+                );
+            }
             return Map.of("status", "ERROR", "error", message);
         } catch (Exception ex) {
             return Map.of("status", "ERROR", "error", ex.getMessage());
@@ -1136,7 +1146,7 @@ final class AgentTreeTools {
             List<String> out = new ArrayList<>();
             for (Object item : list) {
                 if (item != null && !String.valueOf(item).isBlank()) {
-                    out.add(normalizePlatformRole(String.valueOf(item).trim()));
+                    out.add(canonicalizeRoleName(String.valueOf(item)));
                 }
             }
             return out;
@@ -1152,27 +1162,28 @@ final class AgentTreeTools {
         List<String> out = new ArrayList<>();
         for (String part : text.split("[,;\\s]+")) {
             if (!part.isBlank()) {
-                out.add(normalizePlatformRole(part.trim()));
+                out.add(canonicalizeRoleName(part));
             }
         }
         return out;
     }
 
-    /** Map common LLM variants onto platform role ids (admin|developer|operator|tenant-admin). */
-    private static String normalizePlatformRole(String role) {
+    /** Map common agent aliases (OPERATOR, ROLE_ADMIN) onto platform role ids. */
+    static String canonicalizeRoleName(String role) {
         if (role == null || role.isBlank()) {
-            return role;
+            return "";
         }
-        String stripped = role.trim();
-        if (stripped.regionMatches(true, 0, "ROLE_", 0, 5)) {
-            stripped = stripped.substring(5);
+        String normalized = role.trim();
+        if (normalized.regionMatches(true, 0, "ROLE_", 0, 5)) {
+            normalized = normalized.substring(5);
         }
-        String lower = stripped.toLowerCase(Locale.ROOT);
+        String lower = normalized.toLowerCase(Locale.ROOT).replace('_', '-');
         return switch (lower) {
-            case "admin", "administrator" -> "admin";
-            case "developer", "dev", "configurator" -> "developer";
-            case "operator", "ops", "user" -> "operator";
-            case "tenant-admin", "tenant_admin", "tenantadmin" -> "tenant-admin";
+            case "operator", "operators", "hmi", "ops", "user" -> com.ispf.server.config.IspfRoles.OPERATOR;
+            case "admin", "administrator", "admins" -> com.ispf.server.config.IspfRoles.ADMIN;
+            case "developer", "dev", "developers", "configurator" -> com.ispf.server.config.IspfRoles.DEVELOPER;
+            case "tenant-admin", "tenantadmin", "tenant_admin" -> com.ispf.server.config.IspfRoles.TENANT_ADMIN;
+            case "operator-readonly", "operatorreadonly", "readonly" -> "operator-readonly";
             default -> lower;
         };
     }

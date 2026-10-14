@@ -726,27 +726,29 @@ final class AgentAutomationTools {
                 }
                 objectAccessService.requireWrite(path, auth);
                 try {
-                    objectTreePort.require(path);
+                    PlatformObject bindingHost = objectTreePort.require(path);
+                    Map<String, Object> resolvedArgs = coerceEventBindingArgs(arguments, bindingHost);
+                    targetRef = stringArg(resolvedArgs, "targetRef");
                     // Historian helpers (avg/min/max/…) are not plain CEL — skip reactive CEL compile.
                     if (ruleKind != BindingRuleKind.HISTORIAN) {
                         BindingExpressionValidator.validateOrThrow(expression);
                     }
-                    String condition = optionalString(arguments, "condition");
+                    String condition = optionalString(resolvedArgs, "condition");
                     FormalVerificationReport conditionVerification = null;
                     if (condition != null && !condition.isBlank()) {
                         conditionVerification = formalVerificationService.requireSafeConditionForApply(condition);
                     }
-                    BindingActivators activators = buildActivators(arguments, path, ruleKind);
-                    com.ispf.core.binding.BindingTarget target = buildTarget(arguments, targetKind, targetVariable);
-                    String windowBucket = optionalString(arguments, "windowBucket");
+                    BindingActivators activators = buildActivators(resolvedArgs, path, ruleKind);
+                    com.ispf.core.binding.BindingTarget target = buildTarget(resolvedArgs, targetKind, targetVariable);
+                    String windowBucket = optionalString(resolvedArgs, "windowBucket");
                     if (ruleKind == BindingRuleKind.HISTORIAN && (windowBucket == null || windowBucket.isBlank())) {
                         windowBucket = "1m";
                     }
                     BindingRule rule = new BindingRule(
                             id,
-                            optionalString(arguments, "name"),
-                            boolArg(arguments, "enabled", true),
-                            intArg(arguments, "order", 0),
+                            optionalString(resolvedArgs, "name"),
+                            boolArg(resolvedArgs, "enabled", true),
+                            intArg(resolvedArgs, "order", 0),
                             ruleKind,
                             activators,
                             condition != null ? condition : "",
@@ -772,7 +774,19 @@ final class AgentAutomationTools {
                     }
                     return ok;
                 } catch (Exception ex) {
-                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                    String message = ex.getMessage() == null ? "" : ex.getMessage();
+                    Map<String, Object> err = new LinkedHashMap<>();
+                    err.put("status", "ERROR");
+                    err.put("error", message);
+                    if (message.contains("/evt/") || message.toLowerCase(Locale.ROOT).contains("platformref")
+                            || message.toLowerCase(Locale.ROOT).contains("event target")) {
+                        err.put(
+                                "hint",
+                                "Event targets need slash refs: targetRef=@/evt/event1 (or eventName=event1). "
+                                        + "virtual-unified events are event1/event2 — not Event1 or /evt/Event 1."
+                        );
+                    }
+                    return err;
                 }
             }
 
@@ -1261,6 +1275,28 @@ final class AgentAutomationTools {
                             + ". Example: appId=virt-cluster title=... defaultDashboard=... dashboards=[...]");
         }
         return id;
+    }
+
+    /** Coerce Event1 / Event 1 → event1 on eventName and /evt/ targetRef segments. */
+    private static Map<String, Object> coerceEventBindingArgs(
+            Map<String, Object> arguments,
+            PlatformObject host
+    ) {
+        Map<String, Object> copy = new LinkedHashMap<>(arguments == null ? Map.of() : arguments);
+        String eventName = stringArg(copy, "eventName");
+        if (!eventName.isBlank()) {
+            copy.put("eventName", AgentDiscoveryTools.resolveEventName(host, eventName));
+        }
+        String targetRef = stringArg(copy, "targetRef");
+        int evt = targetRef.lastIndexOf("/evt/");
+        if (evt >= 0) {
+            String prefix = targetRef.substring(0, evt + "/evt/".length());
+            String segment = targetRef.substring(evt + "/evt/".length());
+            if (!segment.isBlank()) {
+                copy.put("targetRef", prefix + AgentDiscoveryTools.resolveEventName(host, segment));
+            }
+        }
+        return copy;
     }
 
     private static String stringArg(Map<String, Object> args, String key) {
