@@ -660,6 +660,7 @@ public class TreeFirstAgentService {
                             var block = AgentPlatformTurnGuard.blockIfNeeded(executionAcceptance);
                             if (block.isPresent()) {
                                 AgentPlatformTurnGuard.BlockDecision decision = block.get();
+                                session.runState().incrementReworkRound();
                                 if (AgentPlatformTurnGuard.isStuckGuardLoop(steps, decision.error())) {
                                     finishSummary = AgentStepHumanizer.platformGuardStuckSummary(uiLocale);
                                     finishResult = new LinkedHashMap<>();
@@ -698,6 +699,110 @@ public class TreeFirstAgentService {
                                 ));
                                 continue;
                             }
+                            // ADR-0051: pre-finish judge (REWORK) — must stay on the execute finish path.
+                            AgentJudgeService.JudgeResult judge = AgentJudgeService.evaluate(
+                                    steps,
+                                    session.runState(),
+                                    candidateResult,
+                                    userMessage
+                            );
+                            if (judge.blocksFinish()) {
+                                Map<String, Object> judgeMap = new LinkedHashMap<>();
+                                judgeMap.put("verdict", judge.verdict().name());
+                                judgeMap.put("summary", judge.summary());
+                                judgeMap.put("issues", judge.issues());
+                                if (judge.hint() != null && !judge.hint().isBlank()) {
+                                    judgeMap.put("hint", judge.hint());
+                                }
+                                if (judge.verdict().requiresUserIntervention()) {
+                                    finishSummary = AgentStepHumanizer.judgeBlockedSummary(
+                                            uiLocale,
+                                            judge.verdict().name()
+                                    );
+                                    finishResult = new LinkedHashMap<>();
+                                    if (candidateResult != null) {
+                                        finishResult.putAll(candidateResult);
+                                    }
+                                    finishResult.put("interactive", true);
+                                    finishResult.put("judge", judgeMap);
+                                    finishResult.put("judgeBlocked", true);
+                                    finalStatus = AgentTurnStatus.OK;
+                                    Map<String, Object> finishStep = new LinkedHashMap<>();
+                                    finishStep.put("step", stepNumber);
+                                    finishStep.put("type", "finish");
+                                    finishStep.put("summary", finishSummary);
+                                    finishStep.put(
+                                            "label",
+                                            AgentStepHumanizer.judgeUserGateLabel(uiLocale)
+                                    );
+                                    finishStep.put("result", finishResult);
+                                    finishStep.put("judge", judgeMap);
+                                    if (executionAcceptance != null) {
+                                        finishStep.put("acceptance", executionAcceptance.toMap());
+                                    }
+                                    steps.add(finishStep);
+                                    publishStep(session.sessionId(), finishStep);
+                                    break;
+                                }
+                                session.runState().incrementReworkRound();
+                                String judgeError = judge.summary() != null && !judge.summary().isBlank()
+                                        ? judge.summary()
+                                        : "Judge REWORK";
+                                if (AgentPlatformTurnGuard.isStuckGuardLoop(steps, judgeError)) {
+                                    finishSummary = AgentStepHumanizer.platformGuardStuckSummary(uiLocale);
+                                    finishResult = new LinkedHashMap<>();
+                                    finishResult.put("interactive", true);
+                                    finishResult.put("platformGuardStuck", true);
+                                    finishResult.put("judge", judgeMap);
+                                    finishResult.put("guardError", judgeError);
+                                    finalStatus = AgentTurnStatus.OK;
+                                    Map<String, Object> finishStep = Map.of(
+                                            "step", stepNumber,
+                                            "type", "finish",
+                                            "summary", finishSummary,
+                                            "label", AgentStepHumanizer.label(
+                                                    "finish", null, null, null, finishSummary, uiLocale),
+                                            "result", finishResult,
+                                            "platformGuardStuck", true
+                                    );
+                                    steps.add(finishStep);
+                                    publishStep(session.sessionId(), finishStep);
+                                    break;
+                                }
+                                Map<String, Object> guardStep = new LinkedHashMap<>();
+                                guardStep.put("step", stepNumber);
+                                guardStep.put("type", "guard");
+                                guardStep.put("label", AgentStepHumanizer.judgeReworkLabel(uiLocale));
+                                guardStep.put("error", judgeError);
+                                guardStep.put(
+                                        "hint",
+                                        judge.hint() != null
+                                                ? judge.hint()
+                                                : String.join("\n", judge.issues())
+                                );
+                                guardStep.put(
+                                        "checkId",
+                                        "judge." + judge.verdict().name().toLowerCase(Locale.ROOT)
+                                );
+                                guardStep.put("judge", judgeMap);
+                                guardStep.put("acceptance", executionAcceptance.toMap());
+                                steps.add(guardStep);
+                                publishStep(session.sessionId(), guardStep);
+                                messages.add(new LlmMessage("assistant", response.content()));
+                                messages.add(new LlmMessage(
+                                        "user",
+                                        "Judge REWORK — finish blocked:\n"
+                                                + judgeError
+                                                + "\n\nIssues:\n- "
+                                                + String.join("\n- ", judge.issues())
+                                                + (judge.hint() != null && !judge.hint().isBlank()
+                                                        ? "\n\n" + judge.hint()
+                                                        : "")
+                                                + "\n\nDo not claim success. Fix with tools, then finish again."
+                                ));
+                                continue;
+                            }
+                            session.runState().resetReworkRounds();
                             AgentPlanGuard.completeExecution(session.runState());
                         }
                     }
@@ -712,6 +817,15 @@ public class TreeFirstAgentService {
                     finishStep.put("result", finishResult);
                     if (executionAcceptance != null) {
                         finishStep.put("acceptance", executionAcceptance.toMap());
+                        finishStep.put(
+                                "judge",
+                                Map.of(
+                                        "verdict",
+                                        AgentJudgeService.Verdict.APPROVE.name(),
+                                        "summary",
+                                        "Conformance OK"
+                                )
+                        );
                     }
                     steps.add(finishStep);
                     publishStep(session.sessionId(), finishStep);

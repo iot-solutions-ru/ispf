@@ -62,18 +62,13 @@ public final class AgentJudgeService {
             }
         }
 
-        AgentAssignmentType assignmentType = resolveAssignmentType(finishResult, storedPlan, userMessage);
+        AgentAssignmentType assignmentType = resolveAssignmentType(finishResult, storedPlan, userMessage, runState);
         if (assignmentType == AgentAssignmentType.APPLICATION_BUNDLE) {
             issues.addAll(verifyApplicationBundleTests(steps));
         } else if (AgentConformanceCatalog.requiresSmokeCases(assignmentType)) {
-            Object conformance = storedPlan.get("conformance");
-            if (conformance == null && finishResult != null) {
-                conformance = finishResult.get("conformance");
-            }
-            if (!(conformance instanceof Map<?, ?> confMap)
-                    || !(confMap.get("smokeCases") instanceof List<?> smoke) || smoke.isEmpty()) {
-                issues.add("conformance.smokeCases empty for assignmentType=" + assignmentType.id());
-            }
+            // Evidence over paperwork: verify catalog smoke/invariants from tool steps.
+            // Missing finish.conformance.smokeCases alone must not approve-fail execute turns
+            // (SIF plans may still declare them for the UI; the judge checks reality).
             issues.addAll(AgentConformanceEvaluator.verifyInvariants(steps, assignmentType));
             issues.addAll(AgentConformanceEvaluator.verifySmokeCases(steps, assignmentType));
         }
@@ -182,11 +177,18 @@ public final class AgentJudgeService {
     private static AgentAssignmentType resolveAssignmentType(
             Map<String, Object> finishResult,
             Map<String, Object> storedPlan,
-            String userMessage
+            String userMessage,
+            AgentRunState runState
     ) {
         String raw = extractAssignmentType(finishResult);
         if (raw == null) {
             raw = extractAssignmentType(storedPlan);
+        }
+        if (raw == null && runState != null) {
+            String fromState = runState.assignmentType();
+            if (fromState != null && !fromState.isBlank()) {
+                raw = fromState;
+            }
         }
         if (raw != null) {
             return AgentAssignmentType.fromString(raw);
