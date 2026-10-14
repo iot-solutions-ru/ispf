@@ -162,6 +162,23 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void stopsTurnWhenEnableAgentToolPackMissingPackTwice() {
+        List<Map<String, Object>> steps = List.of(
+                errorStep("enable_agent_tool_pack", "REQUIRED_ARG_MISSING at pack"),
+                errorStep("enable_agent_tool_pack", "REQUIRED_ARG_MISSING at pack")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "enable_agent_tool_pack",
+                Map.of(),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().blocked());
+        assertTrue(block.get().stopTurn());
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("pack"));
+    }
+
+    @Test
     void softBlocksThirdAddDashboardWidgetOnSamePathWithoutStoppingTurn() {
         String dash = "root.platform.dashboards.virt-cluster-dashboard";
         List<Map<String, Object>> steps = List.of(

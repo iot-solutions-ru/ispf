@@ -119,16 +119,21 @@ final class AgentToolPackTools {
             @Override
             public String description() {
                 return "Enable a tool pack for the rest of this agent turn (progressive disclosure). "
-                        + "Args: pack (required). Returns newly available tools.";
+                        + "Args: pack (REQUIRED string: core|discovery|devices|dashboards|automation|bundles|scada|analytics|security|misc). "
+                        + "Never call with empty arguments. Example arguments: {\"pack\":\"devices\"}.";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
-                String pack = stringArg(arguments, "pack").toLowerCase(Locale.ROOT);
+                Map<String, Object> coerced = AgentToolArgCoercion.coerce("enable_agent_tool_pack", arguments);
+                String pack = stringArg(coerced, "pack").toLowerCase(Locale.ROOT);
                 if (pack.isBlank()) {
                     return Map.of(
                             "status", "ERROR",
                             "error", "pack is required",
+                            "hint",
+                            "Pass pack=devices (or dashboards|automation|…). "
+                                    + "Do not call enable_agent_tool_pack with {}.",
                             "packs", AgentToolPackCatalog.packIndex()
                     );
                 }

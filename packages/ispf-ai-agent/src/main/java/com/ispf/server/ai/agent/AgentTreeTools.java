@@ -1179,7 +1179,7 @@ final class AgentTreeTools {
         }
         String lower = normalized.toLowerCase(Locale.ROOT).replace('_', '-');
         return switch (lower) {
-            case "operator", "operators", "hmi", "ops", "user" -> com.ispf.server.config.IspfRoles.OPERATOR;
+            case "operator", "operators", "ops", "hmi", "user" -> com.ispf.server.config.IspfRoles.OPERATOR;
             case "admin", "administrator", "admins" -> com.ispf.server.config.IspfRoles.ADMIN;
             case "developer", "dev", "developers", "configurator" -> com.ispf.server.config.IspfRoles.DEVELOPER;
             case "tenant-admin", "tenantadmin", "tenant_admin" -> com.ispf.server.config.IspfRoles.TENANT_ADMIN;
