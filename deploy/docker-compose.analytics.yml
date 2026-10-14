@@ -28,6 +28,7 @@ x-ispf-server-env: &ispf-server-env
   ISPF_NATS_ENABLED: "true"
   ISPF_NATS_URL: nats://nats:4222
   ISPF_NATS_REPLICA_EVENTS: "true"
+  ISPF_NATS_JETSTREAM_ENABLED: "true"
   ISPF_REDIS_ENABLED: "true"
   ISPF_REDIS_HOST: redis
   ISPF_CLUSTER_LIVE_VARIABLE_SYNC: "true"

@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { useState } from "react";
 import { renderWithInspector } from "../../test/renderWithInspector";
 import FunctionScriptStepsEditor from "./FunctionScriptStepsEditor";
 
@@ -42,6 +43,28 @@ describe("FunctionScriptStepsEditor", () => {
 
     await user.click(screen.getByRole("button", { name: "+ Key/value pair" }));
     expect(screen.getAllByPlaceholderText("fieldName")).toHaveLength(2);
+  });
+
+  it("keeps focus while SQL is typed in an exec step (controlled parent)", async () => {
+    const user = userEvent.setup();
+    const initial = JSON.stringify(
+      { steps: [{ type: "exec", sql: "SELECT 1", params: [] }] },
+      null,
+      2,
+    );
+
+    function Harness() {
+      const [value, setValue] = useState(initial);
+      return <FunctionScriptStepsEditor value={value} onChange={setValue} />;
+    }
+
+    renderWithInspector(<Harness />);
+    const sql = screen.getByPlaceholderText("SELECT id FROM orders WHERE id = ?");
+    await user.click(sql);
+    await user.keyboard(" WHERE id > 0");
+
+    expect(sql).toHaveFocus();
+    expect(sql).toHaveValue("SELECT 1 WHERE id > 0");
   });
 
   it("returns to the visual editor after valid JSON is applied", async () => {

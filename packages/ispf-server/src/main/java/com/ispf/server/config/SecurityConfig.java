@@ -1,6 +1,7 @@
 package com.ispf.server.config;
 
 import com.ispf.server.federation.FederationOnBehalfOfFilter;
+import com.ispf.server.security.UiPackScopedAccessFilter;
 import com.ispf.server.tenant.TenantRlsFilter;
 import com.ispf.server.websocket.WebSocketAuthSupport;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -12,6 +13,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -51,7 +53,8 @@ public class SecurityConfig {
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
                 // Delegate after JWT channel auth; derive tenant RLS from the delegated principal.
                 .addFilterAfter(onBehalfOfFilter, BearerTokenAuthenticationFilter.class)
-                .addFilterAfter(tenantRlsFilter, FederationOnBehalfOfFilter.class);
+                .addFilterAfter(tenantRlsFilter, FederationOnBehalfOfFilter.class)
+                .addFilterBefore(new UiPackScopedAccessFilter(), AuthorizationFilter.class);
 
         return http.build();
     }

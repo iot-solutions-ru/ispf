@@ -18,7 +18,7 @@ class ReferenceScenarioTest {
 
     @Test
     void catalogContainsTenScenarios() {
-        assertThat(ReferenceScenarioCatalog.all()).hasSize(10);
+        assertThat(ReferenceScenarioCatalog.all()).hasSize(11);
     }
 
     @ParameterizedTest(name = "{0}")
@@ -72,6 +72,6 @@ class ReferenceScenarioTest {
 
     @Test
     void helpEntriesMatchCatalogSize() {
-        assertThat(ReferenceScenarioCatalog.helpEntries()).hasSize(10);
+        assertThat(ReferenceScenarioCatalog.helpEntries()).hasSize(11);
     }
 }

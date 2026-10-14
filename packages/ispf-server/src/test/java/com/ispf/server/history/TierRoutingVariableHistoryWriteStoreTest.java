@@ -10,9 +10,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -87,6 +90,25 @@ class TierRoutingVariableHistoryWriteStoreTest {
     }
 
     @Test
+    void warmAppendFailureIsVisibleAndRetryDoesNotRewriteHot() {
+        tierProperties.hotTier().setDualWriteEnabled(true);
+        Instant now = Instant.now();
+        VariableHistoryWriteRecord recent = record(now.minus(1, ChronoUnit.HOURS), now);
+        doThrow(new IllegalStateException("warm down"))
+                .when(warmStore)
+                .appendBestEffort(List.of(recent));
+
+        assertThatThrownBy(() -> router.appendBatch(List.of(recent)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("warm-tier append failed; warm store is behind hot");
+        assertThatThrownBy(() -> router.appendBatch(List.of(recent)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("warm-tier append failed; warm store is behind hot");
+
+        verify(hotStore, times(1)).appendBatch(List.of(recent));
+    }
+
+    @Test
     void classifiesByObservedAtNotIngestTime() {
         Instant hotCutoff = Instant.now().minus(7, ChronoUnit.DAYS);
         Instant observed = hotCutoff.minus(1, ChronoUnit.HOURS);
@@ -103,6 +125,7 @@ class TierRoutingVariableHistoryWriteStoreTest {
                 sampledAt,
                 observedAt,
                 42.0,
+                null,
                 null
         );
     }

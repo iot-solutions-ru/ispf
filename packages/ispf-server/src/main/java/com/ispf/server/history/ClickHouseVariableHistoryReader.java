@@ -25,7 +25,7 @@ import java.util.Map;
 final class ClickHouseVariableHistoryReader {
 
     private static final String SELECT_COLUMNS = """
-            coalesce(observed_at, sampled_at) AS effective_ts, sampled_at, value_double, value_text
+            coalesce(observed_at, sampled_at) AS effective_ts, sampled_at, value_double, value_text, quality
             """;
 
     private final VariableHistoryProperties.ClickHouse config;
@@ -146,11 +146,16 @@ final class ClickHouseVariableHistoryReader {
                 JsonNode node = objectMapper.readTree(line);
                 Double value = node.path("value_double").isNull() ? null : node.path("value_double").asDouble();
                 String text = node.path("value_text").isNull() ? null : node.path("value_text").asText(null);
+                JsonNode qualityNode = node.path("quality");
+                String quality = qualityNode.isMissingNode() || qualityNode.isNull()
+                        ? null
+                        : VariableHistoryWriteRecord.normalizeQuality(qualityNode.asText(null));
                 samples.add(new VariableHistoryService.VariableHistorySample(
                         ClickHouseDateTimes.parse(node.path("effective_ts").asText()),
                         value,
                         text,
-                        ClickHouseDateTimes.parseOrNull(node.path("sampled_at").asText(null))
+                        ClickHouseDateTimes.parseOrNull(node.path("sampled_at").asText(null)),
+                        quality
                 ));
             } catch (IOException ex) {
                 throw new IllegalStateException("Failed to parse ClickHouse JSONEachRow line: " + line, ex);

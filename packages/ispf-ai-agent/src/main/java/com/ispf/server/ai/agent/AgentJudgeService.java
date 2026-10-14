@@ -78,6 +78,7 @@ public final class AgentJudgeService {
             issues.addAll(AgentConformanceEvaluator.verifySmokeCases(steps, assignmentType));
         }
 
+        // Ship acceptance: logic.host fails LOGIC_HOST_DEVICE (REWORK). Interactive validate may stay WARNING.
         AcceptanceVerdict.Result acceptance = AcceptanceVerdict.evaluate(steps, userMessage, assignmentType.id());
         if (acceptance.checks() != null) {
             for (AcceptanceVerdict.Check check : acceptance.checks()) {

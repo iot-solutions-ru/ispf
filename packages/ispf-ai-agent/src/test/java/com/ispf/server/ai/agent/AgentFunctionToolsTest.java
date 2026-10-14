@@ -1,6 +1,8 @@
 package com.ispf.server.ai.agent;
 
 import com.ispf.core.object.FunctionDescriptor;
+import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.PlatformObject;
 import com.ispf.server.object.ObjectTreePort;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantScopeService;
@@ -52,6 +54,7 @@ class AgentFunctionToolsTest {
         Map<String, Object> result = tool("deploy_tree_function").execute(
                 Map.of(
                         "path", path,
+                        "hostKind", "SINGLETON",
                         "functionName", "echoFn",
                         "sourceType", "java",
                         "sourceBody", AgentFunctionToolsTest.class.getResource("/") == null
@@ -67,6 +70,40 @@ class AgentFunctionToolsTest {
         verify(objectTreePort).upsertFunction(eq(path), captor.capture());
         assertEquals("java", captor.getValue().sourceType());
         assertEquals("echoFn", captor.getValue().name());
+    }
+
+    @Test
+    void deployTreeFunctionRejectsMissingHostKindAndLiveDevice() throws Exception {
+        String path = "root.platform.devices.demo";
+        Map<String, Object> missing = tool("deploy_tree_function").execute(
+                Map.of(
+                        "path", path,
+                        "functionName", "echoFn",
+                        "sourceType", "java",
+                        "sourceBody", "public class EchoFn {}"
+                ),
+                new AgentContext("admin", authentication, null)
+        );
+        assertEquals("ERROR", missing.get("status"));
+        assertEquals("LOGIC_HOST_DEVICE", missing.get("code"));
+
+        PlatformObject device = org.mockito.Mockito.mock(PlatformObject.class);
+        when(device.type()).thenReturn(ObjectType.DEVICE);
+        when(objectTreePort.require(path)).thenReturn(device);
+        Map<String, Object> liveDevice = tool("deploy_tree_function").execute(
+                Map.of(
+                        "path", path,
+                        "hostKind", "SINGLETON",
+                        "functionName", "echoFn",
+                        "sourceType", "java",
+                        "sourceBody", "public class EchoFn {}"
+                ),
+                new AgentContext("admin", authentication, null)
+        );
+        assertEquals("ERROR", liveDevice.get("status"));
+        assertEquals("LOGIC_HOST_DEVICE", liveDevice.get("code"));
+        org.mockito.Mockito.verify(objectTreePort, org.mockito.Mockito.never())
+                .upsertFunction(eq(path), org.mockito.ArgumentMatchers.any());
     }
 
     @Test

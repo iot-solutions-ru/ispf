@@ -96,6 +96,9 @@ dependencies {
     testImplementation("io.moquette:moquette-broker:0.17")
     testImplementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
     testRuntimeOnly("com.h2database:h2")
+    // ADR-0074: ClickHouse quality round-trip. The test stays off unless
+    // ISPF_CLICKHOUSE_QUALITY_TCK=true, so default CI does not start a container.
+    testImplementation("org.testcontainers:testcontainers-clickhouse:2.0.5")
 }
 
 val webConsoleDistDir = rootProject.layout.projectDirectory.dir("apps/web-console/dist")

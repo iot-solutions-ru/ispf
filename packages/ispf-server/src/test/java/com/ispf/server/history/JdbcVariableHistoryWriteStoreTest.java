@@ -15,6 +15,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,8 +45,8 @@ class JdbcVariableHistoryWriteStoreTest {
         ArgumentCaptor<Integer> batchSizeCaptor = ArgumentCaptor.forClass(Integer.class);
         verify(jdbcTemplate).batchUpdate(
                 eq("""
-                        INSERT INTO variable_samples (object_path, variable_name, field_name, sampled_at, observed_at, value_double, value_text)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO variable_samples (object_path, variable_name, field_name, sampled_at, observed_at, value_double, value_text, quality)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         """),
                 eq(records),
                 batchSizeCaptor.capture(),
@@ -64,8 +65,8 @@ class JdbcVariableHistoryWriteStoreTest {
 
         verify(jdbcTemplate).update(
                 eq("""
-                        INSERT INTO variable_samples (object_path, variable_name, field_name, sampled_at, observed_at, value_double, value_text)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO variable_samples (object_path, variable_name, field_name, sampled_at, observed_at, value_double, value_text, quality)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         """),
                 eq("root.a"),
                 eq("pressure"),
@@ -73,7 +74,8 @@ class JdbcVariableHistoryWriteStoreTest {
                 any(),
                 any(),
                 eq(3.0),
-                eq("bar")
+                eq("bar"),
+                isNull()
         );
     }
 }

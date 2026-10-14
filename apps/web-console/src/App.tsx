@@ -426,6 +426,9 @@ function AppShell() {
       if (existing.objectType === "DASHBOARD") {
         applyDashboardOpenOptions(existing.id, options);
       }
+      // Explicit open targets the specialized workspace (DataSourceEditor, …), not the
+      // properties overlay left open from a prior session on the same tab.
+      setPropertiesTabPath(null);
       setWorkspaceTab(existing.id);
       return;
     }
@@ -436,6 +439,7 @@ function AppShell() {
       title: ctx?.displayName ?? path.split(".").pop() ?? path,
       objectType,
     };
+    setPropertiesTabPath(null);
     setEditorTabs((tabs) => [...tabs, tab]);
     if (objectType === "DASHBOARD") {
       applyDashboardOpenOptions(tab.id, options);
@@ -538,7 +542,8 @@ function AppShell() {
       return;
     }
     const ctx = objectList.find((c) => c.path === activeEditor.path);
-    if (!isSpecializedEditorObject(activeEditor.path, ctx?.type, ctx?.templateId)) {
+    const typeForGate = ctx?.type ?? activeEditor.objectType;
+    if (!isSpecializedEditorObject(activeEditor.path, typeForGate, ctx?.templateId)) {
       setSelectedPath(activeEditor.path);
       setPropertiesTabPath(null);
       setWorkspaceTab("explorer");

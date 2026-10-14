@@ -2,17 +2,20 @@
 
 # VPS demostand (example host)
 
-> **General guide:** [demostands](demostands.md) — production, throughput, demo-idle, edge.
+> **General guide:** [demostands](demostands.md) — production, throughput, demo-idle, edge.  
+> **Customer show:** [customer-demo-playbook](customer-demo-playbook.md) — 30–60 min agenda on this host type.
 
 This page is **operational notes** for one prod example: single-node Docker behind nginx. Use as a template; replace container names and hosts with your own.
 
 ## Profile
 
-**Demo / idle** from [demostands.md § Demo / idle](demostands.md):
+**Demo / idle** from [demostands.md § Demo / idle](demostands.md). Use the named overlay; assembling per-tier worker env by hand is a deprecated escape hatch.
 
 - `ISPF_CLUSTER_ENABLED=false`, unified role `all`
+- `ISPF_DEPLOY_PROFILE=demo-idle`
 - Overlay [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env)
 - 2 RUNNING drivers (others STOPPED): SNMP `TELEMETRY_ONLY`, one virtual `FULL` for demo automation
+- Confirm: operator `GET /api/v1/platform/effective-config` → `profile.deployProfile` and `resolvedPools`
 
 ## Typical topology (single-node Docker)
 
