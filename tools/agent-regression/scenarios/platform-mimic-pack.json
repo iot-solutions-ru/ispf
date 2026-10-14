@@ -9,7 +9,7 @@
   ],
   "title": "Fan mimic with pack symbols",
   "description": "Platform demo matrix: Fan mimic with pack symbols",
-  "prompt": "Create mimic demo-fan under mimics. Save a diagram using real pack symbols such as pack.ispf-pid.fan and pump.centrifugal from the platform symbol catalog. Bind running to demo-device-1.deviceActive. Never invent label or button.start symbolIds. Create the device if needed.",
+  "prompt": "Create mimic demo-fan under mimics. First load the platform symbol catalog, then save a diagram that contains ONLY catalog symbols whose ids start with pack. or pump. — specifically include pack.ispf-pid.fan and pump.centrifugal. Bind each element's running property to demo-device-1.deviceActive. Do not add any label, button, text, or custom.svg elements at all. Create the virtual device if needed.",
   "acceptance": {
     "requiredTools": [
       "create_object",

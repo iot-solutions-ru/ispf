@@ -4,8 +4,10 @@ JSON scenarios under `scenarios/platform-*.json` (`domain=platform`, optional `t
 
 | Runner | LLM? | Role |
 |--------|------|------|
-| `run-platform-object-smoke.py` | No | Hard gate — wipe/create/verify object types via REST |
-| `run-demo-scenarios.py` | Yes | Soft report — AI Studio execute session per scenario |
+| `run-platform-object-smoke.py` | No | Hard gate — wipe/create + **deep** verify via `platform_acceptance.py` |
+| `run-demo-scenarios.py` | Yes | AI Studio session per scenario; pass only if deep checks + mutation tools pass |
+
+Deep checks reject path-only fakes: unbound dashboards, mimic `label`/`button.*`, missing `historyEnabled`, hub as DEVICE, ACL without EDITOR, empty BPMN, etc.
 
 ## Validate
 

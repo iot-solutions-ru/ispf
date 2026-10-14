@@ -2,14 +2,14 @@
 """LLM demo runner: AI Studio execute session per platform-* scenario on it-demo.
 
 Reads tools/agent-regression/scenarios/platform-*.json, starts a session per scenario,
-polls until finished, checks acceptance.requiredObjectPaths + requiredTools presence.
+polls until finished, then STRICT live acceptance (platform_acceptance.py):
+required paths + deep semantic checks + required mutation tools.
 
   python tools/agent-regression/run-demo-scenarios.py --max 5
   python tools/agent-regression/run-demo-scenarios.py --ids platform-virtual-devices,platform-mimic-pack
   python tools/agent-regression/run-demo-scenarios.py --tags object:device --max 0
 
 Results: build/agent-regression/demo-scenarios-results.json
-Soft report: LLM fails do not always mean platform broken — use det smoke as hard gate.
 """
 from __future__ import annotations
 
@@ -26,6 +26,18 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 SCENARIOS_DIR = Path(__file__).resolve().parent / "scenarios"
 OUT_DEFAULT = REPO / "build" / "agent-regression" / "demo-scenarios-results.json"
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from platform_acceptance import evaluate_scenario  # noqa: E402
+
+OPTIONAL_TOOL_PREFIXES = (
+    "list_",
+    "get_",
+    "search_",
+    "describe_",
+    "verify_",
+    "enable_agent_tool_pack",
+)
 
 
 def http(
@@ -198,6 +210,10 @@ def tools_used(sess: dict) -> set[str]:
     return found
 
 
+def _is_optional_tool(name: str) -> bool:
+    return name == "enable_agent_tool_pack" or any(name.startswith(p) for p in OPTIONAL_TOOL_PREFIXES)
+
+
 def evaluate(base: str, token: str, scenario: dict, sess: dict) -> dict:
     acceptance = scenario.get("acceptance") or {}
     required_paths = list(acceptance.get("requiredObjectPaths") or [])
@@ -205,12 +221,17 @@ def evaluate(base: str, token: str, scenario: dict, sess: dict) -> dict:
     used = tools_used(sess)
     path_results = {p: object_exists(base, token, p) for p in required_paths}
     missing_paths = [p for p, ok in path_results.items() if not ok]
-    # Soft: at least one required tool seen; hard for objects
+    mutation_required = [t for t in required_tools if not _is_optional_tool(t)]
+    # list_mimic_symbols is required for mimic scenario (anti-fake pack symbols)
+    if scenario.get("id") == "platform-mimic-pack" and "list_mimic_symbols" in required_tools:
+        if "list_mimic_symbols" not in mutation_required:
+            mutation_required.append("list_mimic_symbols")
     tools_hit = [t for t in required_tools if t in used]
-    tools_miss = [t for t in required_tools if t not in used]
+    tools_miss = [t for t in mutation_required if t not in used]
     paths_ok = len(missing_paths) == 0
-    # Pass if all required paths exist (primary). Tool presence is reported.
-    status = "pass" if paths_ok else "fail"
+    deep_ok, deep_detail = evaluate_scenario(base, token, str(scenario.get("id") or ""))
+    tools_ok = len(tools_miss) == 0
+    status = "pass" if (paths_ok and deep_ok and tools_ok) else "fail"
     turns = sess.get("turns") or []
     last_status = None
     if turns and isinstance(turns[-1], dict):
@@ -220,6 +241,9 @@ def evaluate(base: str, token: str, scenario: dict, sess: dict) -> dict:
         "pathsOk": paths_ok,
         "missingPaths": missing_paths,
         "pathResults": path_results,
+        "deepOk": deep_ok,
+        "deepDetail": deep_detail,
+        "toolsOk": tools_ok,
         "toolsUsed": sorted(used),
         "toolsHit": tools_hit,
         "toolsMiss": tools_miss,
@@ -279,19 +303,23 @@ def main() -> int:
         return 1
     token = str(login["token"])
 
-    if not args.no_wipe and args.wipe_prefix:
-        n = wipe_prefix(args.base_url, token, [args.wipe_prefix, "demo-smoke-"])
-        print(f"wiped {n} objects matching prefix {args.wipe_prefix!r}", flush=True)
-
     results: list[dict] = []
     for sc in scenarios:
         print(f"\n=== {sc['id']}: {sc.get('title')} ===", flush=True)
+        if not args.no_wipe and args.wipe_prefix:
+            n = wipe_prefix(args.base_url, token, [args.wipe_prefix, "demo-smoke-"])
+            print(f"wiped {n} objects matching prefix {args.wipe_prefix!r}", flush=True)
         try:
             row = run_one(args.base_url, token, sc, args.poll_ticks, args.sleep)
         except Exception as exc:  # noqa: BLE001
             row = {"id": sc["id"], "status": "fail", "error": str(exc)}
         results.append(row)
-        print(f"RESULT {row['id']} => {row.get('status')} missing={row.get('missingPaths')}", flush=True)
+        print(
+            f"RESULT {row['id']} => {row.get('status')} "
+            f"deep={row.get('deepDetail')} toolsMiss={row.get('toolsMiss')} "
+            f"missing={row.get('missingPaths')}",
+            flush=True,
+        )
 
     passed = sum(1 for r in results if r.get("status") == "pass")
     failed = len(results) - passed

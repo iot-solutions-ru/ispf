@@ -22,6 +22,9 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 OUT_DEFAULT = REPO / "build" / "agent-regression" / "platform-object-smoke.json"
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from platform_acceptance import evaluate_smoke_step  # noqa: E402
+
 # Known matrix paths (also wiped before create).
 WIPE_PATHS = [
     "root.platform.devices.demo-device-1",
@@ -133,6 +136,13 @@ class Smoke:
     def step(self, step_id: str, fn) -> None:
         try:
             ok, detail = fn()
+            if ok:
+                vok, vdetail = evaluate_smoke_step(self.base, self.token, step_id)
+                if not vok:
+                    ok = False
+                    detail = f"create_ok but deep_verify_fail: {vdetail} (create={detail})"
+                else:
+                    detail = f"{detail} | deep={vdetail}"
             self.record(step_id, ok, detail)
         except Exception as exc:  # noqa: BLE001 — smoke aggregates failures
             self.record(step_id, False, f"exception: {exc}")
@@ -526,6 +536,13 @@ class Smoke:
                     "y": 80,
                     "width": 64,
                     "height": 64,
+                    "bindings": {
+                        "running": {
+                            "objectPath": "root.platform.devices.demo-device-1",
+                            "variableName": "deviceActive",
+                            "valueField": "value",
+                        }
+                    },
                 },
             ],
             "connections": [],
@@ -599,7 +616,7 @@ class Smoke:
                 ],
             },
         )
-        ok = code2 in (200, 204) or self.exists("root.platform.operator-apps.demo-ops")
+        ok = code2 in (200, 204)
         return ok, f"create={code} ui={code2}"
 
     def _schedule(self) -> tuple[bool, str]:
