@@ -113,6 +113,13 @@ public class FunctionScriptValidator {
                 objectStep.put("type", "invoke_function");
                 type = "invoke_function";
             }
+            if ("setVar".equals(type) && !hasNonBlank(objectStep, "var")) {
+                if (hasNonBlank(objectStep, "name")) {
+                    objectStep.put("var", objectStep.path("name").asText());
+                } else if (hasNonBlank(objectStep, "variable")) {
+                    objectStep.put("var", objectStep.path("variable").asText());
+                }
+            }
             if ("invoke_function".equals(type)) {
                 if (!hasNonBlank(objectStep, "functionName") && hasNonBlank(objectStep, "function")) {
                     objectStep.put("functionName", objectStep.path("function").asText());
