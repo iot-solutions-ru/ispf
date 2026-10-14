@@ -11,6 +11,8 @@ import com.ispf.server.ai.context.ContextPackService;
 import com.ispf.server.ai.context.PlatformBriefingService;
 import com.ispf.server.ai.llm.LlmProviderRegistry;
 import com.ispf.server.config.AiProperties;
+import com.ispf.server.dashboard.DashboardService;
+import com.ispf.server.mimic.MimicService;
 import com.ispf.server.object.ObjectTreePort;
 import com.ispf.server.operator.OperatorAgentMemoryLearner;
 import com.ispf.server.operator.OperatorAgentMemoryService;
@@ -78,6 +80,10 @@ class TreeFirstAgentServiceSessionTest {
     private AgentSessionDocumentService sessionDocumentService;
     @Mock
     private ObjectTreePort objectTreePort;
+    @Mock
+    private DashboardService dashboardService;
+    @Mock
+    private MimicService mimicService;
 
     private TreeFirstAgentService agentService;
     private AiProperties aiProperties;
@@ -114,7 +120,9 @@ class TreeFirstAgentServiceSessionTest {
                 new AgentTurnRateLimiter(aiProperties),
                 new AgentMetricsRecorder(java.util.Optional.empty()),
                 sessionDocumentService,
-                objectTreePort
+                objectTreePort,
+                dashboardService,
+                mimicService
         );
 
         lenient().when(sessionDocumentService.count(anyString())).thenReturn(0);

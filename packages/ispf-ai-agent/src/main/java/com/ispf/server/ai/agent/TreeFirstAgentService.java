@@ -10,6 +10,8 @@ import com.ispf.server.ai.context.ContextPackService;
 import com.ispf.server.ai.context.PlatformBriefingService;
 import com.ispf.server.ai.llm.LlmProviderRegistry;
 import com.ispf.server.config.AiProperties;
+import com.ispf.server.dashboard.DashboardService;
+import com.ispf.server.mimic.MimicService;
 import com.ispf.server.object.ObjectTreePort;
 import com.ispf.server.operator.OperatorAgentMemoryLearner;
 import com.ispf.server.operator.OperatorAgentMemoryService;
@@ -60,6 +62,8 @@ public class TreeFirstAgentService {
     private final AgentMetricsRecorder agentMetrics;
     private final AgentSessionDocumentService sessionDocumentService;
     private final ObjectTreePort objectTreePort;
+    private final DashboardService dashboardService;
+    private final MimicService mimicService;
     private final AgentPromptAssembler promptAssembler;
 
     public TreeFirstAgentService(
@@ -82,7 +86,9 @@ public class TreeFirstAgentService {
             AgentTurnRateLimiter turnRateLimiter,
             AgentMetricsRecorder agentMetrics,
             AgentSessionDocumentService sessionDocumentService,
-            ObjectTreePort objectTreePort
+            ObjectTreePort objectTreePort,
+            DashboardService dashboardService,
+            MimicService mimicService
     ) {
         this.llmProviderRegistry = llmProviderRegistry;
         this.toolRegistry = toolRegistry;
@@ -104,6 +110,8 @@ public class TreeFirstAgentService {
         this.agentMetrics = agentMetrics;
         this.sessionDocumentService = sessionDocumentService;
         this.objectTreePort = objectTreePort;
+        this.dashboardService = dashboardService;
+        this.mimicService = mimicService;
         this.promptAssembler = new AgentPromptAssembler(
                 aiProperties,
                 platformBriefingService,
@@ -660,6 +668,7 @@ public class TreeFirstAgentService {
                             var block = AgentPlatformTurnGuard.blockIfNeeded(executionAcceptance);
                             if (block.isPresent()) {
                                 AgentPlatformTurnGuard.BlockDecision decision = block.get();
+                                session.runState().incrementReworkRound();
                                 if (AgentPlatformTurnGuard.isStuckGuardLoop(steps, decision.error())) {
                                     finishSummary = AgentStepHumanizer.platformGuardStuckSummary(uiLocale);
                                     finishResult = new LinkedHashMap<>();
@@ -698,6 +707,111 @@ public class TreeFirstAgentService {
                                 ));
                                 continue;
                             }
+                            // ADR-0051: pre-finish judge (REWORK) — step logs + live tree sensors.
+                            AgentJudgeService.JudgeResult judge = AgentJudgeService.evaluate(
+                                    steps,
+                                    session.runState(),
+                                    candidateResult,
+                                    userMessage,
+                                    liveTreeSensors()
+                            );
+                            if (judge.blocksFinish()) {
+                                Map<String, Object> judgeMap = new LinkedHashMap<>();
+                                judgeMap.put("verdict", judge.verdict().name());
+                                judgeMap.put("summary", judge.summary());
+                                judgeMap.put("issues", judge.issues());
+                                if (judge.hint() != null && !judge.hint().isBlank()) {
+                                    judgeMap.put("hint", judge.hint());
+                                }
+                                if (judge.verdict().requiresUserIntervention()) {
+                                    finishSummary = AgentStepHumanizer.judgeBlockedSummary(
+                                            uiLocale,
+                                            judge.verdict().name()
+                                    );
+                                    finishResult = new LinkedHashMap<>();
+                                    if (candidateResult != null) {
+                                        finishResult.putAll(candidateResult);
+                                    }
+                                    finishResult.put("interactive", true);
+                                    finishResult.put("judge", judgeMap);
+                                    finishResult.put("judgeBlocked", true);
+                                    finalStatus = AgentTurnStatus.OK;
+                                    Map<String, Object> finishStep = new LinkedHashMap<>();
+                                    finishStep.put("step", stepNumber);
+                                    finishStep.put("type", "finish");
+                                    finishStep.put("summary", finishSummary);
+                                    finishStep.put(
+                                            "label",
+                                            AgentStepHumanizer.judgeUserGateLabel(uiLocale)
+                                    );
+                                    finishStep.put("result", finishResult);
+                                    finishStep.put("judge", judgeMap);
+                                    if (executionAcceptance != null) {
+                                        finishStep.put("acceptance", executionAcceptance.toMap());
+                                    }
+                                    steps.add(finishStep);
+                                    publishStep(session.sessionId(), finishStep);
+                                    break;
+                                }
+                                session.runState().incrementReworkRound();
+                                String judgeError = judge.summary() != null && !judge.summary().isBlank()
+                                        ? judge.summary()
+                                        : "Judge REWORK";
+                                if (AgentPlatformTurnGuard.isStuckGuardLoop(steps, judgeError)) {
+                                    finishSummary = AgentStepHumanizer.platformGuardStuckSummary(uiLocale);
+                                    finishResult = new LinkedHashMap<>();
+                                    finishResult.put("interactive", true);
+                                    finishResult.put("platformGuardStuck", true);
+                                    finishResult.put("judge", judgeMap);
+                                    finishResult.put("guardError", judgeError);
+                                    finalStatus = AgentTurnStatus.OK;
+                                    Map<String, Object> finishStep = Map.of(
+                                            "step", stepNumber,
+                                            "type", "finish",
+                                            "summary", finishSummary,
+                                            "label", AgentStepHumanizer.label(
+                                                    "finish", null, null, null, finishSummary, uiLocale),
+                                            "result", finishResult,
+                                            "platformGuardStuck", true
+                                    );
+                                    steps.add(finishStep);
+                                    publishStep(session.sessionId(), finishStep);
+                                    break;
+                                }
+                                Map<String, Object> guardStep = new LinkedHashMap<>();
+                                guardStep.put("step", stepNumber);
+                                guardStep.put("type", "guard");
+                                guardStep.put("label", AgentStepHumanizer.judgeReworkLabel(uiLocale));
+                                guardStep.put("error", judgeError);
+                                guardStep.put(
+                                        "hint",
+                                        judge.hint() != null
+                                                ? judge.hint()
+                                                : String.join("\n", judge.issues())
+                                );
+                                guardStep.put(
+                                        "checkId",
+                                        "judge." + judge.verdict().name().toLowerCase(Locale.ROOT)
+                                );
+                                guardStep.put("judge", judgeMap);
+                                guardStep.put("acceptance", executionAcceptance.toMap());
+                                steps.add(guardStep);
+                                publishStep(session.sessionId(), guardStep);
+                                messages.add(new LlmMessage("assistant", response.content()));
+                                messages.add(new LlmMessage(
+                                        "user",
+                                        "Judge REWORK — finish blocked:\n"
+                                                + judgeError
+                                                + "\n\nIssues:\n- "
+                                                + String.join("\n- ", judge.issues())
+                                                + (judge.hint() != null && !judge.hint().isBlank()
+                                                        ? "\n\n" + judge.hint()
+                                                        : "")
+                                                + "\n\nDo not claim success. Fix with tools, then finish again."
+                                ));
+                                continue;
+                            }
+                            session.runState().resetReworkRounds();
                             AgentPlanGuard.completeExecution(session.runState());
                         }
                     }
@@ -712,6 +826,15 @@ public class TreeFirstAgentService {
                     finishStep.put("result", finishResult);
                     if (executionAcceptance != null) {
                         finishStep.put("acceptance", executionAcceptance.toMap());
+                        finishStep.put(
+                                "judge",
+                                Map.of(
+                                        "verdict",
+                                        AgentJudgeService.Verdict.APPROVE.name(),
+                                        "summary",
+                                        "Conformance OK"
+                                )
+                        );
                     }
                     steps.add(finishStep);
                     publishStep(session.sessionId(), finishStep);
@@ -1517,6 +1640,32 @@ public class TreeFirstAgentService {
                 List.of()
         );
         return true;
+    }
+
+    private AgentJudgeService.LiveTreeSensors liveTreeSensors() {
+        return new AgentJudgeService.LiveTreeSensors(
+                path -> {
+                    try {
+                        return objectTreePort.tree().findByPath(path).isPresent();
+                    } catch (Exception ex) {
+                        return false;
+                    }
+                },
+                path -> {
+                    try {
+                        return Optional.ofNullable(dashboardService.getDashboard(path).layoutJson());
+                    } catch (Exception ex) {
+                        return Optional.empty();
+                    }
+                },
+                path -> {
+                    try {
+                        return Optional.ofNullable(mimicService.getMimic(path).diagramJson());
+                    } catch (Exception ex) {
+                        return Optional.empty();
+                    }
+                }
+        );
     }
 
     private void recordTurnAudit(

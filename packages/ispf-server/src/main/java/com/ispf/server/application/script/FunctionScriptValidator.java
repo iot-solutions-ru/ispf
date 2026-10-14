@@ -19,6 +19,7 @@ public class FunctionScriptValidator {
             "when",
             "if",
             "invoke_function",
+            "invoke",
             "cancel_workflows",
             "failIfNull",
             "failIfNotEquals",
@@ -72,6 +73,82 @@ public class FunctionScriptValidator {
             }
         }
         return false;
+    }
+
+    /**
+     * Rewrite common LLM aliases in script steps before validate/persist:
+     * {@code invoke}→{@code invoke_function}, {@code path}→{@code objectPath},
+     * {@code function}→{@code functionName}, default {@code objectPath=self}.
+     */
+    public String normalizeAliases(String sourceBody) {
+        if (sourceBody == null || sourceBody.isBlank()) {
+            return sourceBody;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(sourceBody);
+            if (!(root instanceof tools.jackson.databind.node.ObjectNode objectRoot)) {
+                return sourceBody;
+            }
+            JsonNode steps = objectRoot.get("steps");
+            if (steps == null || !steps.isArray()) {
+                return sourceBody;
+            }
+            normalizeInvokeSteps(steps);
+            return objectMapper.writeValueAsString(objectRoot);
+        } catch (Exception ex) {
+            return sourceBody;
+        }
+    }
+
+    private void normalizeInvokeSteps(JsonNode steps) {
+        if (steps == null || !steps.isArray()) {
+            return;
+        }
+        for (JsonNode step : steps) {
+            if (!(step instanceof tools.jackson.databind.node.ObjectNode objectStep)) {
+                continue;
+            }
+            String type = objectStep.path("type").asText("");
+            if ("invoke".equals(type)) {
+                objectStep.put("type", "invoke_function");
+                type = "invoke_function";
+            }
+            if ("setVar".equals(type) && !hasNonBlank(objectStep, "var")) {
+                if (hasNonBlank(objectStep, "name")) {
+                    objectStep.put("var", objectStep.path("name").asText());
+                } else if (hasNonBlank(objectStep, "variable")) {
+                    objectStep.put("var", objectStep.path("variable").asText());
+                }
+            }
+            if ("invoke_function".equals(type)) {
+                if (!hasNonBlank(objectStep, "functionName") && hasNonBlank(objectStep, "function")) {
+                    objectStep.put("functionName", objectStep.path("function").asText());
+                }
+                if (!hasNonBlank(objectStep, "objectPath")) {
+                    if (hasNonBlank(objectStep, "path")) {
+                        objectStep.put("objectPath", objectStep.path("path").asText());
+                    } else if (!hasNonBlank(objectStep, "ref")) {
+                        // calculate() lives on the virtual DEVICE — never invent self for it.
+                        String fn = objectStep.path("functionName").asText("").toLowerCase(java.util.Locale.ROOT);
+                        if (!"calculate".equals(fn)) {
+                            objectStep.put("objectPath", "self");
+                        }
+                    }
+                }
+            }
+            JsonNode thenSteps = objectStep.get("then");
+            if (thenSteps != null) {
+                normalizeInvokeSteps(thenSteps);
+            }
+            JsonNode elseSteps = objectStep.get("else");
+            if (elseSteps != null) {
+                normalizeInvokeSteps(elseSteps);
+            }
+            JsonNode nested = objectStep.get("steps");
+            if (nested != null) {
+                normalizeInvokeSteps(nested);
+            }
+        }
     }
 
     public void validate(String sourceBody) {
@@ -145,7 +222,20 @@ public class FunctionScriptValidator {
                     validateSteps(elseSteps, false);
                 }
             }
-            case "invoke_function" -> require(step, "objectPath", "functionName");
+            case "invoke_function", "invoke" -> {
+                if (!hasNonBlank(step, "functionName") && !hasNonBlank(step, "function") && !hasNonBlank(step, "ref")) {
+                    throw new IllegalArgumentException(
+                            "Step invoke_function requires functionName (or function) — "
+                                    + "example: {\"type\":\"invoke_function\",\"objectPath\":\"root.platform.devices.virt-device-1\","
+                                    + "\"functionName\":\"calculate\",\"input\":{...},\"var\":\"out\"}"
+                    );
+                }
+                if (!hasNonBlank(step, "objectPath") && !hasNonBlank(step, "path") && !hasNonBlank(step, "ref")) {
+                    throw new IllegalArgumentException(
+                            "Step invoke_function requires objectPath (or path / ref); use \"self\" or the device path"
+                    );
+                }
+            }
             case "cancel_workflows" -> require(step, "workflowPath");
             case "failIfNull" -> require(step, "var");
             case "failIfNotEquals" -> require(step, "var", "equals");
@@ -203,9 +293,13 @@ public class FunctionScriptValidator {
 
     private static void require(JsonNode step, String... fields) {
         for (String field : fields) {
-            if (!step.has(field) || step.get(field).asText("").isBlank()) {
+            if (!hasNonBlank(step, field)) {
                 throw new IllegalArgumentException("Step " + step.path("type").asText() + " requires " + field);
             }
         }
+    }
+
+    private static boolean hasNonBlank(JsonNode step, String field) {
+        return step != null && step.has(field) && !step.get(field).asText("").isBlank();
     }
 }

@@ -52,6 +52,21 @@ final class AgentLoopGuard {
 
     /** After this many prior identical create_object OK/reused, stop — do not flood the step log. */
     private static final int CREATE_REUSE_HARD_BLOCK = 2;
+    /**
+     * Truly idempotent mutates with no progressive content: after this many prior identical OK calls
+     * on the same fingerprint, stop.
+     */
+    private static final int IDEMPOTENT_OK_HARD_BLOCK = 2;
+
+    private static final Set<String> IDEMPOTENT_MUTATE_TOOLS = Set.of(
+            "configure_report"
+    );
+
+    /**
+     * Consecutive trailing OK set_dashboard_layout on the same path — stop spam loops (×25).
+     * Intervening add_dashboard_widget / get_widget_catalog resets the streak so course re-applies are OK.
+     */
+    private static final int LAYOUT_CONSECUTIVE_OK_HARD_BLOCK = 2;
 
     /** Prefer one batch write over many incremental adds — noisy in Studio step log. */
     private static final Set<String> BATCH_INCREMENTAL_TOOLS = Set.of(
@@ -352,6 +367,18 @@ final class AgentLoopGuard {
             ));
         }
 
+        if (IDEMPOTENT_MUTATE_TOOLS.contains(normalized)
+                && priorSame >= IDEMPOTENT_OK_HARD_BLOCK
+                && fingerprintAllStatusOk(steps, fingerprint)) {
+            return Optional.of(new BlockDecision(
+                    "Hard block: identical '" + normalized + "' already succeeded " + priorSame
+                            + " times — stop flooding the step log",
+                    "Reuse the prior OK result. Continue the next course/assignment step "
+                            + "(different dashboard/report/mimic path) or finish — do not re-apply the same layout.",
+                    true
+            ));
+        }
+
         if (BATCH_INCREMENTAL_TOOLS.contains(normalized) && priorSame >= BATCH_INCREMENTAL_HARD_BLOCK) {
             boolean stopTurn = priorSame >= BATCH_INCREMENTAL_STOP_TURN;
             return Optional.of(new BlockDecision(
@@ -370,6 +397,21 @@ final class AgentLoopGuard {
                             + "Do not re-list the same folder.",
                     true
             ));
+        }
+        if ("set_dashboard_layout".equals(normalized)) {
+            long consecutiveOk = consecutiveTrailingFingerprintOkCount(steps, fingerprint);
+            if (consecutiveOk >= LAYOUT_CONSECUTIVE_OK_HARD_BLOCK) {
+                return Optional.of(new BlockDecision(
+                        "Hard block: consecutive 'set_dashboard_layout' succeeded " + consecutiveOk
+                                + " times on the same dashboard — stop flooding the step log",
+                        "Layout already applied. Prefer ONE set_dashboard_layout with the full widgets[] "
+                                + "(after get_widget_catalog), or switch to another dashboard / finish. "
+                                + "Do not re-call set_dashboard_layout in a tight loop.",
+                        true
+                ));
+            }
+            // Lifetime IDENTICAL_CALL would block legitimate re-applies after add_dashboard_widget.
+            return Optional.empty();
         }
         if (priorSame >= IDENTICAL_CALL_HARD_BLOCK) {
             return Optional.of(new BlockDecision(
@@ -453,7 +495,38 @@ final class AgentLoopGuard {
                 sb.append("|path=").append(path);
             }
         }
+        // Binding/alert: different expressions must not count as identical spam.
+        if ("create_binding_rule".equals(normalized)) {
+            appendFingerprintKey(sb, args, "id");
+            appendFingerprintKey(sb, args, "targetVariable");
+            appendFingerprintKey(sb, args, "expression");
+        }
+        if ("configure_alert".equals(normalized)) {
+            appendFingerprintKey(sb, args, "conditionExpr");
+            appendFingerprintKey(sb, args, "watchVariable");
+            appendFingerprintKey(sb, args, "eventName");
+        }
+        // Different layout payloads on the same dashboard are progressive edits, not spam.
+        if ("set_dashboard_layout".equals(normalized)) {
+            String layout = stringArg(args, "layoutJson");
+            if (layout.isBlank()) {
+                layout = stringArg(args, "layout");
+            }
+            if (layout.isBlank()) {
+                layout = stringArg(args, "template");
+            }
+            if (!layout.isBlank()) {
+                sb.append("|layoutHash=").append(Integer.toHexString(layout.hashCode()));
+            }
+        }
         return sb.toString();
+    }
+
+    private static void appendFingerprintKey(StringBuilder sb, Map<String, Object> args, String key) {
+        String value = stringArg(args, key);
+        if (!value.isBlank()) {
+            sb.append('|').append(key).append('=').append(value.toLowerCase(Locale.ROOT));
+        }
     }
 
     static String mutateTargetPath(Map<String, Object> toolArgs) {
@@ -482,6 +555,56 @@ final class AgentLoopGuard {
                         stepMap(step, "arguments")
                 )))
                 .count();
+    }
+
+    /**
+     * Count trailing tool steps that match fingerprint and returned OK — broken by any other tool/args.
+     */
+    private static long consecutiveTrailingFingerprintOkCount(
+            List<Map<String, Object>> steps,
+            String fingerprint
+    ) {
+        if (steps == null || fingerprint == null || fingerprint.isBlank()) {
+            return 0;
+        }
+        long count = 0;
+        for (int i = steps.size() - 1; i >= 0; i--) {
+            Map<String, Object> step = steps.get(i);
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            String fp = callFingerprint(String.valueOf(step.get("tool")), stepMap(step, "arguments"));
+            if (!fingerprint.equals(fp)) {
+                break;
+            }
+            Map<String, Object> result = stepMap(step, "result");
+            if (!"OK".equalsIgnoreCase(String.valueOf(result.get("status")))) {
+                break;
+            }
+            count++;
+        }
+        return count;
+    }
+
+    private static boolean fingerprintAllStatusOk(List<Map<String, Object>> steps, String fingerprint) {
+        if (steps == null || fingerprint == null || fingerprint.isBlank()) {
+            return false;
+        }
+        boolean saw = false;
+        for (Map<String, Object> step : steps) {
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            if (!fingerprint.equals(callFingerprint(String.valueOf(step.get("tool")), stepMap(step, "arguments")))) {
+                continue;
+            }
+            saw = true;
+            Map<String, Object> result = stepMap(step, "result");
+            if (!"OK".equalsIgnoreCase(String.valueOf(result.get("status")))) {
+                return false;
+            }
+        }
+        return saw;
     }
 
     /** True when at least one prior identical create returned reused=true (object already exists). */
@@ -580,6 +703,11 @@ final class AgentLoopGuard {
             sequence = sequence.subList(sequence.size() - OSCILLATION_WINDOW, sequence.size());
         }
         if (!isStrictTwoToolAlternation(sequence)) {
+            return Optional.empty();
+        }
+        // Dashboard course pattern: layout ↔ add_widget is progressive, not a stuck ping-pong.
+        if (sequence.contains("set_dashboard_layout")
+                && (sequence.contains("add_dashboard_widget") || sequence.contains("get_widget_catalog"))) {
             return Optional.empty();
         }
         String a = sequence.get(0);
@@ -702,10 +830,10 @@ final class AgentLoopGuard {
             }
             if (streak >= 2) {
                 String hint = identicalErrorHint(normalized, lastError);
-                // Missing-arg loops: usually keep the turn open so the model can retry with fixed args.
+                // Missing-arg / formal-verify loops: keep turn open so the model can retry with fixed args.
                 // Exception: enable_agent_tool_pack without pack (common on vision turns) never self-corrects.
-                boolean stopTurn = !isMissingRequiredArgError(lastError)
-                        || "enable_agent_tool_pack".equals(normalized);
+                boolean fixable = isMissingRequiredArgError(lastError) || isFormalVerificationError(lastError);
+                boolean stopTurn = !fixable || "enable_agent_tool_pack".equals(normalized);
                 return Optional.of(new BlockDecision(
                         "Hard block: '" + normalized + "' failed " + streak
                                 + " times with the same error — stop flooding the step log",
@@ -734,6 +862,17 @@ final class AgentLoopGuard {
                 || lower.contains("unsatisfiable")
                 || lower.contains("never discriminates")
                 || lower.contains("invalid");
+    }
+
+    private static boolean isFormalVerificationError(String error) {
+        if (error == null || error.isBlank()) {
+            return false;
+        }
+        String lower = error.toLowerCase(Locale.ROOT);
+        return lower.contains("formal verification")
+                || lower.contains("tautology")
+                || lower.contains("unsatisfiable")
+                || lower.contains("never discriminates");
     }
 
     private static String identicalErrorHint(String toolName, String error) {
@@ -793,10 +932,20 @@ final class AgentLoopGuard {
                     Example: create_object type=USER name=user1 roles=operator password=ChangeMe!123. \
                     Do NOT send OPERATOR / ROLE_OPERATOR.""";
         }
-        if ("configure_alert".equals(toolName)
-                || lower.contains("formal verification")
-                || lower.contains("tautology")
-                || lower.contains("never discriminates")) {
+        if ("set_dashboard_layout".equals(toolName) && (lower.contains("invalid layout") || lower.contains("json"))) {
+            return """
+                    layoutJson must be valid JSON (no trailing commas, all strings closed). \
+                    Prefer template= from get_dashboard_layout / catalog, or pass layout as a JSON object \
+                    (not a broken string). Retry set_dashboard_layout once with corrected layoutJson.""";
+        }
+        if ("set_dashboard_layout".equals(toolName)
+                && (lower.contains("destructive layout shrink") || lower.contains("previouswidgetcount"))) {
+            return """
+                    Do NOT replace a multi-widget dashboard with a 1-widget layout. \
+                    Keep/extend the existing widgets[] (objectPath+variableName on value/chart; mimicPath on scada-mimic). \
+                    Continue with the next unfinished course task; force=true only for intentional wipe.""";
+        }
+        if ("configure_alert".equals(toolName) || isFormalVerificationError(error)) {
             return """
                     conditionExpr must discriminate — formal verify rejects tautologies (true, 1==1, true||…). \
                     Example: watchVariable=sineWave conditionExpr=self.sineWave[\"value\"] > 0 \

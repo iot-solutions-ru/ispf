@@ -25,11 +25,18 @@ export const LEGACY_BUILTIN_TO_PACK: Record<string, string> = {
   "valve.diaphragm": "pack.ispf-pid.diaphragm-valve",
   "pump.centrifugal": "pack.ispf-pid.centrifugal-pump",
   "pump.positive": "pack.ispf-pid.positive-displacement-pump",
+  "pump.submersible": "pack.ispf-pid.submersible-pump",
+  "motor": "pack.ispf-pid.motor",
+  "compressor": "pack.ispf-pid.compressor",
+  "mixer": "pack.ispf-pid.mixer",
   "pipe.segment": "pack.ispf-pid.pipe-segment-h",
   "pipe.junction": "pack.ispf-pid.cross",
   "pipe.tee": "pack.ispf-pid.tee",
   "pipe.elbow": "pack.ispf-pid.elbow-90",
   "pipe.reducer": "pack.ispf-pid.reducer",
+  "gen.block": "pack.ispf-pid.generator",
+  "breaker": "pack.ispf-pid.circuit-breaker",
+  "transformer.two-winding": "pack.ispf-pid.transformer-2w",
 };
 
 const packById = new Map<string, PackSymbolRecord>();

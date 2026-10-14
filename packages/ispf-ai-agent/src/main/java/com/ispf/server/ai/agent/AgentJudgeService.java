@@ -4,11 +4,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Pre-finish judge phase — readonly conformance verdict (ISPF agent pipeline).
  */
 public final class AgentJudgeService {
+
+    /**
+     * Optional live-tree sensors. When present, finish paths are checked against the real object tree
+     * (not only tool step logs).
+     */
+    public record LiveTreeSensors(
+            Predicate<String> pathExists,
+            Function<String, Optional<String>> dashboardLayoutJson,
+            Function<String, Optional<String>> mimicDiagramJson
+    ) {
+    }
 
     public enum Verdict {
         APPROVE,
@@ -32,12 +46,22 @@ public final class AgentJudgeService {
     private AgentJudgeService() {
     }
 
-    @SuppressWarnings("unchecked")
     public static JudgeResult evaluate(
             List<Map<String, Object>> steps,
             AgentRunState runState,
             Map<String, Object> finishResult,
             String userMessage
+    ) {
+        return evaluate(steps, runState, finishResult, userMessage, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static JudgeResult evaluate(
+            List<Map<String, Object>> steps,
+            AgentRunState runState,
+            Map<String, Object> finishResult,
+            String userMessage,
+            LiveTreeSensors liveTree
     ) {
         List<String> issues = new ArrayList<>();
 
@@ -62,18 +86,13 @@ public final class AgentJudgeService {
             }
         }
 
-        AgentAssignmentType assignmentType = resolveAssignmentType(finishResult, storedPlan, userMessage);
+        AgentAssignmentType assignmentType = resolveAssignmentType(finishResult, storedPlan, userMessage, runState);
         if (assignmentType == AgentAssignmentType.APPLICATION_BUNDLE) {
             issues.addAll(verifyApplicationBundleTests(steps));
         } else if (AgentConformanceCatalog.requiresSmokeCases(assignmentType)) {
-            Object conformance = storedPlan.get("conformance");
-            if (conformance == null && finishResult != null) {
-                conformance = finishResult.get("conformance");
-            }
-            if (!(conformance instanceof Map<?, ?> confMap)
-                    || !(confMap.get("smokeCases") instanceof List<?> smoke) || smoke.isEmpty()) {
-                issues.add("conformance.smokeCases empty for assignmentType=" + assignmentType.id());
-            }
+            // Evidence over paperwork: verify catalog smoke/invariants from tool steps.
+            // Missing finish.conformance.smokeCases alone must not approve-fail execute turns
+            // (SIF plans may still declare them for the UI; the judge checks reality).
             issues.addAll(AgentConformanceEvaluator.verifyInvariants(steps, assignmentType));
             issues.addAll(AgentConformanceEvaluator.verifySmokeCases(steps, assignmentType));
         }
@@ -86,6 +105,17 @@ public final class AgentJudgeService {
                     issues.add(check.id() + ": " + check.summary());
                 }
             }
+        }
+
+        if (liveTree != null && liveTree.pathExists() != null) {
+            issues.addAll(AgentLiveFinishVerifier.verify(
+                    finishResult,
+                    steps,
+                    userMessage,
+                    liveTree.pathExists(),
+                    liveTree.dashboardLayoutJson(),
+                    liveTree.mimicDiagramJson()
+            ));
         }
 
         if (runState != null && runState.reworkRoundCount() >= 2 && hasBlockingErrorSteps(steps)) {
@@ -182,11 +212,18 @@ public final class AgentJudgeService {
     private static AgentAssignmentType resolveAssignmentType(
             Map<String, Object> finishResult,
             Map<String, Object> storedPlan,
-            String userMessage
+            String userMessage,
+            AgentRunState runState
     ) {
         String raw = extractAssignmentType(finishResult);
         if (raw == null) {
             raw = extractAssignmentType(storedPlan);
+        }
+        if (raw == null && runState != null) {
+            String fromState = runState.assignmentType();
+            if (fromState != null && !fromState.isBlank()) {
+                raw = fromState;
+            }
         }
         if (raw != null) {
             return AgentAssignmentType.fromString(raw);

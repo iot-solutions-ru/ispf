@@ -96,7 +96,44 @@ final class AgentTurnToolErrors {
                 return true;
             }
         }
+        // Course recovery: wrong singleton / virtual-profile → list catalog → create hub / deploy function.
+        if ("ensure_singleton_instance".equals(tool) && isHubIntentRecovered(steps, errorIndex)) {
+            return true;
+        }
+        // deploy_tree_function on DEVICE recovered by later hub deploy (same tool OK already covered)
+        // or by create_object hub when path target differs.
+        if ("deploy_tree_function".equals(tool)) {
+            String error = String.valueOf(stepMap(errorStep, "result").get("error")).toLowerCase(Locale.ROOT);
+            if (error.contains("objecttype.device") && isHubIntentRecovered(steps, errorIndex)) {
+                return true;
+            }
+        }
         return false;
+    }
+
+    /**
+     * ensure_singleton_instance catalog miss is recovered when the agent later listed
+     * singleton blueprints and created a hub or deployed a tree function successfully.
+     */
+    private static boolean isHubIntentRecovered(List<Map<String, Object>> steps, int errorIndex) {
+        boolean listedSingletons = false;
+        boolean hubOrFunctionOk = false;
+        for (int i = errorIndex + 1; i < steps.size(); i++) {
+            Map<String, Object> later = steps.get(i);
+            if (!isOkToolStep(later)) {
+                continue;
+            }
+            String laterTool = String.valueOf(later.get("tool")).toLowerCase(Locale.ROOT);
+            if ("list_singleton_blueprints".equals(laterTool)) {
+                listedSingletons = true;
+            }
+            if ("create_object".equals(laterTool)
+                    || "ensure_singleton_instance".equals(laterTool)
+                    || "deploy_tree_function".equals(laterTool)) {
+                hubOrFunctionOk = true;
+            }
+        }
+        return listedSingletons && hubOrFunctionOk;
     }
 
     @SuppressWarnings("unchecked")

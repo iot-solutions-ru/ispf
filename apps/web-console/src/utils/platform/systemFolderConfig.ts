@@ -105,7 +105,9 @@ function resolveCatalogType(path: string, objectType?: ObjectType): ObjectType |
   ) {
     return "BLUEPRINT";
   }
-  if (objectType && CATALOG_CONTAINER_TYPES.has(objectType)) {
+  // Only treat known catalog roots (and app subfolders) as system folders.
+  // Mis-created children with container types (e.g. query as QUERIES) must stay deletable.
+  if (objectType && CATALOG_CONTAINER_TYPES.has(objectType) && EXACT_CATALOG_PATHS.has(path)) {
     return objectType;
   }
   if (EXACT_CATALOG_PATHS.has(path)) {

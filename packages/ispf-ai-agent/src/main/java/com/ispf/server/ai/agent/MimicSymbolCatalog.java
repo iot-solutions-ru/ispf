@@ -1,17 +1,70 @@
 package com.ispf.server.ai.agent;
 
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 /**
- * Built-in SCADA symbol reference for the platform agent (subset of web-console registry).
+ * SCADA symbol reference for the platform agent.
+ * Only IDs that the web-console can resolve (legacy builtins mapped to ispf-pid-v1 pack,
+ * or pack.* ids). Do not advertise removed React-only symbols (label, status-arrow, button.*).
  */
 final class MimicSymbolCatalog {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private MimicSymbolCatalog() {
+    }
+
+    /**
+     * True when the web-console can resolve the symbol (catalog legacy id, pack SVG, or custom).
+     * Unknown ids (label, button.start, …) render as an empty canvas.
+     */
+    static boolean isRenderable(String symbolId) {
+        if (symbolId == null || symbolId.isBlank()) {
+            return false;
+        }
+        String id = symbolId.trim();
+        for (SymbolRef symbol : SYMBOLS) {
+            if (symbol.id.equals(id)) {
+                return true;
+            }
+        }
+        String lower = id.toLowerCase(Locale.ROOT);
+        if ("custom.svg".equals(lower) || lower.startsWith("custom:")) {
+            return true;
+        }
+        // Any installed ispf-pid pack id is loadable even if not listed in the short agent catalog.
+        return lower.startsWith("pack.ispf-pid.");
+    }
+
+    /** Unknown / blank symbolIds from a mimic diagramJson (v2). */
+    static List<String> unknownSymbolIds(String diagramJson) {
+        LinkedHashSet<String> unknown = new LinkedHashSet<>();
+        if (diagramJson == null || diagramJson.isBlank()) {
+            return List.of();
+        }
+        try {
+            JsonNode elements = MAPPER.readTree(diagramJson).path("elements");
+            if (!elements.isArray()) {
+                return List.of();
+            }
+            for (JsonNode element : elements) {
+                String id = element.path("symbolId").asString("").trim();
+                if (!isRenderable(id)) {
+                    unknown.add(id.isBlank() ? "(blank)" : id);
+                }
+            }
+        } catch (Exception ignored) {
+            return List.of();
+        }
+        return List.copyOf(unknown);
     }
 
     static List<Map<String, Object>> symbols(String categoryFilter) {
@@ -44,6 +97,7 @@ final class MimicSymbolCatalog {
                 "layerId", "layer-default",
                 "x", 100,
                 "y", 80,
+                "props", Map.of("width", 80, "height", 120),
                 "bindings", Map.of("fillLevel", binding)
         );
     }
@@ -58,6 +112,7 @@ final class MimicSymbolCatalog {
     }
 
     private static final List<SymbolRef> SYMBOLS = List.of(
+            // Legacy ids (web-console maps these to pack.ispf-pid.*)
             sym("tank.vertical", "process", List.of("fillLevel", "maxLevel", "rate"), 80, 120),
             sym("tank.horizontal", "process", List.of("fillLevel", "maxLevel"), 120, 80),
             sym("tank.spherical", "process", List.of("fillLevel"), 80, 80),
@@ -69,34 +124,20 @@ final class MimicSymbolCatalog {
             sym("pump.centrifugal", "process", List.of("running", "fault"), 56, 56),
             sym("pump.positive", "process", List.of("running"), 56, 56),
             sym("pump.submersible", "process", List.of("running"), 56, 56),
+            sym("motor", "process", List.of("running"), 64, 64),
             sym("compressor", "process", List.of("running"), 56, 56),
-            sym("heat-exchanger", "process", List.of(), 80, 60),
-            sym("filter", "process", List.of(), 60, 60),
-            sym("separator", "process", List.of(), 60, 80),
             sym("mixer", "process", List.of("running"), 56, 56),
-            sym("motor", "process", List.of("running"), 48, 48),
             sym("pipe.segment", "pipe", List.of(), 80, 12),
             sym("pipe.junction", "pipe", List.of(), 24, 24),
             sym("pipe.tee", "pipe", List.of(), 40, 40),
-            sym("pipeline-track", "pipe", List.of(), 200, 24),
-            sym("sensor.indicator", "sensor", List.of("value"), 32, 32),
-            sym("sensor.gauge-inline", "sensor", List.of("value"), 48, 32),
-            sym("data-block", "sensor", List.of("value"), 80, 40),
-            sym("meter", "sensor", List.of("value"), 48, 48),
-            sym("label", "annotation", List.of("text"), 120, 24),
-            sym("value-badge", "annotation", List.of("value"), 80, 28),
-            sym("status-arrow", "annotation", List.of("active"), 32, 32),
-            sym("rect", "annotation", List.of(), 80, 40),
-            sym("ellipse", "annotation", List.of(), 60, 40),
-            sym("table.embedded", "annotation", List.of(), 200, 120),
             sym("gen.block", "electrical", List.of("running"), 56, 56),
             sym("breaker", "electrical", List.of("closed"), 40, 56),
-            sym("disconnector", "electrical", List.of("closed"), 40, 56),
-            sym("busbar.horizontal", "electrical", List.of(), 120, 8),
-            sym("busbar.vertical", "electrical", List.of(), 8, 120),
             sym("transformer.two-winding", "electrical", List.of(), 56, 72),
-            sym("load.block", "electrical", List.of("power"), 56, 56),
-            sym("line.feeder", "electrical", List.of("energized"), 80, 12)
+            // Prefer pack ids for fan / push-button (no legacy React builtin)
+            sym("pack.ispf-pid.fan", "process", List.of("running"), 64, 64),
+            sym("pack.ispf-pid.motor", "electrical", List.of("running"), 64, 64),
+            sym("pack.ispf-pid.push-button", "electrical", List.of(), 64, 64),
+            sym("pack.ispf-pid.centrifugal-pump", "process", List.of("running"), 64, 64)
     );
 
     private static SymbolRef sym(

@@ -295,6 +295,95 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void allowsRepeatedSetDashboardLayoutAfterWidgetWork() {
+        String dash = "root.platform.dashboards.vd-dashboard";
+        List<Map<String, Object>> steps = List.of(
+                layoutStep(dash),
+                widgetStep(dash),
+                widgetStep(dash),
+                layoutStep(dash)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "set_dashboard_layout",
+                Map.of("path", dash),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
+    void hardBlocksConsecutiveSetDashboardLayoutSpam() {
+        String dash = "root.platform.dashboards.virtual-devices-dashboard";
+        List<Map<String, Object>> steps = List.of(
+                layoutStep(dash),
+                layoutStep(dash)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "set_dashboard_layout",
+                Map.of("path", dash),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
+        assertTrue(block.get().error().contains("consecutive"));
+    }
+
+    @Test
+    void allowsManyLayoutsAcrossTurnWhenNotConsecutive() {
+        String dash = "root.platform.dashboards.virtual-devices-dashboard";
+        List<Map<String, Object>> steps = new java.util.ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            steps.add(layoutStep(dash));
+            steps.add(widgetStep(dash));
+        }
+        var block = AgentLoopGuard.checkHardBlock(
+                "set_dashboard_layout",
+                Map.of("path", dash),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
+    void doesNotTreatDifferentBindingExpressionsAsIdentical() {
+        String path = "root.platform.devices.vd";
+        List<Map<String, Object>> steps = List.of(
+                bindingStep(path, "sumRecordField(self.table.rows, value)"),
+                bindingStep(path, "self.table.rows.map(r | r.value).sum()"),
+                bindingStep(path, "sum(self.table.rows[*].value)"),
+                bindingStep(path, "self.table.rows.reduce(0, (acc, r) | acc + r.value)")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "create_binding_rule",
+                Map.of(
+                        "path", path,
+                        "id", "table-sum",
+                        "expression", "sumRecordField(table, int)",
+                        "targetVariable", "tableIntSum"
+                ),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
+    void hardBlocksRepeatedConfigureReportAfterOk() {
+        String path = "root.platform.reports.report-table-all";
+        List<Map<String, Object>> steps = List.of(
+                reportStep(path),
+                reportStep(path)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "configure_report",
+                Map.of("path", path),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
+        assertTrue(block.get().error().contains("already succeeded"));
+    }
+
+    @Test
     void hardBlocksCreateObjectAfterReuseFlood() {
         String parent = "root.platform.mimics";
         String name = "mimic-button-fan-svg";
@@ -400,6 +489,33 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void softBlocksRepeatedConfigureAlertTautologyWithoutStoppingTurn() {
+        String tautologyError = "Formal verification rejected condition: satisfiable witness: "
+                + "Condition is satisfiable. (The expression is satisfiable unconditionally, "
+                + "regardless of input state); tautology: expression is always true "
+                + "(condition never discriminates)";
+        List<Map<String, Object>> steps = List.of(
+                errorStep("configure_alert", tautologyError),
+                errorStep("configure_alert", tautologyError)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "configure_alert",
+                Map.of(
+                        "name", "demo-alert",
+                        "targetObjectPath", "root.platform.devices.virt-device-1",
+                        "watchVariable", "sineWave",
+                        "conditionExpr", "true",
+                        "eventName", "demo"
+                ),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().blocked());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("discriminat"));
+    }
+
+    @Test
     void hardBlocksListVariablesGetObjectOscillation() {
         String cluster = "root.platform.devices.virt-cluster";
         String alert = "root.platform.alert-rules.virt-cluster-error-alert";
@@ -475,6 +591,38 @@ class AgentLoopGuardTest {
         return Map.of("type", "tool", "tool", tool, "arguments", arguments);
     }
 
+    private static Map<String, Object> layoutStep(String path) {
+        return Map.of(
+                "type", "tool",
+                "tool", "set_dashboard_layout",
+                "arguments", Map.of("path", path),
+                "result", Map.of("status", "OK")
+        );
+    }
+
+    private static Map<String, Object> reportStep(String path) {
+        return Map.of(
+                "type", "tool",
+                "tool", "configure_report",
+                "arguments", Map.of("path", path),
+                "result", Map.of("status", "OK")
+        );
+    }
+
+    private static Map<String, Object> bindingStep(String path, String expression) {
+        return Map.of(
+                "type", "tool",
+                "tool", "create_binding_rule",
+                "arguments", Map.of(
+                        "path", path,
+                        "id", "table-sum",
+                        "expression", expression,
+                        "targetVariable", "tableIntSum"
+                ),
+                "result", Map.of("status", "ERROR", "error", "Invalid expression: " + expression)
+        );
+    }
+
     private static Map<String, Object> widgetCatalogStep(String type) {
         return Map.of(
                 "type", "tool",
@@ -514,15 +662,6 @@ class AgentLoopGuardTest {
                 "type", "tool",
                 "tool", "add_dashboard_widget",
                 "arguments", Map.of("path", path)
-        );
-    }
-
-    private static Map<String, Object> layoutStep(String path) {
-        return Map.of(
-                "type", "tool",
-                "tool", "set_dashboard_layout",
-                "arguments", Map.of("path", path),
-                "result", Map.of("status", "OK")
         );
     }
 

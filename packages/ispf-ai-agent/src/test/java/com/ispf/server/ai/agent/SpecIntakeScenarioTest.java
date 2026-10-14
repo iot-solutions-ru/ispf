@@ -163,6 +163,41 @@ class SpecIntakeScenarioTest {
         assertThat(AgentJudgeService.Verdict.REWORK.requiresUserIntervention()).isFalse();
     }
 
+    @Test
+    void judgeDoesNotRequireSmokeCasePaperworkWhenStepEvidencePasses() {
+        String mimicPath = "root.platform.mimics.fan";
+        String dashPath = "root.platform.dashboards.overview";
+        List<Map<String, Object>> steps = List.of(
+                toolOk("list_variables", Map.of("path", "root.platform.devices.d1")),
+                toolObserved("list_variables", Map.of("path", "root.platform.devices.d1"), Map.of("count", 4)),
+                toolObserved("save_mimic_diagram", Map.of("path", mimicPath), Map.of("elementCount", 2)),
+                toolObserved(
+                        "set_dashboard_layout",
+                        Map.of("path", dashPath),
+                        Map.of("widgetCount", 3, "boundWidgetCount", 3)
+                )
+        );
+        var judge = AgentJudgeService.evaluate(
+                steps,
+                new AgentRunState(),
+                Map.of("assignmentType", "scada_hmi"),
+                "SCADA mimic and dashboard"
+        );
+        assertThat(judge.verdict()).isEqualTo(AgentJudgeService.Verdict.APPROVE);
+    }
+
+    @Test
+    void judgeReworksWhenScadaSmokeEvidenceMissing() {
+        var judge = AgentJudgeService.evaluate(
+                List.of(toolOk("create_object", Map.of("type", "MIMIC", "path", "root.platform.mimics.x"))),
+                new AgentRunState(),
+                Map.of("assignmentType", "scada_hmi"),
+                "build SCADA mimic"
+        );
+        assertThat(judge.verdict()).isEqualTo(AgentJudgeService.Verdict.REWORK);
+        assertThat(judge.issues()).isNotEmpty();
+    }
+
     private static Map<String, Object> toolError(String tool, Map<String, Object> args, String error) {
         return Map.of(
                 "type", "tool",

@@ -585,4 +585,37 @@ class AgentGroundTruthGuardTest {
         assertThat(AgentGroundTruthGuard.resolveCanonicalPath(steps, "root.platform.devices.nm-1"))
                 .isEqualTo("root.platform.devices.NM-1");
     }
+
+    @Test
+    void allowsConfigureAlertUnderAlertRulesWhenFolderExists() {
+        var block = AgentGroundTruthGuard.checkBeforeTool(
+                "configure_alert",
+                Map.of("path", "root.platform.alert-rules.alert-event1-event2-virt-lab"),
+                List.of(),
+                path -> path.equals("root.platform.alert-rules")
+        );
+        assertThat(block).isEmpty();
+    }
+
+    @Test
+    void allowsConfigureAlertByNameWithoutPath() {
+        var block = AgentGroundTruthGuard.checkBeforeTool(
+                "configure_alert",
+                Map.of("name", "alert-sum-range"),
+                List.of(),
+                path -> false
+        );
+        assertThat(block).isEmpty();
+    }
+
+    @Test
+    void allowsConfigureCorrelatorUnderCorrelatorsWhenFolderExists() {
+        var block = AgentGroundTruthGuard.checkBeforeTool(
+                "configure_correlator",
+                Map.of("path", "root.platform.correlators.delay-sum-alert"),
+                List.of(),
+                path -> path.equals("root.platform.correlators")
+        );
+        assertThat(block).isEmpty();
+    }
 }

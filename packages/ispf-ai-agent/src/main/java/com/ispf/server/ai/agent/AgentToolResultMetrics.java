@@ -1,10 +1,13 @@
 package com.ispf.server.ai.agent;
 
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Shared parsing of agent tool result payloads — used by finish guards and dashboard/mimic tools
@@ -13,6 +16,17 @@ import java.util.Map;
 final class AgentToolResultMetrics {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    /** Widget types that need objectPath + variableName to show live data. */
+    private static final Set<String> DATA_BOUND_TYPES = Set.of(
+            "value", "gauge", "chart", "sparkline", "history-chart", "history-table",
+            "kpi", "radial-gauge", "bar", "line", "timeseries"
+    );
+
+    /** Widget types that need objectPath (events / forms / functions / tables). */
+    private static final Set<String> OBJECT_BOUND_TYPES = Set.of(
+            "event-feed", "object-table", "input-form", "function", "event-form", "properties"
+    );
 
     private AgentToolResultMetrics() {
     }
@@ -31,6 +45,79 @@ final class AgentToolResultMetrics {
         } catch (Exception ex) {
             return 0;
         }
+    }
+
+    static int boundWidgetCountFromLayoutJson(ObjectMapper objectMapper, String layoutJson) {
+        if (layoutJson == null || layoutJson.isBlank()) {
+            return 0;
+        }
+        try {
+            JsonNode widgets = objectMapper.readTree(layoutJson).path("widgets");
+            if (!widgets.isArray()) {
+                return 0;
+            }
+            int bound = 0;
+            for (JsonNode widget : widgets) {
+                if (widget.isObject() && widgetIsBound(widget)) {
+                    bound++;
+                }
+            }
+            return bound;
+        } catch (Exception ex) {
+            return 0;
+        }
+    }
+
+    static int bindableWidgetCountFromLayoutJson(ObjectMapper objectMapper, String layoutJson) {
+        if (layoutJson == null || layoutJson.isBlank()) {
+            return 0;
+        }
+        try {
+            JsonNode widgets = objectMapper.readTree(layoutJson).path("widgets");
+            if (!widgets.isArray()) {
+                return 0;
+            }
+            int bindable = 0;
+            for (JsonNode widget : widgets) {
+                if (widget.isObject() && widgetNeedsBinding(widget)) {
+                    bindable++;
+                }
+            }
+            return bindable;
+        } catch (Exception ex) {
+            return 0;
+        }
+    }
+
+    private static boolean widgetNeedsBinding(JsonNode widget) {
+        String type = widget.path("type").asString("").trim().toLowerCase(Locale.ROOT);
+        return DATA_BOUND_TYPES.contains(type)
+                || OBJECT_BOUND_TYPES.contains(type)
+                || "scada-mimic".equals(type)
+                || "report".equals(type);
+    }
+
+    private static boolean widgetIsBound(JsonNode widget) {
+        String type = widget.path("type").asString("").trim().toLowerCase(Locale.ROOT);
+        if (!widgetNeedsBinding(widget)) {
+            return true;
+        }
+        if ("scada-mimic".equals(type)) {
+            return textPresent(widget, "mimicPath");
+        }
+        if ("report".equals(type)) {
+            return textPresent(widget, "reportPath") || textPresent(widget, "reportId")
+                    || textPresent(widget, "objectPath");
+        }
+        if (DATA_BOUND_TYPES.contains(type)) {
+            return textPresent(widget, "objectPath") && textPresent(widget, "variableName");
+        }
+        return textPresent(widget, "objectPath");
+    }
+
+    private static boolean textPresent(JsonNode node, String field) {
+        String value = node.path(field).asString(null);
+        return value != null && !value.isBlank();
     }
 
     static int widgetCountFromResult(Map<String, Object> result) {
@@ -105,6 +192,93 @@ final class AgentToolResultMetrics {
             }
         }
         return last;
+    }
+
+    /**
+     * Per-dashboard path: max OK widgetCount vs last OK widgetCount in step order.
+     * Used to catch destructive {@code set_dashboard_layout} that shrinks a full screen to crumbs.
+     */
+    static Map<String, int[]> dashboardWidgetCountPeaks(List<Map<String, Object>> steps) {
+        Map<String, int[]> peaks = new LinkedHashMap<>();
+        for (Map<String, Object> step : steps) {
+            if (!isOkToolStep(step)) {
+                continue;
+            }
+            String tool = toolName(step);
+            if (!"get_dashboard_layout".equals(tool)
+                    && !"set_dashboard_layout".equals(tool)
+                    && !"add_dashboard_widget".equals(tool)) {
+                continue;
+            }
+            Map<String, Object> result = stepMap(step, "result");
+            Map<String, Object> args = stepMap(step, "arguments");
+            String path = String.valueOf(result.getOrDefault("path", args.getOrDefault("path", ""))).trim();
+            if (path.isBlank()) {
+                continue;
+            }
+            int count = widgetCountFromResult(result);
+            if (count <= 0) {
+                continue;
+            }
+            int[] peak = peaks.computeIfAbsent(path, ignored -> new int[] {0, 0});
+            peak[0] = Math.max(peak[0], count);
+            peak[1] = count;
+        }
+        return peaks;
+    }
+
+    /**
+     * Scan set_dashboard_layout arguments for unbound bindable widgets.
+     * Returns {@code [bindable, bound]} across the last layoutJson per dashboard path.
+     */
+    static int[] dashboardBindingCounts(List<Map<String, Object>> steps) {
+        Map<String, String> lastLayoutByPath = new LinkedHashMap<>();
+        for (Map<String, Object> step : steps) {
+            if (!isOkToolStep(step) || !"set_dashboard_layout".equals(toolName(step))) {
+                continue;
+            }
+            Map<String, Object> args = stepMap(step, "arguments");
+            Map<String, Object> result = stepMap(step, "result");
+            String path = String.valueOf(result.getOrDefault("path", args.getOrDefault("path", ""))).trim();
+            if (path.isBlank()) {
+                continue;
+            }
+            Object layout = args.get("layoutJson");
+            if (layout == null) {
+                layout = args.get("layout");
+            }
+            if (layout instanceof String json && !json.isBlank()) {
+                lastLayoutByPath.put(path, json);
+            } else if (layout != null && !(layout instanceof String)) {
+                try {
+                    lastLayoutByPath.put(path, MAPPER.writeValueAsString(layout));
+                } catch (Exception ignored) {
+                    // keep previous
+                }
+            }
+        }
+        int bindable = 0;
+        int bound = 0;
+        for (String layoutJson : lastLayoutByPath.values()) {
+            bindable += bindableWidgetCountFromLayoutJson(MAPPER, layoutJson);
+            bound += boundWidgetCountFromLayoutJson(MAPPER, layoutJson);
+        }
+        // Prefer tool-reported boundWidgetCount when layoutJson was not retained in steps.
+        if (bindable == 0) {
+            for (Map<String, Object> step : steps) {
+                if (!isOkToolStep(step) || !"set_dashboard_layout".equals(toolName(step))) {
+                    continue;
+                }
+                Map<String, Object> result = stepMap(step, "result");
+                Object reported = result.get("boundWidgetCount");
+                Object widgets = result.get("widgetCount");
+                if (reported instanceof Number boundNum && widgets instanceof Number widgetNum) {
+                    bound = Math.max(bound, boundNum.intValue());
+                    bindable = Math.max(bindable, widgetNum.intValue());
+                }
+            }
+        }
+        return new int[] {bindable, bound};
     }
 
     static boolean hasVerifiedDashboardLayout(List<Map<String, Object>> steps) {

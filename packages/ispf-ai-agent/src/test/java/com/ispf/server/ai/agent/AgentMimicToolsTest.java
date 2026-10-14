@@ -159,4 +159,45 @@ class AgentMimicToolsTest {
         List<Map<String, Object>> symbols = (List<Map<String, Object>>) result.get("symbols");
         assertTrue(symbols.stream().anyMatch(row -> "tank.vertical".equals(row.get("id"))));
     }
+
+    @Test
+    void saveMimicDiagramRejectsUnrenderableSymbolIds() throws Exception {
+        String path = "root.platform.mimics.demo";
+        when(tenantScopeService.isPathVisible(path, authentication)).thenReturn(true);
+        doNothing().when(objectAccessService).requireWrite(path, authentication);
+        when(objectTreePort.require(path)).thenReturn(mimicNode);
+        when(mimicNode.type()).thenReturn(ObjectType.MIMIC);
+        when(mimicService.getMimic(path)).thenReturn(
+                new MimicService.MimicView(path, "Demo", 5000, MimicLayouts.EMPTY_MIMIC)
+        );
+
+        Map<String, Object> result = tool("save_mimic_diagram").execute(
+                Map.of(
+                        "path", path,
+                        "elements", List.of(
+                                Map.of(
+                                        "id", "btn",
+                                        "symbolId", "button.start",
+                                        "layerId", "layer-default",
+                                        "x", 100,
+                                        "y", 100
+                                ),
+                                Map.of(
+                                        "id", "lbl",
+                                        "symbolId", "label",
+                                        "layerId", "layer-default",
+                                        "x", 200,
+                                        "y", 100
+                                )
+                        )
+                ),
+                new AgentContext("admin", authentication, null)
+        );
+
+        assertEquals("ERROR", result.get("status"));
+        assertTrue(String.valueOf(result.get("error")).contains("Unrenderable")
+                || String.valueOf(result.get("error")).contains("Unknown"));
+        assertTrue(String.valueOf(result.get("error")).contains("button.start")
+                || String.valueOf(result.get("hint")).contains("list_mimic_symbols"));
+    }
 }

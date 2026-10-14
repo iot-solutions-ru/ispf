@@ -115,19 +115,30 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("configure_alert", objectSchema(
                 props(
-                        "path", stringProp("Object tree path"),
-                        "configJson", stringProp("JSON string payload"),
-                        "name", stringProp("Node or resource name")
+                        "path", stringProp("ALERT path (root.platform.alert-rules.<id>)"),
+                        "name", stringProp("Creates under alert-rules when path omitted"),
+                        "alertId", stringProp("Short id; path = root.platform.alert-rules.<alertId> when path omitted"),
+                        "targetObjectPath", stringProp("Device/hub path the condition watches"),
+                        "watchVariable", stringProp("Variable name on targetObjectPath"),
+                        "conditionExpr", stringProp(
+                                "CEL that discriminates (self.<watch>[\"value\"] > 0 or == true; never true/1==1)"),
+                        "eventName", stringProp("Event fired on the ALERT node"),
+                        "configJson", stringProp("JSON string payload")
                 ),
-                req("path"),
+                List.of(),
                 true
         ));
         catalog.put("configure_correlator", objectSchema(
                 props(
-                        "path", stringProp("Object tree path"),
+                        "path", stringProp("CORRELATOR path (root.platform.correlators.<id>)"),
+                        "name", stringProp("Creates under correlators when path omitted"),
+                        "correlatorId", stringProp("Short id; path = root.platform.correlators.<id> when path omitted"),
+                        "targetObjectPath", stringProp("Object that emits the watched events"),
+                        "patternType", stringProp("COUNT|SEQUENCE|EVENT_CHAIN|..."),
+                        "eventName", stringProp("Primary event name"),
                         "configJson", stringProp("JSON string payload")
                 ),
-                req("path"),
+                List.of(),
                 true
         ));
         catalog.put("configure_driver", objectSchema(

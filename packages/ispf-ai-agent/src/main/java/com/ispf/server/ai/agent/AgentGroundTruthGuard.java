@@ -62,8 +62,6 @@ final class AgentGroundTruthGuard {
             "save_workflow_bpmn",
             "update_workflow_status",
             "run_workflow",
-            "configure_alert",
-            "configure_correlator",
             "configure_report",
             "run_report",
             "create_variable",
@@ -125,6 +123,24 @@ final class AgentGroundTruthGuard {
             }
             return checkBlueprintDiscovered(arguments, steps, "blueprintName", "blueprintId");
         }
+        if ("configure_alert".equals(tool)) {
+            return checkCreateOnConfigureFolder(
+                    arguments,
+                    steps,
+                    objectExists,
+                    tool,
+                    "root.platform.alert-rules"
+            );
+        }
+        if ("configure_correlator".equals(tool)) {
+            return checkCreateOnConfigureFolder(
+                    arguments,
+                    steps,
+                    objectExists,
+                    tool,
+                    "root.platform.correlators"
+            );
+        }
         if (OBJECT_PATH_MUTATION_TOOLS.contains(tool)) {
             String objectPath = resolveObjectPath(arguments);
             if (objectPath.isBlank()) {
@@ -133,7 +149,23 @@ final class AgentGroundTruthGuard {
             return checkObjectPathDiscovered(objectPath, tool, steps, objectExists);
         }
         if ("ensure_singleton_instance".equals(tool)) {
-            return checkBlueprintDiscovered(arguments, steps, "blueprintName", "blueprintId");
+            Optional<BlockDecision> missing = checkBlueprintDiscovered(
+                    arguments, steps, "blueprintName", "blueprintId");
+            if (missing.isEmpty()) {
+                return Optional.empty();
+            }
+            String modelRef = firstNonBlankArg(arguments, "blueprintName", "blueprintId");
+            if (looksLikeVirtualDeviceProfile(modelRef)) {
+                return Optional.of(new BlockDecision(
+                        "Cannot ensure_singleton_instance: \"" + modelRef
+                                + "\" is a virtual DEVICE profile, not a SINGLETON blueprint",
+                        "For devices use create_virtual_device profile=" + modelRef
+                                + ". For calculator/hub logic: list_singleton_blueprints, then "
+                                + "ensure_singleton_instance blueprintName=<name from that list>. "
+                                + "Never pass virtual-lab / virtual-unified to ensure_singleton_instance."
+                ));
+            }
+            return missing;
         }
         return Optional.empty();
     }
@@ -182,6 +214,39 @@ final class AgentGroundTruthGuard {
         } catch (RuntimeException ignored) {
             return false;
         }
+    }
+
+    private static Optional<BlockDecision> checkCreateOnConfigureFolder(
+            Map<String, Object> arguments,
+            List<Map<String, Object>> steps,
+            ObjectExists objectExists,
+            String tool,
+            String folder
+    ) {
+        String objectPath = resolveObjectPath(arguments);
+        String name = stringArg(arguments, "name");
+        if (objectPath.isBlank() && !name.isBlank()) {
+            return Optional.empty();
+        }
+        String folderNorm = normalizePath(folder);
+        if (!objectPath.isBlank() && isChildOfFolder(objectPath, folderNorm)) {
+            if (isObjectPathGrounded(steps, objectPath) || existsInTree(objectExists, objectPath)) {
+                return Optional.empty();
+            }
+            if (isParentGrounded(steps, folderNorm) || existsInTree(objectExists, folderNorm)) {
+                return Optional.empty();
+            }
+        }
+        if (!objectPath.isBlank()) {
+            return checkObjectPathDiscovered(objectPath, tool, steps, objectExists);
+        }
+        return Optional.empty();
+    }
+
+    private static boolean isChildOfFolder(String objectPath, String folder) {
+        String path = normalizePath(objectPath);
+        String prefix = folder.endsWith(".") ? folder : folder + ".";
+        return path.startsWith(prefix) && path.length() > prefix.length();
     }
 
     private static String mutationLabel(Map<String, Object> arguments, String toolName) {
@@ -291,7 +356,11 @@ final class AgentGroundTruthGuard {
             Map<String, Object> args = stepMap(step, "arguments");
             Map<String, Object> result = stepMap(step, "result");
 
-            if ("create_object".equals(tool) || "create_virtual_device".equals(tool) || "configure_report".equals(tool)) {
+            if ("create_object".equals(tool)
+                    || "create_virtual_device".equals(tool)
+                    || "configure_report".equals(tool)
+                    || "configure_alert".equals(tool)
+                    || "configure_correlator".equals(tool)) {
                 if (pathsEqual(objectPath, pathFromCreateResult(result))) {
                     return true;
                 }
@@ -674,6 +743,28 @@ final class AgentGroundTruthGuard {
 
     private static String toolName(Map<String, Object> step) {
         return String.valueOf(step.get("tool")).toLowerCase(Locale.ROOT);
+    }
+
+    private static String firstNonBlankArg(Map<String, Object> arguments, String... keys) {
+        for (String key : keys) {
+            String value = stringArg(arguments, key);
+            if (!value.isBlank()) {
+                return value;
+            }
+        }
+        return "";
+    }
+
+    /** Virtual device profiles must not be passed to ensure_singleton_instance. */
+    static boolean looksLikeVirtualDeviceProfile(String modelRef) {
+        if (modelRef == null || modelRef.isBlank()) {
+            return false;
+        }
+        String lower = modelRef.trim().toLowerCase(Locale.ROOT);
+        return lower.startsWith("virtual-")
+                || lower.contains("virtual-lab")
+                || lower.contains("virtual-unified")
+                || "virtual".equals(lower);
     }
 
     @SuppressWarnings("unchecked")

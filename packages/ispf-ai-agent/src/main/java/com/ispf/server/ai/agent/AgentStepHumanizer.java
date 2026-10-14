@@ -300,6 +300,31 @@ public final class AgentStepHumanizer {
                 "完成前检查");
     }
 
+    public static String judgeReworkLabel(String uiLocale) {
+        return t(uiLocale,
+                "Judge: rework required",
+                "Судья: нужна переделка",
+                "Richter: Nacharbeit erforderlich",
+                "评审：需要返工");
+    }
+
+    public static String judgeUserGateLabel(String uiLocale) {
+        return t(uiLocale,
+                "Judge: user decision required",
+                "Судья: нужно решение пользователя",
+                "Richter: Benutzerentscheidung nötig",
+                "评审：需要用户决定");
+    }
+
+    public static String judgeBlockedSummary(String uiLocale, String verdict) {
+        String v = verdict == null ? "REWORK" : verdict;
+        return t(uiLocale,
+                "Finish blocked by judge (" + v + "). Fix issues and continue.",
+                "Завершение заблокировано судьёй (" + v + "). Исправьте замечания и продолжайте.",
+                "Abschluss vom Richter blockiert (" + v + "). Probleme beheben und fortsetzen.",
+                "评审阻断完成（" + v + "）。请修复问题后继续。");
+    }
+
     public static String sifPlanCheckLabel(String uiLocale) {
         return t(uiLocale, "SIF plan check", "Проверка SIF-плана", "SIF-Planprüfung", "SIF 计划检查");
     }

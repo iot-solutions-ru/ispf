@@ -134,38 +134,42 @@ final class AgentAutomationTools {
             public String description() {
                 return "Create or update ALERT rule under root.platform.alert-rules. "
                         + "Args: path (existing) OR name (creates under alert-rules), targetObjectPath, watchVariable, "
-                        + "conditionExpr (CEL, e.g. self.temperature[\"value\"] > 85), eventName, "
-                        + "payloadVariable?, enabled?, edgeTrigger?, delaySeconds?, sustainWhileTrue?. "
+                        + "conditionExpr (CEL that DISCRIMINATES — e.g. self.sineWave[\"value\"] > 0 or "
+                        + "self.clusterError[\"value\"] == true; NEVER true / 1==1 — formal verify rejects tautologies), "
+                        + "eventName, payloadVariable?, enabled?, edgeTrigger?, delaySeconds?, sustainWhileTrue?. "
                         + "Condition evaluates on targetObjectPath; eventName is auto-created and fired on the ALERT rule node. "
                         + "Operator alarmBar objectPathPrefix should be root.platform.alert-rules (or rule path). "
-                        + "CEL conditions are formally verified (unsatisfiable/tautology rejected). "
                         + "Use get_automation_schema for field names.";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
                 var auth = context.authentication();
+                String watchVariable = null;
                 try {
                     String path = stringArg(arguments, "path");
                     String name = stringArg(arguments, "name");
                     if (path.isBlank() && name.isBlank()) {
                         return Map.of("status", "ERROR", "error", "path or name is required");
                     }
+                    automationTreeService.ensurePlatformFolders();
                     if (path.isBlank()) {
-                        automationTreeService.ensurePlatformFolders();
                         path = AutomationTreeService.rulePathForName(name);
-                        if (objectTreePort.tree().findByPath(path).isEmpty()) {
-                            objectAccessService.requireWrite(AutomationTreeService.ALERT_RULES_ROOT, auth);
-                            objectTreePort.create(
-                                    AutomationTreeService.ALERT_RULES_ROOT,
-                                    AutomationTreeService.slugify(name),
-                                    ObjectType.ALERT,
-                                    name,
-                                    "",
-                                    null
-                            );
-                            automationTreeService.ensureAlertRuleStructure(path);
-                        }
+                    }
+                    if (objectTreePort.tree().findByPath(path).isEmpty()
+                            && path.startsWith(AutomationTreeService.ALERT_RULES_ROOT + ".")) {
+                        objectAccessService.requireWrite(AutomationTreeService.ALERT_RULES_ROOT, auth);
+                        String nodeName = path.substring(AutomationTreeService.ALERT_RULES_ROOT.length() + 1);
+                        String display = !name.isBlank() ? name : nodeName;
+                        objectTreePort.create(
+                                AutomationTreeService.ALERT_RULES_ROOT,
+                                nodeName,
+                                ObjectType.ALERT,
+                                display,
+                                "",
+                                null
+                        );
+                        automationTreeService.ensureAlertRuleStructure(path);
                     }
                     if (!tenantScopeService.isPathVisible(path, auth)) {
                         return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
@@ -174,7 +178,7 @@ final class AgentAutomationTools {
                     automationTreeService.ensureAlertRuleStructure(path);
 
                     String targetObjectPath = optionalString(arguments, "targetObjectPath");
-                    String watchVariable = optionalString(arguments, "watchVariable");
+                    watchVariable = optionalString(arguments, "watchVariable");
                     String conditionExpr = optionalString(arguments, "conditionExpr");
                     String eventName = optionalString(arguments, "eventName");
                     String payloadVariable = optionalString(arguments, "payloadVariable");
@@ -194,6 +198,8 @@ final class AgentAutomationTools {
                                 "hint", "Provide targetObjectPath, watchVariable, conditionExpr, eventName to update"
                         );
                     }
+                    String requestedCondition = conditionExpr;
+                    conditionExpr = AgentExpressionCoercion.coerceCelCondition(conditionExpr, watchVariable);
 
                     FormalVerificationReport verification =
                             formalVerificationService.requireSafeConditionForApply(conditionExpr);
@@ -230,9 +236,20 @@ final class AgentAutomationTools {
                     ok.put("path", path);
                     ok.put("alert", alertPreview(updated));
                     ok.put("verification", verification);
+                    if (!requestedCondition.equals(conditionExpr)) {
+                        ok.put("requestedConditionExpr", requestedCondition);
+                        ok.put("resolvedConditionExpr", conditionExpr);
+                    }
                     return ok;
                 } catch (Exception ex) {
-                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                    Map<String, Object> err = new LinkedHashMap<>();
+                    err.put("status", "ERROR");
+                    err.put("error", ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName());
+                    String hint = alertConditionHint(watchVariable, ex.getMessage());
+                    if (hint != null) {
+                        err.put("hint", hint);
+                    }
+                    return err;
                 }
             }
         };
@@ -268,21 +285,24 @@ final class AgentAutomationTools {
                     if (path.isBlank() && name.isBlank()) {
                         return Map.of("status", "ERROR", "error", "path or name is required");
                     }
+                    automationTreeService.ensurePlatformFolders();
                     if (path.isBlank()) {
-                        automationTreeService.ensurePlatformFolders();
                         path = AutomationTreeService.correlatorPathForName(name);
-                        if (objectTreePort.tree().findByPath(path).isEmpty()) {
-                            objectAccessService.requireWrite(AutomationTreeService.CORRELATORS_ROOT, auth);
-                            objectTreePort.create(
-                                    AutomationTreeService.CORRELATORS_ROOT,
-                                    AutomationTreeService.slugify(name),
-                                    ObjectType.CORRELATOR,
-                                    name,
-                                    "",
-                                    null
-                            );
-                            automationTreeService.ensureCorrelatorStructure(path);
-                        }
+                    }
+                    if (objectTreePort.tree().findByPath(path).isEmpty()
+                            && path.startsWith(AutomationTreeService.CORRELATORS_ROOT + ".")) {
+                        objectAccessService.requireWrite(AutomationTreeService.CORRELATORS_ROOT, auth);
+                        String nodeName = path.substring(AutomationTreeService.CORRELATORS_ROOT.length() + 1);
+                        String display = !name.isBlank() ? name : nodeName;
+                        objectTreePort.create(
+                                AutomationTreeService.CORRELATORS_ROOT,
+                                nodeName,
+                                ObjectType.CORRELATOR,
+                                display,
+                                "",
+                                null
+                        );
+                        automationTreeService.ensureCorrelatorStructure(path);
                     }
                     if (!tenantScopeService.isPathVisible(path, auth)) {
                         return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
@@ -729,6 +749,32 @@ final class AgentAutomationTools {
                     PlatformObject bindingHost = objectTreePort.require(path);
                     Map<String, Object> resolvedArgs = coerceEventBindingArgs(arguments, bindingHost);
                     targetRef = stringArg(resolvedArgs, "targetRef");
+                    targetVariable = stringArg(resolvedArgs, "targetVariable");
+                    String createdTargetVariable = "";
+                    if (com.ispf.core.binding.BindingTargetKind.VARIABLE.equals(targetKind)
+                            && !targetVariable.isBlank()
+                            && targetRef.isBlank()
+                            && bindingHost.getVariable(targetVariable).isEmpty()) {
+                        // Course agents invent sum targets before create_variable — create DOUBLE sink.
+                        objectTreePort.createVariable(
+                                path,
+                                targetVariable,
+                                DataSchema.builder(targetVariable).field("value", FieldType.DOUBLE).build(),
+                                true,
+                                false,
+                                null,
+                                false,
+                                null
+                        );
+                        createdTargetVariable = targetVariable;
+                        bindingHost = objectTreePort.require(path);
+                    }
+                    String requestedExpression = expression;
+                    expression = AgentExpressionCoercion.coerceBindingExpression(expression, bindingHost);
+                    if (!expression.equals(requestedExpression)) {
+                        resolvedArgs = new LinkedHashMap<>(resolvedArgs);
+                        resolvedArgs.put("expression", expression);
+                    }
                     // Historian helpers (avg/min/max/…) are not plain CEL — skip reactive CEL compile.
                     if (ruleKind != BindingRuleKind.HISTORIAN) {
                         BindingExpressionValidator.validateOrThrow(expression);
@@ -772,6 +818,13 @@ final class AgentAutomationTools {
                     if (conditionVerification != null) {
                         ok.put("conditionVerification", conditionVerification);
                     }
+                    if (!createdTargetVariable.isBlank()) {
+                        ok.put("createdTargetVariable", createdTargetVariable);
+                    }
+                    if (!expression.equals(requestedExpression)) {
+                        ok.put("requestedExpression", requestedExpression);
+                        ok.put("resolvedExpression", expression);
+                    }
                     return ok;
                 } catch (Exception ex) {
                     String message = ex.getMessage() == null ? "" : ex.getMessage();
@@ -785,6 +838,20 @@ final class AgentAutomationTools {
                                 "Event targets need slash refs: targetRef=@/evt/event1 (or eventName=event1). "
                                         + "virtual-unified events are event1/event2 — not Event1 or /evt/Event 1."
                         );
+                    } else if (message.toLowerCase(Locale.ROOT).contains("unknown target variable")) {
+                        err.put(
+                                "hint",
+                                "Create the target first: create_variable path=" + path
+                                        + " name=<targetVariable> valueType=DOUBLE writable=false, "
+                                        + "then retry create_binding_rule."
+                        );
+                    } else if (message.toLowerCase(Locale.ROOT).contains("invalid expression")
+                            || message.toLowerCase(Locale.ROOT).contains("undeclared reference")) {
+                        try {
+                            err.put("hint", AgentExpressionCoercion.tableSumHint(objectTreePort.require(path)));
+                        } catch (Exception ignored) {
+                            err.put("hint", AgentExpressionCoercion.tableSumHint(null));
+                        }
                     }
                     return err;
                 }
@@ -1061,6 +1128,26 @@ final class AgentAutomationTools {
         };
     }
 
+    private static String alertConditionHint(String watchVariable, String error) {
+        if (error == null) {
+            return null;
+        }
+        String lower = error.toLowerCase(Locale.ROOT);
+        if (!lower.contains("formal verification")
+                && !lower.contains("tautology")
+                && !lower.contains("unsatisfiable")) {
+            return null;
+        }
+        String watch = watchVariable != null && watchVariable.matches("[A-Za-z_][A-Za-z0-9_]*")
+                ? watchVariable
+                : "sineWave";
+        String example = AgentExpressionCoercion.discriminatingConditionForWatch(watch);
+        return "conditionExpr must discriminate on state — never true / 1==1 / true||…. "
+                + "Retry configure_alert with conditionExpr=" + example
+                + " (watchVariable=" + watch + "). "
+                + "Boolean watches: self.<name>[\"value\"] == true; numeric: self.<name>[\"value\"] > 0.";
+    }
+
     private static Map<String, Object> alertPreview(AlertRule rule) {
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("path", rule.id());
@@ -1093,7 +1180,8 @@ final class AgentAutomationTools {
                         "targetObjectPath", "watchVariable", "conditionExpr", "eventName",
                         "payloadVariable", "enabled", "edgeTrigger", "delaySeconds", "sustainWhileTrue"
                 ),
-                "conditionExample", "self.temperature[\"value\"] > 85",
+                "conditionExample", "self.sineWave[\"value\"] > 0",
+                "conditionForbidden", "true | 1==1 | true||… (tautology — formal verify rejects)",
                 "firePath", "ALERT rule node (rule path), not targetObjectPath",
                 "alarmBarHint", "objectPathPrefix=root.platform.alert-rules, eventNames=[eventName]",
                 "tool", "configure_alert"

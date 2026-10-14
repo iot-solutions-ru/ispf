@@ -25,6 +25,12 @@ final class AgentToolArgCoercion {
         if ("configure_report".equals(normalized)) {
             return coerceConfigureReport(args);
         }
+        if ("configure_alert".equals(normalized)) {
+            return coerceConfigureAlert(args);
+        }
+        if ("configure_correlator".equals(normalized)) {
+            return coerceConfigureCorrelator(args);
+        }
         return args;
     }
 
@@ -51,6 +57,64 @@ final class AgentToolArgCoercion {
             copy.putIfAbsent("reportId", reportId);
         }
         return copy;
+    }
+
+    private static Map<String, Object> coerceConfigureAlert(Map<String, Object> args) {
+        Map<String, Object> copy = new LinkedHashMap<>(args);
+        String path = stringValue(copy.get("path"));
+        if (!path.isBlank()) {
+            return copy;
+        }
+        String alertId = stringValue(copy.get("alertId"));
+        if (alertId.isBlank()) {
+            alertId = stringValue(copy.get("name"));
+        }
+        if (alertId.isBlank()) {
+            alertId = stringValue(copy.get("id"));
+        }
+        if (alertId.isBlank()) {
+            return copy;
+        }
+        if (alertId.startsWith("root.")) {
+            copy.put("path", alertId);
+        } else {
+            // Keep name for create-on-configure; path helps schema/grounding tooling.
+            copy.putIfAbsent("name", alertId);
+            copy.put("path", "root.platform.alert-rules." + slugifyAlert(alertId));
+        }
+        return copy;
+    }
+
+    private static Map<String, Object> coerceConfigureCorrelator(Map<String, Object> args) {
+        Map<String, Object> copy = new LinkedHashMap<>(args);
+        String path = stringValue(copy.get("path"));
+        if (!path.isBlank()) {
+            return copy;
+        }
+        String correlatorId = stringValue(copy.get("correlatorId"));
+        if (correlatorId.isBlank()) {
+            correlatorId = stringValue(copy.get("name"));
+        }
+        if (correlatorId.isBlank()) {
+            correlatorId = stringValue(copy.get("id"));
+        }
+        if (correlatorId.isBlank()) {
+            return copy;
+        }
+        if (correlatorId.startsWith("root.")) {
+            copy.put("path", correlatorId);
+        } else {
+            copy.putIfAbsent("name", correlatorId);
+            copy.put("path", "root.platform.correlators." + slugifyAlert(correlatorId));
+        }
+        return copy;
+    }
+
+    private static String slugifyAlert(String value) {
+        String slug = value == null ? "" : value.trim().toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
+        return slug.isBlank() ? "alert" : slug;
     }
 
     private static Map<String, Object> coerceEnableAgentToolPack(Map<String, Object> args) {

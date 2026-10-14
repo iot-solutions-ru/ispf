@@ -80,6 +80,8 @@ public final class AcceptanceVerdict {
         add(checks, alert(steps, userMessage));
         add(checks, mimic(steps, userMessage));
         add(checks, dashboard(steps));
+        add(checks, dashboardRegression(steps));
+        add(checks, dashboardBindings(steps));
         add(checks, bundleTests(steps, assignmentType));
         add(checks, logicHost(steps, assignmentType));
         return new Result(aggregate(checks), List.copyOf(checks));
@@ -259,6 +261,63 @@ public final class AcceptanceVerdict {
         return dashboardObservedEmpty(steps)
                 ? failed("dashboard.widgets", summary, hint)
                 : partial("dashboard.widgets", summary, hint);
+    }
+
+    /**
+     * Fail finish when a dashboard path was built with several widgets and later shrunk to crumbs
+     * (classic course failure: set_dashboard_layout wc=9 then wc=1 on the same path).
+     */
+    private static Check dashboardRegression(List<Map<String, Object>> steps) {
+        if (!dashboardRequired(steps)) {
+            return null;
+        }
+        Map<String, int[]> peaks = AgentToolResultMetrics.dashboardWidgetCountPeaks(steps);
+        List<String> regressions = new ArrayList<>();
+        for (Map.Entry<String, int[]> entry : peaks.entrySet()) {
+            int max = entry.getValue()[0];
+            int last = entry.getValue()[1];
+            if (max >= 3 && last < max && last <= max / 2) {
+                regressions.add(entry.getKey() + " max=" + max + " last=" + last);
+            }
+        }
+        if (regressions.isEmpty()) {
+            return passed("dashboard.layout.regression", "No destructive dashboard layout shrink observed.");
+        }
+        return failed(
+                "dashboard.layout.regression",
+                "Cannot finish: dashboard layout was shrunk after a fuller build: "
+                        + String.join("; ", regressions),
+                "Restore the full widgets[] with one set_dashboard_layout (do not leave a 1-widget overwrite). "
+                        + "Destructive shrink is blocked unless force=true."
+        );
+    }
+
+    /**
+     * Require bindable widgets (value/chart/mimic/…) to carry objectPath/variableName/mimicPath.
+     */
+    private static Check dashboardBindings(List<Map<String, Object>> steps) {
+        if (!dashboardRequired(steps)) {
+            return null;
+        }
+        int[] counts = AgentToolResultMetrics.dashboardBindingCounts(steps);
+        int bindable = counts[0];
+        int bound = counts[1];
+        if (bindable == 0) {
+            // No layoutJson retained and no boundWidgetCount — do not block legacy step traces.
+            return null;
+        }
+        if (bound >= Math.max(1, (bindable + 1) / 2)) {
+            return passed(
+                    "dashboard.bindings",
+                    "Dashboard widgets have bindings (" + bound + "/" + bindable + " bindable)."
+            );
+        }
+        return failed(
+                "dashboard.bindings",
+                "Cannot finish: too few bound dashboard widgets (" + bound + "/" + bindable + ").",
+                "Each value/chart/gauge needs objectPath+variableName; scada-mimic needs mimicPath; "
+                        + "event-feed/object-table/function need objectPath. Re-apply set_dashboard_layout."
+        );
     }
 
     private static Check bundleTests(List<Map<String, Object>> steps, String assignmentType) {
