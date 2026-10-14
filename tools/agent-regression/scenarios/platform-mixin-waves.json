@@ -1,0 +1,28 @@
+{
+  "id": "platform-mixin-waves",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "capability:mixin"
+  ],
+  "title": "Apply waves-sum mixin",
+  "description": "Platform demo matrix: Apply waves-sum mixin",
+  "prompt": "Ensure demo-device-1 and demo-device-2 exist as virtual-unified devices. Apply the virtual-lab-waves-sum-v1 mixin so each has sumWaves from sineWave and sawtoothWave.",
+  "acceptance": {
+    "requiredTools": [
+      "create_virtual_device",
+      "list_mixin_blueprints",
+      "apply_mixin_blueprint"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.devices.demo-device-1",
+      "root.platform.devices.demo-device-2"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "ai-studio"
+    ]
+  }
+}

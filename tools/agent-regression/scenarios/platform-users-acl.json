@@ -1,0 +1,30 @@
+{
+  "id": "platform-users-acl",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "object:user",
+    "capability:acl"
+  ],
+  "title": "Demo users and object ACL",
+  "description": "Platform demo matrix: Demo users and object ACL",
+  "prompt": "Create two operator users demo-user1 and demo-user2. Give demo-user1 EDITOR access on root.platform.devices.demo-device-1 (create the device first if missing).",
+  "acceptance": {
+    "requiredTools": [
+      "create_object",
+      "set_object_acl",
+      "create_virtual_device"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.security.users.demo-user1",
+      "root.platform.security.users.demo-user2",
+      "root.platform.devices.demo-device-1"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "ai-studio"
+    ]
+  }
+}

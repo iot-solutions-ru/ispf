@@ -56,8 +56,13 @@ function validateScenarioShape(scenario, file) {
       errors.push(`missing ${key}`);
     }
   }
-  if (scenario.domain && !["scada", "mes", "hvac"].includes(scenario.domain)) {
+  if (scenario.domain && !["scada", "mes", "hvac", "platform"].includes(scenario.domain)) {
     errors.push(`invalid domain ${scenario.domain}`);
+  }
+  if (scenario.tags != null) {
+    if (!Array.isArray(scenario.tags) || scenario.tags.some((t) => !t || String(t).trim().length < 1)) {
+      errors.push("tags must be a non-empty-string array when present");
+    }
   }
   if (scenario.lane && !["human", "agent", "both"].includes(scenario.lane)) {
     errors.push(`invalid lane ${scenario.lane}`);
@@ -170,7 +175,7 @@ function printPassRateReport(summary) {
   console.log(`schema pass: ${summary.schemaPassed}/${summary.total} (${pct(schemaRate)})`);
   console.log(`bundle manifests checked: ${summary.bundleChecks}`);
   console.log("by domain:");
-  for (const domain of ["scada", "mes", "hvac"]) {
+  for (const domain of ["scada", "mes", "hvac", "platform"]) {
     const bucket = summary.byDomain[domain] ?? { pass: 0, fail: 0 };
     const total = bucket.pass + bucket.fail;
     const rate = total > 0 ? bucket.pass / total : 0;

@@ -1,0 +1,30 @@
+{
+  "id": "platform-dashboard-bound",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "object:dashboard"
+  ],
+  "title": "Bound overview dashboard",
+  "description": "Platform demo matrix: Bound overview dashboard",
+  "prompt": "Create dashboard demo-overview under dashboards with a presentable layout columns=84 rowHeight=8. Bind at least value widgets for sineWave and deviceActive on demo-device-1 plus a chart. Create the device if needed. Do not leave unbound placeholders.",
+  "acceptance": {
+    "requiredTools": [
+      "create_object",
+      "create_virtual_device",
+      "set_dashboard_layout",
+      "list_variables"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.dashboards.demo-overview",
+      "root.platform.devices.demo-device-1"
+    ],
+    "operatorSurfaces": [
+      "dashboard",
+      "explorer",
+      "ai-studio"
+    ]
+  }
+}

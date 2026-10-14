@@ -1,0 +1,27 @@
+{
+  "id": "platform-schedule",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "object:schedule"
+  ],
+  "title": "Platform schedule tick",
+  "description": "Platform demo matrix: Platform schedule tick",
+  "prompt": "Create or update a platform schedule demo-tick that periodically invokes a harmless function on demo-calculator hub or demo-device-1. Create prerequisites if missing.",
+  "acceptance": {
+    "requiredTools": [
+      "configure_platform_schedule",
+      "create_object"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.schedules.demo-tick"
+    ],
+    "operatorSurfaces": [
+      "schedules",
+      "explorer",
+      "ai-studio"
+    ]
+  }
+}

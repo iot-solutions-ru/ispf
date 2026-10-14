@@ -1,0 +1,26 @@
+{
+  "id": "platform-report-tree-vars",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "object:report"
+  ],
+  "title": "Tree-variables report",
+  "description": "Platform demo matrix: Tree-variables report",
+  "prompt": "Create report demo-table under reports using tree-variables style for devices matching demo-device-* and variable telemetryTable or similar table variable. Create demo devices if needed.",
+  "acceptance": {
+    "requiredTools": [
+      "configure_report",
+      "create_virtual_device"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.reports.demo-table"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "ai-studio"
+    ]
+  }
+}
