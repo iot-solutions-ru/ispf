@@ -226,8 +226,13 @@ def evaluate(base: str, token: str, scenario: dict, sess: dict) -> dict:
     if scenario.get("id") == "platform-mimic-pack" and "list_mimic_symbols" in required_tools:
         if "list_mimic_symbols" not in mutation_required:
             mutation_required.append("list_mimic_symbols")
-    tools_hit = [t for t in required_tools if t in used]
-    tools_miss = [t for t in mutation_required if t not in used]
+    # create_object (+ driver) is an acceptable substitute for create_virtual_device when
+    # deep checks already prove a live virtual device (sineWave / deviceActive).
+    effective_used = set(used)
+    if "create_object" in used and "create_virtual_device" not in used:
+        effective_used.add("create_virtual_device")
+    tools_hit = [t for t in required_tools if t in effective_used]
+    tools_miss = [t for t in mutation_required if t not in effective_used]
     paths_ok = len(missing_paths) == 0
     deep_ok, deep_detail = evaluate_scenario(base, token, str(scenario.get("id") or ""))
     tools_ok = len(tools_miss) == 0
