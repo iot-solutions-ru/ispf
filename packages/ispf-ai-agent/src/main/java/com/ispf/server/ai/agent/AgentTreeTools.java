@@ -39,6 +39,1188 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * Tree, dashboard, driver, and bundle tools that stayed inline on the registry.
+ */
+final class AgentTreeTools {
+
+    private AgentTreeTools() {
+    }
+
+    static List<PlatformAgentTool> all(
+            ObjectTreePort objectTreePort,
+            ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
+            TenantScopeService tenantScopeService,
+            ObjectUiIconService objectUiIconService,
+            ObjectMapper objectMapper,
+            DriverRuntimeService driverRuntimeService,
+            ObjectTemplateService objectTemplateService,
+            DashboardService dashboardService,
+            ReportService reportService,
+            WorkflowService workflowService,
+            AutomationTreeService automationTreeService,
+            DeviceProvisioningService deviceProvisioningService,
+            FederationBindService federationBindService,
+            PlatformUserService platformUserService,
+            PlatformRoleService platformRoleService,
+            AiToolRegistry aiToolRegistry,
+            ApplicationBundleDeployService bundleDeployService
+    ) {
+        return List.of(
+                listObjectsTool(objectTreePort, objectAccessService, tenantScopeService, objectUiIconService),
+                getObjectTool(objectTreePort, objectAccessService, tenantScopeService, objectUiIconService),
+                listVariablesTool(
+                        objectTreePort,
+                        objectAccessService,
+                        variableMemberAccessService,
+                        tenantScopeService
+                ),
+                setVariableTool(objectTreePort, variableMemberAccessService, objectMapper),
+                configureDriverTool(objectTreePort, objectAccessService, driverRuntimeService, objectMapper),
+                driverControlTool(objectAccessService, driverRuntimeService),
+                createObjectTool(
+                        objectTreePort,
+                        objectAccessService,
+                        objectTemplateService,
+                        dashboardService,
+                        reportService,
+                        workflowService,
+                        automationTreeService,
+                        deviceProvisioningService,
+                        federationBindService,
+                        objectUiIconService,
+                        platformUserService
+                ),
+                deleteObjectTool(
+                        objectTreePort,
+                        objectAccessService,
+                        tenantScopeService,
+                        driverRuntimeService,
+                        platformUserService,
+                        platformRoleService,
+                        automationTreeService
+                ),
+                listObjectAclTool(objectAccessService, tenantScopeService),
+                setObjectAclTool(objectAccessService, tenantScopeService),
+                getDashboardLayoutTool(dashboardService, objectAccessService, tenantScopeService, objectMapper),
+                setDashboardLayoutTool(dashboardService, objectAccessService, tenantScopeService, objectMapper),
+                addDashboardWidgetTool(dashboardService, objectAccessService, tenantScopeService, objectMapper),
+                validateBundleTool(objectMapper, aiToolRegistry),
+                dryRunDeployTool(objectMapper, aiToolRegistry),
+                importPackageTool(objectMapper, aiToolRegistry, bundleDeployService)
+        );
+    }
+
+    private static PlatformAgentTool listObjectsTool(
+            ObjectTreePort objectTreePort,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService,
+            ObjectUiIconService objectUiIconService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "list_objects";
+            }
+
+            @Override
+            public String description() {
+                return "List child objects under a parent path. Args: parent or parentPath (default root), lite (bool, default true).";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String parent = stringArg(arguments, "parent");
+                if (parent.isBlank()) {
+                    parent = stringArg(arguments, "parentPath");
+                }
+                if (parent.isBlank()) {
+                    parent = "root";
+                }
+                boolean lite = boolArg(arguments, "lite", true);
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(parent, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + parent);
+                }
+                objectAccessService.requireRead(parent, auth);
+                Function<PlatformObject, ObjectDto> mapper = lite
+                        ? node -> ObjectDto.fromLite(node, objectUiIconService.readIconId(node).orElse(null))
+                        : node -> ObjectDto.from(node, objectUiIconService.readIconId(node).orElse(null));
+                List<ObjectDto> children = objectTreePort.tree().childrenOf(parent).stream()
+                        .filter(node -> tenantScopeService.isPathVisible(node.path(), auth))
+                        .filter(node -> objectAccessService.canRead(node.path(), auth))
+                        .map(mapper)
+                        .toList();
+                return Map.of("status", "OK", "parent", parent, "count", children.size(), "objects", children);
+            }
+        };
+    }
+
+    private static PlatformAgentTool getObjectTool(
+            ObjectTreePort objectTreePort,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService,
+            ObjectUiIconService objectUiIconService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "get_object";
+            }
+
+            @Override
+            public String description() {
+                return "Get one object by path. Args: path (required).";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                if (path.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path is required");
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireRead(path, auth);
+                PlatformObject node = objectTreePort.require(path);
+                ObjectDto dto = ObjectDto.from(node, objectUiIconService.readIconId(node).orElse(null));
+                return Map.of("status", "OK", "object", dto);
+            }
+        };
+    }
+
+    private static PlatformAgentTool createObjectTool(
+            ObjectTreePort objectTreePort,
+            ObjectAccessService objectAccessService,
+            ObjectTemplateService objectTemplateService,
+            DashboardService dashboardService,
+            ReportService reportService,
+            WorkflowService workflowService,
+            AutomationTreeService automationTreeService,
+            DeviceProvisioningService deviceProvisioningService,
+            FederationBindService federationBindService,
+            ObjectUiIconService objectUiIconService,
+            PlatformUserService platformUserService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "create_object";
+            }
+
+            @Override
+            public String description() {
+                return "Create object tree node. Args: parentPath, name, type (DEVICE|DASHBOARD|USER|CUSTOM|...), "
+                        + "displayName, description?, templateId?, driverId?, driverPollIntervalMs?, autoStartDriver?. "
+                        + "For USER: also password? (default ChangeMe!123), roles? (list or comma string, default operator). "
+                        + "Role ids are lowercase: operator, developer, admin, tenant-admin (not OPERATOR). "
+                        + "USER goes through PlatformUserService (creates login + roles variable) — do NOT apply_mixin platform-user-v1.";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String parentPath = stringArg(arguments, "parentPath");
+                String name = stringArg(arguments, "name");
+                String typeRaw = stringArg(arguments, "type");
+                String displayName = stringArg(arguments, "displayName");
+                if (parentPath.isBlank() || name.isBlank() || typeRaw.isBlank() || displayName.isBlank()) {
+                    return Map.of(
+                            "status", "ERROR",
+                            "error", "parentPath, name, type, displayName are required"
+                    );
+                }
+                String typeKey = typeRaw.trim().toUpperCase(Locale.ROOT);
+                // Legacy/LLM: QUERY is not an ObjectType — object queries are CUSTOM under the catalog.
+                if ("QUERY".equals(typeKey) || ("QUERIES".equals(typeKey) && isQueriesCatalogChild(parentPath))) {
+                    typeKey = "CUSTOM";
+                }
+                ObjectType type = ObjectType.valueOf(typeKey);
+                var auth = context.authentication();
+                if (type == ObjectType.USER) {
+                    return createPlatformUser(platformUserService, arguments, context, name, displayName);
+                }
+                if (objectTreePort.tree().findByPath(parentPath).isEmpty()) {
+                    return Map.of(
+                            "status", "ERROR",
+                            "error", "Parent not found: " + parentPath,
+                            "hint", "Call list_objects on an existing parent folder and use paths from the tool result — "
+                                    + "do not invent parentPath from playbooks or recipes."
+                    );
+                }
+                objectAccessService.requireWrite(parentPath, auth);
+                federationBindService.assertParentAllowsChildren(parentPath);
+                String fullPath = objectTreePort.tree().resolveChildPath(parentPath, name);
+                if (objectTreePort.tree().findByPath(fullPath).isPresent()) {
+                    return AgentObjectReuse.alreadyExistsOk(fullPath, typeRaw);
+                }
+                String templateId = optionalString(arguments, "templateId");
+                String description = optionalString(arguments, "description");
+                PlatformObject node = objectTreePort.create(
+                        parentPath,
+                        name,
+                        type,
+                        displayName,
+                        description,
+                        templateId
+                );
+                objectTemplateService.applyTemplate(node.path(), templateId);
+                if (type == ObjectType.DASHBOARD) {
+                    dashboardService.ensureDashboardStructure(node.path());
+                }
+                if (type == ObjectType.REPORT) {
+                    reportService.ensureReportStructure(node.path());
+                }
+                if (type == ObjectType.WORKFLOW) {
+                    workflowService.ensureWorkflowStructure(node.path());
+                }
+                if (type == ObjectType.ALERT) {
+                    automationTreeService.ensureAlertRuleStructure(node.path());
+                }
+                if (type == ObjectType.CORRELATOR) {
+                    automationTreeService.ensureCorrelatorStructure(node.path());
+                }
+                String driverId = optionalString(arguments, "driverId");
+                if (type == ObjectType.DEVICE && driverId != null && !driverId.isBlank()) {
+                    deviceProvisioningService.provisionDriver(
+                            node.path(),
+                            driverId,
+                            intArg(arguments, "driverPollIntervalMs", 5000),
+                            boolArg(arguments, "autoStartDriver", true)
+                    );
+                    objectTreePort.persistNodeTree(node.path());
+                }
+                PlatformObject saved = objectTreePort.require(node.path());
+                ObjectDto created = ObjectDto.from(saved, objectUiIconService.readIconId(saved).orElse(null));
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("status", "OK");
+                response.put("path", node.path());
+                response.put("object", created);
+                if (type == ObjectType.DEVICE && "virtual".equals(driverId)) {
+                    String tpl = templateId != null ? templateId : "";
+                    if (tpl.isBlank() || tpl.contains("device-v1")) {
+                        response.put(
+                                "warning",
+                                "Virtual DEVICE needs templateId virtual-lab-v1 or virtual-unified-v1, "
+                                        + "or use create_virtual_device. Without model template there are no telemetry variables."
+                        );
+                    }
+                }
+                return response;
+            }
+        };
+    }
+
+    private static PlatformAgentTool deleteObjectTool(
+            ObjectTreePort objectTreePort,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService,
+            DriverRuntimeService driverRuntimeService,
+            PlatformUserService platformUserService,
+            PlatformRoleService platformRoleService,
+            AutomationTreeService automationTreeService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "delete_object";
+            }
+
+            @Override
+            public String description() {
+                return "Delete object tree node by path (and descendants). Args: path (required). "
+                        + "Stops device driver if running. Cannot delete root.";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                if (path.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path is required");
+                }
+                if ("root".equals(path)) {
+                    return Map.of("status", "ERROR", "error", "Cannot delete root object");
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireWrite(path, auth);
+                try {
+                    if (objectTreePort.tree().findByPath(path).isEmpty()) {
+                        return Map.of("status", "ERROR", "error", "Object not found: " + path);
+                    }
+                    if (platformUserService.isSecurityUserPath(path)) {
+                        platformUserService.deleteUser(platformUserService.usernameFromPath(path));
+                        return Map.of("status", "OK", "path", path, "deleted", true);
+                    }
+                    if (platformRoleService.isSecurityRolePath(path)) {
+                        platformRoleService.deleteRole(platformRoleService.roleNameFromPath(path));
+                        return Map.of("status", "OK", "path", path, "deleted", true);
+                    }
+                    if (objectTreePort.tree().findByPath(path)
+                            .filter(node -> node.type() == ObjectType.CORRELATOR)
+                            .isPresent()) {
+                        automationTreeService.deleteCorrelator(path);
+                        return Map.of("status", "OK", "path", path, "deleted", true);
+                    }
+                    objectTreePort.tree().findByPath(path)
+                            .filter(node -> node.type() == ObjectType.DEVICE)
+                            .ifPresent(node -> driverRuntimeService.stopIfRunning(path));
+                    objectTreePort.delete(path);
+                    return Map.of("status", "OK", "path", path, "deleted", true);
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static PlatformAgentTool getDashboardLayoutTool(
+            DashboardService dashboardService,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService,
+            ObjectMapper objectMapper
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "get_dashboard_layout";
+            }
+
+            @Override
+            public String description() {
+                return "Read dashboard layout JSON. Args: path (dashboard object path) OR template "
+                        + "(snmp-host-monitoring | virtual-cluster-overview | virtual-cluster-detail | empty). "
+                        + "Call before editing. Returns layoutJson for set_dashboard_layout. "
+                        + "Prefer template= over hand-building full layout.";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                String template = optionalString(arguments, "template");
+                try {
+                    String layoutJson;
+                    String source;
+                    if (template != null) {
+                        layoutJson = dashboardService.resolveTemplateLayout(template);
+                        source = "template:" + template;
+                    } else if (!path.isBlank()) {
+                        var auth = context.authentication();
+                        if (!tenantScopeService.isPathVisible(path, auth)) {
+                            return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                        }
+                        objectAccessService.requireRead(path, auth);
+                        DashboardService.DashboardView view = dashboardService.getDashboard(path);
+                        layoutJson = view.layoutJson();
+                        source = "path:" + path;
+                    } else {
+                        return Map.of("status", "ERROR", "error", "path or template is required");
+                    }
+                    return Map.of(
+                            "status", "OK",
+                            "source", source,
+                            "layoutJson", layoutJson,
+                            "widgetCount", widgetCount(objectMapper, layoutJson),
+                            "templates", DashboardService.layoutTemplateNames(),
+                            "hint", "Widgets live in layout JSON only. Presentable grid: columns=84 rowHeight=8; "
+                                    + "KPI w=21|28 h=14; charts/tables ≥42×28. "
+                                    + "get_widget_catalog for types; set_dashboard_layout or add_dashboard_widget to edit."
+                    );
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static PlatformAgentTool setDashboardLayoutTool(
+            DashboardService dashboardService,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService,
+            ObjectMapper objectMapper
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "set_dashboard_layout";
+            }
+
+            @Override
+            public String description() {
+                return "Replace dashboard layout variable. Args: path (required), layoutJson (full JSON string) "
+                        + "OR template (snmp-host-monitoring | virtual-cluster-overview | "
+                        + "virtual-cluster-detail | empty). Prefer template= for standard screens. "
+                        + "Custom layoutJson MUST be columns=84,rowHeight=8; KPI tiles w=21|28 h=14 in a filled row; "
+                        + "charts/tables w≥42 h≥28; sizes multiples of 7 — never legacy crumbs w=2..6. "
+                        + "Refuses destructive shrink (new widgetCount ≤ half of existing when existing≥3) "
+                        + "unless force=true. Requires DASHBOARD object at path. Never use set_variable for layout.";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                if (path.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path is required");
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireWrite(path, auth);
+                try {
+                    int previousWidgetCount = 0;
+                    try {
+                        previousWidgetCount = widgetCount(
+                                objectMapper,
+                                dashboardService.getDashboard(path).layoutJson()
+                        );
+                    } catch (Exception ignored) {
+                        // new / unreadable dashboard — treat as empty previous layout
+                    }
+                    String template = optionalString(arguments, "template");
+                    String layoutJson = null;
+                    if (template == null) {
+                        layoutJson = optionalString(arguments, "layoutJson");
+                        if (layoutJson == null) {
+                            layoutJson = optionalString(arguments, "layout");
+                        }
+                        if (layoutJson == null) {
+                            Object layoutObject = arguments.get("layout");
+                            if (layoutObject == null) {
+                                layoutObject = arguments.get("layoutJson");
+                            }
+                            if (layoutObject != null && !(layoutObject instanceof String)) {
+                                layoutJson = DashboardWidgetNormalizer.resolveLayoutJson(layoutObject, objectMapper);
+                            }
+                        }
+                        if (layoutJson == null || layoutJson.isBlank()) {
+                            return Map.of(
+                                    "status", "ERROR",
+                                    "error",
+                                    "layoutJson or template is required"
+                            );
+                        }
+                    }
+                    int incomingWidgetCount = template != null
+                            ? widgetCount(objectMapper, dashboardService.resolveTemplateLayout(template))
+                            : widgetCount(objectMapper, layoutJson);
+                    boolean force = boolArg(arguments, "force", false) || boolArg(arguments, "replace", false);
+                    if (!force
+                            && previousWidgetCount >= 3
+                            && incomingWidgetCount < previousWidgetCount
+                            && incomingWidgetCount <= previousWidgetCount / 2) {
+                        Map<String, Object> blocked = new LinkedHashMap<>();
+                        blocked.put("status", "ERROR");
+                        blocked.put("error", "Refusing destructive layout shrink: path=" + path
+                                + " previousWidgetCount=" + previousWidgetCount
+                                + " incomingWidgetCount=" + incomingWidgetCount);
+                        blocked.put("path", path);
+                        blocked.put("previousWidgetCount", previousWidgetCount);
+                        blocked.put("incomingWidgetCount", incomingWidgetCount);
+                        blocked.put(
+                                "hint",
+                                "Keep the full widgets[] (or grow it). Do not replace a multi-widget dashboard "
+                                        + "with a 1-widget layout. Pass force=true only for intentional wipe."
+                        );
+                        return blocked;
+                    }
+                    DashboardService.DashboardView view = template != null
+                            ? dashboardService.applyTemplateLayout(path, template)
+                            : dashboardService.saveLayout(path, layoutJson);
+                    int savedCount = widgetCount(objectMapper, view.layoutJson());
+                    int boundCount = AgentToolResultMetrics.boundWidgetCountFromLayoutJson(
+                            objectMapper,
+                            view.layoutJson()
+                    );
+                    Map<String, Object> ok = new LinkedHashMap<>();
+                    ok.put("status", "OK");
+                    ok.put("path", view.path());
+                    ok.put("title", view.title());
+                    ok.put("widgetCount", savedCount);
+                    ok.put("previousWidgetCount", previousWidgetCount);
+                    ok.put("boundWidgetCount", boundCount);
+                    return ok;
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static PlatformAgentTool addDashboardWidgetTool(
+            DashboardService dashboardService,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService,
+            ObjectMapper objectMapper
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "add_dashboard_widget";
+            }
+
+            @Override
+            public String description() {
+                return "Append or replace one widget in layout.widgets[] (by id). Args: path (required), "
+                        + "widget (id, type, title, x, y, w, h, variableName, valueField, objectPath OR selectionKey). "
+                        + "Fine grid columns=84 rowHeight=8: KPI tiles w=21|28 h=14; charts/tables w≥42 h≥28; "
+                        + "scada-mimic w=84 h=63; sizes multiples of 7 — never w=2..6 crumbs. "
+                        + "For 3+ widgets prefer one set_dashboard_layout layoutJson/template= over many calls. "
+                        + "list_variables on device first; columnsJson must be a JSON string.";
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                Object widgetRaw = arguments.get("widget");
+                if (path.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path is required");
+                }
+                if (!(widgetRaw instanceof Map<?, ?> widgetMap) || widgetMap.isEmpty()) {
+                    return Map.of("status", "ERROR", "error", "widget object is required");
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireWrite(path, auth);
+                try {
+                    DashboardService.DashboardView view = dashboardService.addWidget(
+                            path,
+                            (Map<String, Object>) widgetMap
+                    );
+                    return Map.of(
+                            "status", "OK",
+                            "path", view.path(),
+                            "widgetCount", widgetCount(objectMapper, view.layoutJson())
+                    );
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static int widgetCount(ObjectMapper objectMapper, String layoutJson) {
+        return AgentToolResultMetrics.widgetCountFromLayoutJson(objectMapper, layoutJson);
+    }
+
+    private static PlatformAgentTool listVariablesTool(
+            ObjectTreePort objectTreePort,
+            ObjectAccessService objectAccessService,
+            VariableMemberAccessService variableMemberAccessService,
+            TenantScopeService tenantScopeService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "list_variables";
+            }
+
+            @Override
+            public String description() {
+                return "List variables on an object with current values (preview). Args: path (required).";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                if (path.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path is required");
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireRead(path, auth);
+                PlatformObject node = objectTreePort.require(path);
+                List<Map<String, Object>> variables = variableMemberAccessService
+                        .filterReadable(path, node.variables().values(), auth)
+                        .stream()
+                        .map(AgentTreeTools::variablePreview)
+                        .toList();
+                return Map.of("status", "OK", "path", path, "count", variables.size(), "variables", variables);
+            }
+        };
+    }
+
+    private static Map<String, Object> variablePreview(Variable variable) {
+        Map<String, Object> preview = new LinkedHashMap<>();
+        preview.put("name", variable.name());
+        preview.put("writable", variable.writable());
+        variable.value().ifPresent(record -> {
+            if (!record.rows().isEmpty()) {
+                preview.put("value", record.firstRow());
+            }
+        });
+        return preview;
+    }
+
+    private static PlatformAgentTool setVariableTool(
+            ObjectTreePort objectTreePort,
+            VariableMemberAccessService variableMemberAccessService,
+            ObjectMapper objectMapper
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "set_variable";
+            }
+
+            @Override
+            public String description() {
+                return "Set variable value on object. Args: path, name, value (string or object map for DataRecord fields).";
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                String name = stringArg(arguments, "name");
+                if (path.isBlank() || name.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path and name are required");
+                }
+                var auth = context.authentication();
+                PlatformObject node = objectTreePort.require(path);
+                String resolvedName = AgentVariableNames.resolve(node, name);
+                Variable existing = node.getVariable(resolvedName).orElse(null);
+                if (existing == null) {
+                    return AgentVariableNames.unknownVariableError(node, name);
+                }
+                variableMemberAccessService.requireWrite(existing, path, auth);
+                if (!existing.writable()) {
+                    return Map.of("status", "ERROR", "error", "Variable is not writable: " + resolvedName);
+                }
+                Object rawValue = arguments.containsKey("value")
+                        ? arguments.get("value")
+                        : arguments.get("valueJson");
+                if (rawValue == null) {
+                    return Map.of("status", "ERROR", "error", "value or valueJson is required");
+                }
+                try {
+                    DataRecord record = toDataRecord(objectMapper, existing, rawValue);
+                    Variable updated = objectTreePort.setVariableValue(path, resolvedName, record);
+                    Map<String, Object> ok = new LinkedHashMap<>();
+                    ok.put("status", "OK");
+                    ok.put("path", path);
+                    ok.put("name", resolvedName);
+                    ok.put("variable", VariableDto.from(updated));
+                    if (!resolvedName.equals(name)) {
+                        ok.put("resolvedName", resolvedName);
+                        ok.put("requestedName", name);
+                    }
+                    return ok;
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    private static DataRecord toDataRecord(ObjectMapper objectMapper, Variable existing, Object rawValue)
+            throws Exception {
+        if (rawValue instanceof Map<?, ?> map) {
+            return DataRecord.single(existing.schema(), (Map<String, Object>) map);
+        }
+        if (rawValue instanceof String text) {
+            String trimmed = text.trim();
+            if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+                try {
+                    Map<String, Object> parsed = objectMapper.readValue(trimmed, Map.class);
+                    return DataRecord.single(existing.schema(), parsed);
+                } catch (Exception ignored) {
+                    // fall through to scalar wrap
+                }
+            }
+            return DataRecord.single(existing.schema(), Map.of("value", text));
+        }
+        return DataRecord.single(existing.schema(), Map.of("value", rawValue));
+    }
+
+    private static PlatformAgentTool configureDriverTool(
+            ObjectTreePort objectTreePort,
+            ObjectAccessService objectAccessService,
+            DriverRuntimeService driverRuntimeService,
+            ObjectMapper objectMapper
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "configure_driver";
+            }
+
+            @Override
+            public String description() {
+                return "Configure device driver binding. Args: devicePath, driverId (e.g. snmp), "
+                        + "configuration (map or JSON string), pointMappings (map or JSON string), "
+                        + "pollIntervalMs?, autoStart? (default true).";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String devicePath = stringArg(arguments, "devicePath");
+                if (devicePath.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "devicePath is required");
+                }
+                var auth = context.authentication();
+                objectAccessService.requireWrite(devicePath, auth);
+                try {
+                    objectTreePort.require(devicePath);
+                    Optional<DriverBinding> existingBinding = driverRuntimeService.readBinding(devicePath);
+                    Map<String, String> configuration = readStringMap(objectMapper, arguments.get("configuration"));
+                    Map<String, String> pointMappings = readStringMap(objectMapper, arguments.get("pointMappings"));
+                    if (configuration == null || configuration.isEmpty()) {
+                        configuration = existingBinding.map(DriverBinding::configuration).orElse(Map.of());
+                    }
+                    if (pointMappings == null || pointMappings.isEmpty()) {
+                        pointMappings = existingBinding.map(DriverBinding::pointMappings).orElse(Map.of());
+                    }
+                    String driverId = optionalString(arguments, "driverId");
+                    if (driverId == null || driverId.isBlank()) {
+                        driverId = existingBinding.map(DriverBinding::driverId)
+                                .orElse(DriverBinding.DEFAULT_DRIVER_ID);
+                    }
+                    int pollIntervalMs = intArg(arguments, "pollIntervalMs", 0);
+                    if (pollIntervalMs <= 0) {
+                        pollIntervalMs = existingBinding.map(DriverBinding::pollIntervalMs).orElse(5000);
+                    }
+                    DriverBinding binding = DriverBinding.of(
+                            driverId,
+                            pollIntervalMs,
+                            configuration,
+                            pointMappings
+                    );
+                    driverRuntimeService.configure(devicePath, binding);
+                    if (boolArg(arguments, "autoStart", true)) {
+                        var status = driverRuntimeService.start(devicePath);
+                        return driverStatusMap("OK", status);
+                    }
+                    return driverRuntimeService.status(devicePath)
+                            .map(status -> driverStatusMap("OK", status))
+                            .orElse(Map.of("status", "OK", "devicePath", devicePath));
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static PlatformAgentTool driverControlTool(
+            ObjectAccessService objectAccessService,
+            DriverRuntimeService driverRuntimeService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "driver_control";
+            }
+
+            @Override
+            public String description() {
+                return "Start/stop/poll/status device driver. Args: devicePath, action (status|start|stop|poll).";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String devicePath = stringArg(arguments, "devicePath");
+                String action = stringArg(arguments, "action");
+                if (devicePath.isBlank() || action.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "devicePath and action are required");
+                }
+                var auth = context.authentication();
+                objectAccessService.requireWrite(devicePath, auth);
+                try {
+                    return switch (action.toLowerCase(Locale.ROOT)) {
+                        case "start" -> driverStatusMap("OK", driverRuntimeService.start(devicePath));
+                        case "stop" -> driverStatusMap("OK", driverRuntimeService.stop(devicePath));
+                        case "poll" -> driverStatusMap("OK", driverRuntimeService.pollNow(devicePath));
+                        case "status" -> driverRuntimeService.status(devicePath)
+                                .map(status -> driverStatusMap("OK", status))
+                                .orElse(Map.of("status", "ERROR", "error", "No driver binding for " + devicePath));
+                        default -> Map.of("status", "ERROR", "error", "Unknown action: " + action);
+                    };
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static Map<String, Object> driverStatusMap(
+            String status,
+            DriverRuntimeService.DriverRuntimeStatus runtimeStatus
+    ) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", status);
+        result.put("devicePath", runtimeStatus.devicePath());
+        result.put("driverId", runtimeStatus.driverId());
+        result.put("driverStatus", runtimeStatus.status());
+        result.put("connected", runtimeStatus.connected());
+        result.put("pollIntervalMs", runtimeStatus.pollIntervalMs());
+        result.put("lastError", runtimeStatus.lastError());
+        result.put("telemetryPublishMode", runtimeStatus.telemetryPublishMode());
+        result.put("telemetryCoalesceMs", runtimeStatus.telemetryCoalesceMs());
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, String> readStringMap(ObjectMapper objectMapper, Object raw) throws Exception {
+        if (raw == null) {
+            return Map.of();
+        }
+        if (raw instanceof Map<?, ?> map) {
+            Map<String, String> out = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                out.put(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
+            }
+            return out;
+        }
+        if (raw instanceof String text && !text.isBlank()) {
+            Map<String, Object> parsed = objectMapper.readValue(text, Map.class);
+            Map<String, String> out = new LinkedHashMap<>();
+            for (Map.Entry<String, Object> entry : parsed.entrySet()) {
+                out.put(entry.getKey(), String.valueOf(entry.getValue()));
+            }
+            return out;
+        }
+        throw new IllegalArgumentException("Expected map or JSON string");
+    }
+
+    private static PlatformAgentTool validateBundleTool(ObjectMapper objectMapper, AiToolRegistry aiToolRegistry) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "validate_bundle";
+            }
+
+            @Override
+            public String description() {
+                return "Semantic validation of bundle manifest (no DB writes). Args: appId, manifest (object). "
+                        + "Authoring path: LOGIC_HOST_DEVICE stays WARNING. "
+                        + "Ship acceptance uses deploy_step_validate, which promotes that code to ERROR.";
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String appId = stringArg(arguments, "appId");
+                Object manifestRaw = arguments.get("manifest");
+                if (appId.isBlank() || !(manifestRaw instanceof Map<?, ?> manifestMap)) {
+                    return Map.of("status", "ERROR", "error", "appId and manifest object are required");
+                }
+                var parsed = BundleManifestJsonSupport.parse(objectMapper, (Map<String, Object>) manifestMap);
+                Map<String, Object> result = aiToolRegistry.validateBundle(appId, parsed, context.actor());
+                if (BundleValidationResult.OK.equals(result.get("status"))) {
+                    context.runState().markBundleValidated(appId);
+                }
+                return result;
+            }
+        };
+    }
+
+    private static PlatformAgentTool dryRunDeployTool(ObjectMapper objectMapper, AiToolRegistry aiToolRegistry) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "dry_run_deploy";
+            }
+
+            @Override
+            public String description() {
+                return "Validate bundle and list wouldApply sections. Args: appId, manifest (object).";
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String appId = stringArg(arguments, "appId");
+                Object manifestRaw = arguments.get("manifest");
+                if (appId.isBlank() || !(manifestRaw instanceof Map<?, ?> manifestMap)) {
+                    return Map.of("status", "ERROR", "error", "appId and manifest object are required");
+                }
+                var parsed = BundleManifestJsonSupport.parse(objectMapper, (Map<String, Object>) manifestMap);
+                Map<String, Object> result = aiToolRegistry.dryRunDeploy(appId, parsed, context.actor());
+                if (BundleValidationResult.OK.equals(result.get("status"))) {
+                    context.runState().markBundleValidated(appId);
+                }
+                return result;
+            }
+        };
+    }
+
+    private static PlatformAgentTool importPackageTool(
+            ObjectMapper objectMapper,
+            AiToolRegistry aiToolRegistry,
+            ApplicationBundleDeployService bundleDeployService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "import_package";
+            }
+
+            @Override
+            public String description() {
+                return "Deploy bundle to platform (mutates DB). Args: packageId, manifest, optional runTests (default true). "
+                        + "Requires prior validate_bundle or dry_run_deploy OK for same packageId in this run.";
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String packageId = stringArg(arguments, "packageId");
+                if (packageId.isBlank()) {
+                    packageId = stringArg(arguments, "appId");
+                }
+                Object manifestRaw = arguments.get("manifest");
+                if (packageId.isBlank() || !(manifestRaw instanceof Map<?, ?> manifestMap)) {
+                    return Map.of("status", "ERROR", "error", "packageId and manifest object are required");
+                }
+                if (!context.runState().isBundleValidated(packageId)) {
+                    return Map.of(
+                            "status", "ERROR",
+                            "error",
+                            "Run validate_bundle or dry_run_deploy with status OK before import_package"
+                    );
+                }
+                var parsed = BundleManifestJsonSupport.parse(objectMapper, (Map<String, Object>) manifestMap);
+                Map<String, Object> shipGate = shipCanonGate(aiToolRegistry, packageId, parsed, context.actor());
+                if (shipGate != null) {
+                    return shipGate;
+                }
+                try {
+                    boolean runTests = !Boolean.FALSE.equals(arguments.get("runTests"));
+                    Map<String, Object> deployed = bundleDeployService.deploy(
+                            packageId,
+                            parsed,
+                            false,
+                            true,
+                            runTests
+                    );
+                    if ("OK".equals(String.valueOf(deployed.get("status")))) {
+                        deployed.put("status", "OK");
+                    } else {
+                        deployed.putIfAbsent("status", "ERROR");
+                        if (deployed.get("testResults") != null) {
+                            deployed.putIfAbsent(
+                                    "hint",
+                                    "Deploy tests failed — consider rollback_application_deploy for " + packageId
+                            );
+                        }
+                    }
+                    return deployed;
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static PlatformAgentTool listObjectAclTool(
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "list_object_acl";
+            }
+
+            @Override
+            public String description() {
+                return "List ACL entries on an object. Args: path (required).";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                if (path.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path is required");
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireRead(path, auth);
+                List<Map<String, Object>> entries = objectAccessService.listEntries(path).stream()
+                        .map(entry -> {
+                            Map<String, Object> row = new LinkedHashMap<>();
+                            row.put("principalType", entry.principalType());
+                            row.put("principalId", entry.principalId());
+                            row.put("permission", entry.permission());
+                            return row;
+                        })
+                        .toList();
+                return Map.of("status", "OK", "path", path, "count", entries.size(), "entries", entries);
+            }
+        };
+    }
+
+    private static PlatformAgentTool setObjectAclTool(
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "set_object_acl";
+            }
+
+            @Override
+            public String description() {
+                return "Replace ACL on an object (gives a user/role access). Args: path (required), "
+                        + "entries=[{principalType:USER|ROLE, principalId, permission:READ|WRITE|INVOKE|VIEWER|EDITOR|OWNER}]. "
+                        + "Course pattern: set_object_acl path=<device of user2> entries="
+                        + "[{principalType:USER, principalId:user1, permission:EDITOR}].";
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                if (path.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path is required");
+                }
+                Object rawEntries = arguments.get("entries");
+                if (!(rawEntries instanceof List<?> list) || list.isEmpty()) {
+                    return Map.of(
+                            "status", "ERROR",
+                            "error", "entries array is required",
+                            "hint", "entries=[{principalType:USER, principalId:user1, permission:EDITOR}]"
+                    );
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireWrite(path, auth);
+                try {
+                    List<ObjectAclStore.ObjectAclEntryDraft> drafts = new ArrayList<>();
+                    for (Object item : list) {
+                        if (!(item instanceof Map<?, ?> map)) {
+                            continue;
+                        }
+                        Map<String, Object> row = (Map<String, Object>) map;
+                        drafts.add(new ObjectAclStore.ObjectAclEntryDraft(
+                                stringArg(row, "principalType"),
+                                stringArg(row, "principalId"),
+                                stringArg(row, "permission")
+                        ));
+                    }
+                    if (drafts.isEmpty()) {
+                        return Map.of("status", "ERROR", "error", "entries contained no valid ACL rows");
+                    }
+                    objectAccessService.replaceEntries(path, drafts);
+                    return Map.of("status", "OK", "path", path, "count", drafts.size());
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static Map<String, Object> createPlatformUser(
+            PlatformUserService platformUserService,
+            Map<String, Object> arguments,
+            AgentContext context,
+            String username,
+            String displayName
+    ) {
+        String password = optionalString(arguments, "password");
+        if (password == null || password.isBlank()) {
+            password = "ChangeMe!123";
+        }
+        List<String> roles = parseRolesArg(arguments.get("roles"));
+        if (roles.isEmpty()) {
+            // Platform roles are lowercase ids (admin|developer|operator), not Spring ROLE_* names.
+            roles = List.of(com.ispf.server.config.IspfRoles.OPERATOR);
+        }
+        String path = PlatformUserService.USERS_PATH_PREFIX + username.trim();
+        try {
+            Map<String, Object> summary = platformUserService.createUser(
+                    username,
+                    displayName,
+                    password,
+                    roles,
+                    context.authentication()
+            );
+            Object objectPath = summary.get("objectPath");
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("status", "OK");
+            response.put("path", objectPath != null ? objectPath : path);
+            response.put("user", summary);
+            response.put(
+                    "hint",
+                    "Platform user ready (roles variable synced). To grant device access: "
+                            + "set_object_acl path=<devicePath> entries="
+                            + "[{principalType:USER, principalId:" + username
+                            + ", permission:EDITOR}]. Do NOT apply_mixin platform-user-v1."
+            );
+            return response;
+        } catch (IllegalArgumentException ex) {
+            String message = ex.getMessage() == null ? "" : ex.getMessage();
+            if (message.toLowerCase(Locale.ROOT).contains("already exists")) {
+                Map<String, Object> reused = AgentObjectReuse.alreadyExistsOk(path, "USER");
+                reused.put(
+                        "hint",
+                        "User already exists at " + path
+                                + ". set_variable name=roles if needed, then set_object_acl on devices. "
+                                + "Do NOT recreate or apply_mixin platform-user-v1."
+                );
+                return reused;
+            }
+            if (message.toLowerCase(Locale.ROOT).contains("unknown role")) {
+                return Map.of(
+                        "status", "ERROR",
+                        "error", message,
+                        "hint",
+                        "Use lowercase role ids: operator, developer, admin, tenant-admin, operator-readonly. "
+                                + "Retry create_object type=USER roles=operator (not OPERATOR)."
+                );
+            }
+            return Map.of("status", "ERROR", "error", message);
+        } catch (Exception ex) {
+            return Map.of("status", "ERROR", "error", ex.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> parseRolesArg(Object raw) {
+        if (raw == null) {
+            return List.of();
+        }
+        if (raw instanceof List<?> list) {
+            List<String> out = new ArrayList<>();
+            for (Object item : list) {
+                if (item != null && !String.valueOf(item).isBlank()) {
+                    out.add(canonicalizeRoleName(String.valueOf(item)));
+                }
+            }
+            return out;
+        }
+        String text = String.valueOf(raw).trim();
+        if (text.isBlank()) {
+            return List.of();
+        }
+        if (text.startsWith("[")) {
+            // best-effort: OPERATOR,ADMIN style inside brackets
+            text = text.replace("[", "").replace("]", "").replace("\"", "");
+        }
+        List<String> out = new ArrayList<>();
+        for (String part : text.split("[,;\\s]+")) {
+            if (!part.isBlank()) {
+                out.add(canonicalizeRoleName(part));
+            }
+        }
+        return out;
+    }
+
     /** Map common agent aliases (OPERATOR, ROLE_ADMIN) onto platform role ids. */
     static String canonicalizeRoleName(String role) {
         if (role == null || role.isBlank()) {
@@ -51,21 +1233,6 @@ import java.util.function.Function;
         String lower = normalized.toLowerCase(Locale.ROOT).replace('_', '-');
         return switch (lower) {
             case "operator", "operators", "ops", "hmi", "user" -> com.ispf.server.config.IspfRoles.OPERATOR;
-            case "admin", "administrator", "admins" -> com.ispf.server.config.IspfRoles.ADMIN;
-            case "developer", "dev", "developers", "configurator" -> com.ispf.server.config.IspfRoles.DEVELOPER;
-            case "tenant-admin", "tenantadmin", "tenant_admin" -> com.ispf.server.config.IspfRoles.TENANT_ADMIN;
-            case "operator-readonly", "operatorreadonly", "readonly" -> "operator-readonly";
-            default -> lower;
-        };
-    }
-
-        String normalized = role.trim();
-        if (normalized.regionMatches(true, 0, "ROLE_", 0, 5)) {
-            normalized = normalized.substring(5);
-        }
-        String lower = normalized.toLowerCase(Locale.ROOT).replace('_', '-');
-        return switch (lower) {
-            case "operator", "operators", "hmi", "ops", "user" -> com.ispf.server.config.IspfRoles.OPERATOR;
             case "admin", "administrator", "admins" -> com.ispf.server.config.IspfRoles.ADMIN;
             case "developer", "dev", "developers", "configurator" -> com.ispf.server.config.IspfRoles.DEVELOPER;
             case "tenant-admin", "tenantadmin", "tenant_admin" -> com.ispf.server.config.IspfRoles.TENANT_ADMIN;
