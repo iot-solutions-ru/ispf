@@ -78,9 +78,11 @@ public class HistorianColdArchiveService {
         int exportedSeries = 0;
         int exportedSamples = 0;
         int skippedEmpty = 0;
+        int failedSeries = 0;
+        String firstFailure = null;
 
         for (ObjectVariableEntity entity : series) {
-            if (exportedSeries >= seriesLimit) {
+            if (exportedSeries + failedSeries >= seriesLimit) {
                 break;
             }
             String fieldName = "value";
@@ -102,14 +104,38 @@ public class HistorianColdArchiveService {
                 coldArchiveSink.put(objectKey, parquet);
                 exportedSeries++;
                 exportedSamples += samples.size();
-            } catch (IOException ex) {
-                log.warn(
-                        "Cold archive export failed for {}:{} — {}",
+            } catch (Exception ex) {
+                failedSeries++;
+                if (firstFailure == null) {
+                    firstFailure = entity.getObjectPath() + ":" + entity.getName() + " — " + ex.getMessage();
+                }
+                log.error(
+                        "Cold archive export failed for {}:{}",
                         entity.getObjectPath(),
                         entity.getName(),
-                        ex.getMessage()
+                        ex
                 );
             }
+        }
+
+        if (failedSeries > 0) {
+            String reason = "export failed for " + failedSeries + " series: " + firstFailure;
+            log.error(
+                    "Cold archive export day {} incomplete — failedSeries={}, exportedSeries={}, samples={}, skippedEmpty={}",
+                    dayKey,
+                    failedSeries,
+                    exportedSeries,
+                    exportedSamples,
+                    skippedEmpty
+            );
+            return new ColdArchiveRunResult(
+                    false,
+                    dayKey,
+                    exportedSeries,
+                    exportedSamples,
+                    skippedEmpty,
+                    reason
+            );
         }
 
         log.info(
