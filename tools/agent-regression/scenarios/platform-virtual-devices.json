@@ -1,0 +1,29 @@
+{
+  "id": "platform-virtual-devices",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "object:device",
+    "capability:virtual"
+  ],
+  "title": "Two virtual-unified devices",
+  "description": "Platform demo matrix: Two virtual-unified devices",
+  "prompt": "Create two virtual unified lab devices named demo-device-1 and demo-device-2 under devices. Start their drivers so telemetry variables like sineWave and intValue exist.",
+  "acceptance": {
+    "requiredTools": [
+      "create_virtual_device",
+      "list_variables"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.devices.demo-device-1",
+      "root.platform.devices.demo-device-2"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "drivers",
+      "ai-studio"
+    ]
+  }
+}

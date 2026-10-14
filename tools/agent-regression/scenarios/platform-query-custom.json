@@ -1,0 +1,25 @@
+{
+  "id": "platform-query-custom",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "object:query"
+  ],
+  "title": "Custom object query",
+  "description": "Platform demo matrix: Custom object query",
+  "prompt": "Create a CUSTOM query object demo-device-vars under root.platform.queries that can list writable variables for demo virtual devices.",
+  "acceptance": {
+    "requiredTools": [
+      "create_object"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.queries.demo-device-vars"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "ai-studio"
+    ]
+  }
+}

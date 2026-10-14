@@ -35,6 +35,7 @@ class AgentRegressionCiTest {
         assertTrue(report.byDomain.containsKey("scada"));
         assertTrue(report.byDomain.containsKey("mes"));
         assertTrue(report.byDomain.containsKey("hvac"));
+        assertTrue(report.byDomain.containsKey("platform"));
         assertTrue(report.bundleChecks >= 15, "expected bundle manifest cross-checks");
     }
 }

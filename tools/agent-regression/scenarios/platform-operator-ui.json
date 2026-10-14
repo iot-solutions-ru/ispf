@@ -1,0 +1,30 @@
+{
+  "id": "platform-operator-ui",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "object:operator-app"
+  ],
+  "title": "Operator app for demo overview",
+  "description": "Platform demo matrix: Operator app for demo overview",
+  "prompt": "Create dashboard demo-overview if missing with a simple bound layout to demo-device-1. Register operator app demo-ops with that dashboard as default so an operator can open it without the object tree.",
+  "acceptance": {
+    "requiredTools": [
+      "create_object",
+      "create_virtual_device",
+      "set_dashboard_layout",
+      "configure_operator_ui"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.dashboards.demo-overview",
+      "root.platform.operator-apps.demo-ops"
+    ],
+    "operatorSurfaces": [
+      "operator",
+      "dashboard",
+      "ai-studio"
+    ]
+  }
+}

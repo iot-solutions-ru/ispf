@@ -1,0 +1,29 @@
+{
+  "id": "platform-singleton-hub",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "object:singleton",
+    "capability:function"
+  ],
+  "title": "Singleton calculator hub",
+  "description": "Platform demo matrix: Singleton calculator hub",
+  "prompt": "Create a CUSTOM singleton hub named demo-calculator under root.platform.singleton-blueprints (never as DEVICE). Deploy a calculator function on it that can invoke calculate on demo-device-1. Create the virtual device if missing.",
+  "acceptance": {
+    "requiredTools": [
+      "create_object",
+      "deploy_tree_function",
+      "create_virtual_device"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.singleton-blueprints.demo-calculator",
+      "root.platform.devices.demo-device-1"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "ai-studio"
+    ]
+  }
+}

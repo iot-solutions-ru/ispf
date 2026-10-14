@@ -1,0 +1,31 @@
+{
+  "id": "platform-alerts-correlators",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "object:alert",
+    "object:correlator"
+  ],
+  "title": "Alert latch and correlator unlatch",
+  "description": "Platform demo matrix: Alert latch and correlator unlatch",
+  "prompt": "On demo-device-1 (create virtual-unified if needed) configure an alert that latches on event1 and a correlator that unlatches or follows up when event2 fires with intValue greater than 20. Put rules under alert-rules and correlators with demo- prefix names demo-event1-latch and demo-event2-unlatch.",
+  "acceptance": {
+    "requiredTools": [
+      "create_virtual_device",
+      "configure_alert",
+      "configure_correlator"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.devices.demo-device-1",
+      "root.platform.alert-rules.demo-event1-latch",
+      "root.platform.correlators.demo-event2-unlatch"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "alarms",
+      "ai-studio"
+    ]
+  }
+}

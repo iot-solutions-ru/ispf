@@ -1,0 +1,25 @@
+{
+  "id": "platform-event-filter",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "object:event-filter"
+  ],
+  "title": "Event filter for event2",
+  "description": "Platform demo matrix: Event filter for event2",
+  "prompt": "Create an event filter demo-event2-filter under event-filters for event2 where int is greater than 10 or string contains abc. Use demo-device-1 as context if needed.",
+  "acceptance": {
+    "requiredTools": [
+      "create_object"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.event-filters.demo-event2-filter"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "ai-studio"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "platform-mimic-pack",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "object:mimic"
+  ],
+  "title": "Fan mimic with pack symbols",
+  "description": "Platform demo matrix: Fan mimic with pack symbols",
+  "prompt": "Create mimic demo-fan under mimics. First load the platform symbol catalog, then save a diagram that contains ONLY catalog symbols whose ids start with pack. or pump. — specifically include pack.ispf-pid.fan and pump.centrifugal. Bind each element's running property to demo-device-1.deviceActive. Do not add any label, button, text, or custom.svg elements at all. Create the virtual device if needed.",
+  "acceptance": {
+    "requiredTools": [
+      "create_object",
+      "create_virtual_device",
+      "list_mimic_symbols",
+      "save_mimic_diagram"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.mimics.demo-fan",
+      "root.platform.devices.demo-device-1"
+    ],
+    "operatorSurfaces": [
+      "mimic",
+      "explorer",
+      "ai-studio"
+    ]
+  }
+}

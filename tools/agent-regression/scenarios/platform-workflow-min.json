@@ -1,0 +1,27 @@
+{
+  "id": "platform-workflow-min",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "object:workflow"
+  ],
+  "title": "Minimal workflow shell",
+  "description": "Platform demo matrix: Minimal workflow shell",
+  "prompt": "Create a WORKFLOW object demo-flow under workflows and save a minimal valid BPMN that starts and ends. Keep it tiny; no production process required.",
+  "acceptance": {
+    "requiredTools": [
+      "create_object",
+      "save_workflow_bpmn"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.workflows.demo-flow"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "work-queue",
+      "ai-studio"
+    ]
+  }
+}

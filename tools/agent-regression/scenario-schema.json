@@ -8,7 +8,7 @@
   "properties": {
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
     "version": { "type": "string" },
-    "domain": { "type": "string", "enum": ["scada", "mes", "hvac"] },
+    "domain": { "type": "string", "enum": ["scada", "mes", "hvac", "platform"] },
     "lane": {
       "type": "string",
       "enum": ["human", "agent", "both"],
@@ -18,6 +18,11 @@
       "type": "string",
       "enum": ["platform-primitive"],
       "description": "Platform velocity fixture (not a vertical product scenario)"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Filter tags for runners (e.g. object:device, capability:historian)"
     },
     "title": { "type": "string", "minLength": 3 },
     "description": { "type": "string" },

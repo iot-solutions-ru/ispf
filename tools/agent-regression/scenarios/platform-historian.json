@@ -1,0 +1,27 @@
+{
+  "id": "platform-historian",
+  "version": "1",
+  "domain": "platform",
+  "lane": "agent",
+  "kind": "platform-primitive",
+  "tags": [
+    "capability:historian"
+  ],
+  "title": "Enable wave historian",
+  "description": "Platform demo matrix: Enable wave historian",
+  "prompt": "On demo-device-1 enable history for sineWave and sawtoothWave so charts can work. Create the virtual device first if it does not exist.",
+  "acceptance": {
+    "requiredTools": [
+      "create_virtual_device",
+      "configure_variable_history",
+      "list_variables"
+    ],
+    "requiredObjectPaths": [
+      "root.platform.devices.demo-device-1"
+    ],
+    "operatorSurfaces": [
+      "explorer",
+      "ai-studio"
+    ]
+  }
+}
