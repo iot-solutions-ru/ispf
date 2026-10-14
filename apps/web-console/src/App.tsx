@@ -892,6 +892,7 @@ function AppShell() {
                 onOpenOperatorApp={openOperatorAppFromPath}
                 onDeleted={() => {
                   setSelectedPath("root");
+                  void invalidateAll();
                   if (isMobileLayout) {
                     setMobileExplorerPane("tree");
                   }
@@ -963,6 +964,7 @@ function AppShell() {
                 setSelectedPath("root");
                 setPropertiesTabPath(null);
                 closeEditor(activeEditor.id);
+                void invalidateAll();
               }}
             />
           </main>

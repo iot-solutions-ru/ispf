@@ -38,6 +38,7 @@ import {
   upsertChatEntry,
 } from "../utils/agent/agentChatStorage";
 import type { AgentChatIndex } from "../utils/agent/agentChatStorage";
+import { requestObjectTreeInvalidate } from "../hooks/useLazyObjectTree";
 import i18n from "../i18n";
 import {
   buildAttachmentApiPayload,
@@ -205,21 +206,51 @@ function resolveRootPath(): string {
   return rootPath || "root";
 }
 
-function agentTurnMutatesObjectTree(result?: Record<string, unknown>): boolean {
-  if (!result) {
-    return false;
+const TREE_MUTATING_TOOLS = new Set([
+  "create_object",
+  "create_virtual_device",
+  "delete_object",
+  "ensure_singleton_instance",
+  "instantiate_instance_type",
+  "configure_alert",
+  "configure_correlator",
+  "configure_operator_ui",
+  "configure_report",
+  "configure_platform_schedule",
+  "save_mimic_diagram",
+  "set_dashboard_layout",
+  "save_workflow_bpmn",
+  "apply_mixin_blueprint",
+  "set_object_acl",
+]);
+
+function agentTurnMutatesObjectTree(
+  result?: Record<string, unknown>,
+  steps?: AiAgentStep[],
+): boolean {
+  if (result) {
+    const keys = [
+      "devicePath",
+      "dashboardPath",
+      "mimicPath",
+      "workflowPath",
+      "objectPath",
+      "createdPath",
+      "deletedPath",
+      "bundlePath",
+    ];
+    if (keys.some((key) => typeof result[key] === "string" && result[key] !== "")) {
+      return true;
+    }
   }
-  const keys = [
-    "devicePath",
-    "dashboardPath",
-    "mimicPath",
-    "workflowPath",
-    "objectPath",
-    "createdPath",
-    "deletedPath",
-    "bundlePath",
-  ];
-  return keys.some((key) => typeof result[key] === "string" && result[key] !== "");
+  return (steps ?? []).some((step) => {
+    const tool = typeof step.tool === "string" ? step.tool : "";
+    if (!TREE_MUTATING_TOOLS.has(tool)) {
+      return false;
+    }
+    const status = (step.result as { status?: string } | undefined)?.status;
+    return status === "OK" || status == null;
+  });
 }
 
 export function AgentChatProvider({
@@ -317,8 +348,10 @@ export function AgentChatProvider({
   const handleAgentResponse = useCallback(
     (data: AiAgentChatResponse) => {
       const mergedResult = mergeAgentResult(data);
-      if (agentTurnMutatesObjectTree(mergedResult)) {
+      if (agentTurnMutatesObjectTree(mergedResult, data.steps)) {
         queryClient.invalidateQueries({ queryKey: ["objects"] });
+        // Sidebar uses useLazyObjectTree (not RQ ["objects"]); force reload + keep WS interest.
+        requestObjectTreeInvalidate();
       }
       if (typeof mergedResult.dashboardPath === "string" && mergedResult.dashboardPath) {
         queryClient.invalidateQueries({ queryKey: ["dashboard", mergedResult.dashboardPath] });
