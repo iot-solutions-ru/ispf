@@ -665,15 +665,6 @@ class AgentLoopGuardTest {
         );
     }
 
-    private static Map<String, Object> layoutStep(String path) {
-        return Map.of(
-                "type", "tool",
-                "tool", "set_dashboard_layout",
-                "arguments", Map.of("path", path),
-                "result", Map.of("status", "OK")
-        );
-    }
-
     private static Map<String, Object> createDashboardStep(String name) {
         return Map.of(
                 "type", "tool",
