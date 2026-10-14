@@ -1,8 +1,13 @@
 package com.ispf.server.ai.agent;
 
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -12,7 +17,54 @@ import java.util.Map;
  */
 final class MimicSymbolCatalog {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private MimicSymbolCatalog() {
+    }
+
+    /**
+     * True when the web-console can resolve the symbol (catalog legacy id, pack SVG, or custom).
+     * Unknown ids (label, button.start, …) render as an empty canvas.
+     */
+    static boolean isRenderable(String symbolId) {
+        if (symbolId == null || symbolId.isBlank()) {
+            return false;
+        }
+        String id = symbolId.trim();
+        for (SymbolRef symbol : SYMBOLS) {
+            if (symbol.id.equals(id)) {
+                return true;
+            }
+        }
+        String lower = id.toLowerCase(Locale.ROOT);
+        if ("custom.svg".equals(lower) || lower.startsWith("custom:")) {
+            return true;
+        }
+        // Any installed ispf-pid pack id is loadable even if not listed in the short agent catalog.
+        return lower.startsWith("pack.ispf-pid.");
+    }
+
+    /** Unknown / blank symbolIds from a mimic diagramJson (v2). */
+    static List<String> unknownSymbolIds(String diagramJson) {
+        LinkedHashSet<String> unknown = new LinkedHashSet<>();
+        if (diagramJson == null || diagramJson.isBlank()) {
+            return List.of();
+        }
+        try {
+            JsonNode elements = MAPPER.readTree(diagramJson).path("elements");
+            if (!elements.isArray()) {
+                return List.of();
+            }
+            for (JsonNode element : elements) {
+                String id = element.path("symbolId").asString("").trim();
+                if (!isRenderable(id)) {
+                    unknown.add(id.isBlank() ? "(blank)" : id);
+                }
+            }
+        } catch (Exception ignored) {
+            return List.of();
+        }
+        return List.copyOf(unknown);
     }
 
     static List<Map<String, Object>> symbols(String categoryFilter) {

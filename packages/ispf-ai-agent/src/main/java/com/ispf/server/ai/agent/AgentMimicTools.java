@@ -113,6 +113,7 @@ final class AgentMimicTools {
                         + "Args: path; diagramJson (full v2 document string or object) OR elements[] "
                         + "(+ optional connections[], width, height, devicePath for binding shorthand). "
                         + "Optional merge=true appends elements instead of replacing. "
+                        + "symbolId must be from list_mimic_symbols or pack.ispf-pid.* (reject inventing button.start/label). "
                         + "Never use set_variable name=diagram — use this tool. "
                         + "Bindings: {slot:{objectPath,variableName,valueField,transform}}.";
             }
@@ -240,6 +241,16 @@ final class AgentMimicTools {
                         "error", "Cannot save empty mimic diagram (elementCount=0)",
                         "hint", "Provide non-empty elements[] with symbolId, x, y, and bindings. "
                                 + "Call list_mimic_symbols and list_variables on the device first."
+                );
+            }
+            List<String> unknownSymbols = MimicSymbolCatalog.unknownSymbolIds(diagramJson);
+            if (!unknownSymbols.isEmpty()) {
+                return Map.of(
+                        "status", "ERROR",
+                        "error", "Unknown/unrenderable symbolId: " + String.join(", ", unknownSymbols),
+                        "hint", "Web console only renders catalog legacy ids (tank.vertical, pump.centrifugal, "
+                                + "motor, …), pack.ispf-pid.* (e.g. pack.ispf-pid.fan, pack.ispf-pid.push-button), "
+                                + "or custom.svg / custom:*. Call list_mimic_symbols — do not invent button.start/label."
                 );
             }
             MimicService.MimicView saved = mimicService.saveDiagram(path, diagramJson);

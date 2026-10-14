@@ -23,12 +23,13 @@ final class AgentLiveFinishVerifier {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static final List<String> PATH_LIST_KEYS = List.of(
-            "devices", "dashboards", "mimics", "alerts", "users", "reports", "queries"
+            "devices", "dashboards", "mimics", "alerts", "users", "reports", "queries",
+            "correlators", "hubs", "eventFilters"
     );
 
     private static final List<String> PATH_SCALAR_KEYS = List.of(
             "device", "dashboard", "mimic", "alert", "report", "query",
-            "eventFilter", "calculatorHub", "operatorApp"
+            "eventFilter", "calculatorHub", "operatorApp", "hub", "correlator"
     );
 
     private AgentLiveFinishVerifier() {
@@ -65,9 +66,13 @@ final class AgentLiveFinishVerifier {
         List<String> unboundDashboards = new ArrayList<>();
         List<String> emptyMimics = new ArrayList<>();
         List<String> unboundMimics = new ArrayList<>();
+        List<String> unrenderableMimics = new ArrayList<>();
         int liveDevices = 0;
         int liveDashboards = 0;
         int liveMimics = 0;
+        int liveCorrelators = 0;
+        int liveSingletonHubs = 0;
+        List<String> badHubs = new ArrayList<>();
 
         for (String path : claimed) {
             if (!pathExists.test(path)) {
@@ -77,6 +82,16 @@ final class AgentLiveFinishVerifier {
             String lower = path.toLowerCase(Locale.ROOT);
             if (lower.contains(".devices.") || lower.endsWith(".devices")) {
                 liveDevices++;
+            }
+            if (lower.contains(".correlators.") || lower.endsWith(".correlator")) {
+                liveCorrelators++;
+            }
+            if (isHubPath(lower)) {
+                if (lower.contains(".singleton-blueprints.")) {
+                    liveSingletonHubs++;
+                } else {
+                    badHubs.add(path);
+                }
             }
             if (isDashboardPath(lower)) {
                 liveDashboards++;
@@ -112,6 +127,10 @@ final class AgentLiveFinishVerifier {
                     emptyMimics.add(path + " elementCount=0");
                     continue;
                 }
+                List<String> unknown = MimicSymbolCatalog.unknownSymbolIds(diagram.get());
+                if (!unknown.isEmpty()) {
+                    unrenderableMimics.add(path + " symbolId=" + String.join(",", unknown));
+                }
                 int boundElements = boundElementCount(diagram.get());
                 if (elements >= 2 && boundElements == 0) {
                     unboundMimics.add(path + " elements=" + elements + " bound=0");
@@ -134,16 +153,44 @@ final class AgentLiveFinishVerifier {
         if (!unboundMimics.isEmpty()) {
             issues.add("live.mimic.bindings: " + String.join("; ", unboundMimics));
         }
+        if (!unrenderableMimics.isEmpty()) {
+            issues.add(
+                    "live.mimic.symbols: unrenderable symbolId (empty canvas): "
+                            + String.join("; ", unrenderableMimics)
+                            + " — use list_mimic_symbols / pack.ispf-pid.*"
+            );
+        }
 
         if (looksLikeCourse(userMessage)) {
+            String courseText = userMessage == null ? "" : userMessage.toLowerCase(Locale.ROOT);
             if (liveDevices < 2) {
                 issues.add("live.course.devices: need ≥2 live devices for full course (found " + liveDevices + ")");
             }
             if (liveDashboards < 1) {
                 issues.add("live.course.dashboards: need ≥1 live non-empty dashboard");
             }
-            if (containsAny(userMessage, "мнемо", "mimic", "svg", "вентилятор", "scada") && liveMimics < 1) {
+            if (containsAny(courseText, "мнемо", "mimic", "svg", "вентилятор", "scada") && liveMimics < 1) {
                 issues.add("live.course.mimics: need ≥1 live non-empty mimic");
+            }
+            boolean correlatorTool = hasSuccessfulTool(steps, "configure_correlator");
+            if (liveCorrelators < 1 && !correlatorTool) {
+                issues.add(
+                        "live.course.correlators: need configure_correlator (or claimed correlators.*) "
+                                + "for latch/unlatch / corrective chain"
+                );
+            }
+            boolean hubTool = hasSingletonHubCreate(steps);
+            if (!badHubs.isEmpty()) {
+                issues.add(
+                        "live.course.hub: hub path must be under singleton-blueprints: "
+                                + String.join(", ", badHubs)
+                );
+            } else if (liveSingletonHubs < 1 && !hubTool
+                    && containsAny(courseText, "calculator", "калькулятор", "hub", "singleton")) {
+                issues.add(
+                        "live.course.hub: calculator/logic hub must live under "
+                                + "root.platform.singleton-blueprints.*"
+                );
             }
         }
 
@@ -207,6 +254,66 @@ final class AgentLiveFinishVerifier {
 
     private static boolean isMimicPath(String lowerPath) {
         return lowerPath.contains(".mimics.") || lowerPath.endsWith(".mimic");
+    }
+
+    private static boolean isHubPath(String lowerPath) {
+        return lowerPath.contains(".singleton-blueprints.")
+                || lowerPath.endsWith("-hub")
+                || lowerPath.contains(".virt-hub")
+                || lowerPath.contains("calculator-hub")
+                || lowerPath.contains(".lab-calculator")
+                || lowerPath.contains(".virt-calculator");
+    }
+
+    private static boolean hasSuccessfulTool(List<Map<String, Object>> steps, String toolName) {
+        if (steps == null) {
+            return false;
+        }
+        for (Map<String, Object> step : steps) {
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            if (!toolName.equalsIgnoreCase(String.valueOf(step.get("tool")))) {
+                continue;
+            }
+            Map<String, Object> result = step.get("result") instanceof Map<?, ?> map
+                    ? castMap(map)
+                    : Map.of();
+            if ("OK".equals(String.valueOf(result.get("status")))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasSingletonHubCreate(List<Map<String, Object>> steps) {
+        if (steps == null) {
+            return false;
+        }
+        for (Map<String, Object> step : steps) {
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            String tool = String.valueOf(step.get("tool")).toLowerCase(Locale.ROOT);
+            Map<String, Object> result = step.get("result") instanceof Map<?, ?> map
+                    ? castMap(map)
+                    : Map.of();
+            if (!"OK".equals(String.valueOf(result.get("status")))) {
+                continue;
+            }
+            Object path = result.get("path");
+            if (path == null && step.get("arguments") instanceof Map<?, ?> args) {
+                path = args.get("path");
+            }
+            if (path instanceof String s && s.toLowerCase(Locale.ROOT).contains(".singleton-blueprints.")) {
+                if ("create_object".equals(tool)
+                        || "ensure_singleton_instance".equals(tool)
+                        || "deploy_tree_function".equals(tool)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static boolean looksLikeBuildTask(String userMessage) {
