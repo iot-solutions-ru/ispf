@@ -1195,21 +1195,6 @@ final class AgentTreeTools {
         };
     }
 
-        String normalized = role.trim();
-        if (normalized.regionMatches(true, 0, "ROLE_", 0, 5)) {
-            normalized = normalized.substring(5);
-        }
-        String lower = normalized.toLowerCase(Locale.ROOT).replace('_', '-');
-        return switch (lower) {
-            case "operator", "operators", "ops", "hmi", "user" -> com.ispf.server.config.IspfRoles.OPERATOR;
-            case "admin", "administrator", "admins" -> com.ispf.server.config.IspfRoles.ADMIN;
-            case "developer", "dev", "developers", "configurator" -> com.ispf.server.config.IspfRoles.DEVELOPER;
-            case "tenant-admin", "tenantadmin", "tenant_admin" -> com.ispf.server.config.IspfRoles.TENANT_ADMIN;
-            case "operator-readonly", "operatorreadonly", "readonly" -> "operator-readonly";
-            default -> lower;
-        };
-    }
-
     /**
      * Final ship gate. Interactive validate may leave {@code LOGIC_HOST_DEVICE} as WARNING;
      * import refuses to apply until ship-canon validation is OK.
