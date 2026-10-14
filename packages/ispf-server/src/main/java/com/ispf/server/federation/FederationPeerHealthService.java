@@ -148,6 +148,7 @@ public class FederationPeerHealthService {
         FederationPeer peer = peerStore.findById(peerId)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown peer: " + peerId));
         boolean tunnelConnected = tunnelHubService.isConnected(peerId);
+        String tunnelError = tunnelHubService.registrationFailure(peerId);
         ProxySnapshot proxy = proxySnapshots.get(peerId);
         Instant lastSuccess = proxy != null ? proxy.lastSuccessAt() : null;
         Long latencyMs = proxy != null ? proxy.lastLatencyMs() : null;
@@ -161,6 +162,7 @@ public class FederationPeerHealthService {
         FederationPeerHealthLevel level = resolveLevel(
                 peer,
                 tunnelConnected,
+                tunnelError,
                 lastSuccess,
                 lastError,
                 pendingBuffer
@@ -173,18 +175,22 @@ public class FederationPeerHealthService {
                 latencyMs,
                 lastError,
                 pendingBuffer,
-                summary(level, peer, tunnelConnected, lastSuccess, pendingBuffer)
+                summary(level, peer, tunnelConnected, tunnelError, lastSuccess, pendingBuffer)
         );
     }
 
     private FederationPeerHealthLevel resolveLevel(
             FederationPeer peer,
             boolean tunnelConnected,
+            String tunnelError,
             Instant lastSuccess,
             String lastError,
             int pendingBuffer
     ) {
         if (peer.authStatus() == FederationAuthStatus.FAILED) {
+            return FederationPeerHealthLevel.RED;
+        }
+        if (tunnelError != null && !tunnelConnected) {
             return FederationPeerHealthLevel.RED;
         }
         if (peer.isTunnelInbound() && !tunnelConnected) {
@@ -213,11 +219,15 @@ public class FederationPeerHealthService {
             FederationPeerHealthLevel level,
             FederationPeer peer,
             boolean tunnelConnected,
+            String tunnelError,
             Instant lastSuccess,
             int pendingBuffer
     ) {
         if (level == FederationPeerHealthLevel.RED && peer.authStatus() == FederationAuthStatus.FAILED) {
             return "Auth failed";
+        }
+        if (tunnelError != null && !tunnelConnected) {
+            return tunnelError;
         }
         if (peer.isTunnelInbound() && !tunnelConnected) {
             return "Tunnel offline";
