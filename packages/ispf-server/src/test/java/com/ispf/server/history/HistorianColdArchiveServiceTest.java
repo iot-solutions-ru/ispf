@@ -17,6 +17,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -116,5 +117,44 @@ class HistorianColdArchiveServiceTest {
         assertThat(result.ran()).isTrue();
         assertThat(result.exportedSeries()).isZero();
         assertThat(result.skippedEmpty()).isEqualTo(1);
+    }
+
+    @Test
+    void partialExportIsNotSuccess() throws Exception {
+        ColdArchiveSink failing = mock(ColdArchiveSink.class);
+        when(failing.isConfigured()).thenReturn(true);
+        doThrow(new IllegalStateException("disk full")).when(failing).put(any(), any());
+        service = new HistorianColdArchiveService(
+                tierProperties,
+                archiveProperties,
+                variableRepository,
+                queryStore,
+                failing,
+                new HistoryParquetExportGateway()
+        );
+        ObjectVariableEntity entity = new ObjectVariableEntity();
+        entity.setObjectPath("root.platform.devices.demo");
+        entity.setName("temperature");
+        when(variableRepository.findByHistoryEnabledTrue()).thenReturn(List.of(entity));
+
+        Instant warmCutoff = service.warmCutoff();
+        Instant exportDayStart = warmCutoff.truncatedTo(ChronoUnit.DAYS).minus(1, ChronoUnit.DAYS);
+        Instant exportDayEnd = exportDayStart.plus(1, ChronoUnit.DAYS).minus(1, ChronoUnit.MILLIS);
+        Instant sampleTs = exportDayStart.plus(1, ChronoUnit.HOURS);
+        when(queryStore.query(
+                eq("root.platform.devices.demo"),
+                eq("temperature"),
+                eq("value"),
+                eq(exportDayStart),
+                eq(exportDayEnd),
+                eq(100)
+        )).thenReturn(List.of(new VariableHistoryService.VariableHistorySample(sampleTs, 21.5, null)));
+
+        HistorianColdArchiveService.ColdArchiveRunResult result = service.exportEligibleDay();
+
+        assertThat(result.ran()).isFalse();
+        assertThat(result.exportedSeries()).isZero();
+        assertThat(result.skipReason()).contains("export failed for 1 series");
+        assertThat(result.skipReason()).contains("disk full");
     }
 }

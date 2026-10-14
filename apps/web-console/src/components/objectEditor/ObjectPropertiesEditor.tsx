@@ -89,6 +89,8 @@ interface ObjectPropertiesEditorProps {
   embedded?: boolean;
   /** Navigate to a parent path when breadcrumb is clicked. */
   onSelectPath?: (path: string) => void;
+  /** Return to the specialized workspace editor (DataSourceEditor, ReportBuilder, …). */
+  onOpenEditor?: () => void;
 }
 
 type Tab = ObjectEditorTab;
@@ -269,6 +271,7 @@ export default function ObjectPropertiesEditor({
   canManageAcl = false,
   embedded = false,
   onSelectPath,
+  onOpenEditor,
 }: ObjectPropertiesEditorProps) {
   const { t } = useTranslation(["inspector", "common", "objectTree"]);
   const queryClient = useQueryClient();
@@ -679,6 +682,11 @@ export default function ObjectPropertiesEditor({
           </div>
         )}
         <div className={`toolbar-actions${embedded ? " toolbar-actions-full" : ""}`}>
+          {onOpenEditor && (
+            <Button type="primary" onClick={onOpenEditor}>
+              {t("common:action.openInEditor")}
+            </Button>
+          )}
           <Button
             aria-label={t("common:action.refresh")}
             onClick={() => void reloadFromEditor()}
