@@ -57,6 +57,7 @@ public class BlueprintController {
     private final BlueprintApplicationService blueprintApplicationService;
     private final AnalyticsFormulaService analyticsFormulaService;
     private final BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport;
+    private final BlueprintBindingRulesMerger blueprintBindingRulesMerger;
 
     public BlueprintController(
             BlueprintRegistry blueprintRegistry,
@@ -66,7 +67,8 @@ public class BlueprintController {
             BlueprintMergeService blueprintMergeService,
             BlueprintApplicationService blueprintApplicationService,
             AnalyticsFormulaService analyticsFormulaService,
-            BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport
+            BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport,
+            BlueprintBindingRulesMerger blueprintBindingRulesMerger
     ) {
         this.blueprintRegistry = blueprintRegistry;
         this.blueprintEngine = blueprintEngine;
@@ -76,6 +78,7 @@ public class BlueprintController {
         this.blueprintApplicationService = blueprintApplicationService;
         this.analyticsFormulaService = analyticsFormulaService;
         this.blueprintAnalyticsFormulaSupport = blueprintAnalyticsFormulaSupport;
+        this.blueprintBindingRulesMerger = blueprintBindingRulesMerger;
     }
 
     @GetMapping
@@ -217,6 +220,8 @@ public class BlueprintController {
                     request.description(),
                     request.type() != null ? request.type() : BlueprintType.INSTANCE
             );
+            model = blueprintBindingRulesMerger.captureFromObject(request.sourcePath(), model);
+            model = blueprintEngine.updateBlueprint(model);
             blueprintPersistence.persist(model, false);
             objectManager.persistNodeTree(model.catalogObjectPath());
             return BlueprintDto.from(model);
