@@ -63,12 +63,19 @@ Monitor: `/opt/ispf/data/disk-guardian.log`
 
 ## Nginx + hosted UI packs (ADR-0054)
 
-On VPS split deploy (`web-console` from disk, JVM on `:8080`), **always** proxy `/apps/` to the server — never let the console SPA fallback handle it:
+On VPS split deploy (`web-console` from disk, JVM behind nginx), **always** proxy `/apps/` to the server — never let the console SPA fallback handle it.
+
+**Two nginx layers on prod-idle demostand** (`docker-compose.vps-single.yml`):
+
+| Layer | Config | `/apps/` must go to |
+|-------|--------|---------------------|
+| Public TLS (`:443`) | [`nginx-ispf.conf`](nginx-ispf.conf) / [`nginx-vps-ssl.conf`](nginx-vps-ssl.conf) | `127.0.0.1:8080` (inner nginx) |
+| Inner LB (`127.0.0.1:8080`) | [`nginx-vps-single.conf`](nginx-vps-single.conf) (cluster: [`nginx-vps-cluster.conf`](nginx-vps-cluster.conf)) | JVM `:8081` (`HostedUiPackFilter`) |
 
 | Path | Handler |
 |------|---------|
-| `/api/`, `/ws/` | `proxy_pass` → `:8080` |
-| `/apps/` | `proxy_pass` → `:8080` (`HostedUiPackFilter`) |
+| `/api/`, `/ws/` | `proxy_pass` → JVM |
+| `/apps/` | `proxy_pass` → JVM (`HostedUiPackFilter`) — **both** public and inner templates |
 | `/`, `/assets/` | static `web-console` |
 
-Templates already include `location ^~ /apps/` in [`nginx-ispf.conf`](nginx-ispf.conf) / [`nginx-vps-ssl.conf`](nginx-vps-ssl.conf). After changing nginx: `curl -fsS https://<host>/apps/<appId>/` must not return `<title>ISPF Admin Console</title>`. Details: [ADR-0054](../docs/en/decisions/0054-hosted-ui-packs.md).
+Symptom if inner nginx omits `/apps/`: public URL returns `<title>ISPF Admin Console</title>` while `curl http://127.0.0.1:8081/apps/<appId>/` serves the pack. After changing nginx: `curl -fsS https://<host>/apps/<appId>/` must not return Admin Console. Details: [ADR-0054](../docs/en/decisions/0054-hosted-ui-packs.md).
