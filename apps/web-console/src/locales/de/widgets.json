@@ -137,6 +137,8 @@
   "editor.variableNamesEmpty": "Das gewählte Objekt hat keine Variablen.",
   "editor.objectTableVariablesNeedParent": "Zuerst einen übergeordneten Ordner wählen — die Liste enthält die Variablen der Objekte darin.",
   "editor.objectTableVariablesEmpty": "Objekte in diesem Ordner haben keine Variablen.",
+  "editor.objectTableNeedChildObjects": "Dieser Pfad hat keine untergeordneten Objekte — die Tabelle bleibt leer. Variablen des Objekts selbst stehen für Spalten zur Verfügung.",
+  "editor.objectTableFieldManualHint": "Felschema nicht geladen — Feldname eingeben (oft value, unit, raw).",
   "editor.col.functionInput": "Funktionseingabe",
   "editor.field.functionName": "Funktion (Welche Funktion aufgerufen wird)",
   "editor.field.validateFunctionName": "Schrittprüfung (Bei Weiter und vor dem Absenden. Ein Fehlercode ungleich OK stoppt den Schritt)",
