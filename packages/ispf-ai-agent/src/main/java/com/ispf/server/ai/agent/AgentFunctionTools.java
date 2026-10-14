@@ -144,6 +144,16 @@ final class AgentFunctionTools {
                     "Use script step types: setVar, readVariable, invoke_function, return "
                             + "(invoke is accepted as alias of invoke_function)."
             );
+        } else if (lower.contains("requires objectpath") || lower.contains("requires functionname")) {
+            result.put(
+                    "hint",
+                    "invoke_function needs objectPath + functionName. For device calculate(): "
+                            + "objectPath=root.platform.devices.<virt> functionName=calculate "
+                            + "(aliases: path, function). Example sourceBody steps: "
+                            + "[{\"type\":\"invoke_function\",\"objectPath\":\"root.platform.devices.virt-device-1\","
+                            + "\"functionName\":\"calculate\",\"input\":{\"a\":1,\"b\":2,\"op\":\"+\"},\"var\":\"out\"},"
+                            + "{\"type\":\"return\",\"fields\":{\"result\":\"${out.value}\"}}]."
+            );
         }
         return result;
     }

@@ -51,6 +51,11 @@ public final class SystemObjectTypeResolver {
     private SystemObjectTypeResolver() {
     }
 
+    /** True for bootstrap catalog roots (DEVICES, QUERIES, …) — not for mis-typed children. */
+    public static boolean isExactCatalogPath(String path) {
+        return path != null && BY_EXACT_PATH.containsKey(path);
+    }
+
     public static Optional<ObjectType> resolve(String path, String templateId) {
         ObjectType exact = BY_EXACT_PATH.get(path);
         if (exact != null) {

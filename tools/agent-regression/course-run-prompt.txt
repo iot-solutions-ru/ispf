@@ -2,10 +2,12 @@
 
 Правила платформы (обязательно):
 - Телеметрия/симулятор: create_virtual_device (virtual-unified / virtual-lab). Имена: virt-device-1, virt-device-2.
-- Логика/функции/калькулятор: НЕ ObjectType.DEVICE. Сначала list_singleton_blueprints, затем ensure_singleton_instance с blueprintName ТОЛЬКО из результата каталога. virtual-lab / virtual-unified — DEVICE-профили, не singleton.
+- Логика/функции/калькулятор: НЕ ObjectType.DEVICE. Hub: list_singleton_blueprints → ensure_singleton_instance (blueprint из каталога) или create_object CUSTOM. virtual-lab / virtual-unified — DEVICE-профили, не singleton.
+- deploy_tree_function calculator: sourceType=script; invoke_function с objectPath=<virt device> и functionName=calculate.
+- Object query под root.platform.queries: type=CUSTOM (не QUERIES).
 - USER: roles=operator (lowercase, не OPERATOR).
 - Тревоги: дискриминирующий CEL (self.<var>["value"] …), никогда true / 1==1.
-- Дашборды: create_object DASHBOARD → set_dashboard_layout (можно много подряд).
+- Дашборды: create_object DASHBOARD → set_dashboard_layout (можно много подряд с разным layoutJson). Перед history-table — configure_variable_history.
 - Mimic: save_mimic_diagram с непустым elements[].
 
 Задания:

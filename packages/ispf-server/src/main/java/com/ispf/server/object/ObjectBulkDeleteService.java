@@ -97,11 +97,13 @@ public class ObjectBulkDeleteService {
     }
 
     private static boolean isProtectedCatalogFolder(PlatformObject node) {
+        // Protect catalog roots by path only. Children mis-created as type=QUERIES/DASHBOARDS
+        // must remain deletable (Studio agent course queries).
+        if (SystemObjectTypeResolver.isExactCatalogPath(node.path())) {
+            return true;
+        }
         return switch (node.type()) {
-            case ROOT, TENANT, PLATFORM, DEVICES, DASHBOARDS, WORKFLOWS, ALERT_RULES, CORRELATORS,
-                 QUERIES, EVENT_FILTERS,
-                 APPLICATIONS, OPERATOR_APPS, SECURITY, USERS, ROLES, DATA_SOURCES, REPORTS,
-                 FUNCTIONS, SCHEDULES, BINDINGS, MIGRATIONS, SCREENS -> true;
+            case ROOT, TENANT, PLATFORM -> true;
             default -> false;
         };
     }

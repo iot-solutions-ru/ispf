@@ -256,9 +256,24 @@ public class ObjectVariableService {
         if (function == null || function.name() == null || function.name().isBlank()) {
             throw new IllegalArgumentException("Function name is required");
         }
+        FunctionDescriptor toSave = function;
         if (function.hasScriptBody()) {
             try {
-                scriptValidator.validate(function.sourceBody());
+                String normalized = scriptValidator.normalizeAliases(function.sourceBody());
+                if (normalized != null && !normalized.equals(function.sourceBody())) {
+                    toSave = new FunctionDescriptor(
+                            function.name(),
+                            function.description(),
+                            function.inputSchema(),
+                            function.outputSchema(),
+                            function.sourceType(),
+                            normalized,
+                            function.dataSourcePath(),
+                            function.version(),
+                            function.invokeRoles()
+                    );
+                }
+                scriptValidator.validate(toSave.sourceBody());
             } catch (IllegalArgumentException ex) {
                 throw new IllegalArgumentException("Function " + function.name() + ": " + ex.getMessage(), ex);
             }
@@ -266,17 +281,17 @@ public class ObjectVariableService {
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
         long revisionBefore = node.revision();
-        FunctionDescriptor before = node.functions().get(function.name());
-        javaFunctionRuntimeService.syncOnSave(path, function, before);
-        node.addFunction(function);
+        FunctionDescriptor before = node.functions().get(toSave.name());
+        javaFunctionRuntimeService.syncOnSave(path, toSave, before);
+        node.addFunction(toSave);
         objectManager.persistNodeConfig(
                 node,
                 "UPSERT_FUNCTION",
-                function.name(),
-                mapper.auditDiff(before, function)
+                toSave.name(),
+                mapper.auditDiff(before, toSave)
         );
         objectManager.publishConfigChange(ObjectChangeType.UPDATED, path, revisionBefore);
-        return function;
+        return toSave;
     }
 
     @Transactional

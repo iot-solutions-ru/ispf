@@ -552,10 +552,18 @@ public class FunctionScriptEngine {
                     : parsed;
         }
         if (kind == com.ispf.core.ref.PlatformRefKind.FUNCTION) {
+            String objectPathRaw = step.path("objectPath").asText("");
+            if (objectPathRaw.isBlank()) {
+                objectPathRaw = step.path("path").asText("self");
+            }
+            String functionName = step.path("functionName").asText("");
+            if (functionName.isBlank()) {
+                functionName = step.path("function").asText("");
+            }
             return com.ispf.core.ref.PlatformRefConfig.requireFunction(
                     null,
-                    resolveObjectPath(step.path("objectPath").asText(), context),
-                    step.path("functionName").asText()
+                    resolveObjectPath(objectPathRaw, context),
+                    functionName
             );
         }
         if (kind == com.ispf.core.ref.PlatformRefKind.VARIABLE) {

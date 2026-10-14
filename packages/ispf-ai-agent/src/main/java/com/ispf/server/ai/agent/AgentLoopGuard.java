@@ -449,6 +449,19 @@ final class AgentLoopGuard {
             appendFingerprintKey(sb, args, "watchVariable");
             appendFingerprintKey(sb, args, "eventName");
         }
+        // Different layout payloads on the same dashboard are progressive edits, not spam.
+        if ("set_dashboard_layout".equals(normalized)) {
+            String layout = stringArg(args, "layoutJson");
+            if (layout.isBlank()) {
+                layout = stringArg(args, "layout");
+            }
+            if (layout.isBlank()) {
+                layout = stringArg(args, "template");
+            }
+            if (!layout.isBlank()) {
+                sb.append("|layoutHash=").append(Integer.toHexString(layout.hashCode()));
+            }
+        }
         return sb.toString();
     }
 

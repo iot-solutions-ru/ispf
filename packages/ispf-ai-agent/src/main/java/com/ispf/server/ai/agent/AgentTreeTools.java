@@ -20,6 +20,7 @@ import com.ispf.server.federation.FederationBindService;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.ObjectTreePort;
 import com.ispf.server.object.ObjectUiIconService;
+import com.ispf.server.query.ObjectQueryCatalog;
 import com.ispf.server.report.ReportService;
 import com.ispf.server.security.PlatformRoleService;
 import com.ispf.server.security.PlatformUserService;
@@ -231,7 +232,12 @@ final class AgentTreeTools {
                             "error", "parentPath, name, type, displayName are required"
                     );
                 }
-                ObjectType type = ObjectType.valueOf(typeRaw.trim().toUpperCase(Locale.ROOT));
+                String typeKey = typeRaw.trim().toUpperCase(Locale.ROOT);
+                // Legacy/LLM: QUERY is not an ObjectType — object queries are CUSTOM under the catalog.
+                if ("QUERY".equals(typeKey) || ("QUERIES".equals(typeKey) && isQueriesCatalogChild(parentPath))) {
+                    typeKey = "CUSTOM";
+                }
+                ObjectType type = ObjectType.valueOf(typeKey);
                 var auth = context.authentication();
                 if (type == ObjectType.USER) {
                     return createPlatformUser(platformUserService, arguments, context, name, displayName);
@@ -1166,6 +1172,16 @@ final class AgentTreeTools {
             }
         }
         return out;
+    }
+
+    private static boolean isQueriesCatalogChild(String parentPath) {
+        if (parentPath == null || parentPath.isBlank()) {
+            return false;
+        }
+        String normalized = parentPath.trim();
+        String root = ObjectQueryCatalog.QUERIES_ROOT;
+        return root.equalsIgnoreCase(normalized)
+                || normalized.toLowerCase(Locale.ROOT).startsWith(root.toLowerCase(Locale.ROOT) + ".");
     }
 
     /** Map common agent aliases (OPERATOR, ROLE_ADMIN) onto platform role ids. */
