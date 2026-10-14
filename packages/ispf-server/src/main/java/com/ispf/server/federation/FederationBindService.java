@@ -266,7 +266,12 @@ public class FederationBindService {
         try {
             driverRuntimeService.start(localPath);
         } catch (RuntimeException ex) {
-            log.warn("Failed to restart driver after federation unbind for {}: {}", localPath, ex.getMessage());
+            log.error("Failed to restart driver after federation unbind for {}: {}", localPath, ex.getMessage());
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Local driver was not restarted after unbind: " + ex.getMessage(),
+                    ex
+            );
         }
     }
 
