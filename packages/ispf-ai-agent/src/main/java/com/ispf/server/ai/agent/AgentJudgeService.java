@@ -4,11 +4,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Pre-finish judge phase — readonly conformance verdict (ISPF agent pipeline).
  */
 public final class AgentJudgeService {
+
+    /**
+     * Optional live-tree sensors. When present, finish paths are checked against the real object tree
+     * (not only tool step logs).
+     */
+    public record LiveTreeSensors(
+            Predicate<String> pathExists,
+            Function<String, Optional<String>> dashboardLayoutJson,
+            Function<String, Optional<String>> mimicDiagramJson
+    ) {
+    }
 
     public enum Verdict {
         APPROVE,
@@ -32,12 +46,22 @@ public final class AgentJudgeService {
     private AgentJudgeService() {
     }
 
-    @SuppressWarnings("unchecked")
     public static JudgeResult evaluate(
             List<Map<String, Object>> steps,
             AgentRunState runState,
             Map<String, Object> finishResult,
             String userMessage
+    ) {
+        return evaluate(steps, runState, finishResult, userMessage, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static JudgeResult evaluate(
+            List<Map<String, Object>> steps,
+            AgentRunState runState,
+            Map<String, Object> finishResult,
+            String userMessage,
+            LiveTreeSensors liveTree
     ) {
         List<String> issues = new ArrayList<>();
 
@@ -81,6 +105,17 @@ public final class AgentJudgeService {
                     issues.add(check.id() + ": " + check.summary());
                 }
             }
+        }
+
+        if (liveTree != null && liveTree.pathExists() != null) {
+            issues.addAll(AgentLiveFinishVerifier.verify(
+                    finishResult,
+                    steps,
+                    userMessage,
+                    liveTree.pathExists(),
+                    liveTree.dashboardLayoutJson(),
+                    liveTree.mimicDiagramJson()
+            ));
         }
 
         if (runState != null && runState.reworkRoundCount() >= 2 && hasBlockingErrorSteps(steps)) {

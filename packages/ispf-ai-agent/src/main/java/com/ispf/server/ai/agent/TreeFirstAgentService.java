@@ -10,6 +10,8 @@ import com.ispf.server.ai.context.ContextPackService;
 import com.ispf.server.ai.context.PlatformBriefingService;
 import com.ispf.server.ai.llm.LlmProviderRegistry;
 import com.ispf.server.config.AiProperties;
+import com.ispf.server.dashboard.DashboardService;
+import com.ispf.server.mimic.MimicService;
 import com.ispf.server.object.ObjectTreePort;
 import com.ispf.server.operator.OperatorAgentMemoryLearner;
 import com.ispf.server.operator.OperatorAgentMemoryService;
@@ -60,6 +62,8 @@ public class TreeFirstAgentService {
     private final AgentMetricsRecorder agentMetrics;
     private final AgentSessionDocumentService sessionDocumentService;
     private final ObjectTreePort objectTreePort;
+    private final DashboardService dashboardService;
+    private final MimicService mimicService;
     private final AgentPromptAssembler promptAssembler;
 
     public TreeFirstAgentService(
@@ -82,7 +86,9 @@ public class TreeFirstAgentService {
             AgentTurnRateLimiter turnRateLimiter,
             AgentMetricsRecorder agentMetrics,
             AgentSessionDocumentService sessionDocumentService,
-            ObjectTreePort objectTreePort
+            ObjectTreePort objectTreePort,
+            DashboardService dashboardService,
+            MimicService mimicService
     ) {
         this.llmProviderRegistry = llmProviderRegistry;
         this.toolRegistry = toolRegistry;
@@ -104,6 +110,8 @@ public class TreeFirstAgentService {
         this.agentMetrics = agentMetrics;
         this.sessionDocumentService = sessionDocumentService;
         this.objectTreePort = objectTreePort;
+        this.dashboardService = dashboardService;
+        this.mimicService = mimicService;
         this.promptAssembler = new AgentPromptAssembler(
                 aiProperties,
                 platformBriefingService,
@@ -699,12 +707,13 @@ public class TreeFirstAgentService {
                                 ));
                                 continue;
                             }
-                            // ADR-0051: pre-finish judge (REWORK) — must stay on the execute finish path.
+                            // ADR-0051: pre-finish judge (REWORK) — step logs + live tree sensors.
                             AgentJudgeService.JudgeResult judge = AgentJudgeService.evaluate(
                                     steps,
                                     session.runState(),
                                     candidateResult,
-                                    userMessage
+                                    userMessage,
+                                    liveTreeSensors()
                             );
                             if (judge.blocksFinish()) {
                                 Map<String, Object> judgeMap = new LinkedHashMap<>();
@@ -1631,6 +1640,32 @@ public class TreeFirstAgentService {
                 List.of()
         );
         return true;
+    }
+
+    private AgentJudgeService.LiveTreeSensors liveTreeSensors() {
+        return new AgentJudgeService.LiveTreeSensors(
+                path -> {
+                    try {
+                        return objectTreePort.tree().findByPath(path).isPresent();
+                    } catch (Exception ex) {
+                        return false;
+                    }
+                },
+                path -> {
+                    try {
+                        return Optional.ofNullable(dashboardService.getDashboard(path).layoutJson());
+                    } catch (Exception ex) {
+                        return Optional.empty();
+                    }
+                },
+                path -> {
+                    try {
+                        return Optional.ofNullable(mimicService.getMimic(path).diagramJson());
+                    } catch (Exception ex) {
+                        return Optional.empty();
+                    }
+                }
+        );
     }
 
     private void recordTurnAudit(

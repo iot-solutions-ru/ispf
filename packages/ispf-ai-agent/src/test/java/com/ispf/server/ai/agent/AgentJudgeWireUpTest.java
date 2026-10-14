@@ -20,6 +20,7 @@ class AgentJudgeWireUpTest {
         String source = Files.readString(path, StandardCharsets.UTF_8);
         assertThat(source)
                 .contains("AgentJudgeService.evaluate(")
+                .contains("liveTreeSensors()")
                 .contains("Judge REWORK")
                 .contains("incrementReworkRound()");
     }

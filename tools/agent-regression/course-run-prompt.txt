@@ -32,4 +32,8 @@
 17) Mimic вентилятора (deviceActive) + кнопка start; дашборд со scada-mimic (mimicPath).
 18) Дашборд виртуальных устройств: график sineWave, свойства, лог событий, отчёт — НЕ уменьшать widgetCount в конце.
 
-В конце finish с кратким списком созданных путей. Не останавливайся на clarify.
+В конце finish:
+- result.devices / dashboards / mimics / alerts — только пути из OK tool results (не выдумывай).
+- НЕ пиши completed:N пока судья не принял бы работу: каждый dashboard path должен иметь widgets с objectPath+variableName; mimic — elements с bindings.
+- summary кратко; без «все 18 готово», если live-дерево ещё неполное.
+Не останавливайся на clarify.
