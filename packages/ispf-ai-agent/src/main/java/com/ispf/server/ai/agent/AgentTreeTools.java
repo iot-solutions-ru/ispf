@@ -456,7 +456,8 @@ final class AgentTreeTools {
                         + "virtual-cluster-detail | empty). Prefer template= for standard screens. "
                         + "Custom layoutJson MUST be columns=84,rowHeight=8; KPI tiles w=21|28 h=14 in a filled row; "
                         + "charts/tables w≥42 h≥28; sizes multiples of 7 — never legacy crumbs w=2..6. "
-                        + "Requires DASHBOARD object at path. Never use set_variable for layout.";
+                        + "Refuses destructive shrink (new widgetCount ≤ half of existing when existing≥3) "
+                        + "unless force=true. Requires DASHBOARD object at path. Never use set_variable for layout.";
             }
 
             @Override
@@ -471,12 +472,19 @@ final class AgentTreeTools {
                 }
                 objectAccessService.requireWrite(path, auth);
                 try {
+                    int previousWidgetCount = 0;
+                    try {
+                        previousWidgetCount = widgetCount(
+                                objectMapper,
+                                dashboardService.getDashboard(path).layoutJson()
+                        );
+                    } catch (Exception ignored) {
+                        // new / unreadable dashboard — treat as empty previous layout
+                    }
                     String template = optionalString(arguments, "template");
-                    DashboardService.DashboardView view;
-                    if (template != null) {
-                        view = dashboardService.applyTemplateLayout(path, template);
-                    } else {
-                        String layoutJson = optionalString(arguments, "layoutJson");
+                    String layoutJson = null;
+                    if (template == null) {
+                        layoutJson = optionalString(arguments, "layoutJson");
                         if (layoutJson == null) {
                             layoutJson = optionalString(arguments, "layout");
                         }
@@ -496,14 +504,46 @@ final class AgentTreeTools {
                                     "layoutJson or template is required"
                             );
                         }
-                        view = dashboardService.saveLayout(path, layoutJson);
                     }
-                    return Map.of(
-                            "status", "OK",
-                            "path", view.path(),
-                            "title", view.title(),
-                            "widgetCount", widgetCount(objectMapper, view.layoutJson())
+                    int incomingWidgetCount = template != null
+                            ? widgetCount(objectMapper, dashboardService.resolveTemplateLayout(template))
+                            : widgetCount(objectMapper, layoutJson);
+                    boolean force = boolArg(arguments, "force", false) || boolArg(arguments, "replace", false);
+                    if (!force
+                            && previousWidgetCount >= 3
+                            && incomingWidgetCount < previousWidgetCount
+                            && incomingWidgetCount <= previousWidgetCount / 2) {
+                        Map<String, Object> blocked = new LinkedHashMap<>();
+                        blocked.put("status", "ERROR");
+                        blocked.put("error", "Refusing destructive layout shrink: path=" + path
+                                + " previousWidgetCount=" + previousWidgetCount
+                                + " incomingWidgetCount=" + incomingWidgetCount);
+                        blocked.put("path", path);
+                        blocked.put("previousWidgetCount", previousWidgetCount);
+                        blocked.put("incomingWidgetCount", incomingWidgetCount);
+                        blocked.put(
+                                "hint",
+                                "Keep the full widgets[] (or grow it). Do not replace a multi-widget dashboard "
+                                        + "with a 1-widget layout. Pass force=true only for intentional wipe."
+                        );
+                        return blocked;
+                    }
+                    DashboardService.DashboardView view = template != null
+                            ? dashboardService.applyTemplateLayout(path, template)
+                            : dashboardService.saveLayout(path, layoutJson);
+                    int savedCount = widgetCount(objectMapper, view.layoutJson());
+                    int boundCount = AgentToolResultMetrics.boundWidgetCountFromLayoutJson(
+                            objectMapper,
+                            view.layoutJson()
                     );
+                    Map<String, Object> ok = new LinkedHashMap<>();
+                    ok.put("status", "OK");
+                    ok.put("path", view.path());
+                    ok.put("title", view.title());
+                    ok.put("widgetCount", savedCount);
+                    ok.put("previousWidgetCount", previousWidgetCount);
+                    ok.put("boundWidgetCount", boundCount);
+                    return ok;
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());
                 }

@@ -938,6 +938,13 @@ final class AgentLoopGuard {
                     Prefer template= from get_dashboard_layout / catalog, or pass layout as a JSON object \
                     (not a broken string). Retry set_dashboard_layout once with corrected layoutJson.""";
         }
+        if ("set_dashboard_layout".equals(toolName)
+                && (lower.contains("destructive layout shrink") || lower.contains("previouswidgetcount"))) {
+            return """
+                    Do NOT replace a multi-widget dashboard with a 1-widget layout. \
+                    Keep/extend the existing widgets[] (objectPath+variableName on value/chart; mimicPath on scada-mimic). \
+                    Continue with the next unfinished course task; force=true only for intentional wipe.""";
+        }
         if ("configure_alert".equals(toolName) || isFormalVerificationError(error)) {
             return """
                     conditionExpr must discriminate — formal verify rejects tautologies (true, 1==1, true||…). \

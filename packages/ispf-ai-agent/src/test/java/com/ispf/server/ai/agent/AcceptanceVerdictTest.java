@@ -54,13 +54,70 @@ class AcceptanceVerdictTest {
                 Map.of(
                         "type", "tool",
                         "tool", "set_dashboard_layout",
-                        "result", Map.of("status", "OK", "widgetCount", 2)
+                        "arguments", Map.of(
+                                "path", "root.platform.dashboards.demo",
+                                "layoutJson", "{\"widgets\":["
+                                        + "{\"id\":\"a\",\"type\":\"value\",\"objectPath\":\"root.platform.devices.d1\",\"variableName\":\"sineWave\"},"
+                                        + "{\"id\":\"b\",\"type\":\"value\",\"objectPath\":\"root.platform.devices.d1\",\"variableName\":\"temperature\"}"
+                                        + "]}"
+                        ),
+                        "result", Map.of(
+                                "status", "OK",
+                                "path", "root.platform.dashboards.demo",
+                                "widgetCount", 2,
+                                "boundWidgetCount", 2
+                        )
                 )
         ), "Создай дашборд для устройства", null);
         assertThat(verdict.allowsFinish()).isTrue();
         assertThat(verdict.checks()).extracting(AcceptanceVerdict.Check::id)
-                .contains("dashboard.widgets")
+                .contains("dashboard.widgets", "dashboard.layout.regression", "dashboard.bindings")
                 .doesNotContain("alert.configured");
+    }
+
+    @Test
+    void destructiveLayoutShrinkBlocksFinish() {
+        var verdict = AcceptanceVerdict.evaluate(List.of(
+                Map.of(
+                        "type", "tool",
+                        "tool", "set_dashboard_layout",
+                        "arguments", Map.of("path", "root.platform.dashboards.main"),
+                        "result", Map.of("status", "OK", "path", "root.platform.dashboards.main", "widgetCount", 9)
+                ),
+                Map.of(
+                        "type", "tool",
+                        "tool", "set_dashboard_layout",
+                        "arguments", Map.of("path", "root.platform.dashboards.main"),
+                        "result", Map.of("status", "OK", "path", "root.platform.dashboards.main", "widgetCount", 1)
+                )
+        ), "Создай дашборд", null);
+        assertThat(verdict.allowsFinish()).isFalse();
+        assertThat(verdict.firstBlocking().id()).isEqualTo("dashboard.layout.regression");
+    }
+
+    @Test
+    void unboundDashboardWidgetsBlockFinish() {
+        var verdict = AcceptanceVerdict.evaluate(List.of(
+                Map.of(
+                        "type", "tool",
+                        "tool", "set_dashboard_layout",
+                        "arguments", Map.of(
+                                "path", "root.platform.dashboards.main",
+                                "layoutJson", "{\"widgets\":["
+                                        + "{\"id\":\"a\",\"type\":\"value\",\"title\":\"orphan\"},"
+                                        + "{\"id\":\"b\",\"type\":\"chart\",\"title\":\"also orphan\"}"
+                                        + "]}"
+                        ),
+                        "result", Map.of(
+                                "status", "OK",
+                                "path", "root.platform.dashboards.main",
+                                "widgetCount", 2,
+                                "boundWidgetCount", 0
+                        )
+                )
+        ), "Создай дашборд", null);
+        assertThat(verdict.allowsFinish()).isFalse();
+        assertThat(verdict.firstBlocking().id()).isEqualTo("dashboard.bindings");
     }
 
     @Test

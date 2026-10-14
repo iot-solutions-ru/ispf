@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.208",
-  "generatedAt": "2026-10-13T16:13:24.046164+00:00",
+  "generatedAt": "2026-10-14T07:52:07.547177+00:00",
   "platformVersion": "0.9.208",
   "bundleManifest": {
     "fields": [
@@ -16903,6 +16903,12 @@
       "path": "docs/en/compliance-tender-pack.md",
       "title": "Compliance tender pack (BL-192)",
       "keywords": "compliance-tender-pack Compliance tender pack (BL-192)"
+    },
+    {
+      "id": "customer-demo-playbook",
+      "path": "docs/en/customer-demo-playbook.md",
+      "title": "Customer demostand playbook (30–60 min)",
+      "keywords": "customer-demo-playbook Customer demostand playbook (30–60 min)"
     },
     {
       "id": "dashboards",
@@ -64703,5 +64709,5 @@
   "embeddingModel": "ispf-hash-v1",
   "embeddingDims": 384,
   "embeddingCoverage": 37,
-  "contentSha256": "6b028aafac99be5d6fd5454f9197473ab279c3e74e1a793f00c1fa2af682ef42"
+  "contentSha256": "40969b02f4e943cb825567bd43d407ccf1e4d784f2e09c7e775e5ad58bd73261"
 }

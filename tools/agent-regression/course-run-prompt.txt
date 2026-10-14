@@ -7,27 +7,29 @@
 - Object query под root.platform.queries: type=CUSTOM (не QUERIES).
 - USER: roles=operator (lowercase, не OPERATOR).
 - Тревоги: дискриминирующий CEL (self.<var>["value"] …), никогда true / 1==1.
-- Дашборды: create_object DASHBOARD → set_dashboard_layout (можно много подряд с разным layoutJson). Перед history-table — configure_variable_history.
-- Mimic: save_mimic_diagram с непустым elements[].
+- Дашборды: create_object DASHBOARD → ONE set_dashboard_layout с полным widgets[] (objectPath+variableName). Не затирай готовый экран 1 виджетом.
+- Имена переменных virtual-unified: intValue, floatValue, sineWave, sawtoothWave, telemetryTable, tableIntSum, sumIntFloat, deviceActive — НЕ Int/Float/Table.
+- Перед history-table — configure_variable_history.
+- Mimic: save_mimic_diagram с elements[] и bindings.{signal}.{objectPath,variableName}.
 
 Задания:
 1) Создать двух пользователей и дать первому пользователю доступ ко всем устройствам другого пользователя (set_object_acl).
-2) Тревога: срабатывает на Event 1 виртуального устройства и деактивируется при Event 2, если Int данных Event 2 > 20.
-3) Тревога через 10 секунд после того, как сумма Int+Float виртуального устройства попадает в [50,100] (delaySeconds=10, sustainWhileTrue).
-4) Тревога если сумма чисел в колонке Int переменной Table > 100 (sumRecordField(table,int) > 100); корректирующее действие — отчёт/таблица оператору при срабатывании.
+2) Тревога: срабатывает на Event 1 виртуального устройства и деактивируется при Event 2, если intValue данных Event 2 > 20.
+3) Тревога через 10 секунд после того, как сумма intValue+floatValue (sumIntFloat) попадает в [50,100] (delaySeconds=10, sustainWhileTrue).
+4) Тревога если tableIntSum > 100 (или sumRecordField(telemetryTable,int)); корректирующее действие — отчёт/таблица оператору при срабатывании.
 5) EVENT_FILTER: Event 2 где Integer > 10; или в поле String встречается "abc".
 6) Форма в виджете (grid layout) как в главе Grid Layout документации.
 7) Функция калькулятора на hub (не DEVICE), два числа через calculate() виртуального устройства.
-8) Относительная модель/mixin: в каждом виртуальном устройстве сумма Sine Wave + Sawtooth Wave.
+8) Относительная модель/mixin: в каждом виртуальном устройстве сумма sineWave + sawtoothWave (sumWaves).
 9) Калькулятор в виде виджета (grid layout).
 10) Запрос: все переменные виртуального устройства, редактируемые значения.
 11) Относительный отчёт: table всех виртуальных устройств.
-12) Посекундный график Sine Wave и Sawtooth Wave.
-13) Pie Chart по табличной переменной.
+12) Посекундный график sineWave и sawtoothWave.
+13) Pie Chart по telemetryTable.
 14) Виджет: сверху форма генерации событий, снизу лог обоих типов.
 15) Виджет с кнопкой, открывающей другой виджет.
-16) История sine за 5 минут: таблица + среднее (configure_variable_history).
-17) Два SVG-виджета кнопка и вентилятор; запуск вентилятора по кнопке (composite/subwidget или mimic).
-18) Дашборд виртуальных устройств: график Sine, свойства, лог событий, отчёт Table.
+16) История sineWave за 5 минут: таблица + среднее (configure_variable_history).
+17) Mimic вентилятора (deviceActive) + кнопка start; дашборд со scada-mimic (mimicPath).
+18) Дашборд виртуальных устройств: график sineWave, свойства, лог событий, отчёт — НЕ уменьшать widgetCount в конце.
 
 В конце finish с кратким списком созданных путей. Не останавливайся на clarify.
