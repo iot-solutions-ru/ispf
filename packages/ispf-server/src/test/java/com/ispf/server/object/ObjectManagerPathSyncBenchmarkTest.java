@@ -127,8 +127,10 @@ class ObjectManagerPathSyncBenchmarkTest {
 
     /** Pre-F-08 shape: {@code public synchronized void reloadPathFromDatabase(String)}. */
     private void instanceMonitorSync(String path) {
-        synchronized (objectManager) {
-            objectManager.reloadPathFromDatabase(path);
+        // Copy: synchronizing on the non-final field is the pre-F-08 monitor, not a second lock.
+        ObjectManager locked = objectManager;
+        synchronized (locked) {
+            locked.reloadPathFromDatabase(path);
         }
     }
 

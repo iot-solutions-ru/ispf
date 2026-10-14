@@ -135,6 +135,14 @@ subprojects {
         useJUnitPlatform()
         maxParallelForks = 1
         systemProperty("junit.jupiter.execution.parallel.enabled", "false")
+        // JDK 25 logs these from every forked test JVM, and CI forkEvery=5 fills the pr-fast
+        // log with them. Netty and z3-turnkey call System.load from the unnamed classpath.
+        // JaCoCo and Mockito append the boot classpath, which already turns CDS off;
+        // -Xshare:off only skips that message.
+        jvmArgs(
+            "--enable-native-access=ALL-UNNAMED",
+            "-Xshare:off",
+        )
     }
 
     // Coverage: `./gradlew coverageReport` after tests writes
