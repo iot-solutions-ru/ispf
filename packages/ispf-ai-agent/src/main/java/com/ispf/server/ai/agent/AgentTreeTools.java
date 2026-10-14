@@ -108,7 +108,7 @@ final class AgentTreeTools {
                 addDashboardWidgetTool(dashboardService, objectAccessService, tenantScopeService, objectMapper),
                 validateBundleTool(objectMapper, aiToolRegistry),
                 dryRunDeployTool(objectMapper, aiToolRegistry),
-                importPackageTool(objectMapper, bundleDeployService)
+                importPackageTool(objectMapper, aiToolRegistry, bundleDeployService)
         );
     }
 
@@ -861,7 +861,9 @@ final class AgentTreeTools {
 
             @Override
             public String description() {
-                return "Semantic validation of bundle manifest (no DB writes). Args: appId, manifest (object).";
+                return "Semantic validation of bundle manifest (no DB writes). Args: appId, manifest (object). "
+                        + "Authoring path: LOGIC_HOST_DEVICE stays WARNING. "
+                        + "Ship acceptance uses deploy_step_validate, which promotes that code to ERROR.";
             }
 
             @Override
@@ -914,6 +916,7 @@ final class AgentTreeTools {
 
     private static PlatformAgentTool importPackageTool(
             ObjectMapper objectMapper,
+            AiToolRegistry aiToolRegistry,
             ApplicationBundleDeployService bundleDeployService
     ) {
         return new PlatformAgentTool() {
@@ -947,6 +950,10 @@ final class AgentTreeTools {
                     );
                 }
                 var parsed = BundleManifestJsonSupport.parse(objectMapper, (Map<String, Object>) manifestMap);
+                Map<String, Object> shipGate = shipCanonGate(aiToolRegistry, packageId, parsed, context.actor());
+                if (shipGate != null) {
+                    return shipGate;
+                }
                 try {
                     boolean runTests = !Boolean.FALSE.equals(arguments.get("runTests"));
                     Map<String, Object> deployed = bundleDeployService.deploy(
@@ -1198,10 +1205,33 @@ final class AgentTreeTools {
             case "operator", "operators", "hmi", "ops", "user" -> com.ispf.server.config.IspfRoles.OPERATOR;
             case "admin", "administrator", "admins" -> com.ispf.server.config.IspfRoles.ADMIN;
             case "developer", "dev", "developers", "configurator" -> com.ispf.server.config.IspfRoles.DEVELOPER;
-            case "tenant-admin", "tenantadmin" -> com.ispf.server.config.IspfRoles.TENANT_ADMIN;
+            case "tenant-admin", "tenantadmin", "tenant_admin" -> com.ispf.server.config.IspfRoles.TENANT_ADMIN;
             case "operator-readonly", "operatorreadonly", "readonly" -> "operator-readonly";
             default -> lower;
         };
+    }
+
+    /**
+     * Final ship gate. Interactive validate may leave {@code LOGIC_HOST_DEVICE} as WARNING;
+     * import refuses to apply until ship-canon validation is OK.
+     *
+     * @return null when the manifest may ship
+     */
+    private static Map<String, Object> shipCanonGate(
+            AiToolRegistry aiToolRegistry,
+            String appId,
+            ApplicationBundleDeployService.BundleManifest manifest,
+            String actor
+    ) {
+        Map<String, Object> ship = aiToolRegistry.validateBundle(appId, manifest, actor, true);
+        if (BundleValidationResult.OK.equals(ship.get("status"))) {
+            return null;
+        }
+        Map<String, Object> blocked = new LinkedHashMap<>(ship);
+        blocked.put("status", BundleValidationResult.ERROR);
+        blocked.putIfAbsent("error", "Ship canon validation failed");
+        blocked.put("shipCanon", true);
+        return blocked;
     }
 
     private static String stringArg(Map<String, Object> args, String key) {

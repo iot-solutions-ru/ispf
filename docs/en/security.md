@@ -111,6 +111,14 @@ Rules: `IspfAuthorizationRules.java`.
 
 Platform backup remains admin-only. Its export is a SYSTEM-style privileged snapshot, not a MEMBER-filtered full-tree dump available to operators.
 
+### Ui-pack scoped tokens (ADR-0073)
+
+A bearer whose authentication carries custom claim `uiPackAppId` is not a console session. `IspfAuthorizationRules.deniesPackScopedApi` rejects every `/api/**` call except `GET /api/v1/auth/me`, `POST /api/v1/auth/logout`, `GET /api/v1/info`, and `POST /api/v1/bff/**` for that app. A `Referer` of `/apps/<other>/` or header `X-ISPF-Ui-Pack-App` that disagrees with the claim is rejected. Realm role `admin` does not lift this.
+
+On local/test token auth, an admin mints one with `POST /api/v1/security/ui-pack-tokens` (`username`, `appId`, optional `ttlHours`). On OIDC this endpoint does not mint; the identity provider must put `uiPackAppId` on the access token.
+
+Partner packs (`ui-pack.json` `uiPackTrust`: `partner` or `signedPartner`) must not call `POST /api/v1/auth/login`. A request whose `Referer` is `/apps/<appId>/` for such a pack is **403**. That check is not a guarantee if the pack omits `Referer`. First-party packs may still log in on `/apps/`.
+
 ## Keycloak (development)
 
 Docker Compose starts Keycloak on port **8180**.

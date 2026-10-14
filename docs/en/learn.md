@@ -23,6 +23,8 @@ Text-first: read + do labs; no video track required.
 
 ---
 
+**Showing a customer on a demostand (not self-study):** use [customer-demo-playbook](customer-demo-playbook.md) (MES live or OT+HMI+air-gap, 30–60 min). Path A/B below are for learners and engineers.
+
 ## Path A — First hour (try + understand)
 
 | Step | Time | Do this | Doc |

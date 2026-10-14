@@ -49,13 +49,16 @@ final class AgentFunctionTools {
             @Override
             public String description() {
                 return "Deploy or update a function on an object tree node. Args: path, functionName, "
+                        + "hostKind (required enum SINGLETON|INSTANCE — DEVICE is rejected), "
                         + "sourceType (script|java), sourceBody (JSON steps string OR Java class source), "
                         + "inputSchema, outputSchema ({name?, fields:[{name,type,nullable?}]}), "
                         + "optional description, dataSourcePath (script SQL), version. "
+                        + "Host path must be a SINGLETON hub (root.platform.singleton-blueprints.*) or INSTANCE twin — "
+                        + "never DEVICE (solution logic canon / ADR-0060). There is no DEVICE default. "
                         + "Prefer sourceType=script on demostand (JSON steps: setVar, invoke_function, return). "
                         + "Java needs a JDK compiler on the server — often unavailable; use script + invoke_function "
-                        + "to call device calculate(). Use get_function_template topic=script. "
-                        + "Test with invoke_tree_function.";
+                        + "to call device calculate(). Use get_function_template topic=java|script for skeleton. "
+                        + "Test with invoke_tree_function. Application SQL functions: deploy_app_function sourceType=script.";
             }
 
             @Override
@@ -77,6 +80,14 @@ final class AgentFunctionTools {
                             "error",
                             "sourceType must be script or java (use deploy_app_function for application script deploy)"
                     );
+                }
+                Map<String, Object> hostError = LogicHostGuard.rejectDeviceHost(
+                        stringArg(arguments, "hostKind"),
+                        path,
+                        LogicHostGuard.liveType(objectTreePort, path)
+                );
+                if (hostError != null) {
+                    return hostError;
                 }
                 var auth = context.authentication();
                 if (!tenantScopeService.isPathVisible(path, auth)) {

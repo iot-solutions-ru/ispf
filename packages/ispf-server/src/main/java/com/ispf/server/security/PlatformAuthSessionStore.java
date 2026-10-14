@@ -21,28 +21,34 @@ public class PlatformAuthSessionStore {
     }
 
     public void save(String token, String username, Instant expiresAt) {
+        save(token, username, expiresAt, null);
+    }
+
+    public void save(String token, String username, Instant expiresAt, String uiPackAppId) {
         jdbcTemplate.update("""
-                INSERT INTO %s (token, username, expires_at, created_at)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO %s (token, username, expires_at, created_at, ui_pack_app_id)
+                VALUES (?, ?, ?, ?, ?)
                 """.formatted(sessionsTable),
                 token,
                 username,
                 Timestamp.from(expiresAt),
-                Timestamp.from(Instant.now())
+                Timestamp.from(Instant.now()),
+                uiPackAppId
         );
     }
 
     public Optional<AuthSession> findValid(String token, Instant now) {
         List<AuthSession> rows = jdbcTemplate.query(
                 """
-                        SELECT token, username, expires_at
+                        SELECT token, username, expires_at, ui_pack_app_id
                         FROM %s
                         WHERE token = ? AND expires_at > ?
                         """.formatted(sessionsTable),
                 (rs, rowNum) -> new AuthSession(
                         rs.getString("token"),
                         rs.getString("username"),
-                        rs.getTimestamp("expires_at").toInstant()
+                        rs.getTimestamp("expires_at").toInstant(),
+                        rs.getString("ui_pack_app_id")
                 ),
                 token,
                 Timestamp.from(now)
@@ -70,6 +76,6 @@ public class PlatformAuthSessionStore {
         return count != null ? count : 0;
     }
 
-    public record AuthSession(String token, String username, Instant expiresAt) {
+    public record AuthSession(String token, String username, Instant expiresAt, String uiPackAppId) {
     }
 }

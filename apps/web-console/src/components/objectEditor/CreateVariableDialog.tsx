@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
-import { Alert, Button, Form, Input, Modal, Segmented, Space, Switch, Typography } from "antd";
+import { Alert, Button, Form, Input, Modal, Space, Switch, Typography } from "antd";
 import { createVariable } from "../../api";
 import type { CreateVariablePayload } from "../../api";
 import type { DataRecord, DataSchema } from "../../types";
@@ -10,40 +10,12 @@ import DataRecordValueEditor from "../schema/DataRecordValueEditor";
 import VariableHistoryFields from "./VariableHistoryFields";
 import type { VariableHistoryState } from "./variableHistoryModel";
 import { scalarValueSchema, syncRecordSchema } from "../../utils/schema/dataSchema";
-import type { SchemaFieldType } from "../../utils/schema/dataSchema";
 import { isTechnicalIdentifier } from "../../utils/ui/technicalIdentifier";
 
 interface CreateVariableDialogProps {
   objectPath: string;
   onClose: () => void;
   onSaved: () => void;
-}
-
-type SchemaPreset = "DOUBLE" | "BOOLEAN" | "STRING" | "INTEGER";
-
-const PRESETS: SchemaPreset[] = ["DOUBLE", "BOOLEAN", "STRING", "INTEGER"];
-
-function schemaForPreset(preset: SchemaPreset, schemaName: string): DataSchema {
-  return scalarValueSchema(schemaName, preset as SchemaFieldType);
-}
-
-function isStockValuePreset(schema: DataSchema): boolean {
-  const only = schema.fields.length === 1 ? schema.fields[0] : null;
-  return Boolean(only && only.name === "value" && PRESETS.includes(only.type as SchemaPreset));
-}
-
-function patchLastFieldType(schema: DataSchema, preset: SchemaPreset, schemaName: string): DataSchema {
-  if (schema.fields.length === 0) {
-    return schemaForPreset(preset, schemaName);
-  }
-  const last = schema.fields.length - 1;
-  return {
-    ...schema,
-    name: schemaName,
-    fields: schema.fields.map((field, index) =>
-      index === last ? { ...field, type: preset, nestedSchema: undefined } : field,
-    ),
-  };
 }
 
 export default function CreateVariableDialog({
@@ -55,7 +27,6 @@ export default function CreateVariableDialog({
   const [name, setName] = useState("");
   const [readable, setReadable] = useState(true);
   const [writable, setWritable] = useState(false);
-  const [schemaPreset, setSchemaPreset] = useState<SchemaPreset | null>("DOUBLE");
   const [schema, setSchema] = useState<DataSchema>(() => scalarValueSchema("value", "DOUBLE"));
   const [record, setRecord] = useState<DataRecord>(() => ({
     schema: scalarValueSchema("value", "DOUBLE"),
@@ -85,24 +56,10 @@ export default function CreateVariableDialog({
     );
   }
 
-  function applyPreset(preset: SchemaPreset) {
-    const stock = isStockValuePreset(schema);
-    const next = stock ? schemaForPreset(preset, schemaName) : patchLastFieldType(schema, preset, schemaName);
-    setSchemaPreset(stock ? preset : null);
-    setSchema(next);
-    setRecord((prev) => syncRecordSchema(prev, next));
-  }
-
   function handleSchemaChange(next: DataSchema) {
     const named = { ...next, name: schemaName };
     setSchema(named);
     setRecord((prev) => syncRecordSchema(prev, named));
-    const only = named.fields.length === 1 ? named.fields[0] : null;
-    if (only?.name === "value" && PRESETS.includes(only.type as SchemaPreset)) {
-      setSchemaPreset(only.type as SchemaPreset);
-    } else {
-      setSchemaPreset(null);
-    }
   }
 
   const mutation = useMutation({
@@ -192,18 +149,8 @@ export default function CreateVariableDialog({
 
         <section className="modal-section">
           <Typography.Title level={4}>{t("variables.schemaSection")}</Typography.Title>
-          <Segmented<SchemaPreset | "">
-            value={schemaPreset ?? ""}
-            onChange={(preset) => {
-              if (preset) applyPreset(preset);
-            }}
-            options={PRESETS.map((preset) => ({
-              value: preset,
-              label: t(`variables.schemaPreset.${preset}`),
-            }))}
-          />
-          <Typography.Paragraph type="secondary" style={{ marginTop: 8 }}>
-            {t("variables.schemaPresetHint")}
+          <Typography.Paragraph type="secondary" style={{ marginTop: 0, marginBottom: 12 }}>
+            {t("variables.createSchemaHint")}
           </Typography.Paragraph>
           <DataSchemaEditor
             value={schema}

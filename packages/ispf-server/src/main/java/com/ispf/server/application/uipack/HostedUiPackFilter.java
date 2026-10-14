@@ -18,10 +18,19 @@ import java.nio.file.Path;
 import java.util.Locale;
 /**
  * ADR-0054: serve installed UI packs at {@code GET /apps/<appId>/**} with SPA fallback.
+ * ADR-0073: every response on that path carries a conservative CSP plus COOP/CORP.
  */
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE - 20)
 public class HostedUiPackFilter extends OncePerRequestFilter {
+
+    /**
+     * Conservative same-origin policy. {@code style-src} keeps {@code 'unsafe-inline'} because
+     * hosted packs ship inline styles; scripts do not get {@code 'unsafe-inline'} or {@code 'unsafe-eval'}.
+     */
+    public static final String CONTENT_SECURITY_POLICY =
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+                    + "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'";
 
     private final DropInUiPackLoader uiPackLoader;
 
@@ -45,6 +54,7 @@ public class HostedUiPackFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+        applyIsolationHeaders(response);
         String path = normalizedPath(request);
         // /apps/<appId>/...
         String rest = path.substring("/apps/".length());
@@ -91,7 +101,7 @@ public class HostedUiPackFilter extends OncePerRequestFilter {
             response.setContentType(contentType);
         }
         response.setHeader("Cache-Control", "no-cache");
-        response.setHeader("X-Content-Type-Options", "nosniff");
+        maybeMarkPartnerContext(response, appId, contentType);
         if ("HEAD".equalsIgnoreCase(request.getMethod())) {
             response.setContentLengthLong(Files.size(asset));
             return;
@@ -99,6 +109,34 @@ public class HostedUiPackFilter extends OncePerRequestFilter {
         try (OutputStream out = response.getOutputStream()) {
             Files.copy(asset, out);
         }
+    }
+
+    /**
+     * Partner HTML pages drop a Path=/ cookie so {@code /api/v1/auth/login} can refuse
+     * a full console token even when the pack strips Referer (ADR-0073).
+     */
+    private void maybeMarkPartnerContext(HttpServletResponse response, String appId, String contentType) {
+        if (contentType == null || !contentType.toLowerCase(Locale.ROOT).contains("text/html")) {
+            return;
+        }
+        if (!UiPackSupport.isSafeAppId(appId)) {
+            return;
+        }
+        if (!UiPackSupport.isPartnerTrust(uiPackLoader.uiPackTrust(appId))) {
+            return;
+        }
+        response.addHeader(
+                "Set-Cookie",
+                UiPackSupport.CONTEXT_COOKIE + "=" + appId
+                        + "; Path=/; Max-Age=3600; HttpOnly; SameSite=Lax"
+        );
+    }
+
+    private static void applyIsolationHeaders(HttpServletResponse response) {
+        response.setHeader("Content-Security-Policy", CONTENT_SECURITY_POLICY);
+        response.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+        response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+        response.setHeader("X-Content-Type-Options", "nosniff");
     }
 
     private static String probeContentType(Path asset) throws IOException {

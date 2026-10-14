@@ -75,6 +75,8 @@ ispf:
     min-interval-ms: 5000
     retention-days: 90   # default when variable retention = null
     record-snapshot-enabled: true   # field $record — full DataRecord JSON in value_text
+    # quality column (ADR-0074): GOOD | UNCERTAIN | BAD, or NULL = unknown / pre-v2 (not GOOD)
+    # Flagship stores: jdbc and clickhouse. cassandra/scylla stay experimental and omit quality.
     # Per-variable policy (PATCH .../variables/history):
     #   historySampleMode: CHANGES_ONLY | ALL_VALUES
     #   includePreviousValueInEvent: boolean  # opt-in previousValue on WS/automation (ADR-0061)

@@ -19,6 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +47,26 @@ class AgentDeployPlaybookToolsTest {
                 org.mockito.Mockito.mock(com.ispf.server.ai.context.ContextPackSearchService.class)
         );
         context = new AgentContext("admin", null, new AgentRunState());
+        lenient().when(aiToolRegistry.validateBundle(any(), any(), any(), eq(true)))
+                .thenReturn(okShip());
+        lenient().when(aiToolRegistry.dryRunDeploy(any(), any(), any(), eq(true)))
+                .thenReturn(okShip());
+    }
+
+    private static Map<String, Object> okShip() {
+        Map<String, Object> ok = new LinkedHashMap<>();
+        ok.put("status", "OK");
+        ok.put("shipCanon", true);
+        return ok;
+    }
+
+    private static Map<String, Object> logicHostError() {
+        Map<String, Object> shipError = new LinkedHashMap<>();
+        shipError.put("status", "ERROR");
+        shipError.put("errors", List.of("[LOGIC_HOST_DEVICE] functions[0].objectPath: hosted on DEVICE"));
+        shipError.put("issues", List.of(Map.of("code", "LOGIC_HOST_DEVICE", "severity", "ERROR")));
+        shipError.put("shipCanon", true);
+        return shipError;
     }
 
     @Test
@@ -125,6 +148,40 @@ class AgentDeployPlaybookToolsTest {
         assertEquals("OK", result.get("status"));
         assertEquals("import", result.get("playbookStep"));
         assertTrue(context.runState().completedPlanSteps().contains("deploy:import"));
+    }
+
+    @Test
+    void deployStepValidateUsesShipCanonAndDoesNotMarkBundleOnLogicHostDevice() throws Exception {
+        when(aiToolRegistry.validateBundle(eq("demo-app"), any(), eq("admin"), eq(true)))
+                .thenReturn(logicHostError());
+        PlatformAgentTool tool = requireTool("deploy_step_validate");
+        Map<String, Object> result = tool.execute(manifestArgs("demo-app"), context);
+        assertEquals("ERROR", result.get("status"));
+        assertFalse(context.runState().isBundleValidated("demo-app"));
+        verify(aiToolRegistry).validateBundle(eq("demo-app"), any(), eq("admin"), eq(true));
+    }
+
+    @Test
+    void deployStepImportRefusesShipCanonFailureWithoutDeploying() throws Exception {
+        context.runState().markBundleValidated("demo-app");
+        when(aiToolRegistry.validateBundle(eq("demo-app"), any(), eq("admin"), eq(true)))
+                .thenReturn(logicHostError());
+        PlatformAgentTool tool = requireTool("deploy_step_import");
+        Map<String, Object> result = tool.execute(manifestArgs("demo-app"), context);
+        assertEquals("ERROR", result.get("status"));
+        assertEquals("import", result.get("playbookStep"));
+        assertFalse(context.runState().completedPlanSteps().contains("deploy:import"));
+        verify(bundleDeployService, never()).deploy(eq("demo-app"), any());
+    }
+
+    private static Map<String, Object> manifestArgs(String appId) {
+        return Map.of(
+                "appId", appId,
+                "manifest", Map.of(
+                        "version", "1.0.0",
+                        "displayName", "Demo"
+                )
+        );
     }
 
     private PlatformAgentTool requireTool(String name) {
