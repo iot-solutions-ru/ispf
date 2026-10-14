@@ -148,7 +148,7 @@ public class FederationPeerAuthService {
                 try {
                     refreshPeer(peer);
                 } catch (Exception e) {
-                    log.warn("Federation auth refresh failed for {}: {}", peer.name(), e.getMessage());
+                    log.error("Federation auth refresh failed for {}: {}", peer.name(), e.getMessage());
                 }
             }
         }
@@ -183,8 +183,8 @@ public class FederationPeerAuthService {
         } catch (RuntimeException e) {
             peerStore.updateAuthState(
                     peer.id(),
-                    peer.authToken(),
-                    peer.tokenExpiresAt(),
+                    null,
+                    null,
                     FederationAuthStatus.FAILED,
                     peer.lastAuthAt(),
                     e.getMessage()
