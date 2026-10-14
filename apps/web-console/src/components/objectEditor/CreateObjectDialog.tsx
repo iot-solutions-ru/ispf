@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Alert, Button, Form, Input, InputNumber, Modal, Select, Space, Typography } from "antd";
-import { createObject, createEventFilter, upsertFunction } from "../../api";
+import { createObject, createEventFilter, fetchVariables, upsertFunction } from "../../api";
 import { buildObjectQueryRunFunction } from "../../utils/object/objectQueryDefaults";
 import {
   createBlueprint,
@@ -44,7 +44,6 @@ import {
   resolveCreateDialogMode,
   showsCreateTypeField,
 } from "../../utils/object/createObjectMode";
-import { DATA_SOURCES_ROOT } from "../../utils/platform/platformSqlPath";
 import { ObjectPathField } from "../../ui/index";
 import type { BlueprintDto } from "../../types/blueprints";
 import type { ObjectType } from "../../types";
@@ -85,7 +84,7 @@ export default function CreateObjectDialog({
   onClose,
   onCreated,
 }: CreateObjectDialogProps) {
-  const { t } = useTranslation(["explorer", "common", "platform"]);
+  const { t } = useTranslation(["explorer", "common", "platform", "scada"]);
   const mode = resolveCreateDialogMode(parentPath);
   const blueprintKind = blueprintKindForCatalog(parentPath);
   const isMimicCatalog = parentPath.endsWith(".mimics");
@@ -127,7 +126,58 @@ export default function CreateObjectDialog({
   const [dashboardLayoutTemplate, setDashboardLayoutTemplate] = useState("");
   const nameValid = isTechnicalIdentifier(name, "pathSegment");
 
-  const dataSourcesQuery = useDataSourceOptions();
+  const dataSourcesQuery = useDataSourceOptions(
+    mode === "report" || mode === "sql-binding" || mode === "migration",
+  );
+
+  const dataSourceSelectOptions = useMemo(
+    () => [
+      { value: "", label: t("platform:sqlBinding.selectPlaceholder") },
+      ...(dataSourcesQuery.data ?? []).map((source) => ({
+        value: source.path,
+        label: `${source.displayName} (${source.path})`,
+      })),
+    ],
+    [dataSourcesQuery.data, t],
+  );
+
+  const bindingTargetPathTrimmed = bindingTargetPath.trim();
+  const bindingTargetVariablesQuery = useQuery({
+    queryKey: ["variables", bindingTargetPathTrimmed],
+    queryFn: () => fetchVariables(bindingTargetPathTrimmed),
+    enabled: mode === "sql-binding" && bindingTargetPathTrimmed.length > 0,
+  });
+
+  const bindingVariableNames = useMemo(() => {
+    const list = bindingTargetVariablesQuery.data ?? [];
+    return list
+      .filter((variable) => variable.writable)
+      .map((variable) => variable.name)
+      .sort((left, right) => left.localeCompare(right));
+  }, [bindingTargetVariablesQuery.data]);
+
+  const bindingVariableSelectOptions = useMemo(() => {
+    const options = bindingVariableNames.map((name) => ({ value: name, label: name }));
+    if (bindingVariable && !bindingVariableNames.includes(bindingVariable)) {
+      options.unshift({ value: bindingVariable, label: bindingVariable });
+    }
+    return options;
+  }, [bindingVariable, bindingVariableNames]);
+
+  useEffect(() => {
+    if (mode !== "sql-binding" || bindingVariableNames.length === 0) {
+      return;
+    }
+    setBindingVariable((current) => {
+      if (current && bindingVariableNames.includes(current)) {
+        return current;
+      }
+      if (bindingVariableNames.includes("value")) {
+        return "value";
+      }
+      return bindingVariableNames[0];
+    });
+  }, [mode, bindingTargetPathTrimmed, bindingVariableNames]);
   const dashboardTemplatesQuery = useQuery({
     queryKey: ["dashboard-layout-templates"],
     queryFn: fetchDashboardLayoutTemplates,
@@ -532,13 +582,8 @@ export default function CreateObjectDialog({
                 <Select
                   value={reportDataSourcePath}
                   onChange={setReportDataSourcePath}
-                  options={[
-                    { value: "", label: t("platform:sqlBinding.selectPlaceholder") },
-                    ...(dataSourcesQuery.data ?? []).map((source) => ({
-                      value: source.path,
-                      label: `${source.displayName} (${source.path})`,
-                    })),
-                  ]}
+                  options={dataSourceSelectOptions}
+                  loading={dataSourcesQuery.isLoading}
                 />
                 </Form.Item>
               </Form>
@@ -638,15 +683,15 @@ export default function CreateObjectDialog({
                 <Form.Item label="Version">
                   <Input value={migrationVersion} onChange={(e) => setMigrationVersion(e.target.value)} />
                 </Form.Item>
-                <ObjectPathField
-                  className="full"
-                  label="Data source path"
-                  value={migrationDataSourcePath}
-                  onChange={setMigrationDataSourcePath}
-                  filterTypes={["DATA_SOURCE"]}
-                  rootPath={DATA_SOURCES_ROOT}
-                  placeholder="root.platform.data-sources.myapp"
-                />
+                <Form.Item label="Data source path" required>
+                  <Select
+                    value={migrationDataSourcePath}
+                    onChange={setMigrationDataSourcePath}
+                    options={dataSourceSelectOptions}
+                    loading={dataSourcesQuery.isLoading}
+                    placeholder={t("platform:sqlBinding.selectPlaceholder")}
+                  />
+                </Form.Item>
                 <Form.Item label={t("dialog.sqlOptional")} className="full">
                   <Input.TextArea
                     className="mono"
@@ -669,19 +714,53 @@ export default function CreateObjectDialog({
                   onChange={setBindingTargetPath}
                   placeholder="root.platform.devices.demo-sensor-01"
                 />
-                <Form.Item label={t("dialog.sqlBindingVariable")}>
-                  <Input value={bindingVariable} onChange={(e) => setBindingVariable(e.target.value)} />
+                <Form.Item
+                  label={t("dialog.sqlBindingVariable")}
+                  required
+                  validateStatus={
+                    bindingTargetPathTrimmed
+                    && !bindingTargetVariablesQuery.isLoading
+                    && !bindingTargetVariablesQuery.isError
+                    && bindingVariableNames.length === 0
+                      ? "warning"
+                      : undefined
+                  }
+                  help={
+                    !bindingTargetPathTrimmed
+                      ? t("scada:props.bindingSelectObjectFirst")
+                      : bindingTargetVariablesQuery.isError
+                        ? t("scada:props.bindingVariablesError")
+                        : bindingTargetPathTrimmed
+                          && !bindingTargetVariablesQuery.isLoading
+                          && bindingVariableNames.length === 0
+                          ? t("scada:props.bindingVariablesEmpty")
+                          : undefined
+                  }
+                >
+                  <Select
+                    value={bindingVariable || undefined}
+                    onChange={setBindingVariable}
+                    options={bindingVariableSelectOptions}
+                    disabled={!bindingTargetPathTrimmed}
+                    loading={bindingTargetVariablesQuery.isLoading}
+                    placeholder={
+                      bindingTargetPathTrimmed
+                        ? t("platform:sqlBinding.selectPlaceholder")
+                        : t("scada:props.bindingSelectObjectFirst")
+                    }
+                    showSearch
+                    optionFilterProp="label"
+                  />
                 </Form.Item>
-                <ObjectPathField
-                  className="full"
-                  label={t("dialog.sqlBindingDataSourcePath")}
-                  pickerTitle={t("dialog.sqlBindingPickDataSource")}
-                  value={bindingDataSourcePath}
-                  onChange={setBindingDataSourcePath}
-                  filterTypes={["DATA_SOURCE"]}
-                  rootPath={DATA_SOURCES_ROOT}
-                  placeholder="root.platform.data-sources.myapp"
-                />
+                <Form.Item label={t("dialog.sqlBindingDataSourcePath")} required>
+                  <Select
+                    value={bindingDataSourcePath}
+                    onChange={setBindingDataSourcePath}
+                    options={dataSourceSelectOptions}
+                    loading={dataSourcesQuery.isLoading}
+                    placeholder={t("platform:sqlBinding.selectPlaceholder")}
+                  />
+                </Form.Item>
                 <Form.Item label={t("dialog.sqlBindingQuery")} className="full">
                   <Input.TextArea
                     className="mono"
@@ -889,7 +968,14 @@ export default function CreateObjectDialog({
                       jdbcUrl: dataSourceJdbcUrl,
                     }))
                   || (mode === "sql-binding"
-                    && (!bindingTargetPath.trim() || !bindingDataSourcePath.trim()))
+                    && (
+                      !bindingTargetPath.trim()
+                      || !bindingDataSourcePath.trim()
+                      || !bindingVariable.trim()
+                      || bindingTargetVariablesQuery.isLoading
+                      || bindingTargetVariablesQuery.isError
+                      || bindingVariableNames.length === 0
+                    ))
                 }
                 loading={mutation.isPending}
               >
