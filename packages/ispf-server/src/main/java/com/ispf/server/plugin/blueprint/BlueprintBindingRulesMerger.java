@@ -18,6 +18,10 @@ import java.util.Set;
 @Service
 public class BlueprintBindingRulesMerger {
 
+    public static final String NOT_EXPORTED = "notExported";
+
+    public static final String NOT_EXPORTED_SECTIONS = "sqlBindings,alertRules";
+
     private final BindingRulesService bindingRulesService;
     private final BindingDependencyIndex dependencyIndex;
     private final BindingRuleEngine bindingRuleEngine;
@@ -86,6 +90,35 @@ public class BlueprintBindingRulesMerger {
 
     public void evaluateRulesForObject(String objectPath) {
         bindingRuleEngine.runRulesForObject(objectPath);
+    }
+
+    /**
+     * Copies live binding rules of the source object onto a model taken from that object.
+     * SQL bindings and alert rules are not part of this snapshot; the model records that omission.
+     */
+    public BlueprintDefinition captureFromObject(String sourcePath, BlueprintDefinition model) {
+        List<BlueprintBindingRule> rules = bindingRulesService.listRules(sourcePath).stream()
+                .map(BlueprintBindingRule::fromBindingRule)
+                .toList();
+        Map<String, String> parameters = new LinkedHashMap<>(model.parameters());
+        parameters.put(NOT_EXPORTED, NOT_EXPORTED_SECTIONS);
+        return new BlueprintDefinition(
+                model.id(),
+                model.name(),
+                model.description(),
+                model.type(),
+                model.targetObjectType(),
+                model.suitabilityExpression(),
+                model.variables(),
+                model.events(),
+                model.functions(),
+                rules,
+                model.sqlBindings(),
+                model.alertRules(),
+                parameters,
+                model.createdAt(),
+                model.updatedAt()
+        );
     }
 
     private static BindingRule resolve(

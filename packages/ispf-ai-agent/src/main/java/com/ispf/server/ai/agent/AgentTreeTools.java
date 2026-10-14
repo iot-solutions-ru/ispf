@@ -1175,7 +1175,10 @@ final class AgentTreeTools {
         return out;
     }
 
-    /** Map common agent aliases (OPERATOR, ROLE_ADMIN, ops, configurator) onto platform role ids. */
+            case "operator", "operators", "ops", "hmi", "user" -> com.ispf.server.config.IspfRoles.OPERATOR;
+            case "admin", "administrator", "admins" -> com.ispf.server.config.IspfRoles.ADMIN;
+            case "developer", "dev", "developers", "configurator" -> com.ispf.server.config.IspfRoles.DEVELOPER;
+            case "tenant-admin", "tenantadmin", "tenant_admin" -> com.ispf.server.config.IspfRoles.TENANT_ADMIN;
     static String canonicalizeRoleName(String role) {
         if (role == null || role.isBlank()) {
             return "";
@@ -1189,7 +1192,10 @@ final class AgentTreeTools {
             case "operator", "operators", "hmi", "ops", "user" -> com.ispf.server.config.IspfRoles.OPERATOR;
             case "admin", "administrator", "admins" -> com.ispf.server.config.IspfRoles.ADMIN;
             case "developer", "dev", "developers", "configurator" -> com.ispf.server.config.IspfRoles.DEVELOPER;
-            case "tenant-admin", "tenantadmin" -> com.ispf.server.config.IspfRoles.TENANT_ADMIN;
+            case "operator", "operators", "ops", "hmi", "user" -> com.ispf.server.config.IspfRoles.OPERATOR;
+            case "admin", "administrator", "admins" -> com.ispf.server.config.IspfRoles.ADMIN;
+            case "developer", "dev", "developers", "configurator" -> com.ispf.server.config.IspfRoles.DEVELOPER;
+            case "tenant-admin", "tenantadmin", "tenant_admin" -> com.ispf.server.config.IspfRoles.TENANT_ADMIN;
             case "operator-readonly", "operatorreadonly", "readonly" -> "operator-readonly";
             default -> lower;
         };
