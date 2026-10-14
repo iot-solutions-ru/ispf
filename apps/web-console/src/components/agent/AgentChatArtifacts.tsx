@@ -21,6 +21,7 @@ import {
   localizeCompletenessGaps,
 } from "../../utils/operator/operatorAgentArtifacts";
 import { isSafeNavigationUrl } from "../../utils/url/navigationUrl";
+import { AgentAutoContinue } from "./AgentAutoContinue";
 
 export interface AgentChatArtifactsProps {
   result?: Record<string, unknown>;
@@ -31,6 +32,11 @@ export interface AgentChatArtifactsProps {
   onAppendToInput?: (text: string) => void;
   onOpenDashboard?: (path: string) => void;
   onOpenReport?: (path: string) => void;
+  /**
+   * Autopilot (AI Studio mode=auto) only. Copilot panels must leave this false —
+   * recommended options stay clickable without a countdown auto-send.
+   */
+  autoContinueEnabled?: boolean;
 }
 
 function openLink(link: AgentArtifactLink, handlers: AgentChatArtifactsProps) {
@@ -428,6 +434,7 @@ export default function AgentChatArtifacts({
   onAppendToInput,
   onOpenDashboard,
   onOpenReport,
+  autoContinueEnabled = false,
 }: AgentChatArtifactsProps) {
   const { t, i18n } = useTranslation(i18nNs);
   const parsed = parseAgentArtifacts(result);
@@ -515,12 +522,24 @@ export default function AgentChatArtifacts({
             <ul>
               {suggestions.map((item) => (
                 <li key={`${item.path ?? item.label}:${item.message}`}>
-                  <Button type="link" onClick={() => onSuggestMessage?.(item.message)}>
+                  <Button
+                    type={item.primary ? "primary" : "link"}
+                    size="small"
+                    onClick={() => onSuggestMessage?.(item.message)}
+                  >
                     {item.label}
+                    {item.primary ? ` (${t("agent.autoContinue.recommended")})` : ""}
                   </Button>
                 </li>
               ))}
             </ul>
+            <AgentAutoContinue
+              result={result}
+              suggestions={suggestions}
+              enabled={autoContinueEnabled}
+              onSuggestMessage={onSuggestMessage}
+              i18nNs={i18nNs}
+            />
           </div>
         )}
         {links.length > 0 && (

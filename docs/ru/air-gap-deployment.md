@@ -110,28 +110,21 @@ bash deploy/air-gap-apply.sh /media/ispf-airgap-<new-version>.tar.gz
 
 ---
 
-## Порядок коммерческого лицензирования
+## Порядок коммерческого лицензирования (RSA — Done)
 
-Сайты с воздушным зазором обычно работают со строгим пакетным доверием. Согласование с [roadmap](roadmap.md):
-
-| Шаг | Действие |
-|------|--------|
-| 1 | On target (once): `GET /api/v1/platform/installation-id` → copy hex ID |
-| 2 | На машине сборки поставщика (подключенной): `python tools/license-builder/sign-bundle.py` с `--installation-id` ([tools/license-builder/README.md](readme.md)) |
-| 3 | Разверните подписанный манифест приложения через API администратора или импортируйте пользовательский интерфейс **после** запуска платформы |
-| 4 | Установите цель до/при применении:
+Compose air-gap по умолчанию включает prod license posture: `ISPF_LICENSE_ENFORCE=true` и `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true`. Экспортируйте публичный ключ **до** `air-gap-apply.sh`. Канон: [en/air-gap-deployment.md](../en/air-gap-deployment.md).
 
 ```bash
 export ISPF_LICENSE_PUBLIC_KEY_PEM="$(cat license-public.pem)"
-export ISPF_LICENSE_ENFORCE=true
-export ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true
+bash deploy/air-gap-apply.sh /media/ispf-airgap-<version>.tar.gz
+# optional smoke: bash deploy/tools/air-gap-signed-gate-smoke.sh
 ```
 
-| 5 | Лицензированные **пакеты драйверов** используют один и тот же открытый ключ; включать пакеты в комплект (`air-gap-pack.sh` по умолчанию) или добавлять через промежуточный tar |
+Lab override: `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=false`. Evidence: [air-gap-signing](../evidence/air-gap-signing/README.md).
 
-Неподписанные эталонные приложения (Apache) развертываются при `require-signed-bundles=false`. Рынок продукции должен сохранить `require-signed-bundles=true`.
+### Подписи издателя (Cosign) — Gap
 
-Ротация ключей без Интернета: поставьте обновленный `license-public.pem` (поддерживается несколько блоков PEM) и переподписанные пакеты в **следующем** резервном архиве — см. [COMMERCIAL_LICENSING.md § Ротация производственных ключей](commercial-licensing.md).
+RSA app-bundle gate — **Done**. Cosign / sigstore для Docker-образов — **Gap** (не в репозитории). `CHECKSUMS.sha256` — только проверка целостности, не publisher signature.
 
 ---
 

@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AiProviderStatus } from "../../api/ai";
 import {
-  createAttachmentFromFile,
+  addAttachmentsFromFiles,
   providerAcceptAttribute,
   providerAllowsTextAttachments,
   providerAllowsImages,
@@ -24,18 +24,7 @@ function useAgentChatAttachments(
 ) {
   const addFiles = useCallback(
     (files: FileList | File[], provider: AiProviderStatus | undefined, onReject?: (reason: "unsupported" | "vision-not-supported") => void) => {
-      const next = [...attachments];
-      for (const file of Array.from(files)) {
-        const created = createAttachmentFromFile(file, provider);
-        if (created === "unsupported" || created === "vision-not-supported") {
-          onReject?.(created);
-          continue;
-        }
-        if (!next.some((item) => item.name === created.name && item.file.size === created.file.size)) {
-          next.push(created);
-        }
-      }
-      onChange(next);
+      onChange(addAttachmentsFromFiles(attachments, files, provider, onReject));
     },
     [attachments, onChange]
   );

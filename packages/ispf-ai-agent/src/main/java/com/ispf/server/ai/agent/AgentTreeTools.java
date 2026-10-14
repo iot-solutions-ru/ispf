@@ -24,6 +24,7 @@ import com.ispf.server.report.ReportService;
 import com.ispf.server.security.PlatformRoleService;
 import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.security.acl.ObjectAclStore;
 import com.ispf.server.security.acl.VariableMemberAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.workflow.WorkflowService;
@@ -87,7 +88,8 @@ final class AgentTreeTools {
                         automationTreeService,
                         deviceProvisioningService,
                         federationBindService,
-                        objectUiIconService
+                        objectUiIconService,
+                        platformUserService
                 ),
                 deleteObjectTool(
                         objectTreePort,
@@ -98,6 +100,8 @@ final class AgentTreeTools {
                         platformRoleService,
                         automationTreeService
                 ),
+                listObjectAclTool(objectAccessService, tenantScopeService),
+                setObjectAclTool(objectAccessService, tenantScopeService),
                 getDashboardLayoutTool(dashboardService, objectAccessService, tenantScopeService, objectMapper),
                 setDashboardLayoutTool(dashboardService, objectAccessService, tenantScopeService, objectMapper),
                 addDashboardWidgetTool(dashboardService, objectAccessService, tenantScopeService, objectMapper),
@@ -197,7 +201,8 @@ final class AgentTreeTools {
             AutomationTreeService automationTreeService,
             DeviceProvisioningService deviceProvisioningService,
             FederationBindService federationBindService,
-            ObjectUiIconService objectUiIconService
+            ObjectUiIconService objectUiIconService,
+            PlatformUserService platformUserService
     ) {
         return new PlatformAgentTool() {
             @Override
@@ -207,8 +212,10 @@ final class AgentTreeTools {
 
             @Override
             public String description() {
-                return "Create object tree node. Args: parentPath, name, type (DEVICE|DASHBOARD|CUSTOM|...), "
-                        + "displayName, description?, templateId?, driverId?, driverPollIntervalMs?, autoStartDriver?.";
+                return "Create object tree node. Args: parentPath, name, type (DEVICE|DASHBOARD|USER|CUSTOM|...), "
+                        + "displayName, description?, templateId?, driverId?, driverPollIntervalMs?, autoStartDriver?. "
+                        + "For USER: also password? (default ChangeMe!123), roles? (list or comma string, default operator). "
+                        + "USER goes through PlatformUserService (creates login + roles variable) — do NOT apply_mixin platform-user-v1.";
             }
 
             @Override
@@ -225,6 +232,9 @@ final class AgentTreeTools {
                 }
                 ObjectType type = ObjectType.valueOf(typeRaw.trim().toUpperCase(Locale.ROOT));
                 var auth = context.authentication();
+                if (type == ObjectType.USER) {
+                    return createPlatformUser(platformUserService, arguments, context, name, displayName);
+                }
                 if (objectTreePort.tree().findByPath(parentPath).isEmpty()) {
                     return Map.of(
                             "status", "ERROR",
@@ -237,13 +247,7 @@ final class AgentTreeTools {
                 federationBindService.assertParentAllowsChildren(parentPath);
                 String fullPath = objectTreePort.tree().resolveChildPath(parentPath, name);
                 if (objectTreePort.tree().findByPath(fullPath).isPresent()) {
-                    return Map.of(
-                            "status", "ERROR",
-                            "error", "Object exists: " + fullPath,
-                            "hint", "Reuse this object: get_object path=" + fullPath
-                                    + " and list_variables — do not create a duplicate.",
-                            "existingPath", fullPath
-                    );
+                    return AgentObjectReuse.alreadyExistsOk(fullPath, typeRaw);
                 }
                 String templateId = optionalString(arguments, "templateId");
                 String description = optionalString(arguments, "description");
@@ -961,6 +965,215 @@ final class AgentTreeTools {
                     return Map.of("status", "ERROR", "error", ex.getMessage());
                 }
             }
+        };
+    }
+
+    private static PlatformAgentTool listObjectAclTool(
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "list_object_acl";
+            }
+
+            @Override
+            public String description() {
+                return "List ACL entries on an object. Args: path (required).";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                if (path.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path is required");
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireRead(path, auth);
+                List<Map<String, Object>> entries = objectAccessService.listEntries(path).stream()
+                        .map(entry -> {
+                            Map<String, Object> row = new LinkedHashMap<>();
+                            row.put("principalType", entry.principalType());
+                            row.put("principalId", entry.principalId());
+                            row.put("permission", entry.permission());
+                            return row;
+                        })
+                        .toList();
+                return Map.of("status", "OK", "path", path, "count", entries.size(), "entries", entries);
+            }
+        };
+    }
+
+    private static PlatformAgentTool setObjectAclTool(
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "set_object_acl";
+            }
+
+            @Override
+            public String description() {
+                return "Replace ACL on an object (gives a user/role access). Args: path (required), "
+                        + "entries=[{principalType:USER|ROLE, principalId, permission:READ|WRITE|INVOKE|VIEWER|EDITOR|OWNER}]. "
+                        + "Course pattern: set_object_acl path=<device of user2> entries="
+                        + "[{principalType:USER, principalId:user1, permission:EDITOR}].";
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                if (path.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path is required");
+                }
+                Object rawEntries = arguments.get("entries");
+                if (!(rawEntries instanceof List<?> list) || list.isEmpty()) {
+                    return Map.of(
+                            "status", "ERROR",
+                            "error", "entries array is required",
+                            "hint", "entries=[{principalType:USER, principalId:user1, permission:EDITOR}]"
+                    );
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireWrite(path, auth);
+                try {
+                    List<ObjectAclStore.ObjectAclEntryDraft> drafts = new ArrayList<>();
+                    for (Object item : list) {
+                        if (!(item instanceof Map<?, ?> map)) {
+                            continue;
+                        }
+                        Map<String, Object> row = (Map<String, Object>) map;
+                        drafts.add(new ObjectAclStore.ObjectAclEntryDraft(
+                                stringArg(row, "principalType"),
+                                stringArg(row, "principalId"),
+                                stringArg(row, "permission")
+                        ));
+                    }
+                    if (drafts.isEmpty()) {
+                        return Map.of("status", "ERROR", "error", "entries contained no valid ACL rows");
+                    }
+                    objectAccessService.replaceEntries(path, drafts);
+                    return Map.of("status", "OK", "path", path, "count", drafts.size());
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static Map<String, Object> createPlatformUser(
+            PlatformUserService platformUserService,
+            Map<String, Object> arguments,
+            AgentContext context,
+            String username,
+            String displayName
+    ) {
+        String password = optionalString(arguments, "password");
+        if (password == null || password.isBlank()) {
+            password = "ChangeMe!123";
+        }
+        List<String> roles = parseRolesArg(arguments.get("roles"));
+        if (roles.isEmpty()) {
+            // Platform roles are lowercase ids (admin|developer|operator), not Spring ROLE_* names.
+            roles = List.of("operator");
+        }
+        String path = PlatformUserService.USERS_PATH_PREFIX + username.trim();
+        try {
+            Map<String, Object> summary = platformUserService.createUser(
+                    username,
+                    displayName,
+                    password,
+                    roles,
+                    context.authentication()
+            );
+            Object objectPath = summary.get("objectPath");
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("status", "OK");
+            response.put("path", objectPath != null ? objectPath : path);
+            response.put("user", summary);
+            response.put(
+                    "hint",
+                    "Platform user ready (roles variable synced). To grant device access: "
+                            + "set_object_acl path=<devicePath> entries="
+                            + "[{principalType:USER, principalId:" + username
+                            + ", permission:EDITOR}]. Do NOT apply_mixin platform-user-v1."
+            );
+            return response;
+        } catch (IllegalArgumentException ex) {
+            String message = ex.getMessage() == null ? "" : ex.getMessage();
+            if (message.toLowerCase(Locale.ROOT).contains("already exists")) {
+                Map<String, Object> reused = AgentObjectReuse.alreadyExistsOk(path, "USER");
+                reused.put(
+                        "hint",
+                        "User already exists at " + path
+                                + ". set_variable name=roles if needed, then set_object_acl on devices. "
+                                + "Do NOT recreate or apply_mixin platform-user-v1."
+                );
+                return reused;
+            }
+            return Map.of("status", "ERROR", "error", message);
+        } catch (Exception ex) {
+            return Map.of("status", "ERROR", "error", ex.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> parseRolesArg(Object raw) {
+        if (raw == null) {
+            return List.of();
+        }
+        if (raw instanceof List<?> list) {
+            List<String> out = new ArrayList<>();
+            for (Object item : list) {
+                if (item != null && !String.valueOf(item).isBlank()) {
+                    out.add(normalizePlatformRole(String.valueOf(item).trim()));
+                }
+            }
+            return out;
+        }
+        String text = String.valueOf(raw).trim();
+        if (text.isBlank()) {
+            return List.of();
+        }
+        if (text.startsWith("[")) {
+            // best-effort: OPERATOR,ADMIN style inside brackets
+            text = text.replace("[", "").replace("]", "").replace("\"", "");
+        }
+        List<String> out = new ArrayList<>();
+        for (String part : text.split("[,;\\s]+")) {
+            if (!part.isBlank()) {
+                out.add(normalizePlatformRole(part.trim()));
+            }
+        }
+        return out;
+    }
+
+    /** Map common LLM variants onto platform role ids (admin|developer|operator|tenant-admin). */
+    private static String normalizePlatformRole(String role) {
+        if (role == null || role.isBlank()) {
+            return role;
+        }
+        String stripped = role.trim();
+        if (stripped.regionMatches(true, 0, "ROLE_", 0, 5)) {
+            stripped = stripped.substring(5);
+        }
+        String lower = stripped.toLowerCase(Locale.ROOT);
+        return switch (lower) {
+            case "admin", "administrator" -> "admin";
+            case "developer", "dev", "configurator" -> "developer";
+            case "operator", "ops", "user" -> "operator";
+            case "tenant-admin", "tenant_admin", "tenantadmin" -> "tenant-admin";
+            default -> lower;
         };
     }
 

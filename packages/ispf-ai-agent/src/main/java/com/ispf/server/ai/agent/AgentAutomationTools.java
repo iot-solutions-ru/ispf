@@ -606,7 +606,18 @@ final class AgentAutomationTools {
                 try {
                     PlatformObject node = objectTreePort.require(path);
                     if (node.getVariable(name).isPresent()) {
-                        return Map.of("status", "ERROR", "error", "Variable already exists: " + name);
+                        Map<String, Object> reused = new LinkedHashMap<>();
+                        reused.put("status", "OK");
+                        reused.put("reused", true);
+                        reused.put("path", path);
+                        reused.put("variable", Map.of("name", name));
+                        reused.put(
+                                "hint",
+                                "Variable already exists — reuse it. For computed sums use create_binding_rule "
+                                        + "expression=read(\"self/<a>\")+read(\"self/<b>\") targetVariable=" + name
+                                        + ". Do not recreate."
+                        );
+                        return reused;
                     }
                     DataSchema schema = schemaForValueType(valueType);
                     boolean writable = boolArg(arguments, "writable", false);
@@ -634,7 +645,19 @@ final class AgentAutomationTools {
                     preview.put("writable", created.writable());
                     return Map.of("status", "OK", "path", path, "variable", preview);
                 } catch (Exception ex) {
-                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                    Map<String, Object> err = new LinkedHashMap<>();
+                    err.put("status", "ERROR");
+                    err.put("error", ex.getMessage() == null ? "create_variable failed" : ex.getMessage());
+                    String msg = String.valueOf(err.get("error")).toLowerCase(Locale.ROOT);
+                    if (msg.contains("must be double") || msg.contains("must be long") || msg.contains("must be int")) {
+                        err.put(
+                                "hint",
+                                "For DOUBLE use initialValue=0 or 0.0 (number), or omit initialValue. "
+                                        + "Do NOT send boolean/object/array. Example: "
+                                        + "path=... name=waveSum valueType=DOUBLE writable=false — then create_binding_rule."
+                        );
+                    }
+                    return err;
                 }
             }
         };
@@ -938,9 +961,11 @@ final class AgentAutomationTools {
             @SuppressWarnings("unchecked")
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
                 try {
-                    String appId = stringArg(arguments, "appId");
-                    if (appId.isBlank()) {
-                        appId = "platform";
+                    String appId;
+                    try {
+                        appId = normalizeOperatorAppId(stringArg(arguments, "appId"));
+                    } catch (IllegalArgumentException ex) {
+                        return Map.of("status", "ERROR", "error", ex.getMessage());
                     }
                     String title = stringArg(arguments, "title");
                     String defaultDashboard = stringArg(arguments, "defaultDashboard");
@@ -952,7 +977,14 @@ final class AgentAutomationTools {
                         } catch (IllegalArgumentException ex) {
                             return AgentToolErrors.error(
                                     "TOOL_ERROR",
-                                    "title, defaultDashboard, dashboards[] are required (app not found: " + appId + ")",
+                                    "configure_operator_ui requires title, defaultDashboard (dashboard path), "
+                                            + "dashboards=[{path,title},...]. "
+                                            + "appId=" + appId + " is a short id (e.g. virt-cluster), NOT a tree path. "
+                                            + "Do NOT create_object APPLICATION — this tool creates the operator app record. "
+                                            + "Example: appId=virt-cluster title=\"Cluster\" "
+                                            + "defaultDashboard=root.platform.dashboards.virt-cluster-overview "
+                                            + "dashboards=[{\"path\":\"root.platform.dashboards.virt-cluster-overview\","
+                                            + "\"title\":\"Overview\"}]",
                                     "",
                                     ""
                             );
@@ -1135,14 +1167,100 @@ final class AgentAutomationTools {
     @SuppressWarnings("unchecked")
     private static DataRecord toInitialRecord(ObjectMapper objectMapper, DataSchema schema, Object raw)
             throws Exception {
+        FieldType fieldType = schema.fields().isEmpty()
+                ? FieldType.DOUBLE
+                : schema.fields().get(0).type();
+        Object scalar = unwrapInitialScalar(objectMapper, raw);
+        Object coerced = coerceInitialScalar(fieldType, scalar);
+        return DataRecord.single(schema, Map.of("value", coerced));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object unwrapInitialScalar(ObjectMapper objectMapper, Object raw) throws Exception {
         if (raw instanceof Map<?, ?> map) {
-            return DataRecord.single(schema, (Map<String, Object>) map);
+            if (map.containsKey("value")) {
+                return map.get("value");
+            }
+            if (map.size() == 1) {
+                return map.values().iterator().next();
+            }
+            throw new IllegalArgumentException(
+                    "initialValue map must be {\"value\": <scalar>} or a single-entry map; got keys=" + map.keySet()
+            );
         }
-        if (raw instanceof String text && text.trim().startsWith("{")) {
-            Map<String, Object> parsed = objectMapper.readValue(text, Map.class);
-            return DataRecord.single(schema, parsed);
+        if (raw instanceof String text) {
+            String trimmed = text.trim();
+            if (trimmed.startsWith("{")) {
+                Map<String, Object> parsed = objectMapper.readValue(trimmed, Map.class);
+                return unwrapInitialScalar(objectMapper, parsed);
+            }
+            return trimmed;
         }
-        return DataRecord.single(schema, Map.of("value", raw));
+        return raw;
+    }
+
+    private static Object coerceInitialScalar(FieldType fieldType, Object raw) {
+        if (raw == null) {
+            return switch (fieldType) {
+                case BOOLEAN -> false;
+                case INTEGER -> 0;
+                case LONG -> 0L;
+                case DOUBLE -> 0.0;
+                default -> "";
+            };
+        }
+        if (raw instanceof Boolean bool) {
+            return switch (fieldType) {
+                case BOOLEAN -> bool;
+                case INTEGER, LONG -> bool ? 1 : 0;
+                case DOUBLE -> bool ? 1.0 : 0.0;
+                default -> String.valueOf(bool);
+            };
+        }
+        if (raw instanceof Number number) {
+            return switch (fieldType) {
+                case BOOLEAN -> number.doubleValue() != 0.0;
+                case INTEGER -> number.intValue();
+                case LONG -> number.longValue();
+                case DOUBLE -> number.doubleValue();
+                default -> String.valueOf(number);
+            };
+        }
+        String text = String.valueOf(raw).trim();
+        return switch (fieldType) {
+            case BOOLEAN -> Boolean.parseBoolean(text) || "1".equals(text) || "true".equalsIgnoreCase(text);
+            case INTEGER -> (int) Double.parseDouble(text);
+            case LONG -> (long) Double.parseDouble(text);
+            case DOUBLE -> Double.parseDouble(text);
+            default -> text;
+        };
+    }
+
+    /**
+     * Operator UI uses a short appId, not a tree path. Strip known prefixes; reject other dotted paths.
+     */
+    static String normalizeOperatorAppId(String rawAppId) {
+        String id = rawAppId == null ? "" : rawAppId.trim();
+        if (id.isBlank()) {
+            return "platform";
+        }
+        String lower = id.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("root.platform.operator-apps.")
+                || lower.startsWith("root.platform.applications.")) {
+            int dot = id.lastIndexOf('.');
+            String shortId = id.substring(dot + 1).trim();
+            if (shortId.isBlank()) {
+                throw new IllegalArgumentException(
+                        "appId tree path has empty leaf; use short id e.g. virt-cluster");
+            }
+            return shortId;
+        }
+        if (id.contains(".")) {
+            throw new IllegalArgumentException(
+                    "appId must be a short id (e.g. virt-cluster), not a tree path: " + id
+                            + ". Example: appId=virt-cluster title=... defaultDashboard=... dashboards=[...]");
+        }
+        return id;
     }
 
     private static String stringArg(Map<String, Object> args, String key) {

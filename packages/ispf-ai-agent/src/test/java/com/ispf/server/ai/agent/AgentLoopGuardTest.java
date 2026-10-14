@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentLoopGuardTest {
@@ -22,6 +23,7 @@ class AgentLoopGuardTest {
         var block = AgentLoopGuard.checkHardBlock("get_driver_help", Map.of("driverId", "snmp"), steps);
         assertTrue(block.isPresent());
         assertTrue(block.get().blocked());
+        assertFalse(block.get().stopTurn());
         assertTrue(block.get().error().contains("stop looping"));
         assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("create_object"));
         assertTrue(block.get().hint().contains("snmp-agent-v1"));
@@ -150,11 +152,314 @@ class AgentLoopGuardTest {
         assertTrue(hint.contains("create_object"));
     }
 
+    @Test
+    void hintsSetDashboardLayoutAfterFirstAddWidget() {
+        String dash = "root.platform.dashboards.virt-cluster-dashboard";
+        List<Map<String, Object>> steps = List.of(widgetStep(dash));
+        String hint = AgentLoopGuard.continuationHint("add_dashboard_widget", steps, 96);
+        assertTrue(hint.toLowerCase(Locale.ROOT).contains("set_dashboard_layout"));
+        assertTrue(hint.toLowerCase(Locale.ROOT).contains("add_dashboard_widget"));
+    }
+
+    @Test
+    void hardBlocksThirdAddDashboardWidgetOnSamePathAndStopsTurn() {
+        String dash = "root.platform.dashboards.virt-cluster-dashboard";
+        List<Map<String, Object>> steps = List.of(
+                widgetStep(dash),
+                widgetStep(dash)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "add_dashboard_widget",
+                Map.of("path", dash, "widget", Map.of("id", "kpi-3")),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().blocked());
+        assertTrue(block.get().stopTurn());
+        assertTrue(block.get().error().toLowerCase(Locale.ROOT).contains("flood"));
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("set_dashboard_layout"));
+    }
+
+    @Test
+    void doesNotHardBlockAddWidgetOnDifferentDashboards() {
+        List<Map<String, Object>> steps = List.of(
+                widgetStep("root.platform.dashboards.a"),
+                widgetStep("root.platform.dashboards.b")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "add_dashboard_widget",
+                Map.of("path", "root.platform.dashboards.c"),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
+    void hardBlocksThirdAddMimicElementsOnSamePath() {
+        String mimic = "root.platform.mimics.plant";
+        List<Map<String, Object>> steps = List.of(
+                mimicStep(mimic),
+                mimicStep(mimic)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "add_mimic_elements",
+                Map.of("path", mimic),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("save_mimic_diagram"));
+    }
+
+    @Test
+    void hardBlocksRepeatedListObjectsOnSameParent() {
+        String parent = "root.platform.devices";
+        List<Map<String, Object>> steps = List.of(
+                listStep(parent),
+                listStep(parent),
+                listStep(parent)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "list_objects",
+                Map.of("parent", parent),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
+    }
+
+    @Test
+    void hardBlocksIdenticalSetVariableSafetyNet() {
+        String path = "root.platform.devices.demo";
+        List<Map<String, Object>> steps = List.of(
+                setVarStep(path, "x"),
+                setVarStep(path, "x"),
+                setVarStep(path, "x"),
+                setVarStep(path, "x"),
+                setVarStep(path, "x")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "set_variable",
+                Map.of("path", path, "name", "x", "value", "6"),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
+    }
+
+    @Test
+    void hardBlocksRepeatedIdenticalBindingArgError() {
+        List<Map<String, Object>> steps = List.of(
+                errorStep("create_binding_rule", "path, id, expression are required"),
+                errorStep("create_binding_rule", "path, id, expression are required")
+        );
+        var block = AgentLoopGuard.checkHardBlock("create_binding_rule", Map.of(), steps);
+        assertTrue(block.isPresent());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().hint().contains("path, id, expression"));
+    }
+
+    @Test
+    void createVariableDoubleTypeErrorKeepsTurnOpen() {
+        List<Map<String, Object>> steps = List.of(
+                errorStep("create_variable", "value must be double"),
+                errorStep("create_variable", "value must be double")
+        );
+        var block = AgentLoopGuard.checkHardBlock("create_variable", Map.of(), steps);
+        assertTrue(block.isPresent());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("0.0")
+                || block.get().hint().toLowerCase(Locale.ROOT).contains("initialvalue"));
+    }
+
+    @Test
+    void missingEventSchemaArgsBlockKeepsTurnOpenWithHint() {
+        List<Map<String, Object>> steps = List.of(
+                errorStep("get_event_schema", "objectPath and eventName are required"),
+                errorStep("get_event_schema", "objectPath and eventName are required")
+        );
+        var block = AgentLoopGuard.checkHardBlock("get_event_schema", Map.of(), steps);
+        assertTrue(block.isPresent());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("objectpath"));
+        assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("eventname"));
+    }
+
+    @Test
+    void missingBlueprintArgsBlockKeepsTurnOpenWithHint() {
+        List<Map<String, Object>> steps = List.of(
+                errorStep("get_object_blueprint", "blueprintName or blueprintId required; use list_mixin_blueprints"),
+                errorStep("get_object_blueprint", "blueprintName or blueprintId required; use list_mixin_blueprints")
+        );
+        var block = AgentLoopGuard.checkHardBlock("get_object_blueprint", Map.of(), steps);
+        assertTrue(block.isPresent());
+        assertFalse(block.get().stopTurn());
+        assertTrue(block.get().hint().contains("blueprintName"));
+    }
+
+    @Test
+    void allowsDistinctSetVariableNamesOnSamePath() {
+        String path = "root.platform.devices.demo";
+        List<Map<String, Object>> steps = List.of(
+                setVarStep(path, "a"),
+                setVarStep(path, "b"),
+                setVarStep(path, "c"),
+                setVarStep(path, "d"),
+                setVarStep(path, "e")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "set_variable",
+                Map.of("path", path, "name", "f", "value", "1"),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
+    void hardBlocksListVariablesGetObjectOscillation() {
+        String cluster = "root.platform.devices.virt-cluster";
+        String alert = "root.platform.alert-rules.virt-cluster-error-alert";
+        List<Map<String, Object>> steps = List.of(
+                toolOnPath("list_variables", cluster),
+                toolOnPath("get_object", alert),
+                toolOnPath("list_variables", cluster),
+                toolOnPath("get_object", alert),
+                toolOnPath("list_variables", cluster)
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "get_object",
+                Map.of("path", alert),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().stopTurn());
+        assertTrue(block.get().error().toLowerCase(Locale.ROOT).contains("oscillat"));
+    }
+
+    @Test
+    void allowsCreateObjectDashboardThenSetLayoutOscillation() {
+        // Course builds many dashboards: create_object ↔ set_dashboard_layout on new paths.
+        List<Map<String, Object>> steps = List.of(
+                createDashboardStep("sine-history-dashboard"),
+                layoutStep("root.platform.dashboards.sine-history-dashboard"),
+                createDashboardStep("table-piechart-dashboard"),
+                layoutStep("root.platform.dashboards.table-piechart-dashboard"),
+                createDashboardStep("button-dashboard"),
+                layoutStep("root.platform.dashboards.button-dashboard"),
+                createDashboardStep("event-grid-dashboard")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "set_dashboard_layout",
+                Map.of("path", "root.platform.dashboards.event-grid-dashboard"),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
+    void doesNotBlockShortAlternation() {
+        List<Map<String, Object>> steps = List.of(
+                toolOnPath("list_variables", "root.a"),
+                toolOnPath("get_object", "root.b"),
+                toolOnPath("list_variables", "root.a")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "get_object",
+                Map.of("path", "root.b"),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
+    void hintsConfigureOperatorUiAfterLayoutVariableMiss() {
+        List<Map<String, Object>> steps = List.of(Map.of(
+                "type", "tool",
+                "tool", "set_variable",
+                "arguments", Map.of("path", "root.platform.operator-apps.x", "name", "layout"),
+                "result", Map.of("status", "ERROR", "error", "Variable not found: layout")
+        ));
+        String hint = AgentLoopGuard.continuationHint("set_variable", steps, 96);
+        assertTrue(hint.toLowerCase(Locale.ROOT).contains("configure_operator_ui"));
+    }
+
     private static Map<String, Object> step(String tool) {
         return step(tool, Map.of());
     }
 
     private static Map<String, Object> step(String tool, Map<String, Object> arguments) {
         return Map.of("type", "tool", "tool", tool, "arguments", arguments);
+    }
+
+    private static Map<String, Object> widgetStep(String path) {
+        return Map.of(
+                "type", "tool",
+                "tool", "add_dashboard_widget",
+                "arguments", Map.of("path", path)
+        );
+    }
+
+    private static Map<String, Object> layoutStep(String path) {
+        return Map.of(
+                "type", "tool",
+                "tool", "set_dashboard_layout",
+                "arguments", Map.of("path", path),
+                "result", Map.of("status", "OK")
+        );
+    }
+
+    private static Map<String, Object> createDashboardStep(String name) {
+        return Map.of(
+                "type", "tool",
+                "tool", "create_object",
+                "arguments", Map.of(
+                        "parentPath", "root.platform.dashboards",
+                        "name", name,
+                        "type", "DASHBOARD"
+                ),
+                "result", Map.of("status", "OK", "path", "root.platform.dashboards." + name)
+        );
+    }
+
+    private static Map<String, Object> mimicStep(String path) {
+        return Map.of(
+                "type", "tool",
+                "tool", "add_mimic_elements",
+                "arguments", Map.of("path", path)
+        );
+    }
+
+    private static Map<String, Object> listStep(String parent) {
+        return Map.of(
+                "type", "tool",
+                "tool", "list_objects",
+                "arguments", Map.of("parent", parent)
+        );
+    }
+
+    private static Map<String, Object> setVarStep(String path, String name) {
+        return Map.of(
+                "type", "tool",
+                "tool", "set_variable",
+                "arguments", Map.of("path", path, "name", name, "value", "1")
+        );
+    }
+
+    private static Map<String, Object> errorStep(String tool, String error) {
+        return Map.of(
+                "type", "tool",
+                "tool", tool,
+                "arguments", Map.of(),
+                "result", Map.of("status", "ERROR", "error", error)
+        );
+    }
+
+    private static Map<String, Object> toolOnPath(String tool, String path) {
+        return Map.of(
+                "type", "tool",
+                "tool", tool,
+                "arguments", Map.of("path", path),
+                "result", Map.of("status", "OK")
+        );
     }
 }

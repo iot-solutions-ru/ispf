@@ -221,6 +221,10 @@ final class AgentPlanGuard {
             if (runState.planPhase() == AgentPlanPhase.APPROVED) {
                 return FinishOutcome.ALLOW_EXECUTION;
             }
+            // Mid-execution clarify: questions/suggestions without a plan payload — wait for user (UI may auto-pick primary).
+            if (isClarificationOnlyFinish(finishResult)) {
+                return FinishOutcome.ALLOW_EXECUTION;
+            }
             if (runState.isPlanningActive()) {
                 if (isPlanFinish(finishResult)) {
                     return hasStructuredPlanContent(finishResult, runState)
@@ -353,11 +357,28 @@ final class AgentPlanGuard {
         if (isPlanFinish(finishResult) || planHasContent(extractPlanMap(finishResult.get("plan")))) {
             return true;
         }
-        Object questions = finishResult.get("questions");
-        if (questions instanceof List<?> list && !list.isEmpty()) {
-            return true;
-        }
+        // Clarifying questions alone are not a plan panel — only with phase=plan / plan map.
         return hasPrimaryApprovalSuggestion(finishResult);
+    }
+
+    /**
+     * Interactive clarify without plan panel: agent pauses for the user; Studio may auto-continue
+     * with the primary suggestion after a timeout.
+     */
+    static boolean isClarificationOnlyFinish(Map<String, Object> finishResult) {
+        if (finishResult == null || finishResult.isEmpty()) {
+            return false;
+        }
+        if (isPlanFinish(finishResult) || planHasContent(extractPlanMap(finishResult.get("plan")))) {
+            return false;
+        }
+        if (hasPrimaryApprovalSuggestion(finishResult)) {
+            return false;
+        }
+        if (looksLikeExecutionResult(finishResult)) {
+            return false;
+        }
+        return isInteractiveClarification(finishResult);
     }
 
     /** Remove plan-panel fields so Ask mode can finish with a plain summary. */
@@ -410,13 +431,15 @@ final class AgentPlanGuard {
             if (!(item instanceof Map<?, ?> map)) {
                 continue;
             }
-            if (Boolean.TRUE.equals(map.get("primary"))) {
-                return true;
-            }
             Object label = map.get("label");
+            Object message = map.get("message");
             if (label != null && isApprovalMessage(String.valueOf(label), AgentPlanPhase.AWAITING_APPROVAL)) {
                 return true;
             }
+            if (message != null && isApprovalMessage(String.valueOf(message), AgentPlanPhase.AWAITING_APPROVAL)) {
+                return true;
+            }
+            // primary alone is for recommended clarify options — not plan approval
         }
         return false;
     }

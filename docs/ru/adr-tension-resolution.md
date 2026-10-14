@@ -6,7 +6,7 @@
 
 Цель: одна claim-ячейка → один ответ. Таблица волн, режимы LOGIC_HOST и чеклист C1 FIELD — в EN-каноне.
 
-**Статус программы (2026-10-13):** волны **1A–2B** Closed на `main` ([#499](https://github.com/iot-solutions-ru/ispf/pull/499), CH opt-in [#503](https://github.com/iot-solutions-ru/ispf/pull/503), cookie-gate [#505](https://github.com/iot-solutions-ru/ispf/pull/505)). Открыто: 3A FIELD (customer plant), HTTP deploy без `--strict`, Cosign / signed air-gap, separate ui-pack origin не заявлен.
+**Статус программы (2026-10-13):** волны **1A–2B** Closed; ship deploy [#513](https://github.com/iot-solutions-ru/ispf/pull/513). Air-gap RSA require-signed default **Done** ([air-gap-signing](../evidence/air-gap-signing/README.md)); Cosign image signing — **Gap**. Открыто: 3A FIELD, Cosign verify evidence, separate ui-pack origin.
 
 | Напряжение | Статус | Волна |
 |------------|--------|-------|

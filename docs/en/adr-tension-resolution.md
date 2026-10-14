@@ -7,7 +7,7 @@ Program to remove contradictions between Accepted ADRs, `AGENTS.md`, and scoreca
 
 Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 
-**Program status (2026-10-13):** Waves **1A–2B** Closed on `main` (stack via [#499](https://github.com/iot-solutions-ru/ispf/pull/499); CH opt-in [#503](https://github.com/iot-solutions-ru/ispf/pull/503); ui-pack cookie gate [#505](https://github.com/iot-solutions-ru/ispf/pull/505)). Open claim work: Wave **3A** customer-plant FIELD; ship residual HTTP deploy without `--strict`; Cosign / signed air-gap evidence; separate ui-pack origin **not claimed**. KMS/GOST stays [0076](decisions/0076-external-secrets-providers.md) non-claim until a named tender.
+**Program status (2026-10-13):** Waves **1A–2B** Closed on `main` (stack via [#499](https://github.com/iot-solutions-ru/ispf/pull/499); CH opt-in [#503](https://github.com/iot-solutions-ru/ispf/pull/503); ui-pack cookie gate [#505](https://github.com/iot-solutions-ru/ispf/pull/505); ship deploy [#513](https://github.com/iot-solutions-ru/ispf/pull/513)). Ship path: `POST .../deploy?strict=true` / `ispf deploy --strict`. Air-gap RSA require-signed default **Done** ([air-gap-signing](../evidence/air-gap-signing/README.md)); **Cosign** image signing remains **Gap**. Open claim work: Wave **3A** customer-plant FIELD; Cosign verify evidence; separate ui-pack origin **not claimed**. KMS/GOST stays [0076](decisions/0076-external-secrets-providers.md) non-claim until a named tender.
 
 ## Resolution table
 
@@ -28,7 +28,7 @@ Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 | Wave | Kind | Deliverables |
 |------|------|--------------|
 | **0** | Docs | This page, canvas RESOLUTION, `AGENTS.md` / principles align with 0060 modes |
-| **1A** | Code | `--strict` validate, catalog gate, `hostKind` poka-yoke, agent ship-canon acceptance (**shipped**; HTTP deploy without `strict` still WARNING) |
+| **1A** | Code | `--strict` validate/deploy, catalog gate, `hostKind` poka-yoke, agent ship-canon acceptance (**shipped**; unqualified HTTP deploy without `strict` still WARNING by design) |
 | **1B** | Code | Effective configuration surface + 0033 docs (**shipped**) |
 | **1C** | Code | Cluster fail-closed JetStream/Redis (**shipped** — `ClusterDependencyValidator`) |
 | **2A** | Code | Ui-pack CSP + scoped token; partner login blocked via Referer / header / context cookie (**shipped**) |
@@ -42,7 +42,7 @@ Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 |------|-----------|--------|
 | **Canon (hard rule)** | Logic hosts are SINGLETON or INSTANCE, never DEVICE | `AGENTS.md`, application-principles |
 | **Authoring validate/deploy** | `LOGIC_HOST_DEVICE` = **WARNING** (does not alone set `status: ERROR`) | Default bundle validate — [0060](decisions/0060-solution-authoring-constraints.md) |
-| **Ship / examples / catalog / agent acceptance** | Same codes = **ERROR**; judge **REWORK** | `ExamplesBundleValidationTest`; `ispf validate --strict`; marketplace catalog; `deploy_step_validate` / `deploy_step_dry_run` / `import_package` / `deploy_step_import` (ADR-0060 ship-default, **Partial** — raw HTTP deploy without `strict` stays WARNING) |
+| **Ship / examples / catalog / agent acceptance** | Same codes = **ERROR**; judge **REWORK** | `ExamplesBundleValidationTest`; `ispf validate --strict` / `ispf deploy --strict`; `POST .../deploy?strict=true`; marketplace catalog; `deploy_step_validate` / `deploy_step_dry_run` / `import_package` / `deploy_step_import` (unqualified HTTP deploy without `strict` stays WARNING) |
 
 ## Wave 3A — C1 FIELD checklist (ops)
 

@@ -363,9 +363,12 @@ public final class AgentPlaybooks {
                    Для каждого устройства и переменных sineWave, sawtoothWave, triangleWave:
                    configure_variable_history path=... name=<var> historyEnabled=true
                 
-                3. create_object parentPath=root.platform.singleton-blueprints name=virt-cluster-hub type=CUSTOM
-                   (non-DEVICE hub for cluster logic; DEVICE children under devices.virt-cluster)
-                   Prefer SINGLETON catalog; path under devices tree with DEVICE kids is also valid if hub type ≠ DEVICE
+                3. Hub (logic ≠ DEVICE): prefer ensure_singleton_instance blueprintName=virt-cluster-hub
+                   (or create under root.platform.singleton-blueprints — NEVER type=DEVICE / CUSTOM hub under devices.*)
+                   DEVICE children stay under """
+                + VIRT_CLUSTER_FOLDER
+                + """
+                
                 4. create_variable path="""
                 + VIRT_CLUSTER_HUB
                 + " name=member1Sine valueType=DOUBLE writable=false\n"
@@ -427,14 +430,19 @@ public final class AgentPlaybooks {
                  template=virtual-cluster-detail
                    (detail widgets use selectionKey=device — открывается после клика по строке в overview)
                 
-                10. configure_operator_ui appId=platform title=Platform HMI
+                10. configure_operator_ui (creates operator app — do NOT create_object APPLICATION):
+                    appId=virt-cluster title="Virtual cluster"
                     defaultDashboard="""
                 + VIRT_CLUSTER_OVERVIEW
-                + """
-                    plus dashboards list: overview path and """
+                + "\n"
+                + "    dashboards=[{\"path\":\""
+                + VIRT_CLUSTER_OVERVIEW
+                + "\",\"title\":\"Overview\"},"
+                + "{\"path\":\""
                 + VIRT_CLUSTER_DETAIL
+                + "\",\"title\":\"Device detail\"}]\n"
                 + """
-                    detail path (configure_operator_ui dashboards argument)
+                    appId is a short id, NOT root.platform.operator-apps.*
                 
                 11. driver_control poll each device; list_variables on hub (clusterError)
                 12. finish: summary + paths (folder, devices, hub, dashboards, alert, operator default)
@@ -465,7 +473,8 @@ public final class AgentPlaybooks {
                 - list_variables path=<существующий DEVICE> — имена переменных для виджетов
                 
                 **Переиспользование:** если list_objects показал папку/устройство — работай с этим path.
-                Если create_object вернул «Object exists» — get_object + list_variables, не дублируй.
+                Если create_object вернул reused=true / already exists — это успех: configure_* / set_* / list_variables \
+                на том же path. Не создавай снова и не чередуй create_object↔get_object.
                 
                 **Recipes:** search_platform_recipes даёт последовательность; подставляй пути из list_objects,
                 не копируй примерные имена из catalog буквально.

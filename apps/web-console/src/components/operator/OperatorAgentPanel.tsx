@@ -247,6 +247,8 @@ export default function OperatorAgentPanel({
                 result={message.result}
                 onSuggestMessage={(text) => void sendMessage(text)}
                 onAppendToInput={appendToInput}
+                /* Operator Copilot is assistive — never auto-pick recommended actions. */
+                autoContinueEnabled={false}
                 onOpenDashboard={(path) => {
                   onOpenDashboard?.(path);
                   onClose();

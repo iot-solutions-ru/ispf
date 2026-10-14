@@ -36,7 +36,7 @@ class AgentPlaybooksTest {
         String guide = AgentPlaybooks.groundTruthGuide();
         assertTrue(guide.contains("list_objects"));
         assertTrue(guide.contains("list_mixin_blueprints"));
-        assertTrue(guide.contains("Object exists"));
+        assertTrue(guide.contains("reused=true") || guide.contains("already exists"));
     }
 
     @Test
@@ -51,6 +51,16 @@ class AgentPlaybooksTest {
         assertFalse(playbook.contains("name=pump-01"));
         assertFalse(playbook.contains("pump-station type=CUSTOM"));
         assertTrue(playbook.contains("list_objects"));
+    }
+
+    @Test
+    void virtualClusterPlaybookPrefersSingletonAndOperatorUiArgs() {
+        String playbook = AgentPlaybooks.virtualClusterMonitoring();
+        assertTrue(playbook.contains("ensure_singleton_instance"));
+        assertTrue(playbook.contains("appId=virt-cluster"));
+        assertTrue(playbook.contains("configure_operator_ui"));
+        assertTrue(playbook.contains("dashboards=["));
+        assertFalse(playbook.contains("%s"));
     }
 
     @Test

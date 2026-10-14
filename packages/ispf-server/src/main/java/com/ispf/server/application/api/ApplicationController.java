@@ -147,9 +147,10 @@ public class ApplicationController {
     }
 
     @PostMapping("/{appId}/deploy")
-    public Map<String, Object> deployBundle(
+    public ResponseEntity<Map<String, Object>> deployBundle(
             @PathVariable String appId,
-            @RequestBody JsonNode body
+            @RequestBody JsonNode body,
+            @RequestParam(defaultValue = "false") boolean strict
     ) {
         try {
             // Verify license on the raw JSON map (same shape as tools/license-builder/sign-bundle.py).
@@ -159,7 +160,18 @@ public class ApplicationController {
             licenseVerifier.verifyOrWarn(appId, raw, false);
             ApplicationBundleDeployService.BundleManifest manifest =
                     objectMapper.convertValue(body, ApplicationBundleDeployService.BundleManifest.class);
-            return bundleDeployService.deploy(appId, manifest, false, false);
+            // ADR-0060: default deploy stays authoring (LOGIC_HOST_DEVICE WARNING).
+            // ?strict=true promotes ship-canon codes and refuses apply on ERROR.
+            if (strict) {
+                BundleValidationResult validation = bundleManifestValidator.validate(appId, manifest, true);
+                if (BundleValidationResult.ERROR.equals(validation.status())) {
+                    Map<String, Object> blocked = new LinkedHashMap<>(validation.toMap());
+                    blocked.put("shipCanon", true);
+                    blocked.put("deployed", false);
+                    return ResponseEntity.badRequest().body(blocked);
+                }
+            }
+            return ResponseEntity.ok(bundleDeployService.deploy(appId, manifest, false, false));
         } catch (CommercialLicenseException ex) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
         } catch (BundleDependencyException ex) {

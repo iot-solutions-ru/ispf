@@ -13,6 +13,19 @@ final class AgentLoopGuard {
     private static final int REPEAT_THRESHOLD = 3;
     /** After this many prior calls of the same discovery tool, the next call is hard-blocked. */
     private static final int DISCOVERY_HARD_BLOCK = 2;
+    /**
+     * Incremental UI builders (widget/element adds): after this many prior same-target calls,
+     * hard-block and stop the turn — batch tools must be used instead.
+     */
+    private static final int BATCH_INCREMENTAL_HARD_BLOCK = 2;
+    /** Same read/list fingerprint (tool + target): hard-block and stop the turn. */
+    private static final int READ_SPAM_HARD_BLOCK = 3;
+    /** Safety net: any tool with the same fingerprint this many times → stop (prevents UI log floods). */
+    private static final int IDENTICAL_CALL_HARD_BLOCK = 5;
+    /** Last N tool names inspected for A↔B oscillation (e.g. list_variables ↔ get_object). */
+    private static final int OSCILLATION_WINDOW = 8;
+    /** Minimum alternating steps (proposed call included) before hard-block — 3 full A/B cycles. */
+    private static final int OSCILLATION_MIN_STEPS = 6;
 
     private static final Set<String> DISCOVERY_LOOP_TOOLS = Set.of(
             "get_driver_help",
@@ -24,6 +37,65 @@ final class AgentLoopGuard {
             "get_example_bundle",
             "get_widget_catalog",
             "get_deploy_playbook"
+    );
+
+    /** Prefer one batch write over many incremental adds — noisy in Studio step log. */
+    private static final Set<String> BATCH_INCREMENTAL_TOOLS = Set.of(
+            "add_dashboard_widget",
+            "add_mimic_elements"
+    );
+
+    private static final Set<String> READ_SPAM_TOOLS = Set.of(
+            "list_objects",
+            "get_object",
+            "list_variables",
+            "describe_variables",
+            "get_dashboard_layout",
+            "get_mimic_diagram",
+            "list_mimic_symbols",
+            "list_functions",
+            "get_function"
+    );
+
+    /**
+     * Tools that participate in read/discovery ping-pong. Mutate pairs
+     * (e.g. create_object ↔ set_dashboard_layout for many course dashboards) are not noise.
+     */
+    private static final Set<String> OSCILLATION_READ_TOOLS = Set.of(
+            "list_objects",
+            "get_object",
+            "list_variables",
+            "describe_variables",
+            "get_dashboard_layout",
+            "get_mimic_diagram",
+            "list_mimic_symbols",
+            "list_functions",
+            "get_function",
+            "get_widget_catalog",
+            "search_context",
+            "get_automation_schema",
+            "list_drivers",
+            "get_driver_help",
+            "list_instance_types",
+            "list_mixin_blueprints",
+            "get_object_blueprint"
+    );
+
+    /** Args that identify the target of a call (body payloads intentionally excluded). */
+    private static final List<String> FINGERPRINT_KEYS = List.of(
+            "path",
+            "parent",
+            "parentPath",
+            "dashboardPath",
+            "mimicPath",
+            "devicePath",
+            "name",
+            "query",
+            "topic",
+            "type",
+            "pack",
+            "templateId",
+            "driverId"
     );
 
     private AgentLoopGuard() {
@@ -43,6 +115,10 @@ final class AgentLoopGuard {
                     + "Call list_objects parent=" + blockedParent
                     + " (exact folder — listing parent=root does NOT ground root.platform.* paths). "
                     + "Verify objects[].path in the result, then retry create_object.";
+        }
+        String objectExistsHint = objectAlreadyExistsHint(lastTool, steps);
+        if (objectExistsHint != null) {
+            return objectExistsHint;
         }
         if ("save_workflow_bpmn".equals(lastTool) && lastStepErrorContains(steps, "not discovered in this turn")) {
             return """
@@ -124,6 +200,21 @@ final class AgentLoopGuard {
                     Do NOT embed manifest JSON in summary (no ``` fences) or in result.plan.sections. \
                     Re-calling get_example_bundle is unnecessary unless the user asks for another appId/sections.""";
         }
+        if ("set_variable".equals(lastTool) && lastStepErrorContains(steps, "Variable not found: layout")) {
+            return """
+                    Operator HMI layout is NOT a tree variable. Use configure_operator_ui \
+                    appId=<short-id> title=... defaultDashboard=<dashboardPath> \
+                    dashboards=[{path,title}]. Do NOT set_variable name=layout.""";
+        }
+        if (isReadToolOscillation(steps)) {
+            return """
+                    Stop read ping-pong (alternating list_*/get_*). Use prior tool results. \
+                    Next: one mutate (configure_operator_ui / configure_alert / set_dashboard_layout) or finish.""";
+        }
+        String batchHint = batchIncrementalHint(lastTool, steps);
+        if (batchHint != null) {
+            return batchHint;
+        }
         if (isRepeatedTool(lastTool, steps)) {
             if (DISCOVERY_LOOP_TOOLS.contains(normalize(lastTool))) {
                 return snmpOrDriverExecuteHint();
@@ -139,12 +230,6 @@ final class AgentLoopGuard {
                     list_mimic_symbols for symbolId; get_mimic_diagram to verify elementCount; never set_variable name=diagram. \
                     For platform docs: use prior search_context / get_driver_help results — do NOT re-call them. \
                     Before invoke_bff: use list_functions and get_function instead of guessing function names.""";
-        }
-        if ("search_context".equals(normalize(lastTool))) {
-            return """
-                    search_context returned short hits — do NOT call it again with the same query. \
-                    Use the snippets: enable_agent_tool_pack if needed, list_objects on real parents, \
-                    create/configure, or finish with Markdown. Full docs are not inlined in the prompt.""";
         }
         long recentSearch = recentToolCount(steps, "search_context");
         if (recentSearch >= REPEAT_THRESHOLD) {
@@ -199,27 +284,66 @@ final class AgentLoopGuard {
                             + " — use exact paths from result, then retry. Problem Brief: do not replan — fix grounding."
             ));
         }
-        String normalized = normalize(toolName);
-        if (!DISCOVERY_LOOP_TOOLS.contains(normalized)) {
-            return Optional.empty();
+        Optional<BlockDecision> sameError = checkRepeatedIdenticalError(toolName, steps);
+        if (sameError.isPresent()) {
+            return sameError;
         }
-        // Same tool with different args (e.g. get_automation_schema topic=dashboard vs workflow) is not a loop.
-        String fingerprint = discoveryArgFingerprint(normalized, toolArgs);
-        long sameCallCount = totalToolCountWithFingerprint(steps, normalized, fingerprint);
-        if (sameCallCount >= DISCOVERY_HARD_BLOCK) {
+        Optional<BlockDecision> oscillation = checkToolOscillation(toolName, steps);
+        if (oscillation.isPresent()) {
+            return oscillation;
+        }
+        String normalized = normalize(toolName);
+        if (DISCOVERY_LOOP_TOOLS.contains(normalized)) {
+            // Same tool with different args (e.g. get_automation_schema topic=dashboard vs workflow) is not a loop.
+            String discoveryFp = discoveryArgFingerprint(normalized, toolArgs);
+            long sameCallCount = totalToolCountWithFingerprint(steps, normalized, discoveryFp);
+            if (sameCallCount >= DISCOVERY_HARD_BLOCK) {
+                return Optional.of(new BlockDecision(
+                        "Hard block: discovery tool '" + normalized + "'"
+                                + (discoveryFp.isBlank() ? "" : " (" + discoveryFp + ")")
+                                + " called " + sameCallCount
+                                + " times this turn with the same arguments — stop looping",
+                        snmpOrDriverExecuteHint(),
+                        false
+                ));
+            }
+        }
+
+        String fingerprint = callFingerprint(normalized, toolArgs);
+        long priorSame = totalFingerprintCount(steps, fingerprint);
+
+        if (BATCH_INCREMENTAL_TOOLS.contains(normalized) && priorSame >= BATCH_INCREMENTAL_HARD_BLOCK) {
             return Optional.of(new BlockDecision(
-                    "Hard block: discovery tool '" + normalized + "'"
-                            + (fingerprint.isBlank() ? "" : " (" + fingerprint + ")")
-                            + " called " + sameCallCount
-                            + " times this turn with the same arguments — stop looping",
-                    snmpOrDriverExecuteHint()
+                    "Hard block: '" + normalized + "' repeated " + priorSame
+                            + " times on the same target — stop flooding the step log",
+                    batchIncrementalHardHint(normalized),
+                    true
+            ));
+        }
+        if (READ_SPAM_TOOLS.contains(normalized) && priorSame >= READ_SPAM_HARD_BLOCK) {
+            return Optional.of(new BlockDecision(
+                    "Hard block: '" + normalized + "' repeated " + priorSame
+                            + " times with the same arguments — stop looping",
+                    "Use the prior tool result. Change path/parent/query or finish with a summary. "
+                            + "Do not re-list the same folder.",
+                    true
+            ));
+        }
+        if (priorSame >= IDENTICAL_CALL_HARD_BLOCK) {
+            return Optional.of(new BlockDecision(
+                    "Hard block: identical '" + normalized + "' call repeated " + priorSame
+                            + " times this turn — stop flooding the step log",
+                    "Change strategy (different tool/args) or finish. "
+                            + "Batch writes (set_dashboard_layout / save_mimic_diagram / one create_object) "
+                            + "beat dozens of tiny OK steps.",
+                    true
             ));
         }
         return Optional.empty();
     }
 
     /**
-     * Discriminator for “same discovery call” — topic/query/path style args, not the tool name alone.
+     * Discriminator for "same discovery call" — topic/query/path style args, not the tool name alone.
      */
     static String discoveryArgFingerprint(String toolName, Map<String, Object> toolArgs) {
         String normalized = normalize(toolName);
@@ -270,7 +394,322 @@ final class AgentLoopGuard {
                 .count();
     }
 
-    record BlockDecision(String error, String hint) {
+    static String callFingerprint(String toolName, Map<String, Object> toolArgs) {
+        String normalized = normalize(toolName);
+        Map<String, Object> args = toolArgs == null ? Map.of() : toolArgs;
+        StringBuilder sb = new StringBuilder(normalized);
+        for (String key : FINGERPRINT_KEYS) {
+            String value = stringArg(args, key);
+            if (!value.isBlank()) {
+                sb.append('|').append(key).append('=').append(value.toLowerCase(Locale.ROOT));
+            }
+        }
+        // Batch-incremental: ignore widget/element body — same dashboard/mimic path is the spam signal.
+        if (BATCH_INCREMENTAL_TOOLS.contains(normalized) && sb.indexOf("|path=") < 0) {
+            String path = mutateTargetPath(args);
+            if (!path.isBlank()) {
+                sb.append("|path=").append(path);
+            }
+        }
+        return sb.toString();
+    }
+
+    static String mutateTargetPath(Map<String, Object> toolArgs) {
+        Map<String, Object> args = toolArgs == null ? Map.of() : toolArgs;
+        String path = stringArg(args, "path");
+        if (path.isBlank()) {
+            path = stringArg(args, "dashboardPath");
+        }
+        if (path.isBlank()) {
+            path = stringArg(args, "mimicPath");
+        }
+        if (path.isBlank()) {
+            path = stringArg(args, "devicePath");
+        }
+        return path.toLowerCase(Locale.ROOT);
+    }
+
+    private static long totalFingerprintCount(List<Map<String, Object>> steps, String fingerprint) {
+        if (steps == null || fingerprint == null || fingerprint.isBlank()) {
+            return 0;
+        }
+        return steps.stream()
+                .filter(step -> "tool".equals(String.valueOf(step.get("type"))))
+                .filter(step -> fingerprint.equals(callFingerprint(
+                        String.valueOf(step.get("tool")),
+                        stepMap(step, "arguments")
+                )))
+                .count();
+    }
+
+    private static String batchIncrementalHint(String lastTool, List<Map<String, Object>> steps) {
+        String normalized = normalize(lastTool);
+        if (!BATCH_INCREMENTAL_TOOLS.contains(normalized)) {
+            return null;
+        }
+        if (totalToolCount(steps, normalized) < 1) {
+            return null;
+        }
+        return batchIncrementalHardHint(normalized);
+    }
+
+    private static String batchIncrementalHardHint(String normalized) {
+        if ("add_dashboard_widget".equals(normalized)) {
+            return """
+                    Stop add_dashboard_widget noise. Prefer ONE set_dashboard_layout path=<dashboard> \
+                    template= or layoutJson with all widgets (columns=84). Then finish. \
+                    Do NOT call add_dashboard_widget for every KPI/chart.""";
+        }
+        return """
+                Stop add_mimic_elements noise. Prefer ONE save_mimic_diagram path=<mimic> \
+                with the full elements[] array, then get_mimic_diagram to verify, then finish.""";
+    }
+
+    /**
+     * A↔B tool oscillation (e.g. list_variables ↔ get_object) floods the Studio log.
+     * Blocks when the proposed call would continue a strict alternation of length ≥ {@link #OSCILLATION_MIN_STEPS}.
+     */
+    private static Optional<BlockDecision> checkToolOscillation(
+            String toolName,
+            List<Map<String, Object>> steps
+    ) {
+        List<String> recent = recentToolNames(steps, OSCILLATION_WINDOW - 1);
+        if (recent.size() < OSCILLATION_MIN_STEPS - 1) {
+            return Optional.empty();
+        }
+        List<String> sequence = new java.util.ArrayList<>(recent);
+        sequence.add(normalize(toolName));
+        if (sequence.size() > OSCILLATION_WINDOW) {
+            sequence = sequence.subList(sequence.size() - OSCILLATION_WINDOW, sequence.size());
+        }
+        if (!isStrictTwoToolAlternation(sequence)) {
+            return Optional.empty();
+        }
+        String a = sequence.get(0);
+        String b = sequence.get(1);
+        if (!isNoiseOscillationPair(a, b)) {
+            // Productive course pattern: create_object DASHBOARD ↔ set_dashboard_layout (new path each cycle).
+            return Optional.empty();
+        }
+        String existsPath = latestExistingObjectPath(steps);
+        String hint;
+        if (!existsPath.isBlank()
+                && sequence.contains("create_object")
+                && sequence.contains("get_object")) {
+            hint = "Object(s) already exist (e.g. " + existsPath + "). "
+                    + "Stop create_object↔get_object. "
+                    + "Next: configure_alert / set_dashboard_layout / list_variables / configure_* on that path, "
+                    + "or continue the next assignment step. Do NOT recreate.";
+        } else {
+            hint = """
+                    Stop read ping-pong. Use prior results or finish. \
+                    Prefer one mutate: configure_operator_ui / configure_alert / set_dashboard_layout / create_binding_rule.""";
+        }
+        return Optional.of(new BlockDecision(
+                "Hard block: tools '" + a + "' ↔ '" + b
+                        + "' oscillating " + sequence.size() + " steps — stop flooding the step log",
+                hint,
+                true
+        ));
+    }
+
+    private static boolean isReadToolOscillation(List<Map<String, Object>> steps) {
+        List<String> recent = recentToolNames(steps, OSCILLATION_WINDOW);
+        if (recent.size() < OSCILLATION_MIN_STEPS || !isStrictTwoToolAlternation(recent)) {
+            return false;
+        }
+        return isNoiseOscillationPair(recent.get(0), recent.get(1));
+    }
+
+    /**
+     * True only for stuck loops: read↔read, or create_object↔get_object.
+     * create_object↔set_dashboard_layout (multi-dashboard course builds) is productive.
+     */
+    private static boolean isNoiseOscillationPair(String a, String b) {
+        if (a == null || b == null || a.equals(b)) {
+            return false;
+        }
+        if (("create_object".equals(a) && "get_object".equals(b))
+                || ("get_object".equals(a) && "create_object".equals(b))) {
+            return true;
+        }
+        return OSCILLATION_READ_TOOLS.contains(a) && OSCILLATION_READ_TOOLS.contains(b);
+    }
+
+    private static List<String> recentToolNames(List<Map<String, Object>> steps, int max) {
+        if (steps == null || max <= 0) {
+            return List.of();
+        }
+        List<String> names = new java.util.ArrayList<>();
+        for (int i = steps.size() - 1; i >= 0 && names.size() < max; i--) {
+            Map<String, Object> step = steps.get(i);
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            names.add(0, normalize(String.valueOf(step.get("tool"))));
+        }
+        return names;
+    }
+
+    private static boolean isStrictTwoToolAlternation(List<String> sequence) {
+        if (sequence == null || sequence.size() < OSCILLATION_MIN_STEPS) {
+            return false;
+        }
+        String a = sequence.get(0);
+        String b = sequence.get(1);
+        if (a == null || b == null || a.isBlank() || b.isBlank() || a.equals(b)) {
+            return false;
+        }
+        for (int i = 0; i < sequence.size(); i++) {
+            String expected = (i % 2 == 0) ? a : b;
+            if (!expected.equals(sequence.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Same tool + same ERROR text ≥2 times → stop turn (missing-arg loops, etc.).
+     */
+    private static Optional<BlockDecision> checkRepeatedIdenticalError(
+            String toolName,
+            List<Map<String, Object>> steps
+    ) {
+        if (steps == null || toolName == null || steps.isEmpty()) {
+            return Optional.empty();
+        }
+        String normalized = normalize(toolName);
+        String lastError = null;
+        int streak = 0;
+        for (int i = steps.size() - 1; i >= 0; i--) {
+            Map<String, Object> step = steps.get(i);
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            if (!normalized.equals(normalize(String.valueOf(step.get("tool"))))) {
+                break;
+            }
+            Map<String, Object> result = stepMap(step, "result");
+            if (!"ERROR".equals(String.valueOf(result.get("status")))) {
+                break;
+            }
+            String error = String.valueOf(result.get("error"));
+            if (lastError == null) {
+                lastError = error;
+                streak = 1;
+            } else if (lastError.equals(error)) {
+                streak++;
+            } else {
+                break;
+            }
+            if (streak >= 2) {
+                String hint = identicalErrorHint(normalized, lastError);
+                // Missing-arg loops: block the spam call but keep the turn open so the model
+                // can retry once with corrected args (course / alarm tasks must not stall).
+                boolean stopTurn = !isMissingRequiredArgError(lastError);
+                return Optional.of(new BlockDecision(
+                        "Hard block: '" + normalized + "' failed " + streak
+                                + " times with the same error — stop flooding the step log",
+                        hint,
+                        stopTurn
+                ));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static boolean isMissingRequiredArgError(String error) {
+        if (error == null || error.isBlank()) {
+            return false;
+        }
+        String lower = error.toLowerCase(Locale.ROOT);
+        return lower.contains("required")
+                || lower.contains("are required")
+                || lower.contains("is required")
+                || lower.contains("missing")
+                || lower.contains("must be ")
+                || lower.contains("unknown_arg")
+                || lower.contains("unknown role")
+                || lower.contains("formal verification")
+                || lower.contains("tautology")
+                || lower.contains("unsatisfiable")
+                || lower.contains("never discriminates")
+                || lower.contains("invalid");
+    }
+
+    private static String identicalErrorHint(String toolName, String error) {
+        String lower = error == null ? "" : error.toLowerCase(Locale.ROOT);
+        if ("get_event_schema".equals(toolName) || lower.contains("objectpath and eventname")) {
+            return """
+                    get_event_schema needs objectPath=<device path> and eventName=<name on that object>. \
+                    Example: objectPath=root.platform.devices.lab-virtual-device eventName=Event1. \
+                    First list_events path=<device> or get_object to see events[]. Do NOT use eventType.""";
+        }
+        if ("get_object_blueprint".equals(toolName) || lower.contains("blueprintname or blueprintid")) {
+            return """
+                    get_object_blueprint needs blueprintName or blueprintId (e.g. virtual-lab-v1). \
+                    Call list_mixin_blueprints or list_object_blueprints first; pass the name from the result. \
+                    Do NOT send empty id/name.""";
+        }
+        if ("create_binding_rule".equals(toolName) || lower.contains("path, id, expression")) {
+            return """
+                    create_binding_rule needs flat args: path, id, expression, targetVariable=<local var>. \
+                    Example expression: read("root.platform.devices.virt-device-1/sineWave") > 0 \
+                    && read(".../virt-device-2/sineWave") > 0 && read(".../virt-device-3/sineWave") > 0 \
+                    ? "ERROR" : "OK". Do NOT send ruleJson. Call describe_agent_tool name=create_binding_rule once.""";
+        }
+        if ("create_variable".equals(toolName) && (lower.contains("must be double") || lower.contains("must be"))) {
+            return """
+                    create_variable initialValue must match valueType: for DOUBLE use 0 or 0.0 (number), \
+                    or omit initialValue. Then create_binding_rule for sine+sawtooth sum. \
+                    Do NOT send boolean/object/array as initialValue.""";
+        }
+        if ("create_variable".equals(toolName) || lower.contains("valuetype")) {
+            return """
+                    create_variable needs path, name, valueType (DOUBLE|BOOLEAN|STRING|INTEGER). \
+                    Optional initialValue scalar (0 / 0.0 / \"\"). Do NOT use dataType. \
+                    Computed waves sum: create_variable then create_binding_rule expression=read(\"self/sineWave\")+read(\"self/sawtoothWave\").""";
+        }
+        if ("configure_operator_ui".equals(toolName) || lower.contains("defaultdashboard")) {
+            return """
+                    configure_operator_ui needs title, defaultDashboard, dashboards=[{path,title}]. \
+                    appId is a short id (virt-cluster), not a tree path. Do NOT create_object APPLICATION.""";
+        }
+        if ("set_variable".equals(toolName) && lower.contains("layout")) {
+            return """
+                    Do NOT set_variable name=layout on operator-apps. \
+                    Use configure_operator_ui with title, defaultDashboard, dashboards=[].""";
+        }
+        if (lower.contains("unknown role")) {
+            return """
+                    USER roles must be lowercase platform ids: admin, developer, operator (or tenant-admin). \
+                    Example: create_object type=USER name=user1 roles=operator password=ChangeMe!123. \
+                    Do NOT send OPERATOR / ROLE_OPERATOR.""";
+        }
+        if ("configure_alert".equals(toolName)
+                || lower.contains("formal verification")
+                || lower.contains("tautology")
+                || lower.contains("never discriminates")) {
+            return """
+                    conditionExpr must discriminate — formal verify rejects tautologies (true, 1==1, true||…). \
+                    Example: watchVariable=sineWave conditionExpr=self.sineWave[\"value\"] > 0 \
+                    or watchVariable=clusterError conditionExpr=self.clusterError[\"value\"] == true. \
+                    Retry configure_alert with a threshold/boolean compare on the watched variable.""";
+        }
+        return "Fix the error using the tool description / describe_agent_tool, then retry with corrected args. "
+                + "Do not repeat the identical failing call. Prefer the next course/task step over clarify.";
+    }
+
+    /**
+     * @param stopTurn when true, TreeFirstAgentService ends the turn after recording the block
+     *                 (avoids ERROR spam in the Studio step log).
+     */
+    record BlockDecision(String error, String hint, boolean stopTurn) {
+        BlockDecision(String error, String hint) {
+            this(error, hint, false);
+        }
+
         boolean blocked() {
             return error != null && !error.isBlank();
         }
@@ -364,6 +803,74 @@ final class AgentLoopGuard {
         return "";
     }
 
+    private static String objectAlreadyExistsHint(String lastTool, List<Map<String, Object>> steps) {
+        if (steps == null || steps.isEmpty() || lastTool == null) {
+            return null;
+        }
+        String tool = normalize(lastTool);
+        if (!"create_object".equals(tool) && !"create_virtual_device".equals(tool)) {
+            return null;
+        }
+        Map<String, Object> last = steps.get(steps.size() - 1);
+        if (!tool.equals(normalize(String.valueOf(last.get("tool"))))) {
+            return null;
+        }
+        Map<String, Object> result = stepMap(last, "result");
+        Map<String, Object> args = stepMap(last, "arguments");
+        String type = "create_virtual_device".equals(tool)
+                ? "DEVICE"
+                : stringArg(args, "type").toUpperCase(Locale.ROOT);
+        if (Boolean.TRUE.equals(result.get("reused"))
+                || "true".equalsIgnoreCase(String.valueOf(result.get("reused")))) {
+            String path = firstNonBlank(
+                    stringArg(result, "path"),
+                    stringArg(result, "existingPath")
+            );
+            String hint = stringArg(result, "hint");
+            return !hint.isBlank() ? hint : AgentObjectReuse.nextStepHint(path, type);
+        }
+        if (lastStepErrorContains(steps, "object exists:")) {
+            String path = latestExistingObjectPath(steps);
+            return AgentObjectReuse.nextStepHint(path, type);
+        }
+        return null;
+    }
+
+    private static String latestExistingObjectPath(List<Map<String, Object>> steps) {
+        if (steps == null) {
+            return "";
+        }
+        for (int i = steps.size() - 1; i >= 0; i--) {
+            Map<String, Object> step = steps.get(i);
+            if (!"tool".equals(String.valueOf(step.get("type")))) {
+                continue;
+            }
+            Map<String, Object> result = stepMap(step, "result");
+            String path = firstNonBlank(
+                    stringArg(result, "existingPath"),
+                    stringArg(result, "path")
+            );
+            if (!path.isBlank()) {
+                return path;
+            }
+            String error = String.valueOf(result.get("error"));
+            if (error.startsWith("Object exists:")) {
+                return error.substring("Object exists:".length()).trim();
+            }
+        }
+        return "";
+    }
+
+    private static String firstNonBlank(String a, String b) {
+        if (a != null && !a.isBlank()) {
+            return a.trim();
+        }
+        if (b != null && !b.isBlank()) {
+            return b.trim();
+        }
+        return "";
+    }
+
     private static String createObjectTypeHint(List<Map<String, Object>> steps) {
         if (steps.isEmpty()) {
             return null;
@@ -372,8 +879,16 @@ final class AgentLoopGuard {
         if (!"create_object".equals(String.valueOf(last.get("tool")))) {
             return null;
         }
-        if (!"OK".equals(String.valueOf(stepMap(last, "result").get("status")))) {
+        Map<String, Object> result = stepMap(last, "result");
+        if (!"OK".equals(String.valueOf(result.get("status")))) {
             return null;
+        }
+        if (Boolean.TRUE.equals(result.get("reused"))
+                || "true".equalsIgnoreCase(String.valueOf(result.get("reused")))) {
+            String hint = stringArg(result, "hint");
+            if (!hint.isBlank()) {
+                return hint;
+            }
         }
         Map<String, Object> args = stepMap(last, "arguments");
         String type = stringArg(args, "type").toUpperCase(Locale.ROOT);
@@ -391,6 +906,12 @@ final class AgentLoopGuard {
                     DEVICE created. Next: configure_driver, list_variables — verify telemetry before dashboard/SCADA bindings.""";
             case "ALERT" -> "ALERT created. Next: configure_alert path=<path from create_object result>.";
             case "REPORT" -> "REPORT created. Next: configure_report path=<path from create_object result>.";
+            case "EVENT_FILTER" -> "EVENT_FILTER created. Reuse path for filter fields; continue the assignment — do not recreate.";
+            case "USER" -> """
+                    Platform USER created (login + roles). Next assignment step: create the second user if needed, \
+                    then set_object_acl on the other user's devices \
+                    entries=[{principalType:USER, principalId=<firstUser>, permission:EDITOR}]. \
+                    Do NOT apply_mixin platform-user-v1 or spam list_variables on the user.""";
             default -> null;
         };
     }
