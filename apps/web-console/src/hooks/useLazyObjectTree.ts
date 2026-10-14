@@ -5,15 +5,24 @@ import type { ObjectSummary, TreeNode } from "../types";
 import { buildObjectTree, parentObjectPath } from "../utils/tree/tree";
 import { objectTreeKey } from "../utils/tree/treeRowKey";
 import type { ObjectWsMessage } from "./useObjectWebSocket";
-import { OBJECT_WS_EVENT } from "./useObjectWebSocket";
+import { OBJECT_WS_EVENT, useObjectPathsSubscription } from "./useObjectWebSocket";
 
 const BOOTSTRAP_PARENTS = ["root", "root.platform"];
+
+/** Full sidebar tree reload (create/delete outside WS interest, agent turns, …). */
+export const TREE_INVALIDATE_EVENT = "ispf-tree-invalidate";
+
+export function requestObjectTreeInvalidate(): void {
+  window.dispatchEvent(new Event(TREE_INVALIDATE_EVENT));
+}
 
 export function useLazyObjectTree(enabled = true) {
   const objectsRef = useRef(new Map<string, ObjectSummary>());
   const loadedParentsRef = useRef(new Set<string>());
   const loadingParentsRef = useRef(new Set<string>());
   const [version, setVersion] = useState(0);
+  /** Path-wide WS interest so CREATED/DELETED under expanded folders reach this client. */
+  const [wsInterestPaths, setWsInterestPaths] = useState<string[]>(() => [...BOOTSTRAP_PARENTS]);
 
   const bump = useCallback(() => setVersion((v) => v + 1), []);
 
@@ -53,6 +62,7 @@ export function useLazyObjectTree(enabled = true) {
         const children = await fetchObjects(parentPath, true);
         mergeObjects(children, parentPath);
         loadedParentsRef.current.add(parentPath);
+        setWsInterestPaths((prev) => (prev.includes(parentPath) ? prev : [...prev, parentPath]));
       } catch (error) {
         loadedParentsRef.current.delete(parentPath);
         console.error(`Failed to load tree children for ${parentPath}`, error);
@@ -131,20 +141,32 @@ export function useLazyObjectTree(enabled = true) {
     return () => window.removeEventListener(OBJECT_WS_EVENT, onDriverVariable);
   }, [refreshParent]);
 
-  // `version` is the change counter of the ref-backed store; it is the real dependency here.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const objects = useMemo(() => [...objectsRef.current.values()], [version]);
-
-  const tree: TreeNode[] = useMemo(() => buildObjectTree(objects), [objects]);
-
   const invalidateAll = useCallback(async () => {
     loadedParentsRef.current.clear();
     objectsRef.current.clear();
+    setWsInterestPaths([...BOOTSTRAP_PARENTS]);
     bump();
     for (const parent of BOOTSTRAP_PARENTS) {
       await loadChildren(parent, true);
     }
   }, [loadChildren, bump]);
+
+  useEffect(() => {
+    const onInvalidate = () => {
+      void invalidateAll();
+    };
+    window.addEventListener(TREE_INVALIDATE_EVENT, onInvalidate);
+    return () => window.removeEventListener(TREE_INVALIDATE_EVENT, onInvalidate);
+  }, [invalidateAll]);
+
+  // Empty interest ⇒ server silence (ADR-0024). Keep every loaded folder subscribed.
+  useObjectPathsSubscription(enabled ? wsInterestPaths : []);
+
+  // `version` is the change counter of the ref-backed store; it is the real dependency here.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const objects = useMemo(() => [...objectsRef.current.values()], [version]);
+
+  const tree: TreeNode[] = useMemo(() => buildObjectTree(objects), [objects]);
 
   return {
     tree,
