@@ -63,6 +63,26 @@ class AgentToolPackCatalogTest {
     }
 
     @Test
+    void continueMessageUnlocksExecutionPacks() {
+        AgentRunState state = new AgentRunState();
+        AgentToolSurface.beginTurn(state, AgentInteractionMode.EXECUTE, "Continue");
+        assertThat(AgentToolSurface.isToolActive(state, "create_object")).isTrue();
+        assertThat(AgentToolSurface.isToolActive(state, "set_dashboard_layout")).isTrue();
+        assertThat(AgentToolSurface.isToolActive(state, "save_mimic_diagram")).isTrue();
+        assertThat(AgentToolSurface.isToolActive(state, "set_object_acl")).isTrue();
+    }
+
+    @Test
+    void autoEnablePackForToolUnlocksWithoutManualEnable() {
+        AgentRunState state = new AgentRunState();
+        AgentToolSurface.beginTurn(state, AgentInteractionMode.EXECUTE, "hello");
+        assertThat(AgentToolSurface.isToolActive(state, "set_dashboard_layout")).isFalse();
+        assertThat(AgentToolSurface.autoEnablePackForTool(state, "set_dashboard_layout")).isTrue();
+        assertThat(AgentToolSurface.isToolActive(state, "set_dashboard_layout")).isTrue();
+        assertThat(AgentToolSurface.isToolActive(state, "create_object")).isTrue();
+    }
+
+    @Test
     void filterCatalogOmitsInactivePacks() {
         AgentRunState state = new AgentRunState();
         AgentToolSurface.beginTurn(state, AgentInteractionMode.ASK, "inventory");

@@ -802,7 +802,8 @@ public class TreeFirstAgentService {
                     } else if (!toolRegistry.isKnownTool(toolName)) {
                         toolResult = new LinkedHashMap<>(toolRegistry.unknownToolResult(toolName));
                         executedTool = toolName;
-                    } else if (!AgentToolSurface.isToolActive(session.runState(), toolName)) {
+                    } else if (!AgentToolSurface.isToolActive(session.runState(), toolName)
+                            && !AgentToolSurface.autoEnablePackForTool(session.runState(), toolName)) {
                         toolResult = new LinkedHashMap<>(
                                 AgentToolSurface.inactiveToolResult(toolName, session.runState())
                         );
@@ -833,7 +834,8 @@ public class TreeFirstAgentService {
                         } else if (!toolRegistry.isKnownTool(toolName)) {
                             toolResult = new LinkedHashMap<>(toolRegistry.unknownToolResult(toolName));
                             executedTool = toolName;
-                        } else if (!AgentToolSurface.isToolActive(session.runState(), toolName)) {
+                        } else if (!AgentToolSurface.isToolActive(session.runState(), toolName)
+                                && !AgentToolSurface.autoEnablePackForTool(session.runState(), toolName)) {
                             toolResult = new LinkedHashMap<>(
                                     AgentToolSurface.inactiveToolResult(toolName, session.runState())
                             );

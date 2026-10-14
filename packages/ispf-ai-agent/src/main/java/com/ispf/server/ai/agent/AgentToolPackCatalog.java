@@ -76,6 +76,14 @@ public final class AgentToolPackCatalog {
         return Set.copyOf(packs);
     }
 
+    /**
+     * Broad pack set used after plan approval / explicit Continue so course execution
+     * does not thrash on enable_agent_tool_pack for every domain tool.
+     */
+    public static Set<String> executionPacks() {
+        return Set.of(DEVICES, DASHBOARDS, AUTOMATION, SCADA, SECURITY, BUNDLES, ANALYTICS);
+    }
+
     public static Set<String> hintPacks(String userMessage) {
         if (userMessage == null || userMessage.isBlank()) {
             return Set.of();
