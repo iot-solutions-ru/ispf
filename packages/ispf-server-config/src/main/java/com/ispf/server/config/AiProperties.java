@@ -39,6 +39,11 @@ public class AiProperties {
     private int agentMaxTurnsPerHourPerUser = 120;
     /** When true, mutating agent tools require an approved plan (BL-106). */
     private boolean agentRequireApprovalForMutate = true;
+    /**
+     * Optional embedding model for ContextPack hybrid search query vectors when the pack was built
+     * with a remote OpenAI-compatible embedder. Empty = use pack {@code embeddingModel}.
+     */
+    private String embeddingModel = "";
 
     public boolean isEnabled() {
         return enabled;
@@ -238,6 +243,14 @@ public class AiProperties {
 
     public void setAgentRequireApprovalForMutate(boolean agentRequireApprovalForMutate) {
         this.agentRequireApprovalForMutate = agentRequireApprovalForMutate;
+    }
+
+    public String getEmbeddingModel() {
+        return embeddingModel == null ? "" : embeddingModel;
+    }
+
+    public void setEmbeddingModel(String embeddingModel) {
+        this.embeddingModel = embeddingModel == null ? "" : embeddingModel;
     }
 
     public Duration timeout() {

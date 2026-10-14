@@ -46,6 +46,18 @@ Outputs:
 
 Pack includes bundle schema fields, script steps, widget types, API doc slices, reference examples, **driverCatalog**, **featureIndex**, **exampleSummaries**, **docCatalog** (index of all `docs/*.md`), **docChunks** for scored search, and **competitiveGapIndex** (readiness gap index from [competitive-scorecard](competitive-scorecard.md) — BL-182).
 
+### Hybrid retrieval (ADR-0077)
+
+`search_context` ranks **docChunks** with hybrid lexical + embedding cosine (default `mode=hybrid`). Hits are short snippets — do not inline full docs into the agent system prompt.
+
+| Build | Behavior |
+|-------|----------|
+| Default | Offline `ispf-hash-v1` (384-d) embeddings written into each `docChunks[].embedding` |
+| `ISPF_CONTEXT_PACK_EMBED_URL` | OpenAI-compatible `/v1/embeddings` at pack build (optional model via `ISPF_CONTEXT_PACK_EMBED_MODEL`) |
+| `ISPF_CONTEXT_PACK_EMBED=off` | No embeddings; runtime lexical only |
+
+Pack metadata: `embeddingModel`, `embeddingDims`, `embeddingCoverage`. Runtime query vectors use the same hash model, or `ispf.ai.base-url` `/embeddings` when the pack was built with a remote embedder (`ispf.ai.embedding-model` overrides the query model id).
+
 Primary agent router doc: [agent-knowledge](agent-knowledge.md) (`search_context topic=agent-knowledge`). Readiness gaps: `search_context topic=gaps`.
 
 CI and release workflows run `python tools/ai-pack/build.py` before server tests/build (`ISPF_VERSION` from tag in release).

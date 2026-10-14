@@ -1,5 +1,6 @@
 package com.ispf.server.config;
 
+import com.ispf.server.security.UiPackScopedAuthority;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -28,6 +29,14 @@ public class KeycloakJwtRoleConverter implements Converter<Jwt, Collection<Grant
                         authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toString()));
                     }
                 }
+            }
+        }
+        Object packApp = jwt.getClaim(UiPackScopedAuthority.CLAIM);
+        if (packApp != null && !packApp.toString().isBlank()) {
+            boolean alreadyScoped = authorities.stream()
+                    .anyMatch(authority -> UiPackScopedAuthority.ROLE.equals(authority.getAuthority()));
+            if (!alreadyScoped) {
+                authorities.add(new SimpleGrantedAuthority(UiPackScopedAuthority.ROLE));
             }
         }
         return authorities;

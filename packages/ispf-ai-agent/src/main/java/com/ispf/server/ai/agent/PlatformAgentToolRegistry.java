@@ -206,7 +206,8 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 applicationFunctionStore,
                 objectMapper,
                 objectAccessService,
-                tenantScopeService
+                tenantScopeService,
+                objectTreePort
         ));
         tools.addAll(AgentPlatformTools.all(
                 scheduleObjectService,

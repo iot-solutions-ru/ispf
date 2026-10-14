@@ -69,12 +69,17 @@ public class ClickHouseVariableHistorySecondaryWriteStore implements VariableHis
                         sampled_at DateTime64(3, 'UTC'),
                         observed_at DateTime64(3, 'UTC'),
                         value_double Nullable(Float64),
-                        value_text Nullable(String)
+                        value_text Nullable(String),
+                        quality Nullable(String)
                     ) ENGINE = MergeTree()
                     PARTITION BY toYYYYMM(sampled_at)
                     ORDER BY (object_path, variable_name, field_name, sampled_at)%s
                     SETTINGS index_granularity = 8192
                     """, qualifiedTable, ttlClause));
+            executeStatement(String.format(
+                    "ALTER TABLE %s ADD COLUMN IF NOT EXISTS quality Nullable(String)",
+                    qualifiedTable
+            ));
         });
         log.info("ClickHouse dual-write secondary ready (database={}, table={})", database, table);
     }
@@ -106,6 +111,7 @@ public class ClickHouseVariableHistorySecondaryWriteStore implements VariableHis
             row.put("observed_at", CH_DATETIME.format(record.observedAt()));
             row.put("value_double", record.valueDouble());
             row.put("value_text", record.valueText());
+            row.put("quality", record.quality());
             return objectMapper.writeValueAsString(row);
         } catch (IOException ex) {
             throw new IllegalStateException("Failed to serialize variable history record", ex);

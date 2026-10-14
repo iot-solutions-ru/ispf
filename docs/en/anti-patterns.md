@@ -86,7 +86,7 @@ Do not hand-copy trees between environments. SHIP layer = bundle ([ADR-0060](dec
 | No type prefix in names (`pump01`, not `devicePump01`) | Type is object path / `ObjectType` |
 | Descriptions on functions and non-obvious variables | Operators + AI tools |
 
-Logic hosts stay **SINGLETON / INSTANCE**, never `ObjectType.DEVICE` ([application-principles](application-principles.md) § Logic objects vs DEVICE). Bundle validate warns `LOGIC_HOST_DEVICE`.
+Logic hosts stay **SINGLETON / INSTANCE**, never `ObjectType.DEVICE` ([application-principles](application-principles.md) § Logic objects vs DEVICE). Authoring validate **warns** `LOGIC_HOST_DEVICE`; ship/`--strict`/catalog **error** ([adr-tension-resolution](adr-tension-resolution.md)).
 
 ---
 

@@ -1,6 +1,6 @@
-import fs from "node:fs";
 import Ajv2020 from "ajv/dist/2020.js";
 import { packDirectory } from "./pack.mjs";
+import { applyStrictShipCanon } from "./shipCanon.mjs";
 import { compactStringify, defaultSchemaPath, readJsonFile, resolveInput } from "./util.mjs";
 
 export function validateLocal(manifest, schemaPath = defaultSchemaPath()) {
@@ -19,14 +19,17 @@ function formatAjvError(err) {
   return `${path}: ${err.message ?? "invalid"}`;
 }
 
-export async function validateRemote(appId, manifest, { dryRun = false } = {}) {
+export async function validateRemote(appId, manifest, { dryRun = false, strict = false } = {}) {
   const baseUrl = (process.env.ISPF_BASE_URL ?? "http://localhost:8080").replace(/\/$/, "");
   const token = process.env.ISPF_API_TOKEN ?? "";
   const headers = { "Content-Type": "application/json" };
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
-  const qs = dryRun ? "?dryRun=true" : "";
+  const params = new URLSearchParams();
+  if (dryRun) params.set("dryRun", "true");
+  if (strict) params.set("strict", "true");
+  const qs = params.toString() ? `?${params}` : "";
   const response = await fetch(
     `${baseUrl}/api/v1/applications/${encodeURIComponent(appId)}/bundle/validate${qs}`,
     {
@@ -48,7 +51,7 @@ export async function validateRemote(appId, manifest, { dryRun = false } = {}) {
   return json;
 }
 
-export async function runValidate(inputPath, { appId, localOnly, schemaPath }) {
+export async function runValidate(inputPath, { appId, localOnly, schemaPath, strict }) {
   const resolved = resolveInput(inputPath);
   let manifest;
   if (resolved.mode === "dir") {
@@ -57,15 +60,18 @@ export async function runValidate(inputPath, { appId, localOnly, schemaPath }) {
     manifest = readJsonFile(resolved.path);
   }
 
-  const results = { local: null, remote: null };
+  const results = { local: null, remote: null, manifest };
 
   results.local = validateLocal(manifest, schemaPath ?? defaultSchemaPath());
+  if (strict && results.local.status === "OK") {
+    results.local = applyStrictShipCanon(results.local, manifest);
+  }
   if (results.local.status !== "OK") {
     return results;
   }
 
   if (appId && !localOnly) {
-    results.remote = await validateRemote(appId, manifest, { dryRun: false });
+    results.remote = await validateRemote(appId, manifest, { dryRun: false, strict: !!strict });
   }
 
   return results;

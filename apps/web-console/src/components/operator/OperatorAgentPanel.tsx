@@ -230,7 +230,7 @@ export default function OperatorAgentPanel({
             onPick={(text) => void sendMessage(text)}
           />
         )}
-        {messages.map((message, index) => (
+        {messages.map((message) => (
           <div
             key={message.id}
             className={message.role === "user" ? "ai-agent-bubble user" : "ai-agent-bubble agent"}
@@ -247,7 +247,8 @@ export default function OperatorAgentPanel({
                 result={message.result}
                 onSuggestMessage={(text) => void sendMessage(text)}
                 onAppendToInput={appendToInput}
-                autoContinueEnabled={!isPending && index === messages.length - 1}
+                /* Operator Copilot is assistive — never auto-pick recommended actions. */
+                autoContinueEnabled={false}
                 onOpenDashboard={(path) => {
                   onOpenDashboard?.(path);
                   onClose();

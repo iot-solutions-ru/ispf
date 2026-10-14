@@ -163,6 +163,7 @@
 |----------|--------|----------|
 | [Развёртывание](deployment.md) | Stable | Docker, env vars |
 | [Профили демостендов](demostands.md) | Lab | Prod, lab, edge |
+| [Плейбук показа заказчику](customer-demo-playbook.md) | Lab | 30–60 мин MES / OT+HMI+air-gap |
 | [Air-gap](air-gap-deployment.md) | Stable | Офлайн-установка |
 | [Федерация](federation.md) | Beta | Hub / edge (caveats зрелости) |
 | [Безопасность](security.md) | Stable | RBAC, MFA |

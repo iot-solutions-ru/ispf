@@ -24,6 +24,9 @@ import java.util.Set;
 @Service
 public class BundleManifestValidator {
 
+    /** Ship / catalog / {@code --strict}: these WARNING codes become ERROR (ADR-0060 Wave 1A). */
+    public static final Set<String> SHIP_CANON_CODES = Set.of("LOGIC_HOST_DEVICE");
+
     private static final Set<String> KNOWN_WIDGET_TYPES = Set.of(
             "value", "indicator", "toggle", "chart", "sparkline", "progress", "gauge", "status-badge",
             "function", "function-form", "pie-chart", "history-table", "variable-editor",
@@ -63,17 +66,29 @@ public class BundleManifestValidator {
     }
 
     public BundleValidationResult validate(String appId, ApplicationBundleDeployService.BundleManifest manifest) {
-        return validate(appId, manifest, false);
+        return validate(appId, manifest, false, false);
+    }
+
+    /**
+     * @param strict when true, {@link #SHIP_CANON_CODES} issues are ERROR (ship / catalog / CLI {@code --strict})
+     */
+    public BundleValidationResult validate(
+            String appId,
+            ApplicationBundleDeployService.BundleManifest manifest,
+            boolean strict
+    ) {
+        return validate(appId, manifest, false, strict);
     }
 
     public BundleValidationResult dryRun(String appId, ApplicationBundleDeployService.BundleManifest manifest) {
-        return validate(appId, manifest, true);
+        return validate(appId, manifest, true, false);
     }
 
     private BundleValidationResult validate(
             String appId,
             ApplicationBundleDeployService.BundleManifest manifest,
-            boolean dryRun
+            boolean dryRun,
+            boolean strict
     ) {
         BundleValidationResult.Builder builder = BundleValidationResult.builder();
 
@@ -132,7 +147,68 @@ public class BundleManifestValidator {
             collectWouldApply(manifest, builder);
         }
 
+        BundleValidationResult result = builder.build();
+        return strict ? promoteShipCanon(result) : result;
+    }
+
+    /**
+     * Reclassify ship-canon WARNING issues as ERROR so status becomes ERROR (ADR-0060 / tension Wave 1A).
+     */
+    public static BundleValidationResult promoteShipCanon(BundleValidationResult result) {
+        if (result == null || result.issues() == null || result.issues().isEmpty()) {
+            return result;
+        }
+        boolean needsPromote = false;
+        for (BundleValidationIssue issue : result.issues()) {
+            if (SHIP_CANON_CODES.contains(issue.code())
+                    && BundleValidationIssue.WARNING.equals(issue.severity())) {
+                needsPromote = true;
+                break;
+            }
+        }
+        if (!needsPromote) {
+            return result;
+        }
+        java.util.HashSet<String> originalIssueTexts = new java.util.HashSet<>();
+        for (BundleValidationIssue issue : result.issues()) {
+            originalIssueTexts.add(formatIssueText(issue));
+        }
+        BundleValidationResult.Builder builder = BundleValidationResult.builder();
+        for (BundleValidationIssue issue : result.issues()) {
+            if (SHIP_CANON_CODES.contains(issue.code())
+                    && BundleValidationIssue.WARNING.equals(issue.severity())) {
+                builder.addIssue(BundleValidationIssue.error(
+                        issue.code(), issue.path(), issue.message(), issue.hint(), issue.docRef()));
+            } else {
+                builder.addIssue(issue);
+            }
+        }
+        for (String err : result.errors()) {
+            if (!originalIssueTexts.contains(err)) {
+                builder.addError(err);
+            }
+        }
+        for (String warning : result.warnings()) {
+            if (!originalIssueTexts.contains(warning)) {
+                builder.addWarning(warning);
+            }
+        }
+        for (String section : result.wouldApply()) {
+            builder.addWouldApply(section);
+        }
         return builder.build();
+    }
+
+    private static String formatIssueText(BundleValidationIssue issue) {
+        StringBuilder sb = new StringBuilder();
+        if (issue.code() != null && !issue.code().isBlank()) {
+            sb.append('[').append(issue.code()).append("] ");
+        }
+        if (issue.path() != null && !issue.path().isBlank()) {
+            sb.append(issue.path()).append(": ");
+        }
+        sb.append(issue.message() != null ? issue.message() : "");
+        return sb.toString();
     }
 
     private void validateMinimumContent(

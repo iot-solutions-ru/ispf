@@ -40,7 +40,7 @@ Scale **1–10** vs leading platforms: Ignition, Kepware/KEPServerEX, OSIsoft PI
 | # | Dimension | 0.9.102 | **0.9.207** | Why |
 |---|-----------|:-------:|:-----------:|-----|
 | 2 | SCADA / HMI | 7.5 | **8.0** | Demostand live FPS + unmocked 500-el; lab CDP **2h + 8h** offline (**P-HMI-8H**). Not 9+: **P-HMI-FIELD** still parked. |
-| 4 | Historian | 7.0 | **9.5** | Enterprise L **Lab PASS** 2026-09-05 (50k history-enabled + ≥1B CH + multi-tag p95≈49 ms). Honesty: synthetic CH fill; demostand remains a small site. |
+| 4 | Historian | 7.0 | **9.5** | Enterprise L **Lab PASS** 2026-09-05 (50k history-enabled + ≥1B CH + multi-tag p95≈49 ms). Honesty: synthetic CH fill; demostand remains a small site. Flagship stores: **jdbc** + **ClickHouse**. Cassandra/Scylla stays **experimental** (0025b). |
 | 10 | Security / RBAC | 8.0 | **8.5** | Fold trusted-channel/OQ residual + PostgreSQL RLS Done. Not 9+: **G-01** pen-test still open; WebAuthn parked. |
 | 11 | Deploy / scale / edge | 7.0→7.5* | **7.5** | Fold Phase 32 Helm/ARM/MoM post-audit delta into top matrix (*evidence table already had 7.5). |
 | 12 | Ecosystem / marketplace | 5.0→6.5* | **6.5** | Fold Marketplace GA + CI catalog gate (*evidence table already had 6.5). |
@@ -73,7 +73,7 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 | 1 | Unified data model | 8.5 | **REAL** | Object tree, CEL, blueprints; `AlertRuleListener` → `AlertRuleService`; correlators in `EventCorrelatorService` |
 | 2 | SCADA / HMI | 8.0 | **PARTIAL** | `ispf-pid-v1` `totalSymbols: 218`; `ScadaMimicEditor.tsx`; demostand FPS [`hmi-fps/2026-09-04-…ui-pump-station`](../evidence/hmi-fps/2026-09-04-ispf-vps-0.9.207-ui-pump-station.json); unmocked 500-el [`…hmi-stress-500`](../evidence/hmi-fps/2026-09-04-ispf-vps-0.9.207-hmi-stress-500.json) (~47 FPS median); lab offline **2h** + **8h** CDP [`hmi-offline/…`](../evidence/hmi-offline/). Residual: on-site tablet (**P-HMI-FIELD**) |
 | 3 | OT/IT drivers | 7.0 | **PARTIAL** | Catalog closed lab Waves 1–11 (**162/162**); BL-191 honesty Done; TOP-20 fixtures **14/20**; BL-140 pilots **in progress** (P1 day4 / P2 day2 / P3 OPC UA loopback day2 — [ot-trust](../evidence/ot-trust/)). Lab VLAN / loopback ≠ customer plant. DNP3 `writePoint` still throws |
-| 4 | Historian | 9.5 | **REAL (lab SLO)** | JVM gates PASS ([`historian-scale/2026-09-04-jvm-…`](../evidence/historian-scale/2026-09-04-jvm-analytics-scale-gate.md)); Enterprise L lab ([`2026-09-05-lab-192.168.100.10-enterprise-l.md`](../evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md)): 50k history-enabled + ≥1B CH + multi-tag p95≈49 ms. **Honesty:** synthetic CH fill; demostand is not the L catalog |
+| 4 | Historian | 9.5 | **REAL (lab SLO)** | JVM gates PASS ([`historian-scale/2026-09-04-jvm-…`](../evidence/historian-scale/2026-09-04-jvm-analytics-scale-gate.md)); Enterprise L lab ([`2026-09-05-lab-192.168.100.10-enterprise-l.md`](../evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md)): 50k history-enabled + ≥1B CH + multi-tag p95≈49 ms. **Honesty:** synthetic CH fill; demostand is not the L catalog. Flagship path is **jdbc + ClickHouse**; **Scylla/Cassandra stays experimental** and does not store sample quality. jdbc and ClickHouse quality round-trips are in place (ADR-0074; ClickHouse Testcontainers is opt-in, not default CI). Score stays 9.5 |
 | 5 | Automation / alarms | 7.5 | **PARTIAL** | Alert rules + correlators **REAL**; alarm shelving approval **persisted** (BL-158) |
 | 6 | Workflow / BPMN | 7.5 | **REAL** | `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`; not full BPMN 2.0; **P-BPMN** parked |
 | 7 | MES / ISA-95 | 6.5 | **PARTIAL** | Marketplace `mes-platform`; stub ERP marks **`simulated`** (not live 1C/SAP — **P-ERP** / BL-169 parked). No production field MES site |
@@ -97,7 +97,8 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 
 ## AI-authoring lane (second scorecard)
 
-> **Not a pin audit.** Weighted judgment as-of tension stack + code-verified 0.9.207 evidence. **Do not average** this lane with the classic 14-dim mean.
+> **Not a pin audit.** Weighted judgment. **Do not average** this lane with the classic 14-dim mean.  
+> The 8.38 figure lived on `main` (PR #498). This revision moves two axes only, and only where this branch adds evidence. Classic OT mean stays **~8.0**.
 
 **Goal:** AI authoring with formal guarantees · unified model · openness · air-gap.  
 **Peer set:** PlantPulse (on-prem LLM / MCP), SymphonyAI IRIS Forge — not Ignition/PI as primary bar.  
@@ -106,18 +107,19 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 | Axis | Weight | Today | Target | Maps from / evidence | Gap to 9.5 |
 |------|:------:|:-----:|:------:|----------------------|------------|
 | Unified model (tree / blueprints / CEL) | 0.20 | **8.5** | 9.5 | Classic #1 | Agent-queryable depth vs ontology peers |
-| AI authoring (tree-first / MCP / Studio) | 0.25 | **9.0** | 9.5 | Classic #9; BL-178 52/52 | Multi-day plant journal; acceptance gate |
-| Formal guarantees (ship / poka-yoke) | 0.25 | **8.0** | 9.5 | 0051, 0004, 0060; `validate --strict` / catalog | Ship-default ERROR; agent cannot bypass host canon |
-| Openness (OSS / API / MCP / docs) | 0.15 | **8.7** | 9.5 | AGPL+dual; #13–14; MCP | Partner Portal external; ui-pack trust Partial |
-| Air-gap / sovereignty | 0.15 | **7.5** | 9.5 | On-prem + OpenAI-compatible local LLM | Signed air-gap install evidence; demostand local-LLM playbook |
+| AI authoring (tree-first / MCP / Studio) | 0.25 | **9.0** | 9.5 | Classic #9; BL-178 52/52 | Multi-day plant journal. Logic-host acceptance is on the guarantees axis |
+| Formal guarantees (ship / poka-yoke) | 0.25 | **8.3** | 9.5 | 0051, 0004, 0060; `--strict`, `deploy?strict=true`, catalog, agent ship REWORK, `hostKind` enum | Authoring `validate_bundle` / unqualified HTTP deploy stay WARNING by design |
+| Openness (OSS / API / MCP / docs) | 0.15 | **8.7** | 9.5 | AGPL+dual; #13–14; MCP; ui-pack same-origin (0073); RSA require-signed on air-gap compose | Partner Portal external; Cosign image signing **Gap**; separate pack origin not claimed |
+| Air-gap / sovereignty | 0.15 | **7.8** | 9.5 | On-prem + local-LLM playbook + RSA air-gap signed gate default + [air-gap-signing](../evidence/air-gap-signing/README.md) | **Partial.** Cosign Gap. No dated LLM soak ([air-gap-llm](../evidence/air-gap-llm/README.md)) |
 
-**Weighted today:** \(0.20×8.5 + 0.25×9.0 + 0.25×8.0 + 0.15×8.7 + 0.15×7.5\) = **8.38**  
+**Weighted today:** \(0.20×8.5 + 0.25×9.0 + 0.25×8.3 + 0.15×8.7 + 0.15×7.8\) = **8.505** → **8.51**  
+**Previous judgment:** **8.49** (air-gap 7.7 before RSA air-gap gate default).  
 **Weighted target:** **9.50** (all axes at target)  
 **Classic OT mean (unchanged):** **~8.0**
 
-Fastest lifts for this lane: ship-default `--strict` + catalog ERROR; signed air-gap + local LLM demostand; agent acceptance gate (0051×0004); ui-pack CSP/scoped deny Done.
+Air-gap +0.1 only for compose/apply default RSA require-signed + evidence stub. **Cosign stays Gap** (no score claim). Dated LLM soak still open.
 
-Related: [adr-tension-resolution](adr-tension-resolution.md) (when present on branch), [0051](decisions/0051-poka-yoke-constraints-over-guards.md), [0004](decisions/0004-ai-artifact-generation-gates.md), [0060](decisions/0060-solution-authoring-constraints.md).
+Related: [adr-tension-resolution](adr-tension-resolution.md), [0051](decisions/0051-poka-yoke-constraints-over-guards.md), [0004](decisions/0004-ai-artifact-generation-gates.md), [0060](decisions/0060-solution-authoring-constraints.md), [air-gap-deployment](air-gap-deployment.md).
 
 ---
 
@@ -129,7 +131,7 @@ Priority fixes that move **code verified** scores toward 10/10 (not marketing cl
 2. **ERP L4 / MES (6.5 → 9+):** live 1C or SAP connector (**BL-169** / **P-ERP** parked); production MES sites. Lab marketplace Done; score stays until field site + live ERP.
 3. **AI (9.0 → 10):** harness bar Done. Residual: optional multi-day plant journal (not oneshot re-runs).
 4. **Ecosystem (6.5 → 9+):** Partner Portal sync + first external partner-hosted catalog.
-5. **Historian (9.5 → 10):** lab L gate met; residual is non-synthetic / demostand-scale honesty and ops playbooks for real customer L sites.
+5. **Historian (9.5 → 10):** lab L gate met; residual is non-synthetic / demostand-scale honesty and ops playbooks for real customer L sites (jdbc + ClickHouse quality TCK are in place, ClickHouse opt-in not default CI; Scylla stays experimental).
 6. **HMI (8.0 → 9+):** on-site tablet / airplane-mode soak (**P-HMI-FIELD**); unmocked ≥60 FPS at 500-el still open.
 7. **Security (8.5 → 9+):** dated third-party pen-test + retest letter (**G-01**); optional hard schema table routing; WebAuthn if tender requires (BL-194). Prep/preflight and [internal engineering review](../evidence/security-pentest/2026-09-09-engineering-review/) under [`security-pentest/`](../evidence/security-pentest/) ≠ cert.
 8. **Compliance:** [compliance-tender-pack](compliance-tender-pack.md) docs Done (BL-192); no product certification claim.
@@ -174,4 +176,4 @@ Wave 8 program mean ~9.8 — **retracted** after code audit 2026-07-08.
 4. Link evidence to tests, `packages/` paths, and evidence JSON/MD — not roadmap claims alone.
 5. Lab PASS items in [parked-backlog](parked-backlog.md) become scorecard inputs only on a **named full audit** (this document).
 6. Refresh AI `competitiveGapIndex` via `python tools/ai-pack/build.py` after matrix edits.
-7. **AI-authoring lane** weights/scores: update only with an explicit note (not folded into the classic 14-dim mean). A named pin audit may later replace the judgment column.
+7. **AI-authoring lane** weights/scores: update only with an explicit note (not folded into the classic 14-dim mean). A named pin audit may later replace the judgment column. 2026-10-13: guarantees 8.0→8.3 and air-gap 7.5→7.7 are **Partial** (see the lane section).

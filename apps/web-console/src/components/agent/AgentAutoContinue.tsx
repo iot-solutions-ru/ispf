@@ -17,8 +17,9 @@ type AgentAutoContinueProps = {
 };
 
 /**
- * When the agent pauses with interactive suggestions, count down and send the
- * recommended (primary) option if the user does not answer.
+ * AI Studio Autopilot only: when the agent pauses with interactive suggestions,
+ * count down and send the recommended (primary) option if the user does not answer.
+ * Admin/Operator Copilot must pass enabled=false — assistive UIs wait for a click.
  */
 export function AgentAutoContinue({
   result,

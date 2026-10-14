@@ -99,7 +99,7 @@ public class FunctionScriptEngine {
                 String var = step.path("var").asText();
                 String sql = step.path("sql").asText();
                 List<Object> params = resolveParams(step.get("params"), vars);
-                List<Map<String, Object>> rows = normalizeRows(jdbcTemplate.queryForList(sql, params.toArray()));
+                List<Map<String, Object>> rows = normalizeRows(jdbc().queryForList(sql, params.toArray()));
                 vars.put(var, rows.isEmpty() ? null : rows.get(0));
                 yield null;
             }
@@ -107,13 +107,13 @@ public class FunctionScriptEngine {
                 String var = step.path("var").asText();
                 String sql = step.path("sql").asText();
                 List<Object> params = resolveParams(step.get("params"), vars);
-                vars.put(var, normalizeRows(jdbcTemplate.queryForList(sql, params.toArray())));
+                vars.put(var, normalizeRows(jdbc().queryForList(sql, params.toArray())));
                 yield null;
             }
             case "exec" -> {
                 String sql = step.path("sql").asText();
                 List<Object> params = resolveParams(step.get("params"), vars);
-                jdbcTemplate.update(sql, params.toArray());
+                jdbc().update(sql, params.toArray());
                 yield null;
             }
             case "setVar" -> {
@@ -513,6 +513,10 @@ public class FunctionScriptEngine {
             }
         }
         return current;
+    }
+
+    private JdbcTemplate jdbc() {
+        return FunctionScriptJdbcScope.activeOr(jdbcTemplate);
     }
 
     private static List<Map<String, Object>> normalizeRows(List<Map<String, Object>> rows) {

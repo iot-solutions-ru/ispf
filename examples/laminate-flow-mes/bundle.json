@@ -901,7 +901,7 @@
       },
       "source": {
         "type": "script",
-        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE lf_wms_command SET status = 'sent' WHERE id = ?\", \"params\": [\"${input.commandId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"commandId\": \"${input.commandId}\", \"status\": \"sent\"}}]}"
+        "body": "{\"steps\": [{\"type\": \"exec\", \"sql\": \"UPDATE lf_wms_command SET status = 'simulated' WHERE id = ?\", \"params\": [\"${input.commandId}\"]}, {\"type\": \"return\", \"fields\": {\"error_code\": \"OK\", \"error_message\": \"\", \"commandId\": \"${input.commandId}\", \"status\": \"simulated\"}}]}"
       }
     },
     {
