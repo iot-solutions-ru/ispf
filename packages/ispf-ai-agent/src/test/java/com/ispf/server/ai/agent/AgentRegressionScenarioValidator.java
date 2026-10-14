@@ -22,7 +22,7 @@ final class AgentRegressionScenarioValidator {
 
     static final int MIN_SCENARIO_COUNT = 50;
 
-    private static final Set<String> DOMAINS = Set.of("scada", "mes", "hvac");
+    private static final Set<String> DOMAINS = Set.of("scada", "mes", "hvac", "platform");
     private static final Set<String> LANES = Set.of("human", "agent", "both");
     private static final Set<String> SCENARIO_PROPERTIES = Set.of(
             "id",
@@ -30,6 +30,7 @@ final class AgentRegressionScenarioValidator {
             "domain",
             "lane",
             "kind",
+            "tags",
             "title",
             "description",
             "prompt",
@@ -150,6 +151,20 @@ final class AgentRegressionScenarioValidator {
         String lane = scenario.path("lane").asText("");
         if (!lane.isBlank() && !LANES.contains(lane)) {
             result.errors.add("invalid lane: " + lane);
+        }
+
+        JsonNode tags = scenario.get("tags");
+        if (tags != null && !tags.isNull()) {
+            if (!tags.isArray()) {
+                result.errors.add("tags must be an array");
+            } else {
+                for (JsonNode tag : tags) {
+                    if (!tag.isTextual() || tag.asText("").trim().isEmpty()) {
+                        result.errors.add("tags must be non-empty strings");
+                        break;
+                    }
+                }
+            }
         }
 
         String id = scenario.path("id").asText("");
