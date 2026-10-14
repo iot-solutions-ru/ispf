@@ -116,7 +116,7 @@ CRUD пользователей — через `POST/PUT/DELETE /api/v1/security
 
 ### Качество телеметрии (BL-82)
 
-Необязательное поле `quality` в строках телеметрии: `GOOD`, `UNCERTAIN`, `BAD` ([0025-telemetry-quality-flags](decisions/0025-telemetry-quality-flags.md)). Драйверы сопоставляют статус протокола (например, OPC UA StatusCode) с этими уровнями. Виджеты графиков пропускают сэмплы `BAD` (разрыв линии); колонка quality в historian — follow-up.
+Необязательное поле `quality` в строках телеметрии: `GOOD`, `UNCERTAIN`, `BAD` ([0025-telemetry-quality-flags](decisions/0025-telemetry-quality-flags.md)). Драйверы сопоставляют статус протокола (например, OPC UA StatusCode) с этими уровнями. Виджеты графиков пропускают сэмплы `BAD` (разрыв линии). JDBC-историк хранит тот же флаг в сэмпле ([0074-historian-quality-persistence](decisions/0074-historian-quality-persistence.md)); null — неизвестно / до v2, не GOOD. Флагманские хранилища — jdbc и ClickHouse. Cassandra/Scylla остаётся experimental и quality не пишет.
 
 ### DataRecord
 

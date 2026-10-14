@@ -166,12 +166,13 @@ Events with `replicaIngress=true` on followers:
 
 ### Cluster-wide path interest (Redis)
 
-When `ispf.cluster.cluster-path-interest-enabled=true` and Redis:
+When `ispf.cluster.cluster-path-interest-enabled=true` (default while cluster mode is on):
 
 - WS `subscribe` / `unsubscribe` updates ref-count in Redis (`ispf:cluster:ws:interest:{path}`).
 - Owner publishes NATS sync even if all browsers are on other replicas.
+- Startup fails if Redis is disabled or does not answer `PING` ([ADR-0069](decisions/0069-cluster-consistency.md)).
 
-Without Redis — local interest only; pin REST+WS to the same replica or enable Redis.
+Live mirror (`ISPF_CLUSTER_LIVE_VARIABLE_SYNC=true` on a replica with `replica-sync`) has the same Redis requirement. To run with local interest only, set `ISPF_CLUSTER_PATH_INTEREST=false` and `ISPF_CLUSTER_LIVE_VARIABLE_SYNC=false`, and pin REST+WS to the same replica.
 
 ## Example: SNMP fleet monitoring (3 replicas)
 
@@ -236,10 +237,13 @@ ISPF_REPLICA_ID=replica-1          # unique per node
 ISPF_DB_URL=jdbc:postgresql://postgres:5432/ispf
 ISPF_NATS_ENABLED=true
 ISPF_NATS_REPLICA_EVENTS=true
+ISPF_NATS_JETSTREAM_ENABLED=true
 ISPF_REDIS_ENABLED=true
 ISPF_CLUSTER_LIVE_VARIABLE_SYNC=true
 ISPF_CLUSTER_PATH_INTEREST=true
 ```
+
+`ClusterDependencyValidator` stops startup when those buses are required but missing: JetStream must be enabled and the stream ready for structure sync, and Redis must answer `PING` when live mirror or path interest is active ([ADR-0069](decisions/0069-cluster-consistency.md)). Start NATS with JetStream (`-js`).
 
 ### Coalescing: two separate knobs
 
@@ -373,6 +377,7 @@ This section is the **canonical order** for bringing up a multi-profile cluster:
 | **One PostgreSQL** for all replicas | Single `root.platform.*` tree, driver locks, cluster registry ([0028-horizontal-active-active-cluster](decisions/0028-horizontal-active-active-cluster.md)) |
 | **Unique `ISPF_REPLICA_ID`** per JVM | Heartbeat, locks, diagnostics |
 | **`ISPF_CLUSTER_ENABLED=true`** on every replica | `unified` profile is not allowed when cluster mode is on |
+| **JetStream and Redis fail closed** | Structure sync needs a ready JetStream stream; live mirror and path interest need reachable Redis ([0069](decisions/0069-cluster-consistency.md)) |
 | **Profile separation** | `edge-api` in nginx; `io` / `analytics` / `compute` internal ([0032-replica-profiles-and-capabilities](decisions/0032-replica-profiles-and-capabilities.md)) |
 | **Staggered replica start** | Avoid concurrent `AssetAnalyticsBootstrap` / Flyway on cold DB (PostgreSQL deadlock on `object_nodes`) |
 | **Host network or unique HTTP ports** | Cluster diagnostics fan-out uses `http://127.0.0.1:{httpPort}/api/v1/platform/metrics` per registered port |
@@ -438,6 +443,7 @@ ISPF_DB_URL=jdbc:postgresql://postgres:5432/ispf   # same URL on all nodes
 ISPF_NATS_ENABLED=true
 ISPF_NATS_URL=nats://nats:4222
 ISPF_NATS_REPLICA_EVENTS=true
+ISPF_NATS_JETSTREAM_ENABLED=true
 ISPF_REDIS_ENABLED=true
 ISPF_REDIS_HOST=redis
 ISPF_CLUSTER_LIVE_VARIABLE_SYNC=true

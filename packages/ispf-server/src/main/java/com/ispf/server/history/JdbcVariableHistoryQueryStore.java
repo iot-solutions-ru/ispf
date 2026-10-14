@@ -79,7 +79,8 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
                         row.effectiveTimestamp(),
                         row.getValueDouble(),
                         row.getValueText(),
-                        row.getSampledAt()
+                        row.getSampledAt(),
+                        VariableHistoryWriteRecord.normalizeQuality(row.getQuality())
                 ))
                 .toList();
     }

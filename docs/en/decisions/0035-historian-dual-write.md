@@ -24,7 +24,7 @@ Operators need a migration path: **OLTP-consistent reads from PostgreSQL**, anal
 |-------|--------|-------|
 | Dual-write flag + primary JDBC / secondary CH | **Done** | |
 | Hot path never blocked by CH failure | **Done** (by design) | |
-| Divergence / lag **metric** + alert | **Gap** | Ops may scrape logs; no first-class counter contract |
+| Secondary append **failure** counter | **Done** | `ispf.historian.dual_write.secondary_failures` increments once per failed ClickHouse append after the JDBC primary succeeds. Not a lag gauge and not an alert rule. |
 | Automatic **catch-up / backfill** after CH outage | **Gap** | Manual or separate BL |
 | Query cutover to CH | **Partial** / separate BL | Reads stay JDBC until switched |
 
@@ -48,7 +48,7 @@ ispf:
 - Duplicate storage; monitor lag/failures on ClickHouse append until Gap metrics land.
 - Query migration — separate BL (optional read replica routing).
 - `store=clickhouse` without dual-write — still single-store mode.
-- Fitness follow-up: counter `historian.dual_write.secondary_failures` (or equivalent) + lab evidence note.
+- Failure counter `ispf.historian.dual_write.secondary_failures` is registered on the Micrometer registry. Lag versus primary and an alert on that counter are still open.
 
 See [deployment](../deployment.md) § ClickHouse, [roadmap](../roadmap.md).
 

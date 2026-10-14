@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   FUNCTION_SCRIPT_STEP_TYPES,
@@ -772,8 +772,13 @@ export default function FunctionScriptStepsEditor({
   const [showJson, setShowJson] = useState(false);
   const [jsonText, setJsonText] = useState(value);
   const [parseError, setParseError] = useState<string | null>(parsed.error ?? null);
+  const skipValueSyncRef = useRef(false);
 
   useEffect(() => {
+    if (skipValueSyncRef.current) {
+      skipValueSyncRef.current = false;
+      return;
+    }
     const next = parseScriptBody(value);
     if (!next.error) {
       setSteps(next.steps);
@@ -787,6 +792,7 @@ export default function FunctionScriptStepsEditor({
     const body = serializeScriptBody(next);
     setJsonText(body);
     setParseError(null);
+    skipValueSyncRef.current = true;
     onChange(body);
   }
 
@@ -809,6 +815,7 @@ export default function FunctionScriptStepsEditor({
       }
       setSteps(next.steps);
       setParseError(null);
+      skipValueSyncRef.current = true;
       onChange(jsonText.trim() ? jsonText : serializeScriptBody(next.steps));
       return true;
     } catch (ex) {

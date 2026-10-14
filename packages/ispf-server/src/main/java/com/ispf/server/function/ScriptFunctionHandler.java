@@ -5,6 +5,7 @@ import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.script.FunctionScriptEngine;
+import com.ispf.server.application.script.FunctionScriptJdbcScope;
 import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.application.script.ScriptExecutionContext;
 import com.ispf.server.binding.BindingRefreshAfterCommit;
@@ -94,7 +95,10 @@ public class ScriptFunctionHandler implements FunctionHandler {
         if (dataSourcePath != null && !dataSourcePath.isBlank()
                 && scriptValidator.containsSqlStep(descriptor.sourceBody())) {
             tenantLocalDataAccessGuard.requireAllowedDataSourcePath(dataSourcePath);
-            dataSourceSqlSession.runWithDataSource(dataSourcePath, ignored -> execute.run());
+            dataSourceSqlSession.runWithDataSource(
+                    dataSourcePath,
+                    jdbc -> FunctionScriptJdbcScope.run(jdbc, execute)
+            );
         } else {
             tenantLocalDataAccessGuard.requireExternalDataAccess();
             schemaSession.runWithPlatformCatalog(execute);

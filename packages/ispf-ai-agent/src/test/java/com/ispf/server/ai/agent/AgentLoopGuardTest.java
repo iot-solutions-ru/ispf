@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,18 +15,47 @@ class AgentLoopGuardTest {
 
     @Test
     void hardBlocksRepeatedGetDriverHelp() {
-        // Two prior get_driver_help calls → third is hard-blocked.
+        // Two prior get_driver_help calls with same args → third is hard-blocked.
         List<Map<String, Object>> steps = List.of(
-                step("get_driver_help"),
-                step("get_driver_help")
+                step("get_driver_help", Map.of("driverId", "snmp")),
+                step("get_driver_help", Map.of("driverId", "snmp"))
         );
-        var block = AgentLoopGuard.checkHardBlock("get_driver_help", steps);
+        var block = AgentLoopGuard.checkHardBlock("get_driver_help", Map.of("driverId", "snmp"), steps);
         assertTrue(block.isPresent());
         assertTrue(block.get().blocked());
         assertFalse(block.get().stopTurn());
         assertTrue(block.get().error().contains("stop looping"));
         assertTrue(block.get().hint().toLowerCase(Locale.ROOT).contains("create_object"));
         assertTrue(block.get().hint().contains("snmp-agent-v1"));
+    }
+
+    @Test
+    void allowsGetAutomationSchemaForDistinctTopics() {
+        List<Map<String, Object>> steps = List.of(
+                step("get_automation_schema", Map.of("topic", "dashboard")),
+                step("get_automation_schema", Map.of("topic", "widget"))
+        );
+        Optional<AgentLoopGuard.BlockDecision> block = AgentLoopGuard.checkHardBlock(
+                "get_automation_schema",
+                Map.of("topic", "workflow"),
+                steps
+        );
+        assertTrue(block.isEmpty(), "different topic must not count as a discovery loop");
+    }
+
+    @Test
+    void hardBlocksSameAutomationSchemaTopicTwice() {
+        List<Map<String, Object>> steps = List.of(
+                step("get_automation_schema", Map.of("topic", "dashboard")),
+                step("get_automation_schema", Map.of("topic", "dashboard"))
+        );
+        Optional<AgentLoopGuard.BlockDecision> block = AgentLoopGuard.checkHardBlock(
+                "get_automation_schema",
+                Map.of("topic", "dashboard"),
+                steps
+        );
+        assertTrue(block.isPresent());
+        assertTrue(block.get().error().contains("topic=dashboard"));
     }
 
     @Test
@@ -324,6 +354,26 @@ class AgentLoopGuardTest {
     }
 
     @Test
+    void allowsCreateObjectDashboardThenSetLayoutOscillation() {
+        // Course builds many dashboards: create_object ↔ set_dashboard_layout on new paths.
+        List<Map<String, Object>> steps = List.of(
+                createDashboardStep("sine-history-dashboard"),
+                layoutStep("root.platform.dashboards.sine-history-dashboard"),
+                createDashboardStep("table-piechart-dashboard"),
+                layoutStep("root.platform.dashboards.table-piechart-dashboard"),
+                createDashboardStep("button-dashboard"),
+                layoutStep("root.platform.dashboards.button-dashboard"),
+                createDashboardStep("event-grid-dashboard")
+        );
+        var block = AgentLoopGuard.checkHardBlock(
+                "set_dashboard_layout",
+                Map.of("path", "root.platform.dashboards.event-grid-dashboard"),
+                steps
+        );
+        assertTrue(block.isEmpty());
+    }
+
+    @Test
     void doesNotBlockShortAlternation() {
         List<Map<String, Object>> steps = List.of(
                 toolOnPath("list_variables", "root.a"),
@@ -351,7 +401,11 @@ class AgentLoopGuardTest {
     }
 
     private static Map<String, Object> step(String tool) {
-        return Map.of("type", "tool", "tool", tool);
+        return step(tool, Map.of());
+    }
+
+    private static Map<String, Object> step(String tool, Map<String, Object> arguments) {
+        return Map.of("type", "tool", "tool", tool, "arguments", arguments);
     }
 
     private static Map<String, Object> widgetStep(String path) {
@@ -359,6 +413,28 @@ class AgentLoopGuardTest {
                 "type", "tool",
                 "tool", "add_dashboard_widget",
                 "arguments", Map.of("path", path)
+        );
+    }
+
+    private static Map<String, Object> layoutStep(String path) {
+        return Map.of(
+                "type", "tool",
+                "tool", "set_dashboard_layout",
+                "arguments", Map.of("path", path),
+                "result", Map.of("status", "OK")
+        );
+    }
+
+    private static Map<String, Object> createDashboardStep(String name) {
+        return Map.of(
+                "type", "tool",
+                "tool", "create_object",
+                "arguments", Map.of(
+                        "parentPath", "root.platform.dashboards",
+                        "name", name,
+                        "type", "DASHBOARD"
+                ),
+                "result", Map.of("status", "OK", "path", "root.platform.dashboards." + name)
         );
     }
 

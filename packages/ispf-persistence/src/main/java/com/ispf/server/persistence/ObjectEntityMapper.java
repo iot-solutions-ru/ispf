@@ -246,9 +246,9 @@ public class ObjectEntityMapper {
         }
         try {
             String[] ids = objectMapper.readValue(json, String[].class);
-            return List.of(ids);
+            return ids != null ? List.of(ids) : List.of();
         } catch (JacksonException e) {
-            return List.of();
+            throw invalidBlueprintJson("applied blueprint ids", e);
         }
     }
 
@@ -271,8 +271,13 @@ public class ObjectEntityMapper {
             );
             return parsed != null ? parsed : Map.of();
         } catch (JacksonException e) {
-            return Map.of();
+            throw invalidBlueprintJson("blueprint contributions", e);
         }
+    }
+
+    private static IllegalArgumentException invalidBlueprintJson(String what, JacksonException e) {
+        String detail = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+        return new IllegalArgumentException("Invalid " + what + " JSON: " + detail, e);
     }
 
     public String writeBlueprintContributions(Map<String, BlueprintContribution> contributions) {
