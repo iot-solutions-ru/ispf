@@ -15,6 +15,7 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.spi.WorkflowFunctionCalls;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
@@ -28,6 +29,7 @@ public class FunctionService implements WorkflowFunctionCalls {
     private final ApplicationSchemaSession schemaSession;
     private final SystemObjectStructureService structureService;
     private final FunctionInvokeAccessService invokeAccessService;
+    private final ObjectMapper objectMapper;
 
     public FunctionService(
             ObjectManager objectManager,
@@ -36,7 +38,8 @@ public class FunctionService implements WorkflowFunctionCalls {
             FunctionInvokeAuditService auditService,
             ApplicationSchemaSession schemaSession,
             SystemObjectStructureService structureService,
-            FunctionInvokeAccessService invokeAccessService
+            FunctionInvokeAccessService invokeAccessService,
+            ObjectMapper objectMapper
     ) {
         this.objectManager = objectManager;
         this.handlers = handlers;
@@ -45,6 +48,7 @@ public class FunctionService implements WorkflowFunctionCalls {
         this.schemaSession = schemaSession;
         this.structureService = structureService;
         this.invokeAccessService = invokeAccessService;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -59,7 +63,7 @@ public class FunctionService implements WorkflowFunctionCalls {
             FunctionDescriptor descriptor = objectManager.tree().findByPath(objectPath)
                     .map(node -> node.functions().get(functionName))
                     .orElse(null);
-            DataRecord resolvedInput = resolveInput(input, descriptor);
+            DataRecord resolvedInput = resolveInput(objectPath, functionName, input, descriptor);
             FunctionHandler handler = null;
             for (FunctionHandler candidate : handlers) {
                 if (candidate.supports(objectPath, functionName)) {
@@ -141,11 +145,32 @@ public class FunctionService implements WorkflowFunctionCalls {
         return invoke(objectPath, functionName, DataRecordPayloadResolver.fromRecord(input));
     }
 
-    private static DataRecord resolveInput(DataRecordPayloadRequest input, FunctionDescriptor descriptor) {
-        DataSchema schema = descriptor != null
-                ? descriptor.inputSchema()
-                : DataSchema.builder("voidInput").build();
+    /**
+     * Prefer the latest deployed application-function input schema when present so a redeploy
+     * that relaxes required fields takes effect without waiting for tree {@code functions_json}
+     * to be rewritten (ensureDescriptor historically only inserted missing descriptors).
+     */
+    private DataRecord resolveInput(
+            String objectPath,
+            String functionName,
+            DataRecordPayloadRequest input,
+            FunctionDescriptor descriptor
+    ) {
+        DataSchema schema = applicationFunctionStore.findLatest(objectPath, functionName)
+                .map(ApplicationFunctionHandler.DeployedFunction::inputSchemaJson)
+                .map(this::readInputSchemaJson)
+                .orElseGet(() -> descriptor != null
+                        ? descriptor.inputSchema()
+                        : DataSchema.builder("voidInput").build());
         return FunctionInputSchema.apply(schema, input);
+    }
+
+    private DataSchema readInputSchemaJson(String json) {
+        try {
+            return objectMapper.readValue(json, DataSchema.class);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Invalid deployed input schema JSON", ex);
+        }
     }
 
     private String resolveAppId(String objectPath, String functionName) {

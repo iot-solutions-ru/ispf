@@ -133,7 +133,7 @@
               "name": "site_id",
               "type": "STRING",
               "description": "",
-              "nullable": false,
+              "nullable": true,
               "nestedSchema": null
             }
           ]
@@ -231,7 +231,7 @@
               "name": "status",
               "type": "STRING",
               "description": "",
-              "nullable": false,
+              "nullable": true,
               "nestedSchema": null
             }
           ]
