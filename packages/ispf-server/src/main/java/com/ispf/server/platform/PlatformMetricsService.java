@@ -171,6 +171,8 @@ public class PlatformMetricsService {
     private Map<String, Object> connectionMetrics() {
         Map<String, Object> section = new LinkedHashMap<>();
         section.put("websocketClients", objectWebSocketHandler.activeSessionCount());
+        section.put("websocketSendFailures", objectWebSocketHandler.sendFailureCount());
+        section.put("websocketSessionErrors", objectWebSocketHandler.sessionDeliveryErrors());
         return section;
     }
 
