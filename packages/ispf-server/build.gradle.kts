@@ -93,7 +93,8 @@ dependencies {
     // Moquette + Paho for BL-142 MqttDriverRuntimeIntegrationTest (matches ispf-driver-mqtt).
     // Pin (ADR-0059 registry): Moquette declares Netty 4.1.x; lift to the patched 4.2 line.
     testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.19.Final"))
-    testImplementation("io.moquette:moquette-broker:0.17")
+    // 0.18.1+ via JitPack (Central still at 0.17 — Dependabot GHSA-5f42-97gr-vfhq / GHSA-9jjc-fw8x-fmwx).
+    testImplementation("io.github.moquette-io.moquette:moquette-broker:0.18.1")
     testImplementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
     testRuntimeOnly("com.h2database:h2")
     // ADR-0074: ClickHouse quality round-trip. The test stays off unless

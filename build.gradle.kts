@@ -27,6 +27,13 @@ allprojects {
 
     repositories {
         mavenCentral()
+        // Moquette 0.18.x (GHSA-5f42-97gr-vfhq / GHSA-9jjc-fw8x-fmwx) is not on Maven Central yet
+        // (Central still tops out at 0.17). JitPack builds the GitHub tag for test-only brokers.
+        maven("https://jitpack.io") {
+            content {
+                includeGroupByRegex("io\\.github\\.moquette-io(\\..+)?")
+            }
+        }
     }
 }
 
@@ -202,6 +209,9 @@ subprojects {
                 // commons-configuration2 2.10.1 (CVE-2026-45205). Drop when the parents move.
                 "at.yawk.lz4:lz4-java:1.12.0",
                 "org.apache.commons:commons-configuration2:2.15.1",
+                // Dependabot GHSA-j288-q9x7-2f5v (CVE-2025-48924): lang3 < 3.18.0. Runtime already
+                // resolves to 3.20.0 via configuration2/text; force keeps the graph explicit.
+                "org.apache.commons:commons-lang3:3.20.0",
                 // Dependabot / Trivy GHSA stream: Jackson / Log4j / Tomcat. Boot 4.1.1 still
                 // manages jackson-2-bom 2.21.5 / jackson-bom (tools.jackson) 3.1.5 and Tomcat
                 // 11.0.24; Boot modules override those extras, and force+rules here keep non-Boot
