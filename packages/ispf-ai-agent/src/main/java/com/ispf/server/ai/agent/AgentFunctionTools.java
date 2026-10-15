@@ -1,7 +1,6 @@
 package com.ispf.server.ai.agent;
 
 import com.ispf.core.model.DataSchema;
-import com.ispf.core.model.FieldType;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.server.object.ObjectTreePort;
 import com.ispf.server.security.acl.ObjectAccessService;
@@ -51,7 +50,7 @@ final class AgentFunctionTools {
                 return "Deploy or update a function on an object tree node. Args: path, functionName, "
                         + "hostKind (required enum SINGLETON|INSTANCE — DEVICE is rejected), "
                         + "sourceType (script|java), sourceBody (JSON steps string OR Java class source), "
-                        + "inputSchema, outputSchema ({name?, fields:[{name,type,nullable?}]}), "
+                        + "inputSchema, outputSchema (object only; nullable and nestedSchema are kept; a JSON string is rejected), "
                         + "optional description, dataSourcePath (script SQL), version. "
                         + "Host path must be a SINGLETON hub (root.platform.singleton-blueprints.*) or INSTANCE twin — "
                         + "never DEVICE (solution logic canon / ADR-0060). There is no DEVICE default. "
@@ -256,34 +255,17 @@ final class AgentFunctionTools {
             return objectMapper.readValue(text.trim(), DataSchema.class);
         }
         if (raw instanceof Map<?, ?> map) {
-            String name = map.containsKey("name") ? String.valueOf(map.get("name")) : defaultName;
-            DataSchema.Builder builder = DataSchema.builder(name);
-            Object fields = map.get("fields");
-            if (fields instanceof List<?> list) {
-                for (Object item : list) {
-                    if (item instanceof Map<?, ?> fieldMap) {
-                        String fieldName = String.valueOf(fieldMap.get("name"));
-                        FieldType type = parseFieldType(String.valueOf(fieldMap.get("type")));
-                        builder.field(fieldName, type);
-                    }
-                }
-            } else if (fields instanceof Map<?, ?> fieldMap) {
-                fieldMap.forEach((key, type) -> builder.field(String.valueOf(key), parseFieldType(String.valueOf(type))));
+            Map<String, Object> copy = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                copy.put(String.valueOf(entry.getKey()), entry.getValue());
             }
-            return builder.build();
+            Object name = copy.get("name");
+            if (name == null || String.valueOf(name).isBlank()) {
+                copy.put("name", defaultName);
+            }
+            return objectMapper.convertValue(copy, DataSchema.class);
         }
         return DataSchema.builder(defaultName).build();
-    }
-
-    private static FieldType parseFieldType(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return FieldType.STRING;
-        }
-        try {
-            return FieldType.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ex) {
-            return FieldType.STRING;
-        }
     }
 
     private static String optionalString(Map<String, Object> args, String key) {
