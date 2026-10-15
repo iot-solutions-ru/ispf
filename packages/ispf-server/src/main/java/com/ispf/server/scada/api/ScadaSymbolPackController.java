@@ -28,8 +28,9 @@ public class ScadaSymbolPackController {
     @GetMapping
     public Map<String, Object> listInstalled() {
         List<Map<String, Object>> packs = symbolPackLoader.listInstalledPacks();
+        boolean failed = packs.stream().anyMatch(pack -> "failed".equals(pack.get("status")));
         Map<String, Object> response = new LinkedHashMap<>();
-        response.put("status", "OK");
+        response.put("status", failed ? "ERROR" : "OK");
         response.put("count", packs.size());
         response.put("packs", packs);
         response.put("packsDir", symbolPackLoader.packsRoot().toString());
