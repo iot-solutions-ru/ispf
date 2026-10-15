@@ -18,14 +18,14 @@ Driver Development Kit — шаблоны и документация для в�
 | ---- | ---------- |
 | `template/` | Минимальный driver stub + test + `driver-pack.json` + `build.gradle.kts` |
 | `examples/simple-counter/` | Poll-only counter reference driver (BL-144) |
-| `examples/json-poller/` | HTTP JSON poller stub (BL-144) |
+| `examples/json-poller/` | HTTP JSON poller (BL-144) |
 | `examples/modbus-simulator/` | In-memory Modbus register simulator (BL-144 wave 8) |
 | `src/main/java/.../DriverDdk.java` | Версия DDK (для smoke-теста модуля) |
 
 ## Тесты
 
 ```bash
-./gradlew :packages:ispf-driver-ddk:test
+./gradlew :packages:ispf-driver-ddk:check
 ```
 
-Проверяет наличие template-файлов и компилируемость reference stub в unit-тесте.
+Проверяет template, reference drivers (в т.ч. HTTP loopback для json-poller) и собирает packs в `build/ddk-example-packs/`.

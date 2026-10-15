@@ -47,7 +47,7 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "opcua-server",
             "OPC UA Server Driver",
-            "0.1.0",
+            "0.2.0",
             "Hosts an embedded OPC UA server (None / Sign / SignAndEncrypt) and maps node values to ISPF variables",
             "ISPF",
             Map.of(

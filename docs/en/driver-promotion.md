@@ -24,6 +24,19 @@ Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/d
 4. Change entry in `DriverMaturityRegistry`.
 5. If needed — demo device / model in bootstrap.
 
+## DDK → matrix (BL-144)
+
+Custom drivers start from [`packages/ispf-driver-ddk`](../../packages/ispf-driver-ddk/) — see [driver-ddk](driver-ddk.md).
+
+| Step | Gate |
+|------|------|
+| Copy `template/` or clone a reference under `examples/` | Compiles in `:packages:ispf-driver-ddk:test` |
+| Implement real `readPoints` / `writePoint` (no stub payloads) | Loopback JUnit on `127.0.0.1` |
+| `./gradlew :packages:ispf-driver-ddk:assembleDdkExamplePacks` (or module `assembleDriverPack`) | `driver-pack.json` + jar layout |
+| Promote into monorepo `ispf-driver-*` + `DriverProductionMatrix` | This checklist below + [driver-interop-lab](driver-interop-lab.md) |
+
+Reference drivers (`simple-counter`, `json-poller`, `modbus-simulator`) stay **BETA** teaching packs — they are not PRODUCTION matrix rows.
+
 ## Rule: stub / placeholder never PRODUCTION
 
 A driver whose class javadoc documents a **stub** or **placeholder** (connectivity shell, incomplete protocol) **must not** be labeled `PRODUCTION`. CI gate: `DriverProductionMatrixTest.productionDriversMustNotBeDocumentedStubs`. Promote only after real poll/read (and write when claimed) + tests + docs — see checklist below.
