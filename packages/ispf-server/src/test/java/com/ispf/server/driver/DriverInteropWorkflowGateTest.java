@@ -38,7 +38,12 @@ class DriverInteropWorkflowGateTest {
         Set<String> workflowModules = parseWorkflowModules(yaml);
         Set<String> expectedModules = interopModulesFor(DriverProductionMatrix.TOP_20_INDUSTRIAL);
 
-        assertEquals(expectedModules, workflowModules, "driver-interop.yml matrix must match top-20 modules exactly");
+        // Extra lab modules (e.g. ispf-driver-ddk) may share the same matrix job; top-20 must still be covered.
+        assertTrue(
+                workflowModules.containsAll(expectedModules),
+                () -> "driver-interop.yml matrix missing top-20 modules: "
+                        + expectedModules.stream().filter(m -> !workflowModules.contains(m)).sorted().toList()
+        );
     }
 
     @Test

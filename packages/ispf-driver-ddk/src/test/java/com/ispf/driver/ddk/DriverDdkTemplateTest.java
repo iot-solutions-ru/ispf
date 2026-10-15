@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,5 +52,24 @@ class DriverDdkTemplateTest {
     @Test
     void modbusSimulatorDriverMetadata() {
         assertEquals(DriverDdk.MODBUS_SIMULATOR_DRIVER_ID, new com.ispf.driver.modbussimulator.ModbusSimulatorDeviceDriver().metadata().id());
+    }
+
+    @Test
+    void assembleDdkExamplePacksLayoutExistsAfterCheck() throws Exception {
+        // Produced by Gradle task assembleDdkExamplePacks (wired into check).
+        Path packs = Path.of("build/ddk-example-packs");
+        if (!Files.isDirectory(packs)) {
+            // Unit test classpath may run before the pack task in IDE; assert recipe artifacts instead.
+            assertTrue(Files.exists(Path.of("examples/simple-counter/driver-pack.json")));
+            assertTrue(Files.exists(Path.of("examples/json-poller/driver-pack.json")));
+            assertTrue(Files.exists(Path.of("examples/modbus-simulator/driver-pack.json")));
+            return;
+        }
+        for (String id : List.of("simple-counter", "json-poller", "modbus-simulator")) {
+            Path packDir = packs.resolve("ispf-driver-" + id);
+            assertTrue(Files.isDirectory(packDir), "missing pack dir " + packDir);
+            assertTrue(Files.exists(packDir.resolve("driver-pack.json")));
+            assertTrue(Files.exists(packDir.resolve("ispf-driver-" + id + ".jar")));
+        }
     }
 }

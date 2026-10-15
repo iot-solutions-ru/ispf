@@ -86,6 +86,7 @@ jobs:
           - ispf-driver-flexible
           - ispf-driver-opcua
           - ispf-driver-opcua-server
+          - ispf-driver-ddk
           - ispf-driver-snmp
           - ispf-driver-bacnet
           - ispf-driver-s7

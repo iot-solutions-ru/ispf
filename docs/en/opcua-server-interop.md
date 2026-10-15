@@ -77,6 +77,8 @@ Covers:
 - `OpcUaServerPointTest` — NodeId parsing
 - `OpcUaServerDeviceDriverTest` — connect, read, write round-trip on ephemeral port
 - `OpcUaServerSubscriptionWriteBackIntegrationTest` — external Milo client subscribe + write → ISPF variable write-back (BL-143)
+- `OpcUaServerExternalSubscribeNotificationTest` — browse + create monitored items + ISPF write visible on wire (BL-143 lab GA)
+- `OpcUaServerSubscriptionScaleTest` — 50 monitored items + ISPF write + external read
 
 ### Client + server loopback (full stack)
 
@@ -110,13 +112,23 @@ Point mapping: same NodeId as server mapping, e.g. `ns=2;s=Temperature`.
 
 See also [drivers](drivers.md) § opcua client and [driver-interop-lab](driver-interop-lab.md).
 
-## Limitations (v0.1)
+## Lab GA (BL-143)
 
-- String values only (no typed Variant mapping)
+**Lab Done** when CI proves external-client browse + read + write + **DataChange on ISPF write** (Milo stand-in for UA Expert / Prosys). Manual Expert/Prosys steps:
+
+1. Start an `opcua-server` device (`bindPort` 4840, SecurityPolicy `None` or signed PKI).
+2. Map points (e.g. `ns=2;s=Temperature`).
+3. Connect UA Expert / Prosys Client to `opc.tcp://<host>:4840/ispf`.
+4. Browse `Objects` → `IspfVariables` → tag; create monitored item; write from ISPF (or reverse) and confirm update.
+
+Evidence note: [BL-143 lab gate](../evidence/ot-trust/2026-10-15-bl143-opcua-server-lab-ga.md).
+
+## Limitations (v0.2)
+
+- String values only (no typed Variant mapping) — non-blocking for BL-143 acceptance
 - Default remains SecurityPolicy None (lab). Sign / SignAndEncrypt need a persistent `pkiDir` and mutual trust of `application.cer`. GetEndpoints uses `/ispf/discovery` with SecurityPolicy None (OPC UA convention).
 - Username token still accepts any credentials (application identity is the channel security)
 - No REST browse for server devices (use OPC UA browse on wire)
-- External subscribe notifications depend on Milo server monitoring callbacks (write-back to ISPF variables is covered by BL-143 integration test)
 - Self-signed identity is created once under `pkiDir` (`identity.p12`); a missing `pkiDir` with `None` still uses an ephemeral temp directory
 
 ## Related files

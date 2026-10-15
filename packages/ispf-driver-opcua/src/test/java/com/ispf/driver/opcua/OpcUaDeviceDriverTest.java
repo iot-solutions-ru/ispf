@@ -263,7 +263,8 @@ class OpcUaDeviceDriverTest {
                 .build();
 
         private final Map<String, String> configuration;
-        private final Map<String, DataRecord> variables = new HashMap<>();
+        /** Concurrent: subscription ingress updates from Milo callback threads. */
+        private final Map<String, DataRecord> variables = new java.util.concurrent.ConcurrentHashMap<>();
 
         StubDriverObject(Map<String, String> configuration) {
             this.configuration = configuration;

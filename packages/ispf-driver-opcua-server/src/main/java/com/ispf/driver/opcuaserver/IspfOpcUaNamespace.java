@@ -8,21 +8,26 @@ import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
 import org.eclipse.milo.opcua.sdk.server.api.DataItem;
 import org.eclipse.milo.opcua.sdk.server.api.ManagedNamespaceWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.api.MonitoredItem;
+import org.eclipse.milo.opcua.sdk.server.nodes.AttributeObserver;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.UaNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters;
 import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
 
 /**
@@ -34,6 +39,8 @@ final class IspfOpcUaNamespace extends ManagedNamespaceWithLifecycle {
 
     private final Map<NodeId, UaVariableNode> variableNodes = new ConcurrentHashMap<>();
     private final Map<NodeId, String> variableValues = new ConcurrentHashMap<>();
+    private final Map<DataItem, AttributeObserver> dataItemObservers = new ConcurrentHashMap<>();
+    private final Map<NodeId, List<DataItem>> monitoredByNode = new ConcurrentHashMap<>();
     private final SubscriptionModel subscriptionModel;
     private BiConsumer<NodeId, String> externalWriteListener;
     private UaFolderNode variablesFolder;
@@ -86,9 +93,19 @@ final class IspfOpcUaNamespace extends ManagedNamespaceWithLifecycle {
 
     void writeValue(NodeId nodeId, String value) {
         variableValues.put(nodeId, value);
+        DataValue dataValue = new DataValue(new Variant(value), StatusCode.GOOD, DateTime.now());
         UaVariableNode node = variableNodes.get(nodeId);
         if (node != null) {
-            node.setValue(new DataValue(new Variant(value)));
+            node.setValue(dataValue);
+            // Same notify path as AttributeFilters.setValue (external client write).
+            node.fireAttributeChanged(AttributeId.Value, dataValue);
+        }
+        // Directly push to monitored items (SubscriptionModel sampling alone is not enough for lab GA).
+        List<DataItem> items = monitoredByNode.get(nodeId);
+        if (items != null) {
+            for (DataItem item : items) {
+                item.setValue(dataValue);
+            }
         }
     }
 
@@ -99,6 +116,25 @@ final class IspfOpcUaNamespace extends ManagedNamespaceWithLifecycle {
     @Override
     public void onDataItemsCreated(List<DataItem> dataItems) {
         subscriptionModel.onDataItemsCreated(dataItems);
+        for (DataItem item : dataItems) {
+            NodeId nodeId = item.getReadValueId().getNodeId();
+            monitoredByNode.computeIfAbsent(nodeId, ignored -> new CopyOnWriteArrayList<>()).add(item);
+            UaVariableNode variableNode = variableNodes.get(nodeId);
+            if (variableNode == null) {
+                continue;
+            }
+            AttributeObserver observer = (node, attributeId, value) -> {
+                if (attributeId == AttributeId.Value && value instanceof DataValue dataValue) {
+                    item.setValue(dataValue);
+                }
+            };
+            variableNode.addAttributeObserver(observer);
+            dataItemObservers.put(item, observer);
+            Object current = variableNode.getAttribute(AttributeId.Value);
+            if (current instanceof DataValue dataValue) {
+                item.setValue(dataValue);
+            }
+        }
     }
 
     @Override
@@ -108,6 +144,23 @@ final class IspfOpcUaNamespace extends ManagedNamespaceWithLifecycle {
 
     @Override
     public void onDataItemsDeleted(List<DataItem> dataItems) {
+        for (DataItem item : dataItems) {
+            NodeId nodeId = item.getReadValueId().getNodeId();
+            List<DataItem> items = monitoredByNode.get(nodeId);
+            if (items != null) {
+                items.remove(item);
+                if (items.isEmpty()) {
+                    monitoredByNode.remove(nodeId);
+                }
+            }
+            AttributeObserver observer = dataItemObservers.remove(item);
+            if (observer != null) {
+                UaNode node = variableNodes.get(nodeId);
+                if (node != null) {
+                    node.removeAttributeObserver(observer);
+                }
+            }
+        }
         subscriptionModel.onDataItemsDeleted(dataItems);
     }
 
