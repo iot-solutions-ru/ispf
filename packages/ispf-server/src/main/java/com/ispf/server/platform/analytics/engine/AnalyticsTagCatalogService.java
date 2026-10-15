@@ -44,7 +44,12 @@ public class AnalyticsTagCatalogService {
 
     private final Object catalogLock = new Object();
     private volatile List<AnalyticsTagDefinition> cachedAllTags = List.of();
+    private volatile List<CatalogSkip> lastCatalogSkips = List.of();
     private volatile boolean catalogCacheLoaded;
+
+    /** Object whose historian rules were not compiled into the catalog. */
+    public record CatalogSkip(String objectPath, String error) {
+    }
 
     public AnalyticsTagCatalogService(
             ObjectManager objectManager,
@@ -71,7 +76,12 @@ public class AnalyticsTagCatalogService {
         synchronized (catalogLock) {
             catalogCacheLoaded = false;
             cachedAllTags = List.of();
+            lastCatalogSkips = List.of();
         }
+    }
+
+    public List<CatalogSkip> lastCatalogSkips() {
+        return lastCatalogSkips;
     }
 
     @Transactional(readOnly = true)
@@ -111,15 +121,22 @@ public class AnalyticsTagCatalogService {
 
     private List<AnalyticsTagDefinition> buildAllTagDefinitions() {
         List<AnalyticsTagDefinition> tags = new ArrayList<>();
+        List<CatalogSkip> skips = new ArrayList<>();
         Set<String> extensionIds = extensionHelperIds();
         for (String objectPath : objectPathsWithBindingRules()) {
             try {
                 tags.addAll(listTagDefinitionsForObject(objectPath, extensionIds));
             } catch (RuntimeException ex) {
                 // Orphan @bindingRules rows or mid-deploy tree gaps must not wipe the whole catalog.
-                log.warn("Skipping historian catalog for {}: {}", objectPath, ex.getMessage());
+                String error = ex.getMessage();
+                if (error == null || error.isBlank()) {
+                    error = ex.getClass().getSimpleName();
+                }
+                skips.add(new CatalogSkip(objectPath, error));
+                log.error("Historian catalog failed for {}: {}", objectPath, error);
             }
         }
+        lastCatalogSkips = List.copyOf(skips);
         return tags;
     }
 

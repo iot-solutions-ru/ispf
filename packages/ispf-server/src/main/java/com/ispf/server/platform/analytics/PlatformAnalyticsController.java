@@ -142,7 +142,11 @@ public class PlatformAnalyticsController {
     @GetMapping("/tags")
     public Map<String, Object> listTags(@RequestParam(required = false) String path) {
         List<AnalyticsTagCatalogEntry> tags = tagCatalogService.listCatalogEntries(path);
-        return Map.of("count", tags.size(), "tags", tags);
+        return Map.of(
+                "count", tags.size(),
+                "tags", tags,
+                "catalogSkips", tagCatalogService.lastCatalogSkips()
+        );
     }
 
     /** Analytics tag catalog entry with lineage graph (BL-209). */

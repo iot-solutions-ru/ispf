@@ -154,6 +154,27 @@ class AnalyticsTagCatalogServiceTest {
         verify(bindingRulesService, times(2)).listRules(DEVICE_B);
     }
 
+    @Test
+    void failedObjectIsNamedInCatalogSkipsAndOtherTagsRemain() {
+        when(bindingRulesService.listRules(DEVICE_A)).thenReturn(List.of(historianAvgRule("rule-a")));
+        when(bindingRulesService.listRules(DEVICE_B))
+                .thenThrow(new IllegalArgumentException("Invalid binding rules JSON: boom"));
+
+        var tags = catalogService.listAllTagDefinitions();
+
+        assertThat(tags).hasSize(1);
+        assertThat(tags.getFirst().objectPath()).isEqualTo(DEVICE_A);
+        assertThat(catalogService.lastCatalogSkips()).containsExactly(
+                new AnalyticsTagCatalogService.CatalogSkip(DEVICE_B, "Invalid binding rules JSON: boom")
+        );
+
+        catalogService.listAllTagDefinitions();
+        assertThat(catalogService.lastCatalogSkips()).containsExactly(
+                new AnalyticsTagCatalogService.CatalogSkip(DEVICE_B, "Invalid binding rules JSON: boom")
+        );
+        verify(bindingRulesService, times(1)).listRules(DEVICE_B);
+    }
+
     private static BindingRule historianAvgRule(String id) {
         return new BindingRule(
                 id,
