@@ -29,7 +29,7 @@
 
 | Операция | Пример | Назначение |
 |----------|--------|------------|
-| `read(ref)` | `read(root.platform.devices.a/temperature)` | Live-поле переменной |
+| `read(ref)` | `read("root.platform.devices.a/temperature")` или `read("…/coordinates/latitude")` | Live-поле; slash ref **в кавычках** (обязательно при сегменте `/поле`) |
 | `call(ref[, inputRef])` | `call(@/fn/ack, @/payload)` | Вызов функции |
 | `fire(ref)` | `fire(@/evt/overload)` | Публикация события |
 | Historian | `avg(root.../temperature, 5m)`, `live(@/temperature)` | Агрегат по окну / live-сэмпл |
@@ -65,7 +65,7 @@
     "periodicMs": 0
   },
   "condition": "",
-  "expression": "read(root.platform.devices.virt-cluster.dev-03/sineWave)",
+  "expression": "read(\"root.platform.devices.virt-cluster.dev-03/sineWave\")",
   "target": { "variableName": "member3Sine", "field": "value" }
 }
 ```
@@ -80,7 +80,7 @@
   "activators": {
     "onVariableChange": [{ "ref": "root.platform.devices.cluster.dev-03/sineWave" }]
   },
-  "expression": "read(root.platform.devices.cluster.dev-03/sineWave)",
+  "expression": "read(\"root.platform.devices.cluster.dev-03/sineWave\")",
   "target": {
     "kind": "variable",
     "ref": "root.platform.devices.cluster.dev-03/mirroredSine"
@@ -160,7 +160,7 @@
 | Вид | Пример |
 |-----|--------|
 | **CEL** | `self.temperature.value + 1.0` на текущем объекте (лучше double) |
-| **Platform binding** (целое выражение) | `counterRate(@/ifInOctets)`, `hysteresis(@/temperature, 80, 70)`, `read(root.../dev-03/sineWave)`, `queryScalar(@/oqSpec, "count")` |
+| **Platform binding** (целое выражение) | `counterRate(ifInOctets)`, `hysteresis(temperature, 80, 70)`, `read("root.../dev-03/sineWave")`, `queryScalar(@/oqSpec, "count")` |
 | **Function / event** | `call(@/fn/dispatch, @/lastIngress)`, `fire(root.../pump/evt/overload)` |
 
 > **Важно:** `read(...)` — **platform binding**, не CEL-функция; нельзя смешивать с `+` в одной строке. Локальная арифметика — CEL `self.*`. Полные таблицы: [expression-language](expression-language.md).

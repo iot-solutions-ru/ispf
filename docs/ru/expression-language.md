@@ -141,7 +141,7 @@ Historian-правила (`kind: historian`) используют **helpers** (`
 
 | Функция | Синтаксис | Описание | Пример |
 |---------|-----------|----------|--------|
-| `read` | `read(<ref>)` | Живое чтение переменной | `read(root.platform.devices.a/temperature)` |
+| `read` | `read("<ref>")` | Живое чтение переменной (slash ref в кавычках) | `read("root.platform.devices.a/temperature")`, `read("root.../coordinates/latitude")` |
 | `write` | `write(<ref>, <value>)` | Запись поля | `write(@/setpoint, 42)` |
 | `call` | `call(<fnRef>[, <inputRef>])` | Вызов функции дерева | `call(@/fn/ack, @/payload)` |
 | `fire` | `fire(<evtRef>)` | Публикация события | `fire(@/evt/alarmRaised)` |
@@ -227,7 +227,7 @@ hysteresis(temperature, 80, 70)
 **Зеркало удалённого значения**
 
 ```text
-read(root.platform.devices.cluster.dev-03/sineWave)
+read("root.platform.devices.cluster.dev-03/sineWave")
 ```
 
 **Historian среднее**

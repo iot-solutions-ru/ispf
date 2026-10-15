@@ -37,8 +37,20 @@ class BindingExpressionValidatorTest {
                 .doesNotThrowAnyException();
         assertThatCode(() -> BindingExpressionValidator.validateOrThrow("read(\"root.platform.devices.foo/temperature\")"))
                 .doesNotThrowAnyException();
+        assertThatCode(() -> BindingExpressionValidator.validateOrThrow(
+                "read(\"root.platform.devices.demo/coordinates/latitude\")"))
+                .doesNotThrowAnyException();
         assertThatCode(() -> BindingExpressionValidator.validateOrThrow("call(root.remote/fn/fn, @/input)"))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    void rejectsMisleadingBindingForms() {
+        assertThatThrownBy(() -> BindingExpressionValidator.validateOrThrow("selectField(@/temperature)"))
+                .isInstanceOf(Exception.class);
+        assertThatThrownBy(() -> BindingExpressionValidator.validateOrThrow(
+                "read(root.platform.devices.demo/coordinates/latitude)"))
+                .isInstanceOf(Exception.class);
     }
 
     @Test

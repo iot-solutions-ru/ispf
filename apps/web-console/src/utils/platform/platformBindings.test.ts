@@ -40,6 +40,18 @@ describe("platformBindings", () => {
     );
   });
 
+  it("builds readRef with record field in quoted ref", () => {
+    const entry = PLATFORM_BINDING_ENTRIES.find((item) => item.id === "readRef");
+    expect(entry).toBeDefined();
+    expect(
+      buildPlatformBindingExpression(entry!, {
+        path: "root.platform.singleton-blueprints.cutoff-hub-v1.io",
+        remoteVar: "coordinates",
+        remoteField: "latitude",
+      })
+    ).toBe('read("root.platform.singleton-blueprints.cutoff-hub-v1.io/coordinates/latitude")');
+  });
+
   it("builds avg analytics helper for chart bindings", () => {
     const entry = PLATFORM_BINDING_ENTRIES.find((item) => item.id === "avgHistorian");
     expect(entry).toBeDefined();

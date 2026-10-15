@@ -29,7 +29,7 @@ All references to variables, functions, events, and historian tags use one slash
 
 | Operation | Example | Purpose |
 |-----------|---------|---------|
-| `read(ref)` | `read(root.platform.devices.a/temperature)` | Live variable field |
+| `read(ref)` | `read("root.platform.devices.a/temperature")` or `read("…/coordinates/latitude")` | Live variable field; **quote** the slash ref (required when ref has a `/field` segment) |
 | `call(ref[, inputRef])` | `call(@/fn/ack, @/payload)` | Invoke function |
 | `fire(ref)` | `fire(@/evt/overload)` | Publish event |
 | Historian | `avg(root.../temperature, 5m)`, `live(@/temperature)` | Windowed aggregate / live sample |
@@ -65,7 +65,7 @@ All references to variables, functions, events, and historian tags use one slash
     "periodicMs": 0
   },
   "condition": "",
-  "expression": "read(root.platform.devices.virt-cluster.dev-03/sineWave)",
+  "expression": "read(\"root.platform.devices.virt-cluster.dev-03/sineWave\")",
   "target": { "variableName": "member3Sine", "field": "value" }
 }
 ```
@@ -80,7 +80,7 @@ Cross-object write (rule on hub, result on remote device):
   "activators": {
     "onVariableChange": [{ "ref": "root.platform.devices.cluster.dev-03/sineWave" }]
   },
-  "expression": "read(root.platform.devices.cluster.dev-03/sineWave)",
+  "expression": "read(\"root.platform.devices.cluster.dev-03/sineWave\")",
   "target": {
     "kind": "variable",
     "ref": "root.platform.devices.cluster.dev-03/mirroredSine"
@@ -160,7 +160,7 @@ Activator **`onContextChange`** — recalculate when `@dashboardContext` changes
 | Kind | Example |
 |-----|--------|
 | **CEL** | `self.temperature.value + 1.0` on the current object (prefer doubles) |
-| **Platform binding** (whole expression) | `counterRate(@/ifInOctets)`, `hysteresis(@/temperature, 80, 70)`, `read(root.../dev-03/sineWave)`, `queryScalar(@/oqSpec, "count")` |
+| **Platform binding** (whole expression) | `counterRate(ifInOctets)`, `hysteresis(temperature, 80, 70)`, `read("root.../dev-03/sineWave")`, `queryScalar(@/oqSpec, "count")` |
 | **Function / event** | `call(@/fn/dispatch, @/lastIngress)`, `fire(root.../pump/evt/overload)` |
 
 > **Note:** `read(...)` is a **platform binding**, not a CEL function — it cannot be mixed with `+` in the same string. For local arithmetic use CEL `self.*`. Full tables: [expression-language](expression-language.md).
