@@ -15,8 +15,9 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,20 +46,30 @@ class AnalyticsTagMetadataServiceSoftFailTest {
     }
 
     @Test
-    void missingObjectSkipsTagAndContinues() {
+    void missingObjectMarksTagErrorAndContinues() {
         AnalyticsTagDefinition missingTag = tag(MISSING, "orphan-avg");
-        AnalyticsTagDefinition validTag = tag(DEVICE, "avg-temp");
+        AnalyticsTagDefinition validTag = new AnalyticsTagDefinition(
+                HistorianTagPaths.encode(DEVICE, "avg-temp"),
+                "avg",
+                List.of(new AnalyticsSourceRef(MISSING, "avgValue", "value")),
+                "5m",
+                List.of("5m"),
+                60_000L,
+                true,
+                true,
+                "avgValue"
+        );
         when(objectManager.require(MISSING)).thenThrow(new ObjectNotFoundException(MISSING));
         when(objectManager.require(DEVICE)).thenReturn(deviceNode);
         when(historianRuleMetaService.readRuleMeta(eq(deviceNode), eq("avg-temp")))
                 .thenReturn(new HistorianRuleMetaService.RuleMeta("ok", "", null));
 
-        assertThatCode(() -> metadataService.propagateQuality(List.of(missingTag, validTag)))
-                .doesNotThrowAnyException();
+        List<String> missing = metadataService.propagateQuality(List.of(missingTag, validTag));
 
+        assertThat(missing).containsExactly(missingTag.tagPath());
         verify(historianRuleMetaService).readRuleMeta(deviceNode, "avg-temp");
-        verify(objectManager).require(MISSING);
-        verify(objectManager).require(DEVICE);
+        verify(historianRuleMetaService).setQuality(validTag.tagPath(), AnalyticsTagMetadataService.QUALITY_UNCERTAIN);
+        verify(historianRuleMetaService, never()).setQuality(eq(missingTag.tagPath()), eq(AnalyticsTagMetadataService.QUALITY_ERROR));
     }
 
     private static AnalyticsTagDefinition tag(String objectPath, String ruleId) {

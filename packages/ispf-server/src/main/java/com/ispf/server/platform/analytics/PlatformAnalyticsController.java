@@ -141,8 +141,13 @@ public class PlatformAnalyticsController {
     /** List deployed analytics tags with lineage and impact metadata (BL-209). */
     @GetMapping("/tags")
     public Map<String, Object> listTags(@RequestParam(required = false) String path) {
+        List<String> missingObjectTags = analyticsEngineService.refreshMissingObjectTags();
         List<AnalyticsTagCatalogEntry> tags = tagCatalogService.listCatalogEntries(path);
-        return Map.of("count", tags.size(), "tags", tags);
+        java.util.LinkedHashMap<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("count", tags.size());
+        body.put("tags", tags);
+        body.put("missingObjectTags", missingObjectTags);
+        return body;
     }
 
     /** Analytics tag catalog entry with lineage graph (BL-209). */
