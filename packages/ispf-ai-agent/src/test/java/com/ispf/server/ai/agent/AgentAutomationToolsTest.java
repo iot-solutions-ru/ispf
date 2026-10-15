@@ -1,5 +1,7 @@
 package com.ispf.server.ai.agent;
 
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
@@ -17,6 +19,7 @@ import com.ispf.server.tenant.TenantScopeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tools.jackson.databind.ObjectMapper;
@@ -102,6 +105,39 @@ class AgentAutomationToolsTest {
         );
         assertEquals("OK", result.get("status"));
         verify(objectTreePort).createVariable(eq(path), eq("waveSum"), any(), eq(true), eq(false), any(), eq(false), isNull());
+    }
+
+    @Test
+    void createVariableKeepsJsonLookingStringAsScalar() throws Exception {
+        String path = "root.platform.devices.flat-json";
+        PlatformObject node = new PlatformObject("1", path, ObjectType.DEVICE, "flat", "", null);
+        when(tenantScopeService.isPathVisible(eq(path), any())).thenReturn(true);
+        when(objectTreePort.require(path)).thenReturn(node);
+        when(objectTreePort.createVariable(eq(path), eq("stateJson"), any(), eq(true), eq(true), any(), eq(false), isNull()))
+                .thenAnswer(inv -> {
+                    Variable v = org.mockito.Mockito.mock(Variable.class);
+                    when(v.name()).thenReturn("stateJson");
+                    when(v.writable()).thenReturn(true);
+                    return v;
+                });
+
+        Map<String, Object> result = requireTool("create_variable").execute(
+                Map.of(
+                        "path", path,
+                        "name", "stateJson",
+                        "dataType", "STRING",
+                        "initialValue", "{}",
+                        "writable", true
+                ),
+                context
+        );
+
+        assertEquals("OK", result.get("status"));
+        ArgumentCaptor<DataRecord> record = ArgumentCaptor.forClass(DataRecord.class);
+        verify(objectTreePort).createVariable(
+                eq(path), eq("stateJson"), any(DataSchema.class), eq(true), eq(true), record.capture(), eq(false), isNull()
+        );
+        assertEquals("{}", record.getValue().firstRow().get("value"));
     }
 
     @Test

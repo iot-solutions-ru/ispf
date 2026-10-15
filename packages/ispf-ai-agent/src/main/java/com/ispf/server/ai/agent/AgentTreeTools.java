@@ -729,15 +729,6 @@ final class AgentTreeTools {
             return DataRecord.single(existing.schema(), (Map<String, Object>) map);
         }
         if (rawValue instanceof String text) {
-            String trimmed = text.trim();
-            if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-                try {
-                    Map<String, Object> parsed = objectMapper.readValue(trimmed, Map.class);
-                    return DataRecord.single(existing.schema(), parsed);
-                } catch (Exception ignored) {
-                    // fall through to scalar wrap
-                }
-            }
             return DataRecord.single(existing.schema(), Map.of("value", text));
         }
         return DataRecord.single(existing.schema(), Map.of("value", rawValue));
