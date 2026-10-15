@@ -78,7 +78,14 @@ Format: `channel:address` (example `ai:room-1`). Replace with your DSL (Modbus-s
 
 ## Reference drivers (roadmap.md)
 
-BL-144 acceptance: three reference custom drivers — `template/` (acme-widget), `examples/simple-counter/`, `examples/json-poller/`, `examples/modbus-simulator/`. All four compile in `:packages:ispf-driver-ddk:test`.
+BL-144 acceptance: three reference custom drivers — `template/` (acme-widget), `examples/simple-counter/`, `examples/json-poller/` (real HTTP JSON poll), `examples/modbus-simulator/`. All compile and pack via:
+
+```bash
+./gradlew :packages:ispf-driver-ddk:check
+# → build/ddk-example-packs/ispf-driver-{simple-counter,json-poller,modbus-simulator}/
+```
+
+CI: `.github/workflows/driver-interop.yml` matrix includes `ispf-driver-ddk`.
 
 ## Related ADRs
 
