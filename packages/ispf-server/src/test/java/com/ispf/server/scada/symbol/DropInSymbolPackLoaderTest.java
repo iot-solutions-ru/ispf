@@ -65,4 +65,18 @@ class DropInSymbolPackLoaderTest {
         assertThat(categories).hasSize(1);
         assertThat(categories.getFirst().get("symbols")).asList().hasSize(1);
     }
+
+    @Test
+    void corruptManifestIsFailedInCatalog() throws Exception {
+        Path broken = tempDir.resolve("installed").resolve("broken-pack");
+        Files.createDirectories(broken);
+        Files.writeString(broken.resolve("manifest.json"), "{not-json");
+
+        List<Map<String, Object>> packs = loader.listInstalledPacks();
+        assertThat(packs).hasSize(1);
+        assertThat(packs.getFirst().get("packId")).isEqualTo("broken-pack");
+        assertThat(packs.getFirst().get("status")).isEqualTo("failed");
+        assertThat(packs.getFirst().get("installed")).isEqualTo(false);
+        assertThat(String.valueOf(packs.getFirst().get("error"))).isNotBlank();
+    }
 }

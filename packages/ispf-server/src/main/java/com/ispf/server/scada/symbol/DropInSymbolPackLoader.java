@@ -121,11 +121,13 @@ public class DropInSymbolPackLoader {
                     Map<String, Object> manifest = objectMapper.readValue(Files.readString(manifestPath), Map.class);
                     rows.add(packSummary(dir, manifest));
                 } catch (Exception ex) {
-                    log.warn("Skipping corrupt symbol pack {}: {}", dir, ex.getMessage());
+                    rows.add(failedPack(dir, ex));
+                    log.error("Symbol pack failed in {}: {}", dir, ex.getMessage());
                 }
             }
         } catch (IOException ex) {
-            log.warn("Failed to list symbol packs: {}", ex.getMessage());
+            log.error("Failed to list symbol packs: {}", ex.getMessage());
+            rows.add(failedPack(root, ex));
         }
         return rows;
     }
@@ -176,6 +178,21 @@ public class DropInSymbolPackLoader {
         row.put("categories", manifest.get("categories"));
         row.put("path", packDir.toString());
         row.put("installed", true);
+        row.put("status", "loaded");
+        row.put("error", "");
+        return row;
+    }
+
+    private static Map<String, Object> failedPack(Path dir, Exception ex) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        String name = dir.getFileName() == null ? dir.toString() : dir.getFileName().toString();
+        row.put("packId", name);
+        row.put("status", "failed");
+        row.put("installed", false);
+        row.put("error", ex.getMessage() == null || ex.getMessage().isBlank()
+                ? ex.getClass().getSimpleName()
+                : ex.getMessage());
+        row.put("path", dir.toString());
         return row;
     }
 
