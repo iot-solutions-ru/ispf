@@ -37,6 +37,7 @@ public class OperatorStarterTemplatesService {
     private final DashboardService dashboardService;
     private final OperatorAppUiService operatorAppUiService;
     private final BootstrapProperties bootstrapProperties;
+    private volatile String seedError;
 
     public OperatorStarterTemplatesService(
             ObjectManager objectManager,
@@ -58,10 +59,24 @@ public class OperatorStarterTemplatesService {
         }
         try {
             Map<String, Object> result = installStarters(false);
+            seedError = null;
             log.info("Operator starter templates: {}", result.get("installed"));
         } catch (Exception ex) {
-            log.warn("Operator starter templates seed skipped: {}", ex.getMessage());
+            seedError = ex.getMessage() == null || ex.getMessage().isBlank()
+                    ? ex.getClass().getSimpleName()
+                    : ex.getMessage();
+            log.error("Operator starter templates seed failed: {}", seedError);
         }
+    }
+
+    public Map<String, Object> seedStatus() {
+        Map<String, Object> status = new LinkedHashMap<>();
+        boolean required = bootstrapProperties.isFixturesEnabled()
+                && bootstrapProperties.shouldSeedGeneralReferenceDemos();
+        status.put("required", required);
+        status.put("ready", seedError == null);
+        status.put("error", seedError == null ? "" : seedError);
+        return status;
     }
 
     public List<Map<String, Object>> listStarters() {
