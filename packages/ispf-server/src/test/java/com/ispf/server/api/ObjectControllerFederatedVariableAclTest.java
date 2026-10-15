@@ -150,6 +150,7 @@ class ObjectControllerFederatedVariableAclTest {
         return new VariableDto(
                 name,
                 DataRecord.single(SCHEMA, Map.of("value", 10.0)),
+                SCHEMA,
                 true,
                 true,
                 null,

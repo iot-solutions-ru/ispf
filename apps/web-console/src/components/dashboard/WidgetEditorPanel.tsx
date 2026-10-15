@@ -155,7 +155,7 @@ export default function WidgetEditorPanel({
     );
   }
 
-  const hintPath = widget.modelHintPath || widget.objectPath;
+  const hintPath = widget.objectPath || widget.modelHintPath;
   const variables =
     objects.find((ctx) => ctx.path === hintPath)?.variableNames ?? [];
   const variableSelectEnabled = Boolean(hintPath) || Boolean(widget.selectionKey);
