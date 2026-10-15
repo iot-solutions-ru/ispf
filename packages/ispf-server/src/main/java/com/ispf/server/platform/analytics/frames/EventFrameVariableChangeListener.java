@@ -9,6 +9,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
 /**
  * Opens and closes batch event frames when ISA-88 {@code batch-v1} phase changes (BL-208).
  */
@@ -42,7 +43,7 @@ public class EventFrameVariableChangeListener {
 
     private static boolean isBatchLot(PlatformObject node) {
         for (String blueprintId : node.appliedBlueprintIds()) {
-            if (blueprintId.toLowerCase().contains("batch-v1")) {
+            if (blueprintId.toLowerCase(Locale.ROOT).contains("batch-v1")) {
                 return true;
             }
         }

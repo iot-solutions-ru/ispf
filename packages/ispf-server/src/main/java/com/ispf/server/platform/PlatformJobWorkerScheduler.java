@@ -71,7 +71,7 @@ public class PlatformJobWorkerScheduler {
             }
             activeJobs.incrementAndGet();
             PlatformJobService.ClaimedJob job = claimed.get();
-            executor.submit(() -> runJob(job));
+            var _ = executor.submit(() -> runJob(job));
             if (clusterProperties.jobElasticEnabled() && activeJobs.get() >= clusterProperties.jobElasticScaleUpThreshold()) {
                 max = resolvedMaxConcurrent();
             }

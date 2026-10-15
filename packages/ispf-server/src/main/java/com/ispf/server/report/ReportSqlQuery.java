@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import java.util.Locale;
 /**
  * Read-only SQL guard rails and parameter binding for report queries. Pure functions — no
  * database access; the service decides where (schema / external data source) the query runs.
@@ -132,7 +133,7 @@ final class ReportSqlQuery {
         for (Map<String, Object> row : rows) {
             Map<String, Object> mapped = new LinkedHashMap<>();
             for (Map.Entry<String, Object> entry : row.entrySet()) {
-                mapped.put(entry.getKey().toLowerCase(), entry.getValue());
+                mapped.put(entry.getKey().toLowerCase(Locale.ROOT), entry.getValue());
             }
             normalized.add(mapped);
         }

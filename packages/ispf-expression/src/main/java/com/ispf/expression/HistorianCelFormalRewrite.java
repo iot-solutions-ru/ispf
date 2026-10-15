@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.util.Locale;
 /**
  * Rewrites historian helper calls into {@code self.__histN} placeholders so boolean
  * CEL templates can be formally verified without expanding to current sample literals.
@@ -39,7 +40,7 @@ public final class HistorianCelFormalRewrite {
         StringBuffer out = new StringBuffer();
         while (matcher.find()) {
             String call = matcher.group(0);
-            String key = call.replaceAll("\\s+", " ").toLowerCase();
+            String key = call.replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
             String placeholder = byCall.computeIfAbsent(key, ignored -> "self.__hist" + byCall.size());
             matcher.appendReplacement(out, Matcher.quoteReplacement(placeholder));
         }

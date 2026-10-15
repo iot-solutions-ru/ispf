@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 
 /**
  * Cyclic scheduler for PROCESS_PROGRAM objects (BL-172).
@@ -73,19 +74,19 @@ public class ProcessProgramRunner {
         if (!objectManager.isInitialized()) {
             return;
         }
-        if (!leaderLockService.tryAcquire(LOCK_NAME, LOCK_TTL)) {
-            return;
-        }
-        try {
-            runDuePrograms();
-        } finally {
-            leaderLockService.release(LOCK_NAME);
-        }
+        leaderLockService.runIfLeader(
+                LOCK_NAME,
+                LOCK_TTL,
+                () -> runDuePrograms(() -> leaderLockService.isHeld(LOCK_NAME))
+        );
     }
 
-    void runDuePrograms() {
+    void runDuePrograms(BooleanSupplier stillLeader) {
         Instant now = Instant.now();
         for (ProcessProgramObjectService.ProcessProgramDefinition program : processProgramObjectService.listEnabled()) {
+            if (!stillLeader.getAsBoolean()) {
+                return;
+            }
             if (program.lastCycleAt() != null
                     && program.lastCycleAt().plusMillis(program.cycleIntervalMs()).isAfter(now)) {
                 continue;
@@ -169,10 +170,19 @@ public class ProcessProgramRunner {
         String fieldName = schema.fields().isEmpty() ? "value" : schema.fields().get(0).name();
         DataSchema writeSchema = switch (type) {
             case BOOLEAN -> BOOLEAN_VALUE;
-            case INTEGER, LONG -> INTEGER_VALUE;
+            case INTEGER -> INTEGER_VALUE;
+            case LONG -> schema;
             case DOUBLE -> DOUBLE_VALUE;
             default -> schema.fields().isEmpty() ? STRING_VALUE : schema;
         };
+        if (!schema.fields().isEmpty()
+                && !writeSchema.fields().isEmpty()
+                && writeSchema.fields().get(0).type() != type) {
+            throw new IllegalArgumentException(
+                    "Output schema does not match variable schema: expected " + type
+                            + ", got " + writeSchema.fields().get(0).type()
+            );
+        }
         if (type == FieldType.STRING || schema.fields().isEmpty()) {
             return DataRecord.single(STRING_VALUE, Map.of("value", coerced == null ? "" : String.valueOf(coerced)));
         }
@@ -183,14 +193,16 @@ public class ProcessProgramRunner {
         if (rawValue == null) {
             return switch (type) {
                 case BOOLEAN -> false;
-                case INTEGER, LONG -> 0;
+                case INTEGER -> 0;
+                case LONG -> 0L;
                 case DOUBLE -> 0.0d;
                 default -> "";
             };
         }
         return switch (type) {
             case BOOLEAN -> rawValue instanceof Boolean b ? b : Boolean.parseBoolean(String.valueOf(rawValue));
-            case INTEGER, LONG -> rawValue instanceof Number n ? n.intValue() : Integer.parseInt(String.valueOf(rawValue));
+            case INTEGER -> rawValue instanceof Number n ? n.intValue() : Integer.parseInt(String.valueOf(rawValue));
+            case LONG -> rawValue instanceof Number n ? n.longValue() : Long.parseLong(String.valueOf(rawValue));
             case DOUBLE -> rawValue instanceof Number n ? n.doubleValue() : Double.parseDouble(String.valueOf(rawValue));
             default -> String.valueOf(rawValue);
         };

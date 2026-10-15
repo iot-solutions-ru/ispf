@@ -14,6 +14,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -30,11 +31,10 @@ class BindingPeriodicScheduleRegistryFireDueSoftFailTest {
     BindingRuleEngine bindingRuleEngine;
 
     @Test
-    void fireDueDoesNotAdvanceScheduleOnRuntimeException() throws Exception {
+    void failingRuleIsRescheduledAndTheTickContinues() throws Exception {
         BindingPeriodicScheduleRegistry registry = new BindingPeriodicScheduleRegistry(jdbcTemplate);
         Instant now = Instant.parse("2026-08-31T12:00:00Z");
         String objectPath = "root.platform.devices.flaky-periodic";
-        String ruleId = "rule-flaky";
 
         when(jdbcTemplate.query(
                 anyString(),
@@ -44,16 +44,28 @@ class BindingPeriodicScheduleRegistryFireDueSoftFailTest {
             RowMapper<?> mapper = invocation.getArgument(1);
             ResultSet rs = mock(ResultSet.class);
             when(rs.getString("object_path")).thenReturn(objectPath);
-            when(rs.getString("rule_id")).thenReturn(ruleId);
+            when(rs.getString("rule_id")).thenReturn("rule-flaky", "rule-ok");
             when(rs.getLong("periodic_ms")).thenReturn(500L);
-            return List.of(mapper.mapRow(rs, 0));
+            return List.of(mapper.mapRow(rs, 0), mapper.mapRow(rs, 1));
         });
         doThrow(new RuntimeException("engine failure"))
-                .when(bindingRuleEngine).onPeriodic(objectPath, ruleId);
+                .when(bindingRuleEngine).onPeriodic(objectPath, "rule-flaky");
 
         registry.fireDue(now, bindingRuleEngine);
 
-        verify(jdbcTemplate).query(anyString(), any(RowMapper.class), eq(Timestamp.from(now)));
-        org.mockito.Mockito.verifyNoMoreInteractions(jdbcTemplate);
+        verify(bindingRuleEngine).onPeriodic(objectPath, "rule-ok");
+        verify(jdbcTemplate).update(
+                contains("SET next_run_at = ?"),
+                eq(Timestamp.from(now.plusMillis(500))),
+                eq(objectPath),
+                eq("rule-flaky")
+        );
+        verify(jdbcTemplate).update(
+                contains("SET last_run_at = ?, next_run_at = ?"),
+                eq(Timestamp.from(now)),
+                eq(Timestamp.from(now.plusMillis(500))),
+                eq(objectPath),
+                eq("rule-ok")
+        );
     }
 }

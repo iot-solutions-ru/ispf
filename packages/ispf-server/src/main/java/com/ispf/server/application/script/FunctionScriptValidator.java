@@ -40,6 +40,40 @@ public class FunctionScriptValidator {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Whether {@code sourceBody} contains {@code selectOne}, {@code selectMany}, or {@code exec},
+     * including steps nested under {@code then}, {@code else}, or {@code steps}.
+     * Invalid JSON is treated as no SQL step.
+     */
+    public boolean containsSqlStep(String sourceBody) {
+        if (sourceBody == null || sourceBody.isBlank()) {
+            return false;
+        }
+        try {
+            return containsSqlStep(objectMapper.readTree(sourceBody));
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    private static boolean containsSqlStep(JsonNode node) {
+        if (node == null || node.isNull() || node.isMissingNode()) {
+            return false;
+        }
+        if (node.isArray() || node.isObject()) {
+            String type = node.path("type").asText("");
+            if ("selectOne".equals(type) || "selectMany".equals(type) || "exec".equals(type)) {
+                return true;
+            }
+            for (JsonNode child : node) {
+                if (containsSqlStep(child)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public void validate(String sourceBody) {
         JsonNode root;
         try {

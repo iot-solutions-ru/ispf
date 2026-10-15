@@ -1,5 +1,7 @@
 package com.ispf.server.relational;
 
+
+import java.util.Locale;
 /**
  * Supported metadata / relational-core database engines (ADR-0037).
  */
@@ -11,14 +13,14 @@ public enum RelationalDbKind {
     ORACLE;
 
     public String configValue() {
-        return name().toLowerCase();
+        return name().toLowerCase(Locale.ROOT);
     }
 
     public static RelationalDbKind fromConfig(String value) {
         if (value == null || value.isBlank()) {
             return null;
         }
-        String normalized = value.trim().toLowerCase();
+        String normalized = value.trim().toLowerCase(Locale.ROOT);
         return switch (normalized) {
             case "postgresql", "postgres", "pg" -> POSTGRESQL;
             case "h2" -> H2;

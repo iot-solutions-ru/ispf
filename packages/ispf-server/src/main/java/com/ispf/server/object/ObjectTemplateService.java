@@ -27,15 +27,15 @@ public class ObjectTemplateService {
             List.of(LabBlueprintBootstrap.VIRTUAL_LAB_WAVES_SUM_MODEL)
     );
 
-    private final BlueprintRegistry BlueprintRegistry;
-    private final BlueprintApplicationService BlueprintApplicationService;
+    private final BlueprintRegistry blueprintRegistry;
+    private final BlueprintApplicationService blueprintApplicationService;
 
     public ObjectTemplateService(
-            BlueprintRegistry BlueprintRegistry,
-            BlueprintApplicationService BlueprintApplicationService
+            BlueprintRegistry blueprintRegistry,
+            BlueprintApplicationService blueprintApplicationService
     ) {
-        this.BlueprintRegistry = BlueprintRegistry;
-        this.BlueprintApplicationService = BlueprintApplicationService;
+        this.blueprintRegistry = blueprintRegistry;
+        this.blueprintApplicationService = blueprintApplicationService;
     }
 
     @Transactional
@@ -55,7 +55,7 @@ public class ObjectTemplateService {
                 ));
         applyResolvedModel(objectPath, model, parameters);
         for (String companionName : COMPANION_MODELS_BY_NAME.getOrDefault(model.name(), List.of())) {
-            BlueprintRegistry.findByName(companionName).ifPresent(companion ->
+            blueprintRegistry.findByName(companionName).ifPresent(companion ->
                     applyResolvedModel(objectPath, companion, parameters)
             );
         }
@@ -63,7 +63,7 @@ public class ObjectTemplateService {
 
     private void applyResolvedModel(String objectPath, BlueprintDefinition model, Map<String, String> parameters) {
         try {
-            BlueprintApplicationService.applyBlueprintWithRules(
+            blueprintApplicationService.applyBlueprintWithRules(
                     model,
                     objectPath,
                     parameters != null ? parameters : Map.of()
@@ -74,10 +74,10 @@ public class ObjectTemplateService {
     }
 
     private Optional<BlueprintDefinition> resolveTemplate(String templateId) {
-        Optional<BlueprintDefinition> byId = BlueprintRegistry.findById(templateId);
+        Optional<BlueprintDefinition> byId = blueprintRegistry.findById(templateId);
         if (byId.isPresent()) {
             return byId;
         }
-        return BlueprintRegistry.findByName(templateId);
+        return blueprintRegistry.findByName(templateId);
     }
 }

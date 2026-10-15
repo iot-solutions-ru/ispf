@@ -103,14 +103,15 @@ public class ModbusTcpDeviceDriver implements DeviceDriver {
         if (!isConnected()) {
             throw new DriverTransientException("Not connected");
         }
-        points.clear();
+        Map<String, ModbusPoint> next = new ConcurrentHashMap<>();
         Instant observedAt = DriverPollTimestamps.pollTick();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             ModbusPoint point = ModbusPoint.parse(entry.getValue());
-            points.put(entry.getKey(), point);
+            next.put(entry.getKey(), point);
             DataRecord record = readPoint(point);
             driverObject.updateVariable(entry.getKey(), record, observedAt);
         }
+        replacePoints(next);
     }
 
     @Override
@@ -142,23 +143,29 @@ public class ModbusTcpDeviceDriver implements DeviceDriver {
         }
     }
 
+    private void replacePoints(Map<String, ModbusPoint> next) {
+        points.keySet().retainAll(next.keySet());
+        points.putAll(next);
+    }
+
     private DataRecord readPoint(ModbusPoint point) throws DriverException {
         try {
+            int count = Math.max(1, point.count());
             return switch (point.type()) {
                 case HOLDING -> {
-                    Register register = master.readMultipleRegisters(point.slaveId(), point.address(), 1)[0];
-                    yield toRegisterRecord(register.getValue());
+                    Register[] registers = master.readMultipleRegisters(point.slaveId(), point.address(), count);
+                    yield toRegisterRecord(combineRegisters(registers));
                 }
                 case INPUT -> {
-                    InputRegister register = master.readInputRegisters(point.slaveId(), point.address(), 1)[0];
-                    yield toRegisterRecord(register.getValue());
+                    InputRegister[] registers = master.readInputRegisters(point.slaveId(), point.address(), count);
+                    yield toRegisterRecord(combineInputRegisters(registers));
                 }
                 case COIL -> {
-                    boolean value = master.readCoils(point.slaveId(), point.address(), 1).getBit(0);
+                    boolean value = master.readCoils(point.slaveId(), point.address(), count).getBit(0);
                     yield DataRecord.single(COIL_SCHEMA, Map.of("value", value));
                 }
                 case DISCRETE -> {
-                    boolean value = master.readInputDiscretes(point.slaveId(), point.address(), 1).getBit(0);
+                    boolean value = master.readInputDiscretes(point.slaveId(), point.address(), count).getBit(0);
                     yield DataRecord.single(COIL_SCHEMA, Map.of("value", value));
                 }
             };
@@ -167,9 +174,25 @@ public class ModbusTcpDeviceDriver implements DeviceDriver {
         }
     }
 
-    private static DataRecord toRegisterRecord(int raw) {
+    private static long combineRegisters(Register[] registers) {
+        long raw = 0L;
+        for (Register register : registers) {
+            raw = (raw << 16) | (register.getValue() & 0xFFFFL);
+        }
+        return raw;
+    }
+
+    private static long combineInputRegisters(InputRegister[] registers) {
+        long raw = 0L;
+        for (InputRegister register : registers) {
+            raw = (raw << 16) | (register.getValue() & 0xFFFFL);
+        }
+        return raw;
+    }
+
+    private static DataRecord toRegisterRecord(long raw) {
         return DataRecord.single(REGISTER_SCHEMA, Map.of(
-                "raw", (long) raw,
+                "raw", raw,
                 "value", (double) raw
         ));
     }

@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -51,21 +52,14 @@ class ExamplesBundleValidationTest {
             List<String> hardErrors = new ArrayList<>();
             if (result.issues() != null) {
                 for (BundleValidationIssue issue : result.issues()) {
-                    if (!BundleValidationIssue.ERROR.equals(issue.severity())) {
-                        continue;
-                    }
                     String code = issue.code() != null ? issue.code() : "";
+                    boolean error = BundleValidationIssue.ERROR.equals(issue.severity());
+                    // Examples are agent reference material: they stay canonical even though
+                    // LOGIC_HOST_DEVICE is only a warning for solution authors.
                     if (code.equals("LOGIC_HOST_DEVICE")
-                            || code.equals("BUNDLE_SCHEMA")
-                            || code.startsWith("BINDING_")) {
+                            || (error && (code.equals("BUNDLE_SCHEMA") || code.startsWith("BINDING_")))) {
                         hardErrors.add("[" + code + "] " + issue.path() + ": " + issue.message());
                     }
-                }
-            }
-            // Also catch plain LOGIC_HOST errors if issues empty but errors list has them
-            for (String err : result.errors()) {
-                if (err != null && err.contains("LOGIC_HOST_DEVICE")) {
-                    hardErrors.add(err);
                 }
             }
             if (!hardErrors.isEmpty()) {
@@ -78,7 +72,7 @@ class ExamplesBundleValidationTest {
     }
 
     @Test
-    void rejectsDeviceHostedFunction() throws Exception {
+    void warnsOnDeviceHostedLogicWithoutBlocking() throws Exception {
         String json = """
                 {
                   "version":"1.0.0",
@@ -90,16 +84,112 @@ class ExamplesBundleValidationTest {
                     "objectPath":"root.platform.devices.bad-hub",
                     "functionName":"listItems",
                     "source":{"type":"script","body":"{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\"}}]}"}
-                  }]
+                  }],
+                  "blueprints":[{"name":"bad-hub-v1","type":"SINGLETON","targetObjectType":"DEVICE"}]
                 }
                 """;
         ApplicationBundleDeployService.BundleManifest manifest =
                 objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);
         BundleValidationResult result = validator.validate("bad", manifest);
-        assertEquals(BundleValidationResult.ERROR, result.status());
+        assertEquals(BundleValidationResult.OK, result.status(), String.join("; ", result.errors()));
+        List<BundleValidationIssue> canonIssues = result.issues().stream()
+                .filter(i -> "LOGIC_HOST_DEVICE".equals(i.code()))
+                .toList();
+        assertEquals(
+                List.of("functions[0].objectPath", "blueprints[0].targetObjectType"),
+                canonIssues.stream().map(BundleValidationIssue::path).toList()
+        );
+        assertTrue(canonIssues.stream().allMatch(i -> BundleValidationIssue.WARNING.equals(i.severity())));
+    }
+
+    @Test
+    void warnsWhenFunctionHostHasNoModelAndDoesNotBlock() throws Exception {
+        BundleValidationResult result = validator.validate("shapeless", manifestWithHost(null, null, false));
+        assertEquals(BundleValidationResult.OK, result.status(), String.join("; ", result.errors()));
+        List<BundleValidationIssue> shapeIssues = result.issues().stream()
+                .filter(i -> "LOGIC_HOST_NO_SHAPE".equals(i.code()))
+                .toList();
+        assertEquals(List.of("functions[0].objectPath"), shapeIssues.stream().map(BundleValidationIssue::path).toList());
+        assertEquals(BundleValidationIssue.WARNING, shapeIssues.get(0).severity());
+    }
+
+    @Test
+    void modelBlueprintClearsMissingShapeWarning() throws Exception {
+        String json = """
+                {
+                  "version":"1.0.0",
+                  "displayName":"Shaped",
+                  "tablePrefix":"s_",
+                  "schemaName":"app_shaped",
+                  "objects":[{"parentPath":"root.platform","name":"raw-host","type":"CUSTOM"}],
+                  "blueprints":[{"name":"raw-host-v1","type":"SINGLETON"}],
+                  "functions":[{
+                    "objectPath":"root.platform.raw-host",
+                    "functionName":"tick",
+                    "source":{"type":"script","body":"{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\"}}]}"}
+                  }]
+                }
+                """;
+        ApplicationBundleDeployService.BundleManifest manifest =
+                objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);
+        BundleValidationResult result = validator.validate("shaped", manifest);
+        assertEquals(BundleValidationResult.OK, result.status(), String.join("; ", result.errors()));
+        assertTrue(result.issues().stream().noneMatch(i -> "LOGIC_HOST_NO_SHAPE".equals(i.code())));
+    }
+
+    @Test
+    void templateIdClearsMissingShapeWarning() throws Exception {
+        BundleValidationResult result = validator.validate("templated", manifestWithHost("mqtt-sensor-v1", null, false));
+        assertEquals(BundleValidationResult.OK, result.status(), String.join("; ", result.errors()));
+        assertTrue(result.issues() == null || result.issues().stream().noneMatch(i -> "LOGIC_HOST_NO_SHAPE".equals(i.code())));
+    }
+
+    @Test
+    void labOptOutSkipsMissingShapeWarning() throws Exception {
+        BundleValidationResult result = validator.validate("lab", manifestWithHost(null, true, true));
+        assertEquals(BundleValidationResult.OK, result.status(), String.join("; ", result.errors()));
+        assertTrue(result.issues() == null || result.issues().stream().noneMatch(i -> "LOGIC_HOST_NO_SHAPE".equals(i.code())));
+    }
+
+    private ApplicationBundleDeployService.BundleManifest manifestWithHost(
+            String templateId,
+            Boolean allowLogicWithoutShape,
+            boolean includeMetadata
+    ) throws Exception {
+        String templateField = templateId == null ? "" : ",\"templateId\":\"" + templateId + "\"";
+        String metadataField = includeMetadata
+                ? ",\"metadata\":{\"allowLogicWithoutShape\":" + allowLogicWithoutShape + "}"
+                : "";
+        String json = """
+                {
+                  "version":"1.0.0",
+                  "displayName":"Host",
+                  "tablePrefix":"s_",
+                  "schemaName":"app_host"%s,
+                  "objects":[{"parentPath":"root.platform","name":"raw-host","type":"CUSTOM"%s}],
+                  "functions":[{
+                    "objectPath":"root.platform.raw-host",
+                    "functionName":"tick",
+                    "source":{"type":"script","body":"{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\"}}]}"}
+                  }]
+                }
+                """.formatted(metadataField, templateField);
+        return objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);
+    }
+
+    @Test
+    void mesReferenceDispatchDashboardHostsBffOnSingletonHub() throws Exception {
+        Path bundlePath = resolveExamplesRoot().resolve("mes-reference").resolve("bundle.json");
+        var tree = objectMapper.readTree(Files.readString(bundlePath));
+        String layout = tree.path("dashboards").get(0).path("layoutJson").asText();
         assertTrue(
-                result.issues().stream().anyMatch(i -> "LOGIC_HOST_DEVICE".equals(i.code())),
-                String.join("; ", result.errors())
+                layout.contains("root.platform.singleton-blueprints.mes-reference-hub-v1")
+                        && layout.contains("\"functionName\":\"mes_listOrders\""),
+                "dispatch widgets must invoke BFF on the SINGLETON hub"
+        );
+        assertFalse(
+                layout.contains("root.platform.devices.demo-sensor-01"),
+                "dispatch widgets must not invoke BFF on the rack DEVICE"
         );
     }
 

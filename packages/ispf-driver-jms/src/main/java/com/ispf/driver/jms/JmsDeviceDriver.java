@@ -22,6 +22,7 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.Locale;
 /**
  * JMS driver — Apache ActiveMQ client for queue/topic consume and queue browse depth.
  */
@@ -76,7 +77,7 @@ public class JmsDeviceDriver implements DeviceDriver {
         switch (key) {
             case "brokerUrl" -> brokerUrl = value.trim();
             case "destination", "queue", "topic" -> destination = value.trim();
-            case "destinationType" -> destinationType = value.trim().toLowerCase();
+            case "destinationType" -> destinationType = value.trim().toLowerCase(Locale.ROOT);
             case "timeoutMs" -> timeoutMs = Long.parseLong(value.trim());
             default -> { }
         }

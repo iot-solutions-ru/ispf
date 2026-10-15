@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import java.util.Locale;
 /**
  * Local application driver — executes shell commands via ProcessBuilder.
  */
@@ -147,6 +148,6 @@ public class ApplicationDeviceDriver implements DeviceDriver {
     }
 
     private static boolean isWindows() {
-        return System.getProperty("os.name", "").toLowerCase().contains("win");
+        return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
     }
 }

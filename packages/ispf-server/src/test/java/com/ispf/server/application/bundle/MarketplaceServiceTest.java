@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,7 +24,12 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class MarketplaceServiceTest {
@@ -31,6 +37,9 @@ class MarketplaceServiceTest {
     private HttpServer httpServer;
     private String baseUrl;
     private MarketplaceService service;
+    private ApplicationBundleDeployService deployService;
+    private ApplicationBundleSnapshotStore snapshotStore;
+    private CommercialBundleLicenseSigner licenseSigner;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -51,7 +60,7 @@ class MarketplaceServiceTest {
         });
         httpServer.createContext("/api/v1/catalog/free-app", exchange -> {
             byte[] body = """
-                    {"slug":"free-app","appId":"free-app","pricing":"free","title":"Free App"}
+                    {"slug":"free-app","appId":"free-app","pricing":"free","title":"Free App","latestVersion":"1.0.0"}
                     """.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, body.length);
@@ -99,13 +108,23 @@ class MarketplaceServiceTest {
         CommercialLicenseProperties licenseProperties = new CommercialLicenseProperties();
         licenseProperties.setDataDir(System.getProperty("java.io.tmpdir"));
 
+        deployService = mock(ApplicationBundleDeployService.class);
+        snapshotStore = mock(ApplicationBundleSnapshotStore.class);
+        licenseSigner = mock(CommercialBundleLicenseSigner.class);
+        when(snapshotStore.findActive(anyString())).thenReturn(Optional.empty());
+        when(deployService.deploy(anyString(), any(), anyBoolean())).thenReturn(new LinkedHashMap<>(Map.of(
+                "status", "OK",
+                "appId", "free-app"
+        )));
+        when(deployService.supportsOperatorUi(anyString())).thenReturn(false);
+
         service = new MarketplaceService(
                 properties,
                 dataStore,
-                mock(ApplicationBundleSnapshotStore.class),
-                mock(ApplicationBundleDeployService.class),
+                snapshotStore,
+                deployService,
                 new InstallationIdService(licenseProperties),
-                mock(CommercialBundleLicenseSigner.class),
+                licenseSigner,
                 Optional.empty(),
                 new ObjectMapper(),
                 mock(DropInAnalyticsPackLoader.class),
@@ -156,6 +175,37 @@ class MarketplaceServiceTest {
     @Test
     void installRejectsListingBelowMinIspfVersion() {
         assertThrows(IllegalArgumentException.class, () -> service.installFreeListing("test", "old-platform"));
+    }
+
+    @Test
+    void freeInstallSignsUnsignedManifestWhenSigningKeyConfigured() throws Exception {
+        when(licenseSigner.isConfigured()).thenReturn(true);
+        when(licenseSigner.signManifestIfNeeded(eq("free-app"), any())).thenAnswer(inv -> {
+            Map<String, Object> signed = new LinkedHashMap<>();
+            signed.put("version", "1.0.0");
+            signed.put("displayName", "Free App");
+            signed.put("schemaName", "app_free_app");
+            signed.put("migrations", List.of());
+            signed.put("functions", List.of());
+            signed.put("license", Map.of("bundleId", "free-app", "signature", "test-sig"));
+            return signed;
+        });
+
+        Map<String, Object> result = service.installFreeListing("test", "free-app");
+        assertEquals("OK", result.get("status"));
+
+        verify(licenseSigner).signManifestIfNeeded(eq("free-app"), any());
+        verify(deployService).deploy(eq("free-app"), any(), eq(false));
+    }
+
+    @Test
+    void freeInstallTrustsUnsignedManifestWhenSigningKeyAbsent() throws Exception {
+        when(licenseSigner.isConfigured()).thenReturn(false);
+
+        Map<String, Object> result = service.installFreeListing("test", "free-app");
+        assertEquals("OK", result.get("status"));
+
+        verify(deployService).deploy(eq("free-app"), any(), eq(true));
     }
 
     @Test

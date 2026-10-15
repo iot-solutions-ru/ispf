@@ -2507,11 +2507,71 @@ body.scada-mimic-editor-open {
   line-height: 1.3;
 }
 
+.field-caption-hint {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.15em;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.widget-editor-mini-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.widget-editor-mini-caption {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  color: var(--text-muted, #8b949e);
+}
+
+.widget-editor-mini-field input,
+.widget-editor-mini-field select,
+.widget-editor-mini-field .object-path-field {
+  width: 100%;
+  min-width: 0;
+}
+
+.field-code {
+  display: block;
+  margin-top: 0.1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: var(--text-muted, #8b949e);
+}
+
+.widget-editor-kv-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  color: var(--text-muted, #8b949e);
+}
+
 .widget-editor-form .field-controls {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   min-width: 0;
+}
+
+.widget-editor-form .selection-key-input,
+.widget-editor-list-row .selection-key-input {
+  width: 100%;
+  min-width: 0;
+}
+
+.form-grid .selection-key-input input {
+  width: 100%;
+  border: none;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
 }
 
 .widget-editor-form .field-controls-slot--stacked {
@@ -2548,6 +2608,35 @@ body.scada-mimic-editor-open {
 
 .widget-editor-list-row.widget-editor-kv-row {
   grid-template-columns: 1fr 1fr auto;
+}
+
+.widget-editor-field-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+}
+
+.widget-editor-list-row.widget-editor-form-field-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.72fr) auto;
+  align-items: end;
+}
+
+.widget-editor-list-row.widget-editor-form-field-meta-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.widget-editor-list-row.widget-editor-form-field-meta-row--pair {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.widget-editor-form-field-remove {
+  align-self: end;
+  flex-shrink: 0;
 }
 
 .widget-editor-list-row input,

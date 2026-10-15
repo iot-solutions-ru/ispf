@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 class AgentFunctionToolsTest {
 
     @Mock
-    private ObjectTreePort ObjectTreePort;
+    private ObjectTreePort objectTreePort;
     @Mock
     private ObjectAccessService objectAccessService;
     @Mock
@@ -36,7 +36,7 @@ class AgentFunctionToolsTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private PlatformAgentTool tool(String name) {
-        return AgentFunctionTools.all(ObjectTreePort, objectAccessService, tenantScopeService, objectMapper)
+        return AgentFunctionTools.all(objectTreePort, objectAccessService, tenantScopeService, objectMapper)
                 .stream()
                 .filter(t -> name.equals(t.name()))
                 .findFirst()
@@ -47,7 +47,7 @@ class AgentFunctionToolsTest {
     void deployTreeFunctionJavaSource() throws Exception {
         String path = "root.platform.devices.demo";
         when(tenantScopeService.isPathVisible(path, authentication)).thenReturn(true);
-        when(ObjectTreePort.upsertFunction(eq(path), org.mockito.ArgumentMatchers.any())).thenAnswer(inv -> inv.getArgument(1));
+        when(objectTreePort.upsertFunction(eq(path), org.mockito.ArgumentMatchers.any())).thenAnswer(inv -> inv.getArgument(1));
 
         Map<String, Object> result = tool("deploy_tree_function").execute(
                 Map.of(
@@ -64,7 +64,7 @@ class AgentFunctionToolsTest {
 
         assertEquals("OK", result.get("status"));
         ArgumentCaptor<FunctionDescriptor> captor = ArgumentCaptor.forClass(FunctionDescriptor.class);
-        verify(ObjectTreePort).upsertFunction(eq(path), captor.capture());
+        verify(objectTreePort).upsertFunction(eq(path), captor.capture());
         assertEquals("java", captor.getValue().sourceType());
         assertEquals("echoFn", captor.getValue().name());
     }

@@ -27,6 +27,23 @@ describe("FunctionScriptStepsEditor", () => {
     expect(editor).toHaveValue("{invalid");
   });
 
+  it("adds a fields row on a return step after clearing all pairs", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    renderWithInspector(
+      <FunctionScriptStepsEditor
+        value={'{"steps":[{"type":"return","fields":{"ok":true}}]}'}
+        onChange={onChange}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Remove row" }));
+    expect(screen.getAllByPlaceholderText("fieldName")).toHaveLength(1);
+
+    await user.click(screen.getByRole("button", { name: "+ Key/value pair" }));
+    expect(screen.getAllByPlaceholderText("fieldName")).toHaveLength(2);
+  });
+
   it("returns to the visual editor after valid JSON is applied", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

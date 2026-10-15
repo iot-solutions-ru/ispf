@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DashboardWidgetNormalizerTest {
@@ -49,5 +50,20 @@ class DashboardWidgetNormalizerTest {
         assertTrue(columnsJson.isString());
         var columns = objectMapper.readValue(columnsJson.asString(), List.class);
         assertEquals(1, columns.size());
+    }
+
+    @Test
+    void invalidLayoutJsonIsNotKept() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> DashboardWidgetNormalizer.normalizeLayoutJson("{not-json", objectMapper)
+        );
+        assertTrue(ex.getMessage().startsWith("Invalid layout JSON: "));
+        assertTrue(ex.getCause() != null && ex.getMessage().contains(ex.getCause().getMessage()));
+    }
+
+    @Test
+    void blankLayoutJsonIsUnchanged() {
+        assertEquals("  ", DashboardWidgetNormalizer.normalizeLayoutJson("  ", objectMapper));
     }
 }

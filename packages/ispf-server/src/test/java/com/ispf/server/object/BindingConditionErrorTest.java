@@ -63,6 +63,19 @@ class BindingConditionErrorTest {
     }
 
     @Test
+    void nonBooleanConditionFailsRecalcInsteadOfActingAsFalse() {
+        ensureObject();
+        bindingRulesService.saveRules(PATH, List.of(rule("1", "99.0")));
+
+        assertThatThrownBy(() -> bindingRuleEngine.runRulesForObject(PATH))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining(PATH)
+                .hasMessageContaining("condition must be boolean")
+                .hasMessageContaining("Binding condition failed");
+        assertThat(currentValue()).isEqualTo(0.0);
+    }
+
+    @Test
     void falseConditionSkipsRuleWithoutError() {
         ensureObject();
         bindingRulesService.saveRules(PATH, List.of(rule("false", "99.0")));

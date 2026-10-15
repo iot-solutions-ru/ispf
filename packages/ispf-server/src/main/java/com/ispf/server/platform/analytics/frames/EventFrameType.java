@@ -2,6 +2,7 @@ package com.ispf.server.platform.analytics.frames;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.util.Locale;
 /**
  * Lightweight analytics time window type (BL-208).
  */
@@ -26,7 +27,7 @@ public enum EventFrameType {
         if (raw == null || raw.isBlank()) {
             throw new IllegalArgumentException("frameType is required");
         }
-        String normalized = raw.trim().toLowerCase();
+        String normalized = raw.trim().toLowerCase(Locale.ROOT);
         for (EventFrameType type : values()) {
             if (type.externalName.equals(normalized) || type.name().equalsIgnoreCase(normalized)) {
                 return type;

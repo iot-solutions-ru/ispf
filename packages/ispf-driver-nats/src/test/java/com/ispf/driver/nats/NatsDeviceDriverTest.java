@@ -155,14 +155,14 @@ class NatsDeviceDriverTest {
 
         void start() {
             running = true;
-            executor.submit(this::acceptLoop);
+            var _ = executor.submit(this::acceptLoop);
         }
 
         private void acceptLoop() {
             while (running && !serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
+                    var _ = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (!running || serverSocket.isClosed()) {
                         return;

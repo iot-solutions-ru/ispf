@@ -112,13 +112,13 @@ class FoundationFieldbusDeviceDriverTest {
         int port() { return serverSocket.getLocalPort(); }
         void put(int kind, int index, float value) { values.put(key(kind, index), value); }
         float get(int kind, int index) { return values.getOrDefault(key(kind, index), 0f); }
-        void start() { executor.submit(this::acceptLoop); }
+        void start() { var _ = executor.submit(this::acceptLoop); }
 
         private void acceptLoop() {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
+                    var _ = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (serverSocket.isClosed()) return;
                 }

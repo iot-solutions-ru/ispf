@@ -103,7 +103,7 @@ public class ClusterLiveVariableReplicaPublisher {
             return;
         }
         long delayMs = clusterProperties.liveVariableSyncCoalesceMs();
-        scheduler.schedule(this::flushPending, delayMs, TimeUnit.MILLISECONDS);
+        var _ = scheduler.schedule(this::flushPending, delayMs, TimeUnit.MILLISECONDS);
     }
 
     private void flushPending() {

@@ -5,6 +5,8 @@ package com.ispf.driver.ingress;
  * <p>
  * Event-driven contract: call {@link #adjust(int)} when work is enqueued (scale-up) and when a
  * worker finds the queue empty (scale-down via consecutive empty observations). No periodic polling.
+ * <p>
+ * Methods are synchronized: producers and workers call {@link #adjust(int)} concurrently.
  */
 public final class ElasticWorkerScaler {
 
@@ -35,7 +37,7 @@ public final class ElasticWorkerScaler {
         this.targetWorkers = minWorkers;
     }
 
-    public int targetWorkers() {
+    public synchronized int targetWorkers() {
         return targetWorkers;
     }
 
@@ -43,7 +45,7 @@ public final class ElasticWorkerScaler {
      * @param queueSize current pending work units
      * @return true when target worker count changed
      */
-    public boolean adjust(int queueSize) {
+    public synchronized boolean adjust(int queueSize) {
         int previous = targetWorkers;
         if (queueSize >= scaleUpQueueThreshold) {
             consecutiveEmptyChecks = 0;
@@ -61,7 +63,7 @@ public final class ElasticWorkerScaler {
         return targetWorkers != previous;
     }
 
-    public void reconfigure(int minWorkers, int maxWorkers, int scaleUpQueueThreshold, int scaleDownSteps) {
+    public synchronized void reconfigure(int minWorkers, int maxWorkers, int scaleUpQueueThreshold, int scaleDownSteps) {
         this.minWorkers = minWorkers;
         this.maxWorkers = maxWorkers;
         this.scaleUpQueueThreshold = scaleUpQueueThreshold;

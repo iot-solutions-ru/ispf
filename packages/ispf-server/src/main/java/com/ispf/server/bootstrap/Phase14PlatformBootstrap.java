@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class Phase14PlatformBootstrap {
 
-    private final Phase14BlueprintBootstrap Phase14BlueprintBootstrap;
+    private final Phase14BlueprintBootstrap phase14BlueprintBootstrap;
     private final DataSourceObjectService dataSourceObjectService;
     private final ScheduleObjectService scheduleObjectService;
     private final SqlBindingObjectService sqlBindingObjectService;
@@ -25,14 +25,14 @@ public class Phase14PlatformBootstrap {
     private final SystemObjectDescriptionReconciler systemObjectDescriptionReconciler;
 
     public Phase14PlatformBootstrap(
-            Phase14BlueprintBootstrap Phase14BlueprintBootstrap,
+            Phase14BlueprintBootstrap phase14BlueprintBootstrap,
             DataSourceObjectService dataSourceObjectService,
             ScheduleObjectService scheduleObjectService,
             SqlBindingObjectService sqlBindingObjectService,
             MigrationObjectService migrationObjectService,
             SystemObjectDescriptionReconciler systemObjectDescriptionReconciler
     ) {
-        this.Phase14BlueprintBootstrap = Phase14BlueprintBootstrap;
+        this.phase14BlueprintBootstrap = phase14BlueprintBootstrap;
         this.dataSourceObjectService = dataSourceObjectService;
         this.scheduleObjectService = scheduleObjectService;
         this.sqlBindingObjectService = sqlBindingObjectService;
@@ -44,7 +44,7 @@ public class Phase14PlatformBootstrap {
     @Order(Ordered.HIGHEST_PRECEDENCE + 20)
     @Transactional
     public void onReady() {
-        Phase14BlueprintBootstrap.ensurePhase14Models();
+        phase14BlueprintBootstrap.ensurePhase14Models();
         dataSourceObjectService.ensureCatalog();
         scheduleObjectService.ensureCatalog();
         sqlBindingObjectService.ensureCatalog();

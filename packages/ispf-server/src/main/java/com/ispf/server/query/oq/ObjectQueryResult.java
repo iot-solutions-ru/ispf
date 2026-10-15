@@ -5,9 +5,10 @@ import java.util.Map;
 
 public record ObjectQueryResult(
         List<Map<String, Object>> rows,
-        int rowCount
+        int rowCount,
+        boolean rowsTruncated
 ) {
     public static ObjectQueryResult empty() {
-        return new ObjectQueryResult(List.of(), 0);
+        return new ObjectQueryResult(List.of(), 0, false);
     }
 }

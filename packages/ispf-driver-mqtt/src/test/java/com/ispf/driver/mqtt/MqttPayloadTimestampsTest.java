@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MqttPayloadTimestampsTest {
@@ -32,6 +33,27 @@ class MqttPayloadTimestampsTest {
     @Test
     void skipsRegexForScalarPayload() {
         byte[] payload = "42.5".getBytes(StandardCharsets.UTF_8);
+        Instant before = Instant.now();
+        Instant observed = MqttPayloadTimestamps.resolve(payload);
+        Instant after = Instant.now();
+        assertTrue(!observed.isBefore(before) && !observed.isAfter(after));
+    }
+
+    @Test
+    void rejectsUnparseableIsoTimestampField() {
+        byte[] payload = "{\"value\":1,\"timestamp\":\"not-a-date\"}".getBytes(StandardCharsets.UTF_8);
+        assertThrows(IllegalArgumentException.class, () -> MqttPayloadTimestamps.resolve(payload));
+    }
+
+    @Test
+    void parsesQuotedEpochField() {
+        byte[] payload = "{\"ts\":\"1717239330000\"}".getBytes(StandardCharsets.UTF_8);
+        assertEquals(Instant.ofEpochMilli(1717239330000L), MqttPayloadTimestamps.resolve(payload));
+    }
+
+    @Test
+    void fallsBackToNowWhenTimestampFieldAbsent() {
+        byte[] payload = "{\"value\":12.3}".getBytes(StandardCharsets.UTF_8);
         Instant before = Instant.now();
         Instant observed = MqttPayloadTimestamps.resolve(payload);
         Instant after = Instant.now();

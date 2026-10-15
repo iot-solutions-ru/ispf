@@ -158,6 +158,306 @@ class ObjectQueryServiceTest {
     }
 
     @Test
+    void havingAfterGroupByFiltersByAggregate() {
+        String suffix = Long.toString(System.nanoTime());
+        createLabeledDevice("oq-hgb-" + suffix + "-a1", "A");
+        createLabeledDevice("oq-hgb-" + suffix + "-a2", "A");
+        createLabeledDevice("oq-hgb-" + suffix + "-b1", "B");
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.oq-hgb-%s-*",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "batch", "ref": "{row}/label/value", "alias": "row"}
+                  ],
+                  "groupBy": ["batch"],
+                  "aggregates": [{"name": "rowCount", "fn": "count"}],
+                  "having": "input.rowCount > 1.0"
+                }
+                """.formatted(suffix));
+        ObjectQueryResult result = objectQueryService.execute(spec, "root.platform");
+        assertThat(result.rowCount()).isEqualTo(1);
+        assertThat(result.rows().getFirst())
+                .containsEntry("batch", "A")
+                .containsEntry("rowCount", 2);
+    }
+
+    @Test
+    void groupByWithoutAggregatesUsesImplicitRowCount() {
+        String suffix = Long.toString(System.nanoTime());
+        createLabeledDevice("oq-gb-ia-" + suffix + "-a1", "A");
+        createLabeledDevice("oq-gb-ia-" + suffix + "-a2", "A");
+        createLabeledDevice("oq-gb-ia-" + suffix + "-b1", "B");
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.oq-gb-ia-%s-*",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "batch", "ref": "{row}/label/value", "alias": "row"}
+                  ],
+                  "groupBy": ["batch"]
+                }
+                """.formatted(suffix));
+        ObjectQueryResult result = objectQueryService.execute(spec, "root.platform");
+        assertThat(result.rowCount()).isEqualTo(2);
+        assertThat(result.rows())
+                .anySatisfy(row -> assertThat(row)
+                        .containsEntry("batch", "A")
+                        .containsEntry("rowCount", 2))
+                .anySatisfy(row -> assertThat(row)
+                        .containsEntry("batch", "B")
+                        .containsEntry("rowCount", 1));
+    }
+
+    @Test
+    @Transactional(readOnly = true)
+    void havingFalseFiltersRows() {
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.*",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"}
+                  ],
+                  "having": "false",
+                  "limit": 5
+                }
+                """);
+        ObjectQueryResult result = objectQueryService.execute(spec, "root.platform.queries.test");
+        assertThat(result.rowCount()).isZero();
+    }
+
+    @Test
+    @Transactional(readOnly = true)
+    void havingTrueKeepsRows() {
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.*",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"}
+                  ],
+                  "having": "true",
+                  "limit": 5
+                }
+                """);
+        ObjectQueryResult result = objectQueryService.execute(spec, "root.platform.queries.test");
+        assertThat(result.rowCount()).isGreaterThan(0);
+    }
+
+    @Test
+    @Transactional(readOnly = true)
+    void havingRejectsNonBooleanResult() {
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.*",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"},
+                    {"name": "type", "source": "type", "alias": "row"}
+                  ],
+                  "having": "type",
+                  "limit": 5
+                }
+                """);
+        assertThatThrownBy(() -> objectQueryService.execute(spec, "root.platform.queries.test"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("HAVING expression must yield boolean")
+                .hasMessageContaining("type");
+    }
+
+    @Test
+    @Transactional(readOnly = true)
+    void havingRejectsNonBooleanResultUnderMemberAcl() {
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.*",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"},
+                    {"name": "type", "source": "type", "alias": "row"}
+                  ],
+                  "having": "type",
+                  "limit": 5
+                }
+                """);
+        var operator = UsernamePasswordAuthenticationToken.authenticated("operator", "n/a", List.of());
+        assertThatThrownBy(() -> VariableAclRequestContext.callAsMember(
+                operator,
+                () -> objectQueryService.execute(spec, "root.platform.queries.test")
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("HAVING expression must yield boolean")
+                .hasMessageContaining("type");
+    }
+
+    @Test
+    void havingSkipsRowWhenMemberCannotReadReferencedVariable() {
+        String name = "oq-having-acl-" + System.nanoTime();
+        aclObjectPath = "root.platform.devices." + name;
+        objectManager.create("root.platform.devices", name, ObjectType.DEVICE, "having acl", "", null);
+        DataSchema schema = DataSchema.builder("secret").field("value", FieldType.DOUBLE).build();
+        objectManager.createVariable(
+                aclObjectPath,
+                "secret",
+                schema,
+                true,
+                true,
+                DataRecord.single(schema, Map.of("value", 8675309.0)),
+                true,
+                null,
+                List.of("engineer"),
+                List.of()
+        );
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "%s",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"},
+                    {"name": "secret", "ref": "{row}/secret/value"}
+                  ],
+                  "having": "input.secret == 8675309.0"
+                }
+                """.formatted(aclObjectPath));
+        var operator = UsernamePasswordAuthenticationToken.authenticated("operator", "n/a", List.of());
+
+        ObjectQueryResult memberResult = VariableAclRequestContext.callAsMember(
+                operator,
+                () -> objectQueryService.execute(spec, "root.platform")
+        );
+        assertThat(memberResult.rows()).isEmpty();
+        assertThat(objectQueryService.execute(spec, "root.platform").rows()).hasSize(1);
+    }
+
+    @Test
+    void orderByRejectsMixedTypesInColumn() {
+        String suffix = Long.toString(System.nanoTime());
+        String pathA = "root.platform.devices.oq-sort-a-" + suffix;
+        String pathB = "root.platform.devices.oq-sort-b-" + suffix;
+        objectManager.create("root.platform.devices", "oq-sort-a-" + suffix, ObjectType.DEVICE, "A", "", null);
+        objectManager.create("root.platform.devices", "oq-sort-b-" + suffix, ObjectType.DEVICE, "B", "", null);
+        createdPaths.add(pathA);
+        createdPaths.add(pathB);
+
+        DataSchema numeric = DataSchema.builder("sortKey").field("value", FieldType.DOUBLE).build();
+        DataSchema text = DataSchema.builder("sortKey").field("value", FieldType.STRING).build();
+        objectManager.createVariable(
+                pathA,
+                "sortKey",
+                numeric,
+                true,
+                true,
+                DataRecord.single(numeric, Map.of("value", 10.0)),
+                false,
+                null,
+                List.of(),
+                List.of()
+        );
+        objectManager.createVariable(
+                pathB,
+                "sortKey",
+                text,
+                true,
+                true,
+                DataRecord.single(text, Map.of("value", "2")),
+                false,
+                null,
+                List.of(),
+                List.of()
+        );
+
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.oq-sort-*-%s",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"},
+                    {"name": "sortKey", "ref": "{row}/sortKey/value"}
+                  ],
+                  "orderBy": [{"field": "sortKey", "dir": "asc"}]
+                }
+                """.formatted(suffix));
+
+        assertThatThrownBy(() -> objectQueryService.execute(spec, "root.platform.queries.test"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Cannot order by field 'sortKey'")
+                .hasMessageContaining("incompatible types");
+    }
+
+    @Test
+    void orderBySortsSameTypeNumbers() {
+        String suffix = Long.toString(System.nanoTime());
+        String pathLow = "root.platform.devices.oq-num-low-" + suffix;
+        String pathHigh = "root.platform.devices.oq-num-high-" + suffix;
+        objectManager.create("root.platform.devices", "oq-num-low-" + suffix, ObjectType.DEVICE, "low", "", null);
+        objectManager.create("root.platform.devices", "oq-num-high-" + suffix, ObjectType.DEVICE, "high", "", null);
+        createdPaths.add(pathLow);
+        createdPaths.add(pathHigh);
+
+        DataSchema numeric = DataSchema.builder("rank").field("value", FieldType.DOUBLE).build();
+        objectManager.createVariable(
+                pathLow,
+                "rank",
+                numeric,
+                true,
+                true,
+                DataRecord.single(numeric, Map.of("value", 2.0)),
+                false,
+                null,
+                List.of(),
+                List.of()
+        );
+        objectManager.createVariable(
+                pathHigh,
+                "rank",
+                numeric,
+                true,
+                true,
+                DataRecord.single(numeric, Map.of("value", 10.0)),
+                false,
+                null,
+                List.of(),
+                List.of()
+        );
+
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "root.platform.devices.oq-num-*-%s",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "path", "source": "path", "alias": "row"},
+                    {"name": "rank", "ref": "{row}/rank/value"}
+                  ],
+                  "orderBy": [{"field": "rank", "dir": "asc"}]
+                }
+                """.formatted(suffix));
+
+        ObjectQueryResult result = objectQueryService.execute(spec, "root.platform.queries.test");
+        assertThat(result.rowCount()).isEqualTo(2);
+        assertThat(result.rows().get(0).get("path")).isEqualTo(pathLow);
+        assertThat(result.rows().get(1).get("path")).isEqualTo(pathHigh);
+    }
+
+    @Test
     void memberQueryOmitsRestrictedLiveAndHistorianColumns() {
         String name = "oq-acl-" + System.nanoTime();
         aclObjectPath = "root.platform.devices." + name;
@@ -349,6 +649,36 @@ class ObjectQueryServiceTest {
         assertThatThrownBy(() -> objectQueryService.executeAggregate(spec, "max", "amount", "root.platform"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("no numeric values");
+    }
+
+    @Test
+    void scalarAggregateUsesFullMatchSetNotPage() {
+        String prefix = "oq-agg-page-" + System.nanoTime();
+        createAmountDevice(prefix + "-1", 1.0);
+        createAmountDevice(prefix + "-2", 2.0);
+        createAmountDevice(prefix + "-3", 3.0);
+        createAmountDevice(prefix + "-4", 4.0);
+        createAmountDevice(prefix + "-5", 5.0);
+        ObjectQuerySpec spec = new ObjectQuerySpecParser(objectMapper).parse("""
+                {
+                  "from": {
+                    "sourcePathPattern": "%s",
+                    "objectTypes": ["DEVICE"]
+                  },
+                  "fields": [
+                    {"name": "amount", "ref": "{row}/amount/value"}
+                  ],
+                  "limit": 2
+                }
+                """.formatted("root.platform.devices." + prefix + "-*"));
+
+        ObjectQueryResult table = objectQueryService.execute(spec, "root.platform");
+        assertThat(table.rows()).hasSize(2);
+        assertThat(table.rowCount()).isEqualTo(5);
+        assertThat(table.rowsTruncated()).isTrue();
+
+        assertThat(objectQueryService.executeAggregate(spec, "count", null, "root.platform")).isEqualTo(5);
+        assertThat(objectQueryService.executeAggregate(spec, "sum", "amount", "root.platform")).isEqualTo(15.0);
     }
 
     private ObjectQuerySpec amountSpec(String pattern) {

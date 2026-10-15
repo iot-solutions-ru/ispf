@@ -189,6 +189,11 @@ function StringListField({
   );
 }
 
+function keyValueRowsForEditor(value: unknown): { key: string; val: string }[] {
+  const rows = readKeyValue(value);
+  return rows.length > 0 ? rows : [{ key: "", val: "" }];
+}
+
 function KeyValueField({
   label,
   value,
@@ -203,10 +208,17 @@ function KeyValueField({
   valuePlaceholder?: string;
 }) {
   const { t } = useTranslation("inspector");
-  const pairs = readKeyValue(value);
+  const valueSnapshot = JSON.stringify(value ?? null);
+  const [pairs, setPairs] = useState(() => keyValueRowsForEditor(value));
+
+  useEffect(() => {
+    setPairs(keyValueRowsForEditor(JSON.parse(valueSnapshot)));
+  }, [valueSnapshot]);
 
   const commit = (rows: { key: string; val: string }[]) => {
-    onChange(writeKeyValue(rows));
+    const next = rows.length > 0 ? rows : [{ key: "", val: "" }];
+    setPairs(next);
+    onChange(writeKeyValue(next));
   };
 
   return (

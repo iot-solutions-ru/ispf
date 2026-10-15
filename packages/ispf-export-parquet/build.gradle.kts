@@ -22,6 +22,10 @@ dependencies {
         exclude(group = "ch.qos.reload4j", module = "reload4j")
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
         exclude(group = "log4j", module = "log4j")
+        // Hadoop ships Jetty 9.4.58 for its HttpServer; we only need FS/codec APIs for Parquet.
+        // No patched 9.4.x exists on Central past .58 (Trivy CVE-2026-2332 / CVE-2026-10050).
+        exclude(group = "org.eclipse.jetty")
+        exclude(group = "org.eclipse.jetty.websocket")
     }
 
     constraints {

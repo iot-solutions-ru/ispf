@@ -14,6 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -69,6 +70,26 @@ class ExpressionFunctionIntegrationTest {
         );
 
         assertThat(result.firstRow().get("result")).isEqualTo(42.0);
+    }
+
+    @Test
+    void invokeInvalidExpressionThrowsExpressionException() {
+        functionName = "exprBad" + System.nanoTime();
+        DataSchema inputSchema = DataSchema.builder("in").build();
+        DataSchema outputSchema = DataSchema.builder("out").field("value", FieldType.STRING).build();
+        objectManager.upsertFunction(DEVICE, new FunctionDescriptor(
+                functionName,
+                "Invalid expression",
+                inputSchema,
+                outputSchema,
+                "expression",
+                "no_such_name",
+                null,
+                null
+        ));
+
+        assertThatThrownBy(() -> functionService.invoke(DEVICE, functionName, DataRecord.empty(inputSchema)))
+                .hasMessageContaining("no_such_name");
     }
 
     @Test

@@ -33,7 +33,13 @@ public class ObjectTree {
         if (nodesByPath.putIfAbsent(node.path(), node) != null) {
             throw new IllegalArgumentException("Object already exists: " + node.path());
         }
-        nodesById.put(node.id(), node);
+        PlatformObject previousById = nodesById.putIfAbsent(node.id(), node);
+        if (previousById != null) {
+            nodesByPath.remove(node.path(), node);
+            throw new IllegalArgumentException(
+                    "Object id already registered: " + node.id() + " (existing path " + previousById.path() + ")"
+            );
+        }
         parentPathOf(node.path()).ifPresent(parent ->
                 childPathsByParent.computeIfAbsent(parent, ignored -> ConcurrentHashMap.newKeySet()).add(node.path())
         );
@@ -95,7 +101,17 @@ public class ObjectTree {
     }
 
     public String resolveChildPath(String parentPath, String name) {
-        return parentPath + "." + name;
+        if (parentPath == null || parentPath.isBlank()) {
+            throw new IllegalArgumentException("parentPath is required");
+        }
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("child name is required");
+        }
+        String trimmed = name.trim();
+        if (trimmed.indexOf('.') >= 0) {
+            throw new IllegalArgumentException("child name must not contain '.': " + name);
+        }
+        return parentPath + "." + trimmed;
     }
 
     public void delete(String path) {

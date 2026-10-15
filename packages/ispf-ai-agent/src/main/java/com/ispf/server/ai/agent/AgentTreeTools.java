@@ -46,7 +46,7 @@ final class AgentTreeTools {
     }
 
     static List<PlatformAgentTool> all(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService,
@@ -66,19 +66,19 @@ final class AgentTreeTools {
             ApplicationBundleDeployService bundleDeployService
     ) {
         return List.of(
-                listObjectsTool(ObjectTreePort, objectAccessService, tenantScopeService, objectUiIconService),
-                getObjectTool(ObjectTreePort, objectAccessService, tenantScopeService, objectUiIconService),
+                listObjectsTool(objectTreePort, objectAccessService, tenantScopeService, objectUiIconService),
+                getObjectTool(objectTreePort, objectAccessService, tenantScopeService, objectUiIconService),
                 listVariablesTool(
-                        ObjectTreePort,
+                        objectTreePort,
                         objectAccessService,
                         variableMemberAccessService,
                         tenantScopeService
                 ),
-                setVariableTool(ObjectTreePort, variableMemberAccessService, objectMapper),
-                configureDriverTool(ObjectTreePort, objectAccessService, driverRuntimeService, objectMapper),
+                setVariableTool(objectTreePort, variableMemberAccessService, objectMapper),
+                configureDriverTool(objectTreePort, objectAccessService, driverRuntimeService, objectMapper),
                 driverControlTool(objectAccessService, driverRuntimeService),
                 createObjectTool(
-                        ObjectTreePort,
+                        objectTreePort,
                         objectAccessService,
                         objectTemplateService,
                         dashboardService,
@@ -90,7 +90,7 @@ final class AgentTreeTools {
                         objectUiIconService
                 ),
                 deleteObjectTool(
-                        ObjectTreePort,
+                        objectTreePort,
                         objectAccessService,
                         tenantScopeService,
                         driverRuntimeService,
@@ -108,7 +108,7 @@ final class AgentTreeTools {
     }
 
     private static PlatformAgentTool listObjectsTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ObjectUiIconService objectUiIconService
@@ -142,7 +142,7 @@ final class AgentTreeTools {
                 Function<PlatformObject, ObjectDto> mapper = lite
                         ? node -> ObjectDto.fromLite(node, objectUiIconService.readIconId(node).orElse(null))
                         : node -> ObjectDto.from(node, objectUiIconService.readIconId(node).orElse(null));
-                List<ObjectDto> children = ObjectTreePort.tree().childrenOf(parent).stream()
+                List<ObjectDto> children = objectTreePort.tree().childrenOf(parent).stream()
                         .filter(node -> tenantScopeService.isPathVisible(node.path(), auth))
                         .filter(node -> objectAccessService.canRead(node.path(), auth))
                         .map(mapper)
@@ -153,7 +153,7 @@ final class AgentTreeTools {
     }
 
     private static PlatformAgentTool getObjectTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ObjectUiIconService objectUiIconService
@@ -180,7 +180,7 @@ final class AgentTreeTools {
                     return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
                 }
                 objectAccessService.requireRead(path, auth);
-                PlatformObject node = ObjectTreePort.require(path);
+                PlatformObject node = objectTreePort.require(path);
                 ObjectDto dto = ObjectDto.from(node, objectUiIconService.readIconId(node).orElse(null));
                 return Map.of("status", "OK", "object", dto);
             }
@@ -188,7 +188,7 @@ final class AgentTreeTools {
     }
 
     private static PlatformAgentTool createObjectTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             ObjectTemplateService objectTemplateService,
             DashboardService dashboardService,
@@ -225,7 +225,7 @@ final class AgentTreeTools {
                 }
                 ObjectType type = ObjectType.valueOf(typeRaw.trim().toUpperCase(Locale.ROOT));
                 var auth = context.authentication();
-                if (ObjectTreePort.tree().findByPath(parentPath).isEmpty()) {
+                if (objectTreePort.tree().findByPath(parentPath).isEmpty()) {
                     return Map.of(
                             "status", "ERROR",
                             "error", "Parent not found: " + parentPath,
@@ -235,8 +235,8 @@ final class AgentTreeTools {
                 }
                 objectAccessService.requireWrite(parentPath, auth);
                 federationBindService.assertParentAllowsChildren(parentPath);
-                String fullPath = ObjectTreePort.tree().resolveChildPath(parentPath, name);
-                if (ObjectTreePort.tree().findByPath(fullPath).isPresent()) {
+                String fullPath = objectTreePort.tree().resolveChildPath(parentPath, name);
+                if (objectTreePort.tree().findByPath(fullPath).isPresent()) {
                     return Map.of(
                             "status", "ERROR",
                             "error", "Object exists: " + fullPath,
@@ -247,7 +247,7 @@ final class AgentTreeTools {
                 }
                 String templateId = optionalString(arguments, "templateId");
                 String description = optionalString(arguments, "description");
-                PlatformObject node = ObjectTreePort.create(
+                PlatformObject node = objectTreePort.create(
                         parentPath,
                         name,
                         type,
@@ -279,9 +279,9 @@ final class AgentTreeTools {
                             intArg(arguments, "driverPollIntervalMs", 5000),
                             boolArg(arguments, "autoStartDriver", true)
                     );
-                    ObjectTreePort.persistNodeTree(node.path());
+                    objectTreePort.persistNodeTree(node.path());
                 }
-                PlatformObject saved = ObjectTreePort.require(node.path());
+                PlatformObject saved = objectTreePort.require(node.path());
                 ObjectDto created = ObjectDto.from(saved, objectUiIconService.readIconId(saved).orElse(null));
                 Map<String, Object> response = new LinkedHashMap<>();
                 response.put("status", "OK");
@@ -303,7 +303,7 @@ final class AgentTreeTools {
     }
 
     private static PlatformAgentTool deleteObjectTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             DriverRuntimeService driverRuntimeService,
@@ -338,7 +338,7 @@ final class AgentTreeTools {
                 }
                 objectAccessService.requireWrite(path, auth);
                 try {
-                    if (ObjectTreePort.tree().findByPath(path).isEmpty()) {
+                    if (objectTreePort.tree().findByPath(path).isEmpty()) {
                         return Map.of("status", "ERROR", "error", "Object not found: " + path);
                     }
                     if (platformUserService.isSecurityUserPath(path)) {
@@ -349,16 +349,16 @@ final class AgentTreeTools {
                         platformRoleService.deleteRole(platformRoleService.roleNameFromPath(path));
                         return Map.of("status", "OK", "path", path, "deleted", true);
                     }
-                    if (ObjectTreePort.tree().findByPath(path)
+                    if (objectTreePort.tree().findByPath(path)
                             .filter(node -> node.type() == ObjectType.CORRELATOR)
                             .isPresent()) {
                         automationTreeService.deleteCorrelator(path);
                         return Map.of("status", "OK", "path", path, "deleted", true);
                     }
-                    ObjectTreePort.tree().findByPath(path)
+                    objectTreePort.tree().findByPath(path)
                             .filter(node -> node.type() == ObjectType.DEVICE)
                             .ifPresent(node -> driverRuntimeService.stopIfRunning(path));
-                    ObjectTreePort.delete(path);
+                    objectTreePort.delete(path);
                     return Map.of("status", "OK", "path", path, "deleted", true);
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());
@@ -560,7 +560,7 @@ final class AgentTreeTools {
     }
 
     private static PlatformAgentTool listVariablesTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             VariableMemberAccessService variableMemberAccessService,
             TenantScopeService tenantScopeService
@@ -587,7 +587,7 @@ final class AgentTreeTools {
                     return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
                 }
                 objectAccessService.requireRead(path, auth);
-                PlatformObject node = ObjectTreePort.require(path);
+                PlatformObject node = objectTreePort.require(path);
                 List<Map<String, Object>> variables = variableMemberAccessService
                         .filterReadable(path, node.variables().values(), auth)
                         .stream()
@@ -611,7 +611,7 @@ final class AgentTreeTools {
     }
 
     private static PlatformAgentTool setVariableTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             VariableMemberAccessService variableMemberAccessService,
             ObjectMapper objectMapper
     ) {
@@ -635,7 +635,7 @@ final class AgentTreeTools {
                     return Map.of("status", "ERROR", "error", "path and name are required");
                 }
                 var auth = context.authentication();
-                PlatformObject node = ObjectTreePort.require(path);
+                PlatformObject node = objectTreePort.require(path);
                 Variable existing = node.getVariable(name)
                         .orElseThrow(() -> new IllegalArgumentException("Variable not found: " + name));
                 variableMemberAccessService.requireWrite(existing, path, auth);
@@ -650,7 +650,7 @@ final class AgentTreeTools {
                 }
                 try {
                     DataRecord record = toDataRecord(objectMapper, existing, rawValue);
-                    Variable updated = ObjectTreePort.setVariableValue(path, name, record);
+                    Variable updated = objectTreePort.setVariableValue(path, name, record);
                     return Map.of(
                             "status", "OK",
                             "path", path,
@@ -686,7 +686,7 @@ final class AgentTreeTools {
     }
 
     private static PlatformAgentTool configureDriverTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             DriverRuntimeService driverRuntimeService,
             ObjectMapper objectMapper
@@ -713,7 +713,7 @@ final class AgentTreeTools {
                 var auth = context.authentication();
                 objectAccessService.requireWrite(devicePath, auth);
                 try {
-                    ObjectTreePort.require(devicePath);
+                    objectTreePort.require(devicePath);
                     Optional<DriverBinding> existingBinding = driverRuntimeService.readBinding(devicePath);
                     Map<String, String> configuration = readStringMap(objectMapper, arguments.get("configuration"));
                     Map<String, String> pointMappings = readStringMap(objectMapper, arguments.get("pointMappings"));

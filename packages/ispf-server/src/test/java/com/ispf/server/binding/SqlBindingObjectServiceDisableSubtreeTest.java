@@ -9,6 +9,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.datasource.DataSourceSqlSession;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,8 @@ class SqlBindingObjectServiceDisableSubtreeTest {
     TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
     @Mock
     ObjectTree objectTree;
+    @Mock
+    AutomationMetricsRecorder metricsRecorder;
 
     private SqlBindingObjectService service;
 
@@ -53,7 +56,8 @@ class SqlBindingObjectServiceDisableSubtreeTest {
                 objectManager,
                 structureService,
                 dataSourceSqlSession,
-                tenantLocalDataAccessGuard
+                tenantLocalDataAccessGuard,
+                metricsRecorder
         );
         when(objectManager.tree()).thenReturn(objectTree);
     }

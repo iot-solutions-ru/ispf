@@ -1,5 +1,7 @@
 package com.ispf.server.federation;
 
+
+import java.util.Locale;
 public final class FederationPaths {
 
     public static final String FEDERATION_ROOT = "root.platform.federation";
@@ -17,7 +19,7 @@ public final class FederationPaths {
     }
 
     static String slug(String peerName) {
-        String normalized = peerName.trim().toLowerCase()
+        String normalized = peerName.trim().toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9-]+", "-")
                 .replaceAll("-{2,}", "-")
                 .replaceAll("^-|-$", "");

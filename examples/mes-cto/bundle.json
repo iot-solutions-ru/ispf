@@ -80,7 +80,7 @@
           "fields": [
             {
               "name": "optionsJson",
-              "type": "STRING"
+              "type": "STRING", "nullable": true
             },
             {
               "name": "finishCode",
@@ -134,7 +134,7 @@
           "fields": [
             {
               "name": "optionsJson",
-              "type": "STRING"
+              "type": "STRING", "nullable": true
             },
             {
               "name": "finishCode",

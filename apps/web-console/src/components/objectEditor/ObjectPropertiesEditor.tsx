@@ -45,6 +45,7 @@ import {
 } from "./variableHistoryModel";
 import type { VariableHistoryState } from "./variableHistoryModel";
 import { canDeleteObjectPath } from "../../utils/platform/platformSystemPaths";
+import { isBlueprintOwned } from "../../utils/platform/blueprintOwnership";
 import { filterUserVariableNames, isDeletableUserVariable, isHiddenObjectVariable } from "../../utils/platform/systemVariables";
 import { localizedSystemObjectDescription } from "../../utils/platform/systemFolderI18n";
 import CreateVariableDialog from "./CreateVariableDialog";
@@ -589,6 +590,9 @@ export default function ObjectPropertiesEditor({
   }
 
   const ctx = editorData.object;
+  const ownership = editorData.ownership;
+  const canDeleteVariable = (name: string) =>
+    isDeletableUserVariable(name) && !isBlueprintOwned(ownership, "variables", name);
   const appliedBlueprints = ctx.appliedBlueprints ?? [];
   const attachmentsByBlueprintId = new Map(
     (objectAttachmentsQuery.data ?? []).map((row) => [
@@ -1000,7 +1004,7 @@ export default function ObjectPropertiesEditor({
                       : undefined
                   }
                   onDelete={
-                    canManage && !ctx.federated && isDeletableUserVariable(variable.name)
+                    canManage && !ctx.federated && canDeleteVariable(variable.name)
                       ? () => {
                           if (confirm(t("common:action.confirmDeleteVariable", { name: variable.name }))) {
                             deleteVariableMutation.mutate(variable.name);
@@ -1093,18 +1097,20 @@ export default function ObjectPropertiesEditor({
                         <Button size="small" onClick={() => setDescriptorDialog({ kind: "event", initial: ev })}>
                           {t("common:action.edit")}
                         </Button>
-                        <Button
-                          size="small"
-                          danger
-                          disabled={deleteEventMutation.isPending}
-                          onClick={() => {
-                            if (confirm(t("common:action.confirmDeleteEvent", { name: ev.name }))) {
-                              deleteEventMutation.mutate(ev.name);
-                            }
-                          }}
-                        >
-                          {t("common:action.delete")}
-                        </Button>
+                        {!isBlueprintOwned(ownership, "events", ev.name) && (
+                          <Button
+                            size="small"
+                            danger
+                            disabled={deleteEventMutation.isPending}
+                            onClick={() => {
+                              if (confirm(t("common:action.confirmDeleteEvent", { name: ev.name }))) {
+                                deleteEventMutation.mutate(ev.name);
+                              }
+                            }}
+                          >
+                            {t("common:action.delete")}
+                          </Button>
+                        )}
                       </>
                     )}
                   </span>
@@ -1173,17 +1179,19 @@ export default function ObjectPropertiesEditor({
                         <Button size="small" onClick={() => setDescriptorDialog({ kind: "function", initial: fn })}>
                           {t("common:action.edit")}
                         </Button>
-                        <Button
-                          size="small"
-                          danger
-                          onClick={() => {
-                            if (confirm(t("common:action.confirmDeleteFunction", { name: fn.name }))) {
-                              deleteFunction(path, fn.name).then(() => reloadFromEditor());
-                            }
-                          }}
-                        >
-                          {t("common:action.delete")}
-                        </Button>
+                        {!isBlueprintOwned(ownership, "functions", fn.name) && (
+                          <Button
+                            size="small"
+                            danger
+                            onClick={() => {
+                              if (confirm(t("common:action.confirmDeleteFunction", { name: fn.name }))) {
+                                deleteFunction(path, fn.name).then(() => reloadFromEditor());
+                              }
+                            }}
+                          >
+                            {t("common:action.delete")}
+                          </Button>
+                        )}
                       </>
                     )}
                   </span>
@@ -1241,7 +1249,7 @@ export default function ObjectPropertiesEditor({
             setSettingsVariable(null);
           }}
           onDeleted={
-            canManage && !ctx.federated && isDeletableUserVariable(settingsVariable.name)
+            canManage && !ctx.federated && canDeleteVariable(settingsVariable.name)
               ? async () => {
                   setSettingsVariable(null);
                   await queryClient.invalidateQueries({ queryKey: ["variables", path] });

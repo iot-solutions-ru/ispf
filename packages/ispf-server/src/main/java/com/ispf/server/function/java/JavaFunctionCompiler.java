@@ -27,7 +27,7 @@ final class JavaFunctionCompiler {
     private JavaFunctionCompiler() {
     }
 
-    record CompiledArtifact(String className, byte[] bytecode) {
+    record CompiledArtifact(String className, Map<String, byte[]> classBytes) {
     }
 
     static CompiledArtifact compile(String source) {
@@ -65,15 +65,20 @@ final class JavaFunctionCompiler {
             throw new IllegalStateException("Java function compilation failed: " + ex.getMessage(), ex);
         }
 
-        ByteArrayOutputStream bytecodeStream = classBytes.get(className);
-        if (bytecodeStream == null) {
-            bytecodeStream = classBytes.get(className.substring(className.lastIndexOf('.') + 1));
+        Map<String, byte[]> bytecode = new LinkedHashMap<>();
+        for (Map.Entry<String, ByteArrayOutputStream> entry : classBytes.entrySet()) {
+            bytecode.put(entry.getKey(), entry.getValue().toByteArray());
         }
-        if (bytecodeStream == null) {
-            throw new IllegalArgumentException("Compiled class not found for " + className);
+        String resolvedName = className;
+        if (!bytecode.containsKey(resolvedName)) {
+            String simpleName = className.substring(className.lastIndexOf('.') + 1);
+            if (bytecode.containsKey(simpleName)) {
+                resolvedName = simpleName;
+            } else {
+                throw new IllegalArgumentException("Compiled class not found for " + className);
+            }
         }
-        byte[] bytecode = bytecodeStream.toByteArray();
-        return new CompiledArtifact(className, bytecode);
+        return new CompiledArtifact(resolvedName, Map.copyOf(bytecode));
     }
 
     static String normalizeSource(String source) {
@@ -97,7 +102,7 @@ final class JavaFunctionCompiler {
     static ObjectJavaFunction instantiate(CompiledArtifact artifact) {
         try {
             InMemoryClassLoader loader = new InMemoryClassLoader(
-                    Map.of(artifact.className(), artifact.bytecode()),
+                    artifact.classBytes(),
                     ObjectJavaFunction.class.getClassLoader()
             );
             Class<?> clazz = loader.loadClass(artifact.className());

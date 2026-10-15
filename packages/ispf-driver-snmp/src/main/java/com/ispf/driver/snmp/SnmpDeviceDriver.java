@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.Locale;
 /**
  * SNMP driver (v1/v2c/v3) — polls OIDs and maps values to ISPF object variables.
  * <p>
@@ -170,8 +171,11 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
             throw new IllegalArgumentException("SNMPv3 requires securityName");
         }
         SecurityProtocols.getInstance().addDefaultProtocols();
-        USM usm = new USM(SecurityProtocols.getInstance(), new OctetString(MPv3.createLocalEngineID()), 0);
-        SecurityModels.getInstance().addSecurityModel(usm);
+        // USM is a JVM-global SecurityModels singleton — register once, then add users.
+        if (SecurityModels.getInstance().getSecurityModel(new org.snmp4j.smi.Integer32(USM.SECURITY_MODEL_USM)) == null) {
+            USM usm = new USM(SecurityProtocols.getInstance(), new OctetString(MPv3.createLocalEngineID()), 0);
+            SecurityModels.getInstance().addSecurityModel(usm);
+        }
         snmp.getUSM().addUser(
                 new OctetString(securityName),
                 new UsmUser(
@@ -207,7 +211,7 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
 
     private static OID resolveAuthProtocol(String value) {
         // MD5 stays selectable via explicit config; anything else falls back to SHA.
-        return switch (value.toUpperCase()) {
+        return switch (value.toUpperCase(Locale.ROOT)) {
             case "MD5" -> AuthMD5.ID;
             default -> AuthSHA.ID;
         };
@@ -215,7 +219,7 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
 
     private static OID resolvePrivProtocol(String value) {
         // DES stays selectable via explicit config; anything else falls back to AES-128.
-        return switch (value.toUpperCase()) {
+        return switch (value.toUpperCase(Locale.ROOT)) {
             case "DES" -> PrivDES.ID;
             default -> PrivAES128.ID;
         };
@@ -302,15 +306,38 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
                 throw new DriverPermanentException("SNMP GET batch error: " + response.getErrorStatusText());
             }
 
+            Map<String, SnmpPoint> byOid = new LinkedHashMap<>();
+            Map<String, String> pointIdByOid = new LinkedHashMap<>();
+            for (Map.Entry<String, SnmpPoint> entry : entries) {
+                String oidKey = new OID(entry.getValue().oid()).toString();
+                byOid.put(oidKey, entry.getValue());
+                pointIdByOid.put(oidKey, entry.getKey());
+            }
             Map<String, DataRecord> results = new LinkedHashMap<>();
-            int bindings = Math.min(response.size(), entries.size());
-            for (int i = 0; i < bindings; i++) {
+            for (int i = 0; i < response.size(); i++) {
                 VariableBinding binding = response.get(i);
-                if (binding == null || binding.getVariable() == null || binding.getVariable() instanceof Null) {
+                if (binding == null || binding.getOid() == null
+                        || binding.getVariable() == null || binding.getVariable() instanceof Null) {
                     continue;
                 }
-                Map.Entry<String, SnmpPoint> entry = entries.get(i);
-                results.put(entry.getKey(), SnmpValueMapper.toRecord(binding.getVariable(), entry.getValue().valueKind()));
+                String responseOid = binding.getOid().toString();
+                SnmpPoint point = byOid.get(responseOid);
+                String pointId = pointIdByOid.get(responseOid);
+                if (point == null) {
+                    // Agents may return instance OIDs (… .0); match by prefix of requested OID.
+                    for (Map.Entry<String, SnmpPoint> candidate : byOid.entrySet()) {
+                        if (responseOid.equals(candidate.getKey())
+                                || responseOid.startsWith(candidate.getKey() + ".")) {
+                            point = candidate.getValue();
+                            pointId = pointIdByOid.get(candidate.getKey());
+                            break;
+                        }
+                    }
+                }
+                if (point == null || pointId == null) {
+                    continue;
+                }
+                results.put(pointId, SnmpValueMapper.toRecord(binding.getVariable(), point.valueKind()));
             }
             return results;
         } catch (DriverException e) {
@@ -393,7 +420,7 @@ public class SnmpDeviceDriver implements DeviceDriver, DriverDiscovery, DriverPo
     }
 
     private int parseVersion(String version) {
-        return switch (version.toLowerCase()) {
+        return switch (version.toLowerCase(Locale.ROOT)) {
             case "1", "v1" -> SnmpConstants.version1;
             case "3", "v3" -> SnmpConstants.version3;
             default -> SnmpConstants.version2c;

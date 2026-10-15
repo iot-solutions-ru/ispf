@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.util.Locale;
 /**
  * Platform binding: {@code fire(<eventRef>)} — side-effect binding returning true when dispatched.
  */
@@ -29,7 +30,7 @@ public final class FireRefBinding implements PlatformBinding {
             return false;
         }
         String trimmed = expression.trim();
-        if (!trimmed.toLowerCase().startsWith("fire(")) {
+        if (!trimmed.toLowerCase(Locale.ROOT).startsWith("fire(")) {
             return false;
         }
         Matcher matcher = PATTERN.matcher(trimmed);
@@ -59,6 +60,6 @@ public final class FireRefBinding implements PlatformBinding {
         return context.fireEvent(
                 eventRef.isCurrentObject() ? object.path() : eventRef.object(),
                 eventRef.name()
-        ).map(ignored -> Boolean.TRUE);
+        ).map(ignored -> true);
     }
 }

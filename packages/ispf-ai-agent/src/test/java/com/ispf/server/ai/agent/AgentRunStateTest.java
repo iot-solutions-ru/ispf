@@ -23,7 +23,7 @@ class AgentRunStateTest {
 
         try {
             for (int i = 0; i < threads; i++) {
-                executor.submit(() -> {
+                var _ = executor.submit(() -> {
                     try {
                         start.await(5, TimeUnit.SECONDS);
                         for (int j = 0; j < incrementsPerThread; j++) {

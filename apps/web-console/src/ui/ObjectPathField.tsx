@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Input, Select } from "antd";
+import { Button, Input, Select, Tooltip } from "antd";
 import type { ObjectType } from "../types";
 import ObjectTreePickerDialog from "./ObjectTreePickerDialog";
+import { joinCaptionHints, splitCaptionDetail } from "../utils/splitCaptionDetail";
 
 export interface ObjectPathOption {
   path: string;
@@ -18,6 +19,10 @@ export interface ObjectPathFieldProps {
   filterTypes?: ObjectType[];
   rootPath?: string;
   placeholder?: string;
+  /** Shown on the caption. The input itself stays empty. */
+  hint?: string;
+  /** Seconds before the caption tooltip appears. */
+  hintDelay?: number;
   disabled?: boolean;
   allowManual?: boolean;
   className?: string;
@@ -33,6 +38,8 @@ export default function ObjectPathField({
   filterTypes,
   rootPath,
   placeholder,
+  hint,
+  hintDelay,
   disabled = false,
   allowManual = true,
   className = "",
@@ -40,11 +47,22 @@ export default function ObjectPathField({
 }: ObjectPathFieldProps) {
   const { t } = useTranslation("common");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const caption = label ? splitCaptionDetail(label) : null;
+  const shownLabel = caption?.title ?? label;
+  const tooltip = joinCaptionHints(hint, caption?.detail);
+  const pickerDialogTitle = pickerTitle ? splitCaptionDetail(pickerTitle).title : pickerTitle;
 
   return (
     <>
       <label className={`object-path-field ${className}`.trim()} htmlFor={id}>
-        {label && <span className="field-caption">{label}</span>}
+        {shownLabel &&
+          (tooltip ? (
+            <Tooltip title={tooltip} mouseEnterDelay={hintDelay ?? 0.1}>
+              <span className="field-caption field-caption-hint">{shownLabel}</span>
+            </Tooltip>
+          ) : (
+            <span className="field-caption">{shownLabel}</span>
+          ))}
         <div className="object-path-field-controls">
           {objects && objects.length > 0 && (
             <Select
@@ -81,7 +99,7 @@ export default function ObjectPathField({
       </label>
       <ObjectTreePickerDialog
         open={pickerOpen}
-        title={pickerTitle}
+        title={pickerDialogTitle}
         onClose={() => setPickerOpen(false)}
         onSelect={onChange}
         filterTypes={filterTypes}

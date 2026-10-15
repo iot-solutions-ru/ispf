@@ -39,7 +39,7 @@ final class AgentActionTools {
     static List<PlatformAgentTool> all(
             FunctionService functionService,
             ApplicationFunctionStore functionStore,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             FunctionInvokeAccessService invokeAccessService,
             TenantScopeService tenantScopeService,
@@ -51,7 +51,7 @@ final class AgentActionTools {
         return List.of(
                 invokeBffTool(functionService, functionStore, invokeAccessService, objectMapper),
                 invokeTreeFunctionTool(functionService, invokeAccessService, objectMapper),
-                searchObjectsTool(ObjectTreePort, objectAccessService, tenantScopeService),
+                searchObjectsTool(objectTreePort, objectAccessService, tenantScopeService),
                 searchHaystackTagsTool(haystackExportService, objectAccessService, tenantScopeService),
                 listObjectBlueprintsTool(blueprintRegistry),
                 fireEventTool(eventService, objectAccessService),
@@ -172,7 +172,7 @@ final class AgentActionTools {
     }
 
     private static PlatformAgentTool searchObjectsTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -201,7 +201,7 @@ final class AgentActionTools {
 
                 var auth = context.authentication();
                 List<Map<String, Object>> matches = new ArrayList<>();
-                for (PlatformObject node : ObjectTreePort.tree().all()) {
+                for (PlatformObject node : objectTreePort.tree().all()) {
                     if (matches.size() >= limit) {
                         break;
                     }

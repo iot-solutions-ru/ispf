@@ -1,5 +1,7 @@
 package com.ispf.driver.bacnet.codec;
 
+
+import java.util.Locale;
 /**
  * BACnet object types supported by the clean-room driver codec.
  */
@@ -48,7 +50,7 @@ public enum BacnetObjectType {
     }
 
     public static BacnetObjectType fromName(String name) {
-        String normalized = name.trim().toLowerCase().replace('_', '-');
+        String normalized = name.trim().toLowerCase(Locale.ROOT).replace('_', '-');
         for (BacnetObjectType type : values()) {
             if (type.protocolName.equals(normalized)) {
                 return type;

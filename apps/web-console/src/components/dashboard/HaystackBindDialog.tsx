@@ -9,7 +9,7 @@ import {
   type HaystackTagSearchMatch,
 } from "../../api/haystackSearch";
 import type { DashboardLayout, DashboardWidget } from "../../types/dashboard";
-import { newWidget } from "../../types/dashboard";
+import { DASHBOARD_COLUMNS, newWidget } from "../../types/dashboard";
 import { nextWidgetZIndex } from "./widgetLayerUtils";
 
 interface HaystackBindDialogProps {
@@ -34,7 +34,7 @@ function appendValueWidgets(
   if (pointMatches.length === 0) {
     return layout;
   }
-  const columns = layout.columns ?? 12;
+  const columns = layout.columns ?? DASHBOARD_COLUMNS;
   const widgetW = 4;
   const widgetH = 2;
   const baseY = layout.widgets.reduce((max, widget) => Math.max(max, widget.y + widget.h), 0);

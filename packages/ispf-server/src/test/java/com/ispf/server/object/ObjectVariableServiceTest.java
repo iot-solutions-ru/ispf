@@ -8,6 +8,7 @@ import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.function.java.JavaFunctionRuntimeService;
 import com.ispf.server.persistence.ObjectEntityMapper;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Map;
 
@@ -25,6 +27,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -57,13 +61,14 @@ class ObjectVariableServiceTest {
         objectTree.register(new PlatformObject("devices", "root.devices", ObjectType.DEVICES, "Devices", "", null));
         node = new PlatformObject("pump", PATH, ObjectType.DEVICE, "Pump", "", null);
         objectTree.register(node);
-        when(objectManager.tree()).thenReturn(objectTree);
+        lenient().when(objectManager.tree()).thenReturn(objectTree);
         variableService = new ObjectVariableService(
                 objectManager,
                 variableRepository,
                 mapper,
                 telemetryPolicyService,
-                javaFunctionRuntimeService
+                javaFunctionRuntimeService,
+                new FunctionScriptValidator(new ObjectMapper())
         );
     }
 
@@ -142,6 +147,48 @@ class ObjectVariableServiceTest {
         verify(javaFunctionRuntimeService).syncOnSave(PATH, function, null);
         verify(objectManager).persistNodeConfig(eq(node), eq("UPSERT_FUNCTION"), eq("ping"), any());
         verify(objectManager).publishConfigChange(eq(ObjectChangeType.UPDATED), eq(PATH), any(Long.class));
+    }
+
+    @Test
+    void upsertFunctionRejectsInvalidScriptBeforeSaving() {
+        FunctionDescriptor function = new FunctionDescriptor(
+                "listRows",
+                "List rows",
+                null,
+                null,
+                "script",
+                "{\"steps\":[{\"type\":\"selectAll\",\"var\":\"rows\",\"sql\":\"SELECT 1\"}]}",
+                null,
+                null
+        );
+
+        assertThatThrownBy(() -> variableService.upsertFunction(PATH, function))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("listRows")
+                .hasMessageContaining("Unknown script step type: selectAll");
+        assertThat(node.functions()).doesNotContainKey("listRows");
+        verify(javaFunctionRuntimeService, never()).syncOnSave(any(), any(), any());
+        verify(objectManager, never()).persistNodeConfig(any(), any(), any(), any());
+    }
+
+    @Test
+    void upsertFunctionSavesValidScript() {
+        FunctionDescriptor function = new FunctionDescriptor(
+                "ok",
+                "Ok",
+                null,
+                null,
+                "script",
+                "{\"steps\":[{\"type\":\"return\",\"fields\":{\"ok\":true}}]}",
+                null,
+                null
+        );
+        when(mapper.auditDiff(any(), any())).thenReturn("{}");
+
+        variableService.upsertFunction(PATH, function);
+
+        assertThat(node.functions()).containsKey("ok");
+        verify(objectManager).persistNodeConfig(eq(node), eq("UPSERT_FUNCTION"), eq("ok"), any());
     }
 
     @Test

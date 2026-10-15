@@ -82,6 +82,6 @@ public class NatsObjectChangeSubscriber {
         if (message == null) {
             return;
         }
-        replicaEventProcessor.offer(message.getData());
+        replicaEventProcessor.offer(message.getData(), ReplicaDelivery.of(message));
     }
 }

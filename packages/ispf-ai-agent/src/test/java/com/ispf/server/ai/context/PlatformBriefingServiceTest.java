@@ -36,7 +36,7 @@ class PlatformBriefingServiceTest {
     @Mock
     private ApplicationBundleSnapshotStore bundleSnapshotStore;
     @Mock
-    private ObjectTreePort ObjectTreePort;
+    private ObjectTreePort objectTreePort;
     @Mock
     private ObjectTree objectTree;
 
@@ -52,7 +52,7 @@ class PlatformBriefingServiceTest {
                 driverCatalog,
                 applicationDataStore,
                 bundleSnapshotStore,
-                ObjectTreePort,
+                objectTreePort,
                 new ConcurrentMapCacheManager("platformBriefing"),
                 new PlatformBriefingCacheEpoch(),
                 Optional.empty()
@@ -87,7 +87,7 @@ class PlatformBriefingServiceTest {
                         true
                 )
         ));
-        when(ObjectTreePort.tree()).thenReturn(objectTree);
+        when(objectTreePort.tree()).thenReturn(objectTree);
         when(objectTree.all()).thenReturn(List.of(
                 new PlatformObject("dev1", "root.platform.devices.pump-1", ObjectType.DEVICE, "Pump 1", "", null)
         ));

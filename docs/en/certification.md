@@ -4,6 +4,8 @@
 
 Curriculum and exam stubs for ISPF certification. Labs below are runnable today on lab/VPS hosts.
 
+**Before the track:** follow [Learn ISPF](learn.md) Path A (first hour) so the tree / hub / bundle vocabulary is in place.
+
 Aligns with [partner-program](partner-program.md) commercial tiers.
 
 ---

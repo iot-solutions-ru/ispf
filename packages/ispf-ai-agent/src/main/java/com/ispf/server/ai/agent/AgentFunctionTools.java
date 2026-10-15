@@ -23,19 +23,19 @@ final class AgentFunctionTools {
     }
 
     static List<PlatformAgentTool> all(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ObjectMapper objectMapper
     ) {
         return List.of(
-                deployTreeFunctionTool(ObjectTreePort, objectAccessService, tenantScopeService, objectMapper),
+                deployTreeFunctionTool(objectTreePort, objectAccessService, tenantScopeService, objectMapper),
                 getFunctionTemplateTool()
         );
     }
 
     private static PlatformAgentTool deployTreeFunctionTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ObjectMapper objectMapper
@@ -104,7 +104,7 @@ final class AgentFunctionTools {
                             dataSourcePath,
                             version
                     );
-                    FunctionDescriptor saved = ObjectTreePort.upsertFunction(path, descriptor);
+                    FunctionDescriptor saved = objectTreePort.upsertFunction(path, descriptor);
                     Map<String, Object> response = new LinkedHashMap<>();
                     response.put("status", "OK");
                     response.put("path", path);

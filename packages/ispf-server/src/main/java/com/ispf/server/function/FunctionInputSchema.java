@@ -13,8 +13,8 @@ import java.util.Map;
 
 /**
  * Projects function invoke input onto the descriptor {@code inputSchema}:
- * client schema is ignored, extra fields are dropped, values are coerced like script output.
- * A missing value uses the same default as script coercion so a partial row still matches the contract.
+ * client schema is ignored, extra fields are dropped, required fields must be present,
+ * and values are coerced like script output.
  */
 public final class FunctionInputSchema {
 
@@ -54,7 +54,11 @@ public final class FunctionInputSchema {
         Map<String, Object> normalized = new LinkedHashMap<>();
         Map<String, Object> values = source != null ? source : Map.of();
         for (FieldDefinition field : schema.fields()) {
-            normalized.put(field.name(), ScriptFieldCoercion.coerce(field, values.get(field.name())));
+            Object value = values.get(field.name());
+            if (value == null && !field.nullable()) {
+                throw new IllegalArgumentException("Required field missing: " + field.name());
+            }
+            normalized.put(field.name(), ScriptFieldCoercion.coerce(field, value));
         }
         return normalized;
     }

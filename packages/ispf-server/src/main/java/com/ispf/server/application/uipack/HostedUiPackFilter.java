@@ -15,6 +15,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import java.util.Locale;
 /**
  * ADR-0054: serve installed UI packs at {@code GET /apps/<appId>/**} with SPA fallback.
  */
@@ -105,7 +106,7 @@ public class HostedUiPackFilter extends OncePerRequestFilter {
         if (probed != null && !probed.isBlank()) {
             return probed;
         }
-        String name = asset.getFileName().toString().toLowerCase();
+        String name = asset.getFileName().toString().toLowerCase(Locale.ROOT);
         if (name.endsWith(".html") || name.endsWith(".htm")) {
             return MediaType.TEXT_HTML_VALUE;
         }

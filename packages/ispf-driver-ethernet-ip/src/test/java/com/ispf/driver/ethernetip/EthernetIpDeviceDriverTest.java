@@ -164,7 +164,7 @@ class EthernetIpDeviceDriverTest {
         serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         port = serverSocket.getLocalPort();
         executor = Executors.newSingleThreadExecutor();
-        executor.submit(() -> {
+        var _ = executor.submit(() -> {
             try (Socket client = serverSocket.accept()) {
                 client.setSoTimeout(10000);
                 DataInputStream in = new DataInputStream(client.getInputStream());

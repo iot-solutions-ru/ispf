@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 
+import java.util.Locale;
 @Component
 public class NatsEventBridge implements WorkflowMessageBus {
 
@@ -64,7 +65,7 @@ public class NatsEventBridge implements WorkflowMessageBus {
         }
         try {
             if (!event.telemetry()) {
-                String subject = "ispf.object." + sanitize(event.path()) + "." + event.type().name().toLowerCase();
+                String subject = "ispf.object." + sanitize(event.path()) + "." + event.type().name().toLowerCase(Locale.ROOT);
                 connection.publish(subject, buildPayload(event));
             }
             if (!properties.replicaEventsEnabled()) {
@@ -80,7 +81,7 @@ public class NatsEventBridge implements WorkflowMessageBus {
             if (shouldSkipStructuralReplicaFanout(event)) {
                 return;
             }
-            publishReplicaFanout("ispf.events." + event.type().name().toLowerCase(), buildPayload(event));
+            publishReplicaFanout("ispf.events." + event.type().name().toLowerCase(Locale.ROOT), buildPayload(event));
         } catch (Exception e) {
             log.warn("Failed to publish NATS event for {}: {}", event.path(), e.getMessage());
         }

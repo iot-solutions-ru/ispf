@@ -83,12 +83,14 @@ public class PlatformSelfDiagnosticsBootstrap {
     @Transactional
     public void ensureSelfDiagnostics() {
         if (!properties.isEnsureOnStartup()) {
+            probeService.markBootstrapSkipped();
             return;
         }
         try {
             ensureProbeDevice();
             ensureProbeVariables();
             ensureDashboard();
+            probeService.markBootstrapOk();
             if (properties.isEnabled()) {
                 probeService.setDiagnosticsProbeEnabled(true);
             }
@@ -99,7 +101,8 @@ public class PlatformSelfDiagnosticsBootstrap {
                     properties.isEnabled()
             );
         } catch (RuntimeException ex) {
-            log.warn("Self-diagnostics bootstrap skipped: {}", ex.getMessage());
+            probeService.markBootstrapFailure(ex);
+            log.error("Self-diagnostics bootstrap failed; contour left not ready: {}", ex.getMessage());
         }
     }
 

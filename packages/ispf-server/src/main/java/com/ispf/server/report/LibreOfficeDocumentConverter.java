@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import java.util.Locale;
 @Component
 public class LibreOfficeDocumentConverter {
 
@@ -104,7 +105,7 @@ public class LibreOfficeDocumentConverter {
         if (extension == null || extension.isBlank()) {
             return fallback;
         }
-        return extension.trim().toLowerCase().replaceFirst("^\\.", "");
+        return extension.trim().toLowerCase(Locale.ROOT).replaceFirst("^\\.", "");
     }
 
     private static void deleteRecursively(Path tempDir) {
@@ -126,6 +127,6 @@ public class LibreOfficeDocumentConverter {
     }
 
     private static boolean isWindows() {
-        return System.getProperty("os.name", "").toLowerCase().contains("win");
+        return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
     }
 }

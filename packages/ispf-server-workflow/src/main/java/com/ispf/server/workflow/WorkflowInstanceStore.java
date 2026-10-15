@@ -144,12 +144,8 @@ public class WorkflowInstanceStore {
     }
 
     private String resolveOperatorAppId(String workflowPath) {
-        try {
-            PlatformObject workflow = objects.require(workflowPath);
-            return readString(workflow, "operatorAppId").orElse(null);
-        } catch (Exception ignored) {
-            return null;
-        }
+        PlatformObject workflow = objects.require(workflowPath);
+        return readString(workflow, "operatorAppId").orElse(null);
     }
 
     private void flushPendingSteps(WorkflowInstance instance) {
@@ -186,7 +182,7 @@ public class WorkflowInstanceStore {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (Exception e) {
-            return "{}";
+            throw new IllegalStateException("Failed to serialize workflow step", e);
         }
     }
 

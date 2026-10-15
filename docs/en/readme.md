@@ -11,6 +11,7 @@
 
 ## Start here (≈15 min)
 
+0. **[Learn ISPF](learn.md)** — transparent learning map (first hour → first solution → by role)  
 1. [Getting started — Try ISPF](getting-started.md#try-ispf-15-minutes) — local API + Web Console  
 2. [Product overview](product.md) — what the platform is for  
 3. [Object model](object-model.md) — the tree (devices, dashboards, rules as nodes)  
@@ -24,6 +25,7 @@ Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.de
 
 | I am… | Read next |
 |-------|-----------|
+| **Learning / teaching** | **[Learn ISPF](learn.md)** → [Certification](certification.md) |
 | **Trying the product** | [Getting started](getting-started.md) → [Operator guide](operator-guide.md) |
 | **Building a solution / bundle** | [Solution developer guide](solution-developer-guide.md) · [Applications](applications.md) · [Application principles](application-principles.md) · [External AI IDE](external-ide.md) |
 | **Wiring OT / drivers** | [Drivers](drivers.md) · [Driver DDK](driver-ddk.md) · [Field pilot](field-pilot-playbook.md) |
@@ -70,6 +72,7 @@ Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in t
 
 | Document | Status | Description |
 |----------|--------|-------------|
+| [Learn ISPF](learn.md) | Stable | Transparent entry: paths, tutorials, topic map |
 | [Getting started](getting-started.md) | Stable | Try ISPF + contributor QA |
 | [Architecture](architecture.md) | Stable | Vision, layers, extensibility |
 | [Object model](object-model.md) | Stable | Tree, variables, events, functions |

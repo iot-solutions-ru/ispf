@@ -45,7 +45,7 @@ final class AgentAutomationTools {
     static List<PlatformAgentTool> all(
             AutomationTreeService automationTreeService,
             OperatorAppUiService operatorAppUiService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             BindingRulesService bindingRulesService,
@@ -58,18 +58,18 @@ final class AgentAutomationTools {
         return List.of(
                 configureAlertTool(
                         automationTreeService,
-                        ObjectTreePort,
+                        objectTreePort,
                         objectAccessService,
                         tenantScopeService,
                         formalVerificationService
                 ),
-                configureCorrelatorTool(automationTreeService, ObjectTreePort, objectAccessService, tenantScopeService),
+                configureCorrelatorTool(automationTreeService, objectTreePort, objectAccessService, tenantScopeService),
                 listAutomationTool(automationTreeService, objectAccessService, tenantScopeService),
                 getAutomationSchemaTool(recipeCatalog),
                 searchPlatformRecipesTool(recipeCatalog),
-                createVariableTool(ObjectTreePort, objectAccessService, tenantScopeService, objectMapper),
+                createVariableTool(objectTreePort, objectAccessService, tenantScopeService, objectMapper),
                 createBindingRuleTool(
-                        ObjectTreePort,
+                        objectTreePort,
                         objectAccessService,
                         tenantScopeService,
                         bindingRulesService,
@@ -78,7 +78,7 @@ final class AgentAutomationTools {
                         formalVerificationService
                 ),
                 verifyCelConditionTool(formalVerificationService),
-                configureVariableHistoryTool(ObjectTreePort, objectAccessService, tenantScopeService),
+                configureVariableHistoryTool(objectTreePort, objectAccessService, tenantScopeService),
                 configureOperatorUiTool(operatorAppUiService)
         );
     }
@@ -119,7 +119,7 @@ final class AgentAutomationTools {
 
     private static PlatformAgentTool configureAlertTool(
             AutomationTreeService automationTreeService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ExpressionFormalVerificationService formalVerificationService
@@ -154,9 +154,9 @@ final class AgentAutomationTools {
                     if (path.isBlank()) {
                         automationTreeService.ensurePlatformFolders();
                         path = AutomationTreeService.rulePathForName(name);
-                        if (ObjectTreePort.tree().findByPath(path).isEmpty()) {
+                        if (objectTreePort.tree().findByPath(path).isEmpty()) {
                             objectAccessService.requireWrite(AutomationTreeService.ALERT_RULES_ROOT, auth);
-                            ObjectTreePort.create(
+                            objectTreePort.create(
                                     AutomationTreeService.ALERT_RULES_ROOT,
                                     AutomationTreeService.slugify(name),
                                     ObjectType.ALERT,
@@ -199,7 +199,7 @@ final class AgentAutomationTools {
                             formalVerificationService.requireSafeConditionForApply(conditionExpr);
 
                     String displayName = name.isBlank()
-                            ? ObjectTreePort.require(path).displayName()
+                            ? objectTreePort.require(path).displayName()
                             : name;
                     AlertRule updated = automationTreeService.updateAlertRule(
                             path,
@@ -240,7 +240,7 @@ final class AgentAutomationTools {
 
     private static PlatformAgentTool configureCorrelatorTool(
             AutomationTreeService automationTreeService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -271,9 +271,9 @@ final class AgentAutomationTools {
                     if (path.isBlank()) {
                         automationTreeService.ensurePlatformFolders();
                         path = AutomationTreeService.correlatorPathForName(name);
-                        if (ObjectTreePort.tree().findByPath(path).isEmpty()) {
+                        if (objectTreePort.tree().findByPath(path).isEmpty()) {
                             objectAccessService.requireWrite(AutomationTreeService.CORRELATORS_ROOT, auth);
-                            ObjectTreePort.create(
+                            objectTreePort.create(
                                     AutomationTreeService.CORRELATORS_ROOT,
                                     AutomationTreeService.slugify(name),
                                     ObjectType.CORRELATOR,
@@ -323,7 +323,7 @@ final class AgentAutomationTools {
                     Boolean enabled = boolArg(arguments, "enabled", null);
 
                     String displayName = name.isBlank()
-                            ? ObjectTreePort.require(path).displayName()
+                            ? objectTreePort.require(path).displayName()
                             : name;
                     EventCorrelator updated = automationTreeService.updateCorrelator(
                             path,
@@ -568,7 +568,7 @@ final class AgentAutomationTools {
     }
 
     private static PlatformAgentTool createVariableTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ObjectMapper objectMapper
@@ -604,7 +604,7 @@ final class AgentAutomationTools {
                 }
                 objectAccessService.requireWrite(path, auth);
                 try {
-                    PlatformObject node = ObjectTreePort.require(path);
+                    PlatformObject node = objectTreePort.require(path);
                     if (node.getVariable(name).isPresent()) {
                         return Map.of("status", "ERROR", "error", "Variable already exists: " + name);
                     }
@@ -619,7 +619,7 @@ final class AgentAutomationTools {
                     if (rawInitial != null) {
                         initialValue = toInitialRecord(objectMapper, schema, rawInitial);
                     }
-                    Variable created = ObjectTreePort.createVariable(
+                    Variable created = objectTreePort.createVariable(
                             path,
                             name,
                             schema,
@@ -641,7 +641,7 @@ final class AgentAutomationTools {
     }
 
     private static PlatformAgentTool createBindingRuleTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             BindingRulesService bindingRulesService,
@@ -703,7 +703,7 @@ final class AgentAutomationTools {
                 }
                 objectAccessService.requireWrite(path, auth);
                 try {
-                    ObjectTreePort.require(path);
+                    objectTreePort.require(path);
                     // Historian helpers (avg/min/max/…) are not plain CEL — skip reactive CEL compile.
                     if (ruleKind != BindingRuleKind.HISTORIAN) {
                         BindingExpressionValidator.validateOrThrow(expression);
@@ -858,7 +858,7 @@ final class AgentAutomationTools {
     }
 
     private static PlatformAgentTool configureVariableHistoryTool(
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -893,7 +893,7 @@ final class AgentAutomationTools {
                 objectAccessService.requireWrite(path, auth);
                 try {
                     Integer retentionDays = intArg(arguments, "historyRetentionDays", null);
-                    Variable updated = ObjectTreePort.updateVariableHistory(
+                    Variable updated = objectTreePort.updateVariableHistory(
                             path,
                             name,
                             historyEnabled,

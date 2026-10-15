@@ -4,6 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.server.datasource.DataSourceSqlSession;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,8 @@ class SqlBindingObjectServiceMissingTargetTest {
     TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
     @Mock
     JdbcTemplate jdbcTemplate;
+    @Mock
+    AutomationMetricsRecorder metricsRecorder;
 
     @Test
     void missingTargetObjectIsSoftFailedAndDisabledOnce() {
@@ -122,7 +125,8 @@ class SqlBindingObjectServiceMissingTargetTest {
                 objectManager,
                 structureService,
                 dataSourceSqlSession,
-                tenantLocalDataAccessGuard
+                tenantLocalDataAccessGuard,
+                metricsRecorder
         );
     }
 

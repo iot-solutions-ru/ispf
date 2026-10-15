@@ -55,6 +55,12 @@ public class BindingRulesStartupRunner {
                 dependencyIndex.rebuild(path);
             } catch (ObjectNotFoundException ex) {
                 log.debug("Skip binding dependency rebuild for missing object {}: {}", path, ex.getMessage());
+            } catch (RuntimeException ex) {
+                log.error(
+                        "Binding dependency rebuild failed for {} and was skipped so the server can finish starting: {}",
+                        path,
+                        ex.getMessage()
+                );
             }
         }
         periodicScheduleRegistry.clearAll();
@@ -67,6 +73,12 @@ public class BindingRulesStartupRunner {
                 periodicScheduleRegistry.syncObject(path, reactive);
             } catch (ObjectNotFoundException ex) {
                 log.debug("Skip binding schedule for missing object {}: {}", path, ex.getMessage());
+            } catch (RuntimeException ex) {
+                log.error(
+                        "Binding schedule sync failed for {} and was skipped so the server can finish starting: {}",
+                        path,
+                        ex.getMessage()
+                );
             }
         }
         periodicScheduler.reschedule();

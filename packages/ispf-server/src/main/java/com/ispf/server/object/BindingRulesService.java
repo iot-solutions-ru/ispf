@@ -4,14 +4,18 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.analytics.engine.AnalyticsTagDefinition;
 import com.ispf.core.binding.BindingActivators;
+import com.ispf.core.binding.BindingCascadeAnalyzer;
 import com.ispf.core.binding.BindingRule;
 import com.ispf.core.binding.BindingRuleKind;
 import com.ispf.core.binding.BindingRulesConstants;
 import com.ispf.core.binding.BindingTarget;
 import com.ispf.core.binding.BindingVariableRef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.core.object.BlueprintOwnedMember;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
@@ -42,6 +46,8 @@ import java.util.Objects;
 
 @Service
 public class BindingRulesService {
+
+    private static final Logger log = LoggerFactory.getLogger(BindingRulesService.class);
 
     private static final DataSchema RULES_SCHEMA = DataSchema.builder("bindingRulesJson")
             .field("value", FieldType.STRING)
@@ -108,11 +114,15 @@ public class BindingRulesService {
 
     public List<BindingRule> saveRules(String objectPath, List<BindingRule> rules) {
         synchronized (rulesLocks.computeIfAbsent(objectPath, ignored -> new Object())) {
+            assertOwnedRulesRetained(objectPath, rules);
             List<BindingRule> normalized = normalizeRules(rules).stream()
                     .map(bindingFormulaResolver::resolve)
                     .toList();
             for (BindingRule rule : normalized) {
                 validateRule(objectPath, rule);
+            }
+            for (String warning : BindingCascadeAnalyzer.warnings(normalized)) {
+                log.warn("[binding:{}] {}", objectPath, warning);
             }
             boolean historianChanged = normalized.stream().anyMatch(BindingRule::isHistorian);
             writeRules(objectPath, normalized);
@@ -143,6 +153,7 @@ public class BindingRulesService {
     }
 
     public void deleteRule(String objectPath, String ruleId) {
+        BlueprintOwnedMember.assertDeletableBindingRule(objectManager.require(objectPath), ruleId);
         List<BindingRule> rules = listRules(objectPath).stream()
                 .filter(rule -> !rule.id().equals(ruleId))
                 .toList();
@@ -164,6 +175,16 @@ public class BindingRulesService {
         return activators.stream()
                 .map(BindingVariableRef::normalize)
                 .toList();
+    }
+
+    private void assertOwnedRulesRetained(String objectPath, List<BindingRule> incoming) {
+        PlatformObject node = objectManager.require(objectPath);
+        Set<String> incomingIds = incoming.stream().map(BindingRule::id).collect(Collectors.toSet());
+        for (BindingRule current : readRules(node)) {
+            if (!incomingIds.contains(current.id())) {
+                BlueprintOwnedMember.assertDeletableBindingRule(node, current.id());
+            }
+        }
     }
 
     private void validateRule(String objectPath, BindingRule rule) {

@@ -8,6 +8,7 @@ import com.ispf.core.ref.PlatformRef;
 import com.ispf.core.ref.PlatformRefKind;
 import com.ispf.core.ref.PlatformRefParser;
 import com.ispf.expression.ExpressionEngine;
+import com.ispf.expression.ExpressionException;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.query.oq.ObjectQueryAggregateSpec;
 import com.ispf.server.query.oq.ObjectQueryExpandSpec;
@@ -22,6 +23,7 @@ import com.ispf.server.ref.PlatformRefExecutor;
 import com.ispf.server.ref.PlatformRefResolver;
 import com.ispf.server.security.acl.VariableAclRequestContext;
 import com.ispf.server.security.acl.VariableMemberAccessService;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -34,6 +36,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Set;
 
+import java.util.Locale;
 @Service
 public class ObjectQueryService {
 
@@ -61,6 +64,28 @@ public class ObjectQueryService {
     }
 
     public ObjectQueryResult execute(ObjectQuerySpec spec, String ruleObjectPath) {
+        List<Map<String, Object>> matched = executeMatchedRows(spec, ruleObjectPath);
+        int total = matched.size();
+        List<Map<String, Object>> page = paginate(matched, spec.limit(), spec.offset());
+        boolean truncated = page.size() < total;
+        return new ObjectQueryResult(List.copyOf(page), total, truncated);
+    }
+
+    public Object executeAggregate(ObjectQuerySpec spec, String aggregate, String field, String ruleObjectPath) {
+        List<Map<String, Object>> rows = executeMatchedRows(spec, ruleObjectPath);
+        String fn = aggregate != null ? aggregate.trim().toLowerCase(Locale.ROOT) : "count";
+        return switch (fn) {
+            case "count" -> rows.size();
+            case "sum" -> sumField(rows, requireField(field));
+            case "avg" -> avgField(rows, requireField(field));
+            case "min" -> minField(rows, requireField(field));
+            case "max" -> maxField(rows, requireField(field));
+            case "first" -> firstField(rows, requireField(field));
+            default -> throw new IllegalArgumentException("Unsupported OQ aggregate: " + aggregate);
+        };
+    }
+
+    private List<Map<String, Object>> executeMatchedRows(ObjectQuerySpec spec, String ruleObjectPath) {
         if (spec == null || spec.from() == null) {
             throw new IllegalArgumentException("OQ spec requires from");
         }
@@ -88,25 +113,9 @@ public class ObjectQueryService {
                 rows.add(buildProjectedRow(queryNode, null, drivingAlias, spec, ruleObjectPath));
             }
         }
-        rows = applyHaving(rows, spec.having());
         rows = applyGroupBy(rows, spec);
-        rows = sortRows(rows, spec.orderBy());
-        rows = paginate(rows, spec.limit(), spec.offset());
-        return new ObjectQueryResult(List.copyOf(rows), rows.size());
-    }
-
-    public Object executeAggregate(ObjectQuerySpec spec, String aggregate, String field, String ruleObjectPath) {
-        ObjectQueryResult result = execute(spec, ruleObjectPath);
-        String fn = aggregate != null ? aggregate.trim().toLowerCase() : "count";
-        return switch (fn) {
-            case "count" -> result.rowCount();
-            case "sum" -> sumField(result.rows(), requireField(field));
-            case "avg" -> avgField(result.rows(), requireField(field));
-            case "min" -> minField(result.rows(), requireField(field));
-            case "max" -> maxField(result.rows(), requireField(field));
-            case "first" -> firstField(result.rows(), requireField(field));
-            default -> throw new IllegalArgumentException("Unsupported OQ aggregate: " + aggregate);
-        };
+        rows = applyHaving(rows, spec.having());
+        return sortRows(rows, spec.orderBy());
     }
 
     private List<Map<String, Object>> expandRows(
@@ -147,7 +156,7 @@ public class ObjectQueryService {
             if (join.alias() == null || join.alias().isBlank()) {
                 continue;
             }
-            String joinType = join.type() != null ? join.type().trim().toLowerCase() : "left";
+            String joinType = join.type() != null ? join.type().trim().toLowerCase(Locale.ROOT) : "left";
             Optional<String> joinedPath = joinResolver.resolveJoin(join, aliasPaths, drivingAlias, ruleObjectPath);
             if (joinedPath.isPresent()) {
                 aliasPaths.put(join.alias(), joinedPath.get());
@@ -176,7 +185,10 @@ public class ObjectQueryService {
                     drivingNode,
                     projected
             );
-            if (value != OMIT_FIELD) {
+            // Sentinel identity: OMIT_FIELD marks "do not project this key".
+            @SuppressWarnings("ReferenceEquality")
+            boolean omit = value == OMIT_FIELD;
+            if (!omit) {
                 projected.put(field.name(), value);
             }
         }
@@ -234,7 +246,8 @@ public class ObjectQueryService {
             try {
                 return expressionEngine.evaluate(field.expression(), drivingNode, context);
             } catch (RuntimeException ex) {
-                if (VariableAclRequestContext.isMemberEnforced()) {
+                if (VariableAclRequestContext.isMemberEnforced()
+                        && shouldOmitExpressionFieldUnderMemberAcl(ex)) {
                     return OMIT_FIELD;
                 }
                 throw ex;
@@ -358,11 +371,18 @@ public class ObjectQueryService {
         return objectTypes.contains(node.type().name());
     }
 
+    private static final List<ObjectQueryAggregateSpec> DEFAULT_GROUP_BY_AGGREGATES = List.of(
+            new ObjectQueryAggregateSpec("rowCount", "count", null, null)
+    );
+
     private List<Map<String, Object>> applyGroupBy(List<Map<String, Object>> rows, ObjectQuerySpec spec) {
         List<String> groupBy = spec.groupBy();
-        List<ObjectQueryAggregateSpec> aggregates = spec.aggregates();
-        if (groupBy == null || groupBy.isEmpty() || aggregates == null || aggregates.isEmpty()) {
+        if (groupBy == null || groupBy.isEmpty()) {
             return rows;
+        }
+        List<ObjectQueryAggregateSpec> aggregates = spec.aggregates();
+        if (aggregates == null || aggregates.isEmpty()) {
+            aggregates = DEFAULT_GROUP_BY_AGGREGATES;
         }
         Map<String, List<Map<String, Object>>> groups = new LinkedHashMap<>();
         for (Map<String, Object> row : rows) {
@@ -405,7 +425,7 @@ public class ObjectQueryService {
     }
 
     private static Object aggregateBucket(List<Map<String, Object>> bucket, ObjectQueryAggregateSpec aggregate) {
-        String fn = aggregate.fn() != null ? aggregate.fn().trim().toLowerCase() : "count";
+        String fn = aggregate.fn() != null ? aggregate.fn().trim().toLowerCase(Locale.ROOT) : "count";
         String field = aggregate.field();
         return switch (fn) {
             case "count" -> bucket.size();
@@ -418,6 +438,19 @@ public class ObjectQueryService {
         };
     }
 
+    private static Map<String, Object> normalizeHavingRow(Map<String, Object> row) {
+        Map<String, Object> normalized = LinkedHashMap.newLinkedHashMap(row.size());
+        for (Map.Entry<String, Object> entry : row.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof Number number) {
+                normalized.put(entry.getKey(), number.doubleValue());
+            } else {
+                normalized.put(entry.getKey(), value);
+            }
+        }
+        return normalized;
+    }
+
     private List<Map<String, Object>> applyHaving(List<Map<String, Object>> rows, String having) {
         if (having == null || having.isBlank()) {
             return rows.stream().filter(row -> !row.isEmpty()).toList();
@@ -428,12 +461,19 @@ public class ObjectQueryService {
                 continue;
             }
             try {
-                Object result = expressionEngine.evaluate(having, null, row);
-                if (!(result instanceof Boolean bool) || bool) {
-                    filtered.add(row);
+                Object result = expressionEngine.evaluate(having, null, normalizeHavingRow(row));
+                if (result instanceof Boolean bool) {
+                    if (bool) {
+                        filtered.add(row);
+                    }
+                } else {
+                    throw new IllegalArgumentException(
+                            "HAVING expression must yield boolean: " + having
+                                    + " (got " + (result == null ? "null" : result.getClass().getSimpleName()) + ")"
+                    );
                 }
             } catch (RuntimeException ex) {
-                if (!VariableAclRequestContext.isMemberEnforced()) {
+                if (!shouldSkipHavingRowUnderMemberAcl(ex)) {
                     throw ex;
                 }
             }
@@ -450,7 +490,12 @@ public class ObjectQueryService {
             if (order.field() == null) {
                 continue;
             }
-        Comparator<Map<String, Object>> next = (left, right) -> compareValues(left.get(order.field()), right.get(order.field()));
+        String orderField = order.field();
+        Comparator<Map<String, Object>> next = (left, right) -> compareValues(
+                left.get(orderField),
+                right.get(orderField),
+                orderField
+        );
             if ("desc".equalsIgnoreCase(order.dir())) {
                 next = next.reversed();
             }
@@ -578,7 +623,7 @@ public class ObjectQueryService {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static int compareValues(Object left, Object right) {
+    private static int compareValues(Object left, Object right, String fieldName) {
         if (left == null && right == null) {
             return 0;
         }
@@ -591,10 +636,78 @@ public class ObjectQueryService {
         if (left instanceof Comparable comparable) {
             try {
                 return comparable.compareTo(right);
-            } catch (ClassCastException ignored) {
-                return String.valueOf(left).compareToIgnoreCase(String.valueOf(right));
+            } catch (ClassCastException ex) {
+                throw incompatibleOrderTypes(fieldName, left, right, ex);
             }
         }
+        if (!left.getClass().equals(right.getClass())) {
+            throw incompatibleOrderTypes(fieldName, left, right, null);
+        }
         return String.valueOf(left).compareToIgnoreCase(String.valueOf(right));
+    }
+
+    private static IllegalArgumentException incompatibleOrderTypes(
+            String fieldName,
+            Object left,
+            Object right,
+            ClassCastException cause
+    ) {
+        String message = "Cannot order by field '" + fieldName + "': incompatible types "
+                + typeLabel(left) + " and " + typeLabel(right);
+        return cause == null ? new IllegalArgumentException(message) : new IllegalArgumentException(message, cause);
+    }
+
+    private static String typeLabel(Object value) {
+        return value == null ? "null" : value.getClass().getSimpleName();
+    }
+
+    /**
+     * A non-boolean {@code having} result is a query error even under member ACL.
+     * Skip the row only for an access denial: explicit 403, or evaluation failed
+     * because a member-hidden field is absent from the row.
+     */
+    private static boolean shouldSkipHavingRowUnderMemberAcl(RuntimeException ex) {
+        if (!VariableAclRequestContext.isMemberEnforced()) {
+            return false;
+        }
+        if (containsResponseStatus(ex, HttpStatus.FORBIDDEN)) {
+            return true;
+        }
+        if (ex instanceof ExpressionException expressionEx) {
+            String message = expressionEx.getMessage();
+            return message != null && message.startsWith("Evaluation failed:");
+        }
+        return false;
+    }
+
+    /**
+     * Under member ACL the driving node omits unreadable variables ({@link #readableVariablesOnly}).
+     * Field expressions that still touch hidden data fail at evaluation — omit the column.
+     * Invalid expressions must fail the query.
+     */
+    private static boolean shouldOmitExpressionFieldUnderMemberAcl(RuntimeException ex) {
+        if (containsResponseStatus(ex, HttpStatus.FORBIDDEN)) {
+            return true;
+        }
+        if (ex instanceof ExpressionException expressionEx) {
+            String message = expressionEx.getMessage();
+            if (message != null && message.startsWith("Invalid expression:")) {
+                return false;
+            }
+            if (message != null && message.startsWith("Evaluation failed:")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean containsResponseStatus(Throwable ex, HttpStatus status) {
+        for (Throwable current = ex; current != null; current = current.getCause()) {
+            if (current instanceof ResponseStatusException rse
+                    && rse.getStatusCode().value() == status.value()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

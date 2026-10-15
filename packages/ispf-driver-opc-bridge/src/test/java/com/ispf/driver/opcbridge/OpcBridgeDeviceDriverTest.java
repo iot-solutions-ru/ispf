@@ -81,7 +81,7 @@ class OpcBridgeDeviceDriverTest {
         serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         port = serverSocket.getLocalPort();
         executor = Executors.newSingleThreadExecutor();
-        executor.submit(() -> {
+        var _ = executor.submit(() -> {
             try (var client = serverSocket.accept()) {
                 client.getInputStream().readNBytes(1);
             } catch (Exception ignored) {

@@ -37,4 +37,14 @@ class PlatformMetricsProbeServiceGateTest {
 
         verify(metricsService, never()).snapshot();
     }
+
+    @Test
+    void pollSkipsWhenBootstrapFailed() {
+        when(objectManager.isInitialized()).thenReturn(true);
+        probeService.markBootstrapFailure(new IllegalStateException("ensure failed"));
+
+        probeService.poll();
+
+        verify(metricsService, never()).snapshot();
+    }
 }

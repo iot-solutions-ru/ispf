@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.TimeoutException;
 
+import java.util.Locale;
 /**
  * Coarse classification of a driver failure. Lets the runtime distinguish
  * "retry later" from "fix the configuration" and "this is a bug" without
@@ -38,7 +39,7 @@ public enum DriverErrorKind {
 
     /** Lower-case tag value for metrics and logs. */
     public String tag() {
-        return name().toLowerCase();
+        return name().toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -56,7 +57,10 @@ public enum DriverErrorKind {
                 return declared;
             }
             Throwable cause = driverException.getCause();
-            return cause != null && cause != error ? classifyForeign(cause) : UNCLASSIFIED;
+            // Identity check: stop if the cause chain points at the same throwable instance.
+            @SuppressWarnings("ReferenceEquality")
+            boolean distinctCause = cause != null && cause != error;
+            return distinctCause ? classifyForeign(cause) : UNCLASSIFIED;
         }
         return classifyForeign(error);
     }
@@ -86,7 +90,10 @@ public enum DriverErrorKind {
                 return TRANSIENT;
             }
             Throwable next = current.getCause();
-            if (next == current) {
+            // Identity check: self-cause loops must not recurse forever.
+            @SuppressWarnings("ReferenceEquality")
+            boolean selfCause = next == current;
+            if (selfCause) {
                 break;
             }
             current = next;

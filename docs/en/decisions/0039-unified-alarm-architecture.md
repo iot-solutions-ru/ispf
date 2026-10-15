@@ -2,7 +2,7 @@
 
 ## Status
 
-**Proposed** (2026-07-09)
+**Accepted** (2026-07-09; phase B landed — `deactivateExpr` / `clearEventName` in `AlertRuleService`; later phases incremental). Full ISA-18.2 state model / KPI surface remains a follow-up amendment.
 
 ## Context
 

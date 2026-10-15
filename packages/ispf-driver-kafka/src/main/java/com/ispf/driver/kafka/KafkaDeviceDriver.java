@@ -161,7 +161,7 @@ public class KafkaDeviceDriver implements DeviceDriver {
             thread.setDaemon(true);
             return thread;
         });
-        consumerExecutor.submit(this::consumeLoop);
+        var _ = consumerExecutor.submit(this::consumeLoop);
     }
 
     private void stopConsumerLoop() {

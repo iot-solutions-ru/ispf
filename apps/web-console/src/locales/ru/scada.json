@@ -101,7 +101,7 @@
   "props.behaviors": "Поведения (behaviors)",
   "props.behaviorsAdd": "Добавить",
   "props.behaviorsEmpty": "Поведений пока нет. Добавьте, чтобы управлять заливкой, текстом, видимостью и т.д.",
-  "props.behaviorsHint": "Связывает ключи привязок с целями в SVG (id=\"ispf-…\"). Схема привязок ниже обновляется автоматически.",
+  "props.behaviorsHint": "Каждая область рисунка связана с объектом. Имя области в SVG начинается с ispf-. Список связей ниже обновляется сам.",
   "props.behaviorsRemove": "Удалить",
   "props.bindingObjectPath": "Путь объекта",
   "props.bindingQualityField": "Поле качества",

@@ -1,11 +1,11 @@
-/** Maps AggreGate topology params to ISPF object-tree paths (M11 pilot). */
+/** Maps legacy topology params to ISPF object-tree paths (M11 pilot). */
 
 export const SITE = "m11";
 export const NETWORK = `root.platform.devices.itm.sites.${SITE}.network`;
 export const ISP = `root.platform.devices.itm.sites.${SITE}.isp`;
 export const SECTIONS = `root.platform.devices.itm.sites.${SITE}.sections`;
 
-/** AggreGate node param name → inventory device id */
+/** Legacy node param name → inventory device id */
 export const NODE_DEVICE_IDS = {
   TP14: "tp14",
   TP12: "tp12",
@@ -26,7 +26,7 @@ export const COLORS = {
   linkDown: "#D32F2F",
 };
 
-/** Light HMI canvas — legacy AggreGate / Figma topology used a bright map, not dark UI chrome. */
+/** Light HMI canvas — legacy / Figma topology used a bright map, not dark UI chrome. */
 export const TOPOLOGY_CANVAS = {
   diagramBackground: "#EEF2F6",
   svgBackground: "#EEF2F6",
@@ -34,7 +34,7 @@ export const TOPOLOGY_CANVAS = {
 };
 
 /**
- * @param {string} linkName AggreGate link param name
+ * @param {string} linkName Legacy link param name
  */
 export function resolveLinkBinding(linkName) {
   if (linkName.includes("ROSTELECOM")) {

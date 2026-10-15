@@ -107,7 +107,7 @@ public final class ElasticWorkerLauncher implements AutoCloseable {
         if (workers == null || activeWorkers.get() >= settings.resolvedMaxWorkers()) {
             return;
         }
-        workers.submit(this::workerLoop);
+        var _ = workers.submit(this::workerLoop);
     }
 
     private void workerLoop() {

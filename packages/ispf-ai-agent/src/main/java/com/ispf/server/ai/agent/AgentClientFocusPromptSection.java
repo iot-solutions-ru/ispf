@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import java.util.Locale;
 /**
  * Formats optional UI client-focus metadata into a short system-prompt section so the
  * admin agent can tailor answers to the screen the user is looking at.
@@ -22,7 +23,7 @@ public final class AgentClientFocusPromptSection {
         if (clientChannel == null || clientChannel.isBlank()) {
             return "";
         }
-        return switch (clientChannel.trim().toLowerCase()) {
+        return switch (clientChannel.trim().toLowerCase(Locale.ROOT)) {
             case "copilot" -> """
                     ## Client channel: Admin Copilot (dedicated screen helper — not AI Studio)
                     Answer ONLY about the screen in LIVE UI SNAPSHOT / User UI focus / [UI CONTEXT].

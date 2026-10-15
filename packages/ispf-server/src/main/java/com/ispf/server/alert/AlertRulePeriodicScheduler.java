@@ -51,19 +51,15 @@ public class AlertRulePeriodicScheduler {
         if (!objectManager.isInitialized()) {
             return;
         }
-        if (!leaderLockService.tryAcquire(LOCK_NAME, LOCK_TTL)) {
-            return;
-        }
-        try {
-            runDue();
-        } finally {
-            leaderLockService.release(LOCK_NAME);
-        }
+        leaderLockService.runIfLeader(LOCK_NAME, LOCK_TTL, this::runDue);
     }
 
     void runDue() {
         Instant now = Instant.now();
         for (AlertRule rule : automationTreeService.listEnabledPeriodicAlertRules()) {
+            if (!leaderLockService.isHeld(LOCK_NAME)) {
+                return;
+            }
             Instant last = lastPolledAt.get(rule.id());
             if (last != null && last.plusMillis(rule.pollIntervalMs()).isAfter(now)) {
                 continue;

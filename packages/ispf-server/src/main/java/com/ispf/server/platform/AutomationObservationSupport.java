@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
+import java.util.Locale;
 /**
  * Micrometer observations for automation pipeline handlers (exported as OTel traces when enabled).
  */
@@ -35,7 +36,7 @@ public class AutomationObservationSupport {
         }
         Observation observation = Observation.createNotStarted(HANDLER_OBSERVATION, observationRegistry.get())
                 .lowCardinalityKeyValue("handler", handlerName)
-                .lowCardinalityKeyValue("lane", lane.name().toLowerCase())
+                .lowCardinalityKeyValue("lane", lane.name().toLowerCase(Locale.ROOT))
                 .lowCardinalityKeyValue("change_type", event.type().name())
                 .highCardinalityKeyValue("path", event.path());
         if (event.variableName() != null) {

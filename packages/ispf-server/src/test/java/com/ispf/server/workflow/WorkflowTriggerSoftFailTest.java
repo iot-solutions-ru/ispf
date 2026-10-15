@@ -7,7 +7,9 @@ import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.plugin.workflow.WorkflowEngine;
+import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
+import com.ispf.server.spi.WorkflowStartTrigger;
 import com.ispf.server.expression.ExpressionFormalVerificationService;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.platform.AutomationMetricsRecorder;
@@ -24,9 +26,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,6 +44,7 @@ class WorkflowTriggerSoftFailTest {
     private static final String OBJECT_PATH = "root.platform.devices.demo-sensor-01";
     private static final String STALE_WORKFLOW = "root.platform.workflows.deleted-demo";
     private static final String ACTIVE_WORKFLOW = "root.platform.workflows.active-demo";
+    private static final String BROKEN_WORKFLOW = "root.platform.workflows.broken-demo";
     private static final String VARIABLE_NAME = "temperature";
     private static final String EVENT_NAME = "thresholdExceeded";
 
@@ -127,6 +136,119 @@ class WorkflowTriggerSoftFailTest {
         verify(objects).require(STALE_WORKFLOW);
         verify(objects).require(eq(ACTIVE_WORKFLOW));
         verify(eventTriggerIndex).removeWorkflow(STALE_WORKFLOW);
+    }
+
+    @Test
+    void variableTriggerRecordsTheStartFailureAndDoesNotReturnSuccess() throws Exception {
+        PlatformObject node = workflowNode(WorkflowLifecycleStatus.ACTIVE);
+        Variable triggerJson = stringVariable(
+                "triggerJson",
+                "{\"triggerType\":\"variable\",\"objectPath\":\"" + OBJECT_PATH
+                        + "\",\"variableName\":\"" + VARIABLE_NAME + "\"}"
+        );
+        when(node.path()).thenReturn(ACTIVE_WORKFLOW);
+        when(node.getVariable("triggerJson")).thenReturn(Optional.of(triggerJson));
+        when(eventTriggerIndex.findVariableWorkflows(OBJECT_PATH, VARIABLE_NAME))
+                .thenReturn(List.of(ACTIVE_WORKFLOW));
+        when(objects.require(ACTIVE_WORKFLOW)).thenReturn(node);
+        WorkflowService spyService = spy(workflowService);
+        when(self.getObject()).thenReturn(spyService);
+        doThrow(new WorkflowException("bpmn boom")).when(spyService).runWorkflow(
+                eq(ACTIVE_WORKFLOW),
+                eq(OBJECT_PATH),
+                eq(WorkflowStartTrigger.VARIABLE)
+        );
+
+        IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                () -> spyService.handleVariableTrigger(OBJECT_PATH, VARIABLE_NAME)
+        );
+
+        assertThat(error.getMessage()).contains("bpmn boom");
+        verify(deadLetterService).recordCommitted(
+                eq("trigger-start"),
+                eq(ACTIVE_WORKFLOW),
+                eq(1),
+                eq("bpmn boom"),
+                contains("\"trigger\":\"variable\"")
+        );
+    }
+
+    @Test
+    void eventTriggerRecordsTheStartFailureAndDoesNotReturnSuccess() throws Exception {
+        PlatformObject node = workflowNode(WorkflowLifecycleStatus.ACTIVE);
+        when(eventTriggerIndex.findEventWorkflows(OBJECT_PATH, EVENT_NAME))
+                .thenReturn(List.of(ACTIVE_WORKFLOW));
+        when(objects.require(ACTIVE_WORKFLOW)).thenReturn(node);
+        WorkflowService spyService = spy(workflowService);
+        when(self.getObject()).thenReturn(spyService);
+        doThrow(new WorkflowException("bpmn boom")).when(spyService).runWorkflow(
+                eq(ACTIVE_WORKFLOW),
+                eq(OBJECT_PATH),
+                eq(WorkflowStartTrigger.EVENT)
+        );
+
+        IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                () -> spyService.handleEventTrigger(OBJECT_PATH, EVENT_NAME)
+        );
+
+        assertThat(error.getMessage()).contains("bpmn boom");
+        verify(deadLetterService).recordCommitted(
+                eq("trigger-start"),
+                eq(ACTIVE_WORKFLOW),
+                eq(1),
+                eq("bpmn boom"),
+                contains("\"trigger\":\"event\"")
+        );
+    }
+
+    @Test
+    void eventTriggerFailureDoesNotStopTheSiblingStart() throws Exception {
+        PlatformObject broken = workflowNode(WorkflowLifecycleStatus.ACTIVE);
+        PlatformObject healthy = workflowNode(WorkflowLifecycleStatus.ACTIVE);
+        when(eventTriggerIndex.findEventWorkflows(OBJECT_PATH, EVENT_NAME))
+                .thenReturn(List.of(BROKEN_WORKFLOW, ACTIVE_WORKFLOW));
+        when(objects.require(BROKEN_WORKFLOW)).thenReturn(broken);
+        when(objects.require(ACTIVE_WORKFLOW)).thenReturn(healthy);
+        WorkflowService spyService = spy(workflowService);
+        when(self.getObject()).thenReturn(spyService);
+        doThrow(new IllegalStateException("db down")).when(spyService).runWorkflow(
+                eq(BROKEN_WORKFLOW),
+                eq(OBJECT_PATH),
+                eq(WorkflowStartTrigger.EVENT)
+        );
+        doReturn(null).when(spyService).runWorkflow(
+                eq(ACTIVE_WORKFLOW),
+                eq(OBJECT_PATH),
+                eq(WorkflowStartTrigger.EVENT)
+        );
+
+        IllegalStateException error = assertThrows(
+                IllegalStateException.class,
+                () -> spyService.handleEventTrigger(OBJECT_PATH, EVENT_NAME)
+        );
+
+        assertThat(error.getMessage())
+                .contains(BROKEN_WORKFLOW + ": db down")
+                .doesNotContain(ACTIVE_WORKFLOW + ":");
+        verify(spyService).runWorkflow(ACTIVE_WORKFLOW, OBJECT_PATH, WorkflowStartTrigger.EVENT);
+        verify(deadLetterService).recordCommitted(
+                eq("trigger-start"),
+                eq(BROKEN_WORKFLOW),
+                eq(1),
+                eq("db down"),
+                contains("\"trigger\":\"event\"")
+        );
+    }
+
+    private Variable stringVariable(String name, String value) {
+        Variable variable = mock(Variable.class);
+        when(variable.value()).thenReturn(Optional.of(DataRecord.single(
+                DataSchema.builder(name).field("value", FieldType.STRING).build(),
+                Map.of("value", value)
+        )));
+        return variable;
     }
 
     private PlatformObject workflowNode(WorkflowLifecycleStatus status) {

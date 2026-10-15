@@ -93,14 +93,18 @@ public class TenantVirtualRootService {
             return editor;
         }
         ObjectDto remapped = virtualize(editor.object(), authentication);
-        if (remapped == null || remapped == editor.object()) {
+        // Same instance means no path rewrite was needed.
+        @SuppressWarnings("ReferenceEquality")
+        boolean unchanged = remapped == null || remapped == editor.object();
+        if (unchanged) {
             return editor;
         }
         return new ObjectEditorDto(
                 remapped,
                 editor.variables(),
                 editor.events(),
-                editor.functions()
+                editor.functions(),
+                editor.ownership()
         );
     }
 }

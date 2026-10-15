@@ -82,10 +82,14 @@ public class ObjectQueryHistorianColumnResolver {
             return sample.value();
         }
         if (sample.text() != null) {
-            try {
-                return Double.parseDouble(sample.text());
-            } catch (NumberFormatException ignored) {
+            String text = sample.text().trim();
+            if (text.isEmpty()) {
                 return 0;
+            }
+            try {
+                return Double.parseDouble(text);
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException("Historian sample text is not numeric: " + text, ex);
             }
         }
         return 0;
@@ -102,10 +106,11 @@ public class ObjectQueryHistorianColumnResolver {
         if (window == null || window.isBlank()) {
             return Duration.ofMinutes(15);
         }
+        String trimmed = window.trim();
         try {
-            return VariableHistoryService.parseBucket(window.trim());
+            return VariableHistoryService.parseBucket(trimmed);
         } catch (RuntimeException ex) {
-            return Duration.ofMinutes(15);
+            throw new IllegalArgumentException("Invalid OQ historian window: " + trimmed, ex);
         }
     }
 }

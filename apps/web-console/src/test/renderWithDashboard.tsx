@@ -1,5 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next, I18nextProvider } from "react-i18next";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import type { RenderOptions } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
@@ -10,6 +11,9 @@ import enDashboard from "../locales/en/dashboard.json";
 import enCommon from "../locales/en/common.json";
 
 const testI18n = i18n.createInstance();
+const testQueryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+});
 
 void testI18n.use(initReactI18next).init({
   lng: "en",
@@ -36,17 +40,19 @@ export function renderWithDashboard(
 
   function Wrapper({ children }: { children: ReactNode }) {
     return (
-      <I18nextProvider i18n={testI18n}>
-        <DashboardProvider
-          session={{
-            selection: session?.selection ?? {},
-            params: session?.params ?? {},
-            widgets: session?.widgets ?? {},
-          }}
-        >
-          {children}
-        </DashboardProvider>
-      </I18nextProvider>
+      <QueryClientProvider client={testQueryClient}>
+        <I18nextProvider i18n={testI18n}>
+          <DashboardProvider
+            session={{
+              selection: session?.selection ?? {},
+              params: session?.params ?? {},
+              widgets: session?.widgets ?? {},
+            }}
+          >
+            {children}
+          </DashboardProvider>
+        </I18nextProvider>
+      </QueryClientProvider>
     );
   }
 

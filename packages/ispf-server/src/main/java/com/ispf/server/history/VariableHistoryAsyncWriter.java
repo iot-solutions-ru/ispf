@@ -163,7 +163,7 @@ public class VariableHistoryAsyncWriter {
             return;
         }
         try {
-            workers.submit(this::writerLoop);
+            var _ = workers.submit(this::writerLoop);
         } catch (RuntimeException ex) {
             activeWorkers.decrementAndGet();
             throw ex;

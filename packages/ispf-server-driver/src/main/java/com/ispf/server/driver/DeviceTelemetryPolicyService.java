@@ -223,7 +223,21 @@ public class DeviceTelemetryPolicyService implements DeviceTelemetryPolicy {
         return node.getVariable(variableName)
                 .flatMap(Variable::value)
                 .map(record -> record.firstRow().get("value"))
-                .map(value -> ((Number) value).intValue());
+                .flatMap(DeviceTelemetryPolicyService::coerceInt);
+    }
+
+    private static Optional<Integer> coerceInt(Object value) {
+        if (value instanceof Number number) {
+            return Optional.of(number.intValue());
+        }
+        if (value instanceof String text) {
+            try {
+                return Optional.of(Integer.parseInt(text.trim()));
+            } catch (NumberFormatException ignored) {
+                return Optional.empty();
+            }
+        }
+        return Optional.empty();
     }
 
     private record CachedPolicy(

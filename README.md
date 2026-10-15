@@ -32,6 +32,44 @@ Most SCADA stacks glue together OPC, historian, HMI, alarms, and workflow as sep
   <img src="docs/assets/ispf-architecture-flow.svg" alt="ISPF flow: OT drivers to object tree to HMI, alerts, BPMN, and operators" width="920" />
 </p>
 
+### Hosted solution UIs (ui-packs)
+
+Industry apps ship as React SPAs at `/apps/<appId>/` — not pages inside the admin console. Live gallery: [demo.iot-solutions.ru](https://demo.iot-solutions.ru/) (`admin` / `admin`).
+
+<p align="center">
+  <img src="docs/assets/ispf-readme-farmtwin-ui.png" alt="FarmTwin — digital twin of a pig farm" width="450" />
+  &nbsp;
+  <img src="docs/assets/ispf-readme-warehousetwin-ui.png" alt="WarehouseTwin — warehouse digital twin floor plan" width="450" />
+</p>
+
+<p align="center">
+  <img src="docs/assets/ispf-readme-storetwin-ui.png" alt="StoreTwin — retail floor digital twin and planograms" width="450" />
+  &nbsp;
+  <img src="docs/assets/ispf-readme-oil-control-ui.png" alt="Oil Control — fuel balance and imbalance monitoring" width="450" />
+</p>
+
+<p align="center">
+  <img src="docs/assets/ispf-readme-coffegate-ui.png" alt="CoffeeGate — coffee machine fleet overview" width="450" />
+  &nbsp;
+  <img src="docs/assets/ispf-readme-laminate-flow-ui.png" alt="Laminate-flow MES — weekly production board" width="450" />
+</p>
+
+<p align="center">
+  <img src="docs/assets/ispf-readme-claims-control-ui.png" alt="Claims Control — claims command center" width="450" />
+  &nbsp;
+  <img src="docs/assets/ispf-readme-predictive-ui.png" alt="Predictive analytics — 3D equipment monitor" width="450" />
+</p>
+
+<p align="center">
+  <img src="docs/assets/ispf-readme-monitoring-ui.png" alt="Engineering systems monitoring — summary dashboard" width="450" />
+  &nbsp;
+  <img src="docs/assets/ispf-readme-m11-monitor-ui.png" alt="IT infrastructure monitoring — NMS overview" width="450" />
+</p>
+
+<p align="center">
+  <img src="docs/assets/ispf-readme-lims-ui.png" alt="LIMS — laboratory dashboard" width="450" />
+</p>
+
 ## Why try it
 
 | You want… | ISPF gives you… |

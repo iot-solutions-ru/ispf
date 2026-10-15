@@ -47,7 +47,7 @@ class BindingPeriodicSchedulerGateTest {
 
         scheduler.tick();
 
-        verify(leaderLockService, never()).tryAcquire(any(), any());
+        verify(leaderLockService, never()).runIfLeader(any(), any(), any());
         verify(registry, never()).fireDue(any(), any());
     }
 

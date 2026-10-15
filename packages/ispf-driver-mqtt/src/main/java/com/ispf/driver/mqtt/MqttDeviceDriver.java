@@ -4,6 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.DriverTransientException;
@@ -32,6 +33,10 @@ import java.util.concurrent.ThreadPoolExecutor;
  * Callbacks enqueue into a bounded ingress lane so Paho I/O threads never block on variable
  * updates under flood load. {@code EVENT_JOURNAL_ONLY} and {@code ingressCoalesceEnabled=false}
  * use {@link DriverIngressFifoExecutor} (1:1 FIFO); otherwise a last-value-wins coalesce buffer.
+ * <p>
+ * Safe defaults: {@code eventToVariable=false} keeps high-rate traffic as last-value variables.
+ * Leave object {@code eventJournalEnabled=false} unless durable message audit is required
+ * (see {@code docs/en/anti-patterns.md}).
  */
 public class MqttDeviceDriver implements DeviceDriver {
 
@@ -39,7 +44,7 @@ public class MqttDeviceDriver implements DeviceDriver {
             "mqtt",
             "MQTT Driver",
             "0.1.0",
-            "Connects to MQTT 3.1.1 brokers (Paho mqttv3) and maps topic payloads to ISPF variables",
+            "MQTT 3.1.1 → variables (default last-value; keep eventJournalEnabled off for high-rate topics)",
             "ISPF",
             Map.of(
                     "brokerUrl", "tcp://localhost:1883",
@@ -205,7 +210,13 @@ public class MqttDeviceDriver implements DeviceDriver {
 
     private void handleMessage(String topic, byte[] payloadBytes) {
         String payload = new String(payloadBytes, StandardCharsets.UTF_8);
-        Instant observed = MqttPayloadTimestamps.resolve(payloadBytes);
+        final Instant observed;
+        try {
+            observed = MqttPayloadTimestamps.resolve(payloadBytes);
+        } catch (IllegalArgumentException e) {
+            driverObject.log(DriverLogLevel.ERROR, "MQTT message rejected on " + topic + ": " + e.getMessage());
+            return;
+        }
         String variableName = resolveVariableForTopic(topic);
         if (usesIngressSchema(variableName, topic)) {
             driverObject.updateVariable(variableName, DataRecord.single(
@@ -402,8 +413,17 @@ public class MqttDeviceDriver implements DeviceDriver {
         }
         String topic = topicPrefix + pointId;
         Object raw = value.firstRow().get("raw");
+        if (raw == null) {
+            raw = value.firstRow().get("value");
+        }
+        if (raw == null) {
+            throw new DriverConfigurationException("MQTT write requires raw/value field for " + pointId);
+        }
         try {
-            client.publish(topic, new MqttMessage(String.valueOf(raw).getBytes(StandardCharsets.UTF_8)));
+            byte[] payload = raw instanceof byte[] bytes
+                    ? bytes
+                    : String.valueOf(raw).getBytes(StandardCharsets.UTF_8);
+            client.publish(topic, new MqttMessage(payload));
         } catch (Exception e) {
             throw new DriverTransientException("Publish failed: " + topic, e);
         }

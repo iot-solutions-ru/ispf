@@ -21,6 +21,8 @@ public record BundleValidationIssue(
             "docs/en/application-principles.md#logic-objects-vs-device-mandatory";
     public static final String DOC_BUNDLE =
             "docs/en/solution-developer-public-api.md";
+    public static final String DOC_ANTI_PATTERNS =
+            "docs/en/anti-patterns.md";
 
     public Map<String, Object> toMap() {
         Map<String, Object> map = new LinkedHashMap<>();

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import java.util.Locale;
 @Repository
 public class AgentSessionDocumentStore {
 
@@ -70,7 +71,7 @@ public class AgentSessionDocumentStore {
 
     public List<AgentSessionDocumentRecord> search(String sessionId, String query, int limit) {
         int capped = Math.min(Math.max(limit, 1), 50);
-        String pattern = "%" + query.trim().toLowerCase() + "%";
+        String pattern = "%" + query.trim().toLowerCase(Locale.ROOT) + "%";
         return jdbcTemplate.query("""
                 SELECT doc_id, session_id, filename, mime_type, description, content_text,
                        byte_size, created_at, updated_at

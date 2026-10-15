@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import java.util.Locale;
 public final class ObjectQuerySpecParser {
 
     private static final int DEFAULT_MAX_ROWS = 1000;
@@ -181,7 +182,7 @@ public final class ObjectQuerySpecParser {
         String kindRaw = textOrNull(node.get("kind"));
         JoinKind kind = JoinKind.PARENT;
         if (kindRaw != null) {
-            kind = JoinKind.valueOf(kindRaw.trim().toUpperCase().replace('-', '_'));
+            kind = JoinKind.valueOf(kindRaw.trim().toUpperCase(Locale.ROOT).replace('-', '_'));
         }
         return new ObjectQueryJoinOnSpec(
                 kind,
@@ -261,7 +262,7 @@ public final class ObjectQuerySpecParser {
             for (JsonNode typeNode : node) {
                 String raw = typeNode.asString(null);
                 if (raw != null && !raw.isBlank()) {
-                    types.add(raw.trim().toUpperCase());
+                    types.add(raw.trim().toUpperCase(Locale.ROOT));
                 }
             }
         }

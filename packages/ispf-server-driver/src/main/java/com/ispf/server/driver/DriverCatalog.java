@@ -25,4 +25,8 @@ public class DriverCatalog {
                 })
                 .toList();
     }
+
+    public List<LicensedDriverRegistry.PackLoadFailure> packLoadFailures() {
+        return licensedDriverRegistry.packLoadFailures();
+    }
 }

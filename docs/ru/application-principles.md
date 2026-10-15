@@ -263,6 +263,8 @@ DONE    = validate → dry-run/preview → apply  (P10)
 
 **Жёсткое правило:** объект с логикой приложения / оркестрации / twin **не** должен иметь `ObjectType.DEVICE`. DEVICE — только драйверы и телеметрия.
 
+**Сообщается (ADR-0060):** `BundleManifestValidator` предупреждает о `functions[]` на DEVICE (`LOGIC_HOST_DEVICE`), но не блокирует деплой — это ошибка логики построения решения, а не платформы. Предпочтительно `root.platform.singleton-blueprints.{name}` через SINGLETON blueprint.
+
 | Нужно | Вид blueprint | Типичное размещение | Заметки |
 |-------|---------------|---------------------|---------|
 | Один оркестратор решения/кластера | **SINGLETON** | Предпочтительно `root.platform.singleton-blueprints.{name}` | Уникальный live-хаб; `ensure_singleton_instance` |

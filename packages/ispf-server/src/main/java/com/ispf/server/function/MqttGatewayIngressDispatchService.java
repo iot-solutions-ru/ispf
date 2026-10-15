@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,6 +60,8 @@ public class MqttGatewayIngressDispatchService {
 
     private final ConcurrentHashMap<String, DispatchTask> pendingByKey = new ConcurrentHashMap<>();
     private final AtomicInteger coalescePendingCount = new AtomicInteger();
+    private final AtomicLong dispatchFailureCount = new AtomicLong();
+    private volatile String lastDispatchFailure;
     private LinkedBlockingQueue<DispatchTask> pendingFifo;
     private ElasticWorkerLauncher workers;
     private volatile boolean workersStarted;
@@ -105,6 +108,20 @@ public class MqttGatewayIngressDispatchService {
 
     public boolean isWorkersStarted() {
         return workersStarted;
+    }
+
+    /**
+     * @return total number of failed ingress dispatches since startup
+     */
+    public long dispatchFailureCount() {
+        return dispatchFailureCount.get();
+    }
+
+    /**
+     * @return description of the most recent failed ingress dispatch, if any
+     */
+    public Optional<String> lastDispatchFailure() {
+        return Optional.ofNullable(lastDispatchFailure);
     }
 
     /**
@@ -213,7 +230,8 @@ public class MqttGatewayIngressDispatchService {
         return false;
     }
 
-    private void dispatchIngress(String gatewayPath, String functionName, String topic, String raw) {
+    // package-private for tests
+    void dispatchIngress(String gatewayPath, String functionName, String topic, String raw) {
         try {
             if (MqttGatewayFunctionHandler.FUNCTION_NAME.equals(functionName)) {
                 gatewayFunctionHandler.dispatchIngress(gatewayPath, topic, raw, true);
@@ -222,8 +240,9 @@ public class MqttGatewayIngressDispatchService {
             DataRecord ingress = DataRecord.single(INGRESS_SCHEMA, Map.of("topic", topic, "raw", raw));
             functionService.invoke(gatewayPath, functionName, ingress);
         } catch (Exception ex) {
-            log.warn("Parallel ingress dispatch failed for {} function {} topic {}: {}",
-                    gatewayPath, functionName, topic, ex.getMessage());
+            dispatchFailureCount.incrementAndGet();
+            lastDispatchFailure = gatewayPath + " function " + functionName + " topic " + topic + ": " + ex.getMessage();
+            log.error("Parallel ingress dispatch failed for {} function {} topic {}", gatewayPath, functionName, topic, ex);
         }
     }
 

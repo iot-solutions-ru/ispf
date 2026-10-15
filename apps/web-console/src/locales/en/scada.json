@@ -101,7 +101,7 @@
   "props.behaviors": "Behaviors",
   "props.behaviorsAdd": "Add behavior",
   "props.behaviorsRemove": "Remove",
-  "props.behaviorsHint": "Map binding keys to SVG targets (id=\"ispf-…\"). Binding schema below updates automatically.",
+  "props.behaviorsHint": "Each area of the drawing is tied to an object. The SVG id starts with ispf-. The list below updates on its own.",
   "props.behaviorsEmpty": "No behaviors yet. Add one to drive fill, text, visibility, etc.",
   "props.behaviorType": "Type",
   "props.behaviorBind": "Binding key",

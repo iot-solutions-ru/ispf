@@ -389,6 +389,13 @@ public class AutomationTreeService {
         alertRuleRuntimeStore.setLastFiredAt(path, lastFiredAt);
     }
 
+    /** Delivery failure of this firing. Empty string clears a previous error after a successful send. */
+    @Transactional
+    public void setAlertRuleLastNotificationError(String path, String error) {
+        setRuntimeString(path, "lastNotificationError", error != null ? error : "");
+        objectManager.persistNodeTree(path);
+    }
+
     public void setAlertRuleLastConditionMet(String path, boolean lastConditionMet) {
         alertRuleRuntimeStore.setLastConditionMet(path, lastConditionMet);
     }
@@ -690,7 +697,8 @@ public class AutomationTreeService {
                 createdAt,
                 blankToNull(readString(node, "notificationWebhookUrl").orElse(null)),
                 blankToNull(readString(node, "notificationEmailTarget").orElse(null)),
-                blankToNull(readString(node, "anomalyModelId").orElse(null))
+                blankToNull(readString(node, "anomalyModelId").orElse(null)),
+                blankToNull(readString(node, "lastNotificationError").orElse(null))
         );
     }
 

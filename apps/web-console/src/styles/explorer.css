@@ -241,8 +241,9 @@
   min-width: 0;
 }
 
-.form-grid label,
-.antd-control-grid label {
+/* Direct-child labels only (native fields). Do not restyle Ant Form item labels. */
+.form-grid > label,
+.antd-control-grid > label {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -251,13 +252,56 @@
   min-width: 0;
 }
 
-.form-grid label.full,
+.form-grid > label.full,
 .form-grid > .full,
-.antd-control-grid label.full,
+.antd-control-grid > label.full,
 .antd-control-grid > .full {
   grid-column: 1 / -1;
   min-width: 0;
   max-width: 100%;
+}
+
+/* Ant Design Form inside control grid: stack label above control, compact spacing. */
+.ant-form.antd-control-grid > .ant-form-item {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.ant-form-vertical.antd-control-grid > .ant-form-item .ant-form-item-row {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.ant-form-vertical.antd-control-grid > .ant-form-item .ant-form-item-label {
+  padding: 0 0 0.35rem;
+  max-width: 100%;
+}
+
+.ant-form-vertical.antd-control-grid > .ant-form-item .ant-form-item-label > label {
+  height: auto;
+  min-height: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.ant-form-vertical.antd-control-grid > .ant-form-item .ant-form-item-control {
+  flex: none;
+  width: 100%;
+  max-width: 100%;
+}
+
+.ant-form-vertical.antd-control-grid > .ant-form-item .ant-form-item-control-input {
+  min-height: 0;
+}
+
+.ant-form-vertical.antd-control-grid > .ant-form-item.full {
+  grid-column: 1 / -1;
+}
+
+/* Modals: one column so labels and controls share the same width (no empty half-row). */
+.descriptor-editor-modal .ant-form.antd-control-grid,
+.modal-create-object .ant-form.antd-control-grid {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .form-grid input,

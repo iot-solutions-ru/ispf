@@ -13,6 +13,7 @@ import {
   updateBundleObjects,
 } from "../../api/applications";
 import ApplicationBundlePanel from "./ApplicationBundlePanel";
+import ApplicationGitPanel from "./ApplicationGitPanel";
 import ApplicationLifecyclePanel from "./ApplicationLifecyclePanel";
 import { ObjectPathField } from "../../ui/index";
 import { formatUserDateTime } from "../../utils/ui/formatDateTime";
@@ -23,7 +24,7 @@ interface ApplicationDeployPanelProps {
   canManage: boolean;
 }
 
-type DeployTab = "bundle" | "operations";
+type DeployTab = "bundle" | "git" | "operations";
 
 function formatDeployedAt(value: string | undefined): string {
   if (!value) {
@@ -144,6 +145,7 @@ export default function ApplicationDeployPanel({
         aria-label={t("deploy.tabsAria")}
         items={[
           { key: "bundle", label: t("deploy.tabBundle") },
+          { key: "git", label: t("deploy.tabGit") },
           { key: "operations", label: t("deploy.tabOperations") },
         ]}
       />
@@ -156,6 +158,8 @@ export default function ApplicationDeployPanel({
           embedded
         />
       )}
+
+      {tab === "git" && <ApplicationGitPanel appId={appId} canManage={canManage} />}
 
       {tab === "operations" && (
         <div className="application-operations-panel">

@@ -32,7 +32,7 @@ class AgentMimicToolsTest {
     @Mock
     private MimicService mimicService;
     @Mock
-    private ObjectTreePort ObjectTreePort;
+    private ObjectTreePort objectTreePort;
     @Mock
     private ObjectAccessService objectAccessService;
     @Mock
@@ -46,7 +46,7 @@ class AgentMimicToolsTest {
 
     private PlatformAgentTool tool(String name) {
         return AgentMimicTools.all(
-                mimicService, ObjectTreePort, objectAccessService, tenantScopeService, objectMapper
+                mimicService, objectTreePort, objectAccessService, tenantScopeService, objectMapper
         ).stream().filter(t -> name.equals(t.name())).findFirst().orElseThrow();
     }
 
@@ -55,7 +55,7 @@ class AgentMimicToolsTest {
         String path = "root.platform.mimics.demo";
         when(tenantScopeService.isPathVisible(path, authentication)).thenReturn(true);
         doNothing().when(objectAccessService).requireWrite(path, authentication);
-        when(ObjectTreePort.require(path)).thenReturn(mimicNode);
+        when(objectTreePort.require(path)).thenReturn(mimicNode);
         when(mimicNode.type()).thenReturn(ObjectType.MIMIC);
         when(mimicService.getMimic(path)).thenReturn(
                 new MimicService.MimicView(path, "Demo", 5000, MimicLayouts.EMPTY_MIMIC)
@@ -91,7 +91,7 @@ class AgentMimicToolsTest {
         String path = "root.platform.mimics.demo";
         when(tenantScopeService.isPathVisible(path, authentication)).thenReturn(true);
         doNothing().when(objectAccessService).requireWrite(path, authentication);
-        when(ObjectTreePort.require(path)).thenReturn(mimicNode);
+        when(objectTreePort.require(path)).thenReturn(mimicNode);
         when(mimicNode.type()).thenReturn(ObjectType.MIMIC);
 
         Map<String, Object> result = tool("save_mimic_diagram").execute(
@@ -109,7 +109,7 @@ class AgentMimicToolsTest {
         String devicePath = "root.platform.devices.centrifugal-pump";
         when(tenantScopeService.isPathVisible(path, authentication)).thenReturn(true);
         doNothing().when(objectAccessService).requireWrite(path, authentication);
-        when(ObjectTreePort.require(path)).thenReturn(mimicNode);
+        when(objectTreePort.require(path)).thenReturn(mimicNode);
         when(mimicNode.type()).thenReturn(ObjectType.MIMIC);
         when(mimicService.getMimic(path)).thenReturn(
                 new MimicService.MimicView(path, "Demo", 5000, MimicLayouts.EMPTY_MIMIC)

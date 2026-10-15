@@ -1,5 +1,7 @@
 package com.ispf.driver.modbussimulator;
 
+
+import java.util.Locale;
 /**
  * Parses point mapping {@code slaveId:type:address[:count]} (Modbus TCP convention).
  */
@@ -19,7 +21,7 @@ public record ModbusSimulatorPoint(int slaveId, RegisterType type, int address, 
         }
         try {
             int slaveId = Integer.parseInt(parts[0].trim());
-            RegisterType type = RegisterType.valueOf(parts[1].trim().toUpperCase());
+            RegisterType type = RegisterType.valueOf(parts[1].trim().toUpperCase(Locale.ROOT));
             int address = Integer.parseInt(parts[2].trim());
             int count = parts.length > 3 ? Integer.parseInt(parts[3].trim()) : 1;
             return new ModbusSimulatorPoint(slaveId, type, address, count);

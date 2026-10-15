@@ -53,7 +53,7 @@ public class BlueprintController {
     private final BlueprintEngine blueprintEngine;
     private final ObjectManager objectManager;
     private final BlueprintPersistenceService blueprintPersistence;
-    private final BlueprintMergeService BlueprintMergeService;
+    private final BlueprintMergeService blueprintMergeService;
     private final BlueprintApplicationService blueprintApplicationService;
     private final AnalyticsFormulaService analyticsFormulaService;
     private final BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport;
@@ -63,7 +63,7 @@ public class BlueprintController {
             BlueprintEngine blueprintEngine,
             ObjectManager objectManager,
             BlueprintPersistenceService blueprintPersistence,
-            BlueprintMergeService BlueprintMergeService,
+            BlueprintMergeService blueprintMergeService,
             BlueprintApplicationService blueprintApplicationService,
             AnalyticsFormulaService analyticsFormulaService,
             BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport
@@ -72,7 +72,7 @@ public class BlueprintController {
         this.blueprintEngine = blueprintEngine;
         this.objectManager = objectManager;
         this.blueprintPersistence = blueprintPersistence;
-        this.BlueprintMergeService = BlueprintMergeService;
+        this.blueprintMergeService = blueprintMergeService;
         this.blueprintApplicationService = blueprintApplicationService;
         this.analyticsFormulaService = analyticsFormulaService;
         this.blueprintAnalyticsFormulaSupport = blueprintAnalyticsFormulaSupport;
@@ -264,7 +264,7 @@ public class BlueprintController {
 
     @PostMapping("/merge-preview")
     public Map<String, Object> mergePreview(@Valid @RequestBody MergePreviewRequest request) {
-        return BlueprintMergeService.mergePreview(
+        return blueprintMergeService.mergePreview(
                 request.baseModelId(),
                 request.theirsModelId(),
                 request.objectPath()
@@ -273,7 +273,7 @@ public class BlueprintController {
 
     @PostMapping("/merge-apply")
     public Map<String, Object> mergeApply(@Valid @RequestBody MergeApplyRequest request) {
-        return BlueprintMergeService.applyMerge(
+        return blueprintMergeService.applyMerge(
                 request.baseModelId(),
                 request.theirsModelId(),
                 request.objectPath(),

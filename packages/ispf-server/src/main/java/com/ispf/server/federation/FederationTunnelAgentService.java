@@ -239,7 +239,7 @@ public class FederationTunnelAgentService {
 
     @PreDestroy
     public void shutdown() {
-        scheduler.shutdownNow();
+        var _ = scheduler.shutdownNow();
         proxyExecutor.shutdownNow();
         runtimes.keySet().forEach(this::disconnect);
     }
@@ -469,7 +469,7 @@ public class FederationTunnelAgentService {
         if (agent == null || !agent.enabled()) {
             return;
         }
-        scheduler.schedule(() -> {
+        var _ = scheduler.schedule(() -> {
             FederationOutboundAgent current = agentStore.findById(agentId).orElse(null);
             if (current == null || !current.enabled()) {
                 return;

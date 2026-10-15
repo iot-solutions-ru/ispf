@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class FunctionInputSchemaTest {
 
@@ -38,16 +39,46 @@ class FunctionInputSchemaTest {
     }
 
     @Test
-    void emptyBodyFillsMissingContractFields() {
+    void emptyBodyRejectsMissingRequiredField() {
         DataSchema contract = DataSchema.builder("in")
                 .field(FieldDefinition.required("jobNo", FieldType.STRING))
                 .field("finishCode", FieldType.STRING)
                 .build();
 
-        DataRecord resolved = FunctionInputSchema.apply(contract, null);
+        assertThatThrownBy(() -> FunctionInputSchema.apply(contract, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Required field missing: jobNo");
+    }
 
-        assertThat(resolved.schema()).isEqualTo(contract);
-        assertThat(resolved.firstRow().get("jobNo")).isEqualTo("");
+    @Test
+    void emptyRowRejectsMissingRequiredIntegerField() {
+        DataSchema contract = DataSchema.builder("in")
+                .field(FieldDefinition.required("req", FieldType.INTEGER))
+                .build();
+        DataRecordPayloadRequest payload = new DataRecordPayloadRequest(
+                null,
+                List.of(Map.of())
+        );
+
+        assertThatThrownBy(() -> FunctionInputSchema.apply(contract, payload))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Required field missing: req");
+    }
+
+    @Test
+    void optionalFieldsFilledWhenRequiredPresent() {
+        DataSchema contract = DataSchema.builder("in")
+                .field(FieldDefinition.required("jobNo", FieldType.STRING))
+                .field("finishCode", FieldType.STRING)
+                .build();
+        DataRecordPayloadRequest payload = new DataRecordPayloadRequest(
+                null,
+                List.of(Map.of("jobNo", "J-1"))
+        );
+
+        DataRecord resolved = FunctionInputSchema.apply(contract, payload);
+
+        assertThat(resolved.firstRow().get("jobNo")).isEqualTo("J-1");
         assertThat(resolved.firstRow().get("finishCode")).isNull();
     }
 

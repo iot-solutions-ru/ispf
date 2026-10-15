@@ -15,10 +15,13 @@ import type { TopologySvgHitArea } from "../../scada/topologySvgConfig";
 import SymbolBehaviorsEditor from "../scada/SymbolBehaviorsEditor";
 import MimicBindingSlotEditor from "../scada/MimicBindingSlotEditor";
 import WidgetMediaUploadField from "./WidgetMediaUploadField";
+import { HintCaption } from "./widgetEditorStructured";
+import { SelectionKeyInput } from "./widgetFields/widgetFieldPrimitives";
 
 interface SvgWidgetInteractiveEditorProps {
   widget: SvgWidget;
   update: (patch: Partial<SvgWidget>) => void;
+  selectionKeys?: string[];
 }
 
 function commit(
@@ -36,7 +39,11 @@ function commit(
   update(serializeSvgInteractivePatch(state));
 }
 
-export default function SvgWidgetInteractiveEditor({ widget, update }: SvgWidgetInteractiveEditorProps) {
+export default function SvgWidgetInteractiveEditor({
+  widget,
+  update,
+  selectionKeys = [],
+}: SvgWidgetInteractiveEditorProps) {
   const { t } = useTranslation(["scada", "widgets"]);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -126,17 +133,21 @@ export default function SvgWidgetInteractiveEditor({ widget, update }: SvgWidget
 
   return (
     <div className="svg-widget-interactive-editor scada-editor-panel">
-      <h3 className="scada-props-section-title">{t("editor.section.svgInteractive", { ns: "widgets", defaultValue: "Интерактивный SVG (как SCADA-символ)" })}</h3>
+      <h3 className="scada-props-section-title">
+        <HintCaption className="">
+          {t("editor.section.svgInteractive", { ns: "widgets" })}
+        </HintCaption>
+      </h3>
       <p className="scada-props-hint scada-props-hint-compact">
         {t("props.behaviorsHint", { ns: "scada" })}
       </p>
 
       <WidgetMediaUploadField
-        label="svgUrl"
+        label={t("editor.field.svgUrl", { ns: "widgets" })}
         value={widget.svgUrl ?? ""}
         onChange={(svgUrl) => update({ svgUrl })}
         accept=".svg,image/svg+xml"
-        placeholder="/itm-assets/m11/main_topology.svg"
+        placeholder={t("editor.hint.exampleSvg", { ns: "widgets" })}
         previewAlt={widget.title}
       />
 
@@ -274,12 +285,12 @@ export default function SvgWidgetInteractiveEditor({ widget, update }: SvgWidget
       </div>
 
       <label className="scada-form-field">
-        <span className="scada-form-label">selectionKey</span>
-        <input
-          type="text"
+        <span className="scada-form-label">{t("editor.selectionKeyOnClick", { ns: "widgets" })}</span>
+        <SelectionKeyInput
           className="scada-form-input mono"
           value={widget.selectionKey ?? ""}
-          onChange={(e) => update({ selectionKey: e.target.value || undefined })}
+          keys={selectionKeys}
+          onChange={(next) => update({ selectionKey: next || undefined })}
         />
       </label>
     </div>

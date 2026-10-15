@@ -1,7 +1,6 @@
 package com.ispf.server.plugin.blueprint;
 
 import com.ispf.server.api.dto.ObjectDto;
-import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.dto.BlueprintAttachmentDto;
 import com.ispf.server.plugin.blueprint.dto.BlueprintDto;
 import jakarta.validation.Valid;
@@ -24,11 +23,9 @@ import java.util.Map;
 public class SingletonBlueprintController {
 
     private final TypedBlueprintFacade facade;
-    private final ObjectManager objectManager;
 
-    public SingletonBlueprintController(TypedBlueprintFacade singletonBlueprintFacade, ObjectManager objectManager) {
+    public SingletonBlueprintController(TypedBlueprintFacade singletonBlueprintFacade) {
         this.facade = singletonBlueprintFacade;
-        this.objectManager = objectManager;
     }
 
     @GetMapping
@@ -71,8 +68,6 @@ public class SingletonBlueprintController {
 
     @GetMapping("/{id}/instance")
     public ObjectDto singletonInstance(@PathVariable String id) {
-        var instance = facade.singletonInstance(id);
-        objectManager.persistNodeTree(instance.path());
-        return ObjectDto.from(instance);
+        return ObjectDto.from(facade.singletonInstance(id));
     }
 }

@@ -8,7 +8,7 @@ Reference document for the **tree-first agent**, AI Studio, and MCP clients. It 
 
 **How to read this:** `search_context(query=..., topic=...)` returns full slices from ContextPack. This file is a **router**: what to choose and where to go next.
 
-See also [application-principles](application-principles.md) (canonical P1-P10 set), [ai-development](ai-development.md), [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md), [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md).
+See also [application-principles](application-principles.md) (canonical P1-P10 set), [anti-patterns](anti-patterns.md) (field pain → ISPF constraints), [ai-development](ai-development.md), [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [0005-tree-first-ai-agent](decisions/0005-tree-first-ai-agent.md), [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md).
 
 ---
 
@@ -177,7 +177,7 @@ A complete tree-first project has **8 layers** (see `get_automation_schema topic
 | Reports | `list_reports`, `get_report_schema`, `run_report`, `configure_report` |
 | Automation | `configure_alert`, `configure_correlator`, `list_automation`, `get_automation_schema` |
 | Workflows | `get_workflow`, `save_workflow_bpmn`, `run_workflow`, `update_workflow_status`, `list_workflow_instances`, `signal_workflow_instance`, `cancel_workflow_instance` |
-| Applications | `register_application`, `application_data_*`, `deploy_app_binding`, `deploy_app_function`, `validate_bundle`, `dry_run_deploy`, `import_package`, `export_application_bundle`, `rollback_application_deploy`, `pull_application_from_tree` |
+| Applications | `register_application`, `application_data_*`, `deploy_app_binding`, `deploy_app_function`, `validate_bundle`, `dry_run_deploy`, `import_package`, `export_application_bundle`, `rollback_application_deploy`, `pull_application_from_tree` — after MCP tree edits, sync Catalog via APPLICATION Git **Push tree → PR** (`POST …/git/push-pr`, branch `ispf/…`) or `ispf pack` (ADR-0063). Git PAT: GitHub Contents R/W + Pull requests; GitLab `api` |
 | Functions/events | `list_functions`, `get_function`, `invoke_bff`, `invoke_tree_function`, `fire_event`, `list_events`, `list_event_catalog`, `get_event_schema` |
 | Tree functions | `get_function_template`, `deploy_tree_function` (script **or java**), `invoke_tree_function`; app BFF: `deploy_app_function` (script) |
 | Operator HMI | `configure_operator_ui` |

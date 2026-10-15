@@ -32,8 +32,7 @@ public class EventHistoryRecordCounterBootstrap {
         try {
             recordCounter.initialize(eventJournalStore.countTotal());
         } catch (Exception ex) {
-            log.warn("Event history counter bootstrap failed, starting from 0: {}", ex.getMessage());
-            recordCounter.initialize(0);
+            log.warn("Event history counter bootstrap failed, counter left uninitialized: {}", ex.getMessage());
         }
     }
 }

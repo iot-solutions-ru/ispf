@@ -2,12 +2,14 @@ package com.ispf.server.object;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
+import com.ispf.core.object.BlueprintOwnedMember;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.object.VariableStorageMode;
+import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.spi.DeviceTelemetryPolicy;
 import com.ispf.server.function.java.JavaFunctionRuntimeService;
 import com.ispf.server.persistence.ObjectEntityMapper;
@@ -35,19 +37,22 @@ public class ObjectVariableService {
     private final ObjectEntityMapper mapper;
     private final DeviceTelemetryPolicy telemetryPolicyService;
     private final JavaFunctionRuntimeService javaFunctionRuntimeService;
+    private final FunctionScriptValidator scriptValidator;
 
     public ObjectVariableService(
             @Lazy ObjectManager objectManager,
             ObjectVariableRepository variableRepository,
             ObjectEntityMapper mapper,
             @Lazy DeviceTelemetryPolicy telemetryPolicyService,
-            JavaFunctionRuntimeService javaFunctionRuntimeService
+            JavaFunctionRuntimeService javaFunctionRuntimeService,
+            FunctionScriptValidator scriptValidator
     ) {
         this.objectManager = objectManager;
         this.variableRepository = variableRepository;
         this.mapper = mapper;
         this.telemetryPolicyService = telemetryPolicyService;
         this.javaFunctionRuntimeService = javaFunctionRuntimeService;
+        this.scriptValidator = scriptValidator;
     }
 
     @Transactional
@@ -94,6 +99,7 @@ public class ObjectVariableService {
         assertUserVariable(name);
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
+        BlueprintOwnedMember.assertDeletableVariable(node, name);
         Optional<Variable> existing = node.getVariable(name);
         if (existing.isEmpty()) {
             return;
@@ -250,6 +256,13 @@ public class ObjectVariableService {
         if (function == null || function.name() == null || function.name().isBlank()) {
             throw new IllegalArgumentException("Function name is required");
         }
+        if (function.hasScriptBody()) {
+            try {
+                scriptValidator.validate(function.sourceBody());
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Function " + function.name() + ": " + ex.getMessage(), ex);
+            }
+        }
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
         long revisionBefore = node.revision();
@@ -270,6 +283,7 @@ public class ObjectVariableService {
     public void deleteFunction(String path, String name) {
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
+        BlueprintOwnedMember.assertDeletableFunction(node, name);
         FunctionDescriptor before = node.functions().get(name);
         if (before == null) {
             return;
@@ -300,6 +314,7 @@ public class ObjectVariableService {
     public void deleteEvent(String path, String name) {
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
+        BlueprintOwnedMember.assertDeletableEvent(node, name);
         EventDescriptor before = node.events().get(name);
         if (before == null) {
             return;

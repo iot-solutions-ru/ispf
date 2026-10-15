@@ -5,6 +5,9 @@ plugins {
 
 // Elastic thread pools. Package name stays com.ispf.server.concurrent so existing imports
 // do not change. This module must not depend on ispf-server.
+// Keep in sync with ispf-server (Boot 4 Jackson BOM properties / nightly Trivy).
+extra["jackson-2-bom.version"] = "2.22.3"
+extra["jackson-bom.version"] = "3.2.3"
 dependencyManagement {
     imports {
         mavenBom("org.springframework.boot:spring-boot-dependencies:4.1.1")

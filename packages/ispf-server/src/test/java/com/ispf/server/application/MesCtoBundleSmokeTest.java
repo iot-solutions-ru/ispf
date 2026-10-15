@@ -87,11 +87,13 @@ class MesCtoBundleSmokeTest {
                                     "schema": {
                                       "name": "in",
                                       "fields": [
-                                        { "name": "optionsJson", "type": "STRING" }
+                                        { "name": "finishCode", "type": "STRING" },
+                                        { "name": "sensorCode", "type": "STRING" }
                                       ]
                                     },
                                     "rows": [{
-                                      "optionsJson": "{\\"finishCode\\":\\"FINISH-GLOSS\\",\\"sensorCode\\":\\"SENSOR-VISION\\"}"
+                                      "finishCode": "FINISH-GLOSS",
+                                      "sensorCode": "SENSOR-VISION"
                                     }]
                                   }
                                 }

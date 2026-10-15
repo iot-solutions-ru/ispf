@@ -15,6 +15,7 @@ import java.security.SecureRandom;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import java.util.Locale;
 @Service
 public class TenantService {
 
@@ -180,7 +181,7 @@ public class TenantService {
 
     private static String resolveAdminUsername(TenantDraft draft) {
         if (draft.adminUsername() != null && !draft.adminUsername().isBlank()) {
-            return draft.adminUsername().trim().toLowerCase();
+            return draft.adminUsername().trim().toLowerCase(Locale.ROOT);
         }
         return draft.tenantId() + "-admin";
     }

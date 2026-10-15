@@ -81,6 +81,7 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
     private OpcUaClientPki pki;
     private final Map<String, OpcUaPoint> points = new ConcurrentHashMap<>();
     private ManagedSubscription subscription;
+    private volatile String subscribedFingerprint;
     private DriverIngressBuffer<String, PointRead> ingressBuffer;
     private DriverIngressFifoExecutor ingressFifo;
     private volatile boolean connected;
@@ -174,6 +175,7 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
     private void releaseClient() {
         shutdownIngress();
         subscription = null;
+        subscribedFingerprint = null;
         if (client != null) {
             try {
                 client.disconnect().get(timeoutMs, TimeUnit.MILLISECONDS);
@@ -253,6 +255,10 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
 
     private void ensureSubscription(Map<String, String> pointMappings) throws Exception {
         startIngressIfNeeded();
+        String fingerprint = subscriptionFingerprint(pointMappings);
+        if (subscription != null && fingerprint.equals(subscribedFingerprint)) {
+            return;
+        }
         if (subscription == null) {
             subscription = ManagedSubscription.create(client);
             subscription.setDefaultMonitoringMode(MonitoringMode.Reporting);
@@ -273,6 +279,7 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
                 dispatchIngress(variableName, read);
             });
         }
+        subscribedFingerprint = fingerprint;
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             OpcUaPoint point = points.get(entry.getKey());
             PointRead read = readPoint(point);
@@ -282,6 +289,14 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
                     DriverPollTimestamps.sourceOrPollTick(read.observedAt())
             );
         }
+    }
+
+    private static String subscriptionFingerprint(Map<String, String> pointMappings) {
+        StringBuilder builder = new StringBuilder(pointMappings.size() * 32);
+        pointMappings.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> builder.append(entry.getKey()).append('=').append(entry.getValue()).append('\n'));
+        return builder.toString();
     }
 
     private void startIngressIfNeeded() {

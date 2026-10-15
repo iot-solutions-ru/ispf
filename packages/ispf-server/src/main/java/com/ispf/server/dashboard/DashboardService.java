@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import java.util.Locale;
 @Service
 public class DashboardService {
 
@@ -174,7 +175,7 @@ public class DashboardService {
         if (template == null || template.isBlank()) {
             throw new IllegalArgumentException("template is required");
         }
-        return switch (template.trim().toLowerCase()) {
+        return switch (template.trim().toLowerCase(Locale.ROOT)) {
             case "snmp-host-monitoring", "snmp" -> DashboardLayouts.SNMP_HOST_MONITORING_DASHBOARD.trim();
             case "demo-sensor", "demo" -> DashboardLayouts.DEMO_SENSOR_DASHBOARD.trim();
             case "virtual-cluster-overview", "virt-cluster-overview" ->

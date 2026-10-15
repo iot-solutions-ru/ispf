@@ -555,7 +555,7 @@ public class BlueprintEngine {
     private void mergeModelIntoObject(
             BlueprintDefinition model,
             PlatformObject target,
-            Map<String, String> parameters,
+            @SuppressWarnings("UnusedVariable") Map<String, String> parameters,
             List<BlueprintMergeWarning> warnings
     ) {
         String previousBlueprintId = target.lastAppliedBlueprintId();

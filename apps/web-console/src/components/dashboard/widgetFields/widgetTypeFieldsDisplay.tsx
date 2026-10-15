@@ -3,7 +3,14 @@ import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { WIDGET_HISTORY_RANGE_OPTIONS } from "../../../types/dashboard";
 import { VariableSelect } from "../widgetEditorStructured";
-import { Section, type WidgetFieldContextFor, type WidgetTypeFieldsRegistry } from "./widgetFieldPrimitives";
+import { variableListAllowCustom } from "../widgetEditorHelpers";
+import { RecordFieldGroup } from "./widgetBoundChoices";
+import {
+  Section,
+  WidgetEditorCaption,
+  type WidgetFieldContextFor,
+  type WidgetTypeFieldsRegistry,
+} from "./widgetFieldPrimitives";
 import WidgetMediaUploadField from "../WidgetMediaUploadField";
 
 function valueFields(ctx: WidgetFieldContextFor<"value">, t: TFunction): ReactNode {
@@ -12,18 +19,24 @@ function valueFields(ctx: WidgetFieldContextFor<"value">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.valueDisplay")} />
       <label>
-        {t("editor.unit")}
+        <WidgetEditorCaption text={t("editor.unit")} />
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
+      <RecordFieldGroup
+        objectPath={widget.objectPath ?? widget.modelHintPath}
+        variableName={widget.variableName}
+        allowCustom={variableListAllowCustom(widget)}
+        showHints={false}
+        fields={[
+          {
+            label: t("editor.unitField"),
+            value: widget.unitField ?? "",
+            onChange: (next) => update({ unitField: next || undefined }),
+          },
+        ]}
+      />
       <label>
-        {t("editor.unitField")}
-        <input
-          value={widget.unitField ?? ""}
-          onChange={(e) => update({ unitField: e.target.value || undefined })}
-        />
-      </label>
-      <label>
-        {t("editor.decimals")}
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -42,14 +55,14 @@ function toggleFields(ctx: WidgetFieldContextFor<"toggle">, t: TFunction): React
     <>
       <Section title={t("editor.section.toggle")} />
       <label>
-        {t("editor.trueLabelOn")}
+        <WidgetEditorCaption text={t("editor.trueLabelOn")} />
         <input
           value={widget.trueLabel ?? ""}
           onChange={(e) => update({ trueLabel: e.target.value || undefined })}
         />
       </label>
       <label>
-        {t("editor.trueLabelOff")}
+        <WidgetEditorCaption text={t("editor.trueLabelOff")} />
         <input
           value={widget.falseLabel ?? ""}
           onChange={(e) => update({ falseLabel: e.target.value || undefined })}
@@ -65,21 +78,21 @@ function indicatorFields(ctx: WidgetFieldContextFor<"indicator">, t: TFunction):
     <>
       <Section title={t("editor.section.indicator")} />
       <label>
-        {t("editor.trueLabel")}
+        <WidgetEditorCaption text={t("editor.trueLabel")} />
         <input
           value={widget.trueLabel ?? ""}
           onChange={(e) => update({ trueLabel: e.target.value || undefined })}
         />
       </label>
       <label>
-        {t("editor.falseLabel")}
+        <WidgetEditorCaption text={t("editor.falseLabel")} />
         <input
           value={widget.falseLabel ?? ""}
           onChange={(e) => update({ falseLabel: e.target.value || undefined })}
         />
       </label>
       <label>
-        {t("editor.trueColor")}
+        <WidgetEditorCaption text={t("editor.trueColor")} />
         <input
           type="color"
           value={widget.trueColor ?? "#3fb950"}
@@ -87,7 +100,7 @@ function indicatorFields(ctx: WidgetFieldContextFor<"indicator">, t: TFunction):
         />
       </label>
       <label>
-        {t("editor.falseColor")}
+        <WidgetEditorCaption text={t("editor.falseColor")} />
         <input
           type="color"
           value={widget.falseColor ?? "#f85149"}
@@ -100,7 +113,7 @@ function indicatorFields(ctx: WidgetFieldContextFor<"indicator">, t: TFunction):
           checked={widget.alarmMode === true}
           onChange={(e) => update({ alarmMode: e.target.checked || undefined })}
         />
-        alarmMode ({t("editor.structured.alarmModeHint")})
+        <WidgetEditorCaption text={t("editor.structured.alarmMode")} />
       </label>
     </>
   );
@@ -112,7 +125,7 @@ function sparklineFields(ctx: WidgetFieldContextFor<"sparkline">, t: TFunction):
     <>
       <Section title={t("editor.section.sparkline")} />
       <label>
-        historyRange
+        <WidgetEditorCaption text={t("editor.historyRange")} />
         <select
           value={widget.historyRange ?? "live"}
           onChange={(e) => update({ historyRange: e.target.value as typeof widget.historyRange })}
@@ -125,7 +138,7 @@ function sparklineFields(ctx: WidgetFieldContextFor<"sparkline">, t: TFunction):
         </select>
       </label>
       <label>
-        maxPoints
+        <WidgetEditorCaption text={t("editor.maxPoints")} />
         <input
           type="number"
           min={10}
@@ -135,7 +148,7 @@ function sparklineFields(ctx: WidgetFieldContextFor<"sparkline">, t: TFunction):
         />
       </label>
       <label>
-        {t("editor.sampleMode")}
+        <WidgetEditorCaption text={t("editor.sampleMode")} />
         <select
           value={widget.sampleMode ?? "auto"}
           onChange={(e) =>
@@ -153,7 +166,7 @@ function sparklineFields(ctx: WidgetFieldContextFor<"sparkline">, t: TFunction):
         </select>
       </label>
       <label>
-        {t("editor.color")}
+        <WidgetEditorCaption text={t("editor.color")} />
         <input
           type="color"
           value={widget.color ?? "#3fb950"}
@@ -161,7 +174,7 @@ function sparklineFields(ctx: WidgetFieldContextFor<"sparkline">, t: TFunction):
         />
       </label>
       <label>
-        {t("editor.decimals")}
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -180,23 +193,27 @@ function progressFields(ctx: WidgetFieldContextFor<"progress">, t: TFunction): R
     <>
       <Section title={t("editor.section.progress")} />
       <VariableSelect
-        label="currentVariable"
+        label={t("editor.field.currentVariable")}
         value={widget.currentVariable}
         onChange={(v) => update({ currentVariable: v })}
         variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
       />
       <VariableSelect
-        label="maxVariable"
+        label={t("editor.field.maxVariable")}
         value={widget.maxVariable}
         onChange={(v) => update({ maxVariable: v })}
         variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
       />
       <label>
-        unit
+        <WidgetEditorCaption text={t("editor.unit")} />
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
       <label>
-        decimals
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -215,19 +232,23 @@ function gaugeFields(ctx: WidgetFieldContextFor<"gauge">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.gauge")} />
       <VariableSelect
-        label="minVariable"
+        label={t("editor.field.minVariable")}
         value={widget.minVariable ?? ""}
         onChange={(v) => update({ minVariable: v || undefined })}
         variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
       />
       <VariableSelect
-        label="maxVariable"
+        label={t("editor.field.rangeMax")}
         value={widget.maxVariable ?? ""}
         onChange={(v) => update({ maxVariable: v || undefined })}
         variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
       />
       <label>
-        {t("editor.minValueNoVariable")}
+        <WidgetEditorCaption text={t("editor.minValueNoVariable")} />
         <input
           type="number"
           value={widget.minValue ?? 0}
@@ -235,7 +256,7 @@ function gaugeFields(ctx: WidgetFieldContextFor<"gauge">, t: TFunction): ReactNo
         />
       </label>
       <label>
-        {t("editor.maxValueNoVariable")}
+        <WidgetEditorCaption text={t("editor.maxValueNoVariable")} />
         <input
           type="number"
           value={widget.maxValue ?? 100}
@@ -243,11 +264,11 @@ function gaugeFields(ctx: WidgetFieldContextFor<"gauge">, t: TFunction): ReactNo
         />
       </label>
       <label>
-        unit
+        <WidgetEditorCaption text={t("editor.unit")} />
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
       <label>
-        decimals
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -261,26 +282,28 @@ function gaugeFields(ctx: WidgetFieldContextFor<"gauge">, t: TFunction): ReactNo
 }
 
 function linearGaugeFields(ctx: WidgetFieldContextFor<"linear-gauge">, t: TFunction): ReactNode {
-  const { widget, update } = ctx;
+  const { widget, update, variables } = ctx;
   return (
     <>
       <Section title={t("editor.section.linearGauge")} />
+      <VariableSelect
+        label={t("editor.field.minVariable")}
+        value={widget.minVariable ?? ""}
+        onChange={(v) => update({ minVariable: v || undefined })}
+        variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
+      />
+      <VariableSelect
+        label={t("editor.field.rangeMax")}
+        value={widget.maxVariable ?? ""}
+        onChange={(v) => update({ maxVariable: v || undefined })}
+        variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
+      />
       <label>
-        minVariable
-        <input
-          value={widget.minVariable ?? ""}
-          onChange={(e) => update({ minVariable: e.target.value || undefined })}
-        />
-      </label>
-      <label>
-        maxVariable
-        <input
-          value={widget.maxVariable ?? ""}
-          onChange={(e) => update({ maxVariable: e.target.value || undefined })}
-        />
-      </label>
-      <label>
-        minValue
+        <WidgetEditorCaption text={t("editor.minValueNoVariable")} />
         <input
           type="number"
           value={widget.minValue ?? 0}
@@ -288,7 +311,7 @@ function linearGaugeFields(ctx: WidgetFieldContextFor<"linear-gauge">, t: TFunct
         />
       </label>
       <label>
-        maxValue
+        <WidgetEditorCaption text={t("editor.maxValueNoVariable")} />
         <input
           type="number"
           value={widget.maxValue ?? 100}
@@ -296,11 +319,11 @@ function linearGaugeFields(ctx: WidgetFieldContextFor<"linear-gauge">, t: TFunct
         />
       </label>
       <label>
-        unit
+        <WidgetEditorCaption text={t("editor.unit")} />
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
       <label>
-        decimals
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -314,26 +337,28 @@ function linearGaugeFields(ctx: WidgetFieldContextFor<"linear-gauge">, t: TFunct
 }
 
 function liquidGaugeFields(ctx: WidgetFieldContextFor<"liquid-gauge">, t: TFunction): ReactNode {
-  const { widget, update } = ctx;
+  const { widget, update, variables } = ctx;
   return (
     <>
       <Section title={t("editor.section.liquidGauge")} />
+      <VariableSelect
+        label={t("editor.field.minVariable")}
+        value={widget.minVariable ?? ""}
+        onChange={(v) => update({ minVariable: v || undefined })}
+        variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
+      />
+      <VariableSelect
+        label={t("editor.field.rangeMax")}
+        value={widget.maxVariable ?? ""}
+        onChange={(v) => update({ maxVariable: v || undefined })}
+        variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
+      />
       <label>
-        minVariable
-        <input
-          value={widget.minVariable ?? ""}
-          onChange={(e) => update({ minVariable: e.target.value || undefined })}
-        />
-      </label>
-      <label>
-        maxVariable
-        <input
-          value={widget.maxVariable ?? ""}
-          onChange={(e) => update({ maxVariable: e.target.value || undefined })}
-        />
-      </label>
-      <label>
-        minValue
+        <WidgetEditorCaption text={t("editor.minValueNoVariable")} />
         <input
           type="number"
           value={widget.minValue ?? 0}
@@ -341,7 +366,7 @@ function liquidGaugeFields(ctx: WidgetFieldContextFor<"liquid-gauge">, t: TFunct
         />
       </label>
       <label>
-        maxValue
+        <WidgetEditorCaption text={t("editor.maxValueNoVariable")} />
         <input
           type="number"
           value={widget.maxValue ?? 100}
@@ -349,7 +374,7 @@ function liquidGaugeFields(ctx: WidgetFieldContextFor<"liquid-gauge">, t: TFunct
         />
       </label>
       <label>
-        decimals
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -367,15 +392,20 @@ function pieChartFields(ctx: WidgetFieldContextFor<"pie-chart">, t: TFunction): 
   return (
     <>
       <Section title={t("editor.section.pieChart")} />
+      <RecordFieldGroup
+        objectPath={widget.objectPath ?? widget.modelHintPath}
+        variableName={widget.variableName}
+        allowCustom={variableListAllowCustom(widget)}
+        fields={[
+          {
+            label: t("editor.field.recordLabel"),
+            value: widget.labelField ?? "name",
+            onChange: (next) => update({ labelField: next }),
+          },
+        ]}
+      />
       <label>
-        labelField
-        <input
-          value={widget.labelField ?? "name"}
-          onChange={(e) => update({ labelField: e.target.value })}
-        />
-      </label>
-      <label>
-        decimals
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -394,14 +424,14 @@ function labelFields(ctx: WidgetFieldContextFor<"label">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.label")} />
       <label>
-        {t("editor.textStatic")}
+        <WidgetEditorCaption text={t("editor.textStatic")} />
         <input
           value={widget.text ?? ""}
           onChange={(e) => update({ text: e.target.value || undefined })}
         />
       </label>
       <label>
-        {t("editor.textJsonAlt")}
+        <WidgetEditorCaption text={t("editor.textJsonAlt")} />
         <input
           value={widget.textJson ?? ""}
           onChange={(e) => update({ textJson: e.target.value || undefined })}
@@ -417,14 +447,14 @@ function imageFields(ctx: WidgetFieldContextFor<"image">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.image")} />
       <WidgetMediaUploadField
-        label="imageUrl"
+        label={t("editor.field.imageUrl")}
         value={widget.imageUrl ?? ""}
         onChange={(imageUrl) => update({ imageUrl: imageUrl || undefined })}
         accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg"
         previewAlt={widget.alt ?? widget.title}
       />
       <label>
-        alt
+        <WidgetEditorCaption text={t("editor.field.alt")} />
         <input
           value={widget.alt ?? ""}
           onChange={(e) => update({ alt: e.target.value || undefined })}
@@ -440,7 +470,7 @@ function htmlSnippetFields(ctx: WidgetFieldContextFor<"html-snippet">, t: TFunct
     <>
       <Section title={t("type.htmlSnippet")} />
       <label className="full">
-        htmlJson
+        <WidgetEditorCaption text={t("editor.field.html")} />
         <textarea
           rows={6}
           value={widget.htmlJson ?? ""}
@@ -457,17 +487,17 @@ function timerFields(ctx: WidgetFieldContextFor<"timer">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.timer")} />
       <label>
-        mode
+        <WidgetEditorCaption text={t("editor.field.timerMode")} />
         <select
           value={widget.mode ?? "countdown"}
           onChange={(e) => update({ mode: e.target.value as "countdown" | "elapsed" })}
         >
-          <option value="countdown">countdown</option>
-          <option value="elapsed">elapsed</option>
+          <option value="countdown">{t("editor.timerMode.countdown")}</option>
+          <option value="elapsed">{t("editor.timerMode.elapsed")}</option>
         </select>
       </label>
       <label>
-        durationSeconds (countdown)
+        <WidgetEditorCaption text={t("editor.field.durationSeconds")} />
         <input
           type="number"
           min={1}

@@ -306,10 +306,11 @@ public final class AgentPlaybooks {
         return """
                 ## MES reference (application bundle)
                 
-                Только после deploy bundle пользователем — пути из list_objects / get_example_bundle, не из памяти.
-                1. get_example_bundle appId=mes-reference sections=functions,objects
-                2. list_objects / search_objects — device path для BFF
-                3. list_functions objectPath=<devicePath> appId=mes-reference
+                Только после deploy bundle пользователем — пути из get_example_bundle / list_objects, не из памяти.
+                1. get_example_bundle appId=mes-reference sections=functions,blueprints
+                2. Хост BFF = functions[].objectPath — SINGLETON-хаб root.platform.singleton-blueprints.<name>, не DEVICE;
+                   DEVICE из alertRules[] — телеметрия и журнал событий
+                3. list_functions objectPath=<hubPath> appId=mes-reference
                 4. invoke_bff по functionName из каталога
                 
                 Паттерны: search_context query="mes-reference bundle" topic=application-principles
@@ -855,27 +856,35 @@ public final class AgentPlaybooks {
                 | **script** | SQL (selectOne/exec), readVariable, invoke_function, workflow-style steps |
                 | **(none)** | Built-in platform handlers by name (acknowledgeAlarm, calculate, …) |
                 
+                ### Where functions live
+                Host = SINGLETON hub or INSTANCE twin; DEVICE is for drivers and telemetry.
+                Threshold → alarm is configure_alert (ALERT + CEL); a live computed value is a binding rule — not a function.
+                
                 ### Java deploy example
                 get_function_template topic=java
-                deploy_tree_function path=<devicePath> functionName=checkThreshold
+                deploy_tree_function path=<hubPath> functionName=pumpEfficiency
                   sourceType=java
-                  inputSchema={fields:[{name:value,type:DOUBLE}]}
-                  outputSchema={fields:[{name:alarm,type:BOOLEAN}]}
+                  inputSchema={fields:[{name:flow,type:DOUBLE},{name:head,type:DOUBLE},{name:power,type:DOUBLE}]}
+                  outputSchema={fields:[{name:efficiency,type:DOUBLE}]}
                   sourceBody=\"\"\"
                   import com.ispf.core.function.ObjectJavaFunction;
                   import com.ispf.core.function.JavaFunctionContext;
                   import com.ispf.core.model.*;
                   import java.util.Map;
-                  public class CheckThresholdFn implements ObjectJavaFunction {
+                  public class PumpEfficiencyFn implements ObjectJavaFunction {
                     public DataRecord invoke(DataRecord input, JavaFunctionContext ctx) {
-                      double v = ((Number)input.firstRow().get("value")).doubleValue();
+                      Map<String, Object> row = input.firstRow();
+                      double flow = ((Number) row.get("flow")).doubleValue();   // m3/h
+                      double head = ((Number) row.get("head")).doubleValue();   // m
+                      double power = ((Number) row.get("power")).doubleValue(); // kW, shaft
+                      double efficiency = power > 0 ? flow * head / (367.0 * power) : 0.0;
                       return DataRecord.single(
-                        DataSchema.builder("out").field("alarm", FieldType.BOOLEAN).build(),
-                        Map.of("alarm", v > 80));
+                        DataSchema.builder("out").field("efficiency", FieldType.DOUBLE).build(),
+                        Map.of("efficiency", efficiency));
                     }
                   }
                   \"\"\"
-                invoke_tree_function path=... functionName=checkThreshold inputRows=[{value:90}]
+                invoke_tree_function path=<hubPath> functionName=pumpEfficiency inputRows=[{flow:120,head:45,power:20}]
                 
                 ### Script deploy example
                 deploy_tree_function sourceType=script sourceBody={"steps":[{"type":"return","fields":{"ok":true}}]}

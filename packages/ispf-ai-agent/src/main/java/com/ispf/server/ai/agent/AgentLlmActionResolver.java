@@ -53,10 +53,12 @@ final class AgentLlmActionResolver {
             boolean planningTurn,
             boolean executionTurn,
             boolean askTurn,
-            AgentPhasedPlanIntake.Stage phasedStage
+            AgentPhasedPlanIntake.Stage phasedStage,
+            String uiLocale
     ) {
         static ResolveContext none() {
-            return new ResolveContext(false, false, false, false, AgentPhasedPlanIntake.Stage.DISCOVERY);
+            return new ResolveContext(
+                    false, false, false, false, AgentPhasedPlanIntake.Stage.DISCOVERY, "");
         }
     }
 
@@ -158,7 +160,8 @@ final class AgentLlmActionResolver {
         }
         if (lastResponse != null && AgentJsonProtocol.looksLikeTruncatedContent(lastResponse.content())) {
             Optional<AgentJsonProtocol.AgentAction> salvaged =
-                    AgentJsonProtocol.trySalvageTruncatedFinish(objectMapper, lastResponse.content());
+                    AgentJsonProtocol.trySalvageTruncatedFinish(
+                            objectMapper, lastResponse.content(), ctx.uiLocale());
             if (salvaged.isPresent()) {
                 return new ParseAttempt(lastResponse, salvaged.get(), false, null, totalLlmLatencyMs);
             }

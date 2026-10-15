@@ -164,7 +164,7 @@ class GrpcJsonDeviceDriverTest {
         }
 
         void start() {
-            executor.submit(() -> {
+            var _ = executor.submit(() -> {
                 ready.countDown();
                 acceptLoop();
             });
@@ -186,7 +186,7 @@ class GrpcJsonDeviceDriverTest {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
+                    var _ = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (serverSocket.isClosed()) {
                         return;

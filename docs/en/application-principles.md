@@ -262,7 +262,7 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 
 **Hard rule:** the object that holds application / orchestration / twin logic must **not** be `ObjectType.DEVICE`. DEVICE is for drivers and telemetry only.
 
-**Enforced (ADR-0060):** `BundleManifestValidator` rejects `functions[]` hosted on DEVICE (`LOGIC_HOST_DEVICE`). Prefer `root.platform.singleton-blueprints.{name}` via a SINGLETON blueprint.
+**Reported (ADR-0060):** `BundleManifestValidator` warns on `functions[]` hosted on DEVICE (`LOGIC_HOST_DEVICE`) without blocking deploy — it is a solution-logic issue, not a platform error. Prefer `root.platform.singleton-blueprints.{name}` via a SINGLETON blueprint.
 
 | Need | Blueprint kind | Typical placement | Notes |
 |------|----------------|-------------------|-------|
@@ -289,6 +289,11 @@ Do **not** invent a fake “hub DEVICE” and hang KPIs on it. A CUSTOM/folder c
 | Change set for greenfield bootstrap | Wrong layer; no durable ship artifact | Bundle (SHIP) or tree-first AUTHOR |
 | Hand-duplicating blueprint structure | Breaks SHAPE; drift across instances | Blueprint apply / `models[]` |
 | Logic object typed as **DEVICE** (including “hub” DEVICE) | Wrong role: driver lifecycle, not orchestration/twin logic | SINGLETON orchestrator **or** INSTANCE twin; DEVICE only for I/O children |
+| Heavy CEL/script in dashboard widgets | Logic belongs on the hub, not in HMI fields | Hub function / binding → widget binds a variable ([anti-patterns](anti-patterns.md)) |
+| Binding write↔activate cycles | Pass/depth truncation under load | One owner per variable; see [bindings § Execution](bindings.md#execution) |
+| MQTT / flood topics with event journal on | History DB and UI melt | Last-value variables; `eventJournalEnabled` opt-in only ([anti-patterns](anti-patterns.md)) |
+
+Field pain → ISPF constraints (only enforced items): **[anti-patterns.md](anti-patterns.md)**.
 
 ---
 

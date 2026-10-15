@@ -8,6 +8,7 @@ import type { DataRecord, FunctionDescriptor } from "../../types";
 import DataRecordValueEditor from "../schema/DataRecordValueEditor";
 import { emptyRecord } from "../../utils/ui/record";
 import { cloneSchema } from "../../utils/schema/dataSchema";
+import { functionHasImplementation } from "../../utils/function/functionInvocable";
 
 interface InvokeFunctionDialogProps {
   objectPath: string;
@@ -21,13 +22,6 @@ interface InvokeFunctionDialogProps {
 
 function defaultInputRecord(fn: FunctionDescriptor): DataRecord {
   return emptyRecord(cloneSchema(fn.inputSchema));
-}
-
-function functionHasImplementation(fn: FunctionDescriptor): boolean {
-  if (fn.sourceType === "java" || fn.sourceType === "script") {
-    return Boolean(fn.sourceBody?.trim());
-  }
-  return Boolean(fn.sourceBody?.trim());
 }
 
 function isEmptyInput(input: DataRecord): boolean {

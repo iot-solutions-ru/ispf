@@ -29,6 +29,7 @@ public record BpmnProcess(
         }
 
         SequenceFlowDefinition defaultFlow = null;
+        SequenceFlowDefinition implicitDefault = null;
         for (SequenceFlowDefinition flow : outgoing) {
             if (flow.defaultFlow()) {
                 defaultFlow = flow;
@@ -36,7 +37,10 @@ public record BpmnProcess(
             }
             String condition = flow.conditionExpression();
             if (condition == null || condition.isBlank()) {
-                return flow.targetRef();
+                if (implicitDefault == null) {
+                    implicitDefault = flow;
+                }
+                continue;
             }
             if (evaluator.evaluate(condition)) {
                 return flow.targetRef();
@@ -44,6 +48,9 @@ public record BpmnProcess(
         }
         if (defaultFlow != null) {
             return defaultFlow.targetRef();
+        }
+        if (implicitDefault != null) {
+            return implicitDefault.targetRef();
         }
         if (outgoing.size() == 1) {
             return outgoing.getFirst().targetRef();

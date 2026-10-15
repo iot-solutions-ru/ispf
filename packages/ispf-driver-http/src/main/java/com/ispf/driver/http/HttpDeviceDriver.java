@@ -42,7 +42,6 @@ public class HttpDeviceDriver implements DeviceDriver {
                     "baseUrl", "http://127.0.0.1:8080",
                     "timeoutMs", "5000",
                     "pollIntervalMs", "10000",
-                    "insecureTls", "false",
                     "writePath", ""
             ),
             com.ispf.driver.DriverMaturity.PRODUCTION,
@@ -171,16 +170,39 @@ public class HttpDeviceDriver implements DeviceDriver {
         throw new DriverConfigurationException("Unknown HTTP point: " + pointId);
     }
 
-    private String resolveWriteUrl(HttpPoint point, DataRecord value) {
+    private String resolveWriteUrl(HttpPoint point, DataRecord value) throws DriverException {
         Map<String, Object> row = value.firstRow();
         Object override = firstNonBlank(row, "url", "path");
         if (override != null) {
-            return HttpPoint.resolveUrl(String.valueOf(override).trim(), baseUrl);
+            return requireSameOrigin(HttpPoint.resolveUrl(String.valueOf(override).trim(), baseUrl));
         }
         if (writePath != null && !writePath.isBlank()) {
-            return HttpPoint.resolveUrl(writePath, baseUrl);
+            return requireSameOrigin(HttpPoint.resolveUrl(writePath, baseUrl));
         }
         return point.url();
+    }
+
+    /** Writes may only target the configured baseUrl host (blocks payload SSRF). */
+    private String requireSameOrigin(String resolved) throws DriverException {
+        URI target = URI.create(resolved);
+        URI base = URI.create(baseUrl);
+        String targetHost = target.getHost() == null ? "" : target.getHost().toLowerCase(Locale.ROOT);
+        String baseHost = base.getHost() == null ? "" : base.getHost().toLowerCase(Locale.ROOT);
+        int targetPort = target.getPort() > 0 ? target.getPort() : defaultPort(target.getScheme());
+        int basePort = base.getPort() > 0 ? base.getPort() : defaultPort(base.getScheme());
+        if (!targetHost.equals(baseHost) || targetPort != basePort) {
+            throw new DriverPermanentException(
+                    "HTTP write URL host must match baseUrl (" + baseHost + "); got " + targetHost
+            );
+        }
+        return resolved;
+    }
+
+    private static int defaultPort(String scheme) {
+        if (scheme != null && scheme.equalsIgnoreCase("https")) {
+            return 443;
+        }
+        return 80;
     }
 
     private static String writeMethod(String mappedMethod) {
@@ -237,10 +259,7 @@ public class HttpDeviceDriver implements DeviceDriver {
         if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
             return "application/json";
         }
-        if (!trimmed.isEmpty() && row.size() > 1) {
-            return "application/json";
-        }
-        return "application/json";
+        return "text/plain; charset=utf-8";
     }
 
     private static Object firstNonBlank(Map<String, Object> row, String... keys) {

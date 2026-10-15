@@ -306,7 +306,7 @@ public final class BundleManifestJsonSupport {
             }
             Map<String, Object> copy = new LinkedHashMap<>((Map<String, Object>) dashboard);
             Map<String, Object> mapped = new LinkedHashMap<>();
-            String slug = copy.get("name") != null ? String.valueOf(copy.get("name")).replaceAll("\\s+", "-").toLowerCase() : ("main-" + index);
+            String slug = copy.get("name") != null ? String.valueOf(copy.get("name")).replaceAll("\\s+", "-").toLowerCase(Locale.ROOT) : ("main-" + index);
             mapped.put("path", "root.platform." + appId + ".dashboards." + slug);
             mapped.put("title", copy.getOrDefault("name", "Dashboard " + (index + 1)));
             Object layout = copy.get("layoutJson");

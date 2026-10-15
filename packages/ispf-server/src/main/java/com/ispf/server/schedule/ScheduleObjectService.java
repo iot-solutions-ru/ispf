@@ -294,6 +294,15 @@ public class ScheduleObjectService {
         setString(path, "lastError", error != null ? error : "");
     }
 
+    /**
+     * Records a failed tick without advancing {@code lastTickAt}: the schedule stays due
+     * and the action is retried on the next scheduler poll.
+     */
+    @Transactional
+    public void recordError(String path, String error) {
+        setString(path, "lastError", error != null ? error : "");
+    }
+
     private void ensureStructure(String path) {
         structureService.ensureScheduleStructure(path);
     }

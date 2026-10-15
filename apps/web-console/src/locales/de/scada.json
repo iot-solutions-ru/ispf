@@ -101,7 +101,7 @@
   "props.behaviors": "Verhaltensweisen",
   "props.behaviorsAdd": "Verhalten hinzufügen",
   "props.behaviorsEmpty": "No behaviors yet.",
-  "props.behaviorsHint": "Map binding keys to SVG targets (id=\"ispf-…\").",
+  "props.behaviorsHint": "Jeder Bereich der Zeichnung ist mit einem Objekt verbunden. Die SVG-Id beginnt mit ispf-. Die Liste darunter aktualisiert sich von selbst.",
   "props.behaviorsRemove": "Entfernen",
   "props.bindingObjectPath": "Objektpfad",
   "props.bindingQualityField": "Qualitätsfeld",

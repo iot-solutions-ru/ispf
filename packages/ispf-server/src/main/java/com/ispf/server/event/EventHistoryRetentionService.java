@@ -39,14 +39,7 @@ public class EventHistoryRetentionService {
         if (!clusterProperties.isSchedulerActive()) {
             return;
         }
-        if (!leaderLockService.tryAcquire(RETENTION_LOCK, Duration.ofHours(1))) {
-            return;
-        }
-        try {
-            purgeExpiredEventsInternal();
-        } finally {
-            leaderLockService.release(RETENTION_LOCK);
-        }
+        leaderLockService.runIfLeader(RETENTION_LOCK, Duration.ofHours(1), this::purgeExpiredEventsInternal);
     }
 
     void purgeExpiredEventsInternal() {

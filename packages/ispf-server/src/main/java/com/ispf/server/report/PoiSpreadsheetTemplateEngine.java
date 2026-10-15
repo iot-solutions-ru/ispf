@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.util.Locale;
 /**
  * Band1 spreadsheet filler using Apache POI (ADR-0053).
  * Named range {@code Band1} marks the template row(s); placeholders {@code ${Band1.FIELD}} / {@code ${FIELD}}.
@@ -40,7 +41,7 @@ public class PoiSpreadsheetTemplateEngine implements ReportTemplateEngine {
         if (templateFormat == null) {
             return false;
         }
-        String f = templateFormat.trim().toLowerCase();
+        String f = templateFormat.trim().toLowerCase(Locale.ROOT);
         return "xlsx".equals(f) || "xls".equals(f);
     }
 
@@ -102,7 +103,7 @@ public class PoiSpreadsheetTemplateEngine implements ReportTemplateEngine {
             List<Map<String, Object>> rows,
             ReportExportFormat ignoredOutputFormat
     ) {
-        String templateFormat = template.format().trim().toLowerCase();
+        String templateFormat = template.format().trim().toLowerCase(Locale.ROOT);
         if (!supportsTemplateFormat(templateFormat)) {
             throw new IllegalArgumentException("POI engine supports only xls/xlsx templates");
         }
@@ -179,7 +180,7 @@ public class PoiSpreadsheetTemplateEngine implements ReportTemplateEngine {
         while (matcher.find()) {
             any = true;
             matches++;
-            String key = matcher.group(1).toUpperCase();
+            String key = matcher.group(1).toUpperCase(Locale.ROOT);
             Object value = resolve(rowData, key);
             soleValue = value;
             String replacement = value == null ? "" : String.valueOf(value);
@@ -201,7 +202,7 @@ public class PoiSpreadsheetTemplateEngine implements ReportTemplateEngine {
         if (rowData.containsKey(upperKey)) {
             return rowData.get(upperKey);
         }
-        String lower = upperKey.toLowerCase();
+        String lower = upperKey.toLowerCase(Locale.ROOT);
         if (rowData.containsKey(lower)) {
             return rowData.get(lower);
         }

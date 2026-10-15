@@ -17,11 +17,9 @@ public final class AnsiC12LabClient implements AutoCloseable {
     private final Socket socket;
     private final InputStream in;
     private final OutputStream out;
-    private final int timeoutMs;
     private boolean loggedOn;
 
     public AnsiC12LabClient(String host, int port, int timeoutMs) throws IOException {
-        this.timeoutMs = timeoutMs;
         socket = new Socket();
         socket.connect(new InetSocketAddress(host, port), timeoutMs);
         socket.setTcpNoDelay(true);

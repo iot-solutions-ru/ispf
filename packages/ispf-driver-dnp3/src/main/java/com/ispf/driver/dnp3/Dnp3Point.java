@@ -3,6 +3,7 @@ package com.ispf.driver.dnp3;
 import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 
+import java.util.Locale;
 /**
  * Parsed DNP3 point reference from mapping string {@code index:dataType}.
  * Example: {@code 0:ANALOG_INPUT}.
@@ -24,7 +25,7 @@ public record Dnp3Point(int index, Dnp3Point.Dnp3DataType dataType) {
         }
         try {
             int index = Integer.parseInt(parts[0].trim());
-            Dnp3DataType dataType = Dnp3DataType.valueOf(parts[1].trim().toUpperCase());
+            Dnp3DataType dataType = Dnp3DataType.valueOf(parts[1].trim().toUpperCase(Locale.ROOT));
             return new Dnp3Point(index, dataType);
         } catch (IllegalArgumentException e) {
             throw new DriverConfigurationException("Invalid DNP3 mapping: " + mapping, e);

@@ -9,6 +9,10 @@ extra["protobuf-java.version"] = "4.36.0"
 extra["kafka.version"] = "4.3.1"
 // Pin (ADR-0059 registry): Boot 4.1.1 manages Tomcat 11.0.24 (CVE-2026-65182/65905/68525); drop when the BOM catches up.
 extra["tomcat.version"] = "11.0.26"
+// Boot 4 splits Jackson: jackson-2-bom = com.fasterxml 2.x, jackson-bom = tools.jackson 3.x.
+// Drop when Boot BOM >= these (nightly Trivy CRITICAL/HIGH).
+extra["jackson-2-bom.version"] = "2.22.3"
+extra["jackson-bom.version"] = "3.2.3"
 
 configurations.all {
     exclude(group = "org.slf4j", module = "slf4j-reload4j")
@@ -67,8 +71,8 @@ dependencies {
     implementation("org.apache.poi:poi-ooxml:5.5.1")
     implementation("org.apache.poi:poi:5.5.1")
 
-    // Bundle manifest JSON Schema (ADR-0060)
-    implementation("com.networknt:json-schema-validator:1.5.9")
+    // Bundle manifest JSON Schema (ADR-0060). 3.x is Jackson 3 / JDK 17+ (same lane as ispf-server).
+    implementation("com.networknt:json-schema-validator:3.0.8")
 
     // Parquet export (parquet-mr + Avro + hadoop-common, ~57 MB of the bootJar) is an optional
     // runtime module discovered via ServiceLoader (HistoryParquetExporter in ispf-core).

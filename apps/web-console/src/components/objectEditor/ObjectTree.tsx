@@ -353,11 +353,6 @@ export default function ObjectTree({
     [bulkActions, onRowSelect, openContextMenu],
   );
 
-  const persist = useCallback((next: Set<string>) => {
-    setExpandedPaths(next);
-    writeExpandedPaths(next);
-  }, []);
-
   useEffect(() => {
     if (defaultsSeeded || nodes.length === 0) {
       return;
@@ -367,9 +362,25 @@ export default function ObjectTree({
       setDefaultsSeeded(true);
       return;
     }
-    persist(new Set(defaults));
+    setExpandedPaths((current) => {
+      const next = new Set(current);
+      for (const path of defaults) {
+        next.add(path);
+      }
+      writeExpandedPaths(next);
+      return next;
+    });
+    for (const path of defaults) {
+      onLoadChildrenRef.current?.(path);
+    }
     setDefaultsSeeded(true);
-  }, [nodes, defaultsSeeded, persist]);
+  }, [nodes, defaultsSeeded]);
+
+  useEffect(() => {
+    for (const path of expandedPaths) {
+      onLoadChildrenRef.current?.(path);
+    }
+  }, [expandedPaths]);
 
   useEffect(() => {
     if (!selectedPath || selectedPath === "root") {

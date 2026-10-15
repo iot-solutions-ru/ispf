@@ -112,12 +112,12 @@ class WebsocketDeviceDriverTest {
         int port() { return serverSocket.getLocalPort(); }
         void put(String key, String value) { store.put(key, value); }
         String get(String key) { return store.get(key); }
-        void start() { executor.submit(this::acceptLoop); }
+        void start() { var _ = executor.submit(this::acceptLoop); }
         private void acceptLoop() {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
+                    var _ = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (serverSocket.isClosed()) { return; }
                 }

@@ -115,13 +115,13 @@ class ControlnetDeviceDriverTest {
         int port() { return serverSocket.getLocalPort(); }
         void put(int c, int i, int a, float v) { values.put(key(c, i, a), v); }
         float get(int c, int i, int a) { return values.getOrDefault(key(c, i, a), 0f); }
-        void start() { executor.submit(this::acceptLoop); }
+        void start() { var _ = executor.submit(this::acceptLoop); }
 
         private void acceptLoop() {
             while (!serverSocket.isClosed()) {
                 try {
                     Socket socket = serverSocket.accept();
-                    executor.submit(() -> handle(socket));
+                    var _ = executor.submit(() -> handle(socket));
                 } catch (IOException e) {
                     if (serverSocket.isClosed()) return;
                 }

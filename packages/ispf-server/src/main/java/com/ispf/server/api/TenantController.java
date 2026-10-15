@@ -27,6 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Locale;
 @RestController
 @RequestMapping("/api/v1/tenants")
 public class TenantController {
@@ -57,7 +58,7 @@ public class TenantController {
 
     @GetMapping("/{tenantId}")
     public TenantDto get(@PathVariable String tenantId, Authentication authentication) {
-        String id = tenantId.trim().toLowerCase();
+        String id = tenantId.trim().toLowerCase(Locale.ROOT);
         tenantScopeService.requireTenantAdminOf(id, authentication);
         Tenant tenant = tenantService.getTenant(id);
         String schemaName = tenantIsolationProperties.isHardMode()
@@ -68,7 +69,7 @@ public class TenantController {
 
     @PostMapping
     public TenantDto create(@Valid @RequestBody CreateTenantRequest request) {
-        String tenantId = request.tenantId().trim().toLowerCase();
+        String tenantId = request.tenantId().trim().toLowerCase(Locale.ROOT);
         tenantIsolationValidator.validateTenantIdForCreate(tenantId);
         TenantCreateResult created = tenantService.createTenant(new TenantDraft(
                 tenantId,
@@ -93,7 +94,7 @@ public class TenantController {
     @DeleteMapping("/{tenantId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable String tenantId) {
-        tenantService.deleteTenant(tenantId.trim().toLowerCase());
+        tenantService.deleteTenant(tenantId.trim().toLowerCase(Locale.ROOT));
     }
 
     @PutMapping("/{tenantId}/users/{username}")
@@ -101,14 +102,14 @@ public class TenantController {
             @PathVariable String tenantId,
             @PathVariable String username
     ) {
-        tenantService.assignUserToTenant(username.trim().toLowerCase(), tenantId.trim().toLowerCase());
+        tenantService.assignUserToTenant(username.trim().toLowerCase(Locale.ROOT), tenantId.trim().toLowerCase(Locale.ROOT));
         return Map.of("username", username, "tenantId", tenantId);
     }
 
     @DeleteMapping("/{tenantId}/users/{username}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void unassignUser(@PathVariable String tenantId, @PathVariable String username) {
-        tenantService.clearUserTenant(username.trim().toLowerCase());
+        tenantService.clearUserTenant(username.trim().toLowerCase(Locale.ROOT));
     }
 
     @PutMapping("/{tenantId}/quotas")
@@ -117,7 +118,7 @@ public class TenantController {
             @Valid @RequestBody UpdateTenantQuotasRequest request,
             Authentication authentication
     ) {
-        String id = tenantId.trim().toLowerCase();
+        String id = tenantId.trim().toLowerCase(Locale.ROOT);
         tenantScopeService.requireTenantAdminOf(id, authentication);
         Tenant tenant = tenantService.updateQuotas(
                 id,
@@ -128,7 +129,7 @@ public class TenantController {
 
     @GetMapping("/{tenantId}/usage")
     public TenantUsageDto usage(@PathVariable String tenantId, Authentication authentication) {
-        String id = tenantId.trim().toLowerCase();
+        String id = tenantId.trim().toLowerCase(Locale.ROOT);
         tenantScopeService.requireTenantAdminOf(id, authentication);
         TenantQuotaService.TenantUsage usage = tenantService.usage(id);
         return new TenantUsageDto(usage.tenantId(), usage.devices(), usage.objects());

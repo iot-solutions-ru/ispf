@@ -1,5 +1,6 @@
 package com.ispf.server.application.script;
 
+import com.ispf.core.model.BooleanValues;
 import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.model.IntegerValues;
@@ -25,26 +26,13 @@ public final class ScriptFieldCoercion {
             return field.nullable() ? null : defaultValue(field.type());
         }
         return switch (field.type()) {
-            case BOOLEAN -> coerceBoolean(value);
+            case BOOLEAN -> BooleanValues.requireBoolean(field.name(), value);
             case INTEGER -> IntegerValues.requireInt(field.name(), value);
             case LONG -> coerceLong(value);
             case DOUBLE -> coerceDouble(value);
             case STRING -> String.valueOf(value);
             default -> value;
         };
-    }
-
-    private static Boolean coerceBoolean(Object value) {
-        if (value instanceof Boolean bool) {
-            return bool;
-        }
-        if (value instanceof Number number) {
-            return number.intValue() != 0;
-        }
-        if (value instanceof String text) {
-            return "true".equalsIgnoreCase(text) || "1".equals(text);
-        }
-        throw new IllegalArgumentException("value must be boolean");
     }
 
     private static Long coerceLong(Object value) {

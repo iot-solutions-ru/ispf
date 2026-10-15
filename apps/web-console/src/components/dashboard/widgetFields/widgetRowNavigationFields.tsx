@@ -6,6 +6,7 @@ import {
   DashboardPathField,
   FieldLabel,
   FormRow,
+  SelectionKeyInput,
   StackedSlot,
   type WidgetFieldContext,
 } from "./widgetFieldPrimitives";
@@ -25,29 +26,36 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
             dashboards={ctx.dashboards}
             onChange={(v) => update({ rowTargetDashboard: v || undefined })}
           />
-          <FieldLabel caption="rowOpenMode">
+          <FieldLabel caption={t("editor.field.openMode")}>
             <StackedSlot>
               <select
                 value={mw.rowOpenMode ?? "navigate"}
                 onChange={(e) => update({ rowOpenMode: e.target.value as "navigate" | "modal" })}
                 disabled={!mw.rowTargetDashboard}
               >
-                <option value="navigate">navigate</option>
-                <option value="modal">modal</option>
+                <option value="navigate">{t("editor.openMode.navigate")}</option>
+                <option value="modal">{t("editor.openMode.modal")}</option>
               </select>
             </StackedSlot>
           </FieldLabel>
         </FormRow>
         <FormRow>
-          <FieldLabel caption="rowSelectionKey">
-            <input
+          <FieldLabel
+            caption={t("editor.rowSelectionSlot")}
+            hint={t("editor.hint.rowTargetSelectionKey")}
+          >
+            <SelectionKeyInput
               value={mw.rowSelectionKey ?? ""}
-              onChange={(e) => update({ rowSelectionKey: e.target.value || undefined })}
+              keys={ctx.selectionKeys}
               disabled={!mw.rowTargetDashboard}
+              onChange={(next) => update({ rowSelectionKey: next || undefined })}
             />
           </FieldLabel>
         <KeyValueEditor
-          label="rowParamsJson"
+          label={t("editor.openScreenParams")}
+          keyCaption={t("editor.col.sessionParam")}
+          valueCaption={t("editor.col.value")}
+          keySuggestions={ctx.sessionParams}
           value={mw.rowParamsJson}
           onChange={(v) => update({ rowParamsJson: v })}
         />
@@ -62,34 +70,41 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
       <>
         <FormRow>
           <DashboardPathField
-            caption="rowTargetDashboard"
+            caption={t("editor.rowTargetDashboard")}
             value={tw.rowTargetDashboard ?? ""}
             dashboards={ctx.dashboards}
             onChange={(v) => update({ rowTargetDashboard: v || undefined })}
           />
-          <FieldLabel caption="rowOpenMode">
+          <FieldLabel caption={t("editor.field.openMode")}>
             <StackedSlot>
               <select
                 value={tw.rowOpenMode ?? "navigate"}
                 onChange={(e) => update({ rowOpenMode: e.target.value as "navigate" | "modal" })}
                 disabled={!tw.rowTargetDashboard}
               >
-                <option value="navigate">navigate</option>
-                <option value="modal">modal</option>
+                <option value="navigate">{t("editor.openMode.navigate")}</option>
+                <option value="modal">{t("editor.openMode.modal")}</option>
               </select>
             </StackedSlot>
           </FieldLabel>
         </FormRow>
         <FormRow>
-          <FieldLabel caption="rowSelectionKey">
-            <input
+          <FieldLabel
+            caption={t("editor.rowSelectionSlot")}
+            hint={t("editor.hint.rowTargetSelectionKey")}
+          >
+            <SelectionKeyInput
               value={tw.rowSelectionKey ?? ""}
-              onChange={(e) => update({ rowSelectionKey: e.target.value || undefined })}
+              keys={ctx.selectionKeys}
               disabled={!tw.rowTargetDashboard}
+              onChange={(next) => update({ rowSelectionKey: next || undefined })}
             />
           </FieldLabel>
         <KeyValueEditor
-          label="rowParamsJson"
+          label={t("editor.openScreenParams")}
+          keyCaption={t("editor.col.sessionParam")}
+          valueCaption={t("editor.col.value")}
+          keySuggestions={ctx.sessionParams}
           value={tw.rowParamsJson}
           onChange={(v) => update({ rowParamsJson: v })}
         />
@@ -104,34 +119,38 @@ export function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "ca
       <>
         <FormRow>
           <DashboardPathField
-            caption="cardTargetDashboard"
+            caption={t("editor.field.cardTargetDashboard")}
             value={cw.cardTargetDashboard ?? ""}
             dashboards={ctx.dashboards}
             onChange={(v) => update({ cardTargetDashboard: v || undefined })}
           />
-          <FieldLabel caption="cardOpenMode">
+          <FieldLabel caption={t("editor.field.openMode")}>
             <StackedSlot>
               <select
                 value={cw.cardOpenMode ?? "navigate"}
                 onChange={(e) => update({ cardOpenMode: e.target.value as "navigate" | "modal" })}
                 disabled={!cw.cardTargetDashboard}
               >
-                <option value="navigate">navigate</option>
-                <option value="modal">modal</option>
+                <option value="navigate">{t("editor.openMode.navigate")}</option>
+                <option value="modal">{t("editor.openMode.modal")}</option>
               </select>
             </StackedSlot>
           </FieldLabel>
         </FormRow>
         <FormRow>
-          <FieldLabel caption="cardSelectionKey">
-            <input
+          <FieldLabel caption={t("editor.cardSelectionKey")}>
+            <SelectionKeyInput
               value={cw.cardSelectionKey ?? ""}
-              onChange={(e) => update({ cardSelectionKey: e.target.value || undefined })}
+              keys={ctx.selectionKeys}
               disabled={!cw.cardTargetDashboard}
+              onChange={(next) => update({ cardSelectionKey: next || undefined })}
             />
           </FieldLabel>
         <KeyValueEditor
-          label="cardParamsJson"
+          label={t("editor.openScreenParams")}
+          keyCaption={t("editor.col.sessionParam")}
+          valueCaption={t("editor.col.value")}
+          keySuggestions={ctx.sessionParams}
           value={cw.cardParamsJson}
           onChange={(v) => update({ cardParamsJson: v })}
         />

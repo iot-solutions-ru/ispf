@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.Locale;
 @Service
 public class TenantScopeService {
 
@@ -80,7 +81,7 @@ public class TenantScopeService {
         if (!IspfRoles.isTenantAdmin(authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant admin access required");
         }
-        String normalized = tenantId == null ? "" : tenantId.trim().toLowerCase();
+        String normalized = tenantId == null ? "" : tenantId.trim().toLowerCase(Locale.ROOT);
         String callerTenant = resolveTenantId(authentication)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.FORBIDDEN,

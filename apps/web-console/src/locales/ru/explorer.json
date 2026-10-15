@@ -112,6 +112,7 @@
   "empty.selectObject": "Выбрать объект в дереве",
   "folderList.empty": "Список пуст.",
   "folderList.emptyCreate": "Нет объектов. Создайте первый здесь или через контекстное меню дерева.",
+  "folderList.emptyGroup": "Нет участников. Добавьте объекты через контекстное меню дерева («Добавить в группу»).",
   "folderList.template": "Шаблон",
   "folderList.create": "Создать",
   "folderList.searchPlaceholder": "Поиск по имени, типу, шаблону…",

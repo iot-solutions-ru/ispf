@@ -67,20 +67,24 @@ public class LicensedDriverPackLoader {
         if (!Files.isRegularFile(manifestPath)) {
             return;
         }
+        DriverPackManifest manifest = null;
         try {
             Map<String, Object> root = objectMapper.readValue(manifestPath.toFile(), Map.class);
-            DriverPackManifest manifest = DriverPackManifest.fromMap(root);
+            manifest = DriverPackManifest.fromMap(root);
             if (manifest == null || manifest.packId().isBlank()) {
                 log.warn("Skipping invalid driver pack manifest in {}", packDir);
+                licensedDriverRegistry.recordPackLoadFailure(null, packDir.toString(), "invalid driver pack manifest");
                 return;
             }
             if (manifest.jarFile() == null || manifest.jarFile().isBlank()) {
                 log.warn("Driver pack {} missing jarFile", manifest.packId());
+                licensedDriverRegistry.recordPackLoadFailure(manifest.packId(), packDir.toString(), "manifest missing jarFile");
                 return;
             }
             Path jarPath = packDir.resolve(manifest.jarFile()).normalize();
             if (!jarPath.startsWith(packDir.normalize()) || !Files.isRegularFile(jarPath)) {
                 log.warn("Driver pack {} JAR not found: {}", manifest.packId(), jarPath);
+                licensedDriverRegistry.recordPackLoadFailure(manifest.packId(), packDir.toString(), "JAR not found: " + jarPath);
                 return;
             }
 
@@ -94,10 +98,12 @@ public class LicensedDriverPackLoader {
                     } else {
                         log.warn("Skipping driver pack {} (license): {}", manifest.packId(), ex.getMessage());
                     }
+                    licensedDriverRegistry.recordPackLoadFailure(manifest.packId(), packDir.toString(), "license: " + ex.getMessage());
                     return;
                 }
             } else if (licenseProperties.isEnforce()) {
                 log.warn("Skipping driver pack {} — license block required when enforce=true", manifest.packId());
+                licensedDriverRegistry.recordPackLoadFailure(manifest.packId(), packDir.toString(), "license block required when enforce=true");
                 return;
             } else {
                 log.warn("Loading driver pack {} without license (enforce=false)", manifest.packId());
@@ -107,6 +113,11 @@ public class LicensedDriverPackLoader {
             log.info("Licensed driver pack loaded: {} from {}", manifest.packId(), packDir);
         } catch (Exception ex) {
             log.warn("Failed to load driver pack from {}: {}", packDir, ex.getMessage());
+            licensedDriverRegistry.recordPackLoadFailure(
+                    manifest != null ? manifest.packId() : null,
+                    packDir.toString(),
+                    "load failed: " + ex.getMessage()
+            );
         }
     }
 

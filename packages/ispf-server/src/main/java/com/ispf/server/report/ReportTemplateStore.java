@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.Optional;
 
+import java.util.Locale;
 @Component
 public class ReportTemplateStore {
 
@@ -33,7 +34,7 @@ public class ReportTemplateStore {
         validateFormat(format);
         ReportTemplateEntity entity = repository.findById(reportPath).orElseGet(ReportTemplateEntity::new);
         entity.setReportPath(reportPath);
-        entity.setFormat(format.trim().toLowerCase());
+        entity.setFormat(format.trim().toLowerCase(Locale.ROOT));
         entity.setContent(content);
         entity.setUpdatedAt(Instant.now());
         repository.save(entity);
@@ -48,7 +49,7 @@ public class ReportTemplateStore {
         if (format == null || format.isBlank()) {
             throw new IllegalArgumentException("Template format is required");
         }
-        String normalized = format.trim().toLowerCase();
+        String normalized = format.trim().toLowerCase(Locale.ROOT);
         if (!normalized.equals("xlsx")
                 && !normalized.equals("xls")
                 && !normalized.equals("docx")

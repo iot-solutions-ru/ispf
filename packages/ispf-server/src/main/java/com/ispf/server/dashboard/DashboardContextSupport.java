@@ -34,8 +34,9 @@ public final class DashboardContextSupport {
         try {
             Map<String, Object> parsed = objectMapper.readValue(json, MAP_TYPE);
             return normalizeContext(parsed);
-        } catch (Exception ignored) {
-            return emptyContext();
+        } catch (Exception ex) {
+            String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+            throw new IllegalArgumentException("Invalid dashboard context JSON: " + detail, ex);
         }
     }
 

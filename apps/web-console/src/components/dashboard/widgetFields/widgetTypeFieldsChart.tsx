@@ -2,8 +2,15 @@
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { type NetworkGraphWidget, WIDGET_HISTORY_RANGE_OPTIONS } from "../../../types/dashboard";
-import { AdvancedJsonField, VariableSelect } from "../widgetEditorStructured";
-import { Section, type WidgetFieldContextFor, type WidgetTypeFieldsRegistry } from "./widgetFieldPrimitives";
+import { AdvancedJsonField, HintCaption, VariableSelect } from "../widgetEditorStructured";
+import { variableListAllowCustom } from "../widgetEditorHelpers";
+import { RecordFieldGroup } from "./widgetBoundChoices";
+import {
+  Section,
+  WidgetEditorCaption,
+  type WidgetFieldContextFor,
+  type WidgetTypeFieldsRegistry,
+} from "./widgetFieldPrimitives";
 import { rowNavigationFields } from "./widgetRowNavigationFields";
 
 function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNode {
@@ -13,7 +20,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.chart")} />
       <label>
-        {t("editor.historyRange")}
+        <WidgetEditorCaption text={t("editor.historyRange")} />
         <select
           value={widget.historyRange ?? "live"}
           onChange={(e) => update({ historyRange: e.target.value as typeof widget.historyRange })}
@@ -26,14 +33,14 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
         </select>
       </label>
       <label>
-        {t("editor.chartType")}
+        <WidgetEditorCaption text={t("editor.chartType")} />
         <select
           value={chartType}
           onChange={(e) => update({ chartType: e.target.value as typeof widget.chartType })}
         >
-          <option value="line">line</option>
-          <option value="area">area</option>
-          <option value="bar">bar</option>
+          <option value="line">{t("editor.chartStyle.line")}</option>
+          <option value="area">{t("editor.chartStyle.area")}</option>
+          <option value="bar">{t("editor.chartType.bar")}</option>
           <option value="range">{t("editor.chartTypeRange")}</option>
           <option value="candlestick">{t("editor.chartTypeCandlestick")}</option>
           <option value="bubble">{t("editor.chartTypeBubble")}</option>
@@ -60,6 +67,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
             value={widget.bubbleXVariable ?? ""}
             onChange={(v) => update({ bubbleXVariable: v || undefined })}
             variables={ctx.variables}
+            allowCustom={variableListAllowCustom(widget)}
             disabled={!ctx.variableSelectEnabled}
           />
           <VariableSelect
@@ -67,6 +75,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
             value={widget.bubbleYVariable ?? ""}
             onChange={(v) => update({ bubbleYVariable: v || undefined })}
             variables={ctx.variables}
+            allowCustom={variableListAllowCustom(widget)}
             disabled={!ctx.variableSelectEnabled}
           />
           <VariableSelect
@@ -74,10 +83,11 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
             value={widget.bubbleSizeVariable ?? ""}
             onChange={(v) => update({ bubbleSizeVariable: v || undefined })}
             variables={ctx.variables}
+            allowCustom={variableListAllowCustom(widget)}
             disabled={!ctx.variableSelectEnabled}
           />
           <label>
-            {t("editor.chartBubbleDefaultSize")}
+            <WidgetEditorCaption text={t("editor.chartBubbleDefaultSize")} />
             <input
               type="number"
               min={10}
@@ -109,18 +119,18 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
       )}
       {chartType !== "bubble" && chartType !== "radar" && (
         <label>
-          {t("editor.chartStyle")}
+          <WidgetEditorCaption text={t("editor.chartStyle")} />
           <select
             value={widget.chartStyle ?? "area"}
             onChange={(e) => update({ chartStyle: e.target.value as "line" | "area" })}
           >
-            <option value="area">area</option>
-            <option value="line">line</option>
+            <option value="area">{t("editor.chartStyle.area")}</option>
+            <option value="line">{t("editor.chartStyle.line")}</option>
           </select>
         </label>
       )}
       <label>
-        {t("editor.maxPoints")}
+        <WidgetEditorCaption text={t("editor.maxPoints")} />
         <input
           type="number"
           min={10}
@@ -130,7 +140,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
         />
       </label>
       <label>
-        {t("editor.sampleMode")}
+        <WidgetEditorCaption text={t("editor.sampleMode")} />
         <select
           value={widget.sampleMode ?? "auto"}
           onChange={(e) =>
@@ -151,7 +161,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
       {(widget.sampleMode ?? "auto") !== "raw"
         && (widget.sampleMode ?? "auto") !== "coalesce" && (
         <label>
-          {t("editor.historyBucket")}
+          <WidgetEditorCaption text={t("editor.historyBucket")} />
           <select
             value={widget.historyBucket ?? "auto"}
             onChange={(e) =>
@@ -160,15 +170,15 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
               })
             }
           >
-            <option value="auto">auto</option>
-            <option value="1m">1m</option>
-            <option value="5m">5m</option>
-            <option value="15m">15m</option>
-            <option value="30m">30m</option>
-            <option value="1h">1h</option>
-            <option value="6h">6h</option>
-            <option value="8h">8h</option>
-            <option value="1d">1d</option>
+            <option value="auto">{t("editor.historyBucket.auto")}</option>
+            <option value="1m">{t("editor.historyBucket.1m")}</option>
+            <option value="5m">{t("editor.historyBucket.5m")}</option>
+            <option value="15m">{t("editor.historyBucket.15m")}</option>
+            <option value="30m">{t("editor.historyBucket.30m")}</option>
+            <option value="1h">{t("editor.historyBucket.1h")}</option>
+            <option value="6h">{t("editor.historyBucket.6h")}</option>
+            <option value="8h">{t("editor.historyBucket.8h")}</option>
+            <option value="1d">{t("editor.historyBucket.1d")}</option>
           </select>
           <span className="hint">{t("editor.historyBucketHint")}</span>
         </label>
@@ -176,7 +186,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
       {((widget.sampleMode ?? "auto") === "coalesce"
         || (widget.sampleMode ?? "auto") === "auto") && (
         <label>
-          {t("editor.liveCoalesceMs")}
+          <WidgetEditorCaption text={t("editor.liveCoalesceMs")} />
           <input
             type="number"
             min={200}
@@ -194,7 +204,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
         </label>
       )}
       <label>
-        {t("editor.color")}
+        <WidgetEditorCaption text={t("editor.color")} />
         <input
           type="color"
           value={widget.color ?? "#2f81f7"}
@@ -202,18 +212,18 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
         />
       </label>
       <label>
-        {t("editor.unit")}
+        <WidgetEditorCaption text={t("editor.unit")} />
         <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
       </label>
       <label>
-        unitField
+        <WidgetEditorCaption text={t("editor.unitField")} />
         <input
           value={widget.unitField ?? ""}
           onChange={(e) => update({ unitField: e.target.value || undefined })}
         />
       </label>
       <label>
-        {t("editor.decimals")}
+        <WidgetEditorCaption text={t("editor.decimals")} />
         <input
           type="number"
           min={0}
@@ -232,35 +242,35 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
     <>
       <Section title={t("editor.section.map")} />
       <label>
-        latVariable
+        <WidgetEditorCaption text={t("editor.field.latVariable")} />
         <input
           value={widget.latVariable ?? "coordinates"}
           onChange={(e) => update({ latVariable: e.target.value })}
         />
       </label>
       <label>
-        latField
+        <WidgetEditorCaption text={t("editor.field.latField")} />
         <input
           value={widget.latField ?? "latitude"}
           onChange={(e) => update({ latField: e.target.value })}
         />
       </label>
       <label>
-        lonField
+        <WidgetEditorCaption text={t("editor.field.lonField")} />
         <input
           value={widget.lonField ?? "longitude"}
           onChange={(e) => update({ lonField: e.target.value })}
         />
       </label>
       <label>
-        labelVariable
+        <WidgetEditorCaption text={t("editor.field.labelVariable")} />
         <input
           value={widget.labelVariable ?? ""}
           onChange={(e) => update({ labelVariable: e.target.value || undefined })}
         />
       </label>
       <label>
-        zoom
+        <WidgetEditorCaption text={t("editor.field.zoom")} />
         <input
           type="number"
           min={1}
@@ -270,7 +280,7 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
         />
       </label>
       <label>
-        centerLat
+        <WidgetEditorCaption text={t("editor.field.centerLat")} />
         <input
           type="number"
           step="any"
@@ -279,7 +289,7 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
         />
       </label>
       <label>
-        centerLon
+        <WidgetEditorCaption text={t("editor.field.centerLon")} />
         <input
           type="number"
           step="any"
@@ -288,23 +298,21 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
         />
       </label>
       <label>
-        mapStyleUrl
+        <HintCaption>{t("editor.field.mapStyleUrl")}</HintCaption>
         <input
           value={widget.mapStyleUrl ?? ""}
           onChange={(e) => update({ mapStyleUrl: e.target.value || undefined })}
-          placeholder={t("editor.placeholder.vectorStyle")}
         />
       </label>
       <label>
-        tileUrl
+        <HintCaption>{t("editor.field.tileUrl")}</HintCaption>
         <input
           value={widget.tileUrl ?? ""}
           onChange={(e) => update({ tileUrl: e.target.value || undefined })}
-          placeholder="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
       </label>
       <label>
-        tileAttribution
+        <WidgetEditorCaption text={t("editor.field.tileAttribution")} />
         <input
           value={widget.tileAttribution ?? ""}
           onChange={(e) => update({ tileAttribution: e.target.value || undefined })}
@@ -320,34 +328,35 @@ function ganttChartFields(ctx: WidgetFieldContextFor<"gantt-chart">, t: TFunctio
   return (
     <>
       <Section title={t("editor.section.gantt")} />
-      <label>
-        labelField
-        <input
-          value={widget.labelField ?? "label"}
-          onChange={(e) => update({ labelField: e.target.value })}
-        />
-      </label>
-      <label>
-        startField
-        <input
-          value={widget.startField ?? "start"}
-          onChange={(e) => update({ startField: e.target.value })}
-        />
-      </label>
-      <label>
-        endField
-        <input
-          value={widget.endField ?? "end"}
-          onChange={(e) => update({ endField: e.target.value })}
-        />
-      </label>
+      <RecordFieldGroup
+        objectPath={widget.objectPath ?? widget.modelHintPath}
+        variableName={widget.variableName}
+        allowCustom={variableListAllowCustom(widget)}
+        fields={[
+          {
+            label: t("editor.field.recordLabel"),
+            value: widget.labelField ?? "label",
+            onChange: (next) => update({ labelField: next }),
+          },
+          {
+            label: t("editor.field.recordStart"),
+            value: widget.startField ?? "start",
+            onChange: (next) => update({ startField: next }),
+          },
+          {
+            label: t("editor.field.recordEnd"),
+            value: widget.endField ?? "end",
+            onChange: (next) => update({ endField: next }),
+          },
+        ]}
+      />
       <label className="checkbox-row">
         <input
           type="checkbox"
           checked={widget.interactive !== false}
           onChange={(e) => update({ interactive: e.target.checked })}
         />
-        {t("editor.ganttInteractive")}
+        <WidgetEditorCaption text={t("editor.ganttInteractive")} />
       </label>
       <label className="checkbox-row">
         <input
@@ -355,7 +364,7 @@ function ganttChartFields(ctx: WidgetFieldContextFor<"gantt-chart">, t: TFunctio
           checked={widget.allowBarDrag !== false}
           onChange={(e) => update({ allowBarDrag: e.target.checked })}
         />
-        {t("editor.ganttAllowBarDrag")}
+        <WidgetEditorCaption text={t("editor.ganttAllowBarDrag")} />
       </label>
     </>
   );
@@ -367,47 +376,57 @@ function networkGraphFields(ctx: WidgetFieldContextFor<"network-graph">, t: TFun
     <>
       <Section title={t("editor.section.networkGraph")} />
       <VariableSelect
-        label="nodesVariable"
+        label={t("editor.field.nodesVariable")}
         value={widget.nodesVariable ?? ""}
         onChange={(v) => update({ nodesVariable: v || undefined })}
         variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
       />
       <VariableSelect
-        label="edgesVariable"
+        label={t("editor.field.edgesVariable")}
         value={widget.edgesVariable ?? ""}
         onChange={(v) => update({ edgesVariable: v || undefined })}
         variables={variables}
+        allowCustom={variableListAllowCustom(widget)}
+        disabled={!ctx.variableSelectEnabled}
+      />
+      <RecordFieldGroup
+        objectPath={widget.objectPath ?? widget.modelHintPath}
+        variableName={widget.nodesVariable}
+        allowCustom={variableListAllowCustom(widget)}
+        fields={[
+          {
+            label: t("editor.field.recordLabel"),
+            value: widget.labelField ?? "name",
+            onChange: (next) => update({ labelField: next }),
+          },
+          {
+            label: t("editor.field.recordId"),
+            value: widget.idField ?? "id",
+            onChange: (next) => update({ idField: next }),
+          },
+        ]}
+      />
+      <RecordFieldGroup
+        objectPath={widget.objectPath ?? widget.modelHintPath}
+        variableName={widget.edgesVariable}
+        allowCustom={variableListAllowCustom(widget)}
+        fields={[
+          {
+            label: t("editor.field.edgeFrom"),
+            value: widget.edgeFromField ?? "from",
+            onChange: (next) => update({ edgeFromField: next }),
+          },
+          {
+            label: t("editor.field.edgeTo"),
+            value: widget.edgeToField ?? "to",
+            onChange: (next) => update({ edgeToField: next }),
+          },
+        ]}
       />
       <label>
-        labelField
-        <input
-          value={widget.labelField ?? "name"}
-          onChange={(e) => update({ labelField: e.target.value })}
-        />
-      </label>
-      <label>
-        idField
-        <input
-          value={widget.idField ?? "id"}
-          onChange={(e) => update({ idField: e.target.value })}
-        />
-      </label>
-      <label>
-        edgeFromField
-        <input
-          value={widget.edgeFromField ?? "from"}
-          onChange={(e) => update({ edgeFromField: e.target.value })}
-        />
-      </label>
-      <label>
-        edgeToField
-        <input
-          value={widget.edgeToField ?? "to"}
-          onChange={(e) => update({ edgeToField: e.target.value })}
-        />
-      </label>
-      <label>
-        layout
+        <WidgetEditorCaption text={t("editor.field.graphLayout")} />
         <select
           value={widget.layout ?? "cose"}
           onChange={(e) =>

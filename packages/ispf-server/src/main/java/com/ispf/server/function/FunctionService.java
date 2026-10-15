@@ -1,7 +1,6 @@
 package com.ispf.server.function;
 
 import com.ispf.core.object.FunctionDescriptor;
-import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
@@ -117,13 +116,16 @@ public class FunctionService implements WorkflowFunctionCalls {
     }
 
     private void ensureBuiltinFunctionStructure(String objectPath, String functionName) {
-        PlatformObject node = objectManager.tree().findByPath(objectPath).orElse(null);
-        if (node == null || node.type() != ObjectType.DATA_SOURCE) {
+        if (!DataSourceFunctionSupport.EXECUTE_QUERY_FUNCTION_NAME.equals(functionName)) {
             return;
         }
-        if (DataSourceFunctionSupport.EXECUTE_QUERY_FUNCTION_NAME.equals(functionName)) {
-            structureService.ensureDataSourceStructure(objectPath);
+        PlatformObject node = objectManager.tree().findByPath(objectPath).orElse(null);
+        if (node == null) {
+            return;
         }
+        FunctionDescriptor descriptor = node.functions().get(functionName);
+        ExecuteQueryPathResolver.tryResolve(objectManager, objectPath, descriptor)
+                .ifPresent(structureService::ensureDataSourceStructure);
     }
 
     private record ResolvedInvocation(

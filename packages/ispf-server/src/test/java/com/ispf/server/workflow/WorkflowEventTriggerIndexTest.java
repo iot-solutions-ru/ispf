@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -76,6 +77,41 @@ class WorkflowEventTriggerIndexTest {
         );
         assertTrue(binding.isPresent());
         assertEquals(WorkflowEventTriggerIndex.TriggerType.VARIABLE, binding.get().triggerType());
+    }
+
+    @Test
+    void parseTriggerRejectsUnreadableJson() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () ->
+                WorkflowEventTriggerIndex.parseTrigger(
+                        "root.platform.workflows.alarm",
+                        "{not-json",
+                        OBJECT_MAPPER
+                ));
+        assertTrue(error.getMessage().contains("root.platform.workflows.alarm"));
+        assertTrue(error.getMessage().contains("not valid"));
+    }
+
+    @Test
+    void parseTriggerTreatsEmptyObjectAsNoTrigger() {
+        assertTrue(WorkflowEventTriggerIndex.parseTrigger(
+                "root.platform.workflows.alarm",
+                "{}",
+                OBJECT_MAPPER
+        ).isEmpty());
+    }
+
+    @Test
+    void rebuildFailsWhenActiveWorkflowTriggerJsonIsUnreadable() {
+        PlatformObject broken = workflowNode(
+                "root.platform.workflows.broken",
+                WorkflowLifecycleStatus.ACTIVE,
+                "{not-json"
+        );
+        when(objects.childrenOf(WORKFLOWS_ROOT)).thenReturn(List.of(broken));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, index::rebuild);
+        assertTrue(error.getMessage().contains("root.platform.workflows.broken"));
+        assertEquals(List.of(), index.findEventWorkflows("root.device", "thresholdExceeded"));
     }
 
     @Test

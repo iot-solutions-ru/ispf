@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Locale;
 public record BlueprintDto(
         String id,
         String name,
@@ -76,7 +77,7 @@ public record BlueprintDto(
                     : triggers.stream()
                     .map(String::trim)
                     .filter(s -> !s.isEmpty())
-                    .map(s -> MixinReevaluationTrigger.valueOf(s.toUpperCase()))
+                    .map(s -> MixinReevaluationTrigger.valueOf(s.toUpperCase(Locale.ROOT)))
                     .toArray(MixinReevaluationTrigger[]::new);
             return BlueprintReevaluation.of(true, parsed);
         }

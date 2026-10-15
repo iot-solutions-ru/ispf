@@ -39,20 +39,20 @@ final class AgentPlatformTools {
             BindingRuleEngine bindingRuleEngine,
             PlatformTimeZoneResolver timeZoneResolver,
             HaystackExportService haystackExportService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ExpressionFormalVerificationService formalVerificationService
     ) {
         return List.of(
-                listPlatformSchedulesTool(scheduleObjectService, ObjectTreePort, objectAccessService, tenantScopeService),
+                listPlatformSchedulesTool(scheduleObjectService, objectTreePort, objectAccessService, tenantScopeService),
                 configurePlatformScheduleTool(scheduleObjectService, objectAccessService, tenantScopeService),
-                listBindingRulesTool(bindingRulesService, ObjectTreePort, objectAccessService, tenantScopeService),
+                listBindingRulesTool(bindingRulesService, objectTreePort, objectAccessService, tenantScopeService),
                 configurePlatformContextRuleTool(
                         bindingRulesService,
                         bindingDependencyIndex,
                         bindingRuleEngine,
-                        ObjectTreePort,
+                        objectTreePort,
                         objectAccessService,
                         tenantScopeService,
                         formalVerificationService
@@ -64,7 +64,7 @@ final class AgentPlatformTools {
 
     private static PlatformAgentTool listPlatformSchedulesTool(
             ScheduleObjectService scheduleObjectService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -90,8 +90,8 @@ final class AgentPlatformTools {
                 try {
                     scheduleObjectService.ensureCatalog();
                     List<Map<String, Object>> rows = new ArrayList<>();
-                    if (ObjectTreePort.tree().findByPath(root).isPresent()) {
-                        for (PlatformObject child : ObjectTreePort.tree().childrenOf(root)) {
+                    if (objectTreePort.tree().findByPath(root).isPresent()) {
+                        for (PlatformObject child : objectTreePort.tree().childrenOf(root)) {
                             if (child.type() != ObjectType.SCHEDULE) {
                                 continue;
                             }
@@ -181,7 +181,7 @@ final class AgentPlatformTools {
 
     private static PlatformAgentTool listBindingRulesTool(
             BindingRulesService bindingRulesService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -208,7 +208,7 @@ final class AgentPlatformTools {
                 }
                 objectAccessService.requireRead(path, auth);
                 try {
-                    ObjectTreePort.require(path);
+                    objectTreePort.require(path);
                     List<Map<String, Object>> rows = bindingRulesService.listRules(path).stream()
                             .map(AgentPlatformTools::ruleRow)
                             .toList();
@@ -224,7 +224,7 @@ final class AgentPlatformTools {
             BindingRulesService bindingRulesService,
             BindingDependencyIndex bindingDependencyIndex,
             BindingRuleEngine bindingRuleEngine,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ExpressionFormalVerificationService formalVerificationService
@@ -256,7 +256,7 @@ final class AgentPlatformTools {
                 }
                 objectAccessService.requireWrite(path, auth);
                 try {
-                    PlatformObject node = ObjectTreePort.require(path);
+                    PlatformObject node = objectTreePort.require(path);
                     if (node.type() != ObjectType.DASHBOARD) {
                         return Map.of("status", "ERROR", "error", "Platform context rules require DASHBOARD object: " + path);
                     }

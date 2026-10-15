@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import java.util.Locale;
 /**
  * Loads Tier C analytics packs from {@link AnalyticsPackProperties#getPacksDir()} (BL-216).
  *
@@ -283,7 +284,7 @@ public class DropInAnalyticsPackLoader {
         if (licenseType == null || licenseType.isBlank()) {
             return true;
         }
-        String normalized = licenseType.trim().toLowerCase();
+        String normalized = licenseType.trim().toLowerCase(Locale.ROOT);
         return normalized.equals("apache-2.0")
                 || normalized.equals("mit")
                 || normalized.equals("bsd-3-clause")

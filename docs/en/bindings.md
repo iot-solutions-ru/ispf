@@ -101,6 +101,21 @@ Cross-object write (rule on hub, result on remote device):
 | `windowBucket` | Historian only: aggregate window (`5m`, `1h`, `8h`, …) |
 | `rollupBuckets` | Historian only: optional materialized rollup windows |
 
+### Execution {#execution}
+
+How ISPF avoids the “bindings queue, conditions already flipped” pain:
+
+| Guarantee | Behavior |
+|-----------|----------|
+| **Order** | Enabled reactive rules on one object run sorted by `order` ascending |
+| **Multi-pass** | After a pass that changed variables, the engine re-evaluates (manual trigger) until stable or **`MAX_PASSES=8`** |
+| **Depth** | Cross-object / nested activation depth capped at **`MAX_DEPTH=16`** |
+| **Async** | `activators.async=true` schedules that rule off the sync chain (independent side effects) |
+| **Stop-loss** | Truncation throws + error log + counter (see `BindingRuleEngine`) |
+| **Static warn** | `BindingCascadeAnalyzer` logs write↔activate cycles and heavy expressions on save |
+
+**Authoring:** one owner per variable; put multi-step branching in hub functions (`call(@/fn/…)`), not in competing rules. Anti-patterns: [anti-patterns.md](anti-patterns.md).
+
 ### Historian rules (`kind: historian`)
 
 Same `@bindingRules` array; multiple rules per device; arbitrary output variable names. Tag catalog path = `objectPath/tag/ruleId`.
@@ -124,9 +139,11 @@ Same `@bindingRules` array; multiple rules per device; arbitrary output variable
 
 Rules with `periodicMs > 0` are parsed into JDBC index `platform_binding_periodic_rules` when `@bindingRules` is saved. **`BindingPeriodicScheduler`** wakes the JVM once at the nearest `next_run_at` and runs only due hits — no per-second full-tree scan. If no periodic rules exist, background wake is a no-op.
 
+A run that throws is retried after one period, then after twice the previous delay, up to `max(periodicMs, 5 min)` (`ispf.binding.periodic.max-backoff-ms`). The rule stays enabled; the first success restores the normal period, and saving `@bindingRules` retries at once.
+
 ### Target kinds (platform rule)
 
-Model extension — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). If `target.kind` is absent → **`variable`**.
+Model extension — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). If `target.kind` is absent → **`variable`**. An unknown `kind` is **rejected** (not silently remapped to `variable`).
 
 | `kind` | Fields | Purpose |
 |--------|------|------------|
@@ -201,5 +218,5 @@ For **variable** or **event** targets: choose **Effect type**, then either a loc
 
 ## Not to be confused with
 
-- **SQL bindings** (`SqlBindingObjectService` / bundle `bindings[]`) — separate scheduler, not object binding rules. Prefer **blueprint `sqlBindings`** with `${code}` / `${self.path}` parameters when many instances share one query shape (see [blueprints](blueprints.md) § Parametrized SHAPE).
+- **SQL bindings** (`SqlBindingObjectService` / bundle `bindings[]`) — separate scheduler, not object binding rules. Prefer **blueprint `sqlBindings`** with `${code}` / `${self.path}` parameters when many instances share one query shape (see [blueprints](blueprints.md) § Parametrized SHAPE). A refresh with no usable value (no rows, SQL `NULL`, missing column, non-numeric value) keeps the last value marked `quality=BAD` instead of writing `0`; `ispf.sql_binding.refresh_failures.total{reason}` counts it. A query that fails in a scheduled, event, or after-function-commit refresh is handled the same way (`reason=query_failed`), and the other bindings still run: a scheduled refresh runs each binding outside a shared transaction and an event refresh gives each binding its own transaction, so one failure does not roll back the others. After a function commits, its bindings refresh on the object-change bus shortly after the call returns, outside the function's transaction, so their values are saved; one refresh per function runs at a time, and a commit during it makes it run once more. With `ispf.object-change.async-enabled=false` or a full automation queue, that refresh runs on the calling thread in the function's finished transaction and its values reach only the live tree, since a new transaction there could wait on the locks of a calling workflow step suspended on the same thread. Deploy and manual refresh of a single binding still return the query error; a refresh inside a workflow step runs in the step's transaction, so the error fails the step.
 - **Alert rules**, correlators, workflows — separate subsystems; blueprint `alertRules` templates materialize alert nodes with an absolute target object path.

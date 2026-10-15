@@ -3,6 +3,7 @@ package com.ispf.driver.iec104;
 import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 
+import java.util.Locale;
 /**
  * Parsed IEC 60870-5-104 point reference from mapping string {@code ioa:dataType}.
  * Example: {@code 2001:FLOAT}.
@@ -26,7 +27,7 @@ record Iec104Point(int ioa, Iec104DataType dataType) {
         }
         try {
             int ioa = Integer.parseInt(parts[0].trim());
-            Iec104DataType dataType = Iec104DataType.valueOf(parts[1].trim().toUpperCase());
+            Iec104DataType dataType = Iec104DataType.valueOf(parts[1].trim().toUpperCase(Locale.ROOT));
             return new Iec104Point(ioa, dataType);
         } catch (IllegalArgumentException e) {
             throw new DriverConfigurationException("Invalid IEC104 mapping: " + mapping, e);

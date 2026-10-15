@@ -17,11 +17,19 @@ public record BindingVariableRef(String objectPath, String variableName, String 
     public static final String ANY = "*";
 
     public BindingVariableRef {
-        if (variableName == null || variableName.isBlank()) {
-            variableName = ANY;
-        }
         if (ref != null && ref.isBlank()) {
             ref = null;
+        }
+        // Eagerly materialize path/name from ref so matches() never re-parses on the hot path.
+        if (ref != null) {
+            PlatformRef parsed = PlatformRefParser.parse(ref);
+            if (parsed.kind() == PlatformRefKind.VARIABLE) {
+                objectPath = parsed.isCurrentObject() ? SELF : parsed.object();
+                variableName = parsed.name();
+            }
+        }
+        if (variableName == null || variableName.isBlank()) {
+            variableName = ANY;
         }
     }
 
@@ -51,26 +59,17 @@ public record BindingVariableRef(String objectPath, String variableName, String 
     }
 
     public BindingVariableRef normalize() {
-        if (ref == null || ref.isBlank()) {
-            return this;
-        }
-        PlatformRef parsed = PlatformRefParser.parse(ref);
-        if (parsed.kind() != PlatformRefKind.VARIABLE) {
-            return this;
-        }
-        String path = parsed.isCurrentObject() ? SELF : parsed.object();
-        return new BindingVariableRef(path, parsed.name(), ref);
+        // Compact constructor already materializes path/name from ref.
+        return this;
     }
 
     public boolean matches(String ruleObjectPath, String changedObjectPath, String changedVariable) {
-        BindingVariableRef normalized = normalize();
-        String activatorPath = normalized.objectPath == null || normalized.objectPath.isBlank()
-                || SELF.equals(normalized.objectPath)
+        String activatorPath = objectPath == null || objectPath.isBlank() || SELF.equals(objectPath)
                 ? ruleObjectPath
-                : normalized.objectPath;
+                : objectPath;
         if (!ANY.equals(activatorPath) && !activatorPath.equals(changedObjectPath)) {
             return false;
         }
-        return ANY.equals(normalized.variableName) || normalized.variableName.equals(changedVariable);
+        return ANY.equals(variableName) || variableName.equals(changedVariable);
     }
 }

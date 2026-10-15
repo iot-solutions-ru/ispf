@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.util.Locale;
 public final class ApplicationSchemaSupport {
 
     private static final Pattern CREATE_TABLE = Pattern.compile(
@@ -40,7 +41,7 @@ public final class ApplicationSchemaSupport {
     }
 
     public static String defaultSchemaName(String appId) {
-        String sanitized = appId.replaceAll("[^a-zA-Z0-9_]", "_").toLowerCase();
+        String sanitized = appId.replaceAll("[^a-zA-Z0-9_]", "_").toLowerCase(Locale.ROOT);
         if (sanitized.isBlank()) {
             throw new IllegalArgumentException("appId must contain alphanumeric characters");
         }
@@ -58,14 +59,14 @@ public final class ApplicationSchemaSupport {
     public static void validateMigrationSql(String sql, String tablePrefix) {
         Matcher matcher = CREATE_TABLE.matcher(sql);
         while (matcher.find()) {
-            String tableName = matcher.group(2).toLowerCase();
+            String tableName = matcher.group(2).toLowerCase(Locale.ROOT);
             if (RESERVED_TABLES.contains(tableName)) {
                 throw new IllegalArgumentException(
                         "Migration creates reserved platform table: " + tableName
                 );
             }
             if (tablePrefix != null && !tablePrefix.isBlank()
-                    && !tableName.startsWith(tablePrefix.toLowerCase())) {
+                    && !tableName.startsWith(tablePrefix.toLowerCase(Locale.ROOT))) {
                 throw new IllegalArgumentException(
                         "Table " + tableName + " must start with tablePrefix: " + tablePrefix
                 );

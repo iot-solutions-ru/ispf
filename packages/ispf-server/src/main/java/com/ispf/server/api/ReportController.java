@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Locale;
 @RestController
 @RequestMapping("/api/v1/reports")
 public class ReportController {
@@ -250,7 +251,7 @@ public class ReportController {
     }
 
     private static MediaType templateMediaType(String format) {
-        return switch (format.toLowerCase()) {
+        return switch (format.toLowerCase(Locale.ROOT)) {
             case "xlsx" -> MediaType.parseMediaType(
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             case "xls" -> MediaType.parseMediaType("application/vnd.ms-excel");

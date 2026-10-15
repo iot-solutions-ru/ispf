@@ -48,7 +48,7 @@ class MqttDriverRuntimeIntegrationTest {
     private ObjectManager objectManager;
 
     @Autowired
-    private BlueprintApplicationService BlueprintApplicationService;
+    private BlueprintApplicationService blueprintApplicationService;
 
     @Autowired
     private DriverRuntimeService driverRuntimeService;
@@ -64,7 +64,7 @@ class MqttDriverRuntimeIntegrationTest {
     void createDeviceAndBroker() throws Exception {
         devicePath = DriverIntegrationTestSupport.createDevice(
                 objectManager,
-                BlueprintApplicationService,
+                blueprintApplicationService,
                 driverRuntimeService,
                 DEVICE_NAME
         );

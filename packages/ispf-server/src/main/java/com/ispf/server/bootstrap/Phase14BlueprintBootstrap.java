@@ -33,12 +33,12 @@ public class Phase14BlueprintBootstrap {
             .field("value", FieldType.BOOLEAN)
             .build();
 
-    private final BlueprintEngine BlueprintEngine;
-    private final BlueprintRegistry BlueprintRegistry;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintRegistry blueprintRegistry;
 
-    public Phase14BlueprintBootstrap(BlueprintEngine BlueprintEngine, BlueprintRegistry BlueprintRegistry) {
-        this.BlueprintEngine = BlueprintEngine;
-        this.BlueprintRegistry = BlueprintRegistry;
+    public Phase14BlueprintBootstrap(BlueprintEngine blueprintEngine, BlueprintRegistry blueprintRegistry) {
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintRegistry = blueprintRegistry;
     }
 
     public void ensurePhase14Models() {
@@ -50,13 +50,13 @@ public class Phase14BlueprintBootstrap {
 
     private void ensureModel(String name, BlueprintDefinition definition) {
         BlueprintDefinition intrinsic = definition.withSystemIntrinsicFlag();
-        BlueprintRegistry.findByName(name).ifPresentOrElse(
+        blueprintRegistry.findByName(name).ifPresentOrElse(
                 existing -> {
                     if (!existing.systemIntrinsic()) {
-                        BlueprintEngine.updateBlueprint(existing.withSystemIntrinsicFlag());
+                        blueprintEngine.updateBlueprint(existing.withSystemIntrinsicFlag());
                     }
                 },
-                () -> BlueprintEngine.createBlueprint(intrinsic)
+                () -> blueprintEngine.createBlueprint(intrinsic)
         );
     }
 

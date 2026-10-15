@@ -13,12 +13,14 @@ import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
@@ -31,104 +33,115 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class BindingPeriodicScheduleRegistryConsecutiveFailureTest {
 
+    private static final String OBJECT_PATH = "root.platform.devices.flaky-periodic";
+    private static final String RULE_ID = "rule-flaky";
+    private static final Instant NOW = Instant.parse("2026-08-31T12:00:00Z");
+    private static final long PERIOD_MS = 500L;
+
     @Mock
     JdbcTemplate jdbcTemplate;
 
     @Mock
     BindingRuleEngine bindingRuleEngine;
 
-    @Mock
-    BindingRulesService bindingRulesService;
-
-    private static final String OBJECT_PATH = "root.platform.devices.flaky-periodic";
-    private static final String RULE_ID = "rule-flaky";
-    private static final Instant NOW = Instant.parse("2026-08-31T12:00:00Z");
-
     @Test
-    void runtimeFailureAdvancesConsecutiveCountWithoutDeleting() throws Exception {
-        BindingPeriodicScheduleRegistry registry =
-                new BindingPeriodicScheduleRegistry(jdbcTemplate, null, 5);
-        stubDueQuery(OBJECT_PATH, RULE_ID);
+    void failuresBackOffExponentiallyUpToTheCap() throws Exception {
+        BindingPeriodicScheduleRegistry registry = new BindingPeriodicScheduleRegistry(jdbcTemplate, 3_000L);
+        stubDueQuery();
         doThrow(new RuntimeException("engine failure"))
                 .when(bindingRuleEngine).onPeriodic(OBJECT_PATH, RULE_ID);
 
-        registry.fireDue(NOW, bindingRuleEngine);
-
-        assertThat(registry.consecutiveFailureCount(OBJECT_PATH, RULE_ID)).isEqualTo(1);
-        assertThat(registry.isDisabledAfterFailures(OBJECT_PATH, RULE_ID)).isFalse();
-        verify(jdbcTemplate, never()).update(anyString(), eq(OBJECT_PATH), eq(RULE_ID));
-    }
-
-    @Test
-    void afterMaxFailuresScheduleDeletedAndSkipSetArmed() throws Exception {
-        int maxFailures = 3;
-        BindingPeriodicScheduleRegistry registry =
-                new BindingPeriodicScheduleRegistry(jdbcTemplate, bindingRulesService, maxFailures);
-        stubDueQuery(OBJECT_PATH, RULE_ID);
-        doThrow(new RuntimeException("engine failure"))
-                .when(bindingRuleEngine).onPeriodic(OBJECT_PATH, RULE_ID);
-        BindingRule rule = sampleRule(RULE_ID, true);
-        when(bindingRulesService.listRules(OBJECT_PATH)).thenReturn(List.of(rule));
-        when(bindingRulesService.upsertRule(eq(OBJECT_PATH), any(BindingRule.class))).thenReturn(rule.withEnabled(false));
-
-        for (int i = 0; i < maxFailures - 1; i++) {
+        for (int i = 0; i < 5; i++) {
             registry.fireDue(NOW, bindingRuleEngine);
         }
-        assertThat(registry.consecutiveFailureCount(OBJECT_PATH, RULE_ID)).isEqualTo(maxFailures - 1);
-        assertThat(registry.isDisabledAfterFailures(OBJECT_PATH, RULE_ID)).isFalse();
 
-        registry.fireDue(NOW, bindingRuleEngine);
-
-        assertThat(registry.consecutiveFailureCount(OBJECT_PATH, RULE_ID)).isZero();
-        assertThat(registry.isDisabledAfterFailures(OBJECT_PATH, RULE_ID)).isTrue();
-        verify(jdbcTemplate, atLeastOnce()).update(
-                anyString(),
-                eq(OBJECT_PATH),
-                eq(RULE_ID)
-        );
-        ArgumentCaptor<BindingRule> ruleCaptor = ArgumentCaptor.forClass(BindingRule.class);
-        verify(bindingRulesService).upsertRule(eq(OBJECT_PATH), ruleCaptor.capture());
-        assertThat(ruleCaptor.getValue().enabled()).isFalse();
-        assertThat(ruleCaptor.getValue().id()).isEqualTo(RULE_ID);
+        assertThat(scheduledDelaysMs()).containsExactly(500L, 1_000L, 2_000L, 3_000L, 3_000L);
+        assertThat(registry.consecutiveFailureCount(OBJECT_PATH, RULE_ID)).isEqualTo(5);
+        verify(jdbcTemplate, never()).update(contains("last_run_at"), any(), any(), any(), any());
     }
 
     @Test
-    void successResetsConsecutiveFailureCount() throws Exception {
-        BindingPeriodicScheduleRegistry registry =
-                new BindingPeriodicScheduleRegistry(jdbcTemplate, null, 5);
-        stubDueQuery(OBJECT_PATH, RULE_ID);
+    void failingRuleIsNeverDisabled() throws Exception {
+        BindingPeriodicScheduleRegistry registry = new BindingPeriodicScheduleRegistry(jdbcTemplate);
+        stubDueQuery();
+        doThrow(new RuntimeException("engine failure"))
+                .when(bindingRuleEngine).onPeriodic(OBJECT_PATH, RULE_ID);
+
+        for (int i = 0; i < 20; i++) {
+            registry.fireDue(NOW, bindingRuleEngine);
+        }
+
+        verify(bindingRuleEngine, times(20)).onPeriodic(OBJECT_PATH, RULE_ID);
+        verify(jdbcTemplate, never()).update(contains("DELETE"), eq(OBJECT_PATH), eq(RULE_ID));
+    }
+
+    @Test
+    void successResetsTheBackoff() throws Exception {
+        BindingPeriodicScheduleRegistry registry = new BindingPeriodicScheduleRegistry(jdbcTemplate, 3_000L);
+        stubDueQuery();
         doThrow(new RuntimeException("engine failure"))
                 .doThrow(new RuntimeException("engine failure"))
                 .doNothing()
+                .doThrow(new RuntimeException("engine failure"))
                 .when(bindingRuleEngine).onPeriodic(OBJECT_PATH, RULE_ID);
-        when(jdbcTemplate.update(anyString(), any(), any(), any(), any())).thenReturn(1);
 
-        registry.fireDue(NOW, bindingRuleEngine);
-        registry.fireDue(NOW, bindingRuleEngine);
-        assertThat(registry.consecutiveFailureCount(OBJECT_PATH, RULE_ID)).isEqualTo(2);
+        for (int i = 0; i < 4; i++) {
+            registry.fireDue(NOW, bindingRuleEngine);
+        }
 
-        registry.fireDue(NOW, bindingRuleEngine);
-        assertThat(registry.consecutiveFailureCount(OBJECT_PATH, RULE_ID)).isZero();
-        assertThat(registry.isDisabledAfterFailures(OBJECT_PATH, RULE_ID)).isFalse();
+        assertThat(scheduledDelaysMs()).containsExactly(500L, 1_000L, 500L);
+        verify(jdbcTemplate).update(
+                contains("SET last_run_at = ?, next_run_at = ?"),
+                eq(Timestamp.from(NOW)),
+                eq(Timestamp.from(NOW.plusMillis(PERIOD_MS))),
+                eq(OBJECT_PATH),
+                eq(RULE_ID)
+        );
+        assertThat(registry.consecutiveFailureCount(OBJECT_PATH, RULE_ID)).isEqualTo(1);
     }
 
     @Test
-    void disabledSkipSetPreventsOnPeriodicAndDeletesRow() throws Exception {
-        BindingPeriodicScheduleRegistry registry =
-                new BindingPeriodicScheduleRegistry(jdbcTemplate, null, 1);
-        stubDueQuery(OBJECT_PATH, RULE_ID);
+    void savingTheRulesResetsTheBackoff() throws Exception {
+        BindingPeriodicScheduleRegistry registry = new BindingPeriodicScheduleRegistry(jdbcTemplate);
+        stubDueQuery();
         doThrow(new RuntimeException("engine failure"))
                 .when(bindingRuleEngine).onPeriodic(OBJECT_PATH, RULE_ID);
-
         registry.fireDue(NOW, bindingRuleEngine);
-        assertThat(registry.isDisabledAfterFailures(OBJECT_PATH, RULE_ID)).isTrue();
-
         registry.fireDue(NOW, bindingRuleEngine);
 
-        verify(bindingRuleEngine, times(1)).onPeriodic(OBJECT_PATH, RULE_ID);
+        registry.syncObject(OBJECT_PATH, List.of(periodicRule()));
+
+        assertThat(registry.consecutiveFailureCount(OBJECT_PATH, RULE_ID)).isZero();
     }
 
-    private void stubDueQuery(String objectPath, String ruleId) throws Exception {
+    @Test
+    void backoffNeverExceedsTheLongerOfPeriodAndCap() {
+        BindingPeriodicScheduleRegistry registry = new BindingPeriodicScheduleRegistry(jdbcTemplate, 300_000L);
+
+        assertThat(registry.backoffMs(500L, 1)).isEqualTo(500L);
+        assertThat(registry.backoffMs(500L, 2)).isEqualTo(1_000L);
+        assertThat(registry.backoffMs(500L, 10)).isEqualTo(256_000L);
+        assertThat(registry.backoffMs(500L, 11)).isEqualTo(300_000L);
+        assertThat(registry.backoffMs(500L, Integer.MAX_VALUE)).isEqualTo(300_000L);
+        assertThat(registry.backoffMs(600_000L, 5)).isEqualTo(600_000L);
+        assertThat(new BindingPeriodicScheduleRegistry(jdbcTemplate, Long.MAX_VALUE).backoffMs(500L, 200))
+                .isEqualTo(Long.MAX_VALUE);
+    }
+
+    private List<Long> scheduledDelaysMs() {
+        ArgumentCaptor<Object> nextRun = ArgumentCaptor.forClass(Object.class);
+        verify(jdbcTemplate, atLeastOnce()).update(
+                contains("SET next_run_at = ?"),
+                nextRun.capture(),
+                eq(OBJECT_PATH),
+                eq(RULE_ID)
+        );
+        return nextRun.getAllValues().stream()
+                .map(value -> Duration.between(NOW, ((Timestamp) value).toInstant()).toMillis())
+                .toList();
+    }
+
+    private void stubDueQuery() throws Exception {
         when(jdbcTemplate.query(
                 anyString(),
                 any(RowMapper.class),
@@ -136,20 +149,20 @@ class BindingPeriodicScheduleRegistryConsecutiveFailureTest {
         )).thenAnswer(invocation -> {
             RowMapper<?> mapper = invocation.getArgument(1);
             ResultSet rs = mock(ResultSet.class);
-            when(rs.getString("object_path")).thenReturn(objectPath);
-            when(rs.getString("rule_id")).thenReturn(ruleId);
-            when(rs.getLong("periodic_ms")).thenReturn(500L);
+            when(rs.getString("object_path")).thenReturn(OBJECT_PATH);
+            when(rs.getString("rule_id")).thenReturn(RULE_ID);
+            when(rs.getLong("periodic_ms")).thenReturn(PERIOD_MS);
             return List.of(mapper.mapRow(rs, 0));
         });
     }
 
-    private static BindingRule sampleRule(String id, boolean enabled) {
+    private static BindingRule periodicRule() {
         return new BindingRule(
-                id,
-                id,
-                enabled,
+                RULE_ID,
+                RULE_ID,
+                true,
                 0,
-                new BindingActivators(false, List.of(), null, 500L),
+                new BindingActivators(false, List.of(), null, PERIOD_MS),
                 "",
                 "1.0",
                 new BindingTarget("ignored", "value")

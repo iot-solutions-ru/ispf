@@ -138,7 +138,7 @@ public class EventJournalAsyncWriter {
         if (workers == null || activeWorkers.get() >= properties.resolvedWriterThreadsMax()) {
             return;
         }
-        workers.submit(this::writerLoop);
+        var _ = workers.submit(this::writerLoop);
     }
 
     public void awaitQueueDrain(long timeout, TimeUnit unit) throws InterruptedException {

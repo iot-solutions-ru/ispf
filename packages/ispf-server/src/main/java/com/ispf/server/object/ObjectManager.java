@@ -661,6 +661,9 @@ public class ObjectManager {
             }
             case EVENT_FIRED -> publicationService.publishEventFired(event.path(), event.variableName());
             case CREATED, UPDATED, DELETED -> publicationService.publishStructureChangeAfterCommit(event);
+            case FUNCTION_SUCCEEDED -> {
+                // Not a tree change: only ever submitted to the object-change bus.
+            }
         }
     }
 

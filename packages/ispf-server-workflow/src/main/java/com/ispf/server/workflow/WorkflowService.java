@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -54,7 +55,6 @@ public class WorkflowService {
     private final WorkflowConditionFactory conditionFactory;
     private final WorkflowTaskExecutor taskExecutor;
     private final WorkflowInstanceStatePublisher statePublisher;
-    private final WorkflowInstanceRepository instanceRepository;
     private final WorkflowEventTriggerIndex eventTriggerIndex;
     private final WorkflowMetrics automationMetricsRecorder;
     private final WorkflowTriggerIndexRefresh triggerIndexRefresh;
@@ -90,7 +90,6 @@ public class WorkflowService {
         this.conditionFactory = conditionFactory;
         this.taskExecutor = taskExecutor;
         this.statePublisher = statePublisher;
-        this.instanceRepository = instanceRepository;
         this.eventTriggerIndex = eventTriggerIndex;
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.triggerIndexRefresh = triggerIndexRefresh;
@@ -183,6 +182,11 @@ public class WorkflowService {
                     throw new IllegalArgumentException("Cannot activate workflow with invalid BPMN: " + ex.getMessage(), ex);
                 }
             }
+            WorkflowEventTriggerIndex.parseTrigger(
+                    path,
+                    readString(node, "triggerJson").orElse("{}"),
+                    objectMapper
+            );
         }
         objects.setVariableValue(
                 path,
@@ -352,23 +356,7 @@ public class WorkflowService {
                 WorkflowStartTrigger.MANUAL,
                 input == null ? Map.of() : input
         );
-        Map<String, String> variables = Map.of();
-        try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> state = objectMapper.readValue(view.instanceState(), Map.class);
-            Object vars = state.get("variables");
-            if (vars instanceof Map<?, ?> map) {
-                Map<String, String> parsed = new HashMap<>();
-                map.forEach((k, v) -> {
-                    if (k != null) {
-                        parsed.put(k.toString(), v == null ? "" : v.toString());
-                    }
-                });
-                variables = parsed;
-            }
-        } catch (Exception ignored) {
-            // keep empty
-        }
+        Map<String, String> variables = variablesFromInstanceState(objectMapper, path, view.instanceState());
         Map<String, String> output = WorkflowToolContract.extractOutput(
                 objectMapper,
                 view.outputSchemaJson(),
@@ -502,9 +490,19 @@ public class WorkflowService {
 
     private void handleFailure(String path, WorkflowInstance instance, Map<String, String> input) {
         PlatformObject node = objects.require(path);
-        int attempt = WorkflowTaskExecutor.parseInt(instance.variables().getOrDefault("_retryAttempt", "0"), 0) + 1;
-        int maxAttempts = WorkflowTaskExecutor.parseInt(readString(node, "retryMaxAttempts").orElse("0"), 0);
-        int backoffSeconds = Math.max(0, WorkflowTaskExecutor.parseInt(readString(node, "retryBackoffSeconds").orElse("30"), 30));
+        int attempt;
+        int maxAttempts;
+        int backoffSeconds;
+        try {
+            attempt = WorkflowTaskExecutor.parseInt(instance.variables().getOrDefault("_retryAttempt", "0"), 0) + 1;
+            maxAttempts = WorkflowTaskExecutor.parseInt(readString(node, "retryMaxAttempts").orElse("0"), 0);
+            backoffSeconds = Math.max(0, WorkflowTaskExecutor.parseInt(readString(node, "retryBackoffSeconds").orElse("30"), 30));
+        } catch (WorkflowException e) {
+            String primary = instance.errorMessage() == null ? "" : instance.errorMessage();
+            instance.fail(primary.isBlank() ? e.getMessage() : primary + ". " + e.getMessage());
+            statePublisher.publish(path, instance);
+            return;
+        }
         if (maxAttempts > 0 && attempt < maxAttempts) {
             Map<String, String> retryInput = new HashMap<>(input == null ? Map.of() : input);
             retryInput.put("_retryAttempt", String.valueOf(attempt));
@@ -530,7 +528,7 @@ public class WorkflowService {
                     "attempt", String.valueOf(attempt)
             ));
         } catch (Exception e) {
-            payload = "{}";
+            throw new IllegalStateException("Failed to serialize workflow dead letter", e);
         }
         deadLetterService.record(
                 instance.instanceId(),
@@ -553,9 +551,28 @@ public class WorkflowService {
                         )
                 );
             } catch (Exception e) {
-                log.warn("errorWorkflowPath {} failed: {}", errorWorkflow, e.getMessage());
+                recordErrorPathFailure(path, instance, errorWorkflow, e);
             }
         }
+    }
+
+    private void recordErrorPathFailure(
+            String failedWorkflowPath,
+            WorkflowInstance instance,
+            String errorWorkflow,
+            Exception error
+    ) {
+        String message = "Workflow error path failed: " + errorWorkflow + ": " + error.getMessage();
+        deadLetterService.recordCommitted(
+                instance.instanceId(),
+                errorWorkflow,
+                1,
+                message,
+                "{\"failedWorkflowPath\":\"" + escapeJson(failedWorkflowPath) + "\"}"
+        );
+        String primary = instance.errorMessage() == null ? "" : instance.errorMessage();
+        instance.fail(primary.isBlank() ? message : primary + ". " + message);
+        statePublisher.publish(failedWorkflowPath, instance);
     }
 
     @Transactional
@@ -602,8 +619,9 @@ public class WorkflowService {
         return instanceControl.deliverMessageByWorkflowPath(workflowPath, messageName, operatorId);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void handleVariableTrigger(String objectPath, String variableName) {
+        List<String> failures = new ArrayList<>();
         for (String workflowPath : eventTriggerIndex.findVariableWorkflows(objectPath, variableName)) {
             PlatformObject node;
             try {
@@ -619,20 +637,14 @@ public class WorkflowService {
             if (!isTriggerConditionMet(node, objectPath, variableName)) {
                 continue;
             }
-            try {
-                runWorkflow(
-                        workflowPath,
-                        objectPath,
-                        WorkflowStartTrigger.VARIABLE
-                );
-            } catch (WorkflowException e) {
-                log.warn("Workflow trigger failed for {}: {}", workflowPath, e.getMessage());
-            }
+            startTriggeredWorkflow(workflowPath, objectPath, WorkflowStartTrigger.VARIABLE, "variable", failures);
         }
+        failTriggerStart(failures);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void handleEventTrigger(String objectPath, String eventName) {
+        List<String> failures = new ArrayList<>();
         for (String workflowPath : eventTriggerIndex.findEventWorkflows(objectPath, eventName)) {
             PlatformObject node;
             try {
@@ -645,16 +657,66 @@ public class WorkflowService {
             if (readLifecycleStatus(node) != WorkflowLifecycleStatus.ACTIVE) {
                 continue;
             }
-            try {
-                runWorkflow(
-                        workflowPath,
-                        objectPath,
-                        WorkflowStartTrigger.EVENT
-                );
-            } catch (WorkflowException e) {
-                log.warn("Workflow event trigger failed for {}: {}", workflowPath, e.getMessage());
-            }
+            startTriggeredWorkflow(workflowPath, objectPath, WorkflowStartTrigger.EVENT, "event", failures);
         }
+        failTriggerStart(failures);
+    }
+
+    /**
+     * One triggered start per transaction. Must be called through {@code self} so a failing
+     * sibling cannot roll back a workflow that already started (and ran its side effects).
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void runTriggeredWorkflow(
+            String workflowPath,
+            String sourcePath,
+            WorkflowStartTrigger trigger
+    ) throws WorkflowException {
+        runWorkflow(workflowPath, sourcePath, trigger);
+    }
+
+    private void startTriggeredWorkflow(
+            String workflowPath,
+            String sourcePath,
+            WorkflowStartTrigger trigger,
+            String triggerKind,
+            List<String> failures
+    ) {
+        try {
+            self.getObject().runTriggeredWorkflow(workflowPath, sourcePath, trigger);
+        } catch (WorkflowException | RuntimeException e) {
+            String message = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            recordTriggerStartFailure(workflowPath, triggerKind, sourcePath, message);
+            failures.add(workflowPath + ": " + message);
+        }
+    }
+
+    private void recordTriggerStartFailure(
+            String workflowPath,
+            String triggerKind,
+            String sourcePath,
+            String message
+    ) {
+        deadLetterService.recordCommitted(
+                "trigger-start",
+                workflowPath,
+                1,
+                message,
+                "{\"trigger\":\"" + triggerKind + "\",\"sourcePath\":\"" + escapeJson(sourcePath) + "\"}"
+        );
+    }
+
+    private static void failTriggerStart(List<String> failures) {
+        if (!failures.isEmpty()) {
+            throw new IllegalStateException("Workflow trigger start failed: " + String.join("; ", failures));
+        }
+    }
+
+    private static String escapeJson(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private void notifyCallActivityParents(WorkflowInstance child) {
@@ -761,6 +823,38 @@ public class WorkflowService {
         return readString(node, "status")
                 .map(WorkflowLifecycleStatus::valueOf)
                 .orElse(WorkflowLifecycleStatus.DRAFT);
+    }
+
+    /**
+     * Tool output is projected from {@code instanceState.variables}. Unreadable JSON is a failed
+     * tool call, not an empty success.
+     */
+    static Map<String, String> variablesFromInstanceState(
+            ObjectMapper objectMapper,
+            String workflowPath,
+            String instanceState
+    ) throws WorkflowException {
+        String json = instanceState == null || instanceState.isBlank() ? "{}" : instanceState;
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> state = objectMapper.readValue(json, Map.class);
+            Object vars = state.get("variables");
+            if (!(vars instanceof Map<?, ?> map)) {
+                return Map.of();
+            }
+            Map<String, String> parsed = new HashMap<>();
+            map.forEach((key, value) -> {
+                if (key != null) {
+                    parsed.put(key.toString(), value == null ? "" : value.toString());
+                }
+            });
+            return parsed;
+        } catch (RuntimeException ex) {
+            throw new WorkflowException(
+                    "Workflow instance state is not readable at " + workflowPath + ": " + ex.getMessage(),
+                    ex
+            );
+        }
     }
 
     static Optional<String> readString(PlatformObject node, String variableName) {

@@ -1,5 +1,7 @@
 package com.ispf.core.binding;
 
+
+import java.util.Locale;
 /**
  * Effect kind for a platform rule ({@link BindingRule}).
  */
@@ -18,11 +20,13 @@ public final class BindingTargetKind {
         if (kind == null || kind.isBlank()) {
             return VARIABLE;
         }
-        return switch (kind.trim().toLowerCase()) {
+        String normalized = kind.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case VARIABLE -> VARIABLE;
             case CONTEXT -> CONTEXT;
             case EVENT -> EVENT;
             case ACTION -> ACTION;
-            default -> VARIABLE;
+            default -> throw new IllegalArgumentException("Unknown binding target kind: " + kind);
         };
     }
 }

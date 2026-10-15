@@ -61,6 +61,7 @@ describe("CreateVariableDialog", () => {
 
     expect(input).toHaveValue("temp");
     expect(input).toHaveFocus();
+    expect(screen.queryByText("Schema name")).not.toBeInTheDocument();
   });
 
   it("creates a variable with entered name", async () => {

@@ -384,3 +384,31 @@ export const SCRIPT_TEMPLATES: ScriptTemplate[] = [
 export function defaultScriptBody(): string {
   return serializeStepsArray(SCRIPT_TEMPLATES[0].steps);
 }
+
+const SQL_STEP_TYPES = new Set(["selectOne", "selectMany", "exec"]);
+
+/** True when the script JSON contains a SQL step, including steps nested under when/if/for_each. */
+export function scriptHasSqlStep(sourceBody: string): boolean {
+  if (!sourceBody.trim()) {
+    return false;
+  }
+  try {
+    return valueHasSqlStep(JSON.parse(sourceBody) as unknown);
+  } catch {
+    return false;
+  }
+}
+
+function valueHasSqlStep(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some(valueHasSqlStep);
+  }
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  if (typeof record.type === "string" && SQL_STEP_TYPES.has(record.type)) {
+    return true;
+  }
+  return Object.values(record).some(valueHasSqlStep);
+}

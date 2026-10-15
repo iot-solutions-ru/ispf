@@ -8,11 +8,15 @@ import {
   NavMenuItemsEditor,
   StringListEditor,
   TabPanelMetaEditor,
+  VariableSelect,
 } from "../widgetEditorStructured";
+import { variableListAllowCustom } from "../widgetEditorHelpers";
 import {
   DashboardPathField,
+  ObjectFunctionSelect,
   Section,
   StackedSlot,
+  WidgetEditorCaption,
   type WidgetFieldContextFor,
   type WidgetTypeFieldsRegistry,
 } from "./widgetFieldPrimitives";
@@ -27,7 +31,7 @@ function cardGridFields(ctx: WidgetFieldContextFor<"card-grid">, t: TFunction): 
     <>
       <Section title={t("editor.section.cardGrid")} />
       <StringListEditor
-        label="variablesJson"
+        label={t("editor.field.variablesToShow")}
         value={widget.variablesJson}
         onChange={(v) => update({ variablesJson: v })}
         suggestions={allVariableNames}
@@ -43,32 +47,32 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
     <>
       <Section title={t("editor.section.dashboardLink")} />
       <DashboardPathField
-        caption="targetDashboardPath"
+        caption={t("editor.field.targetDashboard")}
         value={widget.targetDashboardPath}
         dashboards={ctx.dashboards}
         onChange={(v) => update({ targetDashboardPath: v })}
       />
       <label>
-        openMode
+        <WidgetEditorCaption text={t("editor.field.openMode")} />
         <StackedSlot>
           <select
             value={widget.openMode ?? "navigate"}
             onChange={(e) => update({ openMode: e.target.value as "navigate" | "modal" })}
           >
-            <option value="navigate">navigate</option>
-            <option value="modal">modal</option>
+            <option value="navigate">{t("editor.openMode.navigate")}</option>
+            <option value="modal">{t("editor.openMode.modal")}</option>
           </select>
         </StackedSlot>
       </label>
       <label>
-        buttonLabel
+        <WidgetEditorCaption text={t("editor.field.buttonLabel")} />
         <input
           value={widget.buttonLabel ?? ""}
           onChange={(e) => update({ buttonLabel: e.target.value })}
         />
       </label>
       <label>
-        modalTitle
+        <WidgetEditorCaption text={t("editor.field.modalTitle")} />
         <input
           value={widget.modalTitle ?? ""}
           onChange={(e) => update({ modalTitle: e.target.value || undefined })}
@@ -76,28 +80,27 @@ function dashboardLinkFields(ctx: WidgetFieldContextFor<"dashboard-link">, t: TF
         />
       </label>
       <label>
-        confirmMessage
+        <WidgetEditorCaption text={t("editor.field.confirmMessage")} />
         <input
           value={widget.confirmMessage ?? ""}
           onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
         />
       </label>
       <KeyValueEditor
-        label="contextSelectionJson"
+        label={t("editor.contextSelection")}
+        keyCaption={t("editor.col.slotName")}
+        valueCaption={t("editor.col.objectPath")}
         value={widget.contextSelectionJson}
         onChange={(v) => update({ contextSelectionJson: v })}
       />
       <KeyValueEditor
-        label="contextParamsJson"
+        label={t("editor.openScreenParams")}
+        keyCaption={t("editor.col.sessionParam")}
+        valueCaption={t("editor.col.value")}
+        keySuggestions={ctx.sessionParams}
         value={widget.contextParamsJson}
         onChange={(v) => update({ contextParamsJson: v })}
       />
-      <StringListEditor
-        label="requireSessionParamsJson"
-        value={widget.requireSessionParamsJson}
-        onChange={(v) => update({ requireSessionParamsJson: v || undefined })}
-      />
-      <p className="hint">{t("editor.deprecation.requireSessionParamsJson")}</p>
     </>
   );
 }
@@ -108,15 +111,15 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
     <>
       <Section title={t("type.svgWidget")} />
       <WidgetMediaUploadField
-        label="svgUrl"
+        label={t("editor.field.svgUrl")}
         value={widget.svgUrl ?? ""}
         onChange={(svgUrl) => update({ svgUrl })}
         accept=".svg,image/svg+xml,image/png,image/jpeg,image/webp,image/gif"
-        placeholder="/lab-assets/button.svg"
+        placeholder={t("editor.hint.exampleSvg")}
         previewAlt={widget.title}
       />
       <label>
-        clickAction
+        <WidgetEditorCaption text={t("editor.field.clickAction")} />
         <select
           value={widget.clickAction ?? ""}
           onChange={(e) =>
@@ -126,43 +129,43 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
           }
         >
           <option value="">—</option>
-          <option value="function">function</option>
-          <option value="toggle">toggle</option>
+          <option value="function">{t("editor.clickAction.function")}</option>
+          <option value="toggle">{t("editor.clickAction.toggle")}</option>
         </select>
       </label>
       {widget.clickAction === "function" && (
-        <label>
-          functionName
-          <input
-            value={widget.functionName ?? ""}
-            onChange={(e) => update({ functionName: e.target.value })}
-          />
-        </label>
+        <ObjectFunctionSelect
+          label={t("editor.field.functionName")}
+          objectPath={widget.objectPath}
+          value={widget.functionName ?? ""}
+          onChange={(next) => update({ functionName: next || undefined })}
+        />
       )}
       {widget.clickAction === "toggle" && (
-        <label>
-          toggleVariable
-          <input
-            value={widget.toggleVariable ?? widget.variableName ?? ""}
-            onChange={(e) => update({ toggleVariable: e.target.value })}
-          />
-        </label>
+        <VariableSelect
+          label={t("editor.field.toggleVariable")}
+          value={widget.toggleVariable ?? widget.variableName ?? ""}
+          onChange={(v) => update({ toggleVariable: v })}
+          variables={ctx.variables}
+          allowCustom={variableListAllowCustom(widget)}
+          disabled={!ctx.variableSelectEnabled}
+        />
       )}
       <label>
-        confirmMessage
+        <WidgetEditorCaption text={t("editor.field.confirmMessage")} />
         <input
           value={widget.confirmMessage ?? ""}
           onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
         />
       </label>
-      <SvgWidgetInteractiveEditor widget={widget} update={update} />
+      <SvgWidgetInteractiveEditor widget={widget} update={update} selectionKeys={ctx.selectionKeys} />
       <label>
         <input
           type="checkbox"
           checked={widget.showLegend !== false}
           onChange={(e) => update({ showLegend: e.target.checked })}
         />
-        showLegend
+        <WidgetEditorCaption text={t("editor.field.showLegend")} />
       </label>
       <label>
         <input
@@ -170,7 +173,7 @@ function svgWidgetFields(ctx: WidgetFieldContextFor<"svg-widget">, t: TFunction)
           checked={widget.panEnabled !== false}
           onChange={(e) => update({ panEnabled: e.target.checked })}
         />
-        panEnabled
+        <WidgetEditorCaption text={t("editor.field.panEnabled")} />
       </label>
     </>
   );
@@ -182,13 +185,13 @@ function subDashboardFields(ctx: WidgetFieldContextFor<"sub-dashboard">, t: TFun
     <>
       <Section title={t("editor.section.subDashboard")} />
       <DashboardPathField
-        caption="targetDashboardPath"
+        caption={t("editor.field.targetDashboard")}
         value={widget.targetDashboardPath ?? ""}
         dashboards={ctx.dashboards}
         onChange={(v) => update({ targetDashboardPath: v || undefined })}
       />
       <label>
-        {t("editor.targetDashboardPathKeyFromParams")}
+        <WidgetEditorCaption text={t("editor.targetDashboardPathKeyFromParams")} />
         <StackedSlot>
           <input
             value={widget.targetDashboardPathKey ?? ""}
@@ -202,7 +205,7 @@ function subDashboardFields(ctx: WidgetFieldContextFor<"sub-dashboard">, t: TFun
           checked={widget.inheritContext !== false}
           onChange={(e) => update({ inheritContext: e.target.checked })}
         />
-        inheritContext
+        <WidgetEditorCaption text={t("editor.field.inheritContext")} />
       </label>
     </>
   );
@@ -214,7 +217,7 @@ function panelFields(ctx: WidgetFieldContextFor<"panel">, t: TFunction): ReactNo
     <>
       <Section title={t("editor.section.panel")} />
       <label>
-        variant
+        <WidgetEditorCaption text={t("editor.field.variant")} />
         <input
           value={widget.variant ?? "simple"}
           onChange={(e) => update({ variant: e.target.value as "simple" })}
@@ -226,10 +229,10 @@ function panelFields(ctx: WidgetFieldContextFor<"panel">, t: TFunction): ReactNo
           checked={widget.collapsible === true}
           onChange={(e) => update({ collapsible: e.target.checked })}
         />
-        collapsible
+        <WidgetEditorCaption text={t("editor.field.collapsible")} />
       </label>
       <AdvancedJsonField
-        label="childrenJson"
+        label={t("editor.field.childrenJson")}
         value={widget.childrenJson}
         onChange={(v) => update({ childrenJson: v ?? "[]" })}
         rows={8}
@@ -245,7 +248,7 @@ function compositeWidgetFields(ctx: WidgetFieldContextFor<"composite-widget" | "
       <Section title={widget.type === "drawer-panel" ? t("editor.drawerPanel") : t("editor.composite")} />
       {widget.type === "drawer-panel" && (
         <label>
-          drawerLabel
+          <WidgetEditorCaption text={t("editor.field.drawerLabel")} />
           <input
             value={widget.drawerLabel ?? ""}
             onChange={(e) => update({ drawerLabel: e.target.value || undefined })}
@@ -253,7 +256,7 @@ function compositeWidgetFields(ctx: WidgetFieldContextFor<"composite-widget" | "
         </label>
       )}
       <AdvancedJsonField
-        label="childrenJson"
+        label={t("editor.field.childrenJson")}
         value={widget.childrenJson}
         onChange={(v) => update({ childrenJson: v ?? "[]" })}
         rows={8}
@@ -272,7 +275,7 @@ function tabPanelFields(ctx: WidgetFieldContextFor<"tab-panel">, t: TFunction): 
         onChange={(v) => update({ tabsJson: v })}
       />
       <AdvancedJsonField
-        label="tabsJson"
+        label={t("editor.field.tabsJson")}
         value={widget.tabsJson}
         onChange={(v) => update({ tabsJson: v ?? "[]" })}
         rows={8}
@@ -287,14 +290,14 @@ function breadcrumbsFields(ctx: WidgetFieldContextFor<"breadcrumbs">, t: TFuncti
     <>
       <Section title={t("editor.section.breadcrumbs")} />
       <label>
-        {t("editor.pathKeyInParams")}
+        <WidgetEditorCaption text={t("editor.pathKeyInParams")} />
         <input
           value={widget.pathKey ?? ""}
           onChange={(e) => update({ pathKey: e.target.value || undefined })}
         />
       </label>
       <label>
-        separator
+        <WidgetEditorCaption text={t("editor.field.separator")} />
         <input
           value={widget.separator ?? " / "}
           onChange={(e) => update({ separator: e.target.value })}
@@ -310,13 +313,13 @@ function carouselFields(ctx: WidgetFieldContextFor<"carousel">, t: TFunction): R
     <>
       <Section title={t("editor.section.carousel")} />
       <AdvancedJsonField
-        label="slidesJson"
+        label={t("editor.field.slidesJson")}
         value={widget.slidesJson}
         onChange={(v) => update({ slidesJson: v ?? "[]" })}
         rows={6}
       />
       <label>
-        {t("editor.autoplayOff")}
+        <WidgetEditorCaption text={t("editor.autoplayOff")} />
         <input
           type="number"
           min={0}
@@ -334,19 +337,19 @@ function stepsPanelFields(ctx: WidgetFieldContextFor<"steps-panel">, t: TFunctio
     <>
       <Section title={t("editor.section.steps")} />
       <IdLabelListEditor
-        label="stepsJson"
+        label={t("editor.field.stepsJson")}
         value={widget.stepsJson}
         onChange={(v) => update({ stepsJson: v })}
         idPrefix="step"
       />
       <AdvancedJsonField
-        label="stepsJson"
+        label={t("editor.field.stepsJson")}
         value={widget.stepsJson}
         onChange={(v) => update({ stepsJson: v ?? "[]" })}
         rows={6}
       />
       <label>
-        {t("editor.activeStepKeyInParams")}
+        <WidgetEditorCaption text={t("editor.activeStepKeyInParams")} />
         <input
           value={widget.activeStepKey ?? ""}
           onChange={(e) => update({ activeStepKey: e.target.value || undefined })}

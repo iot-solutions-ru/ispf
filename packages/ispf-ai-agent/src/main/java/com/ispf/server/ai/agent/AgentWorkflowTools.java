@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Locale;
 /**
  * Agent tools for BPMN workflows on tree WORKFLOW objects.
  */
@@ -29,21 +30,21 @@ final class AgentWorkflowTools {
             WorkflowService workflowService,
             WorkflowInstanceCancelService cancelService,
             WorkflowInstanceRepository instanceRepository,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ObjectMapper objectMapper
     ) {
         return List.of(
                 getWorkflowTool(workflowService, objectAccessService, tenantScopeService),
-                saveWorkflowBpmnTool(workflowService, ObjectTreePort, objectAccessService, tenantScopeService),
-                runWorkflowTool(workflowService, ObjectTreePort, objectAccessService, tenantScopeService),
-                invokeWorkflowToolTool(workflowService, ObjectTreePort, objectAccessService, tenantScopeService),
-                updateWorkflowStatusTool(workflowService, ObjectTreePort, objectAccessService, tenantScopeService),
+                saveWorkflowBpmnTool(workflowService, objectTreePort, objectAccessService, tenantScopeService),
+                runWorkflowTool(workflowService, objectTreePort, objectAccessService, tenantScopeService),
+                invokeWorkflowToolTool(workflowService, objectTreePort, objectAccessService, tenantScopeService),
+                updateWorkflowStatusTool(workflowService, objectTreePort, objectAccessService, tenantScopeService),
                 listWorkflowInstancesTool(
                         workflowService,
                         instanceRepository,
-                        ObjectTreePort,
+                        objectTreePort,
                         objectAccessService,
                         tenantScopeService,
                         objectMapper
@@ -84,7 +85,7 @@ final class AgentWorkflowTools {
 
     private static PlatformAgentTool saveWorkflowBpmnTool(
             WorkflowService workflowService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -108,7 +109,7 @@ final class AgentWorkflowTools {
                     return Map.of("status", "ERROR", "error", "path and bpmnXml are required");
                 }
                 var auth = context.authentication();
-                if (!requireWorkflowWrite(path, auth, ObjectTreePort, objectAccessService, tenantScopeService)) {
+                if (!requireWorkflowWrite(path, auth, objectTreePort, objectAccessService, tenantScopeService)) {
                     return Map.of("status", "ERROR", "error", "Not a writable WORKFLOW: " + path);
                 }
                 try {
@@ -123,7 +124,7 @@ final class AgentWorkflowTools {
 
     private static PlatformAgentTool runWorkflowTool(
             WorkflowService workflowService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -145,7 +146,7 @@ final class AgentWorkflowTools {
                     return Map.of("status", "ERROR", "error", "path is required");
                 }
                 var auth = context.authentication();
-                if (!requireWorkflowWrite(path, auth, ObjectTreePort, objectAccessService, tenantScopeService)) {
+                if (!requireWorkflowWrite(path, auth, objectTreePort, objectAccessService, tenantScopeService)) {
                     return Map.of("status", "ERROR", "error", "Not a writable WORKFLOW: " + path);
                 }
                 try {
@@ -167,7 +168,7 @@ final class AgentWorkflowTools {
 
     private static PlatformAgentTool invokeWorkflowToolTool(
             WorkflowService workflowService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -190,7 +191,7 @@ final class AgentWorkflowTools {
                     return Map.of("status", "ERROR", "error", "path is required");
                 }
                 var auth = context.authentication();
-                if (!requireWorkflowWrite(path, auth, ObjectTreePort, objectAccessService, tenantScopeService)) {
+                if (!requireWorkflowWrite(path, auth, objectTreePort, objectAccessService, tenantScopeService)) {
                     return Map.of("status", "ERROR", "error", "Not a writable WORKFLOW: " + path);
                 }
                 try {
@@ -245,7 +246,7 @@ final class AgentWorkflowTools {
 
     private static PlatformAgentTool updateWorkflowStatusTool(
             WorkflowService workflowService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -268,11 +269,11 @@ final class AgentWorkflowTools {
                     return Map.of("status", "ERROR", "error", "path and status are required");
                 }
                 var auth = context.authentication();
-                if (!requireWorkflowWrite(path, auth, ObjectTreePort, objectAccessService, tenantScopeService)) {
+                if (!requireWorkflowWrite(path, auth, objectTreePort, objectAccessService, tenantScopeService)) {
                     return Map.of("status", "ERROR", "error", "Not a writable WORKFLOW: " + path);
                 }
                 try {
-                    WorkflowLifecycleStatus lifecycle = WorkflowLifecycleStatus.valueOf(status.trim().toUpperCase());
+                    WorkflowLifecycleStatus lifecycle = WorkflowLifecycleStatus.valueOf(status.trim().toUpperCase(Locale.ROOT));
                     WorkflowService.WorkflowView saved = workflowService.updateStatus(path, lifecycle);
                     return Map.of("status", "OK", "workflow", workflowSummary(saved));
                 } catch (IllegalArgumentException ex) {
@@ -287,7 +288,7 @@ final class AgentWorkflowTools {
     private static PlatformAgentTool listWorkflowInstancesTool(
             WorkflowService workflowService,
             WorkflowInstanceRepository instanceRepository,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             ObjectMapper objectMapper
@@ -315,7 +316,7 @@ final class AgentWorkflowTools {
                 }
                 objectAccessService.requireRead(path, auth);
                 try {
-                    ObjectTreePort.require(path);
+                    objectTreePort.require(path);
                     int limit = intArg(arguments, "limit", 10);
                     List<Map<String, Object>> instances = new ArrayList<>();
                     instanceRepository.findFirstByWorkflowPathOrderByStartedAtDesc(path)
@@ -453,7 +454,7 @@ final class AgentWorkflowTools {
     private static boolean requireWorkflowWrite(
             String path,
             org.springframework.security.core.Authentication auth,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -461,7 +462,7 @@ final class AgentWorkflowTools {
             return false;
         }
         objectAccessService.requireWrite(path, auth);
-        PlatformObject node = ObjectTreePort.require(path);
+        PlatformObject node = objectTreePort.require(path);
         return node.type() == ObjectType.WORKFLOW;
     }
 

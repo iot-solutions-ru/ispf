@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
+import java.util.Locale;
 final class LibreOfficeSupport {
 
     private static final Logger log = LoggerFactory.getLogger(LibreOfficeSupport.class);
@@ -41,7 +42,7 @@ final class LibreOfficeSupport {
         if (message == null) {
             return false;
         }
-        String lower = message.toLowerCase();
+        String lower = message.toLowerCase(Locale.ROOT);
         return lower.contains("libre/open office")
                 || lower.contains("libreoffice")
                 || lower.contains("openoffice");

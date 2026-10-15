@@ -44,6 +44,9 @@ ispf:
   object-change:
     async-enabled: false
     demand-driven-publication: false
+  correlator:
+    async-dispatch: false
+    async-actions: false
   event-journal:
     async-enabled: false
   redis:

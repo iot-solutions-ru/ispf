@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.nio.charset.StandardCharsets;
 
+import java.util.Locale;
 /**
  * Graph database driver — Neo4j Bolt or Gremlin-over-HTTP scalar queries.
  */
@@ -177,7 +178,7 @@ public class GraphDbDeviceDriver implements DeviceDriver {
     }
 
     private static boolean isGremlinHttpUri(String value) {
-        String lower = value.toLowerCase();
+        String lower = value.toLowerCase(Locale.ROOT);
         return lower.startsWith("http://") || lower.startsWith("https://");
     }
 

@@ -25,21 +25,21 @@ final class AgentReportTools {
 
     static List<PlatformAgentTool> all(
             ReportService reportService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
         return List.of(
-                listReportsTool(reportService, ObjectTreePort, objectAccessService, tenantScopeService),
+                listReportsTool(reportService, objectTreePort, objectAccessService, tenantScopeService),
                 getReportSchemaTool(reportService, objectAccessService, tenantScopeService),
                 runReportTool(reportService, objectAccessService, tenantScopeService),
-                configureReportTool(reportService, ObjectTreePort, objectAccessService, tenantScopeService)
+                configureReportTool(reportService, objectTreePort, objectAccessService, tenantScopeService)
         );
     }
 
     private static PlatformAgentTool listReportsTool(
             ReportService reportService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -66,7 +66,7 @@ final class AgentReportTools {
                 reportService.ensureReportsCatalog();
                 String query = stringArg(arguments, "query").toLowerCase(Locale.ROOT);
                 List<Map<String, Object>> rows = new ArrayList<>();
-                for (PlatformObject child : ObjectTreePort.tree().childrenOf(root)) {
+                for (PlatformObject child : objectTreePort.tree().childrenOf(root)) {
                     if (child.type() != ObjectType.REPORT) {
                         continue;
                     }
@@ -187,7 +187,7 @@ final class AgentReportTools {
 
     private static PlatformAgentTool configureReportTool(
             ReportService reportService,
-            ObjectTreePort ObjectTreePort,
+            ObjectTreePort objectTreePort,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -229,7 +229,7 @@ final class AgentReportTools {
                     }
 
                     reportService.ensureReportsCatalog();
-                    boolean created = ObjectTreePort.tree().findByPath(path).isEmpty();
+                    boolean created = objectTreePort.tree().findByPath(path).isEmpty();
                     if (created) {
                         objectAccessService.requireWrite(ReportService.REPORTS_ROOT, auth);
                         String nodeName = ReportService.reportIdFromPath(path);
@@ -240,7 +240,7 @@ final class AgentReportTools {
                         String templateId = treeVariables
                                 ? LabBlueprintBootstrap.TREE_VARIABLES_REPORT_MODEL
                                 : "report-v1";
-                        ObjectTreePort.create(
+                        objectTreePort.create(
                                 ReportService.REPORTS_ROOT,
                                 nodeName,
                                 ObjectType.REPORT,

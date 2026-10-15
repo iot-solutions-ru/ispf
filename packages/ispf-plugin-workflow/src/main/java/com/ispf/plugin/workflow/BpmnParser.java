@@ -642,7 +642,10 @@ public class BpmnParser {
         List<Element> result = new ArrayList<>();
         for (int i = 0; i < nodes.getLength(); i++) {
             Node node = nodes.item(i);
-            if (node.getParentNode() == parent || isDirectChild(parent, node)) {
+            // DOM identity: direct-child check against the parent Element instance.
+            @SuppressWarnings("ReferenceEquality")
+            boolean underParent = node.getParentNode() == parent || isDirectChild(parent, node);
+            if (underParent) {
                 result.add((Element) node);
             }
         }

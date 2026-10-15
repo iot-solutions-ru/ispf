@@ -4,6 +4,7 @@ import com.github.s7connector.api.DaveArea;
 import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 
+import java.util.Locale;
 /**
  * Parsed S7 point reference from mapping string {@code area:dbNumber:offset:type}.
  * Example: {@code DB:1:0:REAL}.
@@ -44,7 +45,7 @@ record S7Point(DaveArea area, int dbNumber, int offset, S7DataType dataType) {
             DaveArea area = parseArea(parts[0].trim());
             int dbNumber = Integer.parseInt(parts[1].trim());
             int offset = Integer.parseInt(parts[2].trim());
-            S7DataType dataType = S7DataType.valueOf(parts[3].trim().toUpperCase());
+            S7DataType dataType = S7DataType.valueOf(parts[3].trim().toUpperCase(Locale.ROOT));
             return new S7Point(area, dbNumber, offset, dataType);
         } catch (IllegalArgumentException e) {
             throw new DriverConfigurationException("Invalid S7 mapping: " + mapping, e);
@@ -52,7 +53,7 @@ record S7Point(DaveArea area, int dbNumber, int offset, S7DataType dataType) {
     }
 
     private static DaveArea parseArea(String areaName) throws DriverException {
-        return switch (areaName.toUpperCase()) {
+        return switch (areaName.toUpperCase(Locale.ROOT)) {
             case "DB" -> DaveArea.DB;
             case "INPUT", "I", "E" -> DaveArea.INPUTS;
             case "OUTPUT", "Q", "A" -> DaveArea.OUTPUTS;

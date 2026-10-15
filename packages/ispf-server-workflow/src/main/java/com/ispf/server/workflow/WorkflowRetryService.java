@@ -115,16 +115,22 @@ public class WorkflowRetryService {
                 });
             }
             return input;
-        } catch (Exception e) {
-            return Map.of();
+        } catch (RuntimeException ex) {
+            throw new IllegalArgumentException(
+                    "Workflow retry input JSON is not readable: " + ex.getMessage(),
+                    ex
+            );
         }
     }
 
     private String writeInput(Map<String, String> input) {
         try {
             return objectMapper.writeValueAsString(input == null ? Map.of() : input);
-        } catch (Exception e) {
-            return "{}";
+        } catch (RuntimeException ex) {
+            throw new IllegalStateException(
+                    "Workflow retry input cannot be stored: " + ex.getMessage(),
+                    ex
+            );
         }
     }
 }

@@ -134,6 +134,7 @@ public class NatsJetStreamSupport {
         }
     }
 
+    /** Auto-ack is off: {@code handler} settles each message (ack once applied, nak to get it redelivered). */
     public JetStreamSubscription subscribeReplicaEvents(Dispatcher dispatcher, MessageHandler handler)
             throws IOException, JetStreamApiException {
         if (!isActive()) {
@@ -152,15 +153,6 @@ public class NatsJetStreamSupport {
                 .durable(durable)
                 .configuration(consumerConfiguration)
                 .build();
-        return jetStream.subscribe(
-                REPLICA_EVENTS_SUBJECT,
-                dispatcher,
-                message -> {
-                    handler.onMessage(message);
-                    message.ack();
-                },
-                true,
-                options
-        );
+        return jetStream.subscribe(REPLICA_EVENTS_SUBJECT, dispatcher, handler, false, options);
     }
 }

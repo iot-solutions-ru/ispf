@@ -61,12 +61,12 @@ public class MiniTecBlueprintBootstrap {
             .field("value", FieldType.STRING)
             .build();
 
-    private final BlueprintEngine BlueprintEngine;
-    private final BlueprintRegistry BlueprintRegistry;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintRegistry blueprintRegistry;
 
-    public MiniTecBlueprintBootstrap(BlueprintEngine BlueprintEngine, BlueprintRegistry BlueprintRegistry) {
-        this.BlueprintEngine = BlueprintEngine;
-        this.BlueprintRegistry = BlueprintRegistry;
+    public MiniTecBlueprintBootstrap(BlueprintEngine blueprintEngine, BlueprintRegistry blueprintRegistry) {
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintRegistry = blueprintRegistry;
     }
 
     public void ensureMiniTecModels() {
@@ -79,16 +79,16 @@ public class MiniTecBlueprintBootstrap {
     }
 
     private void ensure(BlueprintDefinition desired) {
-        var existing = BlueprintRegistry.findByName(desired.name());
+        var existing = blueprintRegistry.findByName(desired.name());
         if (existing.isEmpty()) {
-            BlueprintEngine.createBlueprint(desired);
+            blueprintEngine.createBlueprint(desired);
             return;
         }
         BlueprintDefinition current = existing.get();
         if (!needsModelRefresh(current, desired)) {
             return;
         }
-        BlueprintEngine.updateBlueprint(new BlueprintDefinition(
+        blueprintEngine.updateBlueprint(new BlueprintDefinition(
                 current.id(),
                 desired.name(),
                 desired.description(),

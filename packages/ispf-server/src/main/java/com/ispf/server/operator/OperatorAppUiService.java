@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
+import java.util.Locale;
 @Service
 public class OperatorAppUiService {
 
@@ -340,8 +341,12 @@ public class OperatorAppUiService {
                     return true;
                 }
             }
-        } catch (Exception ignored) {
-            return false;
+        } catch (RuntimeException ex) {
+            String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+            throw new IllegalArgumentException(
+                    "Invalid operator app dashboards JSON for " + record.appId() + ": " + detail,
+                    ex
+            );
         }
         return false;
     }
@@ -506,7 +511,7 @@ public class OperatorAppUiService {
         if (trimmed.isEmpty()) {
             return false;
         }
-        String lower = trimmed.toLowerCase();
+        String lower = trimmed.toLowerCase(Locale.ROOT);
         if (lower.startsWith("javascript:") || lower.startsWith("data:") || lower.startsWith("vbscript:")) {
             return false;
         }

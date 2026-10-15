@@ -58,6 +58,28 @@ public final class DataSchema {
         return fields.size();
     }
 
+    /**
+     * Whether {@code other} declares the same field names and types (order-independent).
+     * For {@link FieldType#RECORD} and {@link FieldType#RECORD_LIST}, nested schemas must match recursively.
+     */
+    public boolean isCompatibleWith(DataSchema other) {
+        if (other == null || fieldCount() != other.fieldCount()) {
+            return false;
+        }
+        for (FieldDefinition field : fields) {
+            Optional<FieldDefinition> otherField = other.field(field.name());
+            if (otherField.isEmpty() || otherField.get().type() != field.type()) {
+                return false;
+            }
+            if (field.type() == FieldType.RECORD || field.type() == FieldType.RECORD_LIST) {
+                if (!field.nestedSchema().isCompatibleWith(otherField.get().nestedSchema())) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     public static final class Builder {
         private final String name;
         private final List<FieldDefinition> fields = new ArrayList<>();

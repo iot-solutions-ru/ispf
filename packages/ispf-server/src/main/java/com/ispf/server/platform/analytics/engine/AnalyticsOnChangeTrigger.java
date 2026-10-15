@@ -44,7 +44,7 @@ public class AnalyticsOnChangeTrigger {
         if (!flag.compareAndSet(false, true)) {
             return;
         }
-        scheduler.schedule(() -> {
+        var _ = scheduler.schedule(() -> {
             try {
                 var tags = catalogService.tagsAffectedBySource(objectPath, variableName);
                 if (!tags.isEmpty()) {

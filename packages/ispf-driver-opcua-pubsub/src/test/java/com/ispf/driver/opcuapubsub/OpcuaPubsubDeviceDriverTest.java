@@ -185,7 +185,7 @@ class OpcuaPubsubDeviceDriverTest {
         }
 
         void start() {
-            executor.submit(() -> {
+            var _ = executor.submit(() -> {
                 ready.countDown();
                 udpLoop();
             });

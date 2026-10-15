@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import java.util.Locale;
 /**
  * In-memory analytics function catalog (Tier A built-ins + Tier C extensions).
  */
@@ -191,7 +192,7 @@ public class AnalyticsCatalogRegistry {
                         List.of(helper + "(...)"),
                         List.of("builtin"),
                         "core",
-                        "analytics-catalog-" + helper.toLowerCase()
+                        "analytics-catalog-" + helper.toLowerCase(Locale.ROOT)
                 );
             };
             catalog.put(entry.id(), entry);
@@ -226,7 +227,7 @@ public class AnalyticsCatalogRegistry {
                     binding.examples() == null ? List.of(binding.syntax()) : List.copyOf(binding.examples()),
                     List.copyOf(tags),
                     "core",
-                    "analytics-catalog-reactive-" + binding.id().toLowerCase()
+                    "analytics-catalog-reactive-" + binding.id().toLowerCase(Locale.ROOT)
             ));
         }
     }
@@ -344,7 +345,7 @@ public class AnalyticsCatalogRegistry {
                     List.of(preset.expressionTemplate()),
                     List.of("preset", "historian", preset.helper()),
                     "core",
-                    "analytics-catalog-preset-" + preset.id().toLowerCase()
+                    "analytics-catalog-preset-" + preset.id().toLowerCase(Locale.ROOT)
             ));
         }
     }
@@ -398,7 +399,7 @@ public class AnalyticsCatalogRegistry {
                 List.of(formula.expression()),
                 List.copyOf(tags),
                 pack,
-                "analytics-catalog-formula-" + formula.id().toLowerCase()
+                "analytics-catalog-formula-" + formula.id().toLowerCase(Locale.ROOT)
         );
     }
 
@@ -437,7 +438,7 @@ public class AnalyticsCatalogRegistry {
                 List.of(syntax),
                 tags,
                 function.packId(),
-                "analytics-catalog-pack-" + id.toLowerCase()
+                "analytics-catalog-pack-" + id.toLowerCase(Locale.ROOT)
         );
     }
 
@@ -448,7 +449,7 @@ public class AnalyticsCatalogRegistry {
             if (tag == null || tag.isBlank()) {
                 continue;
             }
-            String normalized = tag.trim().toLowerCase();
+            String normalized = tag.trim().toLowerCase(Locale.ROOT);
             if (("historian".equals(normalized) || "reactive".equals(normalized) || "cel".equals(normalized))
                     && !kinds.contains(normalized)) {
                 kinds.add(normalized);

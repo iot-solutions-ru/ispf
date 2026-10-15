@@ -4,6 +4,7 @@ import org.springframework.boot.info.BuildProperties;
 
 import java.util.Optional;
 
+import java.util.Locale;
 public final class PlatformVersionSupport {
 
     private PlatformVersionSupport() {
@@ -46,7 +47,7 @@ public final class PlatformVersionSupport {
     }
 
     public static boolean isSnapshot(String version) {
-        return normalizeVersion(version).toUpperCase().contains("SNAPSHOT");
+        return normalizeVersion(version).toUpperCase(Locale.ROOT).contains("SNAPSHOT");
     }
 
     public static boolean isUpdateAvailable(String currentVersion, String latestVersion) {

@@ -57,7 +57,9 @@ public class FederationTunnelHubService {
 
     public void registerSession(UUID peerId, WebSocketSession session) {
         WebSocketSession previous = sessionsByPeer.put(peerId, session);
-        if (previous != null && previous.isOpen() && previous != session) {
+        @SuppressWarnings("ReferenceEquality")
+        boolean replaceOpen = previous != null && previous.isOpen() && previous != session;
+        if (replaceOpen) {
             try {
                 previous.close();
             } catch (IOException e) {
@@ -67,7 +69,11 @@ public class FederationTunnelHubService {
     }
 
     public void unregisterSession(UUID peerId, WebSocketSession session) {
-        sessionsByPeer.computeIfPresent(peerId, (id, current) -> current == session ? null : current);
+        sessionsByPeer.computeIfPresent(peerId, (id, current) -> {
+            @SuppressWarnings("ReferenceEquality")
+            boolean same = current == session;
+            return same ? null : current;
+        });
     }
 
     public boolean isConnected(UUID peerId) {

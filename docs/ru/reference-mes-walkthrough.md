@@ -14,7 +14,8 @@
 |----------|----------|
 | **Наряд** (`mes_dispatch_order`) | Заказ на отгрузку: номер, резервуар, объём, статус |
 | **Резервуар** (`mes_tank`) | Уровень заполнения (демо: `T-01`, 72%) |
-| **Эстакада** | Object path `root.platform.devices.demo-sensor-01` — BFF-функции и журнал событий |
+| **Хаб логики** | SINGLETON `root.platform.singleton-blueprints.mes-reference-hub-v1` — BFF-функции |
+| **Эстакада** | Object path `root.platform.devices.demo-sensor-01` — телеметрия, alert-правило, журнал событий |
 | **Устройство rack** | `root.platform.devices.mes-rack-01` — создаётся из `objects[]` в bundle |
 
 Статусы наряда: `pending` → `filling` → `completed`.
@@ -24,7 +25,7 @@
 | # | Действие | Object path / API | Событие / эффект | Operator |
 |---|----------|-------------------|------------------|----------|
 | 1 | Deploy bundle | `POST /api/v1/applications/mes-reference/deploy` | schema `app_mes_ref`, migrations, functions | Admin |
-| 2 | Список нарядов | BFF `mes_listOrders` @ `demo-sensor-01` | SQL read | Operator UI journal path |
+| 2 | Список нарядов | BFF `mes_listOrders` @ `mes-reference-hub-v1` | SQL read | Operator UI journal path |
 | 3 | Старт налива | BFF `mes_startFilling` + `orderNo` | status → `filling` | Кнопка формы (будущий dashboard) |
 | 4 | Виртуальный счётчик | `virtual` driver profile `meter` + `filling=true` | `meterLiters`, `flowRate` | См. [MesPlatformApiTest](../../packages/ispf-server/src/test/java/com/ispf/server/mes/MesPlatformApiTest.java) |
 | 5 | Завершение | BFF `mes_completeFilling` | status → `completed` | Operator confirm |
@@ -64,7 +65,7 @@ curl -s -X POST http://localhost:8080/api/v1/applications/mes-reference/deploy \
 
 curl -s -X POST http://localhost:8080/api/v1/bff/invoke \
   -H "Content-Type: application/json" \
-  -d '{"objectPath":"root.platform.devices.demo-sensor-01","functionName":"mes_listOrders","input":{"schema":{"name":"in","fields":[]},"rows":[{}]}}'
+  -d '{"objectPath":"root.platform.singleton-blueprints.mes-reference-hub-v1","functionName":"mes_listOrders","input":{"schema":{"name":"in","fields":[]},"rows":[{}]}}'
 ```
 
 ## Связанные документы

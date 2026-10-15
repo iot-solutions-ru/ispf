@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button } from "antd";
+import { Alert, Button, Select } from "antd";
 import {
   applyBlueprint,
   createBlueprint,
@@ -21,6 +21,7 @@ import {
   upgradeBlueprint,
   upgradeBlueprintInstances,
 } from "../../api/blueprints";
+import { fetchVariables } from "../../api";
 import type { EventDescriptor, FunctionDescriptor, ObjectType } from "../../types";
 import {
   SINGLETON_BLUEPRINTS_ROOT,
@@ -46,6 +47,10 @@ import { ObjectPathField } from "../../ui";
 import { PARENT_OBJECT_TYPES } from "../../ui/objectPathFilters";
 import { BLUEPRINT_TARGET_OBJECT_TYPES } from "../../utils/object/createObjectMode";
 import BlueprintAttachmentsSection from "./BlueprintAttachmentsSection";
+import {
+  definitionFromObjectVariable,
+  objectVariablesAvailableForDefinition,
+} from "./blueprintDefinitionVariables";
 import { attachmentsForBlueprint } from "./blueprintAttachments";
 
 interface BlueprintEditorPanelProps {
@@ -85,6 +90,7 @@ function ModelDetail({
   const [parentPath, setParentPath] = useState("root.platform.devices");
   const [instanceName, setInstanceName] = useState("");
   const [variables, setVariables] = useState(model.variables);
+  const [variablePick, setVariablePick] = useState<string | undefined>();
   const [bindings, setBindings] = useState(model.bindings);
   const [events, setEvents] = useState(model.events);
   const [functions, setFunctions] = useState(model.functions);
@@ -240,22 +246,29 @@ function ModelDetail({
     );
   }
 
-  function addVariable() {
-    const baseName = `var${variables.length + 1}`;
-    setVariables((prev) => [
-      ...prev,
-      {
-        name: baseName,
-        description: "",
-        group: "default",
-        schema: { name: baseName, fields: [{ name: "value", type: "STRING" }] },
-        readable: true,
-        writable: false,
-        defaultValue: null,
-        historyEnabled: false,
-        historyRetentionDays: null,
-      },
-    ]);
+  const objectVariablesQuery = useQuery({
+    queryKey: ["variables", model.objectPath],
+    queryFn: () => fetchVariables(model.objectPath),
+    enabled: canManage && !isBuiltin && Boolean(model.objectPath),
+  });
+  const availableObjectVariables = useMemo(
+    () => objectVariablesAvailableForDefinition(objectVariablesQuery.data ?? [], variables),
+    [objectVariablesQuery.data, variables],
+  );
+  const objectHasPayloadVariables = useMemo(
+    () => objectVariablesAvailableForDefinition(objectVariablesQuery.data ?? [], []).length > 0,
+    [objectVariablesQuery.data],
+  );
+
+  function includeObjectVariable(name: string) {
+    const source = (objectVariablesQuery.data ?? []).find((item) => item.name === name);
+    if (!source) {
+      return;
+    }
+    setVariables((prev) => (
+      prev.some((item) => item.name === name) ? prev : [...prev, definitionFromObjectVariable(source)]
+    ));
+    setVariablePick(undefined);
   }
 
   function removeVariable(name: string) {
@@ -291,22 +304,43 @@ function ModelDetail({
   }
 
   function patchEvent(index: number, patch: Partial<EventDescriptor>) {
-    setEvents((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)));
+    setEvents((prev) =>
+      prev.map((event, i) => {
+        if (i !== index) {
+          return event;
+        }
+        const next = { ...event, ...patch };
+        if (
+          patch.name != null &&
+          patch.name !== event.name &&
+          event.payloadSchema.name === `${event.name}Payload`
+        ) {
+          next.payloadSchema = {
+            ...event.payloadSchema,
+            name: `${patch.name.trim() || "event"}Payload`,
+          };
+        }
+        return next;
+      }),
+    );
   }
 
   function addEvent() {
-    setEvents((prev) => [
-      ...prev,
-      {
-        name: `event${prev.length + 1}`,
-        description: "",
-        payloadSchema: {
-          name: "payload",
-          fields: [{ name: "message", type: "STRING" }],
+    setEvents((prev) => {
+      const eventName = `event${prev.length + 1}`;
+      return [
+        ...prev,
+        {
+          name: eventName,
+          description: "",
+          payloadSchema: {
+            name: `${eventName}Payload`,
+            fields: [{ name: "message", type: "STRING" }],
+          },
+          level: "INFO",
         },
-        level: "INFO",
-      },
-    ]);
+      ];
+    });
   }
 
   function removeEvent(index: number) {
@@ -323,9 +357,9 @@ function ModelDetail({
       {
         name: `fn${prev.length + 1}`,
         description: "",
-        inputSchema: { name: "input", fields: [] },
+        inputSchema: { name: "in", fields: [] },
         outputSchema: {
-          name: "output",
+          name: "out",
           fields: [{ name: "ok", type: "BOOLEAN" }],
         },
       },
@@ -445,12 +479,23 @@ function ModelDetail({
       <section className="model-section">
         <div className="model-section-header">
           <h4>{t("inspector:blueprint.variablesTitle", { count: variables.length })}</h4>
-          {canManage && !isBuiltin && (
-            <Button size="small" onClick={addVariable}>
-              {t("inspector:variables.add")}
-            </Button>
+          {canManage && !isBuiltin && availableObjectVariables.length > 0 && (
+            <Select
+              size="small"
+              style={{ minWidth: 220 }}
+              placeholder={t("inspector:blueprint.addObjectVariablePlaceholder")}
+              value={variablePick}
+              options={availableObjectVariables.map((variable) => ({
+                value: variable.name,
+                label: variable.name,
+              }))}
+              onChange={includeObjectVariable}
+            />
           )}
         </div>
+        {canManage && !isBuiltin && !objectVariablesQuery.isLoading && !objectHasPayloadVariables && (
+          <p className="hint">{t("inspector:blueprint.addObjectVariableEmpty")}</p>
+        )}
         {variables.length === 0 ? (
           <p className="hint">{t("inspector:variables.empty")}</p>
         ) : (

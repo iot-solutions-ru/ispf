@@ -17,6 +17,15 @@ class ModbusPointTest {
     }
 
     @Test
+    void parsesHoldingRegisterMappingWithCount() throws Exception {
+        ModbusPoint point = ModbusPoint.parse("1:HOLDING:10:2");
+        assertEquals(1, point.slaveId());
+        assertEquals(ModbusPoint.RegisterType.HOLDING, point.type());
+        assertEquals(10, point.address());
+        assertEquals(2, point.count());
+    }
+
+    @Test
     void rejectsInvalidMapping() {
         assertThrows(Exception.class, () -> ModbusPoint.parse("bad"));
     }

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MimicDiagramJsonSupportTest {
@@ -55,5 +56,26 @@ class MimicDiagramJsonSupportTest {
                 objectMapper
         );
         assertEquals(2, MimicDiagramJsonSupport.countElements(merged, objectMapper));
+    }
+
+    @Test
+    void invalidDiagramJsonIsNotCountedAsZero() {
+        IllegalArgumentException elements = assertThrows(
+                IllegalArgumentException.class,
+                () -> MimicDiagramJsonSupport.countElements("{not-json", objectMapper)
+        );
+        assertTrue(elements.getMessage().startsWith("Invalid diagramJson"));
+        IllegalArgumentException connections = assertThrows(
+                IllegalArgumentException.class,
+                () -> MimicDiagramJsonSupport.countConnections("{\"value\":\"{not-json\"}", objectMapper)
+        );
+        assertTrue(connections.getMessage().startsWith("Invalid diagramJson"));
+    }
+
+    @Test
+    void emptyDiagramCountsAsZero() {
+        String json = "{\"elements\":[],\"connections\":[]}";
+        assertEquals(0, MimicDiagramJsonSupport.countElements(json, objectMapper));
+        assertEquals(0, MimicDiagramJsonSupport.countConnections(json, objectMapper));
     }
 }

@@ -28,11 +28,11 @@ public class LabPlatformBootstrap {
 
     private static final String DEVICES_ROOT = "root.platform.devices";
 
-    private final LabBlueprintBootstrap LabBlueprintBootstrap;
-    private final HaystackBlueprintBootstrap HaystackBlueprintBootstrap;
-    private final BrickBlueprintBootstrap BrickBlueprintBootstrap;
-    private final BlueprintRegistry BlueprintRegistry;
-    private final BlueprintApplicationService BlueprintApplicationService;
+    private final LabBlueprintBootstrap labBlueprintBootstrap;
+    private final HaystackBlueprintBootstrap haystackBlueprintBootstrap;
+    private final BrickBlueprintBootstrap brickBlueprintBootstrap;
+    private final BlueprintRegistry blueprintRegistry;
+    private final BlueprintApplicationService blueprintApplicationService;
     private final ObjectTemplateService objectTemplateService;
     private final ObjectManager objectManager;
     private final ReportService reportService;
@@ -40,22 +40,22 @@ public class LabPlatformBootstrap {
     private final ClusterPlatformBootstrapService clusterBootstrapService;
 
     public LabPlatformBootstrap(
-            LabBlueprintBootstrap LabBlueprintBootstrap,
-            HaystackBlueprintBootstrap HaystackBlueprintBootstrap,
-            BrickBlueprintBootstrap BrickBlueprintBootstrap,
-            BlueprintRegistry BlueprintRegistry,
-            BlueprintApplicationService BlueprintApplicationService,
+            LabBlueprintBootstrap labBlueprintBootstrap,
+            HaystackBlueprintBootstrap haystackBlueprintBootstrap,
+            BrickBlueprintBootstrap brickBlueprintBootstrap,
+            BlueprintRegistry blueprintRegistry,
+            BlueprintApplicationService blueprintApplicationService,
             ObjectTemplateService objectTemplateService,
             ObjectManager objectManager,
             ReportService reportService,
             BootstrapProperties bootstrapProperties,
             ClusterPlatformBootstrapService clusterBootstrapService
     ) {
-        this.LabBlueprintBootstrap = LabBlueprintBootstrap;
-        this.HaystackBlueprintBootstrap = HaystackBlueprintBootstrap;
-        this.BrickBlueprintBootstrap = BrickBlueprintBootstrap;
-        this.BlueprintRegistry = BlueprintRegistry;
-        this.BlueprintApplicationService = BlueprintApplicationService;
+        this.labBlueprintBootstrap = labBlueprintBootstrap;
+        this.haystackBlueprintBootstrap = haystackBlueprintBootstrap;
+        this.brickBlueprintBootstrap = brickBlueprintBootstrap;
+        this.blueprintRegistry = blueprintRegistry;
+        this.blueprintApplicationService = blueprintApplicationService;
         this.objectTemplateService = objectTemplateService;
         this.objectManager = objectManager;
         this.reportService = reportService;
@@ -68,12 +68,12 @@ public class LabPlatformBootstrap {
     @Transactional
     public void onReady() {
         // Virtual driver Mixin Blueprints — required for agent create_virtual_device on prod (not demo fixtures).
-        LabBlueprintBootstrap.ensureLabModels();
+        labBlueprintBootstrap.ensureLabModels();
         if (!bootstrapProperties.shouldSeedGeneralReferenceDemos() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
-        HaystackBlueprintBootstrap.ensureHaystackModel();
-        BrickBlueprintBootstrap.ensureBrickModel();
+        haystackBlueprintBootstrap.ensureHaystackModel();
+        brickBlueprintBootstrap.ensureBrickModel();
         ensureLabDevice(
                 "lab-userA-01",
                 "Lab User A Device 01",
@@ -110,9 +110,9 @@ public class LabPlatformBootstrap {
         if (objectManager.tree().findByPath(path).isEmpty()) {
             return;
         }
-        BlueprintRegistry.findByName(HaystackBlueprintBootstrap.HAYSTACK_METADATA_MODEL).ifPresent(model -> {
+        blueprintRegistry.findByName(HaystackBlueprintBootstrap.HAYSTACK_METADATA_MODEL).ifPresent(model -> {
             if (!objectManager.require(path).appliedBlueprintIds().contains(model.id())) {
-                BlueprintApplicationService.applyBlueprintWithRules(model, path, model.parameters());
+                blueprintApplicationService.applyBlueprintWithRules(model, path, model.parameters());
             }
             DataSchema stringSchema = DataSchema.builder("stringValue")
                     .field("value", FieldType.STRING)
@@ -134,9 +134,9 @@ public class LabPlatformBootstrap {
             );
             objectManager.persistNodeTree(path);
         });
-        BlueprintRegistry.findByName(BrickBlueprintBootstrap.BRICK_METADATA_MODEL).ifPresent(model -> {
+        blueprintRegistry.findByName(BrickBlueprintBootstrap.BRICK_METADATA_MODEL).ifPresent(model -> {
             if (!objectManager.require(path).appliedBlueprintIds().contains(model.id())) {
-                BlueprintApplicationService.applyBlueprintWithRules(model, path, model.parameters());
+                blueprintApplicationService.applyBlueprintWithRules(model, path, model.parameters());
             }
             DataSchema stringSchema = DataSchema.builder("stringValue")
                     .field("value", FieldType.STRING)

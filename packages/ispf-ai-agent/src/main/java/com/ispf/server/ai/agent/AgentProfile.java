@@ -1,5 +1,7 @@
 package com.ispf.server.ai.agent;
 
+
+import java.util.Locale;
 public enum AgentProfile {
     ADMIN,
     OPERATOR;
@@ -12,6 +14,6 @@ public enum AgentProfile {
     }
 
     public String storageValue() {
-        return name().toLowerCase();
+        return name().toLowerCase(Locale.ROOT);
     }
 }

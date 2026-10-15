@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import java.util.Locale;
 @Service
 public class PlatformUserService {
 
@@ -103,7 +104,7 @@ public class PlatformUserService {
 
     @Transactional
     public Map<String, Object> login(String username, String password, String totpCode) {
-        PlatformUserStore.PlatformUser user = userStore.findByUsername(username.trim().toLowerCase())
+        PlatformUserStore.PlatformUser user = userStore.findByUsername(username.trim().toLowerCase(Locale.ROOT))
                 .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
         if (!user.enabled()) {
             throw new IllegalArgumentException("User is disabled");
@@ -552,7 +553,7 @@ public class PlatformUserService {
         if (username == null || username.isBlank()) {
             throw new IllegalArgumentException("Username is required");
         }
-        String normalized = username.trim().toLowerCase();
+        String normalized = username.trim().toLowerCase(Locale.ROOT);
         if (!normalized.matches("[a-z0-9._-]{2,64}")) {
             throw new IllegalArgumentException("Invalid username format");
         }
@@ -587,7 +588,7 @@ public class PlatformUserService {
         }
         List<String> roles = new ArrayList<>();
         for (String part : value.split(",")) {
-            String role = part.trim().toLowerCase();
+            String role = part.trim().toLowerCase(Locale.ROOT);
             if (!role.isBlank()) {
                 roles.add(role);
             }

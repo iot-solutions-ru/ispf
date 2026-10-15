@@ -1,5 +1,7 @@
 package com.ispf.driver.ieee20305;
 
+
+import java.util.Locale;
 /**
  * Point mapping for IEEE 2030.5 (SEP2) HTTP resources.
  * <p>
@@ -34,7 +36,7 @@ public record Ieee20305Point(String path, String field) {
     }
 
     private static String defaultField(String path) {
-        String lower = path.toLowerCase();
+        String lower = path.toLowerCase(Locale.ROOT);
         if (lower.contains("edev")) {
             return "sFDI";
         }

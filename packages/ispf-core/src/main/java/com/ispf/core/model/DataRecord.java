@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -68,7 +69,11 @@ public final class DataRecord {
         return rows.get(rowIndex).get(field);
     }
 
-    public void addRow(Map<String, Object> values) {
+    /**
+     * Construction-time only. Published records must stay immutable so variable readers
+     * and CHANGES_ONLY dedup cannot race on a shared mutable list.
+     */
+    private void addRow(Map<String, Object> values) {
         Map<String, Object> normalized = new LinkedHashMap<>();
         for (FieldDefinition field : schema.fields()) {
             Object value = values.get(field.name());
@@ -90,7 +95,72 @@ public final class DataRecord {
         if (field.type() == FieldType.INTEGER) {
             return IntegerValues.requireInt(field.name(), value);
         }
+        if (field.type() == FieldType.LONG) {
+            return longValue(field, value);
+        }
+        if (field.type() == FieldType.DATETIME) {
+            return datetimeValue(field, value);
+        }
+        if (field.type() == FieldType.RECORD) {
+            return nestedRecordValue(field, value);
+        }
+        if (field.type() == FieldType.RECORD_LIST) {
+            return nestedRecordListValue(field, value);
+        }
         validateType(field, value);
+        return value;
+    }
+
+    private static Long longValue(FieldDefinition field, Object value) {
+        if (value instanceof Long longValue) {
+            return longValue;
+        }
+        if (value instanceof Integer intValue) {
+            return intValue.longValue();
+        }
+        throw new IllegalArgumentException(field.name() + " must be long");
+    }
+
+    private static Instant datetimeValue(FieldDefinition field, Object value) {
+        if (value instanceof Instant instant) {
+            return instant;
+        }
+        if (value instanceof String text) {
+            try {
+                return Instant.parse(text.trim());
+            } catch (DateTimeParseException ex) {
+                throw new IllegalArgumentException(field.name() + " must be datetime", ex);
+            }
+        }
+        throw new IllegalArgumentException(field.name() + " must be datetime");
+    }
+
+    private static Object nestedRecordValue(FieldDefinition field, Object value) {
+        if (value instanceof DataRecord record) {
+            if (!field.nestedSchema().isCompatibleWith(record.schema())) {
+                throw new IllegalArgumentException(field.name() + " does not match nested schema");
+            }
+            return record;
+        }
+        if (value instanceof Map<?, ?>) {
+            return value;
+        }
+        throw new IllegalArgumentException(field.name() + " must be DataRecord");
+    }
+
+    private static Object nestedRecordListValue(FieldDefinition field, Object value) {
+        if (!(value instanceof List<?> list)) {
+            throw new IllegalArgumentException(field.name() + " must be list");
+        }
+        for (Object element : list) {
+            if (element instanceof DataRecord record) {
+                if (!field.nestedSchema().isCompatibleWith(record.schema())) {
+                    throw new IllegalArgumentException(field.name() + " element does not match nested schema");
+                }
+            } else if (!(element instanceof Map<?, ?>)) {
+                throw new IllegalArgumentException(field.name() + " must be a list of DataRecord");
+            }
+        }
         return value;
     }
 
@@ -117,11 +187,7 @@ public final class DataRecord {
                     throw new IllegalArgumentException(field.name() + " must be integer");
                 }
             }
-            case LONG -> {
-                if (!(value instanceof Long) && !(value instanceof Integer)) {
-                    throw new IllegalArgumentException(field.name() + " must be long");
-                }
-            }
+            case LONG -> throw new IllegalStateException("long is stored by longValue");
             case DOUBLE -> throw new IllegalStateException("double is stored by finiteDouble");
             case STRING -> {
                 if (!(value instanceof String)) {
@@ -133,16 +199,8 @@ public final class DataRecord {
                     throw new IllegalArgumentException(field.name() + " must be datetime");
                 }
             }
-            case RECORD -> {
-                if (!(value instanceof DataRecord)) {
-                    throw new IllegalArgumentException(field.name() + " must be DataRecord");
-                }
-            }
-            case RECORD_LIST -> {
-                if (!(value instanceof List)) {
-                    throw new IllegalArgumentException(field.name() + " must be list");
-                }
-            }
+            case RECORD -> throw new IllegalStateException("record is stored by nestedRecordValue");
+            case RECORD_LIST -> throw new IllegalStateException("record list is stored by nestedRecordListValue");
             case BINARY -> {
                 if (!(value instanceof byte[])) {
                     throw new IllegalArgumentException(field.name() + " must be binary");
