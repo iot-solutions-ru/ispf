@@ -49,6 +49,7 @@ public class DropInAnalyticsPackLoader {
     private final ObjectMapper objectMapper;
     private final CommercialLicenseProperties licenseProperties;
     private final AnalyticsPackLicenseSigner licenseSigner;
+    private final Map<String, String> loadFailures = new LinkedHashMap<>();
 
     public DropInAnalyticsPackLoader(
             AnalyticsPackProperties packProperties,
@@ -155,20 +156,30 @@ public class DropInAnalyticsPackLoader {
             Map<String, Object> root = objectMapper.readValue(manifestPath.toFile(), Map.class);
             AnalyticsPackManifest manifest = AnalyticsPackManifest.fromMap(root);
             if (manifest == null) {
-                log.warn("Skipping invalid analytics pack manifest in {}", packDir);
+                String error = "Invalid analytics pack manifest";
+                recordLoadFailure(packDir.getFileName().toString(), error);
+                log.error("Analytics pack failed in {}: {}", packDir, error);
                 return List.of();
             }
             Path jarPath = packDir.resolve(manifest.jarFile()).normalize();
             if (!jarPath.startsWith(packDir.normalize()) || !Files.isRegularFile(jarPath)) {
-                log.warn("Analytics pack {} JAR not found: {}", manifest.packId(), jarPath);
+                String error = "JAR not found: " + jarPath;
+                recordLoadFailure(manifest.packId(), error);
+                log.error("Analytics pack {} failed: {}", manifest.packId(), error);
                 return List.of();
             }
             if (!verifyPackLicense(manifest, jarPath)) {
                 return List.of();
             }
-            return registerJar(manifest.packId(), jarPath);
+            List<String> helpers = registerJar(manifest.packId(), jarPath);
+            loadFailures.remove(manifest.packId());
+            return helpers;
         } catch (Exception ex) {
-            log.warn("Failed to load analytics pack from {}: {}", packDir, ex.getMessage());
+            String error = ex.getMessage() == null || ex.getMessage().isBlank()
+                    ? ex.getClass().getSimpleName()
+                    : ex.getMessage();
+            recordLoadFailure(packDir.getFileName().toString(), error);
+            log.error("Analytics pack failed in {}: {}", packDir, error);
             return List.of();
         }
     }
@@ -198,7 +209,7 @@ public class DropInAnalyticsPackLoader {
         return Files.isRegularFile(packsRoot().resolve(packId.trim()).resolve(MANIFEST_FILE));
     }
 
-    public List<Map<String, Object>> listInstalledPacks() {
+    public synchronized List<Map<String, Object>> listInstalledPacks() {
         Path packsRoot = packsRoot();
         if (!Files.isDirectory(packsRoot)) {
             return List.of();
@@ -210,25 +221,65 @@ public class DropInAnalyticsPackLoader {
                 if (!Files.isRegularFile(manifestPath)) {
                     continue;
                 }
-                @SuppressWarnings("unchecked")
-                Map<String, Object> root = objectMapper.readValue(manifestPath.toFile(), Map.class);
-                AnalyticsPackManifest manifest = AnalyticsPackManifest.fromMap(root);
-                if (manifest == null) {
-                    continue;
-                }
-                Map<String, Object> row = new LinkedHashMap<>();
-                row.put("packId", manifest.packId());
-                row.put("version", manifest.version());
-                row.put("functions", manifest.functions());
-                row.put("licenseType", manifest.licenseType());
-                row.put("minPlatformVersion", manifest.minPlatformVersion());
-                row.put("helpers", analyticsPackLoader.helpersForPack(manifest.packId()));
-                rows.add(row);
+                rows.add(catalogRow(dir, manifestPath));
             }
         } catch (IOException ex) {
-            log.warn("Failed to list installed analytics packs: {}", ex.getMessage());
+            log.error("Failed to list installed analytics packs: {}", ex.getMessage());
         }
         return rows;
+    }
+
+    private Map<String, Object> catalogRow(Path dir, Path manifestPath) {
+        String dirName = dir.getFileName().toString();
+        Map<String, Object> row = new LinkedHashMap<>();
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> root = objectMapper.readValue(manifestPath.toFile(), Map.class);
+            AnalyticsPackManifest manifest = AnalyticsPackManifest.fromMap(root);
+            if (manifest == null) {
+                row.put("packId", dirName);
+                row.put("status", "failed");
+                row.put("error", failureOr(dirName, "Invalid analytics pack manifest"));
+                return row;
+            }
+            row.put("packId", manifest.packId());
+            row.put("version", manifest.version());
+            row.put("functions", manifest.functions());
+            row.put("licenseType", manifest.licenseType());
+            row.put("minPlatformVersion", manifest.minPlatformVersion());
+            Path jarPath = dir.resolve(manifest.jarFile()).normalize();
+            if (!jarPath.startsWith(dir.normalize()) || !Files.isRegularFile(jarPath)) {
+                row.put("helpers", List.of());
+                row.put("status", "failed");
+                row.put("error", failureOr(manifest.packId(), "JAR not found: " + jarPath));
+                return row;
+            }
+            String failure = loadFailures.get(manifest.packId());
+            if (failure == null) {
+                failure = loadFailures.get(dirName);
+            }
+            row.put("helpers", analyticsPackLoader.helpersForPack(manifest.packId()));
+            row.put("status", failure == null ? "loaded" : "failed");
+            row.put("error", failure == null ? "" : failure);
+            return row;
+        } catch (Exception ex) {
+            String error = ex.getMessage() == null || ex.getMessage().isBlank()
+                    ? ex.getClass().getSimpleName()
+                    : ex.getMessage();
+            row.put("packId", dirName);
+            row.put("status", "failed");
+            row.put("error", failureOr(dirName, error));
+            return row;
+        }
+    }
+
+    private void recordLoadFailure(String packId, String error) {
+        loadFailures.put(packId, error);
+    }
+
+    private String failureOr(String packId, String fallback) {
+        String recorded = loadFailures.get(packId);
+        return recorded == null || recorded.isBlank() ? fallback : recorded;
     }
 
     public synchronized Map<String, Object> uninstallPack(String packId) throws IOException {
@@ -259,20 +310,19 @@ public class DropInAnalyticsPackLoader {
                 licenseSigner.verify(manifest.packId(), jarPath, claims);
                 return true;
             } catch (CommercialLicenseException ex) {
-                if (licenseProperties.isEnforce()) {
-                    log.error("Skipping analytics pack {}: {}", manifest.packId(), ex.getMessage());
-                } else {
-                    log.warn("Skipping analytics pack {} (license): {}", manifest.packId(), ex.getMessage());
-                }
+                String error = ex.getMessage() == null || ex.getMessage().isBlank()
+                        ? ex.getClass().getSimpleName()
+                        : ex.getMessage();
+                recordLoadFailure(manifest.packId(), error);
+                log.error("Analytics pack {} failed: {}", manifest.packId(), error);
                 return false;
             }
         }
         if (!isOpenLicenseType(manifest.licenseType())) {
             if (licenseProperties.isEnforce()) {
-                log.warn(
-                        "Skipping analytics pack {} — commercial license required when enforce=true",
-                        manifest.packId()
-                );
+                String error = "Commercial license required when enforce=true";
+                recordLoadFailure(manifest.packId(), error);
+                log.error("Analytics pack {} failed: {}", manifest.packId(), error);
                 return false;
             }
             log.warn("Loading commercial analytics pack {} without license (enforce=false)", manifest.packId());
