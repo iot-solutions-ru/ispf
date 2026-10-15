@@ -41,6 +41,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ObjectWebSocketHandler.class);
     private static final String SUBSCRIBE_ATTR = "subscribedInterest";
+    static final String LAST_SEND_FAILURE_ATTR = "lastObjectChangeSendFailure";
 
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
     /** Reverse index: subscribed path → sessions interested in that path (path-wide or any variables). */
@@ -48,6 +49,8 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     private final WebSocketProperties webSocketProperties;
     private final ConcurrentLinkedQueue<Runnable> pendingSends = new ConcurrentLinkedQueue<>();
     private final AtomicInteger pendingSendCount = new AtomicInteger();
+    private final AtomicInteger sendFailureCount = new AtomicInteger();
+    private final ConcurrentLinkedQueue<Map<String, Object>> recentSendFailures = new ConcurrentLinkedQueue<>();
     private ElasticWorkerLauncher sendWorkers;
     private final ObjectMapper objectMapper;
     private final FederationSubscribePollService federationSubscribePollService;
@@ -327,6 +330,14 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         return (int) sessions.stream().filter(WebSocketSession::isOpen).count();
     }
 
+    public int sendFailureCount() {
+        return sendFailureCount.get();
+    }
+
+    public List<Map<String, Object>> sessionDeliveryErrors() {
+        return List.copyOf(recentSendFailures);
+    }
+
     @EventListener
     public void onObjectChange(ObjectChangeEvent event) {
         Long revision = event.revision();
@@ -362,15 +373,22 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
             if (event.previousValue() != null) {
                 message.put("previousValue", event.previousValue());
             }
+            TextMessage payload;
             try {
-                sendAsync(session, new TextMessage(objectMapper.writeValueAsString(message)));
+                payload = new TextMessage(objectMapper.writeValueAsString(message));
             } catch (tools.jackson.core.JacksonException e) {
-                log.warn("Failed to serialize object-change message for {}: {}", event.path(), e.getMessage());
+                recordSendFailure(session, event.path(), e);
+                continue;
             }
+            sendAsync(session, event.path(), payload);
         }
     }
 
-    private void sendAsync(WebSocketSession session, TextMessage payload) {
+    private void sendAsync(WebSocketSession session, String path, TextMessage payload) {
+        enqueueSend(session, path, payload, 0);
+    }
+
+    private void enqueueSend(WebSocketSession session, String path, TextMessage payload, int attempt) {
         pendingSendCount.incrementAndGet();
         pendingSends.offer(() -> {
             try {
@@ -383,10 +401,32 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
                     }
                 }
             } catch (Exception e) {
-                log.warn("WebSocket send failed for session {}: {}", session.getId(), e.getMessage());
+                if (attempt == 0 && session.isOpen()) {
+                    enqueueSend(session, path, payload, 1);
+                    return;
+                }
+                recordSendFailure(session, path, e);
             }
         });
         sendWorkers.signalWork();
+    }
+
+    private void recordSendFailure(WebSocketSession session, String path, Exception error) {
+        sendFailureCount.incrementAndGet();
+        String message = error.getMessage() == null || error.getMessage().isBlank()
+                ? error.getClass().getSimpleName()
+                : error.getMessage();
+        session.getAttributes().put(LAST_SEND_FAILURE_ATTR, message);
+        Map<String, Object> row = new java.util.LinkedHashMap<>();
+        row.put("sessionId", session.getId());
+        row.put("path", path);
+        row.put("open", session.isOpen());
+        row.put("error", message);
+        recentSendFailures.add(row);
+        while (recentSendFailures.size() > 16) {
+            recentSendFailures.poll();
+        }
+        log.error("Object-change delivery failed for session {} path {}: {}", session.getId(), path, message);
     }
 
     private Set<WebSocketSession> sessionsForEvent(String eventPath, String variableName) {

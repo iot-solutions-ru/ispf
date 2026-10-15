@@ -201,6 +201,30 @@ class ObjectWebSocketHandlerInterestTest {
         assertThat(session.messages.getFirst()).contains("\"variableName\":\"speed\"");
     }
 
+    @Test
+    void failedSendIsRetriedThenVisibleOnSession() throws Exception {
+        RecordingSession session = openSession("s-send-fail");
+        session.failSends = true;
+        session.sendSubscribe("""
+                {"type":"subscribe","paths":["root.devices.pump"]}
+                """);
+
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.pump", "speed"));
+
+        long deadline = System.nanoTime() + 2_000_000_000L;
+        while (handler.sendFailureCount() < 1 && System.nanoTime() < deadline) {
+            Thread.sleep(20);
+        }
+        assertThat(handler.sendFailureCount()).isEqualTo(1);
+        assertThat(session.sendAttempts).isEqualTo(2);
+        assertThat(session.messages).isEmpty();
+        assertThat(handler.sessionDeliveryErrors())
+                .anySatisfy(row -> {
+                    assertThat(row.get("sessionId")).isEqualTo("s-send-fail");
+                    assertThat(String.valueOf(row.get("error"))).contains("send failed");
+                });
+    }
+
     private static UsernamePasswordAuthenticationToken authentication(String role) {
         return new UsernamePasswordAuthenticationToken(
                 "ws-user",
@@ -235,6 +259,8 @@ class ObjectWebSocketHandlerInterestTest {
         private final Map<String, Object> attributes = new HashMap<>();
         private final List<String> messages = new CopyOnWriteArrayList<>();
         private boolean open = true;
+        private boolean failSends;
+        private int sendAttempts;
 
         private RecordingSession(String id) {
             this.id = id;
@@ -255,7 +281,11 @@ class ObjectWebSocketHandlerInterestTest {
         }
 
         @Override
-        public void sendMessage(org.springframework.web.socket.WebSocketMessage<?> message) {
+        public void sendMessage(org.springframework.web.socket.WebSocketMessage<?> message) throws java.io.IOException {
+            if (failSends) {
+                sendAttempts++;
+                throw new java.io.IOException("send failed");
+            }
             if (message instanceof TextMessage text) {
                 messages.add(text.getPayload());
             }
