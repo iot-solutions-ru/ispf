@@ -330,27 +330,32 @@ Response: `{ enabled, persistToDisk, maxBytes, dropPolicy, agents: { "<agentId>"
 
 Use for field/lab soak and alerting on rising `totalPending` / `totalDropped`.
 
-### Field soak — 30-day buffer replay (BL-145)
+### Lab / field soak — buffer journal (BL-145)
 
-Accelerated lab soak (30 sim-days in 30 wall-minutes):
+**Lab Done** = disk persist + stats API + disconnect/replay IT + shippable soak journal script. **Field GA** = 30 real days on a named edge node.
+
+Accelerated lab soak (30 sim-days label in 30 wall-minutes):
 
 ```bash
 export ISPF_SOAK_BASE_URL=https://edge-site.example
-export ISPF_SOAK_TOKEN=<admin-or-read-token>
-export ISPF_SOAK_OUTBOUND_AGENT_ID=<uuid>   # optional disconnect/reconnect cycles
-export ISPF_DATA_DIR=/var/lib/ispf          # optional persist file check
-bash deploy/local/tools/agent-store-forward-soak.sh
+export ISPF_SOAK_TOKEN=<admin-or-read-token>   # or ISPF_SOAK_USER / ISPF_SOAK_PASSWORD
+export ISPF_DATA_DIR=/var/lib/ispf             # optional persist file check
+bash deploy/tools/agent-store-forward-soak.sh
 ```
+
+Smoke (single poll): `ISPF_SOAK_WALL_MINUTES=0 bash deploy/tools/agent-store-forward-soak.sh`
 
 | Env | Default | Description |
 |-----|---------|----------|
-| `ISPF_SOAK_SIM_DAYS` | `30` | Simulated timeline length |
-| `ISPF_SOAK_WALL_MINUTES` | `30` | Wall-clock duration (86400× accel vs 30d) |
+| `ISPF_SOAK_SIM_DAYS` | `30` | Simulated timeline label in the report |
+| `ISPF_SOAK_WALL_MINUTES` | `30` | Wall-clock duration (`0` = one sample; `43200` = 30 real days) |
 | `ISPF_SOAK_POLL_SEC` | `10` | Stats poll interval |
-| `ISPF_SOAK_OUTBOUND_AGENT_ID` | — | Weekly simulated maintenance disconnect/reconnect |
-| `ISPF_SOAK_EVENT_PATH` / `ISPF_SOAK_EVENT_VAR` | demo sensor | Variable patches while tunnel offline |
+| `ISPF_SOAK_OUTBOUND_AGENT_ID` | — | Recorded in report (disconnect/replay proven in IT, not this script) |
+| `ISPF_DATA_DIR` | — | If set, notes whether `agent/store-forward-buffer.json` exists |
 
-**Production field soak:** run same script with `ISPF_SOAK_WALL_MINUTES=43200` (30 real days) on each edge node after hub registration. Review `build/agent-store-forward-soak/soak-report.md` + CSV; GA gate at zero data loss (204 stable, pending drain after reconnect).
+**CI / unit gates:** `AgentStoreForwardServiceTest` (disk restart), `AgentStoreForwardApiTest`, `FederationStoreForwardIntegrationTest` (disconnect → buffer → reconnect drain). Evidence: [BL-145 lab gate](../evidence/ot-trust/2026-10-15-bl145-edge-store-forward-lab-ga.md).
+
+**Production field soak:** same script with `ISPF_SOAK_WALL_MINUTES=43200` on each edge node after hub registration. Review `build/agent-store-forward-soak/soak-report.md` + CSV; field GA at zero data loss (pending drain after reconnect).
 
 **Limits (v1):** buffer tracks only tunnel `event_notify`; HTTP-only peers without outbound tunnel are not buffered.
 
