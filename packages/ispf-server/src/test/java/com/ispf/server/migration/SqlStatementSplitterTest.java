@@ -41,6 +41,42 @@ class SqlStatementSplitterTest {
     }
 
     @Test
+    void keepsSemicolonInsideDollarQuote() {
+        List<String> statements = SqlStatementSplitter.split(
+                "INSERT INTO t VALUES ($$a;b$$); SELECT 1"
+        );
+        assertEquals(2, statements.size());
+        assertEquals("INSERT INTO t VALUES ($$a;b$$)", statements.get(0));
+        assertEquals("SELECT 1", statements.get(1));
+    }
+
+    @Test
+    void keepsFunctionBodyInsideTaggedDollarQuote() {
+        List<String> statements = SqlStatementSplitter.split("""
+                CREATE FUNCTION reserve_order() RETURNS void AS $body$
+                BEGIN
+                  PERFORM 1;
+                END;
+                $body$ LANGUAGE plpgsql;
+                SELECT 1
+                """);
+        assertEquals(2, statements.size());
+        assertEquals(true, statements.get(0).contains("PERFORM 1;"));
+        assertEquals(true, statements.get(0).contains("$body$ LANGUAGE plpgsql"));
+        assertEquals("SELECT 1", statements.get(1));
+    }
+
+    @Test
+    void dollarQuoteDoesNotStartInsideSingleQuotes() {
+        List<String> statements = SqlStatementSplitter.split(
+                "INSERT INTO t VALUES ('$$a;b$$'); SELECT 1"
+        );
+        assertEquals(2, statements.size());
+        assertEquals("INSERT INTO t VALUES ('$$a;b$$')", statements.get(0));
+        assertEquals("SELECT 1", statements.get(1));
+    }
+
+    @Test
     void handlesEscapedSingleQuoteInLiteral() {
         List<String> statements = SqlStatementSplitter.split(
                 "INSERT INTO t VALUES ('it''s fine'); UPDATE t SET x = 1"
