@@ -13,6 +13,7 @@ import type {
 import { getAuthHeaders } from "../auth/session";
 import { fetchWithIngressFallback } from "../utils/ingress/ingressFetch";
 import { request, writeHeaders, type ObjectWriteOptions } from "./httpClient";
+import { normalizeVariablesBatch } from "../utils/object/variablesBatchLookup";
 
 export interface ObjectSearchResponse {
   query: string;
@@ -86,7 +87,7 @@ export async function fetchVariablesBatch(paths: string[]): Promise<Record<strin
     const part = await request<Record<string, VariableDto[]>>(
       `/api/v1/objects/variables/batch?paths=${pathsParam}`
     );
-    Object.assign(result, part);
+    Object.assign(result, normalizeVariablesBatch(part, chunk));
   }
   return result;
 }

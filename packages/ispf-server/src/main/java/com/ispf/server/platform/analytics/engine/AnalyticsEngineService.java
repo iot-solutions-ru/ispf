@@ -38,6 +38,7 @@ public class AnalyticsEngineService {
     private final AnalyticsTagMetadataService metadataService;
     private final VariableMemberAccessService variableMemberAccessService;
     private final AnalyticsEngine analyticsEngine;
+    private volatile List<String> lastMissingObjectTags = List.of();
 
     public AnalyticsEngineService(
             AnalyticsProperties analyticsProperties,
@@ -76,6 +77,15 @@ public class AnalyticsEngineService {
         return analyticsProperties.engineEnabled();
     }
 
+    public List<String> lastMissingObjectTags() {
+        return lastMissingObjectTags;
+    }
+
+    public List<String> refreshMissingObjectTags() {
+        lastMissingObjectTags = List.copyOf(metadataService.propagateQuality(catalogService.listAllTagDefinitions()));
+        return lastMissingObjectTags;
+    }
+
     @Transactional
     public TickResult evaluateAllEnabled() {
         return evaluateAllEnabled(AnalyticsEvaluationOptions.now(), Instant.now());
@@ -92,7 +102,7 @@ public class AnalyticsEngineService {
         List<AnalyticsEvaluationResult> engineResults = evaluateWithSession(tags, options);
         int updated = applyEngineResults(engineResults, observedAt);
         metadataService.recordEvaluations(engineResults, observedAt);
-        metadataService.propagateQuality(allTags);
+        lastMissingObjectTags = List.copyOf(metadataService.propagateQuality(allTags));
         long latencyMs = (System.nanoTime() - started) / 1_000_000L;
         metricsRecorder.recordEvaluation(engineResults.size(), latencyMs);
         return new TickResult(true, engineResults.size(), updated, latencyMs, null);

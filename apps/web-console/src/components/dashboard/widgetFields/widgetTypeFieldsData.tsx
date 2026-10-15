@@ -2,6 +2,7 @@
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { HISTORY_TABLE_RANGE_IDS } from "../../../types/dashboard";
+import { VariableEditorVariablesField } from "./variableEditorWidgetFields";
 import {
   CALCULATOR_SHEET_CONFIG,
   DEFAULT_SHEET_CONFIG,
@@ -13,7 +14,6 @@ import {
   FormFieldsEditor,
   HintCaption,
   KeyValueEditor,
-  ObjectTableColumnsEditor,
   SheetGridSizeEditor,
   StringListEditor,
 } from "../widgetEditorStructured";
@@ -178,7 +178,7 @@ function functionFormFields(ctx: WidgetFieldContextFor<"function-form">, t: TFun
 }
 
 function objectTableFields(ctx: WidgetFieldContextFor<"object-table">, t: TFunction): ReactNode {
-  const { widget, update, objects } = ctx;
+  const { widget, update } = ctx;
   return (
     <>
       <Section title={t("editor.section.objectTable")} />
@@ -206,12 +206,6 @@ function objectTableFields(ctx: WidgetFieldContextFor<"object-table">, t: TFunct
           <option value="CUSTOM">{t("common:objectType.CUSTOM")}</option>
         </select>
       </label>
-      <ObjectTableColumnsEditor
-        value={widget.columnsJson}
-        onChange={(v) => update({ columnsJson: v })}
-        parentPath={widget.parentPath}
-        objects={objects}
-      />
       {rowNavigationFields(ctx, "row", t)}
     </>
   );
@@ -496,20 +490,15 @@ function historyTableFields(ctx: WidgetFieldContextFor<"history-table">, t: TFun
 }
 
 function variableEditorFields(ctx: WidgetFieldContextFor<"variable-editor">, t: TFunction): ReactNode {
-  const { widget, update, variables } = ctx;
-  const objectKnown = Boolean(widget.objectPath?.trim() || widget.modelHintPath?.trim());
+  const { widget, update, allVariableNames } = ctx;
   return (
     <>
       <Section title={t("editor.section.variableEditor")} />
-      {objectKnown && variables.length === 0 ? (
-        <p className="hint">{t("editor.variableNamesEmpty")}</p>
-      ) : null}
-      <StringListEditor
-        label={t("editor.variablesJsonAll")}
-        value={widget.variablesJson}
-        onChange={(v) => update({ variablesJson: v || undefined })}
-        suggestions={objectKnown ? undefined : variables}
-        options={objectKnown ? variables : undefined}
+      <VariableEditorVariablesField
+        widget={widget}
+        update={update}
+        t={t}
+        fallbackSuggestions={allVariableNames}
       />
     </>
   );
