@@ -123,7 +123,6 @@ deploy/tools/analytics-*-gate.sh
 deploy/tools/historian-scale-benchmark.sh
 deploy/tools/run-enterprise-l-gates.sh
 deploy/tools/seed-analytics-scale-catalog.py
-deploy/tools/agent-store-forward-soak.sh
 deploy/tools/setup-historian-chain-*
 deploy/tools/lab-ssh-install-key.py
 deploy/nginx-*-lab.conf

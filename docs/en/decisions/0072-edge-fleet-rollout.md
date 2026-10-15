@@ -15,7 +15,7 @@ ARM edge compose ([BL-187](../demostands.md)), federation S&F / disk buffer (BL-
 | Lane | Meaning | Status today |
 |------|---------|--------------|
 | **A — Edge runtime profile** | ARM/gateway compose + validate | **Done** (lab) |
-| **B — Store-and-forward** | Buffer telemetry/events toward hub when link down | **Partial** (code + metrics; 30d soak open) |
+| **B — Store-and-forward** | Buffer telemetry/events toward hub when link down | **Lab Done** (code + metrics + soak journal script); **field** 30d soak still open |
 | **C — Fleet rollout** | Same bundle revision to N sites with canary/rollback | **Not claimed** — 0063 is **one app ↔ one Git repo**, not N-site GitOps |
 
 ### 2. Hard rules
@@ -27,7 +27,7 @@ ARM edge compose ([BL-187](../demostands.md)), federation S&F / disk buffer (BL-
 ## Consequences
 
 - [federation](../federation.md), [demostands](../demostands.md), [0063](0063-application-git-lifecycle.md).
-- Follow-up: close BL-145 soak evidence; optional fleet controller remains unscheduled.
+- Follow-up: BL-145 **lab** soak journal shipped (`deploy/tools/agent-store-forward-soak.sh`); dated **field** 30d host run still open; optional fleet controller remains unscheduled.
 
 ## Related
 

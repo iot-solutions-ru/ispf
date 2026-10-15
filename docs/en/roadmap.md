@@ -87,7 +87,7 @@ Counts from [§ BL-140…225](#bl-140225--full-registry) — prefer this over th
 | Status | IDs (highlights) | Meaning |
 | ------ | ---------------- | ------- |
 | **Done** | BL-141, 146, 152, 153, 154, 160, 163, 189, 191, 192, 193, 201, 202, 220, 222, 223 | Accepted / shipped with evidence |
-| **Partial** | BL-140, 145, … | Foundation exists; tail open (field task, stub, soak, or live gate missing). BL-143/144 lab Done 2026-10-15 |
+| **Partial** | BL-140, … | Foundation exists; tail open (field task, stub, soak, or live gate missing). BL-143/144/145 **lab** Done 2026-10-15 |
 | **Done** | BL-191 (matrix honesty) | OT PRODUCTION stubs downgraded; CI gate green |
 | **Done** | BL-193 (genealogy lite) | mes-platform BFF + Operator report/dashboard with seed graph |
 | **Planned** | BL-200, 224–225 | Not started or charter-only |
@@ -974,7 +974,7 @@ Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Co
 | **Closed (honesty)** | IoT / OT | Matrix honesty (BL-191) | Kepware / Ignition | Shells/poll-only → BETA; DNP3 write still open as capability gap | [BL-191](#bl-191193--domain-audit-follow-ups) **Done**; BL-140 field |
 | **Blocker** | ERP L4 | Outbox marks `simulated` without live ERP | B2MML / 1C / SAP IDoc | Stub connector only | **BL-169** (deferred from 90-day plan) |
 | **High** | AI | Field soak / soft &lt;15 min | Differentiated AI agent path | BL-177…180 **Done** (harness); BL-178 full live 52/52 @100%; residual: field soak + soft duration budget | BL-177…180 |
-| High | IoT / Edge | Edge agent GA, ARM soak 30d | Ignition Edge | BL-187 Done (compose+validate); BL-145 Partial (30d soak) | BL-145, 187 |
+| High | IoT / Edge | Edge agent GA, ARM soak 30d | Ignition Edge | BL-187 Done (compose+validate); BL-145 **lab** Done (disk + IT + soak script); field 30d Gap | BL-145, 187 |
 | High | SCADA | Offline PWA / HMI CI gates | Ignition Perspective | BL-151 Done; BL-152 Done (500@≥55 CI + WS path; do **not** claim unmocked ≥60; LH operator ≥95 = ops stretch, CI floor 90) | BL-151, 152 Done |
 | High | Historian | Enterprise L 1B CH scorecard sign-off | OSIsoft PI | Phase 28 BL-159…163 **Done**; scorecard 7.0 until 1B lab | BL-210 lab |
 | High | MES | Lab MES ≠ Opcenter / field site | Siemens Opcenter | Scorecard 6.5; BL-164…168/170/193 Done on marketplace; not plant | BL-164…170 |
@@ -1042,8 +1042,8 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-141 | **Driver interop lab** | P0 | Docker fixtures per driver, CI workflow `driver-interop.yml`, latency + write round-trip report |
 | BL-142 | **Event→variable at driver** | P1 | MQTT/Kafka streams → dynamic variables; integration test |
 | BL-143 | **OPC UA server GA** | P1 | **Done (lab)** — External UA clients: subscribe, read, write; Milo CI proxy for UA Expert / Prosys + interop runbook |
-| BL-144 | **Driver DDK** | P1 | **Done (lab)** — `packages/ispf-driver-ddk`, template, 3 reference custom drivers + pack assemble, [driver-promotion](driver-promotion.md) |
-| BL-145 | **Agent edge GA** | P1 | Store-forward, offline buffer, federation sync — 30-day field soak, [federation](federation.md) |
+| BL-144 | **Driver DDK** | P1 | **Done (lab)** — packages/ispf-driver-ddk, template, 3 reference custom drivers + pack assemble, [driver-promotion](driver-promotion.md) |
+| BL-145 | **Agent edge GA** | P1 | **Done (lab)** — store-forward, offline disk buffer, federation sync IT + soak journal; 30-day **field** soak still open — [federation](federation.md) |
 
 **Phase metric:** 20 PRODUCTION drivers; 0 beta in top-industrial list; 3 pilot OT sites without middleware.
 
@@ -1227,9 +1227,9 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-140 | 25 | Top-20 industrial PRODUCTION | P0 | **Partial** (matrix + playbooks + [Pilot #1 day 1](../evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md) on named lab VLAN; field Done after 7-day soak + sign-off) |
 | BL-141 | 25 | Driver interop lab | P0 | **Done** (Docker + CI smoke) |
 | BL-142 | 25 | Event→variable at driver | P1 | **Done** — MQTT + Kafka driver loopback + server IT (`MqttDriverRuntimeIntegrationTest`, `KafkaDriverRuntimeIntegrationTest`) |
-| BL-143 | 25 | OPC UA server GA | P1 | **Done** (lab) — browse + read/write + subscribe create + ISPF write visible to external client (`OpcUaServerExternalSubscribeNotificationTest`); UA Expert/Prosys = Milo CI proxy + [opcua-server-interop](opcua-server-interop.md) manual steps; evidence [`2026-10-15-bl143-opcua-server-lab-ga.md`](../evidence/ot-trust/2026-10-15-bl143-opcua-server-lab-ga.md) |
-| BL-144 | 25 | Driver DDK | P1 | **Done** (lab) — template + 3 refs (json-poller HTTP real); `assembleDdkExamplePacks`; CI `ispf-driver-ddk`; evidence [`2026-10-15-bl144-driver-ddk-lab-ga.md`](../evidence/ot-trust/2026-10-15-bl144-driver-ddk-lab-ga.md) |
-| BL-145 | 25 | Agent edge GA | P1 | Partial (disk buffer; 30d soak) |
+| BL-143 | 25 | OPC UA server GA | P1 | **Done** (lab) — browse + read/write + subscribe create + ISPF write visible to external client (OpcUaServerExternalSubscribeNotificationTest); UA Expert/Prosys = Milo CI proxy + [opcua-server-interop](opcua-server-interop.md) manual steps; evidence [2026-10-15-bl143-opcua-server-lab-ga.md](../evidence/ot-trust/2026-10-15-bl143-opcua-server-lab-ga.md) |
+| BL-144 | 25 | Driver DDK | P1 | **Done** (lab) — template + 3 refs (json-poller HTTP real); ssembleDdkExamplePacks; CI ispf-driver-ddk; evidence [2026-10-15-bl144-driver-ddk-lab-ga.md](../evidence/ot-trust/2026-10-15-bl144-driver-ddk-lab-ga.md) |
+| BL-145 | 25 | Agent edge GA | P1 | **Done** (lab) — disk buffer + stats API + disconnect/replay IT + deploy/tools/agent-store-forward-soak.sh; field 30d soak still Gap — evidence [2026-10-15-bl145-edge-store-forward-lab-ga.md](../evidence/ot-trust/2026-10-15-bl145-edge-store-forward-lab-ga.md) |
 | BL-146 | 26 | P&ID symbol library v2 | P1 | **Done** (218 symbols) |
 | BL-147 | 26 | Mimic editor pro | P1 | **Done** |
 | BL-148 | 26 | Video wall mode | P2 | **Done** |

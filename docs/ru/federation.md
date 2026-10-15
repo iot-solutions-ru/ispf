@@ -330,29 +330,20 @@ Authorization: Bearer <read-token>
 
 Используйте для field/lab soak и алертинга на рост `totalPending` / `totalDropped`.
 
-### Замачивание поля — повтор 30-дневного буфера (BL-145)
+### Lab / field soak — журнал буфера (BL-145)
 
-Ускоренное лабораторное погружение (30 сим-дней за 30 стено-минут):
+**Lab Done** = disk persist + stats API + disconnect/replay IT + soak-скрипт. **Field GA** = 30 реальных дней на named edge. Канон: [en/federation.md](../en/federation.md).
 
 ```bash
 export ISPF_SOAK_BASE_URL=https://edge-site.example
 export ISPF_SOAK_TOKEN=<admin-or-read-token>
-export ISPF_SOAK_OUTBOUND_AGENT_ID=<uuid>   # optional disconnect/reconnect cycles
-export ISPF_DATA_DIR=/var/lib/ispf          # optional persist file check
-bash deploy/local/tools/agent-store-forward-soak.sh
+export ISPF_DATA_DIR=/var/lib/ispf
+bash deploy/tools/agent-store-forward-soak.sh
 ```
 
-| Окружение | По умолчанию | Описание |
-|-----|---------|----------|
-| `ISPF_SOAK_SIM_DAYS` | `30` | Simulated timeline length |
-| `ISPF_SOAK_WALL_MINUTES` | `30` | Wall-clock duration (86400× accel vs 30d) |
-| `ISPF_SOAK_POLL_SEC` | `10` | Stats poll interval |
-| `ISPF_SOAK_OUTBOUND_AGENT_ID` | — | Weekly simulated maintenance disconnect/reconnect |
-| `ISPF_SOAK_EVENT_PATH` / `ISPF_SOAK_EVENT_VAR` | demo sensor | Variable patches while tunnel offline |
+Smoke: `ISPF_SOAK_WALL_MINUTES=0`. Field: `ISPF_SOAK_WALL_MINUTES=43200`.
 
-**Загрузка производственных полей:** запустите один и тот же сценарий с `ISPF_SOAK_WALL_MINUTES=43200` (30 реальных дней) на каждом граничном узле после регистрации концентратора. Обзор `build/agent-store-forward-soak/soak-report.md` + CSV; шлюз GA при нулевой потере данных (204 стабильный, ожидающий сброса после повторного подключения).
-
-**Ограничения (v1):** буфер отслеживает только туннель `event_notify`; Одноранговые узлы только HTTP без исходящего туннеля не буферизуются.
+**Ограничения (v1):** буфер отслеживает только туннель `event_notify`; HTTP-only peers без исходящего туннеля не буферизуются.
 
 ### SLO по здоровью сверстников (BL-118)
 
