@@ -1,5 +1,6 @@
 package com.ispf.server.ai.agent;
 
+import com.ispf.core.model.FieldType;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -104,6 +106,48 @@ class AgentFunctionToolsTest {
         assertEquals("LOGIC_HOST_DEVICE", liveDevice.get("code"));
         org.mockito.Mockito.verify(objectTreePort, org.mockito.Mockito.never())
                 .upsertFunction(eq(path), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void deployKeepsRequiredFieldAndNestedRecordList() throws Exception {
+        String path = "root.platform.singleton-blueprints.schemaHost";
+        when(tenantScopeService.isPathVisible(path, authentication)).thenReturn(true);
+        when(objectTreePort.upsertFunction(eq(path), org.mockito.ArgumentMatchers.any())).thenAnswer(inv -> inv.getArgument(1));
+
+        Map<String, Object> result = tool("deploy_tree_function").execute(
+                Map.of(
+                        "path", path,
+                        "hostKind", "SINGLETON",
+                        "functionName", "acceptRows",
+                        "sourceType", "script",
+                        "sourceBody", "{\"steps\":[{\"type\":\"return\",\"fields\":{\"ok\":true}}]}",
+                        "inputSchema", Map.of(
+                                "fields", List.of(
+                                        Map.of("name", "code", "type", "STRING", "nullable", false),
+                                        Map.of(
+                                                "name", "rows",
+                                                "type", "RECORD_LIST",
+                                                "nullable", true,
+                                                "nestedSchema", Map.of(
+                                                        "name", "row",
+                                                        "fields", List.of(Map.of("name", "qty", "type", "LONG"))
+                                                )
+                                        )
+                                )
+                        )
+                ),
+                new AgentContext("admin", authentication, null)
+        );
+
+        assertEquals("OK", result.get("status"));
+        ArgumentCaptor<FunctionDescriptor> captor = ArgumentCaptor.forClass(FunctionDescriptor.class);
+        verify(objectTreePort).upsertFunction(eq(path), captor.capture());
+        var code = captor.getValue().inputSchema().field("code").orElseThrow();
+        assertEquals(FieldType.STRING, code.type());
+        assertFalse(code.nullable());
+        var rows = captor.getValue().inputSchema().field("rows").orElseThrow();
+        assertEquals(FieldType.RECORD_LIST, rows.type());
+        assertEquals(FieldType.LONG, rows.nestedSchema().field("qty").orElseThrow().type());
     }
 
     @Test

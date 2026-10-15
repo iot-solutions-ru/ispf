@@ -391,8 +391,12 @@ public final class AgentToolInputSchemas {
                         "functionName", stringProp("Function name"),
                         "sourceType", stringProp("script or java"),
                         "sourceBody", stringProp("JSON steps string or Java source"),
-                        "inputSchema", objectProp("Input schema"),
-                        "outputSchema", objectProp("Output schema")
+                        "inputSchema", objectProp(
+                                "Input schema object. Field nullable and nestedSchema are kept. A JSON string is rejected."
+                        ),
+                        "outputSchema", objectProp(
+                                "Output schema object. Field nullable and nestedSchema are kept. A JSON string is rejected."
+                        )
                 ),
                 req("path", "hostKind", "functionName", "sourceType", "sourceBody"),
                 true
