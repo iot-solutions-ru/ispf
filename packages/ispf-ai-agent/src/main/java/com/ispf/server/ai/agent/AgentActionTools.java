@@ -459,6 +459,11 @@ final class AgentActionTools {
             if (rows instanceof List<?> list) {
                 return new DataRecordPayloadRequest(null, castRowList(list));
             }
+            Map<String, Object> row = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : inputMap.entrySet()) {
+                row.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+            return new DataRecordPayloadRequest(null, List.of(row));
         }
         Object rows = arguments.get("inputRows");
         if (rows instanceof List<?> list) {

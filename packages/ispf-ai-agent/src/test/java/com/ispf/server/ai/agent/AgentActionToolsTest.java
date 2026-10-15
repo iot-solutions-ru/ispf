@@ -19,6 +19,7 @@ import com.ispf.server.tenant.TenantScopeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -147,6 +148,24 @@ class AgentActionToolsTest {
         ), new AgentContext("operator", authentication, null));
 
         verify(invokeAccessService).requireDirectInvoke(eq("root.platform.devices.demo-sensor-01"), eq("mes_listOrders"), any());
+    }
+
+    @Test
+    void invokeTreeFunctionFlatInputBecomesOneRow() throws Exception {
+        DataSchema schema = new DataSchema("out", List.of());
+        when(functionService.invoke(anyString(), anyString(), nullable(DataRecordPayloadRequest.class)))
+                .thenReturn(DataRecord.empty(schema));
+        var authentication = UsernamePasswordAuthenticationToken.authenticated("operator", "n/a", List.of());
+
+        tool("invoke_tree_function").execute(Map.of(
+                "path", "root.platform.devices.demo",
+                "functionName", "start",
+                "input", Map.of("action", "NEW_GAME")
+        ), new AgentContext("operator", authentication, null));
+
+        ArgumentCaptor<DataRecordPayloadRequest> payload = ArgumentCaptor.forClass(DataRecordPayloadRequest.class);
+        verify(functionService).invoke(eq("root.platform.devices.demo"), eq("start"), payload.capture());
+        assertEquals(List.of(Map.of("action", "NEW_GAME")), payload.getValue().rows());
     }
 
     @Test
