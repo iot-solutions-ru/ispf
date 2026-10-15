@@ -147,6 +147,7 @@ public class PlatformAnalyticsController {
         body.put("count", tags.size());
         body.put("tags", tags);
         body.put("missingObjectTags", missingObjectTags);
+        body.put("catalogSkips", tagCatalogService.lastCatalogSkips());
         return body;
     }
 
