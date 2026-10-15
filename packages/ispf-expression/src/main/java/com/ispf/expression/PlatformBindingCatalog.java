@@ -107,9 +107,13 @@ public final class PlatformBindingCatalog {
                             param("toUnit", "unit", true, "Target unit", "F")
                     ),
                     "Converts supported engineering units.", List.of("unitConvert(temperature, C, F)"), false, "signal"),
-            entry("read", "Read ref", "read(<objectPath/variable>)",
-                    List.of(param("ref", "platformRef", true, "Variable PlatformRef", null)),
-                    "Reads a variable via slash ref.", List.of("read(\"root.platform.devices.pump-01/flow\")"), false, "cross"),
+            entry("read", "Read ref", "read(\"<objectPath/variable[/field]>\")",
+                    List.of(param("ref", "platformRef", true, "Variable PlatformRef (quoted)", null)),
+                    "Reads a remote variable field. Wrap the slash ref in double quotes; add /field when not value.",
+                    List.of(
+                            "read(\"root.platform.devices.pump-01/flow\")",
+                            "read(\"root.platform.devices.demo/coordinates/latitude\")"),
+                    false, "cross"),
             entry("call", "Call function", "call(@/fn/<functionName>[, @/<inputVar>])",
                     List.of(
                             param("function", "function", true, "Function ref on this object", null),

@@ -153,7 +153,7 @@ Must be the **entire** expression. Optional trailing `field` on many helpers def
 
 | Function | Syntax | Description | Example |
 |----------|--------|-------------|---------|
-| `read` | `read(<ref>)` | Live variable read | `read(root.platform.devices.a/temperature)` |
+| `read` | `read("<ref>")` | Live variable read (quoted slash ref) | `read("root.platform.devices.a/temperature")`, `read("root.../coordinates/latitude")` |
 | `write` | `write(<ref>, <value>)` | Write variable field | `write(@/setpoint, 42)` |
 | `call` | `call(<fnRef>[, <inputRef>])` | Invoke tree function | `call(@/fn/ack, @/payload)` |
 | `fire` | `fire(<evtRef>)` | Publish event | `fire(@/evt/alarmRaised)` |
@@ -250,7 +250,7 @@ hysteresis(temperature, 80, 70)
 ### Mirror remote live value
 
 ```text
-read(root.platform.devices.cluster.dev-03/sineWave)
+read("root.platform.devices.cluster.dev-03/sineWave")
 ```
 
 ### Historian rolling average → derived variable

@@ -32,6 +32,21 @@ export interface BindingBuilderContext {
   functionNames?: string[];
 }
 
+/** Whole-expression read(ref): slash refs must be double-quoted (required when ref includes a record field). */
+export function formatReadBindingExpression(ref: string): string {
+  const trimmed = ref.trim();
+  if (!trimmed) {
+    return 'read("")';
+  }
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"'))
+    || (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return `read(${trimmed})`;
+  }
+  return `read(${quoteString(trimmed)})`;
+}
+
 function quoteString(value: string, style: "single" | "double" = "double"): string {
   if (style === "single") {
     return `'${value.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
@@ -109,7 +124,10 @@ export function buildPlatformBindingExpression(
   const path = values.path?.trim();
   const remoteVar = values.remoteVar?.trim();
   if (entry.id === "readRef" && path && remoteVar) {
-    return `read(${quoteString(`${path}/${remoteVar}`)})`;
+    const field = values.remoteField?.trim();
+    const slashRef =
+      field && field !== "value" ? `${path}/${remoteVar}/${field}` : `${path}/${remoteVar}`;
+    return formatReadBindingExpression(slashRef);
   }
   const fn = values.function?.trim();
   const input = values.input?.trim();
@@ -185,14 +203,14 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "selectField",
     name: "selectField",
-    snippet: "selectField(@/sourceVar)",
+    snippet: "selectField(temperature)",
     category: "signal",
     params: [{ key: "source", kind: "var", labelKey: "platformBindings.param.source" }],
   },
   {
     id: "scale",
     name: "scale",
-    snippet: "scale(@/sourceVar, 0, 100, 0, 1)",
+    snippet: "scale(temperature, 0, 100, 0, 1)",
     category: "signal",
     params: [
       { key: "source", kind: "var", labelKey: "platformBindings.param.source" },
@@ -205,7 +223,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "clamp",
     name: "clamp",
-    snippet: "clamp(@/sourceVar, 0, 100)",
+    snippet: "clamp(temperature, 0, 100)",
     category: "signal",
     params: [
       { key: "source", kind: "var", labelKey: "platformBindings.param.source" },
@@ -216,7 +234,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "format",
     name: "format",
-    snippet: 'format("%.1f", @/sourceVar)',
+    snippet: 'format("%.1f", temperature)',
     category: "signal",
     params: [
       { key: "pattern", kind: "string", labelKey: "platformBindings.param.pattern", default: "%.1f" },
@@ -226,7 +244,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "delta",
     name: "delta",
-    snippet: "delta(@/sourceVar)",
+    snippet: "delta(temperature)",
     stateful: true,
     category: "stateful",
     params: [{ key: "source", kind: "var", labelKey: "platformBindings.param.source" }],
@@ -234,7 +252,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "rate",
     name: "rate",
-    snippet: "rate(@/sourceVar)",
+    snippet: "rate(temperature)",
     stateful: true,
     category: "stateful",
     params: [{ key: "source", kind: "var", labelKey: "platformBindings.param.source" }],
@@ -258,7 +276,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "movingAvg",
     name: "movingAvg",
-    snippet: "movingAvg(@/sourceVar, 60)",
+    snippet: "movingAvg(temperature, 60)",
     stateful: true,
     category: "stateful",
     params: [
@@ -269,7 +287,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "movingMin",
     name: "movingMin",
-    snippet: "movingMin(@/sourceVar, 30)",
+    snippet: "movingMin(temperature, 30)",
     stateful: true,
     category: "stateful",
     params: [
@@ -280,7 +298,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "movingMax",
     name: "movingMax",
-    snippet: "movingMax(@/sourceVar, 30)",
+    snippet: "movingMax(temperature, 30)",
     stateful: true,
     category: "stateful",
     params: [
@@ -291,7 +309,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "deadband",
     name: "deadband",
-    snippet: "deadband(@/sourceVar, 1.0)",
+    snippet: "deadband(temperature, 1.0)",
     stateful: true,
     category: "stateful",
     params: [
@@ -302,7 +320,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "hysteresis",
     name: "hysteresis",
-    snippet: "hysteresis(@/sourceVar, 80, 70)",
+    snippet: "hysteresis(temperature, 80, 70)",
     stateful: true,
     category: "stateful",
     params: [
@@ -314,7 +332,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "unitConvert",
     name: "unitConvert",
-    snippet: "unitConvert(@/temperature, C, F)",
+    snippet: "unitConvert(temperature, C, F)",
     category: "signal",
     params: [
       { key: "source", kind: "var", labelKey: "platformBindings.param.source" },
@@ -325,11 +343,18 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "readRef",
     name: "read",
-    snippet: 'read("root.platform.devices.demo/temperature")',
+    snippet: 'read("root.platform.devices.demo/coordinates/latitude")',
     category: "cross",
     params: [
       { key: "path", kind: "path", labelKey: "platformBindings.param.path" },
       { key: "remoteVar", kind: "var", labelKey: "platformBindings.param.remoteVar" },
+      {
+        key: "remoteField",
+        kind: "string",
+        labelKey: "platformBindings.param.remoteField",
+        default: "value",
+        optional: true,
+      },
     ],
   },
   {
@@ -407,7 +432,7 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
   {
     id: "sumRecordField",
     name: "sumRecordField",
-    snippet: 'sumRecordField(@/tableVar, "amount")',
+    snippet: 'sumRecordField(telemetryTable, "amount")',
     category: "aggregate",
     params: [
       { key: "table", kind: "var", labelKey: "platformBindings.param.table" },

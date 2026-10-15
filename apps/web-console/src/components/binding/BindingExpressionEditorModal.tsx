@@ -8,6 +8,7 @@ import PlatformBindingComposer from "../platform/PlatformBindingComposer";
 import {
   PLATFORM_BINDING_ENTRIES,
   filterPlatformBindings,
+  formatReadBindingExpression,
   suggestPlatformBindingPrefix,
 } from "../../utils/platform/platformBindings";
 import type {
@@ -412,8 +413,9 @@ export default function BindingExpressionEditorModal({
                 kind="variable"
                 variableNames={variableNames}
                 functionNames={functionNames}
-                onChange={(ref) => applySnippet(`read(${ref})`)}
+                onChange={(ref) => applySnippet(formatReadBindingExpression(ref))}
               />
+              <p className="hint">{t("platformBindings.readRef.help")}</p>
             </div>
             <div className="platform-binding-catalog-toolbar">
               <input
@@ -424,6 +426,7 @@ export default function BindingExpressionEditorModal({
               />
               <span className="hint">{t("platformBindings.count", { count: catalogEntries.length })}</span>
             </div>
+            <p className="hint">{t("platformBindings.catalogIntro")}</p>
             <ul className="platform-binding-catalog-list">
               {catalogEntries.map((entry) => (
                 <li key={entry.id}>
