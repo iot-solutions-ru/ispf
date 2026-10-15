@@ -34,8 +34,17 @@ public class OperatorAppController {
         return service.listApps(authentication);
     }
 
+    @GetMapping("/starters/status")
+    public Map<String, Object> starterStatus() {
+        return starterTemplatesService.seedStatus();
+    }
+
     @GetMapping("/starters")
     public List<Map<String, Object>> listStarters(Authentication authentication) {
+        Map<String, Object> seed = starterTemplatesService.seedStatus();
+        if (Boolean.FALSE.equals(seed.get("ready"))) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, String.valueOf(seed.get("error")));
+        }
         if (service.isTenantScoped(authentication)) {
             return List.of();
         }
