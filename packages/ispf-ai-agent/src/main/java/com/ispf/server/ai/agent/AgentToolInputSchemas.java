@@ -258,7 +258,7 @@ public final class AgentToolInputSchemas {
                         "path", stringProp("Object tree path (prefer SINGLETON/INSTANCE hub, not DEVICE)"),
                         "name", stringProp("Variable name"),
                         "valueType", enumProp("Value type", List.of("DOUBLE", "BOOLEAN", "STRING", "INTEGER")),
-                        "initialValue", stringProp("Optional initial value (scalar or JSON map)"),
+                        "initialValue", stringProp("Optional scalar. JSON text stays the string value"),
                         "value", stringProp("Alias of initialValue"),
                         "writable", booleanProp("Writable (default false)"),
                         "historyEnabled", booleanProp("Enable historian (default false)")

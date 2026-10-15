@@ -615,6 +615,9 @@ final class AgentAutomationTools {
                 String path = stringArg(arguments, "path");
                 String name = stringArg(arguments, "name");
                 String valueType = stringArg(arguments, "valueType");
+                if (valueType.isBlank()) {
+                    valueType = stringArg(arguments, "dataType");
+                }
                 if (path.isBlank() || name.isBlank() || valueType.isBlank()) {
                     return Map.of("status", "ERROR", "error", "path, name, valueType are required");
                 }
@@ -1313,12 +1316,7 @@ final class AgentAutomationTools {
             );
         }
         if (raw instanceof String text) {
-            String trimmed = text.trim();
-            if (trimmed.startsWith("{")) {
-                Map<String, Object> parsed = objectMapper.readValue(trimmed, Map.class);
-                return unwrapInitialScalar(objectMapper, parsed);
-            }
-            return trimmed;
+            return text.trim();
         }
         return raw;
     }
