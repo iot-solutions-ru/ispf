@@ -39,9 +39,10 @@ public final class AgentPromptBuilder {
             search_context and get_automation_schema describe documentation, not live tree state.
             
             Before creating a new project blueprint, call get_automation_schema topic=projectBlueprint.
-            For "create application/solution" or approach choice: search_context topic=agent-knowledge (AGENT_KNOWLEDGE.md — all delivery paths A–H and full doc index).
-            For bundle/manifest/SQL/BFF: search_context topic=applications or topic=solution.
-            For dashboard context rules: search_context topic=platform-logic.
+            For "create application/solution" or approach choice: search_context query=agent-knowledge topic=agent-knowledge (AGENT_KNOWLEDGE.md — all delivery paths A–H and full doc index).
+            For bundle/manifest/SQL/BFF: search_context query=bundle topic=applications (or topic=solution).
+            For dashboard context rules: search_context query=platform-logic topic=platform-logic.
+            search_context: prefer query=...; topic-only is accepted (query defaults to that topic).
             Anti-noise: never spam the same tool (add_dashboard_widget, add_mimic_elements, list_*, get_*) —
             batch (set_dashboard_layout / save_mimic_diagram) or finish. Studio step log must stay short.
             Cluster/app logic hub: SINGLETON (ensure_singleton_instance) or INSTANCE — never CUSTOM/DEVICE under devices.
@@ -114,7 +115,7 @@ public final class AgentPromptBuilder {
     private static final String PLAYBOOK_INDEX = """
             
             ## Playbook index (fetch on demand — do NOT invent from memory)
-            - Ground truth / paths: get_automation_schema topic=platformMaster OR search_context topic=agent-knowledge
+            - Ground truth / paths: get_automation_schema topic=platformMaster OR search_context query=paths topic=agent-knowledge
             - Spec intake / sectional plans: get_automation_schema topic=projectBlueprint
             - SNMP host monitoring (execute after ≤1 get_driver_help — do NOT loop docs):
               enable_agent_tool_pack devices + dashboards → list_objects parent=root.platform.devices →
@@ -126,7 +127,7 @@ public final class AgentPromptBuilder {
             - Dashboards / widgets: get_widget_catalog type=<type>; prefer set_dashboard_layout template=
             - SCADA mimics: get_automation_schema topic=scada; list_mimic_symbols
             - Workflows / BPMN: get_automation_schema topic=workflow
-            - Applications / bundles: search_context topic=applications; get_deploy_playbook; get_example_bundle
+            - Applications / bundles: search_context query=bundle topic=applications; get_deploy_playbook; get_example_bundle
             - Recipes: search_platform_recipes query="<task>" (once) then execute — never re-call get_driver_help
             Layout templates (names only): """
             + String.join(", ", DashboardService.layoutTemplateNames())

@@ -31,7 +31,33 @@ final class AgentToolArgCoercion {
         if ("configure_correlator".equals(normalized)) {
             return coerceConfigureCorrelator(args);
         }
+        if ("search_context".equals(normalized)) {
+            return coerceSearchContext(args);
+        }
         return args;
+    }
+
+    /**
+     * Accept topic-only / alias keys that Studio agents emit (empty {@code query} was ~90% ERROR).
+     */
+    private static Map<String, Object> coerceSearchContext(Map<String, Object> args) {
+        Map<String, Object> copy = new LinkedHashMap<>(args);
+        String query = stringValue(copy.get("query"));
+        if (query.isBlank()) {
+            for (String alt : List.of("q", "text", "search", "keywords")) {
+                String candidate = stringValue(copy.get(alt));
+                if (!candidate.isBlank()) {
+                    copy.put("query", candidate);
+                    query = candidate;
+                    break;
+                }
+            }
+        }
+        String topic = stringValue(copy.get("topic"));
+        if (query.isBlank() && !topic.isBlank() && !"all".equalsIgnoreCase(topic)) {
+            copy.put("query", topic);
+        }
+        return copy;
     }
 
     private static Map<String, Object> coerceConfigureReport(Map<String, Object> args) {

@@ -38,14 +38,26 @@ public class ContextPackSearchService {
     }
 
     public Map<String, Object> search(String query, String topic, String mode) {
+        String normalizedTopic = topic == null || topic.isBlank() ? "all" : topic.trim().toLowerCase(Locale.ROOT);
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        boolean queryDefaultedFromTopic = false;
+        // Studio agents often call topic-only (prompts historically omitted query=). Treat a specific
+        // topic as the query so we do not burn turns on "query is required" retries.
+        if (q.isBlank() && !normalizedTopic.equals("all")) {
+            q = normalizedTopic;
+            queryDefaultedFromTopic = true;
+        }
         if (q.isBlank()) {
-            return Map.of("status", "ERROR", "error", "query is required");
+            return Map.of(
+                    "status", "ERROR",
+                    "error", "query is required (or pass a specific topic; topic-only defaults query to that topic)",
+                    "hint", "Example: search_context query=bindings topic=agent-knowledge "
+                            + "— or topic=agent-knowledge alone."
+            );
         }
         String searchMode = normalizeMode(mode);
         Map<String, Object> pack = contextPackService.loadPack();
         List<Map<String, Object>> hits = new ArrayList<>();
-        String normalizedTopic = topic == null || topic.isBlank() ? "all" : topic.trim().toLowerCase(Locale.ROOT);
 
         if (matchesTopic(normalizedTopic, "drivers", "all")) {
             collectDriverHits(pack, q, hits);
@@ -72,9 +84,16 @@ public class ContextPackSearchService {
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "OK");
-        result.put("query", query);
+        // Echo caller text when provided; only the topic-default path uses normalized q.
+        String echoedQuery = queryDefaultedFromTopic
+                ? q
+                : (query == null ? q : query.trim());
+        result.put("query", echoedQuery);
         result.put("topic", normalizedTopic);
         result.put("mode", searchMode);
+        if (queryDefaultedFromTopic) {
+            result.put("queryDefaultedFromTopic", true);
+        }
         result.put("contextPackVersion", pack.getOrDefault("contextPackVersion", "unknown"));
         result.put("embeddingModel", pack.getOrDefault("embeddingModel", ""));
         result.put("hits", top);

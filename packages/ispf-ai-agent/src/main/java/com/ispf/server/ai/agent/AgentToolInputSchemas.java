@@ -950,8 +950,8 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("search_context", objectSchema(
                 props(
-                        "query", stringProp("Search query"),
-                        "topic", stringProp("ContextPack topic id"),
+                        "query", stringProp("Search query (or omit when topic is a specific id — defaults to topic)"),
+                        "topic", stringProp("ContextPack topic id; topic-only OK (not topic=all)"),
                         "mode", stringProp("hybrid|lexical|vector (default hybrid)"),
                         "limit", integerProp("Max slices")
                 ),

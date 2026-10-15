@@ -23,7 +23,7 @@ public final class AgentSolutionGeneratorPlaybook {
                 4. Prefer bundle base (get_example_bundle) when a reference app matches ≥70% of spec
                 
                 ### Pipeline (strict order)
-                1. **Intake** — search_context topic=all + get_automation_schema topic=objectTypes + list_objects parent=root.platform
+                1. **Intake** — search_context query=solution topic=agent-knowledge + get_automation_schema topic=objectTypes + list_objects parent=root.platform
                 2. **Structure** — create_object CUSTOM folder from specBrief.entities[0].name (never hardcoded slugs)
                 3. **Sources** — for each entity: create_virtual_device / create_object DEVICE + configure_driver + list_variables (mandatory per device)
                 4. **Aggregation** — non-DEVICE hub: SINGLETON orchestrator (prefer singleton-blueprints)

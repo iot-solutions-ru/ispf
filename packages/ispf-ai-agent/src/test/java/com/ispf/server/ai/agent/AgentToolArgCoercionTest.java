@@ -54,4 +54,32 @@ class AgentToolArgCoercionTest {
         assertThat(coerced.get("path")).isEqualTo("root.platform.alert-rules.alert-event1-event2-virt-lab");
         assertThat(coerced.get("name")).isEqualTo("alert-event1-event2-virt-lab");
     }
+
+    @Test
+    void searchContextDefaultsQueryFromTopic() {
+        Map<String, Object> coerced = AgentToolArgCoercion.coerce(
+                "search_context",
+                Map.of("topic", "agent-knowledge")
+        );
+        assertThat(coerced.get("query")).isEqualTo("agent-knowledge");
+        assertThat(coerced.get("topic")).isEqualTo("agent-knowledge");
+    }
+
+    @Test
+    void searchContextMapsQAliasToQuery() {
+        Map<String, Object> coerced = AgentToolArgCoercion.coerce(
+                "search_context",
+                Map.of("q", "bindings", "topic", "all")
+        );
+        assertThat(coerced.get("query")).isEqualTo("bindings");
+    }
+
+    @Test
+    void searchContextDoesNotDefaultQueryFromTopicAll() {
+        Map<String, Object> coerced = AgentToolArgCoercion.coerce(
+                "search_context",
+                Map.of("topic", "all")
+        );
+        assertThat(coerced.containsKey("query")).isFalse();
+    }
 }

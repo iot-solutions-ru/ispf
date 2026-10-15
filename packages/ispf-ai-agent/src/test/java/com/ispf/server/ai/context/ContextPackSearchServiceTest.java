@@ -34,6 +34,35 @@ class ContextPackSearchServiceTest {
     }
 
     @Test
+    void topicOnlyDefaultsQueryToTopic() {
+        when(contextPackService.loadPack()).thenReturn(Map.of(
+                "contextPackVersion", "ispf-test",
+                "driverCatalog", List.of(Map.of(
+                        "driverId", "snmp",
+                        "name", "SNMP",
+                        "description", "SNMP polling",
+                        "keywords", "snmp drivers oid"
+                ))
+        ));
+
+        Map<String, Object> result = searchService.search("", "drivers");
+
+        assertEquals("OK", result.get("status"));
+        assertEquals("drivers", result.get("query"));
+        assertEquals(true, result.get("queryDefaultedFromTopic"));
+        List<?> hits = (List<?>) result.get("hits");
+        assertTrue(hits.size() >= 1);
+    }
+
+    @Test
+    void blankQueryAndTopicAllStillErrors() {
+        Map<String, Object> result = searchService.search("", "all");
+
+        assertEquals("ERROR", result.get("status"));
+        assertTrue(String.valueOf(result.get("error")).contains("query is required"));
+    }
+
+    @Test
     void findsDriverByTopic() {
         when(contextPackService.loadPack()).thenReturn(Map.of(
                 "contextPackVersion", "ispf-0.7.8",
