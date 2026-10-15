@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@d266c0b24d799bb397139d13a68e6c85f1634e12 # v3.5.0
+        uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb # v3.8.2
 
       - name: Run Cosign lab smoke
         run: |
@@ -41,7 +41,7 @@ jobs:
 
       - name: Upload lab transcript
         if: always()
-        uses: actions/upload-artifact@330a01c490aca151389bafd2028e4dbf5d9a4a4b # v5
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: cosign-lab-smoke
           path: build/cosign-smoke/cosign-verify.txt
