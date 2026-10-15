@@ -540,6 +540,21 @@ export function ObjectTableColumnsEditor({
     return fields[0] ?? "value";
   };
 
+  const resolveColumnField = (
+    variableName: string | undefined,
+    field: string | undefined,
+  ): string => {
+    const fields = fieldsFor(variableName);
+    const trimmed = field?.trim() ?? "";
+    if (fields.length > 0) {
+      if (trimmed && fields.includes(trimmed)) {
+        return trimmed;
+      }
+      return defaultFieldForVariable(variableName);
+    }
+    return trimmed || defaultFieldForVariable(variableName);
+  };
+
   const setColumns = (next: ObjectTableColumn[]) => {
     onChange(stringifyJson(next));
   };
@@ -587,11 +602,15 @@ export function ObjectTableColumnsEditor({
                 onChange={(nextValue) => {
                   const next = [...columns];
                   const variable = nextValue || undefined;
+                  const sameVariable = variable === col.variable?.trim();
                   next[index] = {
                     ...next[index],
                     variable,
                     label: next[index].label?.trim() || variable || "",
-                    field: next[index].field?.trim() || defaultFieldForVariable(variable),
+                    field: resolveColumnField(
+                      variable,
+                      sameVariable ? next[index].field : undefined,
+                    ),
                   };
                   setColumns(next);
                 }}
@@ -619,7 +638,7 @@ export function ObjectTableColumnsEditor({
               recordFields.length > 0 ? (
                 <OptionsSelect
                   ariaLabel={t("editor.structured.colField")}
-                  value={col.field?.trim() || defaultFieldForVariable(col.variable)}
+                  value={resolveColumnField(col.variable, col.field)}
                   options={recordFields}
                   disabled={variablesLoading}
                   onChange={(nextValue) => {
@@ -635,7 +654,7 @@ export function ObjectTableColumnsEditor({
               ) : (
                 <SuggestInput
                   ariaLabel={t("editor.structured.colField")}
-                  value={col.field?.trim() || defaultFieldForVariable(col.variable)}
+                  value={resolveColumnField(col.variable, col.field)}
                   suggestions={undefined}
                   onChange={(nextValue) => {
                     const next = [...columns];
