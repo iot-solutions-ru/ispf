@@ -4,6 +4,7 @@ import com.ispf.analytics.engine.AnalyticsDagBuilder;
 import com.ispf.analytics.engine.AnalyticsTagDefinition;
 import com.ispf.analytics.engine.HistorianTagPaths;
 import com.ispf.core.binding.BindingRulesConstants;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.object.BindingRulesService;
@@ -195,7 +196,14 @@ public class AnalyticsTagCatalogService {
         return definitions.stream()
                 .filter(definition -> pathPrefix == null || pathPrefix.isBlank()
                         || definition.objectPath().startsWith(pathPrefix))
-                .map(definition -> toCatalogEntry(definition, definitions))
+                .map(definition -> {
+                    try {
+                        return toCatalogEntry(definition, definitions);
+                    } catch (ObjectNotFoundException ex) {
+                        return null;
+                    }
+                })
+                .filter(entry -> entry != null)
                 .toList();
     }
 

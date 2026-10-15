@@ -63,19 +63,25 @@ public class AnalyticsTagMetadataService {
         }
     }
 
+    /**
+     * @return tag paths whose object is missing; those tags are quality {@code error}, not skipped as ok
+     */
     @Transactional
-    public void propagateQuality(List<AnalyticsTagDefinition> tags) {
+    public List<String> propagateQuality(List<AnalyticsTagDefinition> tags) {
         if (tags.isEmpty()) {
-            return;
+            return List.of();
         }
         AnalyticsDagBuilder.AnalyticsTagAdjacency adjacency = AnalyticsDagBuilder.adjacency(tags);
         Map<String, String> qualityByPath = new LinkedHashMap<>();
+        List<String> missingObjectTags = new ArrayList<>();
         for (AnalyticsTagDefinition tag : tags) {
             PlatformObject node;
             try {
                 node = objectManager.require(tag.objectPath());
             } catch (ObjectNotFoundException ex) {
-                log.warn("Skipping analytics tag {} (missing object): {}", tag.tagPath(), ex.getMessage());
+                qualityByPath.put(tag.tagPath(), QUALITY_ERROR);
+                missingObjectTags.add(tag.tagPath());
+                log.error("Analytics tag {} quality is error (missing object): {}", tag.tagPath(), ex.getMessage());
                 continue;
             }
             String quality = historianRuleMetaService.readRuleMeta(node, tag.ruleId()).quality();
@@ -95,10 +101,13 @@ public class AnalyticsTagMetadataService {
                 }
             }
             if (!quality.equals(qualityByPath.get(tag.tagPath()))) {
-                historianRuleMetaService.setQuality(tag.tagPath(), quality);
+                if (!missingObjectTags.contains(tag.tagPath())) {
+                    historianRuleMetaService.setQuality(tag.tagPath(), quality);
+                }
                 qualityByPath.put(tag.tagPath(), quality);
             }
         }
+        return List.copyOf(missingObjectTags);
     }
 
     @Transactional
