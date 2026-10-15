@@ -90,8 +90,10 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("apply_mixin_blueprint", objectSchema(
                 props(
-                        "objectPath", stringProp("Object tree path"),
-                        "blueprintId", stringProp("Relative blueprint id")
+                        "objectPath", stringProp("Object tree path (alias: path)"),
+                        "path", stringProp("Alias for objectPath"),
+                        "blueprintId", stringProp("Blueprint id (alias: blueprintName)"),
+                        "blueprintName", stringProp("Alias for blueprintId — list_mixin_blueprints name")
                 ),
                 req("objectPath", "blueprintId"),
                 true
@@ -442,7 +444,8 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("ensure_singleton_instance", objectSchema(
                 props(
-                        "blueprintId", stringProp("Absolute blueprint id")
+                        "blueprintId", stringProp("Singleton blueprint id (alias: blueprintName)"),
+                        "blueprintName", stringProp("Alias for blueprintId — list_singleton_blueprints name")
                 ),
                 req("blueprintId"),
                 true
@@ -516,9 +519,11 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("get_dashboard_layout", objectSchema(
                 props(
-                        "path", stringProp("Object tree path")
+                        "path", stringProp("Dashboard object path (alias: dashboardPath)"),
+                        "dashboardPath", stringProp("Alias for path"),
+                        "template", stringProp("Layout template id when path omitted (e.g. snmp-host-monitoring)")
                 ),
-                req("path"),
+                List.of(),
                 true
         ));
         catalog.put("get_deploy_playbook", objectSchema(
@@ -950,8 +955,8 @@ public final class AgentToolInputSchemas {
         ));
         catalog.put("search_context", objectSchema(
                 props(
-                        "query", stringProp("Search query"),
-                        "topic", stringProp("ContextPack topic id"),
+                        "query", stringProp("Search query (or omit when topic is a specific id — defaults to topic)"),
+                        "topic", stringProp("ContextPack topic id; topic-only OK (not topic=all)"),
                         "mode", stringProp("hybrid|lexical|vector (default hybrid)"),
                         "limit", integerProp("Max slices")
                 ),

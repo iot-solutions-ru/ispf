@@ -63,6 +63,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -383,7 +384,21 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
     }
 
     public boolean isKnownTool(String toolName) {
-        return toolName != null && toolsByName.containsKey(toolName);
+        return toolName != null && toolsByName.containsKey(canonicalToolName(toolName));
+    }
+
+    /**
+     * Models sometimes shorten catalog names (Studio: {@code enable_pack} → UNKNOWN_TOOL errors).
+     */
+    static String canonicalToolName(String toolName) {
+        if (toolName == null || toolName.isBlank()) {
+            return toolName;
+        }
+        String normalized = toolName.trim().toLowerCase(Locale.ROOT);
+        if ("enable_pack".equals(normalized)) {
+            return "enable_agent_tool_pack";
+        }
+        return toolName.trim();
     }
 
     public Map<String, Object> unknownToolResult(String toolName) {
@@ -422,15 +437,16 @@ public class PlatformAgentToolRegistry implements McpToolCatalogPort {
                 return Map.of("status", "ERROR", "error", ex.getMessage());
             }
         }
-        PlatformAgentTool tool = toolsByName.get(toolName);
+        String canonicalName = canonicalToolName(toolName);
+        PlatformAgentTool tool = toolsByName.get(canonicalName);
         if (tool == null) {
             return unknownToolResult(toolName);
         }
-        Map<String, Object> args = AgentToolArgCoercion.coerce(toolName, arguments != null ? arguments : Map.of());
+        Map<String, Object> args = AgentToolArgCoercion.coerce(canonicalName, arguments != null ? arguments : Map.of());
         var schemaViolation = AgentToolSchemaValidator.validate(tool.inputSchema(), args);
         if (schemaViolation.isPresent()) {
             Map<String, Object> error = new LinkedHashMap<>(schemaViolation.get().toErrorResult());
-            if ("enable_agent_tool_pack".equals(toolName)
+            if ("enable_agent_tool_pack".equals(canonicalName)
                     && "pack".equals(String.valueOf(error.get("path")))) {
                 error.put(
                         "hint",

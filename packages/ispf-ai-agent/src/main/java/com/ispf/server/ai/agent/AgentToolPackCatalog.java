@@ -34,7 +34,8 @@ public final class AgentToolPackCatalog {
     public static final Set<String> META_TOOLS = Set.of(
             "list_agent_tools",
             "describe_agent_tool",
-            "enable_agent_tool_pack"
+            "enable_agent_tool_pack",
+            "enable_pack"
     );
 
     private static final Map<String, String> EXPLICIT = buildExplicit();
@@ -216,6 +217,7 @@ public final class AgentToolPackCatalog {
         map.put("list_agent_tools", CORE);
         map.put("describe_agent_tool", CORE);
         map.put("enable_agent_tool_pack", CORE);
+        map.put("enable_pack", CORE); // alias → enable_agent_tool_pack
 
         // devices
         map.put("create_object", DEVICES);

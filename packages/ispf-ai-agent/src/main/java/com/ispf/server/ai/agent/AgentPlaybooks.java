@@ -579,7 +579,7 @@ public final class AgentPlaybooks {
         return """
                 ## SCADA mimic (MIMIC objects + scada-mimic widget)
                 
-                search_context topic=scada for diagramJson v2, editor tools, REST API.
+                search_context query=mimic topic=scada for diagramJson v2, editor tools, REST API.
                 
                 ### Concepts
                 - Object type MIMIC at root.platform.mimics.* (template mimic-v1)
@@ -748,7 +748,7 @@ public final class AgentPlaybooks {
                 5. configure_correlator action=RUN_WORKFLOW for event-driven start (optional)
                 6. add_dashboard_widget type=work-queue for operator tasks (optional)
                 
-                BPMN service tasks can invoke tree functions (see WORKFLOWS.md in search_context topic=workflows).
+                BPMN service tasks can invoke tree functions (see WORKFLOWS.md in search_context query=workflows topic=workflows).
                 """;
     }
 
@@ -907,7 +907,7 @@ public final class AgentPlaybooks {
                 Writes: {"type":"exec","sql":"INSERT ... VALUES (?, ?)","params":["${input.a}","${input.b}"]} then return.fields.
                 Must include at least one return step with fields object.
                 
-                search_context topic=functions for full OBJECT_FUNCTIONS.md (Java security limits, script steps).
+                search_context query=functions topic=functions for full OBJECT_FUNCTIONS.md (Java security limits, script steps).
                 """;
     }
 }

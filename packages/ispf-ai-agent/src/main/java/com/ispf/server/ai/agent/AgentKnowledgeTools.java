@@ -46,9 +46,10 @@ final class AgentKnowledgeTools {
             public String description() {
                 return "Search ISPF platform knowledge (docs, drivers, features, examples, readiness gaps). "
                         + "Returns short snippets — do not load full docs into the prompt. "
-                        + "Args: query (string), optional topic "
-                        + "(drivers|workflows|dashboards|examples|features|gaps|readiness|agent-knowledge|all), "
-                        + "optional mode (hybrid|lexical|vector; default hybrid). "
+                        + "Args: query (preferred) and/or topic "
+                        + "(drivers|workflows|dashboards|examples|features|gaps|readiness|agent-knowledge|all); "
+                        + "topic-only is OK (query defaults to that topic). "
+                        + "Optional mode (hybrid|lexical|vector; default hybrid). "
                         + "Call once with a specific query, then act on hits (list_objects / mutate / finish).";
             }
 

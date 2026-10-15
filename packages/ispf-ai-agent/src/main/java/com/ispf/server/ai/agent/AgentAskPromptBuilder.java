@@ -39,7 +39,7 @@ public final class AgentAskPromptBuilder {
             NEVER call operator-HMI tools in admin Ask/Copilot: read_app_document, list_app_documents,
             search_app_documents, get_operator_scope, get_operator_link, list_app_memory, list_work_queue.
             For System → Settings → AI: prefer LIVE UI SNAPSHOT / visible setting ids, then at most one
-            search_context (topic=agent-knowledge or ai). Finish from that — do not retry discovery tools.
+            search_context query=ai settings topic=agent-knowledge (topic-only also OK). Finish from that — do not retry discovery tools.
             
             TOOL SURFACE: only listed Active tools are callable. Use list_agent_tools / enable_agent_tool_pack
             to expand discovery packs if needed. Ask mode still blocks mutations via the plan guard.
@@ -65,7 +65,7 @@ public final class AgentAskPromptBuilder {
 
     private static final String KNOWLEDGE_INDEX = """
             ## Knowledge index (fetch on demand)
-            - Concepts / how-to: search_context topic=agent-knowledge|applications|drivers|dashboards
+            - Concepts / how-to: search_context query=<intent> topic=agent-knowledge|applications|drivers|dashboards (topic-only OK)
             - Schemas: get_automation_schema topic=platformMaster|dashboard|scada|workflow|report|projectBlueprint
             - Examples: list_examples; get_example_bundle; list_applications
             - Live tree: list_objects; get_object; list_variables; search_objects
