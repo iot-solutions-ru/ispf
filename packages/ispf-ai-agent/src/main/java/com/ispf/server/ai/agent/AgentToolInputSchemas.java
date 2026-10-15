@@ -671,7 +671,7 @@ public final class AgentToolInputSchemas {
                 props(
                         "path", stringProp("Object tree path"),
                         "functionName", stringProp("Function name"),
-                        "input", objectProp("Input record")
+                        "input", objectProp("One input row, or {rows:[...]} for several")
                 ),
                 req("path", "functionName"),
                 true
