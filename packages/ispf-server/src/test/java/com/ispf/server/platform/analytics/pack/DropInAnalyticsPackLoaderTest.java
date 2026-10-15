@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -117,6 +119,30 @@ class DropInAnalyticsPackLoaderTest {
         assertThatThrownBy(() -> loader.installZipArchive(Files.readAllBytes(zipPath), null))
                 .isInstanceOf(IOException.class)
                 .hasMessageContaining("escapes target directory");
+    }
+
+    @Test
+    void catalogNamesInvalidManifestAndMissingJar() throws Exception {
+        Path packsDir = tempDir.resolve("packs");
+        Path broken = Files.createDirectories(packsDir.resolve("broken-manifest"));
+        Files.writeString(broken.resolve("analytics-pack.json"), "{not-json");
+        Path missingJar = Files.createDirectories(packsDir.resolve("missing-jar"));
+        Files.writeString(
+                missingJar.resolve("analytics-pack.json"),
+                "{\"packId\":\"missing-jar\",\"jarFile\":\"absent.jar\",\"version\":\"1\"}"
+        );
+        DropInAnalyticsPackLoader loader = newLoader(packsDir);
+
+        loader.loadDropInPacksOnStartup();
+        List<Map<String, Object>> packs = loader.listInstalledPacks();
+
+        assertThat(packs).extracting(row -> row.get("packId"))
+                .containsExactly("broken-manifest", "missing-jar");
+        assertThat(packs).allSatisfy(row -> {
+            assertThat(row.get("status")).isEqualTo("failed");
+            assertThat(row.get("error").toString()).isNotBlank();
+        });
+        assertThat(packs.get(1).get("error").toString()).contains("JAR not found").contains("absent.jar");
     }
 
     private static DropInAnalyticsPackLoader newLoader(Path packsDir) {
