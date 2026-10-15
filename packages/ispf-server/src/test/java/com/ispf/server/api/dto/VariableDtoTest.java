@@ -41,7 +41,8 @@ class VariableDtoTest {
         VariableDto dto = VariableDto.from(variable);
 
         assertThat(dto.schema().fields()).extracting("name").containsExactly("online", "value");
-        assertThat(dto.value().schema().fields()).extracting("name").containsExactly("value");
+        assertThat(dto.value().schema().fields()).extracting("name").containsExactly("online", "value");
         assertThat(dto.value().firstRow().get("value")).isEqualTo("ok");
+        assertThat(dto.value().firstRow().get("online")).isNull();
     }
 }
