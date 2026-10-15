@@ -23,7 +23,7 @@ Pick **one** track. Do not mix both in the same hour unless the room asks for a 
 - [ ] Track A: `mes-platform-production` (or marketplace MES) installed and operator UI opens
 - [ ] Track B: one RUNNING virtual/demo device + one mimic/dashboard; optional air-gap tar **story** (need not re-apply live)
 - [ ] Browser tabs ready: Admin Explorer, Operator UI, one dashboard/mimic — no random open PRs on screen
-- [ ] Honesty card ready (say aloud if asked): MES ERP stub is **simulated**; driver FIELD count is **0** until a named plant pack; Cosign for images is **not** claimed
+- [ ] Honesty card ready (say aloud if asked): MES ERP stub is **simulated**; driver FIELD count is **0** until a named plant pack; Cosign tooling is **lab** (GHCR keyless + CI smoke) — do **not** claim a customer air-gap host verify
 
 Deep ops: [reference-mes-platform](reference-mes-platform.md), [mes-field-pilot-playbook](mes-field-pilot-playbook.md), [air-gap-deployment](air-gap-deployment.md), [air-gap-signing evidence](../evidence/air-gap-signing/README.md).
 
@@ -54,7 +54,7 @@ Talk track: *“Sensors and HMI are live; logic stays on SINGLETON/INSTANCE hubs
 | 0–5 | Tree | DEVICE under a hub (never claim DEVICE holds orchestration) — [application-principles](application-principles.md) § Logic objects |
 | 5–20 | Live I/O + HMI | RUNNING driver → variable → dashboard or SCADA mimic; optional FPS honesty if asked ([hmi-quality-gates](hmi-quality-gates.md), evidence under `docs/evidence/hmi-fps/`) |
 | 20–35 | Automation light | One alert or binding — keep widgets thin ([anti-patterns](anti-patterns.md)) |
-| 35–50 | Air-gap story | Walk [air-gap-deployment](air-gap-deployment.md) checklist verbally: pack → sneakernet → apply; **RSA require-signed default** on air-gap compose; Cosign for Docker images = Gap unless their ИБ requires it |
+| 35–50 | Air-gap story | Walk [air-gap-deployment](air-gap-deployment.md) checklist verbally: pack → sneakernet → apply; **RSA require-signed default** on air-gap compose; Cosign = lab tooling (release GHCR + CI smoke); customer-host transcript still Gap unless their ИБ has a dated run |
 | 50–60 | Q&A | Local LLM optional ([air-gap-deployment § Local LLM](air-gap-deployment.md#local-llm-demostand-air-gapped-site)); FIELD only with named plant |
 
 **Done when:** customer hears a clear split: live OT/HMI demo vs offline install story vs “we will certify FIELD on your site.”

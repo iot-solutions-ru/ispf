@@ -9,7 +9,11 @@
 #   ISPF_LICENSE_PUBLIC_KEY_PEM   — PEM text or path content for RSA app-bundle verify
 #   ISPF_LICENSE_ENFORCE=true|false
 #   ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true|false  (lab override: false)
-# Cosign / image signatures are not verified here (Gap) — CHECKSUMS.sha256 only.
+# Cosign (optional, when signatures ship with the bundle or images are on a registry):
+#   ISPF_COSIGN_VERIFY=true       — fail if cosign verify fails (requires cosign on PATH)
+#   ISPF_COSIGN_PUBLIC_KEY        — path to cosign.pub for keyful verify (air-gap / offline)
+#   ISPF_COSIGN_IMAGE             — image ref to verify (default from air-gap-images.env if set)
+# CHECKSUMS.sha256 remains the mandatory corruption gate.
 set -euo pipefail
 
 INPUT="${1:-}"
@@ -79,6 +83,27 @@ if [[ -f deploy/air-gap-images.env ]]; then
   source deploy/air-gap-images.env
 fi
 
+COSIGN_VERIFY="${ISPF_COSIGN_VERIFY:-false}"
+if [[ "$COSIGN_VERIFY" == "true" ]]; then
+  if ! command -v cosign >/dev/null 2>&1; then
+    echo "ISPF_COSIGN_VERIFY=true but cosign is not on PATH" >&2
+    exit 1
+  fi
+  COSIGN_IMAGE="${ISPF_COSIGN_IMAGE:-${ISPF_SERVER_IMAGE:-}}"
+  COSIGN_KEY="${ISPF_COSIGN_PUBLIC_KEY:-}"
+  if [[ -z "$COSIGN_IMAGE" ]]; then
+    echo "ISPF_COSIGN_VERIFY=true requires ISPF_COSIGN_IMAGE (or ISPF_SERVER_IMAGE in air-gap-images.env)" >&2
+    exit 1
+  fi
+  echo "==> Cosign verify ${COSIGN_IMAGE}"
+  if [[ -n "$COSIGN_KEY" ]]; then
+    cosign verify --key "$COSIGN_KEY" --insecure-ignore-tlog=true "$COSIGN_IMAGE"
+  else
+    echo "WARN: no ISPF_COSIGN_PUBLIC_KEY — attempting keyless verify (needs network to Rekor/Fulcio)" >&2
+    cosign verify "$COSIGN_IMAGE"
+  fi
+fi
+
 echo "==> Loading Docker images (offline)"
 docker load -i images/prod-stack.tar
 
@@ -127,7 +152,8 @@ echo "Air-gap deployment ready:"
 echo "  API:  http://127.0.0.1:8080/api/v1/info"
 echo "  UI:   http://127.0.0.1:8088/"
 echo "  Stop: docker compose -f $COMPOSE_FILE down"
-echo "  App bundles: RSA require-signed default ON — Cosign image signing is Gap (not in this script)."
+echo "  App bundles: RSA require-signed default ON."
+echo "  Cosign: set ISPF_COSIGN_VERIFY=true (+ ISPF_COSIGN_PUBLIC_KEY for offline) to fail-closed on image verify."
 echo
 echo "Updates without internet: transfer a newer ispf-airgap-*.tar.gz and re-run this script"
 echo "(docker compose down first; PostgreSQL volume ispf_airgap_pg retains data unless -v)."

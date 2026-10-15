@@ -1,0 +1,48 @@
+name: Cosign smoke
+
+# Lab gate for Cosign tooling (keyful blob + local-registry image).
+# Release tags use keyless OIDC on GHCR — see release.yml.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "deploy/tools/air-gap-cosign-smoke.sh"
+      - "deploy/air-gap-apply.sh"
+      - "docs/en/air-gap-deployment.md"
+      - "docs/evidence/air-gap-signing/**"
+      - ".github/workflows/cosign-smoke.yml"
+      - ".github/workflows/release.yml"
+  pull_request:
+    paths:
+      - "deploy/tools/air-gap-cosign-smoke.sh"
+      - "deploy/air-gap-apply.sh"
+      - "docs/en/air-gap-deployment.md"
+      - "docs/evidence/air-gap-signing/**"
+      - ".github/workflows/cosign-smoke.yml"
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cosign-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb # v3.8.2
+
+      - name: Run Cosign lab smoke
+        run: |
+          chmod +x deploy/tools/air-gap-cosign-smoke.sh
+          bash deploy/tools/air-gap-cosign-smoke.sh
+
+      - name: Upload lab transcript
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: cosign-lab-smoke
+          path: build/cosign-smoke/cosign-verify.txt
+          if-no-files-found: warn

@@ -109,15 +109,15 @@ Evidence classes: **REAL** (runtime + tests / dated lab), **PARTIAL** (core work
 | Unified model (tree / blueprints / CEL) | 0.20 | **8.5** | 9.5 | Classic #1 | Agent-queryable depth vs ontology peers |
 | AI authoring (tree-first / MCP / Studio) | 0.25 | **9.0** | 9.5 | Classic #9; BL-178 52/52 | Multi-day plant journal. Logic-host acceptance is on the guarantees axis |
 | Formal guarantees (ship / poka-yoke) | 0.25 | **8.3** | 9.5 | 0051, 0004, 0060; `--strict`, `deploy?strict=true`, catalog, agent ship REWORK, `hostKind` enum | Authoring `validate_bundle` / unqualified HTTP deploy stay WARNING by design |
-| Openness (OSS / API / MCP / docs) | 0.15 | **8.7** | 9.5 | AGPL+dual; #13–14; MCP; ui-pack same-origin (0073); RSA require-signed on air-gap compose | Partner Portal external; Cosign image signing **Gap**; separate pack origin not claimed |
-| Air-gap / sovereignty | 0.15 | **7.8** | 9.5 | On-prem + local-LLM playbook + RSA air-gap signed gate default + [air-gap-signing](../evidence/air-gap-signing/README.md) | **Partial.** Cosign Gap. No dated LLM soak ([air-gap-llm](../evidence/air-gap-llm/README.md)) |
+| Openness (OSS / API / MCP / docs) | 0.15 | **8.7** | 9.5 | AGPL+dual; #13–14; MCP; ui-pack same-origin (0073); RSA require-signed on air-gap compose; Cosign GHCR keyless + CI smoke (**Lab Done**) | Partner Portal external; Cosign **customer-host** transcript still Gap; separate pack origin not claimed |
+| Air-gap / sovereignty | 0.15 | **7.8** | 9.5 | On-prem + local-LLM playbook + RSA air-gap signed gate default + Cosign tooling Lab Done ([air-gap-signing](../evidence/air-gap-signing/README.md)) | **Partial.** Cosign field host Gap. No dated LLM soak ([air-gap-llm](../evidence/air-gap-llm/README.md)) |
 
 **Weighted today:** \(0.20×8.5 + 0.25×9.0 + 0.25×8.3 + 0.15×8.7 + 0.15×7.8\) = **8.505** → **8.51**  
 **Previous judgment:** **8.49** (air-gap 7.7 before RSA air-gap gate default).  
 **Weighted target:** **9.50** (all axes at target)  
 **Classic OT mean (unchanged):** **~8.0**
 
-Air-gap +0.1 only for compose/apply default RSA require-signed + evidence stub. **Cosign stays Gap** (no score claim). Dated LLM soak still open.
+Air-gap +0.1 only for compose/apply default RSA require-signed + evidence stub. Cosign **tooling** Lab Done (no score bump until customer-host transcript). Dated LLM soak still open.
 
 Related: [adr-tension-resolution](adr-tension-resolution.md), [0051](decisions/0051-poka-yoke-constraints-over-guards.md), [0004](decisions/0004-ai-artifact-generation-gates.md), [0060](decisions/0060-solution-authoring-constraints.md), [air-gap-deployment](air-gap-deployment.md).
 

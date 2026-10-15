@@ -136,16 +136,28 @@ Evidence / claim table: [docs/evidence/air-gap-signing/](../evidence/air-gap-sig
 
 ---
 
-## Publisher signatures (Cosign) — Gap
+## Publisher signatures (Cosign) — Lab Done / field Gap
 
 | Claim | Status |
 |-------|--------|
 | RSA app-bundle `license` + require-signed on air-gap stack | **Done** (this section) |
 | `CHECKSUMS.sha256` in the air-gap tar | **Done** as corruption check — not a publisher signature |
-| Cosign / sigstore image or archive signatures | **Gap** — not implemented in this repository |
-| Dated Cosign verify on a customer host | **Gap** — record under [air-gap-signing evidence](../evidence/air-gap-signing/README.md) when a vendor run exists |
+| Cosign sign+verify **tooling** (CI smoke + release keyless on GHCR) | **Lab Done** — `deploy/tools/air-gap-cosign-smoke.sh`, workflow `cosign-smoke.yml`, `release.yml` signs GHCR digests |
+| Optional fail-closed verify on apply | **Lab Done** — `ISPF_COSIGN_VERIFY=true` in `deploy/air-gap-apply.sh` (needs `cosign` + public key for offline) |
+| Dated Cosign verify on a **customer** air-gap host | **Gap** — record under [air-gap-signing evidence](../evidence/air-gap-signing/README.md) when a vendor run exists |
 
-Optional operator/vendor steps (outside ISPF): sign Docker digests with Cosign on the connected build machine; on the air-gap host run `cosign verify` against the loaded images and archive the transcript. ISPF does not ship a Cosign binary or CI verify job.
+```bash
+# Lab / CI tooling smoke (keyful blob + local registry image)
+bash deploy/tools/air-gap-cosign-smoke.sh
+
+# Air-gap apply fail-closed (offline keyful)
+export ISPF_COSIGN_VERIFY=true
+export ISPF_COSIGN_PUBLIC_KEY=/path/to/cosign.pub
+export ISPF_COSIGN_IMAGE=ghcr.io/<org>/ispf-server:<version>@sha256:...
+bash deploy/air-gap-apply.sh /path/to/ispf-airgap-<version>.tar.gz
+```
+
+Release tags sign `ghcr.io/.../ispf-server` digests with Cosign **keyless OIDC**. Verify with the identity regexp in the GitHub Release notes. ISPF does not vendor a Cosign binary into the air-gap tar — install Cosign on the host when using `ISPF_COSIGN_VERIFY`.
 
 ---
 
@@ -194,7 +206,7 @@ Playbook for pointing the agent at an **OpenAI-compatible model that stays on th
 ### Claim boundary — "data never leaves the site"
 
 - **In scope:** agent LLM calls go to the configured base URL (`OpenAiCompatibleLlmProvider` → `{base}/chat/completions`, or `OllamaLlmProvider` → `{base}/api/chat`). If that URL is a host on the site LAN, prompts and completions for the agent do not need a path to the public internet.
-- **Not a claim:** ISPF does not prove that model weights, the OS, or the Docker images were built with no network. `CHECKSUMS.sha256` inside the air-gap bundle detects corruption. It is not a publisher signature. **Cosign / sigstore image signing remains Gap** — see § Publisher signatures (Cosign). RSA app-bundle require-signed on the air-gap stack is separate and **Done**.
+- **Not a claim:** ISPF does not prove that model weights, the OS, or the Docker images were built with no network. `CHECKSUMS.sha256` inside the air-gap bundle detects corruption. It is not a publisher signature. Cosign **tooling** is Lab Done; a dated **customer** host verify remains Gap — see § Publisher signatures (Cosign). RSA app-bundle require-signed on the air-gap stack is separate and **Done**.
 - **Not a claim:** marketplace sync, license issuance, and any other client still follow their own URLs. An air-gapped host should not set `ISPF_AI_BASE_URL` (or `ISPF_MARKETPLACE_DEFAULT_URL`) to a public endpoint. A wrong base URL sends prompts wherever that URL points.
 - **Not a claim:** a dated air-gapped demostand journal is not archived yet. Record one under [docs/evidence/air-gap-llm/](../evidence/air-gap-llm/README.md). Until that folder has a real run, the scorecard air-gap axis stays **Partial**.
 
