@@ -855,7 +855,7 @@ public class TreeFirstAgentService {
                     break;
                 }
 
-                String toolName = agentAction.toolName();
+                String toolName = PlatformAgentToolRegistry.canonicalToolName(agentAction.toolName());
                 Map<String, Object> toolArgs = agentAction.arguments() != null ? agentAction.arguments() : Map.of();
                 long toolStartNanos = System.nanoTime();
                 String executedTool = toolName;
