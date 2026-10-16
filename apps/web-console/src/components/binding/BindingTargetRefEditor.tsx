@@ -100,7 +100,7 @@ export default function BindingTargetRefEditor({
     }
     if (kind === "variable") {
       const field = normalizeVariableRefField(
-        target.variableName,
+        target.variableName ?? undefined,
         target.field,
         variablesForPath
       );
@@ -206,7 +206,7 @@ export default function BindingTargetRefEditor({
                   : resolvedPath;
             const canonicalRef =
               kind === "variable" && fields.name
-                ? refFromFields(objectPath, fields.name, field) ?? ref
+                ? refFromFields(objectPath, fields.name, field ?? undefined) ?? ref
                 : ref;
             onChange({
               ...target,
