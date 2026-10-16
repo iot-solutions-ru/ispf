@@ -70,6 +70,7 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
     pinnedPathRef.current = targetPathTrimmed;
     pinnedVariableRef.current = variable;
   }
+  const pinnedVariable = pinnedVariableRef.current;
   const variableNames = useMemo(() => {
     const list = targetVarsQuery.data ?? [];
     return list
@@ -78,8 +79,8 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
       .sort((left, right) => left.localeCompare(right));
   }, [targetVarsQuery.data]);
   const variableOptions = useMemo(
-    () => sqlBindingVariableOptions(variableNames, pinnedVariableRef.current),
-    [variableNames, targetPathTrimmed],
+    () => sqlBindingVariableOptions(variableNames, pinnedVariable),
+    [variableNames, pinnedVariable],
   );
 
   const targetPreview = targetVarsQuery.data?.find((v) => v.name === variable);
