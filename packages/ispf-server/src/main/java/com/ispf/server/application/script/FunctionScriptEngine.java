@@ -545,7 +545,20 @@ public class FunctionScriptEngine {
             com.ispf.core.ref.PlatformRefKind kind,
             ScriptExecutionContext context
     ) {
-        String ref = step.path("ref").asText(null);
+        try {
+            return resolveStepRefUnchecked(step, kind, context);
+        } catch (com.ispf.core.ref.PlatformRefParseException ex) {
+            throw new IllegalArgumentException(ex.getMessage(), ex);
+        }
+    }
+
+    private static com.ispf.core.ref.PlatformRef resolveStepRefUnchecked(
+            JsonNode step,
+            com.ispf.core.ref.PlatformRefKind kind,
+            ScriptExecutionContext context
+    ) {
+        JsonNode refNode = step.get("ref");
+        String ref = refNode != null && refNode.isTextual() ? refNode.asText("") : null;
         if (ref != null && !ref.isBlank()) {
             com.ispf.core.ref.PlatformRef parsed = com.ispf.core.ref.PlatformRefParser.parse(ref.trim());
             if (parsed.kind() != kind) {
