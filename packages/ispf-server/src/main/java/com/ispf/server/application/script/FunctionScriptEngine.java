@@ -210,7 +210,7 @@ public class FunctionScriptEngine {
             case "failIfNotEquals" -> {
                 Object actual = resolvePath(vars, step.path("var").asText());
                 String expected = step.path("equals").asText();
-                if (!Objects.equals(String.valueOf(actual), expected)) {
+                if (!textEquals(actual, expected)) {
                     yield wireError(outputSchema, step);
                 }
                 yield null;
@@ -314,6 +314,14 @@ public class FunctionScriptEngine {
         };
     }
 
+    /** Java null is not the four characters {@code null}. Missing values use {@code notNull} / {@code failIfNull}. */
+    private static boolean textEquals(Object actual, String expected) {
+        if (actual == null) {
+            return false;
+        }
+        return Objects.equals(String.valueOf(actual), expected);
+    }
+
     private boolean evaluateWhenCondition(JsonNode step, Map<String, Object> vars) {
         if (step.has("notNull")) {
             String var = step.path("var").asText();
@@ -324,12 +332,12 @@ public class FunctionScriptEngine {
         if (step.has("equals")) {
             Object actual = resolvePath(vars, step.path("var").asText());
             String expected = step.path("equals").asText();
-            return Objects.equals(String.valueOf(actual), expected);
+            return textEquals(actual, expected);
         }
         if (step.has("notEquals")) {
             Object actual = resolvePath(vars, step.path("var").asText());
             String expected = step.path("notEquals").asText();
-            return !Objects.equals(String.valueOf(actual), expected);
+            return !textEquals(actual, expected);
         }
         if (step.has("gt") || step.has("lt") || step.has("gte") || step.has("lte")) {
             Object actual = resolvePath(vars, step.path("var").asText());
