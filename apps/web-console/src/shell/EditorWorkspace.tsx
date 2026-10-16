@@ -90,6 +90,7 @@ export default function EditorWorkspace({
           canManage={canConfigure}
           title={editor.title}
           onClose={close}
+          onOpenProperties={openProperties}
           onSelectPath={onSelectBlueprintPath}
           explorerPath={explorerPath}
         />
@@ -105,7 +106,14 @@ export default function EditorWorkspace({
       case "SCHEDULE":
         return <ScheduleEditor path={editor.path} onClose={close} onOpenProperties={openProperties} />;
       case "MIMIC":
-        return <MimicEditorPanel path={editor.path} title={editor.title} onClose={close} />;
+        return (
+          <MimicEditorPanel
+            path={editor.path}
+            title={editor.title}
+            onClose={close}
+            onOpenProperties={openProperties}
+          />
+        );
       case "APPLICATION":
         return (
           <ApplicationEditorPanel

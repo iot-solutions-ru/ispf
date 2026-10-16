@@ -2,6 +2,8 @@
  * PlatformRef slash grammar (ADR-0043) — TS mirror of com.ispf.core.ref.PlatformRefParser.
  */
 
+import type { VariableDto } from "../../types";
+
 export type PlatformRefKind = "variable" | "function" | "event" | "tag";
 
 export interface PlatformRef {
@@ -97,4 +99,29 @@ export function fieldsFromRef(refString: string | undefined): {
     field: parsed.field,
     kind: parsed.kind,
   };
+}
+
+/** Drop stale target fields when the variable schema has no such member (e.g. field left from another variable). */
+export function normalizeVariableRefField(
+  variableName: string | undefined,
+  field: string | undefined | null,
+  variables: VariableDto[] | undefined
+): string {
+  const candidate = field?.trim() || "value";
+  const name = variableName?.trim();
+  if (!name || !variables?.length) {
+    return candidate;
+  }
+  const variable = variables.find((entry) => entry.name === name);
+  if (!variable) {
+    return candidate;
+  }
+  const schemaFields = variable.value?.schema?.fields ?? [];
+  if (!schemaFields.length) {
+    return "value";
+  }
+  if (schemaFields.some((entry) => entry.name === candidate)) {
+    return candidate;
+  }
+  return "value";
 }

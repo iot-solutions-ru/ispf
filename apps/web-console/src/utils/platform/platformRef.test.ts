@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { formatPlatformRef, parsePlatformRef, refFromFields } from "./platformRef";
+import type { VariableDto } from "../../types";
+import { formatPlatformRef, normalizeVariableRefField, parsePlatformRef, refFromFields } from "./platformRef";
 
 describe("platformRef", () => {
   it("parses slash variable ref", () => {
@@ -35,5 +36,23 @@ describe("platformRef", () => {
 
   it("rejects legacy hash tag path", () => {
     expect(parsePlatformRef("root.platform.devices.a#rule-1")).toBeNull();
+  });
+
+  it("drops target field that is not in variable schema", () => {
+    const variables: VariableDto[] = [
+      {
+        name: "blueprintType",
+        value: {
+          schema: { name: "blueprintType", fields: [{ name: "value", type: "STRING" }] },
+          rows: [{ value: "INSTANCE" }],
+        },
+        readable: true,
+        writable: true,
+        updatedAt: null,
+        historyEnabled: false,
+        historyRetentionDays: null,
+      },
+    ];
+    expect(normalizeVariableRefField("blueprintType", "sine", variables)).toBe("value");
   });
 });

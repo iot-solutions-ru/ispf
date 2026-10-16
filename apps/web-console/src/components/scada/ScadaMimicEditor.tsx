@@ -86,10 +86,16 @@ interface ScadaMimicEditorProps {
   diagramJson: string;
   onSave: (diagramJson: string) => void;
   onClose: () => void;
+  onOpenProperties?: () => void;
 }
 
-export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: ScadaMimicEditorProps) {
-  const { t } = useTranslation("scada");
+export default function ScadaMimicEditor({
+  diagramJson,
+  onSave,
+  onClose,
+  onOpenProperties,
+}: ScadaMimicEditorProps) {
+  const { t } = useTranslation(["scada", "common"]);
   /** Binding host session — not DashboardContext (editor boundary). */
   const session = useMimicHostSession();
   const {
@@ -858,6 +864,11 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
           <span className="scada-toolbar-tool-hint">{toolLabel}</span>
 
           <Space className="scada-toolbar-primary-actions" size="small">
+            {onOpenProperties ? (
+              <Button className="scada-btn-ghost" onClick={onOpenProperties}>
+                {t("common:action.properties")}
+              </Button>
+            ) : null}
             <Button className="scada-btn-ghost" onClick={onClose}>{t("tools.close")}</Button>
             <Button type="primary" className="scada-btn-primary" onClick={() => onSave(mimicDocumentToJson(document))}>
               {t("tools.save")}
