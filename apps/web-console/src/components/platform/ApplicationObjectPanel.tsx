@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Button } from "antd";
 import ApplicationDeployPanel from "./ApplicationDeployPanel";
 import { resolveApplicationAppId } from "../../utils/platform/applicationPath";
 
@@ -7,6 +8,7 @@ interface ApplicationObjectPanelProps {
   displayName?: string;
   description?: string;
   canManage: boolean;
+  onOpenEditor?: () => void;
 }
 
 export default function ApplicationObjectPanel({
@@ -14,8 +16,9 @@ export default function ApplicationObjectPanel({
   displayName,
   description,
   canManage,
+  onOpenEditor,
 }: ApplicationObjectPanelProps) {
-  const { t } = useTranslation(["platform", "inspector"]);
+  const { t } = useTranslation(["platform", "inspector", "common"]);
   const appId = resolveApplicationAppId(path, description);
 
   return (
@@ -26,6 +29,11 @@ export default function ApplicationObjectPanel({
           <p className="op-muted">{t("platform:application.explorerSubtitle")}</p>
           <p className="hint mono small">{path}</p>
         </div>
+        {onOpenEditor ? (
+          <Button type="primary" onClick={onOpenEditor}>
+            {t("common:action.openInEditor")}
+          </Button>
+        ) : null}
       </header>
       {appId ? (
         <ApplicationDeployPanel appId={appId} displayName={displayName} canManage={canManage} />

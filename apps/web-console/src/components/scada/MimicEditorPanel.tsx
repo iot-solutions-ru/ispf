@@ -11,6 +11,7 @@ interface MimicEditorPanelProps {
   path: string;
   title?: string;
   onClose: () => void;
+  onOpenProperties?: () => void;
 }
 
 function mimicStats(diagramJson: string | undefined): {
@@ -37,7 +38,12 @@ function mimicStats(diagramJson: string | undefined): {
   }
 }
 
-export default function MimicEditorPanel({ path, title, onClose }: MimicEditorPanelProps) {
+export default function MimicEditorPanel({
+  path,
+  title,
+  onClose,
+  onOpenProperties,
+}: MimicEditorPanelProps) {
   const { t } = useTranslation("scada");
   const queryClient = useQueryClient();
   const mimicQuery = useQuery({
@@ -101,6 +107,7 @@ export default function MimicEditorPanel({ path, title, onClose }: MimicEditorPa
         }
       }}
       onClose={onClose}
+      onOpenProperties={onOpenProperties}
     />
   );
 }
