@@ -423,6 +423,7 @@ export default function BindingRulesPanel({
                   kind="variable"
                   target={editing.target}
                   localVariableNames={variableNames}
+                  localVariables={variables}
                   onChange={(target) => setEditing({ ...editing, target })}
                 />
               )}

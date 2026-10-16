@@ -10,7 +10,6 @@ import SecurityRootPanel from "../security/SecurityRootPanel";
 import SystemFolderListPanel from "../platform/SystemFolderListPanel";
 import FederationPeersPanel from "../federation/FederationPeersPanel";
 import TenantsPanel from "../platform/TenantsPanel";
-import { isBlueprintsPath } from "../../types/blueprints";
 import type { ObjectSummary } from "../../types";
 import { isOperatorAppChildPath } from "../../utils/operator/operatorAppsPath";
 import { isSecurityUserPath, isSecurityUsersRoot } from "../../utils/security/securityUserPath";
@@ -33,7 +32,9 @@ import AnalyticsTagInspector from "../analytics/AnalyticsTagInspector";
 import AutomationRulesListPanel from "../automation/AutomationRulesListPanel";
 import CorrelatorInspector from "../automation/CorrelatorInspector";
 import ProcessProgramInspector from "../automation/ProcessProgramInspector";
-import { isSpecializedEditorObject } from "../../utils/object/editorObject";
+import {
+  isSpecializedEditorObject,
+} from "../../utils/object/editorObject";
 import {
   isTypedCatalogObject,
   opensCatalogChildList,
@@ -136,7 +137,9 @@ export default function ExplorerView({
     || isTenants
     || isCatalogFolder
     || isPlatformSqlObject
-    || isVisualGroup;
+    || isApplicationObject
+    || isVisualGroup
+    || opensInEditor;
 
   return (
     <div
@@ -147,18 +150,6 @@ export default function ExplorerView({
           <Button className="explorer-back-btn" onClick={onBackToTree}>
             {t("explorer:mobile.backToTree")}
           </Button>
-        </div>
-      )}
-      {!hideToolbar && opensInEditor && (
-        <div className="explorer-toolbar">
-          <Button onClick={() => onOpenEditor(selectedPath)}>
-            {t("common:action.openInEditor")}
-          </Button>
-          <span className="hint">
-            {isBlueprintsPath(selectedPath)
-              ? t("common:hint.modelFullDefinition")
-              : t("common:hint.openEditorButton")}
-          </span>
         </div>
       )}
       {!hideToolbar && !opensInEditor && (
@@ -206,6 +197,7 @@ export default function ExplorerView({
           displayName={selectedObject?.displayName}
           description={selectedObject?.description}
           canManage={canConfigure}
+          onOpenEditor={() => onOpenEditor(selectedPath)}
         />
       ) : showCatalogChildList ? (
         <SystemFolderListPanel
@@ -239,6 +231,7 @@ export default function ExplorerView({
           canManageAcl={canManageTenantSecurity}
           onDeleted={onDeleted}
           onSelectPath={onSelectPath}
+          onOpenEditor={() => onOpenEditor(selectedPath)}
         />
       )}
     </div>

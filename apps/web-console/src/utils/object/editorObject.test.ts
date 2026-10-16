@@ -39,3 +39,11 @@ describe("editorObject VISUAL_GROUP", () => {
     expect(isSpecializedEditorObject("root.platform.dashboards.comfort", "CUSTOM")).toBe(false);
   });
 });
+
+describe("editorObject application SQL leaves", () => {
+  it("resolves BINDING type for app bindings path when type is unknown", () => {
+    const path = "root.platform.applications.demo.bindings.row-count";
+    expect(resolveEditorObjectType(path, undefined)).toBe("BINDING");
+    expect(isSpecializedEditorObject(path, "BINDING")).toBe(true);
+  });
+});

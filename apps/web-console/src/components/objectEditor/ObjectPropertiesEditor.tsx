@@ -75,6 +75,7 @@ import { usePublishAdminFocus } from "../../hooks/usePublishAdminFocus";
 import type { AdminClientFocus } from "../../context/useAdminFocus";
 import { OBJECT_EDITOR_TABS, visibleObjectEditorTabs } from "./tabs";
 import type { ObjectEditorTab } from "./tabs";
+import { isSpecializedEditorObject } from "../../utils/object/editorObject";
 
 const EventJournalPanel = lazy(() => import("../operator/EventJournalPanel"));
 
@@ -89,6 +90,8 @@ interface ObjectPropertiesEditorProps {
   embedded?: boolean;
   /** Navigate to a parent path when breadcrumb is clicked. */
   onSelectPath?: (path: string) => void;
+  /** Return to dedicated builder (dashboard, SQL binding, data source, …). */
+  onOpenEditor?: () => void;
 }
 
 type Tab = ObjectEditorTab;
@@ -269,6 +272,7 @@ export default function ObjectPropertiesEditor({
   canManageAcl = false,
   embedded = false,
   onSelectPath,
+  onOpenEditor,
 }: ObjectPropertiesEditorProps) {
   const { t } = useTranslation(["inspector", "common", "objectTree"]);
   const queryClient = useQueryClient();
@@ -606,6 +610,9 @@ export default function ObjectPropertiesEditor({
   const isApplication = ctx.type === "APPLICATION";
   const applicationAppId = isApplication ? resolveApplicationAppId(path, ctx.description) : null;
   const canDelete = canDeleteObjectPath(path, ctx.type);
+  const showOpenEditorButton =
+    Boolean(onOpenEditor)
+    && isSpecializedEditorObject(path, ctx.type, ctx.templateId);
   const crumbs = path.split(".");
   const headerDescription =
     localizedSystemObjectDescription(t, path, ctx.description)
@@ -679,6 +686,11 @@ export default function ObjectPropertiesEditor({
           </div>
         )}
         <div className={`toolbar-actions${embedded ? " toolbar-actions-full" : ""}`}>
+          {showOpenEditorButton && (
+            <Button type="primary" onClick={onOpenEditor}>
+              {t("common:action.editor")}
+            </Button>
+          )}
           <Button
             aria-label={t("common:action.refresh")}
             onClick={() => void reloadFromEditor()}

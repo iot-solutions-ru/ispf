@@ -51,7 +51,7 @@ export default function PlatformSqlEditorShell({
           {toolbar}
           {onOpenProperties && (
             <Button onClick={onOpenProperties}>
-              {t("inspector:tab.general")}
+              {t("common:action.properties")}
             </Button>
           )}
           {onClose && (

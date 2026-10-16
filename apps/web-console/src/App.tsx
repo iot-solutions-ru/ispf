@@ -950,6 +950,7 @@ function AppShell() {
               canManage={canConfigure}
               canManageAcl={canManageSecurity}
               onSelectPath={selectPathInExplorer}
+              onOpenEditor={() => setPropertiesTabPath(null)}
               onClose={() => {
                 setPropertiesTabPath(null);
               }}
