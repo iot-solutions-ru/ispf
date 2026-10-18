@@ -225,27 +225,35 @@ public class FunctionScriptEngine {
                 yield null;
             }
             case "readVariable" -> {
-                com.ispf.core.ref.PlatformRef varRef = resolveStepRef(
-                        step,
-                        com.ispf.core.ref.PlatformRefKind.VARIABLE,
-                        context
-                );
-                String objectPath = varRef.isCurrentObject()
-                        ? context.callerObjectPath()
-                        : varRef.object();
-                String value = platformScriptBridge.readVariableField(
-                        objectPath,
-                        varRef.name(),
-                        varRef.field()
-                );
+                String objectPath;
+                String variableName;
+                String fieldName;
+                JsonNode refNode = step.get("ref");
+                if (refNode != null && refNode.isTextual() && !refNode.asText("").isBlank()) {
+                    com.ispf.core.ref.PlatformRef varRef = resolveStepRef(
+                            step,
+                            com.ispf.core.ref.PlatformRefKind.VARIABLE,
+                            context
+                    );
+                    objectPath = varRef.isCurrentObject()
+                            ? context.callerObjectPath()
+                            : varRef.object();
+                    variableName = varRef.name();
+                    fieldName = varRef.field();
+                } else {
+                    objectPath = resolveObjectPath(interpolated(step.get("objectPath"), vars, "self"), context);
+                    variableName = interpolated(step.get("variable"), vars, "");
+                    fieldName = interpolated(step.get("field"), vars, "value");
+                }
+                String value = platformScriptBridge.readVariableField(objectPath, variableName, fieldName);
                 vars.put(step.path("var").asText(), value);
                 yield null;
             }
             case "writeVariable" -> {
-                String objectPath = resolveObjectPath(step.path("objectPath").asText(), context);
+                String objectPath = resolveObjectPath(interpolated(step.get("objectPath"), vars, ""), context);
                 platformScriptBridge.writeVariableFields(
                         objectPath,
-                        step.path("variable").asText(),
+                        interpolated(step.get("variable"), vars, ""),
                         resolveFields(step.get("fields"), vars)
                 );
                 yield null;
@@ -449,6 +457,18 @@ public class FunctionScriptEngine {
     private String resolveBlueprintName(JsonNode step, Map<String, Object> vars) {
         JsonNode blueprintNode = step.has("blueprintName") ? step.get("blueprintName") : step.get("modelName");
         return String.valueOf(resolveStepValue(blueprintNode, vars));
+    }
+
+    private String interpolated(JsonNode node, Map<String, Object> vars, String fallback) {
+        if (node == null || node.isNull() || node.isMissingNode()) {
+            return fallback;
+        }
+        Object resolved = resolveStepValue(node, vars);
+        if (resolved == null) {
+            return fallback;
+        }
+        String text = String.valueOf(resolved);
+        return text.isBlank() ? fallback : text;
     }
 
     private Object resolveStepValue(JsonNode valueNode, Map<String, Object> vars) {
