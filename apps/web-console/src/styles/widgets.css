@@ -2359,6 +2359,12 @@
   margin: 0 0 0.35rem;
 }
 
+.model-editor-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
 .model-editor-body {
   flex: 1;
   overflow: auto;

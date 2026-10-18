@@ -1,7 +1,10 @@
 import { isBlueprintsPath } from "../../types/blueprints";
 import type { ObjectType } from "../../types";
 import { isApplicationObjectPath } from "../platform/applicationPath";
-import { isPlatformSqlObjectPath } from "../platform/platformSqlPath";
+import {
+  isApplicationSqlCatalogLeaf,
+  isPlatformSqlObjectPath,
+} from "../platform/platformSqlPath";
 
 /** Objects edited in a dedicated builder (dashboard / report / workflow / model / platform SQL). */
 export function isSpecializedEditorObject(
@@ -99,5 +102,10 @@ export function resolveEditorObjectType(
   if (path.startsWith("root.platform.migrations.")) return "MIGRATION";
   if (path.startsWith("root.platform.bindings.")) return "BINDING";
   if (path.startsWith("root.platform.schedules.")) return "SCHEDULE";
+  if (isApplicationSqlCatalogLeaf(path)) {
+    if (path.includes(".bindings.")) return "BINDING";
+    if (path.includes(".migrations.")) return "MIGRATION";
+    if (path.includes(".schedules.")) return "SCHEDULE";
+  }
   return type;
 }

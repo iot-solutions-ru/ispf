@@ -58,6 +58,7 @@ interface BlueprintEditorPanelProps {
   canManage: boolean;
   onSelectPath?: (path: string) => void;
   onClose?: () => void;
+  onOpenProperties?: () => void;
   title?: string;
   /** Object currently selected in the explorer, used to fill Apply. */
   explorerPath?: string | null;
@@ -1218,6 +1219,7 @@ export default function BlueprintEditorPanel({
   canManage,
   onSelectPath,
   onClose,
+  onOpenProperties,
   title,
   explorerPath,
 }: BlueprintEditorPanelProps) {
@@ -1248,11 +1250,18 @@ export default function BlueprintEditorPanel({
           <h2>{headerTitle}</h2>
           <code className="path-code">{selectedPath}</code>
         </div>
-        {onClose && (
-          <Button onClick={onClose}>
-            {t("common:action.close")}
-          </Button>
-        )}
+        <div className="model-editor-header-actions">
+          {onOpenProperties && (
+            <Button onClick={onOpenProperties}>
+              {t("common:action.properties")}
+            </Button>
+          )}
+          {onClose && (
+            <Button onClick={onClose}>
+              {t("common:action.close")}
+            </Button>
+          )}
+        </div>
       </header>
 
       <div className="model-editor-body">

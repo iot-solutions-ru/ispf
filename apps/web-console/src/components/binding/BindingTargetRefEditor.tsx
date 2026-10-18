@@ -1,11 +1,11 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import type { BindingTarget, BindingTargetKind } from "../../types";
+import type { BindingTarget, BindingTargetKind, VariableDto } from "../../types";
 import { fetchObjectEditor } from "../../api";
 import { useVariablesQuery } from "../../hooks/useVariablesQuery";
 import { ObjectPathField } from "../../ui/index";
-import { fieldsFromRef, refFromFields } from "../../utils/platform/platformRef";
+import { fieldsFromRef, normalizeVariableRefField, refFromFields } from "../../utils/platform/platformRef";
 import { filterUserVariableNames } from "../../utils/platform/systemVariables";
 import { PlatformRefPicker } from "../platform/PlatformRefPicker";
 
@@ -14,6 +14,7 @@ interface BindingTargetRefEditorProps {
   kind: Extract<BindingTargetKind, "variable" | "event">;
   target: BindingTarget;
   localVariableNames?: string[];
+  localVariables?: VariableDto[];
   localEventNames?: string[];
   onChange: (target: BindingTarget) => void;
 }
@@ -34,6 +35,7 @@ export default function BindingTargetRefEditor({
   kind,
   target,
   localVariableNames = [],
+  localVariables = [],
   localEventNames = [],
   onChange,
 }: BindingTargetRefEditorProps) {
@@ -71,12 +73,71 @@ export default function BindingTargetRefEditor({
     return (editorQuery.data?.events ?? []).map((event) => event.name);
   }, [kind, resolvedPath, ruleObjectPath, localEventNames, editorQuery.data?.events]);
 
-  const pickerValue =
-    target.ref
-    ?? (kind === "variable"
-      ? refFromFields(isSelfTarget ? "@" : resolvedPath, target.variableName ?? "", target.field ?? "value")
-      : refFromFields(isSelfTarget ? "@" : resolvedPath, target.eventName ?? "", undefined, "event"))
-    ?? "";
+  const variablesForPath = useMemo(() => {
+    if (kind !== "variable") {
+      return [] as VariableDto[];
+    }
+    if (resolvedPath === ruleObjectPath) {
+      return localVariables;
+    }
+    return variablesQuery.data ?? [];
+  }, [kind, resolvedPath, ruleObjectPath, localVariables, variablesQuery.data]);
+
+  const pickerValue = useMemo(() => {
+    if (target.ref?.trim()) {
+      if (kind !== "variable") {
+        return target.ref;
+      }
+      const fields = fieldsFromRef(target.ref);
+      const field = normalizeVariableRefField(
+        fields.name,
+        fields.field ?? target.field,
+        variablesForPath
+      );
+      const objectPath =
+        fields.objectPath && fields.objectPath !== "self" ? fields.objectPath : isSelfTarget ? "@" : resolvedPath;
+      return refFromFields(objectPath, fields.name ?? "", field) ?? target.ref;
+    }
+    if (kind === "variable") {
+      const field = normalizeVariableRefField(
+        target.variableName ?? undefined,
+        target.field,
+        variablesForPath
+      );
+      return refFromFields(isSelfTarget ? "@" : resolvedPath, target.variableName ?? "", field) ?? "";
+    }
+    return refFromFields(isSelfTarget ? "@" : resolvedPath, target.eventName ?? "", undefined, "event") ?? "";
+  }, [target, kind, isSelfTarget, resolvedPath, variablesForPath]);
+
+  const targetSyncKeyRef = useRef("");
+  useEffect(() => {
+    if (kind !== "variable" || !variablesForPath.length) {
+      return;
+    }
+    const fields = target.ref ? fieldsFromRef(target.ref) : null;
+    const variableName = fields?.name ?? target.variableName ?? "";
+    if (!variableName.trim()) {
+      return;
+    }
+    const rawField = fields?.field ?? target.field ?? "value";
+    const field = normalizeVariableRefField(variableName, rawField, variablesForPath);
+    const ref = refFromFields(isSelfTarget ? "@" : resolvedPath, variableName, field);
+    if (!ref || (field === rawField && target.ref === ref)) {
+      return;
+    }
+    const syncKey = `${variableName}|${field}|${ref}`;
+    if (targetSyncKeyRef.current === syncKey) {
+      return;
+    }
+    targetSyncKeyRef.current = syncKey;
+    onChange({
+      ...target,
+      kind,
+      ref,
+      field,
+      variableName: isSelfTarget ? variableName : target.variableName,
+    });
+  }, [kind, target, variablesForPath, isSelfTarget, resolvedPath, onChange]);
 
   const setTargetPath = (path: string, name?: string) => {
     const trimmed = path.trim();
@@ -129,13 +190,31 @@ export default function BindingTargetRefEditor({
             }
             const fields = fieldsFromRef(ref);
             const remote = fields.objectPath && fields.objectPath !== "self" && fields.objectPath !== ruleObjectPath;
+            const field =
+              kind === "variable"
+                ? normalizeVariableRefField(
+                    fields.name,
+                    fields.field ?? target.field ?? "value",
+                    variablesForPath
+                  )
+                : target.field;
+            const objectPath =
+              fields.objectPath && fields.objectPath !== "self"
+                ? fields.objectPath
+                : isSelfTarget
+                  ? "@"
+                  : resolvedPath;
+            const canonicalRef =
+              kind === "variable" && fields.name
+                ? refFromFields(objectPath, fields.name, field ?? undefined) ?? ref
+                : ref;
             onChange({
               ...target,
               kind,
-              ref,
+              ref: canonicalRef,
               variableName: kind === "variable" && !remote ? (fields.name ?? "") : null,
               eventName: kind === "event" && !remote ? (fields.name ?? "") : null,
-              field: kind === "variable" ? (fields.field ?? target.field ?? "value") : target.field,
+              field: kind === "variable" ? field : target.field,
             });
           }}
         />

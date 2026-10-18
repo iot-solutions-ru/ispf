@@ -1,50 +1,135 @@
+param(
+    [switch]$SkipInstall,
+    [switch]$KeepCache
+)
+
 # Отладочная веб-консоль ISPF (Vite, Windows, PowerShell).
 #
 # Запуск из любой папки:
 #   .\scripts\run-web-console.ps1
 #
-# Консоль: http://localhost:5173
-# Остановка: Ctrl+C в этом окне.
+# Консоль: http://localhost:5173 (исходники apps\web-console\src)
+# API проксируется на http://localhost:8080 (сервер: .\scripts\rebuild-and-run.ps1)
+# Остановка: Ctrl+C
 #
-# Это режим разработки: Vite отдаёт исходники React и пересобирает страницу
-# при сохранении файла. Сборка dist\ и встраивание в JAR здесь не выполняются.
-#
-# API консоль сама не поднимает. Запросы /api и /ws Vite пересылает на
-# http://localhost:8080 (см. server.proxy в apps\web-console\vite.config.ts).
-# Сервер перед этим запускают отдельно: .\scripts\rebuild-and-run.ps1
+# Параметры: -SkipInstall (без npm ci), -KeepCache (не чистить node_modules\.vite)
+# Перед стартом освобождает порт 5173 (завершает прежний Vite, если окно потеряно).
 
 $ErrorActionPreference = "Stop"
 
-# Каталог репозитория — родитель папки scripts.
+$DevPort = 5173
+
 $Root = Split-Path -Parent $PSScriptRoot
 $Console = Join-Path $Root "apps\web-console"
+$LockFile = Join-Path $Console "package-lock.json"
+$NodeModules = Join-Path $Console "node_modules"
+$InstallStamp = Join-Path $NodeModules ".run-web-console-install-stamp"
+$ViteCache = Join-Path $NodeModules ".vite"
 
 if (-not (Test-Path (Join-Path $Console "package.json"))) {
-    Write-Error "Не найден apps\web-console\package.json. Запускайте скрипт из клона репозитория ISPF."
+    Write-Error "Ne naiden apps\web-console\package.json. Zapuskajte iz klona repozitorija ISPF."
 }
 
-# npm должен быть в PATH (Node.js 20+).
 if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
-    Write-Error "npm не найден в PATH. Установите Node.js 20 или новее и откройте терминал заново."
+    Write-Error "npm ne naiden v PATH. Ustanovite Node.js 20+."
+}
+
+function Test-WebConsoleDepsReady {
+    return Test-Path (Join-Path $NodeModules ".bin\vite.cmd")
+}
+
+function Test-WebConsoleDepsStale {
+    if (-not (Test-Path $NodeModules)) { return $true }
+    if (-not (Test-Path $LockFile)) { return $false }
+    if (-not (Test-Path $InstallStamp)) { return $true }
+    $lockTime = (Get-Item $LockFile).LastWriteTimeUtc
+    $stampTime = (Get-Item $InstallStamp).LastWriteTimeUtc
+    return $lockTime -gt $stampTime
+}
+
+function Install-WebConsoleDeps {
+    Write-Host "npm ci (web-console)..."
+    Set-Location $Console
+    npm ci --no-audit
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    New-Item -ItemType Directory -Force -Path $NodeModules | Out-Null
+    Set-Content -Path $InstallStamp -Value ((Get-Item $LockFile).LastWriteTimeUtc.ToString("o")) -Encoding ascii
+}
+
+function Clear-VitePrebundleCache {
+    if (-not (Test-Path $ViteCache)) { return }
+    Write-Host "Clear Vite cache: $ViteCache"
+    Remove-Item -Recurse -Force $ViteCache
+}
+
+function Stop-ListenerOnPort {
+    param([int]$Port)
+
+    $pids = [System.Collections.Generic.HashSet[int]]::new()
+    if (Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue) {
+        Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
+            ForEach-Object { [void]$pids.Add($_.OwningProcess) }
+    }
+    if ($pids.Count -eq 0) {
+        $pattern = ":$Port\s"
+        netstat -ano | Select-String $pattern | ForEach-Object {
+            $line = $_.Line.Trim()
+            if ($line -match 'LISTENING\s+(\d+)\s*$') {
+                [void]$pids.Add([int]$Matches[1])
+            }
+        }
+    }
+    foreach ($procId in $pids) {
+        if ($procId -le 0) { continue }
+        Write-Host "Port $Port in use by PID $procId - stopping..."
+        Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+    }
+    if ($pids.Count -gt 0) {
+        Start-Sleep -Milliseconds 400
+    }
+}
+
+if (Get-Command git -ErrorAction SilentlyContinue) {
+    Push-Location $Root
+    try {
+        $branch = git branch --show-current 2>$null
+        if ($branch) { Write-Host "Git branch: $branch" }
+    } finally {
+        Pop-Location
+    }
 }
 
 Set-Location $Console
 
-# Зависимости ставим только если каталога node_modules ещё нет.
-# npm ci ставит версии ровно из package-lock.json, без обновления пакетов.
-# Повторный запуск этот шаг пропускает.
-if (-not (Test-Path (Join-Path $Console "node_modules"))) {
-    Write-Host "Зависимости консоли ещё не установлены. Выполняю npm ci."
-    npm ci
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+if (-not (Test-WebConsoleDepsReady)) {
+    if ($SkipInstall) {
+        Write-Host "node_modules incomplete (-SkipInstall ignored, running npm ci)..."
+    }
+    Install-WebConsoleDeps
+} elseif (-not $SkipInstall -and (Test-WebConsoleDepsStale)) {
+    Install-WebConsoleDeps
+} elseif (-not (Test-Path $NodeModules)) {
+    Install-WebConsoleDeps
 }
 
-# npm run dev запускает Vite и не возвращает управление, пока процесс жив.
-# Порт 5173 задан в vite.config.ts. Если порт занят, Vite сообщит об этом сам.
+if (-not (Test-WebConsoleDepsReady)) {
+    Write-Error "npm ci did not install vite. Run manually: cd apps\web-console; npm ci"
+}
+
+if (-not $KeepCache) {
+    Clear-VitePrebundleCache
+}
+
+Stop-ListenerOnPort -Port $DevPort
+
 Write-Host ""
-Write-Host "Отладочная консоль: http://localhost:5173"
-Write-Host "API ожидается на http://localhost:8080"
-Write-Host "Остановка: Ctrl+C в этом окне."
+Write-Host "Web console: http://localhost:$DevPort"
+Write-Host "For React UI use 5173 only (not 8080 embedded dist)."
+Write-Host "After git pull or branch switch restart this script (Ctrl+C, run again)."
+Write-Host "API expected at http://localhost:8080"
+Write-Host "Stop: Ctrl+C"
 Write-Host ""
-npm run dev
+
+$viteCmd = Join-Path $NodeModules ".bin\vite.cmd"
+& $viteCmd --force
 exit $LASTEXITCODE
