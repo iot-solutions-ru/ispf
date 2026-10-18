@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Checkbox, Form, Input, Select } from "antd";
@@ -6,6 +6,7 @@ import { fetchVariables } from "../../api";
 import { fetchSqlBinding, refreshSqlBinding, updateSqlBinding } from "../../api/platformSql";
 import PlatformSqlEditorShell from "./PlatformSqlEditorShell";
 import { ObjectPathField } from "../../ui";
+import { sqlBindingVariableOptions } from "./sqlBindingVariableOptions";
 import { useDataSourceOptions } from "./useDataSourceOptions";
 
 const REFRESH_MODES = ["manual", "on_schedule", "on_function_success"] as const;
@@ -18,7 +19,7 @@ interface SqlBindingEditorProps {
 }
 
 export default function SqlBindingEditor({ path, onClose, onOpenProperties }: SqlBindingEditorProps) {
-  const { t } = useTranslation(["platform", "common"]);
+  const { t } = useTranslation(["platform", "common", "scada"]);
   const queryClient = useQueryClient();
   const bindingQuery = useQuery({
     queryKey: ["sql-binding", path],
@@ -61,6 +62,26 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
     queryFn: () => fetchVariables(targetObjectPath),
     enabled: Boolean(targetObjectPath.trim()),
   });
+
+  const targetPathTrimmed = targetObjectPath.trim();
+  const pinnedVariableRef = useRef("");
+  const pinnedPathRef = useRef<string | null>(null);
+  if (pinnedPathRef.current !== targetPathTrimmed) {
+    pinnedPathRef.current = targetPathTrimmed;
+    pinnedVariableRef.current = variable;
+  }
+  const pinnedVariable = pinnedVariableRef.current;
+  const variableNames = useMemo(() => {
+    const list = targetVarsQuery.data ?? [];
+    return list
+      .filter((item) => item.writable)
+      .map((item) => item.name)
+      .sort((left, right) => left.localeCompare(right));
+  }, [targetVarsQuery.data]);
+  const variableOptions = useMemo(
+    () => sqlBindingVariableOptions(variableNames, pinnedVariable),
+    [variableNames, pinnedVariable],
+  );
 
   const targetPreview = targetVarsQuery.data?.find((v) => v.name === variable);
 
@@ -148,14 +169,48 @@ export default function SqlBindingEditor({ path, onClose, onOpenProperties }: Sq
           filterTypes={["DEVICE"]}
           placeholder="root.platform.devices.demo-sensor-01"
         />
-        <label>
-          Variable *
-          <Input value={variable} onChange={(e) => setVariable(e.target.value)} required />
-        </label>
-        <label>
-          Value field
+        <Form.Item
+          label={t("platform:sqlBinding.variable")}
+          required
+          validateStatus={
+            targetPathTrimmed
+            && !targetVarsQuery.isLoading
+            && !targetVarsQuery.isError
+            && variableNames.length === 0
+              ? "warning"
+              : undefined
+          }
+          help={
+            !targetPathTrimmed
+              ? t("scada:props.bindingSelectObjectFirst")
+              : targetVarsQuery.isError
+                ? t("scada:props.bindingVariablesError")
+                : targetPathTrimmed && !targetVarsQuery.isLoading && variableNames.length === 0
+                  ? t("scada:props.bindingVariablesEmpty")
+                  : undefined
+          }
+        >
+          <Select
+            value={variable || undefined}
+            onChange={setVariable}
+            options={variableOptions}
+            disabled={!targetPathTrimmed}
+            loading={targetVarsQuery.isLoading}
+            placeholder={
+              targetPathTrimmed
+                ? t("platform:sqlBinding.selectPlaceholder")
+                : t("scada:props.bindingSelectObjectFirst")
+            }
+            showSearch
+            optionFilterProp="label"
+          />
+        </Form.Item>
+        <Form.Item
+          label={t("platform:sqlBinding.valueField")}
+          extra={t("platform:sqlBinding.valueFieldHint")}
+        >
           <Input value={valueField} onChange={(e) => setValueField(e.target.value)} />
-        </label>
+        </Form.Item>
         <label className="full">
           Data source *
           <Select
