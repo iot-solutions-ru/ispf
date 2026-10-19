@@ -3,6 +3,7 @@ package com.ispf.server.api;
 import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.expression.ExpressionException;
 import com.ispf.plugin.workflow.WorkflowException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -58,6 +59,19 @@ public class ApiExceptionHandler {
         return detail;
     }
 
+    /**
+     * Script / JDBC unique and other integrity failures must not surface as a bare 500.
+     * Application script {@code exec}/{@code select*} steps propagate
+     * {@link DataIntegrityViolationException} (often {@code DuplicateKeyException}) to the HTTP layer.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrity(DataIntegrityViolationException exception) {
+        String message = integrityDetail(exception);
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, message);
+        detail.setTitle("Data integrity violation");
+        return detail;
+    }
+
     @ExceptionHandler(ResponseStatusException.class)
     public ProblemDetail handleResponseStatus(ResponseStatusException exception) {
         HttpStatus status = HttpStatus.resolve(exception.getStatusCode().value());
@@ -68,5 +82,20 @@ public class ApiExceptionHandler {
         ProblemDetail detail = ProblemDetail.forStatusAndDetail(status, message);
         detail.setTitle(status.getReasonPhrase());
         return detail;
+    }
+
+    static String integrityDetail(DataIntegrityViolationException exception) {
+        Throwable root = exception.getMostSpecificCause();
+        String rootMessage = root != null && root.getMessage() != null && !root.getMessage().isBlank()
+                ? root.getMessage().trim()
+                : null;
+        if (rootMessage != null) {
+            return rootMessage;
+        }
+        String top = exception.getMessage();
+        if (top != null && !top.isBlank()) {
+            return top.trim();
+        }
+        return "Data integrity constraint violated";
     }
 }
