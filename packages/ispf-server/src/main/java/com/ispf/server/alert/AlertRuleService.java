@@ -24,16 +24,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AlertRuleService {
 
     private static final Logger log = LoggerFactory.getLogger(AlertRuleService.class);
-
-    /** Rule ids already soft-disabled after a missing watch/ALERT target; skip re-evaluation for JVM lifetime. */
-    private final Set<String> disabledOrphanRuleIds = ConcurrentHashMap.newKeySet();
 
     /**
      * Object-change workers, the poll scheduler and SQL refreshes can reach one rule at the same time; its edge,
@@ -185,9 +181,6 @@ public class AlertRuleService {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void evaluateRule(AlertRule rule) {
-        if (disabledOrphanRuleIds.contains(rule.id())) {
-            return;
-        }
         synchronized (ruleLocks.computeIfAbsent(rule.id(), ignored -> new Object())) {
             evaluateIsolated(rule);
         }
@@ -198,16 +191,11 @@ public class AlertRuleService {
         try {
             evaluateRuleInternal(rule);
         } catch (ObjectNotFoundException ex) {
-            // Orphan watch target / missing ALERT node must not abort the periodic poll or
-            // variable-change fan-out for remaining rules (same soft-fail shape as SQL bindings).
-            if (disabledOrphanRuleIds.add(rule.id())) {
-                log.warn("Disabling alert rule {} (missing object): {}", rule.id(), ex.getMessage());
-                try {
-                    automationTreeService.setAlertRuleEnabled(rule.id(), false);
-                } catch (RuntimeException disableEx) {
-                    log.warn("Could not disable alert rule {}: {}", rule.id(), disableEx.getMessage());
-                }
-            }
+            // A missing watch target or ALERT node skips this tick. The rule stays enabled so a
+            // later tick can succeed when the object is back. The failure is counted, and the
+            // exception does not abort the remaining rules of the same fan-out.
+            automationMetricsRecorder.recordAlertRuleFailure(AutomationMetricsRecorder.AlertRuleFailure.ERROR);
+            log.error("Alert rule {} skipped, watched object missing (rule stays enabled): {}", rule.id(), ex.getMessage());
         } catch (RuntimeException ex) {
             if (isConditionFailure(ex)) {
                 // Uncomputable condition/deactivate and a failed anomaly history read must not look like an honest false.

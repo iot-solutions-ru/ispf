@@ -22,6 +22,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -100,18 +102,8 @@ class AlertRuleSoftFailTest {
     }
 
     @Test
-    void missingWatchTargetIsSoftFailedAndDisabled() {
-        AlertRuleService service = new AlertRuleService(
-                automationTreeService,
-                objectManager,
-                expressionEngine,
-                formalVerificationService,
-                eventService,
-                automationMetricsRecorder,
-                notificationDispatchService,
-                alarmShelfService,
-                anomalyAlertRuleEvaluator
-        );
+    void missingWatchTargetStaysEnabledAndCountsAFailure() {
+        AlertRuleService service = newService();
         AlertRule rule = sampleRule("root.automation.alert-rules.orphan", "root.missing.target");
         when(automationTreeService.getAlertRule(rule.id())).thenReturn(rule);
         when(objectManager.require(rule.objectPath()))
@@ -119,22 +111,13 @@ class AlertRuleSoftFailTest {
 
         assertThatCode(() -> service.evaluateRule(rule)).doesNotThrowAnyException();
         verify(automationMetricsRecorder, never()).recordAlertEvaluation();
-        verify(automationTreeService).setAlertRuleEnabled(rule.id(), false);
+        verify(automationMetricsRecorder).recordAlertRuleFailure(AutomationMetricsRecorder.AlertRuleFailure.ERROR);
+        verify(automationTreeService, never()).setAlertRuleEnabled(anyString(), anyBoolean());
     }
 
     @Test
-    void missingWatchTargetWarnAndDisableOncePerRuleId() {
-        AlertRuleService service = new AlertRuleService(
-                automationTreeService,
-                objectManager,
-                expressionEngine,
-                formalVerificationService,
-                eventService,
-                automationMetricsRecorder,
-                notificationDispatchService,
-                alarmShelfService,
-                anomalyAlertRuleEvaluator
-        );
+    void missingWatchTargetIsEvaluatedAgainOnTheNextTick() {
+        AlertRuleService service = newService();
         AlertRule rule = sampleRule("root.automation.alert-rules.orphan-twice", "root.missing.target");
         when(automationTreeService.getAlertRule(rule.id())).thenReturn(rule);
         when(objectManager.require(rule.objectPath()))
@@ -143,8 +126,24 @@ class AlertRuleSoftFailTest {
         assertThatCode(() -> service.evaluateRule(rule)).doesNotThrowAnyException();
         assertThatCode(() -> service.evaluateRule(rule)).doesNotThrowAnyException();
 
-        verify(automationTreeService, times(1)).setAlertRuleEnabled(rule.id(), false);
-        verify(automationTreeService, times(1)).getAlertRule(rule.id());
+        verify(automationTreeService, never()).setAlertRuleEnabled(anyString(), anyBoolean());
+        verify(automationTreeService, times(2)).getAlertRule(rule.id());
+        verify(automationMetricsRecorder, times(2))
+                .recordAlertRuleFailure(AutomationMetricsRecorder.AlertRuleFailure.ERROR);
+    }
+
+    private AlertRuleService newService() {
+        return new AlertRuleService(
+                automationTreeService,
+                objectManager,
+                expressionEngine,
+                formalVerificationService,
+                eventService,
+                automationMetricsRecorder,
+                notificationDispatchService,
+                alarmShelfService,
+                anomalyAlertRuleEvaluator
+        );
     }
 
     private static AlertRule sampleRule(String id, String objectPath) {
