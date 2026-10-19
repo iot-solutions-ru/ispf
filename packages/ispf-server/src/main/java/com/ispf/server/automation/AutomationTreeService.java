@@ -22,6 +22,7 @@ import com.ispf.server.persistence.EventCorrelatorRepository;
 import com.ispf.server.persistence.entity.AlertRuleEntity;
 import com.ispf.server.persistence.entity.EventCorrelatorEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -523,6 +524,11 @@ public class AutomationTreeService {
     @Transactional
     public void setCorrelatorLastTriggeredAt(String path, Instant triggeredAt) {
         correlators.setCorrelatorLastTriggeredAt(path, triggeredAt);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void setCorrelatorLastActionError(String path, String message) {
+        correlators.setCorrelatorLastActionError(path, message);
     }
 
     @Transactional

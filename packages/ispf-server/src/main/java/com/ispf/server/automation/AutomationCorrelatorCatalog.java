@@ -133,6 +133,11 @@ final class AutomationCorrelatorCatalog {
         tree.objectManager.persistNodeTree(path);
     }
 
+    void setCorrelatorLastActionError(String path, String message) {
+        tree.setRuntimeString(path, "lastActionError", message == null ? "" : message);
+        tree.objectManager.persistNodeTree(path);
+    }
+
     void deleteCorrelator(String path) {
         EventCorrelator correlator = getCorrelator(path);
         tree.correlatorWindowStore.clearCorrelator(path);
@@ -246,6 +251,9 @@ final class AutomationCorrelatorCatalog {
         String actionRaw = AutomationTreeService.readString(node, "actionType").orElse("RUN_WORKFLOW");
         String lastTriggeredRaw = AutomationTreeService.readString(node, "lastTriggeredAt").orElse("");
         Instant lastTriggered = lastTriggeredRaw.isBlank() ? null : Instant.parse(lastTriggeredRaw);
+        String lastActionError = AutomationTreeService.blankToNull(
+                AutomationTreeService.readString(node, "lastActionError").orElse(null)
+        );
         return new EventCorrelator(
                 node.path(),
                 node.displayName(),
@@ -262,6 +270,7 @@ final class AutomationCorrelatorCatalog {
                 AutomationTreeService.blankToNull(AutomationTreeService.readString(node, "payloadFilterExpr").orElse(null)),
                 AutomationTreeService.readBoolean(node, "enabled").orElse(true),
                 lastTriggered,
+                lastActionError,
                 createdAt,
                 createdAt
         );

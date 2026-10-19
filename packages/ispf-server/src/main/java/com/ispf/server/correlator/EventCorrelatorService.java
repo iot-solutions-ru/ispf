@@ -543,9 +543,18 @@ public class EventCorrelatorService {
                         )
                 );
             }
+            automationTreeService.setCorrelatorLastActionError(correlator.id(), null);
         } catch (Exception e) {
             automationMetricsRecorder.recordCorrelatorError();
-            log.warn("Correlator {} action failed: {}", correlator.id(), e.getMessage());
+            String message = e.getMessage() == null || e.getMessage().isBlank()
+                    ? e.getClass().getSimpleName()
+                    : e.getMessage();
+            try {
+                automationTreeService.setCorrelatorLastActionError(correlator.id(), message);
+            } catch (RuntimeException storeEx) {
+                log.error("Could not store correlator {} action error: {}", correlator.id(), storeEx.getMessage());
+            }
+            log.error("Correlator {} action failed: {}", correlator.id(), message, e);
         }
     }
 
