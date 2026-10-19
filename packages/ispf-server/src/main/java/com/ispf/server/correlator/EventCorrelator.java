@@ -18,6 +18,7 @@ public record EventCorrelator(
         String payloadFilterExpr,
         boolean enabled,
         Instant lastTriggeredAt,
+        String lastActionError,
         Instant createdAt,
         Instant updatedAt
 ) {
