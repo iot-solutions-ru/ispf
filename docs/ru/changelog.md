@@ -11,6 +11,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Добавлено
 
+- Импорт одного узла в папку каталога: в списке папки кнопка «Импорт из JSON». Файл — экспорт поддерева ровно с одним узлом; путь в файле не используется, имя задаётся при импорте, объект создаётся в открытой папке. Импорт в каталог mixin, типов экземпляров или singleton регистрирует blueprint и копирует определение, если исходный тип есть на этом сервере. `POST /api/v1/platform/backup/import-node`. Восстановление поддерева на тех же путях без изменений.
 - Effective configuration (ADR-0033 волна 1B): `GET /api/v1/platform/effective-config` (роль чтения) — resolved replica profile и снимок `resolvedPools`. В docs demostand предпочтительны именованные профили; потировые env-ручки — устаревший escape hatch.
 - CSP и scoped-токен hosted ui-pack (ADR-0073, волна 2A): заголовки CSP/COOP/CORP на `/apps/<appId>/`; claim `uiPackAppId` пускает только BFF и запрещает admin API; логин partner-пака — 403 по Referer / `X-ISPF-Ui-Pack-App` / cookie `ISPF_UI_PACK_CTX`. Остаток: редкий путь без cookie и без сигналов; Cosign / отдельный origin не заявлены.
 - ADR 0068–0076 (excellence gaps): backup/DR, consistency кластера, N→N+1, UNS, edge fleet, ui-pack trust, historian quality, OTel/SLO, external secrets — honesty-контракты; код-остатки явные.
