@@ -8,10 +8,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tools.jackson.databind.ObjectMapper;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ExtendWith(MockitoExtension.class)
 class PlatformRolesJsonDeserializeTest {
@@ -28,7 +28,7 @@ class PlatformRolesJsonDeserializeTest {
     TenantScopeService tenantScopeService;
 
     @Test
-    void corruptRolesJsonReturnsEmptyList() throws Exception {
+    void corruptRolesJsonIsAnAccountError() throws Exception {
         PlatformRoleService roleService = new PlatformRoleService(
                 roleStore,
                 userStore,
@@ -40,9 +40,10 @@ class PlatformRolesJsonDeserializeTest {
         Method deserializeRoles = PlatformRoleService.class.getDeclaredMethod("deserializeRoles", String.class);
         deserializeRoles.setAccessible(true);
 
-        @SuppressWarnings("unchecked")
-        List<String> roles = (List<String>) deserializeRoles.invoke(roleService, "{not-valid-json");
-
-        assertThat(roles).isEmpty();
+        assertThatThrownBy(() -> deserializeRoles.invoke(roleService, "{not-valid-json"))
+                .isInstanceOf(InvocationTargetException.class)
+                .cause()
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Corrupt roles JSON");
     }
 }
