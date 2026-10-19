@@ -1,6 +1,6 @@
-# ISPF — Open-source industrial IoT / SCADA
+# ISPF — IoT, SCADA, MES, and the shop-floor side of ERP
 
-**Self-hosted industrial IoT / SCADA application platform** — devices, HMI, alarms, historian, digital twins, and workflows on **one object tree, one API, one UI**.
+**One self-hosted system for a plant.** Devices on the network, operator screens, alarms, history, production accounting, and the workflows between them. Same object tree, same API, same console — on your server or in your cloud.
 
 Website: [ispf.ai](https://ispf.ai) · Demo: [demo.iot-solutions.ru](https://demo.iot-solutions.ru/) · Repo: [github.com/iot-solutions-ru/ispf](https://github.com/iot-solutions-ru/ispf)
 
@@ -10,7 +10,7 @@ Website: [ispf.ai](https://ispf.ai) · Demo: [demo.iot-solutions.ru](https://dem
 [![Changelog](https://img.shields.io/badge/changelog-Keep%20a%20Changelog-orange)](CHANGELOG.md)
 [![Stack](https://img.shields.io/badge/stack-Spring%20Boot%204%20%2B%20React%2019-informational)](docs/en/architecture.md)
 
-Most SCADA stacks glue together OPC, historian, HMI, alarms, and workflow as separate products. **ISPF** puts them on a hierarchical **object tree**: a device, dashboard, alert rule, correlator, and BPMN workflow are all nodes with the same API. Orchestration and twin logic live on **SINGLETON** / **INSTANCE** hubs — never on `DEVICE` (drivers and telemetry only).
+On a typical site those jobs are five products and a year of integration. Here a device, a dashboard, an alert rule, a correlator, and a BPMN workflow are nodes of one tree, and you talk to all of them the same way. Orchestration and twin logic sit on **SINGLETON** or **INSTANCE** hubs. A `DEVICE` node is the driver and the telemetry, nothing else.
 
 <!-- Hero: when ready, drop docs/assets/ispf-hero.gif and change src below (script: docs/assets/README.md). -->
 
@@ -71,30 +71,40 @@ Industry apps ship as React SPAs at `/apps/<appId>/` — not pages inside the ad
   <img src="docs/assets/ispf-readme-lims-ui.png" alt="LIMS — laboratory dashboard" width="450" />
 </p>
 
-## Why try it
+## What actually runs
 
-| You want… | ISPF gives you… |
-| ----------- | ---------------- |
-| One model instead of tag soup + side systems | Object tree + CEL bindings |
-| Real HMI, not only a device gateway | Admin Explorer + operator mode + SCADA mimics |
-| Alarms that do something | CEL alert rules → correlators → BPMN |
-| Industry solutions without forking the core | Declarative **bundles** + hosted **ui-packs** |
-| Ship from the live tree / team git | `ispf pack` or APPLICATION **Git** (Pull release / Push → PR) |
-| Modern self-hosted stack | Spring Boot 4, Java 25, React 19, PostgreSQL/TimescaleDB |
+**Field and IoT.** 162 driver packs: Modbus, OPC UA, S7, MQTT, SNMP, BACnet, IEC-104, DNP3, JDBC, and a long tail of lab codecs. 114 are marked PRODUCTION. In this repo that word means a codec plus a loopback test, not a signed plant pilot. The protocols we stand up in the interop lab are the usual industrial set. Maturity, protocol by protocol: [drivers](docs/en/drivers.md).
 
-Honest positioning: closer to an **open Ignition-class application platform** than to a pure MQTT broker or Node-RED flow tool. See the [competitive scorecard](docs/en/competitive-scorecard.md).
+**SCADA.** Mimic editor in the browser, 218 P&ID symbols (valves, pumps, tanks, pipes, electrical), a symbol bound to a variable, and a command back to the device from the same screen. Dashboards for trends, tables, maps, and spreadsheets. Operator mode is the same screens without the admin tree. Symbol library: [scada](docs/en/scada.md).
 
-## Features at a glance
+**Alarms and shift processes.** A CEL condition on a variable fires an event. A correlator can start a BPMN workflow from that event. The workflow waits on an operator in the work queue, calls a function, or branches. A trip, a work order, and an escalation are the same mechanism. [automation](docs/en/automation.md) · [workflows](docs/en/workflows.md).
 
-- **Object tree** — typed variables, events, functions; REST + WebSocket
-- **162 driver packs** — Modbus, OPC UA, MQTT, SNMP, JDBC, and more; top-20 industrial protocols run in the interop lab, the long tail is lab-codec grade (see maturity notes in [drivers](docs/en/drivers.md))
-- **HMI** — dashboard builder, charts with variable history, SCADA mimics
-- **Automation** — alert rules, correlators, BPMN workflows as tree nodes
-- **Applications** — bundle deploy, reports, BFF functions, scheduler; **Application Git** (Connect / Pull / Push → PR — [ADR-0063](docs/en/decisions/0063-application-git-lifecycle.md))
-- **Digital twins & MES-style apps** — INSTANCE hubs + ui-packs at `/apps/<appId>/` (gallery above)
-- **Storage** — H2 for local; PostgreSQL + TimescaleDB for prod; Redis/NATS optional
-- **AI-assisted solution tooling** — agent / generator paths in docs ([ai-development](docs/en/ai-development.md))
-- **Learn path** — first hour → first solution: [docs/en/learn.md](docs/en/learn.md) · [docs/ru/learn.md](docs/ru/learn.md)
+**History.** The screen reads the last value. Trends and shift reports read the historian. Local profile is a file H2 database. In production the hot tier is PostgreSQL/Timescale (about a week of operator trends), the warm tier is ClickHouse, and cold export is Parquet. Cassandra stays experimental. [historian tiers](docs/en/historian-tiers.md).
+
+**MES.** Lines, shifts, OEE, batches, SPC, and dispatch are configuration on the tree. The catalog bundle `mes-platform` carries dispatch, OEE, batch, and quality; `mes-oee-reference` is the separate OEE reference. The model follows ISA-95. The operator opens them as dashboards of one app (`?mode=operator&app=mes-platform`). [MES](docs/en/mes.md) · [platform reference](docs/en/reference-mes-platform.md).
+
+**The shop floor’s side of ERP.** Orders, batches, yield, and what the shop has to tell the office. Catalog bundles cover ISA-95 contours for a core plant, pharma, printing, APS, and CMMS. Where a demo exchanges data with an accounting system, the bundle says the exchange is simulated. A live 1C or SAP connector is not shipped.
+
+**Twins and ready sites.** An INSTANCE hub is a twin with its own logic: a farm, a warehouse, a store, a tank farm, a CHP. The operator UI for those is a React app at `/apps/<appId>/`, built outside this repo and installed as a ui-pack. The pictures above are that gallery. Live catalog: [marketplace.ispf.ai](https://marketplace.ispf.ai).
+
+**People, tenants, other sites.** TOTP, rights down to a variable, separate tenants, an audit log. Federation when a second site has to see the first. Helm, and an ARM image when the box is in the field rather than in the server room. [security](docs/en/security.md) · [deployment](docs/en/deployment.md).
+
+**Assistant.** You write the task in the console. The agent lays out devices, screens, and rules, shows each step, and waits for an OK before it writes. 67 regression scenarios cover that path. [ai-development](docs/en/ai-development.md).
+
+**How a solution leaves the laptop.** `ispf pack` or a bundle deploy. Or Application Git: pull a release, push a branch, open a PR ([ADR-0063](docs/en/decisions/0063-application-git-lifecycle.md)). Logic stays in hub functions and binding rules. Widgets only display variables.
+
+A code-verified read against Ignition, PI, Opcenter, and the rest is the [competitive scorecard](docs/en/competitive-scorecard.md) (about 8.0 / 10 as of the September 2026 audit). First hour on the product: [learn](docs/en/learn.md) · [по-русски](docs/ru/learn.md).
+
+## Why people install it
+
+| Job | Where it lives |
+| --- | --- |
+| One address space for tags, screens, and processes | Object tree, CEL bindings |
+| Operator screens, not only a protocol gateway | Explorer, operator mode, SCADA mimics |
+| An alarm that starts real work | Alert rule → correlator → BPMN |
+| A plant solution without a fork of the server | Bundle + ui-pack |
+| The tree in git | `ispf pack`, or Application Git |
+| A stack you can patch yourself | Java 25, Spring Boot 4, React 19, PostgreSQL |
 
 ## Quick start
 
