@@ -1,6 +1,5 @@
 package com.ispf.server.security;
 
-import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
@@ -388,12 +387,6 @@ public class PlatformUserObjectTreeService {
     }
 
     private List<String> deserializeRoles(String json) {
-        try {
-            return objectMapper.readValue(json, new TypeReference<>() {
-            });
-        } catch (Exception ex) {
-            log.warn("Corrupt roles JSON for object-tree user roles: {}", json, ex);
-            return List.of();
-        }
+        return StoredRolesJson.read(objectMapper, json);
     }
 }
