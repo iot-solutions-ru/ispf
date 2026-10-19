@@ -329,15 +329,14 @@ export const PLATFORM_CREATE_TYPES: readonly ObjectType[] = [
   "DRIVER",
 ];
 
-/** Target types for INSTANCE and MIXIN blueprints. SINGLETON does not take one. */
+/**
+ * Target types for INSTANCE and MIXIN blueprints. SINGLETON does not take one.
+ * Shipped blueprints target a logic object or a device; catalog objects such as
+ * dashboards and workflows are not blueprint targets.
+ */
 export const BLUEPRINT_TARGET_OBJECT_TYPES: readonly ObjectType[] = [
-  "DEVICE",
   "CUSTOM",
-  "DASHBOARD",
-  "WORKFLOW",
-  "MIMIC",
-  "ALERT",
-  "REPORT",
+  "DEVICE",
 ];
 
 export type BlueprintCatalogKind = "MIXIN" | "INSTANCE" | "SINGLETON";

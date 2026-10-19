@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  BLUEPRINT_TARGET_OBJECT_TYPES,
   blueprintKindForCatalog,
   canCreateChildAt,
   defaultObjectTypeForParent,
@@ -46,6 +47,7 @@ describe("resolveCreateDialogMode", () => {
     expect(blueprintKindForCatalog("root.platform.mixin-blueprints")).toBe("MIXIN");
     expect(blueprintKindForCatalog("root.platform.singleton-blueprints")).toBe("SINGLETON");
     expect(blueprintKindForCatalog("root.platform.devices")).toBeNull();
+    expect(BLUEPRINT_TARGET_OBJECT_TYPES).toEqual(["CUSTOM", "DEVICE"]);
   });
 });
 
