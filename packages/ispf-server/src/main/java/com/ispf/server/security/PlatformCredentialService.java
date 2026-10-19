@@ -50,11 +50,7 @@ public class PlatformCredentialService implements CredentialLookup {
         });
         existing.setKind(kind == null || kind.isBlank() ? "generic" : kind);
         existing.setCipherText(cipher.encrypt(secretPlaintext));
-        try {
-            existing.setMetadataJson(objectMapper.writeValueAsString(metadata == null ? Map.of() : metadata));
-        } catch (Exception e) {
-            existing.setMetadataJson("{}");
-        }
+        existing.setMetadataJson(objectMapper.writeValueAsString(metadata == null ? Map.of() : metadata));
         existing.setUpdatedAt(Instant.now());
         repository.save(existing);
         Map<String, Object> result = new LinkedHashMap<>();
