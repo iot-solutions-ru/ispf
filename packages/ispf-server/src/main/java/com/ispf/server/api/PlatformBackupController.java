@@ -40,4 +40,14 @@ public class PlatformBackupController {
     ) {
         return platformBackupService.importSubtree(json, dryRun);
     }
+
+    @PostMapping("/import-node")
+    public Map<String, String> importNode(
+            Authentication authentication,
+            @RequestParam String parentPath,
+            @RequestParam String name,
+            @RequestBody String json
+    ) {
+        return Map.of("path", platformBackupService.importNodeAsChild(parentPath, name, json));
+    }
 }

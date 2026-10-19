@@ -12,8 +12,10 @@ import {
 } from "../../utils/platform/systemFolderConfig";
 import { isSpecializedEditorObject } from "../../utils/object/editorObject";
 import { isOperatorAppChildPath } from "../../utils/operator/operatorAppsPath";
-import { APPLICATIONS_ROOT } from "../../utils/object/createObjectMode";
+import { APPLICATIONS_ROOT, canCreateChildAt } from "../../utils/object/createObjectMode";
+import { isPlatformCatalogContainer } from "../../utils/platform/platformCatalogPath";
 import EmptyState from "../ui/EmptyState";
+import ImportCatalogNodeButton from "./ImportCatalogNodeButton";
 
 interface SystemFolderListPanelProps {
   folderPath: string;
@@ -119,6 +121,9 @@ export default function SystemFolderListPanel({
   const createAction = isApplicationsFolder
     ? onCreateApplication
     : onCreate;
+  const showImport = canManage
+    && canCreateChildAt(folderPath, folderType)
+    && isPlatformCatalogContainer(folderPath);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -271,12 +276,19 @@ export default function SystemFolderListPanel({
             {truncateText(meta.description, 160)}
           </Typography.Paragraph>
         </div>
-        {canManage && createAction && (
-          <Button type="primary" onClick={createAction}>
-            {isApplicationsFolder
-              ? t("contextMenu.create.application")
-              : t("folderList.create")}
-          </Button>
+        {canManage && (createAction || showImport) && (
+          <Space>
+            {showImport && (
+              <ImportCatalogNodeButton parentPath={folderPath} onCreated={onSelectPath} />
+            )}
+            {createAction && (
+              <Button type="primary" onClick={createAction}>
+                {isApplicationsFolder
+                  ? t("contextMenu.create.application")
+                  : t("folderList.create")}
+              </Button>
+            )}
+          </Space>
         )}
       </header>
 

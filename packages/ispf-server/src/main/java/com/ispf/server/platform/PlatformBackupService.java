@@ -2,13 +2,26 @@ package com.ispf.server.platform;
 
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.core.binding.BindingRulesConstants;
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
+import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.plugin.blueprint.BlueprintCatalogRoots;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintException;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
+import com.ispf.plugin.blueprint.SystemIntrinsicBlueprints;
 import com.ispf.server.federation.FederationProxyMetadata;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectEntityMapper;
+import com.ispf.server.plugin.blueprint.BlueprintPersistenceService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,25 +34,37 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 public class PlatformBackupService {
 
     public static final String ROOT_PATH = "root.platform";
     private static final int FORMAT_VERSION = 1;
+    private static final Pattern PATH_SEGMENT = Pattern.compile("[A-Za-z0-9_-]+");
 
     private final ObjectManager objectManager;
     private final ObjectEntityMapper entityMapper;
     private final ObjectMapper objectMapper;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintRegistry blueprintRegistry;
+    private final BlueprintPersistenceService blueprintPersistence;
 
     public PlatformBackupService(
             ObjectManager objectManager,
             ObjectEntityMapper entityMapper,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            BlueprintEngine blueprintEngine,
+            BlueprintRegistry blueprintRegistry,
+            BlueprintPersistenceService blueprintPersistence
     ) {
         this.objectManager = objectManager;
         this.entityMapper = entityMapper;
         this.objectMapper = objectMapper;
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintRegistry = blueprintRegistry;
+        this.blueprintPersistence = blueprintPersistence;
     }
 
     @Transactional(readOnly = true)
@@ -131,6 +156,181 @@ public class PlatformBackupService {
         return new ImportResult(preview, created, updated, skipped, false);
     }
 
+    /**
+     * Creates one object under {@code parentPath} from a subtree export that contains a single node.
+     * The path stored in the file is ignored; {@code name} is the new path segment.
+     */
+    @Transactional
+    public String importNodeAsChild(String parentPath, String name, String json) {
+        String parent = normalizeExportRoot(parentPath);
+        String segment = name == null ? "" : name.trim();
+        if (!PATH_SEGMENT.matcher(segment).matches()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid object name: " + name);
+        }
+        if (objectManager.tree().findByPath(parent).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing parent: " + parent);
+        }
+        String childPath = parent + "." + segment;
+        if (objectManager.tree().findByPath(childPath).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Object already exists: " + childPath);
+        }
+        BackupDocument document = parseDocument(json);
+        if (document.nodes().size() != 1) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "JSON must contain exactly one exported node"
+            );
+        }
+        BackupNode node = document.nodes().get(0);
+        if (ROOT_PATH.equals(node.path())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot import the platform root as an object");
+        }
+        BlueprintType catalogKind = blueprintKind(parent);
+        if (catalogKind != null) {
+            return importBlueprint(segment, node, catalogKind);
+        }
+        objectManager.create(
+                parent,
+                segment,
+                node.type(),
+                node.displayName(),
+                node.description(),
+                node.templateId()
+        );
+        applyNodeConfig(childPath, node);
+        return childPath;
+    }
+
+    /**
+     * Mixin, instance-type and singleton catalogs open in the blueprint editor.
+     * A raw tree node has no row in {@code blueprint_definitions}, so the editor returns 404.
+     */
+    private String importBlueprint(String name, BackupNode node, BlueprintType kind) {
+        if (blueprintRegistry.findByName(name).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Blueprint already exists: " + name);
+        }
+        BlueprintDefinition model = blueprintFromExport(name, node, kind);
+        BlueprintDefinition created;
+        try {
+            created = blueprintEngine.createBlueprint(model);
+        } catch (BlueprintException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage(), ex);
+        }
+        blueprintPersistence.persist(created, false);
+        objectManager.persistNodeTree(created.catalogObjectPath());
+        return created.catalogObjectPath();
+    }
+
+    private BlueprintDefinition blueprintFromExport(String name, BackupNode node, BlueprintType kind) {
+        Optional<BlueprintDefinition> source = blueprintRegistry.all().stream()
+                .filter(model -> node.path().equals(model.catalogObjectPath()))
+                .findFirst();
+        Instant now = Instant.now();
+        if (source.isPresent()) {
+            BlueprintDefinition existing = source.get();
+            Map<String, String> parameters = new LinkedHashMap<>(existing.parameters());
+            parameters.remove("singletonInstancePath");
+            parameters.remove(SystemIntrinsicBlueprints.PARAM_SYSTEM_INTRINSIC);
+            ObjectType target = existing.targetObjectType() != null
+                    ? existing.targetObjectType()
+                    : ObjectType.CUSTOM;
+            return new BlueprintDefinition(
+                    UUID.randomUUID().toString(),
+                    name,
+                    node.description() != null && !node.description().isBlank()
+                            ? node.description()
+                            : existing.description(),
+                    kind,
+                    target,
+                    existing.suitabilityExpression(),
+                    existing.variables(),
+                    existing.events(),
+                    existing.functions(),
+                    existing.bindingRules(),
+                    existing.sqlBindings(),
+                    existing.alertRules(),
+                    parameters,
+                    now,
+                    now
+            );
+        }
+        ObjectType target = node.type() == ObjectType.BLUEPRINT || node.type() == null
+                ? ObjectType.CUSTOM
+                : node.type();
+        return new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                name,
+                node.description(),
+                kind,
+                target,
+                suitabilityFrom(node),
+                variablesFrom(node),
+                node.events(),
+                node.functions(),
+                List.of(),
+                Map.of(),
+                now,
+                now
+        );
+    }
+
+    private List<BlueprintVariableDefinition> variablesFrom(BackupNode node) {
+        List<BlueprintVariableDefinition> variables = new ArrayList<>();
+        for (VariableSnapshot variable : node.variables()) {
+            if (variable.name() == null
+                    || variable.name().isBlank()
+                    || "blueprintType".equals(variable.name())
+                    || "suitabilityExpression".equals(variable.name())
+                    || BindingRulesConstants.isReservedVariable(variable.name())
+                    || FederationProxyMetadata.isFederationVariable(variable.name())
+                    || variable.schemaJson() == null
+                    || variable.schemaJson().isBlank()
+                    || "null".equals(variable.schemaJson())) {
+                continue;
+            }
+            DataSchema schema = entityMapper.readSchema(variable.schemaJson());
+            DataRecord value = variable.valueJson() != null && !variable.valueJson().isBlank()
+                    && !"null".equals(variable.valueJson())
+                    ? entityMapper.readDataRecord(variable.valueJson())
+                    : null;
+            variables.add(BlueprintVariableDefinition.of(
+                    variable.name(),
+                    "",
+                    "default",
+                    schema,
+                    true,
+                    true,
+                    value
+            ));
+        }
+        return variables;
+    }
+
+    private String suitabilityFrom(BackupNode node) {
+        for (VariableSnapshot variable : node.variables()) {
+            if (!"suitabilityExpression".equals(variable.name()) || variable.valueJson() == null) {
+                continue;
+            }
+            DataRecord record = entityMapper.readDataRecord(variable.valueJson());
+            Object value = record.get("value", 0);
+            return value == null ? "" : String.valueOf(value);
+        }
+        return "";
+    }
+
+    private static BlueprintType blueprintKind(String parentPath) {
+        if (BlueprintCatalogRoots.MIXIN.equals(parentPath)) {
+            return BlueprintType.MIXIN;
+        }
+        if (BlueprintCatalogRoots.INSTANCE.equals(parentPath)) {
+            return BlueprintType.INSTANCE;
+        }
+        if (BlueprintCatalogRoots.SINGLETON.equals(parentPath)) {
+            return BlueprintType.SINGLETON;
+        }
+        return null;
+    }
+
     private void createNode(BackupNode node) {
         int lastDot = node.path().lastIndexOf('.');
         if (lastDot <= 0) {
@@ -152,7 +352,7 @@ public class PlatformBackupService {
                 node.description(),
                 node.templateId()
         );
-        applyNodeConfig(node);
+        applyNodeConfig(node.path(), node);
     }
 
     private void updateNode(BackupNode node) {
@@ -161,11 +361,11 @@ public class PlatformBackupService {
             objectManager.updateInfo(node.path(), node.displayName(), node.description());
         }
         objectManager.reconcileType(node.path(), node.type());
-        applyNodeConfig(node);
+        applyNodeConfig(node.path(), node);
     }
 
-    private void applyNodeConfig(BackupNode node) {
-        PlatformObject platformObject = objectManager.require(node.path());
+    private void applyNodeConfig(String path, BackupNode node) {
+        PlatformObject platformObject = objectManager.require(path);
         for (EventDescriptor event : node.events()) {
             platformObject.addEvent(event);
         }
@@ -177,13 +377,13 @@ public class PlatformBackupService {
                 continue;
             }
             objectManager.upsertSystemVariable(
-                    node.path(),
+                    path,
                     variable.name(),
                     entityMapper.readSchema(variable.schemaJson()),
                     entityMapper.readDataRecord(variable.valueJson())
             );
         }
-        objectManager.persistNodeTree(node.path());
+        objectManager.persistNodeTree(path);
     }
 
     private Map<String, Object> serializeNode(PlatformObject node) {

@@ -58,3 +58,23 @@ export async function importPlatformBackup(
   }
   return response.json();
 }
+
+export async function importCatalogNode(parentPath: string, name: string, json: string): Promise<string> {
+  const params = new URLSearchParams({ parentPath, name });
+  const response = await fetch(`/api/v1/platform/backup/import-node?${params.toString()}`, {
+    method: "POST",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: json,
+  });
+  if (!response.ok) {
+    throw new Error(parseApiError(await response.text(), `Import failed: ${response.status}`));
+  }
+  const body = (await response.json()) as { path?: string };
+  if (!body.path) {
+    throw new Error("Import failed: missing path");
+  }
+  return body.path;
+}
