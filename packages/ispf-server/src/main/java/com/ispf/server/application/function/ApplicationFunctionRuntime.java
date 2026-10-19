@@ -123,13 +123,29 @@ public class ApplicationFunctionRuntime {
             var node = objectManager.require(objectPath);
             DataSchema inputSchema = readSchema(deployed.inputSchemaJson());
             DataSchema outputSchema = readSchema(deployed.outputSchemaJson());
-            FunctionDescriptor desired = new FunctionDescriptor(
-                    functionName,
-                    "Application function " + functionName,
-                    inputSchema,
-                    outputSchema
-            );
             FunctionDescriptor existing = node.functions().get(functionName);
+            // Preserve ACL and script metadata from the tree. Replacing with the 4-arg
+            // constructor wiped invokeRoles (and source*) whenever store/tree schemas diverged.
+            FunctionDescriptor desired = existing == null
+                    ? new FunctionDescriptor(
+                            functionName,
+                            "Application function " + functionName,
+                            inputSchema,
+                            outputSchema
+                    )
+                    : new FunctionDescriptor(
+                            functionName,
+                            existing.description() != null && !existing.description().isBlank()
+                                    ? existing.description()
+                                    : "Application function " + functionName,
+                            inputSchema,
+                            outputSchema,
+                            existing.sourceType(),
+                            existing.sourceBody(),
+                            existing.dataSourcePath(),
+                            existing.version(),
+                            existing.invokeRoles()
+                    );
             if (existing == null || !schemasEqual(existing.inputSchema(), inputSchema)
                     || !schemasEqual(existing.outputSchema(), outputSchema)) {
                 node.addFunction(desired);

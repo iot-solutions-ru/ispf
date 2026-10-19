@@ -196,8 +196,27 @@ class MesPlatformApiTest {
                 .andExpect(jsonPath("$.status").value("STOPPED"));
 
         mockMvc.perform(post("/api/v1/drivers/runtime/start").param("devicePath", DEMO_DEVICE))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("RUNNING"));
+                .andExpect(status().isOk());
+
+        // Start can return before the runtime thread publishes RUNNING under CI load.
+        awaitDriverStatus(DEMO_DEVICE, "RUNNING", 5_000);
+    }
+
+    private void awaitDriverStatus(String devicePath, String expectedStatus, long timeoutMs) throws Exception {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            String body = mockMvc.perform(get("/api/v1/drivers/runtime/status").param("devicePath", devicePath))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+            if (body.contains("\"status\":\"" + expectedStatus + "\"")
+                    || body.contains("\"status\": \"" + expectedStatus + "\"")) {
+                return;
+            }
+            Thread.sleep(100);
+        }
+        throw new AssertionError("driver " + devicePath + " status was not " + expectedStatus + " within " + timeoutMs + "ms");
     }
 
     @Test
