@@ -259,11 +259,14 @@ public class EventCorrelatorService {
         if (!passesPayloadFilter(correlator, objectPath, eventName)) {
             return null;
         }
+        // Hits share the action path: an alert event lives on the ALERT node, while
+        // targetObjectPath is the watched device the correlator is bound to.
+        String hitPath = actionPath.get();
         boolean triggered = switch (correlator.patternType()) {
-            case COUNT -> processCountPattern(correlator, objectPath, eventName, eventTime);
-            case SEQUENCE -> processSequencePattern(correlator, objectPath, eventName, eventTime);
-            case EVENT_CHAIN -> processEventChainPattern(correlator, objectPath, eventName, eventTime);
-            case WINDOW -> processWindowPattern(correlator, objectPath, eventName, eventTime);
+            case COUNT -> processCountPattern(correlator, hitPath, eventName, eventTime);
+            case SEQUENCE -> processSequencePattern(correlator, hitPath, eventName, eventTime);
+            case EVENT_CHAIN -> processEventChainPattern(correlator, hitPath, eventName, eventTime);
+            case WINDOW -> processWindowPattern(correlator, hitPath, eventName, eventTime);
         };
         if (!triggered) {
             return null;
