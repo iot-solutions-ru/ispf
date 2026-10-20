@@ -48,6 +48,7 @@ import { canDeleteObjectPath } from "../../utils/platform/platformSystemPaths";
 import { isBlueprintOwned } from "../../utils/platform/blueprintOwnership";
 import { filterUserVariableNames, isDeletableUserVariable, isHiddenObjectVariable } from "../../utils/platform/systemVariables";
 import { localizedSystemObjectDescription } from "../../utils/platform/systemFolderI18n";
+import CopyFunctionDialog from "./CopyFunctionDialog";
 import CreateVariableDialog from "./CreateVariableDialog";
 import EditDescriptorDialog from "./EditDescriptorDialog";
 import EditVariableDialog from "./EditVariableDialog";
@@ -321,6 +322,7 @@ export default function ObjectPropertiesEditor({
   const [descriptorDialog, setDescriptorDialog] = useState<
     { kind: "function" | "event"; initial?: FunctionDescriptor | EventDescriptor } | null
   >(null);
+  const [copyFunction, setCopyFunction] = useState<FunctionDescriptor | null>(null);
   const [fireEventTarget, setFireEventTarget] = useState<EventDescriptor | null>(null);
   const [invokeFunctionTarget, setInvokeFunctionTarget] = useState<FunctionDescriptor | null>(null);
   const [historyVariable, setHistoryVariable] = useState<string | null>(null);
@@ -1191,6 +1193,9 @@ export default function ObjectPropertiesEditor({
                         <Button size="small" onClick={() => setDescriptorDialog({ kind: "function", initial: fn })}>
                           {t("common:action.edit")}
                         </Button>
+                        <Button size="small" onClick={() => setCopyFunction(fn)}>
+                          {t("functions.copy")}
+                        </Button>
                         {!isBlueprintOwned(ownership, "functions", fn.name) && (
                           <Button
                             size="small"
@@ -1270,6 +1275,20 @@ export default function ObjectPropertiesEditor({
                 }
               : undefined
           }
+        />
+      )}
+
+      {copyFunction && (
+        <CopyFunctionDialog
+          objectPath={path}
+          source={copyFunction}
+          existingNames={editorData.functions.map((fn) => fn.name)}
+          onClose={() => setCopyFunction(null)}
+          onCopied={async () => {
+            await queryClient.invalidateQueries({ queryKey: ["object-editor", path] });
+            await reloadFromEditor();
+            setCopyFunction(null);
+          }}
         />
       )}
 
