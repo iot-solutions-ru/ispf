@@ -83,7 +83,9 @@ public class PlatformNatsHealthService {
                 consumerDurable,
                 consumerPending,
                 connected,
-                connectionError
+                connectionError,
+                eventBridge.publishFailureCount(),
+                eventBridge.lastPublishError()
         );
     }
 
@@ -102,7 +104,9 @@ public class PlatformNatsHealthService {
             String consumerDurable,
             Long consumerPending,
             boolean publishNatsAvailable,
-            String connectionError
+            String connectionError,
+            long publishFailureCount,
+            String lastPublishError
     ) {
     }
 }
