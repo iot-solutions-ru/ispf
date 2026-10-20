@@ -211,7 +211,7 @@ subprojects {
                 "org.apache.commons:commons-configuration2:2.15.1",
                 // Dependabot GHSA-j288-q9x7-2f5v (CVE-2025-48924): lang3 < 3.18.0. Runtime already
                 // resolves to 3.20.0 via configuration2/text; force keeps the graph explicit.
-                "org.apache.commons:commons-lang3:3.20.0",
+                "org.apache.commons:commons-lang3:3.21.0",
                 // Dependabot / Trivy GHSA stream: Jackson / Log4j / Tomcat. Boot 4.1.1 still
                 // manages jackson-2-bom 2.21.5 / jackson-bom (tools.jackson) 3.1.5 and Tomcat
                 // 11.0.24; Boot modules override those extras, and force+rules here keep non-Boot
@@ -224,9 +224,9 @@ subprojects {
                 "tools.jackson:jackson-bom:3.2.3",
                 "tools.jackson.core:jackson-core:3.2.3",
                 "tools.jackson.core:jackson-databind:3.2.3",
-                "org.apache.tomcat.embed:tomcat-embed-core:11.0.26",
-                "org.apache.tomcat.embed:tomcat-embed-el:11.0.26",
-                "org.apache.tomcat.embed:tomcat-embed-websocket:11.0.26",
+                "org.apache.tomcat.embed:tomcat-embed-core:11.0.27",
+                "org.apache.tomcat.embed:tomcat-embed-el:11.0.27",
+                "org.apache.tomcat.embed:tomcat-embed-websocket:11.0.27",
                 "org.apache.logging.log4j:log4j-api:2.26.1",
             )
             eachDependency {
@@ -251,7 +251,7 @@ subprojects {
                             useVersion("3.2.3")
                         }
                     }
-                    "org.apache.tomcat.embed" -> useVersion("11.0.26")
+                    "org.apache.tomcat.embed" -> useVersion("11.0.27")
                     "org.eclipse.jetty" -> {
                         val current = requested.version ?: return@eachDependency
                         when {

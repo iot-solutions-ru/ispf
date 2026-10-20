@@ -66,7 +66,7 @@ dependencies {
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("io.micrometer:micrometer-registry-otlp")
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
-    implementation("org.apache.cassandra:java-driver-core:4.19.3")
+    implementation("org.apache.cassandra:java-driver-core:4.19.4")
 
     implementation("org.apache.poi:poi-ooxml:5.5.1")
     implementation("org.apache.poi:poi:5.5.1")
@@ -87,8 +87,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.mockito:mockito-core")
     // Embedded Kafka for BL-142 KafkaDriverRuntimeIntegrationTest (matches ispf-driver-kafka).
-    testImplementation("org.apache.kafka:kafka-clients:4.3.1")
-    testImplementation("io.github.embeddedkafka:embedded-kafka_2.13:4.3.1")
+    testImplementation("org.apache.kafka:kafka-clients:4.4.0")
+    testImplementation("io.github.embeddedkafka:embedded-kafka_2.13:4.4.0")
     testRuntimeOnly("org.scala-lang:scala-library:3.10.0")
     // Moquette + Paho for BL-142 MqttDriverRuntimeIntegrationTest (matches ispf-driver-mqtt).
     // Pin (ADR-0059 registry): Moquette declares Netty 4.1.x; lift to the patched 4.2 line.
