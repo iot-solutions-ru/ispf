@@ -32,7 +32,10 @@ public class PlatformNatsHealthService {
         boolean connected = eventBridge.isEnabled();
         String connectionError = null;
         if (enabled && !connected) {
-            connectionError = "NATS enabled but connection is not available";
+            String failure = eventBridge.connectFailure();
+            connectionError = failure == null || failure.isBlank()
+                    ? "NATS enabled but connection is not available"
+                    : failure;
         }
 
         boolean jetStreamConfigured = enabled && properties.jetStreamEnabled();
