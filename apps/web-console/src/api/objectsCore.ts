@@ -521,6 +521,8 @@ export interface CreateVariablePayload {
   initialValue?: DataRecord | null;
   historyEnabled?: boolean;
   historyRetentionDays?: number | null;
+  readRoles?: string[];
+  writeRoles?: string[];
 }
 
 export function createVariable(path: string, payload: CreateVariablePayload): Promise<VariableDto> {
