@@ -50,6 +50,7 @@ import { filterUserVariableNames, isDeletableUserVariable, isHiddenObjectVariabl
 import { localizedSystemObjectDescription } from "../../utils/platform/systemFolderI18n";
 import CopyFunctionDialog from "./CopyFunctionDialog";
 import CreateVariableDialog from "./CreateVariableDialog";
+import CopyVariableDialog from "./CopyVariableDialog";
 import EditDescriptorDialog from "./EditDescriptorDialog";
 import EditVariableDialog from "./EditVariableDialog";
 import InvokeFunctionDialog from "../runtime/InvokeFunctionDialog";
@@ -144,6 +145,7 @@ function VariableEditorRow({
   onChange,
   onHistoryChange,
   onOpenSettings,
+  onCopy,
   onDelete,
   deleting = false,
 }: {
@@ -155,6 +157,7 @@ function VariableEditorRow({
   onChange: (next: DataRecord) => void;
   onHistoryChange: (next: VariableHistoryState) => void;
   onOpenSettings?: () => void;
+  onCopy?: () => void;
   onDelete?: () => void;
   deleting?: boolean;
   canManage?: boolean;
@@ -199,6 +202,11 @@ function VariableEditorRow({
           {onOpenSettings && (
             <Button size="small" onClick={onOpenSettings}>
               {t("variables.settings")}
+            </Button>
+          )}
+          {onCopy && (
+            <Button size="small" onClick={onCopy}>
+              {t("variables.copy")}
             </Button>
           )}
           {onDelete && (
@@ -318,6 +326,7 @@ export default function ObjectPropertiesEditor({
   const [state, setState] = useState<EditorState | null>(null);
   const [baseline, setBaseline] = useState<EditorState | null>(null);
   const [showCreateVariable, setShowCreateVariable] = useState(false);
+  const [copySource, setCopySource] = useState<VariableDto | null>(null);
   const [settingsVariable, setSettingsVariable] = useState<VariableDto | null>(null);
   const [descriptorDialog, setDescriptorDialog] = useState<
     { kind: "function" | "event"; initial?: FunctionDescriptor | EventDescriptor } | null
@@ -1017,6 +1026,11 @@ export default function ObjectPropertiesEditor({
                       ? () => setSettingsVariable(variable)
                       : undefined
                   }
+                  onCopy={
+                    canManage && !ctx.federated
+                      ? () => setCopySource(variable)
+                      : undefined
+                  }
                   onDelete={
                     canManage && !ctx.federated && canDeleteVariable(variable.name)
                       ? () => {
@@ -1237,6 +1251,20 @@ export default function ObjectPropertiesEditor({
 
       {tab === "history" && (
         <ObjectChangeHistoryPanel objectPath={path} compact scrollMaxHeight={420} />
+      )}
+
+      {copySource && (
+        <CopyVariableDialog
+          objectPath={path}
+          variable={copySource}
+          onClose={() => setCopySource(null)}
+          onSaved={async () => {
+            setCopySource(null);
+            await queryClient.invalidateQueries({ queryKey: ["object-editor", path] });
+            await queryClient.invalidateQueries({ queryKey: ["variables", path] });
+            await reloadFromEditor();
+          }}
+        />
       )}
 
       {showCreateVariable && (

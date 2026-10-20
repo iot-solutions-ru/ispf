@@ -66,7 +66,7 @@ dependencies {
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("io.micrometer:micrometer-registry-otlp")
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
-    implementation("org.apache.cassandra:java-driver-core:4.19.3")
+    implementation("org.apache.cassandra:java-driver-core:4.19.4")
 
     implementation("org.apache.poi:poi-ooxml:5.5.1")
     implementation("org.apache.poi:poi:5.5.1")
