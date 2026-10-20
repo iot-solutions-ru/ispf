@@ -34,9 +34,13 @@ COSIGN_PASSWORD="$COSIGN_PASSWORD" cosign generate-key-pair
 PAYLOAD="$WORK/lab-payload.bin"
 printf 'ispf-cosign-lab-smoke\n' >"$PAYLOAD"
 
-echo "==> sign-blob / verify-blob (offline TUF upload disabled)"
+echo "==> sign-blob / verify-blob (offline; classic keyful, no Rekor)"
+# Cosign 3+ defaults to signing-config and rejects --tlog-upload=false with it.
+# Lab smoke stays keyful/offline via classic flags (compatible with Cosign 2 and 3).
 SIG="$WORK/lab-payload.sig"
-cosign sign-blob --yes --key cosign.key --tlog-upload=false --output-signature "$SIG" "$PAYLOAD"
+cosign sign-blob --yes --key cosign.key \
+  --use-signing-config=false --tlog-upload=false --new-bundle-format=false \
+  --output-signature "$SIG" "$PAYLOAD"
 cosign verify-blob --key cosign.pub --signature "$SIG" --insecure-ignore-tlog=true "$PAYLOAD"
 echo "OK: blob sign+verify"
 
@@ -70,7 +74,9 @@ docker tag alpine:3.20 "$IMAGE"
 docker push "$IMAGE" >/dev/null
 
 echo "==> cosign sign / verify image (keyful, no Rekor)"
-cosign sign --yes --key cosign.key --tlog-upload=false "$IMAGE"
+cosign sign --yes --key cosign.key \
+  --use-signing-config=false --tlog-upload=false --new-bundle-format=false \
+  "$IMAGE"
 cosign verify --key cosign.pub --insecure-ignore-tlog=true "$IMAGE" >/dev/null
 echo "OK: image sign+verify"
 
