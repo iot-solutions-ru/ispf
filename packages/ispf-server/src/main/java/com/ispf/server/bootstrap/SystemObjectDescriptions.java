@@ -244,25 +244,31 @@ public final class SystemObjectDescriptions {
         if (!rest.contains(".")) {
             return Optional.of(APPLICATION_INSTANCE);
         }
-        if (rest.endsWith(".functions")) {
+        if (isDirectApplicationFolder(rest, "functions")) {
             return Optional.of(APPLICATION_FUNCTIONS);
         }
-        if (rest.endsWith(".reports")) {
+        if (isDirectApplicationFolder(rest, "reports")) {
             return Optional.of(APPLICATION_REPORTS);
         }
-        if (rest.endsWith(".schedules")) {
+        if (isDirectApplicationFolder(rest, "schedules")) {
             return Optional.of(APPLICATION_SCHEDULES);
         }
-        if (rest.endsWith(".bindings")) {
+        if (isDirectApplicationFolder(rest, "bindings")) {
             return Optional.of(APPLICATION_BINDINGS);
         }
-        if (rest.endsWith(".migrations")) {
+        if (isDirectApplicationFolder(rest, "migrations")) {
             return Optional.of(APPLICATION_MIGRATIONS);
         }
-        if (rest.endsWith(".screens")) {
+        if (isDirectApplicationFolder(rest, "screens")) {
             return Optional.of(APPLICATION_SCREENS);
         }
         return Optional.empty();
+    }
+
+    /** {@code {appId}.{leaf}} only. A deeper name that happens to end with the leaf is not the folder. */
+    private static boolean isDirectApplicationFolder(String rest, String leaf) {
+        String suffix = "." + leaf;
+        return rest.endsWith(suffix) && rest.indexOf('.') == rest.length() - suffix.length();
     }
 
     public static Map<String, Entry> exactPaths() {
