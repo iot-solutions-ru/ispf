@@ -45,7 +45,19 @@ public class MixinReevaluationListener implements ObjectChangeAsyncHandler {
         try {
             mixinReevaluationService.onObjectCreated(event.path());
         } catch (Exception e) {
-            log.warn("Mixin reevaluation on CREATED failed for {}: {}", event.path(), e.getMessage());
+            String message = e.getMessage() == null || e.getMessage().isBlank()
+                    ? e.getClass().getSimpleName()
+                    : e.getMessage();
+            log.error("Mixin reevaluation on CREATED failed for {}: {}", event.path(), message, e);
+            try {
+                mixinReevaluationService.recordCreateFailure(event.path(), message);
+            } catch (RuntimeException storeEx) {
+                log.error(
+                        "Could not store mixin reevaluation error for {}: {}",
+                        event.path(),
+                        storeEx.getMessage()
+                );
+            }
         }
     }
 }
