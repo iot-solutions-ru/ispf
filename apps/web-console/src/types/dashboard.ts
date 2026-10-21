@@ -545,6 +545,12 @@ export interface TabPanelWidget extends DashboardWidgetBase {
   tabsJson?: string;
 }
 
+/** Marker appearance for `map` widgets. */
+export type MapMarkerMode = "default" | "status-color" | "fixed-color" | "icon";
+
+/** Click popup content for `map` markers. */
+export type MapPopupMode = "none" | "label" | "variables";
+
 export interface MapWidget extends DashboardWidgetBase {
   type: "map";
   parentPath: string;
@@ -552,6 +558,47 @@ export interface MapWidget extends DashboardWidgetBase {
   latField?: string;
   lonField?: string;
   labelVariable?: string;
+  /** Glob on object leaf name (same as object-table), e.g. `modbus-localhost*`. */
+  namePattern?: string;
+  /** Filter catalog children by ObjectType. */
+  objectType?: import("../types").ObjectType;
+  /**
+   * JSON string array of full paths or leaf names to include.
+   * When non-empty, only matching children are shown (after namePattern / objectType).
+   */
+  includePathsJson?: string;
+  /** JSON string array of full paths or leaf names to hide. */
+  excludePathsJson?: string;
+  /**
+   * Marker look. Default: `default`, or `status-color` when `statusVariable` is set (legacy).
+   */
+  markerMode?: MapMarkerMode;
+  /** Hex/CSS color when `markerMode=fixed-color`. */
+  markerColor?: string;
+  /** Image URL when `markerMode=icon`. */
+  markerIconUrl?: string;
+  /** Icon size in px (default 24). */
+  markerIconSize?: number;
+  /** When `markerMode=icon`, also tint border/halo from status variable. */
+  markerIconTintByStatus?: boolean;
+  /** Variable used to color the marker (e.g. driverStatus). Used by status-color / icon tint. */
+  statusVariable?: string;
+  /** Field inside the status variable row (default `value`). */
+  statusField?: string;
+  /**
+   * Comma-separated values treated as healthy (green). Default: RUNNING,ONLINE,OK,CONNECTED,TRUE,1.
+   * Anything else with a present status → red; missing status → accent blue.
+   */
+  statusOkValues?: string;
+  /**
+   * Popup on marker click. Default: `variables` when `popupVariablesJson` is set, else `label`.
+   */
+  popupMode?: MapPopupMode;
+  /**
+   * JSON array of popup rows: `[{ "name": "reg1", "label": "Register 1", "field": "value" }]`.
+   * Shown under the marker label when `popupMode=variables`.
+   */
+  popupVariablesJson?: string;
   zoom?: number;
   centerLat?: number;
   centerLon?: number;

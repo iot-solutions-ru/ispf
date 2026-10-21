@@ -142,4 +142,72 @@ describe("MapWidgetView", () => {
     expect(marker).toHaveAttribute("data-lon", "37.64");
     expect(screen.getByRole("button", { name: "Truck 1" })).toBeInTheDocument();
   });
+
+  it("filters children by namePattern", async () => {
+    vi.mocked(api.fetchObjects).mockResolvedValue([
+      {
+        path: "root.platform.devices.truck-1",
+        name: "truck-1",
+        displayName: "Truck 1",
+        type: "DEVICE",
+        children: [],
+      },
+      {
+        path: "root.platform.devices.pump-1",
+        name: "pump-1",
+        displayName: "Pump 1",
+        type: "DEVICE",
+        children: [],
+      },
+    ] as never);
+    vi.mocked(api.fetchVariablesBatch).mockResolvedValue({
+      "root.platform.devices.truck-1": [
+        {
+          name: "coordinates",
+          value: {
+            schema: { name: "coordinates", fields: [] },
+            rows: [{ latitude: 55.76, longitude: 37.64 }],
+          },
+          readable: true,
+          writable: false,
+          updatedAt: "2026-08-02T00:00:00.000Z",
+          historyEnabled: false,
+          historyRetentionDays: null,
+        },
+      ],
+      "root.platform.devices.pump-1": [
+        {
+          name: "coordinates",
+          value: {
+            schema: { name: "coordinates", fields: [] },
+            rows: [{ latitude: 55.77, longitude: 37.65 }],
+          },
+          readable: true,
+          writable: false,
+          updatedAt: "2026-08-02T00:00:00.000Z",
+          historyEnabled: false,
+          historyRetentionDays: null,
+        },
+      ],
+    } as never);
+
+    const widget = {
+      ...newWidget("map", 0),
+      title: "Fleet map",
+      parentPath: "root.platform.devices",
+      namePattern: "truck-*",
+      latVariable: "coordinates",
+      latField: "latitude",
+      lonField: "longitude",
+    };
+
+    renderMap(<MapWidgetView widget={widget} refreshIntervalMs={5000} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("map-marker")).toBeInTheDocument();
+    });
+    expect(screen.getAllByTestId("map-marker")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Truck 1" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Pump 1" })).not.toBeInTheDocument();
+  });
 });

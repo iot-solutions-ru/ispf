@@ -238,6 +238,9 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
 
 function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
   const { widget, update } = ctx;
+  const markerMode = widget.markerMode ?? (widget.statusVariable ? "status-color" : "default");
+  const popupMode =
+    widget.popupMode ?? (widget.popupVariablesJson?.trim() ? "variables" : "label");
   return (
     <>
       <Section title={t("editor.section.map")} />
@@ -269,6 +272,158 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
           onChange={(e) => update({ labelVariable: e.target.value || undefined })}
         />
       </label>
+
+      <Section title={t("editor.section.mapFilter")} />
+      <label>
+        <HintCaption>{t("editor.field.namePattern")}</HintCaption>
+        <input
+          value={widget.namePattern ?? ""}
+          onChange={(e) => update({ namePattern: e.target.value || undefined })}
+          placeholder="modbus-localhost*"
+        />
+      </label>
+      <label>
+        <WidgetEditorCaption text={t("editor.field.objectType")} />
+        <select
+          value={widget.objectType ?? ""}
+          onChange={(e) =>
+            update({
+              objectType: (e.target.value || undefined) as typeof widget.objectType,
+            })
+          }
+        >
+          <option value="">—</option>
+          <option value="DEVICE">{t("common:objectType.DEVICE")}</option>
+          <option value="FOLDER">{t("common:objectType.FOLDER")}</option>
+          <option value="DASHBOARD">{t("common:objectType.DASHBOARD")}</option>
+          <option value="CUSTOM">{t("common:objectType.CUSTOM")}</option>
+        </select>
+      </label>
+      <AdvancedJsonField
+        label={t("editor.field.includePathsJson")}
+        value={widget.includePathsJson}
+        onChange={(v) => update({ includePathsJson: v })}
+        rows={2}
+      />
+      <AdvancedJsonField
+        label={t("editor.field.excludePathsJson")}
+        value={widget.excludePathsJson}
+        onChange={(v) => update({ excludePathsJson: v })}
+        rows={2}
+      />
+
+      <Section title={t("editor.section.mapMarker")} />
+      <label>
+        <WidgetEditorCaption text={t("editor.field.markerMode")} />
+        <select
+          value={markerMode}
+          onChange={(e) =>
+            update({
+              markerMode: (e.target.value || undefined) as typeof widget.markerMode,
+            })
+          }
+        >
+          <option value="default">{t("editor.markerMode.default")}</option>
+          <option value="status-color">{t("editor.markerMode.statusColor")}</option>
+          <option value="fixed-color">{t("editor.markerMode.fixedColor")}</option>
+          <option value="icon">{t("editor.markerMode.icon")}</option>
+        </select>
+      </label>
+      {markerMode === "fixed-color" && (
+        <label>
+          <WidgetEditorCaption text={t("editor.field.markerColor")} />
+          <input
+            value={widget.markerColor ?? "#2f81f7"}
+            onChange={(e) => update({ markerColor: e.target.value || undefined })}
+            placeholder="#2f81f7"
+          />
+        </label>
+      )}
+      {markerMode === "icon" && (
+        <>
+          <label>
+            <HintCaption>{t("editor.field.markerIconUrl")}</HintCaption>
+            <input
+              value={widget.markerIconUrl ?? ""}
+              onChange={(e) => update({ markerIconUrl: e.target.value || undefined })}
+            />
+          </label>
+          <label>
+            <WidgetEditorCaption text={t("editor.field.markerIconSize")} />
+            <input
+              type="number"
+              min={12}
+              max={96}
+              value={widget.markerIconSize ?? 24}
+              onChange={(e) => update({ markerIconSize: Number(e.target.value) || undefined })}
+            />
+          </label>
+          <label className="dash-editor-checkbox">
+            <input
+              type="checkbox"
+              checked={widget.markerIconTintByStatus === true}
+              onChange={(e) =>
+                update({ markerIconTintByStatus: e.target.checked ? true : undefined })
+              }
+            />
+            <span>{t("editor.field.markerIconTintByStatus")}</span>
+          </label>
+        </>
+      )}
+      {(markerMode === "status-color" ||
+        (markerMode === "icon" && widget.markerIconTintByStatus)) && (
+        <>
+          <label>
+            <HintCaption>{t("editor.field.statusVariable")}</HintCaption>
+            <input
+              value={widget.statusVariable ?? ""}
+              onChange={(e) => update({ statusVariable: e.target.value || undefined })}
+              placeholder="driverStatus"
+            />
+          </label>
+          <label>
+            <WidgetEditorCaption text={t("editor.field.statusField")} />
+            <input
+              value={widget.statusField ?? "value"}
+              onChange={(e) => update({ statusField: e.target.value || undefined })}
+            />
+          </label>
+          <label>
+            <HintCaption>{t("editor.field.statusOkValues")}</HintCaption>
+            <input
+              value={widget.statusOkValues ?? ""}
+              onChange={(e) => update({ statusOkValues: e.target.value || undefined })}
+              placeholder="RUNNING,ONLINE,OK"
+            />
+          </label>
+        </>
+      )}
+
+      <Section title={t("editor.section.mapPopup")} />
+      <label>
+        <WidgetEditorCaption text={t("editor.field.popupMode")} />
+        <select
+          value={popupMode}
+          onChange={(e) =>
+            update({
+              popupMode: (e.target.value || undefined) as typeof widget.popupMode,
+            })
+          }
+        >
+          <option value="none">{t("editor.popupMode.none")}</option>
+          <option value="label">{t("editor.popupMode.label")}</option>
+          <option value="variables">{t("editor.popupMode.variables")}</option>
+        </select>
+      </label>
+      {popupMode === "variables" && (
+        <AdvancedJsonField
+          label={t("editor.field.popupVariablesJson")}
+          value={widget.popupVariablesJson}
+          onChange={(v) => update({ popupVariablesJson: v })}
+          rows={3}
+        />
+      )}
+
       <label>
         <WidgetEditorCaption text={t("editor.field.zoom")} />
         <input
