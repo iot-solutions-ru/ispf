@@ -166,6 +166,28 @@ class ModbusTcpDeviceDriverTest {
     }
 
     @Test
+    void readsFloat32HoldingRegisterWithBadcByteSwap() throws Exception {
+        // IEEE float 12.34 = 0x414570A4 (ABCD). BADC wire words: 0x4541, 0xA470.
+        int port = freePort();
+        startTcpSlave(port, holdingImageWithTwoRegisters(0x4541, 0xA470));
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "timeoutMs", "3000"
+        ));
+        ModbusTcpDeviceDriver driver = new ModbusTcpDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("pv", "1:HOLDING:0:2:FLOAT32:BADC"));
+
+        DataRecord record = driverObject.variables.get("pv");
+        assertEquals(0x4541A470L, record.firstRow().get("raw"));
+        assertEquals(12.34, (Double) record.firstRow().get("value"), 1e-5);
+        driver.disconnect();
+    }
+
+    @Test
     void rejectsUnknownPoint() throws Exception {
         int port = freePort();
         startTcpSlave(port, holdingImage(0));

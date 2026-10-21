@@ -274,9 +274,34 @@ Loopback test: `MqttDeviceDriverTest` (embedded moquette broker, subscribe + pub
 
 j2mod, Modbus TCP. Poll/read/write via `readPoints` / `writePoint`.
 
-Point format: `slaveId:registerType:address[:count]`
+Point format:
+
+`slaveId:registerType:address[:count]:dataType[:byteOrder]`
 
 Register types: `HOLDING`, `INPUT`, `COIL`, `DISCRETE`.
+
+| Type | Canonical mapping |
+|------|-------------------|
+| Signed / Unsigned 16-bit | `INT16` / `UINT16` |
+| Signed / Unsigned 32-bit | `INT32:ABCD` / `UINT32:BADC` |
+| Float 32-bit | `FLOAT32:BADC` |
+| Double 64-bit | `DOUBLE:DCBA` |
+
+Byte orders (32/64-bit only): `ABCD`, `BADC`, `CDAB`, `DCBA`.  
+`count` is optional (`2` for 32-bit types, `4` for `DOUBLE`).  
+Aliases: `FLOAT` → `FLOAT32`, `FLOAT64` → `DOUBLE`, `SIGNED` → `INT16`, `BE_BS` → `BADC`.  
+Legacy `slaveId:type:address[:count]` without a data type stays RAW (word concat → `value`).
+
+Example — four FLOAT32 holding values with BADC byte order:
+
+```json
+{
+  "reg1": "1:HOLDING:0:FLOAT32:BADC",
+  "reg2": "1:HOLDING:2:FLOAT32:BADC",
+  "reg3": "1:HOLDING:4:FLOAT32:BADC",
+  "reg4": "1:HOLDING:6:FLOAT32:BADC"
+}
+```
 
 Write (`writePoint`):
 
