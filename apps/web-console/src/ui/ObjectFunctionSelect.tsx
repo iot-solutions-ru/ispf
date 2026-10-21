@@ -9,6 +9,7 @@ export default function ObjectFunctionSelect({
   value,
   onChange,
   hintNamespace = "widgets",
+  className,
 }: {
   label: string;
   objectPath?: string;
@@ -16,6 +17,7 @@ export default function ObjectFunctionSelect({
   onChange: (next: string) => void;
   /** i18n namespace for empty-path hints (widgets.editor.* or inspector.scriptSteps.*). */
   hintNamespace?: "widgets" | "inspector";
+  className?: string;
 }) {
   const { t } = useTranslation([hintNamespace, "widgets", "inspector"]);
   const path = objectPath?.trim() ?? "";
@@ -44,7 +46,7 @@ export default function ObjectFunctionSelect({
       : "editor.functionNamesEmpty";
 
   return (
-    <label className="field-block">
+    <label className={className ? `field-block ${className}` : "field-block"}>
       <span className="field-label">{label}</span>
       <select
         aria-label={label}
