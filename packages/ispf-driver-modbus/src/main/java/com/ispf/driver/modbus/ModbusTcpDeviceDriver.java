@@ -22,16 +22,17 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Modbus TCP driver — reads/writes registers and maps them to ISPF object variables.
  * <p>
- * Point mapping format: {@code slaveId:registerType:address[:count]}
- * registerType: HOLDING, INPUT, COIL, DISCRETE
+ * Point mapping: {@code slaveId:registerType:address[:count]:dataType[:byteOrder]}.
+ * Examples: {@code 1:HOLDING:0:FLOAT32:BADC}, {@code 1:HOLDING:0:INT32:ABCD}.
+ * Byte orders: ABCD, BADC, CDAB, DCBA.
  */
 public class ModbusTcpDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "modbus-tcp",
             "Modbus TCP Driver",
-            "0.1.0",
-            "Polls Modbus TCP slaves and maps register values to ISPF variables",
+            "0.1.2",
+            "Polls Modbus TCP slaves; typed INT/FLOAT/DOUBLE decode with byte order",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -154,11 +155,11 @@ public class ModbusTcpDeviceDriver implements DeviceDriver {
             return switch (point.type()) {
                 case HOLDING -> {
                     Register[] registers = master.readMultipleRegisters(point.slaveId(), point.address(), count);
-                    yield toRegisterRecord(combineRegisters(registers));
+                    yield toRegisterRecord(registersToWords(registers), point);
                 }
                 case INPUT -> {
                     InputRegister[] registers = master.readInputRegisters(point.slaveId(), point.address(), count);
-                    yield toRegisterRecord(combineInputRegisters(registers));
+                    yield toRegisterRecord(inputRegistersToWords(registers), point);
                 }
                 case COIL -> {
                     boolean value = master.readCoils(point.slaveId(), point.address(), count).getBit(0);
@@ -174,26 +175,26 @@ public class ModbusTcpDeviceDriver implements DeviceDriver {
         }
     }
 
-    private static long combineRegisters(Register[] registers) {
-        long raw = 0L;
-        for (Register register : registers) {
-            raw = (raw << 16) | (register.getValue() & 0xFFFFL);
+    private static int[] registersToWords(Register[] registers) {
+        int[] words = new int[registers.length];
+        for (int i = 0; i < registers.length; i++) {
+            words[i] = registers[i].getValue() & 0xFFFF;
         }
-        return raw;
+        return words;
     }
 
-    private static long combineInputRegisters(InputRegister[] registers) {
-        long raw = 0L;
-        for (InputRegister register : registers) {
-            raw = (raw << 16) | (register.getValue() & 0xFFFFL);
+    private static int[] inputRegistersToWords(InputRegister[] registers) {
+        int[] words = new int[registers.length];
+        for (int i = 0; i < registers.length; i++) {
+            words[i] = registers[i].getValue() & 0xFFFF;
         }
-        return raw;
+        return words;
     }
 
-    private static DataRecord toRegisterRecord(long raw) {
+    private static DataRecord toRegisterRecord(int[] words, ModbusPoint point) {
         return DataRecord.single(REGISTER_SCHEMA, Map.of(
-                "raw", raw,
-                "value", (double) raw
+                "raw", ModbusValueCodec.combineWords(words),
+                "value", ModbusValueCodec.decodeValue(words, point)
         ));
     }
 
