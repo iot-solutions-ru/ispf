@@ -1,5 +1,8 @@
 package com.ispf.server.plugin.blueprint;
 
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.plugin.blueprint.BlueprintApplyResult;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Evaluates watch MIXINs for attach/detach (ADR-0058).
@@ -100,6 +104,21 @@ public class MixinReevaluationService {
             log.info("Mixin SERVER_READY reevaluation: {} attach/detach action(s)", outcomes.size());
         }
         return outcomes;
+    }
+
+    private static final DataSchema ERROR_SCHEMA = DataSchema.builder("mixinReevaluationError")
+            .field("value", FieldType.STRING)
+            .build();
+
+    @Transactional
+    public void recordCreateFailure(String objectPath, String message) {
+        String text = message == null || message.isBlank() ? "mixin reevaluation failed" : message;
+        objectManager.upsertSystemVariable(
+                objectPath,
+                "mixinReevaluationError",
+                ERROR_SCHEMA,
+                DataRecord.single(ERROR_SCHEMA, Map.of("value", text))
+        );
     }
 
     @Transactional

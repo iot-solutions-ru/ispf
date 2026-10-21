@@ -54,6 +54,42 @@ class BlueprintEngineTest {
     }
 
     @Test
+    void createReplacesADefinitionWhoseCatalogNodeWasDeleted() {
+        BlueprintRegistry registry = new BlueprintRegistry();
+        BlueprintEngine local = new BlueprintEngine(registry, objectTree, new ExpressionEngine());
+        BlueprintDefinition first = instanceBlueprint("migrationss");
+        local.createBlueprint(first);
+        objectTree.delete(first.catalogObjectPath());
+
+        BlueprintDefinition second = local.createBlueprint(instanceBlueprint("migrationss"));
+
+        assertThat(registry.findByName("migrationss")).contains(second);
+        assertThat(second.id()).isNotEqualTo(first.id());
+    }
+
+    @Test
+    void createRejectsANameWhileTheCatalogNodeExists() {
+        BlueprintEngine local = new BlueprintEngine(new BlueprintRegistry(), objectTree, new ExpressionEngine());
+        local.createBlueprint(instanceBlueprint("migrationss"));
+
+        assertThatThrownBy(() -> local.createBlueprint(instanceBlueprint("migrationss")))
+                .isInstanceOf(BlueprintException.class)
+                .hasMessageContaining("migrationss");
+    }
+
+    @Test
+    void deletingACatalogNodeReleasesNestedBlueprintDefinitions() {
+        BlueprintRegistry registry = new BlueprintRegistry();
+        BlueprintEngine local = new BlueprintEngine(registry, objectTree, new ExpressionEngine());
+        local.createBlueprint(instanceBlueprint("migrationss"));
+
+        assertThat(local.removeDefinitionsForDeletedPath("root.platform.instance-types"))
+                .extracting(BlueprintDefinition::name)
+                .containsExactly("migrationss");
+        assertThat(registry.findByName("migrationss")).isEmpty();
+    }
+
+    @Test
     void createsAndAppliesRelativeModel() {
         DataSchema temperatureSchema = DataSchema.builder("temperature")
                 .field("value", FieldType.DOUBLE)
@@ -631,5 +667,23 @@ class BlueprintEngineTest {
         assertThat(detach.skippedNames()).anyMatch(s -> s.contains("legacyVar") && s.contains("no-ownership"));
         assertThat(device.getVariable("legacyVar")).isPresent();
         assertThat(device.appliedBlueprintIds()).doesNotContain(model.id());
+    }
+
+    private static BlueprintDefinition instanceBlueprint(String name) {
+        return new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                name,
+                "",
+                BlueprintType.INSTANCE,
+                ObjectType.CUSTOM,
+                "",
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
     }
 }

@@ -206,12 +206,11 @@ public class PlatformBackupService {
      * A raw tree node has no row in {@code blueprint_definitions}, so the editor returns 404.
      */
     private String importBlueprint(String name, BackupNode node, BlueprintType kind) {
-        if (blueprintRegistry.findByName(name).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Blueprint already exists: " + name);
-        }
         BlueprintDefinition model = blueprintFromExport(name, node, kind);
         BlueprintDefinition created;
         try {
+            blueprintEngine.releaseOrphanedName(name)
+                    .ifPresent(old -> blueprintPersistence.delete(old.id()));
             created = blueprintEngine.createBlueprint(model);
         } catch (BlueprintException ex) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage(), ex);

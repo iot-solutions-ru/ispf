@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **Copy a function on the same object** — the Functions tab saves a second function under a new name. The copy keeps the schemas, body, data source, version, and invoke roles. Callers that name the source stay on the source. The dialog requires a free name.
 - **Copy a variable on the same object** — the Variables tab creates a second variable under a new name. The copy keeps the schema, current value, read/write flags, roles, and history settings. Historian samples and bindings that name the source stay on the source.
 - **Import one exported node into a catalog folder** — folder lists under `root.platform` offer Import from JSON. The file must be a subtree export with exactly one node. The path inside the file is ignored; the operator enters the new name, and the object is created in the open folder. Import into a mixin, instance-type, or singleton catalog registers a blueprint, copying the definition when the source blueprint is on this server. `POST /api/v1/platform/backup/import-node?parentPath=&name=`. In-place subtree restore is unchanged.
 - **Effective configuration (Wave 1B)** — `GET /api/v1/platform/effective-config` exposes resolved replica profile and pool min/max snapshot ([0033](docs/en/decisions/0033-prod-idle-demostand-tuning.md)); demostand docs prefer named profiles over ad-hoc per-tier env.
@@ -32,6 +33,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 ### Changed
 
 - **Blueprint import target** — a node imported into a mixin, instance-type, or singleton catalog keeps a `CUSTOM` or `DEVICE` target. Any other source type, such as a migration, becomes `CUSTOM`. The blueprint kind still comes from the folder.
+- **Deleting a blueprint catalog object releases its name** — removing the tree node also drops the blueprint definition. Creating the same name again no longer returns 409 `Model already exists` after the node is gone.
 - **Customer demostand playbook** — [customer-demo-playbook](docs/en/customer-demo-playbook.md): 30–60 min show-the-customer agenda (MES live · OT+HMI+air-gap); linked from learn / demostands / vps-demostand. Not engineer Path A/B.
 - **Air-gap RSA signed gate default** — `deploy/docker-compose.air-gap.yml` defaults `ISPF_LICENSE_ENFORCE` / `REQUIRE_SIGNED_BUNDLES` to `true` and `SPRING_PROFILES_ACTIVE=prod`; `air-gap-apply.sh` warns if the public key is missing. Evidence stub [air-gap-signing](docs/evidence/air-gap-signing/README.md); smoke `deploy/tools/air-gap-signed-gate-smoke.sh`. **Cosign / image publisher signatures remain Gap** (not claimed). Scorecard air-gap 7.7→7.8.
 - **Ship-canon HTTP deploy gate (ADR-0060)** — `POST /api/v1/applications/{appId}/deploy?strict=true` validates with ship-canon before apply and returns **400** (`shipCanon: true`, `deployed: false`) when `LOGIC_HOST_DEVICE` is ERROR. Default deploy unchanged (authoring WARNING). CLI: `ispf deploy --strict` (dry-run + deploy `?strict=true`).
