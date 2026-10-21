@@ -1,6 +1,6 @@
 // Type-specific editor fields — chart widgets (4 types).
 import type { TFunction } from "i18next";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   type MapMarkerRule,
   type MapMarkerRuleOp,
@@ -10,6 +10,7 @@ import {
 import { AdvancedJsonField, HintCaption, VariableSelect } from "../widgetEditorStructured";
 import { variableListAllowCustom } from "../widgetEditorHelpers";
 import { parseMarkerRules, serializeMarkerRules } from "../mapWidgetUtils";
+import WidgetMediaUploadField from "../WidgetMediaUploadField";
 import { RecordFieldGroup } from "./widgetBoundChoices";
 import {
   Section,
@@ -38,9 +39,21 @@ function MapMarkerRulesEditor({
   onChange: (next: string | undefined) => void;
   t: TFunction;
 }): ReactNode {
-  const rules = parseMarkerRules(value);
+  // Keep local draft so Color→Picture (empty URL) does not drop the row on re-parse.
+  const [rules, setRules] = useState<MapMarkerRule[]>(() => parseMarkerRules(value));
+
+  useEffect(() => {
+    const incoming = serializeMarkerRules(parseMarkerRules(value)) ?? "";
+    const current = serializeMarkerRules(rules) ?? "";
+    if (incoming !== current) {
+      setRules(parseMarkerRules(value));
+    }
+    // Only re-sync when parent value changes externally.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: compare against value
+  }, [value]);
 
   const commit = (next: MapMarkerRule[]) => {
+    setRules(next);
     onChange(serializeMarkerRules(next));
   };
 
@@ -58,7 +71,6 @@ function MapMarkerRulesEditor({
             <div className="widget-editor-map-marker-rule-head">
               <strong>
                 {t("editor.markerRule.state")} {index + 1}
-                {rule.label ? ` · ${rule.label}` : ""}
               </strong>
               <div className="widget-editor-list-actions">
                 <button
@@ -85,168 +97,178 @@ function MapMarkerRulesEditor({
                 >
                   ↓
                 </button>
-                <button
-                  type="button"
-                  onClick={() => commit(rules.filter((_, i) => i !== index))}
-                >
+                <button type="button" onClick={() => commit(rules.filter((_, i) => i !== index))}>
                   {t("editor.markerRule.remove")}
                 </button>
               </div>
             </div>
-            <label>
-              <WidgetEditorCaption text={t("editor.markerRule.variable")} />
-              <input
-                value={rule.when.variable}
-                onChange={(e) =>
-                  patch(index, (r) => ({
-                    ...r,
-                    when: { ...r.when, variable: e.target.value },
-                  }))
-                }
-                placeholder="driverStatus"
-              />
-            </label>
-            <label>
-              <WidgetEditorCaption text={t("editor.markerRule.field")} />
-              <input
-                value={rule.when.field ?? "value"}
-                onChange={(e) =>
-                  patch(index, (r) => ({
-                    ...r,
-                    when: { ...r.when, field: e.target.value || undefined },
-                  }))
-                }
-              />
-            </label>
-            <label>
-              <WidgetEditorCaption text={t("editor.markerRule.op")} />
-              <select
-                value={rule.when.op}
-                onChange={(e) =>
-                  patch(index, (r) => ({
-                    ...r,
-                    when: { ...r.when, op: e.target.value as MapMarkerRuleOp },
-                  }))
-                }
-              >
-                {MAP_MARKER_OPS.map((op) => (
-                  <option key={op} value={op}>
-                    {t(`editor.markerRule.op.${op}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <WidgetEditorCaption text={t("editor.markerRule.value")} />
-              <input
-                value={String(rule.when.value ?? "")}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  const asNum = Number(raw);
-                  const value =
-                    raw.trim() !== "" && Number.isFinite(asNum) && /^-?\d+(\.\d+)?$/.test(raw.trim())
-                      ? asNum
-                      : raw;
-                  patch(index, (r) => ({ ...r, when: { ...r.when, value } }));
-                }}
-                placeholder="RUNNING"
-              />
-            </label>
-            <label>
-              <WidgetEditorCaption text={t("editor.markerRule.styleType")} />
-              <select
-                value={styleType}
-                onChange={(e) => {
-                  const nextType = e.target.value as "color" | "icon";
-                  patch(index, (r) =>
-                    nextType === "color"
-                      ? {
-                          ...r,
-                          style: {
-                            type: "color",
-                            color: r.style.type === "color" ? r.style.color : "#3fb950",
-                          },
-                        }
-                      : {
-                          ...r,
-                          style: {
-                            type: "icon",
-                            url: r.style.type === "icon" ? r.style.url : "",
-                            size: r.style.type === "icon" ? r.style.size : 24,
-                          },
-                        }
-                  );
-                }}
-              >
-                <option value="color">{t("editor.markerRule.styleColor")}</option>
-                <option value="icon">{t("editor.markerRule.styleIcon")}</option>
-              </select>
-            </label>
-            {styleType === "color" ? (
-              <label>
-                <WidgetEditorCaption text={t("editor.field.markerColor")} />
-                <input
-                  value={rule.style.type === "color" ? rule.style.color : "#3fb950"}
-                  onChange={(e) =>
-                    patch(index, (r) => ({
-                      ...r,
-                      style: { type: "color", color: e.target.value },
-                    }))
-                  }
-                  placeholder="#3fb950"
-                />
-              </label>
-            ) : (
-              <>
+
+            <div className="widget-editor-map-marker-rule-block">
+              <span className="widget-editor-map-marker-rule-block-title">
+                {t("editor.markerRule.condition")}
+              </span>
+              <div className="widget-editor-map-marker-rule-row">
                 <label>
-                  <HintCaption>{t("editor.field.markerIconUrl")}</HintCaption>
+                  <WidgetEditorCaption text={t("editor.markerRule.variable")} />
                   <input
-                    value={rule.style.type === "icon" ? rule.style.url : ""}
+                    value={rule.when.variable}
                     onChange={(e) =>
+                      patch(index, (r) => ({
+                        ...r,
+                        when: { ...r.when, variable: e.target.value },
+                      }))
+                    }
+                    placeholder="driverStatus"
+                  />
+                </label>
+                <label>
+                  <WidgetEditorCaption text={t("editor.markerRule.op")} />
+                  <select
+                    value={rule.when.op}
+                    onChange={(e) =>
+                      patch(index, (r) => ({
+                        ...r,
+                        when: { ...r.when, op: e.target.value as MapMarkerRuleOp },
+                      }))
+                    }
+                  >
+                    {MAP_MARKER_OPS.map((op) => (
+                      <option key={op} value={op}>
+                        {t(`editor.markerRule.op.${op}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <WidgetEditorCaption text={t("editor.markerRule.value")} />
+                  <input
+                    value={String(rule.when.value ?? "")}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      const asNum = Number(raw);
+                      const nextValue =
+                        raw.trim() !== "" &&
+                        Number.isFinite(asNum) &&
+                        /^-?\d+(\.\d+)?$/.test(raw.trim())
+                          ? asNum
+                          : raw;
+                      patch(index, (r) => ({ ...r, when: { ...r.when, value: nextValue } }));
+                    }}
+                    placeholder="RUNNING"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="widget-editor-map-marker-rule-block">
+              <span className="widget-editor-map-marker-rule-block-title">
+                {t("editor.markerRule.appearance")}
+              </span>
+              <label>
+                <WidgetEditorCaption text={t("editor.markerRule.styleType")} />
+                <select
+                  value={styleType}
+                  onChange={(e) => {
+                    const nextType = e.target.value as "color" | "icon";
+                    patch(index, (r) =>
+                      nextType === "color"
+                        ? {
+                            ...r,
+                            style: {
+                              type: "color",
+                              color: r.style.type === "color" ? r.style.color : "#3fb950",
+                            },
+                          }
+                        : {
+                            ...r,
+                            style: {
+                              type: "icon",
+                              url: r.style.type === "icon" ? r.style.url : "",
+                              size: r.style.type === "icon" ? r.style.size : 24,
+                            },
+                          }
+                    );
+                  }}
+                >
+                  <option value="color">{t("editor.markerRule.styleColor")}</option>
+                  <option value="icon">{t("editor.markerRule.styleIcon")}</option>
+                </select>
+              </label>
+              {styleType === "color" ? (
+                <label>
+                  <WidgetEditorCaption text={t("editor.markerRule.color")} />
+                  <input
+                    type="color"
+                    value={
+                      rule.style.type === "color" && /^#[0-9a-fA-F]{6}$/.test(rule.style.color)
+                        ? rule.style.color
+                        : "#3fb950"
+                    }
+                    onChange={(e) =>
+                      patch(index, (r) => ({
+                        ...r,
+                        style: { type: "color", color: e.target.value },
+                      }))
+                    }
+                  />
+                  <input
+                    value={rule.style.type === "color" ? rule.style.color : "#3fb950"}
+                    onChange={(e) =>
+                      patch(index, (r) => ({
+                        ...r,
+                        style: { type: "color", color: e.target.value },
+                      }))
+                    }
+                    placeholder="#3fb950"
+                  />
+                </label>
+              ) : (
+                <>
+                  <WidgetMediaUploadField
+                    label={t("editor.markerRule.iconUrl")}
+                    value={rule.style.type === "icon" ? rule.style.url : ""}
+                    onChange={(url) =>
                       patch(index, (r) => ({
                         ...r,
                         style: {
                           type: "icon",
-                          url: e.target.value,
+                          url,
                           size: r.style.type === "icon" ? r.style.size : 24,
                         },
                       }))
                     }
+                    accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg"
+                    placeholder={t("editor.markerRule.iconUrlHint")}
+                    previewAlt={t("editor.markerRule.styleIcon")}
                   />
-                </label>
-                <label>
-                  <WidgetEditorCaption text={t("editor.field.markerIconSize")} />
-                  <input
-                    type="number"
-                    min={12}
-                    max={96}
-                    value={rule.style.type === "icon" ? (rule.style.size ?? 24) : 24}
-                    onChange={(e) =>
-                      patch(index, (r) => ({
-                        ...r,
-                        style: {
-                          type: "icon",
-                          url: r.style.type === "icon" ? r.style.url : "",
-                          size: Number(e.target.value) || 24,
-                        },
-                      }))
-                    }
-                  />
-                </label>
-              </>
-            )}
+                  <label>
+                    <WidgetEditorCaption text={t("editor.markerRule.iconSize")} />
+                    <input
+                      type="number"
+                      min={12}
+                      max={96}
+                      value={rule.style.type === "icon" ? (rule.style.size ?? 24) : 24}
+                      onChange={(e) =>
+                        patch(index, (r) => ({
+                          ...r,
+                          style: {
+                            type: "icon",
+                            url: r.style.type === "icon" ? r.style.url : "",
+                            size: Number(e.target.value) || 24,
+                          },
+                        }))
+                      }
+                    />
+                  </label>
+                </>
+              )}
+            </div>
           </div>
         );
       })}
       <button type="button" onClick={() => commit([...rules, newMarkerRule()])}>
         {t("editor.markerRule.add")}
       </button>
-      <AdvancedJsonField
-        label={t("editor.field.markerRulesJson")}
-        value={value}
-        onChange={onChange}
-        rows={4}
-      />
     </div>
   );
 }
@@ -476,10 +498,8 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
 
 function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
   const { widget, update } = ctx;
-  const markerMode = widget.markerMode ?? (widget.statusVariable ? "status-color" : "default");
   const popupMode =
     widget.popupMode ?? (widget.popupVariablesJson?.trim() ? "variables" : "label");
-  const hasRules = parseMarkerRules(widget.markerRulesJson).length > 0;
   return (
     <>
       <Section title={t("editor.section.map")} />
@@ -557,96 +577,6 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
         onChange={(v) => update({ markerRulesJson: v })}
         t={t}
       />
-
-      <Section title={t("editor.section.mapMarker")} />
-      {hasRules ? <p className="hint">{t("editor.hint.markerModeIgnored")}</p> : null}
-      <label>
-        <WidgetEditorCaption text={t("editor.field.markerMode")} />
-        <select
-          value={markerMode}
-          disabled={hasRules}
-          onChange={(e) =>
-            update({
-              markerMode: (e.target.value || undefined) as typeof widget.markerMode,
-            })
-          }
-        >
-          <option value="default">{t("editor.markerMode.default")}</option>
-          <option value="status-color">{t("editor.markerMode.statusColor")}</option>
-          <option value="fixed-color">{t("editor.markerMode.fixedColor")}</option>
-          <option value="icon">{t("editor.markerMode.icon")}</option>
-        </select>
-      </label>
-      {!hasRules && markerMode === "fixed-color" && (
-        <label>
-          <WidgetEditorCaption text={t("editor.field.markerColor")} />
-          <input
-            value={widget.markerColor ?? "#2f81f7"}
-            onChange={(e) => update({ markerColor: e.target.value || undefined })}
-            placeholder="#2f81f7"
-          />
-        </label>
-      )}
-      {!hasRules && markerMode === "icon" && (
-        <>
-          <label>
-            <HintCaption>{t("editor.field.markerIconUrl")}</HintCaption>
-            <input
-              value={widget.markerIconUrl ?? ""}
-              onChange={(e) => update({ markerIconUrl: e.target.value || undefined })}
-            />
-          </label>
-          <label>
-            <WidgetEditorCaption text={t("editor.field.markerIconSize")} />
-            <input
-              type="number"
-              min={12}
-              max={96}
-              value={widget.markerIconSize ?? 24}
-              onChange={(e) => update({ markerIconSize: Number(e.target.value) || undefined })}
-            />
-          </label>
-          <label className="dash-editor-checkbox">
-            <input
-              type="checkbox"
-              checked={widget.markerIconTintByStatus === true}
-              onChange={(e) =>
-                update({ markerIconTintByStatus: e.target.checked ? true : undefined })
-              }
-            />
-            <span>{t("editor.field.markerIconTintByStatus")}</span>
-          </label>
-        </>
-      )}
-      {!hasRules &&
-        (markerMode === "status-color" ||
-          (markerMode === "icon" && widget.markerIconTintByStatus)) && (
-          <>
-            <label>
-              <HintCaption>{t("editor.field.statusVariable")}</HintCaption>
-              <input
-                value={widget.statusVariable ?? ""}
-                onChange={(e) => update({ statusVariable: e.target.value || undefined })}
-                placeholder="driverStatus"
-              />
-            </label>
-            <label>
-              <WidgetEditorCaption text={t("editor.field.statusField")} />
-              <input
-                value={widget.statusField ?? "value"}
-                onChange={(e) => update({ statusField: e.target.value || undefined })}
-              />
-            </label>
-            <label>
-              <HintCaption>{t("editor.field.statusOkValues")}</HintCaption>
-              <input
-                value={widget.statusOkValues ?? ""}
-                onChange={(e) => update({ statusOkValues: e.target.value || undefined })}
-                placeholder="RUNNING,ONLINE,OK"
-              />
-            </label>
-          </>
-        )}
 
       <Section title={t("editor.section.mapPopup")} />
       <label>

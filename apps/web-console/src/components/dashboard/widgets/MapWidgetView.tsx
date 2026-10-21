@@ -19,6 +19,7 @@ import {
 } from "../mapWidgetUtils";
 import type { MapMarkerStyle } from "../../../types/dashboard";
 import { resolveMapStyle } from "../mapStyleUtils";
+import { resolveWidgetMediaSrc } from "../widgetMediaUrl";
 import { triggerDashboardOpen, useDashboardContext } from "../useDashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
@@ -549,7 +550,7 @@ function MapMarker({
       >
         {appearance.iconUrl ? (
           <img
-            src={appearance.iconUrl}
+            src={resolveWidgetMediaSrc(appearance.iconUrl)}
             alt=""
             width={appearance.iconSize}
             height={appearance.iconSize}

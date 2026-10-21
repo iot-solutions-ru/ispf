@@ -3059,6 +3059,33 @@
   margin-bottom: 0.25rem;
 }
 
+.widget-editor-map-marker-rule-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border, #d0d7de);
+}
+
+.widget-editor-map-marker-rule-block-title {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.widget-editor-map-marker-rule-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 0.5rem;
+}
+
+@media (max-width: 720px) {
+  .widget-editor-map-marker-rule-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .dash-map-marker:disabled {
   cursor: default;
 }
