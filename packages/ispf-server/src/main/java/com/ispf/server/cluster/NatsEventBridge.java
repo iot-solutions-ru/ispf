@@ -14,6 +14,7 @@ import io.nats.client.Options;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -22,8 +23,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import java.util.Locale;
+
 @Component
 public class NatsEventBridge implements WorkflowMessageBus {
 
@@ -35,8 +38,11 @@ public class NatsEventBridge implements WorkflowMessageBus {
     private final StructureChangeSubscriptionRegistry structureSubscriptionRegistry;
     private final Connection connection;
     private final NatsJetStreamSupport jetStreamSupport;
+    private final AtomicLong publishFailures = new AtomicLong();
+    private volatile String lastPublishError;
     private volatile String connectFailure;
 
+    @Autowired
     public NatsEventBridge(
             NatsProperties properties,
             ClusterProperties clusterProperties,
@@ -49,6 +55,22 @@ public class NatsEventBridge implements WorkflowMessageBus {
         this.objectMapper = objectMapper;
         this.structureSubscriptionRegistry = structureSubscriptionRegistry;
         this.connection = properties.enabled() ? connect() : null;
+        this.jetStreamSupport = jetStreamSupport;
+    }
+
+    NatsEventBridge(
+            NatsProperties properties,
+            ClusterProperties clusterProperties,
+            ObjectMapper objectMapper,
+            StructureChangeSubscriptionRegistry structureSubscriptionRegistry,
+            NatsJetStreamSupport jetStreamSupport,
+            Connection connection
+    ) {
+        this.properties = properties;
+        this.clusterProperties = clusterProperties;
+        this.objectMapper = objectMapper;
+        this.structureSubscriptionRegistry = structureSubscriptionRegistry;
+        this.connection = connection;
         this.jetStreamSupport = jetStreamSupport;
     }
 
@@ -84,7 +106,7 @@ public class NatsEventBridge implements WorkflowMessageBus {
             }
             publishReplicaFanout("ispf.events." + event.type().name().toLowerCase(Locale.ROOT), buildPayload(event));
         } catch (Exception e) {
-            log.warn("Failed to publish NATS event for {}: {}", event.path(), e.getMessage());
+            recordPublishFailure("object event", e);
         }
     }
 
@@ -111,7 +133,7 @@ public class NatsEventBridge implements WorkflowMessageBus {
             }
             publishReplicaFanout("ispf.events.variable_updated", objectMapper.writeValueAsBytes(body));
         } catch (Exception e) {
-            log.warn("Failed to publish live variable replica sync for {}.{}: {}", path, variableName, e.getMessage());
+            recordPublishFailure("live variable sync", e);
         }
     }
 
@@ -131,7 +153,7 @@ public class NatsEventBridge implements WorkflowMessageBus {
         try {
             connection.publish(subject, message.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
-            log.warn("Failed to publish NATS message to {}: {}", subject, e.getMessage());
+            recordPublishFailure("message", e);
         }
     }
 
@@ -144,7 +166,7 @@ public class NatsEventBridge implements WorkflowMessageBus {
             body.put("source", properties.replicaId());
             publish("ispf.workflow." + sanitize(workflowPath) + "." + event, objectMapper.writeValueAsString(body));
         } catch (Exception e) {
-            log.warn("Failed to publish workflow NATS event: {}", e.getMessage());
+            recordPublishFailure("workflow event", e);
         }
     }
 
@@ -152,9 +174,26 @@ public class NatsEventBridge implements WorkflowMessageBus {
         return properties.enabled() && connection != null;
     }
 
+    public long publishFailureCount() {
+        return publishFailures.get();
+    }
+
+    public String lastPublishError() {
+        return lastPublishError;
+    }
+
     /** Set when NATS is enabled and {@link #connect()} failed. Null when disabled or connected. */
     public String connectFailure() {
         return connectFailure;
+    }
+
+    private void recordPublishFailure(String action, Exception e) {
+        String message = e.getMessage() == null || e.getMessage().isBlank()
+                ? e.getClass().getSimpleName()
+                : e.getMessage();
+        publishFailures.incrementAndGet();
+        lastPublishError = message;
+        log.error("NATS {} failed: {}", action, message);
     }
 
     @PreDestroy
