@@ -204,7 +204,6 @@ export default function MapMarkerRulesEditor({
                         style: { type: "color", color: e.target.value },
                       }))
                     }
-                    placeholder="#3fb950"
                   />
                 </label>
               ) : (
