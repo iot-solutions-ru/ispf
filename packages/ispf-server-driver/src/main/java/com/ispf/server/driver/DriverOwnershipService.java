@@ -37,6 +37,10 @@ public class DriverOwnershipService {
         return clusterProperties.isDriverOwnershipActive();
     }
 
+    public boolean runsDriversLocally() {
+        return clusterProperties.runsDriversLocally();
+    }
+
     public String instanceId() {
         return instanceId;
     }
