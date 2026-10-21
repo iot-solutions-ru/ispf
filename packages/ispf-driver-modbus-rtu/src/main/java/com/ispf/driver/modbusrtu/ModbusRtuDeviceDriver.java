@@ -182,21 +182,22 @@ public class ModbusRtuDeviceDriver implements DeviceDriver {
 
     private DataRecord readPoint(ModbusPoint point) throws DriverException {
         try {
+            int count = Math.max(1, point.count());
             return switch (point.type()) {
                 case HOLDING -> {
-                    Register register = master.readMultipleRegisters(point.slaveId(), point.address(), 1)[0];
-                    yield toRegisterRecord(register.getValue());
+                    Register[] registers = master.readMultipleRegisters(point.slaveId(), point.address(), count);
+                    yield toRegisterRecord(registersToWords(registers), point);
                 }
                 case INPUT -> {
-                    InputRegister register = master.readInputRegisters(point.slaveId(), point.address(), 1)[0];
-                    yield toRegisterRecord(register.getValue());
+                    InputRegister[] registers = master.readInputRegisters(point.slaveId(), point.address(), count);
+                    yield toRegisterRecord(inputRegistersToWords(registers), point);
                 }
                 case COIL -> {
-                    boolean value = master.readCoils(point.slaveId(), point.address(), 1).getBit(0);
+                    boolean value = master.readCoils(point.slaveId(), point.address(), count).getBit(0);
                     yield DataRecord.single(COIL_SCHEMA, Map.of("value", value));
                 }
                 case DISCRETE -> {
-                    boolean value = master.readInputDiscretes(point.slaveId(), point.address(), 1).getBit(0);
+                    boolean value = master.readInputDiscretes(point.slaveId(), point.address(), count).getBit(0);
                     yield DataRecord.single(COIL_SCHEMA, Map.of("value", value));
                 }
             };
@@ -205,10 +206,26 @@ public class ModbusRtuDeviceDriver implements DeviceDriver {
         }
     }
 
-    private static DataRecord toRegisterRecord(int raw) {
+    private static int[] registersToWords(Register[] registers) {
+        int[] words = new int[registers.length];
+        for (int i = 0; i < registers.length; i++) {
+            words[i] = registers[i].getValue() & 0xFFFF;
+        }
+        return words;
+    }
+
+    private static int[] inputRegistersToWords(InputRegister[] registers) {
+        int[] words = new int[registers.length];
+        for (int i = 0; i < registers.length; i++) {
+            words[i] = registers[i].getValue() & 0xFFFF;
+        }
+        return words;
+    }
+
+    private static DataRecord toRegisterRecord(int[] words, ModbusPoint point) {
         return DataRecord.single(REGISTER_SCHEMA, Map.of(
-                "raw", (long) raw,
-                "value", (double) raw
+                "raw", ModbusValueCodec.combineWords(words),
+                "value", ModbusValueCodec.decodeValue(words, point)
         ));
     }
 
