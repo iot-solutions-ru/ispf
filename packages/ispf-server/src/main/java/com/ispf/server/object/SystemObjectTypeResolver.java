@@ -74,31 +74,71 @@ public final class SystemObjectTypeResolver {
         return Optional.empty();
     }
 
+    /**
+     * Catalog folder types are positional. A blueprint named {@code migrations} must not become
+     * {@link ObjectType#MIGRATIONS} just because its path ends with that leaf.
+     */
     private static ObjectType resolveFolderSuffix(String path) {
-        if (path.endsWith(".reports")) {
-            return ObjectType.REPORTS;
+        if (path == null) {
+            return null;
         }
-        if (path.endsWith(".data-sources")) {
-            return ObjectType.DATA_SOURCES;
+        int dot = path.lastIndexOf('.');
+        if (dot < 0 || dot == path.length() - 1) {
+            return null;
         }
-        if (path.endsWith(".functions")) {
-            return ObjectType.FUNCTIONS;
+        String leaf = path.substring(dot + 1);
+        ObjectType type = switch (leaf) {
+            case "reports" -> ObjectType.REPORTS;
+            case "data-sources" -> ObjectType.DATA_SOURCES;
+            case "functions" -> ObjectType.FUNCTIONS;
+            case "schedules" -> ObjectType.SCHEDULES;
+            case "bindings" -> ObjectType.BINDINGS;
+            case "migrations" -> ObjectType.MIGRATIONS;
+            case "screens" -> ObjectType.SCREENS;
+            case "process-programs" -> ObjectType.PROCESS_PROGRAMS;
+            default -> null;
+        };
+        if (type == null || !isCatalogFolderPath(path, leaf)) {
+            return null;
         }
-        if (path.endsWith(".schedules")) {
-            return ObjectType.SCHEDULES;
+        return type;
+    }
+
+    /**
+     * {@code root.platform.{leaf}}, {@code root.tenant.{id}.platform.{leaf}},
+     * or the same leaf directly under an application ({@code applications.{appId}.{leaf}}).
+     */
+    static boolean isCatalogFolderPath(String path, String leaf) {
+        if (path == null || leaf == null || leaf.isBlank()) {
+            return false;
         }
-        if (path.endsWith(".bindings")) {
-            return ObjectType.BINDINGS;
+        if (path.equals("root.platform." + leaf)) {
+            return true;
         }
-        if (path.endsWith(".migrations")) {
-            return ObjectType.MIGRATIONS;
+        String[] parts = path.split("\\.", -1);
+        if (parts.length == 5
+                && "root".equals(parts[0])
+                && "tenant".equals(parts[1])
+                && "platform".equals(parts[3])
+                && leaf.equals(parts[4])
+                && !parts[2].isEmpty()) {
+            return true;
         }
-        if (path.endsWith(".screens")) {
-            return ObjectType.SCREENS;
+        if (parts.length == 5
+                && "root".equals(parts[0])
+                && "platform".equals(parts[1])
+                && "applications".equals(parts[2])
+                && leaf.equals(parts[4])
+                && !parts[3].isEmpty()) {
+            return true;
         }
-        if (path.endsWith(".process-programs")) {
-            return ObjectType.PROCESS_PROGRAMS;
-        }
-        return null;
+        return parts.length == 7
+                && "root".equals(parts[0])
+                && "tenant".equals(parts[1])
+                && "platform".equals(parts[3])
+                && "applications".equals(parts[4])
+                && leaf.equals(parts[6])
+                && !parts[2].isEmpty()
+                && !parts[5].isEmpty();
     }
 }

@@ -9,6 +9,7 @@ import {
 import type { ObjectType } from "../../types";
 import { BINDINGS_ROOT, DATA_SOURCES_ROOT, MIGRATIONS_ROOT, SCHEDULES_ROOT } from "../platform/platformSqlPath";
 import { isQueryPath, QUERIES_ROOT } from "../ui/queryPath";
+import { isCatalogFolderPath } from "../platform/catalogFolderPath";
 import { isMesCatalogContainer, isPlatformCatalogContainer, isPlatformReportsFolder } from "../platform/platformCatalogPath";
 import { EVENT_FILTERS_ROOT } from "../automation/eventFilterPath";
 import { PROCESS_PROGRAMS_ROOT } from "../automation/processProgramPath";
@@ -55,16 +56,16 @@ export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
   if (parentPath === CORRELATORS_ROOT) {
     return "correlator";
   }
-  if (parentPath === DATA_SOURCES_ROOT || parentPath.endsWith(".data-sources")) {
+  if (parentPath === DATA_SOURCES_ROOT || isCatalogFolderPath(parentPath, "data-sources")) {
     return "data-source";
   }
-  if (parentPath === MIGRATIONS_ROOT || parentPath.endsWith(".migrations")) {
+  if (parentPath === MIGRATIONS_ROOT || isCatalogFolderPath(parentPath, "migrations")) {
     return "migration";
   }
-  if (parentPath === BINDINGS_ROOT || parentPath.endsWith(".bindings")) {
+  if (parentPath === BINDINGS_ROOT || isCatalogFolderPath(parentPath, "bindings")) {
     return "sql-binding";
   }
-  if (parentPath === SCHEDULES_ROOT || parentPath.endsWith(".schedules")) {
+  if (parentPath === SCHEDULES_ROOT || isCatalogFolderPath(parentPath, "schedules")) {
     return "schedule";
   }
   if (parentPath === QUERIES_ROOT) {
@@ -272,7 +273,7 @@ export function defaultObjectTypeForParent(parentPath: string): ObjectType {
   if (isPathUnder(parentPath, MIMICS_ROOT) || parentPath.endsWith(".mimics")) {
     return "MIMIC";
   }
-  if (isPathUnder(parentPath, REPORTS_ROOT) || parentPath.endsWith(".reports")) {
+  if (isPathUnder(parentPath, REPORTS_ROOT) || isCatalogFolderPath(parentPath, "reports")) {
     return "REPORT";
   }
   if (isPathUnder(parentPath, WORKFLOWS_ROOT) || parentPath.endsWith(".workflows")) {
@@ -442,7 +443,7 @@ export function instanceTypeTargetsForParent(parentPath: string): readonly Objec
   if (isPathUnder(parentPath, MIMICS_ROOT)) {
     return ["MIMIC"];
   }
-  if (isPathUnder(parentPath, REPORTS_ROOT) || parentPath.endsWith(".reports")) {
+  if (isPathUnder(parentPath, REPORTS_ROOT) || isCatalogFolderPath(parentPath, "reports")) {
     return ["REPORT"];
   }
   if (isPathUnder(parentPath, WORKFLOWS_ROOT)) {

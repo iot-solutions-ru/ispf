@@ -17,6 +17,7 @@ import {
 import { isEventFilterPath, isEventFiltersRoot } from "../automation/eventFilterPath";
 import { isFederationRoot } from "../federation/federationPath";
 import { isTenantsRoot } from "./tenantPath";
+import { isCatalogFolderPath } from "./catalogFolderPath";
 import { localizedSystemFolderMeta } from "./systemFolderI18n";
 
 const APPLICATION_SUBFOLDER_SUFFIXES = [
@@ -94,7 +95,7 @@ const ID_COLUMN_BY_TYPE: Partial<Record<ObjectType, "section" | "appId" | "id">>
 };
 
 function isApplicationSubfolder(path: string): boolean {
-  return APPLICATION_SUBFOLDER_SUFFIXES.some((suffix) => path.endsWith(suffix));
+  return APPLICATION_SUBFOLDER_SUFFIXES.some((suffix) => isCatalogFolderPath(path, suffix.slice(1)));
 }
 
 function resolveCatalogType(path: string, objectType?: ObjectType): ObjectType | null {
