@@ -392,13 +392,22 @@ public class ObjectController {
         }
         ensurePhase30CatalogStructure(node);
         if (request.type() == ObjectType.DEVICE && request.driverId() != null && !request.driverId().isBlank()) {
-            deviceProvisioningService.provisionDriver(
-                    node.path(),
-                    request.driverId(),
-                    request.driverPollIntervalMs(),
-                    Boolean.TRUE.equals(request.autoStartDriver())
-                            || request.autoStartDriver() == null
-            );
+            try {
+                deviceProvisioningService.provisionDriver(
+                        node.path(),
+                        request.driverId(),
+                        request.driverPollIntervalMs(),
+                        Boolean.TRUE.equals(request.autoStartDriver())
+                                || request.autoStartDriver() == null
+                );
+            } catch (RuntimeException provisioningFailure) {
+                try {
+                    objectManager.delete(node.path());
+                } catch (RuntimeException deleteFailure) {
+                    provisioningFailure.addSuppressed(deleteFailure);
+                }
+                throw provisioningFailure;
+            }
             objectManager.persistNodeTree(node.path());
         }
         return virtualizeDto(toDto(node), authentication);
