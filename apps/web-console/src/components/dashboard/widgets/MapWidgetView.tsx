@@ -166,7 +166,8 @@ export default function MapWidgetView({
   );
   const useStatus =
     !rulesActive &&
-    (markerMode === "status-color" || (markerMode === "icon" && widget.markerIconTintByStatus));
+    (markerMode === "status-color" ||
+      (markerMode === "icon" && Boolean(widget.markerIconTintByStatus)));
 
   useEffect(() => {
     setGpsByPath({});
