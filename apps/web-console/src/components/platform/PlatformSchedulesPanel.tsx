@@ -8,7 +8,7 @@ import {
   upsertPlatformAppSchedule,
   type PlatformAppSchedule,
 } from "../../api/platformAppSchedules";
-import { ObjectPathField } from "../../ui";
+import { ObjectFunctionSelect, ObjectPathField } from "../../ui";
 
 const DEFAULT_ACTION_JSON = '{"objectPath":"root.platform.devices.demo-sensor-01","functionName":"poll"}';
 
@@ -196,18 +196,23 @@ export default function PlatformSchedulesPanel() {
                 label={tp("schedule.objectPath")}
                 value={invokeAction.objectPath}
                 onChange={(objectPath) =>
-                  setActionJson(patchActionJson(actionJson, { objectPath }))
+                  setActionJson(patchActionJson(actionJson, {
+                    objectPath,
+                    functionName: objectPath.trim() === invokeAction.objectPath.trim()
+                      ? invokeAction.functionName
+                      : "",
+                  }))
                 }
               />
-              <Form.Item label={tp("schedule.functionName")} className="full">
-                <Input
-                  value={invokeAction.functionName}
-                  onChange={(e) =>
-                    setActionJson(patchActionJson(actionJson, { functionName: e.target.value }))
-                  }
-                  placeholder="poll"
-                />
-              </Form.Item>
+              <ObjectFunctionSelect
+                className="full"
+                label={tp("schedule.functionName")}
+                objectPath={invokeAction.objectPath}
+                value={invokeAction.functionName}
+                onChange={(functionName) =>
+                  setActionJson(patchActionJson(actionJson, { functionName }))
+                }
+              />
             </>
           )}
           <Form.Item label={`${t("appSchedules.column.action")} JSON`} className="full">
