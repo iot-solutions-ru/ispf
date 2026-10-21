@@ -1,8 +1,8 @@
 import type { BlueprintVariableDefinition } from "../../types/blueprints";
 import type { VariableDto } from "../../types";
+import { BLUEPRINT_CATALOG_META_VARIABLES } from "../../utils/platform/systemVariables";
 
-/** Written onto the catalog node by the blueprint engine. They are not mixin payload. */
-export const BLUEPRINT_CATALOG_META_VARIABLES = new Set(["blueprintType", "suitabilityExpression"]);
+export { BLUEPRINT_CATALOG_META_VARIABLES };
 
 export function objectVariablesAvailableForDefinition<T extends { name: string }>(
   objectVariables: T[],

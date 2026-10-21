@@ -5,6 +5,12 @@ export const HIDDEN_OBJECT_VARIABLES = new Set([
   "uiIcon",
 ]);
 
+/** Written onto a blueprint catalog node by the engine. Not operator payload. */
+export const BLUEPRINT_CATALOG_META_VARIABLES = new Set([
+  "blueprintType",
+  "suitabilityExpression",
+]);
+
 /** DEVICE driver bookkeeping — must not be deleted from the Variables tab. */
 export const DRIVER_SYSTEM_VARIABLES = new Set([
   "driverId",
@@ -26,7 +32,7 @@ export function isDeletableUserVariable(name: string): boolean {
   if (!name || name.startsWith("@") || isHiddenObjectVariable(name)) {
     return false;
   }
-  return !DRIVER_SYSTEM_VARIABLES.has(name);
+  return !DRIVER_SYSTEM_VARIABLES.has(name) && !BLUEPRINT_CATALOG_META_VARIABLES.has(name);
 }
 
 /** User-facing variable names for pickers (targets, expression context). */

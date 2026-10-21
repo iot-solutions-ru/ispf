@@ -25,5 +25,7 @@ describe("systemVariables", () => {
     expect(isDeletableUserVariable("driverId")).toBe(false);
     expect(isDeletableUserVariable("driverPointMappingsJson")).toBe(false);
     expect(isDeletableUserVariable("uiIcon")).toBe(false);
+    expect(isDeletableUserVariable("blueprintType")).toBe(false);
+    expect(isDeletableUserVariable("suitabilityExpression")).toBe(false);
   });
 });

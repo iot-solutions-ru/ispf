@@ -37,7 +37,9 @@ public final class SystemIntrinsicBlueprints {
             Map.entry(ObjectType.MIMIC, "mimic-v1"),
             Map.entry(ObjectType.REPORT, "report-v1"),
             Map.entry(ObjectType.WORKFLOW, "workflow-v1"),
-            Map.entry(ObjectType.EVENT_FILTER, "event-filter-v1")
+            Map.entry(ObjectType.EVENT_FILTER, "event-filter-v1"),
+            Map.entry(ObjectType.PROCESS_PROGRAM, "process-program-v1"),
+            Map.entry(ObjectType.ANALYTICS_TEMPLATE, "analytics-template-v1")
     );
 
     private SystemIntrinsicBlueprints() {

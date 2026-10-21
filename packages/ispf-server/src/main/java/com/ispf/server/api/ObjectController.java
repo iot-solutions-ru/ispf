@@ -15,6 +15,7 @@ import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import com.ispf.server.plugin.blueprint.dto.AppliedBlueprintDto;
 import com.ispf.server.api.dto.ObjectEditorDto;
+import com.ispf.server.object.CatalogSchemaVariables;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectRevisionConflictException;
 import com.ispf.server.object.ObjectEditLeaseService;
@@ -325,15 +326,21 @@ public class ObjectController {
         }
         path = canonicalPath(path, authentication);
         objectAccessService.requireRead(path, authentication);
-        return tenantVirtualRootService.virtualize(
-                ObjectEditorDto.from(
-                        objectManager.require(path),
-                        objectUiIconService,
-                        authentication,
-                        variableMemberAccessService
-                ),
-                authentication
+        PlatformObject node = objectManager.require(path);
+        ObjectEditorDto editor = ObjectEditorDto.from(
+                node,
+                objectUiIconService,
+                authentication,
+                variableMemberAccessService
         );
+        editor = new ObjectEditorDto(
+                editor.object(),
+                editor.variables(),
+                editor.events(),
+                editor.functions(),
+                editor.ownership().withAdditionalVariables(CatalogSchemaVariables.names(node, blueprintRegistry))
+        );
+        return tenantVirtualRootService.virtualize(editor, authentication);
     }
 
     @GetMapping("/by-path")

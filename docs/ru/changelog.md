@@ -23,6 +23,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Изменено
 
+- Переменные встроенной схемы каталога нельзя удалить с вкладки «Переменные»: дашборд, источник данных, расписание, оповещение, workflow и остальные типы каталога, включая `blueprintType` и `suitabilityExpression` у blueprint. Переменная, которую оператор добавил на том же объекте, по-прежнему удаляется. То же имя на пользовательском объекте или устройстве удаляется.
 - Плейбук показа заказчику: [customer-demo-playbook](customer-demo-playbook.md) (MES / OT+HMI+air-gap, 30–60 мин).
 - Air-gap RSA signed gate по умолчанию: compose `require-signed`/`enforce=true`, profile `prod`; evidence [air-gap-signing](../evidence/air-gap-signing/README.md); Cosign по-прежнему Gap. Scorecard air-gap 7.7→7.8.
 - Ship-canon на HTTP deploy (ADR-0060): `POST .../deploy?strict=true` валидирует перед apply и отвечает **400** (`shipCanon`) при `LOGIC_HOST_DEVICE`; без `strict` поведение авторства без изменений. CLI: `ispf deploy --strict`.
