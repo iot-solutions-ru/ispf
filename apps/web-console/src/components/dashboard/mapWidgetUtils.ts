@@ -127,14 +127,13 @@ function parseStyle(raw: unknown): MapMarkerStyle | null {
   const row = raw as Record<string, unknown>;
   const type = String(row.type ?? "").trim().toLowerCase();
   if (type === "color") {
-    const color = String(row.color ?? "").trim();
-    return color ? { type: "color", color } : null;
+    // Allow empty while editing in the widget editor; default hex for display.
+    const color = String(row.color ?? "").trim() || "#3fb950";
+    return { type: "color", color };
   }
   if (type === "icon") {
+    // Empty URL is valid in the editor after switching Color → Picture (user fills URL next).
     const url = String(row.url ?? row.iconUrl ?? "").trim();
-    if (!url) {
-      return null;
-    }
     const sizeRaw = row.size != null ? Number(row.size) : undefined;
     const size =
       sizeRaw != null && Number.isFinite(sizeRaw)

@@ -118,6 +118,14 @@ describe("mapWidgetUtils", () => {
     expect(hasMarkerRules({ markerRulesJson: JSON.stringify(rules) })).toBe(true);
   });
 
+  it("keeps icon rule with empty URL (editor Color→Picture switch)", () => {
+    const rules = parseMarkerRules(
+      '[{"when":{"variable":"driverStatus","op":"eq","value":"RUNNING"},"style":{"type":"icon","url":""}}]'
+    );
+    expect(rules).toHaveLength(1);
+    expect(rules[0].style).toEqual({ type: "icon", url: "" });
+  });
+
   it("evaluates eq/gt/in and first-match wins", () => {
     const running = vars({ driverStatus: "RUNNING", reg1: 150 });
     expect(
