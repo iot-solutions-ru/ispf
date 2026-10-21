@@ -41,6 +41,7 @@ public class BlueprintEngine {
     public BlueprintDefinition createBlueprint(BlueprintDefinition model) {
         validateBlueprintType(model);
         ensureCatalogContainers();
+        releaseOrphanedName(model.name());
         BlueprintDefinition stored = registry.register(model);
         registerBlueprintObject(stored);
         if (stored.type() == BlueprintType.SINGLETON) {
@@ -60,12 +61,33 @@ public class BlueprintEngine {
         return stored;
     }
 
+    /**
+     * Drops catalog blueprints whose tree node was removed with {@code path} or under it.
+     * The caller deletes the persisted definition rows.
+     */
+    public List<BlueprintDefinition> removeDefinitionsForDeletedPath(String path) {
+        if (path == null || path.isBlank()) {
+            return List.of();
+        }
+        String prefix = path + ".";
+        List<BlueprintDefinition> removed = new ArrayList<>();
+        for (BlueprintDefinition model : List.copyOf(registry.all())) {
+            if (model.systemIntrinsic()) {
+                continue;
+            }
+            String catalogPath = model.catalogObjectPath();
+            if (!path.equals(catalogPath) && !catalogPath.startsWith(prefix)) {
+                continue;
+            }
+            deleteBlueprint(model.id());
+            removed.add(model);
+        }
+        return removed;
+    }
+
     public void deleteBlueprint(String blueprintId) {
-        BlueprintDefinition model = registry.requireById(blueprintId);
         registry.delete(blueprintId);
-        objectTree.findByPath(model.catalogObjectPath()).ifPresent(node ->
-                attachments.removeIf(a -> a.blueprintId().equals(blueprintId))
-        );
+        attachments.removeIf(a -> a.blueprintId().equals(blueprintId));
     }
 
     /**
@@ -472,6 +494,24 @@ public class BlueprintEngine {
                     null
             ));
         }
+    }
+
+    /**
+     * A deleted catalog node leaves the definition in memory. The same name may be created again.
+     * A definition whose node is still in the tree keeps the name.
+     * The caller deletes the persisted row for the returned definition.
+     */
+    public Optional<BlueprintDefinition> releaseOrphanedName(String name) {
+        Optional<BlueprintDefinition> existing = registry.findByName(name);
+        if (existing.isEmpty()) {
+            return Optional.empty();
+        }
+        BlueprintDefinition model = existing.get();
+        if (model.systemIntrinsic() || objectTree.findByPath(model.catalogObjectPath()).isPresent()) {
+            throw new BlueprintException("Model already exists: " + name);
+        }
+        deleteBlueprint(model.id());
+        return Optional.of(model);
     }
 
     private void ensureCatalogContainer(String path, String displayName, String description) {
