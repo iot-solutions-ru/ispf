@@ -24,6 +24,8 @@ class SystemObjectDescriptionsTest {
     void resolvesApplicationSubfolders() {
         assertTrue(SystemObjectDescriptions.resolve("root.platform.applications.demo.functions").isPresent());
         assertTrue(SystemObjectDescriptions.resolve("root.platform.applications.demo").isPresent());
+        assertFalse(SystemObjectDescriptions.resolve("root.platform.applications.demo.extra.migrations").isPresent());
+        assertFalse(SystemObjectDescriptions.resolve("root.platform.singleton-blueprints.migrations").isPresent());
     }
 
     @Test

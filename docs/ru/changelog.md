@@ -24,6 +24,7 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Изменено
 
+- Имя каталога остаётся папкой только на своём месте: `root.platform.{leaf}`, `root.tenant.{id}.platform.{leaf}` или `applications.{appId}.{leaf}` (`migrations`, `reports`, `schedules`, `bindings`, `functions`, `screens`). Объект с именем `migrations`, в том числе singleton blueprint, сохраняет свой тип и удаляется.
 - Импорт в каталог mixin, типов экземпляров или singleton сохраняет цель `CUSTOM` или `DEVICE`. Другой тип исходного узла, например миграция, становится целью `CUSTOM`. Вид blueprint по-прежнему задаёт папка.
 - Удаление объекта в каталоге blueprint снимает и определение типа. Повторное создание с тем же именем больше не отвечает 409 `Model already exists`, когда узла уже нет.
 - Плейбук показа заказчику: [customer-demo-playbook](customer-demo-playbook.md) (MES / OT+HMI+air-gap, 30–60 мин).

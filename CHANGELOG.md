@@ -32,6 +32,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Changed
 
+- **Catalog folder names stay folders** — a path counts as a migrations, reports, schedules, bindings, functions, or screens catalog only at `root.platform.{leaf}`, `root.tenant.{id}.platform.{leaf}`, or `applications.{appId}.{leaf}`. An object named `migrations`, including a singleton blueprint, keeps its own type and can be deleted.
 - **Blueprint import target** — a node imported into a mixin, instance-type, or singleton catalog keeps a `CUSTOM` or `DEVICE` target. Any other source type, such as a migration, becomes `CUSTOM`. The blueprint kind still comes from the folder.
 - **Deleting a blueprint catalog object releases its name** — removing the tree node also drops the blueprint definition. Creating the same name again no longer returns 409 `Model already exists` after the node is gone.
 - **Customer demostand playbook** — [customer-demo-playbook](docs/en/customer-demo-playbook.md): 30–60 min show-the-customer agenda (MES live · OT+HMI+air-gap); linked from learn / demostands / vps-demostand. Not engineer Path A/B.

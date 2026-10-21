@@ -1,3 +1,5 @@
+import { isCatalogFolderPath } from "./catalogFolderPath";
+
 /** Platform catalog folder paths that accept new child instances from Explorer. */
 export const QUERIES_ROOT = "root.platform.queries";
 
@@ -9,7 +11,6 @@ const PLATFORM_CATALOG_SUFFIXES = [
   ".instances",
   ".dashboards",
   ".mimics",
-  ".reports",
   ".workflows",
   ".alert-rules",
   ".correlators",
@@ -30,7 +31,7 @@ const PLATFORM_CATALOG_SUFFIXES = [
 
 export function isPlatformReportsFolder(path: string): boolean {
   return path === "root.platform.reports"
-    || (path.endsWith(".reports") && !path.startsWith("root.platform.applications."));
+    || /^root\.tenant\.[^.]+\.platform\.reports$/.test(path);
 }
 
 export function isMesCatalogContainer(path: string): boolean {
@@ -52,5 +53,23 @@ export function isPlatformCatalogContainer(path: string): boolean {
   if (isPlatformReportsFolder(path) || isMesCatalogContainer(path)) {
     return true;
   }
-  return PLATFORM_CATALOG_SUFFIXES.some((suffix) => path.endsWith(suffix));
+  return PLATFORM_CATALOG_SUFFIXES.some((suffix) => matchesCatalogSuffix(path, suffix));
+}
+
+const POSITION_SCOPED_SUFFIXES = new Set([
+  ".data-sources",
+  ".schedules",
+  ".bindings",
+  ".migrations",
+  ".process-programs",
+]);
+
+function matchesCatalogSuffix(path: string, suffix: (typeof PLATFORM_CATALOG_SUFFIXES)[number]): boolean {
+  if (!path.endsWith(suffix)) {
+    return false;
+  }
+  if (POSITION_SCOPED_SUFFIXES.has(suffix)) {
+    return isCatalogFolderPath(path, suffix.slice(1));
+  }
+  return true;
 }
