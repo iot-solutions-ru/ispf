@@ -146,13 +146,7 @@ export default function MapWidgetView({
       path: obj.path,
       displayName: obj.displayName,
     }));
-  }, [
-    children.data,
-    widget.namePattern,
-    widget.objectType,
-    widget.includePathsJson,
-    widget.excludePathsJson,
-  ]);
+  }, [children.data, widget]);
 
   const markerPaths = useMemo(() => markerObjects.map((obj) => obj.path), [markerObjects]);
   const variablesBatch = useVariablesBatchQuery(
@@ -232,6 +226,8 @@ export default function MapWidgetView({
     setPopup((prev) =>
       prev && prev.path === popup.path ? { ...prev, rows, statusClass } : prev
     );
+    // popup object identity changes when rows refresh; key off path only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: popup?.path
   }, [
     popup?.path,
     popupMode,
