@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import java.util.Locale;
+
 @Component
 public class NatsEventBridge implements WorkflowMessageBus {
 
@@ -39,6 +40,7 @@ public class NatsEventBridge implements WorkflowMessageBus {
     private final NatsJetStreamSupport jetStreamSupport;
     private final AtomicLong publishFailures = new AtomicLong();
     private volatile String lastPublishError;
+    private volatile String connectFailure;
 
     @Autowired
     public NatsEventBridge(
@@ -137,8 +139,15 @@ public class NatsEventBridge implements WorkflowMessageBus {
 
     @Override
     public void publish(String subject, String message) {
-        if (!properties.enabled() || connection == null) {
+        if (!properties.enabled()) {
             log.info("[nats:disabled] {} -> {}", subject, message);
+            return;
+        }
+        if (connection == null) {
+            log.error(
+                    "NATS publish skipped, bridge is not connected: {}",
+                    connectFailure == null ? "connection failed" : connectFailure
+            );
             return;
         }
         try {
@@ -171,6 +180,11 @@ public class NatsEventBridge implements WorkflowMessageBus {
 
     public String lastPublishError() {
         return lastPublishError;
+    }
+
+    /** Set when NATS is enabled and {@link #connect()} failed. Null when disabled or connected. */
+    public String connectFailure() {
+        return connectFailure;
     }
 
     private void recordPublishFailure(String action, Exception e) {
@@ -221,10 +235,15 @@ public class NatsEventBridge implements WorkflowMessageBus {
                     .errorListener(new RateLimitedNatsErrorListener(properties.slowConsumerLogIntervalSeconds()))
                     .build();
             Connection conn = Nats.connect(options);
+            connectFailure = null;
             log.info("Connected to NATS at {}", redactCredentials(properties.url()));
             return conn;
         } catch (Exception e) {
-            log.warn("NATS connection failed ({}). Event bridge will run in no-op mode.", redactCredentials(e.getMessage()));
+            String message = e.getMessage() == null || e.getMessage().isBlank()
+                    ? e.getClass().getSimpleName()
+                    : e.getMessage();
+            connectFailure = redactCredentials(message);
+            log.error("NATS enabled but connection failed: {}", connectFailure);
             return null;
         }
     }
