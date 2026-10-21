@@ -3,6 +3,8 @@ package com.ispf.server.object;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.object.BlueprintOwnedMember;
+import com.ispf.plugin.blueprint.BlueprintCatalogMetadata;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.HistorySampleMode;
@@ -38,6 +40,7 @@ public class ObjectVariableService {
     private final DeviceTelemetryPolicy telemetryPolicyService;
     private final JavaFunctionRuntimeService javaFunctionRuntimeService;
     private final FunctionScriptValidator scriptValidator;
+    private final BlueprintRegistry blueprintRegistry;
 
     public ObjectVariableService(
             @Lazy ObjectManager objectManager,
@@ -45,7 +48,8 @@ public class ObjectVariableService {
             ObjectEntityMapper mapper,
             @Lazy DeviceTelemetryPolicy telemetryPolicyService,
             JavaFunctionRuntimeService javaFunctionRuntimeService,
-            FunctionScriptValidator scriptValidator
+            FunctionScriptValidator scriptValidator,
+            @Lazy BlueprintRegistry blueprintRegistry
     ) {
         this.objectManager = objectManager;
         this.variableRepository = variableRepository;
@@ -53,6 +57,7 @@ public class ObjectVariableService {
         this.telemetryPolicyService = telemetryPolicyService;
         this.javaFunctionRuntimeService = javaFunctionRuntimeService;
         this.scriptValidator = scriptValidator;
+        this.blueprintRegistry = blueprintRegistry;
     }
 
     @Transactional
@@ -96,9 +101,15 @@ public class ObjectVariableService {
 
     @Transactional
     public void deleteVariable(String path, String name) {
+        if (BlueprintCatalogMetadata.isCatalogVariable(name)) {
+            throw new IllegalArgumentException("Cannot delete catalog variable: " + name);
+        }
         assertUserVariable(name);
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
+        if (CatalogSchemaVariables.isIntrinsicSchemaVariable(node, name, blueprintRegistry)) {
+            throw new IllegalArgumentException("Cannot delete catalog variable: " + name);
+        }
         BlueprintOwnedMember.assertDeletableVariable(node, name);
         Optional<Variable> existing = node.getVariable(name);
         if (existing.isEmpty()) {

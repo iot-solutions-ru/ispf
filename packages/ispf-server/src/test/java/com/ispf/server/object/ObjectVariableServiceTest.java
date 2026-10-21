@@ -8,6 +8,10 @@ import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.function.java.JavaFunctionRuntimeService;
@@ -21,6 +25,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,7 +74,8 @@ class ObjectVariableServiceTest {
                 mapper,
                 telemetryPolicyService,
                 javaFunctionRuntimeService,
-                new FunctionScriptValidator(new ObjectMapper())
+                new FunctionScriptValidator(new ObjectMapper()),
+                null
         );
     }
 
@@ -109,6 +116,94 @@ class ObjectVariableServiceTest {
                 null
         )).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("already exists");
+    }
+
+    @Test
+    void deleteVariableRejectsBlueprintCatalogMetadata() {
+        DataSchema meta = DataSchema.builder("blueprintType").field("value", FieldType.STRING).build();
+        node.addVariable(new Variable("blueprintType", meta, true, false, null));
+        node.addVariable(new Variable("suitabilityExpression", meta, true, true, null));
+
+        assertThatThrownBy(() -> variableService.deleteVariable(PATH, "blueprintType"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("blueprintType");
+        assertThatThrownBy(() -> variableService.deleteVariable(PATH, "suitabilityExpression"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("suitabilityExpression");
+        assertThat(node.getVariable("blueprintType")).isPresent();
+        assertThat(node.getVariable("suitabilityExpression")).isPresent();
+        verify(variableRepository, never()).deleteByObjectPathAndName(any(), any());
+    }
+
+    @Test
+    void deleteVariableRejectsIntrinsicCatalogSchemaAndKeepsLocalVariables() {
+        DataSchema schema = DataSchema.builder("layout").field("value", FieldType.STRING).build();
+        PlatformObject dashboard = new PlatformObject(
+                "main",
+                "root.platform.dashboards.main",
+                ObjectType.DASHBOARD,
+                "Main",
+                "",
+                null
+        );
+        objectTree.register(dashboard);
+        dashboard.addVariable(new Variable("layout", schema, true, true, null));
+        dashboard.addVariable(new Variable("note", schema, true, true, null));
+        ObjectVariableService scoped = serviceWith(dashboardSchema(schema));
+        when(mapper.auditDiff(any(), any())).thenReturn("{}");
+
+        assertThatThrownBy(() -> scoped.deleteVariable(dashboard.path(), "layout"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("layout");
+        assertThat(dashboard.getVariable("layout")).isPresent();
+
+        scoped.deleteVariable(dashboard.path(), "note");
+        assertThat(dashboard.getVariable("note")).isEmpty();
+        verify(variableRepository).deleteByObjectPathAndName(dashboard.path(), "note");
+    }
+
+    @Test
+    void deleteVariableAllowsSchemaNameOnADevice() {
+        DataSchema schema = DataSchema.builder("layout").field("value", FieldType.STRING).build();
+        node.addVariable(new Variable("layout", schema, true, true, null));
+        ObjectVariableService scoped = serviceWith(dashboardSchema(schema));
+        when(mapper.auditDiff(any(), any())).thenReturn("{}");
+
+        scoped.deleteVariable(PATH, "layout");
+
+        assertThat(node.getVariable("layout")).isEmpty();
+    }
+
+    private ObjectVariableService serviceWith(BlueprintDefinition model) {
+        BlueprintRegistry registry = new BlueprintRegistry();
+        registry.register(model);
+        return new ObjectVariableService(
+                objectManager,
+                variableRepository,
+                mapper,
+                telemetryPolicyService,
+                javaFunctionRuntimeService,
+                new FunctionScriptValidator(new ObjectMapper()),
+                registry
+        );
+    }
+
+    private static BlueprintDefinition dashboardSchema(DataSchema layout) {
+        return new BlueprintDefinition(
+                "dash-id",
+                "dashboard-v1",
+                "",
+                BlueprintType.MIXIN,
+                ObjectType.DASHBOARD,
+                "",
+                List.of(BlueprintVariableDefinition.of("layout", "", "info", layout, true, true, null)),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.EPOCH,
+                Instant.EPOCH
+        );
     }
 
     @Test

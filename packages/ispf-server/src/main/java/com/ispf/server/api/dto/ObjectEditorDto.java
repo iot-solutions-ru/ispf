@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Universal object editor payload — all editable aspects of an object in one response.
@@ -102,6 +103,20 @@ public record ObjectEditorDto(
                     List.copyOf(events),
                     List.copyOf(functions),
                     List.copyOf(bindingRuleIds)
+            );
+        }
+
+        public BlueprintOwnershipDto withAdditionalVariables(Set<String> names) {
+            if (names == null || names.isEmpty()) {
+                return this;
+            }
+            LinkedHashSet<String> merged = new LinkedHashSet<>(variables);
+            merged.addAll(names);
+            return new BlueprintOwnershipDto(
+                    List.copyOf(merged),
+                    events,
+                    functions,
+                    bindingRuleIds
             );
         }
     }

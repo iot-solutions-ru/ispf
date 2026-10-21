@@ -555,17 +555,17 @@ public class BlueprintEngine {
         modelObject.updateInfo(model.name(), model.description());
 
         modelObject.addVariable(new Variable(
-                "blueprintType",
-                com.ispf.core.model.DataSchema.builder("blueprintType").field("value", com.ispf.core.model.FieldType.STRING).build(),
+                BlueprintCatalogMetadata.BLUEPRINT_TYPE,
+                com.ispf.core.model.DataSchema.builder(BlueprintCatalogMetadata.BLUEPRINT_TYPE).field("value", com.ispf.core.model.FieldType.STRING).build(),
                 true,
                 false,
                 com.ispf.core.model.DataRecord.single(
-                        com.ispf.core.model.DataSchema.builder("blueprintType").field("value", com.ispf.core.model.FieldType.STRING).build(),
+                        com.ispf.core.model.DataSchema.builder(BlueprintCatalogMetadata.BLUEPRINT_TYPE).field("value", com.ispf.core.model.FieldType.STRING).build(),
                         Map.of("value", model.type().name())
                 )
         ));
         modelObject.addVariable(new Variable(
-                "suitabilityExpression",
+                BlueprintCatalogMetadata.SUITABILITY_EXPRESSION,
                 com.ispf.core.model.DataSchema.builder("expr").field("value", com.ispf.core.model.FieldType.STRING).build(),
                 true,
                 true,
