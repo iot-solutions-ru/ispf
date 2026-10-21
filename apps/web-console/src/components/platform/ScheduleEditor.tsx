@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, Button, Checkbox, Form, Input } from "antd";
 import { fetchSchedule, updateSchedule } from "../../api/platformSchedules";
-import { ObjectPathField } from "../../ui";
+import { ObjectFunctionSelect, ObjectPathField } from "../../ui";
 import PlatformSqlEditorShell from "./PlatformSqlEditorShell";
 
 const { TextArea } = Input;
@@ -133,18 +133,21 @@ export default function ScheduleEditor({ path, onClose, onOpenProperties }: Sche
           className="full"
           label={t("platform:schedule.objectPath")}
           value={objectPath}
-          onChange={setObjectPath}
+          onChange={(next) => {
+            if (next.trim() !== objectPath.trim()) {
+              setFunctionName("");
+            }
+            setObjectPath(next);
+          }}
           placeholder="root.platform.devices.demo-sensor-01"
         />
-        <label className="full">
-          {t("platform:schedule.functionName")}
-          <Input
-            value={functionName}
-            onChange={(e) => setFunctionName(e.target.value)}
-            placeholder="refresh"
-            required
-          />
-        </label>
+        <ObjectFunctionSelect
+          className="full"
+          label={t("platform:schedule.functionName")}
+          objectPath={objectPath}
+          value={functionName}
+          onChange={setFunctionName}
+        />
         <label className="full">
           <Checkbox checked={enabled} onChange={(e) => setEnabled(e.target.checked)}>
             {t("platform:schedule.enabled")}

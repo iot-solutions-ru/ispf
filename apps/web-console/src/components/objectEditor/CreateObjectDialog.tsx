@@ -44,7 +44,7 @@ import {
   resolveCreateDialogMode,
   showsCreateTypeField,
 } from "../../utils/object/createObjectMode";
-import { ObjectPathField } from "../../ui/index";
+import { ObjectFunctionSelect, ObjectPathField } from "../../ui/index";
 import type { BlueprintDto } from "../../types/blueprints";
 import type { ObjectType } from "../../types";
 import { isTechnicalIdentifier } from "../../utils/ui/technicalIdentifier";
@@ -789,16 +789,21 @@ export default function CreateObjectDialog({
                   className="full"
                   label={t("platform:schedule.objectPath")}
                   value={scheduleObjectPath}
-                  onChange={setScheduleObjectPath}
+                  onChange={(next) => {
+                    if (next.trim() !== scheduleObjectPath.trim()) {
+                      setScheduleFunctionName("");
+                    }
+                    setScheduleObjectPath(next);
+                  }}
                   placeholder="root.platform.devices.demo-sensor-01"
                 />
-                <Form.Item label={t("platform:schedule.functionName")} className="full">
-                  <Input
-                    value={scheduleFunctionName}
-                    onChange={(e) => setScheduleFunctionName(e.target.value)}
-                    required
-                  />
-                </Form.Item>
+                <ObjectFunctionSelect
+                  className="full"
+                  label={t("platform:schedule.functionName")}
+                  objectPath={scheduleObjectPath}
+                  value={scheduleFunctionName}
+                  onChange={setScheduleFunctionName}
+                />
               </>
             )}
 
@@ -967,6 +972,8 @@ export default function CreateObjectDialog({
                       schemaName,
                       jdbcUrl: dataSourceJdbcUrl,
                     }))
+                  || (mode === "schedule"
+                    && (!scheduleObjectPath.trim() || !scheduleFunctionName.trim()))
                   || (mode === "sql-binding"
                     && (
                       !bindingTargetPath.trim()
