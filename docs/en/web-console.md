@@ -196,7 +196,7 @@ Components: `FederationPeersPanel`, `FederationCatalogSyncDialog`, `components/f
 
 **WorkflowBuilder:** cancel/signal active BPMN instance (`POST /workflows/instances/{id}/cancel|signal`).
 
-**Platform backup** (`PlatformBackupPanel`, BL-47): export JSON subtree `root.platform`; import with dry-run preview. API: `GET /api/v1/platform/backup/export`, `POST /api/v1/platform/backup/import?dryRun=true|false`. Federation proxy nodes are skipped on import. Catalog folders also offer **Import from JSON**: a subtree export of exactly one node becomes a new child of the open folder. The path inside the file is ignored; the operator enters the new name. Import into a mixin, instance-type, or singleton catalog registers a blueprint. API: `POST /api/v1/platform/backup/import-node?parentPath=&name=`.
+**Platform backup** (`PlatformBackupPanel`, BL-47): export JSON subtree `root.platform`; import with dry-run preview. API: `GET /api/v1/platform/backup/export`, `POST /api/v1/platform/backup/import?dryRun=true|false`. Federation proxy nodes are skipped on import. Catalog folders also offer **Import from JSON**: a subtree export of exactly one node becomes a new child of the open folder. The path inside the file is ignored; the operator enters the new name. Import into a mixin, instance-type, or singleton catalog registers a blueprint. The target stays `CUSTOM` or `DEVICE`; any other source type becomes `CUSTOM`. API: `POST /api/v1/platform/backup/import-node?parentPath=&name=`.
 
 ## System metrics
 

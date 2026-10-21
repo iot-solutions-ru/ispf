@@ -32,6 +32,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Changed
 
+- **Blueprint import target** — a node imported into a mixin, instance-type, or singleton catalog keeps a `CUSTOM` or `DEVICE` target. Any other source type, such as a migration, becomes `CUSTOM`. The blueprint kind still comes from the folder.
 - **Deleting a blueprint catalog object releases its name** — removing the tree node also drops the blueprint definition. Creating the same name again no longer returns 409 `Model already exists` after the node is gone.
 - **Customer demostand playbook** — [customer-demo-playbook](docs/en/customer-demo-playbook.md): 30–60 min show-the-customer agenda (MES live · OT+HMI+air-gap); linked from learn / demostands / vps-demostand. Not engineer Path A/B.
 - **Air-gap RSA signed gate default** — `deploy/docker-compose.air-gap.yml` defaults `ISPF_LICENSE_ENFORCE` / `REQUIRE_SIGNED_BUNDLES` to `true` and `SPRING_PROFILES_ACTIVE=prod`; `air-gap-apply.sh` warns if the public key is missing. Evidence stub [air-gap-signing](docs/evidence/air-gap-signing/README.md); smoke `deploy/tools/air-gap-signed-gate-smoke.sh`. **Cosign / image publisher signatures remain Gap** (not claimed). Scorecard air-gap 7.7→7.8.

@@ -230,9 +230,7 @@ public class PlatformBackupService {
             Map<String, String> parameters = new LinkedHashMap<>(existing.parameters());
             parameters.remove("singletonInstancePath");
             parameters.remove(SystemIntrinsicBlueprints.PARAM_SYSTEM_INTRINSIC);
-            ObjectType target = existing.targetObjectType() != null
-                    ? existing.targetObjectType()
-                    : ObjectType.CUSTOM;
+            ObjectType target = blueprintTarget(existing.targetObjectType());
             return new BlueprintDefinition(
                     UUID.randomUUID().toString(),
                     name,
@@ -253,9 +251,7 @@ public class PlatformBackupService {
                     now
             );
         }
-        ObjectType target = node.type() == ObjectType.BLUEPRINT || node.type() == null
-                ? ObjectType.CUSTOM
-                : node.type();
+        ObjectType target = blueprintTarget(node.type());
         return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 name,
@@ -315,6 +311,17 @@ public class PlatformBackupService {
             return value == null ? "" : String.valueOf(value);
         }
         return "";
+    }
+
+    /**
+     * Mixin, instance-type, and singleton catalogs accept the same blueprint targets as the create dialog.
+     * A migration or other catalog object becomes {@link ObjectType#CUSTOM}.
+     */
+    private static ObjectType blueprintTarget(ObjectType sourceType) {
+        if (sourceType == ObjectType.CUSTOM || sourceType == ObjectType.DEVICE) {
+            return sourceType;
+        }
+        return ObjectType.CUSTOM;
     }
 
     private static BlueprintType blueprintKind(String parentPath) {
