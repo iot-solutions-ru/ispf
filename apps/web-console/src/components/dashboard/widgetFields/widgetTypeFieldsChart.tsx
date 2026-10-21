@@ -1,10 +1,14 @@
 // Type-specific editor fields — chart widgets (4 types).
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
-import { type NetworkGraphWidget, WIDGET_HISTORY_RANGE_OPTIONS } from "../../../types/dashboard";
+import {
+  type NetworkGraphWidget,
+  WIDGET_HISTORY_RANGE_OPTIONS,
+} from "../../../types/dashboard";
 import { AdvancedJsonField, HintCaption, VariableSelect } from "../widgetEditorStructured";
 import { variableListAllowCustom } from "../widgetEditorHelpers";
 import { RecordFieldGroup } from "./widgetBoundChoices";
+import MapMarkerRulesEditor from "./MapMarkerRulesEditor";
 import {
   Section,
   WidgetEditorCaption,
@@ -238,6 +242,8 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
 
 function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
   const { widget, update } = ctx;
+  const popupMode =
+    widget.popupMode ?? (widget.popupVariablesJson?.trim() ? "variables" : "label");
   return (
     <>
       <Section title={t("editor.section.map")} />
@@ -269,6 +275,78 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
           onChange={(e) => update({ labelVariable: e.target.value || undefined })}
         />
       </label>
+
+      <Section title={t("editor.section.mapFilter")} />
+      <label>
+        <HintCaption>{t("editor.field.namePattern")}</HintCaption>
+        <input
+          value={widget.namePattern ?? ""}
+          onChange={(e) => update({ namePattern: e.target.value || undefined })}
+          placeholder="modbus-localhost*"
+        />
+      </label>
+      <label>
+        <WidgetEditorCaption text={t("editor.field.objectType")} />
+        <select
+          value={widget.objectType ?? ""}
+          onChange={(e) =>
+            update({
+              objectType: (e.target.value || undefined) as typeof widget.objectType,
+            })
+          }
+        >
+          <option value="">—</option>
+          <option value="DEVICE">{t("common:objectType.DEVICE")}</option>
+          <option value="FOLDER">{t("common:objectType.FOLDER")}</option>
+          <option value="DASHBOARD">{t("common:objectType.DASHBOARD")}</option>
+          <option value="CUSTOM">{t("common:objectType.CUSTOM")}</option>
+        </select>
+      </label>
+      <AdvancedJsonField
+        label={t("editor.field.includePathsJson")}
+        value={widget.includePathsJson}
+        onChange={(v) => update({ includePathsJson: v })}
+        rows={2}
+      />
+      <AdvancedJsonField
+        label={t("editor.field.excludePathsJson")}
+        value={widget.excludePathsJson}
+        onChange={(v) => update({ excludePathsJson: v })}
+        rows={2}
+      />
+
+      <Section title={t("editor.section.mapMarkerRules")} />
+      <MapMarkerRulesEditor
+        value={widget.markerRulesJson}
+        onChange={(v) => update({ markerRulesJson: v })}
+        t={t}
+      />
+
+      <Section title={t("editor.section.mapPopup")} />
+      <label>
+        <WidgetEditorCaption text={t("editor.field.popupMode")} />
+        <select
+          value={popupMode}
+          onChange={(e) =>
+            update({
+              popupMode: (e.target.value || undefined) as typeof widget.popupMode,
+            })
+          }
+        >
+          <option value="none">{t("editor.popupMode.none")}</option>
+          <option value="label">{t("editor.popupMode.label")}</option>
+          <option value="variables">{t("editor.popupMode.variables")}</option>
+        </select>
+      </label>
+      {popupMode === "variables" && (
+        <AdvancedJsonField
+          label={t("editor.field.popupVariablesJson")}
+          value={widget.popupVariablesJson}
+          onChange={(v) => update({ popupVariablesJson: v })}
+          rows={3}
+        />
+      )}
+
       <label>
         <WidgetEditorCaption text={t("editor.field.zoom")} />
         <input

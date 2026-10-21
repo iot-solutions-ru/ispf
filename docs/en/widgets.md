@@ -557,9 +557,17 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 | Field | Description |
 |-------|-------------|
 | `parentPath` | **Required.** |
-| `latVariable` | Geo variable on child |
-| `latField` / `lonField` | Coordinate fields (default `lat`/`lon`) |
+| `latVariable` | Geo variable on child (default `coordinates`) |
+| `latField` / `lonField` | Coordinate fields (default `latitude` / `longitude`) |
 | `labelVariable` | Marker label |
+| `namePattern` | Glob on leaf name (same as object-table), e.g. `modbus-localhost*` |
+| `objectType` | Filter children by type (`DEVICE`, …) |
+| `includePathsJson` | JSON string array of full paths or leaf names; when set, only those pass |
+| `excludePathsJson` | JSON string array of paths/names to hide |
+| `markerRulesJson` | **Primary marker UI.** Ordered states (JSON). **First match wins.** Each state: condition (`variable` + `op` + `value`) and appearance — either `{ type:"color", color }` **or** `{ type:"icon", url, size? }` (`url` may be http(s), site path, or inline `data:` from file upload, same as image widget). Ops: `eq` \| `ne` \| `gt` \| `gte` \| `lt` \| `lte` \| `in`. No match → default platform marker. |
+| `markerMode` / `markerColor` / `markerIconUrl` / `statusVariable` / … | Legacy shortcuts only (layouts without rules). Ignored when `markerRulesJson` has states. Not shown in the widget editor. |
+| `popupMode` | `none` \| `label` \| `variables` (legacy: `popupVariablesJson` set ⇒ `variables`, else `label`) |
+| `popupVariablesJson` | JSON `[{name,label?,field?}]` rows when `popupMode=variables` |
 | `zoom`, `centerLat`, `centerLon` | Map view |
 | `tileUrl`, `mapStyleUrl`, `tileAttribution` | Custom tiles |
 | `rowTargetDashboard`, `rowOpenMode`, `rowSelectionKey`, `rowParamsJson` | Same as table |
