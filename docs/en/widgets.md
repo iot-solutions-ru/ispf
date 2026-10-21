@@ -557,9 +557,23 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 | Field | Description |
 |-------|-------------|
 | `parentPath` | **Required.** |
-| `latVariable` | Geo variable on child |
-| `latField` / `lonField` | Coordinate fields (default `lat`/`lon`) |
+| `latVariable` | Geo variable on child (default `coordinates`) |
+| `latField` / `lonField` | Coordinate fields (default `latitude` / `longitude`) |
 | `labelVariable` | Marker label |
+| `namePattern` | Glob on leaf name (same as object-table), e.g. `modbus-localhost*` |
+| `objectType` | Filter children by type (`DEVICE`, …) |
+| `includePathsJson` | JSON string array of full paths or leaf names; when set, only those pass |
+| `excludePathsJson` | JSON string array of paths/names to hide |
+| `markerRulesJson` | Ordered appearance rules (JSON array). **First match wins.** When non-empty, overrides `markerMode` / status / fixed / icon shortcuts. Each rule: `{ when: { variable, field?, op, value }, style: { type:"color", color } \| { type:"icon", url, size? } }`. Ops: `eq` \| `ne` \| `gt` \| `gte` \| `lt` \| `lte` \| `in` |
+| `markerMode` | `default` \| `status-color` \| `fixed-color` \| `icon` (legacy: `statusVariable` set ⇒ `status-color`). Ignored when `markerRulesJson` has rules |
+| `markerColor` | CSS/hex when `markerMode=fixed-color` |
+| `markerIconUrl` / `markerIconSize` | Icon URL and size (px) when `markerMode=icon` |
+| `markerIconTintByStatus` | When icon mode: also tint ring from status |
+| `statusVariable` | Status variable for marker color/tint (e.g. `driverStatus`) |
+| `statusField` | Status field (default `value`) |
+| `statusOkValues` | Comma-separated healthy values (default `RUNNING,ONLINE,OK,CONNECTED,TRUE,1`) → green; else red |
+| `popupMode` | `none` \| `label` \| `variables` (legacy: `popupVariablesJson` set ⇒ `variables`, else `label`) |
+| `popupVariablesJson` | JSON `[{name,label?,field?}]` rows when `popupMode=variables` |
 | `zoom`, `centerLat`, `centerLon` | Map view |
 | `tileUrl`, `mapStyleUrl`, `tileAttribution` | Custom tiles |
 | `rowTargetDashboard`, `rowOpenMode`, `rowSelectionKey`, `rowParamsJson` | Same as table |
