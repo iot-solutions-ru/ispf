@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **Copy a function on the same object** — the Functions tab saves a second function under a new name. The copy keeps the schemas, body, data source, version, and invoke roles. Callers that name the source stay on the source. The dialog requires a free name.
 - **Copy a variable on the same object** — the Variables tab creates a second variable under a new name. The copy keeps the schema, current value, read/write flags, roles, and history settings. Historian samples and bindings that name the source stay on the source.
 - **Import one exported node into a catalog folder** — folder lists under `root.platform` offer Import from JSON. The file must be a subtree export with exactly one node. The path inside the file is ignored; the operator enters the new name, and the object is created in the open folder. Import into a mixin, instance-type, or singleton catalog registers a blueprint, copying the definition when the source blueprint is on this server. `POST /api/v1/platform/backup/import-node?parentPath=&name=`. In-place subtree restore is unchanged.
 - **Effective configuration (Wave 1B)** — `GET /api/v1/platform/effective-config` exposes resolved replica profile and pool min/max snapshot ([0033](docs/en/decisions/0033-prod-idle-demostand-tuning.md)); demostand docs prefer named profiles over ad-hoc per-tier env.
