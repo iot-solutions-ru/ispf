@@ -32,7 +32,10 @@ public class PlatformNatsHealthService {
         boolean connected = eventBridge.isEnabled();
         String connectionError = null;
         if (enabled && !connected) {
-            connectionError = "NATS enabled but connection is not available";
+            String failure = eventBridge.connectFailure();
+            connectionError = failure == null || failure.isBlank()
+                    ? "NATS enabled but connection is not available"
+                    : failure;
         }
 
         boolean jetStreamConfigured = enabled && properties.jetStreamEnabled();
@@ -83,7 +86,9 @@ public class PlatformNatsHealthService {
                 consumerDurable,
                 consumerPending,
                 connected,
-                connectionError
+                connectionError,
+                eventBridge.publishFailureCount(),
+                eventBridge.lastPublishError()
         );
     }
 
@@ -102,7 +107,9 @@ public class PlatformNatsHealthService {
             String consumerDurable,
             Long consumerPending,
             boolean publishNatsAvailable,
-            String connectionError
+            String connectionError,
+            long publishFailureCount,
+            String lastPublishError
     ) {
     }
 }

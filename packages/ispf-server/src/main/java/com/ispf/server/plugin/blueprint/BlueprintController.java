@@ -128,6 +128,8 @@ public class BlueprintController {
                 now
         );
         try {
+            blueprintEngine.releaseOrphanedName(model.name())
+                    .ifPresent(old -> blueprintPersistence.delete(old.id()));
             BlueprintDefinition created = blueprintEngine.createBlueprint(model);
             blueprintPersistence.persist(created, false);
             return BlueprintDto.from(created);

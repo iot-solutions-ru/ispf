@@ -174,6 +174,40 @@ class PlatformBackupScopedExportTest {
         }
     }
 
+    @Test
+    void importIntoAnInstanceCatalogKeepsDeviceTargetAndReplacesOtherTypesWithCustom() {
+        String deviceName = "json-bp-device";
+        String migrationName = "json-bp-migration";
+        deleteBlueprint(deviceName);
+        deleteBlueprint(migrationName);
+        String deviceJson = """
+                {
+                  "formatVersion": 1,
+                  "nodes": [
+                    {"path":"root.platform.devices.meter","type":"DEVICE","displayName":"Meter","description":""}
+                  ]
+                }
+                """;
+        String migrationJson = """
+                {
+                  "formatVersion": 1,
+                  "nodes": [
+                    {"path":"root.platform.migrations.cutoff_schema_v11","type":"MIGRATION","displayName":"Cutoff","description":""}
+                  ]
+                }
+                """;
+        try {
+            platformBackupService.importNodeAsChild("root.platform.instance-types", deviceName, deviceJson);
+            platformBackupService.importNodeAsChild("root.platform.instance-types", migrationName, migrationJson);
+            assertEquals(ObjectType.DEVICE, blueprintRegistry.findByName(deviceName).orElseThrow().targetObjectType());
+            assertEquals(BlueprintType.INSTANCE, blueprintRegistry.findByName(migrationName).orElseThrow().type());
+            assertEquals(ObjectType.CUSTOM, blueprintRegistry.findByName(migrationName).orElseThrow().targetObjectType());
+        } finally {
+            deleteBlueprint(deviceName);
+            deleteBlueprint(migrationName);
+        }
+    }
+
     private void deleteBlueprint(String name) {
         blueprintRegistry.findByName(name).ifPresent(model -> {
             blueprintEngine.deleteBlueprint(model.id());

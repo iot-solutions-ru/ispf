@@ -80,6 +80,17 @@ public record ClusterProperties(
         return enabled && driverOwnershipEnabled && hasCapability(ReplicaCapability.DRIVERS);
     }
 
+    /**
+     * A single node always runs drivers. In a cluster, only a replica with {@code DRIVERS} does.
+     * Inactive ownership is a different fact: an edge-api replica has ownership off and must not poll.
+     */
+    public boolean runsDriversLocally() {
+        if (!enabled) {
+            return true;
+        }
+        return hasCapability(ReplicaCapability.DRIVERS);
+    }
+
     /** ADR-0029: NATS live-value mirror to follower RAM. */
     public boolean isLiveVariableSyncActive() {
         return enabled && liveVariableSyncEnabled && hasCapability(ReplicaCapability.REPLICA_SYNC);

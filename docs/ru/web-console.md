@@ -200,7 +200,7 @@ npm run i18n:translate   # regenerate ru/de/zh from en (tools/i18n/generate-loca
 
 **WorkflowBuilder:** cancel/signal активного BPMN instance (`POST /workflows/instances/{id}/cancel|signal`).
 
-**Platform backup** (`PlatformBackupPanel`, BL-47): экспорт JSON-поддерева `root.platform`; импорт с dry-run preview. API: `GET /api/v1/platform/backup/export`, `POST /api/v1/platform/backup/import?dryRun=true|false`. Federation proxy nodes при импорте пропускаются. В папке каталога есть **Импорт из JSON**: экспорт поддерева ровно с одним узлом создаёт новый объект в открытой папке. Путь в файле не используется, имя вводится при импорте. Импорт в каталог mixin, типов экземпляров или singleton регистрирует blueprint. API: `POST /api/v1/platform/backup/import-node?parentPath=&name=`.
+**Platform backup** (`PlatformBackupPanel`, BL-47): экспорт JSON-поддерева `root.platform`; импорт с dry-run preview. API: `GET /api/v1/platform/backup/export`, `POST /api/v1/platform/backup/import?dryRun=true|false`. Federation proxy nodes при импорте пропускаются. В папке каталога есть **Импорт из JSON**: экспорт поддерева ровно с одним узлом создаёт новый объект в открытой папке. Путь в файле не используется, имя вводится при импорте. Импорт в каталог mixin, типов экземпляров или singleton регистрирует blueprint. Цель остаётся `CUSTOM` или `DEVICE`; другой тип исходного узла становится `CUSTOM`. API: `POST /api/v1/platform/backup/import-node?parentPath=&name=`.
 
 ## AI Studio
 

@@ -164,6 +164,10 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     @EventListener(ApplicationReadyEvent.class)
     @Order(ObjectTreeReadyOrder.AFTER_OBJECT_TREE_READY_ORDER)
     public void startConfiguredDrivers() {
+        if (!ownershipService.runsDriversLocally()) {
+            log.info("Driver auto-start skipped: this replica has no DRIVERS capability");
+            return;
+        }
         if (!driverPackProperties.isAutoStartOnBoot()) {
             log.info("Driver auto-start on boot disabled (ispf.driver.auto-start-on-boot=false)");
             return;
@@ -302,6 +306,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public DriverRuntimeStatus start(String devicePath) {
+        refuseWhenReplicaDoesNotRunDrivers();
         stopLocal(devicePath, true);
         if (!ownershipService.tryAcquire(devicePath)) {
             setStatus(devicePath, "STANDBY");
@@ -315,6 +320,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public DriverRuntimeStatus startHeld(String devicePath) {
+        refuseWhenReplicaDoesNotRunDrivers();
         if (activeDrivers.containsKey(devicePath)) {
             return status(devicePath).orElseThrow();
         }
@@ -322,6 +328,12 @@ public class DriverRuntimeService implements DriverConnectionLookup {
             throw new IllegalStateException("Not driver lock holder for: " + devicePath);
         }
         return doStart(devicePath);
+    }
+
+    private void refuseWhenReplicaDoesNotRunDrivers() {
+        if (!ownershipService.runsDriversLocally()) {
+            throw new IllegalStateException("This replica does not run drivers (no DRIVERS capability)");
+        }
     }
 
     private DriverRuntimeStatus doStart(String devicePath) {
