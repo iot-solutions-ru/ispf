@@ -320,11 +320,13 @@ public class ClickHouseHistorianRollupStore {
     }
 
     private void executeStatement(String statement) {
-        post(statement, "");
+        // CREATE DATABASE must run against default; target DB may not exist yet.
+        post(statement, "", Map.of(), "default");
     }
 
     private String postQuery(String query, Map<String, String> params) {
-        HttpResponse<String> response = send(buildRequest(query, "", params));
+        HttpResponse<String> response = send(buildRequest(
+                query, "", params, resolveClickHouse().orElseThrow().getDatabase()));
         if (response.statusCode() >= 400) {
             throw new IllegalStateException(
                     "ClickHouse rollup query failed (" + response.statusCode() + "): " + response.body()
@@ -338,7 +340,11 @@ public class ClickHouseHistorianRollupStore {
     }
 
     private void post(String query, String body, Map<String, String> params) {
-        HttpResponse<String> response = send(buildRequest(query, body, params));
+        post(query, body, params, resolveClickHouse().orElseThrow().getDatabase());
+    }
+
+    private void post(String query, String body, Map<String, String> params, String database) {
+        HttpResponse<String> response = send(buildRequest(query, body, params, database));
         if (response.statusCode() >= 400) {
             throw new IllegalStateException(
                     "ClickHouse rollup request failed (" + response.statusCode() + "): " + response.body()
@@ -357,7 +363,7 @@ public class ClickHouseHistorianRollupStore {
         }
     }
 
-    private HttpRequest buildRequest(String query, String body, Map<String, String> params) {
+    private HttpRequest buildRequest(String query, String body, Map<String, String> params, String database) {
         VariableHistoryProperties.ClickHouse config = resolveClickHouse().orElseThrow();
         StringBuilder url = new StringBuilder(config.getUrl());
         if (!config.getUrl().contains("?")) {
@@ -365,7 +371,7 @@ public class ClickHouseHistorianRollupStore {
         } else if (!config.getUrl().endsWith("&") && !config.getUrl().endsWith("?")) {
             url.append('&');
         }
-        url.append("database=").append(encode(config.getDatabase()));
+        url.append("database=").append(encode(database));
         url.append("&query=").append(encode(query));
         for (Map.Entry<String, String> param : params.entrySet()) {
             url.append("&param_").append(encode(param.getKey())).append('=').append(encode(param.getValue()));

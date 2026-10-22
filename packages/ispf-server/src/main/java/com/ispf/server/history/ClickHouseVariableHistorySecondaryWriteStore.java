@@ -119,11 +119,16 @@ public class ClickHouseVariableHistorySecondaryWriteStore implements VariableHis
     }
 
     private void executeStatement(String sql) {
-        post(sql, "");
+        // CREATE DATABASE must run against default; target DB may not exist yet.
+        post(sql, "", "default");
     }
 
     private void post(String query, String body) {
-        HttpResponse<String> response = send(buildRequest(query, body));
+        post(query, body, properties.getClickhouse().getDatabase());
+    }
+
+    private void post(String query, String body, String database) {
+        HttpResponse<String> response = send(buildRequest(query, body, database));
         if (response.statusCode() >= 400) {
             throw new IllegalStateException(
                     "ClickHouse request failed (" + response.statusCode() + "): " + response.body()
@@ -142,7 +147,7 @@ public class ClickHouseVariableHistorySecondaryWriteStore implements VariableHis
         }
     }
 
-    private HttpRequest buildRequest(String query, String body) {
+    private HttpRequest buildRequest(String query, String body, String database) {
         VariableHistoryProperties.ClickHouse config = properties.getClickhouse();
         StringBuilder url = new StringBuilder(config.getUrl());
         if (!config.getUrl().contains("?")) {
@@ -150,7 +155,7 @@ public class ClickHouseVariableHistorySecondaryWriteStore implements VariableHis
         } else if (!config.getUrl().endsWith("&") && !config.getUrl().endsWith("?")) {
             url.append('&');
         }
-        url.append("database=").append(encode(config.getDatabase()));
+        url.append("database=").append(encode(database));
         url.append("&query=").append(encode(query));
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url.toString()))
