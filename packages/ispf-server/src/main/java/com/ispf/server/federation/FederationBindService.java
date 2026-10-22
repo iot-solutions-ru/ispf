@@ -110,10 +110,12 @@ public class FederationBindService {
                     "Object is not federation-bound: " + localPath
             );
         }
-        FederationProxyMetadata.clearFrom(node);
+        // Delete while variables are still on the node. clearFrom first would leave
+        // object_variables rows: deleteVariable no-ops when the in-memory variable is gone.
         objectManager.deleteVariable(localPath, FederationProxyMetadata.VAR_PROXY);
         objectManager.deleteVariable(localPath, FederationProxyMetadata.VAR_PEER_ID);
         objectManager.deleteVariable(localPath, FederationProxyMetadata.VAR_REMOTE_PATH);
+        FederationProxyMetadata.clearFrom(node);
         Optional<FederationBindSnapshot.LocalState> restored = FederationBindSnapshot.restoreAndClear(
                 objectManager,
                 objectMapper,
