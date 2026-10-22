@@ -93,6 +93,11 @@ class ClickHouseVariableHistoryStoreTest {
         assertTrue(queries.stream().anyMatch(q -> q.contains("CREATE+DATABASE")));
         assertTrue(queries.stream().anyMatch(q -> q.contains("CREATE+TABLE")));
         assertTrue(queries.stream().anyMatch(q -> q.contains("quality")));
+        assertTrue(
+                queries.stream().anyMatch(q ->
+                        q.contains("CREATE+DATABASE") && q.contains("database=default")),
+                "CREATE DATABASE must use database=default so empty ClickHouse can bootstrap"
+        );
     }
 
     @Test
