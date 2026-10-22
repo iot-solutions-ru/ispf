@@ -28,11 +28,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -142,13 +144,19 @@ public class VariableHistoryService {
         Instant now = Instant.now();
         long nowMs = now.toEpochMilli();
         Map<String, VariableSampleEntity> coalesced = new LinkedHashMap<>();
-        appendSamplesFromDataRecord(objectPath, variableName, record, observedAt, now, nowMs, coalesced);
+        Map<String, DataRecord> historizedCandidates = new LinkedHashMap<>();
+        appendSamplesFromDataRecord(
+                objectPath, variableName, record, observedAt, now, nowMs, coalesced, historizedCandidates
+        );
         List<VariableSampleEntity> samples = new ArrayList<>();
+        Set<String> acceptedHistorizedKeys = new HashSet<>();
         for (Map.Entry<String, VariableSampleEntity> entry : coalesced.entrySet()) {
             if (acceptDebouncedSample(entry.getKey(), entry.getValue(), nowMs)) {
                 samples.add(entry.getValue());
+                acceptedHistorizedKeys.add(historizedKeyFromDebounceKey(entry.getKey()));
             }
         }
+        rememberAcceptedHistorizedRecords(historizedCandidates, acceptedHistorizedKeys);
         return samples;
     }
 
@@ -236,6 +244,7 @@ public class VariableHistoryService {
         long nowMs = System.currentTimeMillis();
         Instant now = Instant.ofEpochMilli(nowMs);
         Map<String, VariableSampleEntity> coalesced = new LinkedHashMap<>();
+        Map<String, DataRecord> historizedCandidates = new LinkedHashMap<>();
         for (CoalescedTelemetryUpdate update : updates) {
             if (update.value() == null || update.value().rowCount() == 0) {
                 continue;
@@ -251,16 +260,20 @@ public class VariableHistoryService {
                     update.observedAt(),
                     now,
                     nowMs,
-                    coalesced
+                    coalesced,
+                    historizedCandidates
             );
         }
         List<VariableSampleEntity> samples = new ArrayList<>(coalesced.size());
+        Set<String> acceptedHistorizedKeys = new HashSet<>();
         for (Map.Entry<String, VariableSampleEntity> entry : coalesced.entrySet()) {
             if (!acceptDebouncedSample(entry.getKey(), entry.getValue(), nowMs)) {
                 continue;
             }
             samples.add(entry.getValue());
+            acceptedHistorizedKeys.add(historizedKeyFromDebounceKey(entry.getKey()));
         }
+        rememberAcceptedHistorizedRecords(historizedCandidates, acceptedHistorizedKeys);
         enqueueSamples(samples);
     }
 
@@ -296,11 +309,13 @@ public class VariableHistoryService {
             Instant observedAt,
             Instant now,
             long nowMs,
-            Map<String, VariableSampleEntity> samples
+            Map<String, VariableSampleEntity> samples,
+            Map<String, DataRecord> historizedCandidates
     ) {
         if (!acceptHistorianSample(objectPath, variableName, record)) {
             return;
         }
+        historizedCandidates.put(objectPath + "|" + variableName, record);
         Instant effectiveObserved = observedAt != null ? observedAt : now;
 
         for (var field : record.schema().fields()) {
@@ -397,12 +412,18 @@ public class VariableHistoryService {
             List<VariableSampleEntity> samples
     ) {
         Map<String, VariableSampleEntity> coalesced = new LinkedHashMap<>();
-        appendSamplesFromDataRecord(objectPath, variableName, record, observedAt, now, nowMs, coalesced);
+        Map<String, DataRecord> historizedCandidates = new LinkedHashMap<>();
+        appendSamplesFromDataRecord(
+                objectPath, variableName, record, observedAt, now, nowMs, coalesced, historizedCandidates
+        );
+        Set<String> acceptedHistorizedKeys = new HashSet<>();
         for (Map.Entry<String, VariableSampleEntity> entry : coalesced.entrySet()) {
             if (acceptDebouncedSample(entry.getKey(), entry.getValue(), nowMs)) {
                 samples.add(entry.getValue());
+                acceptedHistorizedKeys.add(historizedKeyFromDebounceKey(entry.getKey()));
             }
         }
+        rememberAcceptedHistorizedRecords(historizedCandidates, acceptedHistorizedKeys);
     }
 
     private void enqueueSamples(List<VariableSampleEntity> samples) {
@@ -757,17 +778,33 @@ public class VariableHistoryService {
                 .getVariable(variableName)
                 .map(Variable::historySampleMode)
                 .orElse(HistorySampleMode.CHANGES_ONLY);
-        String key = objectPath + "|" + variableName;
         if (mode == HistorySampleMode.ALL_VALUES) {
-            lastHistorizedRecord.put(key, record);
             return true;
         }
+        String key = objectPath + "|" + variableName;
         DataRecord last = lastHistorizedRecord.get(key);
-        if (DataRecordValues.equal(last, record)) {
-            return false;
+        return !DataRecordValues.equal(last, record);
+    }
+
+    private void rememberAcceptedHistorizedRecords(
+            Map<String, DataRecord> historizedCandidates,
+            Set<String> acceptedHistorizedKeys
+    ) {
+        for (String key : acceptedHistorizedKeys) {
+            DataRecord record = historizedCandidates.get(key);
+            if (record != null) {
+                lastHistorizedRecord.put(key, record);
+            }
         }
-        lastHistorizedRecord.put(key, record);
-        return true;
+    }
+
+    private static String historizedKeyFromDebounceKey(String debounceKey) {
+        int first = debounceKey.indexOf('|');
+        if (first < 0) {
+            return debounceKey;
+        }
+        int second = debounceKey.indexOf('|', first + 1);
+        return second < 0 ? debounceKey : debounceKey.substring(0, second);
     }
 
     private int resolveRetentionDays(ObjectVariableEntity entity) {
