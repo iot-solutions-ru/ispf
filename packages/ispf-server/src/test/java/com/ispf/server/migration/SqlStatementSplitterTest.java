@@ -85,4 +85,47 @@ class SqlStatementSplitterTest {
         assertEquals("INSERT INTO t VALUES ('it''s fine')", statements.get(0));
         assertEquals("UPDATE t SET x = 1", statements.get(1));
     }
+
+    @Test
+    void ignoresSemicolonInsideLineComment() {
+        List<String> statements = SqlStatementSplitter.split(
+                "CREATE TABLE t(id int); -- seed: a; b\nINSERT INTO t VALUES (1);"
+        );
+        assertEquals(2, statements.size());
+        assertEquals("CREATE TABLE t(id int)", statements.get(0));
+        assertEquals(true, statements.get(1).contains("INSERT INTO t VALUES (1)"));
+        assertEquals(true, statements.get(1).contains("-- seed: a; b"));
+    }
+
+    @Test
+    void ignoresSemicolonInsideBlockComment() {
+        List<String> statements = SqlStatementSplitter.split(
+                "CREATE TABLE t(id int); /* note: a; b */ INSERT INTO t VALUES (1);"
+        );
+        assertEquals(2, statements.size());
+        assertEquals("CREATE TABLE t(id int)", statements.get(0));
+        assertEquals(true, statements.get(1).contains("INSERT INTO t VALUES (1)"));
+        assertEquals(true, statements.get(1).contains("/* note: a; b */"));
+    }
+
+    @Test
+    void apostropheInsideLineCommentDoesNotToggleLiteralState() {
+        List<String> statements = SqlStatementSplitter.split(
+                "CREATE TABLE t(id int); -- don't break\nINSERT INTO t VALUES (1); SELECT 1"
+        );
+        assertEquals(3, statements.size());
+        assertEquals("CREATE TABLE t(id int)", statements.get(0));
+        assertEquals(true, statements.get(1).contains("INSERT INTO t VALUES (1)"));
+        assertEquals("SELECT 1", statements.get(2));
+    }
+
+    @Test
+    void apostropheInsideBlockCommentDoesNotToggleLiteralState() {
+        List<String> statements = SqlStatementSplitter.split(
+                "CREATE TABLE t(id int); /* don't break */ INSERT INTO t VALUES (1);"
+        );
+        assertEquals(2, statements.size());
+        assertEquals("CREATE TABLE t(id int)", statements.get(0));
+        assertEquals(true, statements.get(1).contains("INSERT INTO t VALUES (1)"));
+    }
 }
