@@ -3,6 +3,7 @@ package com.ispf.server.application.bff;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
+import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.function.FunctionInvokeAccessService;
 import com.ispf.server.function.FunctionService;
@@ -68,7 +69,7 @@ public class BffController {
     public record BffInvokeRequest(
             String objectPath,
             String functionName,
-            DataRecord input,
+            DataRecordPayloadRequest input,
             String wireProfile
     ) {
     }
