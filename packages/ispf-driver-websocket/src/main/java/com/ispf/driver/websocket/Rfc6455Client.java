@@ -6,7 +6,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -101,11 +104,23 @@ final class Rfc6455Client implements AutoCloseable {
 
     synchronized String readText() throws IOException {
         ensureOpen();
+        ByteArrayOutputStream message = new ByteArrayOutputStream();
+        boolean collecting = false;
         while (true) {
             Frame frame = readFrame();
             switch (frame.opcode) {
-                case OPCODE_TEXT -> {
-                    return new String(frame.payload, StandardCharsets.UTF_8);
+                case OPCODE_TEXT, 0 -> {
+                    if (frame.opcode == 0 && !collecting) {
+                        throw new IOException("Unexpected WebSocket continuation frame");
+                    }
+                    if (frame.opcode == OPCODE_TEXT && collecting) {
+                        throw new IOException("Unexpected WebSocket text frame inside a fragmented message");
+                    }
+                    message.writeBytes(frame.payload);
+                    collecting = true;
+                    if (frame.fin) {
+                        return message.toString(StandardCharsets.UTF_8);
+                    }
                 }
                 case OPCODE_PING -> writeFrame(OPCODE_PONG, frame.payload, true);
                 case OPCODE_PONG -> { }
@@ -120,6 +135,29 @@ final class Rfc6455Client implements AutoCloseable {
                 }
                 default -> throw new IOException("Unsupported WebSocket opcode: " + frame.opcode);
             }
+        }
+    }
+
+    /**
+     * Blocks for the first text message, then drains further text that arrives within 50 ms.
+     * At most 64 messages are kept so a fast publisher cannot stall the poll.
+     */
+    synchronized List<String> readAvailableTexts() throws IOException {
+        int originalTimeout = socket.getSoTimeout();
+        List<String> texts = new ArrayList<>();
+        try {
+            texts.add(readText());
+            socket.setSoTimeout(50);
+            while (texts.size() < 64) {
+                try {
+                    texts.add(readText());
+                } catch (SocketTimeoutException timedOut) {
+                    return texts;
+                }
+            }
+            return texts;
+        } finally {
+            socket.setSoTimeout(originalTimeout);
         }
     }
 
@@ -194,6 +232,7 @@ final class Rfc6455Client implements AutoCloseable {
             open = false;
             throw new IOException("EOF reading WebSocket frame");
         }
+        boolean fin = (b0 & 0x80) != 0;
         int opcode = b0 & 0x0F;
         int b1 = in.read();
         if (b1 < 0) {
@@ -225,7 +264,7 @@ final class Rfc6455Client implements AutoCloseable {
                 payload[i] = (byte) (payload[i] ^ maskKey[i % 4]);
             }
         }
-        return new Frame(opcode, payload);
+        return new Frame(fin, opcode, payload);
     }
 
     private int readUnsignedShort() throws IOException {
@@ -355,7 +394,7 @@ final class Rfc6455Client implements AutoCloseable {
         return line.toString(StandardCharsets.US_ASCII);
     }
 
-    private record Frame(int opcode, byte[] payload) {
+    private record Frame(boolean fin, int opcode, byte[] payload) {
     }
 
     /** Server-side helpers used by loopback tests (unmasked frames). */

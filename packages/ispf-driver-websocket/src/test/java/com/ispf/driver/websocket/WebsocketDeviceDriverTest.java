@@ -77,6 +77,47 @@ class WebsocketDeviceDriverTest {
     }
 
     @Test
+    void subscribeReadsLatestBallsPublish() throws Exception {
+        server = new FakeWebSocketServer();
+        server.start();
+        String subscribe = "{\"op\":\"subscribe\",\"id\":\"balls\",\"topic\":\"/balls\","
+                + "\"type\":\"tf2_msgs/msg/TFMessage\",\"throttle_rate\":200,\"queue_length\":1}";
+        StubDriverObject object = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(server.port()),
+                "path", "/",
+                "timeoutMs", "2000",
+                "subscribeText", subscribe
+        ));
+        driver = new WebsocketDeviceDriver();
+        driver.initialize(object);
+        driver.connect();
+        driver.readPoints(Map.of(
+                "state", "@state",
+                "op", "$.op",
+                "count", "$.msg.transforms.length",
+                "name", "$.msg.transforms.0.child_frame_id",
+                "x", "round:3:$.msg.transforms.0.transform.translation.x",
+                "y", "round:3:$.msg.transforms.0.transform.translation.y",
+                "z", "round:3:$.msg.transforms.0.transform.translation.z"
+        ));
+        assertEquals("Open", value(object, "state"));
+        assertEquals("publish", value(object, "op"));
+        assertEquals("2", value(object, "count"));
+        assertEquals("ball_0", value(object, "name"));
+        assertEquals("1.235", value(object, "x"));
+        assertEquals("-0.5", value(object, "y"));
+        assertEquals("0", value(object, "z"));
+        assertThrows(DriverException.class, () -> driver.writePoint("x", DataRecord.single(
+                DataSchema.builder("v").field("value", FieldType.STRING).build(),
+                Map.of("value", "1"))));
+    }
+
+    private static String value(StubDriverObject object, String name) {
+        return String.valueOf(object.variables.get(name).firstRow().get("value"));
+    }
+
+    @Test
     void readPointsBeforeConnectThrows() {
         driver = new WebsocketDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of()));
@@ -96,6 +137,11 @@ class WebsocketDeviceDriverTest {
         DriverException error = assertThrows(DriverException.class, driver::connect);
         assertTrue(error.getMessage().contains("WebSocket connect failed"));
     }
+
+    private static final String BALLS_PUBLISH = "{\"op\":\"publish\",\"topic\":\"/balls\",\"msg\":{\"transforms\":["
+            + "{\"child_frame_id\":\"ball_0\",\"transform\":{\"translation\":{\"x\":1.2346,\"y\":-0.5,\"z\":0.0}}},"
+            + "{\"child_frame_id\":\"ball_1\",\"transform\":{\"translation\":{\"x\":9,\"y\":9,\"z\":9}}}"
+            + "]}}";
 
     private static final class FakeWebSocketServer implements AutoCloseable {
         private final ServerSocket serverSocket;
@@ -132,6 +178,12 @@ class WebsocketDeviceDriverTest {
                     String text = Rfc6455Client.ServerHelpers.readMaskedText(in);
                     String op = Rfc6455Client.extractJsonField(text, "op");
                     String point = Rfc6455Client.extractJsonField(text, "point");
+                    if ("subscribe".equals(op)) {
+                        Rfc6455Client.ServerHelpers.writeUnmaskedText(out,
+                                "{\"op\":\"status\",\"level\":\"info\"}");
+                        Rfc6455Client.ServerHelpers.writeUnmaskedText(out, BALLS_PUBLISH);
+                        continue;
+                    }
                     if ("set".equals(op)) {
                         String value = Rfc6455Client.extractJsonField(text, "value");
                         store.put(point == null ? "" : point, value == null ? "" : value);
