@@ -398,7 +398,8 @@ public class ObjectController {
                         request.driverId(),
                         request.driverPollIntervalMs(),
                         Boolean.TRUE.equals(request.autoStartDriver())
-                                || request.autoStartDriver() == null
+                                || request.autoStartDriver() == null,
+                        request.driverConfiguration()
                 );
             } catch (RuntimeException provisioningFailure) {
                 try {
@@ -558,7 +559,8 @@ public class ObjectController {
             Boolean autoApplyMixinBlueprints,
             String driverId,
             Integer driverPollIntervalMs,
-            Boolean autoStartDriver
+            Boolean autoStartDriver,
+            Map<String, String> driverConfiguration
     ) {
     }
 

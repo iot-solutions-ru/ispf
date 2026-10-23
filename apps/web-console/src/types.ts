@@ -252,6 +252,7 @@ export interface CreateObjectPayload {
   autoApplyMixinBlueprints?: boolean;
   driverId?: string;
   driverPollIntervalMs?: number;
+  driverConfiguration?: Record<string, string>;
   autoStartDriver?: boolean;
 }
 
