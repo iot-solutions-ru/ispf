@@ -20,6 +20,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * Point mapping is a channel/path (for example {@code /sensors/temp}) or a message key
  * (for example {@code temperature}). Reads send a JSON get request and take the {@code value}
  * field from the reply; writes send a JSON set request with the record value.
+ * <p>
+ * When {@code subscribeText} is set, that text is sent once after the handshake and each poll
+ * reads the latest text message. Point mappings are then {@code @state}, {@code $.path},
+ * {@code $.array.length} or {@code round:<digits>:$.path}.
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only (no Jetty/Netty/Tyrus/OkHttp).
  */
 public class WebsocketDeviceDriver implements DeviceDriver {
@@ -33,14 +37,15 @@ public class WebsocketDeviceDriver implements DeviceDriver {
             "websocket",
             "WebSocket Driver",
             "0.1.0",
-            "Connects via RFC6455 and exchanges JSON text frames for channel/path or message-key points",
+            "Connects via RFC6455. get/set by point key, or one subscribeText plus $.path reads",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "8080",
                     "path", "/",
                     "timeoutMs", "5000",
-                    "pollIntervalMs", "5000"
+                    "pollIntervalMs", "5000",
+                    "subscribeText", ""
             ),
             DriverMaturity.PRODUCTION,
             Set.of("read", "write")
@@ -51,6 +56,7 @@ public class WebsocketDeviceDriver implements DeviceDriver {
     private int port = 8080;
     private String path = "/";
     private int timeoutMs = 5000;
+    private String subscribeText = "";
     private final Map<String, String> points = new ConcurrentHashMap<>();
     private Rfc6455Client client;
     private volatile boolean connected;
@@ -75,6 +81,7 @@ public class WebsocketDeviceDriver implements DeviceDriver {
             case "port" -> port = Integer.parseInt(value.trim());
             case "path" -> path = Rfc6455Client.normalizePath(value);
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
+            case "subscribeText" -> subscribeText = value.trim();
             default -> { }
         }
     }
@@ -84,10 +91,14 @@ public class WebsocketDeviceDriver implements DeviceDriver {
         try {
             closeClient();
             client = Rfc6455Client.connect(host, port, path, timeoutMs);
+            if (!subscribeText.isBlank()) {
+                client.sendText(subscribeText);
+            }
             connected = true;
             driverObject.log(DriverLogLevel.INFO, "WebSocket connected to " + host + ":" + port + path);
         } catch (IOException e) {
             connected = false;
+            closeClient();
             throw new DriverException("WebSocket connect failed for " + host + ":" + port + path, e);
         }
     }
@@ -113,6 +124,10 @@ public class WebsocketDeviceDriver implements DeviceDriver {
             throw new DriverException("Not connected");
         }
         points.clear();
+        if (!subscribeText.isBlank()) {
+            readSubscribed(pointMappings);
+            return;
+        }
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             String pointId = entry.getKey();
             String mapping = resolveMapping(pointId, entry.getValue());
@@ -139,6 +154,9 @@ public class WebsocketDeviceDriver implements DeviceDriver {
         if (!isConnected()) {
             throw new DriverException("Not connected");
         }
+        if (!subscribeText.isBlank()) {
+            throw new DriverException("WebSocket subscribe mode is read-only");
+        }
         String mapping = points.getOrDefault(pointId, pointId);
         String payload = extractValue(value);
         try {
@@ -155,6 +173,46 @@ public class WebsocketDeviceDriver implements DeviceDriver {
         } catch (IOException e) {
             throw new DriverException("WebSocket write failed for point " + mapping, e);
         }
+    }
+
+    private void readSubscribed(Map<String, String> pointMappings) throws DriverException {
+        String message;
+        try {
+            List<String> batch = client.readAvailableTexts();
+            message = pickPublish(batch);
+        } catch (IOException e) {
+            throw new DriverException("WebSocket read failed", e);
+        }
+        Object root;
+        try {
+            root = JsonValues.parse(message);
+        } catch (IllegalArgumentException e) {
+            throw new DriverException("WebSocket message is not JSON", e);
+        }
+        for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
+            String pointId = entry.getKey();
+            String mapping = resolveMapping(pointId, entry.getValue());
+            points.put(pointId, mapping);
+            String value;
+            try {
+                value = JsonValues.readMapping(root, mapping);
+            } catch (IllegalArgumentException | ArithmeticException e) {
+                throw new DriverException("WebSocket point mapping failed for " + pointId, e);
+            }
+            driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
+                    "value", value,
+                    "point", mapping
+            )));
+        }
+    }
+
+    private static String pickPublish(List<String> batch) {
+        for (int i = batch.size() - 1; i >= 0; i--) {
+            if ("publish".equals(Rfc6455Client.extractJsonField(batch.get(i), "op"))) {
+                return batch.get(i);
+            }
+        }
+        return batch.get(batch.size() - 1);
     }
 
     private static String resolveMapping(String pointId, String mapping) {

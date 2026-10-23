@@ -308,6 +308,7 @@ val devDriverPackProjectNames = listOf(
     "ispf-driver-email",
     "ispf-driver-sms",
     "ispf-driver-webhook",
+    "ispf-driver-websocket",
     "ispf-driver-cwmp",
     "ispf-driver-flexible",
     "ispf-driver-gps-tracker",
