@@ -4,6 +4,7 @@ import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingRule;
 import com.ispf.core.binding.BindingRuleKind;
 import com.ispf.core.binding.BindingTarget;
+import com.ispf.core.binding.BindingTargetKind;
 
 import java.util.List;
 import java.util.Locale;
@@ -11,6 +12,7 @@ import java.util.Map;
 
 /**
  * Binding rule attached by a model.
+ * Accepts flat {@code targetVariable}/{@code targetField} and live-API nested {@code target}.
  */
 public record BlueprintBindingRule(
         String id,
@@ -28,9 +30,18 @@ public record BlueprintBindingRule(
         String formulaRef,
         Map<String, String> formulaParams,
         String formulaScope,
-        String formulaAppId
+        String formulaAppId,
+        BindingTarget target
 ) {
     public BlueprintBindingRule {
+        if (target != null) {
+            if (targetVariable == null || targetVariable.isBlank()) {
+                targetVariable = target.variableName();
+            }
+            if (targetField == null || targetField.isBlank()) {
+                targetField = target.field();
+            }
+        }
         if (rollupBuckets != null) {
             rollupBuckets = List.copyOf(rollupBuckets);
         }
@@ -56,6 +67,7 @@ public record BlueprintBindingRule(
                 null,
                 null,
                 null,
+                null,
                 null
         );
     }
@@ -71,7 +83,25 @@ public record BlueprintBindingRule(
             String targetVariable,
             String targetField
     ) {
-        this(id, name, enabled, order, activators, condition, expression, targetVariable, targetField, null, null, null, null, null, null, null);
+        this(
+                id,
+                name,
+                enabled,
+                order,
+                activators,
+                condition,
+                expression,
+                targetVariable,
+                targetField,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
     }
 
     public BindingRule toBindingRule() {
@@ -88,13 +118,28 @@ public record BlueprintBindingRule(
                 activators,
                 condition,
                 expression,
-                new BindingTarget(targetVariable, targetField),
+                resolvedTarget(),
                 windowBucket,
                 rollupBuckets,
                 formulaRef,
                 formulaParams,
                 formulaScope,
                 formulaAppId
+        );
+    }
+
+    private BindingTarget resolvedTarget() {
+        if (target == null) {
+            return new BindingTarget(targetVariable, targetField);
+        }
+        String resolvedKind = target.kind() != null ? target.kind() : BindingTargetKind.VARIABLE;
+        return new BindingTarget(
+                resolvedKind,
+                targetVariable,
+                targetField,
+                target.path(),
+                target.eventName(),
+                target.ref()
         );
     }
 
@@ -115,7 +160,8 @@ public record BlueprintBindingRule(
                 rule.formulaRef(),
                 rule.formulaParams(),
                 rule.formulaScope(),
-                rule.formulaAppId()
+                rule.formulaAppId(),
+                null
         );
     }
 }
