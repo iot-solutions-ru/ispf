@@ -104,13 +104,18 @@ public class BundleTreeArtifactsApplier {
 
         try {
             String schema = resolvePackageSchemaName(appId, manifest);
+            String ensuredPath = dataSourceObjectService.pathForNodeName(appId);
             dataSourceObjectService.ensureDataSource(
                     appId,
                     manifest.displayName() != null ? manifest.displayName() : appId,
                     schema,
                     "Package import data source"
             );
-            applied.add("dataSource:" + dataSourcePath);
+            if (objectManager.tree().findByPath(ensuredPath).isEmpty()) {
+                errors.add("dataSource: ensure did not create " + ensuredPath);
+            } else {
+                applied.add("dataSource:" + ensuredPath);
+            }
         } catch (Exception ex) {
             errors.add("dataSource: " + ex.getMessage());
         }
