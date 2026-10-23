@@ -29,7 +29,7 @@ import { isDataSourceConnectionValid } from "../platform/dataSourceConnectionVal
 import type { DataSourceConnectionMode } from "../platform/dataSourceConnectionValidation";
 import { createSchedule } from "../../api/platformSchedules";
 import { fetchDrivers } from "../../api/drivers";
-import { formatDriverConfigJson } from "../../utils/driverDefaults";
+import { formatDriverConfigJson, parseDriverConfigJson } from "../../utils/driverDefaults";
 import DriverMaturityBadge from "../DriverMaturityBadge";
 import { formatDriverOptionLabel } from "../driverOptionLabel";
 import {
@@ -473,6 +473,14 @@ export default function CreateObjectDialog({
         const obj = await instantiateBlueprint(selectedInstanceModel.id, parentPath, name, {});
         return obj.path;
       }
+      let driverConfiguration: Record<string, string> | undefined;
+      if (type === "DEVICE") {
+        try {
+          driverConfiguration = parseDriverConfigJson(configPreview);
+        } catch {
+          throw new Error(t("dialog.driverConfigInvalid"));
+        }
+      }
       const obj = await createObject({
         parentPath,
         name,
@@ -493,6 +501,7 @@ export default function CreateObjectDialog({
                     : undefined,
         driverId: type === "DEVICE" ? driverId : undefined,
         driverPollIntervalMs: type === "DEVICE" ? pollIntervalMs : undefined,
+        driverConfiguration,
         autoStartDriver: true,
       });
       if (type === "DASHBOARD" && dashboardLayoutTemplate.trim()) {
@@ -930,10 +939,10 @@ export default function CreateObjectDialog({
                 )}
                 <Form.Item label={t("dialog.defaultDriverConfig")} className="full">
                   <Input.TextArea
-                    className="mono readonly"
-                    rows={4}
+                    className="mono"
+                    rows={8}
                     value={configPreview}
-                    readOnly
+                    onChange={(event) => setConfigPreview(event.target.value)}
                     spellCheck={false}
                   />
                 </Form.Item>

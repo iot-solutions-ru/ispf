@@ -81,6 +81,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     private final ConcurrentLinkedQueue<Runnable> ioPending = new ConcurrentLinkedQueue<>();
     private final AtomicInteger ioPendingCount = new AtomicInteger();
     private final Map<String, ActiveDriver> activeDrivers = new ConcurrentHashMap<>();
+    private final Map<String, String> connectErrors = new ConcurrentHashMap<>();
 
     public DriverRuntimeService(
             DeviceObjectAccess objects,
@@ -278,13 +279,19 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         ActiveDriver active = activeDrivers.get(devicePath);
         if (active == null) {
             try {
-                return readBinding(devicePath).map(binding -> statusOf(
-                        devicePath,
-                        binding,
-                        "STOPPED",
-                        false,
-                        null
-                ));
+                return readBinding(devicePath).map(binding -> {
+                    String connectError = connectErrors.get(devicePath);
+                    if (connectError != null) {
+                        return statusOf(devicePath, binding, "ERROR", false, connectError);
+                    }
+                    return statusOf(
+                            devicePath,
+                            binding,
+                            "STOPPED",
+                            false,
+                            null
+                    );
+                });
             } catch (IllegalArgumentException e) {
                 return Optional.of(statusOf(
                         devicePath,
@@ -398,9 +405,13 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                 }
             }
             var kind = errorMetrics.record(binding.driverId(), DriverErrorMetrics.Operation.CONNECT, e);
+            String message = "Driver connect failed [" + kind.tag() + "]: " + e.getMessage();
+            connectErrors.put(devicePath, message);
             setStatus(devicePath, "ERROR");
-            throw new IllegalStateException("Driver connect failed [" + kind.tag() + "]: " + e.getMessage(), e);
+            ownershipService.release(devicePath);
+            throw new IllegalStateException(message, e);
         }
+        connectErrors.remove(devicePath);
 
         ScheduledFuture<?> future = scheduler.scheduleAtFixedRate(
                 () -> poll(devicePath),
@@ -441,6 +452,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         if (releaseOwnership) {
             ownershipService.release(devicePath);
         }
+        connectErrors.remove(devicePath);
         if (objects.findByPath(devicePath).isPresent()) {
             setStatus(devicePath, "STOPPED");
         }
