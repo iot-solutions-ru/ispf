@@ -4,6 +4,7 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.function.FunctionInvocationScope;
@@ -135,7 +136,7 @@ public class PlatformSchedulerService {
                 continue;
             }
             try {
-                executeAction(schedule.actionType(), schedule.actionJson());
+                executeAction(schedule.actionType(), schedule.actionJson(), schedule.path(), now);
                 scheduleObjectService.recordTick(schedule.path(), now, null);
             } catch (Exception ex) {
                 log.warn("Platform tree schedule {} failed: {}", schedule.path(), ex.getMessage());
@@ -157,7 +158,12 @@ public class PlatformSchedulerService {
             }
             String scheduleId = String.valueOf(schedule.get("schedule_id"));
             try {
-                executeAction(String.valueOf(schedule.get("action_type")), String.valueOf(schedule.get("action_json")));
+                executeAction(
+                        String.valueOf(schedule.get("action_type")),
+                        String.valueOf(schedule.get("action_json")),
+                        scheduleId,
+                        now
+                );
                 jdbcTemplate.update(
                         "UPDATE platform_schedules SET last_tick_at = ?, last_error = NULL WHERE schedule_id = ?",
                         Timestamp.from(now),
@@ -174,9 +180,10 @@ public class PlatformSchedulerService {
         }
     }
 
-    private void executeAction(String actionType, String actionJson) throws Exception {
+    private void executeAction(String actionType, String actionJson, String scheduleRef, Instant tickAt)
+            throws Exception {
         if ("invoke_function".equals(actionType)) {
-            executeInvokeFunction(actionJson);
+            executeInvokeFunction(actionJson, scheduleRef, tickAt);
             return;
         }
         if ("write_point".equals(actionType)) {
@@ -184,24 +191,27 @@ public class PlatformSchedulerService {
         }
     }
 
-    private void executeInvokeFunction(String actionJson) throws Exception {
+    private void executeInvokeFunction(String actionJson, String scheduleRef, Instant tickAt) throws Exception {
         Map<?, ?> action = objectMapper.readValue(actionJson, Map.class);
         String objectPath = String.valueOf(action.get("objectPath"));
         String functionName = String.valueOf(action.get("functionName"));
-        DataRecord input = null;
-        if (action.get("input") instanceof Map<?, ?> inputMap && !inputMap.isEmpty()) {
-            DataSchema.Builder schemaBuilder = DataSchema.builder("scheduleInput");
-            Map<String, Object> row = new LinkedHashMap<>();
+        Map<String, Object> row = new LinkedHashMap<>();
+        if (action.get("input") instanceof Map<?, ?> inputMap) {
             for (Map.Entry<?, ?> entry : inputMap.entrySet()) {
-                String key = String.valueOf(entry.getKey());
-                schemaBuilder.field(key, FieldType.STRING);
-                row.put(key, entry.getValue());
+                row.put(String.valueOf(entry.getKey()), entry.getValue());
             }
-            input = DataRecord.single(schemaBuilder.build(), row);
         }
-        final DataRecord invokeInput = input;
+        // Per-tick key so invoke_function schedules with required idempotencyKey advance each due.
+        row.put("idempotencyKey", perTickIdempotencyKey(scheduleRef, tickAt));
+        DataRecordPayloadRequest payload = new DataRecordPayloadRequest(null, List.of(row));
         FunctionInvocationScope.runSystemTrusted(() ->
-                functionService.invoke(objectPath, functionName, invokeInput));
+                functionService.invoke(objectPath, functionName, payload));
+    }
+
+    static String perTickIdempotencyKey(String scheduleRef, Instant tickAt) {
+        String ref = scheduleRef == null || scheduleRef.isBlank() ? "schedule" : scheduleRef.trim();
+        long epochMs = tickAt != null ? tickAt.toEpochMilli() : Instant.now().toEpochMilli();
+        return "schedule:" + ref + ":" + epochMs;
     }
 
     private void executeWritePoint(String actionJson) throws Exception {
