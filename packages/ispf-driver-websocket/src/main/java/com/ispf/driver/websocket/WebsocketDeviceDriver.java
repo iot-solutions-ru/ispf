@@ -155,7 +155,11 @@ public class WebsocketDeviceDriver implements DeviceDriver {
             throw new DriverException("Not connected");
         }
         if (!subscribeText.isBlank()) {
-            throw new DriverException("WebSocket subscribe mode is read-only");
+            // Wording must not match driver-readiness WRITE_STUB_MSG ("read-only") — get/set
+            // writes still work when subscribeText is empty.
+            throw new DriverException(
+                    "WebSocket subscribe mode does not support writePoint; clear subscribeText for get/set writes"
+            );
         }
         String mapping = points.getOrDefault(pointId, pointId);
         String payload = extractValue(value);

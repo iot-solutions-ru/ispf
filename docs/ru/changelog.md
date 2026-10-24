@@ -46,7 +46,9 @@ Changelog отдельных application bundles — в манифестах п�
 
 ### Исправлено
 
+- Тип цели blueprint: при создании INSTANCE или MIXIN предлагаются только CUSTOM и DEVICE. Dashboard, workflow, mimic, alert и report больше не в списке; каталог singleton по-прежнему не спрашивает цель.
 - Создание устройства: JSON драйвера редактируется в диалоге и сохраняется вместе с объектом. Если первое подключение не удалось, объект не удаляется, ошибка остаётся на вкладке «Драйвер».
+- WebSocket subscribe: при `subscribeText` драйвер отправляет текст после connect и раскладывает последний publish в точки (`$.path`, `length` массива, `round:<n>:$.path`). Режим get/set без изменений, если `subscribeText` пуст.
 - Free install marketplace на demostand с подписью: при `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM` unsigned free-download не подписывался (trusted оставался false) → 403 при `require-signed-bundles=true` (например Building HVAC Reference). Снова trusted для unsigned free-download, чтобы платформа подписала перед verify.
 - SCADA mimic: выпадающий список Category (и другие Select/Tooltip редактора) открывался за полноэкранным оверлеем и выглядел «мёртвым» — попапы Ant Design теперь монтируются внутри оверлея.
 - Explorer: VISUAL_GROUP в каталогах (Data Sources и др.) открывается списком участников, как корневая папка, а не редактором data source по path-эвристике («Not a data source object»). То же для групп в Operator Apps; path-эвристика больше не перекрывает известный не-editor тип. Состав группы — через контекстное меню дерева («Добавить в группу»).

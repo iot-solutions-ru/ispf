@@ -57,7 +57,9 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **Blueprint target type** — creating an INSTANCE or MIXIN blueprint asks for a target of CUSTOM or DEVICE. Dashboard, workflow, mimic, alert, and report are no longer offered; a singleton catalog still does not ask.
 - **Device create keeps the object when the driver cannot connect** — the create dialog edits `driverConfigJson` and sends it with the device. A failed first connection no longer deletes the object; the error stays on the Driver tab.
+- **WebSocket subscribe points** — with `subscribeText`, the driver sends that text after connect and maps the latest publish into points (`$.path`, array `length`, `round:<n>:$.path`). Get/set mode is unchanged when `subscribeText` is empty.
 - **Marketplace free install under signed-bundle demostands** — when `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM` was set, free installs never signed the downloaded manifest (trusted flag stayed false), so reinstall of unsigned listings (e.g. Building HVAC Reference) returned 403 under `require-signed-bundles=true`. Unsigned free downloads are trusted again so the platform can sign them before verify.
 - **SCADA mimic symbol category Select** — Ant Design popups (Category dropdown, property Selects, toolbar tooltips) were portaled to `document.body` under the fullscreen editor overlay (`z-index` 15000), so the menu opened behind the dialog and looked like a dead click. Popups now mount inside the overlay.
 - **Explorer catalog VISUAL_GROUP** — selecting a bundle group under Data Sources (or other catalogs) opened the SQL object / data-source editor by path heuristic and failed with “Not a data source object”. Groups now open the same child list panel as the catalog root (membership edits stay on the tree context menu “Add to group”), including Operator Apps `bundle-*` groups; path heuristics no longer override a known non-editor type.
