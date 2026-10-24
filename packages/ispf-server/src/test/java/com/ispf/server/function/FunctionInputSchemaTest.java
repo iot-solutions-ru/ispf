@@ -88,4 +88,20 @@ class FunctionInputSchemaTest {
 
         assertThat(FunctionInputSchema.apply(voidInput, null).rowCount()).isZero();
     }
+
+    @Test
+    void emptyClientSchemaFieldsStillProjectRowsOntoContract() {
+        DataSchema contract = DataSchema.builder("in")
+                .field(FieldDefinition.required("idempotencyKey", FieldType.STRING))
+                .build();
+        DataSchema emptyClient = DataSchema.builder("client").build();
+        DataRecordPayloadRequest payload = new DataRecordPayloadRequest(
+                emptyClient,
+                List.of(Map.of("idempotencyKey", "tick-1"))
+        );
+
+        DataRecord resolved = FunctionInputSchema.apply(contract, payload);
+
+        assertThat(resolved.firstRow().get("idempotencyKey")).isEqualTo("tick-1");
+    }
 }
