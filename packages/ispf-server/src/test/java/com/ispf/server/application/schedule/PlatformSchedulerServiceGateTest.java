@@ -2,15 +2,16 @@ package com.ispf.server.application.schedule;
 
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.driver.DriverRuntimeService;
-import com.ispf.core.model.DataRecord;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.PlatformLeaderLockService;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.schedule.ScheduleObjectService.ScheduleDefinition;
+import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -22,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
@@ -92,7 +94,7 @@ class PlatformSchedulerServiceGateTest {
         when(scheduleObjectService.listEnabled()).thenReturn(List.of(schedule));
         when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = TRUE"))
                 .thenReturn(List.of());
-        when(functionService.invoke(anyString(), anyString(), any(DataRecord.class)))
+        when(functionService.invoke(anyString(), anyString(), any(DataRecordPayloadRequest.class)))
                 .thenThrow(new IllegalStateException("boom"));
 
         scheduler.tickSchedules();
@@ -121,8 +123,49 @@ class PlatformSchedulerServiceGateTest {
 
         scheduler.tickSchedules();
 
-        verify(scheduleObjectService).recordTick(eq("schedules.demo"), any(Instant.class), isNull());
+        ArgumentCaptor<DataRecordPayloadRequest> payloadCaptor =
+                ArgumentCaptor.forClass(DataRecordPayloadRequest.class);
+        ArgumentCaptor<Instant> tickCaptor = ArgumentCaptor.forClass(Instant.class);
+        verify(functionService).invoke(eq("objects.a"), eq("run"), payloadCaptor.capture());
+        verify(scheduleObjectService).recordTick(eq("schedules.demo"), tickCaptor.capture(), isNull());
         verify(scheduleObjectService, never()).recordError(any(), any());
+
+        Map<String, Object> row = payloadCaptor.getValue().rows().getFirst();
+        assertThat(row.get("k")).isEqualTo("v");
+        assertThat(row.get("idempotencyKey"))
+                .isEqualTo(PlatformSchedulerService.perTickIdempotencyKey("schedules.demo", tickCaptor.getValue()));
+    }
+
+    @Test
+    void invokeFunctionWithoutActionInputStillSuppliesPerTickKey() {
+        ScheduleDefinition schedule = new ScheduleDefinition(
+                "schedules.demo",
+                "demo",
+                true,
+                60_000L,
+                null,
+                null,
+                "invoke_function",
+                "{\"objectPath\":\"objects.a\",\"functionName\":\"run\"}",
+                null,
+                null
+        );
+        when(scheduleObjectService.listEnabled()).thenReturn(List.of(schedule));
+        when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = TRUE"))
+                .thenReturn(List.of());
+
+        scheduler.tickSchedules();
+
+        ArgumentCaptor<DataRecordPayloadRequest> payloadCaptor =
+                ArgumentCaptor.forClass(DataRecordPayloadRequest.class);
+        ArgumentCaptor<Instant> tickCaptor = ArgumentCaptor.forClass(Instant.class);
+        verify(functionService).invoke(eq("objects.a"), eq("run"), payloadCaptor.capture());
+        verify(scheduleObjectService).recordTick(eq("schedules.demo"), tickCaptor.capture(), isNull());
+
+        Map<String, Object> row = payloadCaptor.getValue().rows().getFirst();
+        assertThat(row).containsOnlyKeys("idempotencyKey");
+        assertThat(row.get("idempotencyKey"))
+                .isEqualTo(PlatformSchedulerService.perTickIdempotencyKey("schedules.demo", tickCaptor.getValue()));
     }
 
     @Test
@@ -136,7 +179,7 @@ class PlatformSchedulerServiceGateTest {
         row.put("action_json", "{\"objectPath\":\"objects.a\",\"functionName\":\"run\",\"input\":{\"k\":\"v\"}}");
         when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = TRUE"))
                 .thenReturn(List.of(row));
-        when(functionService.invoke(anyString(), anyString(), any(DataRecord.class)))
+        when(functionService.invoke(anyString(), anyString(), any(DataRecordPayloadRequest.class)))
                 .thenThrow(new IllegalStateException("boom"));
 
         scheduler.tickSchedules();
