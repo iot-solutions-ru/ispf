@@ -7,12 +7,19 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.jdbc.BadSqlGrammarException;
+import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.sql.SQLException;
+
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    /** PostgreSQL {@code RAISE EXCEPTION} / plpgsql raise_exception. */
+    private static final String PG_RAISE_EXCEPTION = "P0001";
 
     @ExceptionHandler(ObjectNotFoundException.class)
     public ProblemDetail handleObjectNotFound(ObjectNotFoundException exception) {
@@ -72,6 +79,30 @@ public class ApiExceptionHandler {
         return detail;
     }
 
+    /**
+     * Script SQL {@code RAISE EXCEPTION} must not surface as a bare Spring 500.
+     * Other uncategorized SQL errors keep propagating as 500.
+     */
+    @ExceptionHandler(UncategorizedSQLException.class)
+    public ProblemDetail handleUncategorizedSql(UncategorizedSQLException exception) {
+        if (!isPostgresRaise(exception)) {
+            throw exception;
+        }
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, sqlRaiseDetail(exception));
+        detail.setTitle("Database raise");
+        return detail;
+    }
+
+    @ExceptionHandler(BadSqlGrammarException.class)
+    public ProblemDetail handleBadSqlGrammar(BadSqlGrammarException exception) {
+        if (!isPostgresRaise(exception)) {
+            throw exception;
+        }
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, sqlRaiseDetail(exception));
+        detail.setTitle("Database raise");
+        return detail;
+    }
+
     @ExceptionHandler(ResponseStatusException.class)
     public ProblemDetail handleResponseStatus(ResponseStatusException exception) {
         HttpStatus status = HttpStatus.resolve(exception.getStatusCode().value());
@@ -97,5 +128,35 @@ public class ApiExceptionHandler {
             return top.trim();
         }
         return "Data integrity constraint violated";
+    }
+
+    static boolean isPostgresRaise(Throwable exception) {
+        Throwable current = exception;
+        while (current != null) {
+            if (current instanceof SQLException sql
+                    && PG_RAISE_EXCEPTION.equals(sql.getSQLState())) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    static String sqlRaiseDetail(Throwable exception) {
+        Throwable current = exception;
+        while (current != null) {
+            if (current instanceof SQLException sql
+                    && PG_RAISE_EXCEPTION.equals(sql.getSQLState())
+                    && sql.getMessage() != null
+                    && !sql.getMessage().isBlank()) {
+                return sql.getMessage().trim();
+            }
+            current = current.getCause();
+        }
+        String top = exception.getMessage();
+        if (top != null && !top.isBlank()) {
+            return top.trim();
+        }
+        return "Database raised an exception";
     }
 }
