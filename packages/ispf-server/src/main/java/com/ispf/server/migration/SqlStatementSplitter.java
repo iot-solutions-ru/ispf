@@ -5,7 +5,8 @@ import java.util.List;
 
 /**
  * Splits SQL migration scripts into individual statements on {@code ;} boundaries.
- * Respects single-quoted literals and PostgreSQL dollar-quoted strings ({@code $$} / {@code $tag$}).
+ * Respects single-quoted literals, PostgreSQL dollar-quoted strings ({@code $$} / {@code $tag$}),
+ * line comments ({@code --}) and block comments ({@code /}{@code *} … {@code *}{@code /}).
  */
 public final class SqlStatementSplitter {
 
@@ -19,6 +20,8 @@ public final class SqlStatementSplitter {
         List<String> statements = new ArrayList<>();
         StringBuilder current = new StringBuilder();
         boolean inSingleQuote = false;
+        boolean inLineComment = false;
+        boolean inBlockComment = false;
         String dollarTag = null;
         for (int i = 0; i < sql.length(); i++) {
             char ch = sql.charAt(i);
@@ -33,6 +36,22 @@ public final class SqlStatementSplitter {
                 }
                 continue;
             }
+            if (inLineComment) {
+                current.append(ch);
+                if (ch == '\n') {
+                    inLineComment = false;
+                }
+                continue;
+            }
+            if (inBlockComment) {
+                current.append(ch);
+                if (ch == '*' && i + 1 < sql.length() && sql.charAt(i + 1) == '/') {
+                    current.append('/');
+                    i++;
+                    inBlockComment = false;
+                }
+                continue;
+            }
             if (ch == '\'') {
                 current.append(ch);
                 if (inSingleQuote && i + 1 < sql.length() && sql.charAt(i + 1) == '\'') {
@@ -41,6 +60,18 @@ public final class SqlStatementSplitter {
                 } else {
                     inSingleQuote = !inSingleQuote;
                 }
+                continue;
+            }
+            if (!inSingleQuote && ch == '-' && i + 1 < sql.length() && sql.charAt(i + 1) == '-') {
+                current.append('-').append('-');
+                i++;
+                inLineComment = true;
+                continue;
+            }
+            if (!inSingleQuote && ch == '/' && i + 1 < sql.length() && sql.charAt(i + 1) == '*') {
+                current.append('/').append('*');
+                i++;
+                inBlockComment = true;
                 continue;
             }
             if (!inSingleQuote && ch == '$') {
