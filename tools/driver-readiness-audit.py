@@ -50,7 +50,7 @@ DRIVERS_MD = ROOT / "docs" / "en" / "drivers.md"
 
 WRITE_IMPL_RE = re.compile(
     r"\.(writeProperty|writePoint|writeTag|writeRegister|writeCoil|submit|publish|setOid|setParameter|"
-    r"writeValue|send\()\s*\(",
+    r"writeValue|sendText|sendBinary|send\()\s*\(",
     re.IGNORECASE,
 )
 WRITE_STUB_MSG_RE = re.compile(
