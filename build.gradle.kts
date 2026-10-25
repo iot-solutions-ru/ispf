@@ -68,6 +68,12 @@ subprojects {
         apply(plugin = "ispf-driver-pack")
     }
 
+    // Spring Boot BOM manages commons-lang3 at 3.20.0; override for Dependabot GHSA-j288-q9x7-2f5v
+    // (CVE-2025-48924, patched ≥ 3.18.0) and keep the pin explicit past the BOM.
+    pluginManager.withPlugin("io.spring.dependency-management") {
+        extra["commons-lang3.version"] = "3.21.0"
+    }
+
     java {
         toolchain {
             languageVersion.set(JavaLanguageVersion.of(25))
@@ -209,8 +215,9 @@ subprojects {
                 // commons-configuration2 2.10.1 (CVE-2026-45205). Drop when the parents move.
                 "at.yawk.lz4:lz4-java:1.12.0",
                 "org.apache.commons:commons-configuration2:2.15.1",
-                // Dependabot GHSA-j288-q9x7-2f5v (CVE-2025-48924): lang3 < 3.18.0. Runtime already
-                // resolves to 3.20.0 via configuration2/text; force keeps the graph explicit.
+                // Dependabot GHSA-j288-q9x7-2f5v (CVE-2025-48924): lang3 < 3.18.0.
+                // Boot 4.1.1 manages 3.20.0; force+eachDependency pin 3.21.0 so the graph
+                // and Dependabot alert #112 stay on a patched line past the BOM.
                 "org.apache.commons:commons-lang3:3.21.0",
                 // Dependabot / Trivy GHSA stream: Jackson / Log4j / Tomcat. Boot 4.1.1 still
                 // manages jackson-2-bom 2.21.5 / jackson-bom (tools.jackson) 3.1.5 and Tomcat
@@ -231,6 +238,11 @@ subprojects {
             )
             eachDependency {
                 when (requested.group) {
+                    "org.apache.commons" -> {
+                        if (requested.name == "commons-lang3") {
+                            useVersion("3.21.0")
+                        }
+                    }
                     "com.fasterxml.jackson", "com.fasterxml.jackson.core",
                     "com.fasterxml.jackson.datatype", "com.fasterxml.jackson.module",
                     "com.fasterxml.jackson.dataformat" -> {
