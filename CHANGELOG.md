@@ -33,6 +33,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Changed
 
+- **Driver form keeps an in-progress edit** — live point updates no longer replace `driverConfigJson` and `driverPointMappingsJson` on the Driver tab. Those fields refresh from the server when the binding itself changes.
 - **WebSocket raw reply** — point mapping `@raw` stores the text frame used for that poll. In subscribe mode it is the chosen publish message.
 - **Catalog schema variables stay on the node** — variables of a built-in platform schema (dashboard, data source, schedule, alert, workflow, and the other catalog object types, including blueprint `blueprintType` and `suitabilityExpression`) cannot be deleted from the Variables tab. A variable the operator added on the same object can still be deleted. The same name on a custom or device object stays deletable.
 - **Schedule function is chosen from the object** — New schedule and the schedule editor list the functions of the selected object instead of a free-text name.
