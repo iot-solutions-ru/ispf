@@ -227,8 +227,12 @@ public class BrickClassInferenceService {
             List<String> tags = objectMapper.readValue(raw, new TypeReference<>() {
             });
             return normalizeTags(tags);
-        } catch (Exception ignored) {
-            return List.of();
+        } catch (Exception ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid haystackTags JSON: " + ex.getMessage(),
+                    ex
+            );
         }
     }
 
