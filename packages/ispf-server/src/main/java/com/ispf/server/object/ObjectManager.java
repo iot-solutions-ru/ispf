@@ -377,6 +377,27 @@ public class ObjectManager {
     }
 
     @Transactional
+    public Variable updateVariableDefinition(
+            String path,
+            String name,
+            Boolean readable,
+            Boolean writable,
+            List<String> readRoles,
+            List<String> writeRoles,
+            DataSchema schema
+    ) {
+        return variableService.updateVariableDefinition(
+                path,
+                name,
+                readable,
+                writable,
+                readRoles,
+                writeRoles,
+                schema
+        );
+    }
+
+    @Transactional
     public FunctionDescriptor upsertFunction(String path, FunctionDescriptor function) {
         return variableService.upsertFunction(path, function);
     }
