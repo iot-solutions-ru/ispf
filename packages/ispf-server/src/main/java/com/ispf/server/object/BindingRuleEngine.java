@@ -328,9 +328,17 @@ public class BindingRuleEngine {
             }
             return false;
         } catch (RuntimeException ex) {
+            // Do not rethrow: a thrown failure aborts the outer transaction and rolls back
+            // a synchronous audit insert. Soft-fail like empty expression so recordCel persists.
             success = false;
             error = ex.getMessage();
-            throw ex;
+            log.warn(
+                    "Binding rule {} on {} failed: {}",
+                    rule.id(),
+                    object.path(),
+                    ex.getMessage()
+            );
+            return false;
         } finally {
             bindingAuditService.recordCel(
                     object.path(),
@@ -410,7 +418,13 @@ public class BindingRuleEngine {
         } catch (RuntimeException ex) {
             success = false;
             error = ex.getMessage();
-            throw ex;
+            log.warn(
+                    "Binding rule {} on {} failed: {}",
+                    rule.id(),
+                    object.path(),
+                    ex.getMessage()
+            );
+            return false;
         } finally {
             bindingAuditService.recordCel(
                     object.path(),
@@ -451,7 +465,13 @@ public class BindingRuleEngine {
         } catch (RuntimeException ex) {
             success = false;
             error = ex.getMessage();
-            throw ex;
+            log.warn(
+                    "Binding rule {} on {} failed: {}",
+                    rule.id(),
+                    object.path(),
+                    ex.getMessage()
+            );
+            return false;
         } finally {
             bindingAuditService.recordCel(
                     object.path(),
@@ -491,7 +511,13 @@ public class BindingRuleEngine {
         } catch (RuntimeException ex) {
             success = false;
             error = ex.getMessage();
-            throw ex;
+            log.warn(
+                    "Binding rule {} on {} failed: {}",
+                    rule.id(),
+                    object.path(),
+                    ex.getMessage()
+            );
+            return false;
         } finally {
             bindingAuditService.recordCel(
                     object.path(),
