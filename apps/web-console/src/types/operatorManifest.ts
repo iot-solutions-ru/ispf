@@ -108,6 +108,10 @@ export interface OperatorManifestChart {
   bubbleSizeVariable?: string;
   bubbleDefaultSize?: number;
   bubblePointsJson?: string;
+  bubbleXMin?: number;
+  bubbleXMax?: number;
+  bubbleYMin?: number;
+  bubbleYMax?: number;
   radarAxesJson?: string;
   demoPreviewJson?: string;
 }
@@ -231,6 +235,10 @@ export function manifestChartToWidget(
     bubbleSizeVariable: chart.bubbleSizeVariable,
     bubbleDefaultSize: chart.bubbleDefaultSize,
     bubblePointsJson: chart.bubblePointsJson,
+    bubbleXMin: chart.bubbleXMin,
+    bubbleXMax: chart.bubbleXMax,
+    bubbleYMin: chart.bubbleYMin,
+    bubbleYMax: chart.bubbleYMax,
     radarAxesJson: chart.radarAxesJson,
     demoPreviewJson: chart.demoPreviewJson,
   };

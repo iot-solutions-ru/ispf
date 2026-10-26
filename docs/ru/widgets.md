@@ -164,6 +164,7 @@
 | `bubbleXVariable`, `bubbleYVariable` | **bubble:** траектория X/Y по live/history трендам |
 | `bubbleSizeVariable`, `bubbleDefaultSize` | **bubble:** размер маркера (Z); default 80 |
 | `bubblePointsJson` | **bubble:** snapshot JSON `[{label,xVariable,yVariable,sizeVariable?}]` — перекрывает trajectory |
+| `bubbleXMin`, `bubbleXMax`, `bubbleYMin`, `bubbleYMax` | **bubble:** необязательные пределы осей. Пустой конец следует за точками. Оба конца фиксируют ось. Если минимум не меньше максимума, ось остаётся автоматической |
 | `radarAxesJson` | **radar:** JSON `[{label,variableName,valueField?,max?}]`, минимум 3 оси |
 
 **Ограничения пузырька/радара:** траектория zip по индексу точек (без слияния по временной метке); радар — только последний снимок, а не история.

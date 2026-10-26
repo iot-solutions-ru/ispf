@@ -198,6 +198,14 @@ export interface ChartWidget extends DashboardWidgetBase {
    * When set, overrides bubbleXVariable/bubbleYVariable trajectory mode.
    */
   bubblePointsJson?: string;
+  /** Bubble: optional X-axis minimum. Empty follows the points. */
+  bubbleXMin?: number;
+  /** Bubble: optional X-axis maximum. A pair with bubbleXMin fixes the axis. */
+  bubbleXMax?: number;
+  /** Bubble: optional Y-axis minimum. Empty follows the points. */
+  bubbleYMin?: number;
+  /** Bubble: optional Y-axis maximum. A pair with bubbleYMin fixes the axis. */
+  bubbleYMax?: number;
   /**
    * Radar: categorical axes JSON array
    * `[{ "label", "variableName", "valueField?", "max?" }]`.
