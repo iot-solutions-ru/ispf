@@ -543,6 +543,7 @@ export interface UpdateVariableDefinitionPayload {
   writable?: boolean;
   readRoles?: string[];
   writeRoles?: string[];
+  schema?: DataSchema;
 }
 
 export function updateVariableDefinition(

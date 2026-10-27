@@ -34,6 +34,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Changed
 
+- **Variable schema can be edited** — the variable dialog edits fields of an operator variable. Rows keep values for fields of the same type; removed fields drop out of the current value; new fields are empty. Historian samples stay as stored. Driver, catalog, and reserved variables stay fixed. Applying the blueprint again can restore the catalog schema.
 - **Driver form keeps an in-progress edit** — live point updates no longer replace `driverConfigJson` and `driverPointMappingsJson` on the Driver tab. Those fields refresh from the server when the binding itself changes.
 - **WebSocket raw reply** — point mapping `@raw` stores the text frame used for that poll. In subscribe mode it is the chosen publish message.
 - **Catalog schema variables stay on the node** — variables of a built-in platform schema (dashboard, data source, schedule, alert, workflow, and the other catalog object types, including blueprint `blueprintType` and `suitabilityExpression`) cannot be deleted from the Variables tab. A variable the operator added on the same object can still be deleted. The same name on a custom or device object stays deletable.

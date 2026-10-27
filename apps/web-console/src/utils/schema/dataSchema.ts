@@ -48,6 +48,31 @@ export function schemaFromRecord(record: DataRecord | null | undefined, fallback
   return emptySchema(fallbackName);
 }
 
+/**
+ * Current rows projected onto {@code schema}.
+ * A cell is kept when the previous schema has the same field name and type.
+ * Removed fields are dropped. New fields and type changes are empty.
+ * Rows are not invented when the record has none. History samples are not touched.
+ */
+export function alignRecordToSchema(
+  record: DataRecord,
+  schema: DataSchema,
+  previous?: DataSchema | null
+): DataRecord {
+  const previousByName = new Map((previous?.fields ?? []).map((field) => [field.name, field.type]));
+  const nextSchema = cloneSchema(schema);
+  const rows = record.rows.map((row) => {
+    const next: Record<string, unknown> = {};
+    for (const field of nextSchema.fields) {
+      const sameType = previousByName.get(field.name) === field.type;
+      const current = row[field.name];
+      next[field.name] = sameType && current !== undefined ? current : null;
+    }
+    return next;
+  });
+  return { schema: nextSchema, rows };
+}
+
 export function syncRecordSchema(record: DataRecord, schema: DataSchema): DataRecord {
   const nextSchema = cloneSchema(schema);
   const rows = record.rows.map((row) => {
