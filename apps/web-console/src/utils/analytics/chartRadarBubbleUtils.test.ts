@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  bubbleAxisDomain,
   buildBubbleSnapshotPoints,
   buildRadarRows,
   parseBubblePointsJson,
@@ -47,6 +48,15 @@ const variables: VariableDto[] = [
 ];
 
 describe("chartRadarBubbleUtils", () => {
+  it("fixes a bubble axis end when it is set", () => {
+    expect(bubbleAxisDomain(undefined, undefined)).toBeUndefined();
+    expect(bubbleAxisDomain(-5, undefined)).toEqual([-5, "auto"]);
+    expect(bubbleAxisDomain(undefined, 5)).toEqual(["auto", 5]);
+    expect(bubbleAxisDomain(5, -5)).toBeUndefined();
+    expect(bubbleAxisDomain(1, 1)).toBeUndefined();
+    expect(bubbleAxisDomain(-5, 5)).toEqual([-5, 5]);
+  });
+
   it("parses bubble points JSON", () => {
     const configs = parseBubblePointsJson(
       JSON.stringify([{ label: "A", xVariable: "temperature", yVariable: "humidity" }])

@@ -164,6 +164,7 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 | `bubbleXVariable`, `bubbleYVariable` | **bubble:** X/Y trajectory from live/history trends |
 | `bubbleSizeVariable`, `bubbleDefaultSize` | **bubble:** marker size (Z); default 80 |
 | `bubblePointsJson` | **bubble:** snapshot JSON `[{label,xVariable,yVariable,sizeVariable?}]` — overrides trajectory |
+| `bubbleXMin`, `bubbleXMax`, `bubbleYMin`, `bubbleYMax` | **bubble:** optional axis limits. An empty end follows the points. Both ends keep that axis fixed. If the minimum is not below the maximum, that axis stays automatic |
 | `radarAxesJson` | **radar:** JSON `[{label,variableName,valueField?,max?}]`, minimum 3 axes |
 
 **Bubble/radar limits:** trajectory zips by point index (no timestamp merge); radar shows latest snapshot only, not history.

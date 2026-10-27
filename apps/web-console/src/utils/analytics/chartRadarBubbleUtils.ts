@@ -238,6 +238,28 @@ export function parseDemoBubblePoints(raw: unknown): ChartBubblePoint[] {
     .filter((item): item is ChartBubblePoint => item != null);
 }
 
+/**
+ * Bubble axis limits. An empty end follows the points. Both ends fix the axis
+ * when the minimum is below the maximum; otherwise the axis stays automatic.
+ */
+export function bubbleAxisDomain(
+  min: number | undefined,
+  max: number | undefined
+): [number | "auto", number | "auto"] | undefined {
+  const hasMin = typeof min === "number" && Number.isFinite(min);
+  const hasMax = typeof max === "number" && Number.isFinite(max);
+  if (hasMin && hasMax) {
+    return min < max ? [min, max] : undefined;
+  }
+  if (hasMin) {
+    return [min, "auto"];
+  }
+  if (hasMax) {
+    return ["auto", max];
+  }
+  return undefined;
+}
+
 export function parseDemoRadarRows(raw: unknown): ChartRadarRow[] {
   if (!Array.isArray(raw)) {
     return [];
