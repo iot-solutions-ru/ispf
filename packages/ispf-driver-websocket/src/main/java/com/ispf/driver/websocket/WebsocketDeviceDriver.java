@@ -25,6 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * reads the latest text message. Point mappings are then {@code @state}, {@code @raw},
  * {@code $.path}, {@code $.array.length} or {@code round:<digits>:$.path}.
  * {@code @raw} stores the text of the message used for that poll.
+ * {@code useTls} wraps the connection in TLS. Empty or {@code false} keeps the plain socket.
+ * {@code caCertPath} is an optional PEM file trusted together with the JVM trust store.
+ * The port stays the value in the device configuration; public wss servers usually use 443.
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only (no Jetty/Netty/Tyrus/OkHttp).
  */
 public class WebsocketDeviceDriver implements DeviceDriver {
@@ -37,8 +40,8 @@ public class WebsocketDeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "websocket",
             "WebSocket Driver",
-            "0.1.0",
-            "Connects via RFC6455. get/set by point key, or one subscribeText plus $.path reads",
+            "0.1.1",
+            "RFC6455 client. useTls encrypts the socket. get/set by point key, or subscribeText plus $.path",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -46,7 +49,9 @@ public class WebsocketDeviceDriver implements DeviceDriver {
                     "path", "/",
                     "timeoutMs", "5000",
                     "pollIntervalMs", "5000",
-                    "subscribeText", ""
+                    "subscribeText", "",
+                    "useTls", "false",
+                    "caCertPath", ""
             ),
             DriverMaturity.PRODUCTION,
             Set.of("read", "write")
@@ -58,6 +63,8 @@ public class WebsocketDeviceDriver implements DeviceDriver {
     private String path = "/";
     private int timeoutMs = 5000;
     private String subscribeText = "";
+    private boolean useTls;
+    private String caCertPath = "";
     private final Map<String, String> points = new ConcurrentHashMap<>();
     private Rfc6455Client client;
     private volatile boolean connected;
@@ -83,6 +90,8 @@ public class WebsocketDeviceDriver implements DeviceDriver {
             case "path" -> path = Rfc6455Client.normalizePath(value);
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
             case "subscribeText" -> subscribeText = value.trim();
+            case "useTls" -> useTls = Boolean.parseBoolean(value.trim());
+            case "caCertPath" -> caCertPath = value.trim();
             default -> { }
         }
     }
@@ -91,12 +100,14 @@ public class WebsocketDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         try {
             closeClient();
-            client = Rfc6455Client.connect(host, port, path, timeoutMs);
+            client = Rfc6455Client.connect(host, port, path, timeoutMs,
+                    new Rfc6455Client.SocketSecurity(useTls, caCertPath));
             if (!subscribeText.isBlank()) {
                 client.sendText(subscribeText);
             }
             connected = true;
-            driverObject.log(DriverLogLevel.INFO, "WebSocket connected to " + host + ":" + port + path);
+            driverObject.log(DriverLogLevel.INFO, "WebSocket connected"
+                    + (useTls ? " via TLS" : "") + " to " + host + ":" + port + path);
         } catch (IOException e) {
             connected = false;
             closeClient();

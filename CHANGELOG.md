@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **WebSocket TLS** — the `websocket` driver setting `useTls` wraps the RFC6455 socket in TLS. Empty or `false` keeps the plain socket. `caCertPath` is an optional PEM file trusted together with the JVM trust store. The configured port stays as written; public wss servers usually use 443.
 - **Bubble chart axis limits** — the chart editor accepts an optional minimum and maximum for the horizontal and vertical axes. Empty limits follow the points. Both ends of an axis keep that axis fixed.
 - **Copy a function on the same object** — the Functions tab saves a second function under a new name. The copy keeps the schemas, body, data source, version, and invoke roles. Callers that name the source stay on the source. The dialog requires a free name.
 - **Modbus typed register decode** — `modbus-tcp` / `modbus-rtu` / `modbus-udp` point mappings accept `INT16`/`UINT16`/`INT32`/`UINT32`/`FLOAT32`/`DOUBLE` with byte order `ABCD`|`BADC`|`CDAB`|`DCBA` (e.g. `1:HOLDING:0:FLOAT32:BADC`). Legacy mappings without a data type stay RAW. Docs: [drivers](docs/en/drivers.md).

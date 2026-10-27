@@ -8,14 +8,29 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Minimal RFC6455 WebSocket client: handshake plus masked text and close frames.
@@ -42,19 +57,28 @@ final class Rfc6455Client implements AutoCloseable {
         this.open = true;
     }
 
+    /** Plain TCP, or TLS with an optional extra PEM trust file. */
+    record SocketSecurity(boolean tls, String caCertPath) {
+        static SocketSecurity plain() {
+            return new SocketSecurity(false, "");
+        }
+    }
+
     static Rfc6455Client connect(String host, int port, String path, int timeoutMs) throws IOException {
+        return connect(host, port, path, timeoutMs, SocketSecurity.plain());
+    }
+
+    static Rfc6455Client connect(
+            String host, int port, String path, int timeoutMs, SocketSecurity security) throws IOException {
         String requestPath = normalizePath(path);
-        Socket socket = new Socket();
-        socket.connect(new InetSocketAddress(host, port), timeoutMs);
-        socket.setSoTimeout(timeoutMs);
-        socket.setTcpNoDelay(true);
+        Socket socket = openSocket(host, port, timeoutMs, security);
 
         byte[] keyBytes = new byte[16];
         new SecureRandom().nextBytes(keyBytes);
         String secKey = Base64.getEncoder().encodeToString(keyBytes);
 
         String handshake = "GET " + requestPath + " HTTP/1.1\r\n"
-                + "Host: " + host + ":" + port + "\r\n"
+                + "Host: " + hostHeader(host, port, security.tls()) + "\r\n"
                 + "Upgrade: websocket\r\n"
                 + "Connection: Upgrade\r\n"
                 + "Sec-WebSocket-Key: " + secKey + "\r\n"
@@ -91,6 +115,97 @@ final class Rfc6455Client implements AutoCloseable {
             throw new IOException("Invalid Sec-WebSocket-Accept");
         }
         return new Rfc6455Client(socket);
+    }
+
+    private static Socket openSocket(String host, int port, int timeoutMs, SocketSecurity security) throws IOException {
+        Socket socket;
+        if (security.tls()) {
+            SSLSocket ssl;
+            try {
+                ssl = (SSLSocket) clientContext(security.caCertPath()).getSocketFactory().createSocket();
+            } catch (GeneralSecurityException e) {
+                throw new IOException("WebSocket TLS context failed", e);
+            }
+            ssl.connect(new InetSocketAddress(host, port), timeoutMs);
+            SSLParameters parameters = ssl.getSSLParameters();
+            parameters.setEndpointIdentificationAlgorithm("HTTPS");
+            ssl.setSSLParameters(parameters);
+            ssl.startHandshake();
+            socket = ssl;
+        } else {
+            socket = new Socket();
+            socket.connect(new InetSocketAddress(host, port), timeoutMs);
+        }
+        socket.setSoTimeout(timeoutMs);
+        socket.setTcpNoDelay(true);
+        return socket;
+    }
+
+    /** Port 443 is the usual wss port, so the Host header omits it. */
+    private static String hostHeader(String host, int port, boolean tls) {
+        if (tls && port == 443) {
+            return host;
+        }
+        return host + ":" + port;
+    }
+
+    private static SSLContext clientContext(String caCertPath) throws GeneralSecurityException, IOException {
+        if (caCertPath == null || caCertPath.isBlank()) {
+            return SSLContext.getDefault();
+        }
+        CertificateFactory factory = CertificateFactory.getInstance("X.509");
+        Collection<? extends Certificate> extra;
+        try (InputStream in = Files.newInputStream(Path.of(caCertPath))) {
+            extra = factory.generateCertificates(in);
+        }
+        if (extra.isEmpty()) {
+            throw new IOException("No certificates in " + caCertPath);
+        }
+        TrustManagerFactory platform = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        platform.init((KeyStore) null);
+        X509TrustManager platformTrust = firstX509(platform.getTrustManagers());
+        KeyStore extraStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        extraStore.load(null, null);
+        int index = 0;
+        for (Certificate certificate : extra) {
+            extraStore.setCertificateEntry("ca-" + index, certificate);
+            index++;
+        }
+        TrustManagerFactory extraFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        extraFactory.init(extraStore);
+        X509TrustManager extraTrust = firstX509(extraFactory.getTrustManagers());
+        X509TrustManager combined = new X509TrustManager() {
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                platformTrust.checkClientTrusted(chain, authType);
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                try {
+                    platformTrust.checkServerTrusted(chain, authType);
+                } catch (CertificateException ignored) {
+                    extraTrust.checkServerTrusted(chain, authType);
+                }
+            }
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return platformTrust.getAcceptedIssuers();
+            }
+        };
+        SSLContext context = SSLContext.getInstance("TLS");
+        context.init(null, new TrustManager[] {combined}, null);
+        return context;
+    }
+
+    private static X509TrustManager firstX509(TrustManager[] managers) throws GeneralSecurityException {
+        for (TrustManager manager : managers) {
+            if (manager instanceof X509TrustManager x509) {
+                return x509;
+            }
+        }
+        throw new GeneralSecurityException("No X509 trust manager");
     }
 
     boolean isOpen() {
