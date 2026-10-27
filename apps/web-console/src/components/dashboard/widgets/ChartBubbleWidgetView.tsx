@@ -17,7 +17,7 @@ import { useWidgetStyles } from "../widgetStyles";
 import { CHART_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../../utils/analytics/chartTheme";
 import WidgetDragHandle from "../WidgetDragHandle";
 import { parseDemoPreview } from "../widgetDemoData";
-import { parseDemoBubblePoints } from "../../../utils/analytics/chartRadarBubbleUtils";
+import { bubbleAxisDomain, parseDemoBubblePoints } from "../../../utils/analytics/chartRadarBubbleUtils";
 
 interface ChartBubbleWidgetViewProps {
   widget: ChartWidget;
@@ -46,6 +46,8 @@ export default function ChartBubbleWidgetView({
   const points = demoPoints.length > 0 ? demoPoints : series.points;
   const isDemo = demoPoints.length > 0;
   const chartReady = points.length > 0;
+  const xDomain = bubbleAxisDomain(widget.bubbleXMin, widget.bubbleXMax);
+  const yDomain = bubbleAxisDomain(widget.bubbleYMin, widget.bubbleYMax);
 
   return (
     <div className="dash-widget dash-widget-chart" style={styles.card}>
@@ -80,6 +82,8 @@ export default function ChartBubbleWidgetView({
               <XAxis
                 type="number"
                 dataKey="x"
+                domain={xDomain}
+                allowDataOverflow={xDomain != null}
                 name={t("view.chartBubble.axisX")}
                 tick={{ fontSize: 10 }}
                 tickFormatter={(v) => Number(v).toFixed(decimals)}
@@ -87,6 +91,8 @@ export default function ChartBubbleWidgetView({
               <YAxis
                 type="number"
                 dataKey="y"
+                domain={yDomain}
+                allowDataOverflow={yDomain != null}
                 name={t("view.chartBubble.axisY")}
                 tick={{ fontSize: 10 }}
                 width={42}

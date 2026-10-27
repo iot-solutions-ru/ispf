@@ -97,6 +97,9 @@ ispf:
     fixture-profile: ${ISPF_BOOTSTRAP_FIXTURE_PROFILE:full}
     # MES catalog + batch/work-order models ship via marketplace (IoT Solutions), not base platform.
     mes-catalog-enabled: ${ISPF_BOOTSTRAP_MES_CATALOG_ENABLED:false}
+  # Due-poll for SCHEDULE objects / platform_schedules. intervalMs finer than this is capped by the poll.
+  scheduler:
+    poll-delay-ms: ${ISPF_SCHEDULER_POLL_DELAY_MS:1000}
   platform:
     name: IoT Solutions Platform Framework
     restart:

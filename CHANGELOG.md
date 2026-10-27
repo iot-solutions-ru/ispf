@@ -19,6 +19,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Added
 
+- **Bubble chart axis limits** — the chart editor accepts an optional minimum and maximum for the horizontal and vertical axes. Empty limits follow the points. Both ends of an axis keep that axis fixed.
 - **Copy a function on the same object** — the Functions tab saves a second function under a new name. The copy keeps the schemas, body, data source, version, and invoke roles. Callers that name the source stay on the source. The dialog requires a free name.
 - **Modbus typed register decode** — `modbus-tcp` / `modbus-rtu` / `modbus-udp` point mappings accept `INT16`/`UINT16`/`INT32`/`UINT32`/`FLOAT32`/`DOUBLE` with byte order `ABCD`|`BADC`|`CDAB`|`DCBA` (e.g. `1:HOLDING:0:FLOAT32:BADC`). Legacy mappings without a data type stay RAW. Docs: [drivers](docs/en/drivers.md).
 - **Copy a variable on the same object** — the Variables tab creates a second variable under a new name. The copy keeps the schema, current value, read/write flags, roles, and history settings. Historian samples and bindings that name the source stay on the source.
@@ -34,6 +35,8 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 ### Changed
 
 - **Variable schema can be edited** — the variable dialog edits fields of an operator variable. Rows keep values for fields of the same type; removed fields drop out of the current value; new fields are empty. Historian samples stay as stored. Driver, catalog, and reserved variables stay fixed. Applying the blueprint again can restore the catalog schema.
+- **Driver form keeps an in-progress edit** — live point updates no longer replace `driverConfigJson` and `driverPointMappingsJson` on the Driver tab. Those fields refresh from the server when the binding itself changes.
+- **WebSocket raw reply** — point mapping `@raw` stores the text frame used for that poll. In subscribe mode it is the chosen publish message.
 - **Catalog schema variables stay on the node** — variables of a built-in platform schema (dashboard, data source, schedule, alert, workflow, and the other catalog object types, including blueprint `blueprintType` and `suitabilityExpression`) cannot be deleted from the Variables tab. A variable the operator added on the same object can still be deleted. The same name on a custom or device object stays deletable.
 - **Schedule function is chosen from the object** — New schedule and the schedule editor list the functions of the selected object instead of a free-text name.
 - **Catalog folder names stay folders** — a path counts as a migrations, reports, schedules, bindings, functions, or screens catalog only at `root.platform.{leaf}`, `root.tenant.{id}.platform.{leaf}`, or `applications.{appId}.{leaf}`. An object named `migrations`, including a singleton blueprint, keeps its own type and can be deleted.

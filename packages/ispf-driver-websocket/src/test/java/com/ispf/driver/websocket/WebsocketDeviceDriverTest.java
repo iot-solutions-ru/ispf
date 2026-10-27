@@ -71,6 +71,28 @@ class WebsocketDeviceDriverTest {
     }
 
     @Test
+    void getModeRawPointKeepsTheLastReplyText() throws Exception {
+        server = new FakeWebSocketServer();
+        server.put("temperature", "23.5");
+        server.start();
+        StubDriverObject object = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(server.port()),
+                "path", "/",
+                "timeoutMs", "2000"
+        ));
+        driver = new WebsocketDeviceDriver();
+        driver.initialize(object);
+        driver.connect();
+        java.util.Map<String, String> mappings = new java.util.LinkedHashMap<>();
+        mappings.put("temp", "temperature");
+        mappings.put("raw", "@raw");
+        driver.readPoints(mappings);
+        assertEquals("23.5", value(object, "temp"));
+        assertEquals("{\"point\":\"temperature\",\"value\":\"23.5\"}", value(object, "raw"));
+    }
+
+    @Test
     void acceptKeyMatchesRfc6455Example() {
         assertEquals("s3pPLMBiTxaQ9kYGzzhZRbK+xOo=",
                 Rfc6455Client.acceptKey("dGhlIHNhbXBsZSBub25jZQ=="));
@@ -99,7 +121,8 @@ class WebsocketDeviceDriverTest {
                 "name", "$.msg.transforms.0.child_frame_id",
                 "x", "round:3:$.msg.transforms.0.transform.translation.x",
                 "y", "round:3:$.msg.transforms.0.transform.translation.y",
-                "z", "round:3:$.msg.transforms.0.transform.translation.z"
+                "z", "round:3:$.msg.transforms.0.transform.translation.z",
+                "raw", "@raw"
         ));
         assertEquals("Open", value(object, "state"));
         assertEquals("publish", value(object, "op"));
@@ -108,6 +131,7 @@ class WebsocketDeviceDriverTest {
         assertEquals("1.235", value(object, "x"));
         assertEquals("-0.5", value(object, "y"));
         assertEquals("0", value(object, "z"));
+        assertEquals(BALLS_PUBLISH, value(object, "raw"));
         assertThrows(DriverException.class, () -> driver.writePoint("x", DataRecord.single(
                 DataSchema.builder("v").field("value", FieldType.STRING).build(),
                 Map.of("value", "1"))));

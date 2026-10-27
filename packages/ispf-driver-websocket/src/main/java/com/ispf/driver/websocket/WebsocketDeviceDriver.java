@@ -22,8 +22,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * field from the reply; writes send a JSON set request with the record value.
  * <p>
  * When {@code subscribeText} is set, that text is sent once after the handshake and each poll
- * reads the latest text message. Point mappings are then {@code @state}, {@code $.path},
- * {@code $.array.length} or {@code round:<digits>:$.path}.
+ * reads the latest text message. Point mappings are then {@code @state}, {@code @raw},
+ * {@code $.path}, {@code $.array.length} or {@code round:<digits>:$.path}.
+ * {@code @raw} stores the text of the message used for that poll.
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only (no Jetty/Netty/Tyrus/OkHttp).
  */
 public class WebsocketDeviceDriver implements DeviceDriver {
@@ -128,24 +129,31 @@ public class WebsocketDeviceDriver implements DeviceDriver {
             readSubscribed(pointMappings);
             return;
         }
+        String lastReply = "";
+        Map<String, String> rawPoints = new java.util.LinkedHashMap<>();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             String pointId = entry.getKey();
             String mapping = resolveMapping(pointId, entry.getValue());
             points.put(pointId, mapping);
+            if (isRawMapping(mapping)) {
+                rawPoints.put(pointId, mapping);
+                continue;
+            }
             try {
                 client.sendText(Rfc6455Client.getRequest(mapping));
                 String reply = client.readText();
+                lastReply = reply == null ? "" : reply;
                 String value = Rfc6455Client.extractJsonField(reply, "value");
                 if (value == null) {
-                    value = reply == null ? "" : reply;
+                    value = lastReply;
                 }
-                driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
-                        "value", value,
-                        "point", mapping
-                )));
+                updatePoint(pointId, value, mapping);
             } catch (IOException e) {
                 throw new DriverException("WebSocket read failed for point " + mapping, e);
             }
+        }
+        for (Map.Entry<String, String> rawPoint : rawPoints.entrySet()) {
+            updatePoint(rawPoint.getKey(), lastReply, rawPoint.getValue());
         }
     }
 
@@ -198,16 +206,28 @@ public class WebsocketDeviceDriver implements DeviceDriver {
             String mapping = resolveMapping(pointId, entry.getValue());
             points.put(pointId, mapping);
             String value;
-            try {
-                value = JsonValues.readMapping(root, mapping);
-            } catch (IllegalArgumentException | ArithmeticException e) {
-                throw new DriverException("WebSocket point mapping failed for " + pointId, e);
+            if (isRawMapping(mapping)) {
+                value = message == null ? "" : message;
+            } else {
+                try {
+                    value = JsonValues.readMapping(root, mapping);
+                } catch (IllegalArgumentException | ArithmeticException e) {
+                    throw new DriverException("WebSocket point mapping failed for " + pointId, e);
+                }
             }
-            driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
-                    "value", value,
-                    "point", mapping
-            )));
+            updatePoint(pointId, value, mapping);
         }
+    }
+
+    private void updatePoint(String pointId, String value, String mapping) {
+        driverObject.updateVariable(pointId, DataRecord.single(VALUE_SCHEMA, Map.of(
+                "value", value,
+                "point", mapping
+        )));
+    }
+
+    private static boolean isRawMapping(String mapping) {
+        return "@raw".equals(mapping);
     }
 
     private static String pickPublish(List<String> batch) {

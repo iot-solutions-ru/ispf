@@ -11,6 +11,7 @@ import java.util.Map;
  * JDK-only JSON reader for subscribe payloads. Paths look like {@code $.msg.transforms.0.child_frame_id}.
  * {@code length} on an array returns its size. {@code round:<digits>:$.path} rounds a number.
  * {@code @state} is the open-socket marker used by the driver after a successful read.
+ * {@code @raw} is handled by the driver and stores the original text frame.
  */
 final class JsonValues {
 
