@@ -33,6 +33,12 @@ public class PlatformSchedulerService {
 
     private static final String SCHEDULER_LOCK = "platform_scheduler";
 
+    /**
+     * Default due-poll period. Schedule {@code intervalMs} below this value cannot fire more often
+     * than the poll (configure {@code ispf.scheduler.poll-delay-ms}).
+     */
+    public static final long DEFAULT_POLL_DELAY_MS = 1_000L;
+
     private final JdbcTemplate jdbcTemplate;
     private final FunctionService functionService;
     private final DriverRuntimeService driverRuntimeService;
@@ -107,7 +113,7 @@ public class PlatformSchedulerService {
                 """);
     }
 
-    @Scheduled(fixedDelay = 5000)
+    @Scheduled(fixedDelayString = "${ispf.scheduler.poll-delay-ms:1000}")
     public void tick() {
         if (!clusterProperties.isSchedulerActive()) {
             return;
