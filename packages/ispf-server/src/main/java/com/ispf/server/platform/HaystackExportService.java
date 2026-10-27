@@ -387,8 +387,12 @@ public class HaystackExportService {
             List<String> tags = objectMapper.readValue(raw, new TypeReference<>() {
             });
             return mergeTags(Map.of(), tags);
-        } catch (Exception ignored) {
-            return Map.of();
+        } catch (Exception ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid haystackTags JSON: " + ex.getMessage(),
+                    ex
+            );
         }
     }
 
