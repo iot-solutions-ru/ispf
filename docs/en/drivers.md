@@ -104,7 +104,7 @@ public interface DeviceDriver {
 
 | Exception | `DriverErrorKind` | Meaning / runtime reaction |
 |-----------|-------------------|-----------------------------|
-| `DriverTransientException` | `transient` | timeout, connection reset, device busy — keep polling. `websocket` calls `connect()` again from later polls unless the failure is configuration; the wait grows from 5 s to 60 s. A quiet open socket is not reconnected |
+| `DriverTransientException` | `transient` | timeout, connection reset, device busy — keep polling. `websocket` and `jdbc` call `connect()` again from later polls unless the failure is configuration; the wait grows from 5 s to 60 s. A session that is still open is not reconnected |
 | `DriverPermanentException` | `permanent` | protocol violation, device rejected — retry will not help |
 | `DriverConfigurationException` | `configuration` | bad host / register / unit id — operator must fix config |
 | `DriverUnsupportedOperationException` | `unsupported` | write or browse not implemented for this driver / model |
@@ -883,6 +883,8 @@ Maturity: **production**. Loopback test: `JmxDeviceDriverTest` (JDK `JMXConnecto
 SQL scalar/row read over any JDBC driver. Config: `jdbcUrl`, `username`, `password`, `timeoutMs`.
 
 Point mapping: a **full SELECT statement per point** (case-insensitive `SELECT` guard; connection is opened `setReadOnly(true)`). There is no `query` config key.
+
+A connect failure that is not a configuration error keeps the poll timer and calls `connect()` again. The wait grows from 5 s to 60 s. A query that finds the session closed drops it and uses the same wait. A session that is still open after a query error stays open. A name that does not resolve does not retry.
 
 Variable: single-column result → `value` (first row); multi-column first row → one string field per column label (sanitized `[^a-zA-Z0-9_]` → `_`).
 
