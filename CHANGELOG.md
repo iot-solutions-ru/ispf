@@ -62,6 +62,7 @@ Russian summary: [docs/ru/changelog.md](docs/ru/changelog.md).
 
 ### Fixed
 
+- **WebSocket reconnect** — when `connect()` fails for a reason other than configuration, the `websocket` driver keeps its poll timer and tries `connect()` again. The wait grows from 5 seconds to 60 seconds. A name that does not resolve does not retry. An open socket that is only quiet stays open.
 - **Blueprint target type** — creating an INSTANCE or MIXIN blueprint asks for a target of CUSTOM or DEVICE. Dashboard, workflow, mimic, alert, and report are no longer offered; a singleton catalog still does not ask.
 - **Device create keeps the object when the driver cannot connect** — the create dialog edits `driverConfigJson` and sends it with the device. A failed first connection no longer deletes the object; the error stays on the Driver tab.
 - **WebSocket subscribe points** — with `subscribeText`, the driver sends that text after connect and maps the latest publish into points (`$.path`, array `length`, `round:<n>:$.path`). Get/set mode is unchanged when `subscribeText` is empty.

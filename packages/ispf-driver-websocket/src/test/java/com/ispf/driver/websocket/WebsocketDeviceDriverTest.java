@@ -6,7 +6,9 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverErrorKind;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverReconnectPendingException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -19,6 +21,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -149,12 +152,62 @@ class WebsocketDeviceDriverTest {
     }
 
     @Test
-    void readPointsBeforeConnectThrows() {
+    void readPointsBeforeConnectTriesConnect() throws Exception {
+        int closedPort;
+        try (ServerSocket socket = new ServerSocket(0)) { closedPort = socket.getLocalPort(); }
         driver = new WebsocketDeviceDriver();
-        driver.initialize(new StubDriverObject(Map.of()));
+        driver.initialize(new StubDriverObject(Map.of(
+                "host", "127.0.0.1", "port", String.valueOf(closedPort), "timeoutMs", "200")));
         DriverException error = assertThrows(DriverException.class, () ->
                 driver.readPoints(Map.of("k", "temperature")));
-        assertTrue(error.getMessage().contains("Not connected"));
+        assertTrue(error.getMessage().contains("WebSocket connect failed"));
+    }
+
+    @Test
+    void retriesConnectAfterTheBackoffWhenTheAddressReturns() throws Exception {
+        int port;
+        try (ServerSocket socket = new ServerSocket(0)) { port = socket.getLocalPort(); }
+        long[] now = {1_000L};
+        StubDriverObject object = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "path", "/ws",
+                "timeoutMs", "500"
+        ));
+        driver = new WebsocketDeviceDriver();
+        driver.clock = () -> now[0];
+        driver.initialize(object);
+        DriverException first = assertThrows(DriverException.class, driver::connect);
+        assertTrue(first.getMessage().contains("WebSocket connect failed"));
+        DriverException waiting = assertThrows(DriverException.class, () ->
+                driver.readPoints(Map.of("temp", "temperature")));
+        assertTrue(waiting instanceof DriverReconnectPendingException);
+
+        server = new FakeWebSocketServer(null, port);
+        server.put("temperature", "23.5");
+        server.start();
+        now[0] = now[0] + 5_000L;
+        driver.readPoints(Map.of("temp", "temperature"));
+        assertEquals("23.5", value(object, "temp"));
+    }
+
+    @Test
+    void configurationFailureIsNotRetried() throws Exception {
+        long[] now = {1_000L};
+        driver = new WebsocketDeviceDriver();
+        driver.clock = () -> now[0];
+        driver.initialize(new StubDriverObject(Map.of(
+                "host", "127.0.0.1", "port", "9", "timeoutMs", "200")));
+        driver.rememberConnectFailure(new DriverException(
+                "WebSocket connect failed", new UnknownHostException("plc.local")));
+        DriverException error = assertThrows(DriverException.class, () ->
+                driver.readPoints(Map.of("temp", "temperature")));
+        assertEquals(DriverErrorKind.CONFIGURATION, error.kind());
+        now[0] = now[0] + 120_000L;
+        DriverException again = assertThrows(DriverException.class, () ->
+                driver.readPoints(Map.of("temp", "temperature")));
+        assertEquals(DriverErrorKind.CONFIGURATION, again.kind());
+        assertTrue(again.getMessage().contains("not usable"));
     }
 
     @Test
@@ -232,15 +285,19 @@ class WebsocketDeviceDriverTest {
         });
         private final Map<String, String> store = new ConcurrentHashMap<>();
         FakeWebSocketServer() throws IOException {
-            this(null);
+            this(null, 0);
         }
         FakeWebSocketServer(SSLContext tls) throws IOException {
+            this(tls, 0);
+        }
+        FakeWebSocketServer(SSLContext tls, int port) throws IOException {
             if (tls == null) {
                 serverSocket = new ServerSocket();
             } else {
                 serverSocket = tls.getServerSocketFactory().createServerSocket();
             }
-            serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+            serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress("127.0.0.1", port));
         }
         int port() { return serverSocket.getLocalPort(); }
         void put(String key, String value) { store.put(key, value); }

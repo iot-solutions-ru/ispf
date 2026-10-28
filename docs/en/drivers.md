@@ -104,7 +104,7 @@ public interface DeviceDriver {
 
 | Exception | `DriverErrorKind` | Meaning / runtime reaction |
 |-----------|-------------------|-----------------------------|
-| `DriverTransientException` | `transient` | timeout, connection reset, device busy — keep polling |
+| `DriverTransientException` | `transient` | timeout, connection reset, device busy — keep polling. `websocket` calls `connect()` again from later polls unless the failure is configuration; the wait grows from 5 s to 60 s. A quiet open socket is not reconnected |
 | `DriverPermanentException` | `permanent` | protocol violation, device rejected — retry will not help |
 | `DriverConfigurationException` | `configuration` | bad host / register / unit id — operator must fix config |
 | `DriverUnsupportedOperationException` | `unsupported` | write or browse not implemented for this driver / model |
