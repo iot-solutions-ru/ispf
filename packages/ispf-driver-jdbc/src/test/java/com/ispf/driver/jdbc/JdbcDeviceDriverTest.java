@@ -54,16 +54,50 @@ class JdbcDeviceDriverTest {
     }
 
     @Test
-    void mapsFirstRowColumnsToDynamicSchema() throws Exception {
+    void mapsEveryRowToTheVariable() throws Exception {
         startDriverWithSeededDatabase();
 
-        driver.readPoints(Map.of("firstSensor", "SELECT NAME, TEMP FROM SENSORS ORDER BY ID"));
+        driver.readPoints(Map.of("sensors", "SELECT NAME, TEMP FROM SENSORS ORDER BY ID"));
 
-        DataRecord record = driverObject.variables.get("firstSensor");
-        assertEquals(1, record.rowCount());
+        DataRecord record = driverObject.variables.get("sensors");
+        assertEquals(2, record.rowCount());
         assertEquals("jdbcRow", record.schema().name());
         assertEquals("alpha", record.firstRow().get("NAME"));
         assertEquals("21.5", record.firstRow().get("TEMP"));
+        assertEquals("beta", record.rows().get(1).get("NAME"));
+        assertEquals("18.0", record.rows().get(1).get("TEMP"));
+    }
+
+    @Test
+    void singleColumnKeepsEveryRowAsValue() throws Exception {
+        startDriverWithSeededDatabase();
+
+        driver.readPoints(Map.of("names", "SELECT NAME FROM SENSORS ORDER BY ID"));
+
+        DataRecord record = driverObject.variables.get("names");
+        assertEquals(2, record.rowCount());
+        assertEquals("alpha", record.firstRow().get("value"));
+        assertEquals("beta", record.rows().get(1).get("value"));
+    }
+
+    @Test
+    void maxRowsStopsTheResult() throws Exception {
+        startDriverWithSeededDatabase();
+        driver.disconnect();
+        driverObject = new StubDriverObject(Map.of(
+                "jdbcUrl", jdbcUrl,
+                "timeoutMs", "5000",
+                "maxRows", "1"
+        ));
+        driver = new JdbcDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+
+        driver.readPoints(Map.of("names", "SELECT NAME FROM SENSORS ORDER BY ID"));
+
+        DataRecord record = driverObject.variables.get("names");
+        assertEquals(1, record.rowCount());
+        assertEquals("alpha", record.firstRow().get("value"));
     }
 
     @Test

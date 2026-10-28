@@ -317,6 +317,7 @@ val devDriverPackProjectNames = listOf(
     "ispf-driver-kafka",
     "ispf-driver-modbus",
     "ispf-driver-http",
+    "ispf-driver-jdbc",
     "ispf-driver-email",
     "ispf-driver-sms",
     "ispf-driver-webhook",
