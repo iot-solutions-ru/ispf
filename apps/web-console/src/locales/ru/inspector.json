@@ -707,6 +707,8 @@
   "variables.schemaRequired": "Добавьте хотя бы одно поле схемы перед созданием переменной.",
   "variables.schemaSection": "Схема",
   "variables.setInitialValue": "Задать начальное значение",
+  "variables.rows": "Строки ({{count}})",
+  "variables.rowsHint": "Все сохранённые строки. Поля ниже — первая строка.",
   "variables.settings": "Настройки",
   "variables.settingsTitle": "Настройки: {{name}}",
   "variables.storageMode": "Хранение значения",

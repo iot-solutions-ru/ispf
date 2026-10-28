@@ -704,6 +704,8 @@
   "variables.schemaRequired": "创建变量前请至少添加一个 schema 字段。",
   "variables.schemaSection": "模式",
   "variables.setInitialValue": "设置初始值",
+  "variables.rows": "行 ({{count}})",
+  "variables.rowsHint": "已保存的全部行。下方字段是第一行。",
   "variables.settings": "设置",
   "variables.settingsTitle": "设置：{{name}}",
   "variables.storageMode": "Value storage",

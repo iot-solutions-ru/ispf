@@ -72,6 +72,8 @@
   "variables.column.storage": "Storage",
   "variables.column.default": "Default",
   "variables.chart": "Chart",
+  "variables.rows": "Rows ({{count}})",
+  "variables.rowsHint": "All stored rows. The fields below are the first row.",
   "variables.settings": "Settings",
   "variables.changeValue": "Change",
   "events.add": "+ Event",
