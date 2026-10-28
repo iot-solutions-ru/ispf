@@ -7,6 +7,7 @@ import {
 } from "../../../types/dashboard";
 import { AdvancedJsonField, HintCaption, VariableSelect } from "../widgetEditorStructured";
 import { variableListAllowCustom } from "../widgetEditorHelpers";
+import AxisLimitInput from "./AxisLimitInput";
 import { RecordFieldGroup } from "./widgetBoundChoices";
 import MapMarkerRulesEditor from "./MapMarkerRulesEditor";
 import {
@@ -107,6 +108,27 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
             onChange={(v) => update({ bubblePointsJson: v || undefined })}
             rows={5}
           />
+          <AxisLimitInput
+            label={t("editor.chartBubbleXMin")}
+            value={widget.bubbleXMin}
+            onChange={(bubbleXMin) => update({ bubbleXMin })}
+          />
+          <AxisLimitInput
+            label={t("editor.chartBubbleXMax")}
+            value={widget.bubbleXMax}
+            onChange={(bubbleXMax) => update({ bubbleXMax })}
+          />
+          <AxisLimitInput
+            label={t("editor.chartBubbleYMin")}
+            value={widget.bubbleYMin}
+            onChange={(bubbleYMin) => update({ bubbleYMin })}
+          />
+          <AxisLimitInput
+            label={t("editor.chartBubbleYMax")}
+            value={widget.bubbleYMax}
+            onChange={(bubbleYMax) => update({ bubbleYMax })}
+          />
+          <span className="hint">{t("editor.chartBubbleAxisLimitsHint")}</span>
         </>
       )}
       {chartType === "radar" && (

@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -88,6 +89,44 @@ class ObjectTreeLoadSyncServiceTest {
         loadSyncService.reloadFromDatabase(() -> bootstrapped.set(true));
 
         assertThat(bootstrapped).isTrue();
+    }
+
+    @Test
+    void loadFromDatabaseAppliesAuditFlagsOntoExistingStub() {
+        PlatformObject stub = new PlatformObject(
+                "hub-id",
+                "root.platform.singleton-blueprints.audit-hub-v1",
+                ObjectType.BLUEPRINT,
+                "audit-hub-v1",
+                "",
+                null
+        );
+        objectTree.register(stub);
+        assertThat(stub.bindingAuditEnabled()).isFalse();
+
+        ObjectNodeEntity entity = new ObjectNodeEntity();
+        entity.setId("hub-id");
+        entity.setPath("root.platform.singleton-blueprints.audit-hub-v1");
+        entity.setType(ObjectType.BLUEPRINT);
+        entity.setDisplayName("audit-hub-v1");
+        entity.setSortOrder(0);
+        entity.setRevision(3L);
+        entity.setBindingAuditEnabled(true);
+        entity.setFunctionAuditEnabled(true);
+        entity.setEventJournalEnabled(true);
+        when(nodeRepository.findAllByOrderByPathAsc()).thenReturn(List.of(entity));
+        when(mapper.readappliedBlueprintIds(any())).thenReturn(List.of());
+        when(mapper.readBlueprintContributions(any())).thenReturn(Map.of());
+        when(mapper.readEvents(any())).thenReturn(new com.ispf.core.object.EventDescriptor[0]);
+        when(mapper.readFunctions(any())).thenReturn(new com.ispf.core.object.FunctionDescriptor[0]);
+
+        loadSyncService.loadFromDatabase();
+
+        PlatformObject loaded = objectTree.require("root.platform.singleton-blueprints.audit-hub-v1");
+        assertThat(loaded.bindingAuditEnabled()).isTrue();
+        assertThat(loaded.functionAuditEnabled()).isTrue();
+        assertThat(loaded.eventJournalEnabled()).isTrue();
+        assertThat(loaded.revision()).isEqualTo(3L);
     }
 
     @Test

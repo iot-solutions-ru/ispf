@@ -68,8 +68,8 @@ dependencies {
     implementation("io.micrometer:micrometer-tracing-bridge-otel")
     implementation("org.apache.cassandra:java-driver-core:4.19.4")
 
-    implementation("org.apache.poi:poi-ooxml:5.5.1")
-    implementation("org.apache.poi:poi:5.5.1")
+    implementation("org.apache.poi:poi-ooxml:6.0.0")
+    implementation("org.apache.poi:poi:6.0.0")
 
     // Bundle manifest JSON Schema (ADR-0060). 3.x is Jackson 3 / JDK 17+ (same lane as ispf-server).
     implementation("com.networknt:json-schema-validator:3.0.8")

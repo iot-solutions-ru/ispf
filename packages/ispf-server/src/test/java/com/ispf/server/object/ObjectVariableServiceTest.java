@@ -4,10 +4,12 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.FunctionDescriptor;
+import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.core.object.VariableStorageMode;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.plugin.blueprint.BlueprintType;
@@ -172,6 +174,122 @@ class ObjectVariableServiceTest {
         scoped.deleteVariable(PATH, "layout");
 
         assertThat(node.getVariable("layout")).isEmpty();
+    }
+
+    @Test
+    void updateVariableDefinitionReplacesSchemaAndKeepsOverlappingValues() {
+        DataSchema original = DataSchema.builder("reading")
+                .field("value", FieldType.DOUBLE)
+                .field("note", FieldType.STRING)
+                .build();
+        node.addVariable(new Variable(
+                "reading",
+                original,
+                true,
+                true,
+                DataRecord.single(original, Map.of("value", 1.5, "note", "hot")),
+                true,
+                14,
+                HistorySampleMode.ALL_VALUES,
+                true,
+                VariableStorageMode.TRANSIENT,
+                null,
+                List.of("operator"),
+                List.of()
+        ));
+        when(mapper.auditDiff(any(), any())).thenReturn("{}");
+        DataSchema next = DataSchema.builder("ignored")
+                .field("value", FieldType.DOUBLE)
+                .field("unit", FieldType.STRING)
+                .build();
+
+        Variable updated = variableService.updateVariableDefinition(
+                PATH,
+                "reading",
+                false,
+                null,
+                null,
+                null,
+                next
+        );
+
+        assertThat(updated.schema().name()).isEqualTo("reading");
+        assertThat(updated.schema().field("note")).isEmpty();
+        assertThat(updated.schema().field("unit")).isPresent();
+        assertThat(updated.readable()).isFalse();
+        assertThat(updated.writable()).isTrue();
+        assertThat(updated.historyEnabled()).isTrue();
+        assertThat(updated.historyRetentionDays()).contains(14);
+        assertThat(updated.historySampleMode()).isEqualTo(HistorySampleMode.ALL_VALUES);
+        assertThat(updated.includePreviousValueInEvent()).isTrue();
+        assertThat(updated.storageMode()).isEqualTo(VariableStorageMode.TRANSIENT);
+        assertThat(updated.readRoles()).containsExactly("operator");
+        Map<String, Object> row = updated.value().orElseThrow().firstRow();
+        assertThat(row.get("value")).isEqualTo(1.5);
+        assertThat(row).doesNotContainKey("note");
+        assertThat(row.get("unit")).isNull();
+        verify(objectManager).persistVariable(eq(PATH), any(Variable.class));
+    }
+
+    @Test
+    void updateVariableDefinitionRejectsEmptySchemaAndSystemNames() {
+        DataSchema original = DataSchema.builder("reading").field("value", FieldType.DOUBLE).build();
+        node.addVariable(new Variable("reading", original, true, true, null));
+        node.addVariable(new Variable("driverId", original, true, true, null));
+
+        assertThatThrownBy(() -> variableService.updateVariableDefinition(
+                PATH,
+                "reading",
+                null,
+                null,
+                null,
+                null,
+                new DataSchema("reading", List.of())
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("at least one field");
+        assertThat(node.getVariable("reading").orElseThrow().schema().field("value")).isPresent();
+
+        DataSchema renamed = DataSchema.builder("driverId").field("id", FieldType.STRING).build();
+        assertThatThrownBy(() -> variableService.updateVariableDefinition(
+                PATH,
+                "driverId",
+                null,
+                null,
+                null,
+                null,
+                renamed
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("driverId");
+        assertThat(node.getVariable("driverId").orElseThrow().schema().field("value")).isPresent();
+    }
+
+    @Test
+    void updateVariableDefinitionRejectsIntrinsicCatalogSchema() {
+        DataSchema schema = DataSchema.builder("layout").field("value", FieldType.STRING).build();
+        PlatformObject dashboard = new PlatformObject(
+                "main",
+                "root.platform.dashboards.main",
+                ObjectType.DASHBOARD,
+                "Main",
+                "",
+                null
+        );
+        objectTree.register(dashboard);
+        dashboard.addVariable(new Variable("layout", schema, true, true, null));
+        ObjectVariableService scoped = serviceWith(dashboardSchema(schema));
+        DataSchema next = DataSchema.builder("layout").field("other", FieldType.STRING).build();
+
+        assertThatThrownBy(() -> scoped.updateVariableDefinition(
+                dashboard.path(),
+                "layout",
+                null,
+                null,
+                null,
+                null,
+                next
+        )).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("layout");
+        assertThat(dashboard.getVariable("layout").orElseThrow().schema().field("value")).isPresent();
     }
 
     private ObjectVariableService serviceWith(BlueprintDefinition model) {

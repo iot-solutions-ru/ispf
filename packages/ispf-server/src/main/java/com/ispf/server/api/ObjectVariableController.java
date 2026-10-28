@@ -305,7 +305,8 @@ public class ObjectVariableController {
                     request.readable(),
                     request.writable(),
                     request.readRoles(),
-                    request.writeRoles()
+                    request.writeRoles(),
+                    request.schema()
             );
             if (request.readRoles() != null || request.writeRoles() != null) {
                 auditEventService.logVariableAclChange(
@@ -367,7 +368,8 @@ public class ObjectVariableController {
             Boolean readable,
             Boolean writable,
             List<String> readRoles,
-            List<String> writeRoles
+            List<String> writeRoles,
+            DataSchema schema
     ) {
     }
 

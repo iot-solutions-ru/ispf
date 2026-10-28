@@ -22,6 +22,9 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.web.server.ResponseStatusException;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -156,5 +159,43 @@ class HaystackExportServiceTest {
         assertTrue(rows.stream().anyMatch(row -> "visibleTemperature".equals(row.get("variableName"))));
         assertFalse(rows.stream().anyMatch(row -> "restrictedTemperature".equals(row.get("variableName"))));
         assertFalse(payload.toString().contains("restrictedTemperature"));
+    }
+
+    @Test
+    void invalidHaystackTagsJsonIsErrorNotEmptyTags() {
+        DataSchema stringSchema = DataSchema.builder("string")
+                .field("value", FieldType.STRING)
+                .build();
+        PlatformObject device = new PlatformObject(
+                "acl-export-test",
+                DEVICE_PATH,
+                ObjectType.DEVICE,
+                "ACL export test",
+                "",
+                null
+        );
+        device.addVariable(new Variable(
+                "haystackTags",
+                stringSchema,
+                true,
+                true,
+                DataRecord.single(stringSchema, Map.of("value", "{not-json"))
+        ));
+        ObjectTree tree = new ObjectTree();
+        tree.register(device);
+        when(objectManager.tree()).thenReturn(tree);
+        when(objectAccessService.canRead(DEVICE_PATH, OPERATOR)).thenReturn(true);
+        when(variableMemberAccessService.canRead(DEVICE_PATH, "haystackTags", OPERATOR)).thenReturn(true);
+
+        HaystackExportService service = new HaystackExportService(
+                objectManager,
+                new ObjectMapper(),
+                objectAccessService,
+                variableMemberAccessService
+        );
+
+        assertThatThrownBy(() -> service.exportSubtree(OPERATOR, DEVICE_PATH, false))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Invalid haystackTags JSON");
     }
 }

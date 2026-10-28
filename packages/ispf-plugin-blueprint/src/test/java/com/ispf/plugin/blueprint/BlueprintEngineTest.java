@@ -669,6 +669,38 @@ class BlueprintEngineTest {
         assertThat(device.appliedBlueprintIds()).doesNotContain(model.id());
     }
 
+    @Test
+    void ensureSingletonPreservesRuntimeAuditFlags() {
+        BlueprintDefinition model = new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                "audit-hub-v1",
+                "hub",
+                BlueprintType.SINGLETON,
+                ObjectType.CUSTOM,
+                "",
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        engine.createBlueprint(model);
+        PlatformObject hub = objectTree.require(BlueprintEngine.singletonInstancePath(model));
+        hub.setBindingAuditEnabled(true);
+        hub.setFunctionAuditEnabled(true);
+        hub.setEventJournalEnabled(true);
+
+        engine.updateBlueprint(model);
+        engine.refreshBlueprintCatalogNodes();
+        PlatformObject after = objectTree.require(BlueprintEngine.singletonInstancePath(model));
+
+        assertThat(after.bindingAuditEnabled()).isTrue();
+        assertThat(after.functionAuditEnabled()).isTrue();
+        assertThat(after.eventJournalEnabled()).isTrue();
+    }
+
     private static BlueprintDefinition instanceBlueprint(String name) {
         return new BlueprintDefinition(
                 UUID.randomUUID().toString(),

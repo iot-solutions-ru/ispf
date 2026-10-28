@@ -2,6 +2,8 @@ package com.ispf.server.object;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldDefinition;
+import com.ispf.core.model.FieldType;
 import com.ispf.core.object.BlueprintOwnedMember;
 import com.ispf.plugin.blueprint.BlueprintCatalogMetadata;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
@@ -22,10 +24,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Variable / function / event config ops used widely across the platform.
@@ -33,6 +38,17 @@ import java.util.Optional;
  */
 @Service
 public class ObjectVariableService {
+
+    /** Driver bookkeeping and the object icon. Schema stays with the platform. */
+    private static final Set<String> SCHEMA_LOCKED = Set.of(
+            "driverId",
+            "driverPollIntervalMs",
+            "driverConfigJson",
+            "driverPointMappingsJson",
+            "driverStatus",
+            "driverAutoStart",
+            "uiIcon"
+    );
 
     private final ObjectManager objectManager;
     private final ObjectVariableRepository variableRepository;
@@ -214,7 +230,7 @@ public class ObjectVariableService {
             Boolean readable,
             Boolean writable
     ) {
-        return updateVariableDefinition(path, name, readable, writable, null, null);
+        return updateVariableDefinition(path, name, readable, writable, null, null, null);
     }
 
     @Transactional
@@ -225,6 +241,19 @@ public class ObjectVariableService {
             Boolean writable,
             List<String> readRoles,
             List<String> writeRoles
+    ) {
+        return updateVariableDefinition(path, name, readable, writable, readRoles, writeRoles, null);
+    }
+
+    @Transactional
+    public Variable updateVariableDefinition(
+            String path,
+            String name,
+            Boolean readable,
+            Boolean writable,
+            List<String> readRoles,
+            List<String> writeRoles,
+            DataSchema schema
     ) {
         objectManager.assertExpectedRevision(path);
         PlatformObject node = objectManager.tree().require(path);
@@ -239,14 +268,36 @@ public class ObjectVariableService {
         boolean nextWritable = writable != null ? writable : variable.writable();
         List<String> nextReadRoles = readRoles != null ? readRoles : variable.readRoles();
         List<String> nextWriteRoles = writeRoles != null ? writeRoles : variable.writeRoles();
-        Variable updated = variable.withDefinition(
-                nextReadable,
-                nextWritable,
-                variable.historyEnabled(),
-                variable.historyRetentionDays().orElse(null),
-                nextReadRoles,
-                nextWriteRoles
-        );
+        Variable updated;
+        if (schema == null) {
+            updated = variable.withDefinition(
+                    nextReadable,
+                    nextWritable,
+                    variable.historyEnabled(),
+                    variable.historyRetentionDays().orElse(null),
+                    nextReadRoles,
+                    nextWriteRoles
+            );
+        } else {
+            assertSchemaEditable(node, name);
+            DataSchema named = normalizeSchema(name, schema);
+            DataRecord aligned = alignRecord(variable.value().orElse(null), variable.schema(), named);
+            updated = new Variable(
+                    name,
+                    named,
+                    nextReadable,
+                    nextWritable,
+                    aligned,
+                    variable.historyEnabled(),
+                    variable.historyRetentionDays().orElse(null),
+                    variable.historySampleMode(),
+                    variable.includePreviousValueInEvent(),
+                    variable.storageMode(),
+                    variable.telemetryPublishModeOverride().orElse(null),
+                    nextReadRoles,
+                    nextWriteRoles
+            );
+        }
         node.addVariable(updated);
         objectManager.persistVariable(path, updated);
         objectManager.bumpRevision(node);
@@ -456,6 +507,66 @@ public class ObjectVariableService {
             objectManager.publish(ObjectChangeEvent.variableUpdated(path, name));
             return created;
         }
+    }
+
+    private void assertSchemaEditable(PlatformObject node, String name) {
+        if (name.startsWith("@")
+                || SCHEMA_LOCKED.contains(name)
+                || CatalogSchemaVariables.isIntrinsicSchemaVariable(node, name, blueprintRegistry)) {
+            throw new IllegalArgumentException("Cannot change schema of system variable: " + name);
+        }
+    }
+
+    private static DataSchema normalizeSchema(String variableName, DataSchema schema) {
+        if (schema.fields().isEmpty()) {
+            throw new IllegalArgumentException("Variable schema requires at least one field");
+        }
+        for (FieldDefinition field : schema.fields()) {
+            if (field.name().isBlank()) {
+                throw new IllegalArgumentException("Schema field name is required");
+            }
+        }
+        if (variableName.equals(schema.name())) {
+            return schema;
+        }
+        return new DataSchema(variableName, schema.fields());
+    }
+
+    /**
+     * Keeps cell values whose field name and type still match. Other cells become empty.
+     * Historian samples are left as stored.
+     */
+    static DataRecord alignRecord(DataRecord current, DataSchema previous, DataSchema next) {
+        if (current == null || current.rows().isEmpty()) {
+            return DataRecord.empty(next);
+        }
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (Map<String, Object> row : current.rows()) {
+            Map<String, Object> aligned = new LinkedHashMap<>();
+            for (FieldDefinition field : next.fields()) {
+                FieldDefinition old = previous == null ? null : previous.field(field.name()).orElse(null);
+                if (sameShape(old, field) && row.containsKey(field.name())) {
+                    aligned.put(field.name(), row.get(field.name()));
+                }
+            }
+            rows.add(aligned);
+        }
+        return new DataRecord(next, rows);
+    }
+
+    private static boolean sameShape(FieldDefinition previous, FieldDefinition next) {
+        if (previous == null || previous.type() != next.type()) {
+            return false;
+        }
+        if (next.type() == FieldType.RECORD || next.type() == FieldType.RECORD_LIST) {
+            DataSchema previousNested = previous.nestedSchema();
+            DataSchema nextNested = next.nestedSchema();
+            if (previousNested == null || nextNested == null) {
+                return previousNested == nextNested;
+            }
+            return previousNested.isCompatibleWith(nextNested);
+        }
+        return true;
     }
 
     private static void assertUserVariable(String name) {

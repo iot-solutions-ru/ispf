@@ -166,17 +166,29 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
   });
 
   const hasBinding = Boolean(variableString(variablesQuery.data, "driverId"));
+  const variablesLoaded = variablesQuery.data != null;
+  const serverDriverId = variableString(variablesQuery.data, "driverId");
+  const serverPollIntervalMs = variableInt(variablesQuery.data, "driverPollIntervalMs", 5000);
+  const serverConfigJson = variableString(variablesQuery.data, "driverConfigJson");
+  const serverMappingsJson = variableString(variablesQuery.data, "driverPointMappingsJson");
 
   useEffect(() => {
-    if (!variablesQuery.data) {
+    if (!variablesLoaded) {
       return;
     }
-    const vars = variablesQuery.data;
-    setDriverId(variableString(vars, "driverId") || "virtual");
-    setPollIntervalMs(variableInt(vars, "driverPollIntervalMs", 5000));
-    setConfigJson(prettyJson(variableString(vars, "driverConfigJson"), {}));
-    setMappingsJson(prettyJson(variableString(vars, "driverPointMappingsJson"), {}));
-  }, [variablesQuery.data]);
+    // Live point updates replace the variables array every poll. Resync only when
+    // the driver binding itself changes, so an in-progress edit is not wiped.
+    setDriverId(serverDriverId || "virtual");
+    setPollIntervalMs(serverPollIntervalMs);
+    setConfigJson(prettyJson(serverConfigJson, {}));
+    setMappingsJson(prettyJson(serverMappingsJson, {}));
+  }, [
+    variablesLoaded,
+    serverDriverId,
+    serverPollIntervalMs,
+    serverConfigJson,
+    serverMappingsJson,
+  ]);
 
   const selectedDriver = useMemo(
     () => driversQuery.data?.find((d) => d.id === driverId),

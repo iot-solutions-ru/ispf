@@ -108,11 +108,11 @@ public class ObjectTreeLoadSyncService {
             if ("root".equals(entity.getPath())) {
                 continue;
             }
-            if (objectTree.findByPath(entity.getPath()).isPresent()) {
-                objectTree.ensureParentLink(entity.getPath());
-                continue;
-            }
+            // Always project persisted node config (incl. audit flags) onto RAM.
+            // Skipping when the path already exists left bootstrap/blueprint stubs
+            // with defaults and wiped runtime settings after restart.
             registerNodeFromEntity(entity, List.of());
+            objectTree.ensureParentLink(entity.getPath());
         }
         objectTree.rebuildChildIndex();
         List<String> nodePaths = nodes.stream()
@@ -136,6 +136,11 @@ public class ObjectTreeLoadSyncService {
 
     void registerNodeFromEntity(ObjectNodeEntity entity, List<ObjectVariableEntity> variableEntities) {
         ObjectTree objectTree = objectManager.tree();
+        Optional<PlatformObject> existing = objectTree.findByPath(entity.getPath());
+        if (existing.isPresent()) {
+            applyEntityToExistingNode(existing.get(), entity, variableEntities);
+            return;
+        }
         PlatformObject node = new PlatformObject(
                 entity.getId(),
                 entity.getPath(),
@@ -160,15 +165,12 @@ public class ObjectTreeLoadSyncService {
         for (FunctionDescriptor function : mapper.readFunctions(entity.getFunctionsJson())) {
             node.addFunction(function);
         }
-        if (objectTree.findByPath(entity.getPath()).isEmpty()) {
-            objectTree.register(node);
-        }
-        PlatformObject registered = objectTree.require(entity.getPath());
+        objectTree.register(node);
         for (ObjectVariableEntity varEntity : variableEntities) {
-            if (registered.variables().containsKey(varEntity.getName())) {
+            if (node.variables().containsKey(varEntity.getName())) {
                 continue;
             }
-            registered.addVariable(mapper.toVariable(varEntity));
+            node.addVariable(mapper.toVariable(varEntity));
         }
     }
 

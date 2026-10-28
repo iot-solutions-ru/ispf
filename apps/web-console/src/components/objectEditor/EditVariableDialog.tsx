@@ -9,8 +9,9 @@ import {
   updateVariableHistory,
 } from "../../api";
 import { fetchSecurityRoles } from "../../api/securityRoles";
-import type { DataRecord, VariableDto } from "../../types";
+import type { DataRecord, DataSchema, VariableDto } from "../../types";
 import DataRecordValueEditor from "../schema/DataRecordValueEditor";
+import DataSchemaEditor from "../schema/DataSchemaEditor";
 import VariableHistoryFields from "./VariableHistoryFields";
 import {
   historyStateEqual,
@@ -20,6 +21,7 @@ import {
 import type { VariableHistoryState } from "./variableHistoryModel";
 import RoleMultiSelect from "../security/RoleMultiSelect";
 import { cloneRecord, recordsEqual } from "../../utils/ui/record";
+import { alignRecordToSchema, cloneSchema, scalarValueSchema } from "../../utils/schema/dataSchema";
 import { isDeletableUserVariable } from "../../utils/platform/systemVariables";
 
 interface EditVariableDialogProps {
@@ -40,6 +42,22 @@ function historyEqual(a: VariableHistoryState, b: VariableHistoryState): boolean
   return historyStateEqual(a, b);
 }
 
+function schemaForEdit(variable: VariableDto): DataSchema {
+  const source = variable.schema?.fields?.length
+    ? variable.schema
+    : variable.value?.schema?.fields?.length
+      ? variable.value.schema
+      : null;
+  if (!source) {
+    return scalarValueSchema(variable.name);
+  }
+  return cloneSchema({ ...source, name: variable.name });
+}
+
+function schemaSignature(schema: DataSchema): string {
+  return JSON.stringify({ name: schema.name, fields: schema.fields });
+}
+
 export default function EditVariableDialog({
   objectPath,
   variable,
@@ -55,6 +73,8 @@ export default function EditVariableDialog({
       ? cloneRecord(variable.value)
       : { schema: { name: variable.name, fields: [] }, rows: [] }
   );
+  const [schema, setSchema] = useState(() => schemaForEdit(variable));
+  const [baselineSchema, setBaselineSchema] = useState(() => schemaForEdit(variable));
   const [readable, setReadable] = useState(variable.readable);
   const [writable, setWritable] = useState(variable.writable);
   const [readRoles, setReadRoles] = useState<string[]>(variable.readRoles ?? []);
@@ -86,6 +106,9 @@ export default function EditVariableDialog({
   const initialWriteRoles = variable.writeRoles ?? [];
   const readRolesDirty = canEditDefinition && !rolesEqual(readRoles, initialReadRoles);
   const writeRolesDirty = canEditDefinition && !rolesEqual(writeRoles, initialWriteRoles);
+  const schemaEditable = canEditDefinition && isDeletableUserVariable(variable.name);
+  const schemaDirty =
+    schemaEditable && schemaSignature(schema) !== schemaSignature(baselineSchema);
 
   const canEditValue = variable.writable;
   const definitionDirty =
@@ -93,7 +116,8 @@ export default function EditVariableDialog({
     (readable !== variable.readable ||
       writable !== variable.writable ||
       readRolesDirty ||
-      writeRolesDirty);
+      writeRolesDirty ||
+      schemaDirty);
   const historyDirty = canManageHistory && !historyEqual(history, initialHistory);
   const jsonDirty = showJson && jsonText !== JSON.stringify(initialRecord, null, 2);
   const valueDirty = canEditValue && (!recordsEqual(record, initialRecord) || jsonDirty);
@@ -104,6 +128,9 @@ export default function EditVariableDialog({
       : { schema: { name: variable.name, fields: [] }, rows: [] };
     setRecord(next);
     setJsonText(JSON.stringify(next, null, 2));
+    const nextSchema = schemaForEdit(variable);
+    setSchema(nextSchema);
+    setBaselineSchema(cloneSchema(nextSchema));
     setReadable(variable.readable);
     setWritable(variable.writable);
     setReadRoles(variable.readRoles ?? []);
@@ -135,14 +162,29 @@ export default function EditVariableDialog({
 
   const canDelete = Boolean(onDeleted) && isDeletableUserVariable(variable.name);
 
+  function applySchema(next: DataSchema) {
+    const named = cloneSchema({ ...next, name: variable.name });
+    const synced = alignRecordToSchema(record, named, schema);
+    setSchema(named);
+    setRecord(synced);
+    setJsonText(JSON.stringify(synced, null, 2));
+    setParseError(null);
+  }
+
   const mutation = useMutation({
     mutationFn: async () => {
+      if (schemaEditable && schemaDirty) {
+        if (schema.fields.length === 0 || schema.fields.some((field) => !field.name.trim())) {
+          throw new Error(t("variables.schemaFieldRequired"));
+        }
+      }
       if (canEditDefinition && definitionDirty) {
         await updateVariableDefinition(objectPath, variable.name, {
           readable,
           writable,
           readRoles,
           writeRoles,
+          ...(schemaDirty ? { schema: { ...schema, name: variable.name } } : {}),
         });
       }
       if (canManageHistory && historyDirty) {
@@ -274,9 +316,26 @@ export default function EditVariableDialog({
               <Switch checked={writable} onChange={setWritable} />
               <Typography.Text>{t("variables.writable")}</Typography.Text>
             </Space>
-            <Typography.Paragraph type="secondary" className="full">
-              {t("variables.schemaReadOnlyHint")}
-            </Typography.Paragraph>
+            {schemaEditable ? (
+              <>
+                <Typography.Title level={5} className="full">{t("variables.schemaSection")}</Typography.Title>
+                <div className="full">
+                  <DataSchemaEditor
+                    value={schema}
+                    onChange={applySchema}
+                    idPrefix={`edit-schema-${variable.name}`}
+                    showSchemaName={false}
+                  />
+                </div>
+                <Typography.Paragraph type="secondary" className="full">
+                  {t("variables.schemaEditHint")}
+                </Typography.Paragraph>
+              </>
+            ) : (
+              <Typography.Paragraph type="secondary" className="full">
+                {t("variables.schemaReadOnlyHint")}
+              </Typography.Paragraph>
+            )}
             <RoleMultiSelect
               id={`read-roles-${variable.name}`}
               label={t("variables.readRoles")}
