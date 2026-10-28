@@ -264,8 +264,22 @@ public class ObjectManager {
             node.addVariable(created);
             return created;
         });
-        variable.setComputedValue(value);
+        variable.setComputedValue(value.projectedOnto(variable.schema()));
         return variable;
+    }
+
+    /**
+     * Driver read projected onto the variable field list, when that variable already exists.
+     * Callers that publish or store the tick should use this record so extra columns stay out.
+     */
+    DataRecord alignDriverTelemetry(String path, String name, DataRecord value) {
+        if (value == null) {
+            return null;
+        }
+        return objectTree.findByPath(path)
+                .flatMap(node -> node.getVariable(name))
+                .map(variable -> value.projectedOnto(variable.schema()))
+                .orElse(value);
     }
 
     /** In-memory variable update for high-frequency driver/runtime data (no DB flush per tick). */
@@ -276,9 +290,10 @@ public class ObjectManager {
             node.addVariable(created);
             return created;
         });
-        variable.setComputedValue(value);
+        DataRecord stored = value.projectedOnto(variable.schema());
+        variable.setComputedValue(stored);
         if (publishEvent) {
-            publish(ObjectChangeEvent.variableUpdated(path, name, false, true, null, value, null));
+            publish(ObjectChangeEvent.variableUpdated(path, name, false, true, null, stored, null));
         }
         return variable;
     }
