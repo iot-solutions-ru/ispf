@@ -290,7 +290,11 @@ public class BindingRuleEngine {
             }
             ResolvedVariableTarget target = resolveVariableTarget(object.path(), rule.target());
             if (target == null) {
-                throw new IllegalStateException("Unknown target variable: " + describeVariableTarget(rule.target()));
+                // Soft-fail so recordCel in finally persists; do not abort the rule pass / TX.
+                success = false;
+                error = "Unknown target variable: " + describeVariableTarget(rule.target());
+                log.warn("Binding rule {} on {}: {}", rule.id(), object.path(), error);
+                return false;
             }
             Optional<DataRecord> computed = expressionEvaluator.evaluate(
                     object,
@@ -477,11 +481,17 @@ public class BindingRuleEngine {
             }
             ResolvedEventTarget target = resolveEventTarget(object.path(), rule.target());
             if (target == null) {
-                throw new IllegalStateException("Unknown event target: " + describeEventTarget(rule.target()));
+                success = false;
+                error = "Unknown event target: " + describeEventTarget(rule.target());
+                log.warn("Binding rule {} on {}: {}", rule.id(), object.path(), error);
+                return false;
             }
             PlatformObject targetObject = objectManager.tree().findByPath(target.objectPath()).orElse(null);
             if (targetObject == null || targetObject.events().get(target.eventName()) == null) {
-                throw new IllegalStateException("Unknown event: " + target.eventName() + " on " + target.objectPath());
+                success = false;
+                error = "Unknown event: " + target.eventName() + " on " + target.objectPath();
+                log.warn("Binding rule {} on {}: {}", rule.id(), object.path(), error);
+                return false;
             }
             Object computed = expressionEngine.evaluate(rule.expression(), object, readContextMap(object));
             DataRecord payload = payloadFromExpressionResult(computed);

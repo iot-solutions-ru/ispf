@@ -18,8 +18,13 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class BindingRuleEngineUnknownEventTargetTest {
@@ -27,24 +32,50 @@ class BindingRuleEngineUnknownEventTargetTest {
     private static final String PATH = "root.platform.devices.event-target-probe";
 
     @Test
-    void unknownEventNameIsARuleFailure() {
-        BindingRuleEngine engine = engineWith(new BindingTarget("event", null, "value", null, "missingEvent"));
+    void unknownEventNameIsAuditedWithoutAbortingPass() {
+        BindingInvokeAuditService audit = mock(BindingInvokeAuditService.class);
+        BindingRuleEngine engine = engineWith(
+                new BindingTarget("event", null, "value", null, "missingEvent"),
+                audit
+        );
 
-        assertThatThrownBy(() -> engine.runRulesForObject(PATH))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Unknown event: missingEvent on " + PATH);
+        engine.runRulesForObject(PATH);
+
+        verify(audit).recordCel(
+                eq(PATH),
+                any(BindingRule.class),
+                anyString(),
+                eq(false),
+                eq(false),
+                contains("Unknown event: missingEvent on " + PATH),
+                anyLong(),
+                any()
+        );
     }
 
     @Test
-    void nonEventRefIsARuleFailure() {
-        BindingRuleEngine engine = engineWith(new BindingTarget("event", null, "value", null, null, "@/temperature"));
+    void nonEventRefIsAuditedWithoutAbortingPass() {
+        BindingInvokeAuditService audit = mock(BindingInvokeAuditService.class);
+        BindingRuleEngine engine = engineWith(
+                new BindingTarget("event", null, "value", null, null, "@/temperature"),
+                audit
+        );
 
-        assertThatThrownBy(() -> engine.runRulesForObject(PATH))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Unknown event target: @/temperature");
+        engine.runRulesForObject(PATH);
+
+        verify(audit).recordCel(
+                eq(PATH),
+                any(BindingRule.class),
+                anyString(),
+                eq(false),
+                eq(false),
+                contains("Unknown event target: @/temperature"),
+                anyLong(),
+                any()
+        );
     }
 
-    private static BindingRuleEngine engineWith(BindingTarget target) {
+    private static BindingRuleEngine engineWith(BindingTarget target, BindingInvokeAuditService audit) {
         ObjectTree tree = new ObjectTree();
         PlatformObject node = new PlatformObject("event-target-probe", PATH, ObjectType.DEVICE, "probe", "", null);
         tree.register(node);
@@ -70,7 +101,7 @@ class BindingRuleEngineUnknownEventTargetTest {
                 mock(BindingEvaluationContext.class),
                 mock(ObjectChangePublicationService.class),
                 mock(BindingRuleAsyncExecutor.class),
-                mock(BindingInvokeAuditService.class),
+                audit,
                 mock(ObjectEntityMapper.class),
                 new ObjectMapper(),
                 mock(EventService.class)
