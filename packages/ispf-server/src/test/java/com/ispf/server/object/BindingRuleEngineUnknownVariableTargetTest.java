@@ -18,8 +18,15 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class BindingRuleEngineUnknownVariableTargetTest {
@@ -27,24 +34,47 @@ class BindingRuleEngineUnknownVariableTargetTest {
     private static final String PATH = "root.platform.devices.variable-target-probe";
 
     @Test
-    void unknownVariableNameIsARuleFailure() {
-        BindingRuleEngine engine = engineWith(new BindingTarget("missingVar", "value"));
+    void unknownVariableNameIsAuditedWithoutAbortingPass() {
+        BindingInvokeAuditService audit = mock(BindingInvokeAuditService.class);
+        BindingRuleEngine engine = engineWith(new BindingTarget("missingVar", "value"), audit);
 
-        assertThatThrownBy(() -> engine.runRulesForObject(PATH))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Unknown target variable: missingVar");
+        engine.runRulesForObject(PATH);
+
+        verify(audit).recordCel(
+                eq(PATH),
+                any(BindingRule.class),
+                anyString(),
+                eq(false),
+                eq(false),
+                contains("Unknown target variable: missingVar"),
+                anyLong(),
+                any()
+        );
     }
 
     @Test
-    void unknownVariableRefIsARuleFailure() {
-        BindingRuleEngine engine = engineWith(new BindingTarget("variable", null, "value", null, null, "@/missingVar"));
+    void unknownVariableRefIsAuditedWithoutAbortingPass() {
+        BindingInvokeAuditService audit = mock(BindingInvokeAuditService.class);
+        BindingRuleEngine engine = engineWith(
+                new BindingTarget("variable", null, "value", null, null, "@/missingVar"),
+                audit
+        );
 
-        assertThatThrownBy(() -> engine.runRulesForObject(PATH))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Unknown target variable: @/missingVar");
+        engine.runRulesForObject(PATH);
+
+        verify(audit).recordCel(
+                eq(PATH),
+                any(BindingRule.class),
+                anyString(),
+                eq(false),
+                eq(false),
+                contains("Unknown target variable: @/missingVar"),
+                anyLong(),
+                any()
+        );
     }
 
-    private static BindingRuleEngine engineWith(BindingTarget target) {
+    private static BindingRuleEngine engineWith(BindingTarget target, BindingInvokeAuditService audit) {
         ObjectTree tree = new ObjectTree();
         PlatformObject node = new PlatformObject(
                 "variable-target-probe",
@@ -77,7 +107,7 @@ class BindingRuleEngineUnknownVariableTargetTest {
                 mock(BindingEvaluationContext.class),
                 mock(ObjectChangePublicationService.class),
                 mock(BindingRuleAsyncExecutor.class),
-                mock(BindingInvokeAuditService.class),
+                audit,
                 mock(ObjectEntityMapper.class),
                 new ObjectMapper(),
                 mock(EventService.class)
