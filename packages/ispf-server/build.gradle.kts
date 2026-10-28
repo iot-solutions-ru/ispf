@@ -87,6 +87,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.mockito:mockito-core")
     // Embedded Kafka for BL-142 KafkaDriverRuntimeIntegrationTest (matches ispf-driver-kafka).
+    // Keep 4.3.1 with extra["kafka.version"]; embedded-kafka 4.4.0 fails classpath (CNFE) in CI.
     testImplementation("org.apache.kafka:kafka-clients:4.3.1")
     testImplementation("io.github.embeddedkafka:embedded-kafka_2.13:4.3.1")
     testRuntimeOnly("org.scala-lang:scala-library:3.10.0")

@@ -10,7 +10,7 @@ extra["jackson-2-bom.version"] = "2.22.3"
 extra["jackson-bom.version"] = "3.2.3"
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.boot:spring-boot-dependencies:4.1.1")
+        mavenBom("org.springframework.boot:spring-boot-dependencies:4.1.2")
     }
 }
 

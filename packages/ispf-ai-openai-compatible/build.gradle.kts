@@ -1,6 +1,6 @@
 dependencies {
     implementation(project(":packages:ispf-ai-api"))
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.22.3")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.22.4")
 
     testImplementation("org.junit.jupiter:junit-jupiter:6.1.3")
 }
