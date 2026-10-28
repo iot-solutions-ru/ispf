@@ -25,6 +25,15 @@ public interface DeviceDriver {
 
     void connect() throws DriverException;
 
+    /**
+     * When {@code true} and {@code connect()} fails for a reason other than configuration,
+     * the runtime keeps the poll timer. The driver then calls {@code connect()} again from
+     * later polls. A configuration failure still leaves the device stopped with no timer.
+     */
+    default boolean retriesConnectWhilePolling() {
+        return false;
+    }
+
     void disconnect();
 
     boolean isConnected();

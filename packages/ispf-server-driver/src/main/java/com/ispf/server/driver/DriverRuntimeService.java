@@ -8,8 +8,10 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverDiscovery;
+import com.ispf.driver.DriverErrorKind;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverPointCatalog;
+import com.ispf.driver.DriverReconnectPendingException;
 import com.ispf.driver.ingress.DriverIngress;
 import com.ispf.server.spi.LabDevicePaths;
 import com.ispf.driver.ingress.DriverIngressBuffer;
@@ -393,23 +395,29 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         );
 
         driver.initialize(driverObject);
+        DriverException connectFailure = null;
         try {
             driver.connect();
         } catch (DriverException e) {
-            if (ingressBuffer != null) {
-                try {
-                    ingressBuffer.shutdown();
-                } catch (RuntimeException shutdownError) {
-                    log.warn("Ingress buffer shutdown after connect failure for {}: {}",
-                            devicePath, shutdownError.toString());
-                }
-            }
             var kind = errorMetrics.record(binding.driverId(), DriverErrorMetrics.Operation.CONNECT, e);
             String message = "Driver connect failed [" + kind.tag() + "]: " + e.getMessage();
-            connectErrors.put(devicePath, message);
-            setStatus(devicePath, "ERROR");
-            ownershipService.release(devicePath);
-            throw new IllegalStateException(message, e);
+            if (kind == DriverErrorKind.CONFIGURATION || !driver.retriesConnectWhilePolling()) {
+                if (ingressBuffer != null) {
+                    try {
+                        ingressBuffer.shutdown();
+                    } catch (RuntimeException shutdownError) {
+                        log.warn("Ingress buffer shutdown after connect failure for {}: {}",
+                                devicePath, shutdownError.toString());
+                    }
+                }
+                connectErrors.put(devicePath, message);
+                setStatus(devicePath, "ERROR");
+                ownershipService.release(devicePath);
+                throw new IllegalStateException(message, e);
+            }
+            connectFailure = e;
+            log.warn("Driver connect failed [{}] for {}, polling will retry: {}",
+                    kind.tag(), devicePath, e.getMessage());
         }
         connectErrors.remove(devicePath);
 
@@ -420,10 +428,15 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                 TimeUnit.MILLISECONDS
         );
         boolean connected = driver.isConnected();
-        activeDrivers.put(devicePath, new ActiveDriver(driver, binding, future, null, connected, driverObject));
+        String lastError = connectFailure == null ? null : connectFailure.getMessage();
+        activeDrivers.put(devicePath, new ActiveDriver(driver, binding, future, lastError, connected, driverObject));
         signalSchedulerLoad();
         poll(devicePath);
-        setStatus(devicePath, "RUNNING");
+        if (connectFailure == null || driver.isConnected()) {
+            setStatus(devicePath, "RUNNING");
+        } else {
+            setStatus(devicePath, "ERROR");
+        }
         return status(devicePath).orElseThrow();
     }
 
@@ -736,8 +749,27 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                 return;
             }
             setStatus(devicePath, "ERROR");
-            log.warn("Driver poll failed for {} [{}]: {}", devicePath, kind.tag(), e.getMessage());
+            if (e instanceof DriverReconnectPendingException) {
+                log.debug("Driver poll waiting to reconnect {} [{}]: {}", devicePath, kind.tag(), e.getMessage());
+            } else {
+                log.warn("Driver poll failed for {} [{}]: {}", devicePath, kind.tag(), e.getMessage());
+            }
+            if (kind == DriverErrorKind.CONFIGURATION && active.driver().retriesConnectWhilePolling()) {
+                haltRetriesAfterConfiguration(devicePath, e.getMessage());
+            }
         }
+    }
+
+    /** Drops the poll timer after a configuration failure so later polls do not call {@code connect()}. */
+    private void haltRetriesAfterConfiguration(String devicePath, String message) {
+        scheduler.execute(() -> {
+            if (!isActiveLocally(devicePath)) {
+                return;
+            }
+            stopLocal(devicePath, true);
+            connectErrors.put(devicePath, message);
+            setStatus(devicePath, "ERROR");
+        });
     }
 
     public Optional<DriverBinding> readBinding(String devicePath) {

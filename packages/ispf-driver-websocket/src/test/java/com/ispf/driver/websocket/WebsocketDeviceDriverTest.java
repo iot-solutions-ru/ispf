@@ -6,9 +6,14 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverErrorKind;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverReconnectPendingException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +21,11 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -142,12 +152,111 @@ class WebsocketDeviceDriverTest {
     }
 
     @Test
-    void readPointsBeforeConnectThrows() {
+    void readPointsBeforeConnectTriesConnect() throws Exception {
+        int closedPort;
+        try (ServerSocket socket = new ServerSocket(0)) { closedPort = socket.getLocalPort(); }
         driver = new WebsocketDeviceDriver();
-        driver.initialize(new StubDriverObject(Map.of()));
+        driver.initialize(new StubDriverObject(Map.of(
+                "host", "127.0.0.1", "port", String.valueOf(closedPort), "timeoutMs", "200")));
         DriverException error = assertThrows(DriverException.class, () ->
                 driver.readPoints(Map.of("k", "temperature")));
-        assertTrue(error.getMessage().contains("Not connected"));
+        assertTrue(error.getMessage().contains("WebSocket connect failed"));
+    }
+
+    @Test
+    void retriesConnectAfterTheBackoffWhenTheAddressReturns() throws Exception {
+        int port;
+        try (ServerSocket socket = new ServerSocket(0)) { port = socket.getLocalPort(); }
+        long[] now = {1_000L};
+        StubDriverObject object = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "path", "/ws",
+                "timeoutMs", "500"
+        ));
+        driver = new WebsocketDeviceDriver();
+        driver.clock = () -> now[0];
+        driver.initialize(object);
+        DriverException first = assertThrows(DriverException.class, driver::connect);
+        assertTrue(first.getMessage().contains("WebSocket connect failed"));
+        DriverException waiting = assertThrows(DriverException.class, () ->
+                driver.readPoints(Map.of("temp", "temperature")));
+        assertTrue(waiting instanceof DriverReconnectPendingException);
+
+        server = new FakeWebSocketServer(null, port);
+        server.put("temperature", "23.5");
+        server.start();
+        now[0] = now[0] + 5_000L;
+        driver.readPoints(Map.of("temp", "temperature"));
+        assertEquals("23.5", value(object, "temp"));
+    }
+
+    @Test
+    void configurationFailureIsNotRetried() throws Exception {
+        long[] now = {1_000L};
+        driver = new WebsocketDeviceDriver();
+        driver.clock = () -> now[0];
+        driver.initialize(new StubDriverObject(Map.of(
+                "host", "127.0.0.1", "port", "9", "timeoutMs", "200")));
+        driver.rememberConnectFailure(new DriverException(
+                "WebSocket connect failed", new UnknownHostException("plc.local")));
+        DriverException error = assertThrows(DriverException.class, () ->
+                driver.readPoints(Map.of("temp", "temperature")));
+        assertEquals(DriverErrorKind.CONFIGURATION, error.kind());
+        now[0] = now[0] + 120_000L;
+        DriverException again = assertThrows(DriverException.class, () ->
+                driver.readPoints(Map.of("temp", "temperature")));
+        assertEquals(DriverErrorKind.CONFIGURATION, again.kind());
+        assertTrue(again.getMessage().contains("not usable"));
+    }
+
+    @Test
+    void tlsGetTrustsTheCaFile() throws Exception {
+        Path dir = Files.createTempDirectory("ispf-ws-tls");
+        try {
+            SelfSignedTls tls = SelfSignedTls.create(dir);
+            server = new FakeWebSocketServer(tls.serverContext());
+            server.put("temperature", "23.5");
+            server.start();
+            StubDriverObject object = new StubDriverObject(Map.of(
+                    "host", "127.0.0.1",
+                    "port", String.valueOf(server.port()),
+                    "path", "/ws",
+                    "timeoutMs", "2000",
+                    "useTls", "true",
+                    "caCertPath", tls.caPem().toString()
+            ));
+            driver = new WebsocketDeviceDriver();
+            driver.initialize(object);
+            driver.connect();
+            assertTrue(driver.isConnected());
+            driver.readPoints(Map.of("temp", "temperature"));
+            assertEquals("23.5", value(object, "temp"));
+        } finally {
+            deleteTree(dir);
+        }
+    }
+
+    @Test
+    void tlsWithoutTheCaFileFails() throws Exception {
+        Path dir = Files.createTempDirectory("ispf-ws-tls");
+        try {
+            SelfSignedTls tls = SelfSignedTls.create(dir);
+            server = new FakeWebSocketServer(tls.serverContext());
+            server.start();
+            StubDriverObject object = new StubDriverObject(Map.of(
+                    "host", "127.0.0.1",
+                    "port", String.valueOf(server.port()),
+                    "timeoutMs", "2000",
+                    "useTls", "true"
+            ));
+            driver = new WebsocketDeviceDriver();
+            driver.initialize(object);
+            DriverException error = assertThrows(DriverException.class, driver::connect);
+            assertTrue(error.getMessage().contains("WebSocket connect failed"));
+        } finally {
+            deleteTree(dir);
+        }
     }
 
     @Test
@@ -176,8 +285,19 @@ class WebsocketDeviceDriverTest {
         });
         private final Map<String, String> store = new ConcurrentHashMap<>();
         FakeWebSocketServer() throws IOException {
-            serverSocket = new ServerSocket();
-            serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+            this(null, 0);
+        }
+        FakeWebSocketServer(SSLContext tls) throws IOException {
+            this(tls, 0);
+        }
+        FakeWebSocketServer(SSLContext tls, int port) throws IOException {
+            if (tls == null) {
+                serverSocket = new ServerSocket();
+            } else {
+                serverSocket = tls.getServerSocketFactory().createServerSocket();
+            }
+            serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress("127.0.0.1", port));
         }
         int port() { return serverSocket.getLocalPort(); }
         void put(String key, String value) { store.put(key, value); }
@@ -228,6 +348,78 @@ class WebsocketDeviceDriverTest {
             serverSocket.close();
             executor.shutdownNow();
             executor.awaitTermination(2, TimeUnit.SECONDS);
+        }
+    }
+
+    private static final class SelfSignedTls {
+        private final SSLContext serverContext;
+        private final Path caPem;
+
+        private SelfSignedTls(SSLContext serverContext, Path caPem) {
+            this.serverContext = serverContext;
+            this.caPem = caPem;
+        }
+
+        SSLContext serverContext() { return serverContext; }
+        Path caPem() { return caPem; }
+
+        static SelfSignedTls create(Path dir) throws Exception {
+            Path keystore = dir.resolve("server.p12");
+            Path caPem = dir.resolve("ca.pem");
+            String keytoolName = System.getProperty("os.name", "").toLowerCase().contains("win")
+                    ? "keytool.exe" : "keytool";
+            Path keytool = Path.of(System.getProperty("java.home"), "bin", keytoolName);
+            run(keytool, "-genkeypair",
+                    "-alias", "server",
+                    "-keyalg", "RSA",
+                    "-keysize", "2048",
+                    "-storetype", "PKCS12",
+                    "-keystore", keystore.toString(),
+                    "-storepass", "changeit",
+                    "-keypass", "changeit",
+                    "-dname", "CN=127.0.0.1",
+                    "-ext", "san=ip:127.0.0.1",
+                    "-validity", "2");
+            run(keytool, "-exportcert",
+                    "-alias", "server",
+                    "-keystore", keystore.toString(),
+                    "-storepass", "changeit",
+                    "-rfc",
+                    "-file", caPem.toString());
+            KeyStore store = KeyStore.getInstance("PKCS12");
+            try (InputStream in = Files.newInputStream(keystore)) {
+                store.load(in, "changeit".toCharArray());
+            }
+            KeyManagerFactory keys = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keys.init(store, "changeit".toCharArray());
+            SSLContext context = SSLContext.getInstance("TLS");
+            context.init(keys.getKeyManagers(), null, null);
+            return new SelfSignedTls(context, caPem);
+        }
+
+        private static void run(Path keytool, String... args) throws Exception {
+            String[] command = new String[args.length + 1];
+            command[0] = keytool.toString();
+            System.arraycopy(args, 0, command, 1, args.length);
+            Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+            String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            int code = process.waitFor();
+            if (code != 0) {
+                throw new IllegalStateException("keytool failed: " + output);
+            }
+        }
+    }
+
+    private static void deleteTree(Path dir) throws IOException {
+        if (!Files.exists(dir)) {
+            return;
+        }
+        try (var paths = Files.walk(dir)) {
+            paths.sorted((left, right) -> right.compareTo(left)).forEach(path -> {
+                try {
+                    Files.deleteIfExists(path);
+                } catch (IOException ignored) { }
+            });
         }
     }
 

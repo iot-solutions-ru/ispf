@@ -4,15 +4,19 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
+import com.ispf.driver.DriverErrorKind;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverReconnectPendingException;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.LongSupplier;
 
 /**
  * WebSocket driver — RFC6455 client with text-frame get/set for telemetry points.
@@ -25,9 +29,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * reads the latest text message. Point mappings are then {@code @state}, {@code @raw},
  * {@code $.path}, {@code $.array.length} or {@code round:<digits>:$.path}.
  * {@code @raw} stores the text of the message used for that poll.
+ * {@code useTls} wraps the connection in TLS. Empty or {@code false} keeps the plain socket.
+ * {@code caCertPath} is an optional PEM file trusted together with the JVM trust store.
+ * The port stays the value in the device configuration; public wss servers usually use 443.
+ * A connect failure that is not a configuration error is retried from later polls. The wait
+ * grows from 5 seconds to 60 seconds. An open socket that is only quiet is left open.
  * Clean-room ISPF code, Apache-2.0 — JDK sockets only (no Jetty/Netty/Tyrus/OkHttp).
  */
 public class WebsocketDeviceDriver implements DeviceDriver {
+
+    private static final long[] RETRY_DELAYS_MS = {5_000L, 10_000L, 20_000L, 40_000L, 60_000L};
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("websocketValue")
             .field("value", FieldType.STRING)
@@ -37,8 +48,8 @@ public class WebsocketDeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "websocket",
             "WebSocket Driver",
-            "0.1.0",
-            "Connects via RFC6455. get/set by point key, or one subscribeText plus $.path reads",
+            "0.1.2",
+            "RFC6455 client. useTls encrypts the socket. Retries connect unless configuration is wrong",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -46,7 +57,9 @@ public class WebsocketDeviceDriver implements DeviceDriver {
                     "path", "/",
                     "timeoutMs", "5000",
                     "pollIntervalMs", "5000",
-                    "subscribeText", ""
+                    "subscribeText", "",
+                    "useTls", "false",
+                    "caCertPath", ""
             ),
             DriverMaturity.PRODUCTION,
             Set.of("read", "write")
@@ -58,6 +71,12 @@ public class WebsocketDeviceDriver implements DeviceDriver {
     private String path = "/";
     private int timeoutMs = 5000;
     private String subscribeText = "";
+    private boolean useTls;
+    private String caCertPath = "";
+    private DriverErrorKind lastConnectFailure;
+    private int retryAttempt;
+    private long nextConnectAttemptAt;
+    LongSupplier clock = System::currentTimeMillis;
     private final Map<String, String> points = new ConcurrentHashMap<>();
     private Rfc6455Client client;
     private volatile boolean connected;
@@ -83,30 +102,44 @@ public class WebsocketDeviceDriver implements DeviceDriver {
             case "path" -> path = Rfc6455Client.normalizePath(value);
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
             case "subscribeText" -> subscribeText = value.trim();
+            case "useTls" -> useTls = Boolean.parseBoolean(value.trim());
+            case "caCertPath" -> caCertPath = value.trim();
             default -> { }
         }
+    }
+
+    @Override
+    public boolean retriesConnectWhilePolling() {
+        return true;
     }
 
     @Override
     public void connect() throws DriverException {
         try {
             closeClient();
-            client = Rfc6455Client.connect(host, port, path, timeoutMs);
+            client = Rfc6455Client.connect(host, port, path, timeoutMs,
+                    new Rfc6455Client.SocketSecurity(useTls, caCertPath));
             if (!subscribeText.isBlank()) {
                 client.sendText(subscribeText);
             }
             connected = true;
-            driverObject.log(DriverLogLevel.INFO, "WebSocket connected to " + host + ":" + port + path);
+            clearConnectFailure();
+            driverObject.log(DriverLogLevel.INFO, "WebSocket connected"
+                    + (useTls ? " via TLS" : "") + " to " + host + ":" + port + path);
         } catch (IOException e) {
             connected = false;
             closeClient();
-            throw new DriverException("WebSocket connect failed for " + host + ":" + port + path, e);
+            DriverException error = new DriverException(
+                    "WebSocket connect failed for " + host + ":" + port + path, e);
+            rememberConnectFailure(error);
+            throw error;
         }
     }
 
     @Override
     public void disconnect() {
         connected = false;
+        clearConnectFailure();
         closeClient();
         points.clear();
         if (driverObject != null) {
@@ -121,9 +154,7 @@ public class WebsocketDeviceDriver implements DeviceDriver {
 
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
-        if (!isConnected()) {
-            throw new DriverException("Not connected");
-        }
+        ensureConnectedForPoll();
         points.clear();
         if (!subscribeText.isBlank()) {
             readSubscribed(pointMappings);
@@ -159,9 +190,7 @@ public class WebsocketDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        if (!isConnected()) {
-            throw new DriverException("Not connected");
-        }
+        ensureConnectedForPoll();
         if (!subscribeText.isBlank()) {
             // Wording must not match driver-readiness WRITE_STUB_MSG ("read-only") — get/set
             // writes still work when subscribeText is empty.
@@ -244,6 +273,32 @@ public class WebsocketDeviceDriver implements DeviceDriver {
             return pointId;
         }
         return mapping.trim();
+    }
+
+    private void ensureConnectedForPoll() throws DriverException {
+        if (isConnected()) {
+            return;
+        }
+        if (lastConnectFailure == DriverErrorKind.CONFIGURATION) {
+            throw new DriverConfigurationException("WebSocket address is not usable");
+        }
+        if (clock.getAsLong() < nextConnectAttemptAt) {
+            throw new DriverReconnectPendingException("WebSocket reconnect is waiting");
+        }
+        connect();
+    }
+
+    void rememberConnectFailure(DriverException error) {
+        lastConnectFailure = DriverErrorKind.classify(error);
+        long delay = RETRY_DELAYS_MS[Math.min(retryAttempt, RETRY_DELAYS_MS.length - 1)];
+        retryAttempt++;
+        nextConnectAttemptAt = clock.getAsLong() + delay;
+    }
+
+    private void clearConnectFailure() {
+        lastConnectFailure = null;
+        retryAttempt = 0;
+        nextConnectAttemptAt = 0;
     }
 
     private void closeClient() {
