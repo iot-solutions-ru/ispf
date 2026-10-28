@@ -88,7 +88,10 @@ subprojects {
     // Static analysis (code-analysis F-02): Error Prone runs inside javac on every compile.
     // ERROR-severity bug patterns fail the build; WARNING patterns are reported. Local opt-out
     // for a quick iteration: -Pispf.errorprone=false (CI always compiles with it on).
-    if (findProperty("ispf.errorprone")?.toString() != "false") {
+    // Skip under CodeQL autobuild: the extractor tracer + Error Prone OOMs the default runner
+    // heap on a full-tree testClasses compile (seen with Error Prone 2.51 / Gradle 9.8.2).
+    val codeQlBuild = !System.getenv("CODEQL_DIST").isNullOrBlank()
+    if (!codeQlBuild && findProperty("ispf.errorprone")?.toString() != "false") {
         apply(plugin = "net.ltgt.errorprone")
         dependencies {
             "errorprone"("com.google.errorprone:error_prone_core:2.51.0")
