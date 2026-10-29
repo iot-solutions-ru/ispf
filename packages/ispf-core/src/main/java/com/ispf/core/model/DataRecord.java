@@ -71,11 +71,12 @@ public final class DataRecord {
 
     /**
      * Keeps cells whose name and type already exist on {@code target}.
-     * Extra source columns are dropped. Target fields with no matching source cell are empty.
-     * A payload that shares no field with {@code target} is returned unchanged.
+     * Extra source columns are dropped. Nullable target fields with no matching source cell are empty.
+     * A payload that shares no field with {@code target}, or that omits a required target field, is returned unchanged.
      */
     public DataRecord projectedOnto(DataSchema target) {
-        if (target == null || target.fields().isEmpty() || schema.fields().isEmpty() || !sharesTypedField(target)) {
+        if (target == null || target.fields().isEmpty() || schema.fields().isEmpty()
+                || !sharesTypedField(target) || !coversRequired(target)) {
             return this;
         }
         if (rows.isEmpty()) {
@@ -103,6 +104,19 @@ public final class DataRecord {
             }
         }
         return false;
+    }
+
+    private boolean coversRequired(DataSchema target) {
+        for (FieldDefinition field : target.fields()) {
+            if (field.nullable()) {
+                continue;
+            }
+            FieldDefinition source = schema.field(field.name()).orElse(null);
+            if (source == null || !sameShape(field, source)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean sameShape(FieldDefinition target, FieldDefinition source) {

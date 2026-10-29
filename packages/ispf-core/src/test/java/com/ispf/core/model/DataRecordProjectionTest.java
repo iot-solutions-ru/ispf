@@ -50,6 +50,21 @@ class DataRecordProjectionTest {
     }
 
     @Test
+    void requiredFieldMissingFromTheReadLeavesThePayloadIntact() {
+        DataSchema variable = DataSchema.builder("temperature")
+                .field(FieldDefinition.required("value", FieldType.DOUBLE))
+                .field(FieldDefinition.required("unit", FieldType.STRING))
+                .field("raw", FieldType.STRING)
+                .build();
+        DataSchema payload = DataSchema.builder("temperature")
+                .field("raw", FieldType.STRING)
+                .build();
+        DataRecord incoming = DataRecord.single(payload, Map.of("raw", "25.0"));
+
+        assertThat(incoming.projectedOnto(variable)).isSameAs(incoming);
+    }
+
+    @Test
     void variableFieldMissingFromTheReadBecomesEmpty() {
         DataSchema variable = DataSchema.builder("families")
                 .field("id", FieldType.STRING)
