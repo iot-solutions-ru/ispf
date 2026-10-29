@@ -4,8 +4,11 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
+import com.ispf.driver.DriverErrorKind;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverReconnectPendingException;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -13,15 +16,29 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.LongSupplier;
 
 /**
- * JDBC driver — executes read-only SELECT queries and maps the first row to ISPF variables.
+ * JDBC driver — executes read-only SELECT queries and maps every result row to an ISPF variable.
+ * <p>
+ * {@code maxRows} limits how many rows one poll keeps. The default is 100 and the ceiling is 1000.
+ * A single column is stored as {@code value} on each row. Several columns become one string field
+ * per column label.
+ * <p>
+ * A connect failure that is not a configuration error is retried from later polls. The wait
+ * grows from 5 seconds to 60 seconds. A query that finds the session closed drops it and uses
+ * the same wait. A session that is still open after a query error stays open.
  */
 public class JdbcDeviceDriver implements DeviceDriver {
+
+    private static final long[] RETRY_DELAYS_MS = {5_000L, 10_000L, 20_000L, 40_000L, 60_000L};
+    private static final int DEFAULT_MAX_ROWS = 100;
+    private static final int MAX_ROWS_CEILING = 1_000;
 
     private static final DataSchema QUERY_SCHEMA = DataSchema.builder("jdbcQuery")
             .field("value", FieldType.STRING)
@@ -30,15 +47,16 @@ public class JdbcDeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "jdbc",
             "JDBC Query Driver",
-            "0.1.0",
-            "Executes read-only SQL SELECT queries (single row) and maps columns to ISPF variables",
+            "0.1.2",
+            "Read-only SQL SELECT. Keeps every row up to maxRows. Retries connect unless configuration is wrong",
             "ISPF",
             Map.of(
                     "jdbcUrl", "jdbc:h2:mem:test",
                     "username", "",
                     "password", "",
                     "timeoutMs", "5000",
-                    "pollIntervalMs", "30000"
+                    "pollIntervalMs", "30000",
+                    "maxRows", "100"
             )
     );
 
@@ -47,9 +65,14 @@ public class JdbcDeviceDriver implements DeviceDriver {
     private String username = "";
     private String password = "";
     private int timeoutMs = 5000;
+    private int maxRows = DEFAULT_MAX_ROWS;
     private Connection connection;
     private final Map<String, String> points = new ConcurrentHashMap<>();
     private volatile boolean connected;
+    private DriverErrorKind lastConnectFailure;
+    private int retryAttempt;
+    private long nextConnectAttemptAt;
+    LongSupplier clock = System::currentTimeMillis;
 
     @Override
     public DriverMetadata metadata() {
@@ -71,14 +94,21 @@ public class JdbcDeviceDriver implements DeviceDriver {
             case "username" -> username = value;
             case "password" -> password = value;
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
+            case "maxRows" -> maxRows = Integer.parseInt(value.trim());
             default -> { }
         }
+    }
+
+    @Override
+    public boolean retriesConnectWhilePolling() {
+        return true;
     }
 
     @Override
     public void connect() throws DriverException {
         int previousLoginTimeout = DriverManager.getLoginTimeout();
         try {
+            closeConnection();
             // DriverManager login timeout is JVM-global — restore prior value after connect.
             DriverManager.setLoginTimeout(Math.max(1, timeoutMs / 1000));
             if (username == null || username.isBlank()) {
@@ -88,9 +118,14 @@ public class JdbcDeviceDriver implements DeviceDriver {
             }
             connection.setReadOnly(true);
             connected = true;
+            clearConnectFailure();
             driverObject.log(DriverLogLevel.INFO, "JDBC connected to " + jdbcUrl);
         } catch (SQLException e) {
-            throw new DriverException("JDBC connect failed", e);
+            connected = false;
+            closeConnection();
+            DriverException error = new DriverException("JDBC connect failed", e);
+            rememberConnectFailure(error);
+            throw error;
         } finally {
             DriverManager.setLoginTimeout(previousLoginTimeout);
         }
@@ -99,14 +134,9 @@ public class JdbcDeviceDriver implements DeviceDriver {
     @Override
     public void disconnect() {
         connected = false;
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException ignored) {
-                // best effort
-            }
-            connection = null;
-        }
+        clearConnectFailure();
+        closeConnection();
+        points.clear();
     }
 
     @Override
@@ -123,9 +153,7 @@ public class JdbcDeviceDriver implements DeviceDriver {
 
     @Override
     public void readPoints(Map<String, String> pointMappings) throws DriverException {
-        if (!isConnected()) {
-            throw new DriverException("Not connected");
-        }
+        ensureConnectedForPoll();
         points.clear();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             String sql = entry.getValue();
@@ -164,25 +192,93 @@ public class JdbcDeviceDriver implements DeviceDriver {
         try (Statement statement = connection.createStatement()) {
             statement.setQueryTimeout(Math.max(1, timeoutMs / 1000));
             try (ResultSet rs = statement.executeQuery(normalized)) {
-                if (!rs.next()) {
-                    return DataRecord.single(QUERY_SCHEMA, Map.of("value", ""));
-                }
-                Map<String, Object> fields = new LinkedHashMap<>();
                 ResultSetMetaData meta = rs.getMetaData();
                 int columnCount = meta.getColumnCount();
+                List<String> labels = new ArrayList<>(columnCount);
                 for (int i = 1; i <= columnCount; i++) {
-                    String label = meta.getColumnLabel(i);
-                    Object val = rs.getObject(i);
-                    fields.put(sanitizeFieldName(label), val == null ? "" : String.valueOf(val));
+                    labels.add(sanitizeFieldName(meta.getColumnLabel(i)));
                 }
-                if (fields.size() == 1) {
-                    return DataRecord.single(QUERY_SCHEMA, Map.of("value", fields.values().iterator().next()));
+                int limit = Math.min(Math.max(maxRows, 1), MAX_ROWS_CEILING);
+                List<Map<String, Object>> rows = new ArrayList<>();
+                while (rs.next() && rows.size() < limit) {
+                    Map<String, Object> fields = new LinkedHashMap<>();
+                    for (int i = 1; i <= columnCount; i++) {
+                        Object val = rs.getObject(i);
+                        fields.put(labels.get(i - 1), val == null ? "" : String.valueOf(val));
+                    }
+                    rows.add(fields);
                 }
-                DataSchema schema = buildSchema(fields);
-                return DataRecord.single(schema, fields);
+                if (rows.isEmpty()) {
+                    return DataRecord.single(QUERY_SCHEMA, Map.of("value", ""));
+                }
+                if (columnCount == 1) {
+                    List<Map<String, Object>> values = new ArrayList<>(rows.size());
+                    for (Map<String, Object> row : rows) {
+                        values.add(Map.of("value", row.values().iterator().next()));
+                    }
+                    return new DataRecord(QUERY_SCHEMA, values);
+                }
+                return new DataRecord(buildSchema(rows.get(0)), rows);
             }
         } catch (SQLException e) {
-            throw new DriverException("JDBC query failed", e);
+            DriverException error = new DriverException("JDBC query failed", e);
+            if (!connectionStillUsable()) {
+                rememberConnectFailure(error);
+                closeConnection();
+            }
+            throw error;
+        }
+    }
+
+    private void ensureConnectedForPoll() throws DriverException {
+        if (isConnected()) {
+            return;
+        }
+        if (lastConnectFailure == DriverErrorKind.CONFIGURATION) {
+            throw new DriverConfigurationException("JDBC address is not usable");
+        }
+        if (clock.getAsLong() < nextConnectAttemptAt) {
+            throw new DriverReconnectPendingException("JDBC reconnect is waiting");
+        }
+        connect();
+    }
+
+    void rememberConnectFailure(DriverException error) {
+        lastConnectFailure = DriverErrorKind.classify(error);
+        long delay = RETRY_DELAYS_MS[Math.min(retryAttempt, RETRY_DELAYS_MS.length - 1)];
+        retryAttempt++;
+        nextConnectAttemptAt = clock.getAsLong() + delay;
+    }
+
+    private void clearConnectFailure() {
+        lastConnectFailure = null;
+        retryAttempt = 0;
+        nextConnectAttemptAt = 0;
+    }
+
+    private void closeConnection() {
+        Connection current = connection;
+        connection = null;
+        connected = false;
+        if (current == null) {
+            return;
+        }
+        try {
+            current.close();
+        } catch (SQLException ignored) {
+            // best effort
+        }
+    }
+
+    private boolean connectionStillUsable() {
+        Connection current = connection;
+        if (current == null) {
+            return false;
+        }
+        try {
+            return !current.isClosed() && current.isValid(1);
+        } catch (SQLException e) {
+            return false;
         }
     }
 

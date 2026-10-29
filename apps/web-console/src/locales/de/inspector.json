@@ -704,6 +704,8 @@
   "variables.schemaRequired": "Mindestens ein Schemafeld vor dem Anlegen hinzufügen.",
   "variables.schemaSection": "Schema",
   "variables.setInitialValue": "Anfangswert setzen",
+  "variables.rows": "Zeilen ({{count}})",
+  "variables.rowsHint": "Alle gespeicherten Zeilen. Die Felder darunter sind die erste Zeile.",
   "variables.settings": "Einstellungen",
   "variables.settingsTitle": "Einstellungen: {{name}}",
   "variables.storageMode": "Value storage",

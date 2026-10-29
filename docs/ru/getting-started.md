@@ -59,7 +59,7 @@ cd apps/web-console && npm install && npm run dev
 | http://localhost:8080/api/v1/info | Версия / capabilities |
 | http://localhost:8080/actuator/health | Health |
 
-`bootRun` по умолчанию вызывает **`syncDevDriverPacks`** (≈8 packs). Полный каталог: `-Dispf.driver.packs=all`.
+`bootRun` по умолчанию вызывает **`syncDevDriverPacks`** (короткий локальный набор, включая `jdbc`). Полный каталог: `-Dispf.driver.packs=all`.
 
 ### 2. Вход (`local`)
 

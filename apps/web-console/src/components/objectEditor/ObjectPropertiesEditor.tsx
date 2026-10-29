@@ -36,7 +36,6 @@ import { applyRemoteVariables } from "../../utils/object/objectPropertiesRemoteS
 import IconPicker from "../icons/IconPicker";
 import ObjectTreeIcon from "../icons/ObjectTreeIcon";
 import VariableFieldEditor from "./VariableFieldEditor";
-import VariableHistoryFields from "./VariableHistoryFields";
 import {
   formatHistoryRetention,
   historyStateEqual,
@@ -136,6 +135,16 @@ function buildState(data: ObjectEditorDto): EditorState {
   };
 }
 
+function formatRowCell(value: unknown): string {
+  if (value == null) {
+    return "";
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
 function VariableEditorRow({
   variable,
   record,
@@ -143,7 +152,6 @@ function VariableEditorRow({
   history,
   historyBaseline,
   onChange,
-  onHistoryChange,
   onOpenSettings,
   onCopy,
   onDelete,
@@ -155,7 +163,6 @@ function VariableEditorRow({
   history?: VariableHistoryState;
   historyBaseline?: VariableHistoryState;
   onChange: (next: DataRecord) => void;
-  onHistoryChange: (next: VariableHistoryState) => void;
   onOpenSettings?: () => void;
   onCopy?: () => void;
   onDelete?: () => void;
@@ -163,8 +170,8 @@ function VariableEditorRow({
   canManage?: boolean;
 }) {
   const { t } = useTranslation(["inspector", "common"]);
-  const [showHistory, setShowHistory] = useState(false);
   const [showJson, setShowJson] = useState(false);
+  const [showRows, setShowRows] = useState(false);
   const safeRecord = record ?? ensureRecord(variable);
   const safeHistory = history ?? historyFromVariable(variable);
   const safeHistoryBaseline = historyBaseline ?? historyFromVariable(variable);
@@ -220,22 +227,44 @@ function VariableEditorRow({
               {t("common:action.delete")}
             </Button>
           )}
-          <Button size="small" onClick={() => setShowHistory((v) => !v)}>
-            {t("objectEditor.historyBtn")}
-          </Button>
+          {safeRecord.rows.length > 1 && (
+            <Button
+              size="small"
+              type={showRows ? "primary" : "default"}
+              onClick={() => setShowRows((open) => !open)}
+            >
+              {t("variables.rows", { count: safeRecord.rows.length })}
+            </Button>
+          )}
           <Button size="small" onClick={() => setShowJson((v) => !v)}>
             JSON
           </Button>
         </div>
       </header>
 
-      {showHistory && (
-        <div className="binding-panel">
-          <VariableHistoryFields
-            idPrefix={`prop-${variable.name}`}
-            value={safeHistory}
-            onChange={onHistoryChange}
-          />
+      {showRows && safeRecord.rows.length > 1 && (
+        <div className="property-rows">
+          <p className="hint">{t("variables.rowsHint")}</p>
+          <div className="property-rows-panel">
+            <table className="property-rows-table">
+              <thead>
+                <tr>
+                  {safeRecord.schema.fields.map((field) => (
+                    <th key={field.name} scope="col">{field.name}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {safeRecord.rows.map((dataRow, index) => (
+                  <tr key={index}>
+                    {safeRecord.schema.fields.map((field) => (
+                      <td key={field.name}>{formatRowCell(dataRow[field.name])}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -1047,16 +1076,6 @@ export default function ObjectPropertiesEditor({
                   onChange={(next) =>
                     setState((s) =>
                       s ? { ...s, variables: { ...s.variables, [variable.name]: next } } : s
-                    )
-                  }
-                  onHistoryChange={(next) =>
-                    setState((s) =>
-                      s
-                        ? {
-                            ...s,
-                            variableHistory: { ...s.variableHistory, [variable.name]: next },
-                          }
-                        : s
                     )
                   }
                 />

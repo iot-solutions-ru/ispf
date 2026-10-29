@@ -59,7 +59,7 @@ cd apps/web-console && npm install && npm run dev
 | http://localhost:8080/api/v1/info | Version / capabilities |
 | http://localhost:8080/actuator/health | Health |
 
-`bootRun` uses **`syncDevDriverPacks`** by default (≈8 packs). Full catalog: `-Dispf.driver.packs=all`.
+`bootRun` uses **`syncDevDriverPacks`** by default (the short local set, including `jdbc`). Full catalog: `-Dispf.driver.packs=all`.
 
 ### Solution pack (repeatable ship)
 

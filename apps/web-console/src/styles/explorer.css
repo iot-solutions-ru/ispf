@@ -1350,6 +1350,41 @@
   color: var(--text);
 }
 
+.property-rows {
+  margin-bottom: 0.75rem;
+}
+
+.property-rows .hint {
+  margin: 0 0 0.35rem;
+}
+
+.property-rows-panel {
+  max-height: 16rem;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.property-rows-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.property-rows-table th,
+.property-rows-table td {
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+.property-rows-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+}
+
 .property-fields {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

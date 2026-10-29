@@ -459,8 +459,8 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                 {t("inspector:driver.pollIntervalMs")}
                 <Input
                   type="number"
-                  min={500}
-                  step={500}
+                  min={driverId === "websocket" ? 1 : 500}
+                  step={driverId === "websocket" ? 1 : 500}
                   value={pollIntervalMs}
                   onChange={(e) => setPollIntervalMs(Number(e.target.value) || 5000)}
                 />

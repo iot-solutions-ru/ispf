@@ -47,26 +47,27 @@ public class DriverTelemetryService {
     }
 
     public Variable setDriverTelemetryValue(String path, String name, DataRecord value, Instant observedAt) {
+        DataRecord stored = objectManager.alignDriverTelemetry(path, name, value);
         if (eventJournalFastPath.isEligible(path, name)
-                && eventJournalFastPath.tryFire(path, name, value, observedAt)) {
-            return objectManager.resolveDriverTelemetryVariable(path, name, value);
+                && eventJournalFastPath.tryFire(path, name, stored, observedAt)) {
+            return objectManager.resolveDriverTelemetryVariable(path, name, stored);
         }
         if (historianFastPath.isHistorianOnlyEligible(path, name)
-                && historianFastPath.tryPublish(path, name, value, observedAt)) {
+                && historianFastPath.tryPublish(path, name, stored, observedAt)) {
             // Keep live values updated: gateway lastIngress and loadtest ingress gates read RAM.
             // Still skip the object-change bus for historian-only TELEMETRY_ONLY ticks.
-            Variable variable = objectManager.applyDriverTelemetryInMemory(path, name, value);
-            gatewayIngressDispatch.tryScheduleDispatch(path, name, value);
+            Variable variable = objectManager.applyDriverTelemetryInMemory(path, name, stored);
+            gatewayIngressDispatch.tryScheduleDispatch(path, name, stored);
             return variable;
         }
-        Variable variable = objectManager.applyDriverTelemetryInMemory(path, name, value);
-        if (gatewayIngressDispatch.tryScheduleDispatch(path, name, value)) {
+        Variable variable = objectManager.applyDriverTelemetryInMemory(path, name, stored);
+        if (gatewayIngressDispatch.tryScheduleDispatch(path, name, stored)) {
             return variable;
         }
         if (telemetryIngressDispatcher.isQueueEnabled()) {
-            telemetryIngressDispatcher.submit(path, name, value, observedAt);
+            telemetryIngressDispatcher.submit(path, name, stored, observedAt);
         } else {
-            telemetryCoalescer.recordUpdate(path, name, value, observedAt);
+            telemetryCoalescer.recordUpdate(path, name, stored, observedAt);
         }
         return variable;
     }

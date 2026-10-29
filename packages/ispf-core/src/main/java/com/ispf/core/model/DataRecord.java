@@ -70,6 +70,71 @@ public final class DataRecord {
     }
 
     /**
+     * Keeps cells whose name and type already exist on {@code target}.
+     * Extra source columns are dropped. Nullable target fields with no matching source cell are empty.
+     * A payload that shares no field with {@code target}, or that omits a required target field, is returned unchanged.
+     */
+    public DataRecord projectedOnto(DataSchema target) {
+        if (target == null || target.fields().isEmpty() || schema.fields().isEmpty()
+                || !sharesTypedField(target) || !coversRequired(target)) {
+            return this;
+        }
+        if (rows.isEmpty()) {
+            return DataRecord.empty(target);
+        }
+        List<Map<String, Object>> projected = new ArrayList<>(rows.size());
+        for (Map<String, Object> row : rows) {
+            Map<String, Object> kept = new LinkedHashMap<>();
+            for (FieldDefinition field : target.fields()) {
+                FieldDefinition source = schema.field(field.name()).orElse(null);
+                if (source != null && sameShape(field, source) && row.containsKey(field.name())) {
+                    kept.put(field.name(), row.get(field.name()));
+                }
+            }
+            projected.add(kept);
+        }
+        return new DataRecord(target, projected);
+    }
+
+    private boolean sharesTypedField(DataSchema target) {
+        for (FieldDefinition field : target.fields()) {
+            FieldDefinition source = schema.field(field.name()).orElse(null);
+            if (source != null && sameShape(field, source)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean coversRequired(DataSchema target) {
+        for (FieldDefinition field : target.fields()) {
+            if (field.nullable()) {
+                continue;
+            }
+            FieldDefinition source = schema.field(field.name()).orElse(null);
+            if (source == null || !sameShape(field, source)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean sameShape(FieldDefinition target, FieldDefinition source) {
+        if (target.type() != source.type()) {
+            return false;
+        }
+        if (target.type() != FieldType.RECORD && target.type() != FieldType.RECORD_LIST) {
+            return true;
+        }
+        DataSchema targetNested = target.nestedSchema();
+        DataSchema sourceNested = source.nestedSchema();
+        if (targetNested == null || sourceNested == null) {
+            return targetNested == sourceNested;
+        }
+        return targetNested.isCompatibleWith(sourceNested);
+    }
+
+    /**
      * Construction-time only. Published records must stay immutable so variable readers
      * and CHANGES_ONLY dedup cannot race on a shared mutable list.
      */
