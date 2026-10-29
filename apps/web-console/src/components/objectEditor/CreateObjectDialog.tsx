@@ -898,8 +898,8 @@ export default function CreateObjectDialog({
                 </Form.Item>
                 <Form.Item label={t("dialog.pollIntervalMs")}>
                   <InputNumber
-                    min={500}
-                    step={500}
+                    min={driverId === "websocket" ? 1 : 500}
+                    step={driverId === "websocket" ? 1 : 500}
                     value={pollIntervalMs}
                     onChange={(value) =>
                       setPollIntervalMs(Number(value) || DEFAULT_POLL_INTERVAL_MS)
