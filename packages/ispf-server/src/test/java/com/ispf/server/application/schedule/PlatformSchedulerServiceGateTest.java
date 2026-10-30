@@ -1,5 +1,8 @@
 package com.ispf.server.application.schedule;
 
+import com.ispf.core.object.ObjectTree;
+import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.PlatformObject;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.function.FunctionService;
@@ -29,6 +32,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,9 +56,14 @@ class PlatformSchedulerServiceGateTest {
     ObjectManager objectManager;
 
     private PlatformSchedulerService scheduler;
+    private ObjectTree objectTree;
 
     @BeforeEach
     void setUp() {
+        objectTree = new ObjectTree();
+        lenient().when(objectManager.tree()).thenReturn(objectTree);
+        lenient().when(scheduleObjectService.pathForScheduleId(anyString()))
+                .thenAnswer(invocation -> "root.platform.schedules." + invocation.getArgument(0));
         scheduler = new PlatformSchedulerService(
                 jdbcTemplate,
                 functionService,
@@ -189,6 +198,32 @@ class PlatformSchedulerServiceGateTest {
                 eq("boom"),
                 eq("legacy-1")
         );
+        verify(jdbcTemplate, never()).update(contains("last_tick_at"), any(), any());
+    }
+
+    @Test
+    void tickSkipsLegacyRowWhenTreeScheduleOwnsSameId() {
+        when(scheduleObjectService.listEnabled()).thenReturn(List.of());
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("schedule_id", "fleet-tick");
+        row.put("interval_ms", 1_000L);
+        row.put("last_tick_at", Timestamp.from(Instant.now().minusSeconds(3600)));
+        row.put("action_type", "invoke_function");
+        row.put("action_json", "{\"objectPath\":\"objects.a\",\"functionName\":\"run\"}");
+        when(jdbcTemplate.queryForList("SELECT * FROM platform_schedules WHERE enabled = TRUE"))
+                .thenReturn(List.of(row));
+        objectTree.register(new PlatformObject(
+                "fleet-tick",
+                "root.platform.schedules.fleet-tick",
+                ObjectType.SCHEDULE,
+                "fleet-tick",
+                "",
+                null
+        ));
+
+        scheduler.tickSchedules();
+
+        verify(functionService, never()).invoke(anyString(), anyString(), any(DataRecordPayloadRequest.class));
         verify(jdbcTemplate, never()).update(contains("last_tick_at"), any(), any());
     }
 }

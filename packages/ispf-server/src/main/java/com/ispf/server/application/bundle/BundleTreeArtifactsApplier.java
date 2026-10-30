@@ -22,6 +22,7 @@ import com.ispf.server.datasource.DataSourceObjectService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.analytics.formula.AnalyticsFormulaService;
 import com.ispf.server.report.ReportService;
+import com.ispf.server.application.schedule.PlatformSchedulerService;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
 import org.springframework.stereotype.Component;
@@ -55,6 +56,7 @@ public class BundleTreeArtifactsApplier {
     private final SqlBindingObjectService sqlBindingObjectService;
     private final ApplicationReportService reportService;
     private final ScheduleObjectService scheduleObjectService;
+    private final PlatformSchedulerService platformSchedulerService;
     private final AnalyticsFormulaService analyticsFormulaService;
     private final ApplicationEventCatalogService eventCatalogService;
     private final BundleArtifactDeployers deployers;
@@ -69,6 +71,7 @@ public class BundleTreeArtifactsApplier {
             SqlBindingObjectService sqlBindingObjectService,
             ApplicationReportService reportService,
             ScheduleObjectService scheduleObjectService,
+            PlatformSchedulerService platformSchedulerService,
             AnalyticsFormulaService analyticsFormulaService,
             ApplicationEventCatalogService eventCatalogService,
             BundleArtifactDeployers deployers,
@@ -82,6 +85,7 @@ public class BundleTreeArtifactsApplier {
         this.sqlBindingObjectService = sqlBindingObjectService;
         this.reportService = reportService;
         this.scheduleObjectService = scheduleObjectService;
+        this.platformSchedulerService = platformSchedulerService;
         this.analyticsFormulaService = analyticsFormulaService;
         this.eventCatalogService = eventCatalogService;
         this.deployers = deployers;
@@ -317,6 +321,14 @@ public class BundleTreeArtifactsApplier {
                             actionJson,
                             null,
                             null
+                    ));
+                    platformSchedulerService.upsert(new PlatformSchedulerService.PlatformSchedule(
+                            schedule.scheduleId(),
+                            appId,
+                            schedule.enabled(),
+                            schedule.intervalMs(),
+                            schedule.actionType(),
+                            actionJson
                     ));
                     applied.add("schedule:" + schedule.scheduleId());
                 } catch (Exception ex) {
