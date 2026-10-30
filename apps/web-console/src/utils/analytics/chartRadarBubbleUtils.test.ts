@@ -8,6 +8,7 @@ import {
   parseDemoBubblePoints,
   parseDemoRadarRows,
   parseRadarAxesJson,
+  resolveBubbleMode,
   serializeBubblePoints,
   serializeRadarAxes,
   zipBubbleTrajectoryPoints,
@@ -129,6 +130,14 @@ describe("chartRadarBubbleUtils", () => {
     ).toBe(
       JSON.stringify([{ label: "Temp", variableName: "temperature", valueField: "raw", max: 50 }])
     );
+  });
+
+  it("lets an explicit bubble mode override the point list", () => {
+    const points = JSON.stringify([{ label: "A", xVariable: "temperature", yVariable: "humidity" }]);
+    expect(resolveBubbleMode(undefined, undefined)).toBe("trajectory");
+    expect(resolveBubbleMode(undefined, points)).toBe("snapshot");
+    expect(resolveBubbleMode("trajectory", points)).toBe("trajectory");
+    expect(resolveBubbleMode("snapshot", undefined)).toBe("snapshot");
   });
 
   it("parses radar axes and builds rows", () => {

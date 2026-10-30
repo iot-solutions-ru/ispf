@@ -195,9 +195,11 @@ export interface ChartWidget extends DashboardWidgetBase {
   /**
    * Bubble: optional multi-point snapshot config JSON array
    * `[{ "label", "xVariable", "yVariable", "sizeVariable?" }]`.
-   * When set, overrides bubbleXVariable/bubbleYVariable trajectory mode.
+   * Used when bubbleMode is snapshot. Without bubbleMode, a non-empty list selects that mode.
    */
   bubblePointsJson?: string;
+  /** Bubble drawing mode. Unset keeps the previous list-versus-path choice. */
+  bubbleMode?: "trajectory" | "snapshot";
   /** Bubble: optional X-axis minimum. Empty follows the points. */
   bubbleXMin?: number;
   /** Bubble: optional X-axis maximum. A pair with bubbleXMin fixes the axis. */

@@ -7,6 +7,7 @@ import {
 } from "../../../types/dashboard";
 import { AdvancedJsonField, HintCaption, VariableSelect } from "../widgetEditorStructured";
 import { variableListAllowCustom } from "../widgetEditorHelpers";
+import { resolveBubbleMode } from "../../../utils/analytics/chartRadarBubbleUtils";
 import AxisLimitInput from "./AxisLimitInput";
 import { ChartBubblePointsEditor, ChartRadarAxesEditor } from "./ChartPointListEditors";
 import { RecordFieldGroup } from "./widgetBoundChoices";
@@ -22,22 +23,25 @@ import { rowNavigationFields } from "./widgetRowNavigationFields";
 function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNode {
   const { widget, update } = ctx;
   const chartType = widget.chartType ?? widget.chartStyle ?? "area";
+  const bubbleMode = resolveBubbleMode(widget.bubbleMode, widget.bubblePointsJson);
   return (
     <>
       <Section title={t("editor.section.chart")} />
-      <label>
-        <WidgetEditorCaption text={t("editor.historyRange")} />
-        <select
-          value={widget.historyRange ?? "live"}
-          onChange={(e) => update({ historyRange: e.target.value as typeof widget.historyRange })}
-        >
-          {WIDGET_HISTORY_RANGE_OPTIONS.map((item) => (
-            <option key={item.id} value={item.id}>
-              {t(`history.${item.id}`)}
-            </option>
-          ))}
-        </select>
-      </label>
+      {chartType !== "bubble" && (
+        <label>
+          <WidgetEditorCaption text={t("editor.historyRange")} />
+          <select
+            value={widget.historyRange ?? "live"}
+            onChange={(e) => update({ historyRange: e.target.value as typeof widget.historyRange })}
+          >
+            {WIDGET_HISTORY_RANGE_OPTIONS.map((item) => (
+              <option key={item.id} value={item.id}>
+                {t(`history.${item.id}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label>
         <WidgetEditorCaption text={t("editor.chartType")} />
         <select
@@ -68,32 +72,85 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
       {chartType === "bubble" && (
         <>
           <Section title={t("editor.section.chartBubble")} />
-          <div className="widget-editor-chart-point-line widget-editor-chart-point-line--primary full">
-            <VariableSelect
-              label={t("editor.chartBubbleXVariable")}
-              value={widget.bubbleXVariable ?? ""}
-              onChange={(v) => update({ bubbleXVariable: v || undefined })}
+          <label>
+            <WidgetEditorCaption text={t("editor.chartBubbleMode")} />
+            <select
+              value={bubbleMode}
+              onChange={(e) =>
+                update({ bubbleMode: e.target.value as typeof widget.bubbleMode })
+              }
+            >
+              <option value="trajectory">{t("editor.chartBubbleMode.trajectory")}</option>
+              <option value="snapshot">{t("editor.chartBubbleMode.snapshot")}</option>
+            </select>
+          </label>
+          {bubbleMode === "trajectory" ? (
+            <>
+              <Section title={t("editor.chartBubblePath")} />
+              <div className="widget-editor-chart-point-block full">
+                <div className="widget-editor-chart-point-line">
+                  <VariableSelect
+                    label={t("editor.chartBubbleXVariable")}
+                    value={widget.bubbleXVariable ?? ""}
+                    onChange={(v) => update({ bubbleXVariable: v || undefined })}
+                    variables={ctx.variables}
+                    allowCustom={variableListAllowCustom(widget)}
+                    disabled={!ctx.variableSelectEnabled}
+                  />
+                  <VariableSelect
+                    label={t("editor.chartBubbleYVariable")}
+                    value={widget.bubbleYVariable ?? ""}
+                    onChange={(v) => update({ bubbleYVariable: v || undefined })}
+                    variables={ctx.variables}
+                    allowCustom={variableListAllowCustom(widget)}
+                    disabled={!ctx.variableSelectEnabled}
+                  />
+                </div>
+                <div className="widget-editor-chart-point-line">
+                  <VariableSelect
+                    label={t("editor.chartBubbleSizeVariable")}
+                    value={widget.bubbleSizeVariable ?? ""}
+                    onChange={(v) => update({ bubbleSizeVariable: v || undefined })}
+                    variables={ctx.variables}
+                    allowCustom={variableListAllowCustom(widget)}
+                    disabled={!ctx.variableSelectEnabled}
+                  />
+                </div>
+              </div>
+              <label>
+                <WidgetEditorCaption text={t("editor.historyRange")} />
+                <select
+                  value={widget.historyRange ?? "live"}
+                  onChange={(e) => update({ historyRange: e.target.value as typeof widget.historyRange })}
+                >
+                  {WIDGET_HISTORY_RANGE_OPTIONS.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {t(`history.${item.id}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <WidgetEditorCaption text={t("editor.maxPoints")} />
+                <input
+                  type="number"
+                  min={10}
+                  max={500}
+                  value={widget.maxPoints ?? 120}
+                  onChange={(e) => update({ maxPoints: Number(e.target.value) })}
+                />
+              </label>
+            </>
+          ) : (
+            <ChartBubblePointsEditor
+              className="full"
+              widget={widget}
               variables={ctx.variables}
-              allowCustom={variableListAllowCustom(widget)}
-              disabled={!ctx.variableSelectEnabled}
+              variableSelectEnabled={ctx.variableSelectEnabled}
+              onChange={(bubblePointsJson) => update({ bubblePointsJson })}
+              t={t}
             />
-            <VariableSelect
-              label={t("editor.chartBubbleYVariable")}
-              value={widget.bubbleYVariable ?? ""}
-              onChange={(v) => update({ bubbleYVariable: v || undefined })}
-              variables={ctx.variables}
-              allowCustom={variableListAllowCustom(widget)}
-              disabled={!ctx.variableSelectEnabled}
-            />
-            <VariableSelect
-              label={t("editor.chartBubbleSizeVariable")}
-              value={widget.bubbleSizeVariable ?? ""}
-              onChange={(v) => update({ bubbleSizeVariable: v || undefined })}
-              variables={ctx.variables}
-              allowCustom={variableListAllowCustom(widget)}
-              disabled={!ctx.variableSelectEnabled}
-            />
-          </div>
+          )}
           <label>
             <WidgetEditorCaption text={t("editor.chartBubbleDefaultSize")} />
             <input
@@ -104,13 +161,6 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
               onChange={(e) => update({ bubbleDefaultSize: Number(e.target.value) })}
             />
           </label>
-          <ChartBubblePointsEditor
-            widget={widget}
-            variables={ctx.variables}
-            variableSelectEnabled={ctx.variableSelectEnabled}
-            onChange={(bubblePointsJson) => update({ bubblePointsJson })}
-            t={t}
-          />
           <AxisLimitInput
             label={t("editor.chartBubbleXMin")}
             value={widget.bubbleXMin}
@@ -138,6 +188,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
         <>
           <Section title={t("editor.section.chartRadar")} />
           <ChartRadarAxesEditor
+            className="full"
             widget={widget}
             variables={ctx.variables}
             variableSelectEnabled={ctx.variableSelectEnabled}
@@ -158,6 +209,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
           </select>
         </label>
       )}
+      {chartType !== "bubble" && (
       <label>
         <WidgetEditorCaption text={t("editor.maxPoints")} />
         <input
@@ -167,7 +219,7 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
           value={widget.maxPoints ?? 120}
           onChange={(e) => update({ maxPoints: Number(e.target.value) })}
         />
-        {chartType !== "bubble" && chartType !== "radar" ? (
+        {chartType !== "radar" ? (
           <span className="hint">
             {t("editor.chartSeriesSource", {
               object: widget.objectPath
@@ -180,6 +232,9 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
           </span>
         ) : null}
       </label>
+      )}
+      {chartType !== "bubble" && (
+      <>
       <label>
         <WidgetEditorCaption text={t("editor.sampleMode")} />
         <select
@@ -244,6 +299,8 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
           <span className="hint">{t("editor.liveCoalesceMsHint")}</span>
         </label>
       )}
+      </>
+      )}
       <label>
         <WidgetEditorCaption text={t("editor.color")} />
         <input
@@ -252,17 +309,21 @@ function chartFields(ctx: WidgetFieldContextFor<"chart">, t: TFunction): ReactNo
           onChange={(e) => update({ color: e.target.value })}
         />
       </label>
-      <label>
-        <WidgetEditorCaption text={t("editor.unit")} />
-        <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
-      </label>
-      <label>
-        <WidgetEditorCaption text={t("editor.unitField")} />
-        <input
-          value={widget.unitField ?? ""}
-          onChange={(e) => update({ unitField: e.target.value || undefined })}
-        />
-      </label>
+      {chartType !== "bubble" && (
+        <>
+          <label>
+            <WidgetEditorCaption text={t("editor.unit")} />
+            <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
+          </label>
+          <label>
+            <WidgetEditorCaption text={t("editor.unitField")} />
+            <input
+              value={widget.unitField ?? ""}
+              onChange={(e) => update({ unitField: e.target.value || undefined })}
+            />
+          </label>
+        </>
+      )}
       <label>
         <WidgetEditorCaption text={t("editor.decimals")} />
         <input

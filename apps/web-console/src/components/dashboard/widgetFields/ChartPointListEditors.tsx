@@ -49,12 +49,15 @@ export function ChartBubblePointsEditor({
   variableSelectEnabled,
   onChange,
   t,
+  className,
 }: {
   widget: ChartWidget;
   variables: string[];
   variableSelectEnabled: boolean;
   onChange: (next: string | undefined) => void;
   t: TFunction;
+  /** Read by the field grid so this block is not paired into a half-width cell. */
+  className?: string;
 }): ReactNode {
   const [rows, commit] = useJsonRows(
     widget.bubblePointsJson,
@@ -69,45 +72,49 @@ export function ChartBubblePointsEditor({
   };
 
   return (
-    <div className="widget-editor-chart-points full">
+    <div className={["widget-editor-chart-points", className].filter(Boolean).join(" ")}>
       {rows.length === 0 ? <p className="hint">{t("editor.chartBubblePointsEmpty")}</p> : null}
       {rows.map((point, index) => (
-        <div key={`bubble-point-${index}`} className="widget-editor-chart-point-line">
-          <label>
-            <WidgetEditorCaption text={t("editor.chartPointLabel")} />
-            <input value={point.label} onChange={(e) => patch(index, { label: e.target.value })} />
-          </label>
-          <VariableSelect
-            label={t("editor.chartBubbleXVariable")}
-            value={point.xVariable}
-            onChange={(v) => patch(index, { xVariable: v })}
-            variables={variables}
-            allowCustom={allowCustom}
-            disabled={!variableSelectEnabled}
-          />
-          <VariableSelect
-            label={t("editor.chartBubbleYVariable")}
-            value={point.yVariable}
-            onChange={(v) => patch(index, { yVariable: v })}
-            variables={variables}
-            allowCustom={allowCustom}
-            disabled={!variableSelectEnabled}
-          />
-          <VariableSelect
-            label={t("editor.chartBubbleSizeVariable")}
-            value={point.sizeVariable ?? ""}
-            onChange={(v) => patch(index, { sizeVariable: v || undefined })}
-            variables={variables}
-            allowCustom={allowCustom}
-            disabled={!variableSelectEnabled}
-          />
-          <button
-            type="button"
-            className="btn small danger widget-editor-chart-point-remove"
-            onClick={() => commit(rows.filter((_, i) => i !== index))}
-          >
-            {t("editor.markerRule.remove")}
-          </button>
+        <div key={`bubble-point-${index}`} className="widget-editor-chart-point-block">
+          <div className="widget-editor-chart-point-line">
+            <label>
+              <WidgetEditorCaption text={t("editor.chartPointLabel")} />
+              <input value={point.label} onChange={(e) => patch(index, { label: e.target.value })} />
+            </label>
+            <VariableSelect
+              label={t("editor.chartBubbleXVariable")}
+              value={point.xVariable}
+              onChange={(v) => patch(index, { xVariable: v })}
+              variables={variables}
+              allowCustom={allowCustom}
+              disabled={!variableSelectEnabled}
+            />
+          </div>
+          <div className="widget-editor-chart-point-line widget-editor-chart-point-line--action">
+            <VariableSelect
+              label={t("editor.chartBubbleYVariable")}
+              value={point.yVariable}
+              onChange={(v) => patch(index, { yVariable: v })}
+              variables={variables}
+              allowCustom={allowCustom}
+              disabled={!variableSelectEnabled}
+            />
+            <VariableSelect
+              label={t("editor.chartBubbleSizeVariable")}
+              value={point.sizeVariable ?? ""}
+              onChange={(v) => patch(index, { sizeVariable: v || undefined })}
+              variables={variables}
+              allowCustom={allowCustom}
+              disabled={!variableSelectEnabled}
+            />
+            <button
+              type="button"
+              className="btn small danger widget-editor-chart-point-remove"
+              onClick={() => commit(rows.filter((_, i) => i !== index))}
+            >
+              {t("editor.markerRule.remove")}
+            </button>
+          </div>
         </div>
       ))}
       <div className="widget-editor-list-actions">
@@ -129,12 +136,15 @@ export function ChartRadarAxesEditor({
   variableSelectEnabled,
   onChange,
   t,
+  className,
 }: {
   widget: ChartWidget;
   variables: string[];
   variableSelectEnabled: boolean;
   onChange: (next: string | undefined) => void;
   t: TFunction;
+  /** Read by the field grid so this block is not paired into a half-width cell. */
+  className?: string;
 }): ReactNode {
   const [rows, commit] = useJsonRows(
     widget.radarAxesJson,
@@ -149,43 +159,47 @@ export function ChartRadarAxesEditor({
   };
 
   return (
-    <div className="widget-editor-chart-points full">
+    <div className={["widget-editor-chart-points", className].filter(Boolean).join(" ")}>
       {rows.length === 0 ? <p className="hint">{t("editor.chartRadarAxesEmpty")}</p> : null}
       {rows.map((axis, index) => (
-        <div key={`radar-axis-${index}`} className="widget-editor-chart-point-line widget-editor-chart-point-line--radar">
-          <label>
-            <WidgetEditorCaption text={t("editor.chartPointLabel")} />
-            <input value={axis.label} onChange={(e) => patch(index, { label: e.target.value })} />
-          </label>
-          <VariableSelect
-            label={t("editor.variableName")}
-            value={axis.variableName}
-            onChange={(v) => patch(index, { variableName: v })}
-            variables={variables}
-            allowCustom={allowCustom}
-            disabled={!variableSelectEnabled}
-          />
-          <label>
-            <WidgetEditorCaption text={t("editor.chartRadarAxisMax")} />
-            <input
-              type="number"
-              min={1}
-              value={axis.max ?? ""}
-              onChange={(e) => {
-                const next = Number(e.target.value);
-                patch(index, {
-                  max: e.target.value === "" || !Number.isFinite(next) || next <= 0 ? undefined : next,
-                });
-              }}
+        <div key={`radar-axis-${index}`} className="widget-editor-chart-point-block">
+          <div className="widget-editor-chart-point-line">
+            <label>
+              <WidgetEditorCaption text={t("editor.chartPointLabel")} />
+              <input value={axis.label} onChange={(e) => patch(index, { label: e.target.value })} />
+            </label>
+            <VariableSelect
+              label={t("editor.variableName")}
+              value={axis.variableName}
+              onChange={(v) => patch(index, { variableName: v })}
+              variables={variables}
+              allowCustom={allowCustom}
+              disabled={!variableSelectEnabled}
             />
-          </label>
-          <button
-            type="button"
-            className="btn small danger widget-editor-chart-point-remove"
-            onClick={() => commit(rows.filter((_, i) => i !== index))}
-          >
-            {t("editor.markerRule.remove")}
-          </button>
+          </div>
+          <div className="widget-editor-chart-point-line widget-editor-chart-point-line--end">
+            <label>
+              <WidgetEditorCaption text={t("editor.chartRadarAxisMax")} />
+              <input
+                type="number"
+                min={1}
+                value={axis.max ?? ""}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  patch(index, {
+                    max: e.target.value === "" || !Number.isFinite(next) || next <= 0 ? undefined : next,
+                  });
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              className="btn small danger widget-editor-chart-point-remove"
+              onClick={() => commit(rows.filter((_, i) => i !== index))}
+            >
+              {t("editor.markerRule.remove")}
+            </button>
+          </div>
         </div>
       ))}
       <div className="widget-editor-list-actions">

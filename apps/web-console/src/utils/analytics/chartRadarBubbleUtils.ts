@@ -61,6 +61,19 @@ function readVariableNumeric(
   return toNumeric(readFieldValue(row, valueField));
 }
 
+export type BubbleChartMode = "trajectory" | "snapshot";
+
+/** Explicit mode wins. Older widgets follow the point list when it has a complete row. */
+export function resolveBubbleMode(
+  mode: string | undefined,
+  pointsJson: string | undefined
+): BubbleChartMode {
+  if (mode === "trajectory" || mode === "snapshot") {
+    return mode;
+  }
+  return parseBubblePointsJson(pointsJson).length > 0 ? "snapshot" : "trajectory";
+}
+
 export function parseBubblePointsJson(raw: string | undefined): ChartBubblePointConfig[] {
   if (!raw?.trim()) {
     return [];
