@@ -17,7 +17,11 @@ import { useWidgetStyles } from "../widgetStyles";
 import { CHART_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../../utils/analytics/chartTheme";
 import WidgetDragHandle from "../WidgetDragHandle";
 import { parseDemoPreview } from "../widgetDemoData";
-import { bubbleAxisDomain, parseDemoBubblePoints } from "../../../utils/analytics/chartRadarBubbleUtils";
+import {
+  bubbleAxisDomain,
+  bubbleSymbolScale,
+  parseDemoBubblePoints,
+} from "../../../utils/analytics/chartRadarBubbleUtils";
 
 interface ChartBubbleWidgetViewProps {
   widget: ChartWidget;
@@ -48,6 +52,7 @@ export default function ChartBubbleWidgetView({
   const chartReady = points.length > 0;
   const xDomain = bubbleAxisDomain(widget.bubbleXMin, widget.bubbleXMax);
   const yDomain = bubbleAxisDomain(widget.bubbleYMin, widget.bubbleYMax);
+  const symbolScale = useMemo(() => bubbleSymbolScale(points), [points]);
 
   return (
     <div className="dash-widget dash-widget-chart" style={styles.card}>
@@ -98,7 +103,13 @@ export default function ChartBubbleWidgetView({
                 width={42}
                 tickFormatter={(v) => Number(v).toFixed(decimals)}
               />
-              <ZAxis type="number" dataKey="z" range={[60, 400]} name={t("view.chartBubble.axisSize")} />
+              <ZAxis
+                type="number"
+                dataKey="z"
+                domain={symbolScale.domain}
+                range={symbolScale.range}
+                name={t("view.chartBubble.axisSize")}
+              />
               <Tooltip
                 cursor={{ strokeDasharray: "3 3" }}
                 formatter={(value, name) => {

@@ -50,6 +50,55 @@ describe("widget type fields registry", () => {
     expect(Object.keys(WIDGET_TYPE_FIELDS).sort()).toEqual([...TYPES_WITH_FIELDS].sort());
   });
 
+  it("mounts bubble points and radar axes as rows", () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const bubbleWithPoints = {
+      ...bareWidget("chart"),
+      chartType: "bubble",
+      bubblePointsJson: JSON.stringify([
+        { label: "A", xVariable: "flow", yVariable: "state" },
+      ]),
+    } as DashboardWidget;
+    const cases = [bubbleWithPoints, { ...bareWidget("chart"), chartType: "radar" } as DashboardWidget];
+    for (const widget of cases) {
+      const { container, unmount } = renderWithDashboard(
+        <QueryClientProvider client={queryClient}>
+          <WidgetTypeSpecificFields {...contextFor(widget)} />
+        </QueryClientProvider>,
+      );
+      const points = container.querySelector(".widget-editor-chart-points");
+      expect(points).not.toBeNull();
+      expect(points?.closest(".form-grid-row")).toBeNull();
+      expect(container.querySelector("textarea")).toBeNull();
+      unmount();
+    }
+
+    const { container, unmount } = renderWithDashboard(
+      <QueryClientProvider client={queryClient}>
+        <WidgetTypeSpecificFields
+          {...contextFor({ ...bareWidget("chart"), chartType: "bubble" } as DashboardWidget)}
+        />
+      </QueryClientProvider>,
+    );
+    expect(container.querySelector(".widget-editor-chart-points")).toBeNull();
+    expect(container.querySelector(".widget-editor-chart-point-block")).not.toBeNull();
+    expect(container.textContent).toContain("Which period to show");
+    expect(container.textContent).toContain("How many samples on screen");
+    expect(container.textContent).not.toContain("How to take points");
+    expect(container.textContent).not.toContain("Unit");
+    unmount();
+
+    const { container: snapshot, unmount: unmountSnapshot } = renderWithDashboard(
+      <QueryClientProvider client={queryClient}>
+        <WidgetTypeSpecificFields {...contextFor(bubbleWithPoints)} />
+      </QueryClientProvider>,
+    );
+    expect(snapshot.textContent).not.toContain("Which period to show");
+    expect(snapshot.textContent).not.toContain("How many samples on screen");
+    expect(snapshot.textContent).not.toContain("How to take points");
+    unmountSnapshot();
+  });
+
   it("shares one renderer between composite-widget and drawer-panel", () => {
     expect(WIDGET_TYPE_FIELDS["composite-widget"]).toBe(WIDGET_TYPE_FIELDS["drawer-panel"]);
   });
