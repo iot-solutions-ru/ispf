@@ -96,6 +96,67 @@ class VariableHistoryDebounceChangesOnlyTest {
                 .contains(10.0, 20.0);
     }
 
+    @Test
+    void deletingObjectClearsChangesOnlySnapshotForRecreatedPath() {
+        objectManager.create(
+                "root.platform.devices",
+                "history-debounce-probe",
+                ObjectType.DEVICE,
+                "history debounce",
+                null,
+                null
+        );
+        DataSchema schema = DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build();
+        objectManager.createVariable(
+                PATH,
+                "temperature",
+                schema,
+                true,
+                true,
+                DataRecord.single(schema, Map.of("value", 10.0)),
+                true,
+                null
+        );
+        clearHistorianCaches();
+        DataRecord valueA = DataRecord.single(schema, Map.of("value", 10.0));
+        variableHistoryService.recordFromDataRecordTrusted(PATH, "temperature", valueA, Instant.now());
+        assertThat(historizedValue()).isEqualTo(10.0);
+
+        objectManager.delete(PATH);
+        variableHistoryService.onObjectChange(
+                com.ispf.server.object.ObjectChangeEvent.of(
+                        com.ispf.server.object.ObjectChangeType.DELETED,
+                        PATH
+                )
+        );
+
+        objectManager.create(
+                "root.platform.devices",
+                "history-debounce-probe",
+                ObjectType.DEVICE,
+                "history debounce",
+                null,
+                null
+        );
+        objectManager.createVariable(
+                PATH,
+                "temperature",
+                schema,
+                true,
+                true,
+                DataRecord.single(schema, Map.of("value", 10.0)),
+                true,
+                null
+        );
+        variableHistoryService.recordFromDataRecordTrusted(PATH, "temperature", valueA, Instant.now());
+        assertThat(historizedValue())
+                .as("recreated path must not inherit CHANGES_ONLY snapshot")
+                .isEqualTo(10.0);
+        var history = variableHistoryService.query(PATH, "temperature", "value", null, null, 50);
+        assertThat(history.samples().stream().map(VariableHistoryService.VariableHistorySample::value).toList())
+                .contains(10.0);
+    }
+
     private Double historizedValue() {
         @SuppressWarnings("unchecked")
         ConcurrentHashMap<String, DataRecord> cache = (ConcurrentHashMap<String, DataRecord>) ReflectionTestUtils
