@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   bubbleAxisDomain,
+  bubbleSymbolScale,
   buildBubbleSnapshotPoints,
   buildRadarRows,
   parseBubblePointsJson,
   parseDemoBubblePoints,
   parseDemoRadarRows,
   parseRadarAxesJson,
+  serializeBubblePoints,
+  serializeRadarAxes,
   zipBubbleTrajectoryPoints,
 } from "./chartRadarBubbleUtils";
 import type { VariableDto } from "../../types";
@@ -94,6 +97,40 @@ describe("chartRadarBubbleUtils", () => {
     expect(points[0]).toMatchObject({ x: 10, y: 20, z: 50 });
   });
 
+  it("keeps optional bubble and radar fields when saving a row", () => {
+    expect(
+      serializeBubblePoints([
+        {
+          label: "A",
+          xVariable: "temperature",
+          yVariable: "humidity",
+          sizeVariable: "power",
+          xValueField: "raw",
+        },
+        { label: "", xVariable: "temperature", yVariable: "humidity" },
+      ])
+    ).toBe(
+      JSON.stringify([
+        {
+          label: "A",
+          xVariable: "temperature",
+          yVariable: "humidity",
+          sizeVariable: "power",
+          xValueField: "raw",
+        },
+      ])
+    );
+    expect(serializeBubblePoints([{ label: "", xVariable: "", yVariable: "" }])).toBeUndefined();
+    expect(
+      serializeRadarAxes([
+        { label: "Temp", variableName: "temperature", valueField: "raw", max: 50 },
+        { label: "", variableName: "humidity" },
+      ])
+    ).toBe(
+      JSON.stringify([{ label: "Temp", variableName: "temperature", valueField: "raw", max: 50 }])
+    );
+  });
+
   it("parses radar axes and builds rows", () => {
     const axes = parseRadarAxesJson(
       JSON.stringify([
@@ -107,6 +144,18 @@ describe("chartRadarBubbleUtils", () => {
       { subject: "Temp", value: 22.5, fullMark: 50 },
       { subject: "Hum", value: 55, fullMark: 100 },
     ]);
+  });
+
+  it("uses the requested area when every bubble has the same size", () => {
+    expect(bubbleSymbolScale([{ z: 80 }, { z: 80 }])).toEqual({
+      domain: [80, 80],
+      range: [80, 80],
+    });
+    expect(bubbleSymbolScale([{ z: 200 }, { z: 40 }])).toEqual({
+      domain: [40, 200],
+      range: [40, 200],
+    });
+    expect(bubbleSymbolScale([{ z: 2 }, { z: 5000 }]).range).toEqual([10, 1000]);
   });
 
   it("parses demo preview payloads", () => {

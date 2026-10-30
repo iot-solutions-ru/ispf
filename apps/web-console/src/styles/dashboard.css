@@ -2729,6 +2729,78 @@ body.scada-mimic-editor-open {
   flex-shrink: 0;
 }
 
+.widget-editor-chart-points {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  align-self: stretch;
+}
+
+.widget-editor-chart-point-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1.3fr) minmax(0, 1.3fr) auto;
+  gap: 0.45rem;
+  align-items: end;
+  width: 100%;
+  min-width: 0;
+}
+
+.widget-editor-chart-point-line--radar {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(0, 0.8fr) auto;
+}
+
+.widget-editor-chart-point-line--primary {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.widget-editor-chart-point-line label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  min-width: 0;
+}
+
+.widget-editor-chart-point-line .field-caption {
+  min-height: 0;
+  line-height: 1.2;
+}
+
+.widget-editor-chart-point-line .field-controls {
+  flex-direction: row;
+  align-items: center;
+}
+
+.widget-editor-chart-point-line input,
+.widget-editor-chart-point-line select {
+  width: 100%;
+  min-width: 0;
+  font-size: 0.82rem;
+}
+
+.widget-editor-chart-point-line .field-controls > select,
+.widget-editor-chart-point-line .field-controls > input {
+  flex: 1 1 0;
+  width: auto;
+}
+
+.widget-editor-chart-point-remove {
+  align-self: end;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .widget-editor-chart-point-line,
+  .widget-editor-chart-point-line--radar,
+  .widget-editor-chart-point-line--primary {
+    grid-template-columns: 1fr;
+  }
+}
+
 .widget-editor-table-head {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr auto;

@@ -136,6 +136,62 @@ export function parseRadarAxesJson(raw: string | undefined): ChartRadarAxis[] {
   }
 }
 
+function bubblePointRecord(point: ChartBubblePointConfig): Record<string, string> | null {
+  const label = point.label.trim();
+  const xVariable = point.xVariable.trim();
+  const yVariable = point.yVariable.trim();
+  if (!label || !xVariable || !yVariable) {
+    return null;
+  }
+  const row: Record<string, string> = { label, xVariable, yVariable };
+  const sizeVariable = point.sizeVariable?.trim();
+  if (sizeVariable) {
+    row.sizeVariable = sizeVariable;
+  }
+  if (point.xValueField) {
+    row.xValueField = point.xValueField;
+  }
+  if (point.yValueField) {
+    row.yValueField = point.yValueField;
+  }
+  if (point.sizeValueField) {
+    row.sizeValueField = point.sizeValueField;
+  }
+  return row;
+}
+
+/** Stores complete bubble rows. Incomplete drafts stay out of the saved JSON. */
+export function serializeBubblePoints(points: ChartBubblePointConfig[]): string | undefined {
+  const rows = points
+    .map(bubblePointRecord)
+    .filter((row): row is Record<string, string> => row != null);
+  return rows.length > 0 ? JSON.stringify(rows) : undefined;
+}
+
+function radarAxisRecord(axis: ChartRadarAxis): Record<string, string | number> | null {
+  const label = axis.label.trim();
+  const variableName = axis.variableName.trim();
+  if (!label || !variableName) {
+    return null;
+  }
+  const row: Record<string, string | number> = { label, variableName };
+  if (axis.valueField) {
+    row.valueField = axis.valueField;
+  }
+  if (axis.max != null && Number.isFinite(axis.max) && axis.max > 0) {
+    row.max = axis.max;
+  }
+  return row;
+}
+
+/** Stores complete radar axes. Incomplete drafts stay out of the saved JSON. */
+export function serializeRadarAxes(axes: ChartRadarAxis[]): string | undefined {
+  const rows = axes
+    .map(radarAxisRecord)
+    .filter((row): row is Record<string, string | number> => row != null);
+  return rows.length > 0 ? JSON.stringify(rows) : undefined;
+}
+
 export function buildBubbleSnapshotPoints(
   configs: ChartBubblePointConfig[],
   variables: VariableDto[] | undefined,
@@ -242,6 +298,30 @@ export function parseDemoBubblePoints(raw: unknown): ChartBubblePoint[] {
  * Bubble axis limits. An empty end follows the points. Both ends fix the axis
  * when the minimum is below the maximum; otherwise the axis stays automatic.
  */
+/** Editor limits for bubble area. Recharts draws `z` as symbol area, not radius. */
+const BUBBLE_AREA_MIN = 10;
+const BUBBLE_AREA_MAX = 1000;
+
+/**
+ * Pixel area for the bubble Z axis.
+ * A single shared size (the default, or one size variable on a trajectory) has a
+ * zero-width domain. Recharts then paints the middle of the range, so a fixed
+ * range hides the size field. The range is the requested area in that case.
+ */
+export function bubbleSymbolScale(points: Array<{ z: number }>): {
+  domain: [number, number];
+  range: [number, number];
+} {
+  const values = points.map((point) => point.z).filter((z) => Number.isFinite(z) && z > 0);
+  if (values.length === 0) {
+    return { domain: [80, 80], range: [80, 80] };
+  }
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const clamp = (n: number) => Math.min(BUBBLE_AREA_MAX, Math.max(BUBBLE_AREA_MIN, n));
+  return { domain: [min, max], range: [clamp(min), clamp(max)] };
+}
+
 export function bubbleAxisDomain(
   min: number | undefined,
   max: number | undefined

@@ -50,6 +50,22 @@ describe("widget type fields registry", () => {
     expect(Object.keys(WIDGET_TYPE_FIELDS).sort()).toEqual([...TYPES_WITH_FIELDS].sort());
   });
 
+  it("mounts bubble points and radar axes as rows", () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    for (const chartType of ["bubble", "radar"] as const) {
+      const { container, unmount } = renderWithDashboard(
+        <QueryClientProvider client={queryClient}>
+          <WidgetTypeSpecificFields
+            {...contextFor({ ...bareWidget("chart"), chartType } as DashboardWidget)}
+          />
+        </QueryClientProvider>,
+      );
+      expect(container.querySelector(".widget-editor-chart-points")).not.toBeNull();
+      expect(container.querySelector("textarea")).toBeNull();
+      unmount();
+    }
+  });
+
   it("shares one renderer between composite-widget and drawer-panel", () => {
     expect(WIDGET_TYPE_FIELDS["composite-widget"]).toBe(WIDGET_TYPE_FIELDS["drawer-panel"]);
   });
