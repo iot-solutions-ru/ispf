@@ -20,6 +20,7 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -81,10 +82,21 @@ public class MigrationObjectService {
     /**
      * Apply pending migrations matching {@code version} and, when provided, {@code dataSourcePath}.
      * Without a data-source filter, all platform migrations for the version run (legacy behaviour).
+     * Order is the object-tree child order.
      */
     @Transactional
     public List<String> applyPending(String version, String dataSourcePath) {
-        List<String> applied = new ArrayList<>();
+        return applyPending(version, dataSourcePath, List.of());
+    }
+
+    /**
+     * Same filter as {@link #applyPending(String, String)}. When {@code scriptIdsInOrder} is
+     * non-empty, those ids run first in that order (bundle manifest order). Any other pending
+     * migration for the same filter follows in tree order. Tree child order is not the apply order.
+     */
+    @Transactional
+    public List<String> applyPending(String version, String dataSourcePath, List<String> scriptIdsInOrder) {
+        List<MigrationDefinition> pending = new ArrayList<>();
         for (MigrationDefinition migration : listAll()) {
             if (!matchesPendingFilter(migration, version, dataSourcePath)) {
                 continue;
@@ -92,10 +104,49 @@ public class MigrationObjectService {
             if (isApplied(migration)) {
                 continue;
             }
+            pending.add(migration);
+        }
+        List<String> applied = new ArrayList<>();
+        for (MigrationDefinition migration : orderForApply(pending, scriptIdsInOrder)) {
             applyOne(migration);
             applied.add(migration.scriptId());
         }
         return applied;
+    }
+
+    /**
+     * Manifest ids first, in the given order. Remaining pending scripts keep their incoming order.
+     * An empty order list leaves the incoming order unchanged.
+     */
+    static List<MigrationDefinition> orderForApply(
+            List<MigrationDefinition> pending,
+            List<String> scriptIdsInOrder
+    ) {
+        if (pending == null || pending.isEmpty()) {
+            return List.of();
+        }
+        if (scriptIdsInOrder == null || scriptIdsInOrder.isEmpty()) {
+            return List.copyOf(pending);
+        }
+        Map<String, MigrationDefinition> byId = new LinkedHashMap<>();
+        for (MigrationDefinition migration : pending) {
+            if (migration == null || migration.scriptId() == null || migration.scriptId().isBlank()) {
+                continue;
+            }
+            byId.putIfAbsent(migration.scriptId(), migration);
+        }
+        List<MigrationDefinition> ordered = new ArrayList<>();
+        for (String scriptId : scriptIdsInOrder) {
+            if (scriptId == null || scriptId.isBlank()) {
+                continue;
+            }
+            MigrationDefinition migration = byId.remove(scriptId);
+            if (migration != null) {
+                ordered.add(migration);
+            }
+        }
+        ordered.addAll(byId.values());
+        return ordered;
     }
 
     static boolean matchesPendingFilter(MigrationDefinition migration, String version, String dataSourcePath) {
