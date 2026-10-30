@@ -135,24 +135,31 @@ public class ApplicationBundleDeployService {
         String dataSourcePath = dataSourceObjectService.pathForNodeName(appId);
         treeArtifacts.apply(appId, manifest, false, dataSourcePath, new BundleApplyLog(applied, skipped, errors));
 
+        boolean dataSourcePresent = objectManager.tree().findByPath(dataSourcePath).isPresent();
         if (manifest.migrations() != null && !manifest.migrations().isEmpty()) {
-            try {
-                for (BundleMigration script : manifest.migrations()) {
-                    migrationObjectService.upsert(new MigrationObjectService.MigrationDefinition(
-                            "",
-                            script.id(),
-                            manifest.version(),
-                            dataSourcePath,
-                            script.sql()
-                    ));
+            if (!dataSourcePresent) {
+                if (errors.stream().noneMatch(item -> item.startsWith("dataSource:"))) {
+                    errors.add("dataSource required for migrations: " + dataSourcePath);
                 }
-                List<String> appliedMigrations = migrationObjectService.applyPending(
-                        manifest.version(),
-                        dataSourcePath
-                );
-                applied.addAll(appliedMigrations.stream().map(id -> "migration:" + id).toList());
-            } catch (Exception ex) {
-                errors.add("migrations: " + ex.getMessage());
+            } else {
+                try {
+                    for (BundleMigration script : manifest.migrations()) {
+                        migrationObjectService.upsert(new MigrationObjectService.MigrationDefinition(
+                                "",
+                                script.id(),
+                                manifest.version(),
+                                dataSourcePath,
+                                script.sql()
+                        ));
+                    }
+                    List<String> appliedMigrations = migrationObjectService.applyPending(
+                            manifest.version(),
+                            dataSourcePath
+                    );
+                    applied.addAll(appliedMigrations.stream().map(id -> "migration:" + id).toList());
+                } catch (Exception ex) {
+                    errors.add("migrations: " + ex.getMessage());
+                }
             }
         }
 
