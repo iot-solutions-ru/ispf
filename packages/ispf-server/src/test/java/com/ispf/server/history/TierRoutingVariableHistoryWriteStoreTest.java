@@ -106,6 +106,26 @@ class TierRoutingVariableHistoryWriteStoreTest {
                 .hasMessage("warm-tier append failed; warm store is behind hot");
 
         verify(hotStore, times(1)).appendBatch(List.of(recent));
+        assertThat(router.aheadSize()).isEqualTo(1);
+    }
+
+    @Test
+    void failedWarmWritesDoNotGrowAheadSetPastCap() {
+        tierProperties.hotTier().setDualWriteEnabled(true);
+        router = new TierRoutingVariableHistoryWriteStore(tierProperties, hotStore, warmStore, 3);
+        doThrow(new IllegalStateException("warm down")).when(warmStore).appendBestEffort(anyList());
+
+        Instant now = Instant.now();
+        for (int i = 0; i < 8; i++) {
+            VariableHistoryWriteRecord recent = record(now.minus(1, ChronoUnit.HOURS).plusSeconds(i), now.plusSeconds(i));
+            try {
+                router.appendBatch(List.of(recent));
+            } catch (IllegalStateException ignored) {
+                // warm outage is the case under test
+            }
+        }
+
+        assertThat(router.aheadSize()).isLessThanOrEqualTo(3);
     }
 
     @Test
