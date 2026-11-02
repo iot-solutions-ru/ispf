@@ -95,6 +95,60 @@ class BundleManifestValidatorTest {
     }
 
     @Test
+    void acceptsJavaFunctionSourceWithoutScriptValidation() {
+        String javaBody = """
+                import com.ispf.core.function.ObjectJavaFunction;
+                import com.ispf.core.function.JavaFunctionContext;
+                import com.ispf.core.model.DataRecord;
+                public class BundleJavaEcho implements ObjectJavaFunction {
+                    public DataRecord invoke(DataRecord input, JavaFunctionContext context) {
+                        return input;
+                    }
+                }
+                """;
+        ApplicationBundleDeployService.BundleManifest manifest = new ApplicationBundleDeployService.BundleManifest(
+                "1.0.0",
+                "JavaFn",
+                "jf_",
+                "app_java_fn",
+                null,
+                null,
+                null,
+                null,
+                null,
+                java.util.List.of(new ApplicationBundleDeployService.BundleFunction(
+                        "root.platform.singleton-blueprints.demo-hub-v1",
+                        "echoJava",
+                        "1",
+                        new com.ispf.server.application.api.ApplicationController.FunctionDescriptorDto(
+                                com.ispf.core.model.DataSchema.builder("in").build(),
+                                com.ispf.core.model.DataSchema.builder("out").build()
+                        ),
+                        new com.ispf.server.application.api.ApplicationController.FunctionSourceDto(
+                                "java",
+                                javaBody
+                        )
+                )),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+        BundleValidationResult result = validator.validate("java-fn", manifest);
+        assertEquals(BundleValidationResult.OK, result.status(), String.join("; ", result.errors()));
+    }
+
+    @Test
     void rejectsVersionOnlyManifest() {
         ApplicationBundleDeployService.BundleManifest manifest = new ApplicationBundleDeployService.BundleManifest(
                 "1",
