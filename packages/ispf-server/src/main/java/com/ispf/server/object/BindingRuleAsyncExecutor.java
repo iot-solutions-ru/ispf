@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -29,6 +30,7 @@ public class BindingRuleAsyncExecutor {
     private final BindingProperties properties;
     private final ConcurrentHashMap<String, PerRuleRunner> runners = new ConcurrentHashMap<>();
     private final AtomicInteger pendingRules = new AtomicInteger();
+    private final AtomicLong droppedSubmissions = new AtomicLong();
     private ElasticWorkerLauncher workers;
 
     public BindingRuleAsyncExecutor(BindingProperties properties) {
@@ -56,9 +58,20 @@ public class BindingRuleAsyncExecutor {
     public void schedule(String objectPath, BindingRule rule, Runnable evaluation) {
         ensureStarted();
         String key = objectPath + "|" + rule.id();
-        runners.computeIfAbsent(key, ignored -> new PerRuleRunner(key))
-                .submit(evaluation);
+        runners.compute(key, (ignored, existing) -> {
+            PerRuleRunner runner = existing != null ? existing : new PerRuleRunner(key);
+            runner.submit(evaluation);
+            return runner;
+        });
         workers.signalWork();
+    }
+
+    public int runnerCount() {
+        return runners.size();
+    }
+
+    public long droppedSubmissions() {
+        return droppedSubmissions.get();
     }
 
     private boolean drainOneBinding() {
@@ -82,6 +95,7 @@ public class BindingRuleAsyncExecutor {
         private final String key;
         private final AtomicReference<Runnable> pending = new AtomicReference<>();
         private final ConcurrentLinkedQueue<Runnable> fifo = new ConcurrentLinkedQueue<>();
+        private final AtomicInteger fifoDepth = new AtomicInteger();
         private final AtomicBoolean pumpScheduled = new AtomicBoolean();
 
         private PerRuleRunner(String key) {
@@ -91,8 +105,9 @@ public class BindingRuleAsyncExecutor {
         void submit(Runnable evaluation) {
             if (properties.isAsyncCoalesceEnabled()) {
                 pending.set(evaluation);
-            } else {
-                fifo.offer(evaluation);
+            } else if (!offerFifo(evaluation)) {
+                droppedSubmissions.incrementAndGet();
+                return;
             }
             if (pumpScheduled.compareAndSet(false, true)) {
                 pendingRules.incrementAndGet();
@@ -103,7 +118,7 @@ public class BindingRuleAsyncExecutor {
             if (!pumpScheduled.get()) {
                 return false;
             }
-            Runnable task = properties.isAsyncCoalesceEnabled() ? pending.getAndSet(null) : fifo.poll();
+            Runnable task = properties.isAsyncCoalesceEnabled() ? pending.getAndSet(null) : pollFifo();
             if (task == null) {
                 finishPumpIfIdle();
                 return false;
@@ -112,16 +127,9 @@ public class BindingRuleAsyncExecutor {
                 task.run();
             } catch (Exception ex) {
                 String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
-                IllegalStateException failure = new IllegalStateException(
-                        "Async binding " + key + " failed: " + detail,
-                        ex
-                );
-                log.error(failure.getMessage());
-                throw failure;
+                log.error("Async binding {} failed: {}", key, detail);
             }
-            boolean hasMore = properties.isAsyncCoalesceEnabled()
-                    ? pending.get() != null
-                    : !fifo.isEmpty();
+            boolean hasMore = hasQueuedWork();
             if (hasMore) {
                 return true;
             }
@@ -131,13 +139,43 @@ public class BindingRuleAsyncExecutor {
 
         private void finishPumpIfIdle() {
             pumpScheduled.set(false);
-            boolean hasMore = properties.isAsyncCoalesceEnabled()
-                    ? pending.get() != null
-                    : !fifo.isEmpty();
+            boolean hasMore = hasQueuedWork();
             if (hasMore && pumpScheduled.compareAndSet(false, true)) {
                 return;
             }
             pendingRules.decrementAndGet();
+            runners.compute(key, (ignored, existing) -> {
+                if (existing != this || pumpScheduled.get() || hasQueuedWork()) {
+                    return existing;
+                }
+                return null;
+            });
+        }
+
+        private boolean offerFifo(Runnable evaluation) {
+            int capacity = properties.getAsyncFifoCapacity();
+            while (true) {
+                int depth = fifoDepth.get();
+                if (depth >= capacity) {
+                    return false;
+                }
+                if (fifoDepth.compareAndSet(depth, depth + 1)) {
+                    fifo.offer(evaluation);
+                    return true;
+                }
+            }
+        }
+
+        private Runnable pollFifo() {
+            Runnable task = fifo.poll();
+            if (task != null) {
+                fifoDepth.decrementAndGet();
+            }
+            return task;
+        }
+
+        private boolean hasQueuedWork() {
+            return properties.isAsyncCoalesceEnabled() ? pending.get() != null : fifoDepth.get() > 0;
         }
     }
 }

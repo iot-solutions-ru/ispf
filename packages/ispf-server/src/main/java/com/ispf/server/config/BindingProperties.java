@@ -25,6 +25,9 @@ public class BindingProperties {
     /** When false, each async binding evaluation is queued (FIFO per rule). Default false so every variable tick runs its binding. */
     private boolean asyncCoalesceEnabled = false;
 
+    /** Max queued evaluations per rule when coalesce is off. Further ticks are dropped and counted. */
+    private int asyncFifoCapacity = 1024;
+
     private Audit audit = new Audit();
 
     public static class Audit {
@@ -246,6 +249,14 @@ public class BindingProperties {
 
     public void setAsyncCoalesceEnabled(boolean asyncCoalesceEnabled) {
         this.asyncCoalesceEnabled = asyncCoalesceEnabled;
+    }
+
+    public int getAsyncFifoCapacity() {
+        return asyncFifoCapacity > 0 ? asyncFifoCapacity : 1024;
+    }
+
+    public void setAsyncFifoCapacity(int asyncFifoCapacity) {
+        this.asyncFifoCapacity = asyncFifoCapacity;
     }
 
     public int resolvedAsyncThreadsMin() {

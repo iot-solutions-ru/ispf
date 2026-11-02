@@ -117,6 +117,37 @@ class BindingRuleAsyncExecutorTest {
         return false;
     }
 
+    @Test
+    void fifoDropsPastCapacityAndRemovesIdleRunner() throws Exception {
+        BindingProperties properties = new BindingProperties();
+        properties.setAsyncElasticEnabled(false);
+        properties.setAsyncThreads(1);
+        properties.setAsyncFifoCapacity(2);
+        BindingRuleAsyncExecutor executor = new BindingRuleAsyncExecutor(properties);
+        CountDownLatch started = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        executor.schedule("root.test.device", sampleRule(), () -> {
+            started.countDown();
+            try {
+                release.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        assertThat(started.await(3, TimeUnit.SECONDS)).isTrue();
+        for (int i = 0; i < 10; i++) {
+            executor.schedule("root.test.device", sampleRule(), () -> { });
+        }
+        assertThat(executor.droppedSubmissions()).isGreaterThanOrEqualTo(8);
+        release.countDown();
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
+        while (executor.runnerCount() > 0 && System.nanoTime() < deadline) {
+            Thread.sleep(20);
+        }
+        assertThat(executor.runnerCount()).isZero();
+        executor.shutdown();
+    }
+
     private static BindingRule sampleRule() {
         return new BindingRule(
                 "test-rule",
