@@ -3,6 +3,7 @@ package com.ispf.server.schedule;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
@@ -288,19 +289,35 @@ public class ScheduleObjectService {
     private record ActionTarget(String objectPath, String functionName) {
     }
 
-    @Transactional
     public void recordTick(String path, Instant at, String error) {
-        setString(path, "lastTickAt", at != null ? at.toString() : "");
-        setString(path, "lastError", error != null ? error : "");
+        if (objectManager.tree().findByPath(path).isEmpty()) {
+            return;
+        }
+        try {
+            setString(path, "lastTickAt", at != null ? at.toString() : "");
+            setString(path, "lastError", error != null ? error : "");
+        } catch (ObjectNotFoundException ex) {
+            // Tick finished after the tree node was removed. Do not fail the scheduler thread.
+        }
     }
 
     /**
      * Records a failed tick without advancing {@code lastTickAt}: the schedule stays due
      * and the action is retried on the next scheduler poll.
+     * A missing tree node is not an error of the scheduler thread: the schedule is already gone.
+     * Not {@code @Transactional}: a caught {@link ObjectNotFoundException} from the inner write
+     * would otherwise mark this transaction rollback-only and escape as
+     * {@code UnexpectedRollbackException} from the scheduler thread.
      */
-    @Transactional
     public void recordError(String path, String error) {
-        setString(path, "lastError", error != null ? error : "");
+        if (objectManager.tree().findByPath(path).isEmpty()) {
+            return;
+        }
+        try {
+            setString(path, "lastError", error != null ? error : "");
+        } catch (ObjectNotFoundException ex) {
+            // Node removed during the tick. The caller already logged the action failure.
+        }
     }
 
     private void ensureStructure(String path) {
