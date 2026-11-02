@@ -1,8 +1,11 @@
 package com.ispf.server.federation;
 
 import tools.jackson.databind.JsonNode;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.server.object.BindingStateVariables;
 import com.ispf.server.object.ObjectManager;
 
 import java.util.Locale;
@@ -53,6 +56,35 @@ public final class FederationProxyNodeHelper {
                     displayName != null ? displayName : node.displayName(),
                     description != null ? description : node.description()
             );
+        }
+        ensureLocalVariableShells(objectManager, localPath, remote);
+    }
+
+    /**
+     * Create+bind starts from an empty node. Variable reads keep a remote field only when the
+     * local node already has a variable of the same name, so the probe names must exist locally.
+     */
+    private static void ensureLocalVariableShells(ObjectManager objectManager, String localPath, JsonNode remote) {
+        JsonNode names = remote.get("variableNames");
+        if (names == null || !names.isArray()) {
+            return;
+        }
+        for (JsonNode item : names) {
+            if (item == null || !item.isString()) {
+                continue;
+            }
+            String varName = item.asString().trim();
+            if (varName.isEmpty()
+                    || FederationProxyMetadata.isFederationVariable(varName)
+                    || BindingStateVariables.isReserved(varName)) {
+                continue;
+            }
+            PlatformObject node = objectManager.require(localPath);
+            if (node.getVariable(varName).isPresent()) {
+                continue;
+            }
+            DataSchema schema = DataSchema.builder(varName).field("value", FieldType.STRING).build();
+            objectManager.createVariable(localPath, varName, schema, true, true, null, false, null);
         }
     }
 
