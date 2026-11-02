@@ -10,18 +10,18 @@ import java.util.Optional;
  * Exception: {@link AgentInteractionMode#EXECUTE} — choosing Execute mode is itself explicit
  * consent to mutate for the current turn.
  */
-final class AgentMutateApprovalGuard {
+public final class AgentMutateApprovalGuard {
 
     private AgentMutateApprovalGuard() {
     }
 
-    record BlockDecision(String error, String hint) {
-        boolean blocked() {
+    public record BlockDecision(String error, String hint) {
+        public boolean blocked() {
             return error != null && !error.isBlank();
         }
     }
 
-    static Optional<BlockDecision> checkBeforeTool(
+    public static Optional<BlockDecision> checkBeforeTool(
             boolean requireApprovalForMutate,
             AgentRunState runState,
             String toolName,
