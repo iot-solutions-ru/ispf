@@ -141,6 +141,26 @@ class RuntimeTelemetryCoalescerTest {
     }
 
     @Test
+    void deletingObjectPublishesSameValueAgain() {
+        coalescer = newCoalescer(true, 1_000, false, false, false);
+        org.mockito.Mockito.when(policyService.automationEligible("root.dev.sensor", "temperature"))
+                .thenReturn(false);
+        DataSchema schema = DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build();
+        DataRecord value = record(schema, 42.0);
+
+        coalescer.recordUpdate("root.dev.sensor", "temperature", value);
+        coalescer.recordUpdate("root.dev.sensor", "temperature", value);
+        verify(publicationService, times(1)).publishVariableChange(
+                eq("root.dev.sensor"), eq("temperature"), isNull(), any(), isNull());
+
+        coalescer.onObjectChange(ObjectChangeEvent.of(ObjectChangeType.DELETED, "root.dev.sensor"));
+        coalescer.recordUpdate("root.dev.sensor", "temperature", value);
+
+        verify(publicationService, times(2)).publishVariableChange(
+                eq("root.dev.sensor"), eq("temperature"), isNull(), any(), isNull());
+    }
+
+    @Test
     void publishesUnchangedValuesForFullModeAutomation() {
         coalescer = newCoalescer(true, 1_000);
         org.mockito.Mockito.when(policyService.automationEligible("root.dev.sensor", "temperature"))
