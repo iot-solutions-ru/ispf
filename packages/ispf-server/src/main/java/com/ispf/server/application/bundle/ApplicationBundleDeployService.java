@@ -135,28 +135,35 @@ public class ApplicationBundleDeployService {
         String dataSourcePath = dataSourceObjectService.pathForNodeName(appId);
         treeArtifacts.apply(appId, manifest, false, dataSourcePath, new BundleApplyLog(applied, skipped, errors));
 
+        boolean dataSourcePresent = objectManager.tree().findByPath(dataSourcePath).isPresent();
         if (manifest.migrations() != null && !manifest.migrations().isEmpty()) {
-            try {
-                for (BundleMigration script : manifest.migrations()) {
-                    migrationObjectService.upsert(new MigrationObjectService.MigrationDefinition(
-                            "",
-                            script.id(),
+            if (!dataSourcePresent) {
+                if (errors.stream().noneMatch(item -> item.startsWith("dataSource:"))) {
+                    errors.add("dataSource required for migrations: " + dataSourcePath);
+                }
+            } else {
+                try {
+                    for (BundleMigration script : manifest.migrations()) {
+                        migrationObjectService.upsert(new MigrationObjectService.MigrationDefinition(
+                                "",
+                                script.id(),
+                                manifest.version(),
+                                dataSourcePath,
+                                script.sql()
+                        ));
+                    }
+                    List<String> scriptIdsInOrder = manifest.migrations().stream()
+                            .map(BundleMigration::id)
+                            .toList();
+                    List<String> appliedMigrations = migrationObjectService.applyPending(
                             manifest.version(),
                             dataSourcePath,
-                            script.sql()
-                    ));
+                            scriptIdsInOrder
+                    );
+                    applied.addAll(appliedMigrations.stream().map(id -> "migration:" + id).toList());
+                } catch (Exception ex) {
+                    errors.add("migrations: " + ex.getMessage());
                 }
-                List<String> scriptIdsInOrder = manifest.migrations().stream()
-                        .map(BundleMigration::id)
-                        .toList();
-                List<String> appliedMigrations = migrationObjectService.applyPending(
-                        manifest.version(),
-                        dataSourcePath,
-                        scriptIdsInOrder
-                );
-                applied.addAll(appliedMigrations.stream().map(id -> "migration:" + id).toList());
-            } catch (Exception ex) {
-                errors.add("migrations: " + ex.getMessage());
             }
         }
 

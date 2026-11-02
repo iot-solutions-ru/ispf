@@ -6,6 +6,7 @@ import { useVariablesQuery } from "./useVariablesQuery";
 import {
   buildBubbleSnapshotPoints,
   parseBubblePointsJson,
+  resolveBubbleMode,
   zipBubbleTrajectoryPoints,
   type ChartBubblePoint,
 } from "../utils/analytics/chartRadarBubbleUtils";
@@ -19,6 +20,7 @@ export function useChartBubbleSeries(
     | "bubbleSizeVariable"
     | "bubbleDefaultSize"
     | "bubblePointsJson"
+    | "bubbleMode"
     | "valueField"
     | "maxPoints"
     | "historyRange"
@@ -32,9 +34,10 @@ export function useChartBubbleSeries(
     () => parseBubblePointsJson(widget.bubblePointsJson),
     [widget.bubblePointsJson]
   );
-  const snapshotMode = pointConfigs.length > 0;
+  const bubbleMode = resolveBubbleMode(widget.bubbleMode, widget.bubblePointsJson);
+  const snapshotMode = bubbleMode === "snapshot";
   const trajectoryMode =
-    !snapshotMode && Boolean(widget.bubbleXVariable) && Boolean(widget.bubbleYVariable);
+    bubbleMode === "trajectory" && Boolean(widget.bubbleXVariable) && Boolean(widget.bubbleYVariable);
 
   const variablesQuery = useVariablesQuery(
     objectPath,

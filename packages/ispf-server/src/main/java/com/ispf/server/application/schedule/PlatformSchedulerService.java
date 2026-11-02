@@ -163,6 +163,9 @@ public class PlatformSchedulerService {
                 continue;
             }
             String scheduleId = String.valueOf(schedule.get("schedule_id"));
+            if (treeOwnsSchedule(scheduleId)) {
+                continue;
+            }
             try {
                 executeAction(
                         String.valueOf(schedule.get("action_type")),
@@ -212,6 +215,18 @@ public class PlatformSchedulerService {
         DataRecordPayloadRequest payload = new DataRecordPayloadRequest(null, List.of(row));
         FunctionInvocationScope.runSystemTrusted(() ->
                 functionService.invoke(objectPath, functionName, payload));
+    }
+
+    /**
+     * Bundle/tree schedules are the source of truth. A leftover {@code platform_schedules}
+     * row with the same id must not fire a second action.
+     */
+    boolean treeOwnsSchedule(String scheduleId) {
+        if (scheduleId == null || scheduleId.isBlank() || "null".equals(scheduleId)) {
+            return false;
+        }
+        String path = scheduleObjectService.pathForScheduleId(scheduleId);
+        return objectManager.tree().findByPath(path).isPresent();
     }
 
     static String perTickIdempotencyKey(String scheduleRef, Instant tickAt) {

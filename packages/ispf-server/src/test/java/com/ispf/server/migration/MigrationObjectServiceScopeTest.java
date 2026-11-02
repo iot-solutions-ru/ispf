@@ -6,6 +6,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MigrationObjectServiceScopeTest {
@@ -49,6 +50,18 @@ class MigrationObjectServiceScopeTest {
                 "1.0.0",
                 "root.platform.data-sources.platform-primitive"
         ));
+    }
+
+    @Test
+    void appIdFromDataSourcePathUsesLastSegment() {
+        assertEquals(
+                "robot-fleet-automation",
+                MigrationObjectService.appIdFromDataSourcePath(
+                        "root.platform.data-sources.robot-fleet-automation"
+                )
+        );
+        assertNull(MigrationObjectService.appIdFromDataSourcePath(""));
+        assertNull(MigrationObjectService.appIdFromDataSourcePath(null));
     }
 
     @Test

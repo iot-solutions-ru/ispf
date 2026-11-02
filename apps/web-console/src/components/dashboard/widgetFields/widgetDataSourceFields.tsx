@@ -37,6 +37,7 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
   const typeHintKey = WIDGET_TYPE_HINT_KEYS[widget.type];
   const typeHint = typeHintKey ? t(typeHintKey, { defaultValue: "" }) : "";
   const chartWidget = widget.type === "chart" ? widget : null;
+  const chartKind = chartWidget ? (chartWidget.chartType ?? chartWidget.chartStyle ?? "area") : null;
   const multiQueryTags = chartWidget ? parseAnalyticsQueryTags(chartWidget.analyticsQueryTagsJson) : [];
   const usesMultiTagQuery = multiQueryTags.length > 0;
   const showModelHintPath = widgetUsesModelHintPath(widget.type);
@@ -51,7 +52,7 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
         hint={[bindingHint, typeHint].filter(Boolean).join(" ")}
       />
 
-      {chartWidget && (
+      {chartWidget && chartKind !== "bubble" && (
         <>
           <Section
             title={t("editor.section.analyticsQueryTags")}

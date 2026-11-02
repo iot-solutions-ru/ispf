@@ -108,6 +108,7 @@ export interface OperatorManifestChart {
   bubbleSizeVariable?: string;
   bubbleDefaultSize?: number;
   bubblePointsJson?: string;
+  bubbleMode?: "trajectory" | "snapshot";
   bubbleXMin?: number;
   bubbleXMax?: number;
   bubbleYMin?: number;
@@ -235,6 +236,7 @@ export function manifestChartToWidget(
     bubbleSizeVariable: chart.bubbleSizeVariable,
     bubbleDefaultSize: chart.bubbleDefaultSize,
     bubblePointsJson: chart.bubblePointsJson,
+    bubbleMode: chart.bubbleMode,
     bubbleXMin: chart.bubbleXMin,
     bubbleXMax: chart.bubbleXMax,
     bubbleYMin: chart.bubbleYMin,

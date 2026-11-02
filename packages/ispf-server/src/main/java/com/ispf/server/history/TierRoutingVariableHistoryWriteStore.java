@@ -3,6 +3,7 @@ package com.ispf.server.history;
 import com.ispf.server.config.HistorianTierProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
@@ -12,8 +13,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Routes historian writes: hot (JDBC) for recent samples, warm (ClickHouse) for older observedAt (BL-159).
@@ -29,16 +28,27 @@ class TierRoutingVariableHistoryWriteStore implements VariableHistoryWriteStore 
     private final HistorianTierProperties tierProperties;
     private final JdbcVariableHistoryWriteStore hotStore;
     private final ClickHouseWarmTierWriteStore warmStore;
-    private final Set<String> hotAheadOfWarm = ConcurrentHashMap.newKeySet();
+    private final HistorianAheadSet hotAheadOfWarm;
 
+    @Autowired
     TierRoutingVariableHistoryWriteStore(
             HistorianTierProperties tierProperties,
             JdbcVariableHistoryWriteStore hotStore,
             ClickHouseWarmTierWriteStore warmStore
     ) {
+        this(tierProperties, hotStore, warmStore, HistorianAheadSet.DEFAULT_MAX_KEYS);
+    }
+
+    TierRoutingVariableHistoryWriteStore(
+            HistorianTierProperties tierProperties,
+            JdbcVariableHistoryWriteStore hotStore,
+            ClickHouseWarmTierWriteStore warmStore,
+            int maxAheadKeys
+    ) {
         this.tierProperties = tierProperties;
         this.hotStore = hotStore;
         this.warmStore = warmStore;
+        this.hotAheadOfWarm = new HistorianAheadSet(maxAheadKeys);
     }
 
     @Override
@@ -97,6 +107,10 @@ class TierRoutingVariableHistoryWriteStore implements VariableHistoryWriteStore 
                 hotStore.appendBatch(warmRecords);
             }
         }
+    }
+
+    int aheadSize() {
+        return hotAheadOfWarm.size();
     }
 
     @Override
