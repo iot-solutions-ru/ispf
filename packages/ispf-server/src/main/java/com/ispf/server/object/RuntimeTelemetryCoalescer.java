@@ -13,6 +13,7 @@ import jakarta.annotation.PreDestroy;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -134,6 +135,31 @@ public class RuntimeTelemetryCoalescer {
         pending.put(coalesceKey, new PendingUpdate(path, variableName, value, observedAt));
         adjustSchedulerWorkers();
         scheduleFlushForLane(coalesceKey, path);
+    }
+
+    @EventListener
+    public void onObjectChange(ObjectChangeEvent event) {
+        if (event == null || event.path() == null || event.path().isBlank()) {
+            return;
+        }
+        if (event.type() == ObjectChangeType.DELETED) {
+            forgetPath(event.path());
+        }
+    }
+
+    void forgetPath(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return;
+        }
+        String prefix = objectPath + "|";
+        String descendant = objectPath + ".";
+        pending.keySet().removeIf(key -> ownsKey(key, objectPath, prefix, descendant));
+        lastPublished.keySet().removeIf(key -> ownsKey(key, objectPath, prefix, descendant));
+        laneFlushScheduled.keySet().removeIf(key -> ownsKey(key, objectPath, prefix, descendant));
+    }
+
+    private static boolean ownsKey(String key, String objectPath, String prefix, String descendant) {
+        return key.equals(objectPath) || key.startsWith(prefix) || key.startsWith(descendant);
     }
 
     public void flushNow() {
