@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""OT Trust — readiness audit for every pack in gradle/driver-packs.json (162).
+"""OT Trust — readiness audit for every pack in gradle/driver-packs.json (163).
 
 Honesty-first inventory. Does **not** claim field certification.
 
@@ -63,7 +63,7 @@ STUB_JAVADOC_RE = re.compile(r"\b(stub|placeholder)\b", re.IGNORECASE)
 CLASS_JAVADOC_RE = re.compile(
     r"(?s)/\*\*(.*?)\*/\s*(?:@[\w.]+(?:\([^)]*\))?\s*)*public\s+(?:abstract\s+)?class\s+\w+"
 )
-EXPECTED_CATALOG = 162
+EXPECTED_CATALOG = 163
 
 
 @dataclass
@@ -445,7 +445,7 @@ def audit() -> tuple[list[DriverRow], dict]:
         "matrixEntries": len(matrix),
         "stubIds": len(stub_ids),
         "interopWorkflowModules": sorted(interop_mods),
-        "honesty": "Lab/matrix readiness only — not field certification for 162 drivers",
+        "honesty": "Lab/matrix readiness only — not field certification for 163 drivers",
     }
     if summary["catalogSize"] != EXPECTED_CATALOG:
         summary["failCount"] += 1
@@ -529,7 +529,7 @@ def render_md(rows: list[DriverRow], summary: dict) -> str:
 
     out += [
         "",
-        "## Full catalog (162)",
+        "## Full catalog (163)",
         "",
         "| driverId | pack | maturity | source | readiness | FAIL/WARN |",
         "|----------|------|----------|--------|-----------|----------|",

@@ -227,7 +227,7 @@ def build_rows():
 
 def render_en(rows) -> str:
     lines = [
-        "## Registered driver catalog (162)",
+        f"## Registered driver catalog ({len(rows)})",
         "",
         "The `maturity` field in `GET /api/v1/drivers`: `PRODUCTION` (default), `BETA`, `STUB`. Labels are set in `DriverMaturityRegistry` on the server and shown in the Web Console when selecting a driver.",
         "",
@@ -273,7 +273,7 @@ def render_en(rows) -> str:
 
 def render_ru(rows) -> str:
     lines = [
-        "## Зарегистрированный каталог драйверов (162)",
+        f"## Зарегистрированный каталог драйверов ({len(rows)})",
         "",
         "Поле `maturity` в `GET /api/v1/drivers`: `PRODUCTION` (по умолчанию), `BETA`, `STUB`. Метки задаются в `DriverMaturityRegistry` на сервере и отображаются в Web Console при выборе драйвера.",
         "",
@@ -335,20 +335,20 @@ def splice(path: Path, start_markers: tuple[str, ...], end_marker: str, body: st
 
 def main() -> None:
     rows = build_rows()
-    assert len(rows) == 162, len(rows)
+    assert rows, "driver catalog is empty"
     en_body = render_en(rows)
     ru_body = render_ru(rows)
     (ROOT / "tools/driver-stubs/generated-catalog-en.md").write_text(en_body, encoding="utf-8")
     (ROOT / "tools/driver-stubs/generated-catalog-ru.md").write_text(ru_body, encoding="utf-8")
     splice(
         ROOT / "docs/en/drivers.md",
-        ("## Registered driver catalog (162)", "## Registered driver catalog (58)"),
+        ("## Registered driver catalog (163)", "## Registered driver catalog (162)", "## Registered driver catalog (58)"),
         "### v0.1 limitations (native / full stack required)",
         en_body,
     )
     splice(
         ROOT / "docs/ru/drivers.md",
-        ("## Зарегистрированный каталог драйверов (162)", "## Каталог зарегистрированных драйверов (58)"),
+        ("## Зарегистрированный каталог драйверов (163)", "## Зарегистрированный каталог драйверов (162)", "## Каталог зарегистрированных драйверов (58)"),
         "### Ограничения v0.1 (нужен native / полный стек)",
         ru_body,
     )
