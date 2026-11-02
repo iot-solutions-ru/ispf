@@ -152,9 +152,13 @@ public class ApplicationBundleDeployService {
                                 script.sql()
                         ));
                     }
+                    List<String> scriptIdsInOrder = manifest.migrations().stream()
+                            .map(BundleMigration::id)
+                            .toList();
                     List<String> appliedMigrations = migrationObjectService.applyPending(
                             manifest.version(),
-                            dataSourcePath
+                            dataSourcePath,
+                            scriptIdsInOrder
                     );
                     applied.addAll(appliedMigrations.stream().map(id -> "migration:" + id).toList());
                 } catch (Exception ex) {
