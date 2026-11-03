@@ -6,8 +6,10 @@ import com.ispf.core.model.FieldType;
 import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.api.dto.DataRecordPayloadResolver;
 import com.ispf.server.driver.DriverBinding;
+import com.ispf.server.driver.DriverPointMappingParser;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.driver.TelemetryPublishMode;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.security.acl.VariableMemberAccessService;
@@ -38,6 +40,7 @@ public class DriverRuntimeController {
     private final TenantVirtualRootService tenantVirtualRootService;
     private final ObjectAccessService objectAccessService;
     private final VariableMemberAccessService variableMemberAccessService;
+    private final ObjectMapper objectMapper;
 
     public DriverRuntimeController(
             DriverRuntimeService driverRuntimeService,
@@ -45,7 +48,8 @@ public class DriverRuntimeController {
             TenantScopeService tenantScopeService,
             TenantVirtualRootService tenantVirtualRootService,
             ObjectAccessService objectAccessService,
-            VariableMemberAccessService variableMemberAccessService
+            VariableMemberAccessService variableMemberAccessService,
+            ObjectMapper objectMapper
     ) {
         this.driverRuntimeService = driverRuntimeService;
         this.structureService = structureService;
@@ -53,6 +57,7 @@ public class DriverRuntimeController {
         this.tenantVirtualRootService = tenantVirtualRootService;
         this.objectAccessService = objectAccessService;
         this.variableMemberAccessService = variableMemberAccessService;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping("/status")
@@ -251,15 +256,24 @@ public class DriverRuntimeController {
         Map<String, String> configuration = mergeConfiguration(request);
         TelemetryPublishMode publishMode = TelemetryPublishMode.parse(configuration.get("telemetryPublishMode"));
         int coalesceMs = parsePositiveInt(configuration.get("telemetryCoalesceMs"));
+        String pointMappingsJson = request.pointMappingsJson();
+        Map<String, String> pointMappings;
+        if (pointMappingsJson != null && !pointMappingsJson.isBlank()) {
+            pointMappings = DriverPointMappingParser.toPointIds(
+                    DriverPointMappingParser.parse(pointMappingsJson, objectMapper));
+        } else {
+            pointMappings = request.pointMappings() != null ? request.pointMappings() : Map.of();
+            pointMappingsJson = null;
+        }
         DriverBinding binding = DriverBinding.of(
                 request.driverId() != null ? request.driverId() : DriverBinding.DEFAULT_DRIVER_ID,
                 request.pollIntervalMs() != null ? request.pollIntervalMs() : 2000,
                 configuration,
-                request.pointMappings() != null ? request.pointMappings() : Map.of(),
+                pointMappings,
                 publishMode,
                 coalesceMs
         );
-        driverRuntimeService.configure(canonical, binding);
+        driverRuntimeService.configure(canonical, binding, pointMappingsJson);
         if (Boolean.TRUE.equals(request.autoStart())) {
             driverRuntimeService.setDriverAutoStart(canonical, true);
             return driverRuntimeService.start(canonical);
@@ -284,6 +298,7 @@ public class DriverRuntimeController {
             Integer pollIntervalMs,
             Map<String, String> configuration,
             Map<String, String> pointMappings,
+            String pointMappingsJson,
             String telemetryPublishMode,
             Integer telemetryCoalesceMs,
             Boolean autoStart

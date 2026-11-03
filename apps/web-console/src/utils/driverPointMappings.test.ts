@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseDriverPointMappings, parseDriverWriteValue } from "./driverPointMappings";
+import {
+  normalizeDriverPointMappingsJson,
+  parseDriverPointMappings,
+  parseDriverWriteValue,
+} from "./driverPointMappings";
 
 describe("parseDriverPointMappings", () => {
   it("parses variable to point mapping object", () => {
@@ -35,6 +39,28 @@ describe("parseDriverPointMappings", () => {
       sineWave: "sim",
       presentValue: "analog-value:1:present-value",
       status: "sim",
+    });
+  });
+});
+
+describe("normalizeDriverPointMappingsJson", () => {
+  it("preserves extended mapping objects for persistence", () => {
+    const raw = JSON.stringify(
+      {
+        voltage: {
+          point: "ns=2;s=Voltage",
+          haystackTags: ["point", "sensor", "elec"],
+        },
+      },
+      null,
+      2,
+    );
+    const normalized = normalizeDriverPointMappingsJson(raw);
+    expect(JSON.parse(normalized)).toEqual({
+      voltage: {
+        point: "ns=2;s=Voltage",
+        haystackTags: ["point", "sensor", "elec"],
+      },
     });
   });
 });
