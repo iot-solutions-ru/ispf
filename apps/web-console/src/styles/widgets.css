@@ -3430,6 +3430,13 @@
   margin: 0.5rem 0 0;
 }
 
+.driver-mapping-issue-detail {
+  margin: 0.35rem 0 0;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 .driver-mapping-hint {
   color: var(--text-muted);
 }
@@ -3440,6 +3447,11 @@
   gap: 0.35rem;
   align-items: center;
   margin-top: 0.5rem;
+}
+
+.driver-haystack-tag-copy-feedback {
+  flex-basis: 100%;
+  margin: 0.1rem 0 0;
 }
 
 .driver-haystack-apply {

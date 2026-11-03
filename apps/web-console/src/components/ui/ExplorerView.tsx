@@ -33,9 +33,6 @@ import AutomationRulesListPanel from "../automation/AutomationRulesListPanel";
 import CorrelatorInspector from "../automation/CorrelatorInspector";
 import ProcessProgramInspector from "../automation/ProcessProgramInspector";
 import {
-  isSpecializedEditorObject,
-} from "../../utils/object/editorObject";
-import {
   isTypedCatalogObject,
   opensCatalogChildList,
 } from "../../utils/object/explorerViewRouting";
@@ -111,34 +108,6 @@ export default function ExplorerView({
   const isApplicationObject =
     selectedObject?.type === "APPLICATION"
     && isApplicationObjectPath(selectedPath);
-  const opensInEditor = Boolean(
-    selectedObject
-    && isSpecializedEditorObject(selectedPath, selectedObject.type, selectedObject.templateId),
-  );
-  const hideToolbar =
-    isOperatorAppChild
-    ||     isUsersRoot
-    || isUserObject
-    || isSecurityFolder
-    || isRolesRoot
-    || isRoleObject
-    || isAlertRule
-    || isCorrelator
-    || isProcessProgram
-    || isAlertRulesFolder
-    || isCorrelatorsFolder
-    || isProcessProgramsFolder
-    || isEventFilter
-    || isEventFiltersFolder
-    || isAnalyticsTag
-    || isFederation
-    || isTenants
-    || isCatalogFolder
-    || isPlatformSqlObject
-    || isApplicationObject
-    || isVisualGroup
-    || opensInEditor;
-
   return (
     <div
       className={`explorer-view${isOperatorAppChild ? " explorer-view-operator-app" : ""}`}
@@ -150,12 +119,6 @@ export default function ExplorerView({
           </Button>
         </div>
       )}
-      {!hideToolbar && !opensInEditor && (
-        <div className="explorer-toolbar explorer-toolbar-hint-only">
-          <span className="hint">{t("common:hint.objectPropertiesTabs")}</span>
-        </div>
-      )}
-
       {isOperatorAppChild ? (
         <OperatorAppsPanel canManage={canConfigure} selectedPath={selectedPath} />
       ) : isUsersRoot ? (

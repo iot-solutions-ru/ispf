@@ -20,10 +20,29 @@ describe("validateDriverPointMappingsJson", () => {
     expect(result.issues[0]?.code).toBe("invalid_json");
   });
 
+  it("warns on unknown variable when device has no user variables yet", () => {
+    const result = validateDriverPointMappingsJson(
+      JSON.stringify({ subQueue: "/queue/test" }),
+      ["driverId", "driverPointMappingsJson"],
+      { variablesLoaded: true },
+    );
+    expect(result.issues.some((issue) => issue.code === "unknown_variable")).toBe(true);
+  });
+
+  it("skips unknown variable check until variables list is loaded", () => {
+    const result = validateDriverPointMappingsJson(
+      JSON.stringify({ subQueue: "/queue/test" }),
+      [],
+      { variablesLoaded: false },
+    );
+    expect(result.issues.some((issue) => issue.code === "unknown_variable")).toBe(false);
+  });
+
   it("warns on unknown variable and duplicate address", () => {
     const result = validateDriverPointMappingsJson(
       JSON.stringify({ a: "point-1", b: "point-1" }),
       ["a"],
+      { variablesLoaded: true },
     );
     expect(result.issues.some((issue) => issue.code === "unknown_variable")).toBe(true);
     expect(result.issues.some((issue) => issue.code === "duplicate_address")).toBe(true);
