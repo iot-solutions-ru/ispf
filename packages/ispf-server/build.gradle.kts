@@ -4,7 +4,8 @@ plugins {
 }
 
 // Override Spring Boot BOM pin (4.35.1) so runtime stays >= CEL 0.14 gencode and is current.
-extra["protobuf-java.version"] = "4.36.0"
+// Must match root force + CEL 0.15 gencode (runtime cannot be older than gencode).
+extra["protobuf-java.version"] = "4.36.2"
 // Pin (ADR-0059 registry). Align EmbeddedKafka 4.3.1 with kafka_2.13 (Boot BOM otherwise forces 4.2.1 → CompressionType CNFE).
 extra["kafka.version"] = "4.3.1"
 // Pin (ADR-0059 registry): Boot 4.1.1 manages Tomcat 11.0.24 (CVE-2026-65182/65905/68525); drop when the BOM catches up.

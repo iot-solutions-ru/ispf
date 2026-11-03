@@ -3,6 +3,7 @@ package com.ispf.expression;
 import dev.cel.common.CelAbstractSyntaxTree;
 import dev.cel.common.CelOptions;
 import dev.cel.common.CelValidationException;
+import dev.cel.common.types.MapType;
 import dev.cel.common.types.SimpleType;
 import dev.cel.compiler.CelCompiler;
 import dev.cel.compiler.CelCompilerFactory;
@@ -28,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ExpressionFormalVerifier {
 
-    public static final String ENGINE_ID = "cel-verifier-0.14";
+    public static final String ENGINE_ID = "cel-verifier-0.15";
 
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(2);
 
@@ -42,6 +43,19 @@ public final class ExpressionFormalVerifier {
             .addVar("parent", SimpleType.DYN)
             .addVar("context", SimpleType.DYN)
             .addVar("input", SimpleType.DYN)
+            .build();
+
+    /**
+     * Equivalence checks need a numeric map env: CEL 0.15+ treats {@code dyn} field
+     * compares as underspecified and returns INCONCLUSIVE for flipped inequalities
+     * such as {@code self.x > 10.0} vs {@code 10.0 < self.x}.
+     */
+    private static final CelCompiler EQUIVALENCE_COMPILER = CelCompilerFactory.standardCelCompilerBuilder()
+            .setOptions(CEL_OPTIONS)
+            .addVar("self", MapType.create(SimpleType.STRING, SimpleType.DOUBLE))
+            .addVar("parent", MapType.create(SimpleType.STRING, SimpleType.DOUBLE))
+            .addVar("context", MapType.create(SimpleType.STRING, SimpleType.DOUBLE))
+            .addVar("input", MapType.create(SimpleType.STRING, SimpleType.DOUBLE))
             .build();
 
     private static final ConcurrentHashMap<Long, CelVerifier> VERIFIERS = new ConcurrentHashMap<>();
@@ -128,8 +142,8 @@ public final class ExpressionFormalVerifier {
             );
         }
         try {
-            CelAbstractSyntaxTree astA = COMPILER.compile(ExpressionEngine.normalizeMapIndexSelects(left.trim())).getAst();
-            CelAbstractSyntaxTree astB = COMPILER.compile(ExpressionEngine.normalizeMapIndexSelects(right.trim())).getAst();
+            CelAbstractSyntaxTree astA = EQUIVALENCE_COMPILER.compile(ExpressionEngine.normalizeMapIndexSelects(left.trim())).getAst();
+            CelAbstractSyntaxTree astB = EQUIVALENCE_COMPILER.compile(ExpressionEngine.normalizeMapIndexSelects(right.trim())).getAst();
             CelVerificationResult result = verifier(opts.timeout()).verifyEquivalence(astA, astB);
             List<String> findings = new ArrayList<>();
             List<String> codes = new ArrayList<>();
