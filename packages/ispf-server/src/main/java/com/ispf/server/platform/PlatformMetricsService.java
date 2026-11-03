@@ -8,6 +8,7 @@ import com.ispf.server.config.AiProperties;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.event.EventHistoryRecordCounter;
 import com.ispf.server.event.EventJournalStore;
+import com.ispf.server.object.BindingRuleAsyncExecutor;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -50,6 +51,7 @@ public class PlatformMetricsService {
     private final ApplicationFunctionStore applicationFunctionStore;
     private final PlatformSchedulerService platformSchedulerService;
     private final AutomationMetricsRecorder automationMetricsRecorder;
+    private final BindingRuleAsyncExecutor bindingRuleAsyncExecutor;
     private final Optional<AgentMetricsPort> agentMetricsPort;
     private final AiProperties aiProperties;
 
@@ -70,6 +72,7 @@ public class PlatformMetricsService {
             ApplicationFunctionStore applicationFunctionStore,
             PlatformSchedulerService platformSchedulerService,
             AutomationMetricsRecorder automationMetricsRecorder,
+            BindingRuleAsyncExecutor bindingRuleAsyncExecutor,
             Optional<AgentMetricsPort> agentMetricsPort,
             AiProperties aiProperties
     ) {
@@ -89,6 +92,7 @@ public class PlatformMetricsService {
         this.applicationFunctionStore = applicationFunctionStore;
         this.platformSchedulerService = platformSchedulerService;
         this.automationMetricsRecorder = automationMetricsRecorder;
+        this.bindingRuleAsyncExecutor = bindingRuleAsyncExecutor;
         this.agentMetricsPort = agentMetricsPort != null ? agentMetricsPort : Optional.empty();
         this.aiProperties = aiProperties;
     }
@@ -225,6 +229,8 @@ public class PlatformMetricsService {
         section.put("platformSchedules", platformSchedulerService.countSchedules());
         section.put("platformSchedulesEnabled", platformSchedulerService.countEnabledSchedules());
         section.putAll(automationMetricsRecorder.automationSnapshot());
+        section.put("bindingAsyncRunners", bindingRuleAsyncExecutor.runnerCount());
+        section.put("bindingAsyncDropsTotal", bindingRuleAsyncExecutor.droppedSubmissions());
         return section;
     }
 
