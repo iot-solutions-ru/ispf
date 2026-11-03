@@ -28,6 +28,9 @@ export interface ConfigureDriverPayload {
   driverId: string;
   pollIntervalMs: number;
   configuration: Record<string, string>;
+  /** Legacy flat map (variable → point id). Runtime poll uses these ids. */
   pointMappings: Record<string, string>;
+  /** Full driverPointMappingsJson body (BL-59 extended objects with haystackTags). */
+  pointMappingsJson?: string;
   autoStart?: boolean;
 }

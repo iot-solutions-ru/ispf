@@ -18,7 +18,8 @@ import { formatDriverOptionLabel } from "./driverOptionLabel";
 import DriverWriteForm from "./DriverWriteForm";
 import { driverSupportsWrite } from "../types/drivers";
 import type { VariableDto } from "../types";
-import { validateDriverPointMappingsJson } from "../utils/driverPointMappingValidation";
+import { validateDriverPointMappingsJson, hasDriverMappingErrors } from "../utils/driverPointMappingValidation";
+import { normalizeDriverPointMappingsJson } from "../utils/driverPointMappings";
 import {
   buildHaystackMappingTemplate,
   COMMON_HAYSTACK_MARKER_TAGS,
@@ -268,11 +269,15 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
         t("common:error.invalidJsonLabel", { label: configLabel }),
         t("inspector:driver.invalidJsonObject", { label: configLabel }),
       );
-      const pointMappings = parseJsonObject(
-        mappingsJson,
-        t("common:error.invalidJsonLabel", { label: mappingsLabel }),
-        t("inspector:driver.invalidJsonObject", { label: mappingsLabel }),
-      );
+      if (hasDriverMappingErrors(mappingValidation)) {
+        throw new Error(t("inspector:driver.mappingsValidationFailed"));
+      }
+      let pointMappingsJson: string;
+      try {
+        pointMappingsJson = normalizeDriverPointMappingsJson(mappingsJson);
+      } catch {
+        throw new Error(t("common:error.invalidJsonLabel", { label: mappingsLabel }));
+      }
       if (!driverId.trim()) {
         throw new Error(t("inspector:driver.driverIdRequired"));
       }
@@ -280,7 +285,8 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
         driverId: driverId.trim(),
         pollIntervalMs,
         configuration,
-        pointMappings,
+        pointMappings: mappingValidation.mappings,
+        pointMappingsJson,
         autoStart,
       });
     },

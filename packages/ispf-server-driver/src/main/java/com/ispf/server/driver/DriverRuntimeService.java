@@ -494,6 +494,11 @@ public class DriverRuntimeService implements DriverConnectionLookup {
 
     @Transactional
     public DriverRuntimeStatus configure(String devicePath, DriverBinding binding) {
+        return configure(devicePath, binding, null);
+    }
+
+    @Transactional
+    public DriverRuntimeStatus configure(String devicePath, DriverBinding binding, String pointMappingsJson) {
         String existingDriverId = objects.findByPath(devicePath)
                 .flatMap(node -> stringValue(node, "driverId"))
                 .orElse("");
@@ -503,11 +508,15 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                             + "; cannot switch to " + binding.driverId()
             );
         }
-        persistDriverBinding(devicePath, binding);
+        persistDriverBinding(devicePath, binding, pointMappingsJson);
         return status(devicePath).orElseThrow();
     }
 
     private void persistDriverBinding(String devicePath, DriverBinding binding) {
+        persistDriverBinding(devicePath, binding, null);
+    }
+
+    private void persistDriverBinding(String devicePath, DriverBinding binding, String pointMappingsJson) {
         telemetryPolicyService.invalidateCache(devicePath);
         objects.setSystemVariableValue(
                 devicePath,
@@ -528,12 +537,16 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                             Map.of("value", objectMapper.writeValueAsString(binding.configurationWithPolicy()))
                     )
             );
+            String mappingsStored = pointMappingsJson;
+            if (mappingsStored == null || mappingsStored.isBlank()) {
+                mappingsStored = objectMapper.writeValueAsString(binding.pointMappings());
+            }
             objects.setSystemVariableValue(
                     devicePath,
                     "driverPointMappingsJson",
                     DataRecord.single(
                             STRING_VALUE_SCHEMA,
-                            Map.of("value", objectMapper.writeValueAsString(binding.pointMappings()))
+                            Map.of("value", mappingsStored)
                     )
             );
         } catch (Exception e) {

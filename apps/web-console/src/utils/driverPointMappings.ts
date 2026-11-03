@@ -17,6 +17,19 @@ function extractPointAddress(value: unknown): string {
   return String(value);
 }
 
+/** Canonical JSON string for persisting driverPointMappingsJson (keeps extended mapping objects). */
+export function normalizeDriverPointMappingsJson(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return "{}";
+  }
+  const parsed = JSON.parse(trimmed) as unknown;
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Mappings must be a JSON object");
+  }
+  return JSON.stringify(parsed);
+}
+
 export function parseDriverPointMappings(raw: string): Record<string, string> {
   if (!raw.trim()) {
     return {};
