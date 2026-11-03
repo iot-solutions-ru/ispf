@@ -2,8 +2,8 @@ plugins {
     id("io.spring.dependency-management")
 }
 
-// Keep in sync with ispf-server / root protobuf force (CEL 0.14+ gencode).
-extra["protobuf-java.version"] = "4.36.0"
+// Keep in sync with ispf-server / root protobuf force (CEL 0.15 gencode).
+extra["protobuf-java.version"] = "4.36.2"
 // Keep in sync with ispf-server (ADR-0059 registry): Tomcat CVE fix above the Boot 4.1.1 BOM.
 extra["tomcat.version"] = "11.0.26"
 // Keep in sync with ispf-server (Boot 4 Jackson 2 + Jackson 3 BOM properties).
