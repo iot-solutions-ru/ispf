@@ -542,11 +542,11 @@
   flex-direction: column;
   gap: 0.35rem;
   padding: 0.85rem 1rem;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, var(--widget-bg-start) 0%, var(--widget-bg-end) 100%);
+  background: var(--surface-1);
   overflow: hidden;
-  box-shadow: var(--ui-shadow-surface);
+  box-shadow: none;
 }
 
 .dash-widget-variable-editor {
@@ -1078,9 +1078,9 @@ body.scada-mimic-editor-open {
 .scada-toolbar-logo {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
-  box-shadow: 0 2px 8px rgba(47, 129, 247, 0.35);
+  border-radius: 6px;
+  background: var(--accent);
+  box-shadow: none;
   flex-shrink: 0;
 }
 
@@ -1337,9 +1337,7 @@ body.scada-mimic-editor-open {
   min-height: 0;
   overflow: auto;
   padding: 1rem;
-  background:
-    radial-gradient(circle at 50% 0%, var(--accent-soft) 0%, transparent 55%),
-    var(--bg);
+  background: var(--bg);
 }
 
 /* �� Shared panel chrome �� */
@@ -2062,13 +2060,13 @@ body.scada-mimic-editor-open {
 .dash-indicator-dot.on,
 .dash-indicator-dot.ok {
   background: var(--success);
-  box-shadow: 0 0 12px rgba(63, 185, 80, 0.35);
+  box-shadow: none;
 }
 
 .dash-indicator-dot.off,
 .dash-indicator-dot.alarm {
   background: var(--danger);
-  box-shadow: 0 0 12px rgba(248, 81, 73, 0.45);
+  box-shadow: none;
 }
 
 .dash-indicator-dot.idle {
@@ -2192,13 +2190,9 @@ body.scada-mimic-editor-open {
   position: absolute;
   top: 0.12rem;
   bottom: 0.12rem;
-  border-radius: 999px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent, #2f81f7) 92%, #fff 8%),
-    color-mix(in srgb, var(--accent, #2f81f7) 72%, #000 28%)
-  );
-  box-shadow: 0 1px 4px color-mix(in srgb, var(--accent, #2f81f7) 35%, transparent);
+  border-radius: 4px;
+  background: var(--accent, #2f81f7);
+  box-shadow: none;
   min-width: 4px;
 }
 
@@ -2989,9 +2983,9 @@ body.workflow-bpmn-editor-open {
 .workflow-bpmn-editor-logo {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent) 0%, #0ea5e9 100%);
-  box-shadow: 0 2px 8px rgba(47, 129, 247, 0.35);
+  border-radius: 6px;
+  background: var(--accent);
+  box-shadow: none;
   flex-shrink: 0;
 }
 

@@ -920,8 +920,9 @@ code,
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #2f81f7, #8957e5);
-  font-weight: 700;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
   font-size: 0.75rem;
 }
 
@@ -1000,18 +1001,18 @@ code,
   gap: 1rem;
   flex-shrink: 0;
   padding: 0.65rem 1.25rem;
-  border-bottom: 1px solid #1f6feb55;
-  background: linear-gradient(90deg, #1f6feb22, #8957e522);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background: var(--accent-soft);
 }
 
 .platform-update-banner-error {
-  border-bottom-color: #f8514966;
-  background: linear-gradient(90deg, #f8514922, #da363322);
+  border-bottom-color: color-mix(in srgb, var(--danger) 40%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
 }
 
 .platform-update-banner-busy {
-  border-bottom-color: #d2992266;
-  background: linear-gradient(90deg, #d2992222, #bb800022);
+  border-bottom-color: color-mix(in srgb, var(--warn) 40%, transparent);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
 }
 
 .platform-update-banner-body {
