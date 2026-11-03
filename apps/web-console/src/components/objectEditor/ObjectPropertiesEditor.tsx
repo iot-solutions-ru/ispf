@@ -691,6 +691,7 @@ export default function ObjectPropertiesEditor({
 
   return (
     <div className={`properties-editor inspector${embedded ? " properties-editor-embedded" : ""}`}>
+      <div className="properties-editor-scroll">
       <div className="properties-editor-toolbar">
         {onSelectPath && (
           <div className="breadcrumb">
@@ -835,20 +836,22 @@ export default function ObjectPropertiesEditor({
         <Alert type="error" title={(saveMutation.error as Error).message} showIcon />
       )}
 
-      <div className="tabs-scroll">
-        <nav className="tabs">
-          {tabs.map((tabId) => (
-            <button
-              key={tabId}
-              type="button"
-              className={tab === tabId ? "active" : undefined}
-              aria-current={tab === tabId ? "page" : undefined}
-              onClick={() => setTab(tabId)}
-            >
-              {tabLabel(tabId)}
-            </button>
-          ))}
-        </nav>
+      <div className="properties-editor-tab-strip" role="presentation">
+        <div className="tabs-scroll">
+          <nav className="tabs">
+            {tabs.map((tabId) => (
+              <button
+                key={tabId}
+                type="button"
+                className={tab === tabId ? "active" : undefined}
+                aria-current={tab === tabId ? "page" : undefined}
+                onClick={() => setTab(tabId)}
+              >
+                {tabLabel(tabId)}
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
 
       {tab === "general" && (
@@ -1271,6 +1274,7 @@ export default function ObjectPropertiesEditor({
       {tab === "history" && (
         <ObjectChangeHistoryPanel objectPath={path} compact scrollMaxHeight={420} />
       )}
+      </div>
 
       {copySource && (
         <CopyVariableDialog
