@@ -34,7 +34,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Component
 public class ObjectWebSocketHandler extends TextWebSocketHandler {
@@ -42,13 +44,15 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     private static final Logger log = LoggerFactory.getLogger(ObjectWebSocketHandler.class);
     private static final String SUBSCRIBE_ATTR = "subscribedInterest";
     static final String LAST_SEND_FAILURE_ATTR = "lastObjectChangeSendFailure";
+    static final String SEND_QUEUE_OVERFLOW_ATTR = "objectChangeSendQueueOverflow";
 
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
     /** Reverse index: subscribed path → sessions interested in that path (path-wide or any variables). */
     private final ConcurrentHashMap<String, Set<WebSocketSession>> pathSubscriptions = new ConcurrentHashMap<>();
     private final WebSocketProperties webSocketProperties;
-    private final ConcurrentLinkedQueue<Runnable> pendingSends = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<PendingSend> pendingSends = new ConcurrentLinkedQueue<>();
     private final AtomicInteger pendingSendCount = new AtomicInteger();
+    private final AtomicInteger droppedSendCount = new AtomicInteger();
     private final AtomicInteger sendFailureCount = new AtomicInteger();
     private final ConcurrentLinkedQueue<Map<String, Object>> recentSendFailures = new ConcurrentLinkedQueue<>();
     private ElasticWorkerLauncher sendWorkers;
@@ -98,15 +102,11 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     }
 
     private boolean drainOneSend() {
-        Runnable task = pendingSends.poll();
-        if (task == null) {
+        PendingSend item = pendingSends.poll();
+        if (item == null) {
             return false;
         }
-        try {
-            task.run();
-        } finally {
-            pendingSendCount.decrementAndGet();
-        }
+        deliver(item);
         return true;
     }
 
@@ -115,10 +115,9 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         if (sendWorkers != null) {
             sendWorkers.close();
         }
-        Runnable task;
-        while ((task = pendingSends.poll()) != null) {
-            pendingSendCount.decrementAndGet();
-            task.run();
+        PendingSend item;
+        while ((item = pendingSends.poll()) != null) {
+            deliver(item);
         }
     }
 
@@ -131,6 +130,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session);
+        discardPending(session);
         removeSessionFromIndex(session);
         Object username = session.getAttributes().get("username");
         Object path = session.getAttributes().get("presencePath");
@@ -334,6 +334,14 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         return sendFailureCount.get();
     }
 
+    public int pendingSendDepth() {
+        return Math.max(0, pendingSendCount.get());
+    }
+
+    public int droppedSendCount() {
+        return droppedSendCount.get();
+    }
+
     public List<Map<String, Object>> sessionDeliveryErrors() {
         return List.copyOf(recentSendFailures);
     }
@@ -389,26 +397,98 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void enqueueSend(WebSocketSession session, String path, TextMessage payload, int attempt) {
-        pendingSendCount.incrementAndGet();
-        pendingSends.offer(() -> {
-            try {
-                if (!session.isOpen()) {
-                    return;
-                }
-                synchronized (session) {
-                    if (session.isOpen()) {
-                        session.sendMessage(payload);
-                    }
-                }
-            } catch (Exception e) {
-                if (attempt == 0 && session.isOpen()) {
-                    enqueueSend(session, path, payload, 1);
-                    return;
-                }
-                recordSendFailure(session, path, e);
+        if (session == null || !session.isOpen() || payload == null) {
+            return;
+        }
+        int max = webSocketProperties.getPendingSendMax();
+        while (true) {
+            int current = pendingSendCount.get();
+            if (current >= max) {
+                dropOverflow(session, path);
+                return;
             }
-        });
+            if (pendingSendCount.compareAndSet(current, current + 1)) {
+                break;
+            }
+        }
+        pendingSends.offer(new PendingSend(session, path, payload, attempt));
         sendWorkers.signalWork();
+    }
+
+    private void deliver(PendingSend item) {
+        boolean stillQueued = item.queued.compareAndSet(true, false);
+        if (stillQueued) {
+            pendingSendCount.decrementAndGet();
+        }
+        TextMessage payload = item.payload.getAndSet(null);
+        if (!stillQueued || payload == null || item.session == null || !item.session.isOpen()) {
+            return;
+        }
+        try {
+            synchronized (item.session) {
+                if (item.session.isOpen()) {
+                    item.session.sendMessage(payload);
+                }
+            }
+        } catch (Exception e) {
+            if (item.attempt == 0 && item.session.isOpen()) {
+                enqueueSend(item.session, item.path, payload, 1);
+                return;
+            }
+            recordSendFailure(item.session, item.path, e);
+        }
+    }
+
+    private void dropOverflow(WebSocketSession session, String path) {
+        droppedSendCount.incrementAndGet();
+        if (session.getAttributes().putIfAbsent(SEND_QUEUE_OVERFLOW_ATTR, Boolean.TRUE) != null) {
+            return;
+        }
+        log.warn(
+                "Closing websocket session {} — object-change send queue at capacity {} (path {})",
+                session.getId(),
+                webSocketProperties.getPendingSendMax(),
+                path
+        );
+        discardPending(session);
+        try {
+            session.close(CloseStatus.SERVICE_OVERLOAD);
+        } catch (Exception ex) {
+            log.debug("Websocket session {} close after send-queue overflow failed: {}", session.getId(), ex.toString());
+        }
+    }
+
+    private void discardPending(WebSocketSession session) {
+        if (session == null) {
+            return;
+        }
+        for (PendingSend item : pendingSends) {
+            if (item.session != session) {
+                continue;
+            }
+            item.payload.set(null);
+            if (item.queued.compareAndSet(true, false)) {
+                pendingSendCount.decrementAndGet();
+            }
+        }
+        if (sendWorkers != null) {
+            sendWorkers.signalWork();
+        }
+    }
+
+    private static final class PendingSend {
+        private final WebSocketSession session;
+        private final String path;
+        private final AtomicReference<TextMessage> payload;
+        private final int attempt;
+        private final AtomicBoolean queued = new AtomicBoolean(true);
+
+        private PendingSend(WebSocketSession session, String path, TextMessage payload, int attempt) {
+            this.session = session;
+            this.path = path;
+            this.payload = new AtomicReference<>(payload);
+            this.attempt = attempt;
+        }
     }
 
     private void recordSendFailure(WebSocketSession session, String path, Exception error) {

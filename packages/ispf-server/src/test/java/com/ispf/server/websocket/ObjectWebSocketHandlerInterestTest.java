@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import tools.jackson.databind.ObjectMapper;
@@ -22,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -225,6 +228,46 @@ class ObjectWebSocketHandlerInterestTest {
                 });
     }
 
+    @Test
+    void sendQueueDropsPastCapacityAndReleasesPayloadOnClose() throws Exception {
+        WebSocketProperties properties = new WebSocketProperties();
+        properties.setSendElasticEnabled(false);
+        properties.setSendThreads(1);
+        properties.setPendingSendMax(2);
+        ObjectWebSocketHandler capped = new ObjectWebSocketHandler(
+                properties,
+                new ObjectMapper(),
+                mock(FederationSubscribePollService.class),
+                mock(ObjectPresenceService.class),
+                mock(ObjectManager.class),
+                mock(ApplicationEventCatalogService.class),
+                new ObjectWebSocketPathInterestRegistry(),
+                new NoOpClusterPathInterestStore(),
+                objectAccessService,
+                variableMemberAccessService
+        );
+        capped.startSendWorkers();
+        BlockingSession session = new BlockingSession("s-cap");
+        try {
+            capped.afterConnectionEstablished(session);
+            capped.handleTextMessage(session, new TextMessage(
+                    "{\"type\":\"subscribe\",\"paths\":[\"root.devices.queuecap\"]}"
+            ));
+            capped.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.queuecap", "speed"));
+            assertThat(session.entered.await(2, TimeUnit.SECONDS)).isTrue();
+            for (int i = 0; i < 20; i++) {
+                capped.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.queuecap", "speed"));
+                assertThat(capped.pendingSendDepth()).isLessThanOrEqualTo(2);
+            }
+            assertThat(capped.droppedSendCount()).isGreaterThan(0);
+            capped.afterConnectionClosed(session, CloseStatus.SERVICE_OVERLOAD);
+            assertThat(capped.pendingSendDepth()).isZero();
+        } finally {
+            session.release.countDown();
+            capped.shutdownSendWorkers();
+        }
+    }
+
     private static UsernamePasswordAuthenticationToken authentication(String role) {
         return new UsernamePasswordAuthenticationToken(
                 "ws-user",
@@ -288,6 +331,64 @@ class ObjectWebSocketHandlerInterestTest {
             }
             if (message instanceof TextMessage text) {
                 messages.add(text.getPayload());
+            }
+        }
+
+        @Override
+        public Map<String, Object> getAttributes() {
+            return attributes;
+        }
+
+        @Override public java.net.URI getUri() { return null; }
+        @Override public org.springframework.http.HttpHeaders getHandshakeHeaders() {
+            return new org.springframework.http.HttpHeaders();
+        }
+        @Override public java.security.Principal getPrincipal() { return null; }
+        @Override public java.net.InetSocketAddress getLocalAddress() { return null; }
+        @Override public java.net.InetSocketAddress getRemoteAddress() { return null; }
+        @Override public String getAcceptedProtocol() { return null; }
+        @Override public void setTextMessageSizeLimit(int messageSizeLimit) { }
+        @Override public int getTextMessageSizeLimit() { return 0; }
+        @Override public void setBinaryMessageSizeLimit(int messageSizeLimit) { }
+        @Override public int getBinaryMessageSizeLimit() { return 0; }
+        @Override public List<org.springframework.web.socket.WebSocketExtension> getExtensions() {
+            return List.of();
+        }
+        @Override public void close() { open = false; }
+        @Override public void close(org.springframework.web.socket.CloseStatus status) { open = false; }
+    }
+
+    private static final class BlockingSession implements WebSocketSession {
+        private final String id;
+        private final Map<String, Object> attributes = new HashMap<>();
+        private final CountDownLatch entered = new CountDownLatch(1);
+        private final CountDownLatch release = new CountDownLatch(1);
+        private boolean open = true;
+
+        private BlockingSession(String id) {
+            this.id = id;
+        }
+
+        @Override
+        public String getId() {
+            return id;
+        }
+
+        @Override
+        public boolean isOpen() {
+            return open;
+        }
+
+        @Override
+        public void sendMessage(org.springframework.web.socket.WebSocketMessage<?> message) throws java.io.IOException {
+            entered.countDown();
+            try {
+                if (!release.await(5, TimeUnit.SECONDS)) {
+                    throw new java.io.IOException("send blocked");
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new java.io.IOException("send interrupted", ex);
             }
         }
 

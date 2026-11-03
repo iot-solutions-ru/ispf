@@ -22,6 +22,12 @@ public class WebSocketProperties {
     private int sendScaleCheckIntervalMs = 200;
 
     /**
+     * Cap on queued object-change frames waiting for a websocket send.
+     * A session that falls behind is closed and its queued payloads are dropped.
+     */
+    private int pendingSendMax = 10_000;
+
+    /**
      * Comma-separated origin patterns for {@code /ws/**} (Spring allowedOriginPatterns syntax).
      * Default is localhost-only; {@code application-local.yml} / {@code application-test.yml} use {@code *}.
      * Internet-facing deployments should set an explicit host list (or activate {@code prod} profile).
@@ -83,6 +89,14 @@ public class WebSocketProperties {
 
     public void setSendScaleCheckIntervalMs(int sendScaleCheckIntervalMs) {
         this.sendScaleCheckIntervalMs = Math.max(50, sendScaleCheckIntervalMs);
+    }
+
+    public int getPendingSendMax() {
+        return pendingSendMax <= 0 ? 10_000 : pendingSendMax;
+    }
+
+    public void setPendingSendMax(int pendingSendMax) {
+        this.pendingSendMax = pendingSendMax;
     }
 
     public String getAllowedOriginPatterns() {
