@@ -6,8 +6,8 @@ plugins {
 // Override Spring Boot BOM pin (4.35.1) so runtime stays >= CEL 0.14 gencode and is current.
 // Must match root force + CEL 0.15 gencode (runtime cannot be older than gencode).
 extra["protobuf-java.version"] = "4.36.2"
-// Pin (ADR-0059 registry). Align EmbeddedKafka 4.3.1 with kafka_2.13 (Boot BOM otherwise forces 4.2.1 → CompressionType CNFE).
-extra["kafka.version"] = "4.3.1"
+// Pin (ADR-0059 registry). Align EmbeddedKafka with kafka_2.13 (Boot BOM otherwise forces older clients → CompressionType CNFE).
+extra["kafka.version"] = "4.4.0"
 // Pin (ADR-0059 registry): Boot 4.1.1 manages Tomcat 11.0.24 (CVE-2026-65182/65905/68525); drop when the BOM catches up.
 extra["tomcat.version"] = "11.0.26"
 // Boot 4 splits Jackson: jackson-2-bom = com.fasterxml 2.x, jackson-bom = tools.jackson 3.x.
@@ -88,10 +88,10 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.mockito:mockito-core")
     // Embedded Kafka for BL-142 KafkaDriverRuntimeIntegrationTest (matches ispf-driver-kafka).
-    // Keep 4.3.1 with extra["kafka.version"]; embedded-kafka 4.4.0 fails classpath (CNFE) in CI.
-    testImplementation("org.apache.kafka:kafka-clients:4.3.1")
-    testImplementation("io.github.embeddedkafka:embedded-kafka_2.13:4.3.1")
-    testRuntimeOnly("org.scala-lang:scala-library:3.10.0")
+    // Keep in lockstep with extra["kafka.version"] and ispf-driver-kafka clients.
+    testImplementation("org.apache.kafka:kafka-clients:4.4.0")
+    testImplementation("io.github.embeddedkafka:embedded-kafka_2.13:4.4.0")
+    testRuntimeOnly("org.scala-lang:scala-library:2.13.18")
     // Moquette + Paho for BL-142 MqttDriverRuntimeIntegrationTest (matches ispf-driver-mqtt).
     // Pin (ADR-0059 registry): Moquette declares Netty 4.1.x; lift to the patched 4.2 line.
     testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.19.Final"))
