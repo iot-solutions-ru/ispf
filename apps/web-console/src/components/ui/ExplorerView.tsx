@@ -20,11 +20,8 @@ import {
   isCorrelatorPath,
   isCorrelatorsRoot,
 } from "../../utils/automation/automationPath";
-import {
-  isProcessProgramPath,
-  isProcessProgramsRoot,
-} from "../../utils/automation/processProgramPath";
-import { isEventFilterPath, isEventFiltersRoot } from "../../utils/automation/eventFilterPath";
+import { isProcessProgramPath } from "../../utils/automation/processProgramPath";
+import { isEventFilterPath } from "../../utils/automation/eventFilterPath";
 import { isAnalyticsTagDevice } from "../../utils/analytics/analyticsPath";
 import AlertRuleInspector from "../automation/AlertRuleInspector";
 import EventFilterInspector from "../automation/EventFilterInspector";
@@ -96,9 +93,7 @@ export default function ExplorerView({
   const isProcessProgram = isTypedCatalogObject(objectType, isProcessProgramPath(selectedPath));
   const isAlertRulesFolder = isAlertRulesRoot(selectedPath);
   const isCorrelatorsFolder = isCorrelatorsRoot(selectedPath);
-  const isProcessProgramsFolder = isProcessProgramsRoot(selectedPath);
   const isEventFilter = isTypedCatalogObject(objectType, isEventFilterPath(selectedPath));
-  const isEventFiltersFolder = isEventFiltersRoot(selectedPath);
   const isAnalyticsTag = !isVisualGroup && isAnalyticsTagDevice(selectedObject);
   const isFederation = isFederationRoot(selectedPath);
   const isTenants = isTenantsRoot(selectedPath);
