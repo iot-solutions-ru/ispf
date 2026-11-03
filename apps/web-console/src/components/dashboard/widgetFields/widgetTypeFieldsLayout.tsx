@@ -299,7 +299,7 @@ function breadcrumbsFields(ctx: WidgetFieldContextFor<"breadcrumbs">, t: TFuncti
       <label>
         <WidgetEditorCaption text={t("editor.field.separator")} />
         <input
-          value={widget.separator ?? " / "}
+          value={widget.separator ?? "."}
           onChange={(e) => update({ separator: e.target.value })}
         />
       </label>
