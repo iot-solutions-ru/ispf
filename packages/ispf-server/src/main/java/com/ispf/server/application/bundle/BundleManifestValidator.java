@@ -289,10 +289,17 @@ public class BundleManifestValidator {
                 builder.addError("function " + label + ": source.body is required");
                 continue;
             }
-            try {
-                scriptValidator.validate(function.source().body());
-            } catch (Exception ex) {
-                builder.addError("function " + label + ": " + ex.getMessage());
+            String sourceType = function.source().type() == null
+                    ? ""
+                    : function.source().type().trim().toLowerCase(Locale.ROOT);
+            // Only JSON script bodies are validated here. Java / pulse / expression bodies
+            // are compiled or checked on object-tree upsert (see ObjectVariableService).
+            if (sourceType.isEmpty() || "script".equals(sourceType)) {
+                try {
+                    scriptValidator.validate(function.source().body());
+                } catch (Exception ex) {
+                    builder.addError("function " + label + ": " + ex.getMessage());
+                }
             }
         }
     }
