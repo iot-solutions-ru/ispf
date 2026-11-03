@@ -261,6 +261,8 @@
   "driver.mappingsTestReadPoint": "Точка для теста",
   "driver.mappingsTestReadPointOk": "Poll выполнен для {{pointId}}",
   "driver.mappingsValidationFailed": "Исправьте ошибки mappings перед сохранением",
+  "driver.mappingIssue.unknownVariable": "Переменная «{{key}}» не объявлена на этом устройстве",
+  "driver.mappingIssue.unknownVariableDetail": "Ключ в driverPointMappingsJson должен совпадать с именем переменной на объекте DEVICE (вкладка Variables / чертёж). Сохранение драйвера переменную не создаёт. После успешного poll или write движок может добавить переменную только в RAM — предупреждение тогда исчезнет, но в модели переменной может не быть до явного создания или импорта точек из каталога/MIB.",
   "driver.noDriverId": "У устройства не задан driverId. Примените blueprint (например snmp-agent-v1) или заполните форму ниже и нажмите «Сохранить и старт».",
   "driver.pollInterval": "Интервал опроса",
   "driver.pollIntervalMs": "Интервал опроса (мс)",

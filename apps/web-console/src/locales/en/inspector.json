@@ -334,6 +334,8 @@
   "driver.mib.applyToDevice": "Create {{count}} variable(s) on this device",
   "driver.mib.importOk": "Created {{vars}} variable(s), updated {{mappings}} mapping(s)",
   "driver.mappingsValidationFailed": "Fix point mapping errors before saving",
+  "driver.mappingIssue.unknownVariable": "Variable \"{{key}}\" is not declared on this device",
+  "driver.mappingIssue.unknownVariableDetail": "Each mapping key must match a variable on the DEVICE object (Variables tab or blueprint). Saving the driver does not create variables. After a successful poll or write the runtime may add the variable in RAM only — the warning may disappear, but the variable is not in the model until you create it explicitly or import points from the driver catalog/MIB.",
   "driver.mappingsTestRead": "Test read (poll)",
   "driver.mappingsTestReadAll": "All mapped points",
   "driver.mappingsTestReadPoint": "Test read point",

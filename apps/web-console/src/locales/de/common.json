@@ -79,7 +79,6 @@
   "hint.doubleClickEditor": "Doppelklicken Sie auf einen Baumknoten, um den Editor zu öffnen",
   "hint.modelFullDefinition": "Die vollständige Blueprint-Definition befindet sich im Editor (Schaltfläche oben oder Doppelklick).",
   "hint.objectPropertiesPanel": "Variablen, Funktionen, Bindings und Metadaten bearbeiten Sie im Eigenschaftenbereich unten.",
-  "hint.objectPropertiesTabs": "Wechseln Sie über die Registerkarten unten zwischen Variablen, Funktionen, Bindings und weiteren Einstellungen.",
   "hint.openEditorButton": "Editor – Doppelklick in der Baumstruktur oder „Im Editor öffnen“",
   "logLevel.critical": "CRITICAL",
   "logLevel.debug": "DEBUG",

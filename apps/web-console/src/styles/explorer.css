@@ -1009,7 +1009,7 @@
   flex-direction: column;
 }
 
-/* Scroll lives in .properties-editor-scroll; only the tab strip is sticky. */
+/* Scroll lives in .properties-editor-scroll; toolbar + tab strip stick together. */
 .main.explorer-main:has(.properties-editor.inspector),
 .main.editor-main:has(.properties-editor.inspector) {
   overflow: hidden;
@@ -1068,14 +1068,26 @@
   flex-shrink: 0;
 }
 
-.properties-editor.inspector .properties-editor-tab-strip {
+.properties-editor.inspector .properties-editor-sticky-chrome {
   position: sticky;
   top: 0;
   z-index: 3;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   background: var(--bg);
   padding-bottom: 0.1rem;
   box-shadow: 0 1px 0 var(--border);
+}
+
+.properties-editor.inspector .properties-editor-sticky-chrome .properties-editor-toolbar {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 1px solid var(--border);
+  padding: 0.4rem 0.75rem;
+  background: var(--bg);
 }
 
 .properties-editor.inspector .properties-editor-tab-strip .tabs {

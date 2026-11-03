@@ -16,6 +16,29 @@ export type DriverMappingValidationResult = {
   issues: DriverMappingValidationIssue[];
 };
 
+export type DriverMappingValidationOptions = {
+  /** When true, mapping keys are checked against variables on the device object. */
+  variablesLoaded?: boolean;
+};
+
+/** i18n keys for mapping issues shown in DeviceDriverPanel (inspector namespace). */
+export function driverMappingIssueI18n(issue: DriverMappingValidationIssue): {
+  messageKey: string;
+  messageParams?: Record<string, string>;
+  detailKey?: string;
+} | null {
+  switch (issue.code) {
+    case "unknown_variable":
+      return {
+        messageKey: "driver.mappingIssue.unknownVariable",
+        messageParams: { key: issue.key ?? "?" },
+        detailKey: "driver.mappingIssue.unknownVariableDetail",
+      };
+    default:
+      return null;
+  }
+}
+
 const DRIVER_SYSTEM_VARIABLES = new Set([
   "driverId",
   "driverPollIntervalMs",
@@ -49,6 +72,7 @@ function extractPointAddress(value: unknown): string {
 export function validateDriverPointMappingsJson(
   raw: string,
   deviceVariableNames: string[] = [],
+  options: DriverMappingValidationOptions = {},
 ): DriverMappingValidationResult {
   const issues: DriverMappingValidationIssue[] = [];
   const trimmed = raw.trim();
@@ -80,6 +104,7 @@ export function validateDriverPointMappingsJson(
   const knownVariables = new Set(
     deviceVariableNames.filter((name) => !name.startsWith("@") && !DRIVER_SYSTEM_VARIABLES.has(name)),
   );
+  const variablesLoaded = options.variablesLoaded ?? false;
   const mappings: Record<string, string> = {};
   const addressToKeys = new Map<string, string[]>();
 
@@ -116,7 +141,7 @@ export function validateDriverPointMappingsJson(
     keysForAddress.push(key);
     addressToKeys.set(address, keysForAddress);
 
-    if (knownVariables.size > 0 && !knownVariables.has(key)) {
+    if (variablesLoaded && !knownVariables.has(key)) {
       issues.push({
         level: "warning",
         code: "unknown_variable",
