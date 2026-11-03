@@ -920,8 +920,9 @@ code,
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #2f81f7, #8957e5);
-  font-weight: 700;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
   font-size: 0.75rem;
 }
 
