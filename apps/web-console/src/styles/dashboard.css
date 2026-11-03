@@ -2729,6 +2729,92 @@ body.scada-mimic-editor-open {
   flex-shrink: 0;
 }
 
+.widget-editor-chart-points {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  align-self: stretch;
+  grid-column: 1 / -1;
+}
+
+.widget-editor-chart-point-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 100%;
+  min-width: 0;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+  grid-column: 1 / -1;
+}
+
+.widget-editor-chart-point-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.55rem 0.65rem;
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+}
+
+.widget-editor-chart-point-line--action {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+
+.widget-editor-chart-point-line--end {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.widget-editor-chart-point-line > :only-child {
+  grid-column: 1 / -1;
+}
+
+.widget-editor-chart-point-block label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  min-width: 0;
+}
+
+.widget-editor-chart-point-block .field-caption {
+  min-height: 0;
+  line-height: 1.3;
+  white-space: normal;
+}
+
+.widget-editor-chart-point-block .field-controls {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.28rem;
+}
+
+.widget-editor-chart-point-block input,
+.widget-editor-chart-point-block select {
+  width: 100%;
+  min-width: 0;
+  font-size: 0.82rem;
+}
+
+.widget-editor-chart-point-remove {
+  align-self: end;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .widget-editor-chart-point-line,
+  .widget-editor-chart-point-line--action,
+  .widget-editor-chart-point-line--end {
+    grid-template-columns: 1fr;
+  }
+}
+
 .widget-editor-table-head {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr auto;

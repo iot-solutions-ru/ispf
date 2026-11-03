@@ -15,8 +15,11 @@ import com.ispf.server.persistence.VariableSampleRepository;
 import com.ispf.server.persistence.entity.ObjectVariableEntity;
 import com.ispf.server.persistence.entity.VariableSampleEntity;
 import com.ispf.server.object.CoalescedTelemetryUpdate;
+import com.ispf.server.object.ObjectChangeEvent;
+import com.ispf.server.object.ObjectChangeType;
 import com.ispf.server.platform.analytics.engine.AnalyticsOnChangeTrigger;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -101,6 +104,44 @@ public class VariableHistoryService {
         this.queryMetricsRecorder = queryMetricsRecorder;
         this.analyticsOnChangeTrigger = analyticsOnChangeTrigger;
         this.rollupQueryService = rollupQueryService;
+    }
+
+    @EventListener
+    public void onObjectChange(ObjectChangeEvent event) {
+        if (event == null || event.path() == null || event.path().isBlank()) {
+            return;
+        }
+        if (event.type() == ObjectChangeType.DELETED) {
+            forgetPath(event.path());
+        }
+    }
+
+    void forgetPath(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            return;
+        }
+        String prefix = objectPath + "|";
+        String descendant = objectPath + ".";
+        lastSampleMs.keySet().removeIf(key -> keyBelongsToPath(key, objectPath, prefix, descendant));
+        historizedCache.keySet().removeIf(key -> keyBelongsToPath(key, objectPath, prefix, descendant));
+        lastHistorizedRecord.keySet().removeIf(key -> keyBelongsToPath(key, objectPath, prefix, descendant));
+    }
+
+    void forgetVariable(String objectPath, String variableName) {
+        if (objectPath == null || variableName == null) {
+            return;
+        }
+        String historizedKey = objectPath + "|" + variableName;
+        String samplePrefix = historizedKey + "|";
+        lastSampleMs.keySet().removeIf(key -> key.equals(historizedKey) || key.startsWith(samplePrefix));
+        historizedCache.remove(historizedKey);
+        lastHistorizedRecord.remove(historizedKey);
+    }
+
+    private static boolean keyBelongsToPath(String key, String objectPath, String prefix, String descendant) {
+        return key.equals(objectPath)
+                || key.startsWith(prefix)
+                || key.startsWith(descendant);
     }
 
     public void recordVariableUpdate(String objectPath, String variableName) {
@@ -763,12 +804,25 @@ public class VariableHistoryService {
         if (cached != null && nowMs - cached.loadedAtMs() < HISTORIZED_CACHE_TTL_MS) {
             return cached.enabled();
         }
+        boolean present = objectManager.tree().findByPath(objectPath)
+                .map(node -> node.getVariable(variableName).isPresent())
+                .orElse(false);
+        if (!present) {
+            forgetVariable(objectPath, variableName);
+            historizedCache.put(cacheKey, new HistorizedCacheEntry(false, nowMs));
+            return false;
+        }
         boolean enabled = objectManager.require(objectPath)
                 .getVariable(variableName)
                 .map(Variable::historyEnabled)
                 .orElse(false);
         historizedCache.put(cacheKey, new HistorizedCacheEntry(enabled, nowMs));
+        pruneExpiredHistorizedCache(nowMs);
         return enabled;
+    }
+
+    private void pruneExpiredHistorizedCache(long nowMs) {
+        historizedCache.entrySet().removeIf(entry -> nowMs - entry.getValue().loadedAtMs() >= HISTORIZED_CACHE_TTL_MS);
     }
 
     private record HistorizedCacheEntry(boolean enabled, long loadedAtMs) {}

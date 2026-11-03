@@ -7,6 +7,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.datasource.DataSourceSqlSession;
+import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
@@ -20,6 +21,7 @@ import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,17 +39,20 @@ public class MigrationObjectService {
     private final SystemObjectStructureService structureService;
     private final DataSourceSqlSession dataSourceSqlSession;
     private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
+    private final ApplicationDataStore applicationDataStore;
 
     public MigrationObjectService(
             ObjectManager objectManager,
             SystemObjectStructureService structureService,
             DataSourceSqlSession dataSourceSqlSession,
-            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard,
+            ApplicationDataStore applicationDataStore
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
         this.dataSourceSqlSession = dataSourceSqlSession;
         this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
+        this.applicationDataStore = applicationDataStore;
     }
 
     @Transactional
@@ -81,10 +86,21 @@ public class MigrationObjectService {
     /**
      * Apply pending migrations matching {@code version} and, when provided, {@code dataSourcePath}.
      * Without a data-source filter, all platform migrations for the version run (legacy behaviour).
+     * Order is the object-tree child order.
      */
     @Transactional
     public List<String> applyPending(String version, String dataSourcePath) {
-        List<String> applied = new ArrayList<>();
+        return applyPending(version, dataSourcePath, List.of());
+    }
+
+    /**
+     * Same filter as {@link #applyPending(String, String)}. When {@code scriptIdsInOrder} is
+     * non-empty, those ids run first in that order (bundle manifest order). Any other pending
+     * migration for the same filter follows in tree order. Tree child order is not the apply order.
+     */
+    @Transactional
+    public List<String> applyPending(String version, String dataSourcePath, List<String> scriptIdsInOrder) {
+        List<MigrationDefinition> pending = new ArrayList<>();
         for (MigrationDefinition migration : listAll()) {
             if (!matchesPendingFilter(migration, version, dataSourcePath)) {
                 continue;
@@ -92,10 +108,49 @@ public class MigrationObjectService {
             if (isApplied(migration)) {
                 continue;
             }
+            pending.add(migration);
+        }
+        List<String> applied = new ArrayList<>();
+        for (MigrationDefinition migration : orderForApply(pending, scriptIdsInOrder)) {
             applyOne(migration);
             applied.add(migration.scriptId());
         }
         return applied;
+    }
+
+    /**
+     * Manifest ids first, in the given order. Remaining pending scripts keep their incoming order.
+     * An empty order list leaves the incoming order unchanged.
+     */
+    static List<MigrationDefinition> orderForApply(
+            List<MigrationDefinition> pending,
+            List<String> scriptIdsInOrder
+    ) {
+        if (pending == null || pending.isEmpty()) {
+            return List.of();
+        }
+        if (scriptIdsInOrder == null || scriptIdsInOrder.isEmpty()) {
+            return List.copyOf(pending);
+        }
+        Map<String, MigrationDefinition> byId = new LinkedHashMap<>();
+        for (MigrationDefinition migration : pending) {
+            if (migration == null || migration.scriptId() == null || migration.scriptId().isBlank()) {
+                continue;
+            }
+            byId.putIfAbsent(migration.scriptId(), migration);
+        }
+        List<MigrationDefinition> ordered = new ArrayList<>();
+        for (String scriptId : scriptIdsInOrder) {
+            if (scriptId == null || scriptId.isBlank()) {
+                continue;
+            }
+            MigrationDefinition migration = byId.remove(scriptId);
+            if (migration != null) {
+                ordered.add(migration);
+            }
+        }
+        ordered.addAll(byId.values());
+        return ordered;
     }
 
     static boolean matchesPendingFilter(MigrationDefinition migration, String version, String dataSourcePath) {
@@ -169,6 +224,18 @@ public class MigrationObjectService {
         });
         setString(migration.path(), "checksum", checksum);
         setString(migration.path(), "appliedAt", Instant.now().toString());
+        recordAppliedMigration(migration);
+    }
+
+    void recordAppliedMigration(MigrationDefinition migration) {
+        String appId = appIdFromDataSourcePath(migration.dataSourcePath());
+        if (appId == null || applicationDataStore.findApp(appId).isEmpty()) {
+            return;
+        }
+        if (applicationDataStore.isMigrationApplied(appId, migration.version(), migration.scriptId())) {
+            return;
+        }
+        applicationDataStore.recordMigration(appId, migration.version(), migration.scriptId(), migration.sql());
     }
 
     private MigrationDefinition requireDefinition(String path) {
@@ -193,12 +260,26 @@ public class MigrationObjectService {
     }
 
     private boolean isApplied(MigrationDefinition migration) {
+        String appId = appIdFromDataSourcePath(migration.dataSourcePath());
+        if (appId != null
+                && applicationDataStore.isMigrationApplied(appId, migration.version(), migration.scriptId())) {
+            return true;
+        }
         PlatformObject node = objectManager.require(migration.path());
         String stored = readString(node, "checksum").orElse("");
         if (stored.isBlank()) {
             return false;
         }
         return stored.equals(checksum(migration.sql()));
+    }
+
+    static String appIdFromDataSourcePath(String dataSourcePath) {
+        if (dataSourcePath == null || dataSourcePath.isBlank()) {
+            return null;
+        }
+        int lastDot = dataSourcePath.lastIndexOf('.');
+        String node = lastDot < 0 ? dataSourcePath : dataSourcePath.substring(lastDot + 1);
+        return node.isBlank() ? null : node;
     }
 
     private List<MigrationDefinition> listAll() {

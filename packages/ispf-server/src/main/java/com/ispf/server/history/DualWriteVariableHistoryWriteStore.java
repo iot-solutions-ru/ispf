@@ -1,14 +1,13 @@
 package com.ispf.server.history;
 
 import com.ispf.server.platform.AutomationMetricsRecorder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * BL-116: PostgreSQL/Timescale primary, then ClickHouse secondary. A secondary failure is an error of that history write.
@@ -23,16 +22,27 @@ public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteS
     private final JdbcVariableHistoryWriteStore primary;
     private final ClickHouseVariableHistorySecondaryWriteStore secondary;
     private final AutomationMetricsRecorder metrics;
-    private final Set<String> primaryAheadOfSecondary = ConcurrentHashMap.newKeySet();
+    private final HistorianAheadSet primaryAheadOfSecondary;
 
+    @Autowired
     public DualWriteVariableHistoryWriteStore(
             JdbcVariableHistoryWriteStore primary,
             ClickHouseVariableHistorySecondaryWriteStore secondary,
             AutomationMetricsRecorder metrics
     ) {
+        this(primary, secondary, metrics, HistorianAheadSet.DEFAULT_MAX_KEYS);
+    }
+
+    DualWriteVariableHistoryWriteStore(
+            JdbcVariableHistoryWriteStore primary,
+            ClickHouseVariableHistorySecondaryWriteStore secondary,
+            AutomationMetricsRecorder metrics,
+            int maxAheadKeys
+    ) {
         this.primary = primary;
         this.secondary = secondary;
         this.metrics = metrics;
+        this.primaryAheadOfSecondary = new HistorianAheadSet(maxAheadKeys);
     }
 
     @Override
@@ -68,6 +78,10 @@ public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteS
         for (VariableHistoryWriteRecord record : missingOnPrimary) {
             primaryAheadOfSecondary.add(primaryKey(record));
         }
+    }
+
+    int aheadSize() {
+        return primaryAheadOfSecondary.size();
     }
 
     private void appendSecondary(List<VariableHistoryWriteRecord> records) {

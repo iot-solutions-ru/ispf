@@ -53,6 +53,20 @@ class ApplicationBundleDeployServiceHonestyTest {
     }
 
     @Test
+    void missingDataSourceIsNotSuccessfulDeploy() {
+        assertEquals(
+                "PARTIAL",
+                ApplicationBundleDeployService.finalizeDeployStatus(
+                        List.of("register"),
+                        List.of("dataSource: ensure did not create root.platform.data-sources.demo")
+                )
+        );
+        assertFalse(ApplicationBundleDeployService.shouldActivateDeploySnapshot(
+                List.of("dataSource required for migrations: root.platform.data-sources.demo")
+        ));
+    }
+
+    @Test
     void partialOrFailedNeverActivatesEvenIfSomethingApplied() {
         assertEquals(
                 "PARTIAL",

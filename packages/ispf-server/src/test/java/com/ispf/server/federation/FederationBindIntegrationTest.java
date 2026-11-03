@@ -169,6 +169,12 @@ class FederationBindIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.federated").value(true));
 
+        mockMvc.perform(get("/api/v1/objects/by-path/variables")
+                        .header("Authorization", "Bearer " + token)
+                        .param("path", localPath))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.name=='temperature')]").exists());
+
         mockMvc.perform(delete("/api/v1/federation/peers/" + peerId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());

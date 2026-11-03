@@ -1,6 +1,8 @@
 package com.ispf.server.ai.mcp;
 
 import com.ispf.server.ai.agent.AgentContext;
+import com.ispf.server.ai.agent.AgentMutateApprovalGuard;
+import com.ispf.server.ai.agent.AgentProfile;
 import com.ispf.server.ai.agent.AgentRunState;
 import com.ispf.server.ai.agent.AgentSession;
 import com.ispf.server.ai.agent.AgentSessionStore;
@@ -9,6 +11,7 @@ import com.ispf.server.ai.agent.AgentToolSchemas;
 import com.ispf.server.ai.agent.PlatformAgentToolRegistry;
 import com.ispf.server.ai.audit.AiToolAuditService;
 import com.ispf.server.ai.context.ContextPackService;
+import com.ispf.server.config.AiProperties;
 import com.ispf.server.workflow.WorkflowService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.Authentication;
@@ -35,6 +38,7 @@ public class McpToolAdapter {
     private final AiToolAuditService auditService;
     private final ContextPackService contextPackService;
     private final WorkflowService workflowService;
+    private final AiProperties aiProperties;
     private final ObjectMapper objectMapper;
 
     public McpToolAdapter(
@@ -43,6 +47,7 @@ public class McpToolAdapter {
             AiToolAuditService auditService,
             ContextPackService contextPackService,
             WorkflowService workflowService,
+            AiProperties aiProperties,
             ObjectMapper objectMapper
     ) {
         this.toolRegistry = toolRegistry;
@@ -50,6 +55,7 @@ public class McpToolAdapter {
         this.auditService = auditService;
         this.contextPackService = contextPackService;
         this.workflowService = workflowService;
+        this.aiProperties = aiProperties;
         this.objectMapper = objectMapper;
     }
 
@@ -93,7 +99,20 @@ public class McpToolAdapter {
         AgentContext context = new AgentContext(actor, authentication, runState);
         Map<String, Object> result;
         String status;
-        try {
+        Optional<AgentMutateApprovalGuard.BlockDecision> approvalBlock =
+                AgentMutateApprovalGuard.checkBeforeTool(
+                        aiProperties.isAgentRequireApprovalForMutate(),
+                        runState,
+                        toolName,
+                        AgentProfile.ADMIN
+                );
+        if (approvalBlock.isPresent() && approvalBlock.get().blocked()) {
+            result = new LinkedHashMap<>();
+            result.put("status", "ERROR");
+            result.put("error", approvalBlock.get().error());
+            result.put("hint", approvalBlock.get().hint());
+            status = "ERROR";
+        } else try {
             Optional<WorkflowService.PublishedWorkflowTool> published =
                     workflowService.findPublishedWorkflowTool(toolName);
             if (published.isPresent()) {
