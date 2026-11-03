@@ -41,8 +41,6 @@ import {
 } from "../../utils/object/explorerViewRouting";
 import { isSystemCatalogFolder } from "../../utils/platform/systemFolderConfig";
 import { isPlatformSqlObjectPath } from "../../utils/platform/platformSqlPath";
-import PlatformSqlObjectPanel from "../platform/PlatformSqlObjectPanel";
-import ApplicationObjectPanel from "../platform/ApplicationObjectPanel";
 import { isApplicationObjectPath } from "../../utils/platform/applicationPath";
 import { isFederationRoot } from "../../utils/federation/federationPath";
 import { isTenantsRoot } from "../../utils/platform/tenantPath";
@@ -188,15 +186,15 @@ export default function ExplorerView({
         <FederationPeersPanel canManage={isPlatformAdmin} />
       ) : isTenants ? (
         <TenantsPanel canManage={isPlatformAdmin} onSelectPath={onSelectPath} />
-      ) : isPlatformSqlObject ? (
-        <PlatformSqlObjectPanel key={selectedPath} path={selectedPath} onOpenEditor={onOpenEditor} />
-      ) : isApplicationObject ? (
-        <ApplicationObjectPanel
+      ) : isPlatformSqlObject || isApplicationObject ? (
+        <ObjectPropertiesEditor
           key={selectedPath}
           path={selectedPath}
-          displayName={selectedObject?.displayName}
-          description={selectedObject?.description}
+          embedded
           canManage={canConfigure}
+          canManageAcl={canManageTenantSecurity}
+          onDeleted={onDeleted}
+          onSelectPath={onSelectPath}
           onOpenEditor={() => onOpenEditor(selectedPath)}
         />
       ) : showCatalogChildList ? (

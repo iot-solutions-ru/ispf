@@ -1003,6 +1003,31 @@
   margin: 0 auto;
 }
 
+.main.explorer-main,
+.main.editor-main {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scroll lives in .properties-editor-scroll; only the tab strip is sticky. */
+.main.explorer-main:has(.properties-editor.inspector),
+.main.editor-main:has(.properties-editor.inspector) {
+  overflow: hidden;
+}
+
+.main.editor-main > .properties-editor.inspector {
+  flex: 1;
+  min-height: 0;
+}
+
+.explorer-view:has(> .properties-editor.inspector) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .properties-editor {
   display: flex;
   flex-direction: column;
@@ -1010,10 +1035,23 @@
 }
 
 .properties-editor-embedded {
-  padding: 0 0.25rem 1rem;
+  padding: 0 0.25rem;
 }
 
 .properties-editor.inspector {
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+.properties-editor-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
 }
 
@@ -1030,16 +1068,24 @@
   flex-shrink: 0;
 }
 
-.properties-editor.inspector .panel {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-}
-
-.properties-editor-embedded .properties-editor-toolbar {
+.properties-editor.inspector .properties-editor-tab-strip {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 3;
+  flex-shrink: 0;
+  background: var(--bg);
+  padding-bottom: 0.1rem;
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.properties-editor.inspector .properties-editor-tab-strip .tabs {
+  margin-bottom: 0;
+}
+
+.properties-editor.inspector .panel {
+  overflow: visible;
+  flex: unset;
+  min-height: unset;
 }
 
 .toolbar-actions-full {
@@ -1058,31 +1104,46 @@
 
 .properties-editor-toolbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  padding: 0.75rem 1rem;
+  gap: 0.75rem;
+  flex-wrap: nowrap;
+  padding: 0.45rem 0.75rem;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: var(--ui-shadow-surface);
 }
 
+.properties-editor-toolbar .toolbar-actions {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+}
+
+.object-path-crumbs {
+  margin: 0;
+  word-break: break-all;
+}
+
+.object-path-crumbs .crumb--link {
+  text-decoration: none;
+}
+
+.object-path-crumbs .crumb--link:hover {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  text-underline-offset: 0.15em;
+}
+
 .breadcrumb {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.15rem;
   font-family: Consolas, monospace;
   font-size: 0.85rem;
   color: var(--text-muted);
+  line-height: 1.45;
 }
 
 .crumb {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
+  display: inline;
   cursor: pointer;
 }
 
@@ -1105,11 +1166,6 @@
   color: var(--text);
   font-weight: 500;
   cursor: default;
-}
-
-.crumb-sep {
-  margin: 0 0.25rem;
-  opacity: 0.5;
 }
 
 .form-section {

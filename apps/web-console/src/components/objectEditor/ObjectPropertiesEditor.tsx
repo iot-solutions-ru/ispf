@@ -59,6 +59,7 @@ import DeviceDriverPanel from "../DeviceDriverPanel";
 import HaystackMetadataPanel from "./HaystackMetadataPanel";
 import BrickMetadataPanel from "../platform/BrickMetadataPanel";
 import ResolvedTimeZoneBadge from "../ui/ResolvedTimeZoneBadge";
+import PathBreadcrumb from "../ui/PathBreadcrumb";
 import ApplicationDeployPanel from "../platform/ApplicationDeployPanel";
 import TreeSubtreeExportPanel from "./TreeSubtreeExportPanel";
 import PackageImportPanel from "../platform/PackageImportPanel";
@@ -653,7 +654,6 @@ export default function ObjectPropertiesEditor({
   const showOpenEditorButton =
     Boolean(onOpenEditor)
     && isSpecializedEditorObject(path, ctx.type, ctx.templateId);
-  const crumbs = path.split(".");
   const headerDescription =
     localizedSystemObjectDescription(t, path, ctx.description)
     || t("objectEditor.defaultDescription");
@@ -691,40 +691,8 @@ export default function ObjectPropertiesEditor({
 
   return (
     <div className={`properties-editor inspector${embedded ? " properties-editor-embedded" : ""}`}>
+      <div className="properties-editor-scroll">
       <div className="properties-editor-toolbar">
-        {onSelectPath && (
-          <div className="breadcrumb">
-            {crumbs.map((part, index) => {
-              const crumbPath = crumbs.slice(0, index + 1).join(".");
-              const isLast = index === crumbs.length - 1;
-              const clickable = !isLast;
-              return (
-                <span
-                  key={crumbPath}
-                  className={`crumb ${isLast ? "crumb--current" : ""}${clickable ? " crumb--link" : ""}`}
-                  onClick={() => {
-                    if (clickable) {
-                      onSelectPath(crumbPath);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (clickable && (e.key === "Enter" || e.key === " ")) {
-                      e.preventDefault();
-                      onSelectPath(crumbPath);
-                    }
-                  }}
-                  role={clickable ? "button" : undefined}
-                  tabIndex={clickable ? 0 : undefined}
-                  aria-current={isLast ? "page" : undefined}
-                  title={crumbPath}
-                >
-                  {index > 0 && <span className="crumb-sep">/</span>}
-                  <span>{part}</span>
-                </span>
-              );
-            })}
-          </div>
-        )}
         <div className={`toolbar-actions${embedded ? " toolbar-actions-full" : ""}`}>
           {showOpenEditorButton && (
             <Button type="primary" onClick={onOpenEditor}>
@@ -785,7 +753,15 @@ export default function ObjectPropertiesEditor({
                 <span className="inline-badge federated-inline-badge">{t("common:badge.federated")}</span>
               )}
             </h2>
-            <code className="path-code">{ctx.path}</code>
+            {onSelectPath ? (
+              <PathBreadcrumb
+                path={ctx.path}
+                onSelectPath={onSelectPath}
+                className="path-code object-path-crumbs"
+              />
+            ) : (
+              <code className="path-code">{ctx.path}</code>
+            )}
             {!embedded && headerDescription && (
               <p className="hint">{headerDescription}</p>
             )}
@@ -835,20 +811,22 @@ export default function ObjectPropertiesEditor({
         <Alert type="error" title={(saveMutation.error as Error).message} showIcon />
       )}
 
-      <div className="tabs-scroll">
-        <nav className="tabs">
-          {tabs.map((tabId) => (
-            <button
-              key={tabId}
-              type="button"
-              className={tab === tabId ? "active" : undefined}
-              aria-current={tab === tabId ? "page" : undefined}
-              onClick={() => setTab(tabId)}
-            >
-              {tabLabel(tabId)}
-            </button>
-          ))}
-        </nav>
+      <div className="properties-editor-tab-strip" role="presentation">
+        <div className="tabs-scroll">
+          <nav className="tabs">
+            {tabs.map((tabId) => (
+              <button
+                key={tabId}
+                type="button"
+                className={tab === tabId ? "active" : undefined}
+                aria-current={tab === tabId ? "page" : undefined}
+                onClick={() => setTab(tabId)}
+              >
+                {tabLabel(tabId)}
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
 
       {tab === "general" && (
@@ -1271,6 +1249,7 @@ export default function ObjectPropertiesEditor({
       {tab === "history" && (
         <ObjectChangeHistoryPanel objectPath={path} compact scrollMaxHeight={420} />
       )}
+      </div>
 
       {copySource && (
         <CopyVariableDialog

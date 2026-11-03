@@ -13,7 +13,7 @@ export default function BreadcrumbsWidgetView({ widget, editable }: BreadcrumbsW
   const { selection } = useWidgetSession();
   const path = widget.pathKey ? selection[widget.pathKey] : "";
   const parts = path ? path.split(".") : [];
-  const sep = widget.separator ?? " › ";
+  const sep = widget.separator ?? ".";
 
   return (
     <DashWidgetShell
