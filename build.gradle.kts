@@ -4,7 +4,7 @@ plugins {
     java
     id("org.springframework.boot") version "4.1.2" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
-    id("net.ltgt.errorprone") version "5.1.1" apply false
+    id("net.ltgt.errorprone") version "5.2.0" apply false
     // SBOM for the nightly dependency vulnerability scan (Trivy): ./gradlew cyclonedxBom
     id("org.cyclonedx.bom") version "3.5.1"
 }
