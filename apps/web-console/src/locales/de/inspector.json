@@ -259,6 +259,8 @@
   "driver.mappingsTestReadPoint": "Testpunkt",
   "driver.mappingsTestReadPointOk": "Poll abgeschlossen für {{pointId}}",
   "driver.mappingsValidationFailed": "Mapping-Fehler vor dem Speichern beheben",
+  "driver.mappingIssue.unknownVariable": "Variable „{{key}}“ ist auf diesem Gerät nicht deklariert",
+  "driver.mappingIssue.unknownVariableDetail": "Jeder Mapping-Schlüssel muss mit einer Variable am DEVICE-Objekt übereinstimmen (Registerkarte Variablen oder Blueprint). Speichern des Treibers erzeugt keine Variablen. Nach erfolgreichem Poll oder Write kann die Runtime die Variable nur im RAM anlegen — die Warnung kann dann verschwinden, aber die Variable ist erst im Modell, wenn Sie sie explizit anlegen oder Punkte aus dem Treiberkatalog/MIB importieren.",
   "driver.noDriverId": "Gerät hat keinen driverId. Blueprint anwenden (z. B. snmp-agent-v1) oder Formular ausfüllen und Speichern und starten.",
   "driver.pollInterval": "Abfrageintervall",
   "driver.pollIntervalMs": "Abfrageintervall (ms)",

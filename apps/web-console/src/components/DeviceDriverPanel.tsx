@@ -18,7 +18,11 @@ import { formatDriverOptionLabel } from "./driverOptionLabel";
 import DriverWriteForm from "./DriverWriteForm";
 import { driverSupportsWrite } from "../types/drivers";
 import type { VariableDto } from "../types";
-import { validateDriverPointMappingsJson, hasDriverMappingErrors } from "../utils/driverPointMappingValidation";
+import {
+  driverMappingIssueI18n,
+  validateDriverPointMappingsJson,
+  hasDriverMappingErrors,
+} from "../utils/driverPointMappingValidation";
 import { normalizeDriverPointMappingsJson } from "../utils/driverPointMappings";
 import {
   buildHaystackMappingTemplate,
@@ -123,6 +127,7 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
   const [mappingsJson, setMappingsJson] = useState("{}");
   const [formError, setFormError] = useState<string | null>(null);
   const [mappingTestMessage, setMappingTestMessage] = useState<string | null>(null);
+  const [haystackTagCopyMessage, setHaystackTagCopyMessage] = useState<string | null>(null);
   const [testReadPointId, setTestReadPointId] = useState("");
 
   const mappingKeys = useMemo(() => {
@@ -148,8 +153,11 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
   );
 
   const mappingValidation = useMemo(
-    () => validateDriverPointMappingsJson(mappingsJson, deviceVariableNames),
-    [mappingsJson, deviceVariableNames],
+    () =>
+      validateDriverPointMappingsJson(mappingsJson, deviceVariableNames, {
+        variablesLoaded: variablesQuery.data != null,
+      }),
+    [mappingsJson, deviceVariableNames, variablesQuery.data],
   );
 
   const driversQuery = useQuery({
@@ -493,13 +501,20 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                   onChange={(e) => {
                     setMappingsJson(e.target.value);
                     setMappingTestMessage(null);
+                    setHaystackTagCopyMessage(null);
                   }}
                   spellCheck={false}
                 />
               </label>
               {mappingValidation.issues.length > 0 && (
                 <ul className="driver-mapping-issues full">
-                  {mappingValidation.issues.map((issue) => (
+                  {mappingValidation.issues.map((issue) => {
+                    const i18n = driverMappingIssueI18n(issue);
+                    const issueTitle = i18n
+                      ? t(`inspector:${i18n.messageKey}`, i18n.messageParams)
+                      : issue.message;
+                    const issueDetail = i18n?.detailKey ? t(`inspector:${i18n.detailKey}`) : null;
+                    return (
                     <li
                       key={`${issue.code}-${issue.key ?? issue.message}`}
                       className={
@@ -510,7 +525,10 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                             : "hint warning"
                       }
                     >
-                      <span>{issue.message}</span>
+                      <span>{issueTitle}</span>
+                      {issueDetail ? (
+                        <p className="driver-mapping-issue-detail">{issueDetail}</p>
+                      ) : null}
                       {issue.level === "hint" && issue.key && issue.suggestedTags && (
                         <Button
                           size="small"
@@ -521,7 +539,8 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                         </Button>
                       )}
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               )}
               <div className="driver-haystack-tag-chips full">
@@ -533,12 +552,15 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                     title={t("inspector:driver.haystackTagChipHint")}
                     onClick={() => {
                       navigator.clipboard.writeText(`"${tag}"`).catch(() => {});
-                      setMappingTestMessage(t("inspector:driver.haystackTagCopied", { tag }));
+                      setHaystackTagCopyMessage(t("inspector:driver.haystackTagCopied", { tag }));
                     }}
                   >
                     {tag}
                   </Button>
                 ))}
+                {haystackTagCopyMessage && (
+                  <p className="hint driver-haystack-tag-copy-feedback">{haystackTagCopyMessage}</p>
+                )}
               </div>
               <div className="form-actions full">
                 {mappingKeys.length > 0 && (
@@ -613,6 +635,7 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
         devicePath={devicePath}
         canManage={canManage}
         supportsWrite={driverSupportsWrite(selectedDriver)}
+        showPoll={false}
       />
     </section>
   );

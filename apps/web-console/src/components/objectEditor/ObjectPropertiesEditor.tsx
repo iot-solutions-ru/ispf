@@ -692,51 +692,6 @@ export default function ObjectPropertiesEditor({
   return (
     <div className={`properties-editor inspector${embedded ? " properties-editor-embedded" : ""}`}>
       <div className="properties-editor-scroll">
-      <div className="properties-editor-toolbar">
-        <div className={`toolbar-actions${embedded ? " toolbar-actions-full" : ""}`}>
-          {showOpenEditorButton && (
-            <Button type="primary" onClick={onOpenEditor}>
-              {t("common:action.editor")}
-            </Button>
-          )}
-          <Button
-            aria-label={t("common:action.refresh")}
-            onClick={() => void reloadFromEditor()}
-          >
-            {t("common:action.refresh")}
-          </Button>
-          <Button
-            disabled={!isDirty}
-            aria-label={t("common:action.revert")}
-            onClick={revert}
-          >
-            {t("common:action.revert")}
-          </Button>
-          <Button
-            type="primary"
-            loading={saveMutation.isPending}
-            disabled={!isDirty || (staleRemote && !forceNextSave)}
-            aria-label={t("common:action.save")}
-            onClick={() => saveMutation.mutate()}
-          >
-            {t("common:action.save")}
-          </Button>
-          {canDelete && (
-            <Button
-              danger
-              aria-label={t("common:action.delete")}
-              onClick={() => {
-                if (confirm(t("common:action.confirmDeleteNamed", { name: ctx.displayName }))) {
-                  deleteMutation.mutate();
-                }
-              }}
-            >
-              {t("common:action.delete")}
-            </Button>
-          )}
-        </div>
-      </div>
-
       <header className="inspector-header">
         <div className="inspector-title-row">
           <ObjectTreeIcon
@@ -811,21 +766,67 @@ export default function ObjectPropertiesEditor({
         <Alert type="error" title={(saveMutation.error as Error).message} showIcon />
       )}
 
-      <div className="properties-editor-tab-strip" role="presentation">
-        <div className="tabs-scroll">
-          <nav className="tabs">
-            {tabs.map((tabId) => (
-              <button
-                key={tabId}
-                type="button"
-                className={tab === tabId ? "active" : undefined}
-                aria-current={tab === tabId ? "page" : undefined}
-                onClick={() => setTab(tabId)}
+      <div className="properties-editor-sticky-chrome" role="presentation">
+        <div className="properties-editor-toolbar">
+          <div className={`toolbar-actions${embedded ? " toolbar-actions-full" : ""}`}>
+            {showOpenEditorButton && (
+              <Button type="primary" onClick={onOpenEditor}>
+                {t("common:action.editor")}
+              </Button>
+            )}
+            <Button
+              aria-label={t("common:action.refresh")}
+              onClick={() => void reloadFromEditor()}
+            >
+              {t("common:action.refresh")}
+            </Button>
+            <Button
+              disabled={!isDirty}
+              aria-label={t("common:action.revert")}
+              onClick={revert}
+            >
+              {t("common:action.revert")}
+            </Button>
+            <Button
+              type="primary"
+              loading={saveMutation.isPending}
+              disabled={!isDirty || (staleRemote && !forceNextSave)}
+              aria-label={t("common:action.save")}
+              onClick={() => saveMutation.mutate()}
+            >
+              {t("common:action.save")}
+            </Button>
+            {canDelete && (
+              <Button
+                danger
+                aria-label={t("common:action.delete")}
+                onClick={() => {
+                  if (confirm(t("common:action.confirmDeleteNamed", { name: ctx.displayName }))) {
+                    deleteMutation.mutate();
+                  }
+                }}
               >
-                {tabLabel(tabId)}
-              </button>
-            ))}
-          </nav>
+                {t("common:action.delete")}
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="properties-editor-tab-strip">
+          <div className="tabs-scroll">
+            <nav className="tabs">
+              {tabs.map((tabId) => (
+                <button
+                  key={tabId}
+                  type="button"
+                  className={tab === tabId ? "active" : undefined}
+                  aria-current={tab === tabId ? "page" : undefined}
+                  onClick={() => setTab(tabId)}
+                >
+                  {tabLabel(tabId)}
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
       </div>
 

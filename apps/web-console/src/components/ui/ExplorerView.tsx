@@ -20,11 +20,8 @@ import {
   isCorrelatorPath,
   isCorrelatorsRoot,
 } from "../../utils/automation/automationPath";
-import {
-  isProcessProgramPath,
-  isProcessProgramsRoot,
-} from "../../utils/automation/processProgramPath";
-import { isEventFilterPath, isEventFiltersRoot } from "../../utils/automation/eventFilterPath";
+import { isProcessProgramPath } from "../../utils/automation/processProgramPath";
+import { isEventFilterPath } from "../../utils/automation/eventFilterPath";
 import { isAnalyticsTagDevice } from "../../utils/analytics/analyticsPath";
 import AlertRuleInspector from "../automation/AlertRuleInspector";
 import EventFilterInspector from "../automation/EventFilterInspector";
@@ -32,9 +29,6 @@ import AnalyticsTagInspector from "../analytics/AnalyticsTagInspector";
 import AutomationRulesListPanel from "../automation/AutomationRulesListPanel";
 import CorrelatorInspector from "../automation/CorrelatorInspector";
 import ProcessProgramInspector from "../automation/ProcessProgramInspector";
-import {
-  isSpecializedEditorObject,
-} from "../../utils/object/editorObject";
 import {
   isTypedCatalogObject,
   opensCatalogChildList,
@@ -99,9 +93,7 @@ export default function ExplorerView({
   const isProcessProgram = isTypedCatalogObject(objectType, isProcessProgramPath(selectedPath));
   const isAlertRulesFolder = isAlertRulesRoot(selectedPath);
   const isCorrelatorsFolder = isCorrelatorsRoot(selectedPath);
-  const isProcessProgramsFolder = isProcessProgramsRoot(selectedPath);
   const isEventFilter = isTypedCatalogObject(objectType, isEventFilterPath(selectedPath));
-  const isEventFiltersFolder = isEventFiltersRoot(selectedPath);
   const isAnalyticsTag = !isVisualGroup && isAnalyticsTagDevice(selectedObject);
   const isFederation = isFederationRoot(selectedPath);
   const isTenants = isTenantsRoot(selectedPath);
@@ -111,34 +103,6 @@ export default function ExplorerView({
   const isApplicationObject =
     selectedObject?.type === "APPLICATION"
     && isApplicationObjectPath(selectedPath);
-  const opensInEditor = Boolean(
-    selectedObject
-    && isSpecializedEditorObject(selectedPath, selectedObject.type, selectedObject.templateId),
-  );
-  const hideToolbar =
-    isOperatorAppChild
-    ||     isUsersRoot
-    || isUserObject
-    || isSecurityFolder
-    || isRolesRoot
-    || isRoleObject
-    || isAlertRule
-    || isCorrelator
-    || isProcessProgram
-    || isAlertRulesFolder
-    || isCorrelatorsFolder
-    || isProcessProgramsFolder
-    || isEventFilter
-    || isEventFiltersFolder
-    || isAnalyticsTag
-    || isFederation
-    || isTenants
-    || isCatalogFolder
-    || isPlatformSqlObject
-    || isApplicationObject
-    || isVisualGroup
-    || opensInEditor;
-
   return (
     <div
       className={`explorer-view${isOperatorAppChild ? " explorer-view-operator-app" : ""}`}
@@ -150,12 +114,6 @@ export default function ExplorerView({
           </Button>
         </div>
       )}
-      {!hideToolbar && !opensInEditor && (
-        <div className="explorer-toolbar explorer-toolbar-hint-only">
-          <span className="hint">{t("common:hint.objectPropertiesTabs")}</span>
-        </div>
-      )}
-
       {isOperatorAppChild ? (
         <OperatorAppsPanel canManage={canConfigure} selectedPath={selectedPath} />
       ) : isUsersRoot ? (

@@ -29,6 +29,7 @@ export default function DriverWriteForm({
   const [showJson, setShowJson] = useState(false);
   const [valueJson, setValueJson] = useState('{\n  "rows": [{ "value": 0 }]\n}');
   const [formError, setFormError] = useState<string | null>(null);
+  const [pollNotice, setPollNotice] = useState<string | null>(null);
 
   const variablesQuery = useQuery({
     queryKey: ["variables", devicePath],
@@ -59,7 +60,13 @@ export default function DriverWriteForm({
 
   const pollMutation = useMutation({
     mutationFn: () => pollDriver(devicePath),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      setPollNotice(t("inspector:driver.mappingsTestReadOk"));
+    },
+    onError: (error: Error) => {
+      setPollNotice(error.message);
+    },
   });
 
   const writeMutation = useMutation({
@@ -96,9 +103,7 @@ export default function DriverWriteForm({
 
   const selectedMapping = mappings[pointId];
   const isBusy = pollMutation.isPending || writeMutation.isPending;
-  const actionError =
-    pollMutation.error
-    ?? (writeMutation.error && !formError ? writeMutation.error : null);
+  const actionError = writeMutation.error && !formError ? writeMutation.error : null;
 
   if (variablesQuery.isLoading) {
     return <Typography.Paragraph type="secondary">{t("inspector:driver.write.loading")}</Typography.Paragraph>;
@@ -127,12 +132,23 @@ export default function DriverWriteForm({
           <Button
             disabled={isBusy}
             loading={pollMutation.isPending}
-            onClick={() => pollMutation.mutate()}
+            onClick={() => {
+              setPollNotice(null);
+              pollMutation.mutate();
+            }}
           >
             {pollMutation.isPending ? t("inspector:driver.write.polling") : t("inspector:driver.write.pollNow")}
           </Button>
         )}
       </div>
+
+      {pollNotice && (
+        <Alert
+          type={pollMutation.isError ? "error" : "success"}
+          showIcon
+          title={pollNotice}
+        />
+      )}
 
       {mappingEntries.length === 0 ? (
         <Alert type="warning" showIcon title={t("inspector:driver.write.noMappings")} />
