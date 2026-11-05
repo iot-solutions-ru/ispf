@@ -259,6 +259,8 @@
   "driver.mappingsTestReadPoint": "测试点位",
   "driver.mappingsTestReadPointOk": "已完成 {{pointId}} 的 Poll",
   "driver.mappingsValidationFailed": "保存前请修正 mapping 错误",
+  "driver.mappingIssue.unknownVariable": "变量“{{key}}”未在此设备上声明",
+  "driver.mappingIssue.unknownVariableDetail": "每个映射键必须与 DEVICE 对象上的变量名一致（变量选项卡或蓝图）。保存驱动不会创建变量。成功 poll 或 write 后，运行时可能仅在内存中添加该变量——警告可能消失，但在您显式创建变量或从驱动目录/MIB 导入点之前，模型中仍可能没有该变量。",
   "driver.noDriverId": "设备未设置 driverId。应用蓝图（如 snmp-agent-v1）或填写下方表单并点击保存并启动。",
   "driver.pollInterval": "轮询间隔",
   "driver.pollIntervalMs": "轮询间隔 (毫秒)",
