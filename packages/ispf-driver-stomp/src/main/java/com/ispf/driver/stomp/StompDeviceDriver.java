@@ -346,11 +346,7 @@ public class StompDeviceDriver implements DeviceDriver {
         }
         java.net.HttpURLConnection connection = (java.net.HttpURLConnection) java.net.URI.create(authUrl).toURL().openConnection();
         if (connection instanceof javax.net.ssl.HttpsURLConnection https) {
-            javax.net.ssl.SSLContext context = StompWebSocket.sslContext(new StompWebSocket.SocketSecurity(useTls, caCertPath));
-            https.setSSLSocketFactory(context.getSocketFactory());
-            if (caCertPath != null && !caCertPath.isBlank()) {
-                https.setHostnameVerifier((name, session) -> true);
-            }
+            configureAuthTls(https, useTls, caCertPath);
         }
         connection.setConnectTimeout(timeoutMs);
         connection.setReadTimeout(timeoutMs);
@@ -377,6 +373,13 @@ public class StompDeviceDriver implements DeviceDriver {
             throw new DriverConfigurationException("STOMP auth URL did not return a token");
         }
         return token;
+    }
+
+    /** Custom CA changes trust anchors only. The platform hostname verifier stays in place. */
+    static void configureAuthTls(javax.net.ssl.HttpsURLConnection https, boolean tls, String caCertPath)
+            throws IOException {
+        javax.net.ssl.SSLContext context = StompWebSocket.sslContext(new StompWebSocket.SocketSecurity(tls, caCertPath));
+        https.setSSLSocketFactory(context.getSocketFactory());
     }
 
     private static String jsonString(String value) {

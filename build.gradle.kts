@@ -72,6 +72,8 @@ subprojects {
     // (CVE-2025-48924, patched ≥ 3.18.0) and keep the pin explicit past the BOM.
     pluginManager.withPlugin("io.spring.dependency-management") {
         extra["commons-lang3.version"] = "3.21.0"
+        // Boot 4.1.2 BOM manages OpenTelemetry 1.62.0 (GHSA-ccrj-gw8r-854m, API ≤ 1.66.0).
+        extra["opentelemetry.version"] = "1.68.0"
     }
 
     java {
@@ -196,6 +198,17 @@ subprojects {
     }
 
     dependencies {
+        constraints {
+            implementation("org.apache.commons:commons-lang3:3.21.0")
+            implementation("org.xerial.snappy:snappy-java:1.1.10.12")
+            implementation("com.google.guava:guava:33.8.0-jre")
+            implementation("org.apache.kerby:kerby-asn1:2.1.2")
+            implementation("org.apache.kerby:kerb-core:2.1.2")
+            implementation("org.apache.kerby:kerb-util:2.1.2")
+            implementation("org.apache.kerby:kerby-config:2.1.2")
+            implementation("org.apache.kerby:kerb-simplekdc:2.1.2")
+            implementation("io.opentelemetry:opentelemetry-api:1.68.0")
+        }
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     }
 
@@ -222,6 +235,18 @@ subprojects {
                 // Boot 4.1.1 manages 3.20.0; force+eachDependency pin 3.21.0 so the graph
                 // and Dependabot alert #112 stay on a patched line past the BOM.
                 "org.apache.commons:commons-lang3:3.21.0",
+                // Graph still resolved these below the patched line: snappy 1.1.10.7
+                // (GHSA-q233-g92q-qxp6 / GHSA-xqrx-qh46-34m7 / GHSA-gwq9-9ffj-mvrv, fixed in
+                // 1.1.10.9), Guava 33.4.8-jre (GHSA-xxph-c9ww-hj94), Kerby 2.0.3
+                // (GHSA-x6vc-x4v4-hjhr). Drop when Hadoop / Parquet / Kafka declare them.
+                "org.xerial.snappy:snappy-java:1.1.10.12",
+                "com.google.guava:guava:33.8.0-jre",
+                "org.apache.kerby:kerby-asn1:2.1.2",
+                "org.apache.kerby:kerb-core:2.1.2",
+                "org.apache.kerby:kerb-util:2.1.2",
+                "org.apache.kerby:kerby-config:2.1.2",
+                "org.apache.kerby:kerb-simplekdc:2.1.2",
+                "io.opentelemetry:opentelemetry-api:1.68.0",
                 // Dependabot / Trivy GHSA stream: Jackson / Log4j / Tomcat. Boot 4.1.1 still
                 // manages jackson-2-bom 2.21.5 / jackson-bom (tools.jackson) 3.1.5 and Tomcat
                 // 11.0.24; Boot modules override those extras, and force+rules here keep non-Boot
@@ -244,6 +269,23 @@ subprojects {
                     "org.apache.commons" -> {
                         if (requested.name == "commons-lang3") {
                             useVersion("3.21.0")
+                        }
+                    }
+                    "org.xerial.snappy" -> {
+                        if (requested.name == "snappy-java") {
+                            useVersion("1.1.10.12")
+                        }
+                    }
+                    "com.google.guava" -> {
+                        if (requested.name == "guava") {
+                            useVersion("33.8.0-jre")
+                        }
+                    }
+                    "org.apache.kerby" -> useVersion("2.1.2")
+                    "io.opentelemetry" -> {
+                        val current = requested.version ?: return@eachDependency
+                        if (current.startsWith("1.") && !current.contains("-")) {
+                            useVersion("1.68.0")
                         }
                     }
                     "com.fasterxml.jackson", "com.fasterxml.jackson.core",

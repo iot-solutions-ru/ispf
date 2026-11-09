@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -162,6 +163,30 @@ class StompDeviceDriverTest {
             assertTrue(!tcp.connectText().contains("Bearer leftover"));
         } finally {
             http.stop(0);
+        }
+    }
+
+    @Test
+    void customCaStillChecksTheServerHostname() throws Exception {
+        java.nio.file.Path cert = java.nio.file.Files.createTempFile("stomp-ca", ".pem");
+        try (InputStream in = StompDeviceDriverTest.class.getResourceAsStream("/stomp-test-ca.pem")) {
+            java.nio.file.Files.copy(in, cert, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            javax.net.ssl.HttpsURLConnection https = (javax.net.ssl.HttpsURLConnection)
+                    java.net.URI.create("https://broker.example/auth").toURL().openConnection();
+            javax.net.ssl.HostnameVerifier before = https.getHostnameVerifier();
+            StompDeviceDriver.configureAuthTls(https, true, cert.toString());
+            assertSame(before, https.getHostnameVerifier());
+
+            javax.net.ssl.SSLSocket ssl = (javax.net.ssl.SSLSocket)
+                    javax.net.ssl.SSLContext.getDefault().getSocketFactory().createSocket();
+            try {
+                StompWebSocket.requireHttpsEndpoint(ssl);
+                assertEquals("HTTPS", ssl.getSSLParameters().getEndpointIdentificationAlgorithm());
+            } finally {
+                ssl.close();
+            }
+        } finally {
+            java.nio.file.Files.deleteIfExists(cert);
         }
     }
 

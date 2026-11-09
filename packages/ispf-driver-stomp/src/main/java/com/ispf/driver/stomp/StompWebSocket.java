@@ -27,7 +27,8 @@ import javax.net.ssl.TrustManagerFactory;
 
 /**
  * RFC 6455 client used as the STOMP WebSocket transport. Text frames only.
- * A {@code caCertPath} pins those certificates and is the server identity check.
+ * A {@code caCertPath} replaces the default trust anchors with those certificates.
+ * The TLS hostname is still checked against the certificate.
  * Clean-room JDK sockets, no third-party WebSocket library.
  */
 final class StompWebSocket implements AutoCloseable {
@@ -225,11 +226,7 @@ final class StompWebSocket implements AutoCloseable {
                 throw new IOException("WebSocket TLS context failed", e);
             }
             ssl.connect(new InetSocketAddress(host, port), timeoutMs);
-            if (security.caCertPath() == null || security.caCertPath().isBlank()) {
-                SSLParameters parameters = ssl.getSSLParameters();
-                parameters.setEndpointIdentificationAlgorithm("HTTPS");
-                ssl.setSSLParameters(parameters);
-            }
+            requireHttpsEndpoint(ssl);
             ssl.startHandshake();
             socket = ssl;
         } else {
@@ -239,6 +236,12 @@ final class StompWebSocket implements AutoCloseable {
         socket.setSoTimeout(timeoutMs);
         socket.setTcpNoDelay(true);
         return socket;
+    }
+
+    static void requireHttpsEndpoint(SSLSocket ssl) {
+        SSLParameters parameters = ssl.getSSLParameters();
+        parameters.setEndpointIdentificationAlgorithm("HTTPS");
+        ssl.setSSLParameters(parameters);
     }
 
     private static SSLContext clientContext(String caCertPath) throws GeneralSecurityException, IOException {
