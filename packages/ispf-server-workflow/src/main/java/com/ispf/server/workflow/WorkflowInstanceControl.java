@@ -90,6 +90,14 @@ final class WorkflowInstanceControl {
                 evaluator
         );
         workflows.finishStep(stored.triggerObjectPath(), instance, process, instance.variables());
+        if (instance.status() == InstanceStatus.FAILED) {
+            String message = instance.errorMessage();
+            throw new WorkflowException(
+                    message == null || message.isBlank()
+                            ? "Workflow instance failed: " + instanceId
+                            : message
+            );
+        }
         return workflows.getWorkflow(workflowPath);
     }
 
