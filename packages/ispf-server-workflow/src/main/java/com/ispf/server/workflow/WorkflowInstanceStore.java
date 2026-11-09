@@ -85,8 +85,13 @@ public class WorkflowInstanceStore {
     /**
      * Interrupting boundary timers (and any other resume that drops a pending user task)
      * leave the work-queue row OPEN/CLAIMED unless we close it here.
+     * A FAILED instance is not a completed user task: the queue row stays open so the
+     * same complete call can report the process error without removing the task.
      */
     private void closeOrphanOpenUserTasks(WorkflowInstance instance) {
+        if (instance.status() == InstanceStatus.FAILED) {
+            return;
+        }
         Set<String> pending = new HashSet<>(instance.pendingUserTaskIds());
         for (WorkflowUserTaskEntity task : userTaskRepository.findByInstanceId(instance.instanceId())) {
             String status = task.getStatus();
