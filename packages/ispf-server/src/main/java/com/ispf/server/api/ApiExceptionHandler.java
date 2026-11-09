@@ -1,6 +1,7 @@
 package com.ispf.server.api;
 
 import com.ispf.core.object.ObjectNotFoundException;
+import com.ispf.core.ref.PlatformRefParseException;
 import com.ispf.expression.ExpressionException;
 import com.ispf.plugin.workflow.WorkflowException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -39,6 +40,13 @@ public class ApiExceptionHandler {
     public ProblemDetail handleExpression(ExpressionException exception) {
         ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
         detail.setTitle("Expression error");
+        return detail;
+    }
+
+    @ExceptionHandler(PlatformRefParseException.class)
+    public ProblemDetail handlePlatformRefParse(PlatformRefParseException exception) {
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+        detail.setTitle("Invalid PlatformRef");
         return detail;
     }
 

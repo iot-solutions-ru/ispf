@@ -1,5 +1,6 @@
 package com.ispf.server.api;
 
+import com.ispf.core.ref.PlatformRefParseException;
 import com.ispf.expression.ExpressionException;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DuplicateKeyException;
@@ -23,6 +24,17 @@ class ApiExceptionHandlerUnitTest {
         assertThat(detail.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
         assertThat(String.valueOf(detail.getDetail())).contains("no_such_name");
         assertThat(detail.getTitle()).isEqualTo("Expression error");
+    }
+
+    @Test
+    void platformRefParseExceptionReturnsBadRequestProblemDetail() {
+        ApiExceptionHandler handler = new ApiExceptionHandler();
+        ProblemDetail detail = handler.handlePlatformRefParse(
+                new PlatformRefParseException("Invalid PlatformRef: root.platform.devices.probe/123bad")
+        );
+        assertThat(detail.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+        assertThat(detail.getTitle()).isEqualTo("Invalid PlatformRef");
+        assertThat(String.valueOf(detail.getDetail())).contains("Invalid PlatformRef: root.platform.devices.probe/123bad");
     }
 
     @Test
