@@ -4,6 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.application.data.ApplicationSchemaSession;
+import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.script.FunctionScriptEngine;
 import com.ispf.server.application.script.FunctionScriptJdbcScope;
 import com.ispf.server.application.script.FunctionScriptValidator;
@@ -25,6 +26,7 @@ import java.util.Map;
 public class ScriptFunctionHandler implements FunctionHandler {
 
     private final ObjectManager objectManager;
+    private final ApplicationFunctionStore applicationFunctionStore;
     private final FunctionScriptEngine scriptEngine;
     private final FunctionScriptValidator scriptValidator;
     private final ApplicationSchemaSession schemaSession;
@@ -35,6 +37,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
 
     public ScriptFunctionHandler(
             ObjectManager objectManager,
+            ApplicationFunctionStore applicationFunctionStore,
             FunctionScriptEngine scriptEngine,
             FunctionScriptValidator scriptValidator,
             ApplicationSchemaSession schemaSession,
@@ -44,6 +47,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
             TenantLocalDataAccessGuard tenantLocalDataAccessGuard
     ) {
         this.objectManager = objectManager;
+        this.applicationFunctionStore = applicationFunctionStore;
         this.scriptEngine = scriptEngine;
         this.scriptValidator = scriptValidator;
         this.schemaSession = schemaSession;
@@ -60,7 +64,11 @@ public class ScriptFunctionHandler implements FunctionHandler {
             return false;
         }
         FunctionDescriptor descriptor = node.functions().get(functionName);
-        return descriptor != null && descriptor.hasScriptBody();
+        if (descriptor == null || !descriptor.hasScriptBody()) {
+            return false;
+        }
+        // A deployed application function replaces the object script and runs in that application's schema.
+        return applicationFunctionStore.findLatest(objectPath, functionName).isEmpty();
     }
 
     @Override

@@ -30,13 +30,10 @@ public class ApplicationFunctionHandler implements FunctionHandler {
         FunctionDescriptor treeFn = objectManager.tree().findByPath(objectPath)
                 .map(node -> node.functions().get(functionName))
                 .orElse(null);
-        if (treeFn != null && (treeFn.hasScriptBody() || treeFn.hasJavaBody())) {
+        if (treeFn != null && treeFn.hasJavaBody()) {
             return false;
         }
-        if (store.findLatest(objectPath, functionName).isPresent()) {
-            return true;
-        }
-        return store.findLatestByTreeFunctionPath(objectPath).isPresent();
+        return store.findLatest(objectPath, functionName).isPresent();
     }
 
     @Override
