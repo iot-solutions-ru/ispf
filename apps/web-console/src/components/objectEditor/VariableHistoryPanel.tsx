@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Alert, Button, Segmented, Select, Space, Typography } from "antd";
 import {
@@ -10,7 +11,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { downloadVariableHistoryExport } from "../../api";
+import { downloadVariableHistoryExport, fetchPlatformInfo } from "../../api";
+import type { PlatformInfo } from "../../types";
 import { CHART_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../utils/analytics/chartTheme";
 import {
   type HistoryRange,
@@ -24,6 +26,11 @@ interface VariableHistoryPanelProps {
   /** Numeric schema fields available for history (from variable definition). */
   fields?: string[];
   refreshIntervalMs?: number;
+}
+
+/** Parquet is optional. Offer it only when this server reports the module is loaded. */
+export function parquetExportOffered(info: Pick<PlatformInfo, "parquetExportAvailable"> | undefined): boolean {
+  return info?.parquetExportAvailable === true;
 }
 
 export default function VariableHistoryPanel({
@@ -45,7 +52,9 @@ export default function VariableHistoryPanel({
   const [range, setRange] = useState<HistoryRange>("24h");
   const [field, setField] = useState(fields[0] ?? "value");
   const [exportError, setExportError] = useState<string | null>(null);
-  const [exporting, setExporting] = useState<"csv" | "json" | null>(null);
+  const [exporting, setExporting] = useState<"csv" | "json" | "parquet" | null>(null);
+  const platformInfo = useQuery({ queryKey: ["info"], queryFn: fetchPlatformInfo });
+  const offerParquet = parquetExportOffered(platformInfo.data);
 
   useEffect(() => {
     if (!fields.includes(field)) {
@@ -65,7 +74,7 @@ export default function VariableHistoryPanel({
     }
   );
 
-  const exportHistory = async (format: "csv" | "json") => {
+  const exportHistory = async (format: "csv" | "json" | "parquet") => {
     setExportError(null);
     setExporting(format);
     try {
@@ -147,6 +156,16 @@ export default function VariableHistoryPanel({
             >
               JSON
             </Button>
+            {offerParquet && (
+              <Button
+                size="small"
+                disabled={exporting != null}
+                loading={exporting === "parquet"}
+                onClick={() => exportHistory("parquet")}
+              >
+                Parquet
+              </Button>
+            )}
           </Space.Compact>
         </div>
       </div>

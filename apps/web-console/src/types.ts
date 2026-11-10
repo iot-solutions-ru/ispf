@@ -9,6 +9,8 @@ export interface PlatformInfo {
   capabilities: string[];
   federationSecretsKeyConfigured?: boolean;
   federationSecretsKeySource?: "NONE" | "YAML" | "DATABASE";
+  /** True only when the optional ispf-export-parquet module is on the server classpath. */
+  parquetExportAvailable?: boolean;
 }
 
 export type ObjectType =
