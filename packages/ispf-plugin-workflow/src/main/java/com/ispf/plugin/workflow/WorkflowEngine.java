@@ -7,6 +7,10 @@ import java.util.UUID;
 
 public class WorkflowEngine {
 
+    static final int MAX_SYNC_STEPS = 1000;
+
+    private static final ThreadLocal<int[]> SYNC_STEP_COUNT = new ThreadLocal<>();
+
     private final BpmnParser parser = new BpmnParser();
     private CallActivityExecutor callActivityExecutor = (call, parent) -> {
         throw new WorkflowException("callActivity executor is not configured");
@@ -44,9 +48,7 @@ public class WorkflowEngine {
             MessageTaskExecutor messageExecutor,
             WorkflowConditionEvaluator evaluator
     ) throws WorkflowException {
-        while (instance.status() == InstanceStatus.RUNNING) {
-            step(instance, process, executor, messageExecutor, evaluator);
-        }
+        drain(instance, process, executor, messageExecutor, evaluator);
         return instance;
     }
 
@@ -132,9 +134,7 @@ public class WorkflowEngine {
         instance.resumeUserTask(userTaskNodeId);
         advanceToken(instance, process, token, userTaskNodeId, executor, messageExecutor, evaluator);
 
-        while (instance.status() == InstanceStatus.RUNNING) {
-            step(instance, process, executor, messageExecutor, evaluator);
-        }
+        drain(instance, process, executor, messageExecutor, evaluator);
     }
 
     /**
@@ -178,9 +178,7 @@ public class WorkflowEngine {
             }
             advanceToken(instance, process, token, callNodeId, executor, messageExecutor, evaluator);
         }
-        while (instance.status() == InstanceStatus.RUNNING) {
-            step(instance, process, executor, messageExecutor, evaluator);
-        }
+        drain(instance, process, executor, messageExecutor, evaluator);
     }
 
     public void deliverSignal(
@@ -199,9 +197,7 @@ public class WorkflowEngine {
             String catchNodeId = token.currentNodeId();
             advanceToken(instance, process, token, catchNodeId, executor, messageExecutor, evaluator);
         }
-        while (instance.status() == InstanceStatus.RUNNING) {
-            step(instance, process, executor, messageExecutor, evaluator);
-        }
+        drain(instance, process, executor, messageExecutor, evaluator);
     }
 
     public void deliverMessage(
@@ -228,9 +224,7 @@ public class WorkflowEngine {
             String catchNodeId = token.currentNodeId();
             advanceToken(instance, process, token, catchNodeId, executor, messageExecutor, evaluator);
         }
-        while (instance.status() == InstanceStatus.RUNNING) {
-            step(instance, process, executor, messageExecutor, evaluator);
-        }
+        drain(instance, process, executor, messageExecutor, evaluator);
     }
 
     public void fireDueTimers(
@@ -278,9 +272,7 @@ public class WorkflowEngine {
             }
         }
 
-        while (instance.status() == InstanceStatus.RUNNING) {
-            step(instance, process, executor, messageExecutor, evaluator);
-        }
+        drain(instance, process, executor, messageExecutor, evaluator);
     }
 
     private static BoundaryTimerDefinition findBoundaryTimer(BpmnProcess process, String boundaryNodeId) {
@@ -305,6 +297,13 @@ public class WorkflowEngine {
             WorkflowConditionEvaluator evaluator
     ) throws WorkflowException {
         if (token.state() != TokenState.ACTIVE) {
+            return;
+        }
+        if (SYNC_STEP_COUNT.get() == null) {
+            withSyncBudget(() -> stepToken(instance, process, token, executor, messageExecutor, evaluator));
+            return;
+        }
+        if (!consumeSyncStep(instance)) {
             return;
         }
 
@@ -546,6 +545,52 @@ public class WorkflowEngine {
         }
     }
 
+    private void drain(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            WorkflowActionExecutor executor,
+            MessageTaskExecutor messageExecutor,
+            WorkflowConditionEvaluator evaluator
+    ) throws WorkflowException {
+        withSyncBudget(() -> {
+            while (instance.status() == InstanceStatus.RUNNING) {
+                if (!consumeSyncStep(instance)) {
+                    return;
+                }
+                step(instance, process, executor, messageExecutor, evaluator);
+            }
+        });
+    }
+
+    private void withSyncBudget(SyncBody body) throws WorkflowException {
+        boolean owner = SYNC_STEP_COUNT.get() == null;
+        if (owner) {
+            SYNC_STEP_COUNT.set(new int[]{0});
+        }
+        try {
+            body.run();
+        } finally {
+            if (owner) {
+                SYNC_STEP_COUNT.remove();
+            }
+        }
+    }
+
+    private boolean consumeSyncStep(WorkflowInstance instance) {
+        int[] count = SYNC_STEP_COUNT.get();
+        if (count == null || count[0] >= MAX_SYNC_STEPS) {
+            instance.fail("Exceeded " + MAX_SYNC_STEPS + " synchronous workflow steps");
+            return false;
+        }
+        count[0]++;
+        return true;
+    }
+
+    @FunctionalInterface
+    private interface SyncBody {
+        void run() throws WorkflowException;
+    }
+
     private void runBranchUntilBlocked(
             WorkflowInstance instance,
             BpmnProcess process,
@@ -554,9 +599,14 @@ public class WorkflowEngine {
             MessageTaskExecutor messageExecutor,
             WorkflowConditionEvaluator evaluator
     ) throws WorkflowException {
-        while (token.state() == TokenState.ACTIVE && instance.status() == InstanceStatus.RUNNING) {
-            stepToken(instance, process, token, executor, messageExecutor, evaluator);
-        }
+        withSyncBudget(() -> {
+            while (token.state() == TokenState.ACTIVE && instance.status() == InstanceStatus.RUNNING) {
+                if (!consumeSyncStep(instance)) {
+                    return;
+                }
+                stepToken(instance, process, token, executor, messageExecutor, evaluator);
+            }
+        });
     }
 
     private void handleParallelJoin(

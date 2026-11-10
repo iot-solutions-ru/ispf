@@ -35,4 +35,28 @@ class WorkflowEngineTest {
         assertThat(instance.status()).isEqualTo(InstanceStatus.COMPLETED);
         assertThat(messages).containsExactly("hello");
     }
+
+    @Test
+    void synchronousLoopFailsAfterTheStepCap() throws Exception {
+        String xml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:ispf="http://ispf.io/bpmn">
+                  <process id="loop" name="Loop" isExecutable="true">
+                    <startEvent id="start"/>
+                    <serviceTask id="task" name="Log" ispf:action="log" ispf:message="again"/>
+                    <sequenceFlow sourceRef="start" targetRef="task"/>
+                    <sequenceFlow sourceRef="task" targetRef="task"/>
+                  </process>
+                </definitions>
+                """;
+
+        WorkflowEngine engine = new WorkflowEngine();
+        BpmnProcess process = engine.parse(xml);
+        WorkflowInstance instance = engine.start("root.platform.workflows.loop", process);
+        engine.runToCompletion(instance, process, (task, ignored) -> { }, expr -> true);
+
+        assertThat(instance.status()).isEqualTo(InstanceStatus.FAILED);
+        assertThat(instance.errorMessage()).contains(String.valueOf(WorkflowEngine.MAX_SYNC_STEPS));
+    }
 }
