@@ -91,7 +91,7 @@ dependencies {
     // Keep in lockstep with extra["kafka.version"] and ispf-driver-kafka clients.
     testImplementation("org.apache.kafka:kafka-clients:4.4.0")
     testImplementation("io.github.embeddedkafka:embedded-kafka_2.13:4.4.0")
-    testRuntimeOnly("org.scala-lang:scala-library:2.13.18")
+    testRuntimeOnly("org.scala-lang:scala-library:3.10.0")
     // Moquette + Paho for BL-142 MqttDriverRuntimeIntegrationTest (matches ispf-driver-mqtt).
     // Pin (ADR-0059 registry): Moquette declares Netty 4.1.x; lift to the patched 4.2 line.
     testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.19.Final"))
