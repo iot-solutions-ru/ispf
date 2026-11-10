@@ -96,7 +96,7 @@ subprojects {
     if (!codeQlBuild && findProperty("ispf.errorprone")?.toString() != "false") {
         apply(plugin = "net.ltgt.errorprone")
         dependencies {
-            "errorprone"("com.google.errorprone:error_prone_core:2.51.0")
+            "errorprone"("com.google.errorprone:error_prone_core:2.52.0")
         }
         tasks.withType<JavaCompile> {
             options.errorprone {
@@ -229,7 +229,7 @@ subprojects {
                 "org.bouncycastle:bcutil-jdk18on:1.86",
                 // kafka-clients 4.3.1 -> lz4-java 1.10.2 (CVE-2026-59949); hadoop-common 3.5.0 ->
                 // commons-configuration2 2.10.1 (CVE-2026-45205). Drop when the parents move.
-                "at.yawk.lz4:lz4-java:1.12.1",
+                "at.yawk.lz4:lz4-java:1.13.0",
                 "org.apache.commons:commons-configuration2:2.15.1",
                 // Dependabot GHSA-j288-q9x7-2f5v (CVE-2025-48924): lang3 < 3.18.0.
                 // Boot 4.1.1 manages 3.20.0; force+eachDependency pin 3.21.0 so the graph

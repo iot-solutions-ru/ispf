@@ -73,7 +73,7 @@ dependencies {
     implementation("org.apache.poi:poi:6.0.0")
 
     // Bundle manifest JSON Schema (ADR-0060). 3.x is Jackson 3 / JDK 17+ (same lane as ispf-server).
-    implementation("com.networknt:json-schema-validator:3.0.8")
+    implementation("com.networknt:json-schema-validator:3.0.9")
 
     // Parquet export (parquet-mr + Avro + hadoop-common, ~57 MB of the bootJar) is an optional
     // runtime module discovered via ServiceLoader (HistoryParquetExporter in ispf-core).
@@ -94,7 +94,7 @@ dependencies {
     testRuntimeOnly("org.scala-lang:scala-library:2.13.18")
     // Moquette + Paho for BL-142 MqttDriverRuntimeIntegrationTest (matches ispf-driver-mqtt).
     // Pin (ADR-0059 registry): Moquette declares Netty 4.1.x; lift to the patched 4.2 line.
-    testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.19.Final"))
+    testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.20.Final"))
     // 0.18.1+ via JitPack (Central still at 0.17 — Dependabot GHSA-5f42-97gr-vfhq / GHSA-9jjc-fw8x-fmwx).
     testImplementation("io.github.moquette-io.moquette:moquette-broker:0.18.1")
     testImplementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
