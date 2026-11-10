@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parquetExportOffered } from "./VariableHistoryPanel";
+import { parquetExportOffered } from "./parquetExportOffered";
 
 describe("parquetExportOffered", () => {
   it("hides parquet unless this server reports the module", () => {

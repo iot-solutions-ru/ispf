@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { downloadVariableHistoryExport, fetchPlatformInfo } from "../../api";
-import type { PlatformInfo } from "../../types";
+import { parquetExportOffered } from "./parquetExportOffered";
 import { CHART_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../utils/analytics/chartTheme";
 import {
   type HistoryRange,
@@ -26,11 +26,6 @@ interface VariableHistoryPanelProps {
   /** Numeric schema fields available for history (from variable definition). */
   fields?: string[];
   refreshIntervalMs?: number;
-}
-
-/** Parquet is optional. Offer it only when this server reports the module is loaded. */
-export function parquetExportOffered(info: Pick<PlatformInfo, "parquetExportAvailable"> | undefined): boolean {
-  return info?.parquetExportAvailable === true;
 }
 
 export default function VariableHistoryPanel({
