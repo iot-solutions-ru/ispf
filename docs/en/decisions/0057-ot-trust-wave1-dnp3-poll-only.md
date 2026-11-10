@@ -4,6 +4,10 @@
 **Date:** 2026-09-05  
 **Context:** Phase 25 OT Trust unparked for Wave 1. Roadmap / promotion docs incorrectly claimed BL-191 downgraded `dnp3` and `ethernet-ip` to **BETA**. Matrix code did not.
 
+## Update (2026-11-11)
+
+Direct Operate is now implemented for two objects: CROB g12v1 latch-on/latch-off and analog output g41v3 (IEEE float32 + status). The matrix capability is `POLL` + `WRITE`. `BINARY_INPUT`, `ANALOG_INPUT`, and `COUNTER` stay read-only. Pulse, trip/close, and select-before-operate are still out of scope. The decision below records why poll-only stayed PRODUCTION until that write existed.
+
 ## Decision
 
 1. **`dnp3`** remains **`PRODUCTION`** with capabilities **`POLL` only**.  

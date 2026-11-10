@@ -147,9 +147,9 @@ class DriverProductionMatrixTest {
             );
         }
         assertTrue(DriverProductionMatrix.resolveCapabilities("dnp3").contains(POLL));
-        assertFalse(
+        assertTrue(
                 DriverProductionMatrix.resolveCapabilities("dnp3").contains(WRITE),
-                "dnp3 stays POLL_ONLY until write is implemented"
+                "dnp3 direct operate is CROB latch and g41v3 analog output"
         );
         assertEquals(DriverMaturity.PRODUCTION, DriverProductionMatrix.resolveMaturity("dnp3"));
         assertEquals(DriverMaturity.BETA, DriverProductionMatrix.resolveMaturity("opc-da"));
@@ -162,7 +162,7 @@ class DriverProductionMatrixTest {
      */
     @Test
     void wave1WritePointSourceMatchesDeclaredCapabilities() throws IOException {
-        assertWritePointMentionsNotImplemented("dnp3", true);
+        assertWritePointMentionsNotImplemented("dnp3", false);
         assertWritePointMentionsNotImplemented("gps-tracker", true);
         assertWritePointMentionsNotImplemented("modbus-tcp", false);
         assertWritePointMentionsNotImplemented("http", false);
