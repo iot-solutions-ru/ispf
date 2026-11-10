@@ -64,6 +64,32 @@ class S7ValueCodecTest {
     }
 
     @Test
+    void boolBitWriteLeavesTheOtherBits() throws Exception {
+        S7Point point = S7Point.parse("DB:1:0.3:BOOL");
+        MemoryS7Connector connector = new MemoryS7Connector();
+        connector.write(DaveArea.DB, 1, 0, new byte[]{(byte) 0x01});
+
+        byte[] encoded = S7DeviceDriver.encodeValue(
+                point,
+                DataRecord.single(BOOL_SCHEMA, Map.of("value", true)),
+                connector);
+        connector.write(point.area(), point.dbNumber(), point.offset(), encoded);
+        assertEquals((byte) 0x09, connector.read(DaveArea.DB, 1, 1, 0)[0]);
+
+        DataRecord read = S7DeviceDriver.decodeValue(point.dataType(), new byte[]{(byte) 0x09}, point.bitOffset());
+        assertTrue((Boolean) read.firstRow().get("value"));
+        read = S7DeviceDriver.decodeValue(point.dataType(), new byte[]{(byte) 0x01}, point.bitOffset());
+        assertFalse((Boolean) read.firstRow().get("value"));
+
+        encoded = S7DeviceDriver.encodeValue(
+                point,
+                DataRecord.single(BOOL_SCHEMA, Map.of("value", false)),
+                connector);
+        connector.write(point.area(), point.dbNumber(), point.offset(), encoded);
+        assertEquals((byte) 0x01, connector.read(DaveArea.DB, 1, 1, 0)[0]);
+    }
+
+    @Test
     void decodeBoolReadsLeastSignificantBit() throws Exception {
         DataRecord record = S7DeviceDriver.decodeValue(S7Point.S7DataType.BOOL, new byte[]{(byte) 0x01});
         assertTrue((Boolean) record.firstRow().get("value"));

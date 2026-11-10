@@ -787,7 +787,7 @@ Maturity: **production**. Loopback tests: `OpcUaDeviceDriverTest` (browse, write
 
 Siemens S7 over ISO-on-TCP. Poll/read/write via `readPoints` / `writePoint`.
 
-Point mapping: `area:dbNumber:offset:type` (for example `DB:1:0:REAL`).
+Point mapping: `area:dbNumber:offset:type` (for example `DB:1:0:REAL`). BOOL may use `byte.bit` (`DB:1:0.3:BOOL`, bits 0..7). A bare offset is bit 0.
 
 Supported types: `BOOL`, `BYTE`, `SINT`, `USINT`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL`, `LREAL`.
 
@@ -795,7 +795,7 @@ Write (`writePoint`):
 
 | Type | Field in `DataRecord` |
 |------|-------------------------|
-| `BOOL` | `value` (boolean); read-modify-write of bit 0 in byte at offset |
+| `BOOL` | `value` (boolean); read-modify-write of bit 0..7 in the byte (`offset` or `offset.bit`) |
 | integer types | `raw` or `value` (number) |
 | `REAL`, `LREAL` | `value` or `raw` (number) |
 

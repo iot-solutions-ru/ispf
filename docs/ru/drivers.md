@@ -714,7 +714,7 @@ Write (`writePoint`): Milo `writeValue` на Value attribute; тип Variant п�
 
 Siemens S7 по ISO-on-TCP. Poll/read/write через `readPoints` / `writePoint`.
 
-Маппинг точек: `area:dbNumber:offset:type` (например `DB:1:0:REAL`).
+Маппинг точек: `area:dbNumber:offset:type` (например `DB:1:0:REAL`). Для BOOL можно указать бит: `DB:1:0.3:BOOL` (биты 0..7). Без точки читается бит 0.
 
 Поддерживаемые типы: `BOOL`, `BYTE`, `SINT`, `USINT`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL`, `LREAL`.
 
@@ -722,7 +722,7 @@ Write (`writePoint`):
 
 | Тип | Поле в `DataRecord` |
 |-----|---------------------|
-| `BOOL` | `value` (boolean); read-modify-write бита 0 в байте offset |
+| `BOOL` | `value` (boolean); read-modify-write бита 0..7 в байте (`offset` или `offset.bit`) |
 | целочисленные | `raw` или `value` (число) |
 | `REAL`, `LREAL` | `value` или `raw` (число) |
 
