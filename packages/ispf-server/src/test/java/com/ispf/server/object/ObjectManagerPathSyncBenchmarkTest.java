@@ -2,6 +2,7 @@ package com.ispf.server.object;
 
 import com.ispf.server.bootstrap.PlatformBootstrap;
 import com.ispf.server.config.BootstrapProperties;
+import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectNodeRepository;
@@ -74,6 +75,7 @@ class ObjectManagerPathSyncBenchmarkTest {
     @Mock private ObjectVariableService variableService;
     @Mock private ObjectTreeLoadSyncService loadSyncService;
     @Mock private ObjectMetadataService metadataService;
+    @Mock private ObjectProvider<VariableHistoryService> variableHistoryService;
 
     private ObjectManager objectManager;
     private ExecutorService executor;
@@ -83,7 +85,8 @@ class ObjectManagerPathSyncBenchmarkTest {
         objectManager = new ObjectManager(
                 nodeRepository, variableRepository, mapper, platformBootstrap, bootstrapProperties,
                 publicationService, self, configAuditService, clusterBootstrapService, driverTelemetryService,
-                bootstrapFacade, treeCrudService, variableService, loadSyncService, metadataService
+                bootstrapFacade, treeCrudService, variableService, loadSyncService, metadataService,
+                variableHistoryService
         );
         doAnswer(invocation -> {
             LockSupport.parkNanos(Duration.ofMillis(DB_LATENCY_MS).toNanos());
