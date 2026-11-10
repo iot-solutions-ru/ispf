@@ -15,7 +15,7 @@ Authorship model: only admins create/edit Java function source; other roles invo
 ### 1. Kill-switch (Done)
 
 - Property: `ispf.function.java.enabled` (`ISPF_FUNCTION_JAVA_ENABLED`)
-- Default: `true` (local/test/dev)
+- Default: `false` (every profile, including local and dev)
 - `application-prod.yml`: default `false`
 - When disabled: no compile-on-save, no startup warm-up, `JavaFunctionHandler.supports` returns false, invoke/compile throw a clear error
 - When enabled under the `prod` profile: startup logs a WARN (explicit opt-in on a production host)
