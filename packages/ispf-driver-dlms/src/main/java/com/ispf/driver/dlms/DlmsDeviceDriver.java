@@ -10,9 +10,9 @@ import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.DriverTransientException;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * DLMS/COSEM meter driver over IEC 62056-47 TCP WRAPPER and Get-Request-Normal
@@ -57,7 +57,8 @@ public class DlmsDeviceDriver implements DeviceDriver {
     private int timeoutMs = 10000;
     private int clientAddress = 16;
     private int logicalDevice = 1;
-    private final Map<String, DlmsPoint> points = new ConcurrentHashMap<>();
+    /** Replaced as a whole after each poll so a write never sees an empty map. */
+    private volatile Map<String, DlmsPoint> points = Map.of();
 
     @Override
     public DriverMetadata metadata() {
@@ -114,10 +115,10 @@ public class DlmsDeviceDriver implements DeviceDriver {
         if (!isConnected()) {
             throw new DriverTransientException("Not connected");
         }
-        points.clear();
+        Map<String, DlmsPoint> next = new HashMap<>();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             DlmsPoint point = DlmsPoint.parse(entry.getValue());
-            points.put(entry.getKey(), point);
+            next.put(entry.getKey(), point);
             try {
                 driverObject.updateVariable(entry.getKey(), readPoint(point));
             } catch (DriverException ex) {
@@ -125,6 +126,7 @@ public class DlmsDeviceDriver implements DeviceDriver {
                 driverObject.log(DriverLogLevel.DEBUG, "DLMS read skipped for " + entry.getKey() + ": " + ex.getMessage());
             }
         }
+        points = Map.copyOf(next);
     }
 
     @Override

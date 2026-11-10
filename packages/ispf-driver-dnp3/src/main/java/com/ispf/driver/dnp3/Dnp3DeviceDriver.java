@@ -10,8 +10,8 @@ import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.DriverTransientException;
 import com.ispf.driver.DriverUnsupportedOperationException;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * DNP3 TCP master driver with ISPF-owned Class 0/1/2/3 integrity poll codec.
@@ -58,7 +58,8 @@ public class Dnp3DeviceDriver implements DeviceDriver {
     private int masterAddress = 1;
     private int outstationAddress = 1024;
     private int timeoutMs = 5000;
-    private final Map<String, Dnp3Point> points = new ConcurrentHashMap<>();
+    /** Replaced as a whole after each poll so a later write never sees an empty map. */
+    private volatile Map<String, Dnp3Point> points = Map.of();
 
     @Override
     public DriverMetadata metadata() {
@@ -105,12 +106,12 @@ public class Dnp3DeviceDriver implements DeviceDriver {
         if (!isConnected()) {
             throw new DriverTransientException("Not connected");
         }
-        points.clear();
         session.pollAllClasses();
         Dnp3ReadCache cache = session.cache();
+        Map<String, Dnp3Point> next = new HashMap<>();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             Dnp3Point point = Dnp3Point.parse(entry.getValue());
-            points.put(entry.getKey(), point);
+            next.put(entry.getKey(), point);
             try {
                 driverObject.updateVariable(entry.getKey(), readPoint(point, cache));
             } catch (DriverException ex) {
@@ -118,6 +119,7 @@ public class Dnp3DeviceDriver implements DeviceDriver {
                 driverObject.log(DriverLogLevel.DEBUG, "DNP3 read skipped for " + entry.getKey() + ": " + ex.getMessage());
             }
         }
+        points = Map.copyOf(next);
     }
 
     @Override
