@@ -251,6 +251,26 @@ class Iec104DeviceDriverTest {
             .field("raw", FieldType.STRING)
             .build();
 
+    @Test
+    void unavailableReadKeepsTheLastValue() throws Exception {
+        Iec104Point analog = Iec104Point.parse("100:FLOAT");
+        DataRecord previous = DataRecord.single(FLOAT_SCHEMA, Map.of("value", 42.5));
+        DataRecord kept = Iec104DeviceDriver.unavailableRecord(analog, previous);
+        assertEquals(42.5, ((Number) kept.firstRow().get("value")).doubleValue(), 0.001);
+        assertEquals("UNAVAILABLE", kept.firstRow().get("quality"));
+
+        DataRecord firstMiss = Iec104DeviceDriver.unavailableRecord(analog, null);
+        assertEquals(0.0, ((Number) firstMiss.firstRow().get("value")).doubleValue(), 0.001);
+        assertEquals("UNAVAILABLE", firstMiss.firstRow().get("quality"));
+
+        Iec104Point flag = Iec104Point.parse("1:BOOL");
+        DataRecord boolKept = Iec104DeviceDriver.unavailableRecord(
+                flag,
+                DataRecord.single(BOOL_SCHEMA, Map.of("value", true)));
+        assertEquals(true, boolKept.firstRow().get("value"));
+        assertEquals("UNAVAILABLE", boolKept.firstRow().get("quality"));
+    }
+
     private static final class StubDriverObject implements DeviceDriver.DriverObject {
 
         private final Map<String, String> configuration;

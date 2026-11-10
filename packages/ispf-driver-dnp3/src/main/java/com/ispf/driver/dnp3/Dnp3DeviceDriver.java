@@ -114,7 +114,9 @@ public class Dnp3DeviceDriver implements DeviceDriver {
             try {
                 driverObject.updateVariable(entry.getKey(), readPoint(point, cache));
             } catch (DriverException ex) {
-                driverObject.updateVariable(entry.getKey(), unavailableRecord(point));
+                driverObject.updateVariable(entry.getKey(), unavailableRecord(
+                        point,
+                        driverObject.getVariable(entry.getKey()).orElse(null)));
                 driverObject.log(DriverLogLevel.DEBUG, "DNP3 read skipped for " + entry.getKey() + ": " + ex.getMessage());
             }
         }
@@ -147,18 +149,19 @@ public class Dnp3DeviceDriver implements DeviceDriver {
         };
     }
 
-    private static DataRecord unavailableRecord(Dnp3Point point) {
+    static DataRecord unavailableRecord(Dnp3Point point, DataRecord previous) {
+        Object kept = previous == null ? null : previous.firstRow().get("value");
         return switch (point.dataType()) {
             case BINARY_INPUT, BINARY_OUTPUT -> DataRecord.single(BOOL_VALUE_SCHEMA, Map.of(
-                    "value", false,
+                    "value", kept instanceof Boolean bool ? bool : false,
                     "status", "UNAVAILABLE"
             ));
             case COUNTER -> DataRecord.single(COUNTER_VALUE_SCHEMA, Map.of(
-                    "value", 0L,
+                    "value", kept instanceof Number number ? number.longValue() : 0L,
                     "status", "UNAVAILABLE"
             ));
             case ANALOG_INPUT, ANALOG_OUTPUT -> DataRecord.single(VALUE_SCHEMA, Map.of(
-                    "value", 0.0,
+                    "value", kept instanceof Number number ? number.doubleValue() : 0.0,
                     "status", "UNAVAILABLE"
             ));
         };

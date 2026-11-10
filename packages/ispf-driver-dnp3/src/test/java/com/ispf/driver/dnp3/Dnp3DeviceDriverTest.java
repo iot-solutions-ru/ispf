@@ -85,6 +85,26 @@ class Dnp3DeviceDriverTest {
     }
 
     @Test
+    void unavailableReadKeepsTheLastValue() throws Exception {
+        DataSchema analogSchema = DataSchema.builder("dnp3Value").field("value", FieldType.DOUBLE).build();
+        DataRecord analog = Dnp3DeviceDriver.unavailableRecord(
+                Dnp3Point.parse("0:ANALOG_INPUT"),
+                DataRecord.single(analogSchema, Map.of("value", 12.34)));
+        assertEquals(12.34, ((Number) analog.firstRow().get("value")).doubleValue(), 0.001);
+        assertEquals("UNAVAILABLE", analog.firstRow().get("status"));
+
+        DataSchema counterSchema = DataSchema.builder("dnp3Counter").field("value", FieldType.LONG).build();
+        DataRecord counter = Dnp3DeviceDriver.unavailableRecord(
+                Dnp3Point.parse("0:COUNTER"),
+                DataRecord.single(counterSchema, Map.of("value", 999L)));
+        assertEquals(999L, counter.firstRow().get("value"));
+        assertEquals("UNAVAILABLE", counter.firstRow().get("status"));
+
+        DataRecord firstMiss = Dnp3DeviceDriver.unavailableRecord(Dnp3Point.parse("0:ANALOG_INPUT"), null);
+        assertEquals(0.0, ((Number) firstMiss.firstRow().get("value")).doubleValue(), 0.001);
+    }
+
+    @Test
     void writePointNotImplemented() {
         Dnp3DeviceDriver driver = new Dnp3DeviceDriver();
         DriverException ex = assertThrows(
