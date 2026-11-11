@@ -116,7 +116,7 @@ public class VariableHistoryService {
         }
     }
 
-    void forgetPath(String objectPath) {
+    public void forgetPath(String objectPath) {
         if (objectPath == null || objectPath.isBlank()) {
             return;
         }
@@ -127,7 +127,7 @@ public class VariableHistoryService {
         lastHistorizedRecord.keySet().removeIf(key -> keyBelongsToPath(key, objectPath, prefix, descendant));
     }
 
-    void forgetVariable(String objectPath, String variableName) {
+    public void forgetVariable(String objectPath, String variableName) {
         if (objectPath == null || variableName == null) {
             return;
         }

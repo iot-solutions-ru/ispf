@@ -17,6 +17,7 @@ import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.function.java.JavaFunctionRuntimeService;
+import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectVariableRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +59,8 @@ class ObjectVariableServiceTest {
     private DeviceTelemetryPolicyService telemetryPolicyService;
     @Mock
     private JavaFunctionRuntimeService javaFunctionRuntimeService;
+    @Mock
+    private VariableHistoryService variableHistoryService;
 
     private ObjectTree objectTree;
     private PlatformObject node;
@@ -77,6 +80,7 @@ class ObjectVariableServiceTest {
                 telemetryPolicyService,
                 javaFunctionRuntimeService,
                 new FunctionScriptValidator(new ObjectMapper()),
+                null,
                 null
         );
     }
@@ -101,6 +105,27 @@ class ObjectVariableServiceTest {
         verify(objectManager).persistVariable(eq(PATH), any(Variable.class));
         verify(objectManager).bumpRevision(node);
         verify(objectManager).recordAudit(eq(PATH), eq("CREATE_VARIABLE"), eq("temperature"), any(Long.class), any(Long.class), any());
+    }
+
+    @Test
+    void deleteVariableDropsHistorianCache() {
+        when(mapper.auditDiff(any(), any())).thenReturn("{}");
+        ObjectVariableService service = new ObjectVariableService(
+                objectManager,
+                variableRepository,
+                mapper,
+                telemetryPolicyService,
+                javaFunctionRuntimeService,
+                new FunctionScriptValidator(new ObjectMapper()),
+                null,
+                variableHistoryService
+        );
+        node.addVariable(new Variable("temperature", SCHEMA, true, true, null));
+
+        service.deleteVariable(PATH, "temperature");
+
+        verify(variableHistoryService).forgetVariable(PATH, "temperature");
+        assertThat(node.getVariable("temperature")).isEmpty();
     }
 
     @Test
@@ -302,7 +327,8 @@ class ObjectVariableServiceTest {
                 telemetryPolicyService,
                 javaFunctionRuntimeService,
                 new FunctionScriptValidator(new ObjectMapper()),
-                registry
+                registry,
+                null
         );
     }
 

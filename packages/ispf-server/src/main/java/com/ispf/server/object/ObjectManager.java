@@ -15,6 +15,7 @@ import com.ispf.server.bootstrap.PlatformBootstrap;
 import com.ispf.server.bootstrap.SystemObjectDescriptions;
 import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.federation.FederationPaths;
+import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -63,6 +64,7 @@ public class ObjectManager {
     private final ObjectVariableService variableService;
     private final ObjectTreeLoadSyncService loadSyncService;
     private final ObjectMetadataService metadataService;
+    private final ObjectProvider<VariableHistoryService> variableHistoryService;
     private final ConcurrentHashMap<String, Object> variablePersistLocks = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Object> nodePersistLocks = new ConcurrentHashMap<>();
     /**
@@ -90,7 +92,8 @@ public class ObjectManager {
             @Lazy TreeCrudService treeCrudService,
             @Lazy ObjectVariableService variableService,
             @Lazy ObjectTreeLoadSyncService loadSyncService,
-            @Lazy ObjectMetadataService metadataService
+            @Lazy ObjectMetadataService metadataService,
+            ObjectProvider<VariableHistoryService> variableHistoryService
     ) {
         this.nodeRepository = nodeRepository;
         this.variableRepository = variableRepository;
@@ -107,6 +110,7 @@ public class ObjectManager {
         this.variableService = variableService;
         this.loadSyncService = loadSyncService;
         this.metadataService = metadataService;
+        this.variableHistoryService = variableHistoryService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -317,6 +321,10 @@ public class ObjectManager {
     @Transactional
     public void purgeVariablePersistence(String path, String name) {
         variableRepository.deleteByObjectPathAndName(path, name);
+        VariableHistoryService history = variableHistoryService.getIfAvailable();
+        if (history != null) {
+            history.forgetVariable(path, name);
+        }
     }
 
     @Transactional
@@ -576,6 +584,10 @@ public class ObjectManager {
         withPathSyncLock(path, () -> {
             if (objectTree.findByPath(path).isPresent()) {
                 objectTree.delete(path);
+            }
+            VariableHistoryService history = variableHistoryService.getIfAvailable();
+            if (history != null) {
+                history.forgetPath(path);
             }
         });
     }

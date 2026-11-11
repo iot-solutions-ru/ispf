@@ -6,6 +6,7 @@ import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -34,17 +35,20 @@ public class ObjectTreeLoadSyncService {
     private final ObjectNodeRepository nodeRepository;
     private final ObjectVariableRepository variableRepository;
     private final ObjectEntityMapper mapper;
+    private final VariableHistoryService historyService;
 
     public ObjectTreeLoadSyncService(
             @Lazy ObjectManager objectManager,
             ObjectNodeRepository nodeRepository,
             ObjectVariableRepository variableRepository,
-            ObjectEntityMapper mapper
+            ObjectEntityMapper mapper,
+            @Lazy VariableHistoryService historyService
     ) {
         this.objectManager = objectManager;
         this.nodeRepository = nodeRepository;
         this.variableRepository = variableRepository;
         this.mapper = mapper;
+        this.historyService = historyService;
     }
 
     /** Callers hold {@code ObjectManager.treeSyncLock} (write); no additional monitor here. */
@@ -71,6 +75,7 @@ public class ObjectTreeLoadSyncService {
         Optional<ObjectNodeEntity> entityOpt = nodeRepository.findByPath(path);
         if (entityOpt.isEmpty()) {
             objectManager.removePathFromMemoryIfPresent(path);
+            forgetPath(path);
             return;
         }
         List<ObjectVariableEntity> variableEntities =
@@ -92,6 +97,7 @@ public class ObjectTreeLoadSyncService {
         Optional<ObjectVariableEntity> entityOpt = variableRepository.findByObjectPathAndName(path, name);
         if (entityOpt.isEmpty()) {
             objectTree.findByPath(path).ifPresent(node -> node.removeVariable(name));
+            forgetVariable(path, name);
             return;
         }
         if (objectTree.findByPath(path).isEmpty()) {
@@ -231,6 +237,7 @@ public class ObjectTreeLoadSyncService {
         for (String ramName : new ArrayList<>(node.variables().keySet())) {
             if (!dbVariableNames.contains(ramName)) {
                 node.removeVariable(ramName);
+                forgetVariable(node.path(), ramName);
             }
         }
     }
@@ -243,6 +250,18 @@ public class ObjectTreeLoadSyncService {
         );
     }
 
+    private void forgetPath(String path) {
+        if (historyService != null) {
+            historyService.forgetPath(path);
+        }
+    }
+
+    private void forgetVariable(String path, String name) {
+        if (historyService != null) {
+            historyService.forgetVariable(path, name);
+        }
+    }
+
     private void clearNonRootNodes() {
         ObjectTree objectTree = objectManager.tree();
         List<String> paths = objectTree.all().stream()
@@ -252,6 +271,7 @@ public class ObjectTreeLoadSyncService {
                 .toList();
         for (String path : paths) {
             objectTree.delete(path);
+            forgetPath(path);
         }
     }
 }
