@@ -98,6 +98,110 @@ class WorkflowTaskExecutorTest {
     }
 
     @Test
+    void fireEventBuildsPayloadFromJsonWhenVariableIsAbsent() throws WorkflowException {
+        executor().executeServiceTask(
+                task(WorkflowActionType.FIRE_EVENT, Map.of(
+                        "objectPath", TARGET,
+                        "eventName", "alarm",
+                        "payloadJson", "{\"level\":\"high\",\"n\":2,\"active\":true}"
+                )),
+                instance()
+        );
+
+        ArgumentCaptor<DataRecord> payload = ArgumentCaptor.forClass(DataRecord.class);
+        verify(eventService).publishFired(eq(TARGET), eq("alarm"), payload.capture());
+        assertEquals("high", payload.getValue().firstRow().get("level"));
+        assertEquals(2L, payload.getValue().firstRow().get("n"));
+        assertEquals(true, payload.getValue().firstRow().get("active"));
+        verify(objects, never()).require(anyString());
+    }
+
+    @Test
+    void fireEventRejectsAPayloadJsonArray() {
+        WorkflowException ex = assertThrows(WorkflowException.class, () -> executor().executeServiceTask(
+                task(WorkflowActionType.FIRE_EVENT, Map.of(
+                        "objectPath", TARGET,
+                        "eventName", "alarm",
+                        "payloadJson", "[1]"
+                )),
+                instance()
+        ));
+        assertTrue(ex.getMessage().contains("payloadJson"));
+        verify(eventService, never()).publishFired(anyString(), anyString(), any());
+    }
+
+    @Test
+    void fireEventPrefersPayloadVariableOverPayloadJson() throws WorkflowException {
+        DataSchema schema = DataSchema.builder("v").field("value", FieldType.STRING).build();
+        Variable variable = mock(Variable.class);
+        when(variable.value()).thenReturn(Optional.of(DataRecord.single(schema, Map.of("value", "from-var"))));
+        PlatformObject node = mock(PlatformObject.class);
+        when(node.getVariable("payload")).thenReturn(Optional.of(variable));
+        when(objects.require(TARGET)).thenReturn(node);
+
+        executor().executeServiceTask(
+                task(WorkflowActionType.FIRE_EVENT, Map.of(
+                        "objectPath", TARGET,
+                        "eventName", "alarm",
+                        "payloadVariable", "payload",
+                        "payloadJson", "{\"level\":\"high\"}"
+                )),
+                instance()
+        );
+
+        ArgumentCaptor<DataRecord> payload = ArgumentCaptor.forClass(DataRecord.class);
+        verify(eventService).publishFired(eq(TARGET), eq("alarm"), payload.capture());
+        assertEquals("from-var", payload.getValue().firstRow().get("value"));
+    }
+
+    @Test
+    void fireEventRejectsNestedPayloadJson() {
+        WorkflowException ex = assertThrows(WorkflowException.class, () -> executor().executeServiceTask(
+                task(WorkflowActionType.FIRE_EVENT, Map.of(
+                        "objectPath", TARGET,
+                        "eventName", "alarm",
+                        "payloadJson", "{\"nested\":{\"a\":1}}"
+                )),
+                instance()
+        ));
+        assertTrue(ex.getMessage().contains("scalars"));
+    }
+
+    @Test
+    void invokeFunctionAcceptsAJsonInputMap() throws WorkflowException {
+        when(functionService.invoke(eq(TARGET), eq("open"), any(DataRecord.class))).thenReturn(null);
+        WorkflowInstance instance = instance();
+        instance.setVariable("workflow.orderId", "WO-9");
+
+        executor().executeServiceTask(
+                task(WorkflowActionType.INVOKE_FUNCTION, Map.of(
+                        "objectPath", TARGET,
+                        "functionName", "open",
+                        "inputMap", "{\"orderId\":\"${workflow.orderId}\"}"
+                )),
+                instance
+        );
+
+        ArgumentCaptor<DataRecord> input = ArgumentCaptor.forClass(DataRecord.class);
+        verify(functionService).invoke(eq(TARGET), eq("open"), input.capture());
+        assertEquals("WO-9", input.getValue().firstRow().get("orderId"));
+    }
+
+    @Test
+    void invokeFunctionRejectsNestedJsonInputMap() {
+        WorkflowException ex = assertThrows(WorkflowException.class, () -> executor().executeServiceTask(
+                task(WorkflowActionType.INVOKE_FUNCTION, Map.of(
+                        "objectPath", TARGET,
+                        "functionName", "open",
+                        "inputMap", "{\"row\":{\"a\":1}}"
+                )),
+                instance()
+        ));
+        assertTrue(ex.getMessage().contains("scalars"));
+        verify(functionService, never()).invoke(anyString(), anyString(), any());
+    }
+
+    @Test
     void missingRequiredParameterIsAWorkflowException() {
         WorkflowException ex = assertThrows(WorkflowException.class, () -> executor().executeServiceTask(
                 task(WorkflowActionType.SET_VARIABLE, Map.of("variable", "mode")),

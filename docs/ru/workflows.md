@@ -91,6 +91,8 @@ Namespace расширений: `http://ispf.io/bpmn` (префикс `ispf:`).
 | `publish_nats` | `ispf:subject`, `ispf:message`, `ispf:channel` |
 | `invoke_function` | `ispf:objectPath`, `ispf:functionName`, `ispf:inputMap`, `ispf:outputMap` |
 
+Панель свойств берёт `functionName`, `function` пользовательской задачи, `variable`, `payloadVariable` и `eventName` из дескриптора объекта (`objectPath`, либо `targetObject`, если путь только он). `inputMap` — пары `key=value` или JSON-объект из скаляров. `payloadJson` — JSON-объект из скаляров; движок берёт его, когда `payloadVariable` пуст.
+
 Пример `invoke_function` (прикладные функции — [applications](applications.md)):
 
 ```xml

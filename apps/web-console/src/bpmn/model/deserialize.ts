@@ -31,6 +31,7 @@ const ISPF_ATTR_NAMES = [
   "signal",
   "objectPath",
   "eventName",
+  "payloadVariable",
   "payloadJson",
   "contextKey",
   "workflowPath",
