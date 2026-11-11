@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Siemens S7 driver — reads PLC data blocks via s7connector.
  * <p>
  * Point mapping: {@code area:dbNumber:offset:type} e.g. {@code DB:1:0:REAL}.
+ * BOOL bits use {@code byte.bit}, e.g. {@code DB:1:0.3:BOOL}.
  */
 public class S7DeviceDriver implements DeviceDriver {
 
@@ -57,6 +58,8 @@ public class S7DeviceDriver implements DeviceDriver {
     private int slot = 2;
     private int timeoutMs = 3000;
     private final Map<String, S7Point> points = new ConcurrentHashMap<>();
+    /** Serializes BOOL read-modify-write so two bits in one byte cannot clobber each other. */
+    private final Object boolWriteLock = new Object();
     private volatile boolean connected;
 
     @Override
@@ -134,9 +137,19 @@ public class S7DeviceDriver implements DeviceDriver {
             throw new DriverConfigurationException("Unknown point: " + pointId);
         }
         try {
-            byte[] data = encodeValue(point, value, connector);
-            connector.write(point.area(), point.dbNumber(), point.offset(), data);
-            driverObject.updateVariable(pointId, readPoint(point), DriverPollTimestamps.pollTick());
+            DataRecord readBack;
+            if (point.dataType() == S7Point.S7DataType.BOOL) {
+                synchronized (boolWriteLock) {
+                    byte[] data = encodeValue(point, value, connector);
+                    connector.write(point.area(), point.dbNumber(), point.offset(), data);
+                    readBack = readPoint(point);
+                }
+            } else {
+                byte[] data = encodeValue(point, value, connector);
+                connector.write(point.area(), point.dbNumber(), point.offset(), data);
+                readBack = readPoint(point);
+            }
+            driverObject.updateVariable(pointId, readBack, DriverPollTimestamps.pollTick());
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {
@@ -148,7 +161,7 @@ public class S7DeviceDriver implements DeviceDriver {
         try {
             int length = point.dataType().byteLength();
             byte[] data = connector.read(point.area(), point.dbNumber(), length, point.offset());
-            return decodeValue(point.dataType(), data);
+            return decodeValue(point.dataType(), data, point.bitOffset());
         } catch (Exception e) {
             throw new DriverTransientException("S7 read failed at " + point, e);
         }
@@ -166,6 +179,11 @@ public class S7DeviceDriver implements DeviceDriver {
         ByteBuffer buffer;
         return switch (type) {
             case BOOL -> {
+                int bit = point.bitOffset();
+                if (bit < 0 || bit > 7) {
+                    throw new DriverConfigurationException("S7 BOOL bit offset must be 0..7: " + bit);
+                }
+                int mask = 1 << bit;
                 boolean boolValue = Boolean.TRUE.equals(row.get("value"));
                 byte[] existing;
                 try {
@@ -173,7 +191,7 @@ public class S7DeviceDriver implements DeviceDriver {
                 } catch (Exception e) {
                     throw new DriverTransientException("S7 read before BOOL write failed at " + point, e);
                 }
-                existing[0] = (byte) (boolValue ? (existing[0] | 0x01) : (existing[0] & ~0x01));
+                existing[0] = (byte) (boolValue ? (existing[0] | mask) : (existing[0] & ~mask));
                 yield existing;
             }
             case BYTE, USINT -> {
@@ -240,9 +258,19 @@ public class S7DeviceDriver implements DeviceDriver {
     }
 
     static DataRecord decodeValue(S7Point.S7DataType type, byte[] data) throws DriverException {
+        return decodeValue(type, data, 0);
+    }
+
+    static DataRecord decodeValue(S7Point.S7DataType type, byte[] data, int bitOffset) throws DriverException {
         ByteBuffer buffer = ByteBuffer.wrap(data).order(ByteOrder.BIG_ENDIAN);
         return switch (type) {
-            case BOOL -> DataRecord.single(BOOL_SCHEMA, Map.of("value", (data[0] & 0x01) != 0));
+            case BOOL -> {
+                if (bitOffset < 0 || bitOffset > 7) {
+                    throw new DriverConfigurationException("S7 BOOL bit offset must be 0..7: " + bitOffset);
+                }
+                int mask = 1 << bitOffset;
+                yield DataRecord.single(BOOL_SCHEMA, Map.of("value", (data[0] & mask) != 0));
+            }
             case BYTE, USINT -> DataRecord.single(VALUE_SCHEMA, Map.of(
                     "raw", (long) (data[0] & 0xFF),
                     "value", (double) (data[0] & 0xFF)
