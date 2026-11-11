@@ -137,7 +137,8 @@ describe("useLazyObjectTree", () => {
     ).length;
     await act(async () => {
       // Mirrors App handleTreeLoadChildren(path, forceRefresh=true) for capped folders.
-      const force = true && result.current.wsCappedPaths.includes("root.platform.devices");
+      const forceRefresh = true;
+      const force = forceRefresh && result.current.wsCappedPaths.includes("root.platform.devices");
       await result.current.loadChildren("root.platform.devices", force);
     });
     const callsAfter = vi.mocked(fetchObjects).mock.calls.filter(

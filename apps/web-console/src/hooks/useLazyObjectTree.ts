@@ -79,6 +79,9 @@ export function useLazyObjectTree(enabled = true) {
           loadedParentsRef.current.delete(removed);
           const prefix = `${removed}.`;
           for (const [key, obj] of [...map.entries()]) {
+            if (obj.groupRef) {
+              continue;
+            }
             if (obj.path === removed || obj.path.startsWith(prefix)) {
               map.delete(key);
               loadedParentsRef.current.delete(obj.path);
