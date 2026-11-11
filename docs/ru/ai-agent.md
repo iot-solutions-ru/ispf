@@ -61,7 +61,7 @@ Live apply (BL-180):
 }
 ```
 
-Нужен LLM (`ISPF_AI_*`). Возвращает `mode: live` с `hubPath`, `dashboardPath`, `alertPath`. Proof: `AiSolutionGeneratorLiveSmokeTest` (`ISPF_LLM_SMOKE=true`).
+Нужен LLM (`ISPF_AI_*`). Возвращает `mode: live` с `hubPath`, `dashboardPath`, `alertPath`. Хаб — экземпляр SINGLETON-чертежа `root.platform.singleton-blueprints.{slug}-hub`; оборудование остаётся DEVICE под `root.platform.devices`. Proof: `AiSolutionGeneratorLiveSmokeTest` (`ISPF_LLM_SMOKE=true`).
 
 ### BL-180 soft &lt;15 min + oneshot интегратора (field-soak ready)
 
