@@ -132,6 +132,11 @@ class BundleTrustRequireSignedApiTest {
         String id = objectMapper.readTree(installationId).get("installationId").asText();
 
         Map<String, Object> manifest = baseManifest();
+        Map<String, Object> probe = new LinkedHashMap<>();
+        probe.put("parentPath", "root.platform.devices");
+        probe.put("name", "trust-probe");
+        probe.put("type", "DEVICE");
+        manifest.put("objects", java.util.List.of(probe));
         manifest.put("license", LicenseTestSupport.signedLicense(
                 objectMapper, manifest, "trust-demo", id, keyPair
         ));
