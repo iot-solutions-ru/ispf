@@ -353,10 +353,12 @@ POST /api/v1/applications/{appId}/deploy/rollback
 GET  /api/v1/applications/{appId}/export
 GET  /api/v1/applications/{appId}/export?version=1.0.0
 POST /api/v1/applications/{appId}/bundle/validate?dryRun=true|false&strict=true|false
-POST /api/v1/applications/{appId}/deploy?strict=true|false
+POST /api/v1/applications/{appId}/deploy?strict=true|false&runTests=true|false
 ```
 
-По умолчанию `strict=false` — авторский режим (`LOGIC_HOST_DEVICE` = WARNING, deploy не блокируется). С `strict=true` коды ship-canon становятся **ERROR**: validate сообщает их; deploy отвечает **400** (`shipCanon: true`, `deployed: false`) и не применяет бандл ([0060](decisions/0060-solution-authoring-constraints.md)). CLI: `ispf validate --strict`, `ispf deploy --strict`.
+Deploy всегда прогоняет `BundleManifestValidator` до применения. Пустые `displayName` и `schemaName` заполняются теми же значениями, что и `register()` (`appId` и `app_<appId>`), поэтому догрузка уже зарегистрированного приложения по-прежнему применяется. Проверка лицензии остаётся на исходном JSON. Структурный **ERROR** (нет version, пустой манифест, сломанные миграции) отвечает **400** с `deployed: false` и бандл не применяет. По умолчанию `strict=false` — авторский режим (`LOGIC_HOST_DEVICE` = WARNING, deploy не блокируется). С `strict=true` коды ship-canon становятся **ERROR**: deploy отвечает **400** (`shipCanon: true`, `deployed: false`) ([0060](decisions/0060-solution-authoring-constraints.md)). CLI: `ispf validate --strict`, `ispf deploy --strict`.
+
+`runTests` по умолчанию **true**: `tests[]` манифеста выполняются после apply, провал попадает в результат deploy. `runTests=false` пропускает их.
 
 До записи объектов бандла deploy делает сухой прогон дерева (обязательные поля, известный тип, родитель уже есть или создаётся более ранним объектом этого манифеста, повторяющиеся пути) и выполняет `migrations[]` на одном соединении с БД. Ошибка сухого прогона не меняет живое дерево (`treeMutated: false`) и не запускает SQL. Ошибка оператора откатывает это соединение и удаляет таблицы, которые создал именно этот неуспешный пакет, поэтому более поздняя ошибка не оставляет их в схеме. Регистрация по-прежнему создаёт схему приложения и data source, чтобы операторам было куда выполняться. Уже зафиксированный DDL не откатывается, если следующая запись объекта завершилась ошибкой.
 

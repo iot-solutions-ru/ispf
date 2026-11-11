@@ -353,10 +353,12 @@ Rollback re-applies the stored manifest (migrations skipped, functions re-applie
 GET  /api/v1/applications/{appId}/export
 GET  /api/v1/applications/{appId}/export?version=1.0.0
 POST /api/v1/applications/{appId}/bundle/validate?dryRun=true|false&strict=true|false
-POST /api/v1/applications/{appId}/deploy?strict=true|false
+POST /api/v1/applications/{appId}/deploy?strict=true|false&runTests=true|false
 ```
 
-Default `strict=false` keeps authoring behaviour (`LOGIC_HOST_DEVICE` is WARNING and does not block deploy). With `strict=true`, ship-canon codes are **ERROR**: validate reports them; deploy returns **400** with `shipCanon: true` / `deployed: false` and does not apply the bundle ([0060](decisions/0060-solution-authoring-constraints.md)). CLI: `ispf validate --strict`, `ispf deploy --strict`.
+Deploy always runs `BundleManifestValidator` before apply. A blank `displayName` or `schemaName` is filled with the same defaults `register()` uses (`appId` and `app_<appId>`), so an incremental deploy of an already registered app still applies. The license check stays on the raw JSON body. Structural **ERROR** (missing version, empty manifest, broken migrations) returns **400** with `deployed: false` and does not apply the bundle. Default `strict=false` keeps authoring behaviour (`LOGIC_HOST_DEVICE` is WARNING and does not block deploy). With `strict=true`, ship-canon codes are **ERROR**: deploy returns **400** with `shipCanon: true` / `deployed: false` ([0060](decisions/0060-solution-authoring-constraints.md)). CLI: `ispf validate --strict`, `ispf deploy --strict`.
+
+`runTests` defaults to **true**: manifest `tests[]` run after apply and a failure is recorded on the deploy result. Pass `runTests=false` to skip them.
 
 Before bundle objects are written, deploy dry-runs the object tree (required fields, known types, a parent that already exists or is created earlier in the same manifest, duplicate paths) and runs `migrations[]` on one database connection. A dry-run error leaves the live object tree unchanged (`treeMutated: false`) and does not execute SQL. A failed statement rolls that connection back and drops tables the failed batch itself created, so a later error cannot leave those tables behind. Registration still creates the application schema and data source so the statements have a schema to run in. DDL that has already committed cannot be undone if a later object write fails.
 

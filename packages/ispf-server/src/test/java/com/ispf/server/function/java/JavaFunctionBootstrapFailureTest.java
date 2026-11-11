@@ -75,6 +75,7 @@ class JavaFunctionBootstrapFailureTest {
     @Test
     void markedFailureIsReportedOnInvoke() {
         com.ispf.server.config.FunctionProperties properties = new com.ispf.server.config.FunctionProperties();
+        properties.getJava().setEnabled(true);
         JavaFunctionRuntimeService runtime = new JavaFunctionRuntimeService(properties);
         runtime.markBootstrapFailure(PATH, "tick", new IllegalArgumentException("bad class"));
 
