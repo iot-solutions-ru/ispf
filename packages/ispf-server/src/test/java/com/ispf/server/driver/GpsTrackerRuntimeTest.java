@@ -98,13 +98,38 @@ class GpsTrackerRuntimeTest {
 
         awaitPortOpen(listenPort, 15_000);
 
+        // Initial start() schedules poll asynchronously on the I/O + ingress worker pools;
+        // poll/flush and retry until the mapped variable is materialized on overloaded CI runners.
+        awaitGpsFeedRegistered(15_000);
+
+        // CI runners can be heavily loaded; keep retrying connect/send until the deadline.
+        awaitGpsFeedValue(NMEA_LINE, 45_000);
+    }
+
+    private void awaitGpsFeedRegistered(long timeoutMs) throws Exception {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        AssertionError lastFailure = null;
+        while (System.currentTimeMillis() < deadline) {
+            mockMvc.perform(post("/api/v1/drivers/runtime/poll").param("devicePath", devicePath))
+                    .andExpect(status().isOk());
+            try {
+                mockMvc.perform(get("/api/v1/objects/by-path/variables")
+                                .param("path", devicePath))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$[*].name", hasItem("gpsFeed")));
+                return;
+            } catch (AssertionError failure) {
+                lastFailure = failure;
+                Thread.sleep(100);
+            }
+        }
+        if (lastFailure != null) {
+            throw lastFailure;
+        }
         mockMvc.perform(get("/api/v1/objects/by-path/variables")
                         .param("path", devicePath))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].name", hasItem("gpsFeed")));
-
-        // CI runners can be heavily loaded; keep retrying connect/send until the deadline.
-        awaitGpsFeedValue(NMEA_LINE, 45_000);
     }
 
     private void awaitPortOpen(int port, long timeoutMs) throws Exception {
@@ -152,14 +177,13 @@ class GpsTrackerRuntimeTest {
             }
             mockMvc.perform(post("/api/v1/drivers/runtime/poll").param("devicePath", devicePath))
                     .andExpect(status().isOk());
-            lastBody = mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
+            var detailResult = mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
                             .param("path", devicePath)
                             .param("name", "gpsFeed"))
-                    .andExpect(status().isOk())
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-            if (lastBody.contains(expected)) {
+                    .andReturn();
+            int detailStatus = detailResult.getResponse().getStatus();
+            lastBody = detailResult.getResponse().getContentAsString();
+            if (detailStatus == 200 && lastBody.contains(expected)) {
                 return;
             }
             Thread.sleep(250);
