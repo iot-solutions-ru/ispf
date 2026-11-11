@@ -334,7 +334,7 @@ public class ApplicationBundleDeployService {
         List<String> compensated = new ArrayList<>();
         try {
             if (snapshotStore.findActive(appId).isPresent()) {
-                compensated.addAll(restoreRuntimeFromActiveSnapshot(appId));
+                compensated.addAll(restoreRuntimeFromActiveSnapshot(appId, manifest));
                 return compensated;
             }
             for (String path : BundleVisualGroupService.managedRemovalPaths(appId, manifest)) {
@@ -357,13 +357,30 @@ public class ApplicationBundleDeployService {
 
     /**
      * Re-sync live tree artifacts to match the last active snapshot after a failed upgrade attempt.
+     * Removes v2-only managed paths that are not in the active (v1) manifest before re-applying v1.
      */
-    private List<String> restoreRuntimeFromActiveSnapshot(String appId) {
+    private List<String> restoreRuntimeFromActiveSnapshot(String appId, BundleManifest failedManifest) {
         List<String> compensated = new ArrayList<>();
         try {
             ApplicationBundleSnapshotStore.BundleSnapshot snapshot = snapshotStore.findActive(appId)
                     .orElseThrow();
             BundleManifest activeManifest = objectMapper.readValue(snapshot.manifestJson(), BundleManifest.class);
+            java.util.Set<String> activePaths = new java.util.LinkedHashSet<>(
+                    BundleVisualGroupService.managedRemovalPaths(appId, activeManifest)
+            );
+            for (String path : BundleVisualGroupService.managedRemovalPaths(appId, failedManifest)) {
+                if (activePaths.contains(path)) {
+                    continue;
+                }
+                try {
+                    if (objectManager.tree().findByPath(path).isPresent()) {
+                        objectManager.delete(path);
+                        compensated.add("removedOrphan:" + path);
+                    }
+                } catch (Exception ex) {
+                    compensated.add("removeOrphanFailed:" + path + ": " + ex.getMessage());
+                }
+            }
             String displayName = activeManifest.displayName() != null && !activeManifest.displayName().isBlank()
                     ? activeManifest.displayName()
                     : appId;
