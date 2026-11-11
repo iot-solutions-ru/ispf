@@ -94,7 +94,7 @@ class BundleDeployAtomicityApiTest {
     }
 
     @Test
-    void dryRunFailureSkipsSqlAndTheObjectTree() throws Exception {
+    void dryRunFailureSkipsRegistrationSchemaSqlAndTheObjectTree() throws Exception {
         mockMvc.perform(post("/api/v1/applications/bnd2treebad/deploy")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(
@@ -105,12 +105,70 @@ class BundleDeployAtomicityApiTest {
                                 "CREATE TABLE bnd2_orphan_item (id INT PRIMARY KEY)"
                         )))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("FAILED"))
                 .andExpect(jsonPath("$.treeMutated").value(false))
                 .andExpect(jsonPath("$.errors", hasItem(containsString("parent does not exist"))));
 
+        assertTrue(applicationDataStore.findApp("bnd2treebad").isEmpty());
+        assertEquals(0, schemaCount("app_bnd2treebad"));
+        assertFalse(objectManager.tree().findByPath("root.platform.applications.bnd2treebad").isPresent());
+        assertFalse(objectManager.tree().findByPath("root.platform.data-sources.bnd2treebad").isPresent());
         assertFalse(objectManager.tree().findByPath("root.missing.bnd2.bnd2-orphan").isPresent());
         assertEquals(0, tableCount("app_bnd2treebad", "bnd2_orphan_item"));
         assertFalse(applicationDataStore.isMigrationApplied("bnd2treebad", "1.0.0", "init"));
+    }
+
+    @Test
+    void dryRunRejectsDashboardWorkflowAndSingletonWithMissingParentsBeforeRegistration() throws Exception {
+        String invalidParentsManifest = """
+                {
+                  "version": "1.0.0",
+                  "displayName": "bnd2leafbad",
+                  "schemaName": "app_bnd2leafbad",
+                  "blueprints": [{
+                    "name": "bad-hub",
+                    "type": "SINGLETON",
+                    "variables": [],
+                    "events": [],
+                    "functions": [],
+                    "bindings": [],
+                    "parameters": { "singletonInstancePath": "root.missing_hub_parent.bad-hub" }
+                  }],
+                  "dashboards": [{
+                    "path": "root.missing_dash_parent.board",
+                    "title": "Board",
+                    "layoutJson": "{\\"widgets\\":[]}"
+                  }],
+                  "workflows": [{
+                    "path": "root.missing_wf_parent.flow",
+                    "title": "Flow",
+                    "status": "DRAFT"
+                  }]
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/applications/bnd2leafbad/deploy")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidParentsManifest))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("FAILED"))
+                .andExpect(jsonPath("$.treeMutated").value(false))
+                .andExpect(jsonPath("$.errors", hasItem(containsString("singletonInstancePath parent does not exist"))))
+                .andExpect(jsonPath("$.errors", hasItem(containsString("dryRun:dashboard:"))))
+                .andExpect(jsonPath("$.errors", hasItem(containsString("dryRun:workflow:"))));
+
+        assertTrue(applicationDataStore.findApp("bnd2leafbad").isEmpty());
+        assertEquals(0, schemaCount("app_bnd2leafbad"));
+        assertFalse(objectManager.tree().findByPath("root.platform.applications.bnd2leafbad").isPresent());
+        assertFalse(objectManager.tree().findByPath("root.platform.data-sources.bnd2leafbad").isPresent());
+    }
+
+    private int schemaCount(String schema) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.schemata
+                WHERE LOWER(schema_name) = ?
+                """, Integer.class, schema);
+        return count != null ? count : 0;
     }
 
     private int tableCount(String schema, String table) {

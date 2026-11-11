@@ -121,21 +121,36 @@ public class ApplicationBundleDeployService {
         String displayName = manifest.displayName() != null && !manifest.displayName().isBlank()
                 ? manifest.displayName()
                 : appId;
-
-        try {
-            dataService.register(
-                    appId,
-                    displayName,
-                    manifest.tablePrefix(),
-                    manifest.schemaName()
-            );
-            applied.add("register");
-        } catch (Exception ex) {
-            errors.add("register: " + ex.getMessage());
-        }
-
+        String applicationPath = applicationTreePath(appId);
         String dataSourcePath = dataSourceObjectService.pathForNodeName(appId);
-        boolean treeMutated = applyAfterPreflight(appId, manifest, dataSourcePath, applied, skipped, errors);
+
+        List<String> preflightErrors = BundleDeployPreflight.dryRun(
+                manifest,
+                applicationPath,
+                dataSourcePath,
+                path -> objectManager.tree().findByPath(path).isPresent()
+        );
+        boolean treeMutated = false;
+        if (!preflightErrors.isEmpty()) {
+            errors.addAll(preflightErrors);
+        } else {
+            boolean registered = false;
+            try {
+                dataService.register(
+                        appId,
+                        displayName,
+                        manifest.tablePrefix(),
+                        manifest.schemaName()
+                );
+                applied.add("register");
+                registered = true;
+            } catch (Exception ex) {
+                errors.add("register: " + ex.getMessage());
+            }
+            if (registered) {
+                treeMutated = applyAfterRegistration(appId, manifest, dataSourcePath, applied, skipped, errors);
+            }
+        }
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("appId", appId);
@@ -146,7 +161,6 @@ public class ApplicationBundleDeployService {
         response.put("dataSourcePath", dataSourcePath);
         response.put("treeMutated", treeMutated);
         response.put("objectTree", "tree-first");
-        String applicationPath = applicationTreePath(appId);
         response.put("applicationPath", applicationPath);
 
         // Tree sync can add errors; snapshot must be recorded only after the full outcome is known
@@ -168,24 +182,29 @@ public class ApplicationBundleDeployService {
             }
         }
 
-        try {
-            String manifestJson = objectMapper.writeValueAsString(manifest);
-            String operatorManifestJson = manifest.operatorManifest() != null
-                    ? objectMapper.writeValueAsString(manifest.operatorManifest())
-                    : null;
-            boolean activateSnapshot = shouldActivateDeploySnapshot(errors);
-            snapshotStore.recordDeployment(
-                    appId,
-                    manifest.version(),
-                    manifestJson,
-                    operatorManifestJson,
-                    activateSnapshot
-            );
-            response.put("snapshot", activateSnapshot ? "recorded-active" : "recorded-inactive");
-            response.put("snapshotActive", activateSnapshot);
-        } catch (Exception ex) {
-            errors.add("snapshot: " + ex.getMessage());
-            response.put("snapshot", "failed");
+        if (preflightErrors.isEmpty()) {
+            try {
+                String manifestJson = objectMapper.writeValueAsString(manifest);
+                String operatorManifestJson = manifest.operatorManifest() != null
+                        ? objectMapper.writeValueAsString(manifest.operatorManifest())
+                        : null;
+                boolean activateSnapshot = shouldActivateDeploySnapshot(errors);
+                snapshotStore.recordDeployment(
+                        appId,
+                        manifest.version(),
+                        manifestJson,
+                        operatorManifestJson,
+                        activateSnapshot
+                );
+                response.put("snapshot", activateSnapshot ? "recorded-active" : "recorded-inactive");
+                response.put("snapshotActive", activateSnapshot);
+            } catch (Exception ex) {
+                errors.add("snapshot: " + ex.getMessage());
+                response.put("snapshot", "failed");
+                response.put("snapshotActive", false);
+            }
+        } else {
+            response.put("snapshot", "skipped");
             response.put("snapshotActive", false);
         }
 
@@ -205,12 +224,12 @@ public class ApplicationBundleDeployService {
     }
 
     /**
-     * Dry-run the object tree, then run migration SQL in one transaction.
-     * Bundle objects are written only when both succeed. Registration has already created the schema.
+     * Run migration SQL in one transaction after preflight and registration have succeeded.
+     * Bundle objects are written only when SQL succeeds.
      *
      * @return true when the live object tree was updated with bundle artifacts
      */
-    private boolean applyAfterPreflight(
+    private boolean applyAfterRegistration(
             String appId,
             BundleManifest manifest,
             String dataSourcePath,
@@ -218,17 +237,6 @@ public class ApplicationBundleDeployService {
             List<String> skipped,
             List<String> errors
     ) {
-        List<String> preflightErrors = BundleDeployPreflight.dryRun(
-                manifest.objects(),
-                manifest.blueprints(),
-                manifest.migrations(),
-                manifest.tablePrefix(),
-                path -> objectManager.tree().findByPath(path).isPresent()
-        );
-        if (!preflightErrors.isEmpty()) {
-            errors.addAll(preflightErrors);
-            return false;
-        }
         if (manifest.migrations() != null && !manifest.migrations().isEmpty()) {
             if (objectManager.tree().findByPath(dataSourcePath).isEmpty()) {
                 if (errors.stream().noneMatch(item -> item.startsWith("dataSource:"))) {
