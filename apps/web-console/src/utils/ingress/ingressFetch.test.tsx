@@ -47,6 +47,8 @@ describe("ingressFetch", () => {
     expect(shouldFallbackFromHmiIngress(new Response("", { status: 502 }))).toBe(true);
     expect(shouldFallbackFromHmiIngress(jsonResponse({ ok: true }))).toBe(false);
     expect(shouldFallbackFromHmiIngress(jsonResponse({ error: "x" }, 503))).toBe(false);
+    expect(shouldFallbackFromHmiIngress(jsonResponse({ status: 403, error: "Forbidden" }, 403))).toBe(true);
+    expect(shouldFallbackFromHmiIngress(jsonResponse({ status: 404, error: "Not Found" }, 404))).toBe(true);
   });
 
   it("falls back from /hmi to /api when ingress returns HTML", async () => {
@@ -62,6 +64,22 @@ describe("ingressFetch", () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${HMI_INGRESS_PREFIX}/api/v1/auth/me`);
     expect(fetchMock.mock.calls[1][0]).toBe("/api/v1/auth/me");
     expect(resolveIngressFetchPath("/api/v1/info")).toBe("/api/v1/info");
+  });
+
+  it("falls back from JSON 403 on /hmi to /api and caches direct", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ status: 403, error: "Forbidden", path: "/hmi/api/v1/auth/login" }, 403))
+      .mockResolvedValueOnce(jsonResponse({ token: "ok" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await fetchWithIngressFallback("/api/v1/auth/login", { method: "POST" });
+    expect(response.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][0]).toBe(`${HMI_INGRESS_PREFIX}/api/v1/auth/login`);
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/v1/auth/login");
+    expect(sessionStorage.getItem("ispf-ingress-route")).toBe("direct");
+    expect(resolveIngressFetchPath("/api/v1/operator-apps/demo/ui")).toBe("/api/v1/operator-apps/demo/ui");
   });
 
   it("keeps /hmi when ingress responds with JSON", async () => {

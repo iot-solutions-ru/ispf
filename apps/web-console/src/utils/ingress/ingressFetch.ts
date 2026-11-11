@@ -59,10 +59,14 @@ function isApiResponse(response: Response): boolean {
   return contentType.includes("application/json") || contentType.includes("application/problem+json");
 }
 
-/** True when /hmi ingress is missing (SPA HTML, gateway errors, non-API 503). */
+/**
+ * True when /hmi ingress is missing: SPA HTML, gateway errors, non-API 503,
+ * or a JSON 403/404 from the platform itself (no separate hmi-read proxy).
+ * Other JSON statuses stay on /hmi so a live ingress error is not retried.
+ */
 export function shouldFallbackFromHmiIngress(response: Response): boolean {
   if (isApiResponse(response)) {
-    return false;
+    return response.status === 403 || response.status === 404;
   }
   if ([404, 502, 503, 504].includes(response.status)) {
     return true;
