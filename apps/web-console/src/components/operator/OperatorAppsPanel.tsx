@@ -6,6 +6,7 @@ import {
   createOperatorApp,
   fetchOperatorAppUi,
   fetchOperatorApps,
+  operatorAppSaveNeedsCreate,
   saveOperatorAppUi,
 } from "../../api/operatorApps";
 import type { OperatorUi, OperatorUiDashboard } from "../../types/operatorUi";
@@ -16,6 +17,7 @@ import {
   operatorAppLeafFromPath,
   resolveOperatorAppId,
 } from "../../utils/operator/operatorAppsPath";
+import { buildOperatorAppUi } from "./operatorAppUiDraft";
 
 interface OperatorAppsPanelProps {
   canManage: boolean;
@@ -53,6 +55,8 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
   const [agentInstructions, setAgentInstructions] = useState("");
   const [hideTasksAndEvents, setHideTasksAndEvents] = useState(false);
   const [hideDashboardNav, setHideDashboardNav] = useState(false);
+  const [hostedUiUrl, setHostedUiUrl] = useState("");
+  const [externalSpaUrl, setExternalSpaUrl] = useState("");
 
   const uiQuery = useQuery({
     queryKey: ["operator-app-ui", selectedAppId],
@@ -60,16 +64,22 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
     enabled: Boolean(selectedAppId),
   });
 
+  const applyLoadedUi = useCallback((ui: OperatorUi) => {
+    setTitle(ui.title);
+    setDefaultDashboard(ui.defaultDashboard);
+    setSelectedPaths(ui.dashboards.map((item) => item.path));
+    setAlarmBar(ui.alarmBar);
+    setAgentInstructions(ui.agentInstructions ?? "");
+    setHideTasksAndEvents(ui.hideTasksAndEvents === true);
+    setHideDashboardNav(ui.hideDashboardNav === true);
+    setHostedUiUrl(ui.hostedUiUrl ?? "");
+    setExternalSpaUrl(ui.externalSpaUrl ?? "");
+  }, []);
+
   useEffect(() => {
     const ui = uiQuery.data;
     if (ui) {
-      setTitle(ui.title);
-      setDefaultDashboard(ui.defaultDashboard);
-      setSelectedPaths(ui.dashboards.map((item) => item.path));
-      setAlarmBar(ui.alarmBar);
-      setAgentInstructions(ui.agentInstructions ?? "");
-      setHideTasksAndEvents(ui.hideTasksAndEvents === true);
-      setHideDashboardNav(ui.hideDashboardNav === true);
+      applyLoadedUi(ui);
       return;
     }
     if (pathLeaf) {
@@ -80,8 +90,10 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       setAgentInstructions("");
       setHideTasksAndEvents(false);
       setHideDashboardNav(false);
+      setHostedUiUrl("");
+      setExternalSpaUrl("");
     }
-  }, [uiQuery.data, pathLeaf]);
+  }, [uiQuery.data, pathLeaf, applyLoadedUi]);
 
   const availableDashboards = useMemo(
     () => (dashboardsQuery.data ?? []).filter((obj) => obj.type === "DASHBOARD"),
@@ -93,7 +105,7 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       try {
         return await saveOperatorAppUi(selectedAppId, ui);
       } catch (error) {
-        if (!canManage) {
+        if (!canManage || !operatorAppSaveNeedsCreate(error)) {
           throw error;
         }
         await createOperatorApp(selectedAppId, ui.title);
@@ -101,6 +113,7 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       }
     },
     onSuccess: (saved) => {
+      applyLoadedUi(saved);
       queryClient.setQueryData(["operator-app-ui", selectedAppId], saved);
       queryClient.invalidateQueries({ queryKey: ["operator-apps"] });
       queryClient.invalidateQueries({ queryKey: ["operator-ui", selectedAppId] });
@@ -119,23 +132,21 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       const obj = availableDashboards.find((item) => item.path === path);
       return { path, title: obj?.displayName ?? path.split(".").pop() ?? path };
     });
-    if (!title.trim() || dashboards.length === 0) {
-      return null;
-    }
-    const resolvedDefault = dashboards.some((item) => item.path === defaultDashboard)
-      ? defaultDashboard
-      : dashboards[0].path;
-    return {
+    return buildOperatorAppUi({
+      existing: uiQuery.data,
       appId: selectedAppId,
-      title: title.trim(),
-      defaultDashboard: resolvedDefault,
+      title,
+      defaultDashboard,
       dashboards,
       alarmBar,
-      agentInstructions: agentInstructions.trim() || undefined,
-      ...(hideTasksAndEvents ? { hideTasksAndEvents: true } : {}),
-      ...(hideDashboardNav ? { hideDashboardNav: true } : {}),
-    };
+      agentInstructions,
+      hideTasksAndEvents,
+      hideDashboardNav,
+      hostedUiUrl,
+      externalSpaUrl,
+    });
   }, [
+    uiQuery.data,
     title,
     defaultDashboard,
     selectedPaths,
@@ -145,6 +156,8 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
     agentInstructions,
     hideTasksAndEvents,
     hideDashboardNav,
+    hostedUiUrl,
+    externalSpaUrl,
   ]);
 
   const dirty = useMemo(() => {
@@ -205,6 +218,26 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={!canManage}
               />
+            </label>
+            <label>
+              {t("operatorApps.hostedUiUrl")}
+              <input
+                value={hostedUiUrl}
+                onChange={(e) => setHostedUiUrl(e.target.value)}
+                disabled={!canManage || uiQuery.data?.uiPack?.installed === true}
+                spellCheck={false}
+              />
+              <span className="hint">{t("operatorApps.hostedUiUrlHint")}</span>
+            </label>
+            <label>
+              {t("operatorApps.externalSpaUrl")}
+              <input
+                value={externalSpaUrl}
+                onChange={(e) => setExternalSpaUrl(e.target.value)}
+                disabled={!canManage}
+                spellCheck={false}
+              />
+              <span className="hint">{t("operatorApps.externalSpaUrlHint")}</span>
             </label>
             <label>
               {t("operatorApps.defaultDashboard")}
