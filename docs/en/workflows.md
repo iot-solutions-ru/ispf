@@ -255,7 +255,7 @@ Definition: `WorkflowDefinitions.DEMO_ALARM_HANDLER`.
 ![BPMN workflow editor — MES work-order dispatch](../assets/ispf-bpmn-workflow.png)
 
 - **WorkflowBuilder** — status, run, ISPF Workflow Diagram Editor; product status **Beta — BPMN subset** (see tables above)
-- **IspfBpmnEditor** / **IspfBpmnViewer** (ADR-0052) — first-party React+SVG editor (no bpmn.io / no watermark). Document model serializes to BPMN 2.0 + `bpmndi` + `ispf:*`. Properties panel configures tasks, events, and sequence flows; XML tab is for AI and edge cases.
+- **IspfBpmnEditor** / **IspfBpmnViewer** (ADR-0052) — first-party React+SVG editor (no bpmn.io / no watermark). Document model serializes to BPMN 2.0 + `bpmndi` + `ispf:*`. Properties panel configures tasks, events, and sequence flows; XML tab is for AI and edge cases. `ispf:targetObject` on `setVariable` and user tasks accepts a CUSTOM hub (SINGLETON or INSTANCE), a DEVICE, or an APPLICATION node. `start_workflow` stores the trigger on `ispf:objectPath`; when that attribute is empty the engine reads `ispf:targetObject`.
 - **Import** — foreign BPMN (Camunda/Flowable/…) via **Import BPMN**; `adaptForeignBpmn` rewrites/maps/stubs into the ISPF model and shows a warning report (same spirit as SVG normalize). Hard gate for unsupported constructs remains parser reject at save/run (ADR-0047).
 - Palette presets cover the supported subset (timer/signal/message catch, message throw, messageTask, built-in actions, AI tasks). Marketplace `bpmn-element-pack` (palette contributions) is the extension path for external “elements.”
 
