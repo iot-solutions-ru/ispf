@@ -28,8 +28,12 @@ public class McpJsonRpcHandler {
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, Object> handle(Map<String, Object> request, Authentication authentication, String actor)
-            throws Exception {
+    public Map<String, Object> handle(
+            Map<String, Object> request,
+            Authentication authentication,
+            String actor,
+            String connectionKey
+    ) throws Exception {
         String method = request.get("method") != null ? request.get("method").toString() : "";
         Object id = request.get("id");
         Map<String, Object> params = request.get("params") instanceof Map<?, ?> map
@@ -39,7 +43,7 @@ public class McpJsonRpcHandler {
         return switch (method) {
             case "initialize" -> success(id, initializeResult());
             case "tools/list" -> success(id, Map.of("tools", toolAdapter.listTools()));
-            case "tools/call" -> success(id, callTool(params, authentication, actor));
+            case "tools/call" -> success(id, callTool(params, authentication, actor, connectionKey));
             case "resources/list" -> success(id, Map.of("resources", resourceAdapter.listResources()));
             case "resources/read" -> success(id, readResource(params));
             case "ping" -> success(id, Map.of());
@@ -65,7 +69,8 @@ public class McpJsonRpcHandler {
     private Map<String, Object> callTool(
             Map<String, Object> params,
             Authentication authentication,
-            String actor
+            String actor,
+            String connectionKey
     ) throws Exception {
         String name = params.get("name") != null ? params.get("name").toString() : "";
         if (name.isBlank()) {
@@ -74,7 +79,7 @@ public class McpJsonRpcHandler {
         Map<String, Object> arguments = params.get("arguments") instanceof Map<?, ?> map
                 ? (Map<String, Object>) map
                 : Map.of();
-        return toolAdapter.callTool(name, arguments, authentication, actor);
+        return toolAdapter.callTool(name, arguments, authentication, actor, connectionKey);
     }
 
     private Map<String, Object> readResource(Map<String, Object> params) {
@@ -101,12 +106,16 @@ public class McpJsonRpcHandler {
         return response;
     }
 
-    public Map<String, Object> handleBatch(List<Map<String, Object>> requests, Authentication authentication, String actor)
-            throws Exception {
+    public Map<String, Object> handleBatch(
+            List<Map<String, Object>> requests,
+            Authentication authentication,
+            String actor,
+            String connectionKey
+    ) throws Exception {
         List<Map<String, Object>> responses = requests.stream()
                 .map(req -> {
                     try {
-                        return handle(req, authentication, actor);
+                        return handle(req, authentication, actor, connectionKey);
                     } catch (Exception ex) {
                         Object id = req.get("id");
                         return Map.of(

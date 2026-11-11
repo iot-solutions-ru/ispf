@@ -34,11 +34,14 @@ class McpToolApiTest {
     @Test
     void toolsListIncludesPlatformTools() throws Exception {
         mockMvc.perform(post("/api/v1/ai/mcp")
+                        .header("X-ISPF-Role", "admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}
                                 """))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result.tools[?(@.name == 'mcp_create_agent_session')]").exists())
+                .andExpect(jsonPath("$.result.tools[?(@.name == 'mcp_approve_mutate_plan')]").exists())
                 .andExpect(jsonPath("$.result.tools[?(@.name == 'list_objects')]").exists())
                 .andExpect(jsonPath("$.result.tools[?(@.name == 'search_context')]").exists())
                 .andExpect(jsonPath("$.result.tools[?(@.name == 'list_objects')].inputSchema.properties.parent").exists())

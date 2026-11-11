@@ -1,6 +1,7 @@
 package com.ispf.server.ai.mcp;
 
 import com.ispf.server.ai.agent.AgentContext;
+import com.ispf.server.ai.agent.AgentInteractionMode;
 import com.ispf.server.ai.agent.AgentMutateApprovalGuard;
 import com.ispf.server.ai.agent.AgentProfile;
 import com.ispf.server.ai.agent.AgentRunState;
@@ -24,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Delegates MCP tool calls to {@link PlatformAgentToolRegistry} and publishes ACTIVE workflows
@@ -33,8 +35,14 @@ import java.util.Optional;
 @ConditionalOnProperty(prefix = "ispf.mcp", name = "enabled", havingValue = "true")
 public class McpToolAdapter {
 
+    static final String MCP_CREATE_AGENT_SESSION = "mcp_create_agent_session";
+    static final String MCP_APPROVE_MUTATE_PLAN = "mcp_approve_mutate_plan";
+
+    private static final Set<String> MCP_META_TOOLS = Set.of(MCP_CREATE_AGENT_SESSION, MCP_APPROVE_MUTATE_PLAN);
+
     private final PlatformAgentToolRegistry toolRegistry;
     private final AgentSessionStore sessionStore;
+    private final McpConnectionStateStore connectionStateStore;
     private final AiToolAuditService auditService;
     private final ContextPackService contextPackService;
     private final WorkflowService workflowService;
@@ -44,6 +52,7 @@ public class McpToolAdapter {
     public McpToolAdapter(
             PlatformAgentToolRegistry toolRegistry,
             AgentSessionStore sessionStore,
+            McpConnectionStateStore connectionStateStore,
             AiToolAuditService auditService,
             ContextPackService contextPackService,
             WorkflowService workflowService,
@@ -52,6 +61,7 @@ public class McpToolAdapter {
     ) {
         this.toolRegistry = toolRegistry;
         this.sessionStore = sessionStore;
+        this.connectionStateStore = connectionStateStore;
         this.auditService = auditService;
         this.contextPackService = contextPackService;
         this.workflowService = workflowService;
@@ -61,6 +71,40 @@ public class McpToolAdapter {
 
     public List<Map<String, Object>> listTools() {
         List<Map<String, Object>> tools = new ArrayList<>();
+        tools.add(mcpMetaTool(
+                MCP_CREATE_AGENT_SESSION,
+                "Create a persisted AI agent session for this MCP connection and return sessionId. "
+                        + "Optional rootPath (default root). Run state is carried on the connection until this is called.",
+                AgentToolSchemas.objectSchema(
+                        Map.of(
+                                "rootPath",
+                                AgentToolSchemas.stringProp(
+                                        "Object-tree root for the session (default root)"
+                                ),
+                                "interactionMode",
+                                AgentToolSchemas.stringProp(
+                                        "Optional PLAN, EXECUTE, or CHAT"
+                                )
+                        ),
+                        List.of(),
+                        false
+                )
+        ));
+        tools.add(mcpMetaTool(
+                MCP_APPROVE_MUTATE_PLAN,
+                "Explicitly approve mutate tools for this MCP connection when "
+                        + "ispf.ai.agent-require-approval-for-mutate is enabled.",
+                AgentToolSchemas.objectSchema(
+                        Map.of(
+                                "note",
+                                AgentToolSchemas.stringProp(
+                                        "Optional human-readable approval note"
+                                )
+                        ),
+                        List.of(),
+                        false
+                )
+        ));
         for (Map<String, Object> entry : toolRegistry.toolCatalog()) {
             Map<String, Object> tool = new LinkedHashMap<>();
             tool.put("name", entry.get("name"));
@@ -83,18 +127,18 @@ public class McpToolAdapter {
             String toolName,
             Map<String, Object> arguments,
             Authentication authentication,
-            String actor
+            String actor,
+            String connectionKey
     ) throws Exception {
+        if (MCP_META_TOOLS.contains(toolName)) {
+            return wrapMetaResult(executeMetaTool(toolName, arguments, actor, connectionKey), objectMapper);
+        }
+
         Map<String, Object> args = arguments != null ? new LinkedHashMap<>(arguments) : new LinkedHashMap<>();
         String sessionId = extractSessionId(args);
-        AgentRunState runState = new AgentRunState();
-        Optional<AgentSession> session = Optional.empty();
-        if (sessionId != null && !sessionId.isBlank()) {
-            session = sessionStore.get(sessionId.trim(), actor);
-            if (session.isPresent()) {
-                runState = session.get().runState();
-            }
-        }
+        ResolvedRunState resolved = resolveRunState(connectionKey, sessionId, actor);
+        AgentRunState runState = resolved.runState();
+        Optional<AgentSession> session = resolved.session();
 
         AgentContext context = new AgentContext(actor, authentication, runState);
         Map<String, Object> result;
@@ -128,9 +172,14 @@ public class McpToolAdapter {
 
         session.ifPresent(sessionStore::persistState);
 
+        String auditSessionId = session.map(AgentSession::sessionId)
+                .orElseGet(() -> connectionStateStore.agentSessionId(connectionKey).orElse(
+                        sessionId != null ? sessionId : "mcp"
+                ));
+
         auditService.record(
                 "mcp_" + toolName,
-                sessionId != null ? sessionId : "mcp",
+                auditSessionId,
                 actor,
                 writeJson(args),
                 status,
@@ -146,6 +195,87 @@ public class McpToolAdapter {
                         "type", "text",
                         "text", writeJson(result)
                 )),
+                "isError", isError
+        );
+    }
+
+    private Map<String, Object> executeMetaTool(
+            String toolName,
+            Map<String, Object> arguments,
+            String actor,
+            String connectionKey
+    ) {
+        Map<String, Object> args = arguments != null ? arguments : Map.of();
+        if (MCP_CREATE_AGENT_SESSION.equals(toolName)) {
+            String rootPath = args.get("rootPath") != null ? String.valueOf(args.get("rootPath")) : null;
+            AgentRunState connectionState = connectionStateStore.runStateFor(connectionKey);
+            AgentSession session = sessionStore.create(actor, rootPath);
+            session.runState().restore(objectMapper, connectionState.snapshot(objectMapper));
+            Object modeRaw = args.get("interactionMode");
+            if (modeRaw != null && !String.valueOf(modeRaw).isBlank()) {
+                session.runState().setInteractionMode(AgentInteractionMode.fromString(String.valueOf(modeRaw)));
+            }
+            connectionStateStore.bindAgentSession(connectionKey, session.sessionId());
+            sessionStore.persistState(session);
+            return Map.of(
+                    "status", "OK",
+                    "sessionId", session.sessionId(),
+                    "rootPath", session.rootPath(),
+                    "planState", session.runState().planStateSummary()
+            );
+        }
+        if (MCP_APPROVE_MUTATE_PLAN.equals(toolName)) {
+            ResolvedRunState resolved = resolveRunState(connectionKey, null, actor);
+            resolved.runState().approvePlan(actor);
+            resolved.session().ifPresent(sessionStore::persistState);
+            Map<String, Object> ok = new LinkedHashMap<>();
+            ok.put("status", "OK");
+            ok.put("planApproved", resolved.runState().isPlanApproved());
+            ok.put("planState", resolved.runState().planStateSummary());
+            Object note = args.get("note");
+            if (note != null && !String.valueOf(note).isBlank()) {
+                ok.put("note", String.valueOf(note));
+            }
+            return ok;
+        }
+        return Map.of("status", "ERROR", "error", "Unknown MCP meta tool: " + toolName);
+    }
+
+    private ResolvedRunState resolveRunState(String connectionKey, String sessionIdArg, String actor) {
+        Optional<String> boundSessionId = connectionStateStore.agentSessionId(connectionKey);
+        String effectiveSessionId = sessionIdArg != null && !sessionIdArg.isBlank()
+                ? sessionIdArg.trim()
+                : boundSessionId.orElse(null);
+        if (effectiveSessionId != null) {
+            Optional<AgentSession> session = sessionStore.get(effectiveSessionId, actor);
+            if (session.isPresent()) {
+                return new ResolvedRunState(session.get().runState(), session);
+            }
+        }
+        return new ResolvedRunState(connectionStateStore.runStateFor(connectionKey), Optional.empty());
+    }
+
+    private record ResolvedRunState(AgentRunState runState, Optional<AgentSession> session) {
+    }
+
+    private static Map<String, Object> mcpMetaTool(String name, String description, Map<String, Object> inputSchema) {
+        Map<String, Object> tool = new LinkedHashMap<>();
+        tool.put("name", name);
+        tool.put("description", description);
+        tool.put("inputSchema", inputSchema);
+        return tool;
+    }
+
+    private static Map<String, Object> wrapMetaResult(Map<String, Object> result, ObjectMapper objectMapper) {
+        boolean isError = "ERROR".equals(String.valueOf(result.get("status")));
+        String text;
+        try {
+            text = objectMapper.writeValueAsString(result);
+        } catch (Exception ex) {
+            text = String.valueOf(result);
+        }
+        return Map.of(
+                "content", List.of(Map.of("type", "text", "text", text)),
                 "isError", isError
         );
     }
@@ -203,4 +333,5 @@ public class McpToolAdapter {
             return String.valueOf(value);
         }
     }
+
 }

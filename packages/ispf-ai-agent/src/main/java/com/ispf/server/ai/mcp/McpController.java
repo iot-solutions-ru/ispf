@@ -29,13 +29,14 @@ public class McpController {
     @PostMapping
     public Object message(@RequestBody Object body, Authentication authentication) throws Exception {
         String actor = actor(authentication);
+        String connectionKey = McpConnectionKeys.forHttpActor(actor);
         if (body instanceof List<?> list) {
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> requests = (List<Map<String, Object>>) list;
             return requests.stream()
                     .map(req -> {
                         try {
-                            return jsonRpcHandler.handle(req, authentication, actor);
+                            return jsonRpcHandler.handle(req, authentication, actor, connectionKey);
                         } catch (Exception ex) {
                             return Map.of(
                                     "jsonrpc", "2.0",
@@ -49,7 +50,7 @@ public class McpController {
         if (body instanceof Map<?, ?> map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> request = (Map<String, Object>) map;
-            return jsonRpcHandler.handle(request, authentication, actor);
+            return jsonRpcHandler.handle(request, authentication, actor, connectionKey);
         }
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Expected JSON-RPC object or array");
     }
