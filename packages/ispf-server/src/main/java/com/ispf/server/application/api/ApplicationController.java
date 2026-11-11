@@ -8,6 +8,7 @@ import com.ispf.server.application.bundle.ApplicationBundleDeployService;
 import com.ispf.server.application.bundle.ApplicationBundlePullFromTreeService;
 import com.ispf.server.application.bundle.ApplicationBundlePullFromTreeService.PullFromTreeOptions;
 import com.ispf.server.application.data.ApplicationDataService;
+import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.application.git.ApplicationGitService;
 import com.ispf.server.application.git.ApplicationGitService.GitBindingRequest;
 import com.ispf.server.application.git.ApplicationGitService.PullRequest;
@@ -150,7 +151,8 @@ public class ApplicationController {
     public ResponseEntity<Map<String, Object>> deployBundle(
             @PathVariable String appId,
             @RequestBody JsonNode body,
-            @RequestParam(defaultValue = "false") boolean strict
+            @RequestParam(defaultValue = "false") boolean strict,
+            @RequestParam(defaultValue = "true") boolean runTests
     ) {
         try {
             // Verify license on the raw JSON map (same shape as tools/license-builder/sign-bundle.py).
@@ -160,18 +162,20 @@ public class ApplicationController {
             licenseVerifier.verifyOrWarn(appId, raw, false);
             ApplicationBundleDeployService.BundleManifest manifest =
                     objectMapper.convertValue(body, ApplicationBundleDeployService.BundleManifest.class);
-            // ADR-0060: default deploy stays authoring (LOGIC_HOST_DEVICE WARNING).
-            // ?strict=true promotes ship-canon codes and refuses apply on ERROR.
-            if (strict) {
-                BundleValidationResult validation = bundleManifestValidator.validate(appId, manifest, true);
-                if (BundleValidationResult.ERROR.equals(validation.status())) {
-                    Map<String, Object> blocked = new LinkedHashMap<>(validation.toMap());
-                    blocked.put("shipCanon", true);
-                    blocked.put("deployed", false);
-                    return ResponseEntity.badRequest().body(blocked);
-                }
+            // Structural validation always runs. Blank displayName/schemaName use the same
+            // defaults as register(), so an incremental deploy of an existing app still applies.
+            // License stays on the raw map above: the typed DTO must not be hashed again.
+            // ADR-0060: default stays authoring (LOGIC_HOST_DEVICE is WARNING).
+            // ?strict=true promotes ship-canon codes to ERROR.
+            BundleValidationResult validation = bundleManifestValidator.validate(
+                    appId, withRegistrationDefaults(appId, manifest), strict, false);
+            if (BundleValidationResult.ERROR.equals(validation.status())) {
+                Map<String, Object> blocked = new LinkedHashMap<>(validation.toMap());
+                blocked.put("shipCanon", strict);
+                blocked.put("deployed", false);
+                return ResponseEntity.badRequest().body(blocked);
             }
-            return ResponseEntity.ok(bundleDeployService.deploy(appId, manifest, false, false));
+            return ResponseEntity.ok(bundleDeployService.deploy(appId, manifest, false, false, runTests));
         } catch (CommercialLicenseException ex) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
         } catch (BundleDependencyException ex) {
@@ -527,6 +531,30 @@ public class ApplicationController {
                 "version", version,
                 "status", "deployed"
         );
+    }
+
+    /**
+     * Validation copy only. Deploy still receives the caller's manifest, and {@code register()}
+     * applies the same defaults when the fields are blank.
+     */
+    private ApplicationBundleDeployService.BundleManifest withRegistrationDefaults(
+            String appId,
+            ApplicationBundleDeployService.BundleManifest manifest
+    ) {
+        boolean nameBlank = manifest.displayName() == null || manifest.displayName().isBlank();
+        boolean schemaBlank = manifest.schemaName() == null || manifest.schemaName().isBlank();
+        if (!nameBlank && !schemaBlank) {
+            return manifest;
+        }
+        @SuppressWarnings("unchecked")
+        Map<String, Object> copy = objectMapper.convertValue(manifest, Map.class);
+        if (nameBlank) {
+            copy.put("displayName", appId);
+        }
+        if (schemaBlank) {
+            copy.put("schemaName", ApplicationSchemaSupport.defaultSchemaName(appId));
+        }
+        return objectMapper.convertValue(copy, ApplicationBundleDeployService.BundleManifest.class);
     }
 
     public record RegisterApplicationRequest(
