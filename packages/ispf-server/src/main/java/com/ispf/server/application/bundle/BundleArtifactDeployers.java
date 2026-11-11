@@ -169,6 +169,10 @@ public class BundleArtifactDeployers {
         );
         functionStore.deploy(deployed);
 
+        List<String> invokeRoles = objectManager.tree().findByPath(function.objectPath())
+                .map(node -> node.functions().get(function.functionName()))
+                .map(FunctionDescriptor::invokeRoles)
+                .orElse(List.of());
         FunctionDescriptor treeFunction = new FunctionDescriptor(
                 function.functionName(),
                 "Script function " + function.functionName(),
@@ -177,7 +181,8 @@ public class BundleArtifactDeployers {
                 function.source().type(),
                 function.source().body(),
                 dataSourcePath,
-                version
+                version,
+                invokeRoles
         );
         objectManager.upsertFunction(function.objectPath(), treeFunction);
     }
