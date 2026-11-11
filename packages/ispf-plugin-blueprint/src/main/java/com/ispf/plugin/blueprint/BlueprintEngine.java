@@ -631,7 +631,8 @@ public class BlueprintEngine {
             target.addEvent(event);
         }
         for (FunctionDescriptor function : model.functions()) {
-            if (target.functions().containsKey(function.name())) {
+            FunctionDescriptor existing = target.functions().get(function.name());
+            if (existing != null) {
                 warnings.add(new BlueprintMergeWarning(
                         BlueprintMergeWarning.KIND_FUNCTION,
                         function.name(),
@@ -639,7 +640,22 @@ public class BlueprintEngine {
                         model.id()
                 ));
             }
-            target.addFunction(function);
+            FunctionDescriptor toAdd = (existing != null
+                    && function.invokeRoles().isEmpty()
+                    && !existing.invokeRoles().isEmpty())
+                    ? new FunctionDescriptor(
+                            function.name(),
+                            function.description(),
+                            function.inputSchema(),
+                            function.outputSchema(),
+                            function.sourceType(),
+                            function.sourceBody(),
+                            function.dataSourcePath(),
+                            function.version(),
+                            existing.invokeRoles()
+                    )
+                    : function;
+            target.addFunction(toAdd);
         }
     }
 

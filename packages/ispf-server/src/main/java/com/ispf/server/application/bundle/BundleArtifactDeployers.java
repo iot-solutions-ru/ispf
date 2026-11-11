@@ -19,6 +19,7 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.analytics.formula.AnalyticsFormula;
 import com.ispf.server.platform.analytics.formula.AnalyticsFormulaParameter;
 import com.ispf.server.plugin.blueprint.BlueprintPersistenceService;
+import com.ispf.plugin.blueprint.BlueprintType;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
@@ -239,6 +240,12 @@ public class BundleArtifactDeployers {
                 ? blueprintEngine.updateBlueprint(definition)
                 : blueprintEngine.createBlueprint(definition);
         blueprintPersistence.persist(saved, false);
+        if (saved.type() == BlueprintType.SINGLETON) {
+            String instancePath = BlueprintEngine.singletonInstancePath(saved);
+            if (objectManager.tree().findByPath(instancePath).isPresent()) {
+                objectManager.persistNodeTree(instancePath);
+            }
+        }
     }
 
     static AnalyticsFormula toAnalyticsFormula(String appId, BundleAnalyticsFormula formula) {
