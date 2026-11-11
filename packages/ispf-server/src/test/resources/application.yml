@@ -16,5 +16,8 @@ spring:
           issuer-uri: https://example.invalid/realms/ispf
 
 ispf:
+  function:
+    java:
+      enabled: true
   mqtt:
     enabled: false

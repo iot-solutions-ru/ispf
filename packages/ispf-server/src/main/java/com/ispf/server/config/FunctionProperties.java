@@ -10,12 +10,12 @@ public class FunctionProperties {
     private Audit audit = new Audit();
 
     /**
-     * In-process Java function compile/execute. Default {@code true} for local/test/dev
-     * (admin-authored trusted code); prod profile defaults {@code false} — see
-     * {@code application-prod.yml}. Regex denylist is not a process sandbox — ADR-0045.
+     * In-process Java function compile/execute. Default {@code false}.
+     * Turn on with {@code ispf.function.java.enabled=true} only on a host that trusts
+     * the authors. Regex denylist is not a process sandbox — ADR-0045.
      */
     public static class Java {
-        private boolean enabled = true;
+        private boolean enabled = false;
 
         public boolean isEnabled() {
             return enabled;
