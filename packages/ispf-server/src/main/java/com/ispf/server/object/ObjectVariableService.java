@@ -14,6 +14,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.object.VariableStorageMode;
 import com.ispf.server.application.script.FunctionScriptValidator;
+import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.spi.DeviceTelemetryPolicy;
 import com.ispf.server.function.java.JavaFunctionRuntimeService;
 import com.ispf.server.persistence.ObjectEntityMapper;
@@ -57,6 +58,7 @@ public class ObjectVariableService {
     private final JavaFunctionRuntimeService javaFunctionRuntimeService;
     private final FunctionScriptValidator scriptValidator;
     private final BlueprintRegistry blueprintRegistry;
+    private final VariableHistoryService variableHistoryService;
 
     public ObjectVariableService(
             @Lazy ObjectManager objectManager,
@@ -65,7 +67,8 @@ public class ObjectVariableService {
             @Lazy DeviceTelemetryPolicy telemetryPolicyService,
             JavaFunctionRuntimeService javaFunctionRuntimeService,
             FunctionScriptValidator scriptValidator,
-            @Lazy BlueprintRegistry blueprintRegistry
+            @Lazy BlueprintRegistry blueprintRegistry,
+            @Lazy VariableHistoryService variableHistoryService
     ) {
         this.objectManager = objectManager;
         this.variableRepository = variableRepository;
@@ -74,6 +77,7 @@ public class ObjectVariableService {
         this.javaFunctionRuntimeService = javaFunctionRuntimeService;
         this.scriptValidator = scriptValidator;
         this.blueprintRegistry = blueprintRegistry;
+        this.variableHistoryService = variableHistoryService;
     }
 
     @Transactional
@@ -134,6 +138,9 @@ public class ObjectVariableService {
         long revisionBefore = node.revision();
         Map<String, Object> before = variableSnapshot(existing.get());
         node.removeVariable(name);
+        if (variableHistoryService != null) {
+            variableHistoryService.forgetVariable(path, name);
+        }
         variableRepository.deleteByObjectPathAndName(path, name);
         objectManager.bumpRevision(node);
         objectManager.recordAudit(

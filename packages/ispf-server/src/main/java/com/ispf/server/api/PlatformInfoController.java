@@ -3,6 +3,7 @@ package com.ispf.server.api;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.federation.FederationSecretsKeyService;
+import com.ispf.server.history.HistoryParquetExportGateway;
 import com.ispf.server.platform.update.PlatformVersionSupport;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringBootVersion;
@@ -24,6 +25,7 @@ public class PlatformInfoController {
     private final FederationSecretsKeyService secretsKeyService;
     private final NatsProperties natsProperties;
     private final ClusterProperties clusterProperties;
+    private final HistoryParquetExportGateway parquetExport;
     private final String environment;
 
     public PlatformInfoController(
@@ -31,12 +33,14 @@ public class PlatformInfoController {
             FederationSecretsKeyService secretsKeyService,
             NatsProperties natsProperties,
             ClusterProperties clusterProperties,
+            HistoryParquetExportGateway parquetExport,
             @Value("${ispf.environment:dev}") String environment
     ) {
         this.buildProperties = buildProperties;
         this.secretsKeyService = secretsKeyService;
         this.natsProperties = natsProperties;
         this.clusterProperties = clusterProperties;
+        this.parquetExport = parquetExport;
         this.environment = environment;
     }
 
@@ -79,6 +83,7 @@ public class PlatformInfoController {
         });
         payload.put("federationSecretsKeyConfigured", secretsKeyService.isConfigured());
         payload.put("federationSecretsKeySource", secretsKeyService.source().name());
+        payload.put("parquetExportAvailable", parquetExport.isAvailable());
         return payload;
     }
 }

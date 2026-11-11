@@ -59,7 +59,7 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `device-net` | `ispf-driver-device-net` | STUB | Apache-2.0 | ODVA DeviceNet gateway stub |
 | `dhcp` | `ispf-driver-dhcp` | PRODUCTION | Apache-2.0 | DHCP discover probe |
 | `dlms` | `ispf-driver-dlms` | PRODUCTION | Apache-2.0 | DLMS/COSEM meter master (TCP WRAPPER) |
-| `dnp3` | `ispf-driver-dnp3` | PRODUCTION | Apache-2.0 | DNP3 TCP master — class poll/read (write not implemented) |
+| `dnp3` | `ispf-driver-dnp3` | PRODUCTION | Apache-2.0 | DNP3 TCP master — class poll plus CROB latch and g41v3 analog direct operate |
 | `eebus` | `ispf-driver-eebus` | STUB | Apache-2.0 | EEBUS / SHIP energy management stub |
 | `email` | `ispf-driver-email` | PRODUCTION | Apache-2.0 | Outbound email via HTTP relay gateway |
 | `enocean` | `ispf-driver-enocean` | STUB | Apache-2.0 | EnOcean ESP3 / USB gateway stub |

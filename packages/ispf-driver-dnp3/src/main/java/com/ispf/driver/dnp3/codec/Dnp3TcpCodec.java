@@ -27,12 +27,21 @@ public final class Dnp3TcpCodec {
     private static final int MAX_LENGTH = 255;
     private static final int USER_BLOCK = 16;
     private static final int LINK_CONTROL_RESET = 0xC0;
-    private static final int LINK_CONTROL_UNCONFIRMED = 0x44;
+    private static final int LINK_CONTROL_MASTER_UNCONFIRMED = 0xC4;
+    private static final int LINK_CONTROL_OUTSTATION_UNCONFIRMED = 0x44;
     private static final int TRANSPORT_FIN_FIR = 0xC0;
     private static final int APP_REQUEST = 0xC0;
     private static final int APP_RESPONSE = 0xC0;
-    private static final int FUNCTION_READ = 0x01;
+    public static final int FUNCTION_READ = 0x01;
+    public static final int FUNCTION_DIRECT_OPERATE = 0x05;
     private static final int FUNCTION_RESPONSE = 0x81;
+    private static final int GROUP_CROB = 12;
+    private static final int CROB_VARIATION = 1;
+    private static final int GROUP_ANALOG_OUTPUT_CMD = 41;
+    private static final int ANALOG_OUTPUT_FLOAT = 3;
+    private static final int CROB_LATCH_ON = 0x03;
+    private static final int CROB_LATCH_OFF = 0x04;
+    private static final int OPERATE_SUCCESS = 0;
     private static final int QUALIFIER_16BIT_INDEXES = 0x28;
     /** CRC-16/DNP reflected polynomial (poly 0x3D65, refin/refout). */
     private static final int CRC_POLY_REFLECTED = 0xA6BC;
@@ -60,7 +69,34 @@ public final class Dnp3TcpCodec {
         app.put((byte) 0x3C);
         app.put((byte) 0x03);
         app.put((byte) 0x06);
-        return frame(masterAddress, outstationAddress, app.array(), sequence);
+        return frame(masterAddress, outstationAddress, app.array(), sequence, true);
+    }
+
+    /**
+     * Direct Operate (function {@code 0x05}) for one object.
+     * Binary output is CROB g12v1 latch-on ({@code 0x03}) or latch-off ({@code 0x04}).
+     * Analog output is g41v3 IEEE float32 plus a status byte. Qualifier is {@code 0x28}.
+     */
+    public static byte[] directOperateRequest(int masterAddress, int outstationAddress, int sequence,
+            ControlCommand command) {
+        byte[] object = encodeOperateObject(command, OPERATE_SUCCESS);
+        ByteBuffer app = ByteBuffer.allocate(2 + object.length).order(ByteOrder.LITTLE_ENDIAN);
+        app.put((byte) (APP_REQUEST | (sequence & 0x0F)));
+        app.put((byte) FUNCTION_DIRECT_OPERATE);
+        app.put(object);
+        return frame(masterAddress, outstationAddress, slice(app), sequence, true);
+    }
+
+    /** Echo of a direct-operate request with status 0 and internal indications cleared. */
+    public static byte[] directOperateResponse(int outstationAddress, int masterAddress, ControlCommand command,
+            int sequence) {
+        byte[] object = encodeOperateObject(command, OPERATE_SUCCESS);
+        ByteBuffer app = ByteBuffer.allocate(4 + object.length).order(ByteOrder.LITTLE_ENDIAN);
+        app.put((byte) (APP_RESPONSE | (sequence & 0x0F)));
+        app.put((byte) FUNCTION_RESPONSE);
+        app.putShort((short) 0);
+        app.put(object);
+        return frame(outstationAddress, masterAddress, slice(app), sequence, false);
     }
 
     public static byte[] integrityPollResponse(int outstationAddress, int masterAddress, List<Measurement> measurements,
@@ -75,7 +111,7 @@ public final class Dnp3TcpCodec {
         writeGroup(app, measurements, Dnp3Point.Dnp3DataType.COUNTER, 20, 1);
         writeGroup(app, measurements, Dnp3Point.Dnp3DataType.ANALOG_INPUT, 30, 5);
         writeGroup(app, measurements, Dnp3Point.Dnp3DataType.ANALOG_OUTPUT, 40, 1);
-        return frame(outstationAddress, masterAddress, slice(app), sequence);
+        return frame(outstationAddress, masterAddress, slice(app), sequence, false);
     }
 
     public static Frame readFrame(InputStream in) throws IOException, DriverException {
@@ -119,12 +155,36 @@ public final class Dnp3TcpCodec {
         out.flush();
     }
 
-    public static int requestSequence(Frame frame) throws DriverException {
+    public static int applicationFunction(Frame frame) throws DriverException {
         byte[] application = frame.application();
-        if (application.length < 2 || Byte.toUnsignedInt(application[1]) != FUNCTION_READ) {
-            throw new DriverUnsupportedOperationException("Unsupported DNP3 request");
+        if (application.length < 2) {
+            throw new DriverPermanentException("DNP3 application header too short");
+        }
+        return Byte.toUnsignedInt(application[1]);
+    }
+
+    public static int applicationSequence(Frame frame) throws DriverException {
+        byte[] application = frame.application();
+        if (application.length < 2) {
+            throw new DriverPermanentException("DNP3 application header too short");
         }
         return application[0] & 0x0F;
+    }
+
+    public static int requestSequence(Frame frame) throws DriverException {
+        if (applicationFunction(frame) != FUNCTION_READ) {
+            throw new DriverUnsupportedOperationException("Unsupported DNP3 request");
+        }
+        return applicationSequence(frame);
+    }
+
+    public static ControlCommand parseDirectOperate(Frame frame) throws DriverException {
+        return parseOperate(frame, false);
+    }
+
+    /** Accepts a direct-operate response whose echoed object status is 0. */
+    public static void applyOperateResponse(Frame frame) throws DriverException {
+        parseOperate(frame, true);
     }
 
     public static void applyResponse(Frame frame, MeasurementSink sink) throws DriverException {
@@ -211,11 +271,12 @@ public final class Dnp3TcpCodec {
         };
     }
 
-    private static byte[] frame(int source, int destination, byte[] application, int sequence) {
+    private static byte[] frame(int source, int destination, byte[] application, int sequence, boolean fromMaster) {
         byte[] userData = new byte[1 + application.length];
         userData[0] = (byte) (TRANSPORT_FIN_FIR | (sequence & 0x3F));
         System.arraycopy(application, 0, userData, 1, application.length);
-        return linkFrame(LINK_CONTROL_UNCONFIRMED, destination, source, userData);
+        int control = fromMaster ? LINK_CONTROL_MASTER_UNCONFIRMED : LINK_CONTROL_OUTSTATION_UNCONFIRMED;
+        return linkFrame(control, destination, source, userData);
     }
 
     private static byte[] linkFrame(int control, int destination, int source, byte[] userData) {
@@ -295,6 +356,115 @@ public final class Dnp3TcpCodec {
         buffer.rewind();
         buffer.get(bytes);
         return bytes;
+    }
+
+    private static byte[] encodeOperateObject(ControlCommand command, int status) {
+        return switch (command.type()) {
+            case BINARY_OUTPUT -> {
+                boolean on = command.value() instanceof Boolean bool
+                        ? bool
+                        : ((Number) command.value()).doubleValue() != 0.0;
+                ByteBuffer buffer = ByteBuffer.allocate(18).order(ByteOrder.LITTLE_ENDIAN);
+                buffer.put((byte) GROUP_CROB);
+                buffer.put((byte) CROB_VARIATION);
+                buffer.put((byte) QUALIFIER_16BIT_INDEXES);
+                buffer.putShort((short) 1);
+                buffer.putShort((short) command.index());
+                buffer.put((byte) (on ? CROB_LATCH_ON : CROB_LATCH_OFF));
+                buffer.put((byte) 1);
+                buffer.putInt(0);
+                buffer.putInt(0);
+                buffer.put((byte) status);
+                yield slice(buffer);
+            }
+            case ANALOG_OUTPUT -> {
+                ByteBuffer buffer = ByteBuffer.allocate(13).order(ByteOrder.LITTLE_ENDIAN);
+                buffer.put((byte) GROUP_ANALOG_OUTPUT_CMD);
+                buffer.put((byte) ANALOG_OUTPUT_FLOAT);
+                buffer.put((byte) QUALIFIER_16BIT_INDEXES);
+                buffer.putShort((short) 1);
+                buffer.putShort((short) command.index());
+                buffer.putFloat(((Number) command.value()).floatValue());
+                buffer.put((byte) status);
+                yield slice(buffer);
+            }
+            default -> throw new IllegalArgumentException("DNP3 point type cannot be written: " + command.type());
+        };
+    }
+
+    private static ControlCommand parseOperate(Frame frame, boolean response) throws DriverException {
+        ByteBuffer app = ByteBuffer.wrap(frame.application()).order(ByteOrder.LITTLE_ENDIAN);
+        if (app.remaining() < 2) {
+            throw new DriverPermanentException("DNP3 application header too short");
+        }
+        int control = Byte.toUnsignedInt(app.get());
+        int function = Byte.toUnsignedInt(app.get());
+        int expectedControl = response ? APP_RESPONSE : APP_REQUEST;
+        int expectedFunction = response ? FUNCTION_RESPONSE : FUNCTION_DIRECT_OPERATE;
+        if ((control & 0xC0) != expectedControl || function != expectedFunction) {
+            throw new DriverPermanentException("Unexpected DNP3 operate header");
+        }
+        if (response) {
+            if (app.remaining() < 2) {
+                throw new DriverPermanentException("DNP3 operate response missing indications");
+            }
+            app.get();
+            int iin2 = Byte.toUnsignedInt(app.get());
+            if ((iin2 & 0x17) != 0) {
+                throw new DriverPermanentException("DNP3 operate rejected by IIN2=0x"
+                        + Integer.toHexString(iin2).toUpperCase(Locale.ROOT));
+            }
+        }
+        if (app.remaining() < 7) {
+            throw new DriverPermanentException("DNP3 operate object header truncated");
+        }
+        int group = Byte.toUnsignedInt(app.get());
+        int variation = Byte.toUnsignedInt(app.get());
+        int qualifier = Byte.toUnsignedInt(app.get());
+        if (qualifier != QUALIFIER_16BIT_INDEXES) {
+            throw new DriverUnsupportedOperationException(
+                    "DNP3 operate qualifier 0x" + Integer.toHexString(qualifier).toUpperCase(Locale.ROOT));
+        }
+        int count = Short.toUnsignedInt(app.getShort());
+        if (count != 1) {
+            throw new DriverPermanentException("DNP3 operate accepts one object, got " + count);
+        }
+        int index = Short.toUnsignedInt(app.getShort());
+        if (group == GROUP_CROB && variation == CROB_VARIATION) {
+            if (app.remaining() < 11) {
+                throw new DriverPermanentException("DNP3 CROB truncated");
+            }
+            int code = Byte.toUnsignedInt(app.get());
+            app.get();
+            app.getInt();
+            app.getInt();
+            int status = Byte.toUnsignedInt(app.get());
+            if (response && status != OPERATE_SUCCESS) {
+                throw new DriverPermanentException("DNP3 operate rejected, status " + status);
+            }
+            boolean on = switch (code) {
+                case CROB_LATCH_ON -> true;
+                case CROB_LATCH_OFF -> false;
+                default -> throw new DriverPermanentException("DNP3 CROB code 0x"
+                        + Integer.toHexString(code).toUpperCase(Locale.ROOT));
+            };
+            return new ControlCommand(Dnp3Point.Dnp3DataType.BINARY_OUTPUT, index, on);
+        }
+        if (group == GROUP_ANALOG_OUTPUT_CMD && variation == ANALOG_OUTPUT_FLOAT) {
+            if (app.remaining() < 5) {
+                throw new DriverPermanentException("DNP3 analog output truncated");
+            }
+            double value = app.getFloat();
+            int status = Byte.toUnsignedInt(app.get());
+            if (response && status != OPERATE_SUCCESS) {
+                throw new DriverPermanentException("DNP3 operate rejected, status " + status);
+            }
+            return new ControlCommand(Dnp3Point.Dnp3DataType.ANALOG_OUTPUT, index, value);
+        }
+        throw new DriverPermanentException("DNP3 operate group " + group + " variation " + variation);
+    }
+
+    public record ControlCommand(Dnp3Point.Dnp3DataType type, int index, Object value) {
     }
 
     public static final class Frame {

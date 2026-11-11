@@ -33,7 +33,7 @@
 | `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | см. interop lab; OPC UA в lab по умолчанию SecurityPolicy None |
 | `iec104`, `dlms`, `gps-tracker` | PRODUCTION | см. interop lab |
 | `cwmp` | PRODUCTION | вне top-20; Inform + Get/SetParameterValues |
-| `dnp3` | PRODUCTION | **Только poll/read** — `writePoint` не реализован |
+| `dnp3` | PRODUCTION | Class poll и direct operate (CROB latch, аналоговый float). Входы и счётчики только на чтение |
 | `haystack`, `kafka`, `coap` | PRODUCTION | poll-only клиенты; loopback-тесты |
 | `ip-host`, `telnet`, `ssh`, `modem-at` | PRODUCTION | IT/remote-проверки; read-only |
 | `icmp` | BETA | проба `InetAddress.isReachable`, < 100 строк — ниже порога критерия; read-only |
@@ -533,7 +533,7 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `device-net` | `ispf-driver-device-net` | BETA | Apache-2.0 | DeviceNet: ODVA DeviceNet gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `dhcp` | `ispf-driver-dhcp` | PRODUCTION | Apache-2.0 | DHCP discover probe |
 | `dlms` | `ispf-driver-dlms` | PRODUCTION | Apache-2.0 | DLMS/COSEM master счётчиков (TCP WRAPPER) |
-| `dnp3` | `ispf-driver-dnp3` | PRODUCTION | Apache-2.0 | DNP3 TCP master — class poll/read (запись не реализована) |
+| `dnp3` | `ispf-driver-dnp3` | PRODUCTION | Apache-2.0 | DNP3 TCP master — class poll, CROB latch и g41v3 analog direct operate |
 | `eebus` | `ispf-driver-eebus` | BETA | Apache-2.0 | EEBUS: lab subset, не SHIP/SPINE |
 | `email` | `ispf-driver-email` | PRODUCTION | Apache-2.0 | Исходящая почта через HTTP relay |
 | `enocean` | `ispf-driver-enocean` | STUB | Apache-2.0 | EnOcean: EnOcean ESP3 / USB gateway stub (stub TCP-доступности; codec пока не реализован) |
@@ -714,7 +714,7 @@ Write (`writePoint`): Milo `writeValue` на Value attribute; тип Variant п�
 
 Siemens S7 по ISO-on-TCP. Poll/read/write через `readPoints` / `writePoint`.
 
-Маппинг точек: `area:dbNumber:offset:type` (например `DB:1:0:REAL`).
+Маппинг точек: `area:dbNumber:offset:type` (например `DB:1:0:REAL`). Для BOOL можно указать бит: `DB:1:0.3:BOOL` (биты 0..7). Без точки читается бит 0.
 
 Поддерживаемые типы: `BOOL`, `BYTE`, `SINT`, `USINT`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL`, `LREAL`.
 
@@ -722,7 +722,7 @@ Write (`writePoint`):
 
 | Тип | Поле в `DataRecord` |
 |-----|---------------------|
-| `BOOL` | `value` (boolean); read-modify-write бита 0 в байте offset |
+| `BOOL` | `value` (boolean); read-modify-write бита 0..7 в байте (`offset` или `offset.bit`) |
 | целочисленные | `raw` или `value` (число) |
 | `REAL`, `LREAL` | `value` или `raw` (число) |
 
@@ -734,7 +734,7 @@ IEC 60870-5-104 master. Конфиг: `host`, `port` (2404), `commonAddress`, `t
 
 Маппинг точек: `ioa:dataType` (например `2001:BOOL`, `3001:FLOAT`, `1001:M_ME_NA_1`).
 
-**Write (BL-23):** `BOOL` / `M_SP_NA_1` → `singleCommand`; `FLOAT` / `M_ME_NC_1` → `setShortFloatCommand`; `INT` / `M_ME_NA_1` → `setNormalizedValueCommand`. После write переменная обновляется локально (`quality=GOOD`); poll read может вернуть `NOT_AVAILABLE`, если outstation не отвечает на read command.
+**Write (BL-23):** `BOOL` / `M_SP_NA_1` → `singleCommand`; `M_DP_NA_1` → `doubleCommand` (DCS 2 = ON, 1 = OFF, прямое исполнение); `FLOAT` / `M_ME_NC_1` → `setShortFloatCommand`; `INT` / `M_ME_NA_1` → `setNormalizedValueCommand`. После write переменная обновляется локально (`quality=GOOD`); poll read может вернуть `NOT_AVAILABLE`, если outstation не отвечает на read command.
 
 Loopback-тест: `Iec104DeviceDriverTest` против `iec104-server`.
 
@@ -775,7 +775,7 @@ BACnet/IP read/write property (`present-value`). Конфиг:
 
 ### dnp3 (`ispf-driver-dnp3`)
 
-DNP3 TCP **master** с integrity poll Class 0/1/2/3 (`io.stepfunc:dnp3` 1.6.0).
+DNP3 TCP **master** с integrity poll Class 0/1/2/3 (собственный кодек ISPF).
 
 Конфиг: `host`, `port`, `localAddress` (master link address, по умолчанию `1`), `outstationAddress` (по умолчанию `1024`), `timeoutMs`.
 
@@ -783,7 +783,9 @@ DNP3 TCP **master** с integrity poll Class 0/1/2/3 (`io.stepfunc:dnp3` 1.6.0).
 
 На каждый `readPoints` выполняется `Request.classRequest(0,1,2,3)`; значения и DNP3 flags (`status`) обновляются в переменных объекта.
 
-Зрелость: **production** в реестре для Class 0/1/2/3 **poll/read** (loopback `Dnp3DeviceDriverTest`, BL-140). **`writePoint` не реализован** — не планируйте полевые пилоты control/write на DNP3, пока запись не появится; для сценариев записи считайте **BETA**.
+**Write:** `BINARY_OUTPUT` отправляет Direct Operate CROB g12v1 latch-on (`0x03`) или latch-off (`0x04`). `ANALOG_OUTPUT` отправляет g41v3 IEEE float32 и байт статуса. Квалификатор `0x28` (один объект). `BINARY_INPUT`, `ANALOG_INPUT` и `COUNTER` записать нельзя. Pulse, trip/close и select-before-operate не реализованы.
+
+Зрелость: **production** (`POLL` + `WRITE`) для class poll и этих двух объектов operate (loopback `Dnp3DeviceDriverTest`). Это не полный профиль управления DNP3.
 
 ### dlms (`ispf-driver-dlms`)
 

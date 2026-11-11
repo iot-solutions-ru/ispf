@@ -129,7 +129,7 @@ public class TreeCrudService {
     public PlatformObject reconcileType(String path, ObjectType expectedType) {
         PlatformObject node = objectManager.tree().require(path);
         if (node.type() != expectedType) {
-            node.setType(expectedType);
+            objectManager.tree().updateNodeType(path, expectedType);
             objectManager.persistNode(node);
             objectManager.publish(ObjectChangeEvent.of(ObjectChangeType.UPDATED, path));
         }
