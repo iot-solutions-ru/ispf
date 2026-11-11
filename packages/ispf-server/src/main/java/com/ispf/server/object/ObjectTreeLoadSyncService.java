@@ -194,7 +194,11 @@ public class ObjectTreeLoadSyncService {
             ObjectNodeEntity entity,
             List<ObjectVariableEntity> variableEntities
     ) {
-        node.setType(entity.getType());
+        if (objectManager.tree().findByPath(node.path()).isPresent()) {
+            objectManager.tree().updateNodeType(node.path(), entity.getType());
+        } else {
+            node.setType(entity.getType());
+        }
         node.updateInfo(entity.getDisplayName(), entity.getDescription());
         node.setSortOrder(entity.getSortOrder());
         node.setRevision(entity.getRevision());
