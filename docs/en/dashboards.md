@@ -369,7 +369,7 @@ In runtime (not in the editor), right-click a row on an `object-table` with `var
 
 | Capability | Description |
 |------------|-------------|
-| Up to 4 pens | Add other variables from the same row via dropdown |
+| Up to 16 pens | Add other variables from the same row via dropdown. The pen count stays visible, and the cap notice appears at 16. Scale is a shared axis, each pen normalized to 0–100% of its own range, or two Y axes (even pens left, odd pens right, toggle on the chip). |
 | Ranges | 1h, 6h, 24h, today, 7d (calendar ranges with user TZ — BL-70) |
 | Pan/zoom | Recharts `Brush` under chart; double-click resets |
 | Export | CSV of all pens |

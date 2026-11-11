@@ -7,9 +7,26 @@ export interface TrendPen {
   color: string;
 }
 
-export const TREND_PEN_COLORS = ["#2f81f7", "#e5534b", "#3fb950", "#d29922"] as const;
+export const TREND_PEN_COLORS = [
+  "#2f81f7",
+  "#e5534b",
+  "#3fb950",
+  "#d29922",
+  "#a371f7",
+  "#3fb9c9",
+  "#f778ba",
+  "#7ee787",
+  "#ffa657",
+  "#79c0ff",
+  "#ff7b72",
+  "#d2a8ff",
+  "#56d364",
+  "#e3b341",
+  "#a5d6ff",
+  "#ff9bce",
+] as const;
 
-export const MAX_TREND_PENS = 4;
+export const MAX_TREND_PENS = 16;
 
 export function trendPenKey(pen: Pick<TrendPen, "objectPath" | "variableName" | "valueField">): string {
   return `${pen.objectPath}|${pen.variableName}|${pen.valueField ?? "value"}`;
