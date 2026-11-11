@@ -84,4 +84,31 @@ describe("IspfBpmnPropertiesPanel targetObject", () => {
       }),
     );
   });
+
+  it("writes a start_workflow trigger to objectPath", async () => {
+    const onChangeNode = vi.fn();
+    const user = userEvent.setup();
+    const startTask: FlowNode = {
+      ...serviceTask,
+      id: "task_start",
+      ispf: { action: "start_workflow", workflowPath: "root.platform.workflows.child" },
+    };
+    renderWithInspector(
+      <IspfBpmnPropertiesPanel
+        selection={{ kind: "node", node: startTask }}
+        onChangeNode={onChangeNode}
+        onChangeEdge={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const browse = screen.getAllByRole("button", { name: "Browse tree" });
+    await user.click(browse[1]);
+    await user.click(await screen.findByTitle("root.plant-hub"));
+    await waitFor(() =>
+      expect(onChangeNode).toHaveBeenCalledWith("task_start", {
+        ispf: expect.objectContaining({ objectPath: "root.plant-hub" }),
+      }),
+    );
+  });
 });

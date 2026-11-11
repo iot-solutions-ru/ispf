@@ -5,11 +5,12 @@ import type { ObjectType } from "../../types";
 import { ObjectPathField } from "../../ui";
 
 /**
- * `setVariable`, `start_workflow`, and user-task targets.
+ * `setVariable` and user-task targets.
  * SINGLETON and INSTANCE hubs are CUSTOM (the default singleton object type) or APPLICATION.
  * Sensors stay DEVICE.
+ * `start_workflow` writes the trigger on `objectPath`, which stays unfiltered.
  */
-export const TARGET_OBJECT_TYPES: ObjectType[] = ["CUSTOM", "DEVICE", "APPLICATION"];
+const TARGET_OBJECT_TYPES: ObjectType[] = ["CUSTOM", "DEVICE", "APPLICATION"];
 
 const PATH_FILTERS: Record<string, ObjectType[] | undefined> = {
   objectPath: undefined,
@@ -20,7 +21,7 @@ const PATH_FILTERS: Record<string, ObjectType[] | undefined> = {
 const ACTION_ATTRS: Record<WorkflowIspfAction, string[]> = {
   fire_event: ["objectPath", "eventName", "payloadJson"],
   read_variable: ["objectPath", "variable", "contextKey"],
-  start_workflow: ["workflowPath", "targetObject"],
+  start_workflow: ["workflowPath", "objectPath"],
   invoke_function: ["objectPath", "functionName", "inputMap"],
   setVariable: ["targetObject", "variable", "value"],
   log: ["message"],
