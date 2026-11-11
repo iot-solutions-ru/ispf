@@ -66,7 +66,7 @@ public class BundleManifestValidator {
     }
 
     public BundleValidationResult validate(String appId, ApplicationBundleDeployService.BundleManifest manifest) {
-        return validate(appId, manifest, false, false);
+        return validate(appId, manifest, false, false, true);
     }
 
     /**
@@ -77,18 +77,32 @@ public class BundleManifestValidator {
             ApplicationBundleDeployService.BundleManifest manifest,
             boolean strict
     ) {
-        return validate(appId, manifest, false, strict);
+        return validate(appId, manifest, false, strict, true);
+    }
+
+    /**
+     * @param checkLicense when false, the caller already checked the license on the raw JSON map.
+     *                     The typed DTO drops unknown nested fields and must not be hashed again.
+     */
+    public BundleValidationResult validate(
+            String appId,
+            ApplicationBundleDeployService.BundleManifest manifest,
+            boolean strict,
+            boolean checkLicense
+    ) {
+        return validate(appId, manifest, false, strict, checkLicense);
     }
 
     public BundleValidationResult dryRun(String appId, ApplicationBundleDeployService.BundleManifest manifest) {
-        return validate(appId, manifest, true, false);
+        return validate(appId, manifest, true, false, true);
     }
 
     private BundleValidationResult validate(
             String appId,
             ApplicationBundleDeployService.BundleManifest manifest,
             boolean dryRun,
-            boolean strict
+            boolean strict,
+            boolean checkLicense
     ) {
         BundleValidationResult.Builder builder = BundleValidationResult.builder();
 
@@ -141,7 +155,9 @@ public class BundleManifestValidator {
         validateLogicHosts(manifest, builder);
         validateReports(manifest, builder);
         validateDependencies(appId, manifest, builder);
-        validateLicense(appId, manifest, builder);
+        if (checkLicense) {
+            validateLicense(appId, manifest, builder);
+        }
 
         if (dryRun) {
             collectWouldApply(manifest, builder);

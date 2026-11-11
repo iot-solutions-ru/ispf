@@ -353,10 +353,12 @@ POST /api/v1/applications/{appId}/deploy/rollback
 GET  /api/v1/applications/{appId}/export
 GET  /api/v1/applications/{appId}/export?version=1.0.0
 POST /api/v1/applications/{appId}/bundle/validate?dryRun=true|false&strict=true|false
-POST /api/v1/applications/{appId}/deploy?strict=true|false
+POST /api/v1/applications/{appId}/deploy?strict=true|false&runTests=true|false
 ```
 
-По умолчанию `strict=false` — авторский режим (`LOGIC_HOST_DEVICE` = WARNING, deploy не блокируется). С `strict=true` коды ship-canon становятся **ERROR**: validate сообщает их; deploy отвечает **400** (`shipCanon: true`, `deployed: false`) и не применяет бандл ([0060](decisions/0060-solution-authoring-constraints.md)). CLI: `ispf validate --strict`, `ispf deploy --strict`.
+Deploy всегда прогоняет `BundleManifestValidator` до применения. Пустые `displayName` и `schemaName` заполняются теми же значениями, что и `register()` (`appId` и `app_<appId>`), поэтому догрузка уже зарегистрированного приложения по-прежнему применяется. Проверка лицензии остаётся на исходном JSON. Структурный **ERROR** (нет version, пустой манифест, сломанные миграции) отвечает **400** с `deployed: false` и бандл не применяет. По умолчанию `strict=false` — авторский режим (`LOGIC_HOST_DEVICE` = WARNING, deploy не блокируется). С `strict=true` коды ship-canon становятся **ERROR**: deploy отвечает **400** (`shipCanon: true`, `deployed: false`) ([0060](decisions/0060-solution-authoring-constraints.md)). CLI: `ispf validate --strict`, `ispf deploy --strict`.
+
+`runTests` по умолчанию **true**: `tests[]` манифеста выполняются после apply, провал попадает в результат deploy. `runTests=false` пропускает их.
 
 `export` возвращает активный (или указанный) манифест моментального снимка из `application_bundle_deployments`. Веб-консоль: вкладка **Deploy** на узле `APPLICATION` — редактор JSON, проверка, развертывание, таблица ресурсов (добавление/удаление в манифесте).
 
