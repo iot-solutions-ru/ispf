@@ -59,10 +59,56 @@ function isApiResponse(response: Response): boolean {
   return contentType.includes("application/json") || contentType.includes("application/problem+json");
 }
 
-/** True when /hmi ingress is missing (SPA HTML, gateway errors, non-API 503). */
-export function shouldFallbackFromHmiIngress(response: Response): boolean {
+const PUBLIC_BOOTSTRAP_PATHS = new Set([
+  "/api/v1/auth/login",
+  "/api/v1/auth/config",
+  "/api/v1/auth/me",
+  "/api/v1/info",
+]);
+
+function isPublicBootstrapPath(path: string): boolean {
+  const queryIndex = path.indexOf("?");
+  const pathname = queryIndex >= 0 ? path.slice(0, queryIndex) : path;
+  return PUBLIC_BOOTSTRAP_PATHS.has(pathname);
+}
+
+async function hasHmiSpringErrorPath(response: Response): Promise<boolean> {
+  try {
+    const body: unknown = await response.clone().json();
+    if (body !== null && typeof body === "object" && "path" in body) {
+      const errorPath = (body as { path?: unknown }).path;
+      return typeof errorPath === "string" && errorPath.startsWith(`${HMI_INGRESS_PREFIX}/`);
+    }
+  } catch {
+    // non-JSON or empty body
+  }
+  return false;
+}
+
+export interface IngressFallbackContext {
+  route?: IngressRoute;
+  directPath?: string;
+}
+
+/**
+ * True when /hmi ingress is missing: SPA HTML, gateway errors, non-API 503,
+ * or a JSON 403/404 caused by hitting Spring directly without an /hmi proxy
+ * (either a Spring error body whose `path` starts with `/hmi/`, or an unconfirmed
+ * `auto` route probing a public bootstrap endpoint).
+ * Domain API JSON 403/404 responses on a confirmed `/hmi` route stay on `/hmi`.
+ */
+export async function shouldFallbackFromHmiIngress(
+  response: Response,
+  context?: IngressFallbackContext,
+): Promise<boolean> {
   if (isApiResponse(response)) {
-    return false;
+    if (response.status !== 403 && response.status !== 404) {
+      return false;
+    }
+    if (context?.route === "auto" && context.directPath && isPublicBootstrapPath(context.directPath)) {
+      return true;
+    }
+    return hasHmiSpringErrorPath(response);
   }
   if ([404, 502, 503, 504].includes(response.status)) {
     return true;
@@ -124,7 +170,8 @@ export async function fetchWithIngressFallback(url: string, init?: RequestInit):
   const hmiPath = resolveIngressPath(url);
   const directPath = stripHmiIngressPrefix(hmiPath);
 
-  if (hmiPath === directPath || currentRoute() === "direct") {
+  const route = currentRoute();
+  if (hmiPath === directPath || route === "direct") {
     return fetch(directPath, init);
   }
 
@@ -133,7 +180,7 @@ export async function fetchWithIngressFallback(url: string, init?: RequestInit):
   // to offline variable caches (topology stays green despite live faults).
   try {
     const response = await fetch(hmiPath, init);
-    if (!shouldFallbackFromHmiIngress(response)) {
+    if (!(await shouldFallbackFromHmiIngress(response, { route, directPath }))) {
       markIngressRoute("hmi");
       return response;
     }
