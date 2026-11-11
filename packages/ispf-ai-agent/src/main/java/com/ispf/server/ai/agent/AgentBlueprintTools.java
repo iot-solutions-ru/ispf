@@ -241,7 +241,7 @@ final class AgentBlueprintTools {
                 return "Attach a MIXIN model mixin to an existing object — merges variables, events, functions, "
                         + "binding rules without changing object path. "
                         + "Args: objectPath (required), blueprintName or blueprintId (e.g. virtual-lab-v1). "
-                        + "Prefer over manual create_variable when a catalog model fits. "
+                        + "Not a create path: the object must already exist. "
                         + "After apply on DEVICE: configure_driver + driver_control start, then list_variables.";
             }
 

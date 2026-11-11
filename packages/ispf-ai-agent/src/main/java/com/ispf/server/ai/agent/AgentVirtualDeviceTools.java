@@ -101,7 +101,8 @@ final class AgentVirtualDeviceTools {
                         + VirtualDeviceDefaults.TEMPLATE_ID + ", start driver. "
                         + "Args: parentPath, name, displayName, pollIntervalMs?, autoStart? (default true). "
                         + "Ignore legacy profile arg if present. Call list_variables before finish. "
-                        + "Domain plants: apply_mixin_blueprint instead of a driver profile.";
+                        + "Domain plants: create_object type=DEVICE first, then apply_mixin_blueprint. "
+                        + "This tool is the simulator create; do not also create_object for the same node.";
             }
 
             @Override

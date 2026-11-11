@@ -158,6 +158,23 @@ class AgentToolArgCoercionTest {
     }
 
     @Test
+    void addDashboardWidgetStringifiesJsonArrays() {
+        Map<String, Object> coerced = AgentToolArgCoercion.coerce(
+                "add_dashboard_widget",
+                Map.of(
+                        "path", "root.platform.dashboards.main",
+                        "widget", Map.of(
+                                "type", "object-table",
+                                "columnsJson", java.util.List.of(Map.of("variable", "name"))
+                        )
+                )
+        );
+        @SuppressWarnings("unchecked")
+        Map<String, Object> widget = (Map<String, Object>) coerced.get("widget");
+        assertThat(widget.get("columnsJson")).isEqualTo("[{\"variable\":\"name\"}]");
+    }
+
+    @Test
     void deployTreeFunctionParsesSchemaJsonStrings() {
         Map<String, Object> coerced = AgentToolArgCoercion.coerce(
                 "deploy_tree_function",

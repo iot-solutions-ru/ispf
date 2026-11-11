@@ -1094,25 +1094,18 @@ public final class AgentToolInputSchemas {
     }
 
     private static Map<String, Object> widgetObject(List<String> widgetTypes) {
-        Map<String, Object> widget = objectProp("Widget object");
-        widget.put("properties", props(
-                "id", stringProp("Widget id"),
-                "type", enumProp("Widget type", widgetTypes),
-                "title", stringProp("Title"),
-                "x", integerProp("Grid x"),
-                "y", integerProp("Grid y"),
-                "w", integerProp("Grid width"),
-                "h", integerProp("Grid height"),
-                "objectPath", stringProp("Bound object path"),
-                "selectionKey", stringProp("Selection key"),
-                "variableName", stringProp("Variable name"),
-                "valueField", stringProp("Value field"),
-                "parentPath", stringProp("Parent path for catalog widgets"),
-                "mimicPath", stringProp("Mimic path for scada-mimic"),
-                "reportPath", stringProp("Report path"),
-                "functionName", stringProp("Function name")
-        ));
-        widget.put("required", List.of("type"));
+        Map<String, Map<String, Object>> properties = new LinkedHashMap<>();
+        properties.put("type", enumProp("Widget type", widgetTypes));
+        for (var field : AgentWidgetPropertiesGuide.closedWidgetFieldTypes().entrySet()) {
+            properties.put(field.getKey(), switch (field.getValue()) {
+                case "integer" -> integerProp(field.getKey());
+                case "number" -> numberProp(field.getKey());
+                case "boolean" -> booleanProp(field.getKey());
+                default -> stringProp(field.getKey());
+            });
+        }
+        Map<String, Object> widget = objectSchema(properties, List.of("type"), false);
+        widget.put("description", "Widget object. Unknown keys are rejected.");
         return widget;
     }
 }

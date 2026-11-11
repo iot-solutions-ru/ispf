@@ -217,7 +217,9 @@ final class AgentTreeTools {
                         + "displayName, description?, templateId?, driverId?, driverPollIntervalMs?, autoStartDriver?. "
                         + "For USER: also password? (default ChangeMe!123), roles? (list or comma string, default operator). "
                         + "Role ids are lowercase: operator, developer, admin, tenant-admin (not OPERATOR). "
-                        + "USER goes through PlatformUserService (creates login + roles variable) — do NOT apply_mixin platform-user-v1.";
+                        + "USER goes through PlatformUserService (creates login + roles variable) — do NOT apply_mixin platform-user-v1. "
+                        + "Simulators: create_virtual_device. Alerts: configure_alert. Reports: configure_report. "
+                        + "Singleton hubs: ensure_singleton_instance. apply_mixin_blueprint does not create the object.";
             }
 
             @Override

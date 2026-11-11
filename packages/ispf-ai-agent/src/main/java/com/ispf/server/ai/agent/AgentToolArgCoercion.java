@@ -111,7 +111,25 @@ final class AgentToolArgCoercion {
                 copy.put("widget", new LinkedHashMap<>(castMap(map)));
             }
         }
+        Object current = copy.get("widget");
+        if (current instanceof Map<?, ?> map) {
+            Map<String, Object> fields = new LinkedHashMap<>(castMap(map));
+            stringifyJsonFields(fields);
+            copy.put("widget", fields);
+        }
         return copy;
+    }
+
+    private static void stringifyJsonFields(Map<String, Object> fields) {
+        for (var entry : fields.entrySet()) {
+            if (!entry.getKey().endsWith("Json")) {
+                continue;
+            }
+            Object value = entry.getValue();
+            if (value instanceof Map<?, ?> || value instanceof List<?>) {
+                entry.setValue(MAPPER.writeValueAsString(value));
+            }
+        }
     }
 
     private static Map<String, Object> coerceDeployTreeFunction(Map<String, Object> args) {

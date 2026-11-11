@@ -40,6 +40,15 @@ class AgentPlaybooksTest {
     }
 
     @Test
+    void objectTypeCoverageNamesOneCreateToolPerRole() {
+        String guide = AgentPlaybooks.objectTypeCoverageGuide();
+        assertTrue(guide.contains("Simulator: create_virtual_device"));
+        assertTrue(guide.contains("| ALERT | root.platform.alert-rules | configure_alert |"));
+        assertFalse(guide.contains("create_virtual_device / create_object"));
+        assertFalse(guide.contains("configure_alert (or create_object ALERT)"));
+    }
+
+    @Test
     void projectBlueprintStartsWithGroundTruthLayer() {
         String guide = AgentPlaybooks.projectBlueprintGuide();
         assertTrue(guide.contains("0. **Ground truth**"));

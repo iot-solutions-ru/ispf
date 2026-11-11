@@ -95,6 +95,18 @@ public final class AgentToolSchemaValidator {
             if (typeViolation.isPresent()) {
                 return typeViolation;
             }
+            if (entry.getValue() instanceof Map<?, ?> nested
+                    && "object".equalsIgnoreCase(String.valueOf(prop.get("type")))) {
+                @SuppressWarnings("unchecked")
+                Optional<Violation> nestedViolation = validate(prop, (Map<String, Object>) nested);
+                if (nestedViolation.isPresent()) {
+                    Violation violation = nestedViolation.get();
+                    String childPath = violation.path() == null || violation.path().isBlank()
+                            ? key
+                            : key + "." + violation.path();
+                    return Optional.of(new Violation(violation.code(), childPath, violation.hint()));
+                }
+            }
             Optional<Violation> enumViolation = checkEnum(key, entry.getValue(), prop);
             if (enumViolation.isPresent()) {
                 return enumViolation;

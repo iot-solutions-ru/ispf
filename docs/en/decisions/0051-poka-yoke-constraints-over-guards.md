@@ -8,7 +8,7 @@
 
 | Wave | Notes |
 |------|--------|
-| **1 — Tool inputSchema** | **Landed** — `AgentToolInputSchemas` catalog for all platform tools; `PlatformAgentTool.inputSchema()`; validate-before-execute; MCP `tools/list` publishes real schemas (no `GENERIC_INPUT_SCHEMA` stub). |
+| **1 — Tool inputSchema** | **Landed** — `AgentToolInputSchemas` catalog for all platform tools; `PlatformAgentTool.inputSchema()`; validate-before-execute; MCP `tools/list` publishes real schemas (no `GENERIC_INPUT_SCHEMA` stub). Widget objects on `add_dashboard_widget` are closed (`additionalProperties: false`). One create tool per role: simulator `create_virtual_device`, alert `configure_alert`, hub `ensure_singleton_instance`. |
 | **1b — UI locale language** | **Landed** — console sends `uiLocale` per turn; system prompt mandates response language = web-console locale (en/ru/de/zh). |
 
 ## Context

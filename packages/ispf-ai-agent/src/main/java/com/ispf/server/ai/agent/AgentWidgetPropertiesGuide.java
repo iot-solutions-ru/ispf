@@ -267,6 +267,218 @@ public final class AgentWidgetPropertiesGuide {
         return TYPE_SPECS;
     }
 
+    /**
+     * Widget keys from {@code dashboard.ts} with JSON Schema types.
+     * Grid x/y/w/h are integers; other numeric fields stay numbers.
+     */
+    public static Map<String, String> closedWidgetFieldTypes() {
+        Map<String, String> types = new LinkedHashMap<>();
+        types.put("id", "string");
+        types.put("title", "string");
+        types.put("x", "integer");
+        types.put("y", "integer");
+        types.put("w", "integer");
+        types.put("h", "integer");
+        types.put("objectPath", "string");
+        types.put("variableName", "string");
+        types.put("ref", "string");
+        types.put("valueField", "string");
+        types.put("selectionKey", "string");
+        types.put("paramKey", "string");
+        types.put("contextPathKey", "string");
+        types.put("modelHintPath", "string");
+        types.put("stylesJson", "string");
+        types.put("demoPreviewJson", "string");
+        types.put("sampleTemplate", "boolean");
+        types.put("zIndex", "number");
+        types.put("visible", "boolean");
+        types.put("unit", "string");
+        types.put("unitField", "string");
+        types.put("decimals", "number");
+        types.put("trueLabel", "string");
+        types.put("falseLabel", "string");
+        types.put("trueColor", "string");
+        types.put("falseColor", "string");
+        types.put("alarmMode", "boolean");
+        types.put("chartStyle", "string");
+        types.put("chartType", "string");
+        types.put("maxPoints", "number");
+        types.put("historyRange", "string");
+        types.put("sampleMode", "string");
+        types.put("historyBucket", "string");
+        types.put("liveCoalesceMs", "number");
+        types.put("color", "string");
+        types.put("bubbleXVariable", "string");
+        types.put("bubbleYVariable", "string");
+        types.put("bubbleSizeVariable", "string");
+        types.put("bubbleDefaultSize", "number");
+        types.put("bubblePointsJson", "string");
+        types.put("bubbleMode", "string");
+        types.put("bubbleXMin", "number");
+        types.put("bubbleXMax", "number");
+        types.put("bubbleYMin", "number");
+        types.put("bubbleYMax", "number");
+        types.put("radarAxesJson", "string");
+        types.put("analyticsTemplateId", "string");
+        types.put("analyticsBindingExpression", "string");
+        types.put("analyticsQueryTagsJson", "string");
+        types.put("functionName", "string");
+        types.put("buttonLabel", "string");
+        types.put("confirmMessage", "string");
+        types.put("inputJson", "string");
+        types.put("inputMapJson", "string");
+        types.put("workflowPath", "string");
+        types.put("buttonsJson", "string");
+        types.put("fieldsJson", "string");
+        types.put("wizardStepsJson", "string");
+        types.put("validateFunctionName", "string");
+        types.put("paramBindingsJson", "string");
+        types.put("requireSessionParamsJson", "string");
+        types.put("syncFieldsToSessionJson", "string");
+        types.put("clearSessionParamsJson", "string");
+        types.put("closeModalOnSuccess", "boolean");
+        types.put("currentVariable", "string");
+        types.put("maxVariable", "string");
+        types.put("parentPath", "string");
+        types.put("columnsJson", "string");
+        types.put("namePattern", "string");
+        types.put("objectType", "string");
+        types.put("rowTargetDashboard", "string");
+        types.put("rowOpenMode", "string");
+        types.put("rowSelectionKey", "string");
+        types.put("rowParamsJson", "string");
+        types.put("objectPathPrefix", "string");
+        types.put("eventNamesJson", "string");
+        types.put("payloadFilterExpr", "string");
+        types.put("maxItems", "number");
+        types.put("operatorId", "string");
+        types.put("operatorAppId", "string");
+        types.put("minVariable", "string");
+        types.put("minValue", "number");
+        types.put("maxValue", "number");
+        types.put("variablesJson", "string");
+        types.put("cardTargetDashboard", "string");
+        types.put("cardOpenMode", "string");
+        types.put("cardSelectionKey", "string");
+        types.put("cardParamsJson", "string");
+        types.put("targetDashboardPath", "string");
+        types.put("openMode", "string");
+        types.put("modalTitle", "string");
+        types.put("contextSelectionJson", "string");
+        types.put("contextParamsJson", "string");
+        types.put("reportPath", "string");
+        types.put("emptyMessage", "string");
+        types.put("refreshIntervalMs", "number");
+        types.put("parametersJson", "string");
+        types.put("showCsv", "boolean");
+        types.put("showPdf", "boolean");
+        types.put("showXlsx", "boolean");
+        types.put("showHtml", "boolean");
+        types.put("showTruncatedWarning", "boolean");
+        types.put("selectable", "boolean");
+        types.put("rowParamsFromRowJson", "string");
+        types.put("autoSelectFirstRow", "boolean");
+        types.put("statusDotColumnsJson", "string");
+        types.put("filterable", "boolean");
+        types.put("columnFiltersJson", "string");
+        types.put("rowTargetSelectionKey", "string");
+        types.put("labelField", "string");
+        types.put("svgUrl", "string");
+        types.put("clickAction", "string");
+        types.put("toggleVariable", "string");
+        types.put("svgInnerJson", "string");
+        types.put("behaviorsJson", "string");
+        types.put("bindingsJson", "string");
+        types.put("bindingSchemaJson", "string");
+        types.put("hitAreasJson", "string");
+        types.put("viewBox", "string");
+        types.put("backgroundColor", "string");
+        types.put("hitTargetDashboard", "string");
+        types.put("hitOpenMode", "string");
+        types.put("topologyJson", "string");
+        types.put("showLegend", "boolean");
+        types.put("panEnabled", "boolean");
+        types.put("defaultZoom", "number");
+        types.put("diagramJson", "string");
+        types.put("mimicPath", "string");
+        types.put("showGrid", "boolean");
+        types.put("childrenJson", "string");
+        types.put("targetDashboardPathKey", "string");
+        types.put("inheritContext", "boolean");
+        types.put("variant", "string");
+        types.put("collapsible", "boolean");
+        types.put("tabsJson", "string");
+        types.put("latVariable", "string");
+        types.put("latField", "string");
+        types.put("lonField", "string");
+        types.put("labelVariable", "string");
+        types.put("includePathsJson", "string");
+        types.put("excludePathsJson", "string");
+        types.put("markerRulesJson", "string");
+        types.put("markerMode", "string");
+        types.put("markerColor", "string");
+        types.put("markerIconUrl", "string");
+        types.put("markerIconSize", "number");
+        types.put("markerIconTintByStatus", "boolean");
+        types.put("statusVariable", "string");
+        types.put("statusField", "string");
+        types.put("statusOkValues", "string");
+        types.put("popupMode", "string");
+        types.put("popupVariablesJson", "string");
+        types.put("zoom", "number");
+        types.put("centerLat", "number");
+        types.put("centerLon", "number");
+        types.put("mapStyleUrl", "string");
+        types.put("tileUrl", "string");
+        types.put("tileAttribution", "string");
+        types.put("text", "string");
+        types.put("textJson", "string");
+        types.put("imageUrl", "string");
+        types.put("alt", "string");
+        types.put("htmlJson", "string");
+        types.put("maxDepth", "number");
+        types.put("pathKey", "string");
+        types.put("separator", "string");
+        types.put("mode", "string");
+        types.put("durationSeconds", "number");
+        types.put("drawerLabel", "string");
+        types.put("slidesJson", "string");
+        types.put("autoplayMs", "number");
+        types.put("stepsJson", "string");
+        types.put("activeStepKey", "string");
+        types.put("startField", "string");
+        types.put("endField", "string");
+        types.put("interactive", "boolean");
+        types.put("allowBarDrag", "boolean");
+        types.put("nodesVariable", "string");
+        types.put("edgesVariable", "string");
+        types.put("idField", "string");
+        types.put("edgeFromField", "string");
+        types.put("edgeToField", "string");
+        types.put("layout", "string");
+        types.put("sheetMode", "string");
+        types.put("sheetConfigJson", "string");
+        types.put("persistMode", "string");
+        types.put("valuesVariable", "string");
+        types.put("sessionKey", "string");
+        types.put("editable", "boolean");
+        types.put("live", "boolean");
+        types.put("liveRefreshIntervalMs", "number");
+        types.put("itemsJson", "string");
+        for (Map<String, Object> spec : TYPE_SPECS.values()) {
+            Object fields = spec.get("fields");
+            if (!(fields instanceof List<?> list)) {
+                continue;
+            }
+            for (Object row : list) {
+                if (row instanceof Map<?, ?> map && map.get("name") != null) {
+                    types.putIfAbsent(String.valueOf(map.get("name")), "string");
+                }
+            }
+        }
+        return Map.copyOf(types);
+    }
+
     private static Map<String, Object> spec(
             String binding,
             List<String> required,
