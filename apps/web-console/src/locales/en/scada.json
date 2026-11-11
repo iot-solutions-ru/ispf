@@ -156,6 +156,7 @@
   "importExport.import": "Apply JSON",
   "importExport.convertToLibrary": "Convert built-in symbols to library",
   "editor.loading": "Loading mimic…",
+  "editor.saveFailed": "Could not save the mimic.",
   "editor.title": "Mimic editor",
   "editor.tools": "Tools",
   "editor.canvas": "Canvas",

@@ -48,6 +48,7 @@
   "categories.process": "工艺流程",
   "editor.canvas": "帆布",
   "editor.loading": "正在加载模拟...",
+  "editor.saveFailed": "无法保存模拟图。",
   "editor.meta": "{{width}}×{{height}} · {{count}} 元素",
   "editor.title": "模仿编辑器",
   "editor.tools": "工具",

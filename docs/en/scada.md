@@ -60,7 +60,7 @@ Variables on a `MIMIC` object:
 1. Explorer → **SCADA Mimics** (`root.platform.mimics`)
 2. Right-click → **Create mimic** (or “+” button)
 3. Path segment name, e.g. `my-plant` → `root.platform.mimics.my-plant`
-4. Full-screen editor opens; save → `PUT /api/v1/mimics/by-path/diagram`
+4. Full-screen editor opens; save → `PUT /api/v1/mimics/by-path/diagram`. Save keeps the editor open. Close is a separate button. A failed save shows an error and leaves the editor open.
 
 Alternative: `POST /api/v1/objects` with `type: MIMIC`, `templateId: mimic-v1`, `parentPath: root.platform.mimics`.
 

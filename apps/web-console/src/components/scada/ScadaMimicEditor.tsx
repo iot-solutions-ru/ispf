@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Button, ConfigProvider, Input, Segmented, Space, Tooltip } from "antd";
+import { Alert, Button, ConfigProvider, Input, Segmented, Space, Tooltip } from "antd";
 import { useTranslation } from "react-i18next";
 import type { MimicConnection, MimicCustomSymbol, MimicElement, MimicLayer, ScadaMimicDocument } from "../../types/scadaMimic";
 import { useMimicHistory } from "../../hooks/useMimicHistory";
@@ -87,6 +87,7 @@ interface ScadaMimicEditorProps {
   onSave: (diagramJson: string) => void;
   onClose: () => void;
   onOpenProperties?: () => void;
+  saveError?: string | null;
 }
 
 export default function ScadaMimicEditor({
@@ -94,6 +95,7 @@ export default function ScadaMimicEditor({
   onSave,
   onClose,
   onOpenProperties,
+  saveError,
 }: ScadaMimicEditorProps) {
   const { t } = useTranslation(["scada", "common"]);
   /** Binding host session — not DashboardContext (editor boundary). */
@@ -875,6 +877,9 @@ export default function ScadaMimicEditor({
             </Button>
           </Space>
         </header>
+        {saveError ? (
+          <Alert type="error" showIcon title={saveError} />
+        ) : null}
         {svgUploadError ? (
           <p className="scada-props-hint scada-props-hint-compact" role="alert">
             {svgUploadError}

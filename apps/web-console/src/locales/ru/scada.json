@@ -48,6 +48,7 @@
   "categories.process": "Процесс",
   "editor.canvas": "Холст",
   "editor.loading": "Загрузка мнемосхемы…",
+  "editor.saveFailed": "Не удалось сохранить мнемосхему.",
   "editor.meta": "{{width}}×{{height}} · {{count}} эл.",
   "editor.title": "Редактор мнемосхемы",
   "editor.tools": "Инструменты",

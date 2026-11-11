@@ -48,6 +48,7 @@
   "categories.process": "Prozess",
   "editor.canvas": "Leinwand",
   "editor.loading": "Nachahmung wird geladen…",
+  "editor.saveFailed": "Mimik konnte nicht gespeichert werden.",
   "editor.meta": "{{width}}×{{height}} · {{count}} Elemente",
   "editor.title": "Mimic-Editor",
   "editor.tools": "Werkzeuge",
