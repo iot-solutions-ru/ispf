@@ -268,6 +268,56 @@ class ObjectWebSocketHandlerInterestTest {
         }
     }
 
+    @Test
+    void slowSessionOverflowDoesNotCloseHealthyPeer() throws Exception {
+        WebSocketProperties properties = new WebSocketProperties();
+        properties.setSendElasticEnabled(false);
+        properties.setSendThreads(1);
+        properties.setPendingSendMax(2);
+        ObjectWebSocketHandler capped = new ObjectWebSocketHandler(
+                properties,
+                new ObjectMapper(),
+                mock(FederationSubscribePollService.class),
+                mock(ObjectPresenceService.class),
+                mock(ObjectManager.class),
+                mock(ApplicationEventCatalogService.class),
+                new ObjectWebSocketPathInterestRegistry(),
+                new NoOpClusterPathInterestStore(),
+                objectAccessService,
+                variableMemberAccessService
+        );
+        capped.startSendWorkers();
+        BlockingSession slow = new BlockingSession("s-slow");
+        RecordingSession healthy = new RecordingSession("s-healthy");
+        try {
+            capped.afterConnectionEstablished(slow);
+            capped.afterConnectionEstablished(healthy);
+            capped.handleTextMessage(slow, new TextMessage(
+                    "{\"type\":\"subscribe\",\"paths\":[\"root.devices.slow\"]}"
+            ));
+            capped.handleTextMessage(healthy, new TextMessage(
+                    "{\"type\":\"subscribe\",\"paths\":[\"root.devices.healthy\"]}"
+            ));
+
+            capped.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.slow", "speed"));
+            assertThat(slow.entered.await(2, TimeUnit.SECONDS)).isTrue();
+            for (int i = 0; i < 20; i++) {
+                capped.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.slow", "speed"));
+            }
+            assertThat(slow.isOpen()).isFalse();
+            assertThat(healthy.isOpen()).isTrue();
+            assertThat(capped.droppedSendCount()).isGreaterThan(0);
+            assertThat(capped.pendingSendDepth()).isLessThanOrEqualTo(2);
+
+            slow.release.countDown();
+            capped.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.healthy", "speed"));
+            assertThat(awaitMessages(healthy, 1, 2000)).hasSize(1);
+        } finally {
+            slow.release.countDown();
+            capped.shutdownSendWorkers();
+        }
+    }
+
     private static UsernamePasswordAuthenticationToken authentication(String role) {
         return new UsernamePasswordAuthenticationToken(
                 "ws-user",
