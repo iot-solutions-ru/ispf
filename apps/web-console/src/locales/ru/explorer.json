@@ -168,5 +168,7 @@
   "icons.workflow": "Рабочий процесс",
   "mobile.backToTree": "← Дерево объектов",
   "tree.groupMember": "Участник группы",
+  "tree.liveUpdatesPaused": "В папке больше {{cap}} объектов, живые обновления отключены. Сверните и снова разверните папку, чтобы обновить список.",
+  "tree.liveUpdatesPausedShort": "Без live",
   "tree.linkTitle": "Ссылка: {{path}}"
 }

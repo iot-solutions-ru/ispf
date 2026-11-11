@@ -45,7 +45,8 @@ export default function ObjectTreePickerDialog({
   multi = false,
 }: ObjectTreePickerDialogProps) {
   const { t } = useTranslation(["common", "objectTree"]);
-  const { tree, objects, loadChildren, treeLoadError } = useLazyObjectTree(open);
+  const { tree, objects, loadChildren, treeLoadError, wsCappedPaths } = useLazyObjectTree(open);
+  const liveUpdatesPausedPaths = useMemo(() => new Set(wsCappedPaths), [wsCappedPaths]);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [filterQuery, setFilterQuery] = useState("");
@@ -171,6 +172,7 @@ export default function ObjectTreePickerDialog({
             selectedKeys={selectedKeys}
             onRowSelect={handleRowSelect}
             onLoadChildren={fullTreeSearch ? undefined : handleTreeLoadChildren}
+            liveUpdatesPausedPaths={liveUpdatesPausedPaths}
           />
         </div>
         {filterTypes && filterTypes.length > 0 && (

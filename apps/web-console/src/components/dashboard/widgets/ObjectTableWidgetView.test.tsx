@@ -16,6 +16,7 @@ vi.mock("../../../api", async (importOriginal) => {
   return {
     ...actual,
     fetchObjects: vi.fn(),
+    fetchObjectChildrenPage: vi.fn(),
     fetchVariablesBatch: vi.fn(),
   };
 });
@@ -65,18 +66,23 @@ function renderTables(initial?: DashboardSession) {
 
 describe("ObjectTableWidgetView selection", () => {
   beforeEach(() => {
-    vi.mocked(api.fetchObjects).mockResolvedValue([
-      {
-        path: "root.platform.devices.a",
-        displayName: "Alpha",
-        type: "DEVICE",
-      },
-      {
-        path: "root.platform.devices.b",
-        displayName: "Beta",
-        type: "DEVICE",
-      },
-    ] as never);
+    vi.mocked(api.fetchObjectChildrenPage).mockResolvedValue({
+      items: [
+        {
+          path: "root.platform.devices.a",
+          displayName: "Alpha",
+          type: "DEVICE",
+        },
+        {
+          path: "root.platform.devices.b",
+          displayName: "Beta",
+          type: "DEVICE",
+        },
+      ] as never,
+      total: 2,
+      offset: 0,
+      limit: 50,
+    });
     vi.mocked(api.fetchVariablesBatch).mockResolvedValue({} as never);
   });
 

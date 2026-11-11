@@ -73,6 +73,8 @@
   "bulk.noSelection": "No selected objects",
   "bulk.noVisualGroups": "No groups (VISUAL_GROUP)",
   "tree.groupMember": "Group member",
+  "tree.liveUpdatesPaused": "This folder has more than {{cap}} children, so live updates are off. Collapse and expand the folder to refresh.",
+  "tree.liveUpdatesPausedShort": "Live off",
   "dialog.parent": "Parent:",
   "dialog.deployAppHint": "Registers an empty application in the tree. After creation, open it and paste or deploy a bundle manifest JSON.",
   "dialog.operatorAppHint": "Operator app for ?mode=operator&app=<id>. After creation, select dashboards in the child object.",

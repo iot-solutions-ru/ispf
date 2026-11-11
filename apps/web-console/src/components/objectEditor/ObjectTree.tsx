@@ -27,6 +27,7 @@ import { isSpecializedEditorObject } from "../../utils/object/editorObject";
 import { isOperatorAppChildPath } from "../../utils/operator/operatorAppsPath";
 import { localizedSystemFolderMeta } from "../../utils/platform/systemFolderI18n";
 import { deviceDriverTreeClass } from "../../utils/deviceDriverTreeTone";
+import { TREE_WS_CHILD_CAP } from "../../hooks/useLazyObjectTree";
 
 interface ObjectTreeProps {
   nodes: TreeNode[];
@@ -40,6 +41,7 @@ interface ObjectTreeProps {
   onReorder?: (parentPath: string, orderedPaths: string[]) => void;
   onLoadChildren?: (path: string) => void;
   onVisibleRowKeysChange?: (keys: string[]) => void;
+  liveUpdatesPausedPaths?: ReadonlySet<string>;
   bulkActions?: TreeBulkActionsConfig;
 }
 
@@ -115,6 +117,7 @@ interface TreeRowProps {
   onOpenEditor?: (path: string) => void;
   onOpenOperatorApp?: (path: string) => void;
   onLoadChildren?: (path: string) => void;
+  liveUpdatesPaused?: boolean;
 }
 
 const TreeRow = memo(function TreeRow({
@@ -131,6 +134,7 @@ const TreeRow = memo(function TreeRow({
   onOpenEditor,
   onOpenOperatorApp,
   onLoadChildren,
+  liveUpdatesPaused = false,
 }: TreeRowProps) {
   const { t, i18n } = useTranslation("explorer");
   const { toggle } = useTreeExpanded();
@@ -273,6 +277,11 @@ const TreeRow = memo(function TreeRow({
       <span className="tree-label">
         {node.object.groupRef && <span className="group-ref-badge" title={t("tree.groupMember")}>↗</span>}
         {treeLabel}
+        {liveUpdatesPaused && (
+          <span className="tree-ws-paused" title={t("tree.liveUpdatesPaused", { cap: TREE_WS_CHILD_CAP })}>
+            {t("tree.liveUpdatesPausedShort")}
+          </span>
+        )}
       </span>
       <span className="tree-type">{typeLabel}</span>
     </div>
@@ -294,7 +303,8 @@ const TreeRow = memo(function TreeRow({
   && prev.selectedKeys === next.selectedKeys
   && prev.draggingPath === next.draggingPath
   && prev.dropTargetPath === next.dropTargetPath
-  && prev.siblingSignature === next.siblingSignature);
+  && prev.siblingSignature === next.siblingSignature
+  && prev.liveUpdatesPaused === next.liveUpdatesPaused);
 
 export default function ObjectTree({
   nodes,
@@ -308,6 +318,7 @@ export default function ObjectTree({
   onReorder,
   onLoadChildren,
   onVisibleRowKeysChange,
+  liveUpdatesPausedPaths,
   bulkActions,
 }: ObjectTreeProps) {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => readExpandedPaths());
@@ -528,6 +539,7 @@ export default function ObjectTree({
                     onOpenEditor={onOpenEditor}
                     onOpenOperatorApp={onOpenOperatorApp}
                     onLoadChildren={onLoadChildren}
+                    liveUpdatesPaused={liveUpdatesPausedPaths?.has(node.object.path) ?? false}
                   />
                 ))}
               </div>

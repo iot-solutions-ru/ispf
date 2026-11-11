@@ -7,6 +7,7 @@ import {
 } from "./useLazyObjectTree";
 
 const trackObjectPathSubscriptions = vi.fn(() => () => undefined);
+const treeMock = vi.hoisted(() => ({ deviceCount: 1 }));
 
 vi.mock("./useObjectWebSocket", async () => {
   const actual = await vi.importActual<typeof import("./useObjectWebSocket")>("./useObjectWebSocket");
@@ -45,16 +46,14 @@ vi.mock("../api", () => ({
       ];
     }
     if (parentPath === "root.platform.devices") {
-      return [
-        {
-          id: "d1",
-          path: "root.platform.devices.demo-1",
-          type: "DEVICE",
-          displayName: "Demo 1",
-          description: "",
-          revision: 1,
-        },
-      ];
+      return Array.from({ length: treeMock.deviceCount }, (_, index) => ({
+        id: `d${index}`,
+        path: `root.platform.devices.demo-${index}`,
+        type: "DEVICE",
+        displayName: `Demo ${index}`,
+        description: "",
+        revision: 1,
+      }));
     }
     return [];
   }),
@@ -63,6 +62,7 @@ vi.mock("../api", () => ({
 describe("useLazyObjectTree", () => {
   beforeEach(() => {
     trackObjectPathSubscriptions.mockClear();
+    treeMock.deviceCount = 1;
   });
 
   it("does not path-wide subscribe bootstrap roots (avoids platform telemetry flood)", async () => {
@@ -101,5 +101,21 @@ describe("useLazyObjectTree", () => {
       expect(result.current.objects.length).toBe(before);
     });
     expect(TREE_INVALIDATE_EVENT).toBe("ispf-tree-invalidate");
+  });
+
+  it("records folders larger than the live-update cap and does not subscribe them", async () => {
+    treeMock.deviceCount = 65;
+    const { result } = renderHook(() => useLazyObjectTree(true));
+    await waitFor(() => {
+      expect(result.current.objects.length).toBeGreaterThan(0);
+    });
+    await act(async () => {
+      await result.current.loadChildren("root.platform.devices", true);
+    });
+    await waitFor(() => {
+      expect(result.current.wsCappedPaths).toContain("root.platform.devices");
+    });
+    const last = (trackObjectPathSubscriptions.mock.calls.at(-1)?.[0] as string[]) ?? [];
+    expect(last).not.toContain("root.platform.devices");
   });
 });

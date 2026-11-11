@@ -12,7 +12,7 @@ import type {
 } from "../types";
 import { getAuthHeaders } from "../auth/session";
 import { fetchWithIngressFallback } from "../utils/ingress/ingressFetch";
-import { request, writeHeaders, type ObjectWriteOptions } from "./httpClient";
+import { request, requestResponse, writeHeaders, type ObjectWriteOptions } from "./httpClient";
 import { normalizeVariablesBatch } from "../utils/object/variablesBatchLookup";
 
 export interface ObjectSearchResponse {
@@ -52,6 +52,45 @@ export function fetchObjects(parent?: string, lite = true): Promise<ObjectSummar
   }
   const query = params.toString();
   return request(`/api/v1/objects${query ? `?${query}` : ""}`);
+}
+
+export interface ObjectChildrenPage {
+  items: ObjectSummary[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+/** One page of children. `namePattern` and `objectType` are applied on the server before the slice. */
+export async function fetchObjectChildrenPage(options: {
+  parent: string;
+  offset: number;
+  limit: number;
+  namePattern?: string;
+  objectType?: string;
+}): Promise<ObjectChildrenPage> {
+  const params = new URLSearchParams();
+  params.set("parent", options.parent);
+  params.set("lite", "true");
+  params.set("offset", String(options.offset));
+  params.set("limit", String(options.limit));
+  if (options.namePattern?.trim()) {
+    params.set("namePattern", options.namePattern.trim());
+  }
+  if (options.objectType) {
+    params.set("objectType", options.objectType);
+  }
+  const response = await requestResponse(`/api/v1/objects?${params.toString()}`);
+  const items = (await response.json()) as ObjectSummary[];
+  const totalRaw = response.headers.get("X-Total-Count");
+  const parsedTotal = totalRaw == null ? items.length : Number(totalRaw);
+  const total = Number.isFinite(parsedTotal) ? parsedTotal : items.length;
+  return {
+    items,
+    total,
+    offset: options.offset,
+    limit: options.limit,
+  };
 }
 
 export function reorderObjectChildren(parentPath: string, orderedPaths: string[]): Promise<void> {

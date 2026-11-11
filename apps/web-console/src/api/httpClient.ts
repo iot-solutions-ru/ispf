@@ -45,7 +45,8 @@ async function handlePossibleAuthFailure(status: number): Promise<void> {
 
 type RequestOptions = RequestInit & { authToken?: string };
 
-export async function request<T>(url: string, init?: RequestOptions): Promise<T> {
+/** Successful response, so callers can read headers before parsing JSON. */
+export async function requestResponse(url: string, init?: RequestOptions): Promise<Response> {
   const { authToken, headers: extraHeaders, ...fetchInit } = init ?? {};
   const authHeaders = authToken?.trim()
     ? { Authorization: `Bearer ${authToken.trim()}` }
@@ -73,6 +74,11 @@ export async function request<T>(url: string, init?: RequestOptions): Promise<T>
     }
     throw new Error(message);
   }
+  return response;
+}
+
+export async function request<T>(url: string, init?: RequestOptions): Promise<T> {
+  const response = await requestResponse(url, init);
   if (response.status === 204) {
     return undefined as T;
   }

@@ -3,14 +3,14 @@ import type { MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { fetchObjects } from "../../../api";
+import { fetchObjectChildrenPage } from "../../../api";
 import { resolveVariablesBatchEntry } from "../../../utils/object/variablesBatchLookup";
 import { readFieldValue } from "../../../types/dashboard";
 import type { ObjectTableColumn, ObjectTableWidget } from "../../../types/dashboard";
 import type { VariableDto } from "../../../types";
 import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
 import { useDashboardContext, triggerDashboardOpen } from "../useDashboardContext";
-import { parseJsonObject, parseWidgetJsonArray, matchesNamePattern, objectTableValueField, formatObjectTableCell } from "../dashboardUtils";
+import { parseJsonObject, parseWidgetJsonArray, objectTableValueField, formatObjectTableCell } from "../dashboardUtils";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import MultiPenTrendModal from "../../analytics/MultiPenTrendModal";
@@ -19,6 +19,7 @@ import type { TrendPen } from "../../../types/trendPen";
 
 const VIRTUALIZE_ROW_THRESHOLD = 50;
 const TABLE_ROW_ESTIMATE_PX = 36;
+const OBJECT_TABLE_PAGE_SIZE = 50;
 
 interface ObjectTableWidgetViewProps {
   widget: ObjectTableWidget;
@@ -54,26 +55,33 @@ export default function ObjectTableWidgetView({
     return "—";
   };
 
+  const [page, setPage] = useState(0);
+  useEffect(() => {
+    setPage(0);
+  }, [widget.parentPath, widget.namePattern, widget.objectType]);
+
   const children = useQuery({
-    queryKey: ["objects", widget.parentPath],
-    queryFn: () => fetchObjects(widget.parentPath),
+    queryKey: ["objects-page", widget.parentPath, widget.namePattern, widget.objectType, page],
+    queryFn: () =>
+      fetchObjectChildrenPage({
+        parent: widget.parentPath,
+        offset: page * OBJECT_TABLE_PAGE_SIZE,
+        limit: OBJECT_TABLE_PAGE_SIZE,
+        namePattern: widget.namePattern,
+        objectType: widget.objectType,
+      }),
     enabled: Boolean(widget.parentPath),
     refetchInterval: refreshIntervalMs,
   });
 
-  const rows = useMemo(() => {
-    const list = children.data ?? [];
-    return list.filter((obj) => {
-      const leaf = obj.path.split(".").pop() ?? "";
-      if (widget.namePattern && !matchesNamePattern(leaf, widget.namePattern)) {
-        return false;
-      }
-      if (widget.objectType && obj.type !== widget.objectType) {
-        return false;
-      }
-      return true;
-    });
-  }, [children.data, widget.namePattern, widget.objectType]);
+  const total = children.data?.total ?? 0;
+  const rows = useMemo(() => children.data?.items ?? [], [children.data]);
+  const lastPage = Math.max(0, Math.ceil(total / OBJECT_TABLE_PAGE_SIZE) - 1);
+  useEffect(() => {
+    if (children.data && page > lastPage) {
+      setPage(lastPage);
+    }
+  }, [children.data, page, lastPage]);
 
   // Palette samples are created with an empty id. useId still gives this instance a stable owner.
   const fallbackOwnerId = useId();
@@ -252,6 +260,7 @@ export default function ObjectTableWidgetView({
       ) : parsedColumns.length === 0 ? (
         <p className="hint">{t("view.objectTableNeedColumns")}</p>
       ) : (
+        <>
         <div className="dash-table-wrap" ref={tableWrapRef} style={styles.body}>
           <table className="dash-object-table" style={styles.table}>
             <thead>
@@ -297,6 +306,28 @@ export default function ObjectTableWidgetView({
             </tbody>
           </table>
         </div>
+        {total > OBJECT_TABLE_PAGE_SIZE && (
+          <div className="dash-table-pager">
+            <button type="button" disabled={page === 0} onClick={() => setPage((current) => current - 1)}>
+              {t("view.objectTablePrev")}
+            </button>
+            <span>
+              {t("view.objectTablePage", {
+                from: page * OBJECT_TABLE_PAGE_SIZE + 1,
+                to: Math.min(total, (page + 1) * OBJECT_TABLE_PAGE_SIZE),
+                total,
+              })}
+            </span>
+            <button
+              type="button"
+              disabled={(page + 1) * OBJECT_TABLE_PAGE_SIZE >= total}
+              onClick={() => setPage((current) => current + 1)}
+            >
+              {t("view.objectTableNext")}
+            </button>
+          </div>
+        )}
+        </>
       )}
       {contextMenu && (
         <ul

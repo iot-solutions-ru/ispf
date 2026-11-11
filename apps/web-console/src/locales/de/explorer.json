@@ -168,5 +168,7 @@
   "icons.workflow": "Workflow",
   "mobile.backToTree": "← Objektbaum",
   "tree.groupMember": "Gruppenmitglied",
+  "tree.liveUpdatesPaused": "Dieser Ordner hat mehr als {{cap}} Kinder, daher sind Live-Updates aus. Zum Aktualisieren den Ordner zuklappen und wieder aufklappen.",
+  "tree.liveUpdatesPausedShort": "Live aus",
   "tree.linkTitle": "Link: {{path}}"
 }

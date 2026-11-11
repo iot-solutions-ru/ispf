@@ -298,8 +298,9 @@ function AppShell() {
   useFederatedPathSubscription(selectedPath);
 
   const info = useQuery({ queryKey: ["info"], queryFn: fetchPlatformInfo });
-  const { tree: lazyTree, objects: objectList, loadChildren, invalidateAll, treeLoadError } =
+  const { tree: lazyTree, objects: objectList, loadChildren, invalidateAll, treeLoadError, wsCappedPaths } =
     useLazyObjectTree(Boolean(session));
+  const liveUpdatesPausedPaths = useMemo(() => new Set(wsCappedPaths), [wsCappedPaths]);
   const objectSearch = useObjectTreeSearch(treeFilter, Boolean(session));
   const fullTreeSearch = treeFilter.trim().length >= OBJECT_SEARCH_MIN_CHARS;
   const treeSearchStatus =
@@ -852,6 +853,7 @@ function AppShell() {
                   onReorder={handleTreeReorder}
                   onLoadChildren={fullTreeSearch ? undefined : handleTreeLoadChildren}
                   onVisibleRowKeysChange={setVisibleRowKeys}
+                  liveUpdatesPausedPaths={liveUpdatesPausedPaths}
                   bulkActions={
                     canConfigure
                       ? {
