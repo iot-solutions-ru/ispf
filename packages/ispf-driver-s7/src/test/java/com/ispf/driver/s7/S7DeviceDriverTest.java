@@ -91,12 +91,32 @@ class S7DeviceDriverTest {
         assertEquals(DriverErrorKind.CONFIGURATION, error.kind());
     }
 
+    @Test
+    void publishesPointMapBeforePollIo() throws Exception {
+        MemoryS7Connector connector = new MemoryS7Connector();
+        connector.failReads = true;
+        StubDriverObject driverObject = new StubDriverObject(Map.of("host", "127.0.0.1", "timeoutMs", "3000"));
+        S7DeviceDriver driver = new S7DeviceDriver();
+        driver.initialize(driverObject);
+        driver.attachConnector(connector);
+
+        assertThrows(DriverException.class, () -> driver.readPoints(Map.of("setpoint", "DB:1:0:REAL")));
+
+        connector.failReads = false;
+        driver.writePoint("setpoint", DataRecord.single(VALUE_SCHEMA, Map.of("raw", 42L, "value", 42.0)));
+        assertEquals(42.0, driverObject.variables.get("setpoint").firstRow().get("value"));
+    }
+
     private static final class MemoryS7Connector implements S7Connector {
 
         private final Map<String, byte[]> storage = new ConcurrentHashMap<>();
+        private boolean failReads;
 
         @Override
         public byte[] read(DaveArea area, int dbNumber, int length, int offset) {
+            if (failReads) {
+                throw new IllegalStateException("simulated S7 read failure");
+            }
             byte[] stored = storage.get(key(area, dbNumber, offset));
             if (stored == null) {
                 return new byte[length];

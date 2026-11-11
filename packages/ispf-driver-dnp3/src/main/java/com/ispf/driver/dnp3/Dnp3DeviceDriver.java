@@ -58,6 +58,7 @@ public class Dnp3DeviceDriver implements DeviceDriver {
     private int masterAddress = 1;
     private int outstationAddress = 1024;
     private int timeoutMs = 5000;
+    /** Replaced as a whole before poll I/O so a later write never sees an empty map. */
     private volatile Map<String, Dnp3Point> points = Map.of();
 
     @Override
@@ -109,17 +110,19 @@ public class Dnp3DeviceDriver implements DeviceDriver {
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             next.put(entry.getKey(), Dnp3Point.parse(entry.getValue()));
         }
+        points = Map.copyOf(next);
         session.pollAllClasses();
         Dnp3ReadCache cache = session.cache();
         for (Map.Entry<String, Dnp3Point> entry : next.entrySet()) {
             try {
                 driverObject.updateVariable(entry.getKey(), readPoint(entry.getValue(), cache));
             } catch (DriverException ex) {
-                driverObject.updateVariable(entry.getKey(), unavailableRecord(entry.getValue()));
+                driverObject.updateVariable(entry.getKey(), unavailableRecord(
+                        entry.getValue(),
+                        driverObject.getVariable(entry.getKey()).orElse(null)));
                 driverObject.log(DriverLogLevel.DEBUG, "DNP3 read skipped for " + entry.getKey() + ": " + ex.getMessage());
             }
         }
-        points = Map.copyOf(next);
     }
 
     @Override
@@ -229,18 +232,19 @@ public class Dnp3DeviceDriver implements DeviceDriver {
         };
     }
 
-    private static DataRecord unavailableRecord(Dnp3Point point) {
+    static DataRecord unavailableRecord(Dnp3Point point, DataRecord previous) {
+        Object kept = previous == null ? null : previous.firstRow().get("value");
         return switch (point.dataType()) {
             case BINARY_INPUT, BINARY_OUTPUT -> DataRecord.single(BOOL_VALUE_SCHEMA, Map.of(
-                    "value", false,
+                    "value", kept instanceof Boolean bool ? bool : false,
                     "status", "UNAVAILABLE"
             ));
             case COUNTER -> DataRecord.single(COUNTER_VALUE_SCHEMA, Map.of(
-                    "value", 0L,
+                    "value", kept instanceof Number number ? number.longValue() : 0L,
                     "status", "UNAVAILABLE"
             ));
             case ANALOG_INPUT, ANALOG_OUTPUT -> DataRecord.single(VALUE_SCHEMA, Map.of(
-                    "value", 0.0,
+                    "value", kept instanceof Number number ? number.doubleValue() : 0.0,
                     "status", "UNAVAILABLE"
             ));
         };
