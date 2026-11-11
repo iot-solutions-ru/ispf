@@ -39,6 +39,20 @@ public class DataSourceSqlSession {
         }
     }
 
+    /**
+     * One database transaction for application-schema SQL. External JDBC data sources are refused:
+     * their connections are pooled outside this session and would commit DDL on their own.
+     */
+    public void runInSchemaTransaction(String dataSourcePath, ApplicationSchemaSession.SchemaSqlWork work) {
+        tenantLocalDataAccessGuard.requireAllowedDataSourcePath(dataSourcePath);
+        if (connectionResolver.isExternal(dataSourcePath)) {
+            throw new IllegalArgumentException(
+                    "Bundle SQL transaction requires an application schema data source: " + dataSourcePath
+            );
+        }
+        schemaSession.runInSchemaTransaction(connectionResolver.resolveSchemaName(dataSourcePath), work);
+    }
+
     public void runWithDataSource(String dataSourcePath, Consumer<JdbcTemplate> action) {
         callWithDataSource(dataSourcePath, template -> {
             action.accept(template);

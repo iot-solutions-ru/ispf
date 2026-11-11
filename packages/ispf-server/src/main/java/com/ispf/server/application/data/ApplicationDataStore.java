@@ -5,6 +5,9 @@ import org.springframework.stereotype.Repository;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HexFormat;
@@ -138,6 +141,26 @@ public class ApplicationDataStore {
                 checksum(sql),
                 Timestamp.from(Instant.now())
         );
+    }
+
+    /**
+     * Same insert as {@link #recordMigration(String, String, String, String)} on a caller-owned connection
+     * so the ledger row commits or rolls back with the migration statements.
+     */
+    public void recordMigration(Connection connection, String appId, String version, String scriptId, String sql)
+            throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                INSERT INTO %s (id, app_id, version, script_id, checksum, applied_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """.formatted(migrationsTable))) {
+            statement.setObject(1, UUID.randomUUID());
+            statement.setString(2, appId);
+            statement.setString(3, version);
+            statement.setString(4, scriptId);
+            statement.setString(5, checksum(sql));
+            statement.setTimestamp(6, Timestamp.from(Instant.now()));
+            statement.executeUpdate();
+        }
     }
 
     public List<Map<String, Object>> listMigrations(String appId) {

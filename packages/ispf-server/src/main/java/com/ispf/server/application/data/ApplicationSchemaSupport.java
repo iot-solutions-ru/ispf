@@ -1,5 +1,6 @@
 package com.ispf.server.application.data;
 
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -8,7 +9,9 @@ import java.util.Locale;
 public final class ApplicationSchemaSupport {
 
     private static final Pattern CREATE_TABLE = Pattern.compile(
-            "(?i)CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?([\"`]?)([a-zA-Z_][a-zA-Z0-9_]*)([\"`]?)"
+            "(?i)CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?"
+                    + "(?:[\"`]?[a-zA-Z_][a-zA-Z0-9_]*[\"`]?\\s*\\.\\s*)?"
+                    + "[\"`]?([a-zA-Z_][a-zA-Z0-9_]*)"
     );
 
     private static final Set<String> RESERVED_TABLES = Set.of(
@@ -56,10 +59,23 @@ public final class ApplicationSchemaSupport {
         return new String(identifier.toCharArray());
     }
 
+    /** Table names from {@code CREATE TABLE} statements. Schema-qualified names are not matched. */
+    public static List<String> createTableNames(String sql) {
+        if (sql == null || sql.isBlank()) {
+            return List.of();
+        }
+        Matcher matcher = CREATE_TABLE.matcher(sql);
+        List<String> names = new java.util.ArrayList<>();
+        while (matcher.find()) {
+            names.add(matcher.group(1));
+        }
+        return List.copyOf(names);
+    }
+
     public static void validateMigrationSql(String sql, String tablePrefix) {
         Matcher matcher = CREATE_TABLE.matcher(sql);
         while (matcher.find()) {
-            String tableName = matcher.group(2).toLowerCase(Locale.ROOT);
+            String tableName = matcher.group(1).toLowerCase(Locale.ROOT);
             if (RESERVED_TABLES.contains(tableName)) {
                 throw new IllegalArgumentException(
                         "Migration creates reserved platform table: " + tableName

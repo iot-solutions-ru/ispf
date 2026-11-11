@@ -26,9 +26,11 @@ import com.ispf.server.application.test.FunctionTestRunner;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class ApplicationBundleDeployService {
@@ -133,39 +135,7 @@ public class ApplicationBundleDeployService {
         }
 
         String dataSourcePath = dataSourceObjectService.pathForNodeName(appId);
-        treeArtifacts.apply(appId, manifest, false, dataSourcePath, new BundleApplyLog(applied, skipped, errors));
-
-        boolean dataSourcePresent = objectManager.tree().findByPath(dataSourcePath).isPresent();
-        if (manifest.migrations() != null && !manifest.migrations().isEmpty()) {
-            if (!dataSourcePresent) {
-                if (errors.stream().noneMatch(item -> item.startsWith("dataSource:"))) {
-                    errors.add("dataSource required for migrations: " + dataSourcePath);
-                }
-            } else {
-                try {
-                    for (BundleMigration script : manifest.migrations()) {
-                        migrationObjectService.upsert(new MigrationObjectService.MigrationDefinition(
-                                "",
-                                script.id(),
-                                manifest.version(),
-                                dataSourcePath,
-                                script.sql()
-                        ));
-                    }
-                    List<String> scriptIdsInOrder = manifest.migrations().stream()
-                            .map(BundleMigration::id)
-                            .toList();
-                    List<String> appliedMigrations = migrationObjectService.applyPending(
-                            manifest.version(),
-                            dataSourcePath,
-                            scriptIdsInOrder
-                    );
-                    applied.addAll(appliedMigrations.stream().map(id -> "migration:" + id).toList());
-                } catch (Exception ex) {
-                    errors.add("migrations: " + ex.getMessage());
-                }
-            }
-        }
+        boolean treeMutated = applyAfterPreflight(appId, manifest, dataSourcePath, applied, skipped, errors);
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("appId", appId);
@@ -174,15 +144,19 @@ public class ApplicationBundleDeployService {
         response.put("skipped", skipped);
         response.put("errors", errors);
         response.put("dataSourcePath", dataSourcePath);
+        response.put("treeMutated", treeMutated);
         response.put("objectTree", "tree-first");
         String applicationPath = applicationTreePath(appId);
         response.put("applicationPath", applicationPath);
 
         // Tree sync can add errors; snapshot must be recorded only after the full outcome is known
         // so a post-activate sync failure cannot leave a bad deploy as findActive().
-        syncApplicationTree(appId, displayName, manifest, applied, errors, response);
+        // A rejected preflight or SQL batch did not write bundle objects, so do not sync or delete them.
+        if (treeMutated) {
+            syncApplicationTree(appId, displayName, manifest, applied, errors, response);
+        }
 
-        if (runTests) {
+        if (runTests && treeMutated) {
             List<FunctionTestRunner.TestResult> testResults = runTests(appId, manifest);
             response.put("testResults", testResults);
             List<String> failedTests = testResults.stream()
@@ -220,7 +194,7 @@ public class ApplicationBundleDeployService {
         response.put("failedSteps", List.copyOf(errors));
         response.put("applied", applied);
 
-        if (shouldCompensateFailedDeploy(errors)) {
+        if (treeMutated && shouldCompensateFailedDeploy(errors)) {
             List<String> compensated = compensateFailedDeploy(appId, manifest);
             if (!compensated.isEmpty()) {
                 response.put("compensated", compensated);
@@ -228,6 +202,73 @@ public class ApplicationBundleDeployService {
         }
 
         return response;
+    }
+
+    /**
+     * Dry-run the object tree, then run migration SQL in one transaction.
+     * Bundle objects are written only when both succeed. Registration has already created the schema.
+     *
+     * @return true when the live object tree was updated with bundle artifacts
+     */
+    private boolean applyAfterPreflight(
+            String appId,
+            BundleManifest manifest,
+            String dataSourcePath,
+            List<String> applied,
+            List<String> skipped,
+            List<String> errors
+    ) {
+        List<String> preflightErrors = BundleDeployPreflight.dryRun(
+                manifest.objects(),
+                manifest.blueprints(),
+                manifest.migrations(),
+                manifest.tablePrefix(),
+                path -> objectManager.tree().findByPath(path).isPresent()
+        );
+        if (!preflightErrors.isEmpty()) {
+            errors.addAll(preflightErrors);
+            return false;
+        }
+        if (manifest.migrations() != null && !manifest.migrations().isEmpty()) {
+            if (objectManager.tree().findByPath(dataSourcePath).isEmpty()) {
+                if (errors.stream().noneMatch(item -> item.startsWith("dataSource:"))) {
+                    errors.add("dataSource required for migrations: " + dataSourcePath);
+                }
+                return false;
+            }
+            List<MigrationObjectService.MigrationDefinition> scripts = manifest.migrations().stream()
+                    .map(script -> new MigrationObjectService.MigrationDefinition(
+                            "",
+                            script.id(),
+                            manifest.version(),
+                            dataSourcePath,
+                            script.sql()
+                    ))
+                    .toList();
+            List<String> appliedMigrations;
+            try {
+                appliedMigrations = migrationObjectService.applyBundleSql(appId, manifest.tablePrefix(), scripts);
+            } catch (Exception ex) {
+                errors.add("migrations: " + ex.getMessage());
+                return false;
+            }
+            Set<String> freshScripts = new HashSet<>(appliedMigrations);
+            try {
+                for (MigrationObjectService.MigrationDefinition script : scripts) {
+                    if (freshScripts.contains(script.scriptId())) {
+                        migrationObjectService.recordBundleMigrationNode(script);
+                    } else {
+                        migrationObjectService.upsert(script);
+                    }
+                }
+            } catch (Exception ex) {
+                errors.add("migrations: " + ex.getMessage());
+                return false;
+            }
+            applied.addAll(appliedMigrations.stream().map(id -> "migration:" + id).toList());
+        }
+        treeArtifacts.apply(appId, manifest, false, dataSourcePath, new BundleApplyLog(applied, skipped, errors));
+        return true;
     }
 
     public List<FunctionTestRunner.TestResult> runTests(String appId) {
