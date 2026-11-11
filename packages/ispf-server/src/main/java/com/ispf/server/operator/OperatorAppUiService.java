@@ -198,7 +198,7 @@ public class OperatorAppUiService {
             Map<String, Object> alarmBar,
             String agentInstructions
     ) throws Exception {
-        return saveUiInternal(appId, title, defaultDashboard, dashboards, alarmBar, agentInstructions, null, null, null);
+        return saveUiInternal(appId, title, defaultDashboard, dashboards, alarmBar, agentInstructions, null, null, null, null);
     }
 
     public Map<String, Object> saveUi(
@@ -220,6 +220,7 @@ public class OperatorAppUiService {
                 agentInstructions,
                 hideTasksAndEvents,
                 hideDashboardNav,
+                null,
                 null
         );
     }
@@ -233,7 +234,8 @@ public class OperatorAppUiService {
             String agentInstructions,
             Boolean hideTasksAndEvents,
             Boolean hideDashboardNav,
-            String externalSpaUrl
+            String externalSpaUrl,
+            String hostedUiUrl
     ) throws Exception {
         return saveUiInternal(
                 appId,
@@ -244,7 +246,8 @@ public class OperatorAppUiService {
                 agentInstructions,
                 hideTasksAndEvents,
                 hideDashboardNav,
-                externalSpaUrl
+                externalSpaUrl,
+                hostedUiUrl
         );
     }
 
@@ -257,7 +260,8 @@ public class OperatorAppUiService {
             String agentInstructions,
             Boolean hideTasksAndEvents,
             Boolean hideDashboardNav,
-            String externalSpaUrl
+            String externalSpaUrl,
+            String hostedUiUrl
     ) throws Exception {
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("title is required");
@@ -295,7 +299,8 @@ public class OperatorAppUiService {
                 agentInstructions,
                 hideTasksAndEvents,
                 hideDashboardNav,
-                externalSpaUrl
+                externalSpaUrl,
+                hostedUiUrl
         );
         store.upsert(new OperatorAppUiStore.OperatorAppUiRecord(
                 resolvedAppId,
@@ -400,7 +405,7 @@ public class OperatorAppUiService {
             String defaultDashboard,
             List<Map<String, String>> dashboards
     ) throws Exception {
-        return saveUiInternal(appId, title, defaultDashboard, dashboards, null, null, null, null, null);
+        return saveUiInternal(appId, title, defaultDashboard, dashboards, null, null, null, null, null, null);
     }
 
     public Map<String, Object> saveUi(
@@ -410,7 +415,7 @@ public class OperatorAppUiService {
             List<Map<String, String>> dashboards,
             Map<String, Object> alarmBar
     ) throws Exception {
-        return saveUiInternal(appId, title, defaultDashboard, dashboards, alarmBar, null, null, null, null);
+        return saveUiInternal(appId, title, defaultDashboard, dashboards, alarmBar, null, null, null, null, null);
     }
 
     public String getAgentInstructions(String appId) {
@@ -437,7 +442,7 @@ public class OperatorAppUiService {
     public void saveUiExtras(String appId, Map<String, Object> alarmBar) throws Exception {
         OperatorAppUiStore.OperatorAppUiRecord record = store.findByAppId(appId)
                 .orElseThrow(() -> new IllegalArgumentException("Operator app not found: " + appId));
-        String uiExtrasJson = buildUiExtrasJson(appId, alarmBar, null, null, null, null);
+        String uiExtrasJson = buildUiExtrasJson(appId, alarmBar, null, null, null, null, null);
         store.upsert(new OperatorAppUiStore.OperatorAppUiRecord(
                 record.appId(),
                 record.title(),
@@ -454,7 +459,8 @@ public class OperatorAppUiService {
             String agentInstructions,
             Boolean hideTasksAndEvents,
             Boolean hideDashboardNav,
-            String externalSpaUrl
+            String externalSpaUrl,
+            String hostedUiUrl
     ) throws Exception {
         Map<String, Object> extras = readExtras(store.findByAppId(appId).map(OperatorAppUiStore.OperatorAppUiRecord::uiExtrasJson).orElse(null));
         if (alarmBar != null) {
@@ -474,14 +480,8 @@ public class OperatorAppUiService {
         }
         putChromeHideFlag(extras, "hideTasksAndEvents", hideTasksAndEvents);
         putChromeHideFlag(extras, "hideDashboardNav", hideDashboardNav);
-        if (externalSpaUrl != null) {
-            String trimmed = externalSpaUrl.trim();
-            if (trimmed.isEmpty()) {
-                extras.remove("externalSpaUrl");
-            } else {
-                extras.put("externalSpaUrl", requireSafeOperatorLaunchUrl(trimmed));
-            }
-        }
+        putLaunchUrl(extras, "externalSpaUrl", externalSpaUrl);
+        putLaunchUrl(extras, "hostedUiUrl", hostedUiUrl);
         if (extras.isEmpty()) {
             return null;
         }
@@ -522,14 +522,29 @@ public class OperatorAppUiService {
         return lower.startsWith("https://") || lower.startsWith("http://");
     }
 
-    private static String requireSafeOperatorLaunchUrl(String url) {
-        if (!isSafeOperatorLaunchUrl(url)) {
+    private static void putLaunchUrl(Map<String, Object> extras, String field, String url) {
+        if (url == null) {
+            return;
+        }
+        String trimmed = url.trim();
+        if (trimmed.isEmpty()) {
+            extras.remove(field);
+            return;
+        }
+        if (!isSafeOperatorLaunchUrl(trimmed)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "externalSpaUrl must be an http(s) URL or a path under /apps/"
+                    field + " must be an http(s) URL or a path under /apps/"
             );
         }
-        return url.trim();
+        extras.put(field, trimmed);
+    }
+
+    private static void copyLaunchUrl(Map<String, Object> ui, Map<String, Object> extras, String field) {
+        Object value = extras.get(field);
+        if (value instanceof String url && isSafeOperatorLaunchUrl(url)) {
+            ui.put(field, url.trim());
+        }
     }
 
     private Map<String, Object> readExtras(String uiExtrasJson) throws Exception {
@@ -574,10 +589,8 @@ public class OperatorAppUiService {
         if (Boolean.TRUE.equals(extras.get("hideDashboardNav"))) {
             ui.put("hideDashboardNav", true);
         }
-        Object externalSpaUrl = extras.get("externalSpaUrl");
-        if (externalSpaUrl instanceof String spa && isSafeOperatorLaunchUrl(spa)) {
-            ui.put("externalSpaUrl", spa.trim());
-        }
+        copyLaunchUrl(ui, extras, "externalSpaUrl");
+        copyLaunchUrl(ui, extras, "hostedUiUrl");
         Object spaNav = extras.get("spaNav");
         if (spaNav != null) {
             ui.put("spaNav", spaNav);

@@ -104,8 +104,11 @@ public class OperatorAppController {
                     request.agentInstructions(),
                     request.hideTasksAndEvents(),
                     request.hideDashboardNav(),
-                    request.externalSpaUrl()
+                    request.externalSpaUrl(),
+                    request.hostedUiUrl()
             );
+        } catch (ResponseStatusException ex) {
+            throw ex;
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (Exception ex) {
@@ -124,7 +127,8 @@ public class OperatorAppController {
             String agentInstructions,
             Boolean hideTasksAndEvents,
             Boolean hideDashboardNav,
-            String externalSpaUrl
+            String externalSpaUrl,
+            String hostedUiUrl
     ) {
     }
 }
