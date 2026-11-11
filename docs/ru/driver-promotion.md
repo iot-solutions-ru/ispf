@@ -98,7 +98,7 @@
 | driverId | Было | Стало | Примечание |
 |----------|------|-------|------------|
 | `iec104` | BETA | **PRODUCTION** | Loopback vs `iec104-server`; write commands |
-| `dnp3` | BETA | **PRODUCTION** (только poll) | Class 0/1/2/3 poll; **write не реализован** — field write = не готов |
+| `dnp3` | BETA | **PRODUCTION** (poll + CROB/analog operate) | Class 0/1/2/3 poll; direct operate — CROB latch и g41v3. Входы только на чтение |
 | `dlms` | BETA | **PRODUCTION** | Gurux read/write; auth NONE |
 | `ethernet-ip` | BETA | **PRODUCTION** | CIP session registration + tag path loopback |
 | `opc-da` | BETA | **PRODUCTION** (shell) | Connectivity shell + parser tests — **не** ready-for-field DA |

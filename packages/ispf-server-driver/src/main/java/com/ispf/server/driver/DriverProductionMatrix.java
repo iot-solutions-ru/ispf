@@ -134,7 +134,7 @@ final class DriverProductionMatrix {
             entry("iec104-server", DriverMaturity.PRODUCTION, POLL_WRITE_QUALITY,
                     testPath("ispf-driver-iec104-server", "com.ispf.driver.iec104server.Iec104ServerDeviceDriverTest"),
                     "ispf-driver-iec104-server"),
-            entry("dnp3", DriverMaturity.PRODUCTION, POLL_ONLY,
+            entry("dnp3", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-dnp3", "com.ispf.driver.dnp3.Dnp3DeviceDriverTest"),
                     "ispf-driver-dnp3"),
             entry("dlms", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,

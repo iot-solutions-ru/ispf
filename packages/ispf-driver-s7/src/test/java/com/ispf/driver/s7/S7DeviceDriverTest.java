@@ -28,6 +28,10 @@ class S7DeviceDriverTest {
             .field("raw", FieldType.LONG)
             .build();
 
+    private static final DataSchema BOOL_SCHEMA = DataSchema.builder("s7Bool")
+            .field("value", FieldType.BOOLEAN)
+            .build();
+
     @Test
     void writeRealUpdatesMemoryAndVariable() throws Exception {
         MemoryS7Connector connector = new MemoryS7Connector();
@@ -44,6 +48,22 @@ class S7DeviceDriverTest {
                 S7Point.S7DataType.REAL,
                 connector.read(DaveArea.DB, 1, 4, 0));
         assertEquals(250.0, readBack.firstRow().get("value"));
+    }
+
+    @Test
+    void writeBoolBitKeepsSiblingBits() throws Exception {
+        MemoryS7Connector connector = new MemoryS7Connector();
+        connector.write(DaveArea.DB, 1, 0, new byte[]{(byte) 0x01});
+        StubDriverObject driverObject = new StubDriverObject(Map.of("host", "127.0.0.1", "timeoutMs", "3000"));
+        S7DeviceDriver driver = new S7DeviceDriver();
+        driver.initialize(driverObject);
+        driver.attachConnector(connector);
+        driver.readPoints(Map.of("run", "DB:1:0.3:BOOL"));
+
+        driver.writePoint("run", DataRecord.single(BOOL_SCHEMA, Map.of("value", true)));
+
+        assertEquals(true, driverObject.variables.get("run").firstRow().get("value"));
+        assertEquals((byte) 0x09, connector.read(DaveArea.DB, 1, 1, 0)[0]);
     }
 
     @Test

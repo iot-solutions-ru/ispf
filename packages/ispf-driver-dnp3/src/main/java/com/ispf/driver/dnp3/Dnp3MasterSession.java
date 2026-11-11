@@ -4,6 +4,7 @@ import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverPermanentException;
 import com.ispf.driver.DriverTransientException;
 import com.ispf.driver.dnp3.codec.Dnp3TcpCodec;
+import com.ispf.driver.dnp3.codec.Dnp3TcpCodec.ControlCommand;
 
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -31,7 +32,7 @@ final class Dnp3MasterSession implements AutoCloseable {
         this.timeoutMs = timeoutMs;
     }
 
-    void connect() throws DriverException {
+    synchronized void connect() throws DriverException {
         try {
             socket = new Socket();
             socket.connect(new InetSocketAddress(host, port), timeoutMs);
@@ -42,11 +43,11 @@ final class Dnp3MasterSession implements AutoCloseable {
         }
     }
 
-    boolean isConnected() {
+    synchronized boolean isConnected() {
         return socket != null && socket.isConnected() && !socket.isClosed();
     }
 
-    void pollAllClasses() throws DriverException {
+    synchronized void pollAllClasses() throws DriverException {
         if (!isConnected()) {
             throw new DriverTransientException("Not connected");
         }
@@ -69,8 +70,33 @@ final class Dnp3MasterSession implements AutoCloseable {
         return readCache;
     }
 
+    synchronized void directOperate(Dnp3Point point, Object value) throws DriverException {
+        if (!isConnected()) {
+            throw new DriverTransientException("Not connected");
+        }
+        try {
+            int operateSequence = sequence++ & 0x0F;
+            ControlCommand command = new ControlCommand(point.dataType(), point.index(), value);
+            byte[] request = Dnp3TcpCodec.directOperateRequest(
+                    masterAddress, outstationAddress, operateSequence, command);
+            Dnp3TcpCodec.writeFrame(socket.getOutputStream(), request);
+            Dnp3TcpCodec.Frame response = Dnp3TcpCodec.readFrame(socket.getInputStream());
+            if (response.source() != outstationAddress || response.destination() != masterAddress) {
+                throw new DriverPermanentException("DNP3 response address mismatch");
+            }
+            if (Dnp3TcpCodec.applicationSequence(response) != operateSequence) {
+                throw new DriverPermanentException("DNP3 operate response sequence mismatch");
+            }
+            Dnp3TcpCodec.applyOperateResponse(response);
+        } catch (DriverException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new DriverTransientException("DNP3 direct operate failed", ex);
+        }
+    }
+
     @Override
-    public void close() {
+    public synchronized void close() {
         if (socket != null) {
             try {
                 socket.close();

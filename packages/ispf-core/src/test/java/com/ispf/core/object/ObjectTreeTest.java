@@ -95,4 +95,47 @@ class ObjectTreeTest {
                 .hasMessageContaining("must not contain");
         assertThat(tree.resolveChildPath("root", "pump")).isEqualTo("root.pump");
     }
+
+    @Test
+    void prefixAndTypeIndexesNarrowCandidatesAndTrackMutations() {
+        ObjectTree tree = new ObjectTree();
+        tree.register(new PlatformObject("d1", "root.platform.devices.pump-1", ObjectType.DEVICE, "Pump 1", null, null));
+        tree.register(new PlatformObject("d2", "root.platform.devices.pump-2", ObjectType.DEVICE, "Pump 2", null, null));
+        tree.register(new PlatformObject("h1", "root.platform.devices.hub-1", ObjectType.CUSTOM, "Hub 1", null, null));
+        tree.register(new PlatformObject("r1", "root.platform.reports.daily", ObjectType.REPORT, "Daily", null, null));
+
+        assertThat(tree.findByPathPrefix("root.platform.devices.pump-"))
+                .extracting(PlatformObject::path)
+                .containsExactly("root.platform.devices.pump-1", "root.platform.devices.pump-2");
+
+        assertThat(tree.findCandidates("root.platform.devices.", java.util.Set.of(ObjectType.DEVICE)))
+                .extracting(PlatformObject::path)
+                .containsExactly("root.platform.devices.pump-1", "root.platform.devices.pump-2");
+
+        tree.updateNodeType("root.platform.devices.hub-1", ObjectType.DEVICE);
+        assertThat(tree.findByTypes(java.util.Set.of(ObjectType.DEVICE)))
+                .extracting(PlatformObject::path)
+                .containsExactlyInAnyOrder(
+                        "root.platform.devices.pump-1",
+                        "root.platform.devices.pump-2",
+                        "root.platform.devices.hub-1"
+                );
+        assertThat(tree.findByTypes(java.util.Set.of(ObjectType.CUSTOM))).isEmpty();
+
+        tree.delete("root.platform.devices.pump-1");
+        assertThat(tree.findByTypes(java.util.Set.of(ObjectType.DEVICE)))
+                .extracting(PlatformObject::path)
+                .containsExactlyInAnyOrder("root.platform.devices.pump-2", "root.platform.devices.hub-1");
+
+        tree.register(new PlatformObject("c1", "root.platform.devices.hub-1.child", ObjectType.DEVICE, "Child", null, null));
+        tree.delete("root.platform.devices.hub-1");
+        assertThat(tree.findByTypes(java.util.Set.of(ObjectType.DEVICE)))
+                .extracting(PlatformObject::path)
+                .containsExactly("root.platform.devices.pump-2");
+
+        tree.rebuildChildIndex();
+        assertThat(tree.findByTypes(java.util.Set.of(ObjectType.DEVICE, ObjectType.REPORT)))
+                .extracting(PlatformObject::path)
+                .containsExactlyInAnyOrder("root.platform.devices.pump-2", "root.platform.reports.daily");
+    }
 }

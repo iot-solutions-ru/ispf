@@ -11,7 +11,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -85,16 +84,82 @@ class Dnp3DeviceDriverTest {
     }
 
     @Test
-    void writePointNotImplemented() {
+    void writesBinaryAndAnalogOutputs() throws Exception {
+        outstation = new Dnp3LoopbackOutstation(MASTER_ADDRESS, OUTSTATION_ADDRESS);
+        outstation.awaitBound(5_000);
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(outstation.port()),
+                "localAddress", String.valueOf(MASTER_ADDRESS),
+                "outstationAddress", String.valueOf(OUTSTATION_ADDRESS),
+                "timeoutMs", "10000"
+        ));
         Dnp3DeviceDriver driver = new Dnp3DeviceDriver();
-        DriverException ex = assertThrows(
-                DriverException.class,
-                () -> driver.writePoint("0:ANALOG_OUTPUT", DataRecord.single(
-                        DataSchema.builder("dnp3Value").field("value", FieldType.DOUBLE).build(),
-                        Map.of("value", 1.0)
-                ))
-        );
-        assertTrue(ex.getMessage().toLowerCase(Locale.ROOT).contains("not implemented"));
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of(
+                "coil", "0:BINARY_OUTPUT",
+                "setpoint", "0:ANALOG_OUTPUT",
+                "temp", "0:ANALOG_INPUT"
+        ));
+
+        driver.writePoint("coil", DataRecord.single(
+                DataSchema.builder("dnp3Bool").field("value", FieldType.BOOLEAN).build(),
+                Map.of("value", true)
+        ));
+        driver.writePoint("setpoint", DataRecord.single(
+                DataSchema.builder("dnp3Value").field("value", FieldType.DOUBLE).build(),
+                Map.of("value", 7.25)
+        ));
+        driver.readPoints(Map.of(
+                "coil", "0:BINARY_OUTPUT",
+                "setpoint", "0:ANALOG_OUTPUT",
+                "temp", "0:ANALOG_INPUT"
+        ));
+
+        assertEquals(true, driverObject.variables.get("coil").firstRow().get("value"));
+        assertEquals(7.25, ((Number) driverObject.variables.get("setpoint").firstRow().get("value")).doubleValue(), 0.001);
+
+        driver.writePoint("coil", DataRecord.single(
+                DataSchema.builder("dnp3Bool").field("value", FieldType.BOOLEAN).build(),
+                Map.of("value", false)
+        ));
+        driver.readPoints(Map.of(
+                "coil", "0:BINARY_OUTPUT",
+                "setpoint", "0:ANALOG_OUTPUT",
+                "temp", "0:ANALOG_INPUT"
+        ));
+
+        assertEquals(false, driverObject.variables.get("coil").firstRow().get("value"));
+        assertEquals(7.25, ((Number) driverObject.variables.get("setpoint").firstRow().get("value")).doubleValue(), 0.001);
+        assertEquals(12.34, ((Number) driverObject.variables.get("temp").firstRow().get("value")).doubleValue(), 0.001);
+        driver.disconnect();
+    }
+
+    @Test
+    void rejectsWriteOfInputPoint() throws Exception {
+        outstation = new Dnp3LoopbackOutstation(MASTER_ADDRESS, OUTSTATION_ADDRESS);
+        outstation.awaitBound(5_000);
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(outstation.port()),
+                "localAddress", String.valueOf(MASTER_ADDRESS),
+                "outstationAddress", String.valueOf(OUTSTATION_ADDRESS),
+                "timeoutMs", "10000"
+        ));
+        Dnp3DeviceDriver driver = new Dnp3DeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("temp", "0:ANALOG_INPUT"));
+
+        DriverException ex = assertThrows(DriverException.class, () -> driver.writePoint("temp", DataRecord.single(
+                DataSchema.builder("dnp3Value").field("value", FieldType.DOUBLE).build(),
+                Map.of("value", 1.0)
+        )));
+        assertTrue(ex.getMessage().contains("cannot be written"));
+        driver.disconnect();
     }
 
     private static final class StubDriverObject implements DeviceDriver.DriverObject {

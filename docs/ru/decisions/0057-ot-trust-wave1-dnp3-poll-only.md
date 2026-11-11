@@ -10,6 +10,10 @@
 
 Phase 25: OT Trust снят с парковки для Wave 1. Документы roadmap и promotion ошибочно утверждали, что BL-191 понизил `dnp3` и `ethernet-ip` до **BETA**. Код матрицы этого не делал.
 
+## Обновление (2026-11-11)
+
+Direct Operate реализован для двух объектов: CROB g12v1 latch-on/latch-off и аналоговый выход g41v3 (IEEE float32 + status). В матрице capability теперь `POLL` + `WRITE`. `BINARY_INPUT`, `ANALOG_INPUT` и `COUNTER` остаются только на чтение. Pulse, trip/close и select-before-operate по-прежнему вне объёма. Решение ниже фиксирует, почему poll-only оставался PRODUCTION, пока этой записи не было.
+
 ## Решение
 
 1. **`dnp3`** остаётся **`PRODUCTION`** с capabilities **только `POLL`**.
