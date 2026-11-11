@@ -139,10 +139,10 @@ public class Iec104DeviceDriver implements DeviceDriver {
         return switch (point.dataType()) {
             case BOOL, M_SP_NA_1 -> DataRecord.single(BOOL_SCHEMA, Map.of(
                     "value", kept instanceof Boolean bool ? bool : false,
-                    "quality", "UNAVAILABLE"));
+                    "quality", "NOT_AVAILABLE"));
             default -> DataRecord.single(VALUE_SCHEMA, Map.of(
                     "value", kept instanceof Number number ? number.doubleValue() : 0.0,
-                    "quality", "UNAVAILABLE"));
+                    "quality", "NOT_AVAILABLE"));
         };
     }
 
