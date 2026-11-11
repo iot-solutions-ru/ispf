@@ -58,10 +58,10 @@ class AwsIotCoreDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionReadWrite() {
+    void metadataIsBetaReadWrite() {
         driver = new AwsIotCoreDeviceDriver();
         assertEquals("aws-iot-core", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
         assertFalse(description.contains("lab"));
@@ -124,6 +124,20 @@ class AwsIotCoreDeviceDriverTest {
         DriverException error = assertThrows(DriverException.class, () ->
                 driver.readPoints(Map.of("s", "dt/x/y")));
         assertTrue(error.getMessage().contains("Not connected"));
+    }
+
+    @Test
+    void connectRejectsUseTlsWithoutOpeningTcp() {
+        driver = new AwsIotCoreDeviceDriver();
+        driver.initialize(new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", "1883",
+                "useTls", "true"
+        )));
+
+        DriverException error = assertThrows(DriverException.class, driver::connect);
+        assertTrue(error.getMessage().contains("TLS"));
+        assertFalse(driver.isConnected());
     }
 
     @Test

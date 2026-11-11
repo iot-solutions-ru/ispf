@@ -23,7 +23,7 @@ Production readiness matrix — [0022-driver-production-matrix](decisions/0022-d
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-<!-- maturity-counts: production=115 beta=48 stub=0 -->
+<!-- maturity-counts: production=113 beta=50 stub=0 -->
 <!-- The numbers above are asserted by DriverProductionMatrixTest.docsMaturityCountsMatchMatrix; update both the marker and the sentence together. -->
 In `DriverProductionMatrix` — **115** drivers at **PRODUCTION** (OT Trust Waves 1–11 clean-room lab codecs, each with an in-process loopback test; includes `cwmp` / notification packs `email`/`sms`/`webhook` outside top-20), **48** at **BETA** (`opc-da`, `opc-bridge`, `corba`, plus `icmp`, `smb`, `wmi` — demoted by the mechanical evidence criterion, see below; plus 18 lab subsets and 24 field-PHY TCP gateways kept BETA by decision, including `profinet`, `ethercat`, `iec61850`, `profibus`, `canopen`, `zigbee`, `bluetooth-le`), **0** catalog **STUB** packs left (`protocol-stub-ids.json` is empty; `ispf-driver-stub-kit` remains the template for new protocols). Many lab codecs are small (some packs < 300 LOC including the test) — registry **PRODUCTION** means "lab codec + loopback test + docs", **not** field-proven; see the audit **`STUB_LAB`** column in [driver-readiness](../evidence/ot-trust/driver-readiness.md) and the ready-for-field process below. Top-20 industrial: **18** **PRODUCTION** + **2** **BETA** (`opc-da`, `opc-bridge`). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`. Full 163-pack audit: [driver-readiness](../evidence/ot-trust/driver-readiness.md).
 
@@ -584,8 +584,8 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `application` | `ispf-driver-application` | PRODUCTION | Apache-2.0 | Local shell/script execution mapped to variables |
 | `as-interface` | `ispf-driver-as-interface` | BETA | Apache-2.0 | AS-Interface master/gateway stub |
 | `asterisk` | `ispf-driver-asterisk` | PRODUCTION | Apache-2.0 | Asterisk Manager Interface (AMI) commands |
-| `aws-iot-core` | `ispf-driver-aws-iot-core` | STUB | Apache-2.0 | AWS IoT Core MQTT/HTTP stub |
-| `azure-iot-hub` | `ispf-driver-azure-iot-hub` | STUB | Apache-2.0 | Azure IoT Hub device/service stub |
+| `aws-iot-core` | `ispf-driver-aws-iot-core` | BETA | Apache-2.0 | AWS IoT Core MQTT lab client (plain TCP only; `useTls=true` fails closed) |
+| `azure-iot-hub` | `ispf-driver-azure-iot-hub` | BETA | Apache-2.0 | Azure IoT Hub MQTT lab client (plain TCP only; `useTls=true` fails closed) |
 | `bacnet` | `ispf-driver-bacnet` | PRODUCTION | Apache-2.0 | BACnet/IP client (clean-room codec) |
 | `bacnet-mstp` | `ispf-driver-bacnet-mstp` | BETA | Apache-2.0 | BACnet MS/TP serial stub (BACnet/IP pack is separate) |
 | `barcode-scanner` | `ispf-driver-barcode-scanner` | STUB | Apache-2.0 | Barcode/QR TCP/serial scanner stub |

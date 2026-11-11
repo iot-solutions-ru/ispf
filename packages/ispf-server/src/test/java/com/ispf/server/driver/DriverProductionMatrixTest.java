@@ -467,7 +467,9 @@ class DriverProductionMatrixTest {
             Map.entry("wirelesshart", "HART-IP path; not an 802.15.4 WirelessHART radio"),
             Map.entry("device-net", "CIP Get_Attribute_Single over TCP; not the DeviceNet CAN PHY"),
             Map.entry("j1939", "J1939 frame over TCP; not SocketCAN"),
-            Map.entry("canbus-gateway", "CAN frame over TCP; not SocketCAN")
+            Map.entry("canbus-gateway", "CAN frame over TCP; not SocketCAN"),
+            Map.entry("aws-iot-core", "MQTT loopback lab client; useTls=true fails closed (no MQTT TLS stack)"),
+            Map.entry("azure-iot-hub", "MQTT loopback lab client; useTls=true fails closed (no MQTT TLS stack)")
     );
 
     private static Path repoRoot() {

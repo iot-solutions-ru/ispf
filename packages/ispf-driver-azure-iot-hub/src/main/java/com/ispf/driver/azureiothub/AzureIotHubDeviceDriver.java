@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 
 import java.io.IOException;
@@ -27,8 +28,10 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>{@code deviceId} — device id used in topic paths and as MQTT client id</li>
  *   <li>{@code port} — MQTT port (default {@code 1883})</li>
  *   <li>{@code timeoutMs} — connect / ack / read wait</li>
- *   <li>{@code useTls}, {@code caCertPath}, {@code clientCertPath}, {@code clientKeyPath}
- *       — TLS configuration fields (codec remains MQTT bytes)</li>
+ *   <li>{@code useTls} — when {@code true}, connect fails with {@link DriverException}
+ *       (MQTT TLS is not implemented; plain TCP is not used as a fallback)</li>
+ *   <li>{@code caCertPath}, {@code clientCertPath}, {@code clientKeyPath}
+ *       — reserved for a future TLS implementation</li>
  * </ul>
  * Topic conventions:
  * <ul>
@@ -65,7 +68,7 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
                     "clientCertPath", "",
                     "clientKeyPath", ""
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 
@@ -115,9 +118,8 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         if (useTls) {
-            driverObject.log(DriverLogLevel.INFO,
-                    "TLS fields configured (ca=" + caCertPath + ", cert=" + clientCertPath
-                            + ", key=" + clientKeyPath + "); connecting with MQTT codec on plain TCP");
+            throw new DriverException(
+                    "Azure IoT Hub driver does not implement MQTT TLS; set useTls=false for lab plain TCP");
         }
         try {
             mqtt = new Mqtt311Client(host, port, timeoutMs, deviceId);
