@@ -1,5 +1,7 @@
 export type DriverMaturity = "PRODUCTION" | "BETA" | "STUB";
 
+export type DriverEvidence = "LOOPBACK_VERIFIED" | "FIELD";
+
 export interface DriverMetadata {
   id: string;
   name: string;
@@ -9,6 +11,9 @@ export interface DriverMetadata {
   configurationSchema: Record<string, string>;
   maturity?: DriverMaturity;
   capabilities?: string[];
+  /** Lab loopback versus a named plant gate. Absent on older servers. */
+  evidence?: DriverEvidence;
+  readOnly?: boolean;
 }
 
 export function driverSupportsWrite(driver: DriverMetadata | undefined): boolean {

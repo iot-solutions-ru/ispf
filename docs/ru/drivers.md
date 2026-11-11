@@ -478,6 +478,8 @@ Loopback-тест: `CoapDeviceDriverTest` (in-process Californium CoAP server).
 
 Поле `capabilities` — строковый набор из `DriverProductionMatrix` (ADR-0022): `read`, `write`, `subscribe`, `discovery`, `observed_at`, `quality`. Пример: `opcua` → `read`, `write`, `subscribe`, `discovery`, `observed_at`.
 
+`evidence` — `LOOPBACK_VERIFIED` или `FIELD`. `FIELD` — именной заводской допуск; этот набор пуст, поэтому каждый драйвер каталога — `LOOPBACK_VERIFIED`. `readOnly` истинен, когда нет `write`. Веб-консоль показывает оба признака рядом с бейджем зрелости. `list_drivers` возвращает те же поля.
+
 ### Продвижение stub (по запросу)
 
 58 основных `driverId` в production-матрице; **97** дополнительных stub-протоколов — отдельные пакеты `ispf-driver-<id>` (**STUB**, только TCP, **Apache-2.0**). Продвижение до **PRODUCTION** — **не** по расписанию roadmap, а **по запросу команды приложения** через gate [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md):

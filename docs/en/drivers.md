@@ -549,6 +549,8 @@ The `maturity` field in `GET /api/v1/drivers`: `PRODUCTION` (default), `BETA`, `
 
 The `capabilities` field — string set from `DriverProductionMatrix` (ADR-0022): `read`, `write`, `subscribe`, `discovery`, `observed_at`, `quality`. Example: `opcua` → `read`, `write`, `subscribe`, `discovery`, `observed_at`.
 
+`evidence` is `LOOPBACK_VERIFIED` or `FIELD`. `FIELD` is a named plant gate; that set is empty, so every catalog driver is `LOOPBACK_VERIFIED`. `readOnly` is true when `write` is absent. The Web Console shows both next to the maturity badge. `list_drivers` returns the same fields.
+
 ### Stub promotion (demand-driven)
 
 58 core `driverId` values are in the production matrix; **93** additional protocol-catalog stubs ship as individual `ispf-driver-<id>` packs (**STUB**, TCP reachability only, **Apache-2.0**). Promotion to **PRODUCTION** is **not** on a roadmap schedule, but **on request from the app team** through the gate [0002-dogfooding-gate](decisions/0002-dogfooding-gate.md):

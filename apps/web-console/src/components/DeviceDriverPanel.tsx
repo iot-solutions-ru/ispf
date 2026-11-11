@@ -13,7 +13,7 @@ import {
   browseDriverNodes,
 } from "../api/drivers";
 import { formatDriverConfigJson } from "../utils/driverDefaults";
-import DriverMaturityBadge from "./DriverMaturityBadge";
+import DriverHonestyBadges from "./DriverHonestyBadges";
 import { formatDriverOptionLabel } from "./driverOptionLabel";
 import DriverWriteForm from "./DriverWriteForm";
 import { driverSupportsWrite } from "../types/drivers";
@@ -358,7 +358,7 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
         <div>
           <h3>
             {t("inspector:driver.title")}
-            {selectedDriver && <DriverMaturityBadge maturity={selectedDriver.maturity} />}
+            {selectedDriver && <DriverHonestyBadges driver={selectedDriver} />}
           </h3>
           <p className="hint">
             {t("inspector:driver.subtitle")}
