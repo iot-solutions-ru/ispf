@@ -1,10 +1,16 @@
-import { describe, expect, it, afterEach } from "vitest";
-import { cleanup, screen } from "@testing-library/react";
+import { describe, expect, it, afterEach, vi } from "vitest";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactElement } from "react";
+import { invokeFunction } from "../../../api";
 import FunctionWidgetView from "./FunctionWidgetView";
 import { newWidget } from "../../../types/dashboard";
 import { renderWithDashboard } from "../../../test/renderWithDashboard";
+
+vi.mock("../../../api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../api")>();
+  return { ...actual, invokeFunction: vi.fn() };
+});
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -88,5 +94,27 @@ describe("FunctionWidgetView", () => {
 
     expect(screen.getByRole("button", { name: "Запустить" })).not.toBeDisabled();
     expect(screen.getByRole("button", { name: "Пауза" })).toBeDisabled();
+  });
+
+  it("sends inputMapJson when inputJson is empty", async () => {
+    vi.mocked(invokeFunction).mockResolvedValue({ schema: {}, rows: [{ error_code: "OK" }] });
+    const widget = {
+      ...newWidget("function", 0),
+      title: "Room",
+      objectPath: "root.demo.room",
+      functionName: "cc_getRoomLive",
+      buttonLabel: "Live",
+      confirmMessage: undefined,
+      inputMapJson: "{\"roomCode\":\"ROOM-A\"}",
+    };
+
+    renderWithDashboard(withQueryClient(<FunctionWidgetView widget={widget} />));
+    fireEvent.click(screen.getByRole("button", { name: "Live" }));
+
+    await waitFor(() => {
+      expect(invokeFunction).toHaveBeenCalledWith("root.demo.room", "cc_getRoomLive", {
+        rows: [{ roomCode: "ROOM-A" }],
+      });
+    });
   });
 });

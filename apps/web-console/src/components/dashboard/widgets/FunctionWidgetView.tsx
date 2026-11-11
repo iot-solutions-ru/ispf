@@ -23,6 +23,17 @@ interface EnabledWhen {
   notEquals?: string[];
 }
 
+/** Prefer inputJson. Older layouts store the same static input as inputMapJson. */
+function buttonInputJson(btn: FunctionButton): string | undefined {
+  if (btn.inputJson?.trim()) {
+    return btn.inputJson;
+  }
+  if (btn.inputMapJson?.trim()) {
+    return btn.inputMapJson;
+  }
+  return undefined;
+}
+
 /** `${param:key}` placeholders in button inputJson are filled from session params. */
 function substituteSessionParams(raw: string, sessionParams: Record<string, unknown>): string {
   return raw.replace(/\$\{param:([\w.-]+)\}/g, (_m, key: string) => {
@@ -72,7 +83,10 @@ export default function FunctionWidgetView({ widget, editable }: FunctionWidgetV
         label: widget.buttonLabel,
         functionName: widget.functionName,
         workflowPath: widget.workflowPath,
-        inputJson: widget.inputJson,
+        inputJson: buttonInputJson({
+          inputJson: widget.inputJson,
+          inputMapJson: widget.inputMapJson,
+        }),
         confirmMessage: widget.confirmMessage,
       }];
 
@@ -90,8 +104,9 @@ export default function FunctionWidgetView({ widget, editable }: FunctionWidgetV
         throw new Error(t("error.objectAndFunctionRequired"));
       }
       let input: DataRecord | undefined;
-      if (btn.inputJson?.trim()) {
-        input = parseFunctionInputJson(substituteSessionParams(btn.inputJson, sessionParams));
+      const rawInput = buttonInputJson(btn);
+      if (rawInput) {
+        input = parseFunctionInputJson(substituteSessionParams(rawInput, sessionParams));
       }
       return invokeFunction(objectPath, btn.functionName, input);
     },
