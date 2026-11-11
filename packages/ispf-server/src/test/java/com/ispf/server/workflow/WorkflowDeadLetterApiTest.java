@@ -88,7 +88,7 @@ class WorkflowDeadLetterApiTest {
                 "status",
                 DataRecord.single(
                         DataSchema.builder("status").field("value", FieldType.STRING).build(),
-                        Map.of("value", WorkflowLifecycleStatus.DRAFT.name())
+                        Map.of("value", WorkflowLifecycleStatus.ACTIVE.name())
                 )
         );
         objectManager.persistNodeTree(WORKFLOW);

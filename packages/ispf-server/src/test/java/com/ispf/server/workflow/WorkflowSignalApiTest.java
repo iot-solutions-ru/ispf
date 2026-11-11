@@ -73,6 +73,13 @@ class WorkflowSignalApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("bpmnXml", SIGNAL_BPMN))))
                 .andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/workflows/by-path/status")
+                        .param("path", SIGNAL_WORKFLOW)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"status":"ACTIVE"}
+                                """))
+                .andExpect(status().isOk());
     }
 
     @Test

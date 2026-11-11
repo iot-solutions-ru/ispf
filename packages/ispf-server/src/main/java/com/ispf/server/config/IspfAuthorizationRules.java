@@ -244,7 +244,7 @@ public final class IspfAuthorizationRules {
 
     private static boolean bffMatchesApp(HttpServletRequest request, String uiPackAppId) {
         if (uiPackAppId == null || uiPackAppId.isBlank()) {
-            return true;
+            return false;
         }
         String header = request.getHeader(UiPackSupport.APP_HEADER);
         if (header != null && !header.isBlank() && !uiPackAppId.equals(header.trim())) {

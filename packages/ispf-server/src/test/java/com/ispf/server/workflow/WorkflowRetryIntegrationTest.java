@@ -96,7 +96,7 @@ class WorkflowRetryIntegrationTest {
 
         DataSchema stringSchema = DataSchema.builder("stringValue").field("value", FieldType.STRING).build();
         objectManager.setVariableValue(WORKFLOW, "status",
-                DataRecord.single(stringSchema, Map.of("value", WorkflowLifecycleStatus.DRAFT.name())));
+                DataRecord.single(stringSchema, Map.of("value", WorkflowLifecycleStatus.ACTIVE.name())));
         objectManager.setVariableValue(WORKFLOW, "retryMaxAttempts",
                 DataRecord.single(stringSchema, Map.of("value", "2")));
         objectManager.setVariableValue(WORKFLOW, "retryBackoffSeconds",

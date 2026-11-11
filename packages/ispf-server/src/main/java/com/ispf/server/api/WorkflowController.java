@@ -2,8 +2,10 @@ package com.ispf.server.api;
 
 import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
+import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.workflow.WorkflowService;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,9 +23,11 @@ import java.util.Map;
 public class WorkflowController {
 
     private final WorkflowService workflowService;
+    private final ObjectAccessService objectAccessService;
 
-    public WorkflowController(WorkflowService workflowService) {
+    public WorkflowController(WorkflowService workflowService, ObjectAccessService objectAccessService) {
         this.workflowService = workflowService;
+        this.objectAccessService = objectAccessService;
     }
 
     @GetMapping("/by-path")
@@ -59,8 +63,25 @@ public class WorkflowController {
     public WorkflowService.WorkflowView run(
             @RequestParam String path,
             @RequestParam(required = false) String triggerObjectPath,
-            @RequestBody(required = false) RunWorkflowRequest request
+            @RequestBody(required = false) RunWorkflowRequest request,
+            Authentication authentication
     ) throws WorkflowException {
+        // Gate before BPMN: object INVOKE ACL + ACTIVE lifecycle (same bar as invoke-tool).
+        // Nested INVOKE_FUNCTION steps keep callSystemTrusted only after this check passes.
+        objectAccessService.requireMemberInvoke(path, "workflow", path, List.of(), authentication);
+        if (triggerObjectPath != null && !triggerObjectPath.isBlank()) {
+            objectAccessService.requireMemberInvoke(
+                    triggerObjectPath.trim(),
+                    "workflow-trigger",
+                    triggerObjectPath.trim(),
+                    List.of(),
+                    authentication
+            );
+        }
+        WorkflowService.WorkflowView current = workflowService.getWorkflow(path);
+        if (current.status() != WorkflowLifecycleStatus.ACTIVE) {
+            throw new WorkflowException("Manual workflow run requires ACTIVE status: " + path);
+        }
         Map<String, String> input = request == null || request.input() == null ? Map.of() : request.input();
         return workflowService.runWorkflow(
                 path,
@@ -73,8 +94,10 @@ public class WorkflowController {
     @PostMapping("/by-path/invoke-tool")
     public Map<String, Object> invokeTool(
             @RequestParam String path,
-            @RequestBody(required = false) RunWorkflowRequest request
+            @RequestBody(required = false) RunWorkflowRequest request,
+            Authentication authentication
     ) throws WorkflowException {
+        objectAccessService.requireMemberInvoke(path, "workflow", path, List.of(), authentication);
         Map<String, String> input = request == null || request.input() == null ? Map.of() : request.input();
         return workflowService.invokeWorkflowTool(path, input);
     }
