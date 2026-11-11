@@ -235,6 +235,8 @@
   "editor.spreadsheet.cellKind.formula": "公式",
   "editor.spreadsheet.cellKind.readonly": "只读",
   "editor.spreadsheet.cellKind.binding": "绑定",
+  "editor.spreadsheet.historyMinutes": "历史窗口（分钟）",
+  "editor.spreadsheet.duplicateAddresses": "两个单元格共用同一地址（{{addresses}}）。保存前请修正地址。",
   "editor.spreadsheet.insertCalculatorTemplate": "模板：计算器",
   "editor.spreadsheet.insertDefaultTemplate": "模板：基础网格",
   "editor.spreadsheet.insertFreeTemplate": "模板：自由网格",

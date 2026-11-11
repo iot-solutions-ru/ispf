@@ -2,6 +2,7 @@
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import {
+  AdvancedJsonField,
   ChildWidgetListEditor,
   IdLabelListEditor,
   KeyValueEditor,
@@ -237,6 +238,12 @@ function panelFields(ctx: WidgetFieldContextFor<"panel">, t: TFunction): ReactNo
         value={widget.childrenJson}
         onChange={(childrenJson) => update({ childrenJson })}
       />
+      <AdvancedJsonField
+        label={t("editor.field.childrenJson")}
+        value={widget.childrenJson}
+        onChange={(v) => update({ childrenJson: v ?? "[]" })}
+        rows={8}
+      />
     </>
   );
 }
@@ -260,6 +267,12 @@ function compositeWidgetFields(ctx: WidgetFieldContextFor<"composite-widget" | "
         value={widget.childrenJson}
         onChange={(childrenJson) => update({ childrenJson })}
       />
+      <AdvancedJsonField
+        label={t("editor.field.childrenJson")}
+        value={widget.childrenJson}
+        onChange={(v) => update({ childrenJson: v ?? "[]" })}
+        rows={8}
+      />
     </>
   );
 }
@@ -272,6 +285,12 @@ function tabPanelFields(ctx: WidgetFieldContextFor<"tab-panel">, t: TFunction): 
       <TabPanelMetaEditor
         value={widget.tabsJson}
         onChange={(v) => update({ tabsJson: v })}
+      />
+      <AdvancedJsonField
+        label={t("editor.field.tabsJson")}
+        value={widget.tabsJson}
+        onChange={(v) => update({ tabsJson: v ?? "[]" })}
+        rows={8}
       />
     </>
   );
@@ -310,6 +329,12 @@ function carouselFields(ctx: WidgetFieldContextFor<"carousel">, t: TFunction): R
         value={widget.slidesJson}
         onChange={(slidesJson) => update({ slidesJson })}
       />
+      <AdvancedJsonField
+        label={t("editor.field.slidesJson")}
+        value={widget.slidesJson}
+        onChange={(v) => update({ slidesJson: v ?? "[]" })}
+        rows={6}
+      />
       <label>
         <WidgetEditorCaption text={t("editor.autoplayOff")} />
         <input
@@ -333,6 +358,12 @@ function stepsPanelFields(ctx: WidgetFieldContextFor<"steps-panel">, t: TFunctio
         value={widget.stepsJson}
         onChange={(v) => update({ stepsJson: v })}
         idPrefix="step"
+      />
+      <AdvancedJsonField
+        label={t("editor.field.stepsJson")}
+        value={widget.stepsJson}
+        onChange={(v) => update({ stepsJson: v ?? "[]" })}
+        rows={6}
       />
       <label>
         <WidgetEditorCaption text={t("editor.activeStepKeyInParams")} />

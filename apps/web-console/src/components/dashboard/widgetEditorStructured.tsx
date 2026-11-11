@@ -23,6 +23,7 @@ import { parseJsonArray, parseJsonObject, stringifyJson } from "./widgetEditorJs
 import {
   childWidgetsFromJson,
   childWidgetsToJson,
+  duplicateSheetAddresses,
   popupRowsFromJson,
   popupRowsToJson,
   sheetCellDraftValue,
@@ -1192,8 +1193,15 @@ function SheetCellList({
     setRows(pending.length > 0 ? [...saved, ...pending] : saved);
   }
 
+  const addressDupes = duplicateSheetAddresses(rows);
+
   const commit = (next: SheetCellRow[]) => {
     setRows(next);
+    const collisions = duplicateSheetAddresses(next);
+    if (collisions.length > 0) {
+      // Keep draft rows visible; do not write a colliding map that would drop cells.
+      return;
+    }
     const saved = normalize(sheetConfigWithCells(config, next));
     if (saved !== incoming) {
       setSource(saved);
@@ -1204,6 +1212,11 @@ function SheetCellList({
   return (
     <div className="widget-editor-list">
       <HintCaption>{t("editor.spreadsheet.cells")}</HintCaption>
+      {addressDupes.length > 0 && (
+        <p className="hint danger" role="alert">
+          {t("editor.spreadsheet.duplicateAddresses", { addresses: addressDupes.join(", ") })}
+        </p>
+      )}
       {rows.map((row, index) => (
         <div key={index} className="widget-editor-list-row">
           <MiniField caption={t("editor.spreadsheet.cellAddress")}>
@@ -1242,6 +1255,28 @@ function SheetCellList({
               }}
             />
           </MiniField>
+          {row.cell.kind === "binding" && (
+            <MiniField caption={t("editor.spreadsheet.historyMinutes")} hint={t("editor.spreadsheet.bindingHistoryHint")}>
+              <input
+                type="number"
+                min={0}
+                value={row.cell.historyMinutes ?? ""}
+                onChange={(e) => {
+                  const raw = e.target.value.trim();
+                  const parsed = raw === "" ? undefined : Number(raw);
+                  const next = [...rows];
+                  next[index] = {
+                    ...row,
+                    cell: {
+                      ...row.cell,
+                      historyMinutes: parsed != null && Number.isFinite(parsed) ? parsed : undefined,
+                    },
+                  };
+                  commit(next);
+                }}
+              />
+            </MiniField>
+          )}
           <button
             type="button"
             className="btn small danger"
@@ -1257,6 +1292,40 @@ function SheetCellList({
         addLabel={t("editor.spreadsheet.addCell")}
       />
     </div>
+  );
+}
+
+export function AdvancedJsonField({
+  label,
+  value,
+  onChange,
+  rows = 4,
+  placeholder,
+}: {
+  label: string;
+  value: string | undefined;
+  onChange: (next: string | undefined) => void;
+  rows?: number;
+  placeholder?: string;
+}) {
+  const { t } = useTranslation("widgets");
+  return (
+    <details className="widget-editor-advanced-json full">
+      <summary>
+        <HintCaption
+          className="widget-editor-mini-caption"
+          hint={joinHints(placeholder, t("editor.structured.jsonAdvanced"))}
+        >
+          {label}
+        </HintCaption>
+      </summary>
+      <textarea
+        rows={rows}
+        className="mono"
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value || undefined)}
+      />
+    </details>
   );
 }
 

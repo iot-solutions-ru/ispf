@@ -3,6 +3,7 @@ import type { SheetConfig } from "../../types/dashboard";
 import {
   childWidgetsFromJson,
   childWidgetsToJson,
+  duplicateSheetAddresses,
   popupRowsFromJson,
   popupRowsToJson,
   sheetCellDraftValue,
@@ -68,6 +69,18 @@ describe("widget structured lists", () => {
       validation: { type: "range", min: 0, max: 10 },
     });
     expect(next.cells.A2).toBeUndefined();
+  });
+
+  it("keeps the first cell when two rows share an A1 address", () => {
+    const config: SheetConfig = { rows: 2, cols: 2, cells: {} };
+    const rows = [
+      { address: "A1", cell: { kind: "input" as const, default: "keep" } },
+      { address: "a1", cell: { kind: "label" as const, text: "drop" } },
+    ];
+    expect(duplicateSheetAddresses(rows)).toEqual(["A1"]);
+    expect(sheetConfigWithCells(config, rows).cells).toEqual({
+      A1: { kind: "input", default: "keep" },
+    });
   });
 
   it("keeps a readonly value in default and moves it when the kind changes", () => {

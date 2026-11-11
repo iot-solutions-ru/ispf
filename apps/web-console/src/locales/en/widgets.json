@@ -205,6 +205,8 @@
   "editor.spreadsheet.cellKind.formula": "Formula",
   "editor.spreadsheet.cellKind.readonly": "Read-only",
   "editor.spreadsheet.cellKind.binding": "Binding",
+  "editor.spreadsheet.historyMinutes": "History window (minutes)",
+  "editor.spreadsheet.duplicateAddresses": "Two cells share the same address ({{addresses}}). Fix the addresses before saving.",
   "editor.structured.addColumn": "Add column",
   "editor.structured.addField": "Add field",
   "editor.structured.addItem": "Add",

@@ -10,6 +10,7 @@ import {
   sheetConfigToJson,
 } from "../sheet/sheetConfig";
 import {
+  AdvancedJsonField,
   FormFieldsEditor,
   HintCaption,
   IdLabelListEditor,
@@ -597,6 +598,13 @@ function spreadsheetFields(ctx: WidgetFieldContextFor<"spreadsheet">, t: TFuncti
       <SheetGridSizeEditor
         sheetConfigJson={widget.sheetConfigJson}
         onChange={(v) => update({ sheetConfigJson: v })}
+      />
+      <AdvancedJsonField
+        label={t("editor.spreadsheet.sheetConfigJson")}
+        value={widget.sheetConfigJson}
+        onChange={(v) => update({ sheetConfigJson: v })}
+        rows={10}
+        placeholder={t("editor.spreadsheet.sheetConfigPlaceholder")}
       />
       <div className="widget-editor-actions">
         <button

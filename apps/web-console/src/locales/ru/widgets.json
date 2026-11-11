@@ -239,6 +239,8 @@
   "editor.spreadsheet.cellKind.formula": "Формула",
   "editor.spreadsheet.cellKind.readonly": "Только чтение",
   "editor.spreadsheet.cellKind.binding": "Привязка",
+  "editor.spreadsheet.historyMinutes": "Окно истории (минуты)",
+  "editor.spreadsheet.duplicateAddresses": "Две ячейки с одним адресом ({{addresses}}). Исправьте адреса перед сохранением.",
   "editor.spreadsheet.insertCalculatorTemplate": "Шаблон: калькулятор",
   "editor.spreadsheet.insertDefaultTemplate": "Шаблон: базовая сетка",
   "editor.spreadsheet.insertFreeTemplate": "Шаблон: свободная сетка",

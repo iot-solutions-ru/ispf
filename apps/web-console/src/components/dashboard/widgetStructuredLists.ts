@@ -66,11 +66,33 @@ export function sheetCellRows(config: SheetConfig): SheetCellRow[] {
   return Object.entries(config.cells).map(([address, cell]) => ({ address, cell }));
 }
 
+/** Normalized addresses that appear more than once (empty addresses ignored). */
+export function duplicateSheetAddresses(rows: SheetCellRow[]): string[] {
+  const seen = new Set<string>();
+  const dupes = new Set<string>();
+  for (const row of rows) {
+    const address = row.address.trim().toUpperCase();
+    if (!address) {
+      continue;
+    }
+    if (seen.has(address)) {
+      dupes.add(address);
+    } else {
+      seen.add(address);
+    }
+  }
+  return [...dupes];
+}
+
+/**
+ * Rebuild `cells` from editor rows. Duplicate A1 keys keep the **first** row;
+ * later collisions are skipped so a typo does not wipe an existing cell.
+ */
 export function sheetConfigWithCells(config: SheetConfig, rows: SheetCellRow[]): SheetConfig {
   const cells: Record<string, SheetCellConfig> = {};
   for (const row of rows) {
     const address = row.address.trim().toUpperCase();
-    if (!address) {
+    if (!address || address in cells) {
       continue;
     }
     cells[address] = row.cell;
