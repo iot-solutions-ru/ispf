@@ -35,6 +35,12 @@ export interface OperatorUi {
   hostedUiUrl?: string;
   /** ADR-0054 bridge: externally hosted SPA until a ui-pack is installed. */
   externalSpaUrl?: string;
+  /** Operator SPA navigation stored with the app. The editor keeps it when saving other fields. */
+  spaNav?: unknown;
+  /** Installed UI pack summary. `installed` means the pack owns hostedUiUrl. */
+  uiPack?: {
+    installed?: boolean;
+  };
 }
 
 export function resolveOperatorDashboard(
