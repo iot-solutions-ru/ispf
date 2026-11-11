@@ -118,4 +118,33 @@ describe("useLazyObjectTree", () => {
     const last = (trackObjectPathSubscriptions.mock.calls.at(-1)?.[0] as string[]) ?? [];
     expect(last).not.toContain("root.platform.devices");
   });
+
+  it("force-reloads capped folders on re-expand (live updates are paused)", async () => {
+    const { fetchObjects } = await import("../api");
+    treeMock.deviceCount = 65;
+    const { result } = renderHook(() => useLazyObjectTree(true));
+    await waitFor(() => {
+      expect(result.current.objects.length).toBeGreaterThan(0);
+    });
+    await act(async () => {
+      await result.current.loadChildren("root.platform.devices", true);
+    });
+    await waitFor(() => {
+      expect(result.current.wsCappedPaths).toContain("root.platform.devices");
+    });
+    const callsBefore = vi.mocked(fetchObjects).mock.calls.filter(
+      ([parent]) => parent === "root.platform.devices",
+    ).length;
+    await act(async () => {
+      // Mirrors App handleTreeLoadChildren: force when path is WS-capped.
+      await result.current.loadChildren(
+        "root.platform.devices",
+        result.current.wsCappedPaths.includes("root.platform.devices"),
+      );
+    });
+    const callsAfter = vi.mocked(fetchObjects).mock.calls.filter(
+      ([parent]) => parent === "root.platform.devices",
+    ).length;
+    expect(callsAfter).toBe(callsBefore + 1);
+  });
 });

@@ -345,9 +345,10 @@ function AppShell() {
 
   const handleTreeLoadChildren = useCallback(
     (path: string) => {
-      void loadChildren(path);
+      // WS-capped folders skip live updates; re-expand must force HTTP refresh.
+      void loadChildren(path, liveUpdatesPausedPaths.has(path));
     },
-    [loadChildren],
+    [loadChildren, liveUpdatesPausedPaths],
   );
 
   const tree = useMemo(() => {

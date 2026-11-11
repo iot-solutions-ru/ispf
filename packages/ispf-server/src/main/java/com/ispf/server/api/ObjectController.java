@@ -70,6 +70,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api/v1/objects")
@@ -309,11 +310,12 @@ public class ObjectController {
     ) {
         ObjectType wanted = parseListObjectType(objectType);
         boolean nameFilter = namePattern != null && !namePattern.isBlank();
+        Pattern nameGlob = nameFilter ? ObjectChildPage.compileNameGlob(namePattern) : null;
         List<ObjectDto> filtered = items;
         if (wanted != null || nameFilter) {
             filtered = items.stream()
                     .filter(dto -> wanted == null || dto.type() == wanted)
-                    .filter(dto -> !nameFilter || ObjectChildPage.leafMatches(dto.path(), namePattern))
+                    .filter(dto -> !nameFilter || ObjectChildPage.leafMatches(dto.path(), nameGlob))
                     .toList();
         }
         if (limit == null) {

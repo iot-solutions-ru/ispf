@@ -21,6 +21,14 @@ class ObjectChildPageTest {
     }
 
     @Test
+    void compiledNameGlobCanBeReusedAcrossLeaves() {
+        var pattern = ObjectChildPage.compileNameGlob("modbus*");
+        assertTrue(ObjectChildPage.leafMatches("root.platform.devices.modbus-1", pattern));
+        assertTrue(ObjectChildPage.leafMatches("root.platform.devices.modbus-2", pattern));
+        assertFalse(ObjectChildPage.leafMatches("root.platform.devices.opc-1", pattern));
+    }
+
+    @Test
     void omittedLimitKeepsTheFullList() {
         List<String> items = List.of("a", "b", "c");
         assertEquals(items, ObjectChildPage.slice(items, 0, null));

@@ -19,11 +19,11 @@ public final class ObjectChildPage {
         if (pattern == null || pattern.isBlank()) {
             return true;
         }
-        String leaf = path == null ? "" : path;
-        int dot = leaf.lastIndexOf('.');
-        if (dot >= 0 && dot < leaf.length() - 1) {
-            leaf = leaf.substring(dot + 1);
-        }
+        return leafMatches(path, compileNameGlob(pattern));
+    }
+
+    /** Compile a name glob once per request before filtering many children. */
+    public static Pattern compileNameGlob(String pattern) {
         StringBuilder regex = new StringBuilder("^");
         String trimmed = pattern.trim();
         for (int i = 0; i < trimmed.length(); i++) {
@@ -37,9 +37,19 @@ public final class ObjectChildPage {
             }
         }
         regex.append('$');
-        return Pattern.compile(regex.toString(), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)
-                .matcher(leaf)
-                .matches();
+        return Pattern.compile(regex.toString(), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+    }
+
+    public static boolean leafMatches(String path, Pattern compiled) {
+        if (compiled == null) {
+            return true;
+        }
+        String leaf = path == null ? "" : path;
+        int dot = leaf.lastIndexOf('.');
+        if (dot >= 0 && dot < leaf.length() - 1) {
+            leaf = leaf.substring(dot + 1);
+        }
+        return compiled.matcher(leaf).matches();
     }
 
     /** When {@code limit} is null the full list is returned. Otherwise a copy of the requested window. */
