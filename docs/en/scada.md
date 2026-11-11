@@ -68,7 +68,7 @@ Alternative: `POST /api/v1/objects` with `type: MIMIC`, `templateId: mimic-v1`, 
 
 ## `scada-mimic` widget on a dashboard
 
-The widget renders a mimic document on the dashboard layout (builder + operator HMI).
+The widget renders a mimic document on the dashboard layout (builder + operator HMI). Bound variables follow the object WebSocket (`collectBindingInterests`). The dashboard refresh interval is the HTTP batch fallback while that socket is down; a reconnect refetches the batch once.
 
 | Field | Description |
 |-------|-------------|

@@ -130,12 +130,15 @@ export function useVariablesBatchQuery(
     : [];
   useObjectVariableSubscriptions(interests);
 
+  // A poll-less consumer (live WebSocket) must not reuse the 30s global cache:
+  // unsubscribed gaps and remounts would otherwise stay frozen until the next frame.
+  const alwaysFresh = refreshIntervalMs === false || isOperatorMode();
   return useQuery({
     queryKey: ["variables-batch", uniquePaths],
     queryFn: () => loadVariablesBatchWithOfflineCache(uniquePaths),
     enabled: enabled && uniquePaths.length > 0,
-    staleTime: isOperatorMode() ? 0 : undefined,
-    refetchOnMount: isOperatorMode() ? "always" : true,
+    staleTime: alwaysFresh ? 0 : undefined,
+    refetchOnMount: alwaysFresh ? "always" : true,
     refetchInterval: variablesRefetchIntervalMs(refreshIntervalMs, wsConnected),
     retry: 2,
   });
