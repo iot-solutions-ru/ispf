@@ -5,6 +5,7 @@ import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.EventLevel;
+import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
@@ -699,6 +700,86 @@ class BlueprintEngineTest {
         assertThat(after.bindingAuditEnabled()).isTrue();
         assertThat(after.functionAuditEnabled()).isTrue();
         assertThat(after.eventJournalEnabled()).isTrue();
+    }
+
+    @Test
+    void updateSingletonPreservesExistingFunctionInvokeRolesWhenBlueprintOmitsRoles() {
+        DataSchema inSchema = DataSchema.builder("in").field("x", FieldType.STRING).build();
+        DataSchema outSchema = DataSchema.builder("out").field("error_code", FieldType.STRING).build();
+        FunctionDescriptor fnV1 = new FunctionDescriptor(
+                "adminOp",
+                "v1",
+                inSchema,
+                outSchema,
+                "expression",
+                "'v1'",
+                null,
+                "1",
+                List.of()
+        );
+        BlueprintDefinition v1 = new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                "roles-hub-v1",
+                "hub",
+                BlueprintType.SINGLETON,
+                ObjectType.CUSTOM,
+                "",
+                List.of(),
+                List.of(),
+                List.of(fnV1),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        engine.createBlueprint(v1);
+
+        String hubPath = BlueprintEngine.singletonInstancePath(v1);
+        PlatformObject hub = objectTree.require(hubPath);
+        hub.addFunction(new FunctionDescriptor(
+                "adminOp",
+                "v1",
+                inSchema,
+                outSchema,
+                "expression",
+                "'v1'",
+                null,
+                "1",
+                List.of("admin")
+        ));
+
+        FunctionDescriptor fnV2 = new FunctionDescriptor(
+                "adminOp",
+                "v2",
+                inSchema,
+                outSchema,
+                "expression",
+                "'v2'",
+                null,
+                "2",
+                List.of()
+        );
+        BlueprintDefinition v2 = new BlueprintDefinition(
+                v1.id(),
+                v1.name(),
+                "hub",
+                BlueprintType.SINGLETON,
+                ObjectType.CUSTOM,
+                "",
+                List.of(),
+                List.of(),
+                List.of(fnV2),
+                List.of(),
+                Map.of(),
+                v1.createdAt(),
+                Instant.now()
+        );
+        engine.updateBlueprint(v2);
+
+        FunctionDescriptor merged = objectTree.require(hubPath).functions().get("adminOp");
+        assertThat(merged).isNotNull();
+        assertThat(merged.sourceBody()).isEqualTo("'v2'");
+        assertThat(merged.invokeRoles()).containsExactly("admin");
     }
 
     private static BlueprintDefinition instanceBlueprint(String name) {

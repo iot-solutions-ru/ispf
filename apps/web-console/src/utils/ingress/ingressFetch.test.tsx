@@ -41,12 +41,42 @@ describe("ingressFetch", () => {
     expect(stripHmiIngressPrefix(`${HMI_INGRESS_PREFIX}/api/v1/info`)).toBe("/api/v1/info");
   });
 
-  it("detects SPA/gateway responses as hmi ingress miss", () => {
-    expect(shouldFallbackFromHmiIngress(htmlResponse())).toBe(true);
-    expect(shouldFallbackFromHmiIngress(htmlResponse(404))).toBe(true);
-    expect(shouldFallbackFromHmiIngress(new Response("", { status: 502 }))).toBe(true);
-    expect(shouldFallbackFromHmiIngress(jsonResponse({ ok: true }))).toBe(false);
-    expect(shouldFallbackFromHmiIngress(jsonResponse({ error: "x" }, 503))).toBe(false);
+  it("detects SPA/gateway and unproxied Spring responses as hmi ingress miss", async () => {
+    expect(await shouldFallbackFromHmiIngress(htmlResponse())).toBe(true);
+    expect(await shouldFallbackFromHmiIngress(htmlResponse(404))).toBe(true);
+    expect(await shouldFallbackFromHmiIngress(new Response("", { status: 502 }))).toBe(true);
+    expect(await shouldFallbackFromHmiIngress(jsonResponse({ ok: true }))).toBe(false);
+    expect(await shouldFallbackFromHmiIngress(jsonResponse({ error: "x" }, 503))).toBe(false);
+    expect(
+      await shouldFallbackFromHmiIngress(jsonResponse({ status: 403, error: "Forbidden" }, 403), {
+        route: "auto",
+        directPath: "/api/v1/auth/login",
+      }),
+    ).toBe(true);
+    expect(
+      await shouldFallbackFromHmiIngress(jsonResponse({ status: 404, error: "Not Found" }, 404), {
+        route: "auto",
+        directPath: "/api/v1/auth/config",
+      }),
+    ).toBe(true);
+    expect(
+      await shouldFallbackFromHmiIngress(
+        jsonResponse({ status: 404, error: "Not Found", path: "/hmi/api/v1/operator-apps/demo/ui" }, 404),
+        { route: "hmi", directPath: "/api/v1/operator-apps/demo/ui" },
+      ),
+    ).toBe(true);
+    expect(
+      await shouldFallbackFromHmiIngress(
+        jsonResponse({ status: 404, error: "Not Found", path: "/api/v1/operator-apps/demo/ui" }, 404),
+        { route: "hmi", directPath: "/api/v1/operator-apps/demo/ui" },
+      ),
+    ).toBe(false);
+    expect(
+      await shouldFallbackFromHmiIngress(jsonResponse({ error: "Forbidden" }, 403), {
+        route: "hmi",
+        directPath: "/api/v1/bff/invoke",
+      }),
+    ).toBe(false);
   });
 
   it("falls back from /hmi to /api when ingress returns HTML", async () => {
@@ -62,6 +92,81 @@ describe("ingressFetch", () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${HMI_INGRESS_PREFIX}/api/v1/auth/me`);
     expect(fetchMock.mock.calls[1][0]).toBe("/api/v1/auth/me");
     expect(resolveIngressFetchPath("/api/v1/info")).toBe("/api/v1/info");
+  });
+
+  it("falls back from JSON 403 on /hmi to /api and caches direct", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ status: 403, error: "Forbidden", path: "/hmi/api/v1/auth/login" }, 403))
+      .mockResolvedValueOnce(jsonResponse({ token: "ok" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await fetchWithIngressFallback("/api/v1/auth/login", { method: "POST" });
+    expect(response.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][0]).toBe(`${HMI_INGRESS_PREFIX}/api/v1/auth/login`);
+    expect(fetchMock.mock.calls[1][0]).toBe("/api/v1/auth/login");
+    expect(sessionStorage.getItem("ispf-ingress-route")).toBe("direct");
+    expect(resolveIngressFetchPath("/api/v1/operator-apps/demo/ui")).toBe("/api/v1/operator-apps/demo/ui");
+  });
+
+  it("keeps confirmed /hmi route and does not retry on legitimate JSON 404 for operator-apps UI", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ version: "1" }))
+      .mockResolvedValueOnce(
+        jsonResponse({ status: 404, error: "Not Found", path: "/api/v1/operator-apps/demo/ui" }, 404),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchWithIngressFallback("/api/v1/info");
+    expect(sessionStorage.getItem("ispf-ingress-route")).toBe("hmi");
+
+    const response = await fetchWithIngressFallback("/api/v1/operator-apps/demo/ui");
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({
+      status: 404,
+      error: "Not Found",
+      path: "/api/v1/operator-apps/demo/ui",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][0]).toBe(`${HMI_INGRESS_PREFIX}/api/v1/operator-apps/demo/ui`);
+    expect(sessionStorage.getItem("ispf-ingress-route")).toBe("hmi");
+    expect(resolveIngressFetchPath("/api/v1/operator-apps/demo/ui")).toBe(
+      `${HMI_INGRESS_PREFIX}/api/v1/operator-apps/demo/ui`,
+    );
+  });
+
+  it("keeps /hmi route on domain API JSON 403 without retrying direct", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ authenticated: true }))
+      .mockResolvedValueOnce(jsonResponse({ error: "Forbidden" }, 403));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchWithIngressFallback("/api/v1/auth/me");
+    expect(sessionStorage.getItem("ispf-ingress-route")).toBe("hmi");
+
+    const response = await fetchWithIngressFallback("/api/v1/bff/invoke", { method: "POST" });
+    expect(response.status).toBe(403);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][0]).toBe(`${HMI_INGRESS_PREFIX}/api/v1/bff/invoke`);
+    expect(sessionStorage.getItem("ispf-ingress-route")).toBe("hmi");
+  });
+
+  it("does not fall back in auto mode on domain JSON 404 without /hmi Spring error path", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({ status: 404, error: "Not Found", path: "/api/v1/operator-apps/demo/ui" }, 404),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await fetchWithIngressFallback("/api/v1/operator-apps/demo/ui");
+    expect(response.status).toBe(404);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(`${HMI_INGRESS_PREFIX}/api/v1/operator-apps/demo/ui`);
+    expect(sessionStorage.getItem("ispf-ingress-route")).toBe("hmi");
   });
 
   it("keeps /hmi when ingress responds with JSON", async () => {

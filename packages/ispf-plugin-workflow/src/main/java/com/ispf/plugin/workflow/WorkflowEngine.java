@@ -145,7 +145,8 @@ public class WorkflowEngine {
 
     /**
      * Resume parent tokens waiting on a child callActivity instance.
-     * When {@code childFailedMessage} is non-null, the parent fails instead of advancing.
+     * A non-null {@code childFailedMessage} follows an error boundary on the call activity when one matches;
+     * otherwise the parent fails.
      */
     public void resumeAfterCallActivityChild(
             WorkflowInstance instance,
@@ -157,13 +158,29 @@ public class WorkflowEngine {
             MessageTaskExecutor messageExecutor,
             WorkflowConditionEvaluator evaluator
     ) throws WorkflowException {
-        if (childFailedMessage != null) {
-            instance.fail("callActivity child failed: " + childFailedMessage);
-            return;
-        }
         List<ExecutionToken> waiting = instance.waitingTokens().stream()
                 .filter(token -> childInstanceId.equals(token.pendingCallChildInstanceId()))
                 .toList();
+        if (childFailedMessage != null) {
+            if (waiting.isEmpty() || !instance.resumeCallActivityChild(childInstanceId)) {
+                instance.fail("callActivity child failed: " + childFailedMessage);
+                return;
+            }
+            WorkflowException failure = new WorkflowException("callActivity child failed: " + childFailedMessage);
+            withSyncBudget(() -> {
+                for (ExecutionToken token : waiting) {
+                    BoundaryErrorDefinition boundary = takeErrorBoundary(instance, process, token, failure);
+                    if (boundary == null) {
+                        instance.fail(failure.getMessage());
+                        return;
+                    }
+                    advanceToken(instance, process, token, boundary.id(), executor, messageExecutor, evaluator);
+                }
+                instance.recomputeStatus();
+                drain(instance, process, executor, messageExecutor, evaluator);
+            });
+            return;
+        }
         if (waiting.isEmpty()) {
             throw new WorkflowException("No token waiting for callActivity child: " + childInstanceId);
         }
@@ -292,6 +309,28 @@ public class WorkflowEngine {
         });
     }
 
+    /**
+     * Records a matching error boundary and returns it. The caller moves the token along that
+     * boundary's outgoing flow. A failed activity does not keep a second token, so
+     * {@code cancelActivity} is not applied here.
+     */
+    private BoundaryErrorDefinition takeErrorBoundary(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            ExecutionToken token,
+            WorkflowException error
+    ) {
+        List<BoundaryErrorDefinition> boundaries = process.boundaryErrors()
+                .getOrDefault(token.currentNodeId(), List.of());
+        BoundaryErrorDefinition boundary = BoundaryErrorDefinition.match(boundaries, error.getMessage());
+        if (boundary == null) {
+            return null;
+        }
+        instance.setVariable("errorMessage", error.getMessage() == null ? "" : error.getMessage());
+        instance.setVariable("errorCode", boundary.errorCode() == null ? "" : boundary.errorCode());
+        return boundary;
+    }
+
     private static BoundaryTimerDefinition findBoundaryTimer(BpmnProcess process, String boundaryNodeId) {
         for (BoundaryTimerDefinition boundary : process.boundaryTimers().values()) {
             if (boundaryNodeId.equals(boundary.id())) {
@@ -383,6 +422,10 @@ public class WorkflowEngine {
                     instance.addPendingStep(started.completed(Map.of("status", "OK")));
                 } catch (WorkflowException e) {
                     instance.addPendingStep(started.failed(e.getMessage()));
+                    BoundaryErrorDefinition boundary = takeErrorBoundary(instance, process, token, e);
+                    if (boundary != null) {
+                        return advanceTokenToNext(instance, process, token, boundary.id(), evaluator);
+                    }
                     instance.fail(e.getMessage());
                     return false;
                 }
@@ -410,6 +453,10 @@ public class WorkflowEngine {
                     instance.addPendingStep(started.completed(Map.of("status", "OK")));
                 } catch (WorkflowException e) {
                     instance.addPendingStep(started.failed(e.getMessage()));
+                    BoundaryErrorDefinition boundary = takeErrorBoundary(instance, process, token, e);
+                    if (boundary != null) {
+                        return advanceTokenToNext(instance, process, token, boundary.id(), evaluator);
+                    }
                     instance.fail(e.getMessage());
                     return false;
                 }
@@ -473,7 +520,12 @@ public class WorkflowEngine {
                     if (result.status() == InstanceStatus.FAILED) {
                         String err = result.errorMessage() == null ? "child workflow failed" : result.errorMessage();
                         instance.addPendingStep(started.failed(err));
-                        instance.fail("callActivity failed: " + err);
+                        WorkflowException failure = new WorkflowException("callActivity failed: " + err);
+                        BoundaryErrorDefinition boundary = takeErrorBoundary(instance, process, token, failure);
+                        if (boundary != null) {
+                            return advanceTokenToNext(instance, process, token, boundary.id(), evaluator);
+                        }
+                        instance.fail(failure.getMessage());
                         return false;
                     }
                     if (result.status() == InstanceStatus.WAITING) {
@@ -497,6 +549,10 @@ public class WorkflowEngine {
                     )));
                 } catch (WorkflowException e) {
                     instance.addPendingStep(started.failed(e.getMessage()));
+                    BoundaryErrorDefinition boundary = takeErrorBoundary(instance, process, token, e);
+                    if (boundary != null) {
+                        return advanceTokenToNext(instance, process, token, boundary.id(), evaluator);
+                    }
                     instance.fail(e.getMessage());
                     return false;
                 }

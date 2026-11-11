@@ -31,6 +31,7 @@ const ISPF_ATTR_NAMES = [
   "signal",
   "objectPath",
   "eventName",
+  "payloadVariable",
   "payloadJson",
   "contextKey",
   "workflowPath",
@@ -50,6 +51,7 @@ const ISPF_ATTR_NAMES = [
   "inputMap",
   "outputMap",
   "durationSeconds",
+  "errorCode",
   "default",
 ] as const;
 
@@ -109,7 +111,22 @@ function mapType(tag: string): FlowNodeType | null {
   }
 }
 
+function hasIspfAttr(el: Element, key: string): boolean {
+  return (
+    el.hasAttributeNS(ISPF_NS, key) ||
+    el.hasAttribute(`ispf:${key}`) ||
+    el.hasAttribute(key)
+  );
+}
+
 function inferCatchKind(el: Element, ispf: IspfProps): CatchKind {
+  if (
+    firstChildByLocal(el, "errorEventDefinition") ||
+    ispf.errorCode !== undefined ||
+    hasIspfAttr(el, "errorCode")
+  ) {
+    return "error";
+  }
   if (ispf.durationSeconds || firstChildByLocal(el, "timerEventDefinition")) return "timer";
   if (firstChildByLocal(el, "messageEventDefinition") || ispf.message) return "message";
   return "signal";
@@ -119,6 +136,41 @@ function readMessageRef(el: Element): string | undefined {
   const def = firstChildByLocal(el, "messageEventDefinition");
   if (!def) return undefined;
   return def.getAttribute("messageRef") || undefined;
+}
+
+function lookupErrorCode(doc: Document, errorRef: string): string {
+  const errors = Array.from(doc.getElementsByTagNameNS(BPMN_NS, "error")).concat(
+    Array.from(doc.getElementsByTagName("error") as HTMLCollectionOf<Element>)
+  );
+  for (const err of errors) {
+    if (err.getAttribute("id") === errorRef) {
+      const code = err.getAttribute("errorCode")?.trim();
+      return code || errorRef;
+    }
+  }
+  return errorRef;
+}
+
+function readBoundaryErrorCode(doc: Document, el: Element, ispf: IspfProps): string | undefined {
+  if (ispf.errorCode !== undefined) {
+    return ispf.errorCode;
+  }
+  const def = firstChildByLocal(el, "errorEventDefinition");
+  if (!def) {
+    return undefined;
+  }
+  const defCode =
+    def.getAttributeNS(ISPF_NS, "errorCode") ||
+    def.getAttribute("ispf:errorCode") ||
+    def.getAttribute("errorCode");
+  if (defCode != null && defCode !== "") {
+    return defCode;
+  }
+  const errorRef = def.getAttribute("errorRef")?.trim();
+  if (errorRef) {
+    return lookupErrorCode(doc, errorRef);
+  }
+  return "";
 }
 
 interface Bounds {
@@ -252,6 +304,12 @@ export function deserializeWorkflowDiagram(xml: string): WorkflowDiagram {
     if (type === "boundaryEvent") {
       node.attachedToRef = child.getAttribute("attachedToRef") || undefined;
       node.cancelActivity = child.getAttribute("cancelActivity") !== "false";
+      if (node.catchKind === "error") {
+        const errorCode = readBoundaryErrorCode(doc, child, ispf);
+        if (errorCode !== undefined && errorCode !== "") {
+          node.ispf.errorCode = errorCode;
+        }
+      }
     }
     if (type === "callActivity" && !node.ispf.workflowPath) {
       const called = child.getAttribute("calledElement");
