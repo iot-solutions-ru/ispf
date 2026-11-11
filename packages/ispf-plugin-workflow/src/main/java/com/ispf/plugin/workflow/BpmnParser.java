@@ -658,6 +658,7 @@ public class BpmnParser {
         readIspfAttribute(task, parameters, "outputMap");
         readIspfAttribute(task, parameters, "eventName");
         readIspfAttribute(task, parameters, "payloadVariable");
+        readIspfAttribute(task, parameters, "payloadJson");
         readIspfAttribute(task, parameters, "contextKey");
         readIspfAttribute(task, parameters, "sourceVariable");
         readIspfAttribute(task, parameters, "valueField");

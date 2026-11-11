@@ -23,6 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +40,8 @@ import java.util.Map;
  */
 @Component
 public class WorkflowTaskExecutor {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private static final Logger log = LoggerFactory.getLogger(WorkflowTaskExecutor.class);
 
@@ -161,7 +165,7 @@ public class WorkflowTaskExecutor {
             case FIRE_EVENT -> {
                 String target = params.getOrDefault("objectPath", params.getOrDefault("targetObject", ""));
                 String eventName = required(params, "eventName");
-                DataRecord payload = resolveEventPayload(target, params.get("payloadVariable"));
+                DataRecord payload = resolveEventPayload(target, params);
                 eventService.publishFired(target, eventName, payload);
             }
             case READ_VARIABLE -> {
@@ -214,14 +218,64 @@ public class WorkflowTaskExecutor {
         }
     }
 
-    private DataRecord resolveEventPayload(String objectPath, String payloadVariable) {
-        if (payloadVariable == null || payloadVariable.isBlank()) {
+    private DataRecord resolveEventPayload(String objectPath, Map<String, String> params) throws WorkflowException {
+        String payloadVariable = params.get("payloadVariable");
+        if (payloadVariable != null && !payloadVariable.isBlank()) {
+            PlatformObject node = objects.require(objectPath);
+            return node.getVariable(payloadVariable)
+                    .flatMap(Variable::value)
+                    .orElse(null);
+        }
+        String payloadJson = params.get("payloadJson");
+        if (payloadJson == null || payloadJson.isBlank()) {
             return null;
         }
-        PlatformObject node = objects.require(objectPath);
-        return node.getVariable(payloadVariable)
-                .flatMap(Variable::value)
-                .orElse(null);
+        return dataRecordFromJsonObject(payloadJson);
+    }
+
+    private static DataRecord dataRecordFromJsonObject(String json) throws WorkflowException {
+        JsonNode node = readJsonObject(json, "payloadJson");
+        Map<String, Object> row = new HashMap<>();
+        DataSchema.Builder schema = DataSchema.builder("workflowEventPayload");
+        for (Map.Entry<String, JsonNode> entry : node.properties()) {
+            JsonNode value = entry.getValue();
+            if (value == null || value.isNull()) {
+                continue;
+            }
+            String key = entry.getKey();
+            if (value.isBoolean()) {
+                schema.field(key, FieldType.BOOLEAN);
+                row.put(key, value.booleanValue());
+            } else if (value.isIntegralNumber()) {
+                schema.field(key, FieldType.LONG);
+                row.put(key, value.longValue());
+            } else if (value.isNumber()) {
+                schema.field(key, FieldType.DOUBLE);
+                row.put(key, value.doubleValue());
+            } else if (value.isTextual()) {
+                schema.field(key, FieldType.STRING);
+                row.put(key, value.asString());
+            } else {
+                throw new WorkflowException("Workflow payloadJson values must be scalars: " + key);
+            }
+        }
+        if (row.isEmpty()) {
+            return null;
+        }
+        return DataRecord.single(schema.build(), row);
+    }
+
+    private static JsonNode readJsonObject(String json, String field) throws WorkflowException {
+        final JsonNode node;
+        try {
+            node = JSON.readTree(json);
+        } catch (RuntimeException e) {
+            throw new WorkflowException("Workflow " + field + " is not valid JSON: " + e.getMessage());
+        }
+        if (node == null || !node.isObject()) {
+            throw new WorkflowException("Workflow " + field + " must be a JSON object");
+        }
+        return node;
     }
 
     private String readObjectVariableField(String objectPath, String variableName, String valueField) {
@@ -271,16 +325,37 @@ public class WorkflowTaskExecutor {
     }
 
     private static Map<String, String> readInputMap(String inputMap, WorkflowInstance instance) throws WorkflowException {
+        String trimmed = inputMap.trim();
+        if (trimmed.startsWith("{")) {
+            return readJsonInputMap(trimmed, instance);
+        }
         Map<String, String> mapped = new HashMap<>();
-        for (String part : inputMap.split(",")) {
+        for (String part : trimmed.split(",")) {
             if (part == null || part.isBlank()) {
                 continue;
             }
             String[] kv = part.split("=", 2);
-            if (kv.length != 2) {
+            if (kv.length != 2 || kv[0].isBlank()) {
                 throw new WorkflowException("Workflow inputMap entry is not a key=value pair: " + part.trim());
             }
             mapped.put(kv[0].trim(), resolveMappedValue(kv[1].trim(), instance));
+        }
+        return mapped;
+    }
+
+    private static Map<String, String> readJsonInputMap(String json, WorkflowInstance instance) throws WorkflowException {
+        JsonNode node = readJsonObject(json, "inputMap");
+        Map<String, String> mapped = new HashMap<>();
+        for (Map.Entry<String, JsonNode> entry : node.properties()) {
+            JsonNode value = entry.getValue();
+            if (value == null || value.isNull()) {
+                mapped.put(entry.getKey(), "");
+                continue;
+            }
+            if (!value.isValueNode()) {
+                throw new WorkflowException("Workflow inputMap JSON values must be scalars: " + entry.getKey());
+            }
+            mapped.put(entry.getKey(), resolveMappedValue(value.asString(), instance));
         }
         return mapped;
     }

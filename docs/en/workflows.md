@@ -98,11 +98,13 @@ Generic BPMN pasted from other tools will often fail or behave incorrectly until
 | `set_variable` | `ispf:targetPath`, `ispf:variable`, `ispf:value` |
 | `publish_nats` | `ispf:subject`, `ispf:message`, `ispf:channel` |
 | `invoke_function` | `ispf:objectPath`, `ispf:functionName`, `ispf:inputMap`, `ispf:outputMap` |
-| `fire_event` | `ispf:objectPath`, `ispf:eventName`, `ispf:payloadVariable` |
+| `fire_event` | `ispf:objectPath`, `ispf:eventName`, `ispf:payloadVariable` or `ispf:payloadJson` |
 | `read_variable` | `ispf:objectPath`, `ispf:variable` / `sourceVariable`, `ispf:contextKey` |
 | `start_workflow` | `ispf:workflowPath`, `ispf:objectPath` |
 | `llm_complete` | `ispf:promptTemplate`, `ispf:outputVariable`, `ispf:outputFormat`, `ispf:modelRef`, `ispf:timeoutMs` |
 | `invoke_agent` | `ispf:goalTemplate`, `ispf:agentMode`, `ispf:toolAllowlist`, `ispf:maxSteps`, `ispf:outputVariable` |
+
+The properties panel lists `functionName`, user-task `function`, `variable`, `payloadVariable`, and `eventName` from the target object's descriptor (`objectPath`, or `targetObject` when that is the only path). `inputMap` is `key=value` pairs or a JSON object of scalars. `payloadJson` is a JSON object of scalars and is used when `payloadVariable` is empty.
 
 `modelRef`: `platform-default` (platform AI settings), a model id, or a credentials vault path (`root...`) whose secret is the API key and optional metadata `baseUrl` / `model`.
 

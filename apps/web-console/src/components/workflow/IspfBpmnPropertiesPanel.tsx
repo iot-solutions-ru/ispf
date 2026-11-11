@@ -3,6 +3,7 @@ import { WORKFLOW_ISPF_ACTIONS, type WorkflowIspfAction } from "../../types/auto
 import type { CatchKind, FlowEdge, FlowNode } from "../../bpmn/model/types";
 import type { ObjectType } from "../../types";
 import { ObjectPathField } from "../../ui";
+import { BpmnCheckedText, BpmnDescriptorSelect } from "./BpmnIspfFields";
 
 /**
  * `setVariable` and user-task targets.
@@ -19,7 +20,7 @@ const PATH_FILTERS: Record<string, ObjectType[] | undefined> = {
 };
 
 const ACTION_ATTRS: Record<WorkflowIspfAction, string[]> = {
-  fire_event: ["objectPath", "eventName", "payloadJson"],
+  fire_event: ["objectPath", "eventName", "payloadVariable", "payloadJson"],
   read_variable: ["objectPath", "variable", "contextKey"],
   start_workflow: ["workflowPath", "objectPath"],
   invoke_function: ["objectPath", "functionName", "inputMap"],
@@ -42,28 +43,96 @@ interface Props {
   onDelete: () => void;
 }
 
+function descriptorContextPath(node: FlowNode, hintAttrs: string[]): string {
+  if (node.type === "userTask") {
+    return (node.ispf.targetObject ?? "").trim();
+  }
+  if (node.type === "callActivity") {
+    return (node.ispf.objectPath ?? "").trim();
+  }
+  if (node.type === "serviceTask" && hintAttrs.includes("targetObject")) {
+    return (node.ispf.targetObject ?? "").trim();
+  }
+  if (node.type === "serviceTask" && hintAttrs.includes("objectPath")) {
+    const objectPath = (node.ispf.objectPath ?? "").trim();
+    if (objectPath) {
+      return objectPath;
+    }
+    if (node.ispf.action === "fire_event" || node.ispf.action === "read_variable") {
+      return (node.ispf.targetObject ?? "").trim();
+    }
+  }
+  return "";
+}
+
 function IspfAttrField({
   attr,
   value,
+  contextPath,
   onChange,
 }: {
   attr: string;
   value: string;
+  contextPath: string;
   onChange: (next: string) => void;
 }) {
+  const label = `ispf:${attr}`;
   if (Object.prototype.hasOwnProperty.call(PATH_FILTERS, attr)) {
     return (
       <ObjectPathField
-        label={`ispf:${attr}`}
+        label={label}
         value={value}
         onChange={onChange}
         filterTypes={PATH_FILTERS[attr]}
       />
     );
   }
+  if (attr === "functionName" || attr === "function") {
+    return (
+      <BpmnDescriptorSelect
+        label={label}
+        kind="functions"
+        objectPath={contextPath}
+        value={value}
+        onChange={onChange}
+      />
+    );
+  }
+  if (attr === "variable" || attr === "payloadVariable") {
+    return (
+      <BpmnDescriptorSelect
+        label={label}
+        kind="variables"
+        objectPath={contextPath}
+        value={value}
+        onChange={onChange}
+      />
+    );
+  }
+  if (attr === "eventName") {
+    return (
+      <BpmnDescriptorSelect
+        label={label}
+        kind="events"
+        objectPath={contextPath}
+        value={value}
+        onChange={onChange}
+      />
+    );
+  }
+  if (attr === "inputMap" || attr === "payloadJson") {
+    return (
+      <BpmnCheckedText
+        label={label}
+        kind={attr}
+        value={value}
+        onChange={onChange}
+      />
+    );
+  }
   return (
     <label>
-      ispf:{attr}
+      {label}
       <input value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
@@ -126,6 +195,7 @@ export default function IspfBpmnPropertiesPanel({
   const node = selection.node;
   const action = (node.ispf.action || "") as WorkflowIspfAction | "";
   const hintAttrs = action && ACTION_ATTRS[action] ? ACTION_ATTRS[action] : [];
+  const contextPath = descriptorContextPath(node, hintAttrs);
 
   function setIspf(key: string, value: string) {
     onChangeNode(node.id, { ispf: { ...node.ispf, [key]: value } });
@@ -176,6 +246,7 @@ export default function IspfBpmnPropertiesPanel({
             <IspfAttrField
               key={attr}
               attr={attr}
+              contextPath={contextPath}
               value={node.ispf[attr] ?? ""}
               onChange={(next) => setIspf(attr, next)}
             />
@@ -190,6 +261,7 @@ export default function IspfBpmnPropertiesPanel({
             <IspfAttrField
               key={attr}
               attr={attr}
+              contextPath={contextPath}
               value={node.ispf[attr] ?? ""}
               onChange={(next) => setIspf(attr, next)}
             />
@@ -205,6 +277,7 @@ export default function IspfBpmnPropertiesPanel({
             <IspfAttrField
               key={attr}
               attr={attr}
+              contextPath={contextPath}
               value={node.ispf[attr] ?? ""}
               onChange={(next) => setIspf(attr, next)}
             />

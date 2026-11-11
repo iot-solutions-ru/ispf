@@ -29,6 +29,7 @@
         { "name": "signal", "isAttr": true, "type": "String" },
         { "name": "objectPath", "isAttr": true, "type": "String" },
         { "name": "eventName", "isAttr": true, "type": "String" },
+        { "name": "payloadVariable", "isAttr": true, "type": "String" },
         { "name": "payloadJson", "isAttr": true, "type": "String" },
         { "name": "contextKey", "isAttr": true, "type": "String" },
         { "name": "workflowPath", "isAttr": true, "type": "String" },
