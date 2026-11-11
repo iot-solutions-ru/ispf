@@ -2281,6 +2281,12 @@ body.scada-mimic-editor-open {
   border-radius: 50%;
 }
 
+.multi-pen-trend-pen-axis {
+  padding: 0 0.2rem;
+  height: auto;
+  line-height: 1;
+}
+
 .multi-pen-trend-pen-remove {
   border: none;
   background: transparent;

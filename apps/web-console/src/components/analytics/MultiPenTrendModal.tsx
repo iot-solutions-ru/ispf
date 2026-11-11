@@ -22,6 +22,13 @@ import {
   createTrendPen,
   trendPenKey,
 } from "../../types/trendPen";
+import {
+  defaultTrendAxis,
+  normalizedPenKey,
+  withNormalizedPens,
+  type TrendAxis,
+  type TrendScaleMode,
+} from "./trendScale";
 
 interface MultiPenTrendModalProps {
   pens: TrendPen[];
@@ -43,7 +50,9 @@ export default function MultiPenTrendModal({
     { id: "7d", labelKey: "variables.historyPanel.range7d" },
   ];
   const [range, setRange] = useState<HistoryRange>("24h");
-  const [pens, setPens] = useState<TrendPen[]>(initialPens);
+  const [pens, setPens] = useState<TrendPen[]>(() => initialPens.slice(0, MAX_TREND_PENS));
+  const [scaleMode, setScaleMode] = useState<TrendScaleMode>("shared");
+  const [axisByPenId, setAxisByPenId] = useState<Record<string, TrendAxis>>({});
   const [brushRange, setBrushRange] = useState<{ startIndex?: number; endIndex?: number }>({});
   const [exportError, setExportError] = useState<string | null>(null);
 
@@ -59,6 +68,14 @@ export default function MultiPenTrendModal({
     }
     return merged.slice(brushRange.startIndex, brushRange.endIndex + 1);
   }, [brushRange.endIndex, brushRange.startIndex, merged]);
+
+  const chartData = useMemo(
+    () => (scaleMode === "normalized" ? withNormalizedPens(visibleData, pens.map((pen) => pen.id)) : visibleData),
+    [pens, scaleMode, visibleData],
+  );
+
+  const axisFor = (penId: string, index: number): TrendAxis => axisByPenId[penId] ?? defaultTrendAxis(index);
+  const dualGridAxis: TrendAxis = pens.some((pen, index) => axisFor(pen.id, index) === "left") ? "left" : "right";
 
   const addablePens = useMemo(
     () =>
@@ -137,10 +154,34 @@ export default function MultiPenTrendModal({
       )}
     >
         <div className="multi-pen-trend-pens">
-          {pens.map((pen) => (
+          {pens.map((pen, index) => (
             <Tag key={pen.id} className="multi-pen-trend-pen-chip" style={{ borderColor: pen.color }}>
               <span className="multi-pen-trend-pen-swatch" style={{ background: pen.color }} />
               <span className="multi-pen-trend-pen-label">{pen.label}</span>
+              {scaleMode === "dual" && (
+                <Button
+                  type="text"
+                  size="small"
+                  className="multi-pen-trend-pen-axis"
+                  aria-label={t(
+                    axisFor(pen.id, index) === "left"
+                      ? "view.multiPenTrend.axisLeft"
+                      : "view.multiPenTrend.axisRight",
+                  )}
+                  onClick={() =>
+                    setAxisByPenId((current) => ({
+                      ...current,
+                      [pen.id]: axisFor(pen.id, index) === "left" ? "right" : "left",
+                    }))
+                  }
+                >
+                  {t(
+                    axisFor(pen.id, index) === "left"
+                      ? "view.multiPenTrend.axisLeftShort"
+                      : "view.multiPenTrend.axisRightShort",
+                  )}
+                </Button>
+              )}
               {pens.length > 1 && (
                 <Button
                   type="text"
@@ -174,8 +215,11 @@ export default function MultiPenTrendModal({
               </label>
             </div>
           )}
+          <Typography.Text type="secondary" className="multi-pen-trend-max">
+            {t("view.multiPenTrend.penCount", { count: pens.length, max: MAX_TREND_PENS })}
+          </Typography.Text>
           {pens.length >= MAX_TREND_PENS && (
-            <Typography.Text type="secondary" className="multi-pen-trend-max">
+            <Typography.Text type="warning" className="multi-pen-trend-max">
               {t("view.multiPenTrend.maxPens", { count: MAX_TREND_PENS })}
             </Typography.Text>
           )}
@@ -188,6 +232,16 @@ export default function MultiPenTrendModal({
             </Typography.Text>
           </div>
           <div className="variable-history-controls">
+            <Segmented
+              size="small"
+              value={scaleMode}
+              onChange={(value) => setScaleMode(value as TrendScaleMode)}
+              options={[
+                { value: "shared", label: t("view.multiPenTrend.scaleShared") },
+                { value: "normalized", label: t("view.multiPenTrend.scaleNormalized") },
+                { value: "dual", label: t("view.multiPenTrend.scaleDual") },
+              ]}
+            />
             <Segmented
               size="small"
               value={range}
@@ -209,7 +263,7 @@ export default function MultiPenTrendModal({
         </div>
 
         <Typography.Paragraph type="secondary" className="multi-pen-trend-zoom-hint">
-          {t("view.multiPenTrend.zoomHint")}
+          {scaleMode === "normalized" ? t("view.multiPenTrend.normalizedHint") : t("view.multiPenTrend.zoomHint")}
         </Typography.Paragraph>
         {exportError && <Alert type="error" title={exportError} showIcon />}
 
@@ -222,23 +276,56 @@ export default function MultiPenTrendModal({
             <Typography.Text type="secondary">{t("inspector:variables.historyPanel.notEnoughPoints")}</Typography.Text>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={visibleData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
+              <LineChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={CHART_GRID_STROKE}
+                  yAxisId={scaleMode === "dual" ? dualGridAxis : undefined}
+                />
                 <XAxis dataKey="time" tick={{ fontSize: 10 }} minTickGap={24} interval="preserveStartEnd" />
-                <YAxis tick={{ fontSize: 10 }} width={48} domain={["auto", "auto"]} />
-                <Tooltip contentStyle={{ ...CHART_TOOLTIP_STYLE, fontSize: "0.8rem" }} />
+                {scaleMode === "dual" ? (
+                  <>
+                    <YAxis yAxisId="left" orientation="left" tick={{ fontSize: 10 }} width={48} domain={["auto", "auto"]} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} width={48} domain={["auto", "auto"]} />
+                  </>
+                ) : (
+                  <YAxis
+                    tick={{ fontSize: 10 }}
+                    width={48}
+                    domain={scaleMode === "normalized" ? [0, 100] : ["auto", "auto"]}
+                  />
+                )}
+                <Tooltip
+                  contentStyle={{ ...CHART_TOOLTIP_STYLE, fontSize: "0.8rem" }}
+                  formatter={(value, name, item) => {
+                    if (scaleMode !== "normalized") {
+                      return [value, name];
+                    }
+                    const dataKey = typeof item.dataKey === "string" ? item.dataKey : undefined;
+                    const pen = pens.find((entry) => normalizedPenKey(entry.id) === dataKey);
+                    const raw = pen
+                      ? (item.payload as Record<string, unknown> | undefined)?.[pen.id]
+                      : undefined;
+                    const percent = typeof value === "number" ? Math.round(value) : value;
+                    return [
+                      typeof raw === "number" ? `${percent}% · ${raw.toLocaleString()}` : `${percent}%`,
+                      name,
+                    ];
+                  }}
+                />
                 <Legend />
-                {pens.map((pen) => (
+                {pens.map((pen, index) => (
                   <Line
                     key={pen.id}
                     type="monotone"
-                    dataKey={pen.id}
+                    dataKey={scaleMode === "normalized" ? normalizedPenKey(pen.id) : pen.id}
                     name={pen.label}
                     stroke={pen.color}
                     strokeWidth={2}
                     dot={false}
                     isAnimationActive={false}
                     connectNulls
+                    yAxisId={scaleMode === "dual" ? axisFor(pen.id, index) : undefined}
                   />
                 ))}
                 <Brush
