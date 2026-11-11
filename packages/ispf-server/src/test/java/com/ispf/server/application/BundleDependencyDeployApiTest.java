@@ -34,12 +34,19 @@ class BundleDependencyDeployApiTest {
         manifest.put("displayName", "Dependent App");
         manifest.put("schemaName", "app_dependent_missing");
         manifest.put("requires", List.of(Map.of("appId", "missing-dep-never-deployed", "minVersion", "1.0.0")));
+        manifest.put("objects", List.of(Map.of(
+                "parentPath", "root.platform.devices",
+                "name", "dep-probe",
+                "type", "DEVICE"
+        )));
 
         mockMvc.perform(post("/api/v1/applications/dependent-missing/deploy")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(asJson(manifest)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.detail", containsString("missing-dep-never-deployed")));
+                .andExpect(jsonPath("$.status").value("ERROR"))
+                .andExpect(jsonPath("$.deployed").value(false))
+                .andExpect(jsonPath("$.errors[0]", containsString("missing-dep-never-deployed")));
     }
 
     @Test
@@ -56,6 +63,11 @@ class BundleDependencyDeployApiTest {
         manifest.put("displayName", "Dependent App");
         manifest.put("schemaName", "app_dependent_ok");
         manifest.put("requires", List.of(Map.of("appId", "warehouse", "minVersion", "1.0.0")));
+        manifest.put("objects", List.of(Map.of(
+                "parentPath", "root.platform.devices",
+                "name", "dep-probe",
+                "type", "DEVICE"
+        )));
 
         mockMvc.perform(post("/api/v1/applications/dependent-ok/deploy")
                         .contentType(MediaType.APPLICATION_JSON)
