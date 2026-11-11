@@ -20,12 +20,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class BundleManifestValidator {
 
     /** Ship / catalog / {@code --strict}: these WARNING codes become ERROR (ADR-0060 Wave 1A). */
     public static final Set<String> SHIP_CANON_CODES = Set.of("LOGIC_HOST_DEVICE");
+
+    private static final Pattern BPMN_INVOKE_FUNCTION_HOST = Pattern.compile(
+            "ispf:action=\"invoke_function\"[\\s\\S]*?ispf:objectPath=\"([^\"]+)\"[\\s\\S]*?ispf:functionName=\"([^\"]+)\"",
+            Pattern.DOTALL
+    );
 
     private static final Set<String> KNOWN_WIDGET_TYPES = Set.of(
             "value", "indicator", "toggle", "chart", "sparkline", "progress", "gauge", "status-badge",
@@ -460,21 +467,175 @@ public class BundleManifestValidator {
         if (manifest.blueprints() != null) {
             int index = 0;
             for (ApplicationBundleDeployService.BundleBlueprint blueprint : manifest.blueprints()) {
-                // SINGLETON hubs must not materialize as DEVICE (application-principles hard rule).
-                if (blueprint.type() == BlueprintType.SINGLETON
-                        && blueprint.targetObjectType() == ObjectType.DEVICE) {
+                if (blueprint.targetObjectType() == ObjectType.DEVICE
+                        && blueprintViolatesLogicHostCanon(blueprint)) {
                     builder.addIssue(BundleValidationIssue.warning(
                             "LOGIC_HOST_DEVICE",
                             "blueprints[" + index + "].targetObjectType",
-                            "SINGLETON blueprint '" + blueprint.name() + "' uses targetObjectType=DEVICE: "
+                            blueprint.type() + " blueprint '" + blueprint.name() + "' uses targetObjectType=DEVICE: "
                                     + "solution logic outside the canon (deploy is not blocked)",
-                            "Omit targetObjectType (defaults to CUSTOM) or set CUSTOM/APPLICATION.",
+                            "Use CUSTOM/APPLICATION for logic hubs; DEVICE mixins are for telemetry only.",
                             BundleValidationIssue.DOC_LOGIC_HOST
                     ));
                 }
                 index++;
             }
         }
+        validateManifestFunctionInvokes(manifest, pathTypes, builder);
+    }
+
+    private static boolean blueprintViolatesLogicHostCanon(ApplicationBundleDeployService.BundleBlueprint blueprint) {
+        if (blueprint.targetObjectType() != ObjectType.DEVICE) {
+            return false;
+        }
+        if (blueprint.type() == BlueprintType.SINGLETON) {
+            return true;
+        }
+        return blueprint.type() == BlueprintType.INSTANCE
+                && blueprint.functions() != null
+                && !blueprint.functions().isEmpty();
+    }
+
+    private void validateManifestFunctionInvokes(
+            ApplicationBundleDeployService.BundleManifest manifest,
+            Map<String, String> pathTypes,
+            BundleValidationResult.Builder builder
+    ) {
+        Map<String, String> declaredFunctionHosts = buildDeclaredFunctionHosts(manifest);
+        if (manifest.dashboards() != null) {
+            int index = 0;
+            for (ApplicationBundleDeployService.BundleDashboard dashboard : manifest.dashboards()) {
+                String layoutJson = dashboard.layoutJson();
+                if (layoutJson == null || layoutJson.isBlank()) {
+                    index++;
+                    continue;
+                }
+                try {
+                    JsonNode layout = objectMapper.readTree(layoutJson);
+                    JsonNode widgets = layout.get("widgets");
+                    if (widgets != null && widgets.isArray()) {
+                        int widgetIndex = 0;
+                        for (JsonNode widget : widgets) {
+                            String type = widget.hasNonNull("type") ? widget.get("type").asText() : "";
+                            if ("function".equals(type) || "function-form".equals(type)) {
+                                String objectPath = widget.hasNonNull("objectPath") ? widget.get("objectPath").asText() : "";
+                                String functionName = widget.hasNonNull("functionName") ? widget.get("functionName").asText() : "?";
+                                warnSplitBrainFunctionInvoke(
+                                        declaredFunctionHosts,
+                                        pathTypes,
+                                        objectPath,
+                                        functionName,
+                                        "dashboards[" + index + "].widgets[" + widgetIndex + "].objectPath",
+                                        "Dashboard widget",
+                                        builder
+                                );
+                            }
+                            widgetIndex++;
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // layoutJson syntax errors are reported in validateDashboards
+                }
+                index++;
+            }
+        }
+        if (manifest.schedules() != null) {
+            int index = 0;
+            for (ApplicationBundleDeployService.BundleSchedule schedule : manifest.schedules()) {
+                if ("invoke_function".equalsIgnoreCase(schedule.actionType()) && schedule.action() != null) {
+                    Object objectPathObj = schedule.action().get("objectPath");
+                    Object functionNameObj = schedule.action().get("functionName");
+                    String objectPath = objectPathObj != null ? String.valueOf(objectPathObj).trim() : "";
+                    String functionName = functionNameObj != null ? String.valueOf(functionNameObj).trim() : "?";
+                    warnSplitBrainFunctionInvoke(
+                            declaredFunctionHosts,
+                            pathTypes,
+                            objectPath,
+                            functionName,
+                            "schedules[" + index + "].action.objectPath",
+                            "Schedule '" + schedule.scheduleId() + "'",
+                            builder
+                    );
+                }
+                index++;
+            }
+        }
+        if (manifest.workflows() != null) {
+            int index = 0;
+            for (ApplicationBundleDeployService.BundleWorkflow workflow : manifest.workflows()) {
+                String bpmnXml = workflow.bpmnXml();
+                if (bpmnXml != null && !bpmnXml.isBlank()) {
+                    Matcher matcher = BPMN_INVOKE_FUNCTION_HOST.matcher(bpmnXml);
+                    int taskIndex = 0;
+                    while (matcher.find()) {
+                        String objectPath = matcher.group(1);
+                        String functionName = matcher.group(2);
+                        warnSplitBrainFunctionInvoke(
+                                declaredFunctionHosts,
+                                pathTypes,
+                                objectPath,
+                                functionName,
+                                "workflows[" + index + "].bpmnXml.serviceTask[" + taskIndex + "].objectPath",
+                                "Workflow BPMN",
+                                builder
+                        );
+                        taskIndex++;
+                    }
+                }
+                index++;
+            }
+        }
+    }
+
+    private static Map<String, String> buildDeclaredFunctionHosts(
+            ApplicationBundleDeployService.BundleManifest manifest
+    ) {
+        Map<String, String> hosts = new HashMap<>();
+        if (manifest.functions() == null) {
+            return hosts;
+        }
+        for (ApplicationBundleDeployService.BundleFunction function : manifest.functions()) {
+            if (isBlank(function.functionName()) || isBlank(function.objectPath())) {
+                continue;
+            }
+            hosts.putIfAbsent(function.functionName().trim(), function.objectPath().trim());
+        }
+        return hosts;
+    }
+
+    /**
+     * Detect split-brain: functions[] declare a canonical host but dashboards / schedules / BPMN
+     * still invoke the same function on a different DEVICE path.
+     */
+    private void warnSplitBrainFunctionInvoke(
+            Map<String, String> declaredFunctionHosts,
+            Map<String, String> pathTypes,
+            String invokePath,
+            String functionName,
+            String issuePath,
+            String siteLabel,
+            BundleValidationResult.Builder builder
+    ) {
+        if (isBlank(invokePath) || isBlank(functionName)) {
+            return;
+        }
+        String canonicalHost = declaredFunctionHosts.get(functionName.trim());
+        if (canonicalHost == null || canonicalHost.equals(invokePath)) {
+            return;
+        }
+        Optional<String> invokeType = resolveType(invokePath, pathTypes);
+        if (invokeType.isEmpty() || !ObjectType.DEVICE.name().equalsIgnoreCase(invokeType.get())) {
+            return;
+        }
+        builder.addIssue(BundleValidationIssue.warning(
+                "LOGIC_HOST_DEVICE",
+                issuePath,
+                siteLabel + " invokes function '" + functionName + "' on DEVICE path '" + invokePath
+                        + "' but functions[] declares it on '" + canonicalHost
+                        + "' (deploy is not blocked)",
+                "Align invoke objectPath with functions[] or move logic to the canonical SINGLETON/INSTANCE host.",
+                BundleValidationIssue.DOC_LOGIC_HOST
+        ));
     }
 
     /**

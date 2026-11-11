@@ -103,6 +103,55 @@ class ExamplesBundleValidationTest {
     }
 
     @Test
+    void warnsOnInstanceBlueprintTargetingDevice() throws Exception {
+        String json = """
+                {
+                  "version":"1.0.0",
+                  "displayName":"Bad Twin",
+                  "tablePrefix":"b_",
+                  "schemaName":"app_bad",
+                  "blueprints":[{"name":"twin-v1","type":"INSTANCE","targetObjectType":"DEVICE","functions":[{"name":"tick"}]}]
+                }
+                """;
+        ApplicationBundleDeployService.BundleManifest manifest =
+                objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);
+        BundleValidationResult result = validator.validate("bad-twin", manifest);
+        assertEquals(BundleValidationResult.OK, result.status());
+        assertTrue(result.issues().stream().anyMatch(i ->
+                "LOGIC_HOST_DEVICE".equals(i.code())
+                        && "blueprints[0].targetObjectType".equals(i.path())
+                        && BundleValidationIssue.WARNING.equals(i.severity())));
+    }
+
+    @Test
+    void warnsWhenDashboardInvokesFunctionOnDevice() throws Exception {
+        String layout = """
+                {"columns":12,"rowHeight":48,"widgets":[
+                  {"id":"f1","type":"function-form","objectPath":"root.platform.devices.bad-hub","functionName":"tick"}
+                ]}
+                """;
+        String json = """
+                {
+                  "version":"1.0.0",
+                  "displayName":"Bad Dash",
+                  "tablePrefix":"b_",
+                  "schemaName":"app_bad",
+                  "objects":[{"parentPath":"root.platform.devices","name":"bad-hub","type":"DEVICE"}],
+                  "functions":[{"objectPath":"root.platform.singleton-blueprints.good-hub","functionName":"tick","source":{"type":"script","body":"{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"ok\\":true}}]}"}}],
+                  "dashboards":[{"path":"root.platform.dashboards.bad","title":"Bad","layoutJson":%s}]
+                }
+                """.formatted(objectMapper.writeValueAsString(layout));
+        ApplicationBundleDeployService.BundleManifest manifest =
+                objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);
+        BundleValidationResult result = validator.validate("bad-dash", manifest);
+        assertEquals(BundleValidationResult.OK, result.status());
+        assertTrue(result.issues().stream().anyMatch(i ->
+                "LOGIC_HOST_DEVICE".equals(i.code())
+                        && i.path().startsWith("dashboards[0].widgets[")
+                        && BundleValidationIssue.WARNING.equals(i.severity())));
+    }
+
+    @Test
     void strictModePromotesLogicHostDeviceToError() throws Exception {
         String json = """
                 {

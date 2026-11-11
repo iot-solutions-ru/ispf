@@ -113,43 +113,43 @@
     {
       "path": "root.platform.dashboards.laminate-flow-plan",
       "title": "План линий",
-      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"intro\", \"type\": \"html-snippet\", \"title\": \"Оперативный план\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 14, \"htmlJson\": \"<p>Поточное производство. Единица плана — линия, горизонт — неделя. Перенос заказа между линиями и днями пересчитывает потребность в полуфабрикате и команду в WMS. Операций и незавершёнки нет.</p>\"}, {\"id\": \"board\", \"type\": \"gantt-chart\", \"title\": \"Доска линий\", \"x\": 0, \"y\": 14, \"w\": 84, \"h\": 42, \"objectPath\": \"root.platform.devices.laminate-flow-hub\", \"variableName\": \"schedule\", \"labelField\": \"label\", \"startField\": \"startMs\", \"endField\": \"endMs\", \"allowBarDrag\": true, \"interactive\": true}, {\"id\": \"refresh\", \"type\": \"function\", \"title\": \"Заказы на доске\", \"x\": 0, \"y\": 56, \"w\": 42, \"h\": 21, \"objectPath\": \"root.platform.devices.laminate-flow-hub\", \"functionName\": \"lf_listSchedule\", \"buttonLabel\": \"Показать заказы\"}, {\"id\": \"move\", \"type\": \"function\", \"title\": \"Перенос SO-1002 на Пресс B\", \"x\": 42, \"y\": 56, \"w\": 42, \"h\": 21, \"objectPath\": \"root.platform.devices.laminate-flow-hub\", \"functionName\": \"lf_moveOrder\", \"buttonLabel\": \"Перенести и пересчитать WMS\", \"inputMapJson\": \"{\\\"orderNo\\\": \\\"SO-1002\\\", \\\"lineCode\\\": \\\"l-press-b\\\", \\\"startAt\\\": \\\"2026-09-15T06:00:00+03:00\\\", \\\"endAt\\\": \\\"2026-09-15T14:00:00+03:00\\\"}\"}]}",
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"intro\",\"type\":\"html-snippet\",\"title\":\"Оперативный план\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>Поточное производство. Единица плана — линия, горизонт — неделя. Перенос заказа между линиями и днями пересчитывает потребность в полуфабрикате и команду в WMS. Операций и незавершёнки нет.</p>\"},{\"id\":\"board\",\"type\":\"gantt-chart\",\"title\":\"Доска линий\",\"x\":0,\"y\":14,\"w\":84,\"h\":42,\"objectPath\":\"root.platform.devices.laminate-flow-hub\",\"variableName\":\"schedule\",\"labelField\":\"label\",\"startField\":\"startMs\",\"endField\":\"endMs\",\"allowBarDrag\":true,\"interactive\":true},{\"id\":\"refresh\",\"type\":\"function\",\"title\":\"Заказы на доске\",\"x\":0,\"y\":56,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.laminate-flow-hub\",\"functionName\":\"lf_listSchedule\",\"buttonLabel\":\"Показать заказы\"},{\"id\":\"move\",\"type\":\"function\",\"title\":\"Перенос SO-1002 на Пресс B\",\"x\":42,\"y\":56,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.laminate-flow-hub\",\"functionName\":\"lf_moveOrder\",\"buttonLabel\":\"Перенести и пересчитать WMS\",\"inputMapJson\":\"{\\\"orderNo\\\": \\\"SO-1002\\\", \\\"lineCode\\\": \\\"l-press-b\\\", \\\"startAt\\\": \\\"2026-09-15T06:00:00+03:00\\\", \\\"endAt\\\": \\\"2026-09-15T14:00:00+03:00\\\"}\"}]}",
       "refreshIntervalMs": 5000
     },
     {
       "path": "root.platform.dashboards.laminate-flow-lines",
       "title": "Состояние линий",
-      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"run-l-impreg\", \"type\": \"indicator\", \"title\": \"L1 Пропитка\", \"x\": 0, \"y\": 0, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-impreg\", \"variableName\": \"running\"}, {\"id\": \"spd-l-impreg\", \"type\": \"value\", \"title\": \"Скорость\", \"x\": 0, \"y\": 14, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-impreg\", \"variableName\": \"speed\", \"valueField\": \"value\"}, {\"id\": \"run-l-press-a\", \"type\": \"indicator\", \"title\": \"L2 Пресс A\", \"x\": 21, \"y\": 0, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-press-a\", \"variableName\": \"running\"}, {\"id\": \"spd-l-press-a\", \"type\": \"value\", \"title\": \"Скорость\", \"x\": 21, \"y\": 14, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-press-a\", \"variableName\": \"speed\", \"valueField\": \"value\"}, {\"id\": \"run-l-press-b\", \"type\": \"indicator\", \"title\": \"L3 Пресс B\", \"x\": 42, \"y\": 0, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-press-b\", \"variableName\": \"running\"}, {\"id\": \"spd-l-press-b\", \"type\": \"value\", \"title\": \"Скорость\", \"x\": 42, \"y\": 14, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-press-b\", \"variableName\": \"speed\", \"valueField\": \"value\"}, {\"id\": \"run-l-pack\", \"type\": \"indicator\", \"title\": \"L4 Упаковка\", \"x\": 63, \"y\": 0, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-pack\", \"variableName\": \"running\"}, {\"id\": \"spd-l-pack\", \"type\": \"value\", \"title\": \"Скорость\", \"x\": 63, \"y\": 14, \"w\": 21, \"h\": 14, \"objectPath\": \"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-pack\", \"variableName\": \"speed\", \"valueField\": \"value\"}, {\"id\": \"buf\", \"type\": \"report\", \"title\": \"Буферы между линиями\", \"x\": 0, \"y\": 28, \"w\": 84, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-buffers\"}]}",
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"run-l-impreg\",\"type\":\"indicator\",\"title\":\"L1 Пропитка\",\"x\":0,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-impreg\",\"variableName\":\"running\"},{\"id\":\"spd-l-impreg\",\"type\":\"value\",\"title\":\"Скорость\",\"x\":0,\"y\":14,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-impreg\",\"variableName\":\"speed\",\"valueField\":\"value\"},{\"id\":\"run-l-press-a\",\"type\":\"indicator\",\"title\":\"L2 Пресс A\",\"x\":21,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-press-a\",\"variableName\":\"running\"},{\"id\":\"spd-l-press-a\",\"type\":\"value\",\"title\":\"Скорость\",\"x\":21,\"y\":14,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-press-a\",\"variableName\":\"speed\",\"valueField\":\"value\"},{\"id\":\"run-l-press-b\",\"type\":\"indicator\",\"title\":\"L3 Пресс B\",\"x\":42,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-press-b\",\"variableName\":\"running\"},{\"id\":\"spd-l-press-b\",\"type\":\"value\",\"title\":\"Скорость\",\"x\":42,\"y\":14,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-press-b\",\"variableName\":\"speed\",\"valueField\":\"value\"},{\"id\":\"run-l-pack\",\"type\":\"indicator\",\"title\":\"L4 Упаковка\",\"x\":63,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-pack\",\"variableName\":\"running\"},{\"id\":\"spd-l-pack\",\"type\":\"value\",\"title\":\"Скорость\",\"x\":63,\"y\":14,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.mes.instances.laminate-dzerzhinsk.areas.flow.lines.l-pack\",\"variableName\":\"speed\",\"valueField\":\"value\"},{\"id\":\"buf\",\"type\":\"report\",\"title\":\"Буферы между линиями\",\"x\":0,\"y\":28,\"w\":84,\"h\":28,\"reportPath\":\"root.platform.reports.lf-buffers\"}]}",
       "refreshIntervalMs": 5000
     },
     {
       "path": "root.platform.dashboards.laminate-flow-supply",
       "title": "Материалы",
-      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"sap\", \"type\": \"report\", \"title\": \"Заказы SAP\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-sales-orders\"}, {\"id\": \"need\", \"type\": \"report\", \"title\": \"Потребность в сырье и полуфабрикатах\", \"x\": 0, \"y\": 28, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-material-need\"}, {\"id\": \"wms\", \"type\": \"report\", \"title\": \"Команды WMS\", \"x\": 42, \"y\": 28, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-wms-commands\"}]}",
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"sap\",\"type\":\"report\",\"title\":\"Заказы SAP\",\"x\":0,\"y\":0,\"w\":84,\"h\":28,\"reportPath\":\"root.platform.reports.lf-sales-orders\"},{\"id\":\"need\",\"type\":\"report\",\"title\":\"Потребность в сырье и полуфабрикатах\",\"x\":0,\"y\":28,\"w\":42,\"h\":28,\"reportPath\":\"root.platform.reports.lf-material-need\"},{\"id\":\"wms\",\"type\":\"report\",\"title\":\"Команды WMS\",\"x\":42,\"y\":28,\"w\":42,\"h\":28,\"reportPath\":\"root.platform.reports.lf-wms-commands\"}]}",
       "refreshIntervalMs": 5000
     },
     {
       "path": "root.platform.dashboards.laminate-flow-performance",
       "title": "Смена",
-      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"perf\", \"type\": \"report\", \"title\": \"Производительность линий\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-line-performance\"}, {\"id\": \"disp\", \"type\": \"report\", \"title\": \"Очередь выдачи\", \"x\": 0, \"y\": 28, \"w\": 84, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-dispatch-queue\"}]}",
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"perf\",\"type\":\"report\",\"title\":\"Производительность линий\",\"x\":0,\"y\":0,\"w\":84,\"h\":28,\"reportPath\":\"root.platform.reports.lf-line-performance\"},{\"id\":\"disp\",\"type\":\"report\",\"title\":\"Очередь выдачи\",\"x\":0,\"y\":28,\"w\":84,\"h\":28,\"reportPath\":\"root.platform.reports.lf-dispatch-queue\"}]}",
       "refreshIntervalMs": 5000
     },
     {
       "path": "root.platform.dashboards.laminate-flow-quality",
       "title": "Качество",
-      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"q\", \"type\": \"report\", \"title\": \"Партии\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 48, \"reportPath\": \"root.platform.reports.lf-quality-lots\"}]}",
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"q\",\"type\":\"report\",\"title\":\"Партии\",\"x\":0,\"y\":0,\"w\":84,\"h\":48,\"reportPath\":\"root.platform.reports.lf-quality-lots\"}]}",
       "refreshIntervalMs": 5000
     },
     {
       "path": "root.platform.dashboards.laminate-flow-trace",
       "title": "Партии",
-      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"g\", \"type\": \"report\", \"title\": \"Прослеживаемость\", \"x\": 0, \"y\": 0, \"w\": 84, \"h\": 48, \"reportPath\": \"root.platform.reports.lf-genealogy\"}]}",
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"g\",\"type\":\"report\",\"title\":\"Прослеживаемость\",\"x\":0,\"y\":0,\"w\":84,\"h\":48,\"reportPath\":\"root.platform.reports.lf-genealogy\"}]}",
       "refreshIntervalMs": 5000
     },
     {
       "path": "root.platform.dashboards.laminate-flow-admin",
       "title": "Справочники",
-      "layoutJson": "{\"columns\": 84, \"rowHeight\": 8, \"widgets\": [{\"id\": \"art\", \"type\": \"report\", \"title\": \"Артикулы\", \"x\": 0, \"y\": 0, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-articles\"}, {\"id\": \"dep\", \"type\": \"report\", \"title\": \"Нормы\", \"x\": 42, \"y\": 0, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-dependencies\"}, {\"id\": \"ln\", \"type\": \"report\", \"title\": \"Линии\", \"x\": 0, \"y\": 28, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-lines\"}, {\"id\": \"buf\", \"type\": \"report\", \"title\": \"Буферы\", \"x\": 42, \"y\": 28, \"w\": 42, \"h\": 28, \"reportPath\": \"root.platform.reports.lf-buffers\"}]}",
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"art\",\"type\":\"report\",\"title\":\"Артикулы\",\"x\":0,\"y\":0,\"w\":42,\"h\":28,\"reportPath\":\"root.platform.reports.lf-articles\"},{\"id\":\"dep\",\"type\":\"report\",\"title\":\"Нормы\",\"x\":42,\"y\":0,\"w\":42,\"h\":28,\"reportPath\":\"root.platform.reports.lf-dependencies\"},{\"id\":\"ln\",\"type\":\"report\",\"title\":\"Линии\",\"x\":0,\"y\":28,\"w\":42,\"h\":28,\"reportPath\":\"root.platform.reports.lf-lines\"},{\"id\":\"buf\",\"type\":\"report\",\"title\":\"Буферы\",\"x\":42,\"y\":28,\"w\":42,\"h\":28,\"reportPath\":\"root.platform.reports.lf-buffers\"}]}",
       "refreshIntervalMs": 5000
     }
   ],
@@ -452,32 +452,32 @@
                 "orderNo": "SO-1001",
                 "sku": "QS-OAK-8",
                 "lineCode": "l-press-a",
-                "startMs": 1789354800000.0,
-                "endMs": 1789383600000.0
+                "startMs": 1789354800000,
+                "endMs": 1789383600000
               },
               {
                 "label": "L2 Пресс A",
                 "orderNo": "SO-1002",
                 "sku": "QS-OAK-8",
                 "lineCode": "l-press-a",
-                "startMs": 1789441200000.0,
-                "endMs": 1789470000000.0
+                "startMs": 1789441200000,
+                "endMs": 1789470000000
               },
               {
                 "label": "L1 Пропитка",
                 "orderNo": "SO-1101",
                 "sku": "FILM-OAK",
                 "lineCode": "l-impreg",
-                "startMs": 1789354800000.0,
-                "endMs": 1789376400000.0
+                "startMs": 1789354800000,
+                "endMs": 1789376400000
               },
               {
                 "label": "L4 Упаковка",
                 "orderNo": "SO-1201",
                 "sku": "QS-OAK-8",
                 "lineCode": "l-pack",
-                "startMs": 1789534800000.0,
-                "endMs": 1789563600000.0
+                "startMs": 1789534800000,
+                "endMs": 1789563600000
               }
             ]
           },
