@@ -893,8 +893,8 @@ final class AgentTreeTools {
             @Override
             public String description() {
                 return "Semantic validation of bundle manifest (no DB writes). Args: appId, manifest (object). "
-                        + "Authoring path: LOGIC_HOST_DEVICE stays WARNING. "
-                        + "Ship acceptance uses deploy_step_validate, which promotes that code to ERROR.";
+                        + "Ship canon is on: LOGIC_HOST_DEVICE is ERROR. "
+                        + "HTTP application deploy without strict stays a warning.";
             }
 
             @Override
@@ -906,7 +906,7 @@ final class AgentTreeTools {
                     return Map.of("status", "ERROR", "error", "appId and manifest object are required");
                 }
                 var parsed = BundleManifestJsonSupport.parse(objectMapper, (Map<String, Object>) manifestMap);
-                Map<String, Object> result = aiToolRegistry.validateBundle(appId, parsed, context.actor());
+                Map<String, Object> result = aiToolRegistry.validateBundle(appId, parsed, context.actor(), true);
                 if (BundleValidationResult.OK.equals(result.get("status"))) {
                     context.runState().markBundleValidated(appId);
                 }
@@ -924,7 +924,8 @@ final class AgentTreeTools {
 
             @Override
             public String description() {
-                return "Validate bundle and list wouldApply sections. Args: appId, manifest (object).";
+                return "Validate bundle and list wouldApply sections. Args: appId, manifest (object). "
+                        + "Ship canon is on: LOGIC_HOST_DEVICE is ERROR.";
             }
 
             @Override
@@ -936,7 +937,7 @@ final class AgentTreeTools {
                     return Map.of("status", "ERROR", "error", "appId and manifest object are required");
                 }
                 var parsed = BundleManifestJsonSupport.parse(objectMapper, (Map<String, Object>) manifestMap);
-                Map<String, Object> result = aiToolRegistry.dryRunDeploy(appId, parsed, context.actor());
+                Map<String, Object> result = aiToolRegistry.dryRunDeploy(appId, parsed, context.actor(), true);
                 if (BundleValidationResult.OK.equals(result.get("status"))) {
                     context.runState().markBundleValidated(appId);
                 }
@@ -1244,8 +1245,8 @@ final class AgentTreeTools {
     }
 
     /**
-     * Final ship gate. Interactive validate may leave {@code LOGIC_HOST_DEVICE} as WARNING;
-     * import refuses to apply until ship-canon validation is OK.
+     * Final ship gate. Agent validate and dry-run already promote ship canon;
+     * import refuses to apply until that validation is OK.
      *
      * @return null when the manifest may ship
      */

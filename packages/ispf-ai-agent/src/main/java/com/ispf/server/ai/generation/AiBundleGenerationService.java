@@ -78,8 +78,8 @@ public class AiBundleGenerationService {
         ApplicationBundleDeployService.BundleManifest generated = parsed.manifest();
         Map<String, Object> artifact = parsed.artifact();
 
-        Map<String, Object> validation = toolRegistry.validateBundle(appId, generated, actor);
-        Map<String, Object> dryRun = toolRegistry.dryRunDeploy(appId, generated, actor);
+        Map<String, Object> validation = toolRegistry.validateBundle(appId, generated, actor, true);
+        Map<String, Object> dryRun = toolRegistry.dryRunDeploy(appId, generated, actor, true);
 
         boolean publishable = BundleValidationResult.OK.equals(validation.get("status"))
                 && BundleValidationResult.OK.equals(dryRun.get("status"));

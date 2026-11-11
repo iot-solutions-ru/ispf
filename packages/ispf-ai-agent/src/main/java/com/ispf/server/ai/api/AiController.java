@@ -139,7 +139,8 @@ public class AiController {
         return toolRegistry.validateBundle(
                 request.appId(),
                 parseManifest(request.manifest()),
-                actor(authentication)
+                actor(authentication),
+                true
         );
     }
 
@@ -151,7 +152,8 @@ public class AiController {
         return toolRegistry.dryRunDeploy(
                 request.appId(),
                 parseManifest(request.manifest()),
-                actor(authentication)
+                actor(authentication),
+                true
         );
     }
 

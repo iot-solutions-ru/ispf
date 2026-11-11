@@ -46,6 +46,7 @@ public class AiToolRegistry {
         return contextPackService.refresh();
     }
 
+    /** Authoring residual. Agent, MCP, and AI Studio pass {@code shipCanon=true}. */
     public Map<String, Object> validateBundle(
             String appId,
             ApplicationBundleDeployService.BundleManifest manifest,
@@ -56,7 +57,8 @@ public class AiToolRegistry {
 
     /**
      * @param shipCanon when true, {@code LOGIC_HOST_DEVICE} warnings become errors (ADR-0060 ship path).
-     *                  Authoring {@code validate_bundle} keeps this false.
+     *                  Agent {@code validate_bundle} and AI Studio {@code /tools/validate-bundle} pass true.
+     *                  Unqualified application HTTP deploy keeps the authoring warning.
      */
     public Map<String, Object> validateBundle(
             String appId,
@@ -68,6 +70,7 @@ public class AiToolRegistry {
         return auditedBundle("validate_bundle", appId, manifest, actor, result, shipCanon);
     }
 
+    /** Authoring residual. Agent, MCP, and AI Studio pass {@code shipCanon=true}. */
     public Map<String, Object> dryRunDeploy(
             String appId,
             ApplicationBundleDeployService.BundleManifest manifest,

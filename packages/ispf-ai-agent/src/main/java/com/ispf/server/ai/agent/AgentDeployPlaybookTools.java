@@ -262,7 +262,7 @@ final class AgentDeployPlaybookTools {
             @Override
             public String description() {
                 return "Deploy playbook validate step — ship-canon validation when appId+manifest provided "
-                        + "(LOGIC_HOST_DEVICE is ERROR). Interactive validate_bundle may only warn. "
+                        + "(LOGIC_HOST_DEVICE is ERROR). validate_bundle uses the same promotion. "
                         + "Without args, returns step guidance.";
             }
 

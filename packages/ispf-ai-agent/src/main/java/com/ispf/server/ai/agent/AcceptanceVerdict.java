@@ -366,8 +366,8 @@ public final class AcceptanceVerdict {
 
     /**
      * Ship / host-tool acceptance (ADR-0051 × ADR-0004 × ADR-0060).
-     * Interactive {@code validate_bundle} may keep {@code LOGIC_HOST_DEVICE} as WARNING;
-     * accepting a shipped solution or calling a function-host tool fails the check.
+     * Agent {@code validate_bundle} promotes {@code LOGIC_HOST_DEVICE} to ERROR.
+     * Accepting a shipped solution or calling a function-host tool fails the check.
      */
     private static Check logicHost(List<Map<String, Object>> steps, String assignmentType) {
         boolean bundleAcceptance = assignmentType != null
@@ -396,8 +396,7 @@ public final class AcceptanceVerdict {
                     "logic.host",
                     "Cannot finish: " + violation,
                     "Move functions to a SINGLETON hub or INSTANCE twin (hostKind SINGLETON|INSTANCE). "
-                            + "Ship acceptance rejects LOGIC_HOST_DEVICE (ADR-0060 / ADR-0004). "
-                            + "Interactive validate_bundle may only warn."
+                            + "Ship acceptance rejects LOGIC_HOST_DEVICE (ADR-0060 / ADR-0004)."
             );
         }
         return passed(
@@ -407,7 +406,8 @@ public final class AcceptanceVerdict {
     }
 
     private static String logicHostViolation(List<Map<String, Object>> steps, boolean scanBundleResults) {
-        for (Map<String, Object> step : steps) {
+        for (int index = 0; index < steps.size(); index++) {
+            Map<String, Object> step = steps.get(index);
             if (!isToolStep(step)) {
                 continue;
             }
@@ -420,17 +420,93 @@ public final class AcceptanceVerdict {
                 String path = String.valueOf(result.getOrDefault("path", ""));
                 boolean schemaBlockedHost = ("REQUIRED_ARG_MISSING".equals(code) || "ARG_ENUM_MISMATCH".equals(code))
                         && "hostKind".equals(path);
-                if (!LogicHostGuard.allowedKind(kind) || schemaBlockedHost || "LOGIC_HOST_DEVICE".equals(code)) {
+                if ((!LogicHostGuard.allowedKind(kind) || schemaBlockedHost || "LOGIC_HOST_DEVICE".equals(code))
+                        && !recoveredByLaterFunctionHost(steps, index)) {
                     return "function host tool " + tool + " is not SINGLETON or INSTANCE"
                             + (code.isBlank() ? "" : " (" + code + ")");
                 }
             }
             boolean scan = scanBundleResults && (isShipAcceptanceTool(tool) || isAuthoringBundleTool(tool));
             if ((scan || isFunctionHostTool(tool)) && containsLogicHostDevice(result)) {
-                return "LOGIC_HOST_DEVICE in " + tool + " result";
+                boolean recovered = isFunctionHostTool(tool)
+                        ? recoveredByLaterFunctionHost(steps, index)
+                        : recoveredByLaterBundle(steps, index, step);
+                if (!recovered) {
+                    return "LOGIC_HOST_DEVICE in " + tool + " result";
+                }
             }
         }
         return null;
+    }
+
+    /**
+     * A first-check {@code LOGIC_HOST_DEVICE} is superseded when a later bundle tool for the same
+     * app returns OK without that code. A blank app id on either step matches any later bundle step.
+     */
+    private static boolean recoveredByLaterBundle(
+            List<Map<String, Object>> steps,
+            int index,
+            Map<String, Object> earlier
+    ) {
+        for (int laterIndex = index + 1; laterIndex < steps.size(); laterIndex++) {
+            Map<String, Object> later = steps.get(laterIndex);
+            if (!isToolStep(later)) {
+                continue;
+            }
+            String tool = toolName(later);
+            if (!isShipAcceptanceTool(tool) && !isAuthoringBundleTool(tool)) {
+                continue;
+            }
+            if (!sameBundle(earlier, later)) {
+                continue;
+            }
+            Map<String, Object> result = stepMap(later, "result");
+            if (result.containsKey("nextStep")) {
+                continue;
+            }
+            if ("OK".equals(String.valueOf(result.get("status"))) && !containsLogicHostDevice(result)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean recoveredByLaterFunctionHost(List<Map<String, Object>> steps, int index) {
+        for (int laterIndex = index + 1; laterIndex < steps.size(); laterIndex++) {
+            Map<String, Object> later = steps.get(laterIndex);
+            if (!isToolStep(later) || !isFunctionHostTool(toolName(later))) {
+                continue;
+            }
+            Map<String, Object> args = stepMap(later, "arguments");
+            Map<String, Object> result = stepMap(later, "result");
+            String kind = String.valueOf(args.getOrDefault("hostKind", ""));
+            if ("OK".equals(String.valueOf(result.get("status")))
+                    && LogicHostGuard.allowedKind(kind)
+                    && !containsLogicHostDevice(result)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean sameBundle(Map<String, Object> earlier, Map<String, Object> later) {
+        String left = bundleId(earlier);
+        String right = bundleId(later);
+        return left.isBlank() || right.isBlank() || left.equals(right);
+    }
+
+    private static String bundleId(Map<String, Object> step) {
+        Map<String, Object> args = stepMap(step, "arguments");
+        String appId = textArg(args, "appId");
+        if (!appId.isBlank()) {
+            return appId;
+        }
+        return textArg(args, "packageId");
+    }
+
+    private static String textArg(Map<String, Object> args, String key) {
+        Object value = args.get(key);
+        return value == null ? "" : String.valueOf(value).trim();
     }
 
     private static boolean isFunctionHostTool(String tool) {
