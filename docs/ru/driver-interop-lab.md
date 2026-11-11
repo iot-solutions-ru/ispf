@@ -80,7 +80,7 @@ bash deploy/tools/driver-interop-report.sh
 | `dlms` | Gurux SET |
 | `mqtt` | publish path |
 
-Производственные драйверы только для чтения (`dnp3`, `ethernet-ip`, `opc-da`, `opc-bridge`, `http`, `snmp`, `gps-tracker`) — опрос целостности/проверка сеанса без двусторонней записи; Путь записи продвижения — отдельный BL по [driver-promotion](driver-promotion.md).
+Производственные драйверы только для чтения (`ethernet-ip`, `opc-da`, `opc-bridge`, `http`, `snmp`, `gps-tracker`) — опрос целостности/проверка сеанса без двусторонней записи; Путь записи продвижения — отдельный BL по [driver-promotion](driver-promotion.md). `dnp3` заявляет WRITE для CROB latch и аналогового выхода g41v3.
 
 ## Докерные приспособления (BL-141)
 

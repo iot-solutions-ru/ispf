@@ -73,6 +73,7 @@ final class Iec104Codec {
                 }
             }
             case Iec104Type.C_SC_NA_1 -> out.write(value.booleanValue() ? 1 : 0);
+            case Iec104Type.C_DC_NA_1 -> out.write((int) value.numericValue() & 0x03);
             case Iec104Type.C_IC_NA_1 -> out.write((int) value.numericValue() & 0xff);
             case Iec104Type.C_RD_NA_1 -> {
                 // Read command has only the IOA.
@@ -112,6 +113,10 @@ final class Iec104Codec {
             case Iec104Type.C_SC_NA_1 -> {
                 ensureRemaining(payload, offset, 1, "single command");
                 yield new DecodedValue(new Iec104Value(ioa, typeId, (payload[offset] & 0x01) != 0, "GOOD"), offset + 1);
+            }
+            case Iec104Type.C_DC_NA_1 -> {
+                ensureRemaining(payload, offset, 1, "double command");
+                yield new DecodedValue(new Iec104Value(ioa, typeId, unsigned(payload[offset]) & 0x03, "GOOD"), offset + 1);
             }
             case Iec104Type.C_SE_NA_1 -> {
                 ensureRemaining(payload, offset, 3, "normalized setpoint");

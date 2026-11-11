@@ -2,6 +2,7 @@ package com.ispf.server.object;
 
 import com.ispf.server.bootstrap.PlatformBootstrap;
 import com.ispf.server.config.BootstrapProperties;
+import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.platform.ClusterPlatformBootstrapService;
@@ -54,6 +55,7 @@ class ObjectManagerTreeSyncLockTest {
     @Mock private ObjectVariableService variableService;
     @Mock private ObjectTreeLoadSyncService loadSyncService;
     @Mock private ObjectMetadataService metadataService;
+    @Mock private ObjectProvider<VariableHistoryService> variableHistoryService;
 
     private ObjectManager objectManager;
     private ExecutorService executor;
@@ -75,7 +77,8 @@ class ObjectManagerTreeSyncLockTest {
                 treeCrudService,
                 variableService,
                 loadSyncService,
-                metadataService
+                metadataService,
+                variableHistoryService
         );
         executor = Executors.newCachedThreadPool();
     }

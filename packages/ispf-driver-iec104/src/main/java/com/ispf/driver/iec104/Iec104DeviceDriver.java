@@ -158,6 +158,7 @@ public class Iec104DeviceDriver implements DeviceDriver {
         try {
             switch (point.dataType()) {
                 case BOOL, M_SP_NA_1 -> connection.singleCommand(commonAddress, point.ioa(), extractBoolean(value));
+                case M_DP_NA_1 -> connection.doubleCommand(commonAddress, point.ioa(), extractDoubleCommandOn(value));
                 case FLOAT, M_ME_NC_1, M_ME_TF_1 ->
                         connection.setShortFloatCommand(commonAddress, point.ioa(), extractDouble(value));
                 case INT, M_ME_NA_1 ->
@@ -176,6 +177,10 @@ public class Iec104DeviceDriver implements DeviceDriver {
         return switch (point.dataType()) {
             case BOOL, M_SP_NA_1 -> DataRecord.single(BOOL_SCHEMA, Map.of(
                     "value", extractBoolean(value),
+                    "quality", "GOOD"
+            ));
+            case M_DP_NA_1 -> DataRecord.single(VALUE_SCHEMA, Map.of(
+                    "value", extractDoubleCommandOn(value) ? 2.0 : 1.0,
                     "quality", "GOOD"
             ));
             default -> DataRecord.single(VALUE_SCHEMA, Map.of(
@@ -198,6 +203,39 @@ public class Iec104DeviceDriver implements DeviceDriver {
         }
         String text = String.valueOf(raw).trim().toLowerCase(Locale.ROOT);
         return "true".equals(text) || "1".equals(text) || "on".equals(text);
+    }
+
+    /**
+     * Double-command ON is boolean true or DCS 2. DCS 1 and boolean false are OFF.
+     * Anything else is rejected so a numeric ON cannot be sent as OFF.
+     */
+    private static boolean extractDoubleCommandOn(DataRecord value) throws DriverException {
+        Object raw = value.firstRow().get("value");
+        if (raw == null) {
+            raw = value.firstRow().get("raw");
+        }
+        if (raw instanceof Boolean bool) {
+            return bool;
+        }
+        if (raw instanceof Number number) {
+            double numeric = number.doubleValue();
+            if (numeric == 2.0) {
+                return true;
+            }
+            if (numeric == 1.0) {
+                return false;
+            }
+            throw new DriverPermanentException("IEC104 double command requires DCS 1 or 2: " + raw);
+        }
+        if (raw == null) {
+            throw new DriverPermanentException("IEC104 double command requires a value field");
+        }
+        String text = String.valueOf(raw).trim().toLowerCase(Locale.ROOT);
+        return switch (text) {
+            case "true", "on", "2", "2.0" -> true;
+            case "false", "off", "1", "1.0" -> false;
+            default -> throw new DriverPermanentException("IEC104 double command requires on or off: " + raw);
+        };
     }
 
     private static double extractDouble(DataRecord value) throws DriverException {

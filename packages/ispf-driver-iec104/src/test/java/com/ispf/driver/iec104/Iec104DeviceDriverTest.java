@@ -148,6 +148,42 @@ class Iec104DeviceDriverTest {
     }
 
     @Test
+    void writeDoubleCommandUpdatesServerState() throws Exception {
+        int port = freePort();
+        StubDriverObject serverObject = new StubDriverObject(Map.of(
+                "listenPort", String.valueOf(port),
+                "commonAddress", "1"
+        ));
+        serverDriver = new Iec104ServerDeviceDriver();
+        serverDriver.initialize(serverObject);
+        serverDriver.connect();
+        awaitPortOpen(port);
+        serverDriver.readPoints(Map.of("breaker", "2001"));
+
+        StubDriverObject clientObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "commonAddress", "1",
+                "timeoutMs", "10000"
+        ));
+        Iec104DeviceDriver client = new Iec104DeviceDriver();
+        client.initialize(clientObject);
+        client.connect();
+        client.readPoints(Map.of("breaker", "2001:M_DP_NA_1"));
+
+        client.writePoint("breaker", DataRecord.single(BOOL_SCHEMA, Map.of("value", true)));
+        client.readPoints(Map.of("breaker", "2001:M_DP_NA_1"));
+        assertEquals(2.0, number(clientObject.variables.get("breaker"), "value"), 0.001);
+
+        client.writePoint("breaker", DataRecord.single(BOOL_SCHEMA, Map.of("value", false)));
+        client.readPoints(Map.of("breaker", "2001:M_DP_NA_1"));
+
+        awaitServerValue(serverObject, "breaker", 1.0);
+        assertEquals(1.0, number(clientObject.variables.get("breaker"), "value"), 0.001);
+        client.disconnect();
+    }
+
+    @Test
     void rejectsUnknownPoint() throws Exception {
         int port = freePort();
         startServer(port);

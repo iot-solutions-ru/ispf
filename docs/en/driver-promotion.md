@@ -220,7 +220,7 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 |----------|------|-------|------------|
 | `iec104` | BETA | **PRODUCTION** | Loopback vs `iec104-server`; write commands |
 | `dlms` | BETA | **PRODUCTION** | Gurux read/write; auth NONE |
-| `dnp3` | PRODUCTION (poll only) | **PRODUCTION** (poll only) | Class 0/1/2/3 poll; **write not implemented** — ADR-0057 keeps PRODUCTION+POLL_ONLY (not BETA) |
+| `dnp3` | PRODUCTION (poll only) | **PRODUCTION** (poll + CROB/analog operate) | Class 0/1/2/3 poll; direct operate is CROB latch and g41v3. Inputs stay read-only |
 | `ethernet-ip` | PRODUCTION | **PRODUCTION** | CIP session + tag read/write — do **not** mark BETA |
 | `opc-da` | PRODUCTION (shell) | **BETA** (BL-191) | Connectivity shell + parser tests — not full DA |
 | `opc-bridge` | PRODUCTION (shell) | **BETA** (BL-191) | Bridge point mapping + parser tests |

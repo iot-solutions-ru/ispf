@@ -25,6 +25,9 @@ public record Dnp3Point(int index, Dnp3Point.Dnp3DataType dataType) {
         }
         try {
             int index = Integer.parseInt(parts[0].trim());
+            if (index < 0 || index > 0xFFFF) {
+                throw new DriverConfigurationException("DNP3 index out of range: " + index);
+            }
             Dnp3DataType dataType = Dnp3DataType.valueOf(parts[1].trim().toUpperCase(Locale.ROOT));
             return new Dnp3Point(index, dataType);
         } catch (IllegalArgumentException e) {

@@ -87,6 +87,15 @@ public final class Iec104Connection implements AutoCloseable {
                 new Iec104Value(ioa, Iec104Type.C_SC_NA_1, on, "GOOD")));
     }
 
+    /**
+     * Double command, direct execute. DCS is 2 (ON) or 1 (OFF); qualifier and select bit stay 0.
+     */
+    public void doubleCommand(int commonAddress, int ioa, boolean on) throws IOException {
+        int dcs = on ? 2 : 1;
+        sendAsdu(Iec104Asdu.single(Iec104Type.C_DC_NA_1, Iec104Cause.ACTIVATION, commonAddress,
+                new Iec104Value(ioa, Iec104Type.C_DC_NA_1, dcs, "GOOD")));
+    }
+
     public void setShortFloatCommand(int commonAddress, int ioa, double value) throws IOException {
         sendAsdu(Iec104Asdu.single(Iec104Type.C_SE_NC_1, Iec104Cause.ACTIVATION, commonAddress,
                 new Iec104Value(ioa, Iec104Type.C_SE_NC_1, value, "GOOD")));

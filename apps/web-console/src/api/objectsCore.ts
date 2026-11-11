@@ -379,7 +379,7 @@ export async function downloadVariableHistoryExport(
   path: string,
   name: string,
   options: {
-    format: "csv" | "json";
+    format: "csv" | "json" | "parquet";
     field?: string;
     from?: string;
     to?: string;

@@ -13,9 +13,10 @@ import dev.cel.runtime.CelRuntime;
 import dev.cel.runtime.CelRuntimeFactory;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -61,8 +62,20 @@ public class ExpressionEngine {
             .setOptions(CEL_OPTIONS)
             .build();
 
-    private final ConcurrentHashMap<String, CompiledExpression> compiledCache = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, PayloadCompiledExpression> payloadCompiledCache = new ConcurrentHashMap<>();
+    static final int MAX_COMPILED_EXPRESSIONS = 10_000;
+
+    private final LruCache<CompiledExpression> compiledCache;
+    private final LruCache<PayloadCompiledExpression> payloadCompiledCache;
+
+    public ExpressionEngine() {
+        this(MAX_COMPILED_EXPRESSIONS);
+    }
+
+    ExpressionEngine(int maxCompiledExpressions) {
+        int capacity = Math.max(1, maxCompiledExpressions);
+        this.compiledCache = new LruCache<>(capacity);
+        this.payloadCompiledCache = new LruCache<>(capacity);
+    }
 
     public CompiledExpression compile(String expression) {
         return compiledCache.computeIfAbsent(expression, this::compileUncached);
@@ -222,6 +235,10 @@ public class ExpressionEngine {
     public Object evaluateWithPayload(String expression, Map<String, Object> payload) {
         return payloadCompiledCache.computeIfAbsent(expression, this::compilePayloadUncached)
                 .evaluate(payload);
+    }
+
+    int compiledCacheSize() {
+        return compiledCache.size();
     }
 
     /** Builds CEL evaluation bindings for debugger step-through (always full {@code self}). */
@@ -411,5 +428,42 @@ public class ExpressionEngine {
             return number.doubleValue();
         }
         return value;
+    }
+
+    static final class LruCache<V> {
+        private final int maxSize;
+        private final LinkedHashMap<String, V> entries;
+
+        LruCache(int maxSize) {
+            this.maxSize = maxSize;
+            this.entries = new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, V> eldest) {
+                    return size() > LruCache.this.maxSize;
+                }
+            };
+        }
+
+        V computeIfAbsent(String key, Function<String, V> loader) {
+            synchronized (this) {
+                V existing = entries.get(key);
+                if (existing != null) {
+                    return existing;
+                }
+            }
+            V created = loader.apply(key);
+            synchronized (this) {
+                V existing = entries.get(key);
+                if (existing != null) {
+                    return existing;
+                }
+                entries.put(key, created);
+                return created;
+            }
+        }
+
+        synchronized int size() {
+            return entries.size();
+        }
     }
 }

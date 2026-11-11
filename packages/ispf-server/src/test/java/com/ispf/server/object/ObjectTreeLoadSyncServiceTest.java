@@ -3,6 +3,7 @@ package com.ispf.server.object;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -35,6 +36,8 @@ class ObjectTreeLoadSyncServiceTest {
     private ObjectVariableRepository variableRepository;
     @Mock
     private ObjectEntityMapper mapper;
+    @Mock
+    private VariableHistoryService historyService;
 
     private ObjectTree objectTree;
     private ObjectTreeLoadSyncService loadSyncService;
@@ -47,7 +50,8 @@ class ObjectTreeLoadSyncServiceTest {
                 objectManager,
                 nodeRepository,
                 variableRepository,
-                mapper
+                mapper,
+                historyService
         );
     }
 
@@ -146,5 +150,6 @@ class ObjectTreeLoadSyncServiceTest {
         loadSyncService.syncVariableFromDatabase("root.devices.pump-1", "temperature");
 
         assertThat(objectTree.require("root.devices.pump-1").getVariable("temperature")).isEmpty();
+        verify(historyService).forgetVariable("root.devices.pump-1", "temperature");
     }
 }
