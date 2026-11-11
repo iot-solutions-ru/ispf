@@ -14,7 +14,8 @@ const BOOTSTRAP_PARENTS = ["root", "root.platform"];
  * Cap expanded folders; skip very large folders (HTTP refresh on expand / invalidate).
  */
 const MAX_TREE_WS_INTEREST = 24;
-const TREE_WS_CHILD_CAP = 64;
+/** Expanded folders larger than this are not added to live WebSocket interest. */
+export const TREE_WS_CHILD_CAP = 64;
 
 /** Full sidebar tree reload (create/delete outside WS interest, agent turns, …). */
 export const TREE_INVALIDATE_EVENT = "ispf-tree-invalidate";
@@ -39,6 +40,8 @@ export function useLazyObjectTree(enabled = true) {
   const [version, setVersion] = useState(0);
   /** Path-wide WS interest for recently expanded *non-bootstrap* folders only. */
   const [wsInterestPaths, setWsInterestPaths] = useState<string[]>([]);
+  /** Expanded folders skipped because they exceed {@link TREE_WS_CHILD_CAP}. */
+  const [wsCappedPaths, setWsCappedPaths] = useState<string[]>([]);
 
   const bump = useCallback(() => setVersion((v) => v + 1), []);
 
@@ -56,6 +59,35 @@ export function useLazyObjectTree(enabled = true) {
       const map = objectsRef.current;
       if (parentPath) {
         removeGroupRefsForParent(parentPath);
+        // Drop structural children missing from a fresh parent listing (WS-capped folders
+        // do not receive DELETED events, so collapse/expand must prune ghosts).
+        const nextPaths = new Set(items.map((item) => item.path));
+        const removedPaths: string[] = [];
+        for (const [key, obj] of [...map.entries()]) {
+          if (obj.groupRef) {
+            continue;
+          }
+          if (parentObjectPath(obj.path) !== parentPath) {
+            continue;
+          }
+          if (!nextPaths.has(obj.path)) {
+            removedPaths.push(obj.path);
+            map.delete(key);
+          }
+        }
+        for (const removed of removedPaths) {
+          loadedParentsRef.current.delete(removed);
+          const prefix = `${removed}.`;
+          for (const [key, obj] of [...map.entries()]) {
+            if (obj.groupRef) {
+              continue;
+            }
+            if (obj.path === removed || obj.path.startsWith(prefix)) {
+              map.delete(key);
+              loadedParentsRef.current.delete(obj.path);
+            }
+          }
+        }
       }
       for (const item of items) {
         map.set(objectTreeKey(item), item);
@@ -80,7 +112,11 @@ export function useLazyObjectTree(enabled = true) {
         loadedParentsRef.current.add(parentPath);
         const isBootstrap = BOOTSTRAP_PARENTS.includes(parentPath);
         if (!isBootstrap && children.length <= TREE_WS_CHILD_CAP) {
+          setWsCappedPaths((current) => current.filter((path) => path !== parentPath));
           setWsInterestPaths((prev) => rememberWsInterest(prev, parentPath));
+        } else if (!isBootstrap) {
+          setWsInterestPaths((current) => current.filter((path) => path !== parentPath));
+          setWsCappedPaths((current) => (current.includes(parentPath) ? current : [...current, parentPath]));
         }
       } catch (error) {
         loadedParentsRef.current.delete(parentPath);
@@ -164,6 +200,7 @@ export function useLazyObjectTree(enabled = true) {
     loadedParentsRef.current.clear();
     objectsRef.current.clear();
     setWsInterestPaths([]);
+    setWsCappedPaths([]);
     bump();
     for (const parent of BOOTSTRAP_PARENTS) {
       await loadChildren(parent, true);
@@ -195,5 +232,6 @@ export function useLazyObjectTree(enabled = true) {
     invalidateAll,
     treeLoadError,
     loadingParents: loadingParentsRef.current,
+    wsCappedPaths,
   };
 }

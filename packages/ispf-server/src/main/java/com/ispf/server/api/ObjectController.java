@@ -19,6 +19,7 @@ import com.ispf.server.object.CatalogSchemaVariables;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectRevisionConflictException;
 import com.ispf.server.object.ObjectEditLeaseService;
+import com.ispf.server.api.support.ObjectChildPage;
 import com.ispf.server.api.support.ObjectCollaborationSupport;
 import com.ispf.server.object.ObjectBulkDeleteService;
 import com.ispf.server.object.ObjectManager;
@@ -69,6 +70,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api/v1/objects")
@@ -234,9 +236,13 @@ public class ObjectController {
     // Edit leases: see ObjectEditLeaseController. Functions/events: see ObjectBehaviorController.
 
     @GetMapping
-    public List<ObjectDto> list(
+    public ResponseEntity<List<ObjectDto>> list(
             @RequestParam(required = false) String parent,
             @RequestParam(defaultValue = "false") boolean lite,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String namePattern,
+            @RequestParam(required = false) String objectType,
             Authentication authentication
     ) {
         requireObjectTreeReady();
@@ -244,8 +250,9 @@ public class ObjectController {
         java.util.function.Function<PlatformObject, ObjectDto> mapper = lite
                 ? this::toLiteDto
                 : this::toDto;
+        List<ObjectDto> listed;
         if (parent == null || parent.isBlank()) {
-            return tenantVirtualRootService.virtualize(
+            listed = tenantVirtualRootService.virtualize(
                     tree.all().stream()
                             .filter(node -> tenantScopeService.isPathVisible(node.path(), authentication))
                             .filter(node -> objectAccessService.canRead(node.path(), authentication))
@@ -253,41 +260,81 @@ public class ObjectController {
                             .toList(),
                     authentication
             );
-        }
-        if (!tenantScopeService.isPathVisible(parent, authentication)) {
+        } else if (!tenantScopeService.isPathVisible(parent, authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + parent);
-        }
-        String canonicalParent = canonicalPath(parent, authentication);
-        // Sole-tenant: children of root are only the virtual platform node.
-        if ("root".equals(canonicalParent) && tenantVirtualRootService.isActive(authentication)) {
-            String platformPath = TenantPaths.tenantPlatform(
-                    tenantVirtualRootService.activeTenantId(authentication).orElseThrow()
-            );
-            if (!objectAccessService.canRead(platformPath, authentication)) {
-                return List.of();
+        } else {
+            String canonicalParent = canonicalPath(parent, authentication);
+            // Sole-tenant: children of root are only the virtual platform node.
+            if ("root".equals(canonicalParent) && tenantVirtualRootService.isActive(authentication)) {
+                String platformPath = TenantPaths.tenantPlatform(
+                        tenantVirtualRootService.activeTenantId(authentication).orElseThrow()
+                );
+                if (!objectAccessService.canRead(platformPath, authentication)) {
+                    listed = List.of();
+                } else {
+                    listed = tenantVirtualRootService.virtualize(
+                            List.of(mapper.apply(objectManager.require(platformPath))),
+                            authentication
+                    );
+                }
+            } else {
+                objectAccessService.requireRead(canonicalParent, authentication);
+                PlatformObject parentNode = objectManager.require(canonicalParent);
+                if (parentNode.type() == ObjectType.VISUAL_GROUP) {
+                    listed = tenantVirtualRootService.virtualize(
+                            resolveVisualGroupMembers(canonicalParent, authentication, lite),
+                            authentication
+                    );
+                } else {
+                    listed = tenantVirtualRootService.virtualize(
+                            tree.childrenOf(canonicalParent).stream()
+                                    .filter(node -> tenantScopeService.isPathVisible(node.path(), authentication))
+                                    .filter(node -> objectAccessService.canRead(node.path(), authentication))
+                                    .filter(node -> !visualGroupService.isHiddenFromStructuralTree(node.path()))
+                                    .map(mapper)
+                                    .toList(),
+                            authentication
+                    );
+                }
             }
-            return tenantVirtualRootService.virtualize(
-                    List.of(mapper.apply(objectManager.require(platformPath))),
-                    authentication
-            );
         }
-        objectAccessService.requireRead(canonicalParent, authentication);
-        PlatformObject parentNode = objectManager.require(canonicalParent);
-        if (parentNode.type() == ObjectType.VISUAL_GROUP) {
-            return tenantVirtualRootService.virtualize(
-                    resolveVisualGroupMembers(canonicalParent, authentication, lite),
-                    authentication
-            );
+        return pageChildren(listed, offset, limit, namePattern, objectType);
+    }
+
+    private ResponseEntity<List<ObjectDto>> pageChildren(
+            List<ObjectDto> items,
+            Integer offset,
+            Integer limit,
+            String namePattern,
+            String objectType
+    ) {
+        ObjectType wanted = parseListObjectType(objectType);
+        boolean nameFilter = namePattern != null && !namePattern.isBlank();
+        Pattern nameGlob = nameFilter ? ObjectChildPage.compileNameGlob(namePattern) : null;
+        List<ObjectDto> filtered = items;
+        if (wanted != null || nameFilter) {
+            filtered = items.stream()
+                    .filter(dto -> wanted == null || dto.type() == wanted)
+                    .filter(dto -> !nameFilter || ObjectChildPage.leafMatches(dto.path(), nameGlob))
+                    .toList();
         }
-        return tenantVirtualRootService.virtualize(
-                tree.childrenOf(canonicalParent).stream()
-                        .filter(node -> tenantScopeService.isPathVisible(node.path(), authentication))
-                        .filter(node -> objectAccessService.canRead(node.path(), authentication))
-                        .filter(node -> !visualGroupService.isHiddenFromStructuralTree(node.path()))
-                        .map(mapper)
-                        .toList(),
-                authentication
-        );
+        if (limit == null) {
+            return ResponseEntity.ok(filtered);
+        }
+        return ResponseEntity.ok()
+                .header("X-Total-Count", Integer.toString(filtered.size()))
+                .body(ObjectChildPage.slice(filtered, offset, limit));
+    }
+
+    private static ObjectType parseListObjectType(String objectType) {
+        if (objectType == null || objectType.isBlank()) {
+            return null;
+        }
+        try {
+            return ObjectType.valueOf(objectType.trim());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown object type: " + objectType);
+        }
     }
 
     @GetMapping("/search")

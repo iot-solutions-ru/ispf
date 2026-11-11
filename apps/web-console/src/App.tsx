@@ -298,8 +298,9 @@ function AppShell() {
   useFederatedPathSubscription(selectedPath);
 
   const info = useQuery({ queryKey: ["info"], queryFn: fetchPlatformInfo });
-  const { tree: lazyTree, objects: objectList, loadChildren, invalidateAll, treeLoadError } =
+  const { tree: lazyTree, objects: objectList, loadChildren, invalidateAll, treeLoadError, wsCappedPaths } =
     useLazyObjectTree(Boolean(session));
+  const liveUpdatesPausedPaths = useMemo(() => new Set(wsCappedPaths), [wsCappedPaths]);
   const objectSearch = useObjectTreeSearch(treeFilter, Boolean(session));
   const fullTreeSearch = treeFilter.trim().length >= OBJECT_SEARCH_MIN_CHARS;
   const treeSearchStatus =
@@ -343,10 +344,11 @@ function AppShell() {
   );
 
   const handleTreeLoadChildren = useCallback(
-    (path: string) => {
-      void loadChildren(path);
+    (path: string, forceRefresh = false) => {
+      // Force only on user expand toggle — not on selection/expanded sync effects.
+      void loadChildren(path, forceRefresh && liveUpdatesPausedPaths.has(path));
     },
-    [loadChildren],
+    [loadChildren, liveUpdatesPausedPaths],
   );
 
   const tree = useMemo(() => {
@@ -852,6 +854,7 @@ function AppShell() {
                   onReorder={handleTreeReorder}
                   onLoadChildren={fullTreeSearch ? undefined : handleTreeLoadChildren}
                   onVisibleRowKeysChange={setVisibleRowKeys}
+                  liveUpdatesPausedPaths={liveUpdatesPausedPaths}
                   bulkActions={
                     canConfigure
                       ? {

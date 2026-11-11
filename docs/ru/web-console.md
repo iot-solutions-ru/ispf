@@ -137,6 +137,7 @@ src/
 
 1. **Polling** — `refetchInterval` = `refreshIntervalMs` дашборда
 2. **WebSocket** — `useObjectWebSocket` инвалидирует кэш при `VARIABLE_UPDATED`
+3. **Большие папки** — развёрнутая папка дерева с более чем 64 детьми не подписывается на живые обновления. У строки метка «Без live»; чтобы обновить список, сверните и снова разверните папку.
 
 Proxy (`vite.config.ts`): `/api`, `/ws` → `:8080`.
 

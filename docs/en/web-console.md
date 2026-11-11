@@ -135,6 +135,7 @@ See [workflows](workflows.md).
 
 1. **Polling** — `refetchInterval` = dashboard `refreshIntervalMs`
 2. **WebSocket** — `useObjectWebSocket` invalidates cache on `VARIABLE_UPDATED`
+3. **Large folders** — an expanded object-tree folder with more than 64 children is not subscribed to live updates. The row shows “Live off”; collapse and expand the folder to refresh.
 
 Proxy (`vite.config.ts`): `/api`, `/ws` → `:8080`.
 

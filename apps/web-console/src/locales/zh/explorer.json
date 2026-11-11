@@ -168,5 +168,7 @@
   "icons.workflow": "Workflow",
   "mobile.backToTree": "← 对象树",
   "tree.groupMember": "组成员",
+  "tree.liveUpdatesPaused": "此文件夹的子对象超过 {{cap}} 个，已关闭实时更新。折叠后重新展开即可刷新。",
+  "tree.liveUpdatesPausedShort": "实时关",
   "tree.linkTitle": "链接：{{path}}"
 }

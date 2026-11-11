@@ -501,7 +501,7 @@ The widget editor edits nested widgets, slides, wizard steps, map path lists, po
 
 ### `object-table` — Object table
 
-**Purpose:** table of **child** objects under folder `parentPath`.
+**Purpose:** table of **child** objects under folder `parentPath`. Children load in pages of 50 (`offset` and `limit` on `GET /api/v1/objects`, total in `X-Total-Count`). `namePattern` and `objectType` are applied on the server before the page is cut. Omitting `limit` still returns the full list.
 
 **Operator:** view; click row → selection (`selectionKey`) and/or navigate to another dashboard.
 
