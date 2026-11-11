@@ -9,6 +9,7 @@
         "bpmn:ServiceTask",
         "bpmn:UserTask",
         "bpmn:IntermediateCatchEvent",
+        "bpmn:BoundaryEvent",
         "bpmn:SequenceFlow"
       ],
       "properties": [
@@ -44,7 +45,9 @@
         { "name": "retryable", "isAttr": true, "type": "String" },
         { "name": "sourceVariable", "isAttr": true, "type": "String" },
         { "name": "functionName", "isAttr": true, "type": "String" },
-        { "name": "inputMap", "isAttr": true, "type": "String" }
+        { "name": "inputMap", "isAttr": true, "type": "String" },
+        { "name": "durationSeconds", "isAttr": true, "type": "String" },
+        { "name": "errorCode", "isAttr": true, "type": "String" }
       ]
     },
     {

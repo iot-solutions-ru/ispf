@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * BPMN subset parser for ISPF workflows (ADR-0047). Supported: start/end, service/user/message
  * tasks, exclusive/parallel gateways, embedded subProcess, intermediate catch (signal/timer/message),
- * message throw, boundary timer, sequenceFlow with conditions. Unsupported elements fail at parse.
+ * message throw, boundary timer, boundary error, sequenceFlow with conditions. Unsupported elements fail at parse.
  */
 public class BpmnParser {
 
@@ -51,6 +51,8 @@ public class BpmnParser {
             Map<String, MessageThrowDefinition> messageThrowEvents = new HashMap<>();
             Map<String, TimerCatchDefinition> timerCatchEvents = new HashMap<>();
             Map<String, BoundaryTimerDefinition> boundaryTimers = new HashMap<>();
+            Map<String, List<BoundaryErrorDefinition>> boundaryErrors = new HashMap<>();
+            Element definitions = process.getParentNode() instanceof Element parent ? parent : process;
             Map<String, SubProcessDefinition> subProcesses = new HashMap<>();
             Map<String, String> endEventToSubProcess = new HashMap<>();
             List<SequenceFlowDefinition> sequenceFlows = new ArrayList<>();
@@ -133,10 +135,7 @@ public class BpmnParser {
             }
 
             for (Element boundary : elements(process, "boundaryEvent")) {
-                BoundaryTimerDefinition boundaryTimer = parseBoundaryTimer(boundary);
-                if (boundaryTimer != null) {
-                    boundaryTimers.put(boundaryTimer.attachedToRef(), boundaryTimer);
-                }
+                collectBoundary(boundary, definitions, nodeTypes, boundaryTimers, boundaryErrors);
             }
 
             for (Element subProcess : elements(process, "subProcess")) {
@@ -152,6 +151,8 @@ public class BpmnParser {
                         messageThrowEvents,
                         timerCatchEvents,
                         boundaryTimers,
+                        boundaryErrors,
+                        definitions,
                         subProcesses,
                         endEventToSubProcess,
                         sequenceFlows
@@ -180,6 +181,7 @@ public class BpmnParser {
                     messageThrowEvents,
                     timerCatchEvents,
                     boundaryTimers,
+                    boundaryErrors,
                     subProcesses,
                     endEventToSubProcess,
                     List.copyOf(sequenceFlows)
@@ -203,6 +205,8 @@ public class BpmnParser {
             Map<String, MessageThrowDefinition> messageThrowEvents,
             Map<String, TimerCatchDefinition> timerCatchEvents,
             Map<String, BoundaryTimerDefinition> boundaryTimers,
+            Map<String, List<BoundaryErrorDefinition>> boundaryErrors,
+            Element definitions,
             Map<String, SubProcessDefinition> subProcesses,
             Map<String, String> endEventToSubProcess,
             List<SequenceFlowDefinition> sequenceFlows
@@ -291,10 +295,7 @@ public class BpmnParser {
         }
 
         for (Element boundary : elements(subProcess, "boundaryEvent")) {
-            BoundaryTimerDefinition boundaryTimer = parseBoundaryTimer(boundary);
-            if (boundaryTimer != null) {
-                boundaryTimers.put(boundaryTimer.attachedToRef(), boundaryTimer);
-            }
+            collectBoundary(boundary, definitions, nodeTypes, boundaryTimers, boundaryErrors);
         }
 
         for (Element nested : elements(subProcess, "subProcess")) {
@@ -310,6 +311,8 @@ public class BpmnParser {
                     messageThrowEvents,
                     timerCatchEvents,
                     boundaryTimers,
+                    boundaryErrors,
+                    definitions,
                     subProcesses,
                     endEventToSubProcess,
                     sequenceFlows
@@ -380,6 +383,79 @@ public class BpmnParser {
         }
         boolean defaultFlow = "true".equalsIgnoreCase(readIspfAttribute(flow, "default"));
         return new SequenceFlowDefinition(id, source, target, condition, defaultFlow);
+    }
+
+    private void collectBoundary(
+            Element boundary,
+            Element definitions,
+            Map<String, String> nodeTypes,
+            Map<String, BoundaryTimerDefinition> boundaryTimers,
+            Map<String, List<BoundaryErrorDefinition>> boundaryErrors
+    ) throws WorkflowException {
+        BoundaryTimerDefinition timer = parseBoundaryTimer(boundary);
+        if (timer != null) {
+            nodeTypes.put(timer.id(), "boundaryEvent");
+            boundaryTimers.put(timer.attachedToRef(), timer);
+            return;
+        }
+        BoundaryErrorDefinition error = parseBoundaryError(boundary, definitions);
+        if (error != null) {
+            nodeTypes.put(error.id(), "boundaryEvent");
+            List<BoundaryErrorDefinition> attached = boundaryErrors.computeIfAbsent(
+                    error.attachedToRef(), key -> new ArrayList<>());
+            if (attached.stream().noneMatch(existing -> existing.id().equals(error.id()))) {
+                attached.add(error);
+            }
+            return;
+        }
+        String id = boundary.getAttribute("id");
+        throw new WorkflowException("Unsupported boundaryEvent (timer or error only): "
+                + (id == null || id.isBlank() ? "<unknown>" : id));
+    }
+
+    private BoundaryErrorDefinition parseBoundaryError(Element boundary, Element definitions) throws WorkflowException {
+        Element errorDef = firstChildElement(boundary, "errorEventDefinition");
+        String code = readIspfAttribute(boundary, "errorCode");
+        if ((code == null || code.isBlank()) && errorDef != null) {
+            code = readIspfAttribute(errorDef, "errorCode");
+        }
+        if (errorDef == null && (code == null || code.isBlank())) {
+            return null;
+        }
+        String attachedToRef = boundary.getAttribute("attachedToRef");
+        if (attachedToRef == null || attachedToRef.isBlank()) {
+            throw new WorkflowException("Boundary error requires attachedToRef: " + boundary.getAttribute("id"));
+        }
+        if ((code == null || code.isBlank()) && errorDef != null) {
+            String errorRef = errorDef.getAttribute("errorRef");
+            code = errorRef == null || errorRef.isBlank() ? "" : lookupErrorCode(definitions, errorRef.trim());
+        }
+        String errorCode = code == null ? "" : code.trim();
+        boolean interrupting = !"false".equalsIgnoreCase(boundary.getAttribute("cancelActivity"));
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put("attachedToRef", attachedToRef);
+        parameters.put("errorCode", errorCode);
+        return new BoundaryErrorDefinition(
+                boundary.getAttribute("id"),
+                boundary.getAttribute("name"),
+                attachedToRef,
+                errorCode,
+                interrupting,
+                Map.copyOf(parameters)
+        );
+    }
+
+    private static String lookupErrorCode(Element definitions, String errorRef) {
+        for (Element error : elements(definitions, "error")) {
+            if (errorRef.equals(error.getAttribute("id"))) {
+                String code = error.getAttribute("errorCode");
+                if (code != null && !code.isBlank()) {
+                    return code.trim();
+                }
+                return errorRef;
+            }
+        }
+        return errorRef;
     }
 
     private BoundaryTimerDefinition parseBoundaryTimer(Element boundary) throws WorkflowException {

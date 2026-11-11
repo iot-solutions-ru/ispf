@@ -67,6 +67,11 @@ function nodeXml(node: FlowNode): string {
       const attached = node.attachedToRef ? ` attachedToRef="${esc(node.attachedToRef)}"` : "";
       const cancel =
         node.cancelActivity === false ? ` cancelActivity="false"` : ` cancelActivity="true"`;
+      if (node.catchKind === "error" || node.ispf.errorCode !== undefined) {
+        return `<boundaryEvent id="${esc(node.id)}"${nameAttr}${attached}${cancel}${attrs}>
+      <errorEventDefinition/>
+    </boundaryEvent>`;
+      }
       return `<boundaryEvent id="${esc(node.id)}"${nameAttr}${attached}${cancel}${attrs}/>`;
     }
     default:

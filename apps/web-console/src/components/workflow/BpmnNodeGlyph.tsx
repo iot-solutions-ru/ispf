@@ -48,7 +48,7 @@ export default function BpmnNodeGlyph({ node }: { node: FlowNode }) {
   }
 }
 
-type EventMarker = "none" | "timer" | "signal" | "message";
+type EventMarker = "none" | "timer" | "signal" | "message" | "error";
 
 function inferStartMarker(node: FlowNode): EventMarker {
   if (node.ispf.durationSeconds) return "timer";
@@ -92,6 +92,7 @@ function EventCircle({
       {marker === "message" && (
         <EnvelopeMarker cx={cx} cy={cy} w={rOuter * 0.95} h={rOuter * 0.68} filled={throwing} />
       )}
+      {marker === "error" && <ErrorMarker cx={cx} cy={cy} r={rOuter * 0.52} filled={throwing} />}
     </g>
   );
 }
@@ -182,6 +183,26 @@ function SignalMarker({ cx, cy, r, filled }: { cx: number; cy: number; r: number
       fill={filled ? STROKE : "none"}
       stroke={STROKE}
       strokeWidth={1.5}
+      strokeLinejoin="round"
+    />
+  );
+}
+
+function ErrorMarker({ cx, cy, r, filled }: { cx: number; cy: number; r: number; filled: boolean }) {
+  const points = [
+    `${cx - r * 0.7},${cy + r * 0.7}`,
+    `${cx - r * 0.15},${cy - r * 0.55}`,
+    `${cx + r * 0.12},${cy + r * 0.05}`,
+    `${cx + r * 0.7},${cy - r * 0.7}`,
+    `${cx + r * 0.15},${cy + r * 0.55}`,
+    `${cx - r * 0.12},${cy - r * 0.05}`,
+  ].join(" ");
+  return (
+    <polygon
+      points={points}
+      fill={filled ? STROKE : "none"}
+      stroke={STROKE}
+      strokeWidth={1.35}
       strokeLinejoin="round"
     />
   );

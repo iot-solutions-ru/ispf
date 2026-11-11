@@ -91,4 +91,44 @@ describe("workflow diagram model", () => {
     expect(out).toContain("callActivity");
     expect(out).toContain("ispf:workflowPath");
   });
+
+  it("round-trips error boundaryEvent with errorEventDefinition and errorCode", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:ispf="http://ispf.io/bpmn" targetNamespace="http://ispf.io/bpmn">
+  <error id="errLocked" errorCode="E_LOCKED"/>
+  <process id="p" name="P" isExecutable="true">
+    <startEvent id="s"/>
+    <serviceTask id="assign" name="Assign" ispf:action="log" ispf:message="work"/>
+    <boundaryEvent id="onLock" name="Locked" attachedToRef="assign" cancelActivity="true">
+      <errorEventDefinition errorRef="errLocked"/>
+    </boundaryEvent>
+    <boundaryEvent id="onAny" name="Any" attachedToRef="assign">
+      <errorEventDefinition/>
+    </boundaryEvent>
+    <endEvent id="e"/>
+    <sequenceFlow id="f1" sourceRef="s" targetRef="assign"/>
+    <sequenceFlow id="f2" sourceRef="assign" targetRef="e"/>
+    <sequenceFlow id="f3" sourceRef="onLock" targetRef="e"/>
+    <sequenceFlow id="f4" sourceRef="onAny" targetRef="e"/>
+  </process>
+</definitions>`;
+    const diagram = deserializeWorkflowDiagram(xml);
+    const onLock = diagram.nodes.find((n) => n.id === "onLock");
+    expect(onLock?.catchKind).toBe("error");
+    expect(onLock?.attachedToRef).toBe("assign");
+    expect(onLock?.ispf.errorCode).toBe("E_LOCKED");
+
+    const onAny = diagram.nodes.find((n) => n.id === "onAny");
+    expect(onAny?.catchKind).toBe("error");
+    expect(onAny?.ispf.errorCode).toBeUndefined();
+
+    const out = serializeWorkflowDiagram(diagram);
+    expect(out).toContain("<errorEventDefinition/>");
+    expect(out).toContain('ispf:errorCode="E_LOCKED"');
+
+    const again = deserializeWorkflowDiagram(out);
+    expect(again.nodes.find((n) => n.id === "onLock")?.catchKind).toBe("error");
+    expect(again.nodes.find((n) => n.id === "onLock")?.ispf.errorCode).toBe("E_LOCKED");
+    expect(again.nodes.find((n) => n.id === "onAny")?.catchKind).toBe("error");
+  });
 });

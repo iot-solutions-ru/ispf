@@ -111,4 +111,40 @@ describe("IspfBpmnPropertiesPanel targetObject", () => {
       }),
     );
   });
+
+  it("shows errorCode instead of durationSeconds for error boundary events", async () => {
+    const onChangeNode = vi.fn();
+    const user = userEvent.setup();
+    const errorBoundary: FlowNode = {
+      id: "boundary_err",
+      type: "boundaryEvent",
+      name: "On lock",
+      x: 0,
+      y: 0,
+      width: 36,
+      height: 36,
+      catchKind: "error",
+      attachedToRef: "task_set",
+      cancelActivity: true,
+      ispf: { errorCode: "E_LOCKED" },
+    };
+
+    renderWithInspector(
+      <IspfBpmnPropertiesPanel
+        selection={{ kind: "node", node: errorBoundary }}
+        onChangeNode={onChangeNode}
+        onChangeEdge={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText("ispf:durationSeconds")).not.toBeInTheDocument();
+    const codeInput = screen.getByLabelText("ispf:errorCode");
+    expect(codeInput).toHaveValue("E_LOCKED");
+
+    await user.type(codeInput, "_2");
+    expect(onChangeNode).toHaveBeenCalledWith("boundary_err", {
+      ispf: expect.objectContaining({ errorCode: "E_LOCKED_" }),
+    });
+  });
 });
