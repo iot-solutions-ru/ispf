@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchMimic, invokeFunction, setVariable } from "../../../api";
+import { fetchMimic, fetchVariables, invokeFunction, setVariable } from "../../../api";
 import type { ScadaMimicWidget } from "../../../types/dashboard";
 import type { MimicAction, MimicElement, ScadaMimicDocument } from "../../../types/scadaMimic";
 import { parseMimicDocument } from "../../../scada/document";
@@ -22,6 +22,11 @@ import {
   primaryAction,
 } from "../../../scada/mimicActions";
 import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
+import {
+  isObjectWebSocketConnected,
+  subscribeObjectWebSocketConnection,
+} from "../../../hooks/useObjectWebSocket";
+import { mimicBatchFallbackInterval } from "../../../scada/mimicLiveBindings";
 import { useDashboardContext } from "../useDashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { cloneRecord, setFieldValue } from "../../../utils/ui/record";
@@ -160,12 +165,33 @@ export default function ScadaMimicWidgetView({
     [document, session]
   );
 
+  const wsConnected = useSyncExternalStore(
+    subscribeObjectWebSocketConnection,
+    isObjectWebSocketConnected,
+    () => false,
+  );
   const variablesBatch = useVariablesBatchQuery(
     bindingPaths,
-    refreshIntervalMs,
+    mimicBatchFallbackInterval(refreshIntervalMs, wsConnected),
     bindingPaths.length > 0,
     bindingVariablesByPath
   );
+  const wasConnectedRef = useRef(wsConnected);
+  const pendingReconnectRef = useRef(false);
+  const refetchBatchRef = useRef(variablesBatch.refetch);
+  refetchBatchRef.current = variablesBatch.refetch;
+  const bindingKey = bindingPaths.join("\0");
+  useEffect(() => {
+    if (wsConnected && !wasConnectedRef.current) {
+      pendingReconnectRef.current = true;
+    }
+    wasConnectedRef.current = wsConnected;
+    if (!wsConnected || !pendingReconnectRef.current || bindingKey.length === 0) {
+      return;
+    }
+    pendingReconnectRef.current = false;
+    void refetchBatchRef.current();
+  }, [wsConnected, bindingKey]);
   const variablesByPath = useMemo(() => variablesBatch.data ?? {}, [variablesBatch.data]);
 
   const resolved = useMemo(
@@ -196,8 +222,10 @@ export default function ScadaMimicWidgetView({
       }
       if (action.type === "setVariable" || action.type === "toggleVariable") {
         if (!objectPath || !action.variableName) throw new Error(t("scadaMimic.error.bindingRequired"));
-        const variables = variablesByPath[objectPath];
-        const variable = variables?.find((v) => v.name === action.variableName);
+        // Click reads the current record. Display bindings are a narrower live set
+        // and can omit the action variable, so the cached batch is not the write source.
+        const variables = await fetchVariables(objectPath);
+        const variable = variables.find((item) => item.name === action.variableName);
         if (!variable?.value) throw new Error(t("scadaMimic.error.variableNotLoaded"));
         const field = action.valueField ?? "value";
         if (action.type === "toggleVariable") {
@@ -210,7 +238,7 @@ export default function ScadaMimicWidgetView({
                 valueField: field,
               },
               session,
-              variablesByPath
+              { ...variablesByPath, [objectPath]: variables }
             )
           );
           const record = setFieldValue(cloneRecord(variable.value), field, !active);
