@@ -126,16 +126,23 @@ public class Iec104DeviceDriver implements DeviceDriver {
             try {
                 driverObject.updateVariable(entry.getKey(), readPoint(point));
             } catch (DriverException ex) {
-                driverObject.updateVariable(entry.getKey(), unavailableRecord(point));
+                driverObject.updateVariable(entry.getKey(), unavailableRecord(
+                        point,
+                        driverObject.getVariable(entry.getKey()).orElse(null)));
                 driverObject.log(DriverLogLevel.DEBUG, "IEC104 read skipped for " + entry.getKey() + ": " + ex.getMessage());
             }
         }
     }
 
-    private static DataRecord unavailableRecord(Iec104Point point) {
+    static DataRecord unavailableRecord(Iec104Point point, DataRecord previous) {
+        Object kept = previous == null ? null : previous.firstRow().get("value");
         return switch (point.dataType()) {
-            case BOOL, M_SP_NA_1 -> DataRecord.single(BOOL_SCHEMA, Map.of("value", false, "quality", "NOT_AVAILABLE"));
-            default -> DataRecord.single(VALUE_SCHEMA, Map.of("value", 0.0, "quality", "NOT_AVAILABLE"));
+            case BOOL, M_SP_NA_1 -> DataRecord.single(BOOL_SCHEMA, Map.of(
+                    "value", kept instanceof Boolean bool ? bool : false,
+                    "quality", "NOT_AVAILABLE"));
+            default -> DataRecord.single(VALUE_SCHEMA, Map.of(
+                    "value", kept instanceof Number number ? number.doubleValue() : 0.0,
+                    "quality", "NOT_AVAILABLE"));
         };
     }
 
