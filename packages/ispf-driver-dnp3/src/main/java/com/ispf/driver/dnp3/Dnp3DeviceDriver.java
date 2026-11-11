@@ -58,7 +58,7 @@ public class Dnp3DeviceDriver implements DeviceDriver {
     private int masterAddress = 1;
     private int outstationAddress = 1024;
     private int timeoutMs = 5000;
-    /** Replaced as a whole after each poll so a later write never sees an empty map. */
+    /** Replaced as a whole before poll I/O so a later write never sees an empty map. */
     private volatile Map<String, Dnp3Point> points = Map.of();
 
     @Override
@@ -110,6 +110,7 @@ public class Dnp3DeviceDriver implements DeviceDriver {
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             next.put(entry.getKey(), Dnp3Point.parse(entry.getValue()));
         }
+        points = Map.copyOf(next);
         session.pollAllClasses();
         Dnp3ReadCache cache = session.cache();
         for (Map.Entry<String, Dnp3Point> entry : next.entrySet()) {
@@ -120,7 +121,6 @@ public class Dnp3DeviceDriver implements DeviceDriver {
                 driverObject.log(DriverLogLevel.DEBUG, "DNP3 read skipped for " + entry.getKey() + ": " + ex.getMessage());
             }
         }
-        points = Map.copyOf(next);
     }
 
     @Override

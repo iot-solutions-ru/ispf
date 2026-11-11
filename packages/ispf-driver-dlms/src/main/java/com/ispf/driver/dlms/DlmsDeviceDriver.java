@@ -57,7 +57,7 @@ public class DlmsDeviceDriver implements DeviceDriver {
     private int timeoutMs = 10000;
     private int clientAddress = 16;
     private int logicalDevice = 1;
-    /** Replaced as a whole after each poll so a write never sees an empty map. */
+    /** Replaced as a whole before poll I/O so a write never sees an empty map. */
     private volatile Map<String, DlmsPoint> points = Map.of();
 
     @Override
@@ -117,8 +117,11 @@ public class DlmsDeviceDriver implements DeviceDriver {
         }
         Map<String, DlmsPoint> next = new HashMap<>();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
-            DlmsPoint point = DlmsPoint.parse(entry.getValue());
-            next.put(entry.getKey(), point);
+            next.put(entry.getKey(), DlmsPoint.parse(entry.getValue()));
+        }
+        points = Map.copyOf(next);
+        for (Map.Entry<String, DlmsPoint> entry : next.entrySet()) {
+            DlmsPoint point = entry.getValue();
             try {
                 driverObject.updateVariable(entry.getKey(), readPoint(point));
             } catch (DriverException ex) {
@@ -126,7 +129,6 @@ public class DlmsDeviceDriver implements DeviceDriver {
                 driverObject.log(DriverLogLevel.DEBUG, "DLMS read skipped for " + entry.getKey() + ": " + ex.getMessage());
             }
         }
-        points = Map.copyOf(next);
     }
 
     @Override

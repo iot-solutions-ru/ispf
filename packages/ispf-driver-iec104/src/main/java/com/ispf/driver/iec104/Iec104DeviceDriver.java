@@ -64,7 +64,7 @@ public class Iec104DeviceDriver implements DeviceDriver {
     private int port = 2404;
     private int commonAddress = 1;
     private int timeoutMs = 5000;
-    /** Replaced as a whole after each poll so a write never sees an empty map. */
+    /** Replaced as a whole before poll I/O so a write never sees an empty map. */
     private volatile Map<String, Iec104Point> points = Map.of();
     private final Map<Integer, PendingRead> pendingReads = new ConcurrentHashMap<>();
     private volatile boolean connected;
@@ -123,8 +123,11 @@ public class Iec104DeviceDriver implements DeviceDriver {
         }
         Map<String, Iec104Point> next = new HashMap<>();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
-            Iec104Point point = Iec104Point.parse(entry.getValue());
-            next.put(entry.getKey(), point);
+            next.put(entry.getKey(), Iec104Point.parse(entry.getValue()));
+        }
+        points = Map.copyOf(next);
+        for (Map.Entry<String, Iec104Point> entry : next.entrySet()) {
+            Iec104Point point = entry.getValue();
             try {
                 driverObject.updateVariable(entry.getKey(), readPoint(point));
             } catch (DriverException ex) {
@@ -132,7 +135,6 @@ public class Iec104DeviceDriver implements DeviceDriver {
                 driverObject.log(DriverLogLevel.DEBUG, "IEC104 read skipped for " + entry.getKey() + ": " + ex.getMessage());
             }
         }
-        points = Map.copyOf(next);
     }
 
     private static DataRecord unavailableRecord(Iec104Point point) {
