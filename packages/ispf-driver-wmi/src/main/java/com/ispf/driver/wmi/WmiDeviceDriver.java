@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -110,7 +111,7 @@ public class WmiDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("WMI driver is read-only");
+        throw new DriverUnsupportedOperationException("WMI driver is read-only");
     }
 
     private DataRecord query(WmiPoint point) throws DriverException {

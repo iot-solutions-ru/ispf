@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -156,7 +157,7 @@ public class MtconnectDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("MTConnect driver is poll-only; writePoint is not supported");
+        throw new DriverUnsupportedOperationException("MTConnect driver is poll-only; writePoint is not supported");
     }
 
     /**

@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -281,7 +282,7 @@ public class KafkaDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("Kafka driver is read-only in v0.1");
+        throw new DriverUnsupportedOperationException("Kafka driver is read-only in v0.1");
     }
 
     private DataRecord execute(KafkaPoint point) throws DriverException {

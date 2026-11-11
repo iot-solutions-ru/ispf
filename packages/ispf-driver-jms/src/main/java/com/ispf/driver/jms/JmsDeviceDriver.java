@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import jakarta.jms.Connection;
 import jakarta.jms.ConnectionFactory;
 import jakarta.jms.JMSException;
@@ -134,7 +135,7 @@ public class JmsDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("JMS driver is read-only in v0.1");
+        throw new DriverUnsupportedOperationException("JMS driver is read-only in v0.1");
     }
 
     private DataRecord execute(JmsPoint point) throws DriverException {

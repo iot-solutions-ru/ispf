@@ -10,6 +10,7 @@ import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.DriverTransientException;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -126,7 +127,7 @@ public class JsonPollerDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("JSON poller driver is read-only");
+        throw new DriverUnsupportedOperationException("JSON poller driver is read-only");
     }
 
     private String fetchBody() throws DriverException {

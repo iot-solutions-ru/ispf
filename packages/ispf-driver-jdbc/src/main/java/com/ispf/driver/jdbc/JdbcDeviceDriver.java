@@ -9,6 +9,7 @@ import com.ispf.driver.DriverErrorKind;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.DriverReconnectPendingException;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -167,7 +168,7 @@ public class JdbcDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("JDBC driver is read-only in v0.1");
+        throw new DriverUnsupportedOperationException("JDBC driver is read-only in v0.1");
     }
 
     private DataRecord executeQuery(String sql) throws DriverException {

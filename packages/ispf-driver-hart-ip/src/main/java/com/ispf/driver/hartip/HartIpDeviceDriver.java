@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.hartip.codec.HartIpSession;
 
 import java.io.IOException;
@@ -125,7 +126,7 @@ public class HartIpDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("HART-IP driver is read-only (PV / universal command pass-through)");
+        throw new DriverUnsupportedOperationException("HART-IP driver is read-only (PV / universal command pass-through)");
     }
 
     private void ensureConnected() throws DriverException {

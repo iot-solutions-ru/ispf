@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -155,7 +156,7 @@ public class SmisDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("SMI-S driver is read-only in v0.1");
+        throw new DriverUnsupportedOperationException("SMI-S driver is read-only in v0.1");
     }
 
     private void enumerateProfiles() throws DriverException {

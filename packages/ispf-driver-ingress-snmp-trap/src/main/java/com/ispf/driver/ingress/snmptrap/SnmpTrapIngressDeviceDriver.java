@@ -7,6 +7,7 @@ import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.ingress.DriverIngress;
 import com.ispf.driver.ingress.DriverIngressBuffer;
 
@@ -154,7 +155,7 @@ public class SnmpTrapIngressDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("SNMP trap ingress is read-only");
+        throw new DriverUnsupportedOperationException("SNMP trap ingress is read-only");
     }
 
     private void listenLoop() {

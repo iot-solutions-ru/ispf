@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.io.IOException;
 import java.util.Map;
@@ -154,7 +155,7 @@ public class Lwm2mDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("LwM2M driver is read-only in v0.1 (CoAP GET subset only)");
+        throw new DriverUnsupportedOperationException("LwM2M driver is read-only in v0.1 (CoAP GET subset only)");
     }
 
     /** Package-visible helper for path segment encoding checks. */

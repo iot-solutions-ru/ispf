@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import org.apache.commons.net.telnet.TelnetClient;
 
 import java.io.InputStream;
@@ -109,7 +110,7 @@ public class TelnetDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("Telnet driver is read-only in v0.1");
+        throw new DriverUnsupportedOperationException("Telnet driver is read-only in v0.1");
     }
 
     private DataRecord execute(String command) throws DriverException {

@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -149,7 +150,7 @@ public class Iec62056DeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("IEC 62056-21 Mode C driver is readout-only in v0.1");
+        throw new DriverUnsupportedOperationException("IEC 62056-21 Mode C driver is readout-only in v0.1");
     }
 
     private DataRecord toRecord(Iec62056Point point, ReadoutSession session) throws DriverException {

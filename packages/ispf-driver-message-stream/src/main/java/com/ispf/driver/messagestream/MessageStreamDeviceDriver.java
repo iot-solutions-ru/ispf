@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -142,7 +143,7 @@ public class MessageStreamDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("Message stream driver is read-only in v0.1");
+        throw new DriverUnsupportedOperationException("Message stream driver is read-only in v0.1");
     }
 
     private DataRecord pollStream() throws DriverException {

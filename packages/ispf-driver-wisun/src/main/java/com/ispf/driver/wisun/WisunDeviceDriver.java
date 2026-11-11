@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.wisun.codec.WisunCoapCodec;
 import com.ispf.driver.wisun.codec.WisunCoapSession;
 
@@ -133,7 +134,7 @@ public class WisunDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("Wi-SUN CoAP driver is read-only (CON GET subset)");
+        throw new DriverUnsupportedOperationException("Wi-SUN CoAP driver is read-only (CON GET subset)");
     }
 
     static byte[] buildConGetMid1() {

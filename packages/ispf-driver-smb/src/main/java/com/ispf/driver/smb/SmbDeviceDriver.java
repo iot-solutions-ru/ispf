@@ -15,6 +15,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.util.EnumSet;
 import java.util.Map;
@@ -111,7 +112,7 @@ public class SmbDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("SMB driver is read-only in v0.1");
+        throw new DriverUnsupportedOperationException("SMB driver is read-only in v0.1");
     }
 
     private DataRecord readFile(SmbPoint point) throws DriverException {
