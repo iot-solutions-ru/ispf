@@ -164,7 +164,7 @@ export default defineConfig({
 
 React Router `basename` must match `base`. Dev URL: `http://localhost:5173/apps/my-app/`. Optional `VITE_DATA_SOURCE=mock` for offline UI work (StoreTwin).
 
-Local bridge before the pack is installed: bundle `operatorUi.externalSpaUrl` = `http://127.0.0.1:5173` (see `examples/m11-monitor-ui`).
+Local bridge before the pack is installed: bundle `operatorUi.externalSpaUrl` = `http://127.0.0.1:5173` (see `examples/m11-monitor-ui`). The operator app editor can set or clear **Hosted app URL** and **External app URL**. While a UI pack is installed, **Hosted app URL** stays read-only and is not written back.
 
 ---
 
