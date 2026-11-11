@@ -76,11 +76,12 @@ Drivers with `WRITE` in the matrix cover write path in loopback tests:
 | `opcua` | Milo `writeValue` |
 | `s7` | DB area write |
 | `bacnet` | present-value write |
-| `iec104` | single/set commands |
+| `iec104` | single, double, and set commands |
+| `dnp3` | CROB latch and g41v3 analog direct operate |
 | `dlms` | Gurux SET |
 | `mqtt` | publish path |
 
-Read-only / poll-only **PRODUCTION** drivers (no WRITE in matrix): `dnp3`, `gps-tracker`, plus other POLL_ONLY rows in `DriverProductionMatrix`.  
+Read-only / poll-only **PRODUCTION** drivers (no WRITE in matrix): `gps-tracker`, plus other POLL_ONLY rows in `DriverProductionMatrix`. `dnp3` declares WRITE for CROB latch and g41v3 analog output only.  
 **BETA shells** (not PRODUCTION): `opc-da`, `opc-bridge`.  
 **WRITE declared** (do not list as read-only): `ethernet-ip`, `snmp`, `http` (ADR-0057), Modbus/MQTT/OPC UA/S7/… — see matrix + [driver-promotion](driver-promotion.md).
 

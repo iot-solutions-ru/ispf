@@ -15,6 +15,7 @@ record Iec104Point(int ioa, Iec104DataType dataType) {
         INT,
         FLOAT,
         M_SP_NA_1,
+        M_DP_NA_1,
         M_ME_NA_1,
         M_ME_NC_1,
         M_ME_TF_1

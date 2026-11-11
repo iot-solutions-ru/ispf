@@ -2,9 +2,13 @@ package com.ispf.driver.dnp3;
 
 import com.ispf.driver.dnp3.codec.Dnp3TcpCodec;
 
+import com.ispf.driver.dnp3.codec.Dnp3TcpCodec.ControlCommand;
+
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -57,23 +61,48 @@ final class Dnp3LoopbackOutstation implements AutoCloseable {
 
     private void handleClient(Socket socket) {
         try (socket) {
+            Map<PointKey, Dnp3TcpCodec.Measurement> state = new LinkedHashMap<>();
+            for (Dnp3TcpCodec.Measurement measurement : seedMeasurements()) {
+                state.put(new PointKey(measurement.type(), measurement.index()), measurement);
+            }
             while (!socket.isClosed()) {
                 Dnp3TcpCodec.Frame request = Dnp3TcpCodec.readFrame(socket.getInputStream());
                 if (request.source() != masterAddress || request.destination() != outstationAddress) {
                     continue;
                 }
-                int sequence = Dnp3TcpCodec.requestSequence(request);
-                byte[] response = Dnp3TcpCodec.integrityPollResponse(
-                        outstationAddress,
-                        masterAddress,
-                        seedMeasurements(),
-                        sequence
-                );
+                int function = Dnp3TcpCodec.applicationFunction(request);
+                int sequence = Dnp3TcpCodec.applicationSequence(request);
+                byte[] response;
+                if (function == Dnp3TcpCodec.FUNCTION_READ) {
+                    response = Dnp3TcpCodec.integrityPollResponse(
+                            outstationAddress,
+                            masterAddress,
+                            List.copyOf(state.values()),
+                            sequence
+                    );
+                } else if (function == Dnp3TcpCodec.FUNCTION_DIRECT_OPERATE) {
+                    ControlCommand command = Dnp3TcpCodec.parseDirectOperate(request);
+                    state.put(
+                            new PointKey(command.type(), command.index()),
+                            new Dnp3TcpCodec.Measurement(command.type(), command.index(), command.value(), 0x01)
+                    );
+                    response = Dnp3TcpCodec.directOperateResponse(
+                            outstationAddress,
+                            masterAddress,
+                            command,
+                            sequence
+                    );
+                } else {
+                    continue;
+                }
                 Dnp3TcpCodec.writeFrame(socket.getOutputStream(), response);
             }
         } catch (Exception ignored) {
             // Client disconnects end the test session.
         }
+    }
+
+    private record PointKey(Dnp3Point.Dnp3DataType type, int index) {
     }
 
     private static List<Dnp3TcpCodec.Measurement> seedMeasurements() {

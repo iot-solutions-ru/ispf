@@ -59,7 +59,7 @@ Loopback-тесты (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTes
 | `device-net` | `ispf-driver-device-net` | STUB | Apache-2.0 | DeviceNet: ODVA DeviceNet gateway stub (stub TCP-доступности; codec пока не реализован) |
 | `dhcp` | `ispf-driver-dhcp` | PRODUCTION | Apache-2.0 | DHCP discover probe |
 | `dlms` | `ispf-driver-dlms` | PRODUCTION | Apache-2.0 | DLMS/COSEM master счётчиков (TCP WRAPPER) |
-| `dnp3` | `ispf-driver-dnp3` | PRODUCTION | Apache-2.0 | DNP3 TCP master — class poll/read (запись не реализована) |
+| `dnp3` | `ispf-driver-dnp3` | PRODUCTION | Apache-2.0 | DNP3 TCP master — class poll, CROB latch и g41v3 analog direct operate |
 | `eebus` | `ispf-driver-eebus` | STUB | Apache-2.0 | EEBUS: EEBUS / SHIP energy management stub (stub TCP-доступности; codec пока не реализован) |
 | `email` | `ispf-driver-email` | PRODUCTION | Apache-2.0 | Исходящая почта через HTTP relay |
 | `enocean` | `ispf-driver-enocean` | STUB | Apache-2.0 | EnOcean: EnOcean ESP3 / USB gateway stub (stub TCP-доступности; codec пока не реализован) |
