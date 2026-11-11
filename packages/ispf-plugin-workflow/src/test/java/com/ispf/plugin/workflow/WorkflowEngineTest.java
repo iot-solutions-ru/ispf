@@ -54,9 +54,41 @@ class WorkflowEngineTest {
         WorkflowEngine engine = new WorkflowEngine();
         BpmnProcess process = engine.parse(xml);
         WorkflowInstance instance = engine.start("root.platform.workflows.loop", process);
-        engine.runToCompletion(instance, process, (task, ignored) -> { }, expr -> true);
+        int[] executed = {0};
+        engine.runToCompletion(instance, process, (task, ignored) -> executed[0]++, expr -> true);
 
         assertThat(instance.status()).isEqualTo(InstanceStatus.FAILED);
         assertThat(instance.errorMessage()).contains(String.valueOf(WorkflowEngine.MAX_SYNC_STEPS));
+        assertThat(executed[0]).isEqualTo(WorkflowEngine.MAX_SYNC_STEPS - 1);
+    }
+
+    @Test
+    void resumeUserTaskSharesSyncStepBudgetWithLoop() throws Exception {
+        String xml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:ispf="http://ispf.io/bpmn">
+                  <process id="resume-loop" name="ResumeLoop" isExecutable="true">
+                    <startEvent id="start"/>
+                    <userTask id="wait" name="Wait"/>
+                    <serviceTask id="task" name="Log" ispf:action="log" ispf:message="again"/>
+                    <sequenceFlow sourceRef="start" targetRef="wait"/>
+                    <sequenceFlow sourceRef="wait" targetRef="task"/>
+                    <sequenceFlow sourceRef="task" targetRef="task"/>
+                  </process>
+                </definitions>
+                """;
+
+        WorkflowEngine engine = new WorkflowEngine();
+        BpmnProcess process = engine.parse(xml);
+        WorkflowInstance instance = engine.start("root.platform.workflows.resume-loop", process);
+        engine.runToCompletion(instance, process, (task, ignored) -> { }, expr -> true);
+        assertThat(instance.status()).isEqualTo(InstanceStatus.WAITING);
+
+        int[] executed = {0};
+        engine.completeUserTask(instance, process, (task, ignored) -> executed[0]++, expr -> true);
+        assertThat(instance.status()).isEqualTo(InstanceStatus.FAILED);
+        assertThat(instance.errorMessage()).contains(String.valueOf(WorkflowEngine.MAX_SYNC_STEPS));
+        assertThat(executed[0]).isEqualTo(WorkflowEngine.MAX_SYNC_STEPS);
     }
 }
