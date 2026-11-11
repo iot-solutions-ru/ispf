@@ -4,10 +4,17 @@ import type { CatchKind, FlowEdge, FlowNode } from "../../bpmn/model/types";
 import type { ObjectType } from "../../types";
 import { ObjectPathField } from "../../ui";
 
+/**
+ * `setVariable`, `start_workflow`, and user-task targets.
+ * SINGLETON and INSTANCE hubs are CUSTOM (the default singleton object type) or APPLICATION.
+ * Sensors stay DEVICE.
+ */
+export const TARGET_OBJECT_TYPES: ObjectType[] = ["CUSTOM", "DEVICE", "APPLICATION"];
+
 const PATH_FILTERS: Record<string, ObjectType[] | undefined> = {
   objectPath: undefined,
   workflowPath: ["WORKFLOW"],
-  targetObject: ["DEVICE"],
+  targetObject: TARGET_OBJECT_TYPES,
 };
 
 const ACTION_ATTRS: Record<WorkflowIspfAction, string[]> = {
