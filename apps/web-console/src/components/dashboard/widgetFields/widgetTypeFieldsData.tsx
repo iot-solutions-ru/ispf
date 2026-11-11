@@ -13,6 +13,7 @@ import {
   AdvancedJsonField,
   FormFieldsEditor,
   HintCaption,
+  IdLabelListEditor,
   KeyValueEditor,
   SheetGridSizeEditor,
   StringListEditor,
@@ -167,11 +168,12 @@ function functionFormFields(ctx: WidgetFieldContextFor<"function-form">, t: TFun
         value={widget.clearSessionParamsJson}
         onChange={(v) => update({ clearSessionParamsJson: v || undefined })}
       />
-      <AdvancedJsonField
+      <IdLabelListEditor
         label={t("editor.field.wizardSteps")}
         value={widget.wizardStepsJson}
-        onChange={(v) => update({ wizardStepsJson: v })}
-        rows={3}
+        onChange={(wizardStepsJson) => update({ wizardStepsJson })}
+        idPrefix="step"
+        withChildren={false}
       />
     </>
   );

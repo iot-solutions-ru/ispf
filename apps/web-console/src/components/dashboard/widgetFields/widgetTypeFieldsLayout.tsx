@@ -3,9 +3,11 @@ import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import {
   AdvancedJsonField,
+  ChildWidgetListEditor,
   IdLabelListEditor,
   KeyValueEditor,
   NavMenuItemsEditor,
+  SlideListEditor,
   StringListEditor,
   TabPanelMetaEditor,
   VariableSelect,
@@ -231,6 +233,11 @@ function panelFields(ctx: WidgetFieldContextFor<"panel">, t: TFunction): ReactNo
         />
         <WidgetEditorCaption text={t("editor.field.collapsible")} />
       </label>
+      <ChildWidgetListEditor
+        label={t("editor.field.childrenJson")}
+        value={widget.childrenJson}
+        onChange={(childrenJson) => update({ childrenJson })}
+      />
       <AdvancedJsonField
         label={t("editor.field.childrenJson")}
         value={widget.childrenJson}
@@ -255,6 +262,11 @@ function compositeWidgetFields(ctx: WidgetFieldContextFor<"composite-widget" | "
           />
         </label>
       )}
+      <ChildWidgetListEditor
+        label={t("editor.field.childrenJson")}
+        value={widget.childrenJson}
+        onChange={(childrenJson) => update({ childrenJson })}
+      />
       <AdvancedJsonField
         label={t("editor.field.childrenJson")}
         value={widget.childrenJson}
@@ -312,6 +324,11 @@ function carouselFields(ctx: WidgetFieldContextFor<"carousel">, t: TFunction): R
   return (
     <>
       <Section title={t("editor.section.carousel")} />
+      <SlideListEditor
+        label={t("editor.field.slidesJson")}
+        value={widget.slidesJson}
+        onChange={(slidesJson) => update({ slidesJson })}
+      />
       <AdvancedJsonField
         label={t("editor.field.slidesJson")}
         value={widget.slidesJson}

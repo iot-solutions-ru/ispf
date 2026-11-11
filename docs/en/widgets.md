@@ -53,6 +53,8 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 | `sheetConfigJson` | Spreadsheet config |
 | `stylesJson` | Inline CSS per card element |
 
+The widget editor edits nested widgets, slides, wizard steps, map path lists, popup rows, and spreadsheet cells as fields. The layout still stores those values as JSON strings.
+
 ---
 
 ## Widget categories

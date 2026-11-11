@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
 import { AutoComplete } from "antd";
-import { Children, Fragment, cloneElement, isValidElement, type ReactNode } from "react";
+import { Children, Fragment, cloneElement, isValidElement, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { AnalyticsQueryTagInput } from "../../../api";
 import { fetchReport } from "../../../api/reports";
@@ -11,7 +11,7 @@ import type { ObjectType } from "../../../types";
 import type { ChartWidget, DashboardWidget } from "../../../types/dashboard";
 import { ObjectPathField } from "../../../ui";
 import { splitCaptionDetail, WIDGET_EDITOR_HINT_DELAY_S } from "../widgetEditorHelpers";
-import { AdvancedJsonField, HintCaption } from "../widgetEditorStructured";
+import { HintCaption } from "../widgetEditorStructured";
 
 export type ObjectOption = { path: string; displayName: string; variableNames: string[] };
 export type DashboardOption = { path: string; displayName: string };
@@ -371,13 +371,23 @@ export function ChartAnalyticsQueryTagsField({
   update: (patch: Partial<DashboardWidget>) => void;
 }) {
   const { t } = useTranslation("widgets");
-  const tags = parseAnalyticsQueryTags(widget.analyticsQueryTagsJson);
+  const savedTags = parseAnalyticsQueryTags(widget.analyticsQueryTagsJson);
+  const [tags, setTagsState] = useState(savedTags);
+  const [source, setSource] = useState(widget.analyticsQueryTagsJson);
+  if (widget.analyticsQueryTagsJson !== source) {
+    setSource(widget.analyticsQueryTagsJson);
+    const pending = tags.filter((tag) => !tag.path?.trim() || !tag.variable?.trim());
+    setTagsState(pending.length > 0 ? [...savedTags, ...pending] : savedTags);
+  }
 
   const setTags = (next: AnalyticsQueryTagInput[]) => {
+    setTagsState(next);
     const filtered = next.filter((tag) => tag.path?.trim() && tag.variable?.trim());
-    update({
-      analyticsQueryTagsJson: filtered.length > 0 ? JSON.stringify(filtered) : undefined,
-    } as Partial<DashboardWidget>);
+    const analyticsQueryTagsJson = filtered.length > 0 ? JSON.stringify(filtered) : undefined;
+    if (analyticsQueryTagsJson !== widget.analyticsQueryTagsJson) {
+      setSource(analyticsQueryTagsJson);
+      update({ analyticsQueryTagsJson } as Partial<DashboardWidget>);
+    }
   };
 
   const updateTag = (index: number, patch: Partial<AnalyticsQueryTagInput>) => {
@@ -389,7 +399,7 @@ export function ChartAnalyticsQueryTagsField({
       {tags.length > 0 ? (
         <div className="widget-editor-analytics-tag-list">
           {tags.map((tag, index) => (
-            <div key={`${tag.path}-${tag.variable}-${index}`} className="widget-editor-analytics-tag-card">
+            <div key={index} className="widget-editor-analytics-tag-card">
               <div className="widget-editor-analytics-tag-card-head">
                 <span className="widget-editor-analytics-tag-title">
                   {tag.label?.trim() || tag.path.split(".").pop() || `#${index + 1}`}
@@ -453,13 +463,6 @@ export function ChartAnalyticsQueryTagsField({
           {t("editor.analyticsQueryTagAdd")}
         </button>
       </div>
-      <AdvancedJsonField
-        label={t("editor.analyticsQueryTagsJson")}
-        placeholder={t("editor.analyticsQueryTagsJsonHint")}
-        value={widget.analyticsQueryTagsJson ?? ""}
-        onChange={(value) => update({ analyticsQueryTagsJson: value || undefined } as Partial<DashboardWidget>)}
-        rows={6}
-      />
     </div>
   );
 }
