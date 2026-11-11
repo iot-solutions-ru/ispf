@@ -3,11 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { AutoComplete, Button, Tooltip } from "antd";
 import { useTranslation } from "react-i18next";
 import { fetchObjectEditor, fetchObjects, fetchVariables, fetchVariablesBatch } from "../../api";
-import type {
-  ObjectTableColumn,
-  SheetConfig,
-  FunctionFormField,
-  InputFormField,
+import {
+  newWidget,
+  type DashboardWidget,
+  type FunctionFormField,
+  type InputFormField,
+  type ObjectTableColumn,
+  type SheetCellKind,
+  type SheetConfig,
+  type WidgetType,
 } from "../../types/dashboard";
 import {
   parseSheetConfig,
@@ -16,6 +20,22 @@ import {
 import { WIDGET_STYLE_KEYS_HINT, parseWidgetStyles } from "./widgetStyles";
 import type { WidgetStyleKey } from "./widgetStyles";
 import { parseJsonArray, parseJsonObject, stringifyJson } from "./widgetEditorJson";
+import {
+  childWidgetsFromJson,
+  childWidgetsToJson,
+  popupRowsFromJson,
+  popupRowsToJson,
+  sheetCellDraftValue,
+  sheetCellRows,
+  sheetCellWithDraft,
+  sheetCellWithKind,
+  sheetConfigWithCells,
+  slidesFromJson,
+  slidesToJson,
+  type PopupVariableRow,
+  type SheetCellRow,
+  type SlideRow,
+} from "./widgetStructuredLists";
 import { recordFieldNames, splitCaptionDetail, WIDGET_EDITOR_HINT_DELAY_S } from "./widgetEditorHelpers";
 import { ObjectPathField } from "../../ui";
 
@@ -1019,11 +1039,13 @@ export function IdLabelListEditor({
   value,
   onChange,
   idPrefix,
+  withChildren = true,
 }: {
   label: string;
   value: string | undefined;
   onChange: (next: string) => void;
   idPrefix: string;
+  withChildren?: boolean;
 }) {
   const { t } = useTranslation("widgets");
   const items = parseJsonArray<IdLabelItem>(value, []);
@@ -1067,7 +1089,11 @@ export function IdLabelListEditor({
         onAdd={() =>
           setItems([
             ...items,
-            { id: `${idPrefix}${items.length + 1}`, label: "", children: [] },
+            {
+              id: `${idPrefix}${items.length + 1}`,
+              label: "",
+              ...(withChildren ? { children: [] } : {}),
+            },
           ])
         }
         addLabel={t("editor.structured.addItem")}
@@ -1137,6 +1163,314 @@ export function SheetGridSizeEditor({
           />
         </label>
       </div>
+      <SheetCellList config={config} onChange={onChange} />
+    </div>
+  );
+}
+
+const SHEET_CELL_KINDS: SheetCellKind[] = ["label", "input", "formula", "readonly", "binding"];
+
+function SheetCellList({
+  config,
+  onChange,
+}: {
+  config: SheetConfig;
+  onChange: (next: string) => void;
+}) {
+  const { t } = useTranslation("widgets");
+  const normalize = (value: SheetConfig) => {
+    const json = sheetConfigToJson(value);
+    return sheetConfigToJson(parseSheetConfig(json) ?? value);
+  };
+  const [rows, setRows] = useState<SheetCellRow[]>(() => sheetCellRows(config));
+  const [source, setSource] = useState(() => normalize(config));
+  const incoming = normalize(config);
+  if (incoming !== source) {
+    setSource(incoming);
+    const pending = rows.filter((row) => !row.address.trim());
+    const saved = sheetCellRows(config);
+    setRows(pending.length > 0 ? [...saved, ...pending] : saved);
+  }
+
+  const commit = (next: SheetCellRow[]) => {
+    setRows(next);
+    const saved = normalize(sheetConfigWithCells(config, next));
+    if (saved !== incoming) {
+      setSource(saved);
+      onChange(saved);
+    }
+  };
+
+  return (
+    <div className="widget-editor-list">
+      <HintCaption>{t("editor.spreadsheet.cells")}</HintCaption>
+      {rows.map((row, index) => (
+        <div key={index} className="widget-editor-list-row">
+          <MiniField caption={t("editor.spreadsheet.cellAddress")}>
+            <input
+              value={row.address}
+              onChange={(e) => {
+                const next = [...rows];
+                next[index] = { ...row, address: e.target.value };
+                commit(next);
+              }}
+            />
+          </MiniField>
+          <MiniField caption={t("editor.spreadsheet.cellKind")}>
+            <select
+              value={row.cell.kind}
+              onChange={(e) => {
+                const next = [...rows];
+                next[index] = { ...row, cell: sheetCellWithKind(row.cell, e.target.value as SheetCellKind) };
+                commit(next);
+              }}
+            >
+              {SHEET_CELL_KINDS.map((kind) => (
+                <option key={kind} value={kind}>
+                  {t(`editor.spreadsheet.cellKind.${kind}`)}
+                </option>
+              ))}
+            </select>
+          </MiniField>
+          <MiniField caption={t("editor.spreadsheet.cellValue")}>
+            <input
+              value={sheetCellDraftValue(row.cell)}
+              onChange={(e) => {
+                const next = [...rows];
+                next[index] = { ...row, cell: sheetCellWithDraft(row.cell, e.target.value) };
+                commit(next);
+              }}
+            />
+          </MiniField>
+          <button
+            type="button"
+            className="btn small danger"
+            aria-label={t("editor.structured.removeRow")}
+            onClick={() => commit(rows.filter((_, i) => i !== index))}
+          >
+            ×
+          </button>
+        </div>
+      ))}
+      <ListActions
+        onAdd={() => commit([...rows, { address: "", cell: { kind: "input", default: "" } }])}
+        addLabel={t("editor.spreadsheet.addCell")}
+      />
+    </div>
+  );
+}
+
+const NESTED_CHILD_TYPES: WidgetType[] = ["value", "indicator", "chart", "sparkline", "gauge", "label"];
+
+export function ChildWidgetListEditor({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string | undefined;
+  onChange: (next: string) => void;
+}) {
+  const { t } = useTranslation("widgets");
+  const children = childWidgetsFromJson(value);
+  const setChildren = (next: DashboardWidget[]) => onChange(childWidgetsToJson(next));
+
+  return (
+    <div className="widget-editor-structured full">
+      <HintCaption>{label}</HintCaption>
+      {children.map((child, index) => (
+        <div key={child.id || index} className="widget-editor-list-row">
+          <MiniField caption={t("editor.structured.childType")}>
+            <select
+              value={child.type}
+              onChange={(e) => {
+                const type = e.target.value as WidgetType;
+                const fresh = newWidget(type, index);
+                const next = [...children];
+                next[index] = {
+                  ...fresh,
+                  id: child.id || fresh.id,
+                  title: child.title,
+                  x: child.x,
+                  y: child.y,
+                  w: child.w,
+                  h: child.h,
+                };
+                setChildren(next);
+              }}
+            >
+              {NESTED_CHILD_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+              {NESTED_CHILD_TYPES.includes(child.type) ? null : (
+                <option value={child.type}>{child.type}</option>
+              )}
+            </select>
+          </MiniField>
+          <MiniField caption={t("editor.structured.childTitle")}>
+            <input
+              value={child.title ?? ""}
+              onChange={(e) => {
+                const next = [...children];
+                next[index] = { ...child, title: e.target.value };
+                setChildren(next);
+              }}
+            />
+          </MiniField>
+          <button
+            type="button"
+            className="btn small danger"
+            aria-label={t("editor.structured.removeRow")}
+            onClick={() => setChildren(children.filter((_, i) => i !== index))}
+          >
+            ×
+          </button>
+        </div>
+      ))}
+      <ListActions
+        onAdd={() => setChildren([...children, newWidget("value", children.length)])}
+        addLabel={t("editor.structured.addChild")}
+      />
+    </div>
+  );
+}
+
+export function SlideListEditor({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string | undefined;
+  onChange: (next: string) => void;
+}) {
+  const { t } = useTranslation("widgets");
+  const slides = slidesFromJson(value);
+  const setSlides = (next: SlideRow[]) => onChange(slidesToJson(next));
+
+  return (
+    <div className="widget-editor-structured full">
+      <HintCaption>{label}</HintCaption>
+      {slides.map((slide, index) => (
+        <div key={index} className="widget-editor-list-row">
+          <MiniField caption={t("editor.structured.slideId")}>
+            <input
+              value={slide.id ?? ""}
+              onChange={(e) => {
+                const next = [...slides];
+                next[index] = { ...slide, id: e.target.value };
+                setSlides(next);
+              }}
+            />
+          </MiniField>
+          <MiniField caption={t("editor.structured.fieldLabel")}>
+            <input
+              value={slide.label ?? ""}
+              onChange={(e) => {
+                const next = [...slides];
+                next[index] = { ...slide, label: e.target.value };
+                setSlides(next);
+              }}
+            />
+          </MiniField>
+          <button
+            type="button"
+            className="btn small danger"
+            aria-label={t("editor.structured.removeRow")}
+            onClick={() => setSlides(slides.filter((_, i) => i !== index))}
+          >
+            ×
+          </button>
+        </div>
+      ))}
+      <ListActions
+        onAdd={() => setSlides([...slides, { id: `slide${slides.length + 1}`, label: "", children: [] }])}
+        addLabel={t("editor.structured.addSlide")}
+      />
+    </div>
+  );
+}
+
+export function PopupVariableListEditor({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string | undefined;
+  onChange: (next: string | undefined) => void;
+}) {
+  const { t } = useTranslation("widgets");
+  const [rows, setRows] = useState<PopupVariableRow[]>(() => popupRowsFromJson(value));
+  const [source, setSource] = useState(value);
+  if (value !== source) {
+    setSource(value);
+    const saved = popupRowsFromJson(value);
+    const pending = rows.filter((row) => !row.name.trim());
+    setRows(pending.length > 0 ? [...saved, ...pending] : saved);
+  }
+
+  const commit = (next: PopupVariableRow[]) => {
+    setRows(next);
+    const nextValue = popupRowsToJson(next);
+    if (nextValue !== popupRowsToJson(popupRowsFromJson(value))) {
+      const empty = nextValue === stringifyJson([]);
+      setSource(empty ? undefined : nextValue);
+      onChange(empty ? undefined : nextValue);
+    }
+  };
+
+  return (
+    <div className="widget-editor-structured full">
+      <HintCaption>{label}</HintCaption>
+      {rows.map((row, index) => (
+        <div key={index} className="widget-editor-list-row">
+          <MiniField caption={t("editor.structured.colVariable")}>
+            <input
+              value={row.name}
+              onChange={(e) => {
+                const next = [...rows];
+                next[index] = { ...row, name: e.target.value };
+                commit(next);
+              }}
+            />
+          </MiniField>
+          <MiniField caption={t("editor.structured.fieldLabel")}>
+            <input
+              value={row.label ?? ""}
+              onChange={(e) => {
+                const next = [...rows];
+                next[index] = { ...row, label: e.target.value };
+                commit(next);
+              }}
+            />
+          </MiniField>
+          <MiniField caption={t("editor.structured.colField")}>
+            <input
+              value={row.field ?? ""}
+              onChange={(e) => {
+                const next = [...rows];
+                next[index] = { ...row, field: e.target.value };
+                commit(next);
+              }}
+            />
+          </MiniField>
+          <button
+            type="button"
+            className="btn small danger"
+            aria-label={t("editor.structured.removeRow")}
+            onClick={() => commit(rows.filter((_, i) => i !== index))}
+          >
+            ×
+          </button>
+        </div>
+      ))}
+      <ListActions
+        onAdd={() => commit([...rows, { name: "" }])}
+        addLabel={t("editor.structured.addPopupRow")}
+      />
     </div>
   );
 }
@@ -1298,39 +1632,5 @@ export function TabPanelMetaEditor({
         addLabel={t("editor.structured.addTab")}
       />
     </div>
-  );
-}
-
-export function AdvancedJsonField({
-  label,
-  value,
-  onChange,
-  rows = 4,
-  placeholder,
-}: {
-  label: string;
-  value: string | undefined;
-  onChange: (next: string | undefined) => void;
-  rows?: number;
-  placeholder?: string;
-}) {
-  const { t } = useTranslation("widgets");
-  return (
-    <details className="widget-editor-advanced-json full">
-      <summary>
-        <HintCaption
-          className="widget-editor-mini-caption"
-          hint={joinHints(placeholder, t("editor.structured.jsonAdvanced"))}
-        >
-          {label}
-        </HintCaption>
-      </summary>
-      <textarea
-        rows={rows}
-        className="mono"
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value || undefined)}
-      />
-    </details>
   );
 }

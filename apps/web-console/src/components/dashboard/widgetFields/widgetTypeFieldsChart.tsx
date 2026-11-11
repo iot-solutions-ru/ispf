@@ -5,7 +5,7 @@ import {
   type NetworkGraphWidget,
   WIDGET_HISTORY_RANGE_OPTIONS,
 } from "../../../types/dashboard";
-import { AdvancedJsonField, HintCaption, VariableSelect } from "../widgetEditorStructured";
+import { HintCaption, PopupVariableListEditor, StringListEditor, VariableSelect } from "../widgetEditorStructured";
 import { variableListAllowCustom } from "../widgetEditorHelpers";
 import { resolveBubbleMode } from "../../../utils/analytics/chartRadarBubbleUtils";
 import AxisLimitInput from "./AxisLimitInput";
@@ -400,17 +400,15 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
           <option value="CUSTOM">{t("common:objectType.CUSTOM")}</option>
         </select>
       </label>
-      <AdvancedJsonField
+      <StringListEditor
         label={t("editor.field.includePathsJson")}
         value={widget.includePathsJson}
-        onChange={(v) => update({ includePathsJson: v })}
-        rows={2}
+        onChange={(includePathsJson) => update({ includePathsJson })}
       />
-      <AdvancedJsonField
+      <StringListEditor
         label={t("editor.field.excludePathsJson")}
         value={widget.excludePathsJson}
-        onChange={(v) => update({ excludePathsJson: v })}
-        rows={2}
+        onChange={(excludePathsJson) => update({ excludePathsJson })}
       />
 
       <Section title={t("editor.section.mapMarkerRules")} />
@@ -437,11 +435,10 @@ function mapFields(ctx: WidgetFieldContextFor<"map">, t: TFunction): ReactNode {
         </select>
       </label>
       {popupMode === "variables" && (
-        <AdvancedJsonField
+        <PopupVariableListEditor
           label={t("editor.field.popupVariablesJson")}
           value={widget.popupVariablesJson}
-          onChange={(v) => update({ popupVariablesJson: v })}
-          rows={3}
+          onChange={(popupVariablesJson) => update({ popupMode: "variables", popupVariablesJson })}
         />
       )}
 
