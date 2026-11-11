@@ -327,15 +327,13 @@ public class WorkflowService {
         }
 
         WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(triggerObjectPath);
-        while (instance.status() == InstanceStatus.RUNNING) {
-            workflowEngine.step(
-                    instance,
-                    process,
-                    taskExecutor::executeServiceTask,
-                    taskExecutor::executeMessageTask,
-                    evaluator
-            );
-        }
+        workflowEngine.runToCompletion(
+                instance,
+                process,
+                taskExecutor::executeServiceTask,
+                taskExecutor::executeMessageTask,
+                evaluator
+        );
         finishStep(triggerObjectPath, instance, process, input);
         return instance;
     }

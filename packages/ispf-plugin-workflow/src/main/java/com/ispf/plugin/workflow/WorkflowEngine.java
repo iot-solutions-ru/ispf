@@ -7,6 +7,10 @@ import java.util.UUID;
 
 public class WorkflowEngine {
 
+    static final int MAX_SYNC_STEPS = 1000;
+
+    private static final ThreadLocal<int[]> SYNC_STEP_COUNT = new ThreadLocal<>();
+
     private final BpmnParser parser = new BpmnParser();
     private CallActivityExecutor callActivityExecutor = (call, parent) -> {
         throw new WorkflowException("callActivity executor is not configured");
@@ -44,9 +48,7 @@ public class WorkflowEngine {
             MessageTaskExecutor messageExecutor,
             WorkflowConditionEvaluator evaluator
     ) throws WorkflowException {
-        while (instance.status() == InstanceStatus.RUNNING) {
-            step(instance, process, executor, messageExecutor, evaluator);
-        }
+        drain(instance, process, executor, messageExecutor, evaluator);
         return instance;
     }
 
@@ -71,6 +73,10 @@ public class WorkflowEngine {
         }
 
         List<ExecutionToken> activeTokens = new ArrayList<>(instance.activeTokens());
+        if (activeTokens.isEmpty()) {
+            instance.fail("Workflow instance is RUNNING without active tokens");
+            return;
+        }
         for (ExecutionToken token : activeTokens) {
             if (instance.status() != InstanceStatus.RUNNING) {
                 break;
@@ -130,11 +136,11 @@ public class WorkflowEngine {
         ExecutionToken token = findWaitingToken(instance, userTaskNodeId)
                 .orElseThrow(() -> new WorkflowException("No token for user task: " + userTaskNodeId));
         instance.resumeUserTask(userTaskNodeId);
-        advanceToken(instance, process, token, userTaskNodeId, executor, messageExecutor, evaluator);
-
-        while (instance.status() == InstanceStatus.RUNNING) {
-            step(instance, process, executor, messageExecutor, evaluator);
-        }
+        withSyncBudget(() -> {
+            advanceToken(instance, process, token, userTaskNodeId, executor, messageExecutor, evaluator);
+            instance.recomputeStatus();
+            drain(instance, process, executor, messageExecutor, evaluator);
+        });
     }
 
     /**
@@ -164,23 +170,24 @@ public class WorkflowEngine {
         if (!instance.resumeCallActivityChild(childInstanceId)) {
             throw new WorkflowException("Failed to resume callActivity child: " + childInstanceId);
         }
-        for (ExecutionToken token : waiting) {
-            String callNodeId = token.currentNodeId();
-            if (childVariables != null) {
-                childVariables.forEach((key, value) -> {
-                    if (key != null && !key.startsWith("__")) {
-                        instance.setVariable(
-                                "call." + callNodeId + "." + key,
-                                value == null ? "" : value
-                        );
-                    }
-                });
+        withSyncBudget(() -> {
+            for (ExecutionToken token : waiting) {
+                String callNodeId = token.currentNodeId();
+                if (childVariables != null) {
+                    childVariables.forEach((key, value) -> {
+                        if (key != null && !key.startsWith("__")) {
+                            instance.setVariable(
+                                    "call." + callNodeId + "." + key,
+                                    value == null ? "" : value
+                            );
+                        }
+                    });
+                }
+                advanceToken(instance, process, token, callNodeId, executor, messageExecutor, evaluator);
             }
-            advanceToken(instance, process, token, callNodeId, executor, messageExecutor, evaluator);
-        }
-        while (instance.status() == InstanceStatus.RUNNING) {
-            step(instance, process, executor, messageExecutor, evaluator);
-        }
+            instance.recomputeStatus();
+            drain(instance, process, executor, messageExecutor, evaluator);
+        });
     }
 
     public void deliverSignal(
@@ -195,13 +202,14 @@ public class WorkflowEngine {
             throw new WorkflowException("Instance is not waiting for signal");
         }
         List<ExecutionToken> resumed = instance.resumeSignal(signalName);
-        for (ExecutionToken token : resumed) {
-            String catchNodeId = token.currentNodeId();
-            advanceToken(instance, process, token, catchNodeId, executor, messageExecutor, evaluator);
-        }
-        while (instance.status() == InstanceStatus.RUNNING) {
-            step(instance, process, executor, messageExecutor, evaluator);
-        }
+        withSyncBudget(() -> {
+            for (ExecutionToken token : resumed) {
+                String catchNodeId = token.currentNodeId();
+                advanceToken(instance, process, token, catchNodeId, executor, messageExecutor, evaluator);
+            }
+            instance.recomputeStatus();
+            drain(instance, process, executor, messageExecutor, evaluator);
+        });
     }
 
     public void deliverMessage(
@@ -224,13 +232,14 @@ public class WorkflowEngine {
                             + " (pending: " + instance.pendingMessageNames() + ")",
                     e);
         }
-        for (ExecutionToken token : resumed) {
-            String catchNodeId = token.currentNodeId();
-            advanceToken(instance, process, token, catchNodeId, executor, messageExecutor, evaluator);
-        }
-        while (instance.status() == InstanceStatus.RUNNING) {
-            step(instance, process, executor, messageExecutor, evaluator);
-        }
+        withSyncBudget(() -> {
+            for (ExecutionToken token : resumed) {
+                String catchNodeId = token.currentNodeId();
+                advanceToken(instance, process, token, catchNodeId, executor, messageExecutor, evaluator);
+            }
+            instance.recomputeStatus();
+            drain(instance, process, executor, messageExecutor, evaluator);
+        });
     }
 
     public void fireDueTimers(
@@ -259,28 +268,28 @@ public class WorkflowEngine {
         }
 
         List<ExecutionToken> dueTokens = new ArrayList<>(instance.dueTimerTokens(nowEpochMs));
-        for (ExecutionToken token : dueTokens) {
-            if (token.pendingBoundaryTimerNodeId() != null) {
-                String boundaryNodeId = token.pendingBoundaryTimerNodeId();
-                BoundaryTimerDefinition boundary = findBoundaryTimer(process, boundaryNodeId);
-                if (boundary == null) {
-                    instance.fail("Boundary timer definition missing: " + boundaryNodeId);
-                    return;
-                }
-                ExecutionToken resumed = instance.resumeBoundaryTimer(boundaryNodeId);
-                advanceToken(instance, process, resumed, boundaryNodeId, executor, messageExecutor, evaluator);
-            } else if (token.pendingTimerCatchNodeId() != null) {
-                String catchNodeId = token.pendingTimerCatchNodeId();
-                List<ExecutionToken> resumed = instance.resumeTimerCatch(catchNodeId);
-                for (ExecutionToken resumedToken : resumed) {
-                    advanceToken(instance, process, resumedToken, catchNodeId, executor, messageExecutor, evaluator);
+        withSyncBudget(() -> {
+            for (ExecutionToken token : dueTokens) {
+                if (token.pendingBoundaryTimerNodeId() != null) {
+                    String boundaryNodeId = token.pendingBoundaryTimerNodeId();
+                    BoundaryTimerDefinition boundary = findBoundaryTimer(process, boundaryNodeId);
+                    if (boundary == null) {
+                        instance.fail("Boundary timer definition missing: " + boundaryNodeId);
+                        return;
+                    }
+                    ExecutionToken resumed = instance.resumeBoundaryTimer(boundaryNodeId);
+                    advanceToken(instance, process, resumed, boundaryNodeId, executor, messageExecutor, evaluator);
+                } else if (token.pendingTimerCatchNodeId() != null) {
+                    String catchNodeId = token.pendingTimerCatchNodeId();
+                    List<ExecutionToken> resumed = instance.resumeTimerCatch(catchNodeId);
+                    for (ExecutionToken resumedToken : resumed) {
+                        advanceToken(instance, process, resumedToken, catchNodeId, executor, messageExecutor, evaluator);
+                    }
                 }
             }
-        }
-
-        while (instance.status() == InstanceStatus.RUNNING) {
-            step(instance, process, executor, messageExecutor, evaluator);
-        }
+            instance.recomputeStatus();
+            drain(instance, process, executor, messageExecutor, evaluator);
+        });
     }
 
     private static BoundaryTimerDefinition findBoundaryTimer(BpmnProcess process, String boundaryNodeId) {
@@ -307,23 +316,55 @@ public class WorkflowEngine {
         if (token.state() != TokenState.ACTIVE) {
             return;
         }
+        if (SYNC_STEP_COUNT.get() == null) {
+            withSyncBudget(() -> stepToken(instance, process, token, executor, messageExecutor, evaluator));
+            return;
+        }
+        while (token.state() == TokenState.ACTIVE && instance.status() == InstanceStatus.RUNNING) {
+            if (!consumeSyncStep(instance)) {
+                return;
+            }
+            if (!executeSingleTokenNode(instance, process, token, executor, messageExecutor, evaluator)) {
+                return;
+            }
+        }
+    }
 
+    /**
+     * Executes the current node for {@code token}. Returns {@code true} when {@code token} was
+     * synchronously moved to a successor node and should continue stepping in the caller's loop;
+     * returns {@code false} when {@code token} completed, blocked, joined, or failed.
+     */
+    private boolean executeSingleTokenNode(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            ExecutionToken token,
+            WorkflowActionExecutor executor,
+            MessageTaskExecutor messageExecutor,
+            WorkflowConditionEvaluator evaluator
+    ) throws WorkflowException {
         String nodeId = token.currentNodeId();
         String nodeType = process.nodeTypes().get(nodeId);
         if (nodeType == null) {
             instance.fail("Unknown node: " + nodeId);
-            return;
+            return false;
         }
 
         switch (nodeType) {
-            case "startEvent" -> advanceToken(instance, process, token, nodeId, executor, messageExecutor, evaluator);
-            case "exclusiveGateway" -> advanceToken(instance, process, token, nodeId, executor, messageExecutor, evaluator);
-            case "parallelGateway" -> handleParallelGateway(instance, process, token, nodeId, executor, messageExecutor, evaluator);
+            case "startEvent" -> {
+                return advanceTokenToNext(instance, process, token, nodeId, evaluator);
+            }
+            case "exclusiveGateway" -> {
+                return advanceTokenToNext(instance, process, token, nodeId, evaluator);
+            }
+            case "parallelGateway" -> {
+                return handleParallelGateway(instance, process, token, nodeId, executor, messageExecutor, evaluator);
+            }
             case "serviceTask" -> {
                 ServiceTaskDefinition task = process.serviceTasks().get(nodeId);
                 if (task == null) {
                     instance.fail("Service task definition missing: " + nodeId);
-                    return;
+                    return false;
                 }
                 Map<String, Object> stepInput = new java.util.LinkedHashMap<>();
                 stepInput.put("action", task.action().name());
@@ -343,15 +384,15 @@ public class WorkflowEngine {
                 } catch (WorkflowException e) {
                     instance.addPendingStep(started.failed(e.getMessage()));
                     instance.fail(e.getMessage());
-                    return;
+                    return false;
                 }
-                advanceToken(instance, process, token, nodeId, executor, messageExecutor, evaluator);
+                return advanceTokenToNext(instance, process, token, nodeId, evaluator);
             }
             case "messageTask" -> {
                 MessageTaskDefinition task = process.messageTasks().get(nodeId);
                 if (task == null) {
                     instance.fail("Message task definition missing: " + nodeId);
-                    return;
+                    return false;
                 }
                 WorkflowStepRecord started = WorkflowStepRecord.started(
                         token.tokenId(),
@@ -370,26 +411,27 @@ public class WorkflowEngine {
                 } catch (WorkflowException e) {
                     instance.addPendingStep(started.failed(e.getMessage()));
                     instance.fail(e.getMessage());
-                    return;
+                    return false;
                 }
-                advanceToken(instance, process, token, nodeId, executor, messageExecutor, evaluator);
+                return advanceTokenToNext(instance, process, token, nodeId, evaluator);
             }
             case "userTask" -> {
                 if (process.userTasks().get(nodeId) == null) {
                     instance.fail("User task definition missing: " + nodeId);
-                    return;
+                    return false;
                 }
                 instance.waitTokenAt(token, nodeId);
                 BoundaryTimerDefinition boundary = process.boundaryTimers().get(nodeId);
                 if (boundary != null) {
                     instance.scheduleBoundaryTimer(token, boundary.id(), deadlineFromNow(boundary.durationSeconds()));
                 }
+                return false;
             }
             case "intermediateThrowEvent" -> {
                 MessageThrowDefinition throwDef = process.messageThrowEvents().get(nodeId);
                 if (throwDef == null) {
                     instance.fail("Message throw definition missing: " + nodeId);
-                    return;
+                    return false;
                 }
                 try {
                     messageExecutor.execute(
@@ -405,15 +447,15 @@ public class WorkflowEngine {
                     );
                 } catch (WorkflowException e) {
                     instance.fail(e.getMessage());
-                    return;
+                    return false;
                 }
-                advanceToken(instance, process, token, nodeId, executor, messageExecutor, evaluator);
+                return advanceTokenToNext(instance, process, token, nodeId, evaluator);
             }
             case "callActivity" -> {
                 CallActivityDefinition call = process.callActivities().get(nodeId);
                 if (call == null) {
                     instance.fail("callActivity definition missing: " + nodeId);
-                    return;
+                    return false;
                 }
                 WorkflowStepRecord started = WorkflowStepRecord.started(
                         token.tokenId(),
@@ -432,7 +474,7 @@ public class WorkflowEngine {
                         String err = result.errorMessage() == null ? "child workflow failed" : result.errorMessage();
                         instance.addPendingStep(started.failed(err));
                         instance.fail("callActivity failed: " + err);
-                        return;
+                        return false;
                     }
                     if (result.status() == InstanceStatus.WAITING) {
                         instance.addPendingStep(started.completed(Map.of(
@@ -440,7 +482,7 @@ public class WorkflowEngine {
                                 "childInstanceId", result.childInstanceId() == null ? "" : result.childInstanceId()
                         )));
                         instance.waitTokenAtCallActivity(token, nodeId, result.childInstanceId());
-                        return;
+                        return false;
                     }
                     if (result.variables() != null) {
                         result.variables().forEach((key, value) -> {
@@ -456,34 +498,35 @@ public class WorkflowEngine {
                 } catch (WorkflowException e) {
                     instance.addPendingStep(started.failed(e.getMessage()));
                     instance.fail(e.getMessage());
-                    return;
+                    return false;
                 }
-                advanceToken(instance, process, token, nodeId, executor, messageExecutor, evaluator);
+                return advanceTokenToNext(instance, process, token, nodeId, evaluator);
             }
-            case "subProcess" -> enterSubProcess(instance, process, token, nodeId, executor, messageExecutor, evaluator);
+            case "subProcess" -> {
+                return enterSubProcessToNext(instance, process, token, nodeId);
+            }
             case "intermediateCatchEvent" -> {
                 TimerCatchDefinition timerCatch = process.timerCatchEvents().get(nodeId);
                 if (timerCatch != null) {
                     instance.waitTokenAtTimer(token, nodeId, deadlineFromNow(timerCatch.durationSeconds()));
-                    return;
+                    return false;
                 }
                 MessageCatchDefinition messageCatch = process.messageCatchEvents().get(nodeId);
                 if (messageCatch != null) {
                     instance.waitTokenAtMessage(token, nodeId, messageCatch.messageName());
-                    return;
+                    return false;
                 }
                 SignalCatchDefinition catchDef = process.signalCatchEvents().get(nodeId);
                 if (catchDef == null) {
                     instance.fail("Catch event definition missing: " + nodeId);
-                    return;
+                    return false;
                 }
                 instance.waitTokenAtSignal(token, nodeId, catchDef.signalName());
+                return false;
             }
             case "endEvent" -> {
                 if (process.isSubProcessEnd(nodeId)) {
-                    exitSubProcess(instance, process, token, process.subProcessForEndEvent(nodeId),
-                            executor, messageExecutor, evaluator);
-                    return;
+                    return exitSubProcessToNext(instance, process, token, process.subProcessForEndEvent(nodeId));
                 }
                 token.complete();
                 instance.removeToken(token);
@@ -492,12 +535,16 @@ public class WorkflowEngine {
                 } else {
                     instance.recomputeStatus();
                 }
+                return false;
             }
-            default -> instance.fail("Unsupported node type: " + nodeType);
+            default -> {
+                instance.fail("Unsupported node type: " + nodeType);
+                return false;
+            }
         }
     }
 
-    private void handleParallelGateway(
+    private boolean handleParallelGateway(
             WorkflowInstance instance,
             BpmnProcess process,
             ExecutionToken token,
@@ -508,13 +555,13 @@ public class WorkflowEngine {
     ) throws WorkflowException {
         if (process.isParallelFork(nodeId)) {
             forkParallel(instance, process, token, nodeId, executor, messageExecutor, evaluator);
-            return;
+            return false;
         }
         if (process.isParallelJoin(nodeId)) {
             handleParallelJoin(instance, process, token, nodeId, executor, messageExecutor, evaluator);
-            return;
+            return false;
         }
-        advanceToken(instance, process, token, nodeId, executor, messageExecutor, evaluator);
+        return advanceTokenToNext(instance, process, token, nodeId, evaluator);
     }
 
     private void forkParallel(
@@ -546,6 +593,49 @@ public class WorkflowEngine {
         }
     }
 
+    private void drain(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            WorkflowActionExecutor executor,
+            MessageTaskExecutor messageExecutor,
+            WorkflowConditionEvaluator evaluator
+    ) throws WorkflowException {
+        withSyncBudget(() -> {
+            while (instance.status() == InstanceStatus.RUNNING) {
+                step(instance, process, executor, messageExecutor, evaluator);
+            }
+        });
+    }
+
+    private void withSyncBudget(SyncBody body) throws WorkflowException {
+        boolean owner = SYNC_STEP_COUNT.get() == null;
+        if (owner) {
+            SYNC_STEP_COUNT.set(new int[]{0});
+        }
+        try {
+            body.run();
+        } finally {
+            if (owner) {
+                SYNC_STEP_COUNT.remove();
+            }
+        }
+    }
+
+    private boolean consumeSyncStep(WorkflowInstance instance) {
+        int[] count = SYNC_STEP_COUNT.get();
+        if (count == null || count[0] >= MAX_SYNC_STEPS) {
+            instance.fail("Exceeded " + MAX_SYNC_STEPS + " synchronous workflow steps");
+            return false;
+        }
+        count[0]++;
+        return true;
+    }
+
+    @FunctionalInterface
+    private interface SyncBody {
+        void run() throws WorkflowException;
+    }
+
     private void runBranchUntilBlocked(
             WorkflowInstance instance,
             BpmnProcess process,
@@ -554,9 +644,11 @@ public class WorkflowEngine {
             MessageTaskExecutor messageExecutor,
             WorkflowConditionEvaluator evaluator
     ) throws WorkflowException {
-        while (token.state() == TokenState.ACTIVE && instance.status() == InstanceStatus.RUNNING) {
-            stepToken(instance, process, token, executor, messageExecutor, evaluator);
-        }
+        withSyncBudget(() -> {
+            while (token.state() == TokenState.ACTIVE && instance.status() == InstanceStatus.RUNNING) {
+                stepToken(instance, process, token, executor, messageExecutor, evaluator);
+            }
+        });
     }
 
     private void handleParallelJoin(
@@ -588,8 +680,20 @@ public class WorkflowEngine {
             MessageTaskExecutor messageExecutor,
             WorkflowConditionEvaluator evaluator
     ) throws WorkflowException {
+        if (advanceTokenToNext(instance, process, token, nodeId, evaluator)) {
+            stepToken(instance, process, token, executor, messageExecutor, evaluator);
+        }
+    }
+
+    private boolean advanceTokenToNext(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            ExecutionToken token,
+            String nodeId,
+            WorkflowConditionEvaluator evaluator
+    ) throws WorkflowException {
         if (token.state() != TokenState.ACTIVE) {
-            return;
+            return false;
         }
 
         String next = process.resolveNext(nodeId, evaluator);
@@ -603,29 +707,70 @@ public class WorkflowEngine {
             } else {
                 instance.fail("No outgoing flow from node: " + nodeId);
             }
-            return;
+            return false;
         }
 
         instance.moveToken(token, next);
-        if (process.isSubProcess(next)) {
-            enterSubProcess(instance, process, token, next, executor, messageExecutor, evaluator);
-            return;
+        return resolveArrivalOnNode(instance, process, token, next);
+    }
+
+    private boolean resolveArrivalOnNode(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            ExecutionToken token,
+            String arrivedNodeId
+    ) {
+        if (process.isSubProcess(arrivedNodeId)) {
+            SubProcessDefinition subProcess = process.subProcesses().get(arrivedNodeId);
+            if (subProcess == null) {
+                instance.fail("Subprocess definition missing: " + arrivedNodeId);
+                return false;
+            }
+            instance.moveToken(token, subProcess.startNodeId());
+            return true;
         }
-        if (process.isEnd(next)) {
-            if (process.isSubProcessEnd(next)) {
-                exitSubProcess(instance, process, token, process.subProcessForEndEvent(next),
-                        executor, messageExecutor, evaluator);
-                return;
+        if (process.isEnd(arrivedNodeId)) {
+            if (process.isSubProcessEnd(arrivedNodeId)) {
+                return exitSubProcessToNext(instance, process, token, process.subProcessForEndEvent(arrivedNodeId));
             }
             token.complete();
             instance.removeToken(token);
             if (instance.tokens().isEmpty()) {
                 instance.complete();
             }
-            return;
+            return false;
         }
+        return true;
+    }
 
-        stepToken(instance, process, token, executor, messageExecutor, evaluator);
+    private boolean enterSubProcessToNext(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            ExecutionToken token,
+            String subProcessNodeId
+    ) {
+        return resolveArrivalOnNode(instance, process, token, subProcessNodeId);
+    }
+
+    private boolean exitSubProcessToNext(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            ExecutionToken token,
+            String subProcessNodeId
+    ) {
+        SubProcessDefinition subProcess = process.subProcesses().get(subProcessNodeId);
+        if (subProcess == null) {
+            instance.fail("Subprocess definition missing: " + subProcessNodeId);
+            return false;
+        }
+        List<SequenceFlowDefinition> outgoing = process.outgoingFrom(subProcessNodeId);
+        if (outgoing.isEmpty()) {
+            instance.fail("Subprocess has no outgoing flow: " + subProcessNodeId);
+            return false;
+        }
+        String next = outgoing.getFirst().targetRef();
+        instance.moveToken(token, next);
+        return true;
     }
 
     private static String findJoinNode(BpmnProcess process, String forkNodeId) {
@@ -660,47 +805,6 @@ public class WorkflowEngine {
             return null;
         }
         return findJoinFromBranch(process, outgoing.getFirst().targetRef());
-    }
-
-    private void enterSubProcess(
-            WorkflowInstance instance,
-            BpmnProcess process,
-            ExecutionToken token,
-            String subProcessNodeId,
-            WorkflowActionExecutor executor,
-            MessageTaskExecutor messageExecutor,
-            WorkflowConditionEvaluator evaluator
-    ) throws WorkflowException {
-        SubProcessDefinition subProcess = process.subProcesses().get(subProcessNodeId);
-        if (subProcess == null) {
-            instance.fail("Subprocess definition missing: " + subProcessNodeId);
-            return;
-        }
-        instance.moveToken(token, subProcess.startNodeId());
-        stepToken(instance, process, token, executor, messageExecutor, evaluator);
-    }
-
-    private void exitSubProcess(
-            WorkflowInstance instance,
-            BpmnProcess process,
-            ExecutionToken token,
-            String subProcessNodeId,
-            WorkflowActionExecutor executor,
-            MessageTaskExecutor messageExecutor,
-            WorkflowConditionEvaluator evaluator
-    ) throws WorkflowException {
-        SubProcessDefinition subProcess = process.subProcesses().get(subProcessNodeId);
-        if (subProcess == null) {
-            instance.fail("Subprocess definition missing: " + subProcessNodeId);
-            return;
-        }
-        List<SequenceFlowDefinition> outgoing = process.outgoingFrom(subProcessNodeId);
-        if (outgoing.isEmpty()) {
-            instance.fail("Subprocess has no outgoing flow: " + subProcessNodeId);
-            return;
-        }
-        instance.moveToken(token, outgoing.getFirst().targetRef());
-        stepToken(instance, process, token, executor, messageExecutor, evaluator);
     }
 
     private static java.util.Optional<ExecutionToken> findWaitingToken(
