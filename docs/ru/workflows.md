@@ -228,7 +228,7 @@ POST /api/v1/work-queue/complete?taskId=...&operatorId=operator
 ![BPMN-редактор workflow — MES work-order dispatch](../assets/ispf-bpmn-workflow.png)
 
 - **WorkflowBuilder** — статус, запуск, ISPF Workflow Diagram Editor; статус продукта **Beta — подмножество BPMN** (см. таблицы выше)
-- **IspfBpmnEditor** / **IspfBpmnViewer** (ADR-0052) — свой React+SVG редактор (без bpmn.io / без watermark). Модель сериализуется в BPMN 2.0 + `bpmndi` + `ispf:*`. Свойства — в панели; XML — для ИИ и крайних случаев.
+- **IspfBpmnEditor** / **IspfBpmnViewer** (ADR-0052) — свой React+SVG редактор (без bpmn.io / без watermark). Модель сериализуется в BPMN 2.0 + `bpmndi` + `ispf:*`. Свойства — в панели; XML — для ИИ и крайних случаев. `ispf:targetObject` у `setVariable` и пользовательской задачи принимает хаб CUSTOM (SINGLETON или INSTANCE), DEVICE или узел APPLICATION. `start_workflow` записывает объект запуска в `ispf:objectPath`; если атрибут пуст, движок читает `ispf:targetObject`.
 - **Импорт** — чужой BPMN через **Import BPMN**; `adaptForeignBpmn` перестраивает модель и показывает предупреждения. Жёсткий gate — reject при parse (ADR-0047).
 
 ### Диаграмма без разметки (DI)

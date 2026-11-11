@@ -181,9 +181,13 @@ public class WorkflowTaskExecutor {
             }
             case START_WORKFLOW -> {
                 String childPath = required(params, "workflowPath");
+                String trigger = params.get("objectPath");
+                if (trigger == null || trigger.isBlank()) {
+                    trigger = params.get("targetObject");
+                }
                 workflows.getObject().runWorkflow(
                         childPath,
-                        params.get("objectPath"),
+                        trigger,
                         WorkflowStartTrigger.EVENT
                 );
             }

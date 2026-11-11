@@ -2,7 +2,7 @@ import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { cleanup, screen, waitFor } from "@testing-library/react";
-import type { ObjectEditorDto } from "../../types";
+import type { ObjectEditorDto, ObjectSummary, ObjectType } from "../../types";
 import { renderWithInspector, testI18n } from "../../test/renderWithInspector";
 import enWorkflow from "../../locales/en/workflow.json";
 import * as api from "../../api";
@@ -13,9 +13,25 @@ vi.mock("../../api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../api")>();
   return {
     ...actual,
+    fetchObjects: vi.fn(),
     fetchObjectEditor: vi.fn(),
   };
 });
+
+function object(path: string, type: ObjectType, displayName: string): ObjectSummary {
+  return {
+    id: path,
+    path,
+    type,
+    displayName,
+    description: "",
+    templateId: null,
+    createdAt: "",
+    sortOrder: 0,
+    variableNames: [],
+    eventNames: [],
+  };
+}
 
 function PanelHarness({ initial }: { initial: FlowNode }) {
   const [node, setNode] = useState(initial);
@@ -35,6 +51,17 @@ function PanelHarness({ initial }: { initial: FlowNode }) {
   );
 }
 
+const serviceTask: FlowNode = {
+  id: "task_set",
+  type: "serviceTask",
+  name: "Set mode",
+  x: 0,
+  y: 0,
+  width: 100,
+  height: 80,
+  ispf: { action: "setVariable", targetObject: "", variable: "mode", value: "auto" },
+};
+
 const invokeTask: FlowNode = {
   id: "task_invoke",
   type: "serviceTask",
@@ -45,6 +72,80 @@ const invokeTask: FlowNode = {
   height: 80,
   ispf: { action: "invoke_function", objectPath: "root.plant-hub", functionName: "", inputMap: "" },
 };
+
+describe("IspfBpmnPropertiesPanel targetObject", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  beforeEach(() => {
+    testI18n.addResourceBundle("en", "workflow", enWorkflow, true, true);
+    vi.mocked(api.fetchObjectEditor).mockResolvedValue({} as ObjectEditorDto);
+    vi.mocked(api.fetchObjects).mockImplementation(async (parent) => {
+      if (parent === "root") {
+        return [
+          object("root.plant-hub", "CUSTOM", "Plant hub"),
+          object("root.sensor", "DEVICE", "Sensor"),
+          object("root.board", "DASHBOARD", "Board"),
+        ];
+      }
+      return [];
+    });
+  });
+
+  it("lets setVariable pick a CUSTOM hub and keeps a dashboard out", async () => {
+    const onChangeNode = vi.fn();
+    const user = userEvent.setup();
+    renderWithInspector(
+      <IspfBpmnPropertiesPanel
+        selection={{ kind: "node", node: serviceTask }}
+        onChangeNode={onChangeNode}
+        onChangeEdge={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Browse tree" }));
+    expect(await screen.findByText("Selectable types: CUSTOM, DEVICE, APPLICATION")).toBeInTheDocument();
+
+    await user.click(await screen.findByTitle("root.board"));
+    expect(onChangeNode).not.toHaveBeenCalled();
+
+    await user.click(await screen.findByTitle("root.plant-hub"));
+    await waitFor(() =>
+      expect(onChangeNode).toHaveBeenCalledWith("task_set", {
+        ispf: expect.objectContaining({ targetObject: "root.plant-hub" }),
+      }),
+    );
+  });
+
+  it("writes a start_workflow trigger to objectPath", async () => {
+    const onChangeNode = vi.fn();
+    const user = userEvent.setup();
+    const startTask: FlowNode = {
+      ...serviceTask,
+      id: "task_start",
+      ispf: { action: "start_workflow", workflowPath: "root.platform.workflows.child" },
+    };
+    renderWithInspector(
+      <IspfBpmnPropertiesPanel
+        selection={{ kind: "node", node: startTask }}
+        onChangeNode={onChangeNode}
+        onChangeEdge={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const browse = screen.getAllByRole("button", { name: "Browse tree" });
+    await user.click(browse[1]);
+    await user.click(await screen.findByTitle("root.plant-hub"));
+    await waitFor(() =>
+      expect(onChangeNode).toHaveBeenCalledWith("task_start", {
+        ispf: expect.objectContaining({ objectPath: "root.plant-hub" }),
+      }),
+    );
+  });
+});
 
 describe("IspfBpmnPropertiesPanel descriptors", () => {
   afterEach(() => {
@@ -113,6 +214,27 @@ describe("IspfBpmnPropertiesPanel descriptors", () => {
     expect(api.fetchObjectEditor).not.toHaveBeenCalledWith("root.stale");
   });
 
+  it("falls back to free-text input when descriptor has no matching names", async () => {
+    vi.mocked(api.fetchObjectEditor).mockResolvedValue({ functions: [] } as unknown as ObjectEditorDto);
+    const user = userEvent.setup();
+    renderWithInspector(<PanelHarness initial={invokeTask} />);
+
+    const input = await screen.findByRole("textbox", { name: "ispf:functionName" });
+    await user.type(input, "customFn");
+    expect(input).toHaveValue("customFn");
+    expect(screen.getByText("This object's descriptor has no functions.")).toBeInTheDocument();
+  });
+
+  it("falls back to free-text input when descriptor fetch fails", async () => {
+    vi.mocked(api.fetchObjectEditor).mockRejectedValue(new Error("404 Not Found"));
+    const user = userEvent.setup();
+    renderWithInspector(<PanelHarness initial={invokeTask} />);
+
+    const input = await screen.findByRole("textbox", { name: "ispf:functionName" });
+    await user.type(input, "offlineFn");
+    expect(input).toHaveValue("offlineFn");
+  });
+
   it("flags an inputMap that is neither pairs nor a scalar JSON object", async () => {
     const user = userEvent.setup();
     renderWithInspector(<PanelHarness initial={invokeTask} />);
@@ -132,7 +254,7 @@ describe("IspfBpmnPropertiesPanel descriptors", () => {
     };
     renderWithInspector(<PanelHarness initial={fireTask} />);
 
-    await user.type(screen.getByRole("textbox", { name: "ispf:payloadJson" }), "[1]");
+    await user.type(screen.getByRole("textbox", { name: "ispf:payloadJson" }), "[[1]");
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "payloadJson values must be strings, numbers, or booleans.",
     );

@@ -202,6 +202,31 @@ class WorkflowTaskExecutorTest {
     }
 
     @Test
+    void startWorkflowPrefersObjectPathAndFallsBackToTargetObject() throws WorkflowException {
+        when(workflows.getObject()).thenReturn(workflowService);
+        String child = "root.platform.workflows.child";
+
+        executor().executeServiceTask(
+                task(WorkflowActionType.START_WORKFLOW, Map.of(
+                        "workflowPath", child,
+                        "objectPath", TARGET,
+                        "targetObject", "root.other"
+                )),
+                instance()
+        );
+        verify(workflowService).runWorkflow(child, TARGET, WorkflowStartTrigger.EVENT);
+
+        executor().executeServiceTask(
+                task(WorkflowActionType.START_WORKFLOW, Map.of(
+                        "workflowPath", child,
+                        "targetObject", "root.plant-hub"
+                )),
+                instance()
+        );
+        verify(workflowService).runWorkflow(child, "root.plant-hub", WorkflowStartTrigger.EVENT);
+    }
+
+    @Test
     void missingRequiredParameterIsAWorkflowException() {
         WorkflowException ex = assertThrows(WorkflowException.class, () -> executor().executeServiceTask(
                 task(WorkflowActionType.SET_VARIABLE, Map.of("variable", "mode")),

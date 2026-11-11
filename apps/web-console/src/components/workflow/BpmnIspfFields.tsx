@@ -44,6 +44,7 @@ export function BpmnDescriptorSelect({
     queryKey: ["bpmn-descriptor", path],
     queryFn: () => fetchObjectEditor(path),
     enabled: Boolean(path),
+    retry: false,
   });
   const names = useMemo(
     () => (query.data ? descriptorNames(query.data, kind) : []),
@@ -51,23 +52,32 @@ export function BpmnDescriptorSelect({
   );
   const current = value.trim();
   const options = current && !names.includes(current) ? [current, ...names] : names;
+  const useSelect = Boolean(path) && (query.isLoading || (query.isSuccess && names.length > 0));
 
   return (
     <label className="field-block">
       <span className="field-caption">{label}</span>
-      <select
-        aria-label={label}
-        value={current}
-        disabled={!path || query.isLoading}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value="">—</option>
-        {options.map((name) => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </select>
+      {useSelect ? (
+        <select
+          aria-label={label}
+          value={current}
+          disabled={query.isLoading}
+          onChange={(event) => onChange(event.target.value)}
+        >
+          <option value="">—</option>
+          {options.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          aria-label={label}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      )}
       {!path ? <span className="hint">{t("bpmn.props.descriptorNeedObject")}</span> : null}
       {path && query.isSuccess && names.length === 0 ? (
         <span className="hint">{t(EMPTY_KEY[kind])}</span>

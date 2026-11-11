@@ -92,7 +92,7 @@ export const WORKFLOW_ISPF_ACTIONS: {
 }[] = [
   { action: "fire_event", label: "Fire event", attrs: ["ispf:objectPath", "ispf:eventName", "ispf:payloadVariable", "ispf:payloadJson"] },
   { action: "read_variable", label: "Read variable", attrs: ["ispf:objectPath", "ispf:variable", "ispf:contextKey"] },
-  { action: "start_workflow", label: "Start child workflow", attrs: ["ispf:workflowPath", "ispf:targetObject"] },
+  { action: "start_workflow", label: "Start child workflow", attrs: ["ispf:workflowPath", "ispf:objectPath"] },
   { action: "invoke_function", label: "Invoke function", attrs: ["ispf:objectPath", "ispf:functionName", "ispf:inputMap"] },
   { action: "setVariable", label: "Set variable", attrs: ["ispf:targetObject", "ispf:variable", "ispf:value"] },
   { action: "log", label: "Log message", attrs: ["ispf:message"] },

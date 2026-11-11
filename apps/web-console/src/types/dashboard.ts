@@ -242,6 +242,11 @@ export interface FunctionWidget extends DashboardWidgetBase {
   confirmMessage?: string;
   /** Static JSON input rows for invoke (optional). */
   inputJson?: string;
+  /**
+   * Same static input under the layout name used by older dashboards.
+   * Used when {@link inputJson} is empty.
+   */
+  inputMapJson?: string;
   /** When set, button runs workflow instead of invoking a function. */
   workflowPath?: string;
   /**
@@ -260,6 +265,8 @@ export interface FunctionButton {
    * placeholders substituted from dashboard session params at click time.
    */
   inputJson?: string;
+  /** Older layout name for the same static input. Used when {@link inputJson} is empty. */
+  inputMapJson?: string;
   confirmMessage?: string;
   /** Visual kind: "primary" (default) or "danger". */
   kind?: "primary" | "danger";

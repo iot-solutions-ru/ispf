@@ -96,6 +96,11 @@ class CommercialBundleDeployApiTest {
         manifest.put("schemaName", "app_licensed_deploy");
         manifest.put("migrations", java.util.List.of());
         manifest.put("functions", java.util.List.of());
+        manifest.put("objects", java.util.List.of(Map.of(
+                "parentPath", "root.platform.devices",
+                "name", "licensed-probe",
+                "type", "DEVICE"
+        )));
         return manifest;
     }
 }
