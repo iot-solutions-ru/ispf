@@ -136,15 +136,37 @@ describe("useLazyObjectTree", () => {
       ([parent]) => parent === "root.platform.devices",
     ).length;
     await act(async () => {
-      // Mirrors App handleTreeLoadChildren: force when path is WS-capped.
-      await result.current.loadChildren(
-        "root.platform.devices",
-        result.current.wsCappedPaths.includes("root.platform.devices"),
-      );
+      // Mirrors App handleTreeLoadChildren(path, forceRefresh=true) for capped folders.
+      const force = true && result.current.wsCappedPaths.includes("root.platform.devices");
+      await result.current.loadChildren("root.platform.devices", force);
     });
     const callsAfter = vi.mocked(fetchObjects).mock.calls.filter(
       ([parent]) => parent === "root.platform.devices",
     ).length;
     expect(callsAfter).toBe(callsBefore + 1);
+  });
+
+  it("prunes deleted structural children when a capped folder is force-reloaded", async () => {
+    treeMock.deviceCount = 65;
+    const { result } = renderHook(() => useLazyObjectTree(true));
+    await waitFor(() => {
+      expect(result.current.objects.length).toBeGreaterThan(0);
+    });
+    await act(async () => {
+      await result.current.loadChildren("root.platform.devices", true);
+    });
+    await waitFor(() => {
+      expect(result.current.objects.some((obj) => obj.path.endsWith(".demo-64"))).toBe(true);
+      expect(result.current.wsCappedPaths).toContain("root.platform.devices");
+    });
+    treeMock.deviceCount = 60;
+    await act(async () => {
+      await result.current.loadChildren("root.platform.devices", true);
+    });
+    await waitFor(() => {
+      expect(result.current.objects.some((obj) => obj.path.endsWith(".demo-64"))).toBe(false);
+      expect(result.current.objects.some((obj) => obj.path.endsWith(".demo-59"))).toBe(true);
+      expect(result.current.wsCappedPaths).not.toContain("root.platform.devices");
+    });
   });
 });

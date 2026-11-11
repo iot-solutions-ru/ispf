@@ -344,9 +344,9 @@ function AppShell() {
   );
 
   const handleTreeLoadChildren = useCallback(
-    (path: string) => {
-      // WS-capped folders skip live updates; re-expand must force HTTP refresh.
-      void loadChildren(path, liveUpdatesPausedPaths.has(path));
+    (path: string, forceRefresh = false) => {
+      // Force only on user expand toggle — not on selection/expanded sync effects.
+      void loadChildren(path, forceRefresh && liveUpdatesPausedPaths.has(path));
     },
     [loadChildren, liveUpdatesPausedPaths],
   );

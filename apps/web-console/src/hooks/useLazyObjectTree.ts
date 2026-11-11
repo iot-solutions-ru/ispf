@@ -59,6 +59,32 @@ export function useLazyObjectTree(enabled = true) {
       const map = objectsRef.current;
       if (parentPath) {
         removeGroupRefsForParent(parentPath);
+        // Drop structural children missing from a fresh parent listing (WS-capped folders
+        // do not receive DELETED events, so collapse/expand must prune ghosts).
+        const nextPaths = new Set(items.map((item) => item.path));
+        const removedPaths: string[] = [];
+        for (const [key, obj] of [...map.entries()]) {
+          if (obj.groupRef) {
+            continue;
+          }
+          if (parentObjectPath(obj.path) !== parentPath) {
+            continue;
+          }
+          if (!nextPaths.has(obj.path)) {
+            removedPaths.push(obj.path);
+            map.delete(key);
+          }
+        }
+        for (const removed of removedPaths) {
+          loadedParentsRef.current.delete(removed);
+          const prefix = `${removed}.`;
+          for (const [key, obj] of [...map.entries()]) {
+            if (obj.path === removed || obj.path.startsWith(prefix)) {
+              map.delete(key);
+              loadedParentsRef.current.delete(obj.path);
+            }
+          }
+        }
       }
       for (const item of items) {
         map.set(objectTreeKey(item), item);

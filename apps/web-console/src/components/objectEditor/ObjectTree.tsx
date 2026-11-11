@@ -39,7 +39,8 @@ interface ObjectTreeProps {
   onOpenOperatorApp?: (path: string) => void;
   canReorder?: boolean;
   onReorder?: (parentPath: string, orderedPaths: string[]) => void;
-  onLoadChildren?: (path: string) => void;
+  /** Second arg true only for user expand toggle (WS-capped folders may force HTTP refresh). */
+  onLoadChildren?: (path: string, forceRefresh?: boolean) => void;
   onVisibleRowKeysChange?: (keys: string[]) => void;
   liveUpdatesPausedPaths?: ReadonlySet<string>;
   bulkActions?: TreeBulkActionsConfig;
@@ -116,7 +117,7 @@ interface TreeRowProps {
   onRowContextMenu?: (row: TreeRowSelection, event: React.MouseEvent) => void;
   onOpenEditor?: (path: string) => void;
   onOpenOperatorApp?: (path: string) => void;
-  onLoadChildren?: (path: string) => void;
+  onLoadChildren?: (path: string, forceRefresh?: boolean) => void;
   liveUpdatesPaused?: boolean;
 }
 
@@ -258,7 +259,7 @@ const TreeRow = memo(function TreeRow({
           if (hasChildren) {
             e.stopPropagation();
             if (!expanded) {
-              onLoadChildren?.(path);
+              onLoadChildren?.(path, true);
             }
             toggle(path);
           }
