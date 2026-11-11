@@ -60,7 +60,7 @@
 1. Explorer → **SCADA Mimics** (`root.platform.mimics`)
 2. ПКМ → **Create mimic** (или кнопка «+»)
 3. Имя сегмента пути, например `my-plant` → `root.platform.mimics.my-plant`
-4. Открывается полноэкранный редактор; сохранение → `PUT /api/v1/mimics/by-path/diagram`
+4. Открывается полноэкранный редактор; сохранение → `PUT /api/v1/mimics/by-path/diagram`. Сохранение оставляет редактор открытым. Закрытие — отдельная кнопка. Ошибка сохранения показывается в редакторе, и он не закрывается.
 
 Альтернатива: `POST /api/v1/objects` с `type: MIMIC`, `templateId: mimic-v1`, `parentPath: root.platform.mimics`.
 

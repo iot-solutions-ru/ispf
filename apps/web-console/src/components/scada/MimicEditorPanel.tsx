@@ -1,5 +1,5 @@
 import { Alert } from "antd";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchMimic, saveMimicDiagram, saveMimicTitle } from "../../api";
@@ -46,6 +46,7 @@ export default function MimicEditorPanel({
 }: MimicEditorPanelProps) {
   const { t } = useTranslation("scada");
   const queryClient = useQueryClient();
+  const [saveError, setSaveError] = useState<string | null>(null);
   const mimicQuery = useQuery({
     queryKey: ["mimic", path],
     queryFn: () => fetchMimic(path),
@@ -96,16 +97,20 @@ export default function MimicEditorPanel({
     <ScadaMimicEditor
       diagramJson={mimicQuery.data?.diagramJson ?? "{}"}
       onSave={async (diagramJson) => {
+        setSaveError(null);
         try {
           await saveMutation.mutateAsync(diagramJson);
           if (displayTitle !== mimicQuery.data?.title) {
             await saveMimicTitle(path, displayTitle);
           }
-          onClose();
         } catch (error) {
-          console.error("Failed to save mimic diagram", error);
+          const message = error instanceof Error && error.message.trim()
+            ? error.message
+            : t("editor.saveFailed");
+          setSaveError(message);
         }
       }}
+      saveError={saveError}
       onClose={onClose}
       onOpenProperties={onOpenProperties}
     />
