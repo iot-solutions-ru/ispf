@@ -131,7 +131,22 @@ public class McpToolAdapter {
             String connectionKey
     ) throws Exception {
         if (MCP_META_TOOLS.contains(toolName)) {
-            return wrapMetaResult(executeMetaTool(toolName, arguments, actor, connectionKey), objectMapper);
+            Map<String, Object> metaResult = executeMetaTool(toolName, arguments, actor, connectionKey);
+            String metaStatus = String.valueOf(metaResult.getOrDefault("status", "OK"));
+            auditService.record(
+                    "mcp_" + toolName,
+                    connectionStateStore.agentSessionId(connectionKey).orElse("mcp"),
+                    actor,
+                    writeJson(arguments != null ? arguments : Map.of()),
+                    metaStatus,
+                    "mcp",
+                    "n/a",
+                    contextPackService.contextPackVersion(),
+                    "ERROR".equals(metaStatus)
+                            ? List.of(String.valueOf(metaResult.get("error")))
+                            : List.of()
+            );
+            return wrapMetaResult(metaResult, objectMapper);
         }
 
         Map<String, Object> args = arguments != null ? new LinkedHashMap<>(arguments) : new LinkedHashMap<>();

@@ -1,5 +1,6 @@
 package com.ispf.server.ai.mcp;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -26,10 +27,16 @@ public class McpController {
         this.jsonRpcHandler = jsonRpcHandler;
     }
 
+    public static final String CONNECTION_HEADER = "X-ISPF-Mcp-Connection";
+
     @PostMapping
-    public Object message(@RequestBody Object body, Authentication authentication) throws Exception {
+    public Object message(
+            @RequestBody Object body,
+            Authentication authentication,
+            HttpServletRequest httpRequest
+    ) throws Exception {
         String actor = actor(authentication);
-        String connectionKey = McpConnectionKeys.forHttpActor(actor);
+        String connectionKey = McpConnectionKeys.forHttpActor(actor, httpRequest.getHeader(CONNECTION_HEADER));
         if (body instanceof List<?> list) {
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> requests = (List<Map<String, Object>>) list;
