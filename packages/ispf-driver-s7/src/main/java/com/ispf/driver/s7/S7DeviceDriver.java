@@ -16,8 +16,8 @@ import com.ispf.driver.DriverTransientException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Siemens S7 driver — reads PLC data blocks via s7connector.
@@ -57,7 +57,8 @@ public class S7DeviceDriver implements DeviceDriver {
     private int rack = 0;
     private int slot = 2;
     private int timeoutMs = 3000;
-    private final Map<String, S7Point> points = new ConcurrentHashMap<>();
+    /** Replaced as a whole before poll I/O so a write never sees an empty map. */
+    private volatile Map<String, S7Point> points = Map.of();
     /** Serializes BOOL read-modify-write so two bits in one byte cannot clobber each other. */
     private final Object boolWriteLock = new Object();
     private volatile boolean connected;
@@ -118,12 +119,14 @@ public class S7DeviceDriver implements DeviceDriver {
         if (!isConnected()) {
             throw new DriverTransientException("Not connected");
         }
-        points.clear();
-        Instant observedAt = DriverPollTimestamps.pollTick();
+        Map<String, S7Point> next = new HashMap<>();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
-            S7Point point = S7Point.parse(entry.getValue());
-            points.put(entry.getKey(), point);
-            driverObject.updateVariable(entry.getKey(), readPoint(point), observedAt);
+            next.put(entry.getKey(), S7Point.parse(entry.getValue()));
+        }
+        points = Map.copyOf(next);
+        Instant observedAt = DriverPollTimestamps.pollTick();
+        for (Map.Entry<String, S7Point> entry : next.entrySet()) {
+            driverObject.updateVariable(entry.getKey(), readPoint(entry.getValue()), observedAt);
         }
     }
 

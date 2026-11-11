@@ -18,6 +18,7 @@ import com.ispf.driver.iec104.codec.Iec104Value;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -63,7 +64,8 @@ public class Iec104DeviceDriver implements DeviceDriver {
     private int port = 2404;
     private int commonAddress = 1;
     private int timeoutMs = 5000;
-    private final Map<String, Iec104Point> points = new ConcurrentHashMap<>();
+    /** Replaced as a whole before poll I/O so a write never sees an empty map. */
+    private volatile Map<String, Iec104Point> points = Map.of();
     private final Map<Integer, PendingRead> pendingReads = new ConcurrentHashMap<>();
     private volatile boolean connected;
 
@@ -119,10 +121,13 @@ public class Iec104DeviceDriver implements DeviceDriver {
         if (!isConnected()) {
             throw new DriverTransientException("Not connected");
         }
-        points.clear();
+        Map<String, Iec104Point> next = new HashMap<>();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
-            Iec104Point point = Iec104Point.parse(entry.getValue());
-            points.put(entry.getKey(), point);
+            next.put(entry.getKey(), Iec104Point.parse(entry.getValue()));
+        }
+        points = Map.copyOf(next);
+        for (Map.Entry<String, Iec104Point> entry : next.entrySet()) {
+            Iec104Point point = entry.getValue();
             try {
                 driverObject.updateVariable(entry.getKey(), readPoint(point));
             } catch (DriverException ex) {
