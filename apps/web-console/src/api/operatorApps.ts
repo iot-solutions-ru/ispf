@@ -89,7 +89,23 @@ export async function createOperatorApp(appId: string, title: string): Promise<O
   return response.json() as Promise<OperatorUi>;
 }
 
+export class OperatorAppRequestError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "OperatorAppRequestError";
+    this.status = status;
+  }
+}
+
+/** Create the app only when save failed because it does not exist yet. */
+export function operatorAppSaveNeedsCreate(error: unknown): boolean {
+  return error instanceof OperatorAppRequestError && error.status === 404;
+}
+
 export async function saveOperatorAppUi(appId: string, ui: OperatorUi): Promise<OperatorUi> {
+  const packInstalled = ui.uiPack?.installed === true;
   const response = await fetch(`/api/v1/operator-apps/${encodeURIComponent(appId)}/ui`, {
     method: "PUT",
     headers: {
@@ -104,11 +120,13 @@ export async function saveOperatorAppUi(appId: string, ui: OperatorUi): Promise<
       agentInstructions: ui.agentInstructions?.trim() || null,
       hideTasksAndEvents: ui.hideTasksAndEvents === true,
       hideDashboardNav: ui.hideDashboardNav === true,
+      hostedUiUrl: packInstalled ? null : (ui.hostedUiUrl ?? ""),
+      externalSpaUrl: ui.externalSpaUrl ?? "",
     }),
   });
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || `Save operator app failed: ${response.status}`);
+    throw new OperatorAppRequestError(response.status, text || `Save operator app failed: ${response.status}`);
   }
   return response.json() as Promise<OperatorUi>;
 }

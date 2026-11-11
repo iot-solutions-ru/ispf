@@ -161,7 +161,7 @@ export default defineConfig({
 
 `basename` React Router совпадает с `base`. Dev: `http://localhost:5173/apps/my-app/`. Опционально `VITE_DATA_SOURCE=mock` (StoreTwin).
 
-Мост до установки pack: в бандле `operatorUi.externalSpaUrl` = `http://127.0.0.1:5173` (см. `examples/m11-monitor-ui`).
+Мост до установки pack: в бандле `operatorUi.externalSpaUrl` = `http://127.0.0.1:5173` (см. `examples/m11-monitor-ui`). Редактор операторского приложения задаёт и очищает адрес встроенного и внешнего приложения. Пока UI-пакет установлен, адрес встроенного приложения только для чтения и не записывается обратно.
 
 ---
 
