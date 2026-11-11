@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -201,7 +202,13 @@ public class ObjectQueryJoinResolver {
         List<PlatformObject> candidates = new ArrayList<>();
         String pattern = join.sourcePathPattern();
         Set<String> types = join.objectTypes();
-        for (PlatformObject node : objectManager.tree().all()) {
+        Set<ObjectType> indexedTypes = parseJoinObjectTypes(types);
+        if (types != null && !types.isEmpty() && indexedTypes.isEmpty()) {
+            return List.of();
+        }
+        String prefix = ObjectPathPattern.staticPrefix(pattern);
+        List<PlatformObject> indexed = objectManager.tree().findCandidates(prefix, indexedTypes);
+        for (PlatformObject node : indexed) {
             if (pattern != null && !pattern.isBlank() && !ObjectPathPattern.matches(node.path(), pattern)) {
                 continue;
             }
@@ -211,6 +218,24 @@ public class ObjectQueryJoinResolver {
             candidates.add(node);
         }
         return candidates;
+    }
+
+    private static Set<ObjectType> parseJoinObjectTypes(Set<String> rawTypes) {
+        if (rawTypes == null || rawTypes.isEmpty()) {
+            return Set.of();
+        }
+        EnumSet<ObjectType> resolved = EnumSet.noneOf(ObjectType.class);
+        for (String raw : rawTypes) {
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            try {
+                resolved.add(ObjectType.valueOf(raw.trim()));
+            } catch (IllegalArgumentException ignored) {
+                // Unknown type name cannot match any ObjectType enum constant.
+            }
+        }
+        return resolved;
     }
 
     private boolean matchesJoinSource(ObjectQueryJoinSpec join, String path) {

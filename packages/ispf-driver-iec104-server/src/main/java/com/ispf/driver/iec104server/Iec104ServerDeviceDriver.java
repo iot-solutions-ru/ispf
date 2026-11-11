@@ -255,6 +255,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
         int type = ioaTypes.getOrDefault(ioa, Iec104Type.M_ME_NC_1);
         Iec104Value value = switch (type) {
             case Iec104Type.M_SP_NA_1 -> Iec104Value.singlePoint(ioa, current != 0.0, "GOOD");
+            case Iec104Type.M_DP_NA_1 -> Iec104Value.doublePoint(ioa, (int) current & 0x03, "GOOD");
             case Iec104Type.M_ME_NA_1 -> Iec104Value.normalized(ioa, current, "GOOD");
             default -> Iec104Value.shortFloat(ioa, current, "GOOD");
         };
@@ -289,6 +290,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     private static Double decodeWriteValue(Iec104Value value) {
         return switch (value.typeId()) {
             case Iec104Type.C_SC_NA_1, Iec104Type.M_SP_NA_1 -> value.booleanValue() ? 1.0 : 0.0;
+            case Iec104Type.C_DC_NA_1, Iec104Type.M_DP_NA_1 -> value.numericValue();
             case Iec104Type.C_SE_NA_1, Iec104Type.M_ME_NA_1,
                     Iec104Type.C_SE_NC_1, Iec104Type.M_ME_NC_1, Iec104Type.M_ME_TF_1 -> value.numericValue();
             default -> null;
@@ -298,6 +300,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     private static int measurementTypeFor(int typeId) {
         return switch (typeId) {
             case Iec104Type.C_SC_NA_1 -> Iec104Type.M_SP_NA_1;
+            case Iec104Type.C_DC_NA_1 -> Iec104Type.M_DP_NA_1;
             case Iec104Type.C_SE_NA_1 -> Iec104Type.M_ME_NA_1;
             case Iec104Type.C_SE_NC_1 -> Iec104Type.M_ME_NC_1;
             default -> typeId;

@@ -29,6 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,8 +96,14 @@ public class ObjectQueryService {
             throw new IllegalArgumentException("from.sourcePathPattern is required");
         }
         String drivingAlias = from.aliasOrDefault();
+        Set<ObjectType> indexedTypes = parseObjectTypes(from.objectTypes());
+        if (from.objectTypes() != null && !from.objectTypes().isEmpty() && indexedTypes.isEmpty()) {
+            return List.of();
+        }
+        String prefix = ObjectPathPattern.staticPrefix(pattern);
+        List<PlatformObject> candidates = objectManager.tree().findCandidates(prefix, indexedTypes);
         List<Map<String, Object>> rows = new ArrayList<>();
-        for (PlatformObject node : objectManager.tree().all()) {
+        for (PlatformObject node : candidates) {
             if (!ObjectPathPattern.matches(node.path(), pattern)) {
                 continue;
             }
@@ -369,6 +376,24 @@ public class ObjectQueryService {
             return true;
         }
         return objectTypes.contains(node.type().name());
+    }
+
+    static Set<ObjectType> parseObjectTypes(Set<String> rawTypes) {
+        if (rawTypes == null || rawTypes.isEmpty()) {
+            return Set.of();
+        }
+        EnumSet<ObjectType> resolved = EnumSet.noneOf(ObjectType.class);
+        for (String raw : rawTypes) {
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            try {
+                resolved.add(ObjectType.valueOf(raw.trim()));
+            } catch (IllegalArgumentException ignored) {
+                // Unknown type name cannot match any ObjectType enum constant.
+            }
+        }
+        return resolved;
     }
 
     private static final List<ObjectQueryAggregateSpec> DEFAULT_GROUP_BY_AGGREGATES = List.of(

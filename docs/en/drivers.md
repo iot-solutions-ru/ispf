@@ -37,7 +37,7 @@ In `DriverProductionMatrix` — **115** drivers at **PRODUCTION** (OT Trust Wave
 | `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | see interop lab; OPC UA lab default is SecurityPolicy None |
 | `iec104`, `dlms`, `gps-tracker` | PRODUCTION | see interop lab |
 | `cwmp` | PRODUCTION | outside top-20; Inform + Get/SetParameterValues |
-| `dnp3` | PRODUCTION | **Poll/read only** — `writePoint` not implemented |
+| `dnp3` | PRODUCTION | Class poll plus direct operate (CROB latch, analog float). Inputs and counters stay read-only |
 | `haystack`, `kafka`, `coap` | PRODUCTION | poll-only clients; loopback tests |
 | `ip-host`, `telnet`, `ssh`, `modem-at` | PRODUCTION | IT/remote checks; read-only |
 | `icmp` | BETA | `InetAddress.isReachable` probe, < 100 LOC — below the evidence floor; read-only |
@@ -604,7 +604,7 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `device-net` | `ispf-driver-device-net` | BETA | Apache-2.0 | ODVA DeviceNet gateway stub |
 | `dhcp` | `ispf-driver-dhcp` | PRODUCTION | Apache-2.0 | DHCP discover probe |
 | `dlms` | `ispf-driver-dlms` | PRODUCTION | Apache-2.0 | DLMS/COSEM meter master (TCP WRAPPER) |
-| `dnp3` | `ispf-driver-dnp3` | PRODUCTION | Apache-2.0 | DNP3 TCP master — class poll/read (write not implemented) |
+| `dnp3` | `ispf-driver-dnp3` | PRODUCTION | Apache-2.0 | DNP3 TCP master — class poll plus CROB latch and g41v3 analog direct operate |
 | `eebus` | `ispf-driver-eebus` | BETA | Apache-2.0 | EEBUS / SHIP energy management lab subset |
 | `email` | `ispf-driver-email` | PRODUCTION | Apache-2.0 | Outbound email via HTTP relay gateway |
 | `enocean` | `ispf-driver-enocean` | STUB | Apache-2.0 | EnOcean ESP3 / USB gateway stub |
@@ -787,7 +787,7 @@ Maturity: **production**. Loopback tests: `OpcUaDeviceDriverTest` (browse, write
 
 Siemens S7 over ISO-on-TCP. Poll/read/write via `readPoints` / `writePoint`.
 
-Point mapping: `area:dbNumber:offset:type` (for example `DB:1:0:REAL`).
+Point mapping: `area:dbNumber:offset:type` (for example `DB:1:0:REAL`). BOOL may use `byte.bit` (`DB:1:0.3:BOOL`, bits 0..7). A bare offset is bit 0.
 
 Supported types: `BOOL`, `BYTE`, `SINT`, `USINT`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL`, `LREAL`.
 
@@ -795,7 +795,7 @@ Write (`writePoint`):
 
 | Type | Field in `DataRecord` |
 |------|-------------------------|
-| `BOOL` | `value` (boolean); read-modify-write of bit 0 in byte at offset |
+| `BOOL` | `value` (boolean); read-modify-write of bit 0..7 in the byte (`offset` or `offset.bit`) |
 | integer types | `raw` or `value` (number) |
 | `REAL`, `LREAL` | `value` or `raw` (number) |
 
@@ -807,7 +807,7 @@ IEC 60870-5-104 master (ISPF-owned codec). Config: `host`, `port` (2404), `commo
 
 Point mapping: `ioa:dataType` (for example `2001:BOOL`, `3001:FLOAT`, `1001:M_ME_NA_1`).
 
-**Write (BL-23):** `BOOL` / `M_SP_NA_1` → `singleCommand`; `FLOAT` / `M_ME_NC_1` → `setShortFloatCommand`; `INT` / `M_ME_NA_1` → `setNormalizedValueCommand`. After write the variable is updated locally (`quality=GOOD`); poll read may return `NOT_AVAILABLE` if the outstation does not respond to read command.
+**Write (BL-23):** `BOOL` / `M_SP_NA_1` → `singleCommand`; `M_DP_NA_1` → `doubleCommand` (DCS 2 = ON, 1 = OFF, direct execute); `FLOAT` / `M_ME_NC_1` → `setShortFloatCommand`; `INT` / `M_ME_NA_1` → `setNormalizedValueCommand`. After write the variable is updated locally (`quality=GOOD`); poll read may return `NOT_AVAILABLE` if the outstation does not respond to read command.
 
 Loopback test: `Iec104DeviceDriverTest` against `iec104-server`.
 
@@ -856,7 +856,9 @@ Point mapping: `index:dataType` — `BINARY_INPUT`, `BINARY_OUTPUT`, `ANALOG_INP
 
 On each `readPoints`, `Request.classRequest(0,1,2,3)` runs; values and DNP3 flags (`status`) are updated on the object variables.
 
-Maturity: **production** in registry for Class 0/1/2/3 **poll/read** (loopback `Dnp3DeviceDriverTest`, BL-140). **`writePoint` is not implemented** — do not plan control/write field pilots on DNP3 until write lands; treat as BETA for write scenarios.
+**Write:** `BINARY_OUTPUT` sends Direct Operate CROB g12v1 latch-on (`0x03`) or latch-off (`0x04`). `ANALOG_OUTPUT` sends g41v3 IEEE float32 plus status. Qualifier is `0x28` (one object). `BINARY_INPUT`, `ANALOG_INPUT`, and `COUNTER` cannot be written. Pulse, trip/close, and select-before-operate are not implemented.
+
+Maturity: **production** (`POLL` + `WRITE`) for class poll and those two operate objects (loopback `Dnp3DeviceDriverTest`). This subset is not a full DNP3 control profile.
 
 ### dlms (`ispf-driver-dlms`)
 

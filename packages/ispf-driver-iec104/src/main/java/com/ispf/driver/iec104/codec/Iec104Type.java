@@ -8,6 +8,7 @@ public final class Iec104Type {
     public static final int M_ME_NC_1 = 13;
     public static final int M_ME_TF_1 = 36;
     public static final int C_SC_NA_1 = 45;
+    public static final int C_DC_NA_1 = 46;
     public static final int C_SE_NA_1 = 48;
     public static final int C_SE_NC_1 = 50;
     public static final int C_IC_NA_1 = 100;

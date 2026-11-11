@@ -28,8 +28,7 @@ class ObjectQueryJoinResolverTest {
     @Mock
     private PlatformRefExecutor platformRefExecutor;
 
-    @Mock
-    private com.ispf.core.object.ObjectTree tree;
+    private final ObjectTree tree = new ObjectTree();
 
     private ObjectQueryJoinResolver resolver;
 
@@ -43,7 +42,8 @@ class ObjectQueryJoinResolverTest {
     void parentJoinResolvesParentPath() {
         PlatformObject child = stubNode("root.platform.devices.site-a.tank-1", ObjectType.DEVICE);
         PlatformObject parent = stubNode("root.platform.devices.site-a", ObjectType.DEVICE);
-        when(tree.findByPath("root.platform.devices.site-a")).thenReturn(Optional.of(parent));
+        tree.register(parent);
+        tree.register(child);
 
         ObjectQueryJoinSpec join = new ObjectQueryJoinSpec(
                 "parent",
@@ -66,7 +66,7 @@ class ObjectQueryJoinResolverTest {
     void pathSubstringJoinFindsCatalogEntry() {
         PlatformObject device = stubNode("root.platform.devices.lab-userA-01", ObjectType.DEVICE);
         PlatformObject catalog = stubNode("root.platform.instances.lab-userA-01", ObjectType.CUSTOM);
-        when(tree.all()).thenReturn(java.util.List.of(catalog));
+        tree.register(catalog);
 
         ObjectQueryJoinSpec join = new ObjectQueryJoinSpec(
                 "instance",
@@ -89,7 +89,7 @@ class ObjectQueryJoinResolverTest {
     void pathSubstringJoinMatchesLiteralFragmentWithDots() {
         PlatformObject device = stubNode("root.platform.devices.site-a.tank-1", ObjectType.DEVICE);
         PlatformObject catalog = stubNode("root.platform.instances.site-a.tank", ObjectType.CUSTOM);
-        when(tree.all()).thenReturn(java.util.List.of(catalog));
+        tree.register(catalog);
 
         ObjectQueryJoinSpec join = new ObjectQueryJoinSpec(
                 "instance",
@@ -133,7 +133,7 @@ class ObjectQueryJoinResolverTest {
     void lookupJoinMatchesLeafName() {
         PlatformObject device = stubNode("root.platform.devices.pump-01", ObjectType.DEVICE);
         PlatformObject lookup = stubNode("root.platform.instances.pump-01", ObjectType.CUSTOM);
-        when(tree.all()).thenReturn(java.util.List.of(lookup));
+        tree.register(lookup);
         when(platformRefExecutor.read(any(), any())).thenReturn(Optional.of("pump-01"));
 
         ObjectQueryJoinSpec join = new ObjectQueryJoinSpec(
