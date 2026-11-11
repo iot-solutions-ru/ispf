@@ -8,7 +8,7 @@ import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import WidgetHistoryControls from "../WidgetHistoryControls";
-import { buildDemoTrendPoints, parseDemoPreview } from "../widgetDemoData";
+import { buildDemoTrendPoints, editorDemoPreview } from "../widgetDemoData";
 
 interface SparklineWidgetViewProps {
   widget: SparklineWidget;
@@ -45,12 +45,13 @@ export default function SparklineWidgetView({
 
   const demoPoints = useMemo(() => {
     if (!editable || livePoints.length >= 2) return [];
-    const structured = parseDemoPreview<Array<{ t?: number; v: number }>>(widget.demoPreviewJson);
-    if (structured?.length) return buildDemoTrendPoints(structured);
-    const flat = parseDemoPreview<number[]>(widget.demoPreviewJson);
-    if (flat?.length) return buildDemoTrendPoints(flat.map((v) => ({ v })));
-    return [];
-  }, [editable, livePoints.length, widget.demoPreviewJson]);
+    const raw = editorDemoPreview<Array<{ t?: number; v: number }> | number[]>(widget);
+    if (!Array.isArray(raw) || raw.length === 0) return [];
+    if (typeof raw[0] === "number") {
+      return buildDemoTrendPoints((raw as number[]).map((v) => ({ v })));
+    }
+    return buildDemoTrendPoints(raw as Array<{ t?: number; v: number }>);
+  }, [editable, livePoints.length, widget]);
   const points = demoPoints.length >= 2 ? demoPoints : livePoints;
   const isDemo = demoPoints.length >= 2;
   const latest = isDemo ? points[points.length - 1]?.value : stats.latest;
@@ -77,7 +78,7 @@ export default function SparklineWidgetView({
       demo={isDemo}
     >
       <div className="dash-sparkline-body" style={styles.body}>
-        {!objectPath && widget.selectionKey ? (
+        {!objectPath && widget.selectionKey && !isDemo ? (
           <p className="hint">{t("view.selectDevice")}</p>
         ) : (
           <>

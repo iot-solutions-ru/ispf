@@ -1,7 +1,7 @@
 {
   "editor.advanced": "Erweitert",
   "editor.containerDropHint": "Legen Sie Widgets hier ab oder fügen Sie sie aus der Palette hinzu, während dieser Container ausgewählt ist.",
-  "editor.demoPreviewLabel": "Beispiel ohne Daten (Im Editor, solange keine Live-Werte da sind)",
+  "editor.demoPreviewLabel": "Optionales Demo-JSON, nur im Editor. Ohne Live-Daten erscheint die Plakette DEMO-VORSCHAU.",
   "editor.general": "Allgemein",
   "editor.layerBackward": "Nach hinten",
   "editor.layerForward": "Nach vorne",

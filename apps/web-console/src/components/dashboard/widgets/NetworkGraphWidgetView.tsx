@@ -7,7 +7,7 @@ import { useBoundVariable } from "../../../hooks/useBoundVariable";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { parseDemoPreview } from "../widgetDemoData";
+import { editorDemoPreview } from "../widgetDemoData";
 import {
   parseDemoNetworkGraphPreview,
   parseNetworkGraphData,
@@ -135,9 +135,7 @@ export default function NetworkGraphWidgetView({
     [nodesVar.variable, edgesVar.variable, fieldConfig]
   );
 
-  const demoPreview = editable
-    ? parseDemoPreview<DemoNetworkGraphPreview>(widget.demoPreviewJson)
-    : null;
+  const demoPreview = editable ? editorDemoPreview<DemoNetworkGraphPreview>(widget) : null;
   const demoData = useMemo(
     () => (demoPreview ? parseDemoNetworkGraphPreview(demoPreview) : null),
     [demoPreview]

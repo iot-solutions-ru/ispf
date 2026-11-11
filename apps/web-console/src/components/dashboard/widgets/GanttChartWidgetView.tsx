@@ -85,7 +85,7 @@ export default function GanttChartWidgetView({
 
   const { rows: demoGantt, isDemo: isDemoRaw } = useEditorDemoRows(
     widget,
-    [] as Array<{ label: string; start: number; end: number }>,
+    liveRows,
     editable
   );
   const demoRows =

@@ -69,7 +69,7 @@ export default function PieChartWidgetView({
       editable={editable}
       demo={isDemo}
     >
-      {!objectPath && widget.selectionKey ? (
+      {!objectPath && widget.selectionKey && !isDemo ? (
         <p className="hint">{t("view.selectObject")}</p>
       ) : isLoading && !isDemo ? (
         <p className="hint">{t("common:action.loading")}</p>

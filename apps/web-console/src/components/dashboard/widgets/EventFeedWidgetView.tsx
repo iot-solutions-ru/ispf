@@ -7,7 +7,7 @@ import { isCelEventFilter, matchesPayloadFilter } from "../../../utils/ui/payloa
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { parseDemoPreview } from "../widgetDemoData";
+import { editorDemoPreview } from "../widgetDemoData";
 import JournalViewShell from "../../journal/JournalViewShell";
 import { JOURNAL_VIEW_MODES } from "../../journal/journalViewMode";
 import type { JournalViewMode } from "../../journal/journalViewMode";
@@ -114,10 +114,11 @@ export default function EventFeedWidgetView({
     return Array.from(set).sort();
   }, [events.data]);
 
-  const demoEvents =
+  const demoRaw =
     editable && filtered.length === 0 && !events.isLoading
-      ? parseDemoPreview<DemoFeedEvent[]>(widget.demoPreviewJson) ?? []
-      : [];
+      ? editorDemoPreview<DemoFeedEvent[]>(widget)
+      : null;
+  const demoEvents = Array.isArray(demoRaw) ? demoRaw : [];
   const isDemo = demoEvents.length > 0;
   const displayEvents = isDemo ? demoEvents : filtered;
 

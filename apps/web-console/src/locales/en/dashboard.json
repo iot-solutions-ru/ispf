@@ -1,6 +1,6 @@
 {
   "editor.advanced": "Advanced",
-  "editor.demoPreviewLabel": "Sample without data (Shown in the editor until live values arrive)",
+  "editor.demoPreviewLabel": "Optional demo JSON, editor only. A DEMO PREVIEW badge shows while live data is empty.",
   "editor.general": "General",
   "editor.layoutHint": "Change position and size by dragging on the grid.",
   "editor.layoutGridBounds": "Grid of {{columns}} columns. For this widget position and width stay on the grid: x ≤ {{maxX}}, width ≤ {{maxW}}.",

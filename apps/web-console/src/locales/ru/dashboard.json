@@ -1,7 +1,7 @@
 {
   "editor.advanced": "Расширенное",
   "editor.containerDropHint": "Перетащите виджет сюда или добавьте из палитры, когда контейнер выбран.",
-  "editor.demoPreviewLabel": "Пример без данных (Показывается в редакторе, пока нет живых значений)",
+  "editor.demoPreviewLabel": "Необязательный демо-JSON, только редактор. Пока нет живых данных, видна плашка ДЕМО-ПРОСМОТР.",
   "editor.general": "Общее",
   "editor.layerBackward": "Ниже",
   "editor.layerForward": "Выше",

@@ -1,6 +1,10 @@
 // Extracted from widgetDemoPreview.tsx so that component modules only export components
 // (react-refresh/only-export-components keeps Fast Refresh state-preserving).
-import type { DashboardWidget } from "../../types/dashboard";
+import type { ChartType, DashboardWidget } from "../../types/dashboard";
+
+type EditorDemoWidget = Pick<DashboardWidget, "type" | "demoPreviewJson"> & {
+  chartType?: ChartType;
+};
 import type { TrendPoint } from "../../hooks/useTrendSeries";
 import type { CandlestickPoint, RangeTrendPoint } from "../../hooks/useChartTrendSeries";
 
@@ -13,14 +17,140 @@ export function parseDemoPreview<T>(raw: string | undefined): T | null {
   }
 }
 
+const TREND_DEMO = [
+  { t: 1, v: 21.2 },
+  { t: 2, v: 21.8 },
+  { t: 3, v: 22.1 },
+  { t: 4, v: 22.4 },
+  { t: 5, v: 23.0 },
+  { t: 6, v: 22.7 },
+  { t: 7, v: 22.3 },
+  { t: 8, v: 21.9 },
+];
+
+const SPARKLINE_DEMO = [20.1, 20.4, 20.8, 21.2, 21.0, 21.5, 21.3];
+
+const PIE_DEMO = [
+  { name: "Готово", value: 45 },
+  { name: "В работе", value: 30 },
+  { name: "Ожидание", value: 25 },
+];
+
+const GANTT_DEMO = [
+  { label: "Задача A", start: 0, end: 3 },
+  { label: "Задача B", start: 2, end: 6 },
+  { label: "Задача C", start: 5, end: 9 },
+];
+
+const EVENT_FEED_DEMO = [
+  {
+    id: "demo-event-1",
+    eventName: "thresholdExceeded",
+    level: "WARNING",
+    objectPath: "root.platform.devices.demo-sensor-01",
+    timestamp: "2026-01-15T10:00:00.000Z",
+    payload: { rows: [{ value: 42.5, unit: "°C", threshold: 40 }] },
+  },
+  {
+    id: "demo-event-2",
+    eventName: "thresholdExceeded",
+    level: "INFO",
+    objectPath: "root.platform.devices.demo-sensor-01",
+    timestamp: "2026-01-15T09:58:00.000Z",
+    payload: { rows: [{ value: 38.1, unit: "°C" }] },
+  },
+];
+
+const WORK_QUEUE_DEMO = [
+  {
+    id: "demo-task-1",
+    title: "Проверить датчик",
+    status: "OPEN",
+    instructions: "Сверить показания температуры с эталоном",
+    workflowPath: "root.platform.workflows.example",
+  },
+  {
+    id: "demo-task-2",
+    title: "Подтвердить тревогу",
+    status: "CLAIMED",
+    instructions: "Вызвать acknowledgeAlarm на устройстве",
+    workflowPath: "root.platform.workflows.example",
+  },
+];
+
+const NETWORK_DEMO = {
+  nodes: [
+    { id: "gw", label: "Шлюз" },
+    { id: "s1", label: "Датчик 1" },
+    { id: "s2", label: "Датчик 2" },
+    { id: "plc", label: "ПЛК" },
+  ],
+  edges: [
+    { from: "gw", to: "s1" },
+    { from: "gw", to: "s2" },
+    { from: "gw", to: "plc" },
+    { from: "s1", to: "s2" },
+    { from: "plc", to: "s2" },
+  ],
+};
+
+const BUBBLE_DEMO = [
+  { x: 18, y: 35, z: 90, name: "A" },
+  { x: 22, y: 55, z: 120, name: "B" },
+  { x: 26, y: 72, z: 160, name: "C" },
+];
+
+const RADAR_DEMO = [
+  { subject: "Temp °C", value: 22, fullMark: 50 },
+  { subject: "Temp %", value: 58, fullMark: 100 },
+  { subject: "Порог", value: 35, fullMark: 50 },
+];
+
+function builtinEditorDemo(widget: EditorDemoWidget): unknown | null {
+  if (widget.type === "chart") {
+    if (widget.chartType === "bubble") return BUBBLE_DEMO;
+    if (widget.chartType === "radar") return RADAR_DEMO;
+    return TREND_DEMO;
+  }
+  switch (widget.type) {
+    case "sparkline":
+      return SPARKLINE_DEMO;
+    case "pie-chart":
+      return PIE_DEMO;
+    case "gantt-chart":
+      return GANTT_DEMO;
+    case "event-feed":
+      return EVENT_FEED_DEMO;
+    case "work-queue":
+      return WORK_QUEUE_DEMO;
+    case "network-graph":
+      return NETWORK_DEMO;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Editor-only preview. A widget's own `demoPreviewJson` wins. Palette widgets do not
+ * store that field; the matching built-in payload is used instead and must be badged.
+ */
+export function editorDemoPreview<T>(widget: EditorDemoWidget): T | null {
+  if (widget.demoPreviewJson?.trim()) {
+    return parseDemoPreview<T>(widget.demoPreviewJson);
+  }
+  return builtinEditorDemo(widget) as T | null;
+}
+
 export function useEditorDemoRows<T>(
-  widget: Pick<DashboardWidget, "demoPreviewJson">,
+  widget: EditorDemoWidget,
   liveRows: T[],
   editable?: boolean
 ): { rows: T[]; isDemo: boolean } {
-  const demo = parseDemoPreview<T[]>(widget.demoPreviewJson);
-  if (editable && liveRows.length === 0 && Array.isArray(demo) && demo.length > 0) {
-    return { rows: demo, isDemo: true };
+  if (editable && liveRows.length === 0) {
+    const demo = editorDemoPreview<T[]>(widget);
+    if (Array.isArray(demo) && demo.length > 0) {
+      return { rows: demo, isDemo: true };
+    }
   }
   return { rows: liveRows, isDemo: false };
 }
@@ -28,7 +158,7 @@ export function useEditorDemoRows<T>(
 export function buildDemoTrendPoints(
   raw: Array<{ t?: number; v: number }> | null
 ): TrendPoint[] {
-  if (!raw?.length) return [];
+  if (!Array.isArray(raw) || raw.length === 0) return [];
   const now = Date.now();
   return raw.map((item, index) => {
     const t = item.t ?? now - (raw.length - index) * 60_000;
