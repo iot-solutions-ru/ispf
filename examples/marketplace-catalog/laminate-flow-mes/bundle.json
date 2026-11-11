@@ -113,7 +113,7 @@
     {
       "path": "root.platform.dashboards.laminate-flow-plan",
       "title": "План линий",
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"intro\",\"type\":\"html-snippet\",\"title\":\"Оперативный план\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>Поточное производство. Единица плана — линия, горизонт — неделя. Перенос заказа между линиями и днями пересчитывает потребность в полуфабрикате и команду в WMS. Операций и незавершёнки нет.</p>\"},{\"id\":\"board\",\"type\":\"gantt-chart\",\"title\":\"Доска линий\",\"x\":0,\"y\":14,\"w\":84,\"h\":42,\"objectPath\":\"root.platform.devices.laminate-flow-hub\",\"variableName\":\"schedule\",\"labelField\":\"label\",\"startField\":\"startMs\",\"endField\":\"endMs\",\"allowBarDrag\":true,\"interactive\":true},{\"id\":\"refresh\",\"type\":\"function\",\"title\":\"Заказы на доске\",\"x\":0,\"y\":56,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.laminate-flow-hub\",\"functionName\":\"lf_listSchedule\",\"buttonLabel\":\"Показать заказы\"},{\"id\":\"move\",\"type\":\"function\",\"title\":\"Перенос SO-1002 на Пресс B\",\"x\":42,\"y\":56,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.laminate-flow-hub\",\"functionName\":\"lf_moveOrder\",\"buttonLabel\":\"Перенести и пересчитать WMS\",\"inputMapJson\":\"{\\\"orderNo\\\": \\\"SO-1002\\\", \\\"lineCode\\\": \\\"l-press-b\\\", \\\"startAt\\\": \\\"2026-09-15T06:00:00+03:00\\\", \\\"endAt\\\": \\\"2026-09-15T14:00:00+03:00\\\"}\"}]}",
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"intro\",\"type\":\"html-snippet\",\"title\":\"Оперативный план\",\"x\":0,\"y\":0,\"w\":84,\"h\":14,\"htmlJson\":\"<p>Поточное производство. Единица плана — линия, горизонт — неделя. Перенос заказа между линиями и днями пересчитывает потребность в полуфабрикате и команду в WMS. Операций и незавершёнки нет.</p>\"},{\"id\":\"board\",\"type\":\"gantt-chart\",\"title\":\"Доска линий\",\"x\":0,\"y\":14,\"w\":84,\"h\":42,\"objectPath\":\"root.platform.singleton-blueprints.laminate-flow-hub\",\"variableName\":\"schedule\",\"labelField\":\"label\",\"startField\":\"startMs\",\"endField\":\"endMs\",\"allowBarDrag\":true,\"interactive\":true},{\"id\":\"refresh\",\"type\":\"function\",\"title\":\"Заказы на доске\",\"x\":0,\"y\":56,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.laminate-flow-hub\",\"functionName\":\"lf_listSchedule\",\"buttonLabel\":\"Показать заказы\"},{\"id\":\"move\",\"type\":\"function\",\"title\":\"Перенос SO-1002 на Пресс B\",\"x\":42,\"y\":56,\"w\":42,\"h\":21,\"objectPath\":\"root.platform.singleton-blueprints.laminate-flow-hub\",\"functionName\":\"lf_moveOrder\",\"buttonLabel\":\"Перенести и пересчитать WMS\",\"inputMapJson\":\"{\\\"orderNo\\\": \\\"SO-1002\\\", \\\"lineCode\\\": \\\"l-press-b\\\", \\\"startAt\\\": \\\"2026-09-15T06:00:00+03:00\\\", \\\"endAt\\\": \\\"2026-09-15T14:00:00+03:00\\\"}\"}]}",
       "refreshIntervalMs": 5000
     },
     {
@@ -1560,7 +1560,7 @@
         "title": "Справочники"
       }
     ],
-    "eventJournalObjectPath": "root.platform.devices.laminate-flow-hub"
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.laminate-flow-hub"
   },
   "operatorManifest": null
 }
