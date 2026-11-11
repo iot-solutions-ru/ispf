@@ -181,7 +181,7 @@ PUT  /api/v1/objects/by-path/binding-rules?path={objectPath}
 DELETE /api/v1/objects/by-path/binding-rules/{ruleId}?path={objectPath}
 ```
 
-Agent tool: `create_binding_rule` — slash refs в expression и опциональный `ref` на активаторах.
+Agent tool: `create_binding_rule` — slash refs в expression и опциональный `ref` на активаторах. Целевая переменная должна уже существовать, выражение сохраняется как прислано.
 
 ---
 
