@@ -1,6 +1,8 @@
 package com.ispf.server.history;
 
 import com.ispf.server.platform.AutomationMetricsRecorder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
@@ -10,7 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * BL-116: PostgreSQL/Timescale primary, then ClickHouse secondary. A secondary failure is an error of that history write.
+ * BL-116: PostgreSQL/Timescale primary, then best-effort ClickHouse secondary (ADR-0035).
+ * Secondary failures are logged and metered; they do not fail the hot path after primary success.
  */
 @Service
 @Primary
@@ -18,6 +21,8 @@ import java.util.List;
 @ConditionalOnProperty(name = "ispf.historian.tiers.warm.enabled", havingValue = "false", matchIfMissing = true)
 @ConditionalOnProperty(name = "ispf.variable-history.store", havingValue = "jdbc", matchIfMissing = true)
 public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteStore {
+
+    private static final Logger log = LoggerFactory.getLogger(DualWriteVariableHistoryWriteStore.class);
 
     private final JdbcVariableHistoryWriteStore primary;
     private final ClickHouseVariableHistorySecondaryWriteStore secondary;
@@ -92,10 +97,12 @@ public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteS
             secondary.appendBatch(records);
         } catch (RuntimeException ex) {
             metrics.recordHistorianDualWriteSecondaryFailure();
-            throw new IllegalStateException(
-                    "variable history secondary write failed; secondary store is behind primary",
+            log.warn(
+                    "variable history secondary write failed after primary succeeded (batchSize={})",
+                    records.size(),
                     ex
             );
+            return;
         }
         for (VariableHistoryWriteRecord record : records) {
             primaryAheadOfSecondary.remove(primaryKey(record));

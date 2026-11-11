@@ -1,6 +1,7 @@
 package com.ispf.server.history;
 
 import com.ispf.server.config.HistorianTierProperties;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,26 +29,30 @@ class TierRoutingVariableHistoryWriteStore implements VariableHistoryWriteStore 
     private final HistorianTierProperties tierProperties;
     private final JdbcVariableHistoryWriteStore hotStore;
     private final ClickHouseWarmTierWriteStore warmStore;
+    private final AutomationMetricsRecorder metrics;
     private final HistorianAheadSet hotAheadOfWarm;
 
     @Autowired
     TierRoutingVariableHistoryWriteStore(
             HistorianTierProperties tierProperties,
             JdbcVariableHistoryWriteStore hotStore,
-            ClickHouseWarmTierWriteStore warmStore
+            ClickHouseWarmTierWriteStore warmStore,
+            AutomationMetricsRecorder metrics
     ) {
-        this(tierProperties, hotStore, warmStore, HistorianAheadSet.DEFAULT_MAX_KEYS);
+        this(tierProperties, hotStore, warmStore, metrics, HistorianAheadSet.DEFAULT_MAX_KEYS);
     }
 
     TierRoutingVariableHistoryWriteStore(
             HistorianTierProperties tierProperties,
             JdbcVariableHistoryWriteStore hotStore,
             ClickHouseWarmTierWriteStore warmStore,
+            AutomationMetricsRecorder metrics,
             int maxAheadKeys
     ) {
         this.tierProperties = tierProperties;
         this.hotStore = hotStore;
         this.warmStore = warmStore;
+        this.metrics = metrics;
         this.hotAheadOfWarm = new HistorianAheadSet(maxAheadKeys);
     }
 
@@ -81,16 +86,22 @@ class TierRoutingVariableHistoryWriteStore implements VariableHistoryWriteStore 
                         hotAheadOfWarm.add(sampleKey(record));
                     }
                 }
+                boolean warmMirrored = false;
                 try {
                     warmStore.appendBestEffort(hotRecords);
+                    warmMirrored = true;
                 } catch (RuntimeException ex) {
-                    throw new IllegalStateException(
-                            "warm-tier append failed; warm store is behind hot",
+                    metrics.recordHistorianDualWriteSecondaryFailure();
+                    log.warn(
+                            "warm-tier mirror append failed after hot write succeeded (batchSize={})",
+                            hotRecords.size(),
                             ex
                     );
                 }
-                for (VariableHistoryWriteRecord record : hotRecords) {
-                    hotAheadOfWarm.remove(sampleKey(record));
+                if (warmMirrored) {
+                    for (VariableHistoryWriteRecord record : hotRecords) {
+                        hotAheadOfWarm.remove(sampleKey(record));
+                    }
                 }
             } else {
                 hotStore.appendBatch(hotRecords);

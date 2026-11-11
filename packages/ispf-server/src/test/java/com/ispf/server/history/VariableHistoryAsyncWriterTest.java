@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -171,6 +172,26 @@ class VariableHistoryAsyncWriterTest {
         verify(batchPersister, timeout(5000).atLeastOnce()).persistOne(org.mockito.ArgumentMatchers.any());
         verify(automationMetricsRecorder, timeout(5000).atLeastOnce()).recordVariableHistorySyncFallback();
         allowPersist.countDown();
+    }
+
+    @Test
+    void batchSecondaryFailureDoesNotFanOutPerSampleRetries() throws Exception {
+        doThrow(new HistorianSecondaryWriteFailedException("secondary down", new IllegalStateException("CH down")))
+                .when(batchPersister).persistBatch(anyList());
+
+        writer.enqueue(List.of(
+                sample("root.a", "temperature", "value", 1.0),
+                sample("root.b", "temperature", "value", 2.0),
+                sample("root.c", "temperature", "value", 3.0)
+        ));
+
+        verify(batchPersister, timeout(5000).atLeastOnce()).persistBatch(anyList());
+        verify(batchPersister, never()).persistOne(org.mockito.ArgumentMatchers.any());
+        ArgumentCaptor<Long> flushedCaptor = ArgumentCaptor.forClass(Long.class);
+        verify(automationMetricsRecorder, timeout(5000).atLeastOnce())
+                .recordVariableHistoryFlushed(flushedCaptor.capture());
+        long totalFlushed = flushedCaptor.getAllValues().stream().mapToLong(Long::longValue).sum();
+        assertTrue(totalFlushed >= 3, "expected flushed metric >= 3, got " + totalFlushed);
     }
 
     @Test

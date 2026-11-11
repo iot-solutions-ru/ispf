@@ -2,15 +2,17 @@ package com.ispf.server.history;
 
 import com.ispf.server.config.HistorianTierProfile;
 import com.ispf.server.config.HistorianTierProperties;
+import com.ispf.server.platform.AutomationMetricsRecorder;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -39,7 +41,12 @@ class TierRoutingVariableHistoryWriteStoreTest {
         hotStore = mock(JdbcVariableHistoryWriteStore.class);
         warmStore = mock(ClickHouseWarmTierWriteStore.class);
         when(warmStore.isConfigured()).thenReturn(true);
-        router = new TierRoutingVariableHistoryWriteStore(tierProperties, hotStore, warmStore);
+        router = new TierRoutingVariableHistoryWriteStore(
+                tierProperties,
+                hotStore,
+                warmStore,
+                new AutomationMetricsRecorder(Optional.of(new SimpleMeterRegistry()))
+        );
     }
 
     @Test
@@ -90,7 +97,7 @@ class TierRoutingVariableHistoryWriteStoreTest {
     }
 
     @Test
-    void warmAppendFailureIsVisibleAndRetryDoesNotRewriteHot() {
+    void warmAppendFailureIsMeteredAndRetryDoesNotRewriteHot() {
         tierProperties.hotTier().setDualWriteEnabled(true);
         Instant now = Instant.now();
         VariableHistoryWriteRecord recent = record(now.minus(1, ChronoUnit.HOURS), now);
@@ -98,31 +105,30 @@ class TierRoutingVariableHistoryWriteStoreTest {
                 .when(warmStore)
                 .appendBestEffort(List.of(recent));
 
-        assertThatThrownBy(() -> router.appendBatch(List.of(recent)))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("warm-tier append failed; warm store is behind hot");
-        assertThatThrownBy(() -> router.appendBatch(List.of(recent)))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("warm-tier append failed; warm store is behind hot");
+        router.appendBatch(List.of(recent));
+        router.appendBatch(List.of(recent));
 
         verify(hotStore, times(1)).appendBatch(List.of(recent));
+        verify(warmStore, times(2)).appendBestEffort(List.of(recent));
         assertThat(router.aheadSize()).isEqualTo(1);
     }
 
     @Test
     void failedWarmWritesDoNotGrowAheadSetPastCap() {
         tierProperties.hotTier().setDualWriteEnabled(true);
-        router = new TierRoutingVariableHistoryWriteStore(tierProperties, hotStore, warmStore, 3);
+        router = new TierRoutingVariableHistoryWriteStore(
+                tierProperties,
+                hotStore,
+                warmStore,
+                new AutomationMetricsRecorder(Optional.of(new SimpleMeterRegistry())),
+                3
+        );
         doThrow(new IllegalStateException("warm down")).when(warmStore).appendBestEffort(anyList());
 
         Instant now = Instant.now();
         for (int i = 0; i < 8; i++) {
             VariableHistoryWriteRecord recent = record(now.minus(1, ChronoUnit.HOURS).plusSeconds(i), now.plusSeconds(i));
-            try {
-                router.appendBatch(List.of(recent));
-            } catch (IllegalStateException ignored) {
-                // warm outage is the case under test
-            }
+            router.appendBatch(List.of(recent));
         }
 
         assertThat(router.aheadSize()).isLessThanOrEqualTo(3);
