@@ -133,5 +133,8 @@ export function sheetCellWithKind(cell: SheetCellConfig, kind: SheetCellKind): S
   delete next.expr;
   delete next.default;
   delete next.variableName;
+  if (kind !== "binding") {
+    delete next.historyMinutes;
+  }
   return sheetCellWithDraft(next, value);
 }

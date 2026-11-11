@@ -235,7 +235,7 @@
   "editor.spreadsheet.cellKind.formula": "Formel",
   "editor.spreadsheet.cellKind.readonly": "Nur lesen",
   "editor.spreadsheet.cellKind.binding": "Bindung",
-  "editor.spreadsheet.historyMinutes": "Historielfenster (Minuten)",
+  "editor.spreadsheet.historyMinutes": "Historienfenster (Minuten)",
   "editor.spreadsheet.duplicateAddresses": "Zwei Zellen teilen dieselbe Adresse ({{addresses}}). Adressen vor dem Speichern korrigieren.",
   "editor.spreadsheet.insertCalculatorTemplate": "Vorlage: Rechner",
   "editor.spreadsheet.insertDefaultTemplate": "Vorlage: Basisraster",
