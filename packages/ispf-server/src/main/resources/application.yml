@@ -133,6 +133,7 @@ ispf:
     replica-consumer-worker-threads-max: ${ISPF_NATS_REPLICA_CONSUMER_WORKERS_MAX:32}
     replica-consumer-elastic-scale-up-threshold: ${ISPF_NATS_REPLICA_CONSUMER_SCALE_UP:50}
     replica-consumer-elastic-scale-down-steps: ${ISPF_NATS_REPLICA_CONSUMER_SCALE_DOWN:6}
+    max-reconnects: ${ISPF_NATS_MAX_RECONNECTS:-1}
     slow-consumer-log-interval-seconds: ${ISPF_NATS_SLOW_CONSUMER_LOG_INTERVAL:30}
   cluster:
     enabled: ${ISPF_CLUSTER_ENABLED:false}

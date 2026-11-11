@@ -34,12 +34,14 @@ public class NatsJetStreamSupport {
     static final String REPLICA_EVENTS_SUBJECT = "ispf.events.>";
 
     private final NatsProperties properties;
+    private final NatsEventBridge eventBridge;
     private final JetStream jetStream;
     private final JetStreamManagement management;
     private volatile boolean streamReady;
 
     public NatsJetStreamSupport(NatsProperties properties, NatsEventBridge eventBridge) {
         this.properties = properties;
+        this.eventBridge = eventBridge;
         Connection connection = eventBridge.connection();
         JetStream js = null;
         JetStreamManagement jsm = null;
@@ -124,6 +126,7 @@ public class NatsJetStreamSupport {
                 ensureStream();
             } catch (IOException | JetStreamApiException ex) {
                 log.warn("JetStream stream not ready: {}", ex.getMessage());
+                eventBridge.recordPublishFailure("JetStream replica event", ex);
                 return;
             }
         }
@@ -131,6 +134,7 @@ public class NatsJetStreamSupport {
             jetStream.publish(subject, payload);
         } catch (IOException | JetStreamApiException ex) {
             log.warn("Failed to publish JetStream replica event to {}: {}", subject, ex.getMessage());
+            eventBridge.recordPublishFailure("JetStream replica event", ex);
         }
     }
 

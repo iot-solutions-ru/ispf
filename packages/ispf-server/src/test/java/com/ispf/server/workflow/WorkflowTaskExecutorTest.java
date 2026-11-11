@@ -37,6 +37,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -300,12 +301,40 @@ class WorkflowTaskExecutorTest {
     }
 
     @Test
-    void natsMessageTaskPublishesOnTheBridge() {
+    void natsMessageTaskPublishesOnTheBridge() throws WorkflowException {
         executor().executeMessageTask(
                 new MessageTaskDefinition("m1", "msg", "ispf.alerts", "hello", "nats", Map.of()),
                 instance()
         );
-        verify(natsEventBridge).publish("ispf.alerts", "hello");
+        verify(natsEventBridge).publishWorkflowStep("ispf.alerts", "hello");
+    }
+
+    @Test
+    void natsMessageTaskFailureFailsTheStep() {
+        doThrow(new IllegalStateException("NATS publish failed: down"))
+                .when(natsEventBridge)
+                .publishWorkflowStep("ispf.alerts", "hello");
+
+        WorkflowException error = assertThrows(WorkflowException.class, () -> executor().executeMessageTask(
+                new MessageTaskDefinition("m1", "msg", "ispf.alerts", "hello", "nats", Map.of()),
+                instance()
+        ));
+
+        assertTrue(error.getMessage().contains("NATS publish failed"));
+    }
+
+    @Test
+    void publishNatsServiceTaskFailureFailsTheStep() {
+        doThrow(new IllegalStateException("NATS publish failed: down"))
+                .when(natsEventBridge)
+                .publishWorkflowStep("ispf.workflow.event", "task");
+
+        WorkflowException error = assertThrows(WorkflowException.class, () -> executor().executeServiceTask(
+                task(WorkflowActionType.PUBLISH_NATS, Map.of()),
+                instance()
+        ));
+
+        assertTrue(error.getMessage().contains("NATS publish failed"));
     }
 
     @Test

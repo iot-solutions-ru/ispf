@@ -221,7 +221,7 @@ class ClusterDependencyValidatorTest {
                 32,
                 50,
                 6,
-                30
+                -1, 30
         );
     }
 

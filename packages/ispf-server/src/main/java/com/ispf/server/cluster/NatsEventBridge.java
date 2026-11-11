@@ -11,6 +11,7 @@ import com.ispf.server.object.pubsub.StructureChangeSubscriptionRegistry;
 import io.nats.client.Connection;
 import io.nats.client.Nats;
 import io.nats.client.Options;
+import io.nats.client.Connection.Status;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -143,10 +144,10 @@ public class NatsEventBridge implements WorkflowMessageBus {
             log.info("[nats:disabled] {} -> {}", subject, message);
             return;
         }
-        if (connection == null) {
+        if (!isConnected()) {
             log.error(
                     "NATS publish skipped, bridge is not connected: {}",
-                    connectFailure == null ? "connection failed" : connectFailure
+                    connectionUnavailableReason()
             );
             return;
         }
@@ -154,6 +155,25 @@ public class NatsEventBridge implements WorkflowMessageBus {
             connection.publish(subject, message.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             recordPublishFailure("message", e);
+        }
+    }
+
+    @Override
+    public void publishWorkflowStep(String subject, String message) {
+        if (!properties.enabled()) {
+            log.info("[nats:disabled] {} -> {}", subject, message);
+            return;
+        }
+        if (!isConnected()) {
+            String reason = connectionUnavailableReason();
+            recordPublishFailure("workflow message", new IllegalStateException(reason));
+            throw new IllegalStateException("NATS publish failed: " + reason);
+        }
+        try {
+            connection.publish(subject, message.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            recordPublishFailure("workflow message", e);
+            throw new IllegalStateException("NATS publish failed: " + publishErrorMessage(e), e);
         }
     }
 
@@ -171,7 +191,7 @@ public class NatsEventBridge implements WorkflowMessageBus {
     }
 
     public boolean isEnabled() {
-        return properties.enabled() && connection != null;
+        return properties.enabled() && isConnected();
     }
 
     public long publishFailureCount() {
@@ -187,13 +207,33 @@ public class NatsEventBridge implements WorkflowMessageBus {
         return connectFailure;
     }
 
-    private void recordPublishFailure(String action, Exception e) {
-        String message = e.getMessage() == null || e.getMessage().isBlank()
-                ? e.getClass().getSimpleName()
-                : e.getMessage();
+    void recordPublishFailure(String action, Exception e) {
+        String message = publishErrorMessage(e);
         publishFailures.incrementAndGet();
         lastPublishError = message;
         log.error("NATS {} failed: {}", action, message);
+    }
+
+    private static String publishErrorMessage(Exception e) {
+        if (e.getMessage() == null || e.getMessage().isBlank()) {
+            return e.getClass().getSimpleName();
+        }
+        return e.getMessage();
+    }
+
+    private boolean isConnected() {
+        return connection != null && connection.getStatus() == Status.CONNECTED;
+    }
+
+    private String connectionUnavailableReason() {
+        if (connection == null) {
+            return connectFailure == null ? "connection failed" : connectFailure;
+        }
+        Status status = connection.getStatus();
+        if (status == Status.CONNECTED) {
+            return "connection failed";
+        }
+        return "NATS status is " + status;
     }
 
     @PreDestroy
@@ -231,7 +271,7 @@ public class NatsEventBridge implements WorkflowMessageBus {
                     .server(properties.url())
                     .connectionName("ispf-server-" + properties.replicaId().substring(0, 8))
                     .connectionTimeout(Duration.ofSeconds(2))
-                    .maxReconnects(3)
+                    .maxReconnects(properties.maxReconnects())
                     .errorListener(new RateLimitedNatsErrorListener(properties.slowConsumerLogIntervalSeconds()))
                     .build();
             Connection conn = Nats.connect(options);

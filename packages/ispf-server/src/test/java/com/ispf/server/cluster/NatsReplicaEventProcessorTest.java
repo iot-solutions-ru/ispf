@@ -175,7 +175,7 @@ class NatsReplicaEventProcessorTest {
                 1,
                 50,
                 6,
-                30
+                -1, 30
         );
         processor = new NatsReplicaEventProcessor(
                 tinyQueue,
@@ -221,7 +221,7 @@ class NatsReplicaEventProcessorTest {
                 1,
                 50,
                 6,
-                30
+                -1, 30
         );
         processor = new NatsReplicaEventProcessor(
                 tinyQueue,
@@ -471,7 +471,7 @@ class NatsReplicaEventProcessorTest {
                 1,
                 50,
                 6,
-                30
+                -1, 30
         );
         return new NatsReplicaEventProcessor(
                 properties,

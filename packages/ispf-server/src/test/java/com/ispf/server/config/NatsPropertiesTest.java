@@ -25,13 +25,14 @@ class NatsPropertiesTest {
                 8,
                 50,
                 6,
-                30
+                -1, 30
         );
 
         assertTrue(properties.jetStreamEnabled());
         assertEquals("ispf-automation", properties.jetStreamStreamName());
         assertEquals(24, properties.jetStreamMaxAgeHours());
         assertEquals("ispf-replica-", properties.jetStreamReplicaConsumerPrefix());
+        assertEquals(-1, properties.maxReconnects());
     }
 
     @Test
@@ -51,7 +52,7 @@ class NatsPropertiesTest {
                 8,
                 50,
                 6,
-                30
+                -1, 30
         );
 
         assertFalse(properties.enabled());
