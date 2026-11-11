@@ -16,7 +16,8 @@ import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { useWidgetStyles } from "../widgetStyles";
 import { CHART_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../../utils/analytics/chartTheme";
 import WidgetDragHandle from "../WidgetDragHandle";
-import { parseDemoPreview } from "../widgetDemoData";
+import { editorDemoPreview } from "../widgetDemoData";
+import { WidgetDemoBadge } from "../widgetDemoPreview";
 import {
   bubbleAxisDomain,
   bubbleSymbolScale,
@@ -41,7 +42,15 @@ export default function ChartBubbleWidgetView({
   const objectPath = useWidgetObjectPath(widget.objectPath, widget.selectionKey);
 
   const series = useChartBubbleSeries(objectPath, widget, refreshIntervalMs);
-  const demoPreview = parseDemoPreview<unknown>(widget.demoPreviewJson);
+  const demoPreview = useMemo(
+    () =>
+      editorDemoPreview<unknown>({
+        type: widget.type,
+        chartType: widget.chartType,
+        demoPreviewJson: widget.demoPreviewJson,
+      }),
+    [widget.type, widget.chartType, widget.demoPreviewJson]
+  );
   const demoPoints = useMemo(
     () =>
       editable && series.points.length === 0 ? parseDemoBubblePoints(demoPreview) : [],
@@ -60,7 +69,7 @@ export default function ChartBubbleWidgetView({
       <div className="dash-widget-chart-head" style={styles.body}>
         <div className="dash-widget-title" style={styles.title}>
           {widget.title}
-          {isDemo ? <span className="dash-widget-demo-badge">{t("view.demoBadge")}</span> : null}
+          {isDemo ? <WidgetDemoBadge /> : null}
         </div>
         <div className="dash-chart-head-side">
           <span className="dash-chart-range muted">
@@ -72,7 +81,7 @@ export default function ChartBubbleWidgetView({
         </div>
       </div>
       <div className="dash-chart-body" style={styles.chart}>
-        {!objectPath && widget.selectionKey ? (
+        {!objectPath && widget.selectionKey && !isDemo ? (
           <div className="dash-chart-placeholder">{t("view.selectDevice")}</div>
         ) : series.isLoading && !isDemo ? (
           <div className="dash-chart-placeholder">{t("view.collectingData")}</div>

@@ -161,16 +161,6 @@ export function buildSampleWidget(type: WidgetType, index: number): DashboardWid
         maxPoints: 120,
         color: "#2f81f7",
         decimals: 1,
-        demoPreviewJson: j([
-          { t: 1, v: 21.2 },
-          { t: 2, v: 21.8 },
-          { t: 3, v: 22.1 },
-          { t: 4, v: 22.4 },
-          { t: 5, v: 23.0 },
-          { t: 6, v: 22.7 },
-          { t: 7, v: 22.3 },
-          { t: 8, v: 21.9 },
-        ]),
       };
     case "sparkline":
       return {
@@ -183,7 +173,6 @@ export function buildSampleWidget(type: WidgetType, index: number): DashboardWid
         maxPoints: 40,
         color: "#3fb950",
         decimals: 1,
-        demoPreviewJson: j([20.1, 20.4, 20.8, 21.2, 21.0, 21.5, 21.3]),
       };
     case "function":
       return {
@@ -252,24 +241,6 @@ export function buildSampleWidget(type: WidgetType, index: number): DashboardWid
         objectPathPrefix: DEVICE,
         eventNamesJson: j(["thresholdExceeded"]),
         maxItems: 15,
-        demoPreviewJson: j([
-          {
-            id: "demo-event-1",
-            eventName: "thresholdExceeded",
-            level: "WARNING",
-            objectPath: DEVICE,
-            timestamp: new Date().toISOString(),
-            payload: { rows: [{ value: 42.5, unit: "°C", threshold: 40 }] },
-          },
-          {
-            id: "demo-event-2",
-            eventName: "thresholdExceeded",
-            level: "INFO",
-            objectPath: DEVICE,
-            timestamp: new Date(Date.now() - 120_000).toISOString(),
-            payload: { rows: [{ value: 38.1, unit: "°C" }] },
-          },
-        ]),
       };
     case "work-queue":
       return {
@@ -281,22 +252,6 @@ export function buildSampleWidget(type: WidgetType, index: number): DashboardWid
         objectPath: "",
         operatorId: "operator",
         maxItems: 10,
-        demoPreviewJson: j([
-          {
-            id: "demo-task-1",
-            title: "Проверить датчик",
-            status: "OPEN",
-            instructions: "Сверить показания температуры с эталоном",
-            workflowPath: "root.platform.workflows.example",
-          },
-          {
-            id: "demo-task-2",
-            title: "Подтвердить тревогу",
-            status: "CLAIMED",
-            instructions: "Вызвать acknowledgeAlarm на устройстве",
-            workflowPath: "root.platform.workflows.example",
-          },
-        ]),
       };
     case "status-badge":
       return {
@@ -373,11 +328,6 @@ export function buildSampleWidget(type: WidgetType, index: number): DashboardWid
         labelField: "string",
         valueField: "int",
         decimals: 0,
-        demoPreviewJson: j([
-          { name: "Готово", value: 45 },
-          { name: "В работе", value: 30 },
-          { name: "Ожидание", value: 25 },
-        ]),
       };
     case "history-table":
       return {
@@ -676,11 +626,6 @@ export function buildSampleWidget(type: WidgetType, index: number): DashboardWid
         labelField: "string",
         startField: "int",
         endField: "int",
-        demoPreviewJson: j([
-          { label: "Задача A", start: 0, end: 3 },
-          { label: "Задача B", start: 2, end: 6 },
-          { label: "Задача C", start: 5, end: 9 },
-        ]),
       };
     case "network-graph":
       return {
@@ -694,21 +639,6 @@ export function buildSampleWidget(type: WidgetType, index: number): DashboardWid
         nodesVariable: "nodes",
         edgesVariable: "edges",
         labelField: "name",
-        demoPreviewJson: j({
-          nodes: [
-            { id: "gw", label: "Шлюз" },
-            { id: "s1", label: "Датчик 1" },
-            { id: "s2", label: "Датчик 2" },
-            { id: "plc", label: "ПЛК" },
-          ],
-          edges: [
-            { from: "gw", to: "s1" },
-            { from: "gw", to: "s2" },
-            { from: "gw", to: "plc" },
-            { from: "s1", to: "s2" },
-            { from: "plc", to: "s2" },
-          ],
-        }),
       };
     case "spreadsheet":
       return {
@@ -795,11 +725,6 @@ export function buildChartBubbleSampleWidget(index: number): ChartWidget {
     maxPoints: 60,
     color: "#39c5cf",
     decimals: 1,
-    demoPreviewJson: j([
-      { x: 18, y: 35, z: 90, name: "A" },
-      { x: 22, y: 55, z: 120, name: "B" },
-      { x: 26, y: 72, z: 160, name: "C" },
-    ]),
     sampleTemplate: true,
   };
 }
@@ -823,11 +748,6 @@ export function buildChartRadarSampleWidget(index: number): ChartWidget {
       { label: "Temp °C", variableName: "temperature", max: 50 },
       { label: "Temp %", variableName: "temperaturePercent", max: 100 },
       { label: "Порог", variableName: "threshold", max: 50 },
-    ]),
-    demoPreviewJson: j([
-      { subject: "Temp °C", value: 22, fullMark: 50 },
-      { subject: "Temp %", value: 58, fullMark: 100 },
-      { subject: "Порог", value: 35, fullMark: 50 },
     ]),
     sampleTemplate: true,
   };

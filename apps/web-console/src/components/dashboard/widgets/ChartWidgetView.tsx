@@ -28,8 +28,9 @@ import {
   buildDemoCandlestickPoints,
   buildDemoRangeTrendPoints,
   buildDemoTrendPoints,
-  parseDemoPreview,
+  editorDemoPreview,
 } from "../widgetDemoData";
+import { WidgetDemoBadge } from "../widgetDemoPreview";
 import { CHART_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../../utils/analytics/chartTheme";
 import CandlestickChartBody from "./CandlestickChartBody";
 import ChartBubbleWidgetView from "./ChartBubbleWidgetView";
@@ -129,10 +130,21 @@ function ChartTrendWidgetView({
   );
   const useMultiSeries = multiSeries.tags.length > 0 && chartMode === "line";
 
-  const demoPreview = parseDemoPreview<Array<{ t?: number; v: number }>>(widget.demoPreviewJson);
+  const demoPreview = useMemo(
+    () =>
+      editorDemoPreview<Array<{ t?: number; v: number }>>({
+        type: widget.type,
+        chartType: widget.chartType,
+        demoPreviewJson: widget.demoPreviewJson,
+      }),
+    [widget.type, widget.chartType, widget.demoPreviewJson]
+  );
   const demoLinePoints = useMemo(
-    () => (editable && series.points.length < 2 ? buildDemoTrendPoints(demoPreview) : []),
-    [demoPreview, editable, series.points.length]
+    () =>
+      editable && !useMultiSeries && series.points.length < 2
+        ? buildDemoTrendPoints(demoPreview)
+        : [],
+    [demoPreview, editable, useMultiSeries, series.points.length]
   );
   const demoRangePoints = useMemo(
     () => (editable && isRangeChart && series.rangePoints.length < 2
@@ -220,7 +232,7 @@ function ChartTrendWidgetView({
       <div className="dash-widget-chart-head" style={styles.body}>
         <div className="dash-widget-title" style={styles.title}>
           {widget.title}
-          {isDemo ? <span className="dash-widget-demo-badge">{t("view.demoBadge")}</span> : null}
+          {isDemo ? <WidgetDemoBadge /> : null}
         </div>
         <div className="dash-chart-head-side">
           <div className="dash-chart-stats">
@@ -256,7 +268,7 @@ function ChartTrendWidgetView({
         </div>
       </div>
       <div className="dash-chart-body" style={styles.chart}>
-        {!objectPath && widget.selectionKey ? (
+        {!objectPath && widget.selectionKey && !isDemo ? (
           <div className="dash-chart-placeholder">{t("view.selectDevice")}</div>
         ) : (useMultiSeries ? multiSeries.loading : series.historyLoading) && chartData.length === 0 && !isDemo ? (
           <div className="dash-chart-placeholder">{t("view.collectingData")}</div>

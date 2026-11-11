@@ -11,7 +11,7 @@ import type { WorkQueueWidget } from "../../../types/dashboard";
 import type { WorkQueueItem } from "../../../types/operator";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { parseDemoPreview } from "../widgetDemoData";
+import { editorDemoPreview } from "../widgetDemoData";
 
 interface DemoWorkTask {
   id: string;
@@ -67,10 +67,11 @@ export default function WorkQueueWidgetView({ widget, editable }: WorkQueueWidge
 
   const maxItems = widget.maxItems ?? 20;
   const tasks = (queue.data ?? []).filter((t) => t.status !== "COMPLETED").slice(0, maxItems);
-  const demoTasks =
+  const demoRaw =
     editable && tasks.length === 0 && !queue.isLoading
-      ? parseDemoPreview<DemoWorkTask[]>(widget.demoPreviewJson) ?? []
-      : [];
+      ? editorDemoPreview<DemoWorkTask[]>(widget)
+      : null;
+  const demoTasks = Array.isArray(demoRaw) ? demoRaw : [];
   const isDemo = demoTasks.length > 0;
   const displayTasks = isDemo ? demoTasks : tasks;
 

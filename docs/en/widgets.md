@@ -31,7 +31,7 @@ Every widget in `layout.widgets[]` has a grid position and optional data binding
 | `contextPathKey` | string | Object path from `session.params[key]` |
 | `modelHintPath` | string | Editor only: sample object for variable dropdown |
 | `stylesJson` | string | JSON styles for card elements (see [dashboards.md § stylesJson](dashboards.md)) |
-| `demoPreviewJson` | string | Editor preview without live data |
+| `demoPreviewJson` | string | Optional editor-only preview. Palette widgets do not store this field; the editor shows a built-in preview with a DEMO PREVIEW badge until live data arrives. Operator mode never substitutes it. |
 
 **Object path priority:** if `selectionKey` is set and session has a selection → use selected path; otherwise `objectPath`.
 
