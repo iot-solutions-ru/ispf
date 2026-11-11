@@ -19,6 +19,7 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.analytics.formula.AnalyticsFormula;
 import com.ispf.server.platform.analytics.formula.AnalyticsFormulaParameter;
 import com.ispf.server.plugin.blueprint.BlueprintPersistenceService;
+import com.ispf.plugin.blueprint.BlueprintType;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
@@ -169,6 +170,10 @@ public class BundleArtifactDeployers {
         );
         functionStore.deploy(deployed);
 
+        List<String> invokeRoles = objectManager.tree().findByPath(function.objectPath())
+                .map(node -> node.functions().get(function.functionName()))
+                .map(FunctionDescriptor::invokeRoles)
+                .orElse(List.of());
         FunctionDescriptor treeFunction = new FunctionDescriptor(
                 function.functionName(),
                 "Script function " + function.functionName(),
@@ -177,7 +182,8 @@ public class BundleArtifactDeployers {
                 function.source().type(),
                 function.source().body(),
                 dataSourcePath,
-                version
+                version,
+                invokeRoles
         );
         objectManager.upsertFunction(function.objectPath(), treeFunction);
     }
@@ -234,6 +240,12 @@ public class BundleArtifactDeployers {
                 ? blueprintEngine.updateBlueprint(definition)
                 : blueprintEngine.createBlueprint(definition);
         blueprintPersistence.persist(saved, false);
+        if (saved.type() == BlueprintType.SINGLETON) {
+            String instancePath = BlueprintEngine.singletonInstancePath(saved);
+            if (objectManager.tree().findByPath(instancePath).isPresent()) {
+                objectManager.persistNodeTree(instancePath);
+            }
+        }
     }
 
     static AnalyticsFormula toAnalyticsFormula(String appId, BundleAnalyticsFormula formula) {
