@@ -55,7 +55,7 @@ ISPF implements a **BPMN subset**, not full BPMN 2.0. Engine: pure Java in `ispf
 | `serviceTask` | LOG, SET_VARIABLE, PUBLISH_NATS, **INVOKE_FUNCTION** |
 | `userTask` | Operator queue, claim/complete |
 | `intermediateCatchEvent` | Signal wait (`ispf:signal`), timer (`ispf:durationSeconds`), or message (`messageEventDefinition` / `ispf:message`) |
-| `boundaryEvent` | Timer on user task (`attachedToRef`, `ispf:durationSeconds`, `cancelActivity`) — escalation path |
+| `boundaryEvent` | Timer on a user task (`attachedToRef`, `ispf:durationSeconds`, `cancelActivity`), or an error catch on an activity (`errorEventDefinition` / `ispf:errorCode`) |
 | `messageTask` | NATS publish (if enabled) |
 | `exclusiveGateway` | Conditional transitions (CEL) |
 | `parallelGateway` | Fork/join, execution tokens |
@@ -196,6 +196,18 @@ The instance waits until the deadline expires; continuation via the built-in due
 ```
 
 While the user task is in `WAITING`, an SLA timer runs in parallel. When the timer fires, the escalation branch runs (interrupting). Template: [reference-escalation-templates](reference-escalation-templates.md).
+
+### boundaryEvent (error on an activity)
+
+```xml
+<error id="errLocked" errorCode="E_LOCKED"/>
+<boundaryEvent id="onLock" attachedToRef="assign">
+  <errorEventDefinition errorRef="errLocked"/>
+</boundaryEvent>
+<sequenceFlow sourceRef="onLock" targetRef="recover"/>
+```
+
+When a service task, message task, or call activity fails, a matching boundary follows its outgoing flow instead of failing the instance. `ispf:errorCode` on the boundary is the same match without an `error` element. A blank code catches every failure. A code matches when it occurs in the exception message; the longest code wins. The instance variables `errorCode` and `errorMessage` are set before that flow runs. The failed activity does not keep a second token.
 
 ## Work queue
 

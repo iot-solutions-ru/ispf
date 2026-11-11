@@ -47,7 +47,7 @@ ISPF реализует **подмножество BPMN**, не полный BPM
 | `serviceTask` | LOG, SET_VARIABLE, PUBLISH_NATS, **INVOKE_FUNCTION** |
 | `userTask` | Очередь оператора, claim/complete |
 | `intermediateCatchEvent` | Ожидание сигнала (`ispf:signal`), таймера (`ispf:durationSeconds`) или сообщения (`messageEventDefinition` / `ispf:message`) |
-| `boundaryEvent` | Таймер на user task (`attachedToRef`, `ispf:durationSeconds`, `cancelActivity`) — ветка escalation |
+| `boundaryEvent` | Таймер на user task (`attachedToRef`, `ispf:durationSeconds`, `cancelActivity`) или перехват ошибки активности (`errorEventDefinition` / `ispf:errorCode`) |
 | `messageTask` | Публикация в NATS (если enabled) |
 | `exclusiveGateway` | Условные переходы (CEL) |
 | `parallelGateway` | Fork/join, execution tokens |
@@ -179,6 +179,18 @@ Namespace расширений: `http://ispf.io/bpmn` (префикс `ispf:`).
 ```
 
 Пока пользовательская задача находится в `WAITING`, параллельно отсчитывается SLA. При реализации таймера достижения ветки эскалации (прерывания). Шаблон: [reference-escalation-templates](reference-escalation-templates.md).
+
+### boundaryEvent (ошибка активности)
+
+```xml
+<error id="errLocked" errorCode="E_LOCKED"/>
+<boundaryEvent id="onLock" attachedToRef="assign">
+  <errorEventDefinition errorRef="errLocked"/>
+</boundaryEvent>
+<sequenceFlow sourceRef="onLock" targetRef="recover"/>
+```
+
+Если service task, message task или call activity падает, подходящая граница ведёт по своему исходящему потоку, и экземпляр не переходит в FAILED. `ispf:errorCode` на границе задаёт тот же код без элемента `error`. Пустой код ловит любой сбой. Код совпадает, если он входит в текст исключения; побеждает самый длинный. Перед этой веткой выставляются переменные экземпляра `errorCode` и `errorMessage`. Второй токен на упавшей активности не остаётся.
 
 ## Рабочая очередь
 

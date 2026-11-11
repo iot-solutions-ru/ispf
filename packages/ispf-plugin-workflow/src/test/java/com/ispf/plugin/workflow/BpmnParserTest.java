@@ -177,6 +177,93 @@ class BpmnParserTest {
     }
 
     @Test
+    void readsBoundaryErrorCodeFromTheErrorElement() throws Exception {
+        String xml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:ispf="http://ispf.io/bpmn">
+                  <error id="errLocked" errorCode="E_LOCKED"/>
+                  <process id="err" name="Err" isExecutable="true">
+                    <startEvent id="start"/>
+                    <serviceTask id="assign" name="Assign" ispf:action="log" ispf:message="x"/>
+                    <boundaryEvent id="onLock" attachedToRef="assign">
+                      <errorEventDefinition errorRef="errLocked"/>
+                    </boundaryEvent>
+                    <endEvent id="end"/>
+                    <sequenceFlow sourceRef="start" targetRef="assign"/>
+                    <sequenceFlow sourceRef="assign" targetRef="end"/>
+                    <sequenceFlow sourceRef="onLock" targetRef="end"/>
+                  </process>
+                </definitions>
+                """;
+
+        BpmnProcess process = new BpmnParser().parse(xml);
+
+        assertThat(process.nodeTypes().get("onLock")).isEqualTo("boundaryEvent");
+        assertThat(process.boundaryErrors().get("assign")).singleElement()
+                .extracting(BoundaryErrorDefinition::errorCode)
+                .isEqualTo("E_LOCKED");
+    }
+
+    @Test
+    void readsBoundaryErrorCodeFromIspfAttribute() throws Exception {
+        String xml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:ispf="http://ispf.io/bpmn">
+                  <process id="err" name="Err" isExecutable="true">
+                    <startEvent id="start"/>
+                    <serviceTask id="assign" name="Assign" ispf:action="log" ispf:message="x"/>
+                    <boundaryEvent id="onAny" attachedToRef="assign" ispf:errorCode="E_TIMEOUT"/>
+                    <endEvent id="end"/>
+                    <sequenceFlow sourceRef="start" targetRef="assign"/>
+                    <sequenceFlow sourceRef="assign" targetRef="end"/>
+                    <sequenceFlow sourceRef="onAny" targetRef="end"/>
+                  </process>
+                </definitions>
+                """;
+
+        BpmnProcess process = new BpmnParser().parse(xml);
+
+        assertThat(process.boundaryErrors().get("assign")).singleElement()
+                .extracting(BoundaryErrorDefinition::errorCode)
+                .isEqualTo("E_TIMEOUT");
+    }
+
+    @Test
+    void keepsASingleCopyOfASubprocessErrorBoundary() throws Exception {
+        String xml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:ispf="http://ispf.io/bpmn">
+                  <process id="sub" name="Sub" isExecutable="true">
+                    <startEvent id="start"/>
+                    <subProcess id="inner" name="Inner">
+                      <startEvent id="innerStart"/>
+                      <serviceTask id="assign" name="Assign" ispf:action="log" ispf:message="x"/>
+                      <boundaryEvent id="onAny" attachedToRef="assign">
+                        <errorEventDefinition/>
+                      </boundaryEvent>
+                      <endEvent id="innerEnd"/>
+                      <sequenceFlow sourceRef="innerStart" targetRef="assign"/>
+                      <sequenceFlow sourceRef="assign" targetRef="innerEnd"/>
+                      <sequenceFlow sourceRef="onAny" targetRef="innerEnd"/>
+                    </subProcess>
+                    <endEvent id="end"/>
+                    <sequenceFlow sourceRef="start" targetRef="inner"/>
+                    <sequenceFlow sourceRef="inner" targetRef="end"/>
+                  </process>
+                </definitions>
+                """;
+
+        BpmnProcess process = new BpmnParser().parse(xml);
+
+        assertThat(process.boundaryErrors().get("assign")).singleElement()
+                .extracting(BoundaryErrorDefinition::errorCode)
+                .isEqualTo("");
+    }
+
+    @Test
     void rejectsCompensation() {
         String xml = """
                 <?xml version="1.0" encoding="UTF-8"?>
