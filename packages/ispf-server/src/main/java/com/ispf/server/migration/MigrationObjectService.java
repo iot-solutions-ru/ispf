@@ -18,6 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HexFormat;
@@ -116,6 +120,135 @@ public class MigrationObjectService {
             applied.add(migration.scriptId());
         }
         return applied;
+    }
+
+    /**
+     * Executes bundle SQL and the application migration ledger on one connection.
+     * Does not create migration objects. A failure rolls back every statement in the batch,
+     * so an earlier {@code CREATE} cannot remain when a later statement fails.
+     * Not {@code @Transactional}: {@code JdbcTemplate} was committing each statement on its own connection.
+     */
+    public List<String> applyBundleSql(
+            String appId,
+            String tablePrefix,
+            List<MigrationDefinition> scripts
+    ) {
+        if (scripts == null || scripts.isEmpty()) {
+            return List.of();
+        }
+        String prefix = tablePrefix != null ? tablePrefix : "";
+        List<MigrationDefinition> pending = new ArrayList<>();
+        String dataSourcePath = null;
+        for (MigrationDefinition script : scripts) {
+            if (script == null || script.scriptId() == null || script.scriptId().isBlank()) {
+                throw new IllegalArgumentException("migration id is required");
+            }
+            if (script.sql() == null || script.sql().isBlank()) {
+                throw new IllegalArgumentException("migration " + script.scriptId() + ": sql is required");
+            }
+            ApplicationSchemaSupport.validateMigrationSql(script.sql(), prefix);
+            if (dataSourcePath == null) {
+                dataSourcePath = script.dataSourcePath();
+            } else if (!dataSourcePath.equals(script.dataSourcePath())) {
+                throw new IllegalArgumentException("Bundle migrations must share one data source");
+            }
+            if (!applicationDataStore.isMigrationApplied(appId, script.version(), script.scriptId())) {
+                pending.add(script);
+            }
+        }
+        if (pending.isEmpty()) {
+            return List.of();
+        }
+        List<String> statements = new ArrayList<>();
+        for (MigrationDefinition script : pending) {
+            for (String statement : splitStatements(script.sql())) {
+                if (!statement.isBlank()) {
+                    statements.add(statement);
+                }
+            }
+        }
+        String path = dataSourcePath;
+        dataSourceSqlSession.runInSchemaTransaction(path, (connection, schemaName) -> {
+            List<String> createdTables = new ArrayList<>();
+            try {
+                // Operator-authored migration SQL, same contract as MigrationObjectService.applyOne.
+                for (String statement : statements) {
+                    List<String> newTables = new ArrayList<>();
+                    for (String table : ApplicationSchemaSupport.createTableNames(statement)) {
+                        if (!tableExists(connection, schemaName, table)) {
+                            newTables.add(table);
+                        }
+                    }
+                    try (java.sql.Statement jdbc = connection.createStatement()) {
+                        // codeql[java/sql-injection]
+                        jdbc.execute(statement);
+                    }
+                    createdTables.addAll(newTables);
+                }
+                for (MigrationDefinition script : pending) {
+                    applicationDataStore.recordMigration(
+                            connection,
+                            appId,
+                            script.version(),
+                            script.scriptId(),
+                            script.sql()
+                    );
+                }
+            } catch (SQLException ex) {
+                // Some engines keep CREATE TABLE after rollback. Drop only tables this batch created,
+                // child tables first, and always name the application schema.
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    ex.addSuppressed(rollbackEx);
+                }
+                try {
+                    String safeSchema = ApplicationSchemaSupport.quoteIdentifier(schemaName);
+                    for (int index = createdTables.size() - 1; index >= 0; index--) {
+                        String safeTable = ApplicationSchemaSupport.quoteIdentifier(createdTables.get(index));
+                        try (java.sql.Statement jdbc = connection.createStatement()) {
+                            // codeql[java/sql-injection]
+                            jdbc.execute("DROP TABLE IF EXISTS " + safeSchema + "." + safeTable);
+                        }
+                    }
+                    connection.commit();
+                } catch (SQLException cleanupEx) {
+                    try {
+                        connection.rollback();
+                    } catch (SQLException ignored) {
+                        cleanupEx.addSuppressed(ignored);
+                    }
+                    ex.addSuppressed(cleanupEx);
+                }
+                throw ex;
+            }
+        });
+        return pending.stream().map(MigrationDefinition::scriptId).toList();
+    }
+
+    private static boolean tableExists(Connection connection, String schemaName, String table) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT COUNT(*) FROM information_schema.tables
+                WHERE LOWER(table_schema) = LOWER(?) AND LOWER(table_name) = LOWER(?)
+                """)) {
+            statement.setString(1, schemaName);
+            statement.setString(2, table);
+            try (ResultSet rows = statement.executeQuery()) {
+                return rows.next() && rows.getInt(1) > 0;
+            }
+        }
+    }
+
+    /**
+     * Writes the migration object after {@link #applyBundleSql} has committed.
+     * The SQL batch stays free of object-tree writes so a rollback cannot leave a node in memory.
+     */
+    @Transactional
+    public void recordBundleMigrationNode(MigrationDefinition definition) {
+        upsert(definition);
+        String path = MIGRATIONS_ROOT + "." + sanitizeNodeName(definition.scriptId());
+        setString(path, "checksum", checksum(definition.sql()));
+        setString(path, "appliedAt", Instant.now().toString());
     }
 
     /**

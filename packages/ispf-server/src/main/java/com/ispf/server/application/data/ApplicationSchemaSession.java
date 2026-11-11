@@ -70,6 +70,46 @@ public class ApplicationSchemaSession {
         }
     }
 
+    /**
+     * Runs {@code work} on one connection with auto-commit off, after switching to {@code schemaName}.
+     * Commits only when {@code work} returns. A failure rolls the connection back, including DDL.
+     * JdbcTemplate is not used: its execute path was committing each statement on its own.
+     */
+    public void runInSchemaTransaction(String schemaName, SchemaSqlWork work) {
+        ensureSchemaExists(schemaName);
+        try (Connection connection = dataSource.getConnection()) {
+            boolean previousAutoCommit = connection.getAutoCommit();
+            String previousSchema = null;
+            try {
+                previousSchema = currentSchema(connection);
+                // Commit the schema switch before the migration transaction. A later rollback must not
+                // send an unqualified statement back to the platform schema.
+                switchSearchPath(connection, schemaName);
+                connection.setAutoCommit(false);
+                work.run(connection, schemaName);
+                connection.commit();
+            } catch (Exception ex) {
+                rollbackQuietly(connection);
+                if (ex instanceof RuntimeException runtime) {
+                    throw runtime;
+                }
+                throw new IllegalStateException(
+                        ex.getMessage() != null ? ex.getMessage() : "Migration SQL failed",
+                        ex
+                );
+            } finally {
+                restoreSchemaQuietly(connection, previousSchema);
+                try {
+                    connection.setAutoCommit(previousAutoCommit);
+                } catch (SQLException ignored) {
+                    // The connection is about to be closed.
+                }
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Failed to open migration transaction for schema: " + schemaName, ex);
+        }
+    }
+
     public void runWithPlatformCatalog(Runnable action) {
         callWithPlatformCatalog(() -> {
             action.run();
@@ -154,6 +194,27 @@ public class ApplicationSchemaSession {
         try (Statement statement = connection.createStatement()) {
             statement.execute(dialect.resetPlatformSchemaSql());
         }
+    }
+
+    private void restoreSchemaQuietly(Connection connection, String previousSchema) {
+        try {
+            restoreSchema(connection, previousSchema);
+        } catch (SQLException ignored) {
+            // Best effort after commit or rollback.
+        }
+    }
+
+    private static void rollbackQuietly(Connection connection) {
+        try {
+            connection.rollback();
+        } catch (SQLException ignored) {
+            // Best effort — the caller still surfaces the original statement error.
+        }
+    }
+
+    @FunctionalInterface
+    public interface SchemaSqlWork {
+        void run(Connection connection, String schemaName) throws SQLException;
     }
 
     private static void rollbackIfNeeded(Connection connection, RuntimeException actionError) {

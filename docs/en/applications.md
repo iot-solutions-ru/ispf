@@ -360,6 +360,8 @@ Deploy always runs `BundleManifestValidator` before apply. A blank `displayName`
 
 `runTests` defaults to **true**: manifest `tests[]` run after apply and a failure is recorded on the deploy result. Pass `runTests=false` to skip them.
 
+Before bundle objects are written, deploy dry-runs the object tree (required fields, known types, a parent that already exists or is created earlier in the same manifest, duplicate paths) and runs `migrations[]` on one database connection. A dry-run error leaves the live object tree unchanged (`treeMutated: false`) and does not execute SQL. A failed statement rolls that connection back and drops tables the failed batch itself created, so a later error cannot leave those tables behind. Registration still creates the application schema and data source so the statements have a schema to run in. DDL that has already committed cannot be undone if a later object write fails.
+
 `export` returns the active (or specified) snapshot manifest from `application_bundle_deployments`. Web Console: **Deploy** tab on `APPLICATION` node — JSON editor, validate, deploy, resource table (add/remove in manifest).
 
 ```http
