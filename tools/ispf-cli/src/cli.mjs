@@ -114,6 +114,11 @@ export async function runCli(argv) {
         flags.strict ? "dry-run ship-canon OK wouldApply:" : "dry-run OK wouldApply:",
         (result.dryRun.wouldApply ?? []).join(", ")
       );
+      const deployStatus = result.deploy.status ?? "OK";
+      if (deployStatus !== "OK") {
+        console.error("deploy", deployStatus + ":", (result.deploy.errors ?? []).join("; "));
+        process.exit(1);
+      }
       console.log("deploy OK version:", result.deploy.version ?? result.deploy.bundleVersion ?? "—");
       break;
     }

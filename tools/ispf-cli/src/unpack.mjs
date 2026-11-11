@@ -8,16 +8,26 @@ import {
 } from "./util.mjs";
 
 const SOLUTION_ROOT_KEYS = new Set([
+  "formatVersion",
   "version",
   "displayName",
   "tablePrefix",
   "schemaName",
+  "analyticsFormulas",
   "operatorUi",
   "operatorManifest",
   "metadata",
   "license",
   "requires",
 ]);
+
+const WORKFLOW_MANIFEST_FIELDS = [
+  "inputSchemaJson",
+  "outputSchemaJson",
+  "toolDescription",
+  "sideEffectClass",
+  "webhookSlug",
+];
 
 export function unpackBundle(manifest, outDir) {
   fs.mkdirSync(outDir, { recursive: true });
@@ -126,6 +136,11 @@ export function unpackBundle(manifest, outDir) {
       if (wf.title) meta.title = wf.title;
       if (wf.status) meta.status = wf.status;
       if (wf.operatorAppId) meta.operatorAppId = wf.operatorAppId;
+      for (const key of WORKFLOW_MANIFEST_FIELDS) {
+        if (wf[key] !== undefined) {
+          meta[key] = wf[key];
+        }
+      }
       if (Object.keys(meta).length) {
         writeJsonFile(path.join(outDir, "workflows", `${stem}.meta.json`), meta);
       }

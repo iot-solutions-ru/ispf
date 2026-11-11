@@ -3,6 +3,9 @@ import { applyStrictShipCanon } from "./shipCanon.mjs";
 import { compactStringify } from "./util.mjs";
 import { validateLocal, validateRemote } from "./validate.mjs";
 import { defaultSchemaPath } from "./util.mjs";
+import { assertHonestDeployStatus } from "./honestDeploy.mjs";
+
+export { assertHonestDeployStatus };
 
 export async function deployDirectory(dir, appId, { schemaPath, strict = false } = {}) {
   const manifest = packDirectory(dir);
@@ -53,5 +56,6 @@ export async function deployDirectory(dir, appId, { schemaPath, strict = false }
     err.details = json;
     throw err;
   }
+  assertHonestDeployStatus(json);
   return { dryRun, deploy: json };
 }
