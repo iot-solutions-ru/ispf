@@ -39,8 +39,8 @@ function applyAiDefaults(
   }
   businessObject.set("goalTemplate", "Explain trend for ${tagPath} last 4h");
   businessObject.set("agentMode", "ask");
-  businessObject.set("toolAllowlist", "get_variable_history,summarize_trend,detect_anomalies");
-  businessObject.set("maxSteps", "8");
+  businessObject.set("toolAllowlist", "");
+  businessObject.set("maxSteps", "1");
   businessObject.set("outputVariable", "agentBrief");
 }
 

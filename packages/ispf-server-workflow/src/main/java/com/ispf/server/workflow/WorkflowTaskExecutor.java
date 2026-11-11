@@ -210,7 +210,7 @@ public class WorkflowTaskExecutor {
                         goal,
                         params.getOrDefault("agentMode", "ask"),
                         params.getOrDefault("toolAllowlist", ""),
-                        parseInt(params.getOrDefault("maxSteps", "8"), 8)
+                        parseInt(params.getOrDefault("maxSteps", "1"), 1)
                 );
                 String outputVariable = params.getOrDefault("outputVariable", "agentBrief");
                 instance.setVariable(outputVariable, brief);
