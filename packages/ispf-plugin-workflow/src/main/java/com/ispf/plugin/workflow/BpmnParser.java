@@ -406,7 +406,11 @@ public class BpmnParser {
             if (attached.stream().noneMatch(existing -> existing.id().equals(error.id()))) {
                 attached.add(error);
             }
+            return;
         }
+        String id = boundary.getAttribute("id");
+        throw new WorkflowException("Unsupported boundaryEvent (timer or error only): "
+                + (id == null || id.isBlank() ? "<unknown>" : id));
     }
 
     private BoundaryErrorDefinition parseBoundaryError(Element boundary, Element definitions) throws WorkflowException {

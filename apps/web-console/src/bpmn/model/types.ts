@@ -14,7 +14,7 @@ export type FlowNodeType =
   | "boundaryEvent"
   | "subProcess";
 
-export type CatchKind = "timer" | "signal" | "message";
+export type CatchKind = "timer" | "signal" | "message" | "error";
 
 export type IspfProps = Record<string, string>;
 

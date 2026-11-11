@@ -245,7 +245,32 @@ export default function IspfBpmnPropertiesPanel({
               </select>
             </label>
           )}
-          {(node.catchKind === "timer" || node.type === "boundaryEvent") && (
+          {node.type === "boundaryEvent" && (
+            <label>
+              {t("bpmn.props.catchKind")}
+              <select
+                value={node.catchKind === "error" || node.ispf.errorCode !== undefined ? "error" : "timer"}
+                onChange={(e) => {
+                  const catchKind = e.target.value as CatchKind;
+                  const ispf = { ...node.ispf };
+                  if (catchKind === "error") {
+                    delete ispf.durationSeconds;
+                  } else {
+                    delete ispf.errorCode;
+                    if (!ispf.durationSeconds) ispf.durationSeconds = "60";
+                  }
+                  onChangeNode(node.id, { catchKind, ispf });
+                }}
+              >
+                <option value="timer">timer</option>
+                <option value="error">error</option>
+              </select>
+            </label>
+          )}
+          {(node.catchKind === "timer" ||
+            (node.type === "boundaryEvent" &&
+              node.catchKind !== "error" &&
+              node.ispf.errorCode === undefined)) && (
             <label>
               ispf:durationSeconds
               <input
@@ -254,13 +279,23 @@ export default function IspfBpmnPropertiesPanel({
               />
             </label>
           )}
-          {node.catchKind === "signal" && (
+          {node.type === "boundaryEvent" &&
+            (node.catchKind === "error" || node.ispf.errorCode !== undefined) && (
+              <label>
+                ispf:errorCode
+                <input
+                  value={node.ispf.errorCode ?? ""}
+                  onChange={(e) => setIspf("errorCode", e.target.value)}
+                />
+              </label>
+            )}
+          {node.type === "intermediateCatchEvent" && node.catchKind === "signal" && (
             <label>
               ispf:signal
               <input value={node.ispf.signal ?? ""} onChange={(e) => setIspf("signal", e.target.value)} />
             </label>
           )}
-          {node.catchKind === "message" && (
+          {node.type === "intermediateCatchEvent" && node.catchKind === "message" && (
             <label>
               ispf:message
               <input

@@ -309,4 +309,49 @@ class BpmnParserTest {
                 .hasMessageContaining("Event subprocess is not supported")
                 .hasMessageContaining("onMsg");
     }
+
+    @Test
+    void rejectsUnsupportedBoundaryEventDefinitions() {
+        String signalBoundaryXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
+                  <process id="sig-b" name="Sig" isExecutable="true">
+                    <startEvent id="start"/>
+                    <userTask id="wait" name="Wait"/>
+                    <boundaryEvent id="onSignal" attachedToRef="wait">
+                      <signalEventDefinition signalRef="abort"/>
+                    </boundaryEvent>
+                    <endEvent id="end"/>
+                    <sequenceFlow sourceRef="start" targetRef="wait"/>
+                    <sequenceFlow sourceRef="wait" targetRef="end"/>
+                    <sequenceFlow sourceRef="onSignal" targetRef="end"/>
+                  </process>
+                </definitions>
+                """;
+
+        assertThatThrownBy(() -> new BpmnParser().parse(signalBoundaryXml))
+                .isInstanceOf(WorkflowException.class)
+                .hasMessageContaining("Unsupported boundaryEvent")
+                .hasMessageContaining("onSignal");
+
+        String emptyBoundaryXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
+                  <process id="empty-b" name="Empty" isExecutable="true">
+                    <startEvent id="start"/>
+                    <userTask id="wait" name="Wait"/>
+                    <boundaryEvent id="onNothing" attachedToRef="wait"/>
+                    <endEvent id="end"/>
+                    <sequenceFlow sourceRef="start" targetRef="wait"/>
+                    <sequenceFlow sourceRef="wait" targetRef="end"/>
+                    <sequenceFlow sourceRef="onNothing" targetRef="end"/>
+                  </process>
+                </definitions>
+                """;
+
+        assertThatThrownBy(() -> new BpmnParser().parse(emptyBoundaryXml))
+                .isInstanceOf(WorkflowException.class)
+                .hasMessageContaining("Unsupported boundaryEvent")
+                .hasMessageContaining("onNothing");
+    }
 }
