@@ -2,6 +2,7 @@ package com.ispf.server.application.data;
 
 import com.ispf.server.application.tree.ApplicationObjectTreeService;
 import com.ispf.server.datasource.DataSourceObjectService;
+import com.ispf.server.migration.MigrationLedger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,7 +62,9 @@ public class ApplicationDataService {
         List<String> skipped = new ArrayList<>();
 
         for (MigrationScript script : scripts) {
-            if (store.isMigrationApplied(appId, version, script.id())) {
+            String stored = store.appliedMigrationChecksum(appId, script.id());
+            MigrationLedger.requireUnchanged(script.id(), stored, script.sql());
+            if (stored != null) {
                 skipped.add(script.id());
                 continue;
             }
