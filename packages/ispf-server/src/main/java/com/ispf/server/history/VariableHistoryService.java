@@ -63,6 +63,8 @@ public class VariableHistoryService {
     private final HistorianQueryMetricsRecorder queryMetricsRecorder;
     private final ObjectProvider<AnalyticsOnChangeTrigger> analyticsOnChangeTrigger;
     private final ObjectProvider<HistorianRollupQueryService> rollupQueryService;
+    private final ObjectProvider<HistorianRollupMaterializerService> rollupMaterializer;
+    private final HistorianIngressCompressor ingressCompressor;
     private final HistoryParquetExportGateway parquetExport;
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
@@ -88,9 +90,15 @@ public class VariableHistoryService {
             HistorianQueryMetricsRecorder queryMetricsRecorder,
             ObjectProvider<AnalyticsOnChangeTrigger> analyticsOnChangeTrigger,
             ObjectProvider<HistorianRollupQueryService> rollupQueryService,
+            ObjectProvider<HistorianRollupMaterializerService> rollupMaterializer,
             HistoryParquetExportGateway parquetExport
     ) {
         this.parquetExport = parquetExport;
+        this.rollupMaterializer = rollupMaterializer;
+        this.ingressCompressor = new HistorianIngressCompressor(
+                properties.getExceptionDeadband(),
+                properties.getSwingPerSecond()
+        );
         this.properties = properties;
         this.sampleRepository = sampleRepository;
         this.variableRepository = variableRepository;
@@ -125,6 +133,7 @@ public class VariableHistoryService {
         lastSampleMs.keySet().removeIf(key -> keyBelongsToPath(key, objectPath, prefix, descendant));
         historizedCache.keySet().removeIf(key -> keyBelongsToPath(key, objectPath, prefix, descendant));
         lastHistorizedRecord.keySet().removeIf(key -> keyBelongsToPath(key, objectPath, prefix, descendant));
+        ingressCompressor.forgetPrefix(objectPath);
     }
 
     public void forgetVariable(String objectPath, String variableName) {
@@ -136,6 +145,7 @@ public class VariableHistoryService {
         lastSampleMs.keySet().removeIf(key -> key.equals(historizedKey) || key.startsWith(samplePrefix));
         historizedCache.remove(historizedKey);
         lastHistorizedRecord.remove(historizedKey);
+        ingressCompressor.forgetPrefix(samplePrefix.substring(0, samplePrefix.length() - 1));
     }
 
     private static boolean keyBelongsToPath(String key, String objectPath, String prefix, String descendant) {
@@ -149,15 +159,7 @@ public class VariableHistoryService {
     }
 
     public void recordVariableUpdate(String objectPath, String variableName, Instant observedAt) {
-        List<VariableSampleEntity> samples = collectSamples(objectPath, variableName, observedAt);
-        if (samples.isEmpty()) {
-            return;
-        }
-        if (asyncWriter.isAsyncEnabled()) {
-            asyncWriter.enqueue(samples);
-        } else {
-            batchPersister.persistBatch(samples);
-        }
+        enqueueSamples(collectSamples(objectPath, variableName, observedAt));
     }
 
     private List<VariableSampleEntity> collectSamples(String objectPath, String variableName, Instant observedAt) {
@@ -467,10 +469,43 @@ public class VariableHistoryService {
         rememberAcceptedHistorizedRecords(historizedCandidates, acceptedHistorizedKeys);
     }
 
+    private void noteLateSamples(List<VariableSampleEntity> samples) {
+        HistorianRollupMaterializerService materializer = rollupMaterializer.getIfAvailable();
+        if (materializer == null) {
+            return;
+        }
+        Instant now = Instant.now();
+        for (VariableSampleEntity sample : samples) {
+            if ("$record".equals(sample.getFieldName())) {
+                continue;
+            }
+            Instant effective = sample.getObservedAt() != null ? sample.getObservedAt() : sample.getSampledAt();
+            if (effective != null && effective.isBefore(now.minusSeconds(60))) {
+                materializer.noteLateSample(
+                        sample.getObjectPath(),
+                        sample.getVariableName(),
+                        sample.getFieldName(),
+                        effective
+                );
+            }
+        }
+    }
+
     private void enqueueSamples(List<VariableSampleEntity> samples) {
         if (samples.isEmpty()) {
             return;
         }
+        if (ingressCompressor.enabled()) {
+            samples.removeIf(sample -> !ingressCompressor.accept(
+                    sample.getObjectPath() + "|" + sample.getVariableName() + "|" + sample.getFieldName(),
+                    sample.getObservedAt() != null ? sample.getObservedAt() : sample.getSampledAt(),
+                    sample.getValueDouble()
+            ));
+            if (samples.isEmpty()) {
+                return;
+            }
+        }
+        noteLateSamples(samples);
         if (asyncWriter.isAsyncEnabled()) {
             asyncWriter.enqueue(samples);
         } else {

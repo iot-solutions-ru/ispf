@@ -28,14 +28,24 @@ public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteS
     private final ClickHouseVariableHistorySecondaryWriteStore secondary;
     private final AutomationMetricsRecorder metrics;
     private final HistorianAheadSet primaryAheadOfSecondary;
+    private final HistorianRangeCatchUpService catchUp;
 
     @Autowired
     public DualWriteVariableHistoryWriteStore(
             JdbcVariableHistoryWriteStore primary,
             ClickHouseVariableHistorySecondaryWriteStore secondary,
+            AutomationMetricsRecorder metrics,
+            HistorianRangeCatchUpService catchUp
+    ) {
+        this(primary, secondary, metrics, HistorianAheadSet.DEFAULT_MAX_KEYS, catchUp);
+    }
+
+    public DualWriteVariableHistoryWriteStore(
+            JdbcVariableHistoryWriteStore primary,
+            ClickHouseVariableHistorySecondaryWriteStore secondary,
             AutomationMetricsRecorder metrics
     ) {
-        this(primary, secondary, metrics, HistorianAheadSet.DEFAULT_MAX_KEYS);
+        this(primary, secondary, metrics, HistorianAheadSet.DEFAULT_MAX_KEYS, null);
     }
 
     DualWriteVariableHistoryWriteStore(
@@ -44,10 +54,21 @@ public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteS
             AutomationMetricsRecorder metrics,
             int maxAheadKeys
     ) {
+        this(primary, secondary, metrics, maxAheadKeys, null);
+    }
+
+    DualWriteVariableHistoryWriteStore(
+            JdbcVariableHistoryWriteStore primary,
+            ClickHouseVariableHistorySecondaryWriteStore secondary,
+            AutomationMetricsRecorder metrics,
+            int maxAheadKeys,
+            HistorianRangeCatchUpService catchUp
+    ) {
         this.primary = primary;
         this.secondary = secondary;
         this.metrics = metrics;
         this.primaryAheadOfSecondary = new HistorianAheadSet(maxAheadKeys);
+        this.catchUp = catchUp;
     }
 
     @Override
@@ -102,6 +123,9 @@ public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteS
                     records.size(),
                     ex
             );
+            if (catchUp != null) {
+                catchUp.noteSecondaryFailure(records);
+            }
             return;
         }
         for (VariableHistoryWriteRecord record : records) {
