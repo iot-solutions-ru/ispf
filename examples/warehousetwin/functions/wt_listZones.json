@@ -1,0 +1,49 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "type": "RECORD_LIST",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "zoneCode",
+                "type": "STRING"
+              },
+              {
+                "name": "aisleCount",
+                "type": "INTEGER"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              }
+            ],
+            "name": "zone_row"
+          }
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "wt_listZones",
+  "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"zones\",\"sql\":\"SELECT zone_code, aisle_count, status FROM wt_storage_zone ORDER BY zone_code\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${zones}\",\"fields\":{\"zoneCode\":\"${item.zone_code}\",\"aisleCount\":\"${item.aisle_count}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

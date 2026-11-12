@@ -6,11 +6,22 @@
   "objects": [],
   "dashboards": [],
   "workflows": [],
-  "blueprints": [],
+  "blueprints": [
+    {
+      "name": "woodmes-hub-v1",
+      "description": "WoodMES solution orchestrator (SINGLETON)",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ],
   "migrations": [],
   "functions": [
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_confirmTechStep",
       "version": "ui1",
       "descriptor": {
@@ -66,7 +77,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_createTicket",
       "version": "ui1",
       "descriptor": {
@@ -143,7 +154,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_getEquipment",
       "version": "ui1",
       "descriptor": {
@@ -192,7 +203,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_getKpi",
       "version": "ui1",
       "descriptor": {
@@ -233,7 +244,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_getPlant",
       "version": "ui1",
       "descriptor": {
@@ -274,7 +285,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listAiAdvice",
       "version": "ui1",
       "descriptor": {
@@ -315,7 +326,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listAlarms",
       "version": "ui1",
       "descriptor": {
@@ -356,7 +367,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listAudit",
       "version": "ui1",
       "descriptor": {
@@ -397,7 +408,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listDryers",
       "version": "ui1",
       "descriptor": {
@@ -438,7 +449,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listDryingBatches",
       "version": "ui1",
       "descriptor": {
@@ -479,7 +490,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listEquipment",
       "version": "ui1",
       "descriptor": {
@@ -520,7 +531,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listEquipmentByShop",
       "version": "ui1",
       "descriptor": {
@@ -569,7 +580,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listHealth",
       "version": "ui1",
       "descriptor": {
@@ -610,7 +621,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listKpiPoints",
       "version": "ui1",
       "descriptor": {
@@ -659,7 +670,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listParamHistory",
       "version": "ui1",
       "descriptor": {
@@ -708,7 +719,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listPlan",
       "version": "ui1",
       "descriptor": {
@@ -749,7 +760,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listQuality",
       "version": "ui1",
       "descriptor": {
@@ -790,7 +801,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listShops",
       "version": "ui1",
       "descriptor": {
@@ -831,7 +842,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listTechCards",
       "version": "ui1",
       "descriptor": {
@@ -872,7 +883,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listTickets",
       "version": "ui1",
       "descriptor": {
@@ -913,7 +924,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_listUsers",
       "version": "ui1",
       "descriptor": {
@@ -954,7 +965,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_ping",
       "version": "1",
       "descriptor": {
@@ -981,7 +992,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_saveAiAdvice",
       "version": "ui1",
       "descriptor": {
@@ -1051,7 +1062,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.woodmes.hub",
+      "objectPath": "root.platform.singleton-blueprints.woodmes-hub-v1",
       "functionName": "wm_updateTicketStatus",
       "version": "ui1",
       "descriptor": {

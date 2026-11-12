@@ -1,0 +1,17 @@
+{
+  "columns": [
+    {
+      "field": "status",
+      "label": "Статус"
+    },
+    {
+      "field": "cnt",
+      "label": "Кол-во"
+    }
+  ],
+  "description": "Количество позиций в каждом статусе",
+  "maxRows": 100,
+  "parameters": [],
+  "reportId": "items-summary",
+  "title": "Сводка по статусам"
+}

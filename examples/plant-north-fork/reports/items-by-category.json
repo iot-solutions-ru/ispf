@@ -1,0 +1,21 @@
+{
+  "columns": [
+    {
+      "field": "category_code",
+      "label": "Категория"
+    },
+    {
+      "field": "item_code",
+      "label": "Код"
+    },
+    {
+      "field": "status",
+      "label": "Статус"
+    }
+  ],
+  "description": "JOIN demo_item и demo_category",
+  "maxRows": 500,
+  "parameters": [],
+  "reportId": "items-by-category",
+  "title": "Позиции по категории"
+}

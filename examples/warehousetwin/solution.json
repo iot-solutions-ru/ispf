@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "displayName": "Цифровой двойник склада",
+  "tablePrefix": "wt_",
+  "schemaName": "app_warehousetwin",
+  "metadata": {
+    "domain": "warehousetwin",
+    "changelog": "Reference box: SINGLETON hub, storage_zone schema + default seed"
+  }
+}

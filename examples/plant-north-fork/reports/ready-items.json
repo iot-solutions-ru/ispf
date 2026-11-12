@@ -1,0 +1,19 @@
+{
+  "columns": [
+    {
+      "field": "item_code",
+      "label": "Код"
+    },
+    {
+      "field": "status",
+      "label": "Статус"
+    }
+  ],
+  "description": "Позиции с заданным статусом (параметр status)",
+  "maxRows": 500,
+  "parameters": [
+    "status"
+  ],
+  "reportId": "ready-items",
+  "title": "Готовые позиции"
+}

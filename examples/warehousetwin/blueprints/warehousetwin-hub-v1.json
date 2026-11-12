@@ -1,0 +1,10 @@
+{
+  "bindings": [],
+  "description": "Warehouse digital twin orchestrator (reference box)",
+  "events": [],
+  "functions": [],
+  "name": "warehousetwin-hub-v1",
+  "parameters": {},
+  "type": "SINGLETON",
+  "variables": []
+}
