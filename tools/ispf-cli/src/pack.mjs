@@ -47,14 +47,7 @@ export function packDirectory(dir) {
 
   const sqlDir = path.join(dir, "sql");
   if (fs.existsSync(sqlDir)) {
-    const migrations = fs
-      .readdirSync(sqlDir)
-      .filter((f) => f.toLowerCase().endsWith(".sql"))
-      .sort()
-      .map((file) => ({
-        id: migrationIdFromFilename(file),
-        sql: fs.readFileSync(path.join(sqlDir, file), "utf8").replace(/\r\n/g, "\n").replace(/\n$/, ""),
-      }));
+    const migrations = orderedSqlEntries(sqlDir);
     if (migrations.length) {
       manifest.migrations = migrations;
     }
@@ -62,15 +55,7 @@ export function packDirectory(dir) {
 
   const seedsDir = path.join(dir, "seeds");
   if (fs.existsSync(seedsDir)) {
-    const seeds = fs
-      .readdirSync(seedsDir)
-      .filter((f) => f.toLowerCase().endsWith(".sql"))
-      .sort()
-      .map((file) => ({
-        id: migrationIdFromFilename(file),
-        profile: "default",
-        sql: fs.readFileSync(path.join(seedsDir, file), "utf8").replace(/\r\n/g, "\n").replace(/\n$/, ""),
-      }));
+    const seeds = orderedSqlEntries(seedsDir).map((entry) => ({ ...entry, profile: "default" }));
     if (seeds.length) {
       manifest.seeds = seeds;
     }
@@ -212,6 +197,39 @@ function collectReports(reportsDir) {
   });
   reports.sort((a, b) => String(a.reportId).localeCompare(String(b.reportId)));
   return reports;
+}
+
+function orderedSqlEntries(dir) {
+  const files = fs.readdirSync(dir).filter((file) => file.toLowerCase().endsWith(".sql"));
+  const orderPath = path.join(dir, "order.json");
+  let orderedNames = files.slice().sort();
+  if (fs.existsSync(orderPath)) {
+    const order = readJsonFile(orderPath);
+    const byId = new Map(files.map((file) => [migrationIdFromFilename(file), file]));
+    const used = new Set();
+    const known = [];
+    if (Array.isArray(order)) {
+      for (const id of order) {
+        const file = byId.get(id);
+        if (file && !used.has(file)) {
+          known.push(file);
+          used.add(file);
+        }
+      }
+    }
+    const rest = files
+      .filter((file) => !used.has(file))
+      .sort((a, b) => migrationIdFromFilename(a).localeCompare(
+        migrationIdFromFilename(b),
+        undefined,
+        { numeric: true },
+      ));
+    orderedNames = known.concat(rest);
+  }
+  return orderedNames.map((file) => ({
+    id: migrationIdFromFilename(file),
+    sql: fs.readFileSync(path.join(dir, file), "utf8").replace(/\r\n/g, "\n").replace(/\n$/, ""),
+  }));
 }
 
 function collectWorkflows(workflowsDir) {
