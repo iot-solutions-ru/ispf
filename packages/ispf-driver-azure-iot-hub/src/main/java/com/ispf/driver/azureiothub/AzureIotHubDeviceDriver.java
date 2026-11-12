@@ -4,9 +4,11 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.io.IOException;
 import java.util.List;
@@ -28,8 +30,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>{@code deviceId} — device id used in topic paths and as MQTT client id</li>
  *   <li>{@code port} — MQTT port (default {@code 1883})</li>
  *   <li>{@code timeoutMs} — connect / ack / read wait</li>
- *   <li>{@code useTls} — when {@code true}, connect fails with {@link DriverException}
- *       (MQTT TLS is not implemented; plain TCP is not used as a fallback)</li>
+ *   <li>{@code useTls} — when {@code true}, connect fails with
+ *       {@link DriverUnsupportedOperationException} (MQTT TLS is not implemented;
+ *       plain TCP is not used as a fallback)</li>
  *   <li>{@code caCertPath}, {@code clientCertPath}, {@code clientKeyPath}
  *       — reserved for a future TLS implementation</li>
  * </ul>
@@ -117,10 +120,7 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         disconnect();
-        if (useTls) {
-            throw new DriverException(
-                    "Azure IoT Hub driver does not implement MQTT TLS; set useTls=false for lab plain TCP");
-        }
+        failClosedBeforeTcp();
         try {
             mqtt = new Mqtt311Client(host, port, timeoutMs, deviceId);
             mqtt.addListener(this::onPublish);
@@ -133,6 +133,18 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
             disconnect();
             throw new DriverException("Azure IoT Hub MQTT connect failed for "
                     + host + ":" + port, e);
+        }
+    }
+
+    private void failClosedBeforeTcp() throws DriverException {
+        if (useTls) {
+            throw new DriverUnsupportedOperationException(
+                    "Azure IoT Hub driver does not implement MQTT TLS; set useTls=false for lab plain TCP");
+        }
+        if (!caCertPath.isBlank() || !clientCertPath.isBlank() || !clientKeyPath.isBlank()) {
+            throw new DriverConfigurationException(
+                    "Azure IoT Hub driver does not implement MQTT TLS certificate paths; "
+                            + "leave caCertPath, clientCertPath, and clientKeyPath blank for lab plain TCP");
         }
     }
 

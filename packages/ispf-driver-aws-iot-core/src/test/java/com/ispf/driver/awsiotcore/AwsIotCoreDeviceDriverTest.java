@@ -6,8 +6,10 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -135,8 +137,25 @@ class AwsIotCoreDeviceDriverTest {
                 "useTls", "true"
         )));
 
-        DriverException error = assertThrows(DriverException.class, driver::connect);
+        DriverUnsupportedOperationException error = assertThrows(
+                DriverUnsupportedOperationException.class, driver::connect);
         assertTrue(error.getMessage().contains("TLS"));
+        assertFalse(driver.isConnected());
+    }
+
+    @Test
+    void connectRejectsCertPathsWhenUseTlsFalseWithoutOpeningTcp() {
+        driver = new AwsIotCoreDeviceDriver();
+        driver.initialize(new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", "1883",
+                "useTls", "false",
+                "caCertPath", "/tmp/ca.pem"
+        )));
+
+        DriverConfigurationException error = assertThrows(
+                DriverConfigurationException.class, driver::connect);
+        assertTrue(error.getMessage().contains("certificate"));
         assertFalse(driver.isConnected());
     }
 
