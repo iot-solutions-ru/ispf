@@ -4,7 +4,9 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
 
 import java.io.IOException;
@@ -28,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>{@code port} — MQTT port (default {@code 1883})</li>
  *   <li>{@code timeoutMs} — connect / ack / read wait</li>
  *   <li>{@code useTls}, {@code caCertPath}, {@code clientCertPath}, {@code clientKeyPath}
- *       — TLS configuration fields (codec remains MQTT bytes)</li>
+ *       — fail closed until mTLS is implemented; any of these refuses the connection</li>
  * </ul>
  * Topic conventions:
  * <ul>
@@ -65,7 +67,7 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
                     "clientCertPath", "",
                     "clientKeyPath", ""
             ),
-            null,
+            DriverMaturity.BETA,
             Set.of("read", "write")
     );
 
@@ -114,9 +116,9 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         disconnect();
-        if (useTls) {
-            throw new DriverException(
-                    "Azure IoT Hub TLS/mTLS is not implemented; refusing cleartext fallback (useTls=true)");
+        if (useTls || !caCertPath.isEmpty() || !clientCertPath.isEmpty() || !clientKeyPath.isEmpty()) {
+            throw new DriverConfigurationException(
+                    "Azure IoT Hub TLS/mTLS is not implemented; refusing cleartext fallback");
         }
         try {
             mqtt = new Mqtt311Client(host, port, timeoutMs, deviceId);

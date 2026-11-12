@@ -7,6 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -31,6 +33,8 @@ class AdrHonestyGateTest {
         } else {
             assertTrue(row.contains("**Gap**"),
                     "ADR-0035 must keep catch-up as Gap until HistorianRangeCatchUpService exists");
+            assertFalse(row.contains("**Done**"),
+                    "ADR-0035 must not mark catch-up Done before the service exists");
         }
     }
 
@@ -43,10 +47,12 @@ class AdrHonestyGateTest {
         String adr = Files.readString(repoRoot().resolve("docs/en/decisions/0049-ot-automation-excellence.md"));
         String row = rowContaining(adr, "INVOKE_AGENT");
         if (promptOnly) {
-            assertTrue(row.contains("**Gap**") || row.contains("**Partial**"),
-                    "prompt-only INVOKE_AGENT must not be documented as a Done tool loop");
-            assertFalse(row.contains("bounded multi-step tool loop **Done**"),
-                    "tool loop is still rejected in WorkflowAiActionService");
+            assertTrue(row.contains("**Gap**"),
+                    "prompt-only INVOKE_AGENT must keep the tool loop as Gap");
+            assertFalse(
+                    Pattern.compile("(?i)tool[- ]loop[^|]*\\*\\*Done\\*\\*").matcher(row).find(),
+                    "tool loop is still rejected in WorkflowAiActionService"
+            );
         }
     }
 
@@ -68,13 +74,15 @@ class AdrHonestyGateTest {
                         "packages/ispf-driver-azure-iot-hub/src/main/java/com/ispf/driver/azureiothub/AzureIotHubDeviceDriver.java")
         )) {
             Path source = repoRoot().resolve(driver.relativeSource());
-            if (!Files.exists(source)) {
-                continue;
-            }
+            assertTrue(Files.exists(source), "missing driver source " + source);
             String body = Files.readString(source);
-            boolean plainTcpWhileTlsRequested = body.contains("connecting with MQTT codec on plain TCP");
-            if (plainTcpWhileTlsRequested && matrixEntryIsProduction(matrixSource, driver.id())) {
-                problems.add(driver.id() + " still connects in cleartext when useTls=true but matrix says PRODUCTION");
+            if (body.contains("connecting with MQTT codec on plain TCP")) {
+                problems.add(driver.id() + " still logs a cleartext fallback when TLS is requested");
+            }
+            boolean tlsImplemented = body.contains("SSLContext") || body.contains("SSLSocket");
+            boolean tlsUnimplemented = body.contains("TLS/mTLS is not implemented") || !tlsImplemented;
+            if (tlsUnimplemented && matrixEntryIsProduction(matrixSource, driver.id())) {
+                problems.add(driver.id() + " is PRODUCTION while TLS/mTLS is not implemented");
             }
         }
         String promotion = Files.readString(repoRoot().resolve("docs/en/driver-promotion.md"));
@@ -92,13 +100,10 @@ class AdrHonestyGateTest {
     }
 
     private static boolean matrixEntryIsProduction(String matrixSource, String driverId) {
-        int idAt = matrixSource.indexOf("\"" + driverId + "\"");
-        if (idAt < 0) {
-            return false;
-        }
-        int windowEnd = Math.min(matrixSource.length(), idAt + 220);
-        String window = matrixSource.substring(idAt, windowEnd);
-        return window.contains("DriverMaturity.PRODUCTION");
+        Matcher matcher = Pattern.compile(
+                "entry\\(\\s*\"" + Pattern.quote(driverId) + "\"\\s*,\\s*DriverMaturity\\.(\\w+)"
+        ).matcher(matrixSource);
+        return matcher.find() && "PRODUCTION".equals(matcher.group(1));
     }
 
     private static String rowContaining(String markdown, String needle) {
