@@ -281,8 +281,7 @@
     {
       "name": "tank-farm-hub-v1",
       "description": "Manifold hub (marketplace)",
-      "type": "INSTANCE",
-      "targetObjectType": "DEVICE",
+      "type": "SINGLETON",
       "suitabilityExpression": "",
       "variables": [
         {
@@ -489,102 +488,6 @@
               }
             ]
           }
-        },
-        {
-          "name": "driverId",
-          "description": "Driver id",
-          "group": "driver",
-          "schema": {
-            "name": "stringValue",
-            "fields": [
-              {
-                "name": "value",
-                "type": "STRING"
-              }
-            ]
-          },
-          "readable": true,
-          "writable": true,
-          "defaultValue": {
-            "schema": {
-              "name": "stringValue",
-              "fields": [
-                {
-                  "name": "value",
-                  "type": "STRING"
-                }
-              ]
-            },
-            "rows": [
-              {
-                "value": "virtual"
-              }
-            ]
-          }
-        },
-        {
-          "name": "driverConfigJson",
-          "description": "Driver config (OOTB virtual; domain sim via SQL tick)",
-          "group": "driver",
-          "schema": {
-            "name": "stringValue",
-            "fields": [
-              {
-                "name": "value",
-                "type": "STRING"
-              }
-            ]
-          },
-          "readable": true,
-          "writable": true,
-          "defaultValue": {
-            "schema": {
-              "name": "stringValue",
-              "fields": [
-                {
-                  "name": "value",
-                  "type": "STRING"
-                }
-              ]
-            },
-            "rows": [
-              {
-                "value": "{}"
-              }
-            ]
-          }
-        },
-        {
-          "name": "driverAutoStart",
-          "description": "Auto-start driver",
-          "group": "driver",
-          "schema": {
-            "name": "boolValue",
-            "fields": [
-              {
-                "name": "value",
-                "type": "BOOLEAN"
-              }
-            ]
-          },
-          "readable": true,
-          "writable": true,
-          "defaultValue": {
-            "schema": {
-              "name": "boolValue",
-              "fields": [
-                {
-                  "name": "value",
-                  "type": "BOOLEAN"
-                }
-              ]
-            },
-            "rows": [
-              {
-                "value": true
-              }
-            ]
-          }
         }
       ],
       "events": [],
@@ -600,13 +503,6 @@
       "type": "CUSTOM",
       "displayName": "Резервуарный парк (демо)",
       "description": "Marketplace tank-farm folder"
-    },
-    {
-      "parentPath": "root.platform.singleton-blueprints",
-      "name": "tank-farm-hub-v1",
-      "type": "SINGLETON",
-      "displayName": "Manifold hub",
-      "templateId": "tank-farm-hub-v1"
     },
     {
       "parentPath": "root.platform.devices.tank-farm-demo",

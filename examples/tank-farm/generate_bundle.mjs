@@ -125,13 +125,6 @@ const objects = [
     displayName: "Резервуарный парк (демо)",
     description: "Marketplace tank-farm folder",
   },
-  {
-    parentPath: "root.platform.singleton-blueprints",
-    name: "tank-farm-hub-v1",
-    type: "SINGLETON",
-    displayName: "Manifold hub",
-    templateId: "tank-farm-hub-v1",
-  },
   ...TANKS.map((t) => ({
     parentPath: "root.platform.devices.tank-farm-demo",
     name: `tank-${t.n}`,
@@ -251,8 +244,7 @@ ${TANKS.map(
     {
       name: "tank-farm-hub-v1",
       description: "Manifold hub (marketplace)",
-      type: "INSTANCE",
-      targetObjectType: "DEVICE",
+      type: "SINGLETON",
       suitabilityExpression: "",
       variables: [
         meas("linePressureMpa", "Line pressure", "telemetry", "MPa", 0.82),
@@ -260,7 +252,6 @@ ${TANKS.map(
         meas("lineTempC", "Line temperature", "telemetry", "°C", 11),
         meas("deltaPressureMpa", "Delta pressure", "telemetry", "MPa", 0.03),
         meas("totalVolumeM3", "Total volume", "telemetry", "m³", 81000),
-        ...driverVars(),
       ],
       events: [],
       functions: [],

@@ -28,7 +28,7 @@
     {
       "id": "demo_warehouse",
       "profile": "default",
-      "sql": "INSERT INTO wt_warehouse (id, code, name, status) SELECT 'wh-rc01', 'RC01', 'Demo warehouse', 'active' WHERE NOT EXISTS (SELECT 1 FROM wt_warehouse WHERE id = 'wh-rc01'); INSERT INTO wt_kpi (key, value) SELECT 'ordersActive', 0 WHERE NOT EXISTS (SELECT 1 FROM wt_kpi WHERE key = 'ordersActive');"
+      "sql": "INSERT INTO wt_warehouse (id, code, name, status) SELECT 'wh-rc01', 'RC01', 'Demo warehouse', 'active' WHERE NOT EXISTS (SELECT 1 FROM wt_warehouse WHERE id = 'wh-rc01'); INSERT INTO wt_kpi (key, value) SELECT 'ordersActive', 0 WHERE NOT EXISTS (SELECT 1 FROM wt_kpi WHERE key = 'ordersActive'); INSERT INTO wt_kpi (key, value) SELECT 'tasksOpen', 0 WHERE NOT EXISTS (SELECT 1 FROM wt_kpi WHERE key = 'tasksOpen');"
     }
   ],
   "functions": [
