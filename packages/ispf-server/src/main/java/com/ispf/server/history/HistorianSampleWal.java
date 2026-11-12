@@ -84,10 +84,11 @@ public final class HistorianSampleWal {
     }
 
     private void enforceQuota() throws IOException {
-        byte[] raw = Files.readAllBytes(file);
-        if (raw.length <= maxBytes) {
+        long size = Files.size(file);
+        if (size <= maxBytes) {
             return;
         }
+        byte[] raw = Files.readAllBytes(file);
         List<byte[]> lines = splitLines(raw);
         int keepFrom = lines.size();
         long keptBytes = 0;

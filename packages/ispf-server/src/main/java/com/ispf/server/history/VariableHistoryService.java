@@ -159,16 +159,7 @@ public class VariableHistoryService {
     }
 
     public void recordVariableUpdate(String objectPath, String variableName, Instant observedAt) {
-        List<VariableSampleEntity> samples = collectSamples(objectPath, variableName, observedAt);
-        if (samples.isEmpty()) {
-            return;
-        }
-        noteLateSamples(samples);
-        if (asyncWriter.isAsyncEnabled()) {
-            asyncWriter.enqueue(samples);
-        } else {
-            batchPersister.persistBatch(samples);
-        }
+        enqueueSamples(collectSamples(objectPath, variableName, observedAt));
     }
 
     private List<VariableSampleEntity> collectSamples(String objectPath, String variableName, Instant observedAt) {

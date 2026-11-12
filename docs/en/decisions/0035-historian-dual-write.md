@@ -25,7 +25,7 @@ Operators need a migration path: **OLTP-consistent reads from PostgreSQL**, anal
 | Dual-write flag + primary JDBC / secondary CH | **Done** | |
 | Hot path never blocked by CH failure | **Done** (by design) | |
 | Secondary append **failure** counter | **Done** | `ispf.historian.dual_write.secondary_failures` increments once per failed ClickHouse append after the JDBC primary succeeds. Not a lag gauge and not an alert rule. |
-| Automatic **catch-up / backfill** after CH outage | **Done** | Disk WAL plus `historian_catchup_ranges`; `HistorianRangeCatchUpService` replays to ClickHouse |
+| Automatic **catch-up / backfill** after CH outage | **Done** | Disk WAL under `{ISPF_DATA_DIR or ./data}/historian-catchup` (override `ispf.historian.catchup.dir`) plus `historian_catchup_ranges`; `HistorianRangeCatchUpService` replays to ClickHouse |
 | Query cutover to CH | **Partial** / separate BL | Reads stay JDBC until switched |
 
 Do **not** claim “strong consistency across PG and CH” or “zero sample loss on secondary” from dual-write alone. Full DR tiers: [0068](0068-backup-and-dr.md).

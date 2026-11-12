@@ -13,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,6 +22,46 @@ class HistorianRangeCatchUpServiceTest {
 
     @TempDir
     Path dir;
+
+    @Test
+    void walDirectoryFallsBackUnderDataDir() {
+        assertEquals(
+                Path.of("custom", "catchup"),
+                HistorianRangeCatchUpService.resolveWalDirectory("custom/catchup", "")
+        );
+        assertEquals(
+                Path.of("legacy"),
+                HistorianRangeCatchUpService.resolveWalDirectory("", "legacy")
+        );
+    }
+
+    @Test
+    void replayFailureKeepsWalAndRanges() {
+        MemoryRanges ranges = new MemoryRanges();
+        HistorianSampleWal wal = new HistorianSampleWal(dir, 1_000_000);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<ClickHouseVariableHistorySecondaryWriteStore> secondary = mock(ObjectProvider.class);
+        ClickHouseVariableHistorySecondaryWriteStore writer = mock(ClickHouseVariableHistorySecondaryWriteStore.class);
+        when(secondary.getIfAvailable()).thenReturn(writer);
+        HistorianRangeCatchUpService service = new HistorianRangeCatchUpService(wal, ranges, secondary);
+
+        VariableHistoryWriteRecord sample = new VariableHistoryWriteRecord(
+                "root.platform.devices.line",
+                "temp",
+                "value",
+                Instant.parse("2026-11-12T10:00:00Z"),
+                Instant.parse("2026-11-12T10:00:00Z"),
+                21.5,
+                null,
+                "GOOD"
+        );
+        service.noteSecondaryFailure(List.of(sample));
+        doThrow(new RuntimeException("clickhouse down")).when(writer).appendBatch(List.of(sample));
+
+        assertEquals(0, service.replay());
+        assertEquals(1, wal.readAll().size());
+        assertEquals(1, ranges.list().size());
+    }
 
     @Test
     void outageThenReplayCopiesWalAndClearsRanges() {

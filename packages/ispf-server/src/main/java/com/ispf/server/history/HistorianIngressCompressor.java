@@ -56,10 +56,10 @@ public final class HistorianIngressCompressor {
         }
         double slope = (value - previous.value()) / (elapsedMs / 1000d);
         if (swingPerSecond > 0d) {
-            boolean withinSlope = Math.abs(slope) <= swingPerSecond
-                    && (previous.slope() == null || Math.abs(slope - previous.slope()) <= swingPerSecond);
+            boolean slopeStable = previous.slope() == null
+                    || Math.abs(slope - previous.slope()) <= swingPerSecond;
             boolean withinBand = exceptionDeadband <= 0d || Math.abs(value - previous.value()) <= exceptionDeadband;
-            if (withinSlope && withinBand) {
+            if (slopeStable && withinBand) {
                 lastKept.put(seriesKey, new Kept(previous.sampledAt(), previous.value(), slope));
                 return false;
             }

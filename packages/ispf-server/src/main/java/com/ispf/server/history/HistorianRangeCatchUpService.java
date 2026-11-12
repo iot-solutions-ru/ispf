@@ -12,9 +12,11 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * After a ClickHouse outage, replays primary samples from the disk WAL for every
@@ -34,10 +36,25 @@ public class HistorianRangeCatchUpService {
     public HistorianRangeCatchUpService(
             HistorianCatchUpRangeStore ranges,
             ObjectProvider<ClickHouseVariableHistorySecondaryWriteStore> secondary,
-            @Value("${ispf.variable-history.catchup.directory:${java.io.tmpdir}/ispf-historian-catchup}") String directory,
+            @Value("${ispf.historian.catchup.dir:}") String catchupDir,
+            @Value("${ispf.variable-history.catchup.directory:}") String legacyDir,
             @Value("${ispf.variable-history.catchup.max-bytes:268435456}") long maxBytes
     ) {
-        this(new HistorianSampleWal(Path.of(directory), maxBytes), ranges, secondary);
+        this(new HistorianSampleWal(resolveWalDirectory(catchupDir, legacyDir), maxBytes), ranges, secondary);
+    }
+
+    static Path resolveWalDirectory(String catchupDir, String legacyDir) {
+        if (catchupDir != null && !catchupDir.isBlank()) {
+            return Path.of(catchupDir);
+        }
+        if (legacyDir != null && !legacyDir.isBlank()) {
+            return Path.of(legacyDir);
+        }
+        String dataDir = System.getenv("ISPF_DATA_DIR");
+        if (dataDir == null || dataDir.isBlank()) {
+            dataDir = "./data";
+        }
+        return Path.of(dataDir, "historian-catchup");
     }
 
     HistorianRangeCatchUpService(
@@ -76,31 +93,23 @@ public class HistorianRangeCatchUpService {
         if (writer == null) {
             return 0;
         }
-        List<HistorianCatchUpRangeStore.Range> open;
-        List<VariableHistoryWriteRecord> claimed;
-        synchronized (walLock) {
-            open = ranges.list();
-            if (open.isEmpty()) {
-                return 0;
-            }
-            List<VariableHistoryWriteRecord> staying = new ArrayList<>();
-            claimed = new ArrayList<>();
-            for (VariableHistoryWriteRecord record : dedupe(wal.readAll())) {
-                if (coveredBy(record, open)) {
-                    claimed.add(record);
-                } else {
-                    staying.add(record);
-                }
-            }
-            wal.rewrite(staying);
-            for (HistorianCatchUpRangeStore.Range range : open) {
-                ranges.remove(range.seriesKey(), range.from(), range.to());
-            }
+        List<HistorianCatchUpRangeStore.Range> open = ranges.list();
+        if (open.isEmpty()) {
+            return 0;
         }
+
+        List<VariableHistoryWriteRecord> indexed;
+        synchronized (walLock) {
+            indexed = dedupe(wal.readAll());
+        }
+
         int copied = 0;
+        List<VariableHistoryWriteRecord> acknowledged = new ArrayList<>();
+        List<HistorianCatchUpRangeStore.Range> clearedRanges = new ArrayList<>();
+
         for (HistorianCatchUpRangeStore.Range range : open) {
             List<VariableHistoryWriteRecord> batch = new ArrayList<>();
-            for (VariableHistoryWriteRecord record : claimed) {
+            for (VariableHistoryWriteRecord record : indexed) {
                 if (inRange(record, range)) {
                     batch.add(record);
                 }
@@ -111,11 +120,30 @@ public class HistorianRangeCatchUpService {
             try {
                 writer.appendBatch(batch);
                 copied += batch.size();
+                acknowledged.addAll(batch);
+                clearedRanges.add(range);
             } catch (RuntimeException ex) {
                 log.warn("historian catch-up replay failed for {} ({} samples)", range.seriesKey(), batch.size(), ex);
-                synchronized (walLock) {
-                    wal.append(batch);
-                    coverSpans(batch);
+            }
+        }
+
+        if (!acknowledged.isEmpty() || !clearedRanges.isEmpty()) {
+            Set<String> acked = new HashSet<>();
+            for (VariableHistoryWriteRecord record : acknowledged) {
+                acked.add(identity(record));
+            }
+            synchronized (walLock) {
+                if (!acked.isEmpty()) {
+                    List<VariableHistoryWriteRecord> staying = new ArrayList<>();
+                    for (VariableHistoryWriteRecord record : dedupe(wal.readAll())) {
+                        if (!acked.contains(identity(record))) {
+                            staying.add(record);
+                        }
+                    }
+                    wal.rewrite(staying);
+                }
+                for (HistorianCatchUpRangeStore.Range range : clearedRanges) {
+                    ranges.remove(range.seriesKey(), range.from(), range.to());
                 }
             }
         }
@@ -173,18 +201,6 @@ public class HistorianRangeCatchUpService {
     private static String identity(VariableHistoryWriteRecord record) {
         long at = record.sampledAt() == null ? 0L : record.sampledAt().toEpochMilli();
         return seriesKey(record) + "|" + at + "|" + record.valueDouble() + "|" + record.valueText();
-    }
-
-    private static boolean coveredBy(
-            VariableHistoryWriteRecord record,
-            List<HistorianCatchUpRangeStore.Range> open
-    ) {
-        for (HistorianCatchUpRangeStore.Range range : open) {
-            if (inRange(record, range)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static boolean inRange(VariableHistoryWriteRecord record, HistorianCatchUpRangeStore.Range range) {

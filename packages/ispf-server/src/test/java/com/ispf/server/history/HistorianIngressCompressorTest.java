@@ -34,4 +34,14 @@ class HistorianIngressCompressorTest {
         assertFalse(compressor.accept("line", t0.plusSeconds(10), 0.5));
         assertTrue(compressor.accept("line", t0.plusSeconds(20), 5.0));
     }
+
+    @Test
+    void straightRampBeyondAbsoluteSwingBandStillCompresses() {
+        HistorianIngressCompressor compressor = new HistorianIngressCompressor(0, 0.1);
+        Instant t0 = Instant.parse("2026-11-12T10:00:00Z");
+        assertTrue(compressor.accept("ramp", t0, 0.0));
+        for (int i = 1; i <= 5; i++) {
+            assertFalse(compressor.accept("ramp", t0.plusSeconds(i), i * 2.0));
+        }
+    }
 }
