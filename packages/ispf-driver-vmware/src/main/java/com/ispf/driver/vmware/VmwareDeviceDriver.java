@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -181,7 +182,7 @@ public class VmwareDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("VMware driver is read-only in v0.2");
+        throw new DriverUnsupportedOperationException("VMware driver is read-only in v0.2");
     }
 
     /** {@code about.X} is shorthand for the ServiceInstance {@code content.about.X} path. */

@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -101,7 +102,7 @@ public class FileDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("File driver is read-only in v0.1");
+        throw new DriverUnsupportedOperationException("File driver is read-only in v0.1");
     }
 
     private DataRecord readFile(String pathSpec) throws DriverException {

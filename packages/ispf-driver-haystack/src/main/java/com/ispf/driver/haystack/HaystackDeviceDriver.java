@@ -7,6 +7,7 @@ import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -145,7 +146,7 @@ public class HaystackDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("Haystack driver is read-only in v0.1");
+        throw new DriverUnsupportedOperationException("Haystack driver is read-only in v0.1");
     }
 
     private String postGrid(String operation, String body) throws DriverException {

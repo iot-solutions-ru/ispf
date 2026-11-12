@@ -7,6 +7,7 @@ import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.bluetoothle.codec.BluetoothLeH4Session;
 import com.ispf.driver.bluetoothle.codec.H4HciCodec;
 
@@ -147,7 +148,7 @@ public class BluetoothLeDeviceDriver implements DeviceDriver {
         ensureConnected();
         BluetoothLePoint point = points.get(pointId);
         String display = point != null ? point.display() : pointId;
-        throw new DriverException(
+        throw new DriverUnsupportedOperationException(
                 "Bluetooth H4 HCI rejects writes (not a full GATT client): " + display);
     }
 

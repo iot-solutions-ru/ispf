@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
@@ -98,7 +99,7 @@ public class IpHostDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("IP host driver is read-only in v0.1");
+        throw new DriverUnsupportedOperationException("IP host driver is read-only in v0.1");
     }
 
     private DataRecord check(IpHostPoint point) throws DriverException {

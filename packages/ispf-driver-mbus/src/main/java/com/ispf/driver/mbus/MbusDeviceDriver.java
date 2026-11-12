@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.mbus.codec.MbusTcpClient;
 
 import java.io.IOException;
@@ -126,7 +127,7 @@ public class MbusDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("M-Bus driver is read-only in v0.1");
+        throw new DriverUnsupportedOperationException("M-Bus driver is read-only in v0.1");
     }
 
     private DataRecord readRegister(MbusPoint point) throws DriverException {

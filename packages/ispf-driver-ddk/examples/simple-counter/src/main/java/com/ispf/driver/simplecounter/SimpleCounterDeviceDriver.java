@@ -7,6 +7,7 @@ import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.util.Map;
 import java.util.Set;
@@ -80,7 +81,7 @@ public class SimpleCounterDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("Simple counter driver is read-only");
+        throw new DriverUnsupportedOperationException("Simple counter driver is read-only");
     }
 
     private void requireConnected() throws DriverException {

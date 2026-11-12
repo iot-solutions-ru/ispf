@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.thread.codec.SpinelHdlcCodec;
 import com.ispf.driver.thread.codec.SpinelHdlcSession;
 
@@ -133,7 +134,7 @@ public class ThreadDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("Thread Spinel driver is read-only (CMD_RESET subset)");
+        throw new DriverUnsupportedOperationException("Thread Spinel driver is read-only (CMD_RESET subset)");
     }
 
     static byte[] buildCmdResetFrame() {

@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.wmbus.codec.WmbusCodec;
 import com.ispf.driver.wmbus.codec.WmbusSession;
 
@@ -139,7 +140,7 @@ public class WmbusDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("Wireless M-Bus is read-only (telegram ingest only)");
+        throw new DriverUnsupportedOperationException("Wireless M-Bus is read-only (telegram ingest only)");
     }
 
     private void ensureConnected() throws DriverException {

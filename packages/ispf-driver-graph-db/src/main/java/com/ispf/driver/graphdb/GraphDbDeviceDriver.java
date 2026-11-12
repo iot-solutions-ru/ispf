@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
@@ -128,7 +129,7 @@ public class GraphDbDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("Graph DB driver is read-only in v0.1");
+        throw new DriverUnsupportedOperationException("Graph DB driver is read-only in v0.1");
     }
 
     private DataRecord execute(GraphDbPoint point) throws DriverException {

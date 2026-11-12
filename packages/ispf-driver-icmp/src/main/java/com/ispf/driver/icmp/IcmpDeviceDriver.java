@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.net.InetAddress;
 import java.util.Map;
@@ -97,7 +98,7 @@ public class IcmpDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("ICMP driver is read-only");
+        throw new DriverUnsupportedOperationException("ICMP driver is read-only");
     }
 
     private DataRecord ping(String host) throws DriverException {

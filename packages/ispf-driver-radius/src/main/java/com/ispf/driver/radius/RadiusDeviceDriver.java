@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.radius.codec.RadiusPapClient;
 
 import java.util.Map;
@@ -106,7 +107,7 @@ public class RadiusDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("RADIUS driver is read-only");
+        throw new DriverUnsupportedOperationException("RADIUS driver is read-only");
     }
 
     private DataRecord authenticate(RadiusPoint point) throws DriverException {

@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.weatherstation.codec.WeatherStationCodec;
 
 import java.io.ByteArrayOutputStream;
@@ -133,7 +134,7 @@ public class WeatherStationDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("weather-station is read-only (Davis Vantage LOOP over TCP)");
+        throw new DriverUnsupportedOperationException("weather-station is read-only (Davis Vantage LOOP over TCP)");
     }
 
     static byte[] buildLoopCommand() {

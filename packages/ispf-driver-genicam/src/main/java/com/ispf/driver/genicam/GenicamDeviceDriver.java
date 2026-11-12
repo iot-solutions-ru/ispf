@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.genicam.codec.GenicamCodec;
 
 import java.io.IOException;
@@ -134,7 +135,7 @@ public class GenicamDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("genicam GVCP discovery is read-only");
+        throw new DriverUnsupportedOperationException("genicam GVCP discovery is read-only");
     }
 
     static byte[] buildDiscoveryCommand(int requestId) {

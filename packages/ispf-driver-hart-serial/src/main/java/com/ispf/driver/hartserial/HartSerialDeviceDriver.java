@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.hartserial.codec.HartSerialSession;
 
 import java.io.IOException;
@@ -127,7 +128,7 @@ public class HartSerialDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException(
+        throw new DriverUnsupportedOperationException(
                 "HART serial-gateway rejects writes (PV / universal command read only)");
     }
 

@@ -7,6 +7,7 @@ import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.zigbee.codec.AshCodec;
 import com.ispf.driver.zigbee.codec.AshSession;
 
@@ -136,7 +137,7 @@ public class ZigbeeDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException(
+        throw new DriverUnsupportedOperationException(
                 "Zigbee ASH (EZSP UART) is read-only (RSTACK version/reason); point="
                         + pointId.toLowerCase(Locale.ROOT));
     }
