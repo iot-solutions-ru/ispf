@@ -51,6 +51,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     private final ConcurrentHashMap<String, Set<WebSocketSession>> pathSubscriptions = new ConcurrentHashMap<>();
     private final WebSocketProperties webSocketProperties;
     private final ConcurrentLinkedQueue<PendingSend> pendingSends = new ConcurrentLinkedQueue<>();
+    private final ConcurrentHashMap<String, AtomicInteger> sessionPendingSendCounts = new ConcurrentHashMap<>();
     private final AtomicInteger pendingSendCount = new AtomicInteger();
     private final AtomicInteger droppedSendCount = new AtomicInteger();
     private final AtomicInteger sendFailureCount = new AtomicInteger();
@@ -131,6 +132,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session);
         discardPending(session);
+        sessionPendingSendCounts.remove(session.getId());
         removeSessionFromIndex(session);
         Object username = session.getAttributes().get("username");
         Object path = session.getAttributes().get("presencePath");
@@ -401,16 +403,21 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
             return;
         }
         int max = webSocketProperties.getPendingSendMax();
+        AtomicInteger sessionDepth = sessionPendingSendCounts.computeIfAbsent(
+                session.getId(),
+                ignored -> new AtomicInteger()
+        );
         while (true) {
-            int current = pendingSendCount.get();
+            int current = sessionDepth.get();
             if (current >= max) {
                 dropOverflow(session, path);
                 return;
             }
-            if (pendingSendCount.compareAndSet(current, current + 1)) {
+            if (sessionDepth.compareAndSet(current, current + 1)) {
                 break;
             }
         }
+        pendingSendCount.incrementAndGet();
         pendingSends.offer(new PendingSend(session, path, payload, attempt));
         sendWorkers.signalWork();
     }
@@ -419,6 +426,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         boolean stillQueued = item.queued.compareAndSet(true, false);
         if (stillQueued) {
             pendingSendCount.decrementAndGet();
+            releaseSessionPendingSlot(item.session);
         }
         TextMessage payload = item.payload.getAndSet(null);
         if (!stillQueued || payload == null || item.session == null || !item.session.isOpen()) {
@@ -445,7 +453,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
             return;
         }
         log.warn(
-                "Closing websocket session {} — object-change send queue at capacity {} (path {})",
+                "Closing websocket session {} — per-session object-change send queue at capacity {} (path {})",
                 session.getId(),
                 webSocketProperties.getPendingSendMax(),
                 path
@@ -469,10 +477,21 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
             item.payload.set(null);
             if (item.queued.compareAndSet(true, false)) {
                 pendingSendCount.decrementAndGet();
+                releaseSessionPendingSlot(session);
             }
         }
         if (sendWorkers != null) {
             sendWorkers.signalWork();
+        }
+    }
+
+    private void releaseSessionPendingSlot(WebSocketSession session) {
+        if (session == null) {
+            return;
+        }
+        AtomicInteger depth = sessionPendingSendCounts.get(session.getId());
+        if (depth != null) {
+            depth.decrementAndGet();
         }
     }
 

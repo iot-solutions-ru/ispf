@@ -22,7 +22,7 @@ public class WebSocketProperties {
     private int sendScaleCheckIntervalMs = 200;
 
     /**
-     * Cap on queued object-change frames waiting for a websocket send.
+     * Cap on queued object-change frames waiting for a websocket send, per session.
      * A session that falls behind is closed and its queued payloads are dropped.
      */
     private int pendingSendMax = 10_000;
