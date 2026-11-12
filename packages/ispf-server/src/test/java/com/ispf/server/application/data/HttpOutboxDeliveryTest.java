@@ -50,4 +50,31 @@ class HttpOutboxDeliveryTest {
             server.stop(0);
         }
     }
+
+    @Test
+    void emptyEndpointsDoNotTouchTheRelay() {
+        ApplicationOutboxPump pump = new ApplicationOutboxPump(new ApplicationMessageRelay(null), "");
+        assertEquals(0, pump.relayHttp());
+    }
+
+    @Test
+    void httpPumpLeavesOtherConnectorsPending() {
+        JdbcTemplate jdbc = new JdbcTemplate(new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2).build());
+        ApplicationMessageRelay relay = new ApplicationMessageRelay(jdbc);
+        relay.ensureTables();
+        String sap = relay.enqueue("plant", "sap", "m-sap", "{}");
+        String kafka = relay.enqueue("plant", "kafka", "m-kafka", "{}");
+        assertEquals(1, relay.relayOnce(java.util.Set.of("sap"), (app, connector, message, body) -> { }));
+        assertEquals("SENT", relay.status(sap));
+        assertEquals("PENDING", relay.status(kafka));
+    }
+
+    @Test
+    void endpointMustBeHttp() {
+        IllegalArgumentException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> HttpOutboxDelivery.parseEndpoints("sap=file:///tmp/out")
+        );
+        assertTrue(ex.getMessage().contains("http"));
+    }
 }

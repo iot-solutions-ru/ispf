@@ -5,7 +5,9 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -78,19 +80,38 @@ public class ApplicationMessageRelay {
     }
 
     public int relayOnce(Delivery delivery) {
-        List<Row> pending = jdbcTemplate.query("""
-                SELECT id, app_id, connector_id, message_id, body, attempts
-                FROM application_outbox
-                WHERE status = 'PENDING'
-                ORDER BY created_at
-                """, (rs, row) -> new Row(
-                rs.getString(1),
-                rs.getString(2),
-                rs.getString(3),
-                rs.getString(4),
-                rs.getString(5),
-                rs.getInt(6)
-        ));
+        return relayPending(null, delivery);
+    }
+
+    /**
+     * Drains only the named connectors. An empty set delivers nothing, so a pump
+     * for HTTP endpoints cannot dead-letter rows that belong to another transport.
+     */
+    public int relayOnce(Set<String> connectorIds, Delivery delivery) {
+        if (connectorIds == null || connectorIds.isEmpty()) {
+            return 0;
+        }
+        return relayPending(List.copyOf(connectorIds), delivery);
+    }
+
+    private int relayPending(Collection<String> connectorIds, Delivery delivery) {
+        List<Row> pending;
+        if (connectorIds == null) {
+            pending = jdbcTemplate.query("""
+                    SELECT id, app_id, connector_id, message_id, body, attempts
+                    FROM application_outbox
+                    WHERE status = 'PENDING'
+                    ORDER BY created_at
+                    """, rowMapper());
+        } else {
+            String placeholders = String.join(",", java.util.Collections.nCopies(connectorIds.size(), "?"));
+            pending = jdbcTemplate.query("""
+                    SELECT id, app_id, connector_id, message_id, body, attempts
+                    FROM application_outbox
+                    WHERE status = 'PENDING' AND connector_id IN (%s)
+                    ORDER BY created_at
+                    """.formatted(placeholders), rowMapper(), connectorIds.toArray());
+        }
         int sent = 0;
         for (Row row : pending) {
             try {
@@ -109,6 +130,17 @@ public class ApplicationMessageRelay {
             }
         }
         return sent;
+    }
+
+    private static org.springframework.jdbc.core.RowMapper<Row> rowMapper() {
+        return (rs, row) -> new Row(
+                rs.getString(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getString(4),
+                rs.getString(5),
+                rs.getInt(6)
+        );
     }
 
     public String status(String id) {

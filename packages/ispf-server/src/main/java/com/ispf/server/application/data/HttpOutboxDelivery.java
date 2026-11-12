@@ -40,9 +40,20 @@ public final class HttpOutboxDelivery implements ApplicationMessageRelay.Deliver
             if (split <= 0 || split == trimmed.length() - 1) {
                 throw new IllegalArgumentException("outbox endpoint must be connector=url: " + trimmed);
             }
-            parsed.put(trimmed.substring(0, split).trim(), URI.create(trimmed.substring(split + 1).trim()));
+            parsed.put(trimmed.substring(0, split).trim(), endpoint(trimmed.substring(split + 1).trim()));
         }
         return Map.copyOf(parsed);
+    }
+
+    private static URI endpoint(String raw) {
+        URI uri = URI.create(raw);
+        String scheme = uri.getScheme();
+        if ((!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme))
+                || uri.getHost() == null
+                || uri.getHost().isBlank()) {
+            throw new IllegalArgumentException("outbox endpoint must be an http(s) URL: " + raw);
+        }
+        return uri;
     }
 
     @Override
