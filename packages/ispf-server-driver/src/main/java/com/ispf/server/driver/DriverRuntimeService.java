@@ -97,7 +97,8 @@ public class DriverRuntimeService implements DriverConnectionLookup {
             RuntimeTelemetryProperties runtimeTelemetryProperties,
             ObjectProvider<DriverRuntimeService> self,
             DriverOwnershipService ownershipService,
-            DriverErrorMetrics errorMetrics
+            DriverErrorMetrics errorMetrics,
+            ObjectProvider<DriverWriteForwarder> writeForwarder
     ) {
         this.errorMetrics = errorMetrics;
         this.objects = objects;
@@ -109,7 +110,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         this.runtimeTelemetryProperties = runtimeTelemetryProperties;
         this.self = self;
         this.ownershipService = ownershipService;
-        this.writeRouter = new DriverWriteRouter(ownershipService);
+        this.writeRouter = new DriverWriteRouter(ownershipService, writeForwarder::getIfAvailable);
         this.pointCatalog = new DriverPointCatalogService(
                 this,
                 objects,

@@ -121,6 +121,48 @@ class DriverWriteRouterTest {
         assertTrue(ex.getMessage().contains("unknown"));
     }
 
+    @Test
+    void forwardsToTheLeaseOwnerWhenNatsForwarderIsAvailable() {
+        StubOwnership ownership = new StubOwnership();
+        ownership.enabled = true;
+        ownership.holds = false;
+        ownership.owner = Optional.of("replica-east-2");
+        AtomicBoolean invoked = new AtomicBoolean();
+        DriverWriteForwarder forwarder = new DriverWriteForwarder() {
+            @Override
+            public boolean available() {
+                return true;
+            }
+
+            @Override
+            public DriverRuntimeService.DriverRuntimeStatus forward(
+                    String ownerReplicaId,
+                    String devicePath,
+                    String pointId,
+                    DataRecord value
+            ) {
+                assertTrue("replica-east-2".equals(ownerReplicaId));
+                assertTrue(DEVICE.equals(devicePath));
+                assertTrue("cmdOpen".equals(pointId));
+                return LOCAL_STATUS;
+            }
+        };
+        DriverWriteRouter router = new DriverWriteRouter(ownership, () -> forwarder);
+
+        DriverRuntimeService.DriverRuntimeStatus result = router.route(
+                DEVICE,
+                "cmdOpen",
+                VALUE,
+                () -> {
+                    invoked.set(true);
+                    return LOCAL_STATUS;
+                }
+        );
+
+        assertSame(LOCAL_STATUS, result);
+        assertTrue(!invoked.get());
+    }
+
     private static final class StubOwnership extends DriverOwnershipService {
         boolean enabled = true;
         boolean holds;
