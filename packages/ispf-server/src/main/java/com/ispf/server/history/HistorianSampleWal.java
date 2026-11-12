@@ -56,8 +56,13 @@ public final class HistorianSampleWal {
             List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
             List<VariableHistoryWriteRecord> records = new ArrayList<>();
             for (String line : lines) {
-                if (!line.isBlank()) {
+                if (line.isBlank()) {
+                    continue;
+                }
+                try {
                     records.add(decode(line));
+                } catch (RuntimeException ex) {
+                    // A torn tail line must not stall every later catch-up tick.
                 }
             }
             return records;
@@ -79,20 +84,51 @@ public final class HistorianSampleWal {
     }
 
     private void enforceQuota() throws IOException {
-        long size = Files.size(file);
-        if (size <= maxBytes) {
+        byte[] raw = Files.readAllBytes(file);
+        if (raw.length <= maxBytes) {
             return;
         }
-        List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
-        int drop = 0;
-        long droppedBytes = 0;
-        long overflow = size - maxBytes;
-        while (drop < lines.size() && droppedBytes < overflow) {
-            droppedBytes += lines.get(drop).length() + 1L;
-            drop++;
+        List<byte[]> lines = splitLines(raw);
+        int keepFrom = lines.size();
+        long keptBytes = 0;
+        for (int i = lines.size() - 1; i >= 0; i--) {
+            long lineBytes = lines.get(i).length + 1L;
+            if (lineBytes > maxBytes || keptBytes + lineBytes > maxBytes) {
+                break;
+            }
+            keptBytes += lineBytes;
+            keepFrom = i;
         }
-        List<String> kept = lines.subList(Math.min(drop, lines.size()), lines.size());
-        Files.write(file, kept, StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+        StringBuilder block = new StringBuilder();
+        for (int i = keepFrom; i < lines.size(); i++) {
+            block.append(new String(lines.get(i), StandardCharsets.UTF_8)).append('\n');
+        }
+        Files.writeString(
+                file,
+                block,
+                StandardCharsets.UTF_8,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.CREATE
+        );
+    }
+
+    private static List<byte[]> splitLines(byte[] raw) {
+        List<byte[]> lines = new ArrayList<>();
+        int start = 0;
+        for (int i = 0; i < raw.length; i++) {
+            if (raw[i] == '\n') {
+                int end = i;
+                if (end > start && raw[end - 1] == '\r') {
+                    end--;
+                }
+                lines.add(java.util.Arrays.copyOfRange(raw, start, end));
+                start = i + 1;
+            }
+        }
+        if (start < raw.length) {
+            lines.add(java.util.Arrays.copyOfRange(raw, start, raw.length));
+        }
+        return lines;
     }
 
     static String encode(VariableHistoryWriteRecord record) {
@@ -130,7 +166,7 @@ public final class HistorianSampleWal {
         if (value == null) {
             return "";
         }
-        return value.replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n");
+        return value.replace("\\", "\\\\").replace("\t", "\\t").replace("\r", "\\r").replace("\n", "\\n");
     }
 
     private static String unescape(String value) {
@@ -145,6 +181,7 @@ public final class HistorianSampleWal {
                 out.append(switch (next) {
                     case 't' -> '\t';
                     case 'n' -> '\n';
+                    case 'r' -> '\r';
                     default -> next;
                 });
             } else {

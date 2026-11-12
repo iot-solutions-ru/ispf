@@ -2,6 +2,7 @@ package com.ispf.server.history;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -17,6 +18,7 @@ public class JdbcHistorianCatchUpRangeStore implements HistorianCatchUpRangeStor
     }
 
     @Override
+    @Transactional
     public void cover(String seriesKey, Instant from, Instant to) {
         Instant start = from.isBefore(to) ? from : to;
         Instant end = from.isBefore(to) ? to : from;
@@ -66,9 +68,14 @@ public class JdbcHistorianCatchUpRangeStore implements HistorianCatchUpRangeStor
 
     @Override
     public void remove(String seriesKey, Instant from, Instant to) {
+        Instant start = from.isBefore(to) ? from : to;
+        Instant end = from.isBefore(to) ? to : from;
         jdbcTemplate.update(
-                "DELETE FROM historian_catchup_ranges WHERE series_key = ? AND from_ts = ? AND to_ts = ?",
-                seriesKey, Timestamp.from(from), Timestamp.from(to)
+                """
+                DELETE FROM historian_catchup_ranges
+                WHERE series_key = ? AND from_ts >= ? AND to_ts <= ?
+                """,
+                seriesKey, Timestamp.from(start), Timestamp.from(end)
         );
     }
 }
