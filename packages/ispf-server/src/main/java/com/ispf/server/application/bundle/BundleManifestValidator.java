@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -29,10 +30,13 @@ public class BundleManifestValidator {
     /** Ship / catalog / {@code --strict}: these WARNING codes become ERROR (ADR-0060 Wave 1A). */
     public static final Set<String> SHIP_CANON_CODES = Set.of("LOGIC_HOST_DEVICE");
 
-    private static final Pattern BPMN_INVOKE_FUNCTION_HOST = Pattern.compile(
-            "ispf:action=\"invoke_function\"[\\s\\S]*?ispf:objectPath=\"([^\"]+)\"[\\s\\S]*?ispf:functionName=\"([^\"]+)\"",
-            Pattern.DOTALL
+    private static final Pattern BPMN_SERVICE_TASK_OPEN_TAG = Pattern.compile(
+            "<serviceTask\\b[^>]*>",
+            Pattern.CASE_INSENSITIVE
     );
+    private static final Pattern BPMN_ISPF_ACTION_ATTR = Pattern.compile("ispf:action=\"([^\"]+)\"");
+    private static final Pattern BPMN_ISPF_OBJECT_PATH_ATTR = Pattern.compile("ispf:objectPath=\"([^\"]+)\"");
+    private static final Pattern BPMN_ISPF_FUNCTION_NAME_ATTR = Pattern.compile("ispf:functionName=\"([^\"]+)\"");
 
     private static final Set<String> KNOWN_WIDGET_TYPES = Set.of(
             "value", "indicator", "toggle", "chart", "sparkline", "progress", "gauge", "status-badge",
@@ -565,16 +569,13 @@ public class BundleManifestValidator {
             for (ApplicationBundleDeployService.BundleWorkflow workflow : manifest.workflows()) {
                 String bpmnXml = workflow.bpmnXml();
                 if (bpmnXml != null && !bpmnXml.isBlank()) {
-                    Matcher matcher = BPMN_INVOKE_FUNCTION_HOST.matcher(bpmnXml);
                     int taskIndex = 0;
-                    while (matcher.find()) {
-                        String objectPath = matcher.group(1);
-                        String functionName = matcher.group(2);
+                    for (BpmnInvokeFunctionRef invoke : extractBpmnInvokeFunctionRefs(bpmnXml)) {
                         warnSplitBrainFunctionInvoke(
                                 declaredFunctionHosts,
                                 pathTypes,
-                                objectPath,
-                                functionName,
+                                invoke.objectPath(),
+                                invoke.functionName(),
                                 "workflows[" + index + "].bpmnXml.serviceTask[" + taskIndex + "].objectPath",
                                 "Workflow BPMN",
                                 builder
@@ -636,6 +637,27 @@ public class BundleManifestValidator {
                 "Align invoke objectPath with functions[] or move logic to the canonical SINGLETON/INSTANCE host.",
                 BundleValidationIssue.DOC_LOGIC_HOST
         ));
+    }
+
+    record BpmnInvokeFunctionRef(String objectPath, String functionName) {}
+
+    static List<BpmnInvokeFunctionRef> extractBpmnInvokeFunctionRefs(String bpmnXml) {
+        List<BpmnInvokeFunctionRef> refs = new ArrayList<>();
+        Matcher tagMatcher = BPMN_SERVICE_TASK_OPEN_TAG.matcher(bpmnXml);
+        while (tagMatcher.find()) {
+            String tag = tagMatcher.group();
+            Matcher actionMatcher = BPMN_ISPF_ACTION_ATTR.matcher(tag);
+            if (!actionMatcher.find() || !"invoke_function".equalsIgnoreCase(actionMatcher.group(1).trim())) {
+                continue;
+            }
+            Matcher pathMatcher = BPMN_ISPF_OBJECT_PATH_ATTR.matcher(tag);
+            Matcher nameMatcher = BPMN_ISPF_FUNCTION_NAME_ATTR.matcher(tag);
+            if (!pathMatcher.find() || !nameMatcher.find()) {
+                continue;
+            }
+            refs.add(new BpmnInvokeFunctionRef(pathMatcher.group(1), nameMatcher.group(1)));
+        }
+        return refs;
     }
 
     /**

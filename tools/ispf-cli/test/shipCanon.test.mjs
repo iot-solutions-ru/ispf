@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { applyStrictShipCanon, findLogicHostDeviceIssues } from "../src/shipCanon.mjs";
+import {
+  applyStrictShipCanon,
+  extractBpmnInvokeFunctionRefs,
+  findLogicHostDeviceIssues,
+} from "../src/shipCanon.mjs";
 
 test("findLogicHostDeviceIssues flags function on DEVICE object", () => {
   const issues = findLogicHostDeviceIssues({
@@ -63,6 +67,40 @@ test("findLogicHostDeviceIssues flags split-brain dashboard invoke", () => {
   });
   assert.equal(issues.length, 1);
   assert.equal(issues[0].path, "dashboards[0].widgets[0].objectPath");
+});
+
+test("extractBpmnInvokeFunctionRefs reads attributes inside each serviceTask", () => {
+  const bpmn = `<serviceTask id="t1" ispf:action="invoke_function" ispf:objectPath="root.platform.devices.a" ispf:functionName="f1"/>
+<serviceTask id="t2" ispf:functionName="f2" ispf:action="invoke_function" ispf:objectPath="root.platform.devices.b"/>`;
+  const refs = extractBpmnInvokeFunctionRefs(bpmn);
+  assert.deepEqual(refs, [
+    { objectPath: "root.platform.devices.a", functionName: "f1" },
+    { objectPath: "root.platform.devices.b", functionName: "f2" },
+  ]);
+});
+
+test("findLogicHostDeviceIssues flags BPMN with reversed ispf attributes", () => {
+  const bpmn = `<serviceTask id="t1" ispf:functionName="tick" ispf:action="invoke_function" ispf:objectPath="root.platform.devices.hub"/>`;
+  const issues = findLogicHostDeviceIssues({
+    objects: [{ parentPath: "root.platform.devices", name: "hub", type: "DEVICE" }],
+    functions: [{ objectPath: "root.platform.singleton-blueprints.good-hub", functionName: "tick" }],
+    workflows: [{ bpmnXml: bpmn }],
+  });
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].path, "workflows[0].bpmnXml.serviceTask[0].objectPath");
+});
+
+test("adjacent BPMN tasks do not cross-match invoke attributes", () => {
+  const bpmn = `<serviceTask id="t1" ispf:action="invoke_function" ispf:objectPath="root.platform.devices.hub" ispf:functionName="tick"/>
+<serviceTask id="t2" ispf:action="invoke_function" ispf:objectPath="root.platform.singleton-blueprints.good-hub" ispf:functionName="other"/>`;
+  const issues = findLogicHostDeviceIssues({
+    objects: [{ parentPath: "root.platform.devices", name: "hub", type: "DEVICE" }],
+    functions: [{ objectPath: "root.platform.singleton-blueprints.good-hub", functionName: "tick" }],
+    workflows: [{ bpmnXml: bpmn }],
+  });
+  assert.equal(issues.length, 1);
+  assert.ok(issues[0].message.includes("tick"));
+  assert.ok(issues[0].message.includes("root.platform.devices.hub"));
 });
 
 test("telemetry MIXIN on DEVICE with functions is allowed", () => {

@@ -5,14 +5,6 @@
   "schemaName": "app_laminate_flow_mes",
   "objects": [
     {
-      "parentPath": "root.platform.devices",
-      "name": "laminate-flow-hub",
-      "type": "DEVICE",
-      "displayName": "Хаб поточного плана",
-      "description": "Функции перепланирования, доска заказов, пересчёт WMS",
-      "templateId": "laminate-flow-hub-v1"
-    },
-    {
       "parentPath": "root.platform.mes.instances",
       "name": "laminate-dzerzhinsk",
       "type": "DEVICE",
@@ -157,10 +149,150 @@
   "blueprints": [
     {
       "name": "laminate-flow-hub",
-      "description": "Application logic hub (SINGLETON). Functions live here, not on a DEVICE.",
+      "description": "Application logic hub (SINGLETON). Planning board and BFF functions live here, not on a DEVICE.",
       "type": "SINGLETON",
       "targetObjectType": "CUSTOM",
-      "variables": []
+      "variables": [
+        {
+          "name": "schedule",
+          "description": "Доска планирования, RECORD_LIST для gantt-chart",
+          "group": "plan",
+          "schema": {
+            "name": "scheduleBlock",
+            "fields": [
+              {
+                "name": "label",
+                "type": "STRING",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              },
+              {
+                "name": "orderNo",
+                "type": "STRING",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              },
+              {
+                "name": "sku",
+                "type": "STRING",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              },
+              {
+                "name": "lineCode",
+                "type": "STRING",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              },
+              {
+                "name": "startMs",
+                "type": "DOUBLE",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              },
+              {
+                "name": "endMs",
+                "type": "DOUBLE",
+                "description": "",
+                "nullable": false,
+                "nestedSchema": null
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "scheduleBlock",
+              "fields": [
+                {
+                  "name": "label",
+                  "type": "STRING",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                },
+                {
+                  "name": "orderNo",
+                  "type": "STRING",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                },
+                {
+                  "name": "sku",
+                  "type": "STRING",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                },
+                {
+                  "name": "lineCode",
+                  "type": "STRING",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                },
+                {
+                  "name": "startMs",
+                  "type": "DOUBLE",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                },
+                {
+                  "name": "endMs",
+                  "type": "DOUBLE",
+                  "description": "",
+                  "nullable": false,
+                  "nestedSchema": null
+                }
+              ]
+            },
+            "rows": [
+              {
+                "label": "L2 Пресс A",
+                "orderNo": "SO-1001",
+                "sku": "QS-OAK-8",
+                "lineCode": "l-press-a",
+                "startMs": 1789354800000,
+                "endMs": 1789383600000
+              },
+              {
+                "label": "L2 Пресс A",
+                "orderNo": "SO-1002",
+                "sku": "QS-OAK-8",
+                "lineCode": "l-press-a",
+                "startMs": 1789441200000,
+                "endMs": 1789470000000
+              },
+              {
+                "label": "L1 Пропитка",
+                "orderNo": "SO-1101",
+                "sku": "FILM-OAK",
+                "lineCode": "l-impreg",
+                "startMs": 1789354800000,
+                "endMs": 1789376400000
+              },
+              {
+                "label": "L4 Упаковка",
+                "orderNo": "SO-1201",
+                "sku": "QS-OAK-8",
+                "lineCode": "l-pack",
+                "startMs": 1789534800000,
+                "endMs": 1789563600000
+              }
+            ]
+          },
+          "historyEnabled": false,
+          "historyRetentionDays": null
+        }
+      ]
     },
     {
       "name": "laminate-line-v1",
@@ -331,158 +463,6 @@
           },
           "historyEnabled": false,
           "historyRetentionDays": 0
-        }
-      ],
-      "events": [],
-      "functions": [],
-      "bindings": [],
-      "parameters": {}
-    },
-    {
-      "name": "laminate-flow-hub-v1",
-      "description": "Хаб планирования: доска заказов на неделю",
-      "type": "INSTANCE",
-      "targetObjectType": "DEVICE",
-      "suitabilityExpression": "",
-      "variables": [
-        {
-          "name": "schedule",
-          "description": "Доска планирования, RECORD_LIST для gantt-chart",
-          "group": "plan",
-          "schema": {
-            "name": "scheduleBlock",
-            "fields": [
-              {
-                "name": "label",
-                "type": "STRING",
-                "description": "",
-                "nullable": false,
-                "nestedSchema": null
-              },
-              {
-                "name": "orderNo",
-                "type": "STRING",
-                "description": "",
-                "nullable": false,
-                "nestedSchema": null
-              },
-              {
-                "name": "sku",
-                "type": "STRING",
-                "description": "",
-                "nullable": false,
-                "nestedSchema": null
-              },
-              {
-                "name": "lineCode",
-                "type": "STRING",
-                "description": "",
-                "nullable": false,
-                "nestedSchema": null
-              },
-              {
-                "name": "startMs",
-                "type": "DOUBLE",
-                "description": "",
-                "nullable": false,
-                "nestedSchema": null
-              },
-              {
-                "name": "endMs",
-                "type": "DOUBLE",
-                "description": "",
-                "nullable": false,
-                "nestedSchema": null
-              }
-            ]
-          },
-          "readable": true,
-          "writable": true,
-          "defaultValue": {
-            "schema": {
-              "name": "scheduleBlock",
-              "fields": [
-                {
-                  "name": "label",
-                  "type": "STRING",
-                  "description": "",
-                  "nullable": false,
-                  "nestedSchema": null
-                },
-                {
-                  "name": "orderNo",
-                  "type": "STRING",
-                  "description": "",
-                  "nullable": false,
-                  "nestedSchema": null
-                },
-                {
-                  "name": "sku",
-                  "type": "STRING",
-                  "description": "",
-                  "nullable": false,
-                  "nestedSchema": null
-                },
-                {
-                  "name": "lineCode",
-                  "type": "STRING",
-                  "description": "",
-                  "nullable": false,
-                  "nestedSchema": null
-                },
-                {
-                  "name": "startMs",
-                  "type": "DOUBLE",
-                  "description": "",
-                  "nullable": false,
-                  "nestedSchema": null
-                },
-                {
-                  "name": "endMs",
-                  "type": "DOUBLE",
-                  "description": "",
-                  "nullable": false,
-                  "nestedSchema": null
-                }
-              ]
-            },
-            "rows": [
-              {
-                "label": "L2 Пресс A",
-                "orderNo": "SO-1001",
-                "sku": "QS-OAK-8",
-                "lineCode": "l-press-a",
-                "startMs": 1789354800000,
-                "endMs": 1789383600000
-              },
-              {
-                "label": "L2 Пресс A",
-                "orderNo": "SO-1002",
-                "sku": "QS-OAK-8",
-                "lineCode": "l-press-a",
-                "startMs": 1789441200000,
-                "endMs": 1789470000000
-              },
-              {
-                "label": "L1 Пропитка",
-                "orderNo": "SO-1101",
-                "sku": "FILM-OAK",
-                "lineCode": "l-impreg",
-                "startMs": 1789354800000,
-                "endMs": 1789376400000
-              },
-              {
-                "label": "L4 Упаковка",
-                "orderNo": "SO-1201",
-                "sku": "QS-OAK-8",
-                "lineCode": "l-pack",
-                "startMs": 1789534800000,
-                "endMs": 1789563600000
-              }
-            ]
-          },
-          "historyEnabled": false,
-          "historyRetentionDays": null
         }
       ],
       "events": [],

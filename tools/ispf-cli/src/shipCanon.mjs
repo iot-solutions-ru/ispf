@@ -52,6 +52,31 @@ function buildDeclaredFunctionHosts(manifest) {
   return hosts;
 }
 
+/**
+ * @param {string} bpmnXml
+ * @returns {{ objectPath: string, functionName: string }[]}
+ */
+export function extractBpmnInvokeFunctionRefs(bpmnXml) {
+  const refs = [];
+  const xml = String(bpmnXml || "");
+  const tagRe = /<serviceTask\b[^>]*>/gi;
+  let tagMatch;
+  while ((tagMatch = tagRe.exec(xml)) !== null) {
+    const tag = tagMatch[0];
+    const actionMatch = /ispf:action="([^"]+)"/i.exec(tag);
+    if (!actionMatch || actionMatch[1].toLowerCase() !== "invoke_function") {
+      continue;
+    }
+    const pathMatch = /ispf:objectPath="([^"]+)"/i.exec(tag);
+    const nameMatch = /ispf:functionName="([^"]+)"/i.exec(tag);
+    if (!pathMatch || !nameMatch) {
+      continue;
+    }
+    refs.push({ objectPath: pathMatch[1], functionName: nameMatch[1] });
+  }
+  return refs;
+}
+
 function warnSplitBrainInvoke(issues, declaredHosts, pathTypes, invokePath, functionName, issuePath, siteLabel) {
   const path = String(invokePath || "").trim();
   const fn = String(functionName || "").trim();
@@ -150,23 +175,19 @@ export function findLogicHostDeviceIssues(manifest) {
     );
   });
 
-  const bpmnInvoke = /ispf:action="invoke_function"[\s\S]*?ispf:objectPath="([^"]+)"[\s\S]*?ispf:functionName="([^"]+)"/g;
   (manifest?.workflows ?? []).forEach((workflow, index) => {
     const xml = String(workflow?.bpmnXml || "");
-    let match;
-    let taskIndex = 0;
-    while ((match = bpmnInvoke.exec(xml)) !== null) {
+    extractBpmnInvokeFunctionRefs(xml).forEach((invoke, taskIndex) => {
       warnSplitBrainInvoke(
         issues,
         declaredHosts,
         pathTypes,
-        match[1],
-        match[2],
+        invoke.objectPath,
+        invoke.functionName,
         `workflows[${index}].bpmnXml.serviceTask[${taskIndex}].objectPath`,
         "Workflow BPMN",
       );
-      taskIndex++;
-    }
+    });
   });
 
   return issues;
