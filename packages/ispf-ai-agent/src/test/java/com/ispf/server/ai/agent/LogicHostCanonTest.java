@@ -107,6 +107,95 @@ class LogicHostCanonTest {
     }
 
     @Test
+    void correctedBundleInTheSameTurnClearsTheFirstLogicHostError() {
+        List<Map<String, Object>> steps = List.of(
+                Map.of(
+                        "type", "tool",
+                        "tool", "validate_bundle",
+                        "arguments", Map.of("appId", "demo-app"),
+                        "result", Map.of(
+                                "status", "ERROR",
+                                "shipCanon", true,
+                                "issues", List.of(Map.of("code", "LOGIC_HOST_DEVICE", "severity", "ERROR"))
+                        )
+                ),
+                Map.of(
+                        "type", "tool",
+                        "tool", "validate_bundle",
+                        "arguments", Map.of("appId", "demo-app"),
+                        "result", Map.of("status", "OK", "shipCanon", true)
+                ),
+                Map.of(
+                        "type", "tool",
+                        "tool", "import_package",
+                        "arguments", Map.of("appId", "demo-app"),
+                        "result", Map.of("status", "OK")
+                ),
+                Map.of(
+                        "type", "tool",
+                        "tool", "test_function",
+                        "result", Map.of("status", "PASS")
+                )
+        );
+        var acceptance = AcceptanceVerdict.evaluate(steps, "list objects", "application_bundle");
+        assertThat(acceptance.allowsFinish()).isTrue();
+        var judge = AgentJudgeService.evaluate(
+                steps,
+                new AgentRunState(),
+                Map.of("assignmentType", "application_bundle"),
+                "list objects"
+        );
+        assertThat(judge.verdict()).isEqualTo(AgentJudgeService.Verdict.APPROVE);
+    }
+
+    @Test
+    void cleanBundleForAnotherAppDoesNotClearLogicHostDevice() {
+        List<Map<String, Object>> steps = List.of(
+                Map.of(
+                        "type", "tool",
+                        "tool", "validate_bundle",
+                        "arguments", Map.of("appId", "demo-app"),
+                        "result", Map.of(
+                                "status", "ERROR",
+                                "issues", List.of(Map.of("code", "LOGIC_HOST_DEVICE"))
+                        )
+                ),
+                Map.of(
+                        "type", "tool",
+                        "tool", "validate_bundle",
+                        "arguments", Map.of("appId", "other-app"),
+                        "result", Map.of("status", "OK")
+                )
+        );
+        var acceptance = AcceptanceVerdict.evaluate(steps, "list objects", "application_bundle");
+        assertThat(acceptance.allowsFinish()).isFalse();
+        assertThat(acceptance.checks()).extracting(AcceptanceVerdict.Check::id).contains("logic.host");
+    }
+
+    @Test
+    void playbookGuidanceDoesNotClearLogicHostDevice() {
+        List<Map<String, Object>> steps = List.of(
+                Map.of(
+                        "type", "tool",
+                        "tool", "validate_bundle",
+                        "arguments", Map.of("appId", "demo-app"),
+                        "result", Map.of(
+                                "status", "ERROR",
+                                "issues", List.of(Map.of("code", "LOGIC_HOST_DEVICE"))
+                        )
+                ),
+                Map.of(
+                        "type", "tool",
+                        "tool", "deploy_step_validate",
+                        "result", Map.of("status", "OK", "playbookStep", "validate", "nextStep", "dry_run")
+                )
+        );
+        var acceptance = AcceptanceVerdict.evaluate(steps, "list objects", "application_bundle");
+        assertThat(acceptance.allowsFinish()).isFalse();
+        assertThat(acceptance.checks()).extracting(AcceptanceVerdict.Check::id).contains("logic.host");
+    }
+
+    @Test
     void acceptanceFailsWhenHostKindDefaultsAwayFromSingleton() {
         var verdict = AcceptanceVerdict.evaluate(List.of(Map.of(
                 "type", "tool",

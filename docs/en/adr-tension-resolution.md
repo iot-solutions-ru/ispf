@@ -42,7 +42,7 @@ Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 |------|-----------|--------|
 | **Canon (hard rule)** | Logic hosts are SINGLETON or INSTANCE, never DEVICE | `AGENTS.md`, application-principles |
 | **Authoring validate/deploy** | `LOGIC_HOST_DEVICE` = **WARNING** (does not alone set `status: ERROR`) | Default bundle validate — [0060](decisions/0060-solution-authoring-constraints.md) |
-| **Ship / examples / catalog / agent acceptance** | Same codes = **ERROR**; judge **REWORK** | `ExamplesBundleValidationTest`; `ispf validate --strict` / `ispf deploy --strict`; `POST .../deploy?strict=true`; marketplace catalog; `deploy_step_validate` / `deploy_step_dry_run` / `import_package` / `deploy_step_import` (unqualified HTTP deploy without `strict` stays WARNING) |
+| **Ship / examples / catalog / agent acceptance** | Same codes = **ERROR**; judge **REWORK** | `ExamplesBundleValidationTest`; `ispf validate --strict` / `ispf deploy --strict`; `POST .../deploy?strict=true`; marketplace catalog; agent/MCP/AI Studio `validate_bundle`, `dry_run_deploy`, `deploy_step_*`, `import_package` (unqualified HTTP deploy without `strict` stays WARNING) |
 
 ## Wave 3A — C1 FIELD checklist (ops)
 

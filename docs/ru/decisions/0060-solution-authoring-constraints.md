@@ -31,9 +31,9 @@
 6. Схема в `schema/bundle.schema.json`; MCP `contextpack://bundle-schema`
 7. Бандлы `examples/` не содержат `LOGIC_HOST_DEVICE` (`ExamplesBundleValidationTest`) — это эталонный материал для агента
 
-> **Поправка (2026-10-06):** на **авторском** validate/deploy замечания канона сообщаются и не блокируют применение. Интерактивный `validate_bundle` и HTTP validate/deploy без `strict` оставляют `LOGIC_HOST_DEVICE` как WARNING.
+> **Поправка (2026-10-06):** на **авторском** HTTP validate/deploy замечания канона сообщаются и не блокируют применение. Запрос без `strict` оставляет `LOGIC_HOST_DEVICE` как WARNING.
 >
-> **Поправка (2026-10-13) — ship-default:** финальная приёмка поставки другая. `deploy_step_*` / `import_package`, `ispf validate|deploy --strict`, `POST .../deploy?strict=true` поднимают канон до **ERROR** и не применяют бандл (HTTP 400 + `shipCanon`). Judge — **REWORK** (`logic.host`). Голый `POST .../deploy` без `strict` остаётся WARNING (авторство). Канон: [EN ADR-0060](../../en/decisions/0060-solution-authoring-constraints.md).
+> **Поправка (2026-11-11):** MCP и AI Studio (`validate_bundle`, `dry_run_deploy`, генерация бандла) поднимают канон до **ERROR** уже на первой проверке. Голый `POST .../deploy` без `strict` остаётся WARNING.
 
 ## Связанные
 

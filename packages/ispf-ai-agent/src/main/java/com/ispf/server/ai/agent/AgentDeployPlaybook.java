@@ -36,8 +36,8 @@ public final class AgentDeployPlaybook {
                     "validate",
                     3,
                     "Validate bundle manifest",
-                    "deploy_step_validate appId=... manifest={...} → ship canon OK "
-                            + "(LOGIC_HOST_DEVICE is ERROR). Interactive validate_bundle may only warn.",
+                    "deploy_step_validate or validate_bundle appId=... manifest={...} → ship canon OK "
+                            + "(LOGIC_HOST_DEVICE is ERROR).",
                     List.of("validate_bundle", "deploy_step_validate")
             ),
             new DeployStep(
@@ -122,7 +122,7 @@ public final class AgentDeployPlaybook {
                 1. **Discover** — list_objects, search_context, get_automation_schema topic=all
                 2. **Blueprint** — get_example_bundle appId=<from spec or recipes> sections=[manifest,migrations,functions,operatorUi]
                 3. **Validate** — deploy_step_validate appId=... manifest={...} → ship canon OK.
-                   LOGIC_HOST_DEVICE is ERROR on this path. Interactive validate_bundle may only warn and does not authorize import.
+                   LOGIC_HOST_DEVICE is ERROR on validate_bundle, dry_run_deploy, and deploy_step_*. A warning does not authorize import.
                 4. **Dry run** — deploy_step_dry_run appId=... manifest={...} → review wouldApply; same ship canon
                 5. **Deploy** — import_package / deploy_step_import re-check ship canon, then apply
                 6. **Operator shell** — configure_operator_ui from manifest operatorUi (title, dashboards, reports, alarmBar)
