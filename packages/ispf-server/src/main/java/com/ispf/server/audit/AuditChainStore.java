@@ -1,25 +1,35 @@
 package com.ispf.server.audit;
 
 import com.ispf.server.persistence.entity.AuditEventEntity;
-import jakarta.annotation.PostConstruct;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
+import java.util.zip.CRC32;
 
 @Service
 public class AuditChainStore {
 
+    private static final String CHAIN_HEAD_LOCK_KEY = "audit_event_chain";
+    private static final long CHAIN_ADVISORY_LOCK_ID = 0x415544314C12L;
+
     private final JdbcTemplate jdbcTemplate;
-    private final Object lock = new Object();
 
     public AuditChainStore(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @PostConstruct
+    /**
+     * Idempotent DDL for unit tests and profiles without Flyway. Production schema is V96.
+     */
     public void ensureTable() {
         jdbcTemplate.execute("""
                 CREATE TABLE IF NOT EXISTS audit_event_chain (
@@ -29,13 +39,20 @@ public class AuditChainStore {
                     occurred_at TIMESTAMP NOT NULL
                 )
                 """);
+        jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS platform_script_locks (
+                    lock_key VARCHAR(200) PRIMARY KEY
+                )
+                """);
     }
 
+    @Transactional
     public void append(AuditEventEntity event) {
-        synchronized (lock) {
-            String previous = jdbcTemplate.query(
-                    "SELECT chain_hash FROM audit_event_chain ORDER BY occurred_at DESC, event_id DESC",
-                    rs -> rs.next() ? rs.getString(1) : null
+        jdbcTemplate.execute((Connection connection) -> {
+            acquireAppendLock(connection);
+            String previous = readHeadChainHash(connection);
+            Instant occurredAt = AuditChain.normalizeOccurredAt(
+                    event.getOccurredAt() == null ? Instant.now() : event.getOccurredAt()
             );
             String chainHash = AuditChain.hash(
                     previous,
@@ -46,16 +63,20 @@ public class AuditChainStore {
                     event.getTargetType(),
                     event.getTargetId(),
                     event.getDetailsJson(),
-                    event.getOccurredAt()
+                    occurredAt
             );
-            jdbcTemplate.update(
-                    "INSERT INTO audit_event_chain (event_id, previous_hash, chain_hash, occurred_at) VALUES (?, ?, ?, ?)",
-                    event.getId(),
-                    previous,
-                    chainHash,
-                    Timestamp.from(event.getOccurredAt() == null ? Instant.now() : event.getOccurredAt())
-            );
-        }
+            try (PreparedStatement insert = connection.prepareStatement("""
+                    INSERT INTO audit_event_chain (event_id, previous_hash, chain_hash, occurred_at)
+                    VALUES (?, ?, ?, ?)
+                    """)) {
+                insert.setString(1, event.getId());
+                insert.setString(2, previous);
+                insert.setString(3, chainHash);
+                insert.setTimestamp(4, Timestamp.from(occurredAt));
+                insert.executeUpdate();
+            }
+            return null;
+        });
     }
 
     public boolean verify() {
@@ -73,10 +94,67 @@ public class AuditChainStore {
                 rs.getString(5),
                 rs.getString(6),
                 rs.getString(7),
-                rs.getTimestamp(8) == null ? null : rs.getTimestamp(8).toInstant(),
+                occurredAtFromResultSet(rs),
                 rs.getString(9),
                 rs.getString(10)
         ));
         return AuditChain.intact(links);
+    }
+
+    private static Instant occurredAtFromResultSet(ResultSet rs) throws SQLException {
+        Timestamp stamp = rs.getTimestamp(8);
+        if (stamp == null) {
+            return null;
+        }
+        return AuditChain.normalizeOccurredAt(stamp.toInstant());
+    }
+
+    private static String readHeadChainHash(Connection connection) throws SQLException {
+        try (PreparedStatement head = connection.prepareStatement("""
+                SELECT chain_hash
+                FROM audit_event_chain
+                ORDER BY occurred_at DESC, event_id DESC
+                LIMIT 1
+                FOR UPDATE
+                """)) {
+            try (ResultSet rs = head.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        }
+    }
+
+    private static void acquireAppendLock(Connection connection) throws SQLException {
+        String product = connection.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT);
+        if (product.contains("postgresql")) {
+            try (PreparedStatement lock = connection.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
+                lock.setLong(1, CHAIN_ADVISORY_LOCK_ID);
+                lock.execute();
+            }
+            return;
+        }
+        ensureLockRow(connection, CHAIN_HEAD_LOCK_KEY);
+        try (PreparedStatement rowLock = connection.prepareStatement("""
+                SELECT lock_key FROM platform_script_locks WHERE lock_key = ? FOR UPDATE
+                """)) {
+            rowLock.setString(1, CHAIN_HEAD_LOCK_KEY);
+            rowLock.executeQuery();
+        }
+    }
+
+    public static void ensureLockRow(Connection connection, String lockKey) throws SQLException {
+        try (PreparedStatement insert = connection.prepareStatement("""
+                INSERT INTO platform_script_locks (lock_key)
+                SELECT ? WHERE NOT EXISTS (SELECT 1 FROM platform_script_locks WHERE lock_key = ?)
+                """)) {
+            insert.setString(1, lockKey);
+            insert.setString(2, lockKey);
+            insert.executeUpdate();
+        }
+    }
+
+    public static long advisoryLockId(String key) {
+        CRC32 crc = new CRC32();
+        crc.update(key.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return crc.getValue();
     }
 }

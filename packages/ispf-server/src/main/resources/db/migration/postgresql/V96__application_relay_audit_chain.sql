@@ -1,0 +1,34 @@
+-- Application transactional outbox/inbox, audit hash chain, script advisory-lock backing table.
+
+CREATE TABLE IF NOT EXISTS application_outbox (
+    id              VARCHAR(64)  PRIMARY KEY,
+    app_id          VARCHAR(128) NOT NULL,
+    connector_id    VARCHAR(128) NOT NULL,
+    message_id      VARCHAR(256) NOT NULL,
+    body            TEXT         NOT NULL,
+    status          VARCHAR(32)  NOT NULL,
+    attempts        INT          NOT NULL,
+    created_at      TIMESTAMP    NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_application_outbox_pending ON application_outbox (status, created_at);
+
+CREATE TABLE IF NOT EXISTS application_inbox (
+    connector_id          VARCHAR(128) NOT NULL,
+    external_message_id   VARCHAR(256) NOT NULL,
+    received_at           TIMESTAMP    NOT NULL,
+    PRIMARY KEY (connector_id, external_message_id)
+);
+
+CREATE TABLE IF NOT EXISTS audit_event_chain (
+    event_id       VARCHAR(64) PRIMARY KEY,
+    previous_hash  VARCHAR(64),
+    chain_hash     VARCHAR(64) NOT NULL,
+    occurred_at    TIMESTAMP   NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_event_chain_occurred ON audit_event_chain (occurred_at DESC, event_id DESC);
+
+CREATE TABLE IF NOT EXISTS platform_script_locks (
+    lock_key VARCHAR(200) PRIMARY KEY
+);

@@ -3,6 +3,7 @@ package com.ispf.server.audit;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 import java.util.List;
 
@@ -25,6 +26,7 @@ public final class AuditChain {
             String detailsJson,
             Instant occurredAt
     ) {
+        Instant normalizedAt = normalizeOccurredAt(occurredAt);
         String payload = String.join("\n",
                 previousHash == null ? "" : previousHash,
                 nullToEmpty(id),
@@ -34,7 +36,7 @@ public final class AuditChain {
                 nullToEmpty(targetType),
                 nullToEmpty(targetId),
                 nullToEmpty(detailsJson),
-                occurredAt == null ? "" : occurredAt.toString()
+                normalizedAt == null ? "" : normalizedAt.toString()
         );
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(payload.getBytes(StandardCharsets.UTF_8));
@@ -64,6 +66,13 @@ public final class AuditChain {
             previous = link.chainHash();
         }
         return true;
+    }
+
+    static Instant normalizeOccurredAt(Instant occurredAt) {
+        if (occurredAt == null) {
+            return null;
+        }
+        return occurredAt.truncatedTo(ChronoUnit.MICROS);
     }
 
     private static String nullToEmpty(String value) {

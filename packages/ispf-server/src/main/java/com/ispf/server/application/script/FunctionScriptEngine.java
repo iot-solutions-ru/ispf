@@ -8,9 +8,13 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.application.function.ApplicationFunctionRuntime;
 import com.ispf.server.workflow.WorkflowInstanceCancelService;
+import com.ispf.server.audit.AuditChainStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -123,21 +127,7 @@ public class FunctionScriptEngine {
             }
             case "advisoryLock" -> {
                 String key = resolveStepValue(step.get("key"), vars).toString();
-                jdbc().execute("""
-                        CREATE TABLE IF NOT EXISTS platform_script_locks (
-                            lock_key VARCHAR(200) PRIMARY KEY
-                        )
-                        """);
-                jdbc().update("""
-                        INSERT INTO platform_script_locks (lock_key)
-                        SELECT ? WHERE NOT EXISTS (
-                            SELECT 1 FROM platform_script_locks WHERE lock_key = ?
-                        )
-                        """, key, key);
-                jdbc().queryForList(
-                        "SELECT lock_key FROM platform_script_locks WHERE lock_key = ? FOR UPDATE",
-                        key
-                );
+                acquireAdvisoryLock(key);
                 yield null;
             }
             case "expectRowCount" -> {
@@ -585,6 +575,31 @@ public class FunctionScriptEngine {
 
     private JdbcTemplate jdbc() {
         return FunctionScriptJdbcScope.activeOr(jdbcTemplate);
+    }
+
+    private void acquireAdvisoryLock(String key) {
+        jdbc().execute((Connection connection) -> {
+            String product = connection.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT);
+            if (product.contains("postgresql")) {
+                try (PreparedStatement lock = connection.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
+                    lock.setLong(1, AuditChainStore.advisoryLockId(key));
+                    lock.execute();
+                }
+                return null;
+            }
+            try {
+                AuditChainStore.ensureLockRow(connection, key);
+                try (PreparedStatement rowLock = connection.prepareStatement("""
+                        SELECT lock_key FROM platform_script_locks WHERE lock_key = ? FOR UPDATE
+                        """)) {
+                    rowLock.setString(1, key);
+                    rowLock.executeQuery();
+                }
+            } catch (SQLException ex) {
+                throw new IllegalStateException("advisoryLock failed for key " + key, ex);
+            }
+            return null;
+        });
     }
 
     private static List<Map<String, Object>> normalizeRows(List<Map<String, Object>> rows) {

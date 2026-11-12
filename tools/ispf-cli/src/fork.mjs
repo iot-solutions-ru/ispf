@@ -56,6 +56,28 @@ export function forkSolution(src, dest, appId) {
     ...(solution.metadata ?? {}),
     forkedFrom,
   };
+  const displayName = titleFromAppId(appId);
+  if (solution.displayName != null) {
+    solution.displayName = displayName;
+  }
   writeJsonFile(solutionPath, solution);
+  const bundlePath = path.join(absDest, "bundle.json");
+  if (fs.existsSync(bundlePath)) {
+    const bundle = readJsonFile(bundlePath);
+    bundle.displayName = displayName;
+    bundle.schemaName = solution.schemaName;
+    if (bundle.operatorUi && typeof bundle.operatorUi === "object") {
+      bundle.operatorUi = { ...bundle.operatorUi, appId };
+    }
+    writeJsonFile(bundlePath, bundle);
+  }
   return { dest: absDest, schemaName: solution.schemaName, forkedFrom };
+}
+
+function titleFromAppId(appId) {
+  return appId
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }

@@ -1,6 +1,5 @@
 package com.ispf.server.application.data;
 
-import jakarta.annotation.PostConstruct;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +23,9 @@ public class ApplicationMessageRelay {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @PostConstruct
+    /**
+     * Idempotent DDL for unit tests and profiles without Flyway. Production schema is V96.
+     */
     public void ensureTables() {
         jdbcTemplate.execute("""
                 CREATE TABLE IF NOT EXISTS application_outbox (
@@ -32,7 +33,7 @@ public class ApplicationMessageRelay {
                     app_id VARCHAR(128) NOT NULL,
                     connector_id VARCHAR(128) NOT NULL,
                     message_id VARCHAR(256) NOT NULL,
-                    body CLOB NOT NULL,
+                    body TEXT NOT NULL,
                     status VARCHAR(32) NOT NULL,
                     attempts INT NOT NULL,
                     created_at TIMESTAMP NOT NULL
