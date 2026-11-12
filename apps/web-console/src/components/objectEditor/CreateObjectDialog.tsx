@@ -30,7 +30,7 @@ import type { DataSourceConnectionMode } from "../platform/dataSourceConnectionV
 import { createSchedule } from "../../api/platformSchedules";
 import { fetchDrivers } from "../../api/drivers";
 import { formatDriverConfigJson, parseDriverConfigJson } from "../../utils/driverDefaults";
-import DriverMaturityBadge from "../DriverMaturityBadge";
+import DriverHonestyBadges from "../DriverHonestyBadges";
 import { formatDriverOptionLabel } from "../driverOptionLabel";
 import {
   applicationObjectPath,
@@ -883,8 +883,9 @@ export default function CreateObjectDialog({
             {mode === "object" && type === "DEVICE" && !selectedInstanceModel && (
               <>
                 <Form.Item label={t("dialog.driver")}>
-                  <Space.Compact style={{ width: "100%" }}>
+                  <div className="inline-badge-wrap">
                     <Select
+                      style={{ flex: "1 1 12rem", minWidth: "10rem" }}
                       value={driverId}
                       onChange={handleDriverChange}
                       disabled={driversQuery.isLoading}
@@ -893,8 +894,8 @@ export default function CreateObjectDialog({
                         label: formatDriverOptionLabel(driver.id, driver.name, driver.maturity),
                       }))}
                     />
-                    {selectedDriver && <DriverMaturityBadge maturity={selectedDriver.maturity} />}
-                  </Space.Compact>
+                    {selectedDriver && <DriverHonestyBadges driver={selectedDriver} />}
+                  </div>
                 </Form.Item>
                 <Form.Item label={t("dialog.pollIntervalMs")}>
                   <InputNumber

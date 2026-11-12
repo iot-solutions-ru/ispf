@@ -26,6 +26,10 @@ public class DriverCatalog {
                 .toList();
     }
 
+    public List<DriverListing> listLabeled() {
+        return list().stream().map(DriverListing::of).toList();
+    }
+
     public List<LicensedDriverRegistry.PackLoadFailure> packLoadFailures() {
         return licensedDriverRegistry.packLoadFailures();
     }

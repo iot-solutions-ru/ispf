@@ -5,6 +5,7 @@ import com.ispf.server.ai.context.ContextPackSearchService;
 import com.ispf.server.application.bundle.ApplicationBundleSnapshotStore;
 import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.driver.DriverCatalog;
+import com.ispf.server.driver.DriverListing;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -73,7 +74,9 @@ final class AgentKnowledgeTools {
 
             @Override
             public String description() {
-                return "List device drivers on this platform. Args: optional query, optional maturity (PRODUCTION|BETA|STUB).";
+                return "List device drivers on this platform. Args: optional query, optional maturity (PRODUCTION|BETA|STUB). "
+                        + "Each row has evidence LOOPBACK_VERIFIED or FIELD (FIELD is a named plant gate; none are field-proven today) "
+                        + "and readOnly when write is not declared.";
             }
 
             @Override
@@ -89,11 +92,15 @@ final class AgentKnowledgeTools {
                     if (!query.isBlank() && !haystack.contains(query)) {
                         continue;
                     }
+                    DriverListing listing = DriverListing.of(driver);
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("driverId", driver.id());
-                    row.put("name", driver.name());
-                    row.put("maturity", driver.maturity().name());
-                    row.put("description", driver.description());
+                    row.put("driverId", listing.id());
+                    row.put("name", listing.name());
+                    row.put("maturity", listing.maturity().name());
+                    row.put("evidence", listing.evidence().name());
+                    row.put("readOnly", listing.readOnly());
+                    row.put("capabilities", listing.capabilities());
+                    row.put("description", listing.description());
                     rows.add(row);
                 }
                 return Map.of("status", "OK", "count", rows.size(), "drivers", rows);

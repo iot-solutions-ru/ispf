@@ -1,7 +1,7 @@
 package com.ispf.server.api;
 
-import com.ispf.driver.DriverMetadata;
 import com.ispf.server.driver.DriverCatalog;
+import com.ispf.server.driver.DriverListing;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,7 +19,7 @@ public class DriverController {
     }
 
     @GetMapping
-    public List<DriverMetadata> listDrivers() {
-        return driverCatalog.list();
+    public List<DriverListing> listDrivers() {
+        return driverCatalog.listLabeled();
     }
 }
