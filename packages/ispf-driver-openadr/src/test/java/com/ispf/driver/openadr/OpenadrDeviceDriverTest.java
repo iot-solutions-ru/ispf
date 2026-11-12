@@ -1,6 +1,8 @@
 package com.ispf.driver.openadr;
 
 import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
@@ -134,6 +136,14 @@ class OpenadrDeviceDriverTest {
         assertEquals("2", object.variables.get("level").firstRow().get("value"));
         assertEquals("SIMPLE", object.variables.get("name").firstRow().get("value"));
         assertEquals("true", object.variables.get("on").firstRow().get("value"));
+
+        driver.writePoint("level", DataRecord.single(
+                DataSchema.builder("opt").field("value", FieldType.STRING).build(),
+                Map.of("value", "optOut")));
+        assertEquals("optOut", object.variables.get("level").firstRow().get("value"));
+        assertTrue(peer.lastRawRequest().contains("/EiEvent"));
+        assertTrue(peer.lastBody().contains("<optType>optOut</optType>"));
+        assertTrue(peer.lastBody().contains("<eventID>evt-42</eventID>"));
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverErrorKind;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.bluetoothle.codec.H4HciCodec;
@@ -141,6 +142,7 @@ class BluetoothLeDeviceDriverTest {
                         Map.of("value", "00:11:22:33:44:55")
                 )));
         assertTrue(error.getMessage().toLowerCase(Locale.ROOT).contains("gatt"));
+        assertEquals(DriverErrorKind.UNSUPPORTED, error.kind());
     }
 
     @Test

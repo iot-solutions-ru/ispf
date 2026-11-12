@@ -209,6 +209,35 @@ class DriverProductionMatrixTest {
         assertTrue(violations.isEmpty(), () -> String.join("\n", violations));
     }
 
+    @Test
+    void everyProductionWriteExecutesWritePointInItsLoopbackTest() throws IOException {
+        List<String> violations = new ArrayList<>();
+        int expected = 0;
+        int checked = 0;
+        for (DriverProductionMatrix.Entry entry : DriverProductionMatrix.entries().values()) {
+            if (entry.maturity() != DriverMaturity.PRODUCTION
+                    || !entry.capabilities().contains(WRITE)) {
+                continue;
+            }
+            expected++;
+            Path source = firstExisting(
+                    Path.of(entry.loopbackTestSourcePath()),
+                    Path.of("..", "..", entry.loopbackTestSourcePath())
+            );
+            if (source == null) {
+                violations.add(entry.driverId() + " missing loopback test " + entry.loopbackTestSourcePath());
+                continue;
+            }
+            checked++;
+            if (!Files.readString(source).contains(".writePoint(")) {
+                violations.add(entry.driverId() + " loopback test never calls writePoint: " + source);
+            }
+        }
+        assertEquals(expected, checked, "every production writer needs its loopback test on disk");
+        assertTrue(checked >= 60, "expected the production write catalog, found " + checked);
+        assertTrue(violations.isEmpty(), () -> String.join("\n", violations));
+    }
+
     private record PackSource(String packId, String driverClass) {}
 
     private static Map<String, PackSource> packSourcesByDriverId() throws IOException {

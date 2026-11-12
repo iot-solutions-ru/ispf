@@ -61,7 +61,13 @@ class MesPlatformApiTest {
                 .andExpect(jsonPath("$[?(@.id=='http')]").exists())
                 .andExpect(jsonPath("$[?(@.id=='cwmp')]").exists())
                 .andExpect(jsonPath("$[?(@.id=='flexible')]").exists())
-                .andExpect(jsonPath("$[?(@.id=='gps-tracker')]").exists());
+                .andExpect(jsonPath("$[?(@.id=='gps-tracker')]").exists())
+                .andExpect(jsonPath("$[?(@.id=='virtual')].evidence").value("LOOPBACK_VERIFIED"))
+                .andExpect(jsonPath("$[?(@.id=='virtual')].readOnly").value(true))
+                .andExpect(jsonPath("$[?(@.id=='gps-tracker')].evidence").value("LOOPBACK_VERIFIED"))
+                .andExpect(jsonPath("$[?(@.id=='gps-tracker')].readOnly").value(true))
+                .andExpect(jsonPath("$[?(@.id=='modbus-tcp')].readOnly").value(false))
+                .andExpect(jsonPath("$[?(@.id=='modbus-tcp')].evidence").value("LOOPBACK_VERIFIED"));
     }
 
     @Test

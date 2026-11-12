@@ -307,6 +307,37 @@ class Iec104DeviceDriverTest {
         assertEquals("NOT_AVAILABLE", boolKept.firstRow().get("quality"));
     }
 
+    @Test
+    void invalidMappingLeavesThePreviousPointWritable() throws Exception {
+        int port = freePort();
+        StubDriverObject serverObject = new StubDriverObject(Map.of(
+                "listenPort", String.valueOf(port),
+                "commonAddress", "1"
+        ));
+        serverDriver = new Iec104ServerDeviceDriver();
+        serverDriver.initialize(serverObject);
+        serverDriver.connect();
+        awaitPortOpen(port);
+        serverDriver.readPoints(Map.of("relay", "2001"));
+
+        StubDriverObject clientObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "commonAddress", "1",
+                "timeoutMs", "10000"
+        ));
+        Iec104DeviceDriver client = new Iec104DeviceDriver();
+        client.initialize(clientObject);
+        client.connect();
+        client.readPoints(Map.of("relay", "2001:BOOL"));
+
+        assertThrows(DriverException.class, () -> client.readPoints(Map.of("broken", "not-a-mapping")));
+
+        client.writePoint("relay", DataRecord.single(BOOL_SCHEMA, Map.of("value", true)));
+        awaitServerValue(serverObject, "relay", 1.0);
+        client.disconnect();
+    }
+
     private static final class StubDriverObject implements DeviceDriver.DriverObject {
 
         private final Map<String, String> configuration;
