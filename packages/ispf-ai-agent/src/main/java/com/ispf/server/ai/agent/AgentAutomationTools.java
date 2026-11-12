@@ -714,6 +714,9 @@ final class AgentAutomationTools {
                         + "onContextChange (bool, dashboard rules), onStartup, order. "
                         + "Historian rolling avg example: ruleKind=historian windowBucket=1m "
                         + "expression=avg(root.platform.devices.dev/sineWave, 1m) targetVariable=avg1m. "
+                        + "The target variable must already exist (create_variable first). "
+                        + "The expression is stored as sent; a table-sum dialect returns BINDING_EXPRESSION_REJECTED "
+                        + "with suggestedExpression instead of being rewritten. "
                         + "Do NOT use rolling-avg Mixin Blueprints for 1-minute averages — use historian avg(). "
                         + "For dashboard @dashboardContext rules prefer configure_platform_context_rule.";
             }
@@ -753,31 +756,37 @@ final class AgentAutomationTools {
                     Map<String, Object> resolvedArgs = coerceEventBindingArgs(arguments, bindingHost);
                     targetRef = stringArg(resolvedArgs, "targetRef");
                     targetVariable = stringArg(resolvedArgs, "targetVariable");
-                    String createdTargetVariable = "";
                     if (com.ispf.core.binding.BindingTargetKind.VARIABLE.equals(targetKind)
                             && !targetVariable.isBlank()
                             && targetRef.isBlank()
                             && bindingHost.getVariable(targetVariable).isEmpty()) {
-                        // Course agents invent sum targets before create_variable — create DOUBLE sink.
-                        objectTreePort.createVariable(
+                        return AgentToolErrors.error(
+                                "TARGET_VARIABLE_MISSING",
+                                "Target variable '" + targetVariable + "' does not exist on " + path + ".",
                                 path,
-                                targetVariable,
-                                DataSchema.builder(targetVariable).field("value", FieldType.DOUBLE).build(),
-                                true,
-                                false,
-                                null,
-                                false,
-                                null
+                                "Create it first: create_variable path=" + path
+                                        + " name=" + targetVariable
+                                        + " valueType=DOUBLE writable=false, then retry create_binding_rule."
                         );
-                        createdTargetVariable = targetVariable;
-                        bindingHost = objectTreePort.require(path);
                     }
-                    String requestedExpression = expression;
-                    expression = AgentExpressionCoercion.coerceBindingExpression(expression, bindingHost);
-                    if (!expression.equals(requestedExpression)) {
-                        resolvedArgs = new LinkedHashMap<>(resolvedArgs);
-                        resolvedArgs.put("expression", expression);
+                    String trimmedExpression = expression.trim();
+                    if (ruleKind != BindingRuleKind.HISTORIAN) {
+                        String suggestedExpression = AgentExpressionCoercion.coerceBindingExpression(
+                                trimmedExpression,
+                                bindingHost
+                        );
+                        if (suggestedExpression != null && !suggestedExpression.equals(trimmedExpression)) {
+                            Map<String, Object> rejected = new LinkedHashMap<>(AgentToolErrors.error(
+                                    "BINDING_EXPRESSION_REJECTED",
+                                    "Expression was not stored. Send the platform form explicitly.",
+                                    path,
+                                    AgentExpressionCoercion.tableSumHint(bindingHost)
+                            ));
+                            rejected.put("suggestedExpression", suggestedExpression);
+                            return rejected;
+                        }
                     }
+                    expression = trimmedExpression;
                     // Historian helpers (avg/min/max/…) are not plain CEL — skip reactive CEL compile.
                     if (ruleKind != BindingRuleKind.HISTORIAN) {
                         BindingExpressionValidator.validateOrThrow(expression);
@@ -820,13 +829,6 @@ final class AgentAutomationTools {
                     }
                     if (conditionVerification != null) {
                         ok.put("conditionVerification", conditionVerification);
-                    }
-                    if (!createdTargetVariable.isBlank()) {
-                        ok.put("createdTargetVariable", createdTargetVariable);
-                    }
-                    if (!expression.equals(requestedExpression)) {
-                        ok.put("requestedExpression", requestedExpression);
-                        ok.put("resolvedExpression", expression);
                     }
                     return ok;
                 } catch (Exception ex) {

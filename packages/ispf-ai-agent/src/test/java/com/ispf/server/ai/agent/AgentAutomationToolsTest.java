@@ -31,8 +31,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -360,9 +362,9 @@ class AgentAutomationToolsTest {
     void createBindingRuleHistorianSkipsReactiveCelValidation() throws Exception {
         String path = "root.platform.singleton-blueprints.virt-cluster-hub";
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
-        when(objectTreePort.require(path)).thenReturn(
-                new PlatformObject("1", path, ObjectType.CUSTOM, "hub", "", null)
-        );
+        PlatformObject host = new PlatformObject("1", path, ObjectType.CUSTOM, "hub", "", null);
+        host.addVariable(doubleVariable("avg1m"));
+        when(objectTreePort.require(path)).thenReturn(host);
         com.ispf.core.binding.BindingRule saved = new com.ispf.core.binding.BindingRule(
                 "cluster-avg-1m",
                 "1m avg",
@@ -394,6 +396,91 @@ class AgentAutomationToolsTest {
         verify(bindingRulesService).upsertRule(eq(path), any());
         verify(bindingDependencyIndex).rebuild(path);
         verify(bindingRuleEngine).runRulesForObject(path);
+        verify(objectTreePort, never()).createVariable(
+                any(), any(), any(), anyBoolean(), anyBoolean(), any(), anyBoolean(), any()
+        );
+    }
+
+    @Test
+    void createBindingRuleRefusesMissingTargetVariable() throws Exception {
+        String path = "root.platform.singleton-blueprints.hub";
+        when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
+        when(objectTreePort.require(path)).thenReturn(
+                new PlatformObject("1", path, ObjectType.CUSTOM, "hub", "", null)
+        );
+
+        Map<String, Object> result = requireTool("create_binding_rule").execute(Map.of(
+                "path", path,
+                "id", "wave-sum",
+                "expression", "1",
+                "targetVariable", "waveSum"
+        ), context);
+
+        assertEquals("ERROR", result.get("status"));
+        assertEquals("TARGET_VARIABLE_MISSING", result.get("code"));
+        assertTrue(String.valueOf(result.get("hint")).contains("create_variable"));
+        verify(bindingRulesService, never()).upsertRule(eq(path), any());
+        verify(objectTreePort, never()).createVariable(
+                any(), any(), any(), anyBoolean(), anyBoolean(), any(), anyBoolean(), any()
+        );
+    }
+
+    @Test
+    void createBindingRuleRejectsRewrittenTableSum() throws Exception {
+        String path = "root.platform.singleton-blueprints.hub";
+        PlatformObject host = new PlatformObject("1", path, ObjectType.CUSTOM, "hub", "", null);
+        host.addVariable(doubleVariable("table"));
+        host.addVariable(doubleVariable("tableIntSum"));
+        when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
+        when(objectTreePort.require(path)).thenReturn(host);
+
+        Map<String, Object> result = requireTool("create_binding_rule").execute(Map.of(
+                "path", path,
+                "id", "table-sum",
+                "expression", "table.rows.map(r, r.int)",
+                "targetVariable", "tableIntSum"
+        ), context);
+
+        assertEquals("ERROR", result.get("status"));
+        assertEquals("BINDING_EXPRESSION_REJECTED", result.get("code"));
+        assertEquals("sumRecordField(table, int)", result.get("suggestedExpression"));
+        verify(bindingRulesService, never()).upsertRule(eq(path), any());
+    }
+
+    @Test
+    void createBindingRuleKeepsHistorianSumThatMentionsTable() throws Exception {
+        String path = "root.platform.singleton-blueprints.hub";
+        PlatformObject host = new PlatformObject("1", path, ObjectType.CUSTOM, "hub", "", null);
+        host.addVariable(doubleVariable("table"));
+        host.addVariable(doubleVariable("powerSum"));
+        when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
+        when(objectTreePort.require(path)).thenReturn(host);
+        com.ispf.core.binding.BindingRule saved = new com.ispf.core.binding.BindingRule(
+                "power-sum",
+                null,
+                true,
+                0,
+                com.ispf.core.binding.BindingRuleKind.HISTORIAN,
+                com.ispf.core.binding.BindingActivators.onLocalChange(),
+                "",
+                "sum(root.platform.devices.table-01/power, 5m)",
+                new com.ispf.core.binding.BindingTarget("powerSum", "value"),
+                "5m",
+                null
+        );
+        when(bindingRulesService.upsertRule(eq(path), any())).thenReturn(saved);
+
+        Map<String, Object> result = requireTool("create_binding_rule").execute(Map.of(
+                "path", path,
+                "id", "power-sum",
+                "ruleKind", "historian",
+                "windowBucket", "5m",
+                "expression", "sum(root.platform.devices.table-01/power, 5m)",
+                "targetVariable", "powerSum"
+        ), context);
+
+        assertEquals("OK", result.get("status"));
+        verify(bindingRulesService).upsertRule(eq(path), any());
     }
 
     @Test
@@ -490,6 +577,18 @@ class AgentAutomationToolsTest {
         Map<String, Object> result = tool.execute(Map.of("topic", "projectBlueprint"), context);
         assertEquals("OK", result.get("status"));
         assertTrue(String.valueOf(result.get("projectBlueprint")).contains("Ground truth"));
+    }
+
+    private static Variable doubleVariable(String name) {
+        return new Variable(
+                name,
+                com.ispf.core.model.DataSchema.builder("v")
+                        .field("value", com.ispf.core.model.FieldType.DOUBLE)
+                        .build(),
+                true,
+                false,
+                null
+        );
     }
 
     private PlatformAgentTool requireTool(String name) {

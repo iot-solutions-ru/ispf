@@ -196,7 +196,7 @@ PUT  /api/v1/objects/by-path/binding-rules?path={objectPath}
 DELETE /api/v1/objects/by-path/binding-rules/{ruleId}?path={objectPath}
 ```
 
-Agent tool: `create_binding_rule` — use slash refs in expression and optional `ref` on activators.
+Agent tool: `create_binding_rule` — use slash refs in expression and optional `ref` on activators. The target variable must already exist, and the expression is stored as sent.
 
 ---
 
