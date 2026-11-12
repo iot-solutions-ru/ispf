@@ -63,6 +63,8 @@ public class VariableHistoryService {
     private final HistorianQueryMetricsRecorder queryMetricsRecorder;
     private final ObjectProvider<AnalyticsOnChangeTrigger> analyticsOnChangeTrigger;
     private final ObjectProvider<HistorianRollupQueryService> rollupQueryService;
+    private final ObjectProvider<HistorianRollupMaterializerService> rollupMaterializer;
+    private final HistorianIngressCompressor ingressCompressor;
     private final HistoryParquetExportGateway parquetExport;
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
@@ -88,9 +90,15 @@ public class VariableHistoryService {
             HistorianQueryMetricsRecorder queryMetricsRecorder,
             ObjectProvider<AnalyticsOnChangeTrigger> analyticsOnChangeTrigger,
             ObjectProvider<HistorianRollupQueryService> rollupQueryService,
+            ObjectProvider<HistorianRollupMaterializerService> rollupMaterializer,
             HistoryParquetExportGateway parquetExport
     ) {
         this.parquetExport = parquetExport;
+        this.rollupMaterializer = rollupMaterializer;
+        this.ingressCompressor = new HistorianIngressCompressor(
+                properties.getExceptionDeadband(),
+                properties.getSwingPerSecond()
+        );
         this.properties = properties;
         this.sampleRepository = sampleRepository;
         this.variableRepository = variableRepository;
@@ -470,6 +478,31 @@ public class VariableHistoryService {
     private void enqueueSamples(List<VariableSampleEntity> samples) {
         if (samples.isEmpty()) {
             return;
+        }
+        if (ingressCompressor.enabled()) {
+            samples.removeIf(sample -> !ingressCompressor.accept(
+                    sample.getObjectPath() + "|" + sample.getVariableName() + "|" + sample.getFieldName(),
+                    sample.getSampledAt(),
+                    sample.getValueDouble()
+            ));
+            if (samples.isEmpty()) {
+                return;
+            }
+        }
+        HistorianRollupMaterializerService materializer = rollupMaterializer.getIfAvailable();
+        if (materializer != null) {
+            Instant now = Instant.now();
+            for (VariableSampleEntity sample : samples) {
+                Instant sampledAt = sample.getSampledAt();
+                if (sampledAt != null && sampledAt.isBefore(now.minusSeconds(60))) {
+                    materializer.noteLateSample(
+                            sample.getObjectPath(),
+                            sample.getVariableName(),
+                            sample.getFieldName(),
+                            sampledAt
+                    );
+                }
+            }
         }
         if (asyncWriter.isAsyncEnabled()) {
             asyncWriter.enqueue(samples);

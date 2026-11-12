@@ -10,6 +10,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Incrementally materializes historian rollups into ClickHouse (BL-205).
@@ -28,6 +30,8 @@ public class HistorianRollupMaterializerService {
     private final AnalyticsProperties analyticsProperties;
     private final AnalyticsClusterWorkloadService analyticsClusterWorkloadService;
     private final VariableMemberAccessService variableMemberAccessService;
+    private final ConcurrentHashMap<String, Set<Instant>> dirtyHours = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Set<Instant>> dirtyDays = new ConcurrentHashMap<>();
 
     public HistorianRollupMaterializerService(
             ClickHouseHistorianRollupStore rollupStore,
@@ -66,6 +70,7 @@ public class HistorianRollupMaterializerService {
 
         for (HistorianRollupSubscription subscription : subscriptionIndex.listSubscriptions()) {
             subscriptions++;
+            bucketsWritten += materializeDirty(subscription);
             Instant from = rollupStore.maxMaterializedBucketStart(
                     subscription.objectPath(),
                     subscription.variableName(),
@@ -86,6 +91,37 @@ public class HistorianRollupMaterializerService {
         long latencyMs = (System.nanoTime() - started) / 1_000_000L;
         lastTick = new TickResult(true, subscriptions, bucketsWritten, maxLagMs, latencyMs, null);
         return lastTick;
+    }
+
+    public void noteLateSample(String objectPath, String variableName, String fieldName, Instant sampledAt) {
+        if (sampledAt == null || objectPath == null || variableName == null) {
+            return;
+        }
+        String key = objectPath + "|" + variableName + "|" + (fieldName == null ? "value" : fieldName);
+        dirtyHours.computeIfAbsent(key, ignored -> ConcurrentHashMap.newKeySet())
+                .add(sampledAt.truncatedTo(ChronoUnit.HOURS));
+        dirtyDays.computeIfAbsent(key, ignored -> ConcurrentHashMap.newKeySet())
+                .add(sampledAt.truncatedTo(ChronoUnit.DAYS));
+    }
+
+    private int materializeDirty(HistorianRollupSubscription subscription) {
+        String key = subscription.objectPath() + "|" + subscription.variableName() + "|" + subscription.fieldName();
+        Set<Instant> late;
+        if (Duration.ofHours(1).equals(subscription.bucket())) {
+            late = dirtyHours.remove(key);
+        } else if (Duration.ofDays(1).equals(subscription.bucket())) {
+            late = dirtyDays.remove(key);
+        } else {
+            return 0;
+        }
+        if (late == null || late.isEmpty()) {
+            return 0;
+        }
+        int written = 0;
+        for (Instant start : late) {
+            written += rollupStore.materializeRange(subscription, start, start.plus(subscription.bucket()), 8);
+        }
+        return written;
     }
 
     public RebuildResult rebuild(
