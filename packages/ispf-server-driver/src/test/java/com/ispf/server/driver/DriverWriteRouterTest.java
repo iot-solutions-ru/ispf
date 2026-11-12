@@ -11,10 +11,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DriverWriteRouterTest {
@@ -36,6 +34,8 @@ class DriverWriteRouterTest {
             0
     );
 
+  private static final String DEVICE = "root.platform.devices.pump-01";
+
     @Test
     void routesLocallyWhenOwnershipDisabled() {
         StubOwnership ownership = new StubOwnership();
@@ -44,8 +44,8 @@ class DriverWriteRouterTest {
         DriverWriteRouter router = new DriverWriteRouter(ownership);
         AtomicBoolean invoked = new AtomicBoolean();
 
-        DriverWriteRouter.WriteResult result = router.route(
-                "root.platform.devices.pump-01",
+        DriverRuntimeService.DriverRuntimeStatus result = router.route(
+                DEVICE,
                 "cmdOpen",
                 VALUE,
                 () -> {
@@ -54,8 +54,7 @@ class DriverWriteRouterTest {
                 }
         );
 
-        assertInstanceOf(DriverWriteRouter.WriteResult.Local.class, result);
-        assertSame(LOCAL_STATUS, ((DriverWriteRouter.WriteResult.Local) result).status());
+        assertSame(LOCAL_STATUS, result);
         assertTrue(invoked.get());
     }
 
@@ -67,8 +66,8 @@ class DriverWriteRouterTest {
         DriverWriteRouter router = new DriverWriteRouter(ownership);
         AtomicBoolean invoked = new AtomicBoolean();
 
-        DriverWriteRouter.WriteResult result = router.route(
-                "root.platform.devices.pump-01",
+        DriverRuntimeService.DriverRuntimeStatus result = router.route(
+                DEVICE,
                 "cmdOpen",
                 VALUE,
                 () -> {
@@ -77,12 +76,12 @@ class DriverWriteRouterTest {
                 }
         );
 
-        assertInstanceOf(DriverWriteRouter.WriteResult.Local.class, result);
+        assertSame(LOCAL_STATUS, result);
         assertTrue(invoked.get());
     }
 
     @Test
-    void forwardContainsOwnerDevicePointAndValue() {
+    void rejectsWriteWhenAnotherReplicaHoldsLock() {
         StubOwnership ownership = new StubOwnership();
         ownership.enabled = true;
         ownership.holds = false;
@@ -90,24 +89,36 @@ class DriverWriteRouterTest {
         DriverWriteRouter router = new DriverWriteRouter(ownership);
         AtomicBoolean invoked = new AtomicBoolean();
 
-        DriverWriteRouter.WriteResult result = router.route(
-                "root.platform.devices.pump-01",
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> router.route(
+                DEVICE,
                 "cmdOpen",
                 VALUE,
                 () -> {
                     invoked.set(true);
                     return LOCAL_STATUS;
                 }
-        );
+        ));
 
-        assertFalse(invoked.get());
-        assertInstanceOf(DriverWriteRouter.WriteResult.Forward.class, result);
-        DriverWriteRouter.ForwardRequest forward =
-                ((DriverWriteRouter.WriteResult.Forward) result).forwardRequest();
-        assertEquals("replica-east-2", forward.ownerId());
-        assertEquals("root.platform.devices.pump-01", forward.devicePath());
-        assertEquals("cmdOpen", forward.pointId());
-        assertSame(VALUE, forward.value());
+        assertTrue(ex.getMessage().contains("replica-east-2"));
+        assertTrue(ex.getMessage().contains(DEVICE));
+    }
+
+    @Test
+    void unknownOwnerWhenNoActiveLease() {
+        StubOwnership ownership = new StubOwnership();
+        ownership.enabled = true;
+        ownership.holds = false;
+        ownership.owner = Optional.empty();
+        DriverWriteRouter router = new DriverWriteRouter(ownership);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> router.route(
+                DEVICE,
+                "cmdOpen",
+                VALUE,
+                () -> LOCAL_STATUS
+        ));
+
+        assertTrue(ex.getMessage().contains("unknown"));
     }
 
     private static final class StubOwnership extends DriverOwnershipService {
@@ -184,6 +195,11 @@ class DriverWriteRouterTest {
         @Override
         public Optional<String> findOwner(String devicePath) {
             return owner;
+        }
+
+        @Override
+        public String instanceId() {
+            return "replica-a";
         }
     }
 }

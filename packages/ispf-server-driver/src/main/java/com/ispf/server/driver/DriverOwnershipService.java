@@ -99,7 +99,8 @@ public class DriverOwnershipService {
         int updated = jdbcTemplate.update(
                 """
                         UPDATE platform_driver_locks
-                        SET expires_at = CURRENT_TIMESTAMP + (CAST(? AS BIGINT) * INTERVAL '1' SECOND)
+                        SET expires_at = CURRENT_TIMESTAMP + (CAST(? AS BIGINT) * INTERVAL '1' SECOND),
+                            fencing_epoch = CASE WHEN fencing_epoch < 1 THEN 1 ELSE fencing_epoch END
                         WHERE device_path = ? AND holder_id = ? AND expires_at > CURRENT_TIMESTAMP
                         """,
                 ttlSeconds,
@@ -165,6 +166,25 @@ public class DriverOwnershipService {
                         """,
                 (rs, rowNum) -> rs.getLong("fencing_epoch"),
                 devicePath
+        );
+        return epochs.isEmpty() ? 0L : epochs.getFirst();
+    }
+
+    /**
+     * Fencing epoch for this replica's active lease, or 0 when not holder / expired.
+     */
+    public long currentEpochIfHolder(String devicePath) {
+        if (!isEnabled()) {
+            return 0L;
+        }
+        List<Long> epochs = jdbcTemplate.query(
+                """
+                        SELECT fencing_epoch FROM platform_driver_locks
+                        WHERE device_path = ? AND holder_id = ? AND expires_at > CURRENT_TIMESTAMP
+                        """,
+                (rs, rowNum) -> rs.getLong("fencing_epoch"),
+                devicePath,
+                instanceId
         );
         return epochs.isEmpty() ? 0L : epochs.getFirst();
     }

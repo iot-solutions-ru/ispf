@@ -432,7 +432,9 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         );
         boolean connected = driver.isConnected();
         String lastError = connectFailure == null ? null : connectFailure.getMessage();
-        activeDrivers.put(devicePath, new ActiveDriver(driver, binding, future, lastError, connected, driverObject));
+        long acquiredEpoch = ownershipService.currentEpochIfHolder(devicePath);
+        activeDrivers.put(devicePath, new ActiveDriver(
+                driver, binding, future, lastError, connected, driverObject, acquiredEpoch));
         signalSchedulerLoad();
         poll(devicePath);
         if (connectFailure == null || driver.isConnected()) {
@@ -589,21 +591,12 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         if (!active.binding().pointMappings().containsKey(pointId)) {
             throw new IllegalArgumentException("Unknown point mapping: " + pointId);
         }
-        DriverWriteRouter.WriteResult routed = writeRouter.route(
+        return writeRouter.route(
                 devicePath,
                 pointId,
                 value,
                 () -> writePointLocally(devicePath, pointId, value, active)
         );
-        return switch (routed) {
-            case DriverWriteRouter.WriteResult.Local local -> local.status();
-            case DriverWriteRouter.WriteResult.Forward forward -> throw new IllegalStateException(
-                    "forward driver write to replica "
-                            + forward.forwardRequest().ownerId()
-                            + " for "
-                            + devicePath
-            );
-        };
     }
 
     private DriverRuntimeStatus writePointLocally(
@@ -613,10 +606,16 @@ public class DriverRuntimeService implements DriverConnectionLookup {
             ActiveDriver active
     ) {
         if (ownershipService.isEnabled()) {
-            long epoch = ownershipService.currentEpoch(devicePath);
-            if (!writeFence.allowWrite(epoch, epoch)) {
+            long commandEpoch = active.acquiredFencingEpoch();
+            long currentEpoch = ownershipService.currentEpochIfHolder(devicePath);
+            if (!writeFence.allowWrite(commandEpoch, currentEpoch)) {
                 throw new IllegalStateException(
-                        "driver write rejected: fencing epoch is not current for " + devicePath);
+                        "driver write rejected: stale fencing epoch "
+                                + commandEpoch
+                                + " (current "
+                                + currentEpoch
+                                + ") for "
+                                + devicePath);
             }
         }
         try {
@@ -628,7 +627,8 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                     active.future(),
                     null,
                     connected,
-                    active.driverObject()
+                    active.driverObject(),
+                    active.acquiredFencingEpoch()
             ));
             setStatus(devicePath, "RUNNING");
         } catch (DriverException e) {
@@ -639,7 +639,8 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                     active.future(),
                     e.getMessage(),
                     active.lastKnownConnected(),
-                    active.driverObject()
+                    active.driverObject(),
+                    active.acquiredFencingEpoch()
             ));
             setStatus(devicePath, "ERROR");
             throw new IllegalStateException("Driver write failed [" + kind.tag() + "]: " + e.getMessage(), e);
@@ -769,7 +770,8 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                     active.future(),
                     null,
                     connected,
-                    active.driverObject()
+                    active.driverObject(),
+                    active.acquiredFencingEpoch()
             );
             if (!activeDrivers.replace(devicePath, active, next)) {
                 return;
@@ -789,7 +791,8 @@ public class DriverRuntimeService implements DriverConnectionLookup {
                     active.future(),
                     e.getMessage(),
                     active.lastKnownConnected(),
-                    active.driverObject()
+                    active.driverObject(),
+                    active.acquiredFencingEpoch()
             );
             if (!activeDrivers.replace(devicePath, active, errored)) {
                 return;
@@ -918,7 +921,8 @@ public class DriverRuntimeService implements DriverConnectionLookup {
             ScheduledFuture<?> future,
             String lastError,
             boolean lastKnownConnected,
-            ServerDriverObject driverObject
+            ServerDriverObject driverObject,
+            long acquiredFencingEpoch
     ) {
     }
 
