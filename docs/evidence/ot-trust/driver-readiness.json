@@ -1,19 +1,19 @@
 {
   "summary": {
-    "generatedAt": "2026-09-20T14:31:13Z",
-    "catalogSize": 162,
-    "expectedCatalogSize": 162,
+    "generatedAt": "2026-11-12T08:13:56Z",
+    "catalogSize": 163,
+    "expectedCatalogSize": 163,
     "byMaturity": {
-      "PRODUCTION": 156,
-      "BETA": 6
+      "PRODUCTION": 113,
+      "BETA": 50
     },
     "byReadiness": {
-      "READY_LAB": 156,
-      "PARTIAL": 4,
+      "READY_LAB": 113,
+      "PARTIAL": 48,
       "SHELL_BETA": 2
     },
     "bySource": {
-      "matrix": 162
+      "matrix": 163
     },
     "failCount": 0,
     "warnCount": 0,
@@ -51,10 +51,11 @@
       "flexible",
       "modbus-rtu"
     ],
-    "matrixEntries": 162,
+    "matrixEntries": 163,
     "stubIds": 0,
     "interopWorkflowModules": [
       "ispf-driver-bacnet",
+      "ispf-driver-ddk",
       "ispf-driver-dlms",
       "ispf-driver-dnp3",
       "ispf-driver-ethernet-ip",
@@ -75,7 +76,7 @@
       "ispf-driver-snmp",
       "ispf-driver-virtual"
     ],
-    "honesty": "Lab/matrix readiness only — not field certification for 162 drivers"
+    "honesty": "Lab/matrix readiness only — not field certification for 163 drivers"
   },
   "drivers": [
     {
@@ -110,7 +111,7 @@
       "driver_id": "ansi-c12",
       "pack_id": "ispf-driver-ansi-c12",
       "driver_class": "com.ispf.driver.ansic12.AnsiC12DeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -130,8 +131,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -165,7 +166,7 @@
       "driver_id": "as-interface",
       "pack_id": "ispf-driver-as-interface",
       "driver_class": "com.ispf.driver.asinterface.AsInterfaceDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -185,8 +186,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -220,7 +221,7 @@
       "driver_id": "aws-iot-core",
       "pack_id": "ispf-driver-aws-iot-core",
       "driver_class": "com.ispf.driver.awsiotcore.AwsIotCoreDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -240,15 +241,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "azure-iot-hub",
       "pack_id": "ispf-driver-azure-iot-hub",
       "driver_class": "com.ispf.driver.azureiothub.AzureIotHubDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -268,8 +269,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -304,7 +305,7 @@
       "driver_id": "bacnet-mstp",
       "pack_id": "ispf-driver-bacnet-mstp",
       "driver_class": "com.ispf.driver.bacnetmstp.BacnetMstpDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -324,8 +325,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -388,11 +389,10 @@
       "driver_id": "bluetooth-le",
       "pack_id": "ispf-driver-bluetooth-le",
       "driver_class": "com.ispf.driver.bluetoothle.BluetoothLeDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
-        "POLL",
-        "WRITE"
+        "POLL"
       ],
       "top10": false,
       "top20": false,
@@ -406,10 +406,10 @@
       "loopback_ok": true,
       "interop_module": "ispf-driver-bluetooth-le",
       "interop_in_workflow": false,
-      "write_claimed": true,
-      "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -444,7 +444,7 @@
       "driver_id": "canbus-gateway",
       "pack_id": "ispf-driver-canbus-gateway",
       "driver_class": "com.ispf.driver.canbusgateway.CanbusGatewayDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -464,15 +464,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "canopen",
       "pack_id": "ispf-driver-canopen",
       "driver_class": "com.ispf.driver.canopen.CanopenDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -492,15 +492,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "cc-link",
       "pack_id": "ispf-driver-cc-link",
       "driver_class": "com.ispf.driver.cclink.CcLinkDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -520,15 +520,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "cc-link-ie",
       "pack_id": "ispf-driver-cc-link-ie",
       "driver_class": "com.ispf.driver.cclinkie.CcLinkIeDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -548,8 +548,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -583,7 +583,7 @@
       "driver_id": "codesys",
       "pack_id": "ispf-driver-codesys",
       "driver_class": "com.ispf.driver.codesys.CodesysDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -603,15 +603,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "controlnet",
       "pack_id": "ispf-driver-controlnet",
       "driver_class": "com.ispf.driver.controlnet.ControlnetDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -631,8 +631,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -694,7 +694,7 @@
       "driver_id": "dali",
       "pack_id": "ispf-driver-dali",
       "driver_class": "com.ispf.driver.dali.DaliDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -714,8 +714,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -750,7 +750,7 @@
       "driver_id": "device-net",
       "pack_id": "ispf-driver-device-net",
       "driver_class": "com.ispf.driver.devicenet.DeviceNetDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -770,8 +770,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -836,7 +836,8 @@
       "maturity": "PRODUCTION",
       "source": "matrix",
       "capabilities": [
-        "POLL"
+        "POLL",
+        "WRITE"
       ],
       "top10": false,
       "top20": true,
@@ -850,8 +851,8 @@
       "loopback_ok": true,
       "interop_module": "ispf-driver-dnp3",
       "interop_in_workflow": true,
-      "write_claimed": false,
-      "write_looks_stub": true,
+      "write_claimed": true,
+      "write_looks_stub": false,
       "production_javadoc_stub": false,
       "readiness": "READY_LAB",
       "findings": []
@@ -860,7 +861,7 @@
       "driver_id": "eebus",
       "pack_id": "ispf-driver-eebus",
       "driver_class": "com.ispf.driver.eebus.EebusDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -880,8 +881,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -944,7 +945,7 @@
       "driver_id": "ethercat",
       "pack_id": "ispf-driver-ethercat",
       "driver_class": "com.ispf.driver.ethercat.EthercatDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -964,8 +965,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -1001,7 +1002,7 @@
       "driver_id": "ethernet-powerlink",
       "pack_id": "ispf-driver-ethernet-powerlink",
       "driver_class": "com.ispf.driver.ethernetpowerlink.EthernetPowerlinkDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -1021,15 +1022,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "fanuc-focas",
       "pack_id": "ispf-driver-fanuc-focas",
       "driver_class": "com.ispf.driver.fanucfocas.FanucFocasDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -1049,8 +1050,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -1166,7 +1167,7 @@
       "driver_id": "foundation-fieldbus",
       "pack_id": "ispf-driver-foundation-fieldbus",
       "driver_class": "com.ispf.driver.foundationfieldbus.FoundationFieldbusDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -1186,15 +1187,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "fuji-sph",
       "pack_id": "ispf-driver-fuji-sph",
       "driver_class": "com.ispf.driver.fujisph.FujiSphDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -1214,15 +1215,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "ge-srtp",
       "pack_id": "ispf-driver-ge-srtp",
       "driver_class": "com.ispf.driver.gesrtp.GeSrtpDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -1242,8 +1243,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -1253,8 +1254,7 @@
       "maturity": "PRODUCTION",
       "source": "matrix",
       "capabilities": [
-        "POLL",
-        "WRITE"
+        "POLL"
       ],
       "top10": false,
       "top20": false,
@@ -1268,8 +1268,8 @@
       "loopback_ok": true,
       "interop_module": "ispf-driver-genicam",
       "interop_in_workflow": false,
-      "write_claimed": true,
-      "write_looks_stub": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
       "production_javadoc_stub": false,
       "readiness": "READY_LAB",
       "findings": []
@@ -1360,7 +1360,7 @@
       "driver_id": "grpc",
       "pack_id": "ispf-driver-grpc",
       "driver_class": "com.ispf.driver.grpc.GrpcJsonDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -1380,8 +1380,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -1469,7 +1469,7 @@
       "driver_id": "hitachi-hidic",
       "pack_id": "ispf-driver-hitachi-hidic",
       "driver_class": "com.ispf.driver.hitachihidic.HitachiHidicDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -1489,8 +1489,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -1720,7 +1720,7 @@
       "driver_id": "iec61850",
       "pack_id": "ispf-driver-iec61850",
       "driver_class": "com.ispf.driver.iec61850.Iec61850DeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -1740,15 +1740,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "iec61850-goose",
       "pack_id": "ispf-driver-iec61850-goose",
       "driver_class": "com.ispf.driver.iec61850goose.Iec61850GooseDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -1768,15 +1768,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "iec61850-sv",
       "pack_id": "ispf-driver-iec61850-sv",
       "driver_class": "com.ispf.driver.iec61850sv.Iec61850SvDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -1796,8 +1796,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -1966,7 +1966,7 @@
       "driver_id": "interbus",
       "pack_id": "ispf-driver-interbus",
       "driver_class": "com.ispf.driver.interbus.InterbusDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -1986,15 +1986,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "io-link",
       "pack_id": "ispf-driver-io-link",
       "driver_class": "com.ispf.driver.iolink.IoLinkDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -2014,8 +2014,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -2076,7 +2076,7 @@
       "driver_id": "isa100",
       "pack_id": "ispf-driver-isa100",
       "driver_class": "com.ispf.driver.isa100.Isa100DeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -2096,15 +2096,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "j1939",
       "pack_id": "ispf-driver-j1939",
       "driver_class": "com.ispf.driver.j1939.J1939DeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -2124,8 +2124,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -2351,7 +2351,7 @@
       "driver_id": "lonworks",
       "pack_id": "ispf-driver-lonworks",
       "driver_class": "com.ispf.driver.lonworks.LonworksDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -2371,8 +2371,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -2462,7 +2462,7 @@
       "driver_id": "matter",
       "pack_id": "ispf-driver-matter",
       "driver_class": "com.ispf.driver.matter.MatterDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -2482,8 +2482,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -2987,7 +2987,7 @@
       "driver_id": "opc-ae",
       "pack_id": "ispf-driver-opc-ae",
       "driver_class": "com.ispf.driver.opcae.OpcAeDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -3007,8 +3007,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -3069,7 +3069,7 @@
       "driver_id": "opc-hda",
       "pack_id": "ispf-driver-opc-hda",
       "driver_class": "com.ispf.driver.opchda.OpcHdaDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -3089,8 +3089,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -3129,7 +3129,7 @@
       "driver_id": "opcua-pubsub",
       "pack_id": "ispf-driver-opcua-pubsub",
       "driver_class": "com.ispf.driver.opcuapubsub.OpcuaPubsubDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -3149,8 +3149,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -3242,7 +3242,7 @@
       "driver_id": "plcnext",
       "pack_id": "ispf-driver-plcnext",
       "driver_class": "com.ispf.driver.plcnext.PlcnextDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -3262,8 +3262,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -3297,7 +3297,7 @@
       "driver_id": "profibus",
       "pack_id": "ispf-driver-profibus",
       "driver_class": "com.ispf.driver.profibus.ProfibusDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -3317,15 +3317,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "profibus-pa",
       "pack_id": "ispf-driver-profibus-pa",
       "driver_class": "com.ispf.driver.profibuspa.ProfibusPaDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -3345,15 +3345,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "profinet",
       "pack_id": "ispf-driver-profinet",
       "driver_class": "com.ispf.driver.profinet.ProfinetDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -3373,15 +3373,15 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
       "driver_id": "pulsar",
       "pack_id": "ispf-driver-pulsar",
       "driver_class": "com.ispf.driver.pulsar.PulsarDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -3401,8 +3401,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -3464,7 +3464,7 @@
       "driver_id": "rockwell-csp",
       "pack_id": "ispf-driver-rockwell-csp",
       "driver_class": "com.ispf.driver.rockwellcsp.RockwellCspDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -3484,8 +3484,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -3961,6 +3961,34 @@
       "findings": []
     },
     {
+      "driver_id": "stomp",
+      "pack_id": "ispf-driver-stomp",
+      "driver_class": "com.ispf.driver.stomp.StompDeviceDriver",
+      "maturity": "PRODUCTION",
+      "source": "matrix",
+      "capabilities": [
+        "POLL",
+        "WRITE"
+      ],
+      "top10": false,
+      "top20": false,
+      "pack_dir_ok": true,
+      "source_ok": true,
+      "source_path": "packages/ispf-driver-stomp/src/main/java/com/ispf/driver/stomp/StompDeviceDriver.java",
+      "extends_protocol_stub": false,
+      "pack_contract_test": true,
+      "pack_contract_test_path": "packages/ispf-driver-stomp/src/test/java/com/ispf/driver/stomp/StompDeviceDriverTest.java",
+      "loopback_path": "packages/ispf-driver-stomp/src/test/java/com/ispf/driver/stomp/StompDeviceDriverTest.java",
+      "loopback_ok": true,
+      "interop_module": "ispf-driver-stomp",
+      "interop_in_workflow": false,
+      "write_claimed": true,
+      "write_looks_stub": false,
+      "production_javadoc_stub": false,
+      "readiness": "READY_LAB",
+      "findings": []
+    },
+    {
       "driver_id": "telnet",
       "pack_id": "ispf-driver-telnet",
       "driver_class": "com.ispf.driver.telnet.TelnetDeviceDriver",
@@ -3994,8 +4022,7 @@
       "maturity": "PRODUCTION",
       "source": "matrix",
       "capabilities": [
-        "POLL",
-        "WRITE"
+        "POLL"
       ],
       "top10": false,
       "top20": false,
@@ -4009,8 +4036,8 @@
       "loopback_ok": true,
       "interop_module": "ispf-driver-thread",
       "interop_in_workflow": false,
-      "write_claimed": true,
-      "write_looks_stub": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
       "production_javadoc_stub": false,
       "readiness": "READY_LAB",
       "findings": []
@@ -4019,7 +4046,7 @@
       "driver_id": "toshiba-t-series",
       "pack_id": "ispf-driver-toshiba-t-series",
       "driver_class": "com.ispf.driver.toshibatseries.ToshibaTSeriesDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -4039,8 +4066,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -4352,7 +4379,7 @@
       "driver_id": "wirelesshart",
       "pack_id": "ispf-driver-wirelesshart",
       "driver_class": "com.ispf.driver.wirelesshart.WirelesshartDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
         "POLL",
@@ -4372,8 +4399,8 @@
       "interop_in_workflow": false,
       "write_claimed": true,
       "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
@@ -4383,8 +4410,7 @@
       "maturity": "PRODUCTION",
       "source": "matrix",
       "capabilities": [
-        "POLL",
-        "WRITE"
+        "POLL"
       ],
       "top10": false,
       "top20": false,
@@ -4398,8 +4424,8 @@
       "loopback_ok": true,
       "interop_module": "ispf-driver-wisun",
       "interop_in_workflow": false,
-      "write_claimed": true,
-      "write_looks_stub": false,
+      "write_claimed": false,
+      "write_looks_stub": true,
       "production_javadoc_stub": false,
       "readiness": "READY_LAB",
       "findings": []
@@ -4517,11 +4543,10 @@
       "driver_id": "zigbee",
       "pack_id": "ispf-driver-zigbee",
       "driver_class": "com.ispf.driver.zigbee.ZigbeeDeviceDriver",
-      "maturity": "PRODUCTION",
+      "maturity": "BETA",
       "source": "matrix",
       "capabilities": [
-        "POLL",
-        "WRITE"
+        "POLL"
       ],
       "top10": false,
       "top20": false,
@@ -4535,10 +4560,10 @@
       "loopback_ok": true,
       "interop_module": "ispf-driver-zigbee",
       "interop_in_workflow": false,
-      "write_claimed": true,
-      "write_looks_stub": false,
-      "production_javadoc_stub": false,
-      "readiness": "READY_LAB",
+      "write_claimed": false,
+      "write_looks_stub": true,
+      "production_javadoc_stub": null,
+      "readiness": "PARTIAL",
       "findings": []
     },
     {
