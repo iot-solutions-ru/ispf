@@ -585,6 +585,24 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         if (value == null) {
             throw new IllegalArgumentException("value is required");
         }
+        return writeRouter.route(devicePath, pointId, value, () -> applyLocalWrite(devicePath, pointId, value));
+    }
+
+    /**
+     * Runs a write on this replica. Used by the NATS owner handler so a forwarded
+     * command cannot be forwarded again.
+     */
+    public DriverRuntimeStatus writePointLocal(String devicePath, String pointId, DataRecord value) {
+        if (pointId == null || pointId.isBlank()) {
+            throw new IllegalArgumentException("pointId is required");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("value is required");
+        }
+        return applyLocalWrite(devicePath, pointId, value);
+    }
+
+    private DriverRuntimeStatus applyLocalWrite(String devicePath, String pointId, DataRecord value) {
         ActiveDriver active = activeDrivers.get(devicePath);
         if (active == null) {
             throw new IllegalStateException("Driver is not running for: " + devicePath);
@@ -592,12 +610,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         if (!active.binding().pointMappings().containsKey(pointId)) {
             throw new IllegalArgumentException("Unknown point mapping: " + pointId);
         }
-        return writeRouter.route(
-                devicePath,
-                pointId,
-                value,
-                () -> writePointLocally(devicePath, pointId, value, active)
-        );
+        return writePointLocally(devicePath, pointId, value, active);
     }
 
     private DriverRuntimeStatus writePointLocally(

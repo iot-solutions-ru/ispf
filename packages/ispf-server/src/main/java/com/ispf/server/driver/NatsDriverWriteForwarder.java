@@ -104,7 +104,7 @@ public class NatsDriverWriteForwarder implements DriverWriteForwarder {
         byte[] reply;
         try {
             ParsedRequest request = decodeRequest(message.getData());
-            DriverRuntimeService.DriverRuntimeStatus status = runtime.getObject().writePoint(
+            DriverRuntimeService.DriverRuntimeStatus status = runtime.getObject().writePointLocal(
                     request.devicePath(),
                     request.pointId(),
                     request.value()
@@ -130,8 +130,21 @@ public class NatsDriverWriteForwarder implements DriverWriteForwarder {
                 fields.add(Map.of("name", field.name(), "type", field.type().name()));
             }
         }
+        if (value == null || value.firstRow() == null) {
+            throw new IllegalStateException("driver write value is empty");
+        }
+        for (FieldDefinition field : value.schema().fields()) {
+            if (field.type() != FieldType.BOOLEAN
+                    && field.type() != FieldType.INTEGER
+                    && field.type() != FieldType.LONG
+                    && field.type() != FieldType.DOUBLE
+                    && field.type() != FieldType.STRING
+                    && field.type() != FieldType.DATETIME) {
+                throw new IllegalStateException("driver write field type is not forwarded: " + field.type());
+            }
+        }
         body.put("fields", fields);
-        body.put("row", value == null ? Map.of() : value.firstRow());
+        body.put("row", value.firstRow());
         try {
             return objectMapper.writeValueAsBytes(body);
         } catch (RuntimeException ex) {
@@ -144,18 +157,25 @@ public class NatsDriverWriteForwarder implements DriverWriteForwarder {
         String devicePath = text(root, "devicePath");
         String pointId = text(root, "pointId");
         DataSchema.Builder schema = DataSchema.builder("write");
+        Map<String, FieldType> fieldTypes = new LinkedHashMap<>();
         JsonNode fields = root.get("fields");
         if (fields != null && fields.isArray()) {
             for (int i = 0; i < fields.size(); i++) {
                 JsonNode field = fields.get(i);
-                schema.field(text(field, "name"), FieldType.valueOf(text(field, "type")));
+                FieldType type = FieldType.valueOf(text(field, "type"));
+                String name = text(field, "name");
+                schema.field(name, type);
+                fieldTypes.put(name, type);
             }
         }
         Map<String, Object> row = new LinkedHashMap<>();
         JsonNode rowNode = root.get("row");
         if (rowNode != null && rowNode.isObject()) {
             for (Map.Entry<String, JsonNode> entry : rowNode.properties()) {
-                row.put(entry.getKey(), scalar(entry.getValue()));
+                row.put(entry.getKey(), coerce(
+                        fieldTypes.getOrDefault(entry.getKey(), FieldType.STRING),
+                        entry.getValue()
+                ));
             }
         }
         return new ParsedRequest(devicePath, pointId, DataRecord.single(schema.build(), row));
@@ -195,8 +215,7 @@ public class NatsDriverWriteForwarder implements DriverWriteForwarder {
         try {
             return objectMapper.writeValueAsBytes(Map.of("error", message == null ? "driver write failed" : message));
         } catch (RuntimeException ex) {
-            return ("{\"error\":\"" + (message == null ? "driver write failed" : message) + "\"}")
-                    .getBytes(StandardCharsets.UTF_8);
+            return "{\"error\":\"driver write failed\"}".getBytes(StandardCharsets.UTF_8);
         }
     }
 
@@ -212,20 +231,18 @@ public class NatsDriverWriteForwarder implements DriverWriteForwarder {
         return value == null || value.isNull() ? "" : value.asText();
     }
 
-    private static Object scalar(JsonNode node) {
+    private static Object coerce(FieldType type, JsonNode node) {
         if (node == null || node.isNull()) {
             return null;
         }
-        if (node.isBoolean()) {
-            return node.asBoolean();
-        }
-        if (node.isIntegralNumber()) {
-            return node.asLong();
-        }
-        if (node.isNumber()) {
-            return node.asDouble();
-        }
-        return node.asText();
+        return switch (type) {
+            case BOOLEAN -> node.asBoolean();
+            case INTEGER -> node.asInt();
+            case LONG -> node.asLong();
+            case DOUBLE -> node.asDouble();
+            case STRING, DATETIME -> node.asText();
+            default -> throw new IllegalStateException("driver write field type is not forwarded: " + type);
+        };
     }
 
     record ParsedRequest(String devicePath, String pointId, DataRecord value) {

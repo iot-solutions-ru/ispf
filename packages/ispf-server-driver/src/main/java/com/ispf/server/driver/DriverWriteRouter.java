@@ -39,15 +39,16 @@ public final class DriverWriteRouter {
             return localWrite.get();
         }
         String owner = ownershipService.findOwner(devicePath).orElse("unknown");
+        String self = ownershipService.instanceId();
         DriverWriteForwarder live = forwarder.get();
-        if (live != null && live.available()) {
+        if (live != null && live.available() && !owner.equals("unknown") && !owner.equals(self)) {
             return live.forward(owner, devicePath, pointId, value);
         }
         throw new IllegalStateException(
                 "Driver write not permitted: lock held by replica "
                         + owner
                         + " (this replica is "
-                        + ownershipService.instanceId()
+                        + self
                         + ") for "
                         + devicePath);
     }
