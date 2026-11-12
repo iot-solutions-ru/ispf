@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   buildSubscribePayload,
+  noteObjectWebSocketCursor,
+  resetObjectWebSocketCursorForTests,
   trackObjectVariableSubscriptions,
 } from "./useObjectWebSocket";
 
@@ -54,5 +56,18 @@ describe("object variable WS interest merge", () => {
     wide();
     expect(buildSubscribePayload().variablesByPath["root.dev.a"]).toEqual(["temperature"]);
     narrow();
+  });
+
+  it("sends lastSeq after a frame and jumps the cursor on replay_gap", () => {
+    resetObjectWebSocketCursorForTests();
+    const release = trackObjectVariableSubscriptions([{ path: "root.dev.a" }]);
+    noteObjectWebSocketCursor({ type: "VARIABLE_UPDATED", seq: 4 });
+    expect(buildSubscribePayload().lastSeq).toBe(4);
+    noteObjectWebSocketCursor({ type: "replay_gap", lastSeq: 9 });
+    expect(buildSubscribePayload().lastSeq).toBe(9);
+    noteObjectWebSocketCursor({ type: "replay_gap", lastSeq: 0 });
+    expect(buildSubscribePayload().lastSeq).toBeUndefined();
+    release();
+    resetObjectWebSocketCursorForTests();
   });
 });

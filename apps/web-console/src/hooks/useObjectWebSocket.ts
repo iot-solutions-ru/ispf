@@ -33,6 +33,26 @@ interface PathInterestState {
 
 /** Ref-counted path/variable interests merged into one WS subscribe message. */
 const interestByPath = new Map<string, PathInterestState>();
+/** Highest object-frame {@code seq} applied on this page. Sent as {@code lastSeq} after reconnect. */
+let clientLastSeq = 0;
+
+export const OBJECT_WS_GAP_EVENT = "ispf-object-ws-gap";
+
+export function noteObjectWebSocketCursor(message: { type?: string; seq?: number; lastSeq?: number }) {
+  if (message.type === "replay_gap") {
+    if (typeof message.lastSeq === "number" && Number.isFinite(message.lastSeq) && message.lastSeq >= 0) {
+      clientLastSeq = message.lastSeq;
+    }
+    return;
+  }
+  if (typeof message.seq === "number" && Number.isFinite(message.seq) && message.seq > clientLastSeq) {
+    clientLastSeq = message.seq;
+  }
+}
+
+export function resetObjectWebSocketCursorForTests() {
+  clientLastSeq = 0;
+}
 
 function setWsConnected(connected: boolean) {
   if (wsConnected === connected) {
@@ -108,6 +128,9 @@ function connectWebSocket(authToken: string, tryNextIngressPath = false) {
     wsPathIndex = 0;
   }
 
+  if (connectionToken && connectionToken !== authToken) {
+    clientLastSeq = 0;
+  }
   teardownSocket();
   connectionToken = authToken;
   const socket = openWebSocket(authToken, wsPathIndex);
@@ -138,7 +161,12 @@ function connectWebSocket(authToken: string, tryNextIngressPath = false) {
   socket.onmessage = (event) => {
     lastMessageAt = Date.now();
     try {
-      const message = JSON.parse(event.data) as ObjectWsMessage;
+      const message = JSON.parse(event.data) as ObjectWsMessage & { seq?: number; lastSeq?: number };
+      noteObjectWebSocketCursor(message);
+      if (String(message.type) === "replay_gap") {
+        window.dispatchEvent(new CustomEvent(OBJECT_WS_GAP_EVENT, { detail: message }));
+        return;
+      }
       window.dispatchEvent(new CustomEvent(OBJECT_WS_EVENT, { detail: message }));
 
       if (message.type === "CREATED" || message.type === "UPDATED" || message.type === "DELETED") {
@@ -188,6 +216,7 @@ export function buildSubscribePayload(): {
   type: "subscribe";
   paths: string[];
   variablesByPath: Record<string, string[]>;
+  lastSeq?: number;
 } {
   const paths: string[] = [];
   const variablesByPath: Record<string, string[]> = {};
@@ -202,7 +231,16 @@ export function buildSubscribePayload(): {
     }
   }
   paths.sort();
-  return { type: "subscribe", paths, variablesByPath };
+  const payload: {
+    type: "subscribe";
+    paths: string[];
+    variablesByPath: Record<string, string[]>;
+    lastSeq?: number;
+  } = { type: "subscribe", paths, variablesByPath };
+  if (clientLastSeq > 0) {
+    payload.lastSeq = clientLastSeq;
+  }
+  return payload;
 }
 
 function pushMergedSubscriptionsToServer() {
@@ -349,6 +387,7 @@ export function useObjectWebSocket(enabled = true) {
 
   useEffect(() => {
     if (!enabled || !authToken) {
+      clientLastSeq = 0;
       return;
     }
 

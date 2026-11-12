@@ -4,6 +4,7 @@ import com.ispf.server.application.catalog.ApplicationEventCatalogService;
 import com.ispf.server.config.WebSocketProperties;
 import com.ispf.server.federation.FederationSubscribePollService;
 import com.ispf.server.object.ObjectChangeEvent;
+import com.ispf.server.object.ObjectChangeType;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.pubsub.NoOpClusterPathInterestStore;
 import com.ispf.server.object.pubsub.ObjectWebSocketPathInterestRegistry;
@@ -316,6 +317,87 @@ class ObjectWebSocketHandlerInterestTest {
             slow.release.countDown();
             capped.shutdownSendWorkers();
         }
+    }
+
+    @Test
+    void subscribeWithLastSeqReplaysOnlyNewerFrames() throws Exception {
+        RecordingSession first = openSession("s-replay-first");
+        first.sendSubscribe("""
+                {"type":"subscribe","paths":["root.devices.pump"]}
+                """);
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.pump", "speed"));
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.pump", "temp"));
+        List<String> live = awaitMessages(first, 2, 2000);
+        assertThat(live).hasSize(2);
+        long seen = seqOf(live.getFirst());
+
+        RecordingSession again = openSession("s-replay-again");
+        again.sendSubscribe("""
+                {"type":"subscribe","paths":["root.devices.pump"],"lastSeq":%d}
+                """.formatted(seen));
+
+        List<String> replayed = awaitMessages(again, 1, 2000);
+        assertThat(replayed).hasSize(1);
+        assertThat(replayed.getFirst()).contains("\"variableName\":\"temp\"");
+        assertThat(replayed.getFirst()).contains("\"seq\":" + seqOf(live.get(1)));
+    }
+
+    @Test
+    void subscribeWithExpiredLastSeqReportsGap() throws Exception {
+        handler.resizeReplayBufferForTest(1);
+        RecordingSession first = openSession("s-gap-first");
+        first.sendSubscribe("""
+                {"type":"subscribe","paths":["root.devices.pump"]}
+                """);
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.pump", "speed"));
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.pump", "temp"));
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.pump", "flow"));
+        List<String> live = awaitMessages(first, 3, 2000);
+        assertThat(live).hasSize(3);
+
+        RecordingSession again = openSession("s-gap-again");
+        again.sendSubscribe("""
+                {"type":"subscribe","paths":["root.devices.pump"],"lastSeq":%d}
+                """.formatted(seqOf(live.getFirst())));
+
+        List<String> replayed = awaitMessages(again, 1, 2000);
+        assertThat(replayed).hasSize(1);
+        assertThat(replayed.getFirst()).contains("\"type\":\"replay_gap\"");
+    }
+
+    @Test
+    void replaySkipsFramesOutsideTheSubscription() throws Exception {
+        handler.onObjectChange(ObjectChangeEvent.of(ObjectChangeType.CREATED, "root.devices.other"));
+        handler.onObjectChange(ObjectChangeEvent.variableUpdated("root.devices.pump", "speed"));
+
+        RecordingSession session = openSession("s-replay-filter");
+        session.sendSubscribe("""
+                {"type":"subscribe","paths":["root.devices.pump"],"variablesByPath":{"root.devices.pump":["speed"]},"lastSeq":0}
+                """);
+
+        List<String> replayed = awaitMessages(session, 1, 2000);
+        assertThat(replayed).hasSize(1);
+        assertThat(replayed.getFirst()).contains("\"variableName\":\"speed\"");
+        assertThat(replayed.getFirst()).doesNotContain("root.devices.other");
+    }
+
+    @Test
+    void replayReportsGapWhenCursorIsAheadOfThisServer() throws Exception {
+        RecordingSession session = openSession("s-restart");
+        session.sendSubscribe("""
+                {"type":"subscribe","paths":["root.devices.pump"],"lastSeq":50}
+                """);
+
+        List<String> replayed = awaitMessages(session, 1, 2000);
+        assertThat(replayed).hasSize(1);
+        assertThat(replayed.getFirst()).contains("\"type\":\"replay_gap\"");
+        assertThat(replayed.getFirst()).contains("\"lastSeq\":0");
+    }
+
+    private static long seqOf(String json) {
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"seq\":(\\d+)").matcher(json);
+        assertThat(matcher.find()).isTrue();
+        return Long.parseLong(matcher.group(1));
     }
 
     private static UsernamePasswordAuthenticationToken authentication(String role) {
