@@ -73,6 +73,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     private final RuntimeTelemetryProperties runtimeTelemetryProperties;
     private final ObjectProvider<DriverRuntimeService> self;
     private final DriverOwnershipService ownershipService;
+    private final DriverWriteFence writeFence = new DriverWriteFence();
     private final DriverErrorMetrics errorMetrics;
     private final DriverPointCatalogService pointCatalog;
     private ElasticScheduledPool schedulerPool;
@@ -585,6 +586,17 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         }
         if (!active.binding().pointMappings().containsKey(pointId)) {
             throw new IllegalArgumentException("Unknown point mapping: " + pointId);
+        }
+        if (ownershipService.isEnabled()) {
+            if (!ownershipService.holdsLock(devicePath)) {
+                throw new IllegalStateException(
+                        "driver write rejected: this node does not hold the lease for " + devicePath);
+            }
+            long epoch = ownershipService.currentEpoch(devicePath);
+            if (!writeFence.allowWrite(epoch, epoch)) {
+                throw new IllegalStateException(
+                        "driver write rejected: fencing epoch is not current for " + devicePath);
+            }
         }
         try {
             active.driver().writePoint(pointId, value);
