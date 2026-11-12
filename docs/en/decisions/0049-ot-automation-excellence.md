@@ -17,7 +17,7 @@ Ship **OT Automation Excellence** as five waves:
 | Wave | Scope | Status |
 |------|--------|--------|
 | **1** | Execution journal + workflow tool contracts + `invoke_workflow_tool` | **Done** |
-| **2** | BPMN `LLM_COMPLETE` / `INVOKE_AGENT`; analytics analysis helpers + summarize path | **Done** |
+| **2** | BPMN `LLM_COMPLETE`; analytics analysis helpers + summarize path; `INVOKE_AGENT` single-step LLM only (empty `toolAllowlist`, `maxSteps`≤1) | **Partial** — bounded multi-step tool loop **Gap** |
 | **3** | Webhook + cron triggers; retry / DLQ / `errorWorkflowPath` | **Done** |
 | **4** | Credentials vault; marketplace `workflow-template` installer | **Partial** — encrypt + [0065](0065-secrets-key-rotation.md) Done; marketplace installer **open** |
 | **5** | Aggregate MCP publish of workflow + analytics tools | **Gap** |

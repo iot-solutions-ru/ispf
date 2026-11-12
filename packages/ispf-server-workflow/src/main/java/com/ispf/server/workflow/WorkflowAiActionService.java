@@ -15,12 +15,12 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
 /**
- * BPMN AI service tasks (ADR-0049 Wave 2): LLM_COMPLETE and bounded INVOKE_AGENT.
+ * BPMN AI service tasks (ADR-0049 Wave 2): {@code LLM_COMPLETE} and prompt-only {@code INVOKE_AGENT}.
+ * Multi-step tool loops are not implemented here (use tree-first agent or {@code invoke_workflow_tool}).
  * {@code modelRef} may be {@code platform-default}, a model id, or a credentials vault path
  * ({@code root...}) with encrypted API key and optional metadata {@code baseUrl}/{@code model}.
  */
@@ -81,17 +81,19 @@ public class WorkflowAiActionService {
         if (goal == null || goal.isBlank()) {
             throw new WorkflowException("Agent goal is empty");
         }
-        int steps = Math.max(1, Math.min(maxSteps <= 0 ? 8 : maxSteps, 32));
-        String mode = agentMode == null || agentMode.isBlank() ? "ask" : agentMode.toLowerCase(Locale.ROOT);
-        String allow = toolAllowlist == null ? "" : toolAllowlist;
-        String prompt = """
-                Mode: %s
-                Max steps: %d
-                Allowed tools (do not invent others): %s
-                Goal: %s
-                Respond with a short JSON object: {"brief":"...","suggestedActions":[],"confidence":0.0}
-                """.formatted(mode, steps, allow, goal);
-        return llmComplete(prompt, "platform-default", aiProperties.getTimeoutSeconds() * 1000);
+        String allow = toolAllowlist == null ? "" : toolAllowlist.trim();
+        if (!allow.isBlank()) {
+            throw new WorkflowException(
+                    "INVOKE_AGENT multi-step tool loop is not implemented (non-empty toolAllowlist). "
+                            + "Use LLM_COMPLETE for a single completion, tree-first agent, or invoke_workflow_tool.");
+        }
+        int steps = maxSteps <= 0 ? 1 : Math.min(maxSteps, 32);
+        if (steps > 1) {
+            throw new WorkflowException(
+                    "INVOKE_AGENT multi-step tool loop is not implemented (maxSteps=" + steps + "). "
+                            + "Use maxSteps=1 with an empty toolAllowlist for one LLM completion, or LLM_COMPLETE.");
+        }
+        return llmComplete(goal, "platform-default", aiProperties.getTimeoutSeconds() * 1000);
     }
 
     public static String interpolate(String template, Map<String, String> variables) {

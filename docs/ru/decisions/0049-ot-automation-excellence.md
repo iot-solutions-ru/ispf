@@ -4,7 +4,7 @@
 
 ## Статус
 
-**Accepted** (2026-07-19) — программный ADR. Волны 1–3 **Done**; волна 4 **Partial** (vault/0065 Done, marketplace `workflow-template` open); волна 5 **Gap** (MCP).
+**Accepted** (2026-07-19) — программный ADR. Волны 1 и 3 **Done**; волна 2 **Partial** (`LLM_COMPLETE` Done; полноценный tool-loop `INVOKE_AGENT` — Gap); волна 4 **Partial**; волна 5 **Gap** (MCP).
 
 ## Суть
 
