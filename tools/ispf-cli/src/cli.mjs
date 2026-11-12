@@ -4,6 +4,7 @@ import { unpackFromFile } from "./unpack.mjs";
 import { runValidate } from "./validate.mjs";
 import { diffDirectory, printDiff } from "./diff.mjs";
 import { deployDirectory } from "./deploy.mjs";
+import { forkSolution } from "./fork.mjs";
 
 function usage() {
   console.log(`Usage:
@@ -12,6 +13,7 @@ function usage() {
   ispf validate <dir|bundle.json> [--app id] [--local] [--strict]
   ispf diff <dir> --app <id>
   ispf deploy <dir> --app <id> [--strict]
+  ispf fork <bundle.json|dir> <dest> --app-id <plant-id>
 
 Environment: ISPF_BASE_URL, ISPF_API_TOKEN
 
@@ -26,6 +28,8 @@ function parseArgs(argv) {
     const a = args[i];
     if (a === "--app") {
       flags.app = args[++i];
+    } else if (a === "--app-id") {
+      flags.appId = args[++i];
     } else if (a === "-o" || a === "--output") {
       flags.output = args[++i];
     } else if (a === "--local") {
@@ -104,6 +108,16 @@ export async function runCli(argv) {
       const { summary, local, remote } = await diffDirectory(path.resolve(dir), flags.app);
       printDiff(summary, local, remote);
       process.exit(summary.length ? 1 : 0);
+      break;
+    }
+    case "fork": {
+      const src = positional[1];
+      const dest = positional[2];
+      if (!src || !dest || !flags.appId) {
+        throw new Error("fork requires <bundle.json|dir> <dest> --app-id <plant-id>");
+      }
+      const result = forkSolution(src, dest, flags.appId);
+      console.log(`Forked to ${result.dest} schema=${result.schemaName}`);
       break;
     }
     case "deploy": {

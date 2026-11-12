@@ -152,7 +152,9 @@ public class MigrationObjectService {
             } else if (!dataSourcePath.equals(script.dataSourcePath())) {
                 throw new IllegalArgumentException("Bundle migrations must share one data source");
             }
-            if (!applicationDataStore.isMigrationApplied(appId, script.version(), script.scriptId())) {
+            String stored = applicationDataStore.appliedMigrationChecksum(appId, script.scriptId());
+            MigrationLedger.requireUnchanged(script.scriptId(), stored, script.sql());
+            if (stored == null) {
                 pending.add(script);
             }
         }

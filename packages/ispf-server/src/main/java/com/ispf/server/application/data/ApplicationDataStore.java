@@ -116,17 +116,26 @@ public class ApplicationDataStore {
         return deleted > 0;
     }
 
+    /**
+     * A script id is applied once per app. {@code version} is recorded for audit and is not part of the key,
+     * so a plant fork can raise the manifest version without replaying old scripts.
+     */
     public boolean isMigrationApplied(String appId, String version, String scriptId) {
-        Integer count = jdbcTemplate.queryForObject("""
-                SELECT COUNT(*) FROM %s
-                WHERE app_id = ? AND version = ? AND script_id = ?
+        return appliedMigrationChecksum(appId, scriptId) != null;
+    }
+
+    public String appliedMigrationChecksum(String appId, String scriptId) {
+        java.util.List<String> rows = jdbcTemplate.query(
+                """
+                SELECT checksum FROM %s
+                WHERE app_id = ? AND script_id = ?
+                ORDER BY applied_at DESC
                 """.formatted(migrationsTable),
-                Integer.class,
+                (rs, row) -> rs.getString(1),
                 appId,
-                version,
                 scriptId
         );
-        return count != null && count > 0;
+        return rows.isEmpty() ? null : rows.get(0);
     }
 
     public void recordMigration(String appId, String version, String scriptId, String sql) {
