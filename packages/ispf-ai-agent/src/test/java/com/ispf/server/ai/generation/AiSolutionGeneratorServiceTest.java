@@ -1,11 +1,14 @@
 package com.ispf.server.ai.generation;
 
 import com.ispf.ai.LlmResponse;
+import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.ai.llm.LlmProviderRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
+import com.ispf.server.application.bundle.BundleManifestJsonSupport;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.config.AiProperties;
 import com.ispf.server.license.CommercialBundleLicenseSigner;
@@ -159,6 +162,35 @@ class AiSolutionGeneratorServiceTest {
         List<Map<String, Object>> functions = (List<Map<String, Object>>) bundleDraft.get("functions");
         assertEquals(1, functions.size());
         assertEquals("mes_listOrders", functions.getFirst().get("functionName"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void bundleDraftHostsLogicOnSingletonNotDevice() throws Exception {
+        Map<String, Object> result = service.generate("MES dispatch and OEE for assembly line");
+        Map<String, Object> bundleDraft = (Map<String, Object>) result.get("bundleDraft");
+        ApplicationBundleDeployService.BundleManifest manifest =
+                BundleManifestJsonSupport.parse(new ObjectMapper(), bundleDraft);
+
+        assertEquals(1, manifest.blueprints().size());
+        assertEquals(BlueprintType.SINGLETON, manifest.blueprints().getFirst().type());
+        assertTrue(manifest.blueprints().getFirst().targetObjectType() != ObjectType.DEVICE);
+
+        String hubPath = manifest.functions().getFirst().objectPath();
+        assertEquals(AiSolutionGeneratorService.solutionHubPath("mes-dispatch-and-oee-for-assembly-line"), hubPath);
+        assertTrue(hubPath.startsWith("root.platform.singleton-blueprints."));
+
+        boolean hubDeclared = manifest.objects().stream().anyMatch(object ->
+                hubPath.equals(object.parentPath() + "." + object.name())
+                        && "CUSTOM".equals(object.type())
+        );
+        assertTrue(hubDeclared);
+        assertTrue(manifest.objects().stream().noneMatch(object ->
+                "DEVICE".equals(object.type()) && hubPath.equals(object.parentPath() + "." + object.name())
+        ));
+        assertTrue(manifest.objects().stream().anyMatch(object -> "DEVICE".equals(object.type())));
+        assertEquals(hubPath, ((Map<String, Object>) bundleDraft.get("operatorUi")).get("eventJournalObjectPath"));
+        assertTrue(manifest.dashboards().getFirst().layoutJson().contains(hubPath));
     }
 
     @Test

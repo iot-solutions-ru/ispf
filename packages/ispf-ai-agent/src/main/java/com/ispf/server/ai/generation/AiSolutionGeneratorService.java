@@ -172,7 +172,8 @@ public class AiSolutionGeneratorService {
                       "devices":[{"name":"<kebab-case>","displayName":"<label>"}]
                     }
                     Rules:
-                    - 1..6 DEVICE entries that should appear under root.platform.devices (besides the hub).
+                    - 1..6 DEVICE entries that should appear under root.platform.devices.
+                    - Do not include the solution hub. Orchestration lives on a SINGLETON blueprint, not a DEVICE.
                     - name: lowercase kebab-case [a-z0-9-], no spaces.
                     - Do NOT pick industry catalog ids or reference bundle appIds.
                     - Prefer concrete equipment from the prompt; if vague, invent 2 generic devices.
@@ -328,7 +329,7 @@ public class AiSolutionGeneratorService {
             Map<String, Object> bundleDraft,
             String actor
     ) {
-        String hubPath = "root.platform.devices." + slug + "-hub";
+        String hubPath = solutionHubPath(slug);
         var parsed = BundleManifestJsonSupport.parse(objectMapper, bundleDraft);
         // Same pattern as MarketplaceService free install: sign when private key is configured;
         // otherwise trust platform-generated unsigned apply on this installation (require-signed prod).
@@ -402,7 +403,7 @@ public class AiSolutionGeneratorService {
 
     private void ensureMonitorVariable(String hubPath) {
         if (objectTreePort.tree().findByPath(hubPath).isEmpty()) {
-            throw new IllegalStateException("hub device missing after deploy: " + hubPath);
+            throw new IllegalStateException("hub missing after deploy: " + hubPath);
         }
         if (objectTreePort.require(hubPath).getVariable("status").isPresent()) {
             return;
@@ -712,6 +713,7 @@ public class AiSolutionGeneratorService {
 
         Map<String, Object> suggestedArtifacts = new LinkedHashMap<>();
         suggestedArtifacts.put("rootFolder", "root.platform." + slug);
+        suggestedArtifacts.put("hub", solutionHubPath(slug));
         suggestedArtifacts.put("devices", template.entities().stream()
                 .filter(entity -> "DEVICE".equals(entity.get("type")))
                 .map(entity -> "root.platform.devices." + entity.get("name"))
@@ -742,7 +744,7 @@ public class AiSolutionGeneratorService {
 
     private static Map<String, Object> buildBundleDraft(String slug, String domain, DomainTemplate template) {
         String hubName = slug + "-hub";
-        String hubPath = "root.platform.devices." + hubName;
+        String hubPath = solutionHubPath(slug);
         String schemaName = "app_" + slug.replace('-', '_');
         String overviewDashboard = "root.platform.dashboards." + slug + "-overview";
 
@@ -759,9 +761,9 @@ public class AiSolutionGeneratorService {
             }
         }
         objects.add(objectNode(
-                "root.platform.devices",
+                "root.platform.singleton-blueprints",
                 hubName,
-                "DEVICE",
+                "CUSTOM",
                 template.title() + " hub"
         ));
 
@@ -776,6 +778,7 @@ public class AiSolutionGeneratorService {
                 "CREATE TABLE IF NOT EXISTS " + template.tableName() + " ("
                         + "id UUID PRIMARY KEY, code VARCHAR(64) NOT NULL, label VARCHAR(128) NOT NULL);"
         )));
+        draft.put("blueprints", List.of(singletonHubBlueprint(hubName, template.title() + " hub")));
         draft.put("objects", objects);
         draft.put("functions", List.of(listFunction(hubPath, template.listFunctionName(), template.tableName())));
         draft.put("dashboards", List.of(dashboard(
@@ -793,6 +796,19 @@ public class AiSolutionGeneratorService {
         migration.put("id", id);
         migration.put("sql", sql);
         return migration;
+    }
+
+    /** Logic host for a generated solution. DEVICE children stay under root.platform.devices. */
+    static String solutionHubPath(String slug) {
+        return "root.platform.singleton-blueprints." + slug + "-hub";
+    }
+
+    private static Map<String, Object> singletonHubBlueprint(String name, String description) {
+        Map<String, Object> blueprint = new LinkedHashMap<>();
+        blueprint.put("name", name);
+        blueprint.put("type", "SINGLETON");
+        blueprint.put("description", description);
+        return blueprint;
     }
 
     private static Map<String, Object> objectNode(

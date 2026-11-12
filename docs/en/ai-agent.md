@@ -76,7 +76,7 @@ Live apply (BL-180):
 }
 ```
 
-Requires configured LLM (`ISPF_AI_*`). Returns `mode: live` with `hubPath`, `dashboardPath`, `alertPath`, operator UI. Opt-in proof: `AiSolutionGeneratorLiveSmokeTest` (`ISPF_LLM_SMOKE=true`).
+Requires configured LLM (`ISPF_AI_*`). Returns `mode: live` with `hubPath`, `dashboardPath`, `alertPath`, operator UI. The hub is a SINGLETON blueprint instance at `root.platform.singleton-blueprints.{slug}-hub`; equipment stays DEVICE under `root.platform.devices`. Opt-in proof: `AiSolutionGeneratorLiveSmokeTest` (`ISPF_LLM_SMOKE=true`).
 
 ### BL-180 soft &lt;15 min + integrator oneshot (field-soak ready)
 
