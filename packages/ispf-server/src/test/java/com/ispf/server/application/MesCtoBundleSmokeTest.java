@@ -108,7 +108,8 @@ class MesCtoBundleSmokeTest {
     private void deploy(String appId, String resourceName) throws Exception {
         String bundle = new ClassPathResource(resourceName).getContentAsString(StandardCharsets.UTF_8);
 
-        mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(appId))
+        String seeds = "mes-platform-bundle.json".equals(resourceName) ? "?withSeeds=true" : "";
+        mockMvc.perform(post("/api/v1/applications/%s/deploy%s".formatted(appId, seeds))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bundle))
                 .andExpect(status().isOk())
