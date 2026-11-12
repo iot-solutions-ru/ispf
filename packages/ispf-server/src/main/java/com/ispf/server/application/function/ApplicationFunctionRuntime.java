@@ -8,6 +8,7 @@ import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.application.script.FunctionScriptEngine;
+import com.ispf.server.application.script.SignaturePolicy;
 import com.ispf.server.application.script.ScriptExecutionContext;
 import com.ispf.server.binding.BindingRefreshAfterCommit;
 import com.ispf.server.object.ObjectManager;
@@ -76,6 +77,7 @@ public class ApplicationFunctionRuntime {
 
         ApplicationFunctionHandler.DeployedFunction deployed = store.findLatest(objectPath, functionName)
                 .orElseThrow(() -> new IllegalStateException("Deployed function missing: " + functionName));
+        SignaturePolicy.require(deployed.sourceBody(), input);
 
         ensureDescriptor(objectPath, functionName, deployed);
 

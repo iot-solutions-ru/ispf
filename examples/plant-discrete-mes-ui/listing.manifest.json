@@ -1,0 +1,17 @@
+{
+  "slug": "plant-discrete-mes-ui",
+  "title": "Plant Discrete MES",
+  "description": "Operator screen for the plant-discrete fork. Sets a lot passport note through the hub function, which the core rejects without a signature.",
+  "pricing": "free",
+  "artifactKind": "ui-pack",
+  "appId": "plant-discrete",
+  "packId": "plant-discrete-mes-ui",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorSellerKind": "company",
+  "priceCents": 0,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.30",
+  "tags": ["mes", "ui-pack", "plant-fork"],
+  "changelog": "1.0.0 — Passport screen for the plant-discrete fork."
+}

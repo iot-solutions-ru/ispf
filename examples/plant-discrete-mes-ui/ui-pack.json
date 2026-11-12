@@ -1,0 +1,9 @@
+{
+  "id": "plant-discrete-mes-ui",
+  "appId": "plant-discrete",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "basePath": "/apps/plant-discrete/",
+  "title": "Plant Discrete MES",
+  "minIspfVersion": "0.9.30"
+}

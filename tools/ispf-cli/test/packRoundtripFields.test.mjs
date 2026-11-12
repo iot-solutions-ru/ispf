@@ -7,6 +7,32 @@ import { packDirectory } from "../src/pack.mjs";
 import { unpackBundle } from "../src/unpack.mjs";
 import { compactStringify } from "../src/util.mjs";
 
+test("pack inlines @file references that sit inside a script body", () => {
+  const sql = "SELECT 'a' AS id";
+  const original = {
+    version: "1.0.0",
+    displayName: "inline-sql",
+    schemaName: "app_inline_sql",
+    functions: [
+      {
+        functionName: "ping",
+        objectPath: "root.platform.singleton-blueprints.hub",
+        version: "1",
+        source: {
+          type: "script",
+          body: JSON.stringify({ steps: [{ type: "selectMany", var: "rows", sql }] }),
+        },
+      },
+    ],
+  };
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ispf-pack-inline-"));
+  const repoDir = path.join(tmp, "repo");
+  unpackBundle(original, repoDir);
+  const repacked = packDirectory(repoDir);
+  const body = JSON.parse(repacked.functions[0].source.body);
+  assert.equal(body.steps[0].sql, sql);
+});
+
 test("pack/unpack preserves formatVersion, analyticsFormulas, workflow tool fields", () => {
   const original = {
     formatVersion: 1,
