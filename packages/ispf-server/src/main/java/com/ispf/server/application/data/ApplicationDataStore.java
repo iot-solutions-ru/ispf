@@ -3,14 +3,13 @@ package com.ispf.server.application.data;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
+import com.ispf.server.migration.MigrationLedger;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -219,12 +218,6 @@ public class ApplicationDataStore {
     }
 
     private static String checksum(String sql) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(sql.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash);
-        } catch (Exception ex) {
-            throw new IllegalStateException("Checksum failed", ex);
-        }
+        return MigrationLedger.checksum(sql);
     }
 }
