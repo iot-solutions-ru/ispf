@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -15,6 +14,8 @@ import java.nio.file.Path;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.anonymous;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -27,7 +28,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@WithMockUser(username = "planner-1", roles = "OPERATOR")
 class PlantDiscreteForkTckTest {
 
     private static final String HUB = "root.platform.singleton-blueprints.plant-discrete-hub-v1";
@@ -39,13 +39,16 @@ class PlantDiscreteForkTckTest {
     void cleanInstallRejectsAnUnsignedPassportWrite() throws Exception {
         String bundle = Files.readString(plantBundle());
 
+        // Anonymous deploy exercises FunctionTestRunner's rollback-only test principal.
         mockMvc.perform(post("/api/v1/applications/plant-discrete/deploy")
+                        .with(anonymous())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bundle))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("OK"));
 
         mockMvc.perform(post("/api/v1/bff/invoke")
+                        .with(anonymous())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invoke("mes_platform_listLines", "{}")))
                 .andExpect(status().isOk())
@@ -53,6 +56,7 @@ class PlantDiscreteForkTckTest {
                 .andExpect(jsonPath("$.result.rows", hasSize(0)));
 
         mockMvc.perform(post("/api/v1/bff/invoke")
+                        .with(anonymous())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invoke("plant_set_lot_passport", """
                                 {"lotId":"BATCH-PLANT-1","passportNote":"heat-42"}
@@ -61,6 +65,7 @@ class PlantDiscreteForkTckTest {
                 .andExpect(content().string(containsString("Required field missing: signature")));
 
         mockMvc.perform(post("/api/v1/bff/invoke")
+                        .with(user("planner-1").roles("OPERATOR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invoke("plant_set_lot_passport", """
                                 {"lotId":"BATCH-PLANT-1","passportNote":"heat-42","signature":""}
@@ -69,6 +74,16 @@ class PlantDiscreteForkTckTest {
                 .andExpect(content().string(containsString("requires a signature")));
 
         mockMvc.perform(post("/api/v1/bff/invoke")
+                        .with(anonymous())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invoke("plant_set_lot_passport", """
+                                {"lotId":"BATCH-PLANT-1","passportNote":"heat-42","signature":"planner-1"}
+                                """)))
+                .andExpect(status().isConflict())
+                .andExpect(content().string(containsString("authenticated principal")));
+
+        mockMvc.perform(post("/api/v1/bff/invoke")
+                        .with(user("planner-1").roles("OPERATOR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invoke("plant_set_lot_passport", """
                                 {"lotId":"BATCH-PLANT-1","passportNote":"heat-42","signature":"planner-1"}

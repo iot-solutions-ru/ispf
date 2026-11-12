@@ -67,7 +67,7 @@ public class FunctionTestRunner {
         List<String> errors = new ArrayList<>();
         Map<String, Object> details = new LinkedHashMap<>();
         SecurityContext previous = SecurityContextHolder.getContext();
-        boolean installedTestPrincipal = ensureAuthenticatedPrincipalForBundleTests();
+        boolean installedTestPrincipal = installBundleTestPrincipalIfNeeded(spec);
         try {
             if ("telemetry".equalsIgnoreCase(spec.kind())) {
                 runTelemetry(spec, details, errors);
@@ -80,7 +80,7 @@ public class FunctionTestRunner {
         } finally {
             if (installedTestPrincipal) {
                 SecurityContextHolder.clearContext();
-                if (previous != null) {
+                if (previous.getAuthentication() != null) {
                     SecurityContextHolder.setContext(previous);
                 }
             }
@@ -102,10 +102,14 @@ public class FunctionTestRunner {
     }
 
     /**
-     * Bundle function tests often exercise {@code signaturePolicy=REQUIRED}. Deploy itself is
-     * authenticated in production, but the in-process test runner may have no SecurityContext.
+     * Rollback-only function smoke tests often exercise {@code signaturePolicy=REQUIRED}.
+     * Deploy is authenticated in production, but the in-process runner may have no principal.
+     * Use a fresh SecurityContext so the previous thread context is never mutated in place.
      */
-    private static boolean ensureAuthenticatedPrincipalForBundleTests() {
+    private static boolean installBundleTestPrincipalIfNeeded(TestSpec spec) {
+        if (!spec.rollback() || !"function".equalsIgnoreCase(spec.kind())) {
+            return false;
+        }
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null
                 && authentication.isAuthenticated()
@@ -114,13 +118,15 @@ public class FunctionTestRunner {
                 && !authentication.getName().isBlank()) {
             return false;
         }
-        SecurityContextHolder.getContext().setAuthentication(
+        SecurityContext testContext = SecurityContextHolder.createEmptyContext();
+        testContext.setAuthentication(
                 new UsernamePasswordAuthenticationToken(
                         "bundle-test",
                         "n/a",
-                        List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+                        List.of(new SimpleGrantedAuthority("ROLE_OPERATOR"))
                 )
         );
+        SecurityContextHolder.setContext(testContext);
         return true;
     }
 

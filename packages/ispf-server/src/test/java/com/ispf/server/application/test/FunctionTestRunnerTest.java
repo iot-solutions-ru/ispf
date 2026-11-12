@@ -10,12 +10,18 @@ import com.ispf.server.application.function.ApplicationFunctionRuntime;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.script.PlatformScriptBridge;
 import com.ispf.server.object.ObjectManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import tools.jackson.databind.ObjectMapper;
 
@@ -23,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,6 +57,11 @@ class FunctionTestRunnerTest {
     private ObjectManager objectManager;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     void functionTestUsesInvokeInCurrentTransactionAndPassesOnExpect() throws Exception {
@@ -113,6 +125,158 @@ class FunctionTestRunnerTest {
                 TransactionSynchronizationManager.clearSynchronization();
             }
         }
+    }
+
+    @Test
+    void rollbackFunctionTestInstallsBundleTestPrincipalThenRestoresEmptyContext() throws Exception {
+        stubDeployedPing();
+        AtomicReference<Authentication> duringInvoke = new AtomicReference<>();
+        when(functionRuntime.invokeInCurrentTransaction(anyString(), anyString(), any())).thenAnswer(invocation -> {
+            duringInvoke.set(SecurityContextHolder.getContext().getAuthentication());
+            return DataRecord.single(
+                    DataSchema.builder("out").field("error_code", FieldType.STRING).build(),
+                    Map.of("error_code", "OK")
+            );
+        });
+
+        FunctionTestRunner runner = newRunner();
+        boolean syncActive = TransactionSynchronizationManager.isSynchronizationActive();
+        if (!syncActive) {
+            TransactionSynchronizationManager.initSynchronization();
+        }
+        try {
+            SecurityContextHolder.clearContext();
+            FunctionTestRunner.TestResult result = runner.run(functionSpec(true));
+            assertThat(result.status()).isEqualTo("PASS");
+            assertThat(duringInvoke.get()).isNotNull();
+            assertThat(duringInvoke.get().getName()).isEqualTo("bundle-test");
+            assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+        } finally {
+            if (!syncActive) {
+                TransactionSynchronizationManager.clearSynchronization();
+            }
+        }
+    }
+
+    @Test
+    void rollbackFunctionTestPreservesExistingPrincipal() throws Exception {
+        stubDeployedPing();
+        AtomicReference<Authentication> duringInvoke = new AtomicReference<>();
+        when(functionRuntime.invokeInCurrentTransaction(anyString(), anyString(), any())).thenAnswer(invocation -> {
+            duringInvoke.set(SecurityContextHolder.getContext().getAuthentication());
+            return DataRecord.single(
+                    DataSchema.builder("out").field("error_code", FieldType.STRING).build(),
+                    Map.of("error_code", "OK")
+            );
+        });
+
+        FunctionTestRunner runner = newRunner();
+        UsernamePasswordAuthenticationToken planner = new UsernamePasswordAuthenticationToken(
+                "planner-1",
+                "n/a",
+                List.of(new SimpleGrantedAuthority("ROLE_OPERATOR"))
+        );
+        SecurityContextHolder.getContext().setAuthentication(planner);
+
+        boolean syncActive = TransactionSynchronizationManager.isSynchronizationActive();
+        if (!syncActive) {
+            TransactionSynchronizationManager.initSynchronization();
+        }
+        try {
+            FunctionTestRunner.TestResult result = runner.run(functionSpec(true));
+            assertThat(result.status()).isEqualTo("PASS");
+            assertThat(duringInvoke.get().getName()).isEqualTo("planner-1");
+            assertThat(SecurityContextHolder.getContext().getAuthentication().getName()).isEqualTo("planner-1");
+        } finally {
+            if (!syncActive) {
+                TransactionSynchronizationManager.clearSynchronization();
+            }
+        }
+    }
+
+    @Test
+    void nonRollbackFunctionTestDoesNotSynthesizePrincipal() throws Exception {
+        stubDeployedPing();
+        AtomicReference<Authentication> duringInvoke = new AtomicReference<>();
+        when(functionRuntime.invokeInCurrentTransaction(anyString(), anyString(), any())).thenAnswer(invocation -> {
+            duringInvoke.set(SecurityContextHolder.getContext().getAuthentication());
+            return DataRecord.single(
+                    DataSchema.builder("out").field("error_code", FieldType.STRING).build(),
+                    Map.of("error_code", "OK")
+            );
+        });
+
+        FunctionTestRunner runner = newRunner();
+        SecurityContextHolder.getContext().setAuthentication(
+                new AnonymousAuthenticationToken(
+                        "key",
+                        "anonymousUser",
+                        List.of(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))
+                )
+        );
+
+        boolean syncActive = TransactionSynchronizationManager.isSynchronizationActive();
+        if (!syncActive) {
+            TransactionSynchronizationManager.initSynchronization();
+        }
+        try {
+            FunctionTestRunner.TestResult result = runner.run(functionSpec(false));
+            assertThat(result.status()).isEqualTo("PASS");
+            assertThat(duringInvoke.get()).isInstanceOf(AnonymousAuthenticationToken.class);
+            assertThat(SecurityContextHolder.getContext().getAuthentication())
+                    .isInstanceOf(AnonymousAuthenticationToken.class);
+        } finally {
+            if (!syncActive) {
+                TransactionSynchronizationManager.clearSynchronization();
+            }
+        }
+    }
+
+    private FunctionTestRunner newRunner() {
+        return new FunctionTestRunner(
+                jdbcTemplate,
+                functionRuntime,
+                functionStore,
+                dataStore,
+                schemaSession,
+                platformScriptBridge,
+                objectManager,
+                objectMapper
+        );
+    }
+
+    private void stubDeployedPing() throws Exception {
+        DataSchema inputSchema = DataSchema.builder("in").build();
+        DataSchema outputSchema = DataSchema.builder("out")
+                .field("error_code", FieldType.STRING)
+                .build();
+        ApplicationFunctionHandler.DeployedFunction deployed = new ApplicationFunctionHandler.DeployedFunction(
+                UUID.randomUUID(),
+                "demo",
+                "root.platform.singleton-blueprints.demo-app-hub-v1",
+                "demo_ping",
+                "1",
+                "script",
+                "{}",
+                objectMapper.writeValueAsString(inputSchema),
+                objectMapper.writeValueAsString(outputSchema)
+        );
+        when(functionStore.findLatest(anyString(), anyString())).thenReturn(Optional.of(deployed));
+    }
+
+    private static FunctionTestRunner.TestSpec functionSpec(boolean rollback) {
+        return new FunctionTestRunner.TestSpec(
+                "demo-ping",
+                "function",
+                "root.platform.singleton-blueprints.demo-app-hub-v1",
+                "demo_ping",
+                null,
+                Map.of(),
+                List.of(),
+                Map.of(),
+                Map.of("errorCode", "OK", "rowCount", 1),
+                rollback
+        );
     }
 
     @Test
