@@ -1,0 +1,5 @@
+{
+  "path": "root.platform.dashboards.mes-platform-quality",
+  "refreshIntervalMs": 5000,
+  "title": "MES Quality / SPC"
+}

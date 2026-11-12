@@ -1,0 +1,53 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "sampleId",
+                "type": "STRING"
+              },
+              {
+                "name": "lineCode",
+                "type": "STRING"
+              },
+              {
+                "name": "measurementMm",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "sampleTs",
+                "type": "STRING"
+              }
+            ],
+            "name": "spc_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "mes_quality_listSpcSamples",
+  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"samples\",\"sql\":\"@file:mes_quality_listSpcSamples-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${samples}\",\"fields\":{\"sampleId\":\"${item.sample_id}\",\"lineCode\":\"${item.line_code}\",\"measurementMm\":\"${item.measurement_mm}\",\"sampleTs\":\"${item.sample_ts}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

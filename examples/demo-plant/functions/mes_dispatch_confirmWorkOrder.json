@@ -1,0 +1,48 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "workOrderPath",
+          "nullable": true,
+          "type": "STRING"
+        },
+        {
+          "name": "operatorId",
+          "nullable": true,
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "confirmed",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "workOrderPath",
+          "nullable": true,
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "mes_dispatch_confirmWorkOrder",
+  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.mes.work-orders.wo-line-a01-001\",\"variable\":\"status\",\"fields\":{\"value\":\"complete\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"confirmed\":true,\"workOrderPath\":\"${input.workOrderPath}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

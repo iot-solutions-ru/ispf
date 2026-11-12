@@ -1,0 +1,53 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "recipeId",
+          "type": "STRING"
+        },
+        {
+          "name": "revision",
+          "type": "STRING"
+        },
+        {
+          "name": "displayName",
+          "type": "STRING"
+        },
+        {
+          "name": "signature",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "recipeId",
+          "type": "STRING"
+        },
+        {
+          "name": "revision",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "mes_recipe_release",
+  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "source": {
+    "body": "{\"signaturePolicy\":\"REQUIRED\",\"steps\":[{\"type\":\"exec\",\"sql\":\"@file:mes_recipe_release-step.sql\",\"params\":[\"${input.recipeId}\",\"${input.revision}\",\"${input.displayName}\",\"${input.recipeId}\",\"${input.revision}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"recipeId\":\"${input.recipeId}\",\"revision\":\"${input.revision}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

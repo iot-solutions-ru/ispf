@@ -1950,7 +1950,8 @@
       "version": "2.0.0"
     },
     "product": "mes",
-    "publisher": "IoT Solutions"
+    "publisher": "IoT Solutions",
+    "templatePlant": "demo-plant"
   },
   "migrations": [
     {

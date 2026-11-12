@@ -1,0 +1,126 @@
+{
+  "objects": [
+    {
+      "description": "Manufacturing operations catalog (IoT Solutions MES product)",
+      "displayName": "MES",
+      "name": "mes",
+      "parentPath": "root.platform",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "MES work orders",
+      "displayName": "Work Orders",
+      "name": "work-orders",
+      "parentPath": "root.platform.mes",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "MES operations",
+      "displayName": "Operations",
+      "name": "operations",
+      "parentPath": "root.platform.mes",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "MES lots / batches",
+      "displayName": "Lots",
+      "name": "lots",
+      "parentPath": "root.platform.mes",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "MES shifts",
+      "displayName": "Shifts",
+      "name": "shifts",
+      "parentPath": "root.platform.mes",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "MES quality records",
+      "displayName": "Quality Records",
+      "name": "quality-records",
+      "parentPath": "root.platform.mes",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "MES plant instances",
+      "displayName": "MES Instances",
+      "name": "instances",
+      "parentPath": "root.platform.mes",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "Seed work order for LINE-A01 (BL-164 / BL-166)",
+      "displayName": "WO-LINE-A01-001",
+      "name": "wo-line-a01-001",
+      "parentPath": "root.platform.mes.work-orders",
+      "templateId": "work-order-v1",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "Seed routing operation for LINE-A01 (BL-164)",
+      "displayName": "Assemble A01",
+      "name": "op-assemble-a01",
+      "parentPath": "root.platform.mes.operations",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "Seed ISA-88 batch / lot (BL-164 / BL-168)",
+      "displayName": "BATCH-LINE-A01-001",
+      "name": "batch-line-a01-001",
+      "parentPath": "root.platform.mes.lots",
+      "templateId": "batch-v1",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "Seed production shift (BL-164 / BL-165)",
+      "displayName": "Morning LINE-A01",
+      "name": "shift-morning-a01",
+      "parentPath": "root.platform.mes.shifts",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "Seed quality / defect record (BL-164 / BL-167)",
+      "displayName": "QR-LINE-A01-001",
+      "name": "qr-line-a01-001",
+      "parentPath": "root.platform.mes.quality-records",
+      "templateId": "quality-record-v1",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "ISA-95 site seed (BL-164 / BL-165)",
+      "displayName": "Plant A",
+      "name": "plant-a",
+      "parentPath": "root.platform.mes.instances",
+      "type": "DEVICE"
+    },
+    {
+      "description": "ISA-95 areas container",
+      "displayName": "Areas",
+      "name": "areas",
+      "parentPath": "root.platform.mes.instances.plant-a",
+      "type": "DEVICE"
+    },
+    {
+      "description": "ISA-95 assembly area",
+      "displayName": "Assembly",
+      "name": "assembly",
+      "parentPath": "root.platform.mes.instances.plant-a.areas",
+      "type": "DEVICE"
+    },
+    {
+      "description": "ISA-95 lines container",
+      "displayName": "Lines",
+      "name": "lines",
+      "parentPath": "root.platform.mes.instances.plant-a.areas.assembly",
+      "type": "DEVICE"
+    },
+    {
+      "description": "Assembly Line A01 — OEE / dispatch target",
+      "displayName": "LINE-A01",
+      "name": "line-a01",
+      "parentPath": "root.platform.mes.instances.plant-a.areas.assembly.lines",
+      "type": "DEVICE"
+    }
+  ]
+}

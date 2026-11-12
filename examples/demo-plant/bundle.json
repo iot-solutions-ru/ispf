@@ -1,0 +1,2317 @@
+{
+  "blueprints": [
+    {
+      "description": "ISA-88 batch instance — recipe, phase, batch identity (BL-168)",
+      "name": "batch-v1",
+      "targetObjectType": "CUSTOM",
+      "type": "INSTANCE",
+      "variables": [
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": ""
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ],
+              "name": "stringValue"
+            }
+          },
+          "description": "Batch identifier",
+          "group": "info",
+          "name": "batchId",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ],
+            "name": "stringValue"
+          },
+          "writable": true
+        },
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": ""
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ],
+              "name": "stringValue"
+            }
+          },
+          "description": "Recipe id or name",
+          "group": "config",
+          "name": "recipe",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ],
+            "name": "stringValue"
+          },
+          "writable": true
+        },
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": "idle"
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ],
+              "name": "stringValue"
+            }
+          },
+          "description": "Current ISA-88 phase (charge, react, discharge, …)",
+          "group": "runtime",
+          "name": "phase",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ],
+            "name": "stringValue"
+          },
+          "writable": true
+        }
+      ]
+    },
+    {
+      "bindings": [],
+      "description": "MES platform hub — SPC telemetry and control limits (BL-167)",
+      "events": [],
+      "functions": [],
+      "name": "mes-platform-hub-v1",
+      "parameters": {},
+      "type": "SINGLETON",
+      "variables": [
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": 10.02
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ],
+              "name": "doubleValue"
+            }
+          },
+          "description": "Latest critical-dimension SPC sample (mm)",
+          "group": "quality",
+          "historyEnabled": true,
+          "name": "spcMeasurement",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ],
+            "name": "doubleValue"
+          },
+          "writable": true
+        },
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": 10.5
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ],
+              "name": "doubleValue"
+            }
+          },
+          "description": "Upper control limit (mm)",
+          "group": "quality",
+          "name": "spcUcl",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ],
+            "name": "doubleValue"
+          },
+          "writable": true
+        },
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": 9.5
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ],
+              "name": "doubleValue"
+            }
+          },
+          "description": "Lower control limit (mm)",
+          "group": "quality",
+          "name": "spcLcl",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ],
+            "name": "doubleValue"
+          },
+          "writable": true
+        },
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": 10
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ],
+              "name": "doubleValue"
+            }
+          },
+          "description": "Target / center line (mm)",
+          "group": "quality",
+          "name": "spcTarget",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ],
+            "name": "doubleValue"
+          },
+          "writable": true
+        },
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": 85
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ],
+              "name": "integerValue"
+            }
+          },
+          "description": "Composite OEE percent (A×P×Q) — historian rollup via BL-160 oee template",
+          "group": "oee",
+          "historyEnabled": true,
+          "name": "oeePct",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ],
+            "name": "integerValue"
+          },
+          "writable": true
+        }
+      ]
+    },
+    {
+      "bindings": [],
+      "description": "Quality inspection record with defect traceability (BL-167)",
+      "events": [],
+      "functions": [],
+      "name": "quality-record-v1",
+      "parameters": {},
+      "targetObjectType": "CUSTOM",
+      "type": "MIXIN",
+      "variables": [
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": ""
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ],
+              "name": "stringValue"
+            }
+          },
+          "description": "Defect / NCR code",
+          "group": "info",
+          "name": "defectCode",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ],
+            "name": "stringValue"
+          },
+          "writable": true
+        },
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": "minor"
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ],
+              "name": "stringValue"
+            }
+          },
+          "description": "Severity label (minor, major, critical)",
+          "group": "info",
+          "name": "severity",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ],
+            "name": "stringValue"
+          },
+          "writable": true
+        },
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": ""
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ],
+              "name": "stringValue"
+            }
+          },
+          "description": "Material lot / batch id",
+          "group": "traceability",
+          "name": "lotId",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ],
+            "name": "stringValue"
+          },
+          "writable": true
+        }
+      ]
+    },
+    {
+      "description": "Manufacturing work order instance — dispatch, line, status (BL-164 / BL-166)",
+      "name": "work-order-v1",
+      "targetObjectType": "CUSTOM",
+      "type": "INSTANCE",
+      "variables": [
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": ""
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ],
+              "name": "stringValue"
+            }
+          },
+          "description": "Work order number",
+          "group": "info",
+          "name": "orderNumber",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ],
+            "name": "stringValue"
+          },
+          "writable": true
+        },
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": ""
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ],
+              "name": "stringValue"
+            }
+          },
+          "description": "ISA-95 line code",
+          "group": "routing",
+          "name": "lineCode",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ],
+            "name": "stringValue"
+          },
+          "writable": true
+        },
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": "planned"
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ],
+              "name": "stringValue"
+            }
+          },
+          "description": "Lifecycle status (planned, dispatched, in-progress, complete)",
+          "group": "runtime",
+          "name": "status",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ],
+            "name": "stringValue"
+          },
+          "writable": true
+        },
+        {
+          "defaultValue": {
+            "rows": [
+              {
+                "value": "normal"
+              }
+            ],
+            "schema": {
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ],
+              "name": "stringValue"
+            }
+          },
+          "description": "Priority label (low, normal, high, urgent)",
+          "group": "config",
+          "name": "priority",
+          "readable": true,
+          "schema": {
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ],
+            "name": "stringValue"
+          },
+          "writable": true
+        }
+      ]
+    }
+  ],
+  "correlators": [
+    {
+      "actionTarget": "root.platform.workflows.mes-work-order-dispatch",
+      "actionType": "RUN_WORKFLOW",
+      "cooldownSeconds": 5,
+      "enabled": false,
+      "eventName": "workOrderDispatched",
+      "minOccurrences": 1,
+      "name": "MES work order dispatch",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "patternType": "COUNT",
+      "sequenceGapSeconds": 0,
+      "windowSeconds": 0
+    }
+  ],
+  "dashboards": [
+    {
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"h\":14,\"htmlJson\":\"<p>BL-168: seed LOT <code>batch-line-a01-001</code> / recipe <code>recipe-standard-a</code>. Advance phases with <code>mes_batch_runPhase</code> (charge → react → discharge).</p>\",\"id\":\"batch-help\",\"title\":\"ISA-88 batch lite\",\"type\":\"html-snippet\",\"w\":84,\"x\":0,\"y\":0},{\"buttonLabel\":\"Get seed batch status\",\"functionName\":\"mes_batch_getStatus\",\"h\":21,\"id\":\"batch-status\",\"inputMapJson\":\"{\\\"batchPath\\\":\\\"root.platform.mes.lots.batch-line-a01-001\\\"}\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"Batch status\",\"type\":\"function\",\"w\":42,\"x\":0,\"y\":14},{\"buttonLabel\":\"Advance to react\",\"functionName\":\"mes_batch_runPhase\",\"h\":21,\"id\":\"batch-run-react\",\"inputMapJson\":\"{\\\"batchPath\\\":\\\"root.platform.mes.lots.batch-line-a01-001\\\",\\\"batchId\\\":\\\"BATCH-LINE-A01-001\\\",\\\"recipe\\\":\\\"recipe-standard-a\\\",\\\"phase\\\":\\\"react\\\"}\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"Run phase → react\",\"type\":\"function\",\"w\":42,\"x\":42,\"y\":14}]}",
+      "path": "root.platform.dashboards.mes-platform-batch",
+      "refreshIntervalMs": 5000,
+      "title": "MES Batch (ISA-88)"
+    },
+    {
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"h\":14,\"htmlJson\":\"<p>BL-222: explode seed material <code>MAT-WIDGET-A01</code> and release routing <code>RT-WIDGET-A01</code> operations when predecessors are complete.</p>\",\"id\":\"bom-ops-help\",\"title\":\"Nested BoM + operations graph\",\"type\":\"html-snippet\",\"w\":84,\"x\":0,\"y\":0},{\"buttonLabel\":\"Explode MAT-WIDGET-A01\",\"functionName\":\"mes_bom_explode\",\"h\":21,\"id\":\"bom-explode\",\"inputMapJson\":\"{\\\"materialCode\\\":\\\"MAT-WIDGET-A01\\\"}\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"BoM explosion\",\"type\":\"function\",\"w\":42,\"x\":0,\"y\":14},{\"buttonLabel\":\"Where used MAT-WIP-A01\",\"functionName\":\"mes_bom_whereUsed\",\"h\":21,\"id\":\"bom-where-used\",\"inputMapJson\":\"{\\\"componentMaterialCode\\\":\\\"MAT-WIP-A01\\\"}\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"Where used\",\"type\":\"function\",\"w\":42,\"x\":42,\"y\":14},{\"buttonLabel\":\"List ready operations\",\"functionName\":\"mes_ops_listReady\",\"h\":21,\"id\":\"ops-ready\",\"inputMapJson\":\"{\\\"workOrderNumber\\\":\\\"WO-LINE-A01-001\\\"}\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"Ready operations\",\"type\":\"function\",\"w\":42,\"x\":0,\"y\":35},{\"buttonLabel\":\"Complete and release successors\",\"functionName\":\"mes_ops_complete\",\"h\":21,\"id\":\"ops-complete\",\"inputMapJson\":\"{\\\"workOrderNumber\\\":\\\"WO-LINE-A01-001\\\",\\\"operationId\\\":\\\"OP-ASSEMBLE\\\"}\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"Complete OP-ASSEMBLE\",\"type\":\"function\",\"w\":42,\"x\":42,\"y\":35}]}",
+      "path": "root.platform.dashboards.mes-platform-bom-ops",
+      "refreshIntervalMs": 5000,
+      "title": "MES BoM + Operations"
+    },
+    {
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"h\":42,\"id\":\"dispatch-queue\",\"maxItems\":10,\"operatorAppId\":\"mes-platform\",\"operatorId\":\"operator\",\"title\":\"Work orders\",\"type\":\"work-queue\",\"w\":35,\"x\":0,\"y\":0},{\"h\":21,\"htmlJson\":\"<p>Work order dispatch workflow + operator work-queue (BL-166). Fire <code>workOrderDispatched</code> on the hub to start the BPMN user task.</p>\",\"id\":\"dispatch-help\",\"title\":\"Dispatch\",\"type\":\"html-snippet\",\"w\":49,\"x\":35,\"y\":0},{\"buttonLabel\":\"Load seed shift KPI\",\"functionName\":\"mes_oee_getKpi\",\"h\":21,\"id\":\"oee-shift\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"OEE KPI\",\"type\":\"function\",\"w\":49,\"x\":35,\"y\":21}]}",
+      "path": "root.platform.dashboards.mes-platform-dispatch",
+      "refreshIntervalMs": 5000,
+      "title": "MES Dispatch"
+    },
+    {
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"h\":14,\"htmlJson\":\"<p>BL-193 keeps lot/material/WO/quality links. BL-221 adds DAG traceability with seed hops <code>ENT-RAW-A01</code> → <code>ENT-WIP-B01</code> → <code>ENT-FG-A01</code> for lot <code>BATCH-LINE-A01-001</code>.</p>\",\"id\":\"genealogy-help\",\"title\":\"Genealogy DAG\",\"type\":\"html-snippet\",\"w\":84,\"x\":0,\"y\":0},{\"buttonLabel\":\"Trace seed lot\",\"functionName\":\"mes_genealogy_queryByLot\",\"h\":18,\"id\":\"genealogy-by-lot\",\"inputMapJson\":\"{\\\"lotId\\\":\\\"BATCH-LINE-A01-001\\\"}\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"Query by lot\",\"type\":\"function\",\"w\":42,\"x\":0,\"y\":14},{\"buttonLabel\":\"Trace DAG seed lot\",\"functionName\":\"mes_genealogy_queryDagByLot\",\"h\":18,\"id\":\"genealogy-dag-by-lot\",\"inputMapJson\":\"{\\\"lotId\\\":\\\"BATCH-LINE-A01-001\\\"}\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"DAG by lot\",\"type\":\"function\",\"w\":42,\"x\":42,\"y\":14},{\"buttonLabel\":\"List genealogy links\",\"functionName\":\"mes_genealogy_listGraph\",\"h\":18,\"id\":\"genealogy-graph\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"Full graph\",\"type\":\"function\",\"w\":42,\"x\":0,\"y\":32},{\"buttonLabel\":\"List DAG edges\",\"functionName\":\"mes_genealogy_listDagEdges\",\"h\":18,\"id\":\"genealogy-dag-edges\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"DAG edges\",\"type\":\"function\",\"w\":42,\"x\":42,\"y\":32},{\"h\":28,\"id\":\"genealogy-report\",\"reportPath\":\"root.platform.reports.mes-genealogy\",\"title\":\"Genealogy report\",\"type\":\"report\",\"w\":42,\"x\":0,\"y\":50},{\"h\":28,\"id\":\"genealogy-dag-report\",\"reportPath\":\"root.platform.reports.mes-genealogy-dag\",\"title\":\"DAG report\",\"type\":\"report\",\"w\":42,\"x\":42,\"y\":50}]}",
+      "path": "root.platform.dashboards.mes-platform-genealogy",
+      "refreshIntervalMs": 10000,
+      "title": "MES Genealogy"
+    },
+    {
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"buttonLabel\":\"List shifts\",\"functionName\":\"mes_oee_listShifts\",\"h\":21,\"id\":\"oee-shifts\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"Shifts\",\"type\":\"function\",\"w\":28,\"x\":0,\"y\":0},{\"buttonLabel\":\"Morning shift KPI\",\"functionName\":\"mes_oee_getKpi\",\"h\":21,\"id\":\"oee-kpi\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"OEE KPI\",\"type\":\"function\",\"w\":56,\"x\":28,\"y\":0},{\"buttonLabel\":\"List lines\",\"functionName\":\"mes_platform_listLines\",\"h\":21,\"id\":\"oee-lines\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"ISA-95 lines\",\"type\":\"function\",\"w\":84,\"x\":0,\"y\":21},{\"analyticsBindingExpression\":\"oee('oeePct', '8h')\",\"analyticsTemplateId\":\"oee\",\"chartStyle\":\"area\",\"decimals\":0,\"h\":28,\"historyRange\":\"24h\",\"id\":\"oee-analytics-chart\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"OEE trend (BL-160)\",\"type\":\"chart\",\"unit\":\"%\",\"valueField\":\"value\",\"variableName\":\"oeePct\",\"w\":56,\"x\":0,\"y\":42},{\"h\":28,\"htmlJson\":\"<p>BL-160: chart uses platform <code>oee</code> analytics template with 8h historian rollup on <code>oeePct</code>. Catalog: <code>GET /api/v1/platform/analytics/templates</code>.</p>\",\"id\":\"oee-analytics-help\",\"title\":\"Asset analytics\",\"type\":\"html-snippet\",\"w\":28,\"x\":56,\"y\":42}]}",
+      "path": "root.platform.dashboards.mes-platform-oee",
+      "refreshIntervalMs": 5000,
+      "title": "MES OEE"
+    },
+    {
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"chartStyle\":\"line\",\"decimals\":2,\"h\":28,\"historyRange\":\"24h\",\"id\":\"spc-chart\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"SPC — critical dimension\",\"type\":\"chart\",\"unit\":\"mm\",\"variableName\":\"spcMeasurement\",\"w\":56,\"x\":0,\"y\":0},{\"decimals\":2,\"h\":14,\"id\":\"spc-ucl\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"UCL\",\"type\":\"value\",\"unit\":\"mm\",\"valueField\":\"value\",\"variableName\":\"spcUcl\",\"w\":14,\"x\":56,\"y\":0},{\"decimals\":2,\"h\":14,\"id\":\"spc-target\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"Target\",\"type\":\"value\",\"unit\":\"mm\",\"valueField\":\"value\",\"variableName\":\"spcTarget\",\"w\":14,\"x\":70,\"y\":0},{\"decimals\":2,\"h\":14,\"id\":\"spc-lcl\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"LCL\",\"type\":\"value\",\"unit\":\"mm\",\"valueField\":\"value\",\"variableName\":\"spcLcl\",\"w\":28,\"x\":56,\"y\":14},{\"buttonLabel\":\"List SPC samples\",\"functionName\":\"mes_quality_listSpcSamples\",\"h\":14,\"id\":\"spc-samples\",\"objectPath\":\"root.platform.singleton-blueprints.mes-platform-hub-v1\",\"title\":\"SPC samples\",\"type\":\"function\",\"w\":42,\"x\":0,\"y\":28},{\"h\":14,\"htmlJson\":\"<p>BL-167: <code>chart</code> widget on <code>spcMeasurement</code> with UCL/LCL reference values. Apply <code>quality-record-v1</code> to <code>QUALITY_RECORD</code> nodes for defect traceability.</p>\",\"id\":\"spc-help\",\"title\":\"Quality module\",\"type\":\"html-snippet\",\"w\":42,\"x\":42,\"y\":28}]}",
+      "path": "root.platform.dashboards.mes-platform-quality",
+      "refreshIntervalMs": 5000,
+      "title": "MES Quality / SPC"
+    }
+  ],
+  "displayName": "Демо-завод",
+  "events": [
+    {
+      "id": "workOrderDispatched",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "batchPath",
+              "type": "STRING"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "batchPath",
+              "type": "STRING"
+            },
+            {
+              "name": "batchId",
+              "type": "STRING"
+            },
+            {
+              "name": "recipe",
+              "type": "STRING"
+            },
+            {
+              "name": "phase",
+              "type": "STRING"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_batch_getStatus",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"batch\",\"sql\":\"SELECT batch_id, recipe, phase FROM mes_batch_run WHERE batch_path = ?\",\"params\":[\"${input.batchPath}\"]},{\"type\":\"failIfNull\",\"var\":\"batch\",\"message\":\"Batch not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"batchPath\":\"${input.batchPath}\",\"batchId\":\"${batch.batch_id}\",\"recipe\":\"${batch.recipe}\",\"phase\":\"${batch.phase}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "batchPath",
+              "type": "STRING"
+            },
+            {
+              "name": "batchId",
+              "type": "STRING"
+            },
+            {
+              "name": "recipe",
+              "type": "STRING"
+            },
+            {
+              "name": "phase",
+              "type": "STRING"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "batchPath",
+              "type": "STRING"
+            },
+            {
+              "name": "phase",
+              "type": "STRING"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_batch_runPhase",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_batch_run SET phase = ?, batch_id = ?, recipe = COALESCE(NULLIF(?, ''), recipe), updated_at = CURRENT_TIMESTAMP WHERE batch_path = ?\",\"params\":[\"${input.phase}\",\"${input.batchId}\",\"${input.recipe}\",\"${input.batchPath}\"]},{\"type\":\"selectOne\",\"var\":\"updated\",\"sql\":\"SELECT batch_path FROM mes_batch_run WHERE batch_path = ?\",\"params\":[\"${input.batchPath}\"]},{\"type\":\"when\",\"var\":\"updated\",\"notNull\":false,\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_batch_run (batch_path, batch_id, recipe, phase) VALUES (?, ?, COALESCE(NULLIF(?, ''), 'default-recipe'), ?)\",\"params\":[\"${input.batchPath}\",\"${input.batchId}\",\"${input.recipe}\",\"${input.phase}\"]}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"batchPath\":\"${input.batchPath}\",\"phase\":\"${input.phase}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "materialCode",
+              "type": "STRING"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "materialCode",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "nestedSchema": {
+                "fields": [
+                  {
+                    "name": "bomId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "parentMaterialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "revision",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineNo",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "componentMaterialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "componentName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "quantity",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "uom",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "level",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "path",
+                    "type": "STRING"
+                  }
+                ],
+                "name": "bom_line_row"
+              },
+              "type": "RECORD_LIST"
+            },
+            {
+              "name": "nestedRows",
+              "nestedSchema": {
+                "fields": [
+                  {
+                    "name": "bomId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "parentMaterialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "revision",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineNo",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "componentMaterialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "componentName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "quantity",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "uom",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "level",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "path",
+                    "type": "STRING"
+                  }
+                ],
+                "name": "bom_line_row"
+              },
+              "type": "RECORD_LIST"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_bom_explode",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"flat\",\"sql\":\"SELECT h.bom_id, h.parent_material_code, h.revision, l.line_no, l.component_material_code, COALESCE(m.display_name, '') AS component_name, l.quantity, l.uom, 1 AS level_no, CONCAT(h.parent_material_code, '>', l.component_material_code) AS path FROM mes_bom_header h JOIN mes_bom_line l ON l.bom_id = h.bom_id LEFT JOIN mes_genealogy_material m ON m.material_code = l.component_material_code WHERE h.parent_material_code = ? AND h.status = 'active' ORDER BY l.line_no\",\"params\":[\"${input.materialCode}\"]},{\"type\":\"selectMany\",\"var\":\"nested\",\"sql\":\"SELECT h.bom_id, h.parent_material_code, h.revision, l.line_no, l.component_material_code, COALESCE(m.display_name, '') AS component_name, l.quantity, l.uom, 1 AS level_no, CONCAT(h.parent_material_code, '>', l.component_material_code) AS path FROM mes_bom_header h JOIN mes_bom_line l ON l.bom_id = h.bom_id LEFT JOIN mes_genealogy_material m ON m.material_code = l.component_material_code WHERE h.parent_material_code = ? AND h.status = 'active' ORDER BY l.line_no\",\"params\":[\"${input.materialCode}\"]},{\"type\":\"map\",\"var\":\"flatRows\",\"source\":\"${flat}\",\"fields\":{\"bomId\":\"${item.bom_id}\",\"parentMaterialCode\":\"${item.parent_material_code}\",\"revision\":\"${item.revision}\",\"lineNo\":\"${item.line_no}\",\"componentMaterialCode\":\"${item.component_material_code}\",\"componentName\":\"${item.component_name}\",\"quantity\":\"${item.quantity}\",\"uom\":\"${item.uom}\",\"level\":\"${item.level_no}\",\"path\":\"${item.path}\"}},{\"type\":\"map\",\"var\":\"nestedRows\",\"source\":\"${nested}\",\"fields\":{\"bomId\":\"${item.bom_id}\",\"parentMaterialCode\":\"${item.parent_material_code}\",\"revision\":\"${item.revision}\",\"lineNo\":\"${item.line_no}\",\"componentMaterialCode\":\"${item.component_material_code}\",\"componentName\":\"${item.component_name}\",\"quantity\":\"${item.quantity}\",\"uom\":\"${item.uom}\",\"level\":\"${item.level_no}\",\"path\":\"${item.path}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"materialCode\":\"${input.materialCode}\",\"rows\":\"${flatRows}\",\"nestedRows\":\"${nestedRows}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "componentMaterialCode",
+              "type": "STRING"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "componentMaterialCode",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "nestedSchema": {
+                "fields": [
+                  {
+                    "name": "bomId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "parentMaterialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "parentName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "revision",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineNo",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "quantity",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "uom",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ],
+                "name": "bom_parent_row"
+              },
+              "type": "RECORD_LIST"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_bom_whereUsed",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"parents\",\"sql\":\"SELECT h.bom_id, h.parent_material_code, COALESCE(m.display_name, '') AS parent_name, h.revision, l.line_no, l.quantity, l.uom, h.status FROM mes_bom_header h JOIN mes_bom_line l ON l.bom_id = h.bom_id LEFT JOIN mes_genealogy_material m ON m.material_code = h.parent_material_code WHERE l.component_material_code = ? ORDER BY h.parent_material_code, h.revision, l.line_no\",\"params\":[\"${input.componentMaterialCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${parents}\",\"fields\":{\"bomId\":\"${item.bom_id}\",\"parentMaterialCode\":\"${item.parent_material_code}\",\"parentName\":\"${item.parent_name}\",\"revision\":\"${item.revision}\",\"lineNo\":\"${item.line_no}\",\"quantity\":\"${item.quantity}\",\"uom\":\"${item.uom}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"componentMaterialCode\":\"${input.componentMaterialCode}\",\"rows\":\"${rows}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "workOrderPath",
+              "nullable": true,
+              "type": "STRING"
+            },
+            {
+              "name": "operatorId",
+              "nullable": true,
+              "type": "STRING"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "confirmed",
+              "type": "BOOLEAN"
+            },
+            {
+              "name": "workOrderPath",
+              "nullable": true,
+              "type": "STRING"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_dispatch_confirmWorkOrder",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.mes.work-orders.wo-line-a01-001\",\"variable\":\"status\",\"fields\":{\"value\":\"complete\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"confirmed\":true,\"workOrderPath\":\"${input.workOrderPath}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "entityType",
+              "type": "STRING"
+            },
+            {
+              "name": "entityId",
+              "type": "STRING"
+            },
+            {
+              "name": "payloadJson",
+              "type": "STRING"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "enqueued",
+              "type": "BOOLEAN"
+            },
+            {
+              "name": "idempotencyKey",
+              "type": "STRING"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_erp_enqueueOutbox",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), ?, ?, ?, CONCAT(?, ':', ?), 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = CONCAT(?, ':', ?))\",\"params\":[\"${input.entityType}\",\"${input.entityId}\",\"${input.payloadJson}\",\"${input.entityType}\",\"${input.entityId}\",\"${input.entityType}\",\"${input.entityId}\"]},{\"type\":\"selectOne\",\"var\":\"keyRow\",\"sql\":\"SELECT CONCAT(?, ':', ?) AS idempotency_key\",\"params\":[\"${input.entityType}\",\"${input.entityId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"enqueued\":true,\"idempotencyKey\":\"${keyRow.idempotency_key}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "nestedSchema": {
+                "fields": [
+                  {
+                    "name": "outboxId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "entityType",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "entityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "idempotencyKey",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ],
+                "name": "outbox_row"
+              },
+              "type": "RECORD_LIST"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_erp_pollOutbox",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"pending\",\"sql\":\"UPDATE mes_erp_outbox SET status = 'simulated', processed_at = CURRENT_TIMESTAMP WHERE status = 'pending'\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_erp_outbox SET status = 'simulated', processed_at = CURRENT_TIMESTAMP WHERE status = 'pending'\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${pending}\",\"fields\":{\"outboxId\":\"${item.outbox_id}\",\"entityType\":\"${item.entity_type}\",\"entityId\":\"${item.entity_id}\",\"idempotencyKey\":\"${item.idempotency_key}\",\"status\":\"simulated\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "nestedSchema": {
+                "fields": [
+                  {
+                    "name": "fromEntityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "fromLotId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "fromMaterialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "toEntityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "toLotId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "toMaterialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "activityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "activityType",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "quantity",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "workOrderNumber",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "occurredAt",
+                    "type": "STRING"
+                  }
+                ],
+                "name": "genealogy_dag_edge"
+              },
+              "type": "RECORD_LIST"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_genealogy_listDagEdges",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"edges\",\"sql\":\"SELECT i.entity_id AS from_entity_id, COALESCE(src.lot_id, '') AS from_lot_id, COALESCE(src.material_code, '') AS from_material_code, o.entity_id AS to_entity_id, COALESCE(dst.lot_id, '') AS to_lot_id, COALESCE(dst.material_code, '') AS to_material_code, a.activity_id, a.activity_type, o.quantity AS quantity, a.work_order_number, a.line_code, CAST(a.occurred_at AS VARCHAR) AS occurred_at FROM mes_tracked_activity a JOIN mes_tracked_activity_input i ON i.activity_id = a.activity_id JOIN mes_tracked_activity_output o ON o.activity_id = a.activity_id JOIN mes_tracked_entity src ON src.entity_id = i.entity_id JOIN mes_tracked_entity dst ON dst.entity_id = o.entity_id ORDER BY a.activity_id, i.entity_id, o.entity_id\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${edges}\",\"fields\":{\"fromEntityId\":\"${item.from_entity_id}\",\"fromLotId\":\"${item.from_lot_id}\",\"fromMaterialCode\":\"${item.from_material_code}\",\"toEntityId\":\"${item.to_entity_id}\",\"toLotId\":\"${item.to_lot_id}\",\"toMaterialCode\":\"${item.to_material_code}\",\"activityId\":\"${item.activity_id}\",\"activityType\":\"${item.activity_type}\",\"quantity\":\"${item.quantity}\",\"workOrderNumber\":\"${item.work_order_number}\",\"lineCode\":\"${item.line_code}\",\"occurredAt\":\"${item.occurred_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "nestedSchema": {
+                "fields": [
+                  {
+                    "name": "lotId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lotPath",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "materialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "materialName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "workOrderNumber",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "quantity",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "lotStatus",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "qualityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "defectCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "severity",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "qualityResult",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "recordedAt",
+                    "type": "STRING"
+                  }
+                ],
+                "name": "genealogy_row"
+              },
+              "type": "RECORD_LIST"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_genealogy_listGraph",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"links\",\"sql\":\"SELECT l.lot_id, l.lot_path, l.material_code, m.display_name AS material_name, l.work_order_number, l.line_code, l.quantity, l.status AS lot_status, q.quality_id, COALESCE(q.defect_code, '') AS defect_code, COALESCE(q.severity, '') AS severity, COALESCE(q.result, '') AS quality_result, COALESCE(q.recorded_at::text, '') AS recorded_at FROM mes_genealogy_lot l JOIN mes_genealogy_material m ON m.material_code = l.material_code LEFT JOIN mes_genealogy_quality q ON q.lot_id = l.lot_id ORDER BY l.lot_id, q.recorded_at\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${links}\",\"fields\":{\"lotId\":\"${item.lot_id}\",\"lotPath\":\"${item.lot_path}\",\"materialCode\":\"${item.material_code}\",\"materialName\":\"${item.material_name}\",\"workOrderNumber\":\"${item.work_order_number}\",\"lineCode\":\"${item.line_code}\",\"quantity\":\"${item.quantity}\",\"lotStatus\":\"${item.lot_status}\",\"qualityId\":\"${item.quality_id}\",\"defectCode\":\"${item.defect_code}\",\"severity\":\"${item.severity}\",\"qualityResult\":\"${item.quality_result}\",\"recordedAt\":\"${item.recorded_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "lotId",
+              "type": "STRING"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "lotId",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "nestedSchema": {
+                "fields": [
+                  {
+                    "name": "lotId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lotPath",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "materialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "materialName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "workOrderNumber",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "quantity",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "lotStatus",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "qualityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "defectCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "severity",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "qualityResult",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "recordedAt",
+                    "type": "STRING"
+                  }
+                ],
+                "name": "genealogy_row"
+              },
+              "type": "RECORD_LIST"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_genealogy_queryByLot",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"links\",\"sql\":\"SELECT l.lot_id, l.lot_path, l.material_code, m.display_name AS material_name, l.work_order_number, l.line_code, l.quantity, l.status AS lot_status, q.quality_id, COALESCE(q.defect_code, '') AS defect_code, COALESCE(q.severity, '') AS severity, COALESCE(q.result, '') AS quality_result, COALESCE(q.recorded_at::text, '') AS recorded_at FROM mes_genealogy_lot l JOIN mes_genealogy_material m ON m.material_code = l.material_code LEFT JOIN mes_genealogy_quality q ON q.lot_id = l.lot_id WHERE l.lot_id = ? ORDER BY q.recorded_at\",\"params\":[\"${input.lotId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${links}\",\"fields\":{\"lotId\":\"${item.lot_id}\",\"lotPath\":\"${item.lot_path}\",\"materialCode\":\"${item.material_code}\",\"materialName\":\"${item.material_name}\",\"workOrderNumber\":\"${item.work_order_number}\",\"lineCode\":\"${item.line_code}\",\"quantity\":\"${item.quantity}\",\"lotStatus\":\"${item.lot_status}\",\"qualityId\":\"${item.quality_id}\",\"defectCode\":\"${item.defect_code}\",\"severity\":\"${item.severity}\",\"qualityResult\":\"${item.quality_result}\",\"recordedAt\":\"${item.recorded_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${input.lotId}\",\"rows\":\"${rows}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "lotId",
+              "type": "STRING"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "lotId",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "nestedSchema": {
+                "fields": [
+                  {
+                    "name": "fromEntityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "fromLotId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "fromMaterialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "toEntityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "toLotId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "toMaterialCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "activityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "activityType",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "quantity",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "workOrderNumber",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "occurredAt",
+                    "type": "STRING"
+                  }
+                ],
+                "name": "genealogy_dag_edge"
+              },
+              "type": "RECORD_LIST"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_genealogy_queryDagByLot",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"edges\",\"sql\":\"SELECT i.entity_id AS from_entity_id, COALESCE(src.lot_id, '') AS from_lot_id, COALESCE(src.material_code, '') AS from_material_code, o.entity_id AS to_entity_id, COALESCE(dst.lot_id, '') AS to_lot_id, COALESCE(dst.material_code, '') AS to_material_code, a.activity_id, a.activity_type, o.quantity AS quantity, a.work_order_number, a.line_code, CAST(a.occurred_at AS VARCHAR) AS occurred_at FROM mes_tracked_activity a JOIN mes_tracked_activity_input i ON i.activity_id = a.activity_id JOIN mes_tracked_activity_output o ON o.activity_id = a.activity_id JOIN mes_tracked_entity src ON src.entity_id = i.entity_id JOIN mes_tracked_entity dst ON dst.entity_id = o.entity_id WHERE src.lot_id = ? OR dst.lot_id = ? OR src.entity_id = ? OR dst.entity_id = ? ORDER BY a.activity_id, i.entity_id, o.entity_id\",\"params\":[\"${input.lotId}\",\"${input.lotId}\",\"${input.lotId}\",\"${input.lotId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${edges}\",\"fields\":{\"fromEntityId\":\"${item.from_entity_id}\",\"fromLotId\":\"${item.from_lot_id}\",\"fromMaterialCode\":\"${item.from_material_code}\",\"toEntityId\":\"${item.to_entity_id}\",\"toLotId\":\"${item.to_lot_id}\",\"toMaterialCode\":\"${item.to_material_code}\",\"activityId\":\"${item.activity_id}\",\"activityType\":\"${item.activity_type}\",\"quantity\":\"${item.quantity}\",\"workOrderNumber\":\"${item.work_order_number}\",\"lineCode\":\"${item.line_code}\",\"occurredAt\":\"${item.occurred_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${input.lotId}\",\"rows\":\"${rows}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "shiftId",
+              "type": "STRING"
+            },
+            {
+              "name": "minutes",
+              "type": "INTEGER"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "downtimeMinutes",
+              "type": "INTEGER"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_oee_addDowntime",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"shift\",\"sql\":\"UPDATE mes_oee_shift SET downtime_minutes = LEAST(planned_minutes, downtime_minutes + ?) WHERE id = CAST(? AS uuid)\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"shift\",\"message\":\"Shift not found\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_oee_shift SET downtime_minutes = LEAST(planned_minutes, downtime_minutes + ?) WHERE id = CAST(? AS uuid)\",\"params\":[\"${input.minutes}\",\"${input.shiftId}\"]},{\"type\":\"selectOne\",\"var\":\"updated\",\"sql\":\"SELECT downtime_minutes FROM mes_oee_shift WHERE id = CAST(? AS uuid)\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"downtimeMinutes\":\"${updated.downtime_minutes}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "shiftId",
+              "type": "STRING"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "lineCode",
+              "type": "STRING"
+            },
+            {
+              "name": "shiftLabel",
+              "type": "STRING"
+            },
+            {
+              "name": "availabilityPct",
+              "type": "INTEGER"
+            },
+            {
+              "name": "performancePct",
+              "type": "INTEGER"
+            },
+            {
+              "name": "qualityPct",
+              "type": "INTEGER"
+            },
+            {
+              "name": "oeePct",
+              "type": "INTEGER"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_oee_getKpi",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"kpi\",\"sql\":\"SELECT line_code, shift_label, CAST(ROUND(CASE WHEN planned_minutes > 0 THEN (planned_minutes - downtime_minutes) * 100.0 / planned_minutes ELSE 0 END, 0) AS INT) AS availability_pct, CAST(ROUND(CASE WHEN (planned_minutes - downtime_minutes) > 0 AND total_units > 0 THEN LEAST(100.0, ideal_cycle_sec * total_units * 100.0 / ((planned_minutes - downtime_minutes) * 60)) ELSE 0 END, 0) AS INT) AS performance_pct, CAST(ROUND(CASE WHEN total_units > 0 THEN good_units * 100.0 / total_units ELSE 0 END, 0) AS INT) AS quality_pct, CAST(ROUND(CASE WHEN planned_minutes > 0 AND total_units > 0 THEN (CASE WHEN planned_minutes > 0 THEN (planned_minutes - downtime_minutes) * 1.0 / planned_minutes ELSE 0 END) * (CASE WHEN (planned_minutes - downtime_minutes) > 0 AND total_units > 0 THEN LEAST(1.0, ideal_cycle_sec * total_units * 1.0 / ((planned_minutes - downtime_minutes) * 60)) ELSE 0 END) * (CASE WHEN total_units > 0 THEN good_units * 1.0 / total_units ELSE 0 END) * 100 ELSE 0 END, 0) AS INT) AS oee_pct FROM mes_oee_shift WHERE id = CAST(? AS uuid)\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"kpi\",\"message\":\"Shift not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lineCode\":\"${kpi.line_code}\",\"shiftLabel\":\"${kpi.shift_label}\",\"availabilityPct\":\"${kpi.availability_pct}\",\"performancePct\":\"${kpi.performance_pct}\",\"qualityPct\":\"${kpi.quality_pct}\",\"oeePct\":\"${kpi.oee_pct}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "nestedSchema": {
+                "fields": [
+                  {
+                    "name": "shiftId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "shiftLabel",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "plannedMinutes",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "downtimeMinutes",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "totalUnits",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "goodUnits",
+                    "type": "INTEGER"
+                  }
+                ],
+                "name": "shift_row"
+              },
+              "type": "RECORD_LIST"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_oee_listShifts",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"shifts\",\"sql\":\"SELECT id::text AS shift_id, line_code, shift_label, planned_minutes, downtime_minutes, total_units, good_units FROM mes_oee_shift ORDER BY line_code, shift_label\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${shifts}\",\"fields\":{\"shiftId\":\"${item.shift_id}\",\"lineCode\":\"${item.line_code}\",\"shiftLabel\":\"${item.shift_label}\",\"plannedMinutes\":\"${item.planned_minutes}\",\"downtimeMinutes\":\"${item.downtime_minutes}\",\"totalUnits\":\"${item.total_units}\",\"goodUnits\":\"${item.good_units}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "workOrderNumber",
+              "type": "STRING"
+            },
+            {
+              "name": "operationId",
+              "type": "STRING"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "workOrderNumber",
+              "type": "STRING"
+            },
+            {
+              "name": "operationId",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "nestedSchema": {
+                "fields": [
+                  {
+                    "name": "workOrderNumber",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "operationId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "routingId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "name",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "workCenter",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "sequenceNo",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ],
+                "name": "operation_row"
+              },
+              "type": "RECORD_LIST"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_ops_complete",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"operation\",\"sql\":\"SELECT s.wo_number, d.operation_id, d.routing_id, d.name, d.work_center, d.sequence_no, s.status FROM mes_operation_status s JOIN mes_operation_def d ON d.operation_id = s.operation_id WHERE s.wo_number = ? AND s.status = 'ready' AND NOT EXISTS (SELECT 1 FROM mes_operation_edge e LEFT JOIN mes_operation_status ps ON ps.wo_number = s.wo_number AND ps.operation_id = e.predecessor_op WHERE e.routing_id = d.routing_id AND e.successor_op = s.operation_id AND (ps.status IS NULL OR ps.status <> 'complete')) ORDER BY d.sequence_no\",\"params\":[\"${input.workOrderNumber}\",\"${input.operationId}\"]},{\"type\":\"failIfNull\",\"var\":\"operation\",\"message\":\"Operation status not found\"},{\"type\":\"exec\",\"sql\":\"SELECT s.wo_number, d.operation_id, d.routing_id, d.name, d.work_center, d.sequence_no, s.status FROM mes_operation_status s JOIN mes_operation_def d ON d.operation_id = s.operation_id WHERE s.wo_number = ? AND s.status = 'ready' AND NOT EXISTS (SELECT 1 FROM mes_operation_edge e LEFT JOIN mes_operation_status ps ON ps.wo_number = s.wo_number AND ps.operation_id = e.predecessor_op WHERE e.routing_id = d.routing_id AND e.successor_op = s.operation_id AND (ps.status IS NULL OR ps.status <> 'complete')) ORDER BY d.sequence_no\",\"params\":[\"${input.workOrderNumber}\",\"${input.operationId}\"]},{\"type\":\"exec\",\"sql\":\"SELECT s.wo_number, d.operation_id, d.routing_id, d.name, d.work_center, d.sequence_no, s.status FROM mes_operation_status s JOIN mes_operation_def d ON d.operation_id = s.operation_id WHERE s.wo_number = ? AND s.status = 'ready' AND NOT EXISTS (SELECT 1 FROM mes_operation_edge e LEFT JOIN mes_operation_status ps ON ps.wo_number = s.wo_number AND ps.operation_id = e.predecessor_op WHERE e.routing_id = d.routing_id AND e.successor_op = s.operation_id AND (ps.status IS NULL OR ps.status <> 'complete')) ORDER BY d.sequence_no\",\"params\":[\"${input.workOrderNumber}\",\"${input.operationId}\",\"${input.workOrderNumber}\"]},{\"type\":\"selectMany\",\"var\":\"ready\",\"sql\":\"SELECT s.wo_number, d.operation_id, d.routing_id, d.name, d.work_center, d.sequence_no, s.status FROM mes_operation_status s JOIN mes_operation_def d ON d.operation_id = s.operation_id WHERE s.wo_number = ? AND s.status = 'ready' AND NOT EXISTS (SELECT 1 FROM mes_operation_edge e LEFT JOIN mes_operation_status ps ON ps.wo_number = s.wo_number AND ps.operation_id = e.predecessor_op WHERE e.routing_id = d.routing_id AND e.successor_op = s.operation_id AND (ps.status IS NULL OR ps.status <> 'complete')) ORDER BY d.sequence_no\",\"params\":[\"${input.workOrderNumber}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${ready}\",\"fields\":{\"workOrderNumber\":\"${item.wo_number}\",\"operationId\":\"${item.operation_id}\",\"routingId\":\"${item.routing_id}\",\"name\":\"${item.name}\",\"workCenter\":\"${item.work_center}\",\"sequenceNo\":\"${item.sequence_no}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"workOrderNumber\":\"${input.workOrderNumber}\",\"operationId\":\"${input.operationId}\",\"rows\":\"${rows}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "workOrderNumber",
+              "type": "STRING"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "workOrderNumber",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "nestedSchema": {
+                "fields": [
+                  {
+                    "name": "workOrderNumber",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "operationId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "routingId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "name",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "workCenter",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "sequenceNo",
+                    "type": "INTEGER"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ],
+                "name": "operation_row"
+              },
+              "type": "RECORD_LIST"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_ops_listReady",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"ready\",\"sql\":\"SELECT s.wo_number, d.operation_id, d.routing_id, d.name, d.work_center, d.sequence_no, s.status FROM mes_operation_status s JOIN mes_operation_def d ON d.operation_id = s.operation_id WHERE s.wo_number = ? AND s.status = 'ready' AND NOT EXISTS (SELECT 1 FROM mes_operation_edge e LEFT JOIN mes_operation_status ps ON ps.wo_number = s.wo_number AND ps.operation_id = e.predecessor_op WHERE e.routing_id = d.routing_id AND e.successor_op = s.operation_id AND (ps.status IS NULL OR ps.status <> 'complete')) ORDER BY d.sequence_no\",\"params\":[\"${input.workOrderNumber}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${ready}\",\"fields\":{\"workOrderNumber\":\"${item.wo_number}\",\"operationId\":\"${item.operation_id}\",\"routingId\":\"${item.routing_id}\",\"name\":\"${item.name}\",\"workCenter\":\"${item.work_center}\",\"sequenceNo\":\"${item.sequence_no}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"workOrderNumber\":\"${input.workOrderNumber}\",\"rows\":\"${rows}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "nestedSchema": {
+                "fields": [
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "displayName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "areaPath",
+                    "type": "STRING"
+                  }
+                ],
+                "name": "line_row"
+              },
+              "type": "RECORD_LIST"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_platform_listLines",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"lines\",\"sql\":\"SELECT line_code, display_name, area_path FROM mes_platform_line ORDER BY line_code\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${lines}\",\"fields\":{\"lineCode\":\"${item.line_code}\",\"displayName\":\"${item.display_name}\",\"areaPath\":\"${item.area_path}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "nestedSchema": {
+                "fields": [
+                  {
+                    "name": "sampleId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "lineCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "measurementMm",
+                    "type": "DOUBLE"
+                  },
+                  {
+                    "name": "sampleTs",
+                    "type": "STRING"
+                  }
+                ],
+                "name": "spc_row"
+              },
+              "type": "RECORD_LIST"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_quality_listSpcSamples",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"samples\",\"sql\":\"SELECT id::text AS sample_id, line_code, measurement_mm, sample_ts::text AS sample_ts FROM mes_spc_sample ORDER BY sample_ts DESC LIMIT 20\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${samples}\",\"fields\":{\"sampleId\":\"${item.sample_id}\",\"lineCode\":\"${item.line_code}\",\"measurementMm\":\"${item.measurement_mm}\",\"sampleTs\":\"${item.sample_ts}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "recipeId",
+              "type": "STRING"
+            },
+            {
+              "name": "revision",
+              "type": "STRING"
+            },
+            {
+              "name": "displayName",
+              "type": "STRING"
+            },
+            {
+              "name": "signature",
+              "type": "STRING"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "recipeId",
+              "type": "STRING"
+            },
+            {
+              "name": "revision",
+              "type": "STRING"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_recipe_release",
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "source": {
+        "body": "{\"signaturePolicy\":\"REQUIRED\",\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_recipe (recipe_id, revision, display_name, effective_from, status) SELECT ?, CAST(? AS INTEGER), ?, CURRENT_TIMESTAMP, 'released' WHERE NOT EXISTS (SELECT 1 FROM mes_recipe WHERE recipe_id = ? AND revision = CAST(? AS INTEGER))\",\"params\":[\"${input.recipeId}\",\"${input.revision}\",\"${input.displayName}\",\"${input.recipeId}\",\"${input.revision}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"recipeId\":\"${input.recipeId}\",\"revision\":\"${input.revision}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    }
+  ],
+  "metadata": {
+    "changelog": "1.5.0 - BL-222 Nested BoM + operations dependency graph: BoM explosion/where-used, ready-operation BFF, Operator dashboard; 1.4.0 - BL-221 Traceability DAG v2",
+    "delivery": "marketplace",
+    "forkedFrom": {
+      "schemaName": "app_mes_platform",
+      "sha256": "8da3ea55fbe405942c8de325fc16dabfd352353c61dd1bc1e64a57625ee88f0f",
+      "version": "2.0.0"
+    },
+    "note": "Template factory. A real plant is created with ispf fork of this directory.",
+    "product": "mes",
+    "publisher": "IoT Solutions",
+    "role": "demo-plant"
+  },
+  "migrations": [
+    {
+      "id": "mes_platform_schema",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_platform_line (line_code VARCHAR(32) PRIMARY KEY, display_name VARCHAR(128) NOT NULL, area_path VARCHAR(256)); CREATE TABLE IF NOT EXISTS mes_oee_shift (id UUID PRIMARY KEY, line_code VARCHAR(32) NOT NULL, shift_label VARCHAR(64) NOT NULL, planned_minutes INTEGER NOT NULL, downtime_minutes INTEGER NOT NULL, ideal_cycle_sec INTEGER NOT NULL, total_units INTEGER NOT NULL, good_units INTEGER NOT NULL);"
+    },
+    {
+      "id": "mes_platform_phase29",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_spc_sample (id UUID PRIMARY KEY, line_code VARCHAR(32) NOT NULL, measurement_mm NUMERIC(8,3) NOT NULL, sample_ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE TABLE IF NOT EXISTS mes_erp_outbox (id UUID PRIMARY KEY, entity_type VARCHAR(32) NOT NULL, entity_id VARCHAR(64) NOT NULL, payload_json TEXT NOT NULL, idempotency_key VARCHAR(128) NOT NULL UNIQUE, status VARCHAR(16) NOT NULL DEFAULT 'pending', created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, processed_at TIMESTAMP NULL); CREATE TABLE IF NOT EXISTS mes_batch_run (batch_path VARCHAR(256) PRIMARY KEY, batch_id VARCHAR(64) NOT NULL, recipe VARCHAR(64) NOT NULL, phase VARCHAR(32) NOT NULL DEFAULT 'idle', updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
+    },
+    {
+      "id": "mes_platform_genealogy",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_genealogy_material (material_code VARCHAR(64) PRIMARY KEY, display_name VARCHAR(128) NOT NULL, uom VARCHAR(16) NOT NULL DEFAULT 'EA'); CREATE TABLE IF NOT EXISTS mes_genealogy_lot (lot_id VARCHAR(64) PRIMARY KEY, lot_path VARCHAR(256) NOT NULL, material_code VARCHAR(64) NOT NULL, work_order_number VARCHAR(64) NOT NULL, line_code VARCHAR(32) NOT NULL, quantity NUMERIC(12,3) NOT NULL DEFAULT 0, status VARCHAR(32) NOT NULL DEFAULT 'active'); CREATE TABLE IF NOT EXISTS mes_genealogy_quality (quality_id VARCHAR(64) PRIMARY KEY, lot_id VARCHAR(64) NOT NULL, defect_code VARCHAR(64), severity VARCHAR(32) NOT NULL DEFAULT 'ok', result VARCHAR(32) NOT NULL DEFAULT 'pass', recorded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);"
+    },
+    {
+      "id": "mes_platform_genealogy_dag_v2",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_tracked_entity (entity_id VARCHAR(64) PRIMARY KEY, entity_type VARCHAR(32) NOT NULL, display_name VARCHAR(128) NOT NULL, lot_id VARCHAR(64), material_code VARCHAR(64), status VARCHAR(32) NOT NULL DEFAULT 'available', attributes_json TEXT DEFAULT '{}'); CREATE TABLE IF NOT EXISTS mes_tracked_activity (activity_id VARCHAR(64) PRIMARY KEY, activity_type VARCHAR(32) NOT NULL, work_order_number VARCHAR(64) NOT NULL, line_code VARCHAR(32) NOT NULL, occurred_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, attributes_json TEXT DEFAULT '{}'); CREATE TABLE IF NOT EXISTS mes_tracked_activity_input (activity_id VARCHAR(64) NOT NULL, entity_id VARCHAR(64) NOT NULL, quantity NUMERIC(12,3) NOT NULL DEFAULT 0, PRIMARY KEY (activity_id, entity_id)); CREATE TABLE IF NOT EXISTS mes_tracked_activity_output (activity_id VARCHAR(64) NOT NULL, entity_id VARCHAR(64) NOT NULL, quantity NUMERIC(12,3) NOT NULL DEFAULT 0, PRIMARY KEY (activity_id, entity_id));"
+    },
+    {
+      "id": "mes_platform_bom_ops_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_bom_header (bom_id VARCHAR(64) PRIMARY KEY, parent_material_code VARCHAR(64) NOT NULL, revision VARCHAR(32) NOT NULL, display_name VARCHAR(128) NOT NULL, status VARCHAR(32) NOT NULL); CREATE TABLE IF NOT EXISTS mes_bom_line (bom_id VARCHAR(64) NOT NULL, line_no INTEGER NOT NULL, component_material_code VARCHAR(64) NOT NULL, quantity NUMERIC(12,3) NOT NULL, uom VARCHAR(16) NOT NULL, PRIMARY KEY (bom_id, line_no)); CREATE TABLE IF NOT EXISTS mes_operation_def (operation_id VARCHAR(64) PRIMARY KEY, routing_id VARCHAR(64) NOT NULL, name VARCHAR(128) NOT NULL, work_center VARCHAR(64) NOT NULL, sequence_no INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS mes_operation_edge (routing_id VARCHAR(64) NOT NULL, predecessor_op VARCHAR(64) NOT NULL, successor_op VARCHAR(64) NOT NULL, PRIMARY KEY (routing_id, predecessor_op, successor_op)); CREATE TABLE IF NOT EXISTS mes_operation_status (wo_number VARCHAR(64) NOT NULL, operation_id VARCHAR(64) NOT NULL, status VARCHAR(16) NOT NULL CHECK (status IN ('pending', 'ready', 'complete')), PRIMARY KEY (wo_number, operation_id));"
+    },
+    {
+      "id": "mes_platform_recipe_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_recipe (recipe_id VARCHAR(64) NOT NULL, revision INTEGER NOT NULL, display_name VARCHAR(128) NOT NULL, effective_from TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, effective_to TIMESTAMP, status VARCHAR(32) NOT NULL, PRIMARY KEY (recipe_id, revision));"
+    }
+  ],
+  "objects": [
+    {
+      "description": "Manufacturing operations catalog (IoT Solutions MES product)",
+      "displayName": "MES",
+      "name": "mes",
+      "parentPath": "root.platform",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "MES work orders",
+      "displayName": "Work Orders",
+      "name": "work-orders",
+      "parentPath": "root.platform.mes",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "MES operations",
+      "displayName": "Operations",
+      "name": "operations",
+      "parentPath": "root.platform.mes",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "MES lots / batches",
+      "displayName": "Lots",
+      "name": "lots",
+      "parentPath": "root.platform.mes",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "MES shifts",
+      "displayName": "Shifts",
+      "name": "shifts",
+      "parentPath": "root.platform.mes",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "MES quality records",
+      "displayName": "Quality Records",
+      "name": "quality-records",
+      "parentPath": "root.platform.mes",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "MES plant instances",
+      "displayName": "MES Instances",
+      "name": "instances",
+      "parentPath": "root.platform.mes",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "Seed work order for LINE-A01 (BL-164 / BL-166)",
+      "displayName": "WO-LINE-A01-001",
+      "name": "wo-line-a01-001",
+      "parentPath": "root.platform.mes.work-orders",
+      "templateId": "work-order-v1",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "Seed routing operation for LINE-A01 (BL-164)",
+      "displayName": "Assemble A01",
+      "name": "op-assemble-a01",
+      "parentPath": "root.platform.mes.operations",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "Seed ISA-88 batch / lot (BL-164 / BL-168)",
+      "displayName": "BATCH-LINE-A01-001",
+      "name": "batch-line-a01-001",
+      "parentPath": "root.platform.mes.lots",
+      "templateId": "batch-v1",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "Seed production shift (BL-164 / BL-165)",
+      "displayName": "Morning LINE-A01",
+      "name": "shift-morning-a01",
+      "parentPath": "root.platform.mes.shifts",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "Seed quality / defect record (BL-164 / BL-167)",
+      "displayName": "QR-LINE-A01-001",
+      "name": "qr-line-a01-001",
+      "parentPath": "root.platform.mes.quality-records",
+      "templateId": "quality-record-v1",
+      "type": "CUSTOM"
+    },
+    {
+      "description": "ISA-95 site seed (BL-164 / BL-165)",
+      "displayName": "Plant A",
+      "name": "plant-a",
+      "parentPath": "root.platform.mes.instances",
+      "type": "DEVICE"
+    },
+    {
+      "description": "ISA-95 areas container",
+      "displayName": "Areas",
+      "name": "areas",
+      "parentPath": "root.platform.mes.instances.plant-a",
+      "type": "DEVICE"
+    },
+    {
+      "description": "ISA-95 assembly area",
+      "displayName": "Assembly",
+      "name": "assembly",
+      "parentPath": "root.platform.mes.instances.plant-a.areas",
+      "type": "DEVICE"
+    },
+    {
+      "description": "ISA-95 lines container",
+      "displayName": "Lines",
+      "name": "lines",
+      "parentPath": "root.platform.mes.instances.plant-a.areas.assembly",
+      "type": "DEVICE"
+    },
+    {
+      "description": "Assembly Line A01 — OEE / dispatch target",
+      "displayName": "LINE-A01",
+      "name": "line-a01",
+      "parentPath": "root.platform.mes.instances.plant-a.areas.assembly.lines",
+      "type": "DEVICE"
+    }
+  ],
+  "operatorUi": {
+    "appId": "demo-plant",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.mes-platform-dispatch",
+        "title": "Dispatch"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-oee",
+        "title": "OEE"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-quality",
+        "title": "Quality"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-genealogy",
+        "title": "Genealogy"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-batch",
+        "title": "Batch"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-bom-ops",
+        "title": "BoM + Ops"
+      }
+    ],
+    "defaultDashboard": "root.platform.dashboards.mes-platform-dispatch",
+    "defaultReport": "root.platform.reports.mes-genealogy",
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+    "reports": [
+      {
+        "path": "root.platform.reports.mes-genealogy",
+        "title": "Genealogy"
+      },
+      {
+        "path": "root.platform.reports.mes-genealogy-by-lot",
+        "title": "Genealogy by lot"
+      },
+      {
+        "path": "root.platform.reports.mes-genealogy-dag",
+        "title": "Genealogy DAG"
+      }
+    ],
+    "title": "Демо-завод"
+  },
+  "reports": [
+    {
+      "columns": [
+        {
+          "field": "lot_id",
+          "label": "Lot"
+        },
+        {
+          "field": "material_code",
+          "label": "Material"
+        },
+        {
+          "field": "material_name",
+          "label": "Material name"
+        },
+        {
+          "field": "work_order_number",
+          "label": "Work order"
+        },
+        {
+          "field": "line_code",
+          "label": "Line"
+        },
+        {
+          "field": "quantity",
+          "label": "Qty"
+        },
+        {
+          "field": "lot_status",
+          "label": "Lot status"
+        },
+        {
+          "field": "quality_id",
+          "label": "Quality record"
+        },
+        {
+          "field": "defect_code",
+          "label": "Defect"
+        },
+        {
+          "field": "severity",
+          "label": "Severity"
+        },
+        {
+          "field": "quality_result",
+          "label": "Result"
+        }
+      ],
+      "description": "Lot ↔ material ↔ work-order ↔ quality record (BL-193)",
+      "maxRows": 500,
+      "parameters": [],
+      "query": "SELECT l.lot_id, l.material_code, m.display_name AS material_name, l.work_order_number, l.line_code, l.quantity, l.status AS lot_status, q.quality_id, COALESCE(q.defect_code, '') AS defect_code, COALESCE(q.severity, '') AS severity, COALESCE(q.result, '') AS quality_result FROM mes_genealogy_lot l JOIN mes_genealogy_material m ON m.material_code = l.material_code LEFT JOIN mes_genealogy_quality q ON q.lot_id = l.lot_id ORDER BY l.lot_id, q.quality_id",
+      "reportId": "mes-genealogy",
+      "title": "MES Genealogy"
+    },
+    {
+      "columns": [
+        {
+          "field": "lot_id",
+          "label": "Lot"
+        },
+        {
+          "field": "material_code",
+          "label": "Material"
+        },
+        {
+          "field": "material_name",
+          "label": "Material name"
+        },
+        {
+          "field": "work_order_number",
+          "label": "Work order"
+        },
+        {
+          "field": "line_code",
+          "label": "Line"
+        },
+        {
+          "field": "quality_id",
+          "label": "Quality record"
+        },
+        {
+          "field": "defect_code",
+          "label": "Defect"
+        },
+        {
+          "field": "quality_result",
+          "label": "Result"
+        }
+      ],
+      "description": "Filter genealogy graph by lot id (seed: BATCH-LINE-A01-001)",
+      "maxRows": 200,
+      "parameters": [
+        "lotId"
+      ],
+      "query": "SELECT l.lot_id, l.material_code, m.display_name AS material_name, l.work_order_number, l.line_code, q.quality_id, COALESCE(q.defect_code, '') AS defect_code, COALESCE(q.result, '') AS quality_result FROM mes_genealogy_lot l JOIN mes_genealogy_material m ON m.material_code = l.material_code LEFT JOIN mes_genealogy_quality q ON q.lot_id = l.lot_id WHERE l.lot_id = ? ORDER BY q.quality_id",
+      "reportId": "mes-genealogy-by-lot",
+      "title": "MES Genealogy by lot"
+    },
+    {
+      "columns": [
+        {
+          "field": "from_entity_id",
+          "label": "From entity"
+        },
+        {
+          "field": "from_lot_id",
+          "label": "From lot"
+        },
+        {
+          "field": "from_material_code",
+          "label": "From material"
+        },
+        {
+          "field": "to_entity_id",
+          "label": "To entity"
+        },
+        {
+          "field": "to_lot_id",
+          "label": "To lot"
+        },
+        {
+          "field": "to_material_code",
+          "label": "To material"
+        },
+        {
+          "field": "activity_id",
+          "label": "Activity"
+        },
+        {
+          "field": "activity_type",
+          "label": "Activity type"
+        },
+        {
+          "field": "quantity",
+          "label": "Qty"
+        },
+        {
+          "field": "work_order_number",
+          "label": "Work order"
+        },
+        {
+          "field": "line_code",
+          "label": "Line"
+        },
+        {
+          "field": "occurred_at",
+          "label": "Occurred at"
+        }
+      ],
+      "description": "Tracked entity activity edges (BL-221)",
+      "maxRows": 500,
+      "parameters": [],
+      "query": "SELECT i.entity_id AS from_entity_id, COALESCE(src.lot_id, '') AS from_lot_id, COALESCE(src.material_code, '') AS from_material_code, o.entity_id AS to_entity_id, COALESCE(dst.lot_id, '') AS to_lot_id, COALESCE(dst.material_code, '') AS to_material_code, a.activity_id, a.activity_type, o.quantity AS quantity, a.work_order_number, a.line_code, CAST(a.occurred_at AS VARCHAR) AS occurred_at FROM mes_tracked_activity a JOIN mes_tracked_activity_input i ON i.activity_id = a.activity_id JOIN mes_tracked_activity_output o ON o.activity_id = a.activity_id JOIN mes_tracked_entity src ON src.entity_id = i.entity_id JOIN mes_tracked_entity dst ON dst.entity_id = o.entity_id ORDER BY a.activity_id, i.entity_id, o.entity_id",
+      "reportId": "mes-genealogy-dag",
+      "title": "MES Genealogy DAG"
+    }
+  ],
+  "schedules": [
+    {
+      "action": {
+        "functionName": "mes_erp_pollOutbox",
+        "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1"
+      },
+      "actionType": "invoke_function",
+      "enabled": false,
+      "intervalMs": 5000,
+      "scheduleId": "mes-erp-outbox-poll"
+    }
+  ],
+  "schemaName": "app_demo_plant",
+  "seeds": [
+    {
+      "id": "mes_platform_bom_ops_v1_demo",
+      "profile": "default",
+      "sql": "INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-WIDGET-A01', 'Assembly widget A01', 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-WIDGET-A01'); INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-RAW-A01', 'Raw material A01', 'KG' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-RAW-A01'); INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-WIP-A01', 'WIP material A01', 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-WIP-A01'); INSERT INTO mes_bom_header (bom_id, parent_material_code, revision, display_name, status) SELECT 'BOM-WIDGET-A01-A', 'MAT-WIDGET-A01', 'A', 'Widget A01 BoM rev A', 'active' WHERE NOT EXISTS (SELECT 1 FROM mes_bom_header WHERE bom_id = 'BOM-WIDGET-A01-A'); INSERT INTO mes_bom_line (bom_id, line_no, component_material_code, quantity, uom) SELECT 'BOM-WIDGET-A01-A', 10, 'MAT-RAW-A01', 2.000, 'KG' WHERE NOT EXISTS (SELECT 1 FROM mes_bom_line WHERE bom_id = 'BOM-WIDGET-A01-A' AND line_no = 10); INSERT INTO mes_bom_line (bom_id, line_no, component_material_code, quantity, uom) SELECT 'BOM-WIDGET-A01-A', 20, 'MAT-WIP-A01', 1.000, 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_bom_line WHERE bom_id = 'BOM-WIDGET-A01-A' AND line_no = 20); INSERT INTO mes_operation_def (operation_id, routing_id, name, work_center, sequence_no) SELECT 'OP-CUT', 'RT-WIDGET-A01', 'Cut raw material', 'WC-CUT', 10 WHERE NOT EXISTS (SELECT 1 FROM mes_operation_def WHERE operation_id = 'OP-CUT'); INSERT INTO mes_operation_def (operation_id, routing_id, name, work_center, sequence_no) SELECT 'OP-ASSEMBLE', 'RT-WIDGET-A01', 'Assemble widget', 'WC-ASSEMBLY', 20 WHERE NOT EXISTS (SELECT 1 FROM mes_operation_def WHERE operation_id = 'OP-ASSEMBLE'); INSERT INTO mes_operation_def (operation_id, routing_id, name, work_center, sequence_no) SELECT 'OP-TEST', 'RT-WIDGET-A01', 'Test widget', 'WC-TEST', 30 WHERE NOT EXISTS (SELECT 1 FROM mes_operation_def WHERE operation_id = 'OP-TEST'); INSERT INTO mes_operation_edge (routing_id, predecessor_op, successor_op) SELECT 'RT-WIDGET-A01', 'OP-CUT', 'OP-ASSEMBLE' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_edge WHERE routing_id = 'RT-WIDGET-A01' AND predecessor_op = 'OP-CUT' AND successor_op = 'OP-ASSEMBLE'); INSERT INTO mes_operation_edge (routing_id, predecessor_op, successor_op) SELECT 'RT-WIDGET-A01', 'OP-ASSEMBLE', 'OP-TEST' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_edge WHERE routing_id = 'RT-WIDGET-A01' AND predecessor_op = 'OP-ASSEMBLE' AND successor_op = 'OP-TEST'); INSERT INTO mes_operation_status (wo_number, operation_id, status) SELECT 'WO-LINE-A01-001', 'OP-CUT', 'complete' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_status WHERE wo_number = 'WO-LINE-A01-001' AND operation_id = 'OP-CUT'); INSERT INTO mes_operation_status (wo_number, operation_id, status) SELECT 'WO-LINE-A01-001', 'OP-ASSEMBLE', 'ready' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_status WHERE wo_number = 'WO-LINE-A01-001' AND operation_id = 'OP-ASSEMBLE'); INSERT INTO mes_operation_status (wo_number, operation_id, status) SELECT 'WO-LINE-A01-001', 'OP-TEST', 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_operation_status WHERE wo_number = 'WO-LINE-A01-001' AND operation_id = 'OP-TEST');"
+    },
+    {
+      "id": "mes_platform_genealogy_dag_v2_demo",
+      "profile": "default",
+      "sql": "INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-RAW-A01', 'Raw material A01', 'KG' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-RAW-A01'); INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-WIP-A01', 'WIP material A01', 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-WIP-A01'); INSERT INTO mes_tracked_entity (entity_id, entity_type, display_name, lot_id, material_code, status, attributes_json) SELECT 'ENT-RAW-A01', 'MATERIAL_LOT', 'Raw lot A01', 'LOT-RAW-A01', 'MAT-RAW-A01', 'available', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_entity WHERE entity_id = 'ENT-RAW-A01'); INSERT INTO mes_tracked_entity (entity_id, entity_type, display_name, lot_id, material_code, status, attributes_json) SELECT 'ENT-WIP-B01', 'WIP_LOT', 'WIP lot B01', 'LOT-WIP-B01', 'MAT-WIP-A01', 'in_process', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_entity WHERE entity_id = 'ENT-WIP-B01'); INSERT INTO mes_tracked_entity (entity_id, entity_type, display_name, lot_id, material_code, status, attributes_json) SELECT 'ENT-FG-A01', 'FINISHED_GOOD', 'Finished good A01', 'BATCH-LINE-A01-001', 'MAT-WIDGET-A01', 'available', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_entity WHERE entity_id = 'ENT-FG-A01'); INSERT INTO mes_tracked_activity (activity_id, activity_type, work_order_number, line_code, attributes_json) SELECT 'ACT-TRANSFORM-1', 'TRANSFORM', 'WO-LINE-A01-001', 'LINE-A01', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity WHERE activity_id = 'ACT-TRANSFORM-1'); INSERT INTO mes_tracked_activity (activity_id, activity_type, work_order_number, line_code, attributes_json) SELECT 'ACT-TRANSFORM-2', 'TRANSFORM', 'WO-LINE-A01-001', 'LINE-A01', '{}' WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity WHERE activity_id = 'ACT-TRANSFORM-2'); INSERT INTO mes_tracked_activity_input (activity_id, entity_id, quantity) SELECT 'ACT-TRANSFORM-1', 'ENT-RAW-A01', 100.000 WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity_input WHERE activity_id = 'ACT-TRANSFORM-1' AND entity_id = 'ENT-RAW-A01'); INSERT INTO mes_tracked_activity_output (activity_id, entity_id, quantity) SELECT 'ACT-TRANSFORM-1', 'ENT-WIP-B01', 100.000 WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity_output WHERE activity_id = 'ACT-TRANSFORM-1' AND entity_id = 'ENT-WIP-B01'); INSERT INTO mes_tracked_activity_input (activity_id, entity_id, quantity) SELECT 'ACT-TRANSFORM-2', 'ENT-WIP-B01', 100.000 WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity_input WHERE activity_id = 'ACT-TRANSFORM-2' AND entity_id = 'ENT-WIP-B01'); INSERT INTO mes_tracked_activity_output (activity_id, entity_id, quantity) SELECT 'ACT-TRANSFORM-2', 'ENT-FG-A01', 100.000 WHERE NOT EXISTS (SELECT 1 FROM mes_tracked_activity_output WHERE activity_id = 'ACT-TRANSFORM-2' AND entity_id = 'ENT-FG-A01');"
+    },
+    {
+      "id": "mes_platform_genealogy_demo",
+      "profile": "default",
+      "sql": "INSERT INTO mes_genealogy_material (material_code, display_name, uom) SELECT 'MAT-WIDGET-A01', 'Assembly widget A01', 'EA' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_material WHERE material_code = 'MAT-WIDGET-A01'); INSERT INTO mes_genealogy_lot (lot_id, lot_path, material_code, work_order_number, line_code, quantity, status) SELECT 'BATCH-LINE-A01-001', 'root.platform.mes.lots.batch-line-a01-001', 'MAT-WIDGET-A01', 'WO-LINE-A01-001', 'LINE-A01', 2050, 'active' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_lot WHERE lot_id = 'BATCH-LINE-A01-001'); INSERT INTO mes_genealogy_quality (quality_id, lot_id, defect_code, severity, result) SELECT 'QR-LINE-A01-001', 'BATCH-LINE-A01-001', NULL, 'ok', 'pass' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_quality WHERE quality_id = 'QR-LINE-A01-001'); INSERT INTO mes_genealogy_quality (quality_id, lot_id, defect_code, severity, result) SELECT 'QR-LINE-A01-002', 'BATCH-LINE-A01-001', 'SCRATCH', 'minor', 'ncr' WHERE NOT EXISTS (SELECT 1 FROM mes_genealogy_quality WHERE quality_id = 'QR-LINE-A01-002');"
+    },
+    {
+      "id": "mes_platform_phase29_demo",
+      "profile": "default",
+      "sql": "INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'LINE-A01', 10.02 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'); INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeef', 'LINE-A01', 9.98 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeef'); INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee0', 'LINE-A01', 10.05 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee0'); INSERT INTO mes_batch_run (batch_path, batch_id, recipe, phase) SELECT 'root.platform.mes.lots.batch-line-a01-001', 'BATCH-LINE-A01-001', 'recipe-standard-a', 'charge' WHERE NOT EXISTS (SELECT 1 FROM mes_batch_run WHERE batch_path = 'root.platform.mes.lots.batch-line-a01-001');"
+    },
+    {
+      "id": "mes_platform_schema_demo",
+      "profile": "default",
+      "sql": "INSERT INTO mes_platform_line (line_code, display_name, area_path) SELECT 'LINE-A01', 'Assembly Line A01', 'root.platform.mes.instances.plant-a.areas.assembly.lines.line-a01' WHERE NOT EXISTS (SELECT 1 FROM mes_platform_line WHERE line_code = 'LINE-A01'); INSERT INTO mes_oee_shift (id, line_code, shift_label, planned_minutes, downtime_minutes, ideal_cycle_sec, total_units, good_units) SELECT 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'LINE-A01', 'Morning', 480, 45, 12, 2100, 2050 WHERE NOT EXISTS (SELECT 1 FROM mes_oee_shift WHERE line_code = 'LINE-A01' AND shift_label = 'Morning');"
+    }
+  ],
+  "tablePrefix": "",
+  "version": "2.0.0",
+  "workflows": [
+    {
+      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:ispf=\"http://ispf.io/bpmn\" targetNamespace=\"http://ispf.io/bpmn\"><process id=\"mes-work-order-dispatch\" name=\"MES Work Order Dispatch\" isExecutable=\"true\"><startEvent id=\"start\" name=\"Start\"/><serviceTask id=\"notifyDispatch\" name=\"Log dispatch\" ispf:action=\"log\" ispf:message=\"mes-platform: work order dispatched\"/><userTask id=\"confirmStart\" name=\"Confirm work order start\" ispf:title=\"Confirm work order start\" ispf:instructions=\"Review the dispatched work order and confirm operator acceptance\" ispf:assigneeRole=\"operator\" ispf:targetObject=\"root.platform.singleton-blueprints.mes-platform-hub-v1\" ispf:function=\"mes_dispatch_confirmWorkOrder\"/><endEvent id=\"end\" name=\"End\"/><sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"notifyDispatch\"/><sequenceFlow id=\"f2\" sourceRef=\"notifyDispatch\" targetRef=\"confirmStart\"/><sequenceFlow id=\"f3\" sourceRef=\"confirmStart\" targetRef=\"end\"/></process></definitions>\n",
+      "operatorAppId": "mes-platform",
+      "path": "root.platform.workflows.mes-work-order-dispatch",
+      "status": "ACTIVE"
+    }
+  ]
+}
