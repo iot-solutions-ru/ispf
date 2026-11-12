@@ -10,6 +10,12 @@ import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.script.PlatformScriptBridge;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
@@ -60,6 +66,8 @@ public class FunctionTestRunner {
     public TestResult run(TestSpec spec) {
         List<String> errors = new ArrayList<>();
         Map<String, Object> details = new LinkedHashMap<>();
+        SecurityContext previous = SecurityContextHolder.getContext();
+        boolean installedTestPrincipal = ensureAuthenticatedPrincipalForBundleTests();
         try {
             if ("telemetry".equalsIgnoreCase(spec.kind())) {
                 runTelemetry(spec, details, errors);
@@ -70,6 +78,12 @@ public class FunctionTestRunner {
             errors.add(ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName());
             details.put("exception", ex.getClass().getSimpleName());
         } finally {
+            if (installedTestPrincipal) {
+                SecurityContextHolder.clearContext();
+                if (previous != null) {
+                    SecurityContextHolder.setContext(previous);
+                }
+            }
             if (spec.rollback()) {
                 try {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -85,6 +99,29 @@ public class FunctionTestRunner {
                 errors,
                 details
         );
+    }
+
+    /**
+     * Bundle function tests often exercise {@code signaturePolicy=REQUIRED}. Deploy itself is
+     * authenticated in production, but the in-process test runner may have no SecurityContext.
+     */
+    private static boolean ensureAuthenticatedPrincipalForBundleTests() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)
+                && authentication.getName() != null
+                && !authentication.getName().isBlank()) {
+            return false;
+        }
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        "bundle-test",
+                        "n/a",
+                        List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
+                )
+        );
+        return true;
     }
 
     private void runFunction(TestSpec spec, Map<String, Object> details, List<String> errors) throws Exception {
