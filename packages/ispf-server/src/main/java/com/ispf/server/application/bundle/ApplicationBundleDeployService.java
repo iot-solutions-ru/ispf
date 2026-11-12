@@ -328,14 +328,13 @@ public class ApplicationBundleDeployService {
     /**
      * Best-effort rollback of tree artifacts when deploy did not activate a snapshot.
      * First install: remove manifest-managed paths. Upgrade with prior active snapshot:
-     * visual groups only (do not delete paths owned by the previous version).
+     * re-apply the active bundle (do not strip active-version visual groups).
      */
     private List<String> compensateFailedDeploy(String appId, BundleManifest manifest) {
         List<String> compensated = new ArrayList<>();
         try {
             if (snapshotStore.findActive(appId).isPresent()) {
-                bundleVisualGroupService.removeAllBundleGroups(appId);
-                compensated.add("visualGroups:removed");
+                compensated.addAll(restoreRuntimeFromActiveSnapshot(appId, manifest));
                 return compensated;
             }
             for (String path : BundleVisualGroupService.managedRemovalPaths(appId, manifest)) {
@@ -352,6 +351,59 @@ public class ApplicationBundleDeployService {
             compensated.add("visualGroups:removed");
         } catch (Exception ex) {
             compensated.add("compensate: " + ex.getMessage());
+        }
+        return compensated;
+    }
+
+    /**
+     * Re-sync live tree artifacts to match the last active snapshot after a failed upgrade attempt.
+     * Removes v2-only managed paths that are not in the active (v1) manifest before re-applying v1.
+     */
+    private List<String> restoreRuntimeFromActiveSnapshot(String appId, BundleManifest failedManifest) {
+        List<String> compensated = new ArrayList<>();
+        try {
+            ApplicationBundleSnapshotStore.BundleSnapshot snapshot = snapshotStore.findActive(appId)
+                    .orElseThrow();
+            BundleManifest activeManifest = objectMapper.readValue(snapshot.manifestJson(), BundleManifest.class);
+            java.util.Set<String> activePaths = new java.util.LinkedHashSet<>(
+                    BundleVisualGroupService.managedRemovalPaths(appId, activeManifest)
+            );
+            for (String path : BundleVisualGroupService.managedRemovalPaths(appId, failedManifest)) {
+                if (activePaths.contains(path)) {
+                    continue;
+                }
+                try {
+                    if (objectManager.tree().findByPath(path).isPresent()) {
+                        objectManager.delete(path);
+                        compensated.add("removedOrphan:" + path);
+                    }
+                } catch (Exception ex) {
+                    compensated.add("removeOrphanFailed:" + path + ": " + ex.getMessage());
+                }
+            }
+            String displayName = activeManifest.displayName() != null && !activeManifest.displayName().isBlank()
+                    ? activeManifest.displayName()
+                    : appId;
+            String dataSourcePath = dataSourceObjectService.pathForNodeName(appId);
+            List<String> applied = new ArrayList<>();
+            List<String> skipped = new ArrayList<>();
+            List<String> errors = new ArrayList<>();
+            treeArtifacts.apply(
+                    appId,
+                    activeManifest,
+                    false,
+                    dataSourcePath,
+                    new BundleApplyLog(applied, skipped, errors)
+            );
+            objectTreeService.syncApplication(appId);
+            operatorUiSync.sync(appId, activeManifest);
+            bundleVisualGroupService.syncBundle(appId, displayName, activeManifest);
+            compensated.add("restore:activeSnapshot:" + snapshot.bundleVersion());
+            if (!errors.isEmpty()) {
+                compensated.add("restore:treeErrors:" + String.join("; ", errors));
+            }
+        } catch (Exception ex) {
+            compensated.add("restore:activeSnapshot:failed:" + ex.getMessage());
         }
         return compensated;
     }

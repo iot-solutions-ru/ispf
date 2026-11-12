@@ -10,16 +10,26 @@ import {
 } from "./util.mjs";
 
 const SOLUTION_ROOT_KEYS = new Set([
+  "formatVersion",
   "version",
   "displayName",
   "tablePrefix",
   "schemaName",
+  "analyticsFormulas",
   "operatorUi",
   "operatorManifest",
   "metadata",
   "license",
   "requires",
 ]);
+
+const WORKFLOW_MANIFEST_FIELDS = [
+  "inputSchemaJson",
+  "outputSchemaJson",
+  "toolDescription",
+  "sideEffectClass",
+  "webhookSlug",
+];
 
 export function packDirectory(dir) {
   const solutionPath = path.join(dir, "solution.json");
@@ -198,13 +208,19 @@ function collectWorkflows(workflowsDir) {
     const metaPath = path.join(workflowsDir, `${stem}.meta.json`);
     const meta = fs.existsSync(metaPath) ? readJsonFile(metaPath) : {};
     const bpmnXml = fs.readFileSync(path.join(workflowsDir, bpmnFile), "utf8");
-    return {
+    const entry = {
       path: meta.path ?? `root.platform.workflows.${stem}`,
       title: meta.title,
       status: meta.status,
       operatorAppId: meta.operatorAppId,
       bpmnXml,
     };
+    for (const key of WORKFLOW_MANIFEST_FIELDS) {
+      if (meta[key] !== undefined) {
+        entry[key] = meta[key];
+      }
+    }
+    return entry;
   });
 }
 
