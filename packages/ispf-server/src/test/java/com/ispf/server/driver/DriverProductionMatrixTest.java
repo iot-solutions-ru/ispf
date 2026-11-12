@@ -424,6 +424,8 @@ class DriverProductionMatrixTest {
 
     /** BETA although the mechanical criterion passes — the reason is the value. */
     private static final Map<String, String> BETA_BY_DECISION = Map.ofEntries(
+            Map.entry("aws-iot-core", "useTls=true fails closed; MQTT lab codec is not AWS IoT mTLS"),
+            Map.entry("azure-iot-hub", "useTls=true fails closed; MQTT lab codec is not Azure IoT mTLS"),
             Map.entry("opc-da", "connectivity shell + parser tests, not a full OPC DA (DCOM) stack (BL-191)"),
             Map.entry("opc-bridge", "mapping shell over opc-da; same DCOM gap (BL-191)"),
             Map.entry("grpc", "lab HTTP/2 preface and empty SETTINGS; not HPACK or protobuf RPC"),

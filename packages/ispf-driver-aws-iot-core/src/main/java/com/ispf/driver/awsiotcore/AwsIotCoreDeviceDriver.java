@@ -111,10 +111,8 @@ public class AwsIotCoreDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         if (useTls) {
-            // Certificate paths are retained for operators; MQTT bytes still go over the socket layer.
-            driverObject.log(DriverLogLevel.INFO,
-                    "TLS fields configured (ca=" + caCertPath + ", cert=" + clientCertPath
-                            + ", key=" + clientKeyPath + "); connecting with MQTT codec on plain TCP");
+            throw new DriverException(
+                    "AWS IoT Core TLS/mTLS is not implemented; refusing cleartext fallback (useTls=true)");
         }
         try {
             mqtt = new Mqtt311Client(host, port, timeoutMs, clientId);

@@ -67,8 +67,8 @@ _None._
 | `application` | `ispf-driver-application` | PRODUCTION | matrix | `READY_LAB` | — |
 | `as-interface` | `ispf-driver-as-interface` | PRODUCTION | matrix | `READY_LAB` | — |
 | `asterisk` | `ispf-driver-asterisk` | PRODUCTION | matrix | `READY_LAB` | — |
-| `aws-iot-core` | `ispf-driver-aws-iot-core` | PRODUCTION | matrix | `READY_LAB` | — |
-| `azure-iot-hub` | `ispf-driver-azure-iot-hub` | PRODUCTION | matrix | `READY_LAB` | — |
+| `aws-iot-core` | `ispf-driver-aws-iot-core` | BETA | matrix | `READY_LAB` | TLS fail-closed |
+| `azure-iot-hub` | `ispf-driver-azure-iot-hub` | BETA | matrix | `READY_LAB` | TLS fail-closed |
 | `bacnet` | `ispf-driver-bacnet` | PRODUCTION | matrix | `READY_LAB` | — |
 | `bacnet-mstp` | `ispf-driver-bacnet-mstp` | PRODUCTION | matrix | `READY_LAB` | — |
 | `barcode-scanner` | `ispf-driver-barcode-scanner` | PRODUCTION | matrix | `READY_LAB` | — |

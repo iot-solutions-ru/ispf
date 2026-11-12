@@ -115,9 +115,8 @@ public class AzureIotHubDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         disconnect();
         if (useTls) {
-            driverObject.log(DriverLogLevel.INFO,
-                    "TLS fields configured (ca=" + caCertPath + ", cert=" + clientCertPath
-                            + ", key=" + clientKeyPath + "); connecting with MQTT codec on plain TCP");
+            throw new DriverException(
+                    "Azure IoT Hub TLS/mTLS is not implemented; refusing cleartext fallback (useTls=true)");
         }
         try {
             mqtt = new Mqtt311Client(host, port, timeoutMs, deviceId);
