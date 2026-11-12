@@ -588,10 +588,11 @@ public class FunctionScriptEngine {
                 return null;
             }
             try {
-                AuditChainStore.ensureLockRow(connection, key);
-                try (PreparedStatement rowLock = connection.prepareStatement("""
-                        SELECT lock_key FROM platform_script_locks WHERE lock_key = ? FOR UPDATE
-                        """)) {
+                String locksTable = AuditChainStore.platformScriptLocksTable(connection);
+                AuditChainStore.ensureLockRow(connection, key, locksTable);
+                try (PreparedStatement rowLock = connection.prepareStatement(
+                        "SELECT lock_key FROM " + locksTable + " WHERE lock_key = ? FOR UPDATE"
+                )) {
                     rowLock.setString(1, key);
                     rowLock.executeQuery();
                 }
