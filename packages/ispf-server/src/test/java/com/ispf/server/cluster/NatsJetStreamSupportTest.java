@@ -35,7 +35,7 @@ class NatsJetStreamSupportTest {
                 1,
                 50,
                 6,
-                30
+                -1, 30
         );
         NatsEventBridge bridge = mock(NatsEventBridge.class);
         Connection connection = mock(Connection.class);

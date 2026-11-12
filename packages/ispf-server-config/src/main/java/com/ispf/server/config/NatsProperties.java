@@ -20,6 +20,8 @@ public record NatsProperties(
         @DefaultValue("32") int replicaConsumerWorkerThreadsMax,
         @DefaultValue("50") int replicaConsumerElasticScaleUpThreshold,
         @DefaultValue("6") int replicaConsumerElasticScaleDownSteps,
+        /** -1 = unlimited client reconnects (jnats default); avoid hard CLOSED after a few blips. */
+        @DefaultValue("-1") int maxReconnects,
         @DefaultValue("30") int slowConsumerLogIntervalSeconds
 ) {
     public NatsProperties {

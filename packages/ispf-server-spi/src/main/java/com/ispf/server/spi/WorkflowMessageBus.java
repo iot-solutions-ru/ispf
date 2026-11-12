@@ -7,5 +7,13 @@ public interface WorkflowMessageBus {
 
     void publish(String subject, String message);
 
+    /**
+     * BPMN NATS delivery: implementations that can detect delivery failure should throw
+     * {@link IllegalStateException} so the workflow step can retry or hit an error boundary.
+     */
+    default void publishWorkflowStep(String subject, String message) {
+        publish(subject, message);
+    }
+
     void publishWorkflowEvent(String workflowPath, String event, Map<String, Object> payload);
 }

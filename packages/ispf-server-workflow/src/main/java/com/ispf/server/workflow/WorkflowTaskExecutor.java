@@ -96,7 +96,7 @@ public class WorkflowTaskExecutor {
         }
     }
 
-    public void executeMessageTask(MessageTaskDefinition task, WorkflowInstance instance) {
+    public void executeMessageTask(MessageTaskDefinition task, WorkflowInstance instance) throws WorkflowException {
         if ("bpmn-throw".equalsIgnoreCase(task.channel())) {
             String messageName = task.subject();
             instance.resumeMessageIfPresent(messageName);
@@ -108,7 +108,7 @@ public class WorkflowTaskExecutor {
             return;
         }
         if ("nats".equalsIgnoreCase(task.channel())) {
-            natsEventBridge.publish(task.subject(), task.message());
+            publishNatsOrFail(task.subject(), task.message());
             return;
         }
         log.info("[workflow:{}] message {} -> {}", instance.workflowPath(), task.subject(), task.message());
@@ -157,7 +157,7 @@ public class WorkflowTaskExecutor {
                         DataRecord.single(STRING_VALUE, Map.of("value", value))
                 );
             }
-            case PUBLISH_NATS -> natsEventBridge.publish(
+            case PUBLISH_NATS -> publishNatsOrFail(
                     params.getOrDefault("subject", "ispf.workflow.event"),
                     params.getOrDefault("message", task.name())
             );
@@ -381,6 +381,14 @@ public class WorkflowTaskExecutor {
         return valueExpr.startsWith("${") && valueExpr.endsWith("}")
                 ? instance.variables().getOrDefault(valueExpr.substring(2, valueExpr.length() - 1), "")
                 : valueExpr;
+    }
+
+    private void publishNatsOrFail(String subject, String message) throws WorkflowException {
+        try {
+            natsEventBridge.publishWorkflowStep(subject, message);
+        } catch (RuntimeException e) {
+            throw new WorkflowException(e.getMessage() == null ? "NATS publish failed" : e.getMessage(), e);
+        }
     }
 
     private static String required(Map<String, String> params, String key) throws WorkflowException {

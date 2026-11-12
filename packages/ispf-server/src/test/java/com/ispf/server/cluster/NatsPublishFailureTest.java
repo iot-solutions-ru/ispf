@@ -4,15 +4,18 @@ import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.platform.PlatformNatsHealthService;
 import io.nats.client.Connection;
+import io.nats.client.Connection.Status;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 class NatsPublishFailureTest {
 
@@ -28,6 +31,26 @@ class NatsPublishFailureTest {
 
         assertThat(bridge.publishFailureCount()).isEqualTo(1);
         assertThat(bridge.lastPublishError()).isEqualTo("broken pipe");
+    }
+
+    @Test
+    void workflowPublishFailsWhenClientIsNotConnected() {
+        Connection connection = mock(Connection.class);
+        when(connection.getStatus()).thenReturn(Status.RECONNECTING);
+        NatsEventBridge bridge = new NatsEventBridge(
+                enabledProperties(),
+                mock(ClusterProperties.class),
+                new ObjectMapper(),
+                null,
+                null,
+                connection
+        );
+
+        assertThat(bridge.isEnabled()).isFalse();
+        assertThatThrownBy(() -> bridge.publishWorkflowStep("ispf.workflow.event", "payload"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("NATS publish failed");
+        assertThat(bridge.publishFailureCount()).isEqualTo(1);
     }
 
     @Test
@@ -49,6 +72,7 @@ class NatsPublishFailureTest {
     }
 
     private static NatsEventBridge bridge(Connection connection) {
+        lenient().when(connection.getStatus()).thenReturn(Status.CONNECTED);
         return new NatsEventBridge(
                 enabledProperties(),
                 mock(ClusterProperties.class),
@@ -75,7 +99,7 @@ class NatsPublishFailureTest {
                 1,
                 1,
                 1,
-                30
+                -1, 30
         );
     }
 }
