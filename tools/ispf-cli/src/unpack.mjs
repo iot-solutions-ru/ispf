@@ -43,17 +43,30 @@ export function unpackBundle(manifest, outDir) {
   }
   writeJsonFile(path.join(outDir, "solution.json"), solution);
 
-  if (Array.isArray(manifest.migrations) && manifest.migrations.length) {
-    manifest.migrations.forEach((m, i) => {
-      const id = m.id ?? `migration_${i + 1}`;
-      writeTextFile(path.join(outDir, "sql", `V${i + 1}__${id}.sql`), m.sql ?? "");
+  if (Array.isArray(manifest.seeds) && manifest.seeds.length) {
+    const ids = [];
+    manifest.seeds.forEach((seed, i) => {
+      const id = safeStem(seed.id ?? `seed_${i + 1}`, "seed");
+      ids.push(id);
+      writeTextFile(path.join(outDir, "seeds", `${id}.sql`), seed.sql ?? "");
     });
+    writeJsonFile(path.join(outDir, "seeds", "order.json"), ids);
+  }
+
+  if (Array.isArray(manifest.migrations) && manifest.migrations.length) {
+    const ids = [];
+    manifest.migrations.forEach((m, i) => {
+      const id = safeStem(m.id ?? `migration_${i + 1}`, "migration");
+      ids.push(id);
+      writeTextFile(path.join(outDir, "sql", `${id}.sql`), m.sql ?? "");
+    });
+    writeJsonFile(path.join(outDir, "sql", "order.json"), ids);
   }
 
   if (Array.isArray(manifest.functions)) {
     const functionsDir = path.join(outDir, "functions");
     for (const fn of manifest.functions) {
-      const name = fn.functionName ?? fn.name ?? "function";
+      const name = safeStem(fn.functionName ?? fn.name ?? "function", "function");
       const externalized = externalizeFunctionSteps(fn, functionsDir, name);
       writeJsonFile(path.join(functionsDir, `${name}.json`), externalized);
     }
@@ -61,7 +74,7 @@ export function unpackBundle(manifest, outDir) {
 
   if (Array.isArray(manifest.blueprints)) {
     for (const bp of manifest.blueprints) {
-      const name = bp.name ?? "blueprint";
+      const name = safeStem(bp.name ?? "blueprint", "blueprint");
       writeJsonFile(path.join(outDir, "blueprints", `${name}.json`), bp);
     }
   }
@@ -162,6 +175,13 @@ function dashboardStem(dash) {
     return parts[parts.length - 1] || "dashboard";
   }
   return (dash.title ?? "dashboard").replace(/\s+/g, "-").toLowerCase();
+}
+
+function safeStem(id, kind) {
+  if (typeof id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(id)) {
+    throw new Error(`Unsafe ${kind} id: ${id}`);
+  }
+  return id;
 }
 
 function workflowStem(wf) {

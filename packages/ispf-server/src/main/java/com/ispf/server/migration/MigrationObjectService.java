@@ -16,15 +16,12 @@ import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -152,7 +149,9 @@ public class MigrationObjectService {
             } else if (!dataSourcePath.equals(script.dataSourcePath())) {
                 throw new IllegalArgumentException("Bundle migrations must share one data source");
             }
-            if (!applicationDataStore.isMigrationApplied(appId, script.version(), script.scriptId())) {
+            String stored = applicationDataStore.appliedMigrationChecksum(appId, script.scriptId());
+            MigrationLedger.requireUnchanged(script.scriptId(), stored, script.sql());
+            if (stored == null) {
                 pending.add(script);
             }
         }
@@ -345,6 +344,14 @@ public class MigrationObjectService {
     @Transactional
     public void applyOne(MigrationDefinition migration) {
         tenantLocalDataAccessGuard.requireAllowedDataSourcePath(migration.dataSourcePath());
+        String appId = appIdFromDataSourcePath(migration.dataSourcePath());
+        if (appId != null && applicationDataStore.findApp(appId).isPresent()) {
+            String stored = applicationDataStore.appliedMigrationChecksum(appId, migration.scriptId());
+            MigrationLedger.requireUnchanged(migration.scriptId(), stored, migration.sql());
+            if (stored != null) {
+                return;
+            }
+        }
         String checksum = checksum(migration.sql());
         ApplicationSchemaSupport.validateMigrationSql(migration.sql(), "");
         dataSourceSqlSession.ensureWritable(migration.dataSourcePath());
@@ -394,9 +401,11 @@ public class MigrationObjectService {
 
     private boolean isApplied(MigrationDefinition migration) {
         String appId = appIdFromDataSourcePath(migration.dataSourcePath());
-        if (appId != null
-                && applicationDataStore.isMigrationApplied(appId, migration.version(), migration.scriptId())) {
-            return true;
+        if (appId != null) {
+            String stored = applicationDataStore.appliedMigrationChecksum(appId, migration.scriptId());
+            if (stored != null) {
+                return stored.equals(MigrationLedger.checksum(migration.sql()));
+            }
         }
         PlatformObject node = objectManager.require(migration.path());
         String stored = readString(node, "checksum").orElse("");
@@ -462,13 +471,7 @@ public class MigrationObjectService {
     }
 
     private static String checksum(String sql) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(sql.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash);
-        } catch (Exception ex) {
-            throw new IllegalStateException("Checksum failed", ex);
-        }
+        return MigrationLedger.checksum(sql);
     }
 
     private static List<String> splitStatements(String sql) {

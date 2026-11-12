@@ -28,6 +28,9 @@ public class FunctionScriptValidator {
             "writeVariable",
             "instantiateModelIfMissing",
             "setDriverTelemetry",
+            "selectForUpdate",
+            "advisoryLock",
+            "expectRowCount",
             "queryRows",
             "scan_objects",
             "for_each_row",
@@ -63,7 +66,8 @@ public class FunctionScriptValidator {
         }
         if (node.isArray() || node.isObject()) {
             String type = node.path("type").asText("");
-            if ("selectOne".equals(type) || "selectMany".equals(type) || "exec".equals(type)) {
+            if ("selectOne".equals(type) || "selectMany".equals(type) || "exec".equals(type)
+                    || "selectForUpdate".equals(type) || "advisoryLock".equals(type)) {
                 return true;
             }
             for (JsonNode child : node) {

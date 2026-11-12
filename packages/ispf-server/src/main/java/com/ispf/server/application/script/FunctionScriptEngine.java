@@ -8,9 +8,13 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.application.function.ApplicationFunctionRuntime;
 import com.ispf.server.workflow.WorkflowInstanceCancelService;
+import com.ispf.server.audit.AuditChainStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -108,6 +112,32 @@ public class FunctionScriptEngine {
                 String sql = step.path("sql").asText();
                 List<Object> params = resolveParams(step.get("params"), vars);
                 vars.put(var, normalizeRows(jdbc().queryForList(sql, params.toArray())));
+                yield null;
+            }
+            case "selectForUpdate" -> {
+                String var = step.path("var").asText();
+                String sql = step.path("sql").asText();
+                if (!sql.toLowerCase(Locale.ROOT).contains("for update")) {
+                    sql = sql + " FOR UPDATE";
+                }
+                List<Object> params = resolveParams(step.get("params"), vars);
+                List<Map<String, Object>> rows = normalizeRows(jdbc().queryForList(sql, params.toArray()));
+                vars.put(var, rows.isEmpty() ? null : rows.get(0));
+                yield null;
+            }
+            case "advisoryLock" -> {
+                String key = resolveStepValue(step.get("key"), vars).toString();
+                acquireAdvisoryLock(key);
+                yield null;
+            }
+            case "expectRowCount" -> {
+                String var = step.path("var").asText();
+                int expected = step.path("count").asInt();
+                Object value = vars.get(var);
+                int actual = value instanceof List<?> list ? list.size() : value == null ? 0 : 1;
+                if (actual != expected) {
+                    throw new IllegalStateException("expected " + expected + " rows in " + var + ", got " + actual);
+                }
                 yield null;
             }
             case "exec" -> {
@@ -545,6 +575,32 @@ public class FunctionScriptEngine {
 
     private JdbcTemplate jdbc() {
         return FunctionScriptJdbcScope.activeOr(jdbcTemplate);
+    }
+
+    private void acquireAdvisoryLock(String key) {
+        jdbc().execute((Connection connection) -> {
+            String product = connection.getMetaData().getDatabaseProductName().toLowerCase(Locale.ROOT);
+            if (product.contains("postgresql")) {
+                try (PreparedStatement lock = connection.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
+                    lock.setLong(1, AuditChainStore.advisoryLockId(key));
+                    lock.execute();
+                }
+                return null;
+            }
+            try {
+                String locksTable = AuditChainStore.platformScriptLocksTable(connection);
+                AuditChainStore.ensureLockRow(connection, key, locksTable);
+                try (PreparedStatement rowLock = connection.prepareStatement(
+                        "SELECT lock_key FROM " + locksTable + " WHERE lock_key = ? FOR UPDATE"
+                )) {
+                    rowLock.setString(1, key);
+                    rowLock.executeQuery();
+                }
+            } catch (SQLException ex) {
+                throw new IllegalStateException("advisoryLock failed for key " + key, ex);
+            }
+            return null;
+        });
     }
 
     private static List<Map<String, Object>> normalizeRows(List<Map<String, Object>> rows) {

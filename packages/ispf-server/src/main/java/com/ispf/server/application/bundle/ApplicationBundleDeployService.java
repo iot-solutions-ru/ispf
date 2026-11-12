@@ -100,7 +100,7 @@ public class ApplicationBundleDeployService {
             boolean trustedMarketplaceFreeInstall,
             boolean verifyLicense
     ) {
-        return deploy(appId, manifest, trustedMarketplaceFreeInstall, verifyLicense, false);
+        return deploy(appId, manifest, trustedMarketplaceFreeInstall, verifyLicense, false, false, List.of());
     }
 
     public Map<String, Object> deploy(
@@ -109,6 +109,18 @@ public class ApplicationBundleDeployService {
             boolean trustedMarketplaceFreeInstall,
             boolean verifyLicense,
             boolean runTests
+    ) {
+        return deploy(appId, manifest, trustedMarketplaceFreeInstall, verifyLicense, runTests, false, List.of());
+    }
+
+    public Map<String, Object> deploy(
+            String appId,
+            BundleManifest manifest,
+            boolean trustedMarketplaceFreeInstall,
+            boolean verifyLicense,
+            boolean runTests,
+            boolean withSeeds,
+            List<BundleSeed> seeds
     ) {
         BundleSemverSupport.requireValid(manifest.version());
         if (verifyLicense) {
@@ -148,7 +160,7 @@ public class ApplicationBundleDeployService {
                 errors.add("register: " + ex.getMessage());
             }
             if (registered) {
-                treeMutated = applyAfterRegistration(appId, manifest, dataSourcePath, applied, skipped, errors);
+                treeMutated = applyAfterRegistration(appId, manifest, dataSourcePath, applied, skipped, errors, withSeeds, seeds);
             }
         }
 
@@ -235,7 +247,9 @@ public class ApplicationBundleDeployService {
             String dataSourcePath,
             List<String> applied,
             List<String> skipped,
-            List<String> errors
+            List<String> errors,
+            boolean withSeeds,
+            List<BundleSeed> seeds
     ) {
         if (manifest.migrations() != null && !manifest.migrations().isEmpty()) {
             if (objectManager.tree().findByPath(dataSourcePath).isEmpty()) {
@@ -274,6 +288,17 @@ public class ApplicationBundleDeployService {
                 return false;
             }
             applied.addAll(appliedMigrations.stream().map(id -> "migration:" + id).toList());
+        }
+        if (withSeeds && seeds != null) {
+            for (BundleSeed seed : seeds) {
+                String profile = seed.profile() == null || seed.profile().isBlank() ? "default" : seed.profile();
+                dataService.applyManifestSeeds(appId, profile, List.of(
+                        new ApplicationDataService.SeedScript(seed.id(), seed.sql())
+                ));
+            }
+            if (!seeds.isEmpty()) {
+                applied.add("seeds");
+            }
         }
         treeArtifacts.apply(appId, manifest, false, dataSourcePath, new BundleApplyLog(applied, skipped, errors));
         return true;
@@ -698,6 +723,9 @@ public class ApplicationBundleDeployService {
             /** Manifest wire format (ADR-0064). Null means {@link BundleFormatVersions#CURRENT}. */
             Integer formatVersion
     ) {
+    }
+
+    public record BundleSeed(String id, String profile, String sql) {
     }
 
     public record BundleObject(

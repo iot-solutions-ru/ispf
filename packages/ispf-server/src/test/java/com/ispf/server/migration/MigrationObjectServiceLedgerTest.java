@@ -10,9 +10,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -85,6 +88,56 @@ class MigrationObjectServiceLedgerTest {
                 org.mockito.ArgumentMatchers.anyString(),
                 org.mockito.ArgumentMatchers.anyString(),
                 org.mockito.ArgumentMatchers.anyString()
+        );
+    }
+
+    @Test
+    void versionBumpSkipsUnchangedScriptAndRunsTheNewOne() {
+        String original = "CREATE TABLE t(id int)";
+        when(applicationDataStore.appliedMigrationChecksum("plant", "init"))
+                .thenReturn(MigrationLedger.checksum(original));
+        when(applicationDataStore.appliedMigrationChecksum("plant", "v2")).thenReturn(null);
+
+        MigrationObjectService service = service();
+        service.applyBundleSql("plant", "", List.of(
+                definition("init", "1.1.0", original),
+                definition("v2", "1.1.0", "ALTER TABLE t ADD COLUMN name varchar(32)")
+        ));
+
+        verify(dataSourceSqlSession).runInSchemaTransaction(any(), any());
+    }
+
+    @Test
+    void editedAppliedScriptIsRejectedBeforeSql() {
+        when(applicationDataStore.appliedMigrationChecksum("plant", "init"))
+                .thenReturn(MigrationLedger.checksum("CREATE TABLE t(id int)"));
+
+        MigrationObjectService service = service();
+        assertThrows(IllegalStateException.class, () -> service.applyBundleSql(
+                "plant",
+                "",
+                List.of(definition("init", "1.2.0", "CREATE TABLE t(id bigint)"))
+        ));
+        verify(dataSourceSqlSession, never()).runInSchemaTransaction(any(), any());
+    }
+
+    private MigrationObjectService service() {
+        return new MigrationObjectService(
+                objectManager,
+                structureService,
+                dataSourceSqlSession,
+                tenantLocalDataAccessGuard,
+                applicationDataStore
+        );
+    }
+
+    private static MigrationObjectService.MigrationDefinition definition(String id, String version, String sql) {
+        return new MigrationObjectService.MigrationDefinition(
+                "root.platform.migrations." + id,
+                id,
+                version,
+                "root.platform.data-sources.plant",
+                sql
         );
     }
 }

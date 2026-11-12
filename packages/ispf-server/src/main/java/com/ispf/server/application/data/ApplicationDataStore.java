@@ -3,14 +3,13 @@ package com.ispf.server.application.data;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
+import com.ispf.server.migration.MigrationLedger;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -116,17 +115,26 @@ public class ApplicationDataStore {
         return deleted > 0;
     }
 
+    /**
+     * A script id is applied once per app. {@code version} is recorded for audit and is not part of the key,
+     * so a plant fork can raise the manifest version without replaying old scripts.
+     */
     public boolean isMigrationApplied(String appId, String version, String scriptId) {
-        Integer count = jdbcTemplate.queryForObject("""
-                SELECT COUNT(*) FROM %s
-                WHERE app_id = ? AND version = ? AND script_id = ?
+        return appliedMigrationChecksum(appId, scriptId) != null;
+    }
+
+    public String appliedMigrationChecksum(String appId, String scriptId) {
+        java.util.List<String> rows = jdbcTemplate.query(
+                """
+                SELECT checksum FROM %s
+                WHERE app_id = ? AND script_id = ?
+                ORDER BY applied_at DESC
                 """.formatted(migrationsTable),
-                Integer.class,
+                (rs, row) -> rs.getString(1),
                 appId,
-                version,
                 scriptId
         );
-        return count != null && count > 0;
+        return rows.isEmpty() ? null : rows.get(0);
     }
 
     public void recordMigration(String appId, String version, String scriptId, String sql) {
@@ -210,12 +218,6 @@ public class ApplicationDataStore {
     }
 
     private static String checksum(String sql) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(sql.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash);
-        } catch (Exception ex) {
-            throw new IllegalStateException("Checksum failed", ex);
-        }
+        return MigrationLedger.checksum(sql);
     }
 }

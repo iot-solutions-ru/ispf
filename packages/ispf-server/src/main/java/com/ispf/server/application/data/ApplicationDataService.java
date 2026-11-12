@@ -2,6 +2,7 @@ package com.ispf.server.application.data;
 
 import com.ispf.server.application.tree.ApplicationObjectTreeService;
 import com.ispf.server.datasource.DataSourceObjectService;
+import com.ispf.server.migration.MigrationLedger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,7 +62,9 @@ public class ApplicationDataService {
         List<String> skipped = new ArrayList<>();
 
         for (MigrationScript script : scripts) {
-            if (store.isMigrationApplied(appId, version, script.id())) {
+            String stored = store.appliedMigrationChecksum(appId, script.id());
+            MigrationLedger.requireUnchanged(script.id(), stored, script.sql());
+            if (stored != null) {
                 skipped.add(script.id());
                 continue;
             }
@@ -119,6 +122,26 @@ public class ApplicationDataService {
                 "applied", applied,
                 "skipped", skipped
         );
+    }
+
+    @Transactional
+    public void applyManifestSeeds(String appId, String profile, List<SeedScript> scripts) {
+        Map<String, Object> app = ensureApp(appId);
+        String schemaName = String.valueOf(app.get("schema_name"));
+        schemaSession.ensureSchemaExists(schemaName);
+        for (SeedScript seed : scripts) {
+            if (store.isSeedApplied(appId, profile, seed.id())) {
+                continue;
+            }
+            schemaSession.runInSchema(schemaName, () -> {
+                for (String statement : splitStatements(seed.sql())) {
+                    if (!statement.isBlank()) {
+                        store.executeSql(statement);
+                    }
+                }
+            });
+            store.recordSeed(appId, profile, seed.id());
+        }
     }
 
     public Map<String, Object> status(String appId) {

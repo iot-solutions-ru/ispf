@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,15 +32,18 @@ public class AuditEventService {
     private final AuditEventRepository repository;
     private final ObjectMapper objectMapper;
     private final AuditSiemWebhookDispatcher siemWebhookDispatcher;
+    private final AuditChainStore auditChainStore;
 
     public AuditEventService(
             AuditEventRepository repository,
             ObjectMapper objectMapper,
-            AuditSiemWebhookDispatcher siemWebhookDispatcher
+            AuditSiemWebhookDispatcher siemWebhookDispatcher,
+            AuditChainStore auditChainStore
     ) {
         this.repository = repository;
         this.objectMapper = objectMapper;
         this.siemWebhookDispatcher = siemWebhookDispatcher;
+        this.auditChainStore = auditChainStore;
     }
 
     @Transactional
@@ -52,8 +56,9 @@ public class AuditEventService {
         entity.setTargetType(targetType);
         entity.setTargetId(targetId);
         entity.setDetailsJson(details == null || details.isEmpty() ? null : writeJson(details));
-        entity.setOccurredAt(Instant.now());
+        entity.setOccurredAt(Instant.now().truncatedTo(ChronoUnit.MICROS));
         repository.save(entity);
+        auditChainStore.append(entity);
         siemWebhookDispatcher.dispatch(toRecord(entity));
     }
 
