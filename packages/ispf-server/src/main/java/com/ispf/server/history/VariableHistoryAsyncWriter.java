@@ -257,6 +257,15 @@ public class VariableHistoryAsyncWriter {
             batchPersister.persistBatch(batch);
             automationMetricsRecorder.recordVariableHistoryFlushed(batch.size());
         } catch (Exception ex) {
+            if (isSecondaryOnlyFailure(ex)) {
+                log.warn(
+                        "Variable history batch secondary write failed (size={}); primary durable, skipping per-sample retry",
+                        batch.size(),
+                        ex
+                );
+                automationMetricsRecorder.recordVariableHistoryFlushed(batch.size());
+                return;
+            }
             log.error("Variable history batch flush failed (size={}); falling back to per-sample sync", batch.size(), ex);
             for (VariableSampleEntity sample : batch) {
                 try {
@@ -277,6 +286,25 @@ public class VariableHistoryAsyncWriter {
 
     private static String coalesceKey(VariableSampleEntity sample) {
         return sample.getObjectPath() + "|" + sample.getVariableName() + "|" + sample.getFieldName();
+    }
+
+    private static boolean isSecondaryOnlyFailure(Throwable ex) {
+        Throwable current = ex;
+        while (current != null) {
+            if (current instanceof HistorianSecondaryWriteFailedException) {
+                return true;
+            }
+            if (current instanceof IllegalStateException state) {
+                String message = state.getMessage();
+                if (message != null
+                        && (message.contains("secondary store is behind primary")
+                        || message.contains("warm store is behind hot"))) {
+                    return true;
+                }
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     @PreDestroy

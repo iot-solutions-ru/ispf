@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doThrow;
@@ -50,7 +49,7 @@ class DualWriteVariableHistoryWriteStoreTest {
     }
 
     @Test
-    void secondaryFailureIsVisibleAndRetryDoesNotRewritePrimary() {
+    void secondaryFailureIsMeteredAndDoesNotRewritePrimaryOnRetry() {
         JdbcVariableHistoryWriteStore primary = mock(JdbcVariableHistoryWriteStore.class);
         ClickHouseVariableHistorySecondaryWriteStore secondary =
                 mock(ClickHouseVariableHistorySecondaryWriteStore.class);
@@ -73,16 +72,39 @@ class DualWriteVariableHistoryWriteStoreTest {
         );
         doThrow(new IllegalStateException("CH down")).when(secondary).appendBatch(List.of(record));
 
-        assertThatThrownBy(() -> store.appendOne(record))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("variable history secondary write failed; secondary store is behind primary");
-        assertThatThrownBy(() -> store.appendOne(record))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("variable history secondary write failed; secondary store is behind primary");
+        store.appendOne(record);
+        store.appendOne(record);
 
         verify(primary, times(1)).appendOne(record);
+        verify(secondary, times(2)).appendBatch(List.of(record));
         assertEquals(2.0, registry.get("ispf.historian.dual_write.secondary_failures").counter().count());
         assertEquals(1, store.aheadSize());
+    }
+
+    @Test
+    void batchSecondaryFailureIsSingleAttemptNotPerRecordStorm() {
+        JdbcVariableHistoryWriteStore primary = mock(JdbcVariableHistoryWriteStore.class);
+        ClickHouseVariableHistorySecondaryWriteStore secondary =
+                mock(ClickHouseVariableHistorySecondaryWriteStore.class);
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        DualWriteVariableHistoryWriteStore store = new DualWriteVariableHistoryWriteStore(
+                primary,
+                secondary,
+                new AutomationMetricsRecorder(Optional.of(registry))
+        );
+        List<VariableHistoryWriteRecord> batch = List.of(
+                record("2026-07-06T12:00:00Z", 1.0),
+                record("2026-07-06T12:00:01Z", 2.0),
+                record("2026-07-06T12:00:02Z", 3.0)
+        );
+        doThrow(new IllegalStateException("CH down")).when(secondary).appendBatch(batch);
+
+        store.appendBatch(batch);
+
+        verify(primary, times(1)).appendBatch(batch);
+        verify(secondary, times(1)).appendBatch(batch);
+        assertEquals(1.0, registry.get("ispf.historian.dual_write.secondary_failures").counter().count());
+        assertEquals(3, store.aheadSize());
     }
 
     @Test
@@ -110,13 +132,23 @@ class DualWriteVariableHistoryWriteStoreTest {
                     null,
                     "GOOD"
             );
-            try {
-                store.appendOne(record);
-            } catch (IllegalStateException ignored) {
-                // secondary outage is the case under test
-            }
+            store.appendOne(record);
         }
 
         assertThat(store.aheadSize()).isLessThanOrEqualTo(3);
+    }
+
+    private static VariableHistoryWriteRecord record(String sampledAt, double value) {
+        Instant instant = Instant.parse(sampledAt);
+        return new VariableHistoryWriteRecord(
+                "root.platform.devices.demo",
+                "temperature",
+                "value",
+                instant,
+                instant,
+                value,
+                null,
+                "GOOD"
+        );
     }
 }
