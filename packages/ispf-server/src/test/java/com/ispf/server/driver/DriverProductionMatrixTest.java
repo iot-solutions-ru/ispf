@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -169,6 +170,132 @@ class DriverProductionMatrixTest {
         assertWritePointMentionsNotImplemented("ethernet-ip", false);
         assertWritePointMentionsNotImplemented("snmp", false);
     }
+
+    /**
+     * WRITE is claimed exactly when {@code writePoint} is a real write.
+     * Same method-body heuristic as {@code tools/driver-readiness-audit.py}.
+     */
+    @Test
+    void everyMatrixEntryWriteClaimMatchesWritePoint() throws IOException {
+        Map<String, PackSource> sources = packSourcesByDriverId();
+        List<String> violations = new ArrayList<>();
+        int checked = 0;
+        for (DriverProductionMatrix.Entry entry : DriverProductionMatrix.entries().values()) {
+            PackSource pack = sources.get(entry.driverId());
+            if (pack == null) {
+                violations.add(entry.driverId() + " missing from gradle/driver-packs.json");
+                continue;
+            }
+            Path source = resolvePackClass(pack);
+            if (source == null) {
+                violations.add(entry.driverId() + " source missing for " + pack.driverClass());
+                continue;
+            }
+            String window = writePointWindow(Files.readString(source));
+            if (window.isEmpty()) {
+                violations.add(entry.driverId() + " missing writePoint method in " + pack.driverClass());
+                continue;
+            }
+            checked++;
+            boolean stub = writePointLooksStub(window);
+            boolean claimsWrite = entry.capabilities().contains(WRITE);
+            if (claimsWrite && stub) {
+                violations.add(entry.driverId() + " claims WRITE but writePoint is a stub");
+            } else if (!claimsWrite && !stub) {
+                violations.add(entry.driverId() + " writePoint looks real but matrix omits WRITE");
+            }
+        }
+        assertEquals(DriverProductionMatrix.entries().size(), checked, "every matrix entry must expose writePoint");
+        assertTrue(violations.isEmpty(), () -> String.join("\n", violations));
+    }
+
+    private record PackSource(String packId, String driverClass) {}
+
+    private static Map<String, PackSource> packSourcesByDriverId() throws IOException {
+        Path packs = firstExisting(
+                Path.of("gradle", "driver-packs.json"),
+                Path.of("..", "..", "gradle", "driver-packs.json")
+        );
+        assertNotNull(packs, "gradle/driver-packs.json");
+        Matcher matcher = Pattern.compile(
+                        "\"(ispf-driver-[^\"]+)\"\\s*:\\s*\\{\\s*\"driverClass\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"driverId\"\\s*:\\s*\"([^\"]+)\"")
+                .matcher(Files.readString(packs));
+        Map<String, PackSource> byId = new HashMap<>();
+        while (matcher.find()) {
+            byId.put(matcher.group(3), new PackSource(matcher.group(1), matcher.group(2)));
+        }
+        return byId;
+    }
+
+    private static Path resolvePackClass(PackSource pack) {
+        return firstExisting(
+                classFile(Path.of("packages", pack.packId(), "src", "main", "java"), pack.driverClass()),
+                classFile(Path.of("..", "..", "packages", pack.packId(), "src", "main", "java"), pack.driverClass())
+        );
+    }
+
+    private static Path classFile(Path javaRoot, String className) {
+        Path path = javaRoot;
+        String[] parts = className.split("\\.");
+        for (int i = 0; i < parts.length; i++) {
+            String part = i == parts.length - 1 ? parts[i] + ".java" : parts[i];
+            path = path.resolve(part);
+        }
+        return path;
+    }
+
+    private static String writePointWindow(String source) {
+        int idx = source.indexOf("void writePoint");
+        if (idx < 0) {
+            return "";
+        }
+        int brace = source.indexOf('{', idx);
+        if (brace < 0) {
+            return source.substring(idx, Math.min(source.length(), idx + 200));
+        }
+        int depth = 0;
+        int limit = Math.min(source.length(), brace + 4000);
+        for (int i = brace; i < limit; i++) {
+            char ch = source.charAt(i);
+            if (ch == '{') {
+                depth++;
+            } else if (ch == '}') {
+                depth--;
+                if (depth == 0) {
+                    return source.substring(idx, i + 1);
+                }
+            }
+        }
+        return source.substring(idx, Math.min(source.length(), brace + 800));
+    }
+
+    private static boolean writePointLooksStub(String window) {
+        if (WRITE_IMPL.matcher(window).find()) {
+            return false;
+        }
+        Matcher messages = THROWN_DRIVER_MESSAGE.matcher(window);
+        while (messages.find()) {
+            if (WRITE_STUB_MESSAGE.matcher(messages.group(1)).find()) {
+                return true;
+            }
+        }
+        return window.contains("throw new UnsupportedOperationException");
+    }
+
+    private static final Pattern WRITE_IMPL = Pattern.compile(
+            "\\.(writeProperty|writePoint|writeTag|writeRegister|writeCoil|submit|publish|setOid|setParameter|"
+                    + "writeValue|sendText|sendBinary|send\\()\\s*\\(",
+            Pattern.CASE_INSENSITIVE
+    );
+    private static final Pattern WRITE_STUB_MESSAGE = Pattern.compile(
+            "not implemented|unsupported operation|write not supported|rejects writes|"
+                    + "\\bis read-only\\b|\\bread only\\b|read-only driver|driver is read-only|read-only in v\\d|"
+                    + "read-only stub|readout-only|get-only|poll-only|writepoint is not supported",
+            Pattern.CASE_INSENSITIVE
+    );
+    private static final Pattern THROWN_DRIVER_MESSAGE = Pattern.compile(
+            "(?:DriverException|DriverUnsupportedOperationException)\\(\\s*\"([^\"]*)\""
+    );
 
     private static void assertWritePointMentionsNotImplemented(String driverId, boolean expectStub)
             throws IOException {
