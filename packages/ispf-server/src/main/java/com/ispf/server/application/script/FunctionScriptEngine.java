@@ -110,6 +110,46 @@ public class FunctionScriptEngine {
                 vars.put(var, normalizeRows(jdbc().queryForList(sql, params.toArray())));
                 yield null;
             }
+            case "selectForUpdate" -> {
+                String var = step.path("var").asText();
+                String sql = step.path("sql").asText();
+                if (!sql.toLowerCase(Locale.ROOT).contains("for update")) {
+                    sql = sql + " FOR UPDATE";
+                }
+                List<Object> params = resolveParams(step.get("params"), vars);
+                List<Map<String, Object>> rows = normalizeRows(jdbc().queryForList(sql, params.toArray()));
+                vars.put(var, rows.isEmpty() ? null : rows.get(0));
+                yield null;
+            }
+            case "advisoryLock" -> {
+                String key = resolveStepValue(step.get("key"), vars).toString();
+                jdbc().execute("""
+                        CREATE TABLE IF NOT EXISTS platform_script_locks (
+                            lock_key VARCHAR(200) PRIMARY KEY
+                        )
+                        """);
+                jdbc().update("""
+                        INSERT INTO platform_script_locks (lock_key)
+                        SELECT ? WHERE NOT EXISTS (
+                            SELECT 1 FROM platform_script_locks WHERE lock_key = ?
+                        )
+                        """, key, key);
+                jdbc().queryForList(
+                        "SELECT lock_key FROM platform_script_locks WHERE lock_key = ? FOR UPDATE",
+                        key
+                );
+                yield null;
+            }
+            case "expectRowCount" -> {
+                String var = step.path("var").asText();
+                int expected = step.path("count").asInt();
+                Object value = vars.get(var);
+                int actual = value instanceof List<?> list ? list.size() : value == null ? 0 : 1;
+                if (actual != expected) {
+                    throw new IllegalStateException("expected " + expected + " rows in " + var + ", got " + actual);
+                }
+                yield null;
+            }
             case "exec" -> {
                 String sql = step.path("sql").asText();
                 List<Object> params = resolveParams(step.get("params"), vars);

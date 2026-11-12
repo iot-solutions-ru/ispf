@@ -31,15 +31,18 @@ public class AuditEventService {
     private final AuditEventRepository repository;
     private final ObjectMapper objectMapper;
     private final AuditSiemWebhookDispatcher siemWebhookDispatcher;
+    private final AuditChainStore auditChainStore;
 
     public AuditEventService(
             AuditEventRepository repository,
             ObjectMapper objectMapper,
-            AuditSiemWebhookDispatcher siemWebhookDispatcher
+            AuditSiemWebhookDispatcher siemWebhookDispatcher,
+            AuditChainStore auditChainStore
     ) {
         this.repository = repository;
         this.objectMapper = objectMapper;
         this.siemWebhookDispatcher = siemWebhookDispatcher;
+        this.auditChainStore = auditChainStore;
     }
 
     @Transactional
@@ -54,6 +57,7 @@ public class AuditEventService {
         entity.setDetailsJson(details == null || details.isEmpty() ? null : writeJson(details));
         entity.setOccurredAt(Instant.now());
         repository.save(entity);
+        auditChainStore.append(entity);
         siemWebhookDispatcher.dispatch(toRecord(entity));
     }
 

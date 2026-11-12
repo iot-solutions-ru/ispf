@@ -152,7 +152,8 @@ public class ApplicationController {
             @PathVariable String appId,
             @RequestBody JsonNode body,
             @RequestParam(defaultValue = "false") boolean strict,
-            @RequestParam(defaultValue = "true") boolean runTests
+            @RequestParam(defaultValue = "true") boolean runTests,
+            @RequestParam(defaultValue = "false") boolean withSeeds
     ) {
         try {
             // Verify license on the raw JSON map (same shape as tools/license-builder/sign-bundle.py).
@@ -175,7 +176,8 @@ public class ApplicationController {
                 blocked.put("deployed", false);
                 return ResponseEntity.badRequest().body(blocked);
             }
-            return ResponseEntity.ok(bundleDeployService.deploy(appId, manifest, false, false, runTests));
+            return ResponseEntity.ok(bundleDeployService.deploy(
+                    appId, manifest, false, false, runTests, withSeeds, readSeeds(body)));
         } catch (CommercialLicenseException ex) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
         } catch (BundleDependencyException ex) {
@@ -555,6 +557,24 @@ public class ApplicationController {
             copy.put("schemaName", ApplicationSchemaSupport.defaultSchemaName(appId));
         }
         return objectMapper.convertValue(copy, ApplicationBundleDeployService.BundleManifest.class);
+    }
+
+    private static List<ApplicationBundleDeployService.BundleSeed> readSeeds(JsonNode body) {
+        if (body == null || !body.has("seeds") || !body.get("seeds").isArray()) {
+            return List.of();
+        }
+        List<ApplicationBundleDeployService.BundleSeed> seeds = new java.util.ArrayList<>();
+        for (JsonNode seed : body.get("seeds")) {
+            String profile = seed.path("profile").isMissingNode() || seed.path("profile").isNull()
+                    ? null
+                    : seed.path("profile").asText();
+            seeds.add(new ApplicationBundleDeployService.BundleSeed(
+                    seed.path("id").asText(),
+                    profile,
+                    seed.path("sql").asText()
+            ));
+        }
+        return seeds;
     }
 
     public record RegisterApplicationRequest(

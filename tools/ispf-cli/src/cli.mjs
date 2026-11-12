@@ -5,6 +5,7 @@ import { runValidate } from "./validate.mjs";
 import { diffDirectory, printDiff } from "./diff.mjs";
 import { deployDirectory } from "./deploy.mjs";
 import { forkSolution } from "./fork.mjs";
+import { initSolution } from "./init-solution.mjs";
 
 function usage() {
   console.log(`Usage:
@@ -14,6 +15,8 @@ function usage() {
   ispf diff <dir> --app <id>
   ispf deploy <dir> --app <id> [--strict]
   ispf fork <bundle.json|dir> <dest> --app-id <plant-id>
+  ispf init-solution <dest> --app-id <id> [--name <display>]
+  ispf deploy <dir> --app <id> [--strict] [--with-seeds]
 
 Environment: ISPF_BASE_URL, ISPF_API_TOKEN
 
@@ -30,6 +33,10 @@ function parseArgs(argv) {
       flags.app = args[++i];
     } else if (a === "--app-id") {
       flags.appId = args[++i];
+    } else if (a === "--name") {
+      flags.name = args[++i];
+    } else if (a === "--with-seeds") {
+      flags.withSeeds = true;
     } else if (a === "-o" || a === "--output") {
       flags.output = args[++i];
     } else if (a === "--local") {
@@ -110,6 +117,15 @@ export async function runCli(argv) {
       process.exit(summary.length ? 1 : 0);
       break;
     }
+    case "init-solution": {
+      const dest = positional[1];
+      if (!dest || !flags.appId) {
+        throw new Error("init-solution requires <dest> --app-id <id>");
+      }
+      const result = initSolution(dest, flags.appId, flags.name);
+      console.log(`Initialized ${result.dest} schema=${result.schemaName}`);
+      break;
+    }
     case "fork": {
       const src = positional[1];
       const dest = positional[2];
@@ -123,7 +139,10 @@ export async function runCli(argv) {
     case "deploy": {
       const dir = positional[1];
       if (!dir || !flags.app) throw new Error("deploy requires <dir> --app <id>");
-      const result = await deployDirectory(path.resolve(dir), flags.app, { strict: !!flags.strict });
+      const result = await deployDirectory(path.resolve(dir), flags.app, {
+        strict: !!flags.strict,
+        withSeeds: !!flags.withSeeds,
+      });
       console.log(
         flags.strict ? "dry-run ship-canon OK wouldApply:" : "dry-run OK wouldApply:",
         (result.dryRun.wouldApply ?? []).join(", ")

@@ -46,12 +46,21 @@ export function diffSummary(local, remote) {
       changes.push({ op: "add", path: `/${key}`, note: "only on server" });
     } else if (b === undefined) {
       changes.push({ op: "remove", path: `/${key}`, note: "only in repo" });
-    } else if (Array.isArray(a) && Array.isArray(b) && a.length !== b.length) {
-      changes.push({
-        op: "replace",
-        path: `/${key}`,
-        note: `array length ${a.length} (repo) vs ${b.length} (server)`,
-      });
+    } else if (Array.isArray(a) && Array.isArray(b)) {
+      const ids = (items) => items.map((item) => (item && (item.id ?? item.name ?? item.path)) || JSON.stringify(item));
+      const left = new Set(ids(a));
+      const right = new Set(ids(b));
+      const onlyRepo = [...left].filter((id) => !right.has(id));
+      const onlyServer = [...right].filter((id) => !left.has(id));
+      if (onlyRepo.length || onlyServer.length) {
+        changes.push({
+          op: "replace",
+          path: `/${key}`,
+          note: `ids only in repo: ${onlyRepo.join(", ") || "—"}; only on server: ${onlyServer.join(", ") || "—"}`,
+        });
+      } else if (JSON.stringify(a) !== JSON.stringify(b)) {
+        changes.push({ op: "replace", path: `/${key}`, note: "same ids, content differs" });
+      }
     } else {
       changes.push({ op: "replace", path: `/${key}`, note: "content differs" });
     }
