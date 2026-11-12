@@ -73,6 +73,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
     private final RuntimeTelemetryProperties runtimeTelemetryProperties;
     private final ObjectProvider<DriverRuntimeService> self;
     private final DriverOwnershipService ownershipService;
+    private final DriverWriteRouter writeRouter;
     private final DriverWriteFence writeFence = new DriverWriteFence();
     private final DriverErrorMetrics errorMetrics;
     private final DriverPointCatalogService pointCatalog;
@@ -108,6 +109,7 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         this.runtimeTelemetryProperties = runtimeTelemetryProperties;
         this.self = self;
         this.ownershipService = ownershipService;
+        this.writeRouter = new DriverWriteRouter(ownershipService);
         this.pointCatalog = new DriverPointCatalogService(
                 this,
                 objects,
@@ -587,11 +589,30 @@ public class DriverRuntimeService implements DriverConnectionLookup {
         if (!active.binding().pointMappings().containsKey(pointId)) {
             throw new IllegalArgumentException("Unknown point mapping: " + pointId);
         }
+        DriverWriteRouter.WriteResult routed = writeRouter.route(
+                devicePath,
+                pointId,
+                value,
+                () -> writePointLocally(devicePath, pointId, value, active)
+        );
+        return switch (routed) {
+            case DriverWriteRouter.WriteResult.Local local -> local.status();
+            case DriverWriteRouter.WriteResult.Forward forward -> throw new IllegalStateException(
+                    "forward driver write to replica "
+                            + forward.forwardRequest().ownerId()
+                            + " for "
+                            + devicePath
+            );
+        };
+    }
+
+    private DriverRuntimeStatus writePointLocally(
+            String devicePath,
+            String pointId,
+            DataRecord value,
+            ActiveDriver active
+    ) {
         if (ownershipService.isEnabled()) {
-            if (!ownershipService.holdsLock(devicePath)) {
-                throw new IllegalStateException(
-                        "driver write rejected: this node does not hold the lease for " + devicePath);
-            }
             long epoch = ownershipService.currentEpoch(devicePath);
             if (!writeFence.allowWrite(epoch, epoch)) {
                 throw new IllegalStateException(
