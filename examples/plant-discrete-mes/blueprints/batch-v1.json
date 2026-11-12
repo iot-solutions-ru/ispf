@@ -1,0 +1,104 @@
+{
+  "description": "ISA-88 batch instance — recipe, phase, batch identity (BL-168)",
+  "name": "batch-v1",
+  "targetObjectType": "CUSTOM",
+  "type": "INSTANCE",
+  "variables": [
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": ""
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "STRING"
+            }
+          ],
+          "name": "stringValue"
+        }
+      },
+      "description": "Batch identifier",
+      "group": "info",
+      "name": "batchId",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "STRING"
+          }
+        ],
+        "name": "stringValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": ""
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "STRING"
+            }
+          ],
+          "name": "stringValue"
+        }
+      },
+      "description": "Recipe id or name",
+      "group": "config",
+      "name": "recipe",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "STRING"
+          }
+        ],
+        "name": "stringValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": "idle"
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "STRING"
+            }
+          ],
+          "name": "stringValue"
+        }
+      },
+      "description": "Current ISA-88 phase (charge, react, discharge, …)",
+      "group": "runtime",
+      "name": "phase",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "STRING"
+          }
+        ],
+        "name": "stringValue"
+      },
+      "writable": true
+    }
+  ]
+}

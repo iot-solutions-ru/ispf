@@ -1,7 +1,7 @@
 {
   "slug": "mes-integration-catalog",
   "title": "MES Integration Catalog",
-  "description": "B2MML envelope map and connector profiles (1C HTTP ready, SAP IDoc deferred) on erp-mes-core Part 5 outbox. BL-169 live path.",
+  "description": "B2MML, 1C HTTP, and SAP IDoc profiles on the platform outbox. Sandbox ACK until a plant sets a real endpoint.",
   "pricing": "free",
   "appId": "mes-integration-catalog",
   "vendorName": "IoT Solutions",
@@ -12,9 +12,9 @@
   "vendorContactEmail": "info@vendor.example.invalid",
   "vendorContactPhone": "+7 980 630-93-33",
   "priceCents": 0,
-  "latestVersion": "1.1.0",
+  "latestVersion": "1.2.0",
   "minIspfVersion": "0.9.30",
   "bundleArtifact": "bundle.json",
   "tags": ["mes", "erp", "b2mml", "1c", "integration", "product"],
-  "changelog": "1.1.0 report tables + Send; prior hub/invoke/simulate fixes"
+  "changelog": "1.2.0 SAP and B2MML profiles are ready on the platform outbox"
 }

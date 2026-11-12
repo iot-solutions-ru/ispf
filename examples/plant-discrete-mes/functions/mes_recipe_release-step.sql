@@ -1,0 +1,1 @@
+INSERT INTO mes_recipe (recipe_id, revision, display_name, effective_from, status) SELECT ?, CAST(? AS INTEGER), ?, CURRENT_TIMESTAMP, 'released' WHERE NOT EXISTS (SELECT 1 FROM mes_recipe WHERE recipe_id = ? AND revision = CAST(? AS INTEGER))

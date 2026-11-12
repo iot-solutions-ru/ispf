@@ -1,0 +1,57 @@
+{
+  "columns": [
+    {
+      "field": "from_entity_id",
+      "label": "From entity"
+    },
+    {
+      "field": "from_lot_id",
+      "label": "From lot"
+    },
+    {
+      "field": "from_material_code",
+      "label": "From material"
+    },
+    {
+      "field": "to_entity_id",
+      "label": "To entity"
+    },
+    {
+      "field": "to_lot_id",
+      "label": "To lot"
+    },
+    {
+      "field": "to_material_code",
+      "label": "To material"
+    },
+    {
+      "field": "activity_id",
+      "label": "Activity"
+    },
+    {
+      "field": "activity_type",
+      "label": "Activity type"
+    },
+    {
+      "field": "quantity",
+      "label": "Qty"
+    },
+    {
+      "field": "work_order_number",
+      "label": "Work order"
+    },
+    {
+      "field": "line_code",
+      "label": "Line"
+    },
+    {
+      "field": "occurred_at",
+      "label": "Occurred at"
+    }
+  ],
+  "description": "Tracked entity activity edges (BL-221)",
+  "maxRows": 500,
+  "parameters": [],
+  "reportId": "mes-genealogy-dag",
+  "title": "MES Genealogy DAG"
+}

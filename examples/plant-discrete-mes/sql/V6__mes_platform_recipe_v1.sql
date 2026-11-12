@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS mes_recipe (recipe_id VARCHAR(64) NOT NULL, revision INTEGER NOT NULL, display_name VARCHAR(128) NOT NULL, effective_from TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, effective_to TIMESTAMP, status VARCHAR(32) NOT NULL, PRIMARY KEY (recipe_id, revision));

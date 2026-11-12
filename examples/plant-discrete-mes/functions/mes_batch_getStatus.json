@@ -1,0 +1,49 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "batchPath",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "batchPath",
+          "type": "STRING"
+        },
+        {
+          "name": "batchId",
+          "type": "STRING"
+        },
+        {
+          "name": "recipe",
+          "type": "STRING"
+        },
+        {
+          "name": "phase",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "mes_batch_getStatus",
+  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"batch\",\"sql\":\"SELECT batch_id, recipe, phase FROM mes_batch_run WHERE batch_path = ?\",\"params\":[\"${input.batchPath}\"]},{\"type\":\"failIfNull\",\"var\":\"batch\",\"message\":\"Batch not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"batchPath\":\"${input.batchPath}\",\"batchId\":\"${batch.batch_id}\",\"recipe\":\"${batch.recipe}\",\"phase\":\"${batch.phase}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -1,0 +1,5 @@
+{
+  "path": "root.platform.dashboards.mes-platform-oee",
+  "refreshIntervalMs": 5000,
+  "title": "MES OEE"
+}

@@ -23,6 +23,10 @@
     {
       "id": "mes_platform_bom_ops_v1",
       "sql": "CREATE TABLE IF NOT EXISTS mes_bom_header (bom_id VARCHAR(64) PRIMARY KEY, parent_material_code VARCHAR(64) NOT NULL, revision VARCHAR(32) NOT NULL, display_name VARCHAR(128) NOT NULL, status VARCHAR(32) NOT NULL); CREATE TABLE IF NOT EXISTS mes_bom_line (bom_id VARCHAR(64) NOT NULL, line_no INTEGER NOT NULL, component_material_code VARCHAR(64) NOT NULL, quantity NUMERIC(12,3) NOT NULL, uom VARCHAR(16) NOT NULL, PRIMARY KEY (bom_id, line_no)); CREATE TABLE IF NOT EXISTS mes_operation_def (operation_id VARCHAR(64) PRIMARY KEY, routing_id VARCHAR(64) NOT NULL, name VARCHAR(128) NOT NULL, work_center VARCHAR(64) NOT NULL, sequence_no INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS mes_operation_edge (routing_id VARCHAR(64) NOT NULL, predecessor_op VARCHAR(64) NOT NULL, successor_op VARCHAR(64) NOT NULL, PRIMARY KEY (routing_id, predecessor_op, successor_op)); CREATE TABLE IF NOT EXISTS mes_operation_status (wo_number VARCHAR(64) NOT NULL, operation_id VARCHAR(64) NOT NULL, status VARCHAR(16) NOT NULL CHECK (status IN ('pending', 'ready', 'complete')), PRIMARY KEY (wo_number, operation_id));"
+    },
+    {
+      "id": "mes_platform_recipe_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_recipe (recipe_id VARCHAR(64) NOT NULL, revision INTEGER NOT NULL, display_name VARCHAR(128) NOT NULL, effective_from TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, effective_to TIMESTAMP, status VARCHAR(32) NOT NULL, PRIMARY KEY (recipe_id, revision));"
     }
   ],
   "seeds": [
@@ -177,6 +181,35 @@
     }
   ],
   "functions": [
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_recipe_release",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            { "name": "recipeId", "type": "STRING" },
+            { "name": "revision", "type": "STRING" },
+            { "name": "displayName", "type": "STRING" },
+            { "name": "signature", "type": "STRING" }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            { "name": "recipeId", "type": "STRING" },
+            { "name": "revision", "type": "STRING" }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"signaturePolicy\":\"REQUIRED\",\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_recipe (recipe_id, revision, display_name, effective_from, status) SELECT ?, CAST(? AS INTEGER), ?, CURRENT_TIMESTAMP, 'released' WHERE NOT EXISTS (SELECT 1 FROM mes_recipe WHERE recipe_id = ? AND revision = CAST(? AS INTEGER))\",\"params\":[\"${input.recipeId}\",\"${input.revision}\",\"${input.displayName}\",\"${input.recipeId}\",\"${input.revision}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"recipeId\":\"${input.recipeId}\",\"revision\":\"${input.revision}\"}}]}"
+      }
+    },
     {
       "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
       "functionName": "mes_oee_listShifts",

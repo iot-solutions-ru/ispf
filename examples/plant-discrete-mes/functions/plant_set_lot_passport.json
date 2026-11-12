@@ -1,0 +1,27 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        { "name": "lotId", "type": "STRING" },
+        { "name": "passportNote", "type": "STRING" },
+        { "name": "signature", "type": "STRING" }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        { "name": "error_code", "type": "STRING" },
+        { "name": "error_message", "type": "STRING" },
+        { "name": "lotId", "type": "STRING" }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "plant_set_lot_passport",
+  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "source": {
+    "body": "{\"signaturePolicy\":\"REQUIRED\",\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_genealogy_lot SET passport_note = ? WHERE lot_id = ?\",\"params\":[\"${input.passportNote}\",\"${input.lotId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${input.lotId}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

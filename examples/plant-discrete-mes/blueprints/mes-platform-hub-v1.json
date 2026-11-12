@@ -1,0 +1,173 @@
+{
+  "bindings": [],
+  "description": "MES platform hub — SPC telemetry and control limits (BL-167)",
+  "events": [],
+  "functions": [],
+  "name": "mes-platform-hub-v1",
+  "parameters": {},
+  "type": "SINGLETON",
+  "variables": [
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": 10.02
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "DOUBLE"
+            }
+          ],
+          "name": "doubleValue"
+        }
+      },
+      "description": "Latest critical-dimension SPC sample (mm)",
+      "group": "quality",
+      "historyEnabled": true,
+      "name": "spcMeasurement",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "DOUBLE"
+          }
+        ],
+        "name": "doubleValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": 10.5
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "DOUBLE"
+            }
+          ],
+          "name": "doubleValue"
+        }
+      },
+      "description": "Upper control limit (mm)",
+      "group": "quality",
+      "name": "spcUcl",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "DOUBLE"
+          }
+        ],
+        "name": "doubleValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": 9.5
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "DOUBLE"
+            }
+          ],
+          "name": "doubleValue"
+        }
+      },
+      "description": "Lower control limit (mm)",
+      "group": "quality",
+      "name": "spcLcl",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "DOUBLE"
+          }
+        ],
+        "name": "doubleValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": 10
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "DOUBLE"
+            }
+          ],
+          "name": "doubleValue"
+        }
+      },
+      "description": "Target / center line (mm)",
+      "group": "quality",
+      "name": "spcTarget",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "DOUBLE"
+          }
+        ],
+        "name": "doubleValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": 85
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "INTEGER"
+            }
+          ],
+          "name": "integerValue"
+        }
+      },
+      "description": "Composite OEE percent (A×P×Q) — historian rollup via BL-160 oee template",
+      "group": "oee",
+      "historyEnabled": true,
+      "name": "oeePct",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "INTEGER"
+          }
+        ],
+        "name": "integerValue"
+      },
+      "writable": true
+    }
+  ]
+}
