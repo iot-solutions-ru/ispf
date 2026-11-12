@@ -6,8 +6,10 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
+import com.ispf.driver.DriverUnsupportedOperationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -58,10 +60,10 @@ class AzureIotHubDeviceDriverTest {
     }
 
     @Test
-    void metadataIsProductionReadWrite() {
+    void metadataIsBetaReadWrite() {
         driver = new AzureIotHubDeviceDriver();
         assertEquals("azure-iot-hub", driver.metadata().id());
-        assertEquals(DriverMaturity.PRODUCTION, driver.metadata().maturity());
+        assertEquals(DriverMaturity.BETA, driver.metadata().maturity());
         assertEquals(Set.of("read", "write"), driver.metadata().capabilities());
         String description = driver.metadata().description().toLowerCase(Locale.ROOT);
         assertFalse(description.contains("lab"));
@@ -135,6 +137,37 @@ class AzureIotHubDeviceDriverTest {
         DriverException error = assertThrows(DriverException.class, () ->
                 driver.readPoints(Map.of("c", "cmd")));
         assertTrue(error.getMessage().contains("Not connected"));
+    }
+
+    @Test
+    void connectRejectsUseTlsWithoutOpeningTcp() {
+        driver = new AzureIotHubDeviceDriver();
+        driver.initialize(new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", "1883",
+                "useTls", "true"
+        )));
+
+        DriverUnsupportedOperationException error = assertThrows(
+                DriverUnsupportedOperationException.class, driver::connect);
+        assertTrue(error.getMessage().contains("TLS"));
+        assertFalse(driver.isConnected());
+    }
+
+    @Test
+    void connectRejectsCertPathsWhenUseTlsFalseWithoutOpeningTcp() {
+        driver = new AzureIotHubDeviceDriver();
+        driver.initialize(new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", "1883",
+                "useTls", "false",
+                "clientCertPath", "/tmp/device.crt"
+        )));
+
+        DriverConfigurationException error = assertThrows(
+                DriverConfigurationException.class, driver::connect);
+        assertTrue(error.getMessage().contains("certificate"));
+        assertFalse(driver.isConnected());
     }
 
     @Test

@@ -144,7 +144,7 @@ PURPOSE_RU = {
     "ingress-sflow": "sFlow v5 UDP listener (сырой ingress)",
 }
 
-BETA = {"opc-da", "opc-bridge", "corba"}
+BETA = {"opc-da", "opc-bridge", "corba", "aws-iot-core", "azure-iot-hub"}
 
 
 def load_stub_meta() -> dict[str, dict[str, str]]:
