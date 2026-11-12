@@ -8,6 +8,7 @@ import com.ispf.driver.DriverConfigurationException;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMaturity;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverUnsupportedOperationException;
 
 import java.io.IOException;
 import java.util.List;
@@ -29,8 +30,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>{@code clientId} — MQTT client id</li>
  *   <li>{@code port} — MQTT port (default {@code 1883})</li>
  *   <li>{@code timeoutMs} — connect / ack / read wait</li>
- *   <li>{@code useTls}, {@code caCertPath}, {@code clientCertPath}, {@code clientKeyPath}
- *       — fail closed until mTLS is implemented; any of these refuses the connection</li>
+ *   <li>{@code useTls} — when {@code true}, connect fails with
+ *       {@link DriverUnsupportedOperationException} (MQTT TLS is not implemented;
+ *       plain TCP is not used as a fallback)</li>
+ *   <li>{@code caCertPath}, {@code clientCertPath}, {@code clientKeyPath}
+ *       — fail closed with {@link DriverConfigurationException}; mTLS is not implemented</li>
  * </ul>
  * Topic conventions:
  * <ul>
@@ -112,10 +116,7 @@ public class AwsIotCoreDeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         disconnect();
-        if (useTls || !caCertPath.isEmpty() || !clientCertPath.isEmpty() || !clientKeyPath.isEmpty()) {
-            throw new DriverConfigurationException(
-                    "AWS IoT Core TLS/mTLS is not implemented; refusing cleartext fallback");
-        }
+        failClosedBeforeTcp();
         try {
             mqtt = new Mqtt311Client(host, port, timeoutMs, clientId);
             mqtt.addListener(this::onPublish);
@@ -127,6 +128,18 @@ public class AwsIotCoreDeviceDriver implements DeviceDriver {
             disconnect();
             throw new DriverException("AWS IoT Core MQTT connect failed for "
                     + host + ":" + port, e);
+        }
+    }
+
+    private void failClosedBeforeTcp() throws DriverException {
+        if (useTls) {
+            throw new DriverUnsupportedOperationException(
+                    "AWS IoT Core driver does not implement MQTT TLS; set useTls=false for lab plain TCP");
+        }
+        if (!caCertPath.isBlank() || !clientCertPath.isBlank() || !clientKeyPath.isBlank()) {
+            throw new DriverConfigurationException(
+                    "AWS IoT Core driver does not implement MQTT TLS certificate paths; "
+                            + "leave caCertPath, clientCertPath, and clientKeyPath blank for lab plain TCP");
         }
     }
 

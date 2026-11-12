@@ -103,6 +103,123 @@ class ExamplesBundleValidationTest {
     }
 
     @Test
+    void warnsOnInstanceBlueprintTargetingDevice() throws Exception {
+        String json = """
+                {
+                  "version":"1.0.0",
+                  "displayName":"Bad Twin",
+                  "tablePrefix":"b_",
+                  "schemaName":"app_bad",
+                  "blueprints":[{"name":"twin-v1","type":"INSTANCE","targetObjectType":"DEVICE","functions":[{"name":"tick"}]}]
+                }
+                """;
+        ApplicationBundleDeployService.BundleManifest manifest =
+                objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);
+        BundleValidationResult result = validator.validate("bad-twin", manifest);
+        assertEquals(BundleValidationResult.OK, result.status());
+        assertTrue(result.issues().stream().anyMatch(i ->
+                "LOGIC_HOST_DEVICE".equals(i.code())
+                        && "blueprints[0].targetObjectType".equals(i.path())
+                        && BundleValidationIssue.WARNING.equals(i.severity())));
+    }
+
+    @Test
+    void extractBpmnInvokeFunctionRefsScansPerServiceTaskInAnyAttributeOrder() {
+        String bpmn = """
+                <serviceTask id="t1" ispf:action="invoke_function" ispf:objectPath="root.platform.devices.a" ispf:functionName="f1"/>
+                <serviceTask id="t2" ispf:functionName="f2" ispf:action="invoke_function" ispf:objectPath="root.platform.devices.b"/>
+                """;
+        var refs = BundleManifestValidator.extractBpmnInvokeFunctionRefs(bpmn);
+        assertEquals(2, refs.size());
+        assertEquals("root.platform.devices.a", refs.get(0).objectPath());
+        assertEquals("f1", refs.get(0).functionName());
+        assertEquals("root.platform.devices.b", refs.get(1).objectPath());
+        assertEquals("f2", refs.get(1).functionName());
+    }
+
+    @Test
+    void warnsWhenBpmnInvokesFunctionOnDevice() throws Exception {
+        String bpmn = """
+                <serviceTask id="t1" ispf:functionName="tick" ispf:action="invoke_function" ispf:objectPath="root.platform.devices.bad-hub"/>
+                """;
+        String json = """
+                {
+                  "version":"1.0.0",
+                  "displayName":"Bad Bpmn",
+                  "tablePrefix":"b_",
+                  "schemaName":"app_bad",
+                  "objects":[{"parentPath":"root.platform.devices","name":"bad-hub","type":"DEVICE"}],
+                  "functions":[{"objectPath":"root.platform.singleton-blueprints.good-hub","functionName":"tick","source":{"type":"script","body":"{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"ok\\":true}}]}"}}],
+                  "workflows":[{"workflowId":"wf1","bpmnXml":%s}]
+                }
+                """.formatted(objectMapper.writeValueAsString(bpmn));
+        ApplicationBundleDeployService.BundleManifest manifest =
+                objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);
+        BundleValidationResult result = validator.validate("bad-bpmn", manifest);
+        assertEquals(BundleValidationResult.OK, result.status());
+        assertTrue(result.issues().stream().anyMatch(i ->
+                "LOGIC_HOST_DEVICE".equals(i.code())
+                        && "workflows[0].bpmnXml.serviceTask[0].objectPath".equals(i.path())
+                        && BundleValidationIssue.WARNING.equals(i.severity())));
+    }
+
+    @Test
+    void adjacentBpmnServiceTasksDoNotCrossMatchInvokeAttributes() throws Exception {
+        String bpmn = """
+                <serviceTask id="t1" ispf:action="invoke_function" ispf:objectPath="root.platform.devices.bad-hub" ispf:functionName="tick"/>
+                <serviceTask id="t2" ispf:action="invoke_function" ispf:objectPath="root.platform.singleton-blueprints.good-hub" ispf:functionName="other"/>
+                """;
+        String json = """
+                {
+                  "version":"1.0.0",
+                  "displayName":"Adjacent Bpmn",
+                  "tablePrefix":"b_",
+                  "schemaName":"app_bad",
+                  "objects":[{"parentPath":"root.platform.devices","name":"bad-hub","type":"DEVICE"}],
+                  "functions":[{"objectPath":"root.platform.singleton-blueprints.good-hub","functionName":"tick","source":{"type":"script","body":"{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"ok\\":true}}]}"}}],
+                  "workflows":[{"workflowId":"wf1","bpmnXml":%s}]
+                }
+                """.formatted(objectMapper.writeValueAsString(bpmn));
+        ApplicationBundleDeployService.BundleManifest manifest =
+                objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);
+        BundleValidationResult result = validator.validate("adjacent-bpmn", manifest);
+        assertEquals(BundleValidationResult.OK, result.status());
+        long logicIssues = result.issues().stream().filter(i -> "LOGIC_HOST_DEVICE".equals(i.code())).count();
+        assertEquals(1, logicIssues);
+        assertTrue(result.issues().stream().anyMatch(i ->
+                i.path().equals("workflows[0].bpmnXml.serviceTask[0].objectPath")
+                        && i.message().contains("tick")));
+    }
+
+    @Test
+    void warnsWhenDashboardInvokesFunctionOnDevice() throws Exception {
+        String layout = """
+                {"columns":12,"rowHeight":48,"widgets":[
+                  {"id":"f1","type":"function-form","objectPath":"root.platform.devices.bad-hub","functionName":"tick"}
+                ]}
+                """;
+        String json = """
+                {
+                  "version":"1.0.0",
+                  "displayName":"Bad Dash",
+                  "tablePrefix":"b_",
+                  "schemaName":"app_bad",
+                  "objects":[{"parentPath":"root.platform.devices","name":"bad-hub","type":"DEVICE"}],
+                  "functions":[{"objectPath":"root.platform.singleton-blueprints.good-hub","functionName":"tick","source":{"type":"script","body":"{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"ok\\":true}}]}"}}],
+                  "dashboards":[{"path":"root.platform.dashboards.bad","title":"Bad","layoutJson":%s}]
+                }
+                """.formatted(objectMapper.writeValueAsString(layout));
+        ApplicationBundleDeployService.BundleManifest manifest =
+                objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);
+        BundleValidationResult result = validator.validate("bad-dash", manifest);
+        assertEquals(BundleValidationResult.OK, result.status());
+        assertTrue(result.issues().stream().anyMatch(i ->
+                "LOGIC_HOST_DEVICE".equals(i.code())
+                        && i.path().startsWith("dashboards[0].widgets[")
+                        && BundleValidationIssue.WARNING.equals(i.severity())));
+    }
+
+    @Test
     void strictModePromotesLogicHostDeviceToError() throws Exception {
         String json = """
                 {

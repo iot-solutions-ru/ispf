@@ -638,7 +638,7 @@ final class AgentPlanGuard {
         return false;
     }
 
-    static boolean canApprovePlan(AgentRunState runState) {
+    public static boolean canApprovePlan(AgentRunState runState) {
         if (runState == null) {
             return false;
         }

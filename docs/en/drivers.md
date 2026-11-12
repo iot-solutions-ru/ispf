@@ -584,8 +584,8 @@ What each driver does (all packs from `gradle/driver-packs.json`):
 | `application` | `ispf-driver-application` | PRODUCTION | Apache-2.0 | Local shell/script execution mapped to variables |
 | `as-interface` | `ispf-driver-as-interface` | BETA | Apache-2.0 | AS-Interface master/gateway stub |
 | `asterisk` | `ispf-driver-asterisk` | PRODUCTION | Apache-2.0 | Asterisk Manager Interface (AMI) commands |
-| `aws-iot-core` | `ispf-driver-aws-iot-core` | STUB | Apache-2.0 | AWS IoT Core MQTT/HTTP stub |
-| `azure-iot-hub` | `ispf-driver-azure-iot-hub` | STUB | Apache-2.0 | Azure IoT Hub device/service stub |
+| `aws-iot-core` | `ispf-driver-aws-iot-core` | BETA | Apache-2.0 | AWS IoT Core MQTT lab client (plain TCP only; `useTls=true` fails closed) |
+| `azure-iot-hub` | `ispf-driver-azure-iot-hub` | BETA | Apache-2.0 | Azure IoT Hub MQTT lab client (plain TCP only; `useTls=true` fails closed) |
 | `bacnet` | `ispf-driver-bacnet` | PRODUCTION | Apache-2.0 | BACnet/IP client (clean-room codec) |
 | `bacnet-mstp` | `ispf-driver-bacnet-mstp` | BETA | Apache-2.0 | BACnet MS/TP serial stub (BACnet/IP pack is separate) |
 | `barcode-scanner` | `ispf-driver-barcode-scanner` | STUB | Apache-2.0 | Barcode/QR TCP/serial scanner stub |

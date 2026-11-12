@@ -269,6 +269,12 @@ public final class AgentRunState {
         return appId != null && Boolean.TRUE.equals(validatedBundles.get(appId.trim()));
     }
 
+    public void clearBundleValidated(String appId) {
+        if (appId != null && !appId.isBlank()) {
+            validatedBundles.remove(appId.trim());
+        }
+    }
+
     public Optional<AgentPendingContinuation> pending() {
         return Optional.ofNullable(pending);
     }

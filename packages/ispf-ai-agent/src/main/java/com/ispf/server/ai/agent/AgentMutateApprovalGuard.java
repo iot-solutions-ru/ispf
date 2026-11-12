@@ -21,16 +21,34 @@ public final class AgentMutateApprovalGuard {
         }
     }
 
+    public static boolean canApprovePendingPlan(AgentRunState runState) {
+        return AgentPlanGuard.canApprovePlan(runState);
+    }
+
     public static Optional<BlockDecision> checkBeforeTool(
             boolean requireApprovalForMutate,
             AgentRunState runState,
             String toolName,
             AgentProfile profile
     ) {
+        return checkBeforeTool(requireApprovalForMutate, runState, toolName, profile, false);
+    }
+
+    /**
+     * @param ignoreExecuteModeBypass when true (MCP transport), {@link AgentInteractionMode#EXECUTE}
+     *                                does not bypass the mutate-approval gate.
+     */
+    public static Optional<BlockDecision> checkBeforeTool(
+            boolean requireApprovalForMutate,
+            AgentRunState runState,
+            String toolName,
+            AgentProfile profile,
+            boolean ignoreExecuteModeBypass
+    ) {
         if (!requireApprovalForMutate || profile == AgentProfile.OPERATOR || runState == null) {
             return Optional.empty();
         }
-        if (runState.interactionMode() == AgentInteractionMode.EXECUTE) {
+        if (!ignoreExecuteModeBypass && runState.interactionMode() == AgentInteractionMode.EXECUTE) {
             return Optional.empty();
         }
         if (AgentPlanGuard.isReadOnlyTool(toolName)) {

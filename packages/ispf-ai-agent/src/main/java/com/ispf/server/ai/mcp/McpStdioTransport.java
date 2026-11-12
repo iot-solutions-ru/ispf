@@ -1,11 +1,13 @@
 package com.ispf.server.ai.mcp;
 
+import com.ispf.server.config.IspfRoles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
@@ -15,6 +17,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * JSON-RPC over stdin/stdout for local MCP clients (Cursor, CI). Active when {@code ispf.mcp.stdio-enabled=true}.
@@ -24,6 +27,7 @@ import java.util.Map;
 public class McpStdioTransport implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(McpStdioTransport.class);
+    private static final String STDIO_ACTOR = "admin";
 
     private final McpJsonRpcHandler jsonRpcHandler;
     private final ObjectMapper objectMapper;
@@ -36,9 +40,14 @@ public class McpStdioTransport implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         log.info("MCP stdio transport started (one JSON-RPC object per line on stdin)");
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken("mcp-stdio", null, List.of());
-        String actor = "mcp-stdio";
+        String connectionId = UUID.randomUUID().toString();
+        String connectionKey = McpConnectionKeys.forStdioConnection(connectionId);
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                STDIO_ACTOR,
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_" + IspfRoles.ADMIN))
+        );
+        String actor = STDIO_ACTOR;
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
              PrintWriter writer = new PrintWriter(System.out, true, StandardCharsets.UTF_8)) {
@@ -54,13 +63,13 @@ public class McpStdioTransport implements ApplicationRunner {
                         List<Map<String, Object>> batch = (List<Map<String, Object>>) list;
                         for (Map<String, Object> request : batch) {
                             writer.println(objectMapper.writeValueAsString(
-                                    jsonRpcHandler.handle(request, authentication, actor)));
+                                    jsonRpcHandler.handle(request, authentication, actor, connectionKey)));
                         }
                     } else if (parsed instanceof Map<?, ?> map) {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> request = (Map<String, Object>) map;
                         writer.println(objectMapper.writeValueAsString(
-                                jsonRpcHandler.handle(request, authentication, actor)));
+                                jsonRpcHandler.handle(request, authentication, actor, connectionKey)));
                     }
                 } catch (Exception ex) {
                     log.debug("MCP stdio parse error: {}", ex.getMessage());

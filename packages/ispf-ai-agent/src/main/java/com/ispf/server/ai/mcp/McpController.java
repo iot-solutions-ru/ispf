@@ -1,5 +1,7 @@
 package com.ispf.server.ai.mcp;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -26,32 +28,69 @@ public class McpController {
         this.jsonRpcHandler = jsonRpcHandler;
     }
 
+    /** Standard MCP session header (preferred). */
+    public static final String SESSION_HEADER = "Mcp-Session-Id";
+
+    /** Legacy alias used by early ISPF MCP clients. */
+    public static final String CONNECTION_HEADER = "X-ISPF-Mcp-Connection";
+
     @PostMapping
-    public Object message(@RequestBody Object body, Authentication authentication) throws Exception {
+    public Object message(
+            @RequestBody Object body,
+            Authentication authentication,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) throws Exception {
         String actor = actor(authentication);
+        String sessionHeader = sessionHeader(httpRequest);
         if (body instanceof List<?> list) {
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> requests = (List<Map<String, Object>>) list;
             return requests.stream()
-                    .map(req -> {
-                        try {
-                            return jsonRpcHandler.handle(req, authentication, actor);
-                        } catch (Exception ex) {
-                            return Map.of(
-                                    "jsonrpc", "2.0",
-                                    "id", req.getOrDefault("id", 0),
-                                    "error", Map.of("code", -32000, "message", ex.getMessage())
-                            );
-                        }
-                    })
+                    .map(req -> handleOne(req, authentication, actor, sessionHeader, httpResponse))
                     .toList();
         }
         if (body instanceof Map<?, ?> map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> request = (Map<String, Object>) map;
-            return jsonRpcHandler.handle(request, authentication, actor);
+            return handleOne(request, authentication, actor, sessionHeader, httpResponse);
         }
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Expected JSON-RPC object or array");
+    }
+
+    private Map<String, Object> handleOne(
+            Map<String, Object> request,
+            Authentication authentication,
+            String actor,
+            String sessionHeader,
+            HttpServletResponse httpResponse
+    ) {
+        try {
+            McpJsonRpcHandler.HttpHandleResult handled = jsonRpcHandler.handleHttp(
+                    request,
+                    authentication,
+                    actor,
+                    sessionHeader
+            );
+            if (handled.mintedSessionId() != null) {
+                httpResponse.setHeader(SESSION_HEADER, handled.mintedSessionId());
+            }
+            return handled.response();
+        } catch (Exception ex) {
+            return Map.of(
+                    "jsonrpc", "2.0",
+                    "id", request.getOrDefault("id", 0),
+                    "error", Map.of("code", -32000, "message", ex.getMessage())
+            );
+        }
+    }
+
+    static String sessionHeader(HttpServletRequest httpRequest) {
+        String value = httpRequest.getHeader(SESSION_HEADER);
+        if (value == null || value.isBlank()) {
+            value = httpRequest.getHeader(CONNECTION_HEADER);
+        }
+        return value != null && !value.isBlank() ? value.trim() : null;
     }
 
     private static String actor(Authentication authentication) {
