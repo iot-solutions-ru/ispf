@@ -1,0 +1,66 @@
+{
+  "displayName": "Демо-завод",
+  "metadata": {
+    "changelog": "1.5.0 - BL-222 Nested BoM + operations dependency graph: BoM explosion/where-used, ready-operation BFF, Operator dashboard; 1.4.0 - BL-221 Traceability DAG v2",
+    "delivery": "marketplace",
+    "forkedFrom": {
+      "schemaName": "app_mes_platform",
+      "sha256": "8da3ea55fbe405942c8de325fc16dabfd352353c61dd1bc1e64a57625ee88f0f",
+      "version": "2.0.0"
+    },
+    "product": "mes",
+    "publisher": "IoT Solutions",
+    "role": "demo-plant",
+    "note": "Template factory. A real plant is created with ispf fork of this directory."
+  },
+  "operatorUi": {
+    "appId": "demo-plant",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.mes-platform-dispatch",
+        "title": "Dispatch"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-oee",
+        "title": "OEE"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-quality",
+        "title": "Quality"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-genealogy",
+        "title": "Genealogy"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-batch",
+        "title": "Batch"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-bom-ops",
+        "title": "BoM + Ops"
+      }
+    ],
+    "defaultDashboard": "root.platform.dashboards.mes-platform-dispatch",
+    "defaultReport": "root.platform.reports.mes-genealogy",
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
+    "reports": [
+      {
+        "path": "root.platform.reports.mes-genealogy",
+        "title": "Genealogy"
+      },
+      {
+        "path": "root.platform.reports.mes-genealogy-by-lot",
+        "title": "Genealogy by lot"
+      },
+      {
+        "path": "root.platform.reports.mes-genealogy-dag",
+        "title": "Genealogy DAG"
+      }
+    ],
+    "title": "Демо-завод"
+  },
+  "schemaName": "app_demo_plant",
+  "tablePrefix": "",
+  "version": "2.0.0"
+}

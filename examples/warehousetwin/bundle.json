@@ -6,11 +6,34 @@
   "objects": [],
   "dashboards": [],
   "workflows": [],
-  "blueprints": [],
-  "migrations": [],
+  "blueprints": [
+    {
+      "name": "warehousetwin-hub-v1",
+      "description": "Warehouse orchestrator",
+      "type": "SINGLETON",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ],
+  "migrations": [
+    {
+      "id": "wt_schema",
+      "sql": "CREATE TABLE IF NOT EXISTS wt_warehouse (id VARCHAR(32) PRIMARY KEY, code VARCHAR(32), name VARCHAR(128), address VARCHAR(256), area_m2 INTEGER, status VARCHAR(32)); CREATE TABLE IF NOT EXISTS wt_order (id VARCHAR(64) PRIMARY KEY, warehouse_id VARCHAR(32) NOT NULL, order_no VARCHAR(64), order_type VARCHAR(32), status VARCHAR(32), priority VARCHAR(32), lines_count INTEGER, due_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); CREATE TABLE IF NOT EXISTS wt_task (id VARCHAR(64) PRIMARY KEY, warehouse_id VARCHAR(32) NOT NULL, title VARCHAR(256), task_type VARCHAR(32), status VARCHAR(32), priority VARCHAR(32), assignee VARCHAR(128), location_code VARCHAR(64), source_location_code VARCHAR(64), sku_code VARCHAR(64), qty INTEGER, order_id VARCHAR(64), due_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); CREATE TABLE IF NOT EXISTS wt_kpi (key VARCHAR(64) PRIMARY KEY, value INTEGER NOT NULL DEFAULT 0); CREATE TABLE IF NOT EXISTS wt_wave (id VARCHAR(64) PRIMARY KEY, warehouse_id VARCHAR(32) NOT NULL, wave_no VARCHAR(64), status VARCHAR(32), priority VARCHAR(32), order_count INTEGER, line_count INTEGER, assignee VARCHAR(128), due_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, released_at TIMESTAMP); CREATE TABLE IF NOT EXISTS wt_audit_log (id VARCHAR(64) PRIMARY KEY, warehouse_id VARCHAR(32), entity_type VARCHAR(32), entity_id VARCHAR(64), action VARCHAR(64), detail VARCHAR(512), actor VARCHAR(128), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); CREATE TABLE IF NOT EXISTS wt_equipment (id VARCHAR(64) PRIMARY KEY, warehouse_id VARCHAR(32), code VARCHAR(64), name VARCHAR(128), eq_type VARCHAR(32), status VARCHAR(32), zone_label VARCHAR(64), battery INTEGER, pos_x DOUBLE PRECISION, pos_y DOUBLE PRECISION); CREATE TABLE IF NOT EXISTS wt_location (id VARCHAR(64) PRIMARY KEY, warehouse_id VARCHAR(32), location_code VARCHAR(64), zone_id VARCHAR(32), aisle VARCHAR(16), rack VARCHAR(16), level VARCHAR(16), status VARCHAR(32), fill_pct INTEGER, sku_count INTEGER); CREATE TABLE IF NOT EXISTS wt_inventory (id VARCHAR(64) PRIMARY KEY, warehouse_id VARCHAR(32), location_code VARCHAR(64), sku_code VARCHAR(64), sku_name VARCHAR(128), qty INTEGER, uom VARCHAR(16), lot VARCHAR(64), expiry_date DATE); CREATE TABLE IF NOT EXISTS wt_incident (id VARCHAR(64) PRIMARY KEY, warehouse_id VARCHAR(32), title VARCHAR(256), severity VARCHAR(32), status VARCHAR(32), assignee VARCHAR(128), source VARCHAR(64), equipment_id VARCHAR(64), location_code VARCHAR(64), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, sla_due_at TIMESTAMP); CREATE TABLE IF NOT EXISTS wt_integration (id VARCHAR(64) PRIMARY KEY, name VARCHAR(128), protocol VARCHAR(32), health VARCHAR(32), latency_ms INTEGER, endpoint VARCHAR(256), description VARCHAR(512), last_sync_at TIMESTAMP); CREATE TABLE IF NOT EXISTS wt_kpi_point (id VARCHAR(64) PRIMARY KEY, warehouse_id VARCHAR(32), series VARCHAR(64), label VARCHAR(64), value DOUBLE PRECISION, sort_order INTEGER); CREATE TABLE IF NOT EXISTS wt_pick_route (id VARCHAR(64) PRIMARY KEY, warehouse_id VARCHAR(32), wave_id VARCHAR(64), sort_order INTEGER, location_code VARCHAR(64)); CREATE TABLE IF NOT EXISTS wt_sku (id VARCHAR(64) PRIMARY KEY, warehouse_id VARCHAR(32), sku_code VARCHAR(64), sku_name VARCHAR(128), abc_class VARCHAR(8), storage_zone VARCHAR(32), uom VARCHAR(16), shelf_life_days INTEGER, min_stock INTEGER); CREATE TABLE IF NOT EXISTS wt_user (id VARCHAR(64) PRIMARY KEY, warehouse_id VARCHAR(32), name VARCHAR(128), email VARCHAR(128), role VARCHAR(64)); CREATE TABLE IF NOT EXISTS wt_zone (id VARCHAR(64) PRIMARY KEY, warehouse_id VARCHAR(32) NOT NULL, label VARCHAR(128), zone_type VARCHAR(32), x DOUBLE PRECISION, y DOUBLE PRECISION, w DOUBLE PRECISION, h DOUBLE PRECISION); CREATE TABLE IF NOT EXISTS wt_wave_order (wave_id VARCHAR(64) NOT NULL, order_id VARCHAR(64) NOT NULL, PRIMARY KEY (wave_id, order_id));"
+    }
+  ],
+  "seeds": [
+    {
+      "id": "demo_warehouse",
+      "profile": "default",
+      "sql": "INSERT INTO wt_warehouse (id, code, name, status) SELECT 'wh-rc01', 'RC01', 'Demo warehouse', 'active' WHERE NOT EXISTS (SELECT 1 FROM wt_warehouse WHERE id = 'wh-rc01'); INSERT INTO wt_kpi (key, value) SELECT 'ordersActive', 0 WHERE NOT EXISTS (SELECT 1 FROM wt_kpi WHERE key = 'ordersActive'); INSERT INTO wt_kpi (key, value) SELECT 'tasksOpen', 0 WHERE NOT EXISTS (SELECT 1 FROM wt_kpi WHERE key = 'tasksOpen');"
+    }
+  ],
   "functions": [
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_createOrder",
       "version": "ui1",
       "descriptor": {
@@ -87,7 +110,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_createPutawayTask",
       "version": "ui1",
       "descriptor": {
@@ -192,7 +215,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_createReplenishTask",
       "version": "ui1",
       "descriptor": {
@@ -283,7 +306,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_createTask",
       "version": "ui1",
       "descriptor": {
@@ -395,7 +418,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_createWave",
       "version": "ui1",
       "descriptor": {
@@ -479,7 +502,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_getKpi",
       "version": "ui1",
       "descriptor": {
@@ -520,7 +543,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_getWarehouse",
       "version": "ui1",
       "descriptor": {
@@ -561,7 +584,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listAuditLog",
       "version": "ui1",
       "descriptor": {
@@ -602,7 +625,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listEquipment",
       "version": "ui1",
       "descriptor": {
@@ -643,7 +666,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listFefoAlerts",
       "version": "ui1",
       "descriptor": {
@@ -684,7 +707,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listIncidents",
       "version": "ui1",
       "descriptor": {
@@ -725,7 +748,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listIntegrations",
       "version": "ui1",
       "descriptor": {
@@ -766,7 +789,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listInventory",
       "version": "ui1",
       "descriptor": {
@@ -807,7 +830,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listKpis",
       "version": "ui1",
       "descriptor": {
@@ -848,7 +871,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listLocations",
       "version": "ui1",
       "descriptor": {
@@ -889,7 +912,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listOrders",
       "version": "ui1",
       "descriptor": {
@@ -930,7 +953,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listPickRoutes",
       "version": "ui1",
       "descriptor": {
@@ -971,7 +994,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listPutawayQueue",
       "version": "ui1",
       "descriptor": {
@@ -1012,7 +1035,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listReplenishNeeds",
       "version": "ui1",
       "descriptor": {
@@ -1053,7 +1076,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listSkus",
       "version": "ui1",
       "descriptor": {
@@ -1094,7 +1117,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listTasks",
       "version": "ui1",
       "descriptor": {
@@ -1135,7 +1158,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listUsers",
       "version": "ui1",
       "descriptor": {
@@ -1176,7 +1199,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listWaves",
       "version": "ui1",
       "descriptor": {
@@ -1217,7 +1240,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_listZones",
       "version": "ui1",
       "descriptor": {
@@ -1258,7 +1281,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_logAudit",
       "version": "ui1",
       "descriptor": {
@@ -1335,7 +1358,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_pingIntegration",
       "version": "ui1",
       "descriptor": {
@@ -1384,7 +1407,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_saveMapLayout",
       "version": "ui1",
       "descriptor": {
@@ -1440,7 +1463,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_updateOrderStatus",
       "version": "ui1",
       "descriptor": {
@@ -1496,7 +1519,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_updateTaskStatus",
       "version": "ui1",
       "descriptor": {
@@ -1559,7 +1582,7 @@
       }
     },
     {
-      "objectPath": "root.platform.devices.warehousetwin.hub",
+      "objectPath": "root.platform.singleton-blueprints.warehousetwin-hub-v1",
       "functionName": "wt_updateWaveStatus",
       "version": "ui1",
       "descriptor": {

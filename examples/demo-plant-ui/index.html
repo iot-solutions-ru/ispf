@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Демо-завод</title>
+  <base href="/apps/demo-plant/" />
+  <style>
+    :root { color-scheme: light; font-family: "Segoe UI", system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; background: #0f172a; color: #e2e8f0; display: grid; place-items: center; }
+    main { width: min(40rem, calc(100% - 2rem)); padding: 1.5rem; border: 1px solid #334155; border-radius: 12px; background: #1e293b; }
+    h1 { margin: 0 0 0.5rem; font-size: 1.4rem; }
+    p { margin: 0 0 1rem; color: #cbd5e1; }
+    button { padding: 0.55rem 1rem; border: 0; border-radius: 8px; background: #38bdf8; color: #0f172a; font-weight: 600; cursor: pointer; }
+    #out { margin-top: 1rem; white-space: pre-wrap; font-size: 0.85rem; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Демо-завод</h1>
+    <p>Шаблон завода. Настоящий завод создаётся форком этого решения, а не новой установкой коробки.</p>
+    <button type="button" id="lines">Показать линии</button>
+    <pre id="out"></pre>
+  </main>
+  <script>
+    document.getElementById("lines").addEventListener("click", async () => {
+      const out = document.getElementById("out");
+      out.textContent = "Загрузка…";
+      const body = {
+        objectPath: "root.platform.singleton-blueprints.demo-plant-hub-v1",
+        functionName: "mes_platform_listLines",
+        input: { schema: { name: "in", fields: [] }, rows: [{}] }
+      };
+      try {
+        const res = await fetch("/api/v1/bff/invoke", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        out.textContent = res.status + "\n" + (await res.text()).slice(0, 800);
+      } catch (err) {
+        out.textContent = String(err);
+      }
+    });
+  </script>
+</body>
+</html>

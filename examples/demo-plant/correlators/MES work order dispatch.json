@@ -1,0 +1,13 @@
+{
+  "actionTarget": "root.platform.workflows.mes-work-order-dispatch",
+  "actionType": "RUN_WORKFLOW",
+  "cooldownSeconds": 5,
+  "enabled": false,
+  "eventName": "workOrderDispatched",
+  "minOccurrences": 1,
+  "name": "MES work order dispatch",
+  "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
+  "patternType": "COUNT",
+  "sequenceGapSeconds": 0,
+  "windowSeconds": 0
+}

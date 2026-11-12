@@ -76,6 +76,20 @@ MIGRATIONS = [{
                   'Profile reserved; enable after 1C path is field-proven'
            WHERE NOT EXISTS (SELECT 1 FROM mes_integration_connector WHERE connector_id = 'sap-idoc')""",
     ]),
+}, {
+    "id": "mes_integration_m2_ready_profiles",
+    "sql": ";\n".join([
+        """UPDATE mes_integration_connector
+           SET status = 'ready',
+               endpoint_url = 'http://127.0.0.1:8099/sap/idoc',
+               notes = 'B2MML ProductionSchedule via the platform outbox; sandbox ACK until a plant endpoint is set'
+           WHERE connector_id = 'sap-idoc' AND status = 'deferred'""",
+        """INSERT INTO mes_integration_connector (connector_id, display_name, target_system, status, endpoint_url, notes)
+           SELECT 'b2mml', 'B2MML ProductionSchedule', 'B2MML', 'ready',
+                  'http://127.0.0.1:8099/b2mml',
+                  'ISA-95 B2MML verb/noun map on the platform outbox'
+           WHERE NOT EXISTS (SELECT 1 FROM mes_integration_connector WHERE connector_id = 'b2mml')""",
+    ]),
 }]
 
 FUNCTIONS = [
@@ -222,7 +236,7 @@ DASHBOARDS = [{
 }]
 
 bundle = {
-    "version": "1.1.0",
+    "version": "1.2.0",
     "displayName": "MES Integration Catalog",
     "tablePrefix": "mes_integration_",
     "schemaName": "app_mes_integration_catalog",
@@ -249,7 +263,7 @@ bundle = {
         "product": "mes-integration-catalog",
         "publisher": "IoT Solutions",
         "delivery": "marketplace",
-        "changelog": "1.1.0 report tables + Send; prior invoke/hub/simulate fixes",
+        "changelog": "1.2.0 SAP and B2MML profiles are ready on the platform outbox; 1.1.0 report tables + Send",
     },
 }
 

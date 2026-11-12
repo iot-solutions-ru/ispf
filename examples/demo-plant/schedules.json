@@ -1,0 +1,14 @@
+{
+  "schedules": [
+    {
+      "action": {
+        "functionName": "mes_erp_pollOutbox",
+        "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1"
+      },
+      "actionType": "invoke_function",
+      "enabled": false,
+      "intervalMs": 5000,
+      "scheduleId": "mes-erp-outbox-poll"
+    }
+  ]
+}

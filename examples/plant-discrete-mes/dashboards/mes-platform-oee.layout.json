@@ -1,0 +1,71 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "buttonLabel": "List shifts",
+      "functionName": "mes_oee_listShifts",
+      "h": 21,
+      "id": "oee-shifts",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "Shifts",
+      "type": "function",
+      "w": 28,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "buttonLabel": "Morning shift KPI",
+      "functionName": "mes_oee_getKpi",
+      "h": 21,
+      "id": "oee-kpi",
+      "inputMapJson": "{\"shiftId\":\"dddddddd-dddd-dddd-dddd-dddddddddddd\"}",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "OEE KPI",
+      "type": "function",
+      "w": 56,
+      "x": 28,
+      "y": 0
+    },
+    {
+      "buttonLabel": "List lines",
+      "functionName": "mes_platform_listLines",
+      "h": 21,
+      "id": "oee-lines",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "ISA-95 lines",
+      "type": "function",
+      "w": 84,
+      "x": 0,
+      "y": 21
+    },
+    {
+      "analyticsBindingExpression": "oee('oeePct', '8h')",
+      "analyticsTemplateId": "oee",
+      "chartStyle": "area",
+      "decimals": 0,
+      "h": 28,
+      "historyRange": "24h",
+      "id": "oee-analytics-chart",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "OEE trend (BL-160)",
+      "type": "chart",
+      "unit": "%",
+      "valueField": "value",
+      "variableName": "oeePct",
+      "w": 56,
+      "x": 0,
+      "y": 42
+    },
+    {
+      "h": 28,
+      "htmlJson": "<p>BL-160: chart uses platform <code>oee</code> analytics template with 8h historian rollup on <code>oeePct</code>. Catalog: <code>GET /api/v1/platform/analytics/templates</code>.</p>",
+      "id": "oee-analytics-help",
+      "title": "Asset analytics",
+      "type": "html-snippet",
+      "w": 28,
+      "x": 56,
+      "y": 42
+    }
+  ]
+}

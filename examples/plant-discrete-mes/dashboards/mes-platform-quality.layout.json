@@ -1,0 +1,85 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "chartStyle": "line",
+      "decimals": 2,
+      "h": 28,
+      "historyRange": "24h",
+      "id": "spc-chart",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "SPC — critical dimension",
+      "type": "chart",
+      "unit": "mm",
+      "variableName": "spcMeasurement",
+      "w": 56,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "decimals": 2,
+      "h": 14,
+      "id": "spc-ucl",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "UCL",
+      "type": "value",
+      "unit": "mm",
+      "valueField": "value",
+      "variableName": "spcUcl",
+      "w": 14,
+      "x": 56,
+      "y": 0
+    },
+    {
+      "decimals": 2,
+      "h": 14,
+      "id": "spc-target",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "Target",
+      "type": "value",
+      "unit": "mm",
+      "valueField": "value",
+      "variableName": "spcTarget",
+      "w": 14,
+      "x": 70,
+      "y": 0
+    },
+    {
+      "decimals": 2,
+      "h": 14,
+      "id": "spc-lcl",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "LCL",
+      "type": "value",
+      "unit": "mm",
+      "valueField": "value",
+      "variableName": "spcLcl",
+      "w": 28,
+      "x": 56,
+      "y": 14
+    },
+    {
+      "buttonLabel": "List SPC samples",
+      "functionName": "mes_quality_listSpcSamples",
+      "h": 14,
+      "id": "spc-samples",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "SPC samples",
+      "type": "function",
+      "w": 42,
+      "x": 0,
+      "y": 28
+    },
+    {
+      "h": 14,
+      "htmlJson": "<p>BL-167: <code>chart</code> widget on <code>spcMeasurement</code> with UCL/LCL reference values. Apply <code>quality-record-v1</code> to <code>QUALITY_RECORD</code> nodes for defect traceability.</p>",
+      "id": "spc-help",
+      "title": "Quality module",
+      "type": "html-snippet",
+      "w": 42,
+      "x": 42,
+      "y": 28
+    }
+  ]
+}

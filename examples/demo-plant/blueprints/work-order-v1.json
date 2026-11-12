@@ -1,0 +1,136 @@
+{
+  "description": "Manufacturing work order instance — dispatch, line, status (BL-164 / BL-166)",
+  "name": "work-order-v1",
+  "targetObjectType": "CUSTOM",
+  "type": "INSTANCE",
+  "variables": [
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": ""
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "STRING"
+            }
+          ],
+          "name": "stringValue"
+        }
+      },
+      "description": "Work order number",
+      "group": "info",
+      "name": "orderNumber",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "STRING"
+          }
+        ],
+        "name": "stringValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": ""
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "STRING"
+            }
+          ],
+          "name": "stringValue"
+        }
+      },
+      "description": "ISA-95 line code",
+      "group": "routing",
+      "name": "lineCode",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "STRING"
+          }
+        ],
+        "name": "stringValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": "planned"
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "STRING"
+            }
+          ],
+          "name": "stringValue"
+        }
+      },
+      "description": "Lifecycle status (planned, dispatched, in-progress, complete)",
+      "group": "runtime",
+      "name": "status",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "STRING"
+          }
+        ],
+        "name": "stringValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": "normal"
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "STRING"
+            }
+          ],
+          "name": "stringValue"
+        }
+      },
+      "description": "Priority label (low, normal, high, urgent)",
+      "group": "config",
+      "name": "priority",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "STRING"
+          }
+        ],
+        "name": "stringValue"
+      },
+      "writable": true
+    }
+  ]
+}

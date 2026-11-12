@@ -1,0 +1,65 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "shiftId",
+                "type": "STRING"
+              },
+              {
+                "name": "lineCode",
+                "type": "STRING"
+              },
+              {
+                "name": "shiftLabel",
+                "type": "STRING"
+              },
+              {
+                "name": "plannedMinutes",
+                "type": "INTEGER"
+              },
+              {
+                "name": "downtimeMinutes",
+                "type": "INTEGER"
+              },
+              {
+                "name": "totalUnits",
+                "type": "INTEGER"
+              },
+              {
+                "name": "goodUnits",
+                "type": "INTEGER"
+              }
+            ],
+            "name": "shift_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "mes_oee_listShifts",
+  "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"shifts\",\"sql\":\"@file:mes_oee_listShifts-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${shifts}\",\"fields\":{\"shiftId\":\"${item.shift_id}\",\"lineCode\":\"${item.line_code}\",\"shiftLabel\":\"${item.shift_label}\",\"plannedMinutes\":\"${item.planned_minutes}\",\"downtimeMinutes\":\"${item.downtime_minutes}\",\"totalUnits\":\"${item.total_units}\",\"goodUnits\":\"${item.good_units}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

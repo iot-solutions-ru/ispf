@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "displayName": "MES Integration Catalog",
   "tablePrefix": "mes_integration_",
   "schemaName": "app_mes_integration_catalog",
@@ -13,6 +13,10 @@
     {
       "id": "mes_integration_m1_b2mml",
       "sql": "CREATE TABLE IF NOT EXISTS mes_integration_connector (\n           connector_id VARCHAR(64) PRIMARY KEY,\n           display_name VARCHAR(128) NOT NULL,\n           target_system VARCHAR(64) NOT NULL,\n           status VARCHAR(32) NOT NULL,\n           endpoint_url VARCHAR(512),\n           notes VARCHAR(512) NOT NULL);\nCREATE TABLE IF NOT EXISTS mes_integration_dlq (\n           id VARCHAR(64) PRIMARY KEY,\n           outbox_idempotency_key VARCHAR(128),\n           error_message VARCHAR(1024),\n           payload_xml VARCHAR(8000),\n           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);\nCREATE TABLE IF NOT EXISTS mes_integration_transport_log (\n           id VARCHAR(64) PRIMARY KEY,\n           direction VARCHAR(8) NOT NULL,\n           connector_id VARCHAR(64),\n           verb VARCHAR(32),\n           noun VARCHAR(64),\n           http_status INT,\n           body_preview VARCHAR(1024),\n           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);\nINSERT INTO mes_integration_connector (connector_id, display_name, target_system, status, endpoint_url, notes)\n           SELECT '1c-http', '1C HTTP JSON/B2MML', '1C', 'ready',\n                  'http://127.0.0.1:8099/hs/ispf/b2m',\n                  'Live path: poll emc_erp_outbox → B2MML XML → HTTP POST; sandbox accepts and ACKs'\n           WHERE NOT EXISTS (SELECT 1 FROM mes_integration_connector WHERE connector_id = '1c-http');\nINSERT INTO mes_integration_connector (connector_id, display_name, target_system, status, endpoint_url, notes)\n           SELECT 'sap-idoc', 'SAP IDoc profile', 'SAP', 'deferred', NULL,\n                  'Profile reserved; enable after 1C path is field-proven'\n           WHERE NOT EXISTS (SELECT 1 FROM mes_integration_connector WHERE connector_id = 'sap-idoc')"
+    },
+    {
+      "id": "mes_integration_m2_ready_profiles",
+      "sql": "UPDATE mes_integration_connector\n           SET status = 'ready',\n               endpoint_url = 'http://127.0.0.1:8099/sap/idoc',\n               notes = 'B2MML ProductionSchedule via the platform outbox; sandbox ACK until a plant endpoint is set'\n           WHERE connector_id = 'sap-idoc' AND status = 'deferred';\nINSERT INTO mes_integration_connector (connector_id, display_name, target_system, status, endpoint_url, notes)\n           SELECT 'b2mml', 'B2MML ProductionSchedule', 'B2MML', 'ready',\n                  'http://127.0.0.1:8099/b2mml',\n                  'ISA-95 B2MML verb/noun map on the platform outbox'\n           WHERE NOT EXISTS (SELECT 1 FROM mes_integration_connector WHERE connector_id = 'b2mml')"
     }
   ],
   "objects": [],
@@ -381,6 +385,6 @@
     "product": "mes-integration-catalog",
     "publisher": "IoT Solutions",
     "delivery": "marketplace",
-    "changelog": "1.1.0 report tables + Send; prior invoke/hub/simulate fixes"
+    "changelog": "1.2.0 SAP and B2MML profiles are ready on the platform outbox; 1.1.0 report tables + Send"
   }
 }

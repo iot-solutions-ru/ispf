@@ -82,6 +82,7 @@ export function resolveInput(inputPath) {
 }
 
 const FILE_REF = /^@file:([^\s]+)$/;
+const EMBEDDED_FILE_REF = /@file:([A-Za-z0-9_.-]+)/g;
 
 export function inlineFileRefs(obj, baseDir, readFile = (p) => fs.readFileSync(p, "utf8")) {
   if (obj === null || typeof obj !== "object") {
@@ -100,6 +101,18 @@ export function inlineFileRefs(obj, baseDir, readFile = (p) => fs.readFileSync(p
           throw new Error(`@file reference not found: ${sqlPath}`);
         }
         out[key] = readFile(sqlPath).replace(/\r\n/g, "\n").replace(/\n$/, "");
+        continue;
+      }
+      if (val.includes("@file:")) {
+        out[key] = val.replace(EMBEDDED_FILE_REF, (token, name) => {
+          const sqlPath = path.join(baseDir, name);
+          if (!fs.existsSync(sqlPath)) {
+            throw new Error(`@file reference not found: ${sqlPath}`);
+          }
+          const sql = readFile(sqlPath).replace(/\r\n/g, "\n").replace(/\n$/, "");
+          // Escape as a JSON string body (without surrounding quotes).
+          return JSON.stringify(sql).slice(1, -1);
+        });
         continue;
       }
     }

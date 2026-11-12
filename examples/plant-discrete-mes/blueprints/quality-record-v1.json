@@ -1,0 +1,108 @@
+{
+  "bindings": [],
+  "description": "Quality inspection record with defect traceability (BL-167)",
+  "events": [],
+  "functions": [],
+  "name": "quality-record-v1",
+  "parameters": {},
+  "targetObjectType": "CUSTOM",
+  "type": "MIXIN",
+  "variables": [
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": ""
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "STRING"
+            }
+          ],
+          "name": "stringValue"
+        }
+      },
+      "description": "Defect / NCR code",
+      "group": "info",
+      "name": "defectCode",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "STRING"
+          }
+        ],
+        "name": "stringValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": "minor"
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "STRING"
+            }
+          ],
+          "name": "stringValue"
+        }
+      },
+      "description": "Severity label (minor, major, critical)",
+      "group": "info",
+      "name": "severity",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "STRING"
+          }
+        ],
+        "name": "stringValue"
+      },
+      "writable": true
+    },
+    {
+      "defaultValue": {
+        "rows": [
+          {
+            "value": ""
+          }
+        ],
+        "schema": {
+          "fields": [
+            {
+              "name": "value",
+              "type": "STRING"
+            }
+          ],
+          "name": "stringValue"
+        }
+      },
+      "description": "Material lot / batch id",
+      "group": "traceability",
+      "name": "lotId",
+      "readable": true,
+      "schema": {
+        "fields": [
+          {
+            "name": "value",
+            "type": "STRING"
+          }
+        ],
+        "name": "stringValue"
+      },
+      "writable": true
+    }
+  ]
+}

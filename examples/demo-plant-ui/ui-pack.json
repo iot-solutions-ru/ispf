@@ -1,0 +1,9 @@
+{
+  "id": "demo-plant-ui",
+  "appId": "demo-plant",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "basePath": "/apps/demo-plant/",
+  "title": "Демо-завод",
+  "minIspfVersion": "0.9.30"
+}

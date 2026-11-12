@@ -1,0 +1,68 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "h": 14,
+      "htmlJson": "<p>BL-222: explode seed material <code>MAT-WIDGET-A01</code> and release routing <code>RT-WIDGET-A01</code> operations when predecessors are complete.</p>",
+      "id": "bom-ops-help",
+      "title": "Nested BoM + operations graph",
+      "type": "html-snippet",
+      "w": 84,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "buttonLabel": "Explode MAT-WIDGET-A01",
+      "functionName": "mes_bom_explode",
+      "h": 21,
+      "id": "bom-explode",
+      "inputMapJson": "{\"materialCode\":\"MAT-WIDGET-A01\"}",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "BoM explosion",
+      "type": "function",
+      "w": 42,
+      "x": 0,
+      "y": 14
+    },
+    {
+      "buttonLabel": "Where used MAT-WIP-A01",
+      "functionName": "mes_bom_whereUsed",
+      "h": 21,
+      "id": "bom-where-used",
+      "inputMapJson": "{\"componentMaterialCode\":\"MAT-WIP-A01\"}",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "Where used",
+      "type": "function",
+      "w": 42,
+      "x": 42,
+      "y": 14
+    },
+    {
+      "buttonLabel": "List ready operations",
+      "functionName": "mes_ops_listReady",
+      "h": 21,
+      "id": "ops-ready",
+      "inputMapJson": "{\"workOrderNumber\":\"WO-LINE-A01-001\"}",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "Ready operations",
+      "type": "function",
+      "w": 42,
+      "x": 0,
+      "y": 35
+    },
+    {
+      "buttonLabel": "Complete and release successors",
+      "functionName": "mes_ops_complete",
+      "h": 21,
+      "id": "ops-complete",
+      "inputMapJson": "{\"workOrderNumber\":\"WO-LINE-A01-001\",\"operationId\":\"OP-ASSEMBLE\"}",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "Complete OP-ASSEMBLE",
+      "type": "function",
+      "w": 42,
+      "x": 42,
+      "y": 35
+    }
+  ]
+}

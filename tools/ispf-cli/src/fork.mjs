@@ -229,7 +229,7 @@ function replaceTokens(root, pairs, skipFile, mode) {
       if (skipFile && path.resolve(full) === path.resolve(skipFile)) {
         continue;
       }
-      if (!/\.(json|sql|html|md|ts|tsx|js|mjs)$/i.test(entry.name)) {
+      if (!/\.(json|sql|bpmn|html|md|ts|tsx|js|mjs)$/i.test(entry.name)) {
         continue;
       }
       const original = fs.readFileSync(full, "utf8");

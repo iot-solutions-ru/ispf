@@ -1,0 +1,65 @@
+{
+  "displayName": "Plant Discrete MES",
+  "metadata": {
+    "changelog": "1.5.0 - BL-222 Nested BoM + operations dependency graph: BoM explosion/where-used, ready-operation BFF, Operator dashboard; 1.4.0 - BL-221 Traceability DAG v2",
+    "delivery": "marketplace",
+    "forkedFrom": {
+      "schemaName": "app_mes_platform",
+      "sha256": "da199f6d736168d8d3ab372a76b50dc641199823272812f913aa1c54187120a4",
+      "version": "2.0.0"
+    },
+    "product": "mes",
+    "publisher": "IoT Solutions",
+    "templatePlant": "demo-plant"
+  },
+  "operatorUi": {
+    "appId": "plant-discrete",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.mes-platform-dispatch",
+        "title": "Dispatch"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-oee",
+        "title": "OEE"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-quality",
+        "title": "Quality"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-genealogy",
+        "title": "Genealogy"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-batch",
+        "title": "Batch"
+      },
+      {
+        "path": "root.platform.dashboards.mes-platform-bom-ops",
+        "title": "BoM + Ops"
+      }
+    ],
+    "defaultDashboard": "root.platform.dashboards.mes-platform-dispatch",
+    "defaultReport": "root.platform.reports.mes-genealogy",
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+    "reports": [
+      {
+        "path": "root.platform.reports.mes-genealogy",
+        "title": "Genealogy"
+      },
+      {
+        "path": "root.platform.reports.mes-genealogy-by-lot",
+        "title": "Genealogy by lot"
+      },
+      {
+        "path": "root.platform.reports.mes-genealogy-dag",
+        "title": "Genealogy DAG"
+      }
+    ],
+    "title": "Plant Discrete MES"
+  },
+  "schemaName": "app_plant_discrete",
+  "tablePrefix": "",
+  "version": "2.0.0"
+}

@@ -1,0 +1,89 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "lotId",
+                "type": "STRING"
+              },
+              {
+                "name": "lotPath",
+                "type": "STRING"
+              },
+              {
+                "name": "materialCode",
+                "type": "STRING"
+              },
+              {
+                "name": "materialName",
+                "type": "STRING"
+              },
+              {
+                "name": "workOrderNumber",
+                "type": "STRING"
+              },
+              {
+                "name": "lineCode",
+                "type": "STRING"
+              },
+              {
+                "name": "quantity",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "lotStatus",
+                "type": "STRING"
+              },
+              {
+                "name": "qualityId",
+                "type": "STRING"
+              },
+              {
+                "name": "defectCode",
+                "type": "STRING"
+              },
+              {
+                "name": "severity",
+                "type": "STRING"
+              },
+              {
+                "name": "qualityResult",
+                "type": "STRING"
+              },
+              {
+                "name": "recordedAt",
+                "type": "STRING"
+              }
+            ],
+            "name": "genealogy_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "mes_genealogy_listGraph",
+  "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"links\",\"sql\":\"@file:mes_genealogy_listGraph-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${links}\",\"fields\":{\"lotId\":\"${item.lot_id}\",\"lotPath\":\"${item.lot_path}\",\"materialCode\":\"${item.material_code}\",\"materialName\":\"${item.material_name}\",\"workOrderNumber\":\"${item.work_order_number}\",\"lineCode\":\"${item.line_code}\",\"quantity\":\"${item.quantity}\",\"lotStatus\":\"${item.lot_status}\",\"qualityId\":\"${item.quality_id}\",\"defectCode\":\"${item.defect_code}\",\"severity\":\"${item.severity}\",\"qualityResult\":\"${item.quality_result}\",\"recordedAt\":\"${item.recorded_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

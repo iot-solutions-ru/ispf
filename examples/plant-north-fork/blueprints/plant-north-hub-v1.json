@@ -1,0 +1,10 @@
+{
+  "bindings": [],
+  "description": "Demo application orchestrator (W6 test host)",
+  "events": [],
+  "functions": [],
+  "name": "plant-north-hub-v1",
+  "parameters": {},
+  "type": "SINGLETON",
+  "variables": []
+}

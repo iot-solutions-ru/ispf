@@ -8,5 +8,6 @@ python examples/mes-integration-catalog/generate_bundle.py
 ```
 
 - `1c-http` — ready profile (sandbox ACK via `emc_erp_pollOutbox` + transport log)
-- `sap-idoc` — deferred profile
+- `sap-idoc` — ready profile (sandbox ACK until a plant endpoint is set)
+- `b2mml` — ISA-95 ProductionSchedule on the platform outbox
 - `mes_b2mml_toXml` / `fromXml` — JSON↔B2MML-ish envelope

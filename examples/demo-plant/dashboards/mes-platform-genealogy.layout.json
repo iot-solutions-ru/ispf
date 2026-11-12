@@ -1,0 +1,86 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "h": 14,
+      "htmlJson": "<p>BL-193 keeps lot/material/WO/quality links. BL-221 adds DAG traceability with seed hops <code>ENT-RAW-A01</code> → <code>ENT-WIP-B01</code> → <code>ENT-FG-A01</code> for lot <code>BATCH-LINE-A01-001</code>.</p>",
+      "id": "genealogy-help",
+      "title": "Genealogy DAG",
+      "type": "html-snippet",
+      "w": 84,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "buttonLabel": "Trace seed lot",
+      "functionName": "mes_genealogy_queryByLot",
+      "h": 18,
+      "id": "genealogy-by-lot",
+      "inputMapJson": "{\"lotId\":\"BATCH-LINE-A01-001\"}",
+      "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
+      "title": "Query by lot",
+      "type": "function",
+      "w": 42,
+      "x": 0,
+      "y": 14
+    },
+    {
+      "buttonLabel": "Trace DAG seed lot",
+      "functionName": "mes_genealogy_queryDagByLot",
+      "h": 18,
+      "id": "genealogy-dag-by-lot",
+      "inputMapJson": "{\"lotId\":\"BATCH-LINE-A01-001\"}",
+      "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
+      "title": "DAG by lot",
+      "type": "function",
+      "w": 42,
+      "x": 42,
+      "y": 14
+    },
+    {
+      "buttonLabel": "List genealogy links",
+      "functionName": "mes_genealogy_listGraph",
+      "h": 18,
+      "id": "genealogy-graph",
+      "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
+      "title": "Full graph",
+      "type": "function",
+      "w": 42,
+      "x": 0,
+      "y": 32
+    },
+    {
+      "buttonLabel": "List DAG edges",
+      "functionName": "mes_genealogy_listDagEdges",
+      "h": 18,
+      "id": "genealogy-dag-edges",
+      "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
+      "title": "DAG edges",
+      "type": "function",
+      "w": 42,
+      "x": 42,
+      "y": 32
+    },
+    {
+      "h": 28,
+      "id": "genealogy-report",
+      "reportPath": "root.platform.reports.mes-genealogy",
+      "title": "Genealogy report",
+      "type": "report",
+      "w": 42,
+      "x": 0,
+      "y": 50
+    },
+    {
+      "h": 28,
+      "id": "genealogy-dag-report",
+      "reportPath": "root.platform.reports.mes-genealogy-dag",
+      "title": "DAG report",
+      "type": "report",
+      "w": 42,
+      "x": 42,
+      "y": 50
+    }
+  ]
+}

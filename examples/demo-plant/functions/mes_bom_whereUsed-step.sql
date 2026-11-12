@@ -1,0 +1,1 @@
+SELECT h.bom_id, h.parent_material_code, COALESCE(m.display_name, '') AS parent_name, h.revision, l.line_no, l.quantity, l.uom, h.status FROM mes_bom_header h JOIN mes_bom_line l ON l.bom_id = h.bom_id LEFT JOIN mes_genealogy_material m ON m.material_code = h.parent_material_code WHERE l.component_material_code = ? ORDER BY h.parent_material_code, h.revision, l.line_no

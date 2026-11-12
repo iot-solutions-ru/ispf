@@ -1,0 +1,94 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "lotId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "lotId",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "fromEntityId",
+                "type": "STRING"
+              },
+              {
+                "name": "fromLotId",
+                "type": "STRING"
+              },
+              {
+                "name": "fromMaterialCode",
+                "type": "STRING"
+              },
+              {
+                "name": "toEntityId",
+                "type": "STRING"
+              },
+              {
+                "name": "toLotId",
+                "type": "STRING"
+              },
+              {
+                "name": "toMaterialCode",
+                "type": "STRING"
+              },
+              {
+                "name": "activityId",
+                "type": "STRING"
+              },
+              {
+                "name": "activityType",
+                "type": "STRING"
+              },
+              {
+                "name": "quantity",
+                "type": "DOUBLE"
+              },
+              {
+                "name": "workOrderNumber",
+                "type": "STRING"
+              },
+              {
+                "name": "lineCode",
+                "type": "STRING"
+              },
+              {
+                "name": "occurredAt",
+                "type": "STRING"
+              }
+            ],
+            "name": "genealogy_dag_edge"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "mes_genealogy_queryDagByLot",
+  "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"edges\",\"sql\":\"@file:mes_genealogy_queryDagByLot-step.sql\",\"params\":[\"${input.lotId}\",\"${input.lotId}\",\"${input.lotId}\",\"${input.lotId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${edges}\",\"fields\":{\"fromEntityId\":\"${item.from_entity_id}\",\"fromLotId\":\"${item.from_lot_id}\",\"fromMaterialCode\":\"${item.from_material_code}\",\"toEntityId\":\"${item.to_entity_id}\",\"toLotId\":\"${item.to_lot_id}\",\"toMaterialCode\":\"${item.to_material_code}\",\"activityId\":\"${item.activity_id}\",\"activityType\":\"${item.activity_type}\",\"quantity\":\"${item.quantity}\",\"workOrderNumber\":\"${item.work_order_number}\",\"lineCode\":\"${item.line_code}\",\"occurredAt\":\"${item.occurred_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${input.lotId}\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

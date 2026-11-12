@@ -1,0 +1,1 @@
+ALTER TABLE mes_batch_run ADD COLUMN IF NOT EXISTS hold_reason VARCHAR(256);

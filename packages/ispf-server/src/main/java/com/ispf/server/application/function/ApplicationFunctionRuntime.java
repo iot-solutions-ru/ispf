@@ -77,6 +77,7 @@ public class ApplicationFunctionRuntime {
 
         ApplicationFunctionHandler.DeployedFunction deployed = store.findLatest(objectPath, functionName)
                 .orElseThrow(() -> new IllegalStateException("Deployed function missing: " + functionName));
+        SignaturePolicy.require(deployed.sourceBody(), input);
 
         ensureDescriptor(objectPath, functionName, deployed);
 
@@ -97,15 +98,12 @@ public class ApplicationFunctionRuntime {
         try {
             DataRecord[] outputHolder = new DataRecord[1];
             schemaSession.runInSchema(schemaName, () -> outputHolder[0] = switch (deployed.sourceType()) {
-                case "script" -> {
-                    SignaturePolicy.require(deployed.sourceBody(), input);
-                    yield scriptEngine.execute(
-                            deployed.sourceBody(),
-                            input,
-                            outputSchema,
-                            context
-                    );
-                }
+                case "script" -> scriptEngine.execute(
+                        deployed.sourceBody(),
+                        input,
+                        outputSchema,
+                        context
+                );
                 default -> throw new IllegalStateException("Unsupported source type: " + deployed.sourceType());
             });
             bindingRefreshAfterCommit.scheduleRefreshAfterFunction(objectPath, functionName);

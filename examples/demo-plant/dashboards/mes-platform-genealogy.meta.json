@@ -1,0 +1,5 @@
+{
+  "path": "root.platform.dashboards.mes-platform-genealogy",
+  "refreshIntervalMs": 10000,
+  "title": "MES Genealogy"
+}

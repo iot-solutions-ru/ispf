@@ -1,0 +1,53 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "batchPath",
+          "type": "STRING"
+        },
+        {
+          "name": "batchId",
+          "type": "STRING"
+        },
+        {
+          "name": "recipe",
+          "type": "STRING"
+        },
+        {
+          "name": "phase",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "batchPath",
+          "type": "STRING"
+        },
+        {
+          "name": "phase",
+          "type": "STRING"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "mes_batch_runPhase",
+  "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"@file:mes_batch_runPhase-step.sql\",\"params\":[\"${input.phase}\",\"${input.batchId}\",\"${input.recipe}\",\"${input.batchPath}\"]},{\"type\":\"selectOne\",\"var\":\"updated\",\"sql\":\"SELECT batch_path FROM mes_batch_run WHERE batch_path = ?\",\"params\":[\"${input.batchPath}\"]},{\"type\":\"when\",\"var\":\"updated\",\"notNull\":false,\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_batch_run (batch_path, batch_id, recipe, phase) VALUES (?, ?, COALESCE(NULLIF(?, ''), 'default-recipe'), ?)\",\"params\":[\"${input.batchPath}\",\"${input.batchId}\",\"${input.recipe}\",\"${input.phase}\"]}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"batchPath\":\"${input.batchPath}\",\"phase\":\"${input.phase}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

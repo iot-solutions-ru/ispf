@@ -1,0 +1,17 @@
+{
+  "slug": "demo-plant-ui",
+  "title": "Демо-завод",
+  "description": "Operator screen for the demo plant template. A real plant is a fork of examples/demo-plant.",
+  "pricing": "free",
+  "artifactKind": "ui-pack",
+  "appId": "demo-plant",
+  "packId": "demo-plant-ui",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorSellerKind": "company",
+  "priceCents": 0,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.30",
+  "tags": ["mes", "ui-pack", "demo-plant"],
+  "changelog": "1.0.0 — Screen for the demo plant template."
+}

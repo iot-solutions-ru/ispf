@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plant Discrete MES</title>
+  <base href="/apps/plant-discrete/" />
+  <style>
+    :root { color-scheme: light; font-family: "Segoe UI", system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; background: #0f172a; color: #e2e8f0; display: grid; place-items: center; }
+    main { width: min(36rem, calc(100% - 2rem)); padding: 1.5rem; border: 1px solid #334155; border-radius: 12px; background: #1e293b; }
+    h1 { margin: 0 0 0.5rem; font-size: 1.4rem; }
+    p { margin: 0 0 1rem; color: #cbd5e1; }
+    label { display: block; margin: 0.75rem 0 0.25rem; }
+    input { width: 100%; box-sizing: border-box; padding: 0.45rem 0.6rem; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #e2e8f0; }
+    button { margin-top: 1rem; padding: 0.55rem 1rem; border: 0; border-radius: 8px; background: #38bdf8; color: #0f172a; font-weight: 600; cursor: pointer; }
+    #out { margin-top: 1rem; white-space: pre-wrap; font-size: 0.85rem; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Lot passport</h1>
+    <p>Plant fork of MES. The hub function <code>plant_set_lot_passport</code> runs only with a signature.</p>
+    <form id="passport">
+      <label for="lotId">Lot</label>
+      <input id="lotId" name="lotId" value="BATCH-PLANT-1" required />
+      <label for="passportNote">Passport note</label>
+      <input id="passportNote" name="passportNote" value="heat-42" required />
+      <label for="signature">Signature</label>
+      <input id="signature" name="signature" required />
+      <button type="submit">Save</button>
+    </form>
+    <pre id="out"></pre>
+  </main>
+  <script>
+    document.getElementById("passport").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const out = document.getElementById("out");
+      const data = new FormData(event.target);
+      out.textContent = "Saving…";
+      const body = {
+        objectPath: "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+        functionName: "plant_set_lot_passport",
+        input: {
+          schema: {
+            name: "in",
+            fields: [
+              { name: "lotId", type: "STRING" },
+              { name: "passportNote", type: "STRING" },
+              { name: "signature", type: "STRING" }
+            ]
+          },
+          rows: [{
+            lotId: data.get("lotId"),
+            passportNote: data.get("passportNote"),
+            signature: data.get("signature")
+          }]
+        }
+      };
+      try {
+        const res = await fetch("/api/v1/bff/invoke", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        out.textContent = res.status + "\n" + (await res.text()).slice(0, 800);
+      } catch (err) {
+        out.textContent = String(err);
+      }
+    });
+  </script>
+</body>
+</html>

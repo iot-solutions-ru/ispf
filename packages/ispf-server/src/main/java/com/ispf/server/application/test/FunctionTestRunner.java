@@ -10,6 +10,12 @@ import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.script.PlatformScriptBridge;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
@@ -60,6 +66,8 @@ public class FunctionTestRunner {
     public TestResult run(TestSpec spec) {
         List<String> errors = new ArrayList<>();
         Map<String, Object> details = new LinkedHashMap<>();
+        SecurityContext previous = SecurityContextHolder.getContext();
+        boolean installedTestPrincipal = installBundleTestPrincipalIfNeeded(spec);
         try {
             if ("telemetry".equalsIgnoreCase(spec.kind())) {
                 runTelemetry(spec, details, errors);
@@ -70,6 +78,12 @@ public class FunctionTestRunner {
             errors.add(ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName());
             details.put("exception", ex.getClass().getSimpleName());
         } finally {
+            if (installedTestPrincipal) {
+                SecurityContextHolder.clearContext();
+                if (previous.getAuthentication() != null) {
+                    SecurityContextHolder.setContext(previous);
+                }
+            }
             if (spec.rollback()) {
                 try {
                     TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
@@ -85,6 +99,35 @@ public class FunctionTestRunner {
                 errors,
                 details
         );
+    }
+
+    /**
+     * Rollback-only function smoke tests often exercise {@code signaturePolicy=REQUIRED}.
+     * Deploy is authenticated in production, but the in-process runner may have no principal.
+     * Use a fresh SecurityContext so the previous thread context is never mutated in place.
+     */
+    private static boolean installBundleTestPrincipalIfNeeded(TestSpec spec) {
+        if (!spec.rollback() || !"function".equalsIgnoreCase(spec.kind())) {
+            return false;
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)
+                && authentication.getName() != null
+                && !authentication.getName().isBlank()) {
+            return false;
+        }
+        SecurityContext testContext = SecurityContextHolder.createEmptyContext();
+        testContext.setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        "bundle-test",
+                        "n/a",
+                        List.of(new SimpleGrantedAuthority("ROLE_OPERATOR"))
+                )
+        );
+        SecurityContextHolder.setContext(testContext);
+        return true;
     }
 
     private void runFunction(TestSpec spec, Map<String, Object> details, List<String> errors) throws Exception {

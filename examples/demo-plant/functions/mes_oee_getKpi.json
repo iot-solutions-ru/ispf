@@ -1,0 +1,57 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "shiftId",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "lineCode",
+          "type": "STRING"
+        },
+        {
+          "name": "shiftLabel",
+          "type": "STRING"
+        },
+        {
+          "name": "availabilityPct",
+          "type": "INTEGER"
+        },
+        {
+          "name": "performancePct",
+          "type": "INTEGER"
+        },
+        {
+          "name": "qualityPct",
+          "type": "INTEGER"
+        },
+        {
+          "name": "oeePct",
+          "type": "INTEGER"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "mes_oee_getKpi",
+  "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"kpi\",\"sql\":\"@file:mes_oee_getKpi-step.sql\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"kpi\",\"message\":\"Shift not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lineCode\":\"${kpi.line_code}\",\"shiftLabel\":\"${kpi.shift_label}\",\"availabilityPct\":\"${kpi.availability_pct}\",\"performancePct\":\"${kpi.performance_pct}\",\"qualityPct\":\"${kpi.quality_pct}\",\"oeePct\":\"${kpi.oee_pct}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -1,0 +1,43 @@
+{
+  "columns": [
+    {
+      "field": "lot_id",
+      "label": "Lot"
+    },
+    {
+      "field": "material_code",
+      "label": "Material"
+    },
+    {
+      "field": "material_name",
+      "label": "Material name"
+    },
+    {
+      "field": "work_order_number",
+      "label": "Work order"
+    },
+    {
+      "field": "line_code",
+      "label": "Line"
+    },
+    {
+      "field": "quality_id",
+      "label": "Quality record"
+    },
+    {
+      "field": "defect_code",
+      "label": "Defect"
+    },
+    {
+      "field": "quality_result",
+      "label": "Result"
+    }
+  ],
+  "description": "Filter genealogy graph by lot id (seed: BATCH-LINE-A01-001)",
+  "maxRows": 200,
+  "parameters": [
+    "lotId"
+  ],
+  "reportId": "mes-genealogy-by-lot",
+  "title": "MES Genealogy by lot"
+}

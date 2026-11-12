@@ -76,7 +76,7 @@ class MesBomOpsIntegrationTest {
     private void deployBundle() throws Exception {
         String bundle = new ClassPathResource("mes-platform-bundle.json")
                 .getContentAsString(StandardCharsets.UTF_8);
-        mockMvc.perform(post("/api/v1/applications/mes-platform/deploy")
+        mockMvc.perform(post("/api/v1/applications/mes-platform/deploy?withSeeds=true")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(bundle))
                 .andExpect(status().isOk())

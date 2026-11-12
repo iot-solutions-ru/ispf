@@ -1,0 +1,41 @@
+{
+  "columns": 84,
+  "rowHeight": 8,
+  "widgets": [
+    {
+      "h": 42,
+      "id": "dispatch-queue",
+      "maxItems": 10,
+      "operatorAppId": "mes-platform",
+      "operatorId": "operator",
+      "title": "Work orders",
+      "type": "work-queue",
+      "w": 35,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "h": 21,
+      "htmlJson": "<p>Work order dispatch workflow + operator work-queue (BL-166). Fire <code>workOrderDispatched</code> on the hub to start the BPMN user task.</p>",
+      "id": "dispatch-help",
+      "title": "Dispatch",
+      "type": "html-snippet",
+      "w": 49,
+      "x": 35,
+      "y": 0
+    },
+    {
+      "buttonLabel": "Load seed shift KPI",
+      "functionName": "mes_oee_getKpi",
+      "h": 21,
+      "id": "oee-shift",
+      "inputMapJson": "{\"shiftId\":\"dddddddd-dddd-dddd-dddd-dddddddddddd\"}",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "title": "OEE KPI",
+      "type": "function",
+      "w": 49,
+      "x": 35,
+      "y": 21
+    }
+  ]
+}

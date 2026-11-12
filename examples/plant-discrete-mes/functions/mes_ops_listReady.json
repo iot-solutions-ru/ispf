@@ -1,0 +1,74 @@
+{
+  "descriptor": {
+    "inputSchema": {
+      "fields": [
+        {
+          "name": "workOrderNumber",
+          "type": "STRING"
+        }
+      ],
+      "name": "in"
+    },
+    "outputSchema": {
+      "fields": [
+        {
+          "name": "error_code",
+          "type": "STRING"
+        },
+        {
+          "name": "error_message",
+          "type": "STRING"
+        },
+        {
+          "name": "workOrderNumber",
+          "type": "STRING"
+        },
+        {
+          "name": "rows",
+          "nestedSchema": {
+            "fields": [
+              {
+                "name": "workOrderNumber",
+                "type": "STRING"
+              },
+              {
+                "name": "operationId",
+                "type": "STRING"
+              },
+              {
+                "name": "routingId",
+                "type": "STRING"
+              },
+              {
+                "name": "name",
+                "type": "STRING"
+              },
+              {
+                "name": "workCenter",
+                "type": "STRING"
+              },
+              {
+                "name": "sequenceNo",
+                "type": "INTEGER"
+              },
+              {
+                "name": "status",
+                "type": "STRING"
+              }
+            ],
+            "name": "operation_row"
+          },
+          "type": "RECORD_LIST"
+        }
+      ],
+      "name": "out"
+    }
+  },
+  "functionName": "mes_ops_listReady",
+  "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+  "source": {
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"ready\",\"sql\":\"@file:mes_ops_listReady-step.sql\",\"params\":[\"${input.workOrderNumber}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${ready}\",\"fields\":{\"workOrderNumber\":\"${item.wo_number}\",\"operationId\":\"${item.operation_id}\",\"routingId\":\"${item.routing_id}\",\"name\":\"${item.name}\",\"workCenter\":\"${item.work_center}\",\"sequenceNo\":\"${item.sequence_no}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"workOrderNumber\":\"${input.workOrderNumber}\",\"rows\":\"${rows}\"}}]}",
+    "type": "script"
+  },
+  "version": "1"
+}

@@ -1,0 +1,5 @@
+{
+  "path": "root.platform.dashboards.mes-platform-batch",
+  "refreshIntervalMs": 5000,
+  "title": "MES Batch (ISA-88)"
+}

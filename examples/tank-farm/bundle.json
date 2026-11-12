@@ -488,102 +488,6 @@
               }
             ]
           }
-        },
-        {
-          "name": "driverId",
-          "description": "Driver id",
-          "group": "driver",
-          "schema": {
-            "name": "stringValue",
-            "fields": [
-              {
-                "name": "value",
-                "type": "STRING"
-              }
-            ]
-          },
-          "readable": true,
-          "writable": true,
-          "defaultValue": {
-            "schema": {
-              "name": "stringValue",
-              "fields": [
-                {
-                  "name": "value",
-                  "type": "STRING"
-                }
-              ]
-            },
-            "rows": [
-              {
-                "value": "virtual"
-              }
-            ]
-          }
-        },
-        {
-          "name": "driverConfigJson",
-          "description": "Driver config (OOTB virtual; domain sim via SQL tick)",
-          "group": "driver",
-          "schema": {
-            "name": "stringValue",
-            "fields": [
-              {
-                "name": "value",
-                "type": "STRING"
-              }
-            ]
-          },
-          "readable": true,
-          "writable": true,
-          "defaultValue": {
-            "schema": {
-              "name": "stringValue",
-              "fields": [
-                {
-                  "name": "value",
-                  "type": "STRING"
-                }
-              ]
-            },
-            "rows": [
-              {
-                "value": "{}"
-              }
-            ]
-          }
-        },
-        {
-          "name": "driverAutoStart",
-          "description": "Auto-start driver",
-          "group": "driver",
-          "schema": {
-            "name": "boolValue",
-            "fields": [
-              {
-                "name": "value",
-                "type": "BOOLEAN"
-              }
-            ]
-          },
-          "readable": true,
-          "writable": true,
-          "defaultValue": {
-            "schema": {
-              "name": "boolValue",
-              "fields": [
-                {
-                  "name": "value",
-                  "type": "BOOLEAN"
-                }
-              ]
-            },
-            "rows": [
-              {
-                "value": true
-              }
-            ]
-          }
         }
       ],
       "events": [],
@@ -885,21 +789,21 @@
       "enabled": true
     },
     {
-      "objectPath": "root.platform.devices.tank-farm-demo.hub",
+      "objectPath": "root.platform.singleton-blueprints.tank-farm-hub-v1",
       "variable": "linePressureMpa",
       "query": "SELECT line_pressure_mpa AS value, 'MPa' AS unit FROM hub_sim WHERE id = 1",
       "refreshIntervalMs": 2000,
       "enabled": true
     },
     {
-      "objectPath": "root.platform.devices.tank-farm-demo.hub",
+      "objectPath": "root.platform.singleton-blueprints.tank-farm-hub-v1",
       "variable": "lineFlowM3h",
       "query": "SELECT line_flow_m3h AS value, 'm³/h' AS unit FROM hub_sim WHERE id = 1",
       "refreshIntervalMs": 2000,
       "enabled": true
     },
     {
-      "objectPath": "root.platform.devices.tank-farm-demo.hub",
+      "objectPath": "root.platform.singleton-blueprints.tank-farm-hub-v1",
       "variable": "lineTempC",
       "query": "SELECT line_temp_c AS value, '°C' AS unit FROM hub_sim WHERE id = 1",
       "refreshIntervalMs": 2000,
@@ -913,7 +817,7 @@
       "intervalMs": 5000,
       "actionType": "invoke_function",
       "action": {
-        "objectPath": "root.platform.devices.tank-farm-demo.hub",
+        "objectPath": "root.platform.singleton-blueprints.tank-farm-hub-v1",
         "functionName": "tank_farm_tick"
       }
     }
@@ -923,7 +827,7 @@
       "path": "root.platform.dashboards.tank-farm-overview",
       "title": "Резервуарный парк",
       "refreshIntervalMs": 3000,
-      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"t11\",\"type\":\"value\",\"title\":\"РВС-11 уровень\",\"x\":0,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.tank-farm-demo.tank-11\",\"variableName\":\"fillLevelMm\",\"decimals\":0},{\"id\":\"t12\",\"type\":\"value\",\"title\":\"РВС-12 уровень\",\"x\":21,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.tank-farm-demo.tank-12\",\"variableName\":\"fillLevelMm\",\"decimals\":0},{\"id\":\"hub-p\",\"type\":\"value\",\"title\":\"Давление линии\",\"x\":42,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.tank-farm-demo.hub\",\"variableName\":\"linePressureMpa\",\"decimals\":3},{\"id\":\"hub-f\",\"type\":\"value\",\"title\":\"Расход линии\",\"x\":63,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.tank-farm-demo.hub\",\"variableName\":\"lineFlowM3h\",\"decimals\":1}]}"
+      "layoutJson": "{\"columns\":84,\"rowHeight\":8,\"widgets\":[{\"id\":\"t11\",\"type\":\"value\",\"title\":\"РВС-11 уровень\",\"x\":0,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.tank-farm-demo.tank-11\",\"variableName\":\"fillLevelMm\",\"decimals\":0},{\"id\":\"t12\",\"type\":\"value\",\"title\":\"РВС-12 уровень\",\"x\":21,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.devices.tank-farm-demo.tank-12\",\"variableName\":\"fillLevelMm\",\"decimals\":0},{\"id\":\"hub-p\",\"type\":\"value\",\"title\":\"Давление линии\",\"x\":42,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.tank-farm-hub-v1\",\"variableName\":\"linePressureMpa\",\"decimals\":3},{\"id\":\"hub-f\",\"type\":\"value\",\"title\":\"Расход линии\",\"x\":63,\"y\":0,\"w\":21,\"h\":14,\"objectPath\":\"root.platform.singleton-blueprints.tank-farm-hub-v1\",\"variableName\":\"lineFlowM3h\",\"decimals\":1}]}"
     }
   ],
   "operatorUi": {
@@ -931,10 +835,7 @@
     "title": "Резервуарный парк",
     "defaultDashboard": "root.platform.dashboards.tank-farm-overview",
     "dashboards": [
-      {
-        "path": "root.platform.dashboards.tank-farm-overview",
-        "title": "Резервуарный парк"
-      }
+      "root.platform.dashboards.tank-farm-overview"
     ],
     "eventJournalObjectPath": "root.platform"
   }
