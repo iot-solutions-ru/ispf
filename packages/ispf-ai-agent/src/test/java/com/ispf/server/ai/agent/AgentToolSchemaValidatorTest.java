@@ -32,6 +32,77 @@ class AgentToolSchemaValidatorTest {
     }
 
     @Test
+    void widgetSchemaRejectsUnknownKeysAndAcceptsCatalogFields() {
+        var schema = AgentToolInputSchemas.forTool("add_dashboard_widget");
+        assertThat(schema.get("additionalProperties")).isEqualTo(true);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> widget = (Map<String, Object>) properties.get("widget");
+        assertThat(widget.get("additionalProperties")).isEqualTo(false);
+        assertThat(widget.get("required")).asList().contains("type");
+
+        assertThat(AgentToolSchemaValidator.validate(schema, Map.of(
+                "path", "root.platform.dashboards.main",
+                "widget", Map.of(
+                        "type", "object-table",
+                        "columnsJson", "[{\"variable\":\"name\"}]",
+                        "parentPath", "root.platform.devices"
+                )
+        ))).isEmpty();
+
+        var unknown = AgentToolSchemaValidator.validate(schema, Map.of(
+                "path", "root.platform.dashboards.main",
+                "widget", Map.of("type", "value", "notAField", "x")
+        ));
+        assertThat(unknown).isPresent();
+        assertThat(unknown.get().code()).isEqualTo("UNKNOWN_ARG");
+        assertThat(unknown.get().path()).isEqualTo("widget.notAField");
+
+        var badType = AgentToolSchemaValidator.validate(schema, Map.of(
+                "path", "root.platform.dashboards.main",
+                "widget", Map.of("type", "not-a-widget")
+        ));
+        assertThat(badType).isPresent();
+        assertThat(badType.get().code()).isEqualTo("ARG_ENUM_MISMATCH");
+        assertThat(badType.get().path()).isEqualTo("widget.type");
+
+        Map<String, Object> typed = new java.util.LinkedHashMap<>();
+        typed.put("type", "report");
+        typed.put("x", 0);
+        typed.put("y", 1);
+        typed.put("w", 4);
+        typed.put("h", 3);
+        typed.put("minValue", 1.5);
+        typed.put("showGrid", true);
+        typed.put("editable", false);
+        typed.put("ref", "root.platform.devices.dev1/temp");
+        typed.put("buttonsJson", "[]");
+        typed.put("selectable", true);
+        typed.put("filterable", true);
+        typed.put("workflowPath", "root.platform.workflows.ack");
+        typed.put("wizardStepsJson", "[]");
+        typed.put("alarmMode", false);
+        typed.put("markerRulesJson", "[]");
+        typed.put("analyticsTemplateId", "tpl");
+        assertThat(AgentToolSchemaValidator.validate(schema, Map.of(
+                "path", "root.platform.dashboards.main",
+                "widget", typed
+        ))).isEmpty();
+
+        Map<String, Object> badGrid = new java.util.LinkedHashMap<>();
+        badGrid.put("type", "value");
+        badGrid.put("x", "abc");
+        var badNumber = AgentToolSchemaValidator.validate(schema, Map.of(
+                "path", "root.platform.dashboards.main",
+                "widget", badGrid
+        ));
+        assertThat(badNumber).isPresent();
+        assertThat(badNumber.get().code()).isEqualTo("ARG_TYPE_MISMATCH");
+        assertThat(badNumber.get().path()).isEqualTo("widget.x");
+    }
+
+    @Test
     void rejectsInvalidEnum() {
         var schema = AgentToolInputSchemas.forTool("driver_control");
         var result = AgentToolSchemaValidator.validate(schema, Map.of(

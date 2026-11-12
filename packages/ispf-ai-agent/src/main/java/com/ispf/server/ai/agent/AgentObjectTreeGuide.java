@@ -100,14 +100,14 @@ public final class AgentObjectTreeGuide {
                 2. `create_object parentPath=<folder> name=… type=…` — use path from step 1
                 3. Configure/save on returned path — never before create_object succeeds
                 
-                | Type | Parent folder | After create_object |
-                |------|---------------|---------------------|
-                | WORKFLOW | root.platform.workflows | save_workflow_bpmn → update_workflow_status ACTIVE → run_workflow |
-                | MIMIC | root.platform.mimics | save_mimic_diagram / add_mimic_elements |
-                | DASHBOARD | root.platform.dashboards | set_dashboard_layout or add_dashboard_widget |
-                | DEVICE | root.platform.devices | configure_driver, set_variable, list_variables |
-                | ALERT | root.platform.alert-rules | configure_alert |
-                | REPORT | root.platform.reports | configure_report |
+                | Type | Parent folder | Create, then configure |
+                |------|---------------|------------------------|
+                | WORKFLOW | root.platform.workflows | create_object, then save_workflow_bpmn → update_workflow_status ACTIVE → run_workflow |
+                | MIMIC | root.platform.mimics | create_object, then save_mimic_diagram / add_mimic_elements |
+                | DASHBOARD | root.platform.dashboards | create_object, then set_dashboard_layout or add_dashboard_widget |
+                | DEVICE | root.platform.devices | simulator: create_virtual_device. Field: create_object type=DEVICE, then configure_driver |
+                | ALERT | root.platform.alert-rules | configure_alert (not create_object) |
+                | REPORT | root.platform.reports | configure_report (not create_object) |
                 
                 - list_objects parentPath=… — children of folder
                 - get_object path=… — single node metadata

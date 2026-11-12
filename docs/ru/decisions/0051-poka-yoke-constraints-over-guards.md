@@ -4,6 +4,6 @@
 
 **Кратко (Accepted 2026-07-19):** качество агента и конфигурации строится по Toyota *poka-yoke* — три уровня защиты (prevention → detection → correction). Эвристические гварды в `packages/ispf-ai-agent` (~3.7k LOC: Plan/GroundTruth/JSON salvage/Loop/…) — временные леса: в ревью каждый гвард обязан назвать level-1 constraint, который его заменит. Не демонтировать ACL/scope, mutate approval, bundle gates и CONTROL allowlist. Порядок внедрения: схемы инструментов → `bundle.schema.json` → structured errors → acceptance-вердикт → native FC → демонтаж scaffolding по inventory в ADR. Стек творения — [application-principles P7](../application-principles.md) (AUTHOR / SHAPE / SHIP / PROMOTE).
 
-**Wave 1 (landed):** `AgentToolInputSchemas` на все platform tools; validate-before-execute; MCP `tools/list` отдаёт реальные `inputSchema` (заглушка `GENERIC_INPUT_SCHEMA` снята).
+**Wave 1 (landed):** `AgentToolInputSchemas` на все platform tools; validate-before-execute; MCP `tools/list` отдаёт реальные `inputSchema` (заглушка `GENERIC_INPUT_SCHEMA` снята). Вложенный объект виджета в `add_dashboard_widget` закрыт (`additionalProperties: false`). Создание объекта — один инструмент на роль: симулятор `create_virtual_device`, алерт `configure_alert`, хаб `ensure_singleton_instance`.
 
 **Wave 1b (landed):** консоль передаёт `uiLocale` на каждый turn; system prompt требует отвечать на языке локали UI (en/ru/de/zh).

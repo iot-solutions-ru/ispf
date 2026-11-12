@@ -226,20 +226,20 @@ public final class AgentPlaybooks {
                 
                 | ObjectType | Catalog / parent | Create autonomously when TZ needs it |
                 |------------|------------------|--------------------------------------|
-                | DEVICE | root.platform.devices | create_virtual_device / create_object + apply_mixin_blueprint + configure_driver — I/O only |
+                | DEVICE | root.platform.devices | Simulator: create_virtual_device. Field I/O: create_object type=DEVICE, then configure_driver. apply_mixin_blueprint only enriches that object |
                 | SINGLETON hub | root.platform.singleton-blueprints (or under devices tree) | ensure_singleton_instance — unique orchestrator; type ≠ DEVICE |
                 | INSTANCE twin | instance-types → instantiate | instantiate_instance_type — per-twin logic; may parent DEVICE children |
                 | CUSTOM | root.platform.devices.* (folder) or queries | create_object type=CUSTOM — folder / object-query; not a substitute for typed logic hub |
-                | DASHBOARD | root.platform.dashboards | create_object + set_dashboard_layout template= |
-                | MIMIC | root.platform.mimics | create_object + save_mimic_diagram |
-                | ALERT | root.platform.alert-rules | configure_alert (or create_object ALERT) |
+                | DASHBOARD | root.platform.dashboards | create_object type=DASHBOARD, then set_dashboard_layout |
+                | MIMIC | root.platform.mimics | create_object type=MIMIC, then save_mimic_diagram |
+                | ALERT | root.platform.alert-rules | configure_alert |
                 | CORRELATOR | root.platform.correlators | configure_correlator |
-                | WORKFLOW | root.platform.workflows | create_object + save_workflow_bpmn |
-                | REPORT | root.platform.reports | configure_report + run_report preview |
+                | WORKFLOW | root.platform.workflows | create_object type=WORKFLOW, then save_workflow_bpmn |
+                | REPORT | root.platform.reports | configure_report, then run_report preview |
                 | SCHEDULE | under application or platform | create_object type=SCHEDULE when TZ mentions cron/jobs |
-                | DATA_SOURCE | root.platform.data-sources | create_object when SQL/report needs JDBC |
+                | DATA_SOURCE | root.platform.data-sources | create_object type=DATA_SOURCE when SQL/report needs JDBC |
                 | APPLICATION | register_application / import_package | bundle deploy when TZ is app-level |
-                | FUNCTION | SINGLETON hub or INSTANCE twin — never DEVICE | deploy_tree_function / deploy_app_function hostKind=SINGLETON|INSTANCE |
+                | FUNCTION | SINGLETON hub or INSTANCE twin — never DEVICE | deploy_tree_function hostKind=SINGLETON|INSTANCE. deploy_app_function is the bundle path, not a second tree create |
                 | MODEL strategy | relative / instance / absolute catalogs | pick catalog entry OR instantiate_instance_type OR \
                 apply_mixin_blueprint OR ensure_singleton_instance — do NOT ask user to create types manually in UI |
                 
@@ -465,7 +465,7 @@ public final class AgentPlaybooks {
                 - WORKFLOW: list_objects workflows → create_object WORKFLOW → save_workflow_bpmn → update_workflow_status → run_workflow
                 - MIMIC: list_objects mimics → create_object MIMIC → save_mimic_diagram
                 - DASHBOARD: list_objects dashboards → create_object DASHBOARD → set_dashboard_layout
-                - DEVICE: list_objects devices → create_object / create_virtual_device → configure_driver → list_variables
+                - DEVICE: list_objects devices → simulator create_virtual_device, or field create_object type=DEVICE → configure_driver → list_variables
                 
                 Дополнительно перед create:
                 - search_objects / get_object — если пользователь назвал объект
