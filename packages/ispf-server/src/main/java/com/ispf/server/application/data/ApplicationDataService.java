@@ -124,6 +124,26 @@ public class ApplicationDataService {
         );
     }
 
+    @Transactional
+    public void applyManifestSeeds(String appId, String profile, List<SeedScript> scripts) {
+        Map<String, Object> app = ensureApp(appId);
+        String schemaName = String.valueOf(app.get("schema_name"));
+        schemaSession.ensureSchemaExists(schemaName);
+        for (SeedScript seed : scripts) {
+            if (store.isSeedApplied(appId, profile, seed.id())) {
+                continue;
+            }
+            schemaSession.runInSchema(schemaName, () -> {
+                for (String statement : splitStatements(seed.sql())) {
+                    if (!statement.isBlank()) {
+                        store.executeSql(statement);
+                    }
+                }
+            });
+            store.recordSeed(appId, profile, seed.id());
+        }
+    }
+
     public Map<String, Object> status(String appId) {
         Map<String, Object> app = ensureApp(appId);
         List<Map<String, Object>> migrations = store.listMigrations(appId);

@@ -60,6 +60,22 @@ export function packDirectory(dir) {
     }
   }
 
+  const seedsDir = path.join(dir, "seeds");
+  if (fs.existsSync(seedsDir)) {
+    const seeds = fs
+      .readdirSync(seedsDir)
+      .filter((f) => f.toLowerCase().endsWith(".sql"))
+      .sort()
+      .map((file) => ({
+        id: migrationIdFromFilename(file),
+        profile: "default",
+        sql: fs.readFileSync(path.join(seedsDir, file), "utf8").replace(/\r\n/g, "\n").replace(/\n$/, ""),
+      }));
+    if (seeds.length) {
+      manifest.seeds = seeds;
+    }
+  }
+
   const functionsDir = path.join(dir, "functions");
   if (fs.existsSync(functionsDir)) {
     const functions = fs

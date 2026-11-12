@@ -9,6 +9,7 @@ import com.ispf.server.application.script.FunctionScriptEngine;
 import com.ispf.server.application.script.FunctionScriptJdbcScope;
 import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.application.script.ScriptExecutionContext;
+import com.ispf.server.application.script.SignaturePolicy;
 import com.ispf.server.binding.BindingRefreshAfterCommit;
 import com.ispf.server.datasource.DataSourceSqlSession;
 import com.ispf.server.object.ObjectManager;
@@ -93,6 +94,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
         });
         String dataSourcePath = descriptor.dataSourcePath();
         DataRecord[] outputHolder = new DataRecord[1];
+        SignaturePolicy.require(descriptor.sourceBody(), input);
         Runnable execute = () -> outputHolder[0] = scriptEngine.execute(
                 descriptor.sourceBody(),
                 input,

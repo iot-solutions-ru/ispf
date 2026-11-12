@@ -43,6 +43,13 @@ export function unpackBundle(manifest, outDir) {
   }
   writeJsonFile(path.join(outDir, "solution.json"), solution);
 
+  if (Array.isArray(manifest.seeds) && manifest.seeds.length) {
+    manifest.seeds.forEach((seed, i) => {
+      const id = seed.id ?? `seed_${i + 1}`;
+      writeTextFile(path.join(outDir, "seeds", `${id}.sql`), seed.sql ?? "");
+    });
+  }
+
   if (Array.isArray(manifest.migrations) && manifest.migrations.length) {
     manifest.migrations.forEach((m, i) => {
       const id = m.id ?? `migration_${i + 1}`;

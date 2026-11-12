@@ -7,7 +7,7 @@ import { assertHonestDeployStatus } from "./honestDeploy.mjs";
 
 export { assertHonestDeployStatus };
 
-export async function deployDirectory(dir, appId, { schemaPath, strict = false } = {}) {
+export async function deployDirectory(dir, appId, { schemaPath, strict = false, withSeeds = false } = {}) {
   const manifest = packDirectory(dir);
   let local = validateLocal(manifest, schemaPath ?? defaultSchemaPath());
   if (strict && local.status === "OK") {
@@ -35,7 +35,15 @@ export async function deployDirectory(dir, appId, { schemaPath, strict = false }
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const qs = strict ? "?strict=true" : "";
+  const params = new URLSearchParams();
+  if (strict) {
+    params.set("strict", "true");
+  }
+  if (withSeeds) {
+    params.set("withSeeds", "true");
+  }
+  const query = params.toString();
+  const qs = query ? `?${query}` : "";
   const response = await fetch(
     `${baseUrl}/api/v1/applications/${encodeURIComponent(appId)}/deploy${qs}`,
     {
