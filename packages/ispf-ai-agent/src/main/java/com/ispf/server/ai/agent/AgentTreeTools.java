@@ -999,6 +999,7 @@ final class AgentTreeTools {
                     );
                     if ("OK".equals(String.valueOf(deployed.get("status")))) {
                         deployed.put("status", "OK");
+                        context.runState().clearBundleValidated(packageId);
                     } else {
                         deployed.putIfAbsent("status", "ERROR");
                         if (deployed.get("testResults") != null) {

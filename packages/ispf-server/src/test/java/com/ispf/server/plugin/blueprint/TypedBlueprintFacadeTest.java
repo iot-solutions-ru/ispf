@@ -4,6 +4,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
 import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintException;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.server.object.ObjectManager;
@@ -79,6 +80,21 @@ class TypedBlueprintFacadeTest {
                     assertThat(e.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
                     assertThat(e.getReason()).isEqualTo("alert template is invalid");
                 });
+    }
+
+    @Test
+    void missingBlueprintByNameOrIdMapsToNotFound() {
+        when(blueprintRegistry.requireByName("missing-hub"))
+                .thenThrow(new BlueprintException("Model not found: missing-hub"));
+        when(blueprintRegistry.requireById("missing-id"))
+                .thenThrow(new BlueprintException("Model not found: missing-id"));
+
+        assertThatThrownBy(() -> facade.getByName("missing-hub"))
+                .isInstanceOfSatisfying(ResponseStatusException.class, e ->
+                        assertThat(e.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND));
+        assertThatThrownBy(() -> facade.get("missing-id"))
+                .isInstanceOfSatisfying(ResponseStatusException.class, e ->
+                        assertThat(e.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND));
     }
 
     private static BlueprintDefinition hubBlueprint() {

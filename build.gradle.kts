@@ -199,7 +199,7 @@ subprojects {
 
     dependencies {
         constraints {
-            implementation("org.apache.commons:commons-lang3:3.21.0")
+            implementation("org.apache.commons:commons-lang3:3.22.0")
             implementation("org.xerial.snappy:snappy-java:1.1.10.12")
             implementation("com.google.guava:guava:33.8.0-jre")
             implementation("org.apache.kerby:kerby-asn1:2.1.2")
@@ -234,7 +234,7 @@ subprojects {
                 // Dependabot GHSA-j288-q9x7-2f5v (CVE-2025-48924): lang3 < 3.18.0.
                 // Boot 4.1.1 manages 3.20.0; force+eachDependency pin 3.21.0 so the graph
                 // and Dependabot alert #112 stay on a patched line past the BOM.
-                "org.apache.commons:commons-lang3:3.21.0",
+                "org.apache.commons:commons-lang3:3.22.0",
                 // Graph still resolved these below the patched line: snappy 1.1.10.7
                 // (GHSA-q233-g92q-qxp6 / GHSA-xqrx-qh46-34m7 / GHSA-gwq9-9ffj-mvrv, fixed in
                 // 1.1.10.9), Guava 33.4.8-jre (GHSA-xxph-c9ww-hj94), Kerby 2.0.3

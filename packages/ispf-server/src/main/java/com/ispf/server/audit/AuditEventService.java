@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +56,7 @@ public class AuditEventService {
         entity.setTargetType(targetType);
         entity.setTargetId(targetId);
         entity.setDetailsJson(details == null || details.isEmpty() ? null : writeJson(details));
-        entity.setOccurredAt(Instant.now());
+        entity.setOccurredAt(Instant.now().truncatedTo(ChronoUnit.MICROS));
         repository.save(entity);
         auditChainStore.append(entity);
         siemWebhookDispatcher.dispatch(toRecord(entity));

@@ -91,7 +91,12 @@ public class TypedBlueprintFacade {
     }
 
     public BlueprintDto getByName(String name) {
-        BlueprintDefinition model = blueprintRegistry.requireByName(name);
+        BlueprintDefinition model;
+        try {
+            model = blueprintRegistry.requireByName(name);
+        } catch (BlueprintException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        }
         assertType(model);
         return BlueprintDto.from(model);
     }
@@ -235,7 +240,12 @@ public class TypedBlueprintFacade {
     }
 
     private BlueprintDefinition requireTyped(String id) {
-        BlueprintDefinition model = blueprintRegistry.requireById(id);
+        BlueprintDefinition model;
+        try {
+            model = blueprintRegistry.requireById(id);
+        } catch (BlueprintException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        }
         assertType(model);
         return model;
     }

@@ -2,6 +2,8 @@ package com.ispf.server.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
+
 @ConfigurationProperties(prefix = "ispf.mcp")
 public class McpProperties {
 
@@ -24,6 +26,22 @@ public class McpProperties {
      * When true with profile {@code mcp}, reads JSON-RPC from stdin and writes responses to stdout.
      */
     private boolean stdioEnabled = false;
+
+    /**
+     * When true, {@code mcp_approve_mutate_plan} may unlock mutations without a UI-approved plan.
+     * Default false (production-safe).
+     */
+    private boolean allowInbandMutateApproval = false;
+
+    /**
+     * Evict idle HTTP MCP connection state after this duration.
+     */
+    private Duration connectionIdleTtl = Duration.ofMinutes(30);
+
+    /**
+     * Upper bound on in-memory MCP HTTP connection entries (LRU-ish eviction on overflow).
+     */
+    private int maxConnectionEntries = 1024;
 
     public boolean isEnabled() {
         return enabled;
@@ -55,5 +73,29 @@ public class McpProperties {
 
     public void setStdioEnabled(boolean stdioEnabled) {
         this.stdioEnabled = stdioEnabled;
+    }
+
+    public boolean isAllowInbandMutateApproval() {
+        return allowInbandMutateApproval;
+    }
+
+    public void setAllowInbandMutateApproval(boolean allowInbandMutateApproval) {
+        this.allowInbandMutateApproval = allowInbandMutateApproval;
+    }
+
+    public Duration getConnectionIdleTtl() {
+        return connectionIdleTtl;
+    }
+
+    public void setConnectionIdleTtl(Duration connectionIdleTtl) {
+        this.connectionIdleTtl = connectionIdleTtl;
+    }
+
+    public int getMaxConnectionEntries() {
+        return maxConnectionEntries;
+    }
+
+    public void setMaxConnectionEntries(int maxConnectionEntries) {
+        this.maxConnectionEntries = maxConnectionEntries;
     }
 }
