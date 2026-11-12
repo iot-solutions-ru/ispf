@@ -13,18 +13,65 @@ import java.util.Map;
 @ConditionalOnProperty(prefix = "ispf.mcp", name = "enabled", havingValue = "true")
 public class McpJsonRpcHandler {
 
+    private static final int SESSION_REQUIRED_CODE = -32001;
+
     private final McpProperties properties;
     private final McpToolAdapter toolAdapter;
     private final McpResourceAdapter resourceAdapter;
+    private final McpConnectionStateStore connectionStateStore;
 
     public McpJsonRpcHandler(
             McpProperties properties,
             McpToolAdapter toolAdapter,
-            McpResourceAdapter resourceAdapter
+            McpResourceAdapter resourceAdapter,
+            McpConnectionStateStore connectionStateStore
     ) {
         this.properties = properties;
         this.toolAdapter = toolAdapter;
         this.resourceAdapter = resourceAdapter;
+        this.connectionStateStore = connectionStateStore;
+    }
+
+    public record HttpHandleResult(Map<String, Object> response, String mintedSessionId) {
+    }
+
+    @SuppressWarnings("unchecked")
+    public HttpHandleResult handleHttp(
+            Map<String, Object> request,
+            Authentication authentication,
+            String actor,
+            String sessionHeader
+    ) throws Exception {
+        String method = request.get("method") != null ? request.get("method").toString() : "";
+        Object id = request.get("id");
+        if ("initialize".equals(method)) {
+            String sessionId = connectionStateStore.initializeHttpSession(actor, sessionHeader);
+            Map<String, Object> result = initializeResult(sessionId);
+            return new HttpHandleResult(success(id, result), sessionId);
+        }
+        if (!"ping".equals(method)) {
+            if (sessionHeader == null || sessionHeader.isBlank()) {
+                return new HttpHandleResult(
+                        error(
+                                id,
+                                SESSION_REQUIRED_CODE,
+                                "Mcp-Session-Id header required — call initialize first, then send the session id "
+                                        + "on every tools/call and tools/list request"
+                        ),
+                        null
+                );
+            }
+            if (!connectionStateStore.hasHttpSession(actor, sessionHeader)) {
+                return new HttpHandleResult(
+                        error(id, SESSION_REQUIRED_CODE, "Unknown or expired Mcp-Session-Id — call initialize again"),
+                        null
+                );
+            }
+        }
+        String connectionKey = sessionHeader != null && !sessionHeader.isBlank()
+                ? McpConnectionKeys.forHttpActor(actor, sessionHeader.trim())
+                : McpConnectionKeys.forHttpActor(actor, "noop");
+        return new HttpHandleResult(handle(request, authentication, actor, connectionKey), null);
     }
 
     @SuppressWarnings("unchecked")
@@ -41,7 +88,7 @@ public class McpJsonRpcHandler {
                 : Map.of();
 
         return switch (method) {
-            case "initialize" -> success(id, initializeResult());
+            case "initialize" -> success(id, initializeResult(null));
             case "tools/list" -> success(id, Map.of("tools", toolAdapter.listTools()));
             case "tools/call" -> success(id, callTool(params, authentication, actor, connectionKey));
             case "resources/list" -> success(id, Map.of("resources", resourceAdapter.listResources()));
@@ -51,18 +98,21 @@ public class McpJsonRpcHandler {
         };
     }
 
-    private Map<String, Object> initializeResult() {
-        return Map.of(
-                "protocolVersion", properties.getProtocolVersion(),
-                "capabilities", Map.of(
-                        "tools", Map.of(),
-                        "resources", Map.of()
-                ),
-                "serverInfo", Map.of(
-                        "name", properties.getServerName(),
-                        "version", "0.7.6"
-                )
-        );
+    private Map<String, Object> initializeResult(String sessionId) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("protocolVersion", properties.getProtocolVersion());
+        result.put("capabilities", Map.of(
+                "tools", Map.of(),
+                "resources", Map.of()
+        ));
+        result.put("serverInfo", Map.of(
+                "name", properties.getServerName(),
+                "version", "0.7.6"
+        ));
+        if (sessionId != null && !sessionId.isBlank()) {
+            result.put("sessionId", sessionId);
+        }
+        return result;
     }
 
     @SuppressWarnings("unchecked")

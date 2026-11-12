@@ -7,8 +7,10 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -21,19 +23,43 @@ class McpToolApiTest {
     private MockMvc mockMvc;
 
     @Test
-    void initializeReturnsServerInfo() throws Exception {
+    void initializeReturnsServerInfoAndSessionId() throws Exception {
         mockMvc.perform(post("/api/v1/ai/mcp")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.result.serverInfo.name").value("ispf-platform"));
+                .andExpect(jsonPath("$.result.serverInfo.name").value("ispf-platform"))
+                .andExpect(jsonPath("$.result.sessionId").isNotEmpty())
+                .andExpect(header().exists(McpController.SESSION_HEADER));
+    }
+
+    @Test
+    void toolsCallWithoutSessionReturnsJsonRpcError() throws Exception {
+        mockMvc.perform(post("/api/v1/ai/mcp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "jsonrpc": "2.0",
+                                  "id": 3,
+                                  "method": "tools/call",
+                                  "params": {
+                                    "name": "list_objects",
+                                    "arguments": {"parent": "root.platform.devices", "lite": true}
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.error.code").value(-32001))
+                .andExpect(jsonPath("$.error.message").value(org.hamcrest.Matchers.containsString("Mcp-Session-Id")));
     }
 
     @Test
     void toolsListIncludesPlatformTools() throws Exception {
+        String sessionId = initializeSession();
         mockMvc.perform(post("/api/v1/ai/mcp")
+                        .header(McpController.SESSION_HEADER, sessionId)
                         .header("X-ISPF-Role", "admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -51,7 +77,9 @@ class McpToolApiTest {
 
     @Test
     void toolsCallListObjects() throws Exception {
+        String sessionId = initializeSession();
         mockMvc.perform(post("/api/v1/ai/mcp")
+                        .header(McpController.SESSION_HEADER, sessionId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -71,7 +99,9 @@ class McpToolApiTest {
 
     @Test
     void resourcesListIncludesContextPackSlices() throws Exception {
+        String sessionId = initializeSession();
         mockMvc.perform(post("/api/v1/ai/mcp")
+                        .header(McpController.SESSION_HEADER, sessionId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"jsonrpc":"2.0","id":4,"method":"resources/list","params":{}}
@@ -83,7 +113,9 @@ class McpToolApiTest {
 
     @Test
     void resourcesReadInfoSlice() throws Exception {
+        String sessionId = initializeSession();
         mockMvc.perform(post("/api/v1/ai/mcp")
+                        .header(McpController.SESSION_HEADER, sessionId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -96,5 +128,19 @@ class McpToolApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.contents[0].mimeType").value("application/json"))
                 .andExpect(jsonPath("$.result.contents[0].text").isNotEmpty());
+    }
+
+    private String initializeSession() throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/v1/ai/mcp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"jsonrpc":"2.0","id":0,"method":"initialize","params":{}}
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+        String body = result.getResponse().getContentAsString();
+        int start = body.indexOf("\"sessionId\":\"") + "\"sessionId\":\"".length();
+        int end = body.indexOf('"', start);
+        return body.substring(start, end);
     }
 }

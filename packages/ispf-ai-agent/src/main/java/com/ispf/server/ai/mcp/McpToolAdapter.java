@@ -3,6 +3,7 @@ package com.ispf.server.ai.mcp;
 import com.ispf.server.ai.agent.AgentContext;
 import com.ispf.server.ai.agent.AgentInteractionMode;
 import com.ispf.server.ai.agent.AgentMutateApprovalGuard;
+import com.ispf.server.ai.agent.AgentPlanPhase;
 import com.ispf.server.ai.agent.AgentProfile;
 import com.ispf.server.ai.agent.AgentRunState;
 import com.ispf.server.ai.agent.AgentSession;
@@ -13,6 +14,8 @@ import com.ispf.server.ai.agent.PlatformAgentToolRegistry;
 import com.ispf.server.ai.audit.AiToolAuditService;
 import com.ispf.server.ai.context.ContextPackService;
 import com.ispf.server.config.AiProperties;
+import com.ispf.server.config.McpProperties;
+import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.workflow.WorkflowService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.Authentication;
@@ -47,6 +50,8 @@ public class McpToolAdapter {
     private final ContextPackService contextPackService;
     private final WorkflowService workflowService;
     private final AiProperties aiProperties;
+    private final McpProperties mcpProperties;
+    private final ObjectAccessService objectAccessService;
     private final ObjectMapper objectMapper;
 
     public McpToolAdapter(
@@ -57,6 +62,8 @@ public class McpToolAdapter {
             ContextPackService contextPackService,
             WorkflowService workflowService,
             AiProperties aiProperties,
+            McpProperties mcpProperties,
+            ObjectAccessService objectAccessService,
             ObjectMapper objectMapper
     ) {
         this.toolRegistry = toolRegistry;
@@ -66,6 +73,8 @@ public class McpToolAdapter {
         this.contextPackService = contextPackService;
         this.workflowService = workflowService;
         this.aiProperties = aiProperties;
+        this.mcpProperties = mcpProperties;
+        this.objectAccessService = objectAccessService;
         this.objectMapper = objectMapper;
     }
 
@@ -92,8 +101,9 @@ public class McpToolAdapter {
         ));
         tools.add(mcpMetaTool(
                 MCP_APPROVE_MUTATE_PLAN,
-                "Explicitly approve mutate tools for this MCP connection when "
-                        + "ispf.ai.agent-require-approval-for-mutate is enabled.",
+                "Approve mutate tools for this MCP connection when "
+                        + "ispf.ai.agent-require-approval-for-mutate is enabled. "
+                        + "Requires an approved plan in the UI unless ispf.mcp.allow-inband-mutate-approval=true.",
                 AgentToolSchemas.objectSchema(
                         Map.of(
                                 "note",
@@ -111,6 +121,7 @@ public class McpToolAdapter {
             tool.put("description", entry.get("description"));
             Object schema = entry.get("inputSchema");
             tool.put("inputSchema", schema != null ? schema : AgentToolInputSchemas.forTool(String.valueOf(entry.get("name"))));
+            maybePutDestructiveHint(tool, String.valueOf(entry.get("name")));
             tools.add(tool);
         }
         for (WorkflowService.PublishedWorkflowTool published : workflowService.listPublishedWorkflowTools()) {
@@ -118,6 +129,7 @@ public class McpToolAdapter {
             tool.put("name", published.toolName());
             tool.put("description", published.description() + " [workflow:" + published.path() + "]");
             tool.put("inputSchema", parseInputSchema(published.inputSchemaJson()));
+            tool.put("annotations", Map.of("destructiveHint", true, "openWorldHint", true));
             tools.add(tool);
         }
         return tools;
@@ -163,7 +175,8 @@ public class McpToolAdapter {
                         aiProperties.isAgentRequireApprovalForMutate(),
                         runState,
                         toolName,
-                        AgentProfile.ADMIN
+                        AgentProfile.ADMIN,
+                        true
                 );
         if (approvalBlock.isPresent() && approvalBlock.get().blocked()) {
             result = new LinkedHashMap<>();
@@ -175,11 +188,17 @@ public class McpToolAdapter {
             Optional<WorkflowService.PublishedWorkflowTool> published =
                     workflowService.findPublishedWorkflowTool(toolName);
             if (published.isPresent()) {
-                result = invokePublishedWorkflow(published.get(), args);
+                result = invokePublishedWorkflow(published.get(), args, authentication);
             } else {
                 result = toolRegistry.execute(toolName, args, context);
             }
             status = String.valueOf(result.getOrDefault("status", "OK"));
+            if ("import_package".equals(toolName) && "OK".equals(status)) {
+                String packageId = packageIdFromArgs(args);
+                if (packageId != null) {
+                    runState.clearBundleValidated(packageId);
+                }
+            }
         } catch (Exception ex) {
             result = Map.of("status", "ERROR", "error", ex.getMessage());
             status = "ERROR";
@@ -228,7 +247,19 @@ public class McpToolAdapter {
             session.runState().restore(objectMapper, connectionState.snapshot(objectMapper));
             Object modeRaw = args.get("interactionMode");
             if (modeRaw != null && !String.valueOf(modeRaw).isBlank()) {
-                session.runState().setInteractionMode(AgentInteractionMode.fromString(String.valueOf(modeRaw)));
+                AgentInteractionMode mode = AgentInteractionMode.fromString(String.valueOf(modeRaw));
+                if (aiProperties.isAgentRequireApprovalForMutate()
+                        && mode == AgentInteractionMode.EXECUTE) {
+                    return Map.of(
+                            "status", "ERROR",
+                            "error",
+                            "interactionMode EXECUTE is not allowed over MCP when "
+                                    + "ispf.ai.agent-require-approval-for-mutate is enabled",
+                            "hint",
+                            "Use PLAN mode and obtain human plan approval before calling mutate tools."
+                    );
+                }
+                session.runState().setInteractionMode(mode);
             }
             connectionStateStore.bindAgentSession(connectionKey, session.sessionId());
             sessionStore.persistState(session);
@@ -240,6 +271,32 @@ public class McpToolAdapter {
             );
         }
         if (MCP_APPROVE_MUTATE_PLAN.equals(toolName)) {
+            if (aiProperties.isAgentRequireApprovalForMutate()
+                    && !mcpProperties.isAllowInbandMutateApproval()) {
+                ResolvedRunState resolved = resolveRunState(connectionKey, null, actor);
+                AgentRunState runState = resolved.runState();
+                if (!hasApprovablePlan(runState)) {
+                    return Map.of(
+                            "status", "ERROR",
+                            "error",
+                            "In-band MCP mutate approval is disabled (ispf.mcp.allow-inband-mutate-approval=false)",
+                            "hint",
+                            "Approve the plan in the AI Studio UI, or enable ispf.mcp.allow-inband-mutate-approval "
+                                    + "only in non-production environments."
+                    );
+                }
+                resolved.runState().approvePlan(actor);
+                resolved.session().ifPresent(sessionStore::persistState);
+                Map<String, Object> ok = new LinkedHashMap<>();
+                ok.put("status", "OK");
+                ok.put("planApproved", resolved.runState().isPlanApproved());
+                ok.put("planState", resolved.runState().planStateSummary());
+                Object note = args.get("note");
+                if (note != null && !String.valueOf(note).isBlank()) {
+                    ok.put("note", String.valueOf(note));
+                }
+                return ok;
+            }
             ResolvedRunState resolved = resolveRunState(connectionKey, null, actor);
             resolved.runState().approvePlan(actor);
             resolved.session().ifPresent(sessionStore::persistState);
@@ -278,7 +335,44 @@ public class McpToolAdapter {
         tool.put("name", name);
         tool.put("description", description);
         tool.put("inputSchema", inputSchema);
+        if (MCP_APPROVE_MUTATE_PLAN.equals(name)) {
+            tool.put("annotations", Map.of("destructiveHint", true));
+        }
         return tool;
+    }
+
+    private static boolean hasApprovablePlan(AgentRunState runState) {
+        if (runState == null) {
+            return false;
+        }
+        if (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL
+                || runState.planPhase() == AgentPlanPhase.APPROVED
+                || runState.planPhase() == AgentPlanPhase.PLANNING) {
+            return !runState.storedPlan().isEmpty();
+        }
+        return runState.isPlanningActive() && !runState.storedPlan().isEmpty();
+    }
+
+    private static void maybePutDestructiveHint(Map<String, Object> tool, String toolName) {
+        Optional<AgentMutateApprovalGuard.BlockDecision> wouldBlock =
+                AgentMutateApprovalGuard.checkBeforeTool(true, new AgentRunState(), toolName, AgentProfile.ADMIN);
+        if (wouldBlock.isPresent() && wouldBlock.get().blocked()) {
+            tool.put("annotations", Map.of("destructiveHint", true));
+        }
+    }
+
+    private static String packageIdFromArgs(Map<String, Object> args) {
+        if (args == null) {
+            return null;
+        }
+        Object packageId = args.get("packageId");
+        if (packageId == null || String.valueOf(packageId).isBlank()) {
+            packageId = args.get("appId");
+        }
+        if (packageId == null || String.valueOf(packageId).isBlank()) {
+            return null;
+        }
+        return String.valueOf(packageId).trim();
     }
 
     private static Map<String, Object> wrapMetaResult(Map<String, Object> result, ObjectMapper objectMapper) {
@@ -297,8 +391,20 @@ public class McpToolAdapter {
 
     private Map<String, Object> invokePublishedWorkflow(
             WorkflowService.PublishedWorkflowTool published,
-            Map<String, Object> args
+            Map<String, Object> args,
+            Authentication authentication
     ) throws Exception {
+        try {
+            objectAccessService.requireMemberInvoke(
+                    published.path(),
+                    "workflow",
+                    published.path(),
+                    List.of(),
+                    authentication
+            );
+        } catch (Exception ex) {
+            return Map.of("status", "ERROR", "error", ex.getMessage());
+        }
         Map<String, String> input = new LinkedHashMap<>();
         Object nested = args.get("input");
         if (nested instanceof Map<?, ?> map) {
