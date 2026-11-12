@@ -450,4 +450,43 @@ class ObjectVariableServiceTest {
         verify(telemetryPolicyService).invalidateVariable(PATH, "temperature");
         verify(objectManager).persistVariable(eq(PATH), any(Variable.class));
     }
+
+    @Test
+    void createAndUpdateVariableHistoryForgetStaleHistorianCache() {
+        when(mapper.auditDiff(any(), any())).thenReturn("{}");
+        ObjectVariableService service = new ObjectVariableService(
+                objectManager,
+                variableRepository,
+                mapper,
+                telemetryPolicyService,
+                javaFunctionRuntimeService,
+                new FunctionScriptValidator(new ObjectMapper()),
+                null,
+                variableHistoryService
+        );
+
+        service.createVariable(
+                PATH,
+                "temperature",
+                SCHEMA,
+                true,
+                true,
+                DataRecord.single(SCHEMA, Map.of("value", 20.0)),
+                false,
+                null
+        );
+        verify(variableHistoryService).forgetVariable(PATH, "temperature");
+
+        service.updateVariableHistory(
+                PATH,
+                "temperature",
+                true,
+                30,
+                null,
+                HistorySampleMode.CHANGES_ONLY,
+                null,
+                null
+        );
+        verify(variableHistoryService, org.mockito.Mockito.times(2)).forgetVariable(PATH, "temperature");
+    }
 }

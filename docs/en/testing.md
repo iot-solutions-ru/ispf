@@ -15,6 +15,9 @@
 
 # Single class
 ./gradlew :packages:ispf-server:test --tests "com.ispf.server.api.DashboardApiTest"
+
+# Full platform logic regression suite (golden path across all core engines)
+./gradlew :packages:ispf-server:test --tests "com.ispf.server.regression.*"
 ```
 
 JUnit 5, Java 25, Spring Boot 4.
@@ -60,6 +63,9 @@ Backend tests use modular Boot 4 starters (`spring-boot-starter-webmvc-test`, `s
 | `OperatorAccessTest` | RBAC operator vs admin |
 | `ApplicationPlatformApiTest` | REQ-PF: applications, bundle deploy, BFF invoke |
 | `FunctionTestRunnerTest` | W6 solution smoke tests (rollback transaction) |
+| `PlatformGoldenPathRegressionTest` | Unified end-to-end scenario across SHAPE (SINGLETON/INSTANCE/MIXIN/DEVICE), SHIP (strict bundle validate/dry-run/deploy/reconcile/W6 tests), BFF + `sqlBinding`, CEL + `@dashboardContext` rules, Historian + Analytics engine, and AlertRule → Correlator → BPMN → WorkQueue |
+| `PlatformChangeSetAndBackupRegressionTest` | Change-sets (`create` / `preview` / conflict 409 / `force` apply), edit leases (423) + config audit, and HTTP subtree backup export / dry-run / restore |
+| `PlatformWebSocketLiveRegressionTest` | Live `/ws/objects` subscription filtering, presence, and event catalog contract |
 
 ### Solution tests (W6)
 

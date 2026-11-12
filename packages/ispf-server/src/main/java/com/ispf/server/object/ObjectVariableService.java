@@ -217,6 +217,9 @@ public class ObjectVariableService {
         );
         node.addVariable(variable);
         objectManager.persistVariable(path, variable);
+        if (variableHistoryService != null) {
+            variableHistoryService.forgetVariable(path, name);
+        }
         objectManager.bumpRevision(node);
         objectManager.recordAudit(
                 path,
@@ -461,6 +464,9 @@ public class ObjectVariableService {
         objectManager.persistVariable(path, updated);
         objectManager.bumpRevision(node);
         telemetryPolicyService.invalidateVariable(path, name);
+        if (variableHistoryService != null) {
+            variableHistoryService.forgetVariable(path, name);
+        }
         objectManager.recordAudit(
                 path,
                 "UPDATE_VARIABLE_HISTORY",
