@@ -27,6 +27,14 @@
     {
       "id": "mes_platform_recipe_v1",
       "sql": "CREATE TABLE IF NOT EXISTS mes_recipe (recipe_id VARCHAR(64) NOT NULL, revision INTEGER NOT NULL, display_name VARCHAR(128) NOT NULL, effective_from TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, effective_to TIMESTAMP, status VARCHAR(32) NOT NULL, PRIMARY KEY (recipe_id, revision));"
+    },
+    {
+      "id": "mes_platform_spc_hold_v1",
+      "sql": "ALTER TABLE mes_batch_run ADD COLUMN IF NOT EXISTS hold_reason VARCHAR(256);"
+    },
+    {
+      "id": "mes_platform_genealogy_lookup_v1",
+      "sql": "CREATE INDEX IF NOT EXISTS mes_tracked_activity_input_entity_idx ON mes_tracked_activity_input (entity_id); CREATE INDEX IF NOT EXISTS mes_tracked_activity_output_entity_idx ON mes_tracked_activity_output (entity_id);"
     }
   ],
   "seeds": [
@@ -518,6 +526,36 @@
       "source": {
         "type": "script",
         "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"samples\",\"sql\":\"SELECT id::text AS sample_id, line_code, measurement_mm, sample_ts::text AS sample_ts FROM mes_spc_sample ORDER BY sample_ts DESC LIMIT 20\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${samples}\",\"fields\":{\"sampleId\":\"${item.sample_id}\",\"lineCode\":\"${item.line_code}\",\"measurementMm\":\"${item.measurement_mm}\",\"sampleTs\":\"${item.sample_ts}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "functionName": "mes_quality_autoHold",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            { "name": "batchId", "type": "STRING" },
+            { "name": "measurement", "type": "DOUBLE" },
+            { "name": "ucl", "type": "DOUBLE" },
+            { "name": "lcl", "type": "DOUBLE" },
+            { "name": "reason", "type": "STRING" }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            { "name": "phase", "type": "STRING" },
+            { "name": "holdReason", "type": "STRING", "nullable": true }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"batch\",\"sql\":\"SELECT batch_path, phase FROM mes_batch_run WHERE batch_id = ?\",\"params\":[\"${input.batchId}\"]},{\"type\":\"failIfNull\",\"var\":\"batch\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_batch_run SET phase = 'hold', hold_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE batch_id = ? AND (? > ? OR ? < ?)\",\"params\":[\"${input.reason}\",\"${input.batchId}\",\"${input.measurement}\",\"${input.ucl}\",\"${input.measurement}\",\"${input.lcl}\"]},{\"type\":\"selectOne\",\"var\":\"after\",\"sql\":\"SELECT phase, hold_reason FROM mes_batch_run WHERE batch_id = ?\",\"params\":[\"${input.batchId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"phase\":\"${after.phase}\",\"holdReason\":\"${after.hold_reason}\"}}]}"
       }
     },
     {
