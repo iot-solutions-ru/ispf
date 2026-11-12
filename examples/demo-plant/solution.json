@@ -43,7 +43,7 @@
     ],
     "defaultDashboard": "root.platform.dashboards.mes-platform-dispatch",
     "defaultReport": "root.platform.reports.mes-genealogy",
-    "eventJournalObjectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+    "eventJournalObjectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
     "reports": [
       {
         "path": "root.platform.reports.mes-genealogy",

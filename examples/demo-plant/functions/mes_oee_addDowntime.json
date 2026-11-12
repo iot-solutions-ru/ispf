@@ -32,9 +32,9 @@
     }
   },
   "functionName": "mes_oee_addDowntime",
-  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
   "source": {
-    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"shift\",\"sql\":\"@file:mes_oee_addDowntime-step.sql\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"shift\",\"message\":\"Shift not found\"},{\"type\":\"exec\",\"sql\":\"@file:mes_oee_addDowntime-step.sql\",\"params\":[\"${input.minutes}\",\"${input.shiftId}\"]},{\"type\":\"selectOne\",\"var\":\"updated\",\"sql\":\"SELECT downtime_minutes FROM mes_oee_shift WHERE id = CAST(? AS uuid)\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"downtimeMinutes\":\"${updated.downtime_minutes}\"}}]}",
+    "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"shift\",\"sql\":\"@file:mes_oee_addDowntime-step-1.sql\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"shift\",\"message\":\"Shift not found\"},{\"type\":\"exec\",\"sql\":\"@file:mes_oee_addDowntime-step-2.sql\",\"params\":[\"${input.minutes}\",\"${input.shiftId}\"]},{\"type\":\"selectOne\",\"var\":\"updated\",\"sql\":\"SELECT downtime_minutes FROM mes_oee_shift WHERE id = CAST(? AS uuid)\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"downtimeMinutes\":\"${updated.downtime_minutes}\"}}]}",
     "type": "script"
   },
   "version": "1"

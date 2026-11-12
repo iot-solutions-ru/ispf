@@ -48,7 +48,7 @@
     }
   },
   "functionName": "mes_oee_getKpi",
-  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
   "source": {
     "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"kpi\",\"sql\":\"@file:mes_oee_getKpi-step.sql\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"kpi\",\"message\":\"Shift not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lineCode\":\"${kpi.line_code}\",\"shiftLabel\":\"${kpi.shift_label}\",\"availabilityPct\":\"${kpi.availability_pct}\",\"performancePct\":\"${kpi.performance_pct}\",\"qualityPct\":\"${kpi.quality_pct}\",\"oeePct\":\"${kpi.oee_pct}\"}}]}",
     "type": "script"

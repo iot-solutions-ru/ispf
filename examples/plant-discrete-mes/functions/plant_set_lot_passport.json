@@ -18,7 +18,7 @@
     }
   },
   "functionName": "plant_set_lot_passport",
-  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
   "source": {
     "body": "{\"signaturePolicy\":\"REQUIRED\",\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_genealogy_lot SET passport_note = ? WHERE lot_id = ?\",\"params\":[\"${input.passportNote}\",\"${input.lotId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lotId\":\"${input.lotId}\"}}]}",
     "type": "script"

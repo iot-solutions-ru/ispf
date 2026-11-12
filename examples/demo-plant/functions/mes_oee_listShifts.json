@@ -56,7 +56,7 @@
     }
   },
   "functionName": "mes_oee_listShifts",
-  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
   "source": {
     "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"shifts\",\"sql\":\"@file:mes_oee_listShifts-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${shifts}\",\"fields\":{\"shiftId\":\"${item.shift_id}\",\"lineCode\":\"${item.line_code}\",\"shiftLabel\":\"${item.shift_label}\",\"plannedMinutes\":\"${item.planned_minutes}\",\"downtimeMinutes\":\"${item.downtime_minutes}\",\"totalUnits\":\"${item.total_units}\",\"goodUnits\":\"${item.good_units}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
     "type": "script"

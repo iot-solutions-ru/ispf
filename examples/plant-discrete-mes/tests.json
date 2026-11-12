@@ -4,7 +4,7 @@
       "id": "plant-passport",
       "kind": "function",
       "functionName": "plant_set_lot_passport",
-      "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
       "input": {
         "lotId": "BATCH-PLANT-1",
         "passportNote": "heat-42",

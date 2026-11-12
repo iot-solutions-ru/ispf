@@ -3,7 +3,7 @@
   "description": "MES platform hub — SPC telemetry and control limits (BL-167)",
   "events": [],
   "functions": [],
-  "name": "mes-platform-hub-v1",
+  "name": "plant-discrete-hub-v1",
   "parameters": {},
   "type": "SINGLETON",
   "variables": [

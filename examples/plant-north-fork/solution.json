@@ -2,7 +2,7 @@
   "displayName": "Plant North",
   "metadata": {
     "changelog": "1.0.1 — operatorUi with report screens (was reports-only / no Operator sync)",
-    "domain": "demo-app",
+    "domain": "plant-north",
     "forkedFrom": {
       "schemaName": "app_demo",
       "sha256": "08ea4f557fc540a4caa2a3d31f557e394ec57d72e7f47f73ddc0228b936ae195",
@@ -10,7 +10,7 @@
     }
   },
   "operatorManifest": {
-    "appId": "demo",
+    "appId": "plant-north",
     "defaultScreen": "ready-items-report",
     "screens": [
       {
@@ -50,7 +50,7 @@
     "wireProfile": "ispf-operator-v1"
   },
   "operatorUi": {
-    "appId": "demo",
+    "appId": "plant-north",
     "dashboards": [
       {
         "path": "root.platform.dashboards.demo-ready-items",

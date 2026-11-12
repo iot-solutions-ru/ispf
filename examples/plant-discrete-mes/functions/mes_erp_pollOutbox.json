@@ -48,9 +48,9 @@
     }
   },
   "functionName": "mes_erp_pollOutbox",
-  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
   "source": {
-    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"pending\",\"sql\":\"@file:mes_erp_pollOutbox-step.sql\"},{\"type\":\"exec\",\"sql\":\"@file:mes_erp_pollOutbox-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${pending}\",\"fields\":{\"outboxId\":\"${item.outbox_id}\",\"entityType\":\"${item.entity_type}\",\"entityId\":\"${item.entity_id}\",\"idempotencyKey\":\"${item.idempotency_key}\",\"status\":\"simulated\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+    "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"pending\",\"sql\":\"@file:mes_erp_pollOutbox-step-1.sql\"},{\"type\":\"exec\",\"sql\":\"@file:mes_erp_pollOutbox-step-2.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${pending}\",\"fields\":{\"outboxId\":\"${item.outbox_id}\",\"entityType\":\"${item.entity_type}\",\"entityId\":\"${item.entity_id}\",\"idempotencyKey\":\"${item.idempotency_key}\",\"status\":\"simulated\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
     "type": "script"
   },
   "version": "1"

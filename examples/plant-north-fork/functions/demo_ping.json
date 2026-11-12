@@ -19,7 +19,7 @@
     }
   },
   "functionName": "demo_ping",
-  "objectPath": "root.platform.singleton-blueprints.demo-app-hub-v1",
+  "objectPath": "root.platform.singleton-blueprints.plant-north-hub-v1",
   "source": {
     "body": "{\"steps\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\"}}]}",
     "type": "script"

@@ -40,7 +40,7 @@
     }
   },
   "functionName": "mes_platform_listLines",
-  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
   "source": {
     "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"lines\",\"sql\":\"@file:mes_platform_listLines-step.sql\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${lines}\",\"fields\":{\"lineCode\":\"${item.line_code}\",\"displayName\":\"${item.display_name}\",\"areaPath\":\"${item.area_path}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
     "type": "script"

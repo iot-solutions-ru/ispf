@@ -21,7 +21,7 @@
     }
   },
   "functionName": "mes_quality_autoHold",
-  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
   "source": {
     "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"batch\",\"sql\":\"SELECT batch_path, phase FROM mes_batch_run WHERE batch_id = ?\",\"params\":[\"${input.batchId}\"]},{\"type\":\"failIfNull\",\"var\":\"batch\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_batch_run SET phase = 'hold', hold_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE batch_id = ? AND (CAST(? AS DOUBLE PRECISION) > CAST(? AS DOUBLE PRECISION) OR CAST(? AS DOUBLE PRECISION) < CAST(? AS DOUBLE PRECISION))\",\"params\":[\"${input.reason}\",\"${input.batchId}\",\"${input.measurement}\",\"${input.ucl}\",\"${input.measurement}\",\"${input.lcl}\"]},{\"type\":\"selectOne\",\"var\":\"after\",\"sql\":\"SELECT phase, hold_reason FROM mes_batch_run WHERE batch_id = ?\",\"params\":[\"${input.batchId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"phase\":\"${after.phase}\",\"holdReason\":\"${after.hold_reason}\"}}]}",
     "type": "script"

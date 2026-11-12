@@ -281,7 +281,8 @@
     {
       "name": "tank-farm-hub-v1",
       "description": "Manifold hub (marketplace)",
-      "type": "SINGLETON",
+      "type": "INSTANCE",
+      "targetObjectType": "DEVICE",
       "suitabilityExpression": "",
       "variables": [
         {
@@ -599,6 +600,13 @@
       "type": "CUSTOM",
       "displayName": "Резервуарный парк (демо)",
       "description": "Marketplace tank-farm folder"
+    },
+    {
+      "parentPath": "root.platform.singleton-blueprints",
+      "name": "tank-farm-hub-v1",
+      "type": "SINGLETON",
+      "displayName": "Manifold hub",
+      "templateId": "tank-farm-hub-v1"
     },
     {
       "parentPath": "root.platform.devices.tank-farm-demo",
@@ -931,10 +939,7 @@
     "title": "Резервуарный парк",
     "defaultDashboard": "root.platform.dashboards.tank-farm-overview",
     "dashboards": [
-      {
-        "path": "root.platform.dashboards.tank-farm-overview",
-        "title": "Резервуарный парк"
-      }
+      "root.platform.dashboards.tank-farm-overview"
     ],
     "eventJournalObjectPath": "root.platform"
   }

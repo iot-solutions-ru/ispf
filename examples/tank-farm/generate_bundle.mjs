@@ -126,9 +126,9 @@ const objects = [
     description: "Marketplace tank-farm folder",
   },
   {
-    parentPath: "root.platform.devices.tank-farm-demo",
-    name: "hub",
-    type: "DEVICE",
+    parentPath: "root.platform.singleton-blueprints",
+    name: "tank-farm-hub-v1",
+    type: "SINGLETON",
     displayName: "Manifold hub",
     templateId: "tank-farm-hub-v1",
   },
@@ -166,21 +166,21 @@ const bindings = [
     },
   ]),
   {
-    objectPath: "root.platform.devices.tank-farm-demo.hub",
+    objectPath: "root.platform.singleton-blueprints.tank-farm-hub-v1",
     variable: "linePressureMpa",
     query: "SELECT line_pressure_mpa AS value, 'MPa' AS unit FROM hub_sim WHERE id = 1",
     refreshIntervalMs: 2000,
     enabled: true,
   },
   {
-    objectPath: "root.platform.devices.tank-farm-demo.hub",
+    objectPath: "root.platform.singleton-blueprints.tank-farm-hub-v1",
     variable: "lineFlowM3h",
     query: "SELECT line_flow_m3h AS value, 'm³/h' AS unit FROM hub_sim WHERE id = 1",
     refreshIntervalMs: 2000,
     enabled: true,
   },
   {
-    objectPath: "root.platform.devices.tank-farm-demo.hub",
+    objectPath: "root.platform.singleton-blueprints.tank-farm-hub-v1",
     variable: "lineTempC",
     query: "SELECT line_temp_c AS value, '°C' AS unit FROM hub_sim WHERE id = 1",
     refreshIntervalMs: 2000,
@@ -271,7 +271,7 @@ ${TANKS.map(
   objects,
   functions: [
     {
-      objectPath: "root.platform.devices.tank-farm-demo.hub",
+      objectPath: "root.platform.singleton-blueprints.tank-farm-hub-v1",
       functionName: "tank_farm_tick",
       version: "1",
       descriptor: {
@@ -307,7 +307,7 @@ ${TANKS.map(
       intervalMs: 5000,
       actionType: "invoke_function",
       action: {
-        objectPath: "root.platform.devices.tank-farm-demo.hub",
+        objectPath: "root.platform.singleton-blueprints.tank-farm-hub-v1",
         functionName: "tank_farm_tick",
       },
     },
@@ -353,7 +353,7 @@ ${TANKS.map(
             y: 0,
             w: 21,
             h: 14,
-            objectPath: "root.platform.devices.tank-farm-demo.hub",
+            objectPath: "root.platform.singleton-blueprints.tank-farm-hub-v1",
             variableName: "linePressureMpa",
             decimals: 3,
           },
@@ -365,7 +365,7 @@ ${TANKS.map(
             y: 0,
             w: 21,
             h: 14,
-            objectPath: "root.platform.devices.tank-farm-demo.hub",
+            objectPath: "root.platform.singleton-blueprints.tank-farm-hub-v1",
             variableName: "lineFlowM3h",
             decimals: 1,
           },

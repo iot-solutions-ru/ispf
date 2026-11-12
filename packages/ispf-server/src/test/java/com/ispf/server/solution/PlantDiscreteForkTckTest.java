@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class PlantDiscreteForkTckTest {
 
-    private static final String HUB = "root.platform.singleton-blueprints.mes-platform-hub-v1";
+    private static final String HUB = "root.platform.singleton-blueprints.plant-discrete-hub-v1";
 
     @Autowired
     private MockMvc mockMvc;

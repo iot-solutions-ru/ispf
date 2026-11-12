@@ -110,7 +110,8 @@ export function inlineFileRefs(obj, baseDir, readFile = (p) => fs.readFileSync(p
             throw new Error(`@file reference not found: ${sqlPath}`);
           }
           const sql = readFile(sqlPath).replace(/\r\n/g, "\n").replace(/\n$/, "");
-          return sql.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+          // Escape as a JSON string body (without surrounding quotes).
+          return JSON.stringify(sql).slice(1, -1);
         });
         continue;
       }

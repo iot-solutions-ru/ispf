@@ -198,9 +198,11 @@ function externalizeFunctionSteps(fn, functionsDir, basename) {
   if (typeof body === "string") {
     try {
       const script = JSON.parse(body);
+      let stepSqlIndex = 0;
       walkSteps(script, (step) => {
         if (step && typeof step.sql === "string" && step.sql.length > 80) {
-          step.sql = externalizeSqlField(step.sql, functionsDir, `${basename}-step`);
+          stepSqlIndex += 1;
+          step.sql = externalizeSqlField(step.sql, functionsDir, `${basename}-step-${stepSqlIndex}`);
         }
       });
       clone.source.body = JSON.stringify(script);
@@ -217,6 +219,18 @@ function walkSteps(node, visit) {
   }
   if (Array.isArray(node.steps)) {
     for (const step of node.steps) {
+      visit(step);
+      walkSteps(step, visit);
+    }
+  }
+  if (Array.isArray(node.then)) {
+    for (const step of node.then) {
+      visit(step);
+      walkSteps(step, visit);
+    }
+  }
+  if (Array.isArray(node.else)) {
+    for (const step of node.else) {
       visit(step);
       walkSteps(step, visit);
     }

@@ -6,7 +6,7 @@
   "eventName": "workOrderDispatched",
   "minOccurrences": 1,
   "name": "MES work order dispatch",
-  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
   "patternType": "COUNT",
   "sequenceGapSeconds": 0,
   "windowSeconds": 0

@@ -12,7 +12,7 @@
       "id": "demo-ping",
       "input": {},
       "kind": "function",
-      "objectPath": "root.platform.singleton-blueprints.demo-app-hub-v1",
+      "objectPath": "root.platform.singleton-blueprints.plant-north-hub-v1",
       "rollback": true
     }
   ]

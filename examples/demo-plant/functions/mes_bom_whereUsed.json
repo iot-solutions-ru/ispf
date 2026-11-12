@@ -69,7 +69,7 @@
     }
   },
   "functionName": "mes_bom_whereUsed",
-  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
   "source": {
     "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"parents\",\"sql\":\"@file:mes_bom_whereUsed-step.sql\",\"params\":[\"${input.componentMaterialCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${parents}\",\"fields\":{\"bomId\":\"${item.bom_id}\",\"parentMaterialCode\":\"${item.parent_material_code}\",\"parentName\":\"${item.parent_name}\",\"revision\":\"${item.revision}\",\"lineNo\":\"${item.line_no}\",\"quantity\":\"${item.quantity}\",\"uom\":\"${item.uom}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"componentMaterialCode\":\"${input.componentMaterialCode}\",\"rows\":\"${rows}\"}}]}",
     "type": "script"

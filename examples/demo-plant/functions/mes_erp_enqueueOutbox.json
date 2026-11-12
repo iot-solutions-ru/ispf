@@ -40,7 +40,7 @@
     }
   },
   "functionName": "mes_erp_enqueueOutbox",
-  "objectPath": "root.platform.singleton-blueprints.mes-platform-hub-v1",
+  "objectPath": "root.platform.singleton-blueprints.demo-plant-hub-v1",
   "source": {
     "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"@file:mes_erp_enqueueOutbox-step.sql\",\"params\":[\"${input.entityType}\",\"${input.entityId}\",\"${input.payloadJson}\",\"${input.entityType}\",\"${input.entityId}\",\"${input.entityType}\",\"${input.entityId}\"]},{\"type\":\"selectOne\",\"var\":\"keyRow\",\"sql\":\"SELECT CONCAT(?, ':', ?) AS idempotency_key\",\"params\":[\"${input.entityType}\",\"${input.entityId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"enqueued\":true,\"idempotencyKey\":\"${keyRow.idempotency_key}\"}}]}",
     "type": "script"
