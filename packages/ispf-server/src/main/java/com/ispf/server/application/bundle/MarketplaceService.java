@@ -461,7 +461,9 @@ public class MarketplaceService {
         String installationId = installationIdService.ensureInstallationId();
         byte[] zipBytes = httpGetBytes(buildFreeDownloadUrl(endpoint, slug, installationId));
         String appId = requireUiPackAppId(detail);
-        Map<String, Object> installed = uiPackLoader.installZipArchive(zipBytes, appId);
+        // Marketplace zips are third-party: force partner trust even when the zip omits uiPackTrust
+        // (local drop-in without trust remains firstParty per ADR-0073).
+        Map<String, Object> installed = uiPackLoader.installZipArchive(zipBytes, appId, "partner");
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "OK");
         result.put("artifactKind", "ui-pack");
@@ -469,6 +471,7 @@ public class MarketplaceService {
         result.put("packId", appId);
         result.put("hostedUiUrl", installed.get("hostedUiUrl"));
         result.put("path", installed.get("path"));
+        result.put("uiPackTrust", installed.get("uiPackTrust"));
         result.put("marketplaceId", endpoint.getId());
         result.put("listingSlug", slug);
         result.put("installedFrom", source);

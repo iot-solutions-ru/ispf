@@ -40,6 +40,7 @@ class MarketplaceServiceTest {
     private ApplicationBundleDeployService deployService;
     private ApplicationBundleSnapshotStore snapshotStore;
     private CommercialBundleLicenseSigner licenseSigner;
+    private com.ispf.server.application.uipack.DropInUiPackLoader uiPackLoader;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -118,6 +119,7 @@ class MarketplaceServiceTest {
         )));
         when(deployService.supportsOperatorUi(anyString())).thenReturn(false);
 
+        uiPackLoader = mock(com.ispf.server.application.uipack.DropInUiPackLoader.class);
         service = new MarketplaceService(
                 properties,
                 dataStore,
@@ -129,7 +131,7 @@ class MarketplaceServiceTest {
                 new ObjectMapper(),
                 mock(DropInAnalyticsPackLoader.class),
                 mock(com.ispf.server.scada.symbol.DropInSymbolPackLoader.class),
-                mock(com.ispf.server.application.uipack.DropInUiPackLoader.class),
+                uiPackLoader,
                 java.net.http.HttpClient.newHttpClient()
         );
     }
@@ -216,5 +218,40 @@ class MarketplaceServiceTest {
         List<Map<String, Object>> endpoints = (List<Map<String, Object>>) response.get("endpoints");
         assertEquals(1, endpoints.size());
         assertEquals("https://vendor.example/contact", endpoints.get(0).get("contactUrl"));
+    }
+
+    @Test
+    void uiPackInstallForcesPartnerTrustEvenWhenZipOmitsTrust() throws Exception {
+        httpServer.createContext("/api/v1/catalog/ui-demo", exchange -> {
+            byte[] body = """
+                    {"slug":"ui-demo","appId":"ui-demo","pricing":"free","title":"UI",
+                     "artifactKind":"ui-pack","kind":"ui-pack"}
+                    """.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, body.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(body);
+            }
+        });
+        httpServer.createContext("/api/v1/catalog/ui-demo/download", exchange -> {
+            byte[] body = "PK\u0003\u0004fake-zip".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(body);
+            }
+        });
+        when(uiPackLoader.installZipArchive(any(), eq("ui-demo"), eq("partner")))
+                .thenReturn(new LinkedHashMap<>(Map.of(
+                        "status", "OK",
+                        "appId", "ui-demo",
+                        "hostedUiUrl", "/apps/ui-demo/",
+                        "path", "/tmp/ui-demo",
+                        "uiPackTrust", "partner"
+                )));
+
+        Map<String, Object> result = service.installFreeListing("test", "ui-demo");
+        assertEquals("OK", result.get("status"));
+        assertEquals("partner", result.get("uiPackTrust"));
+        verify(uiPackLoader).installZipArchive(any(), eq("ui-demo"), eq("partner"));
     }
 }

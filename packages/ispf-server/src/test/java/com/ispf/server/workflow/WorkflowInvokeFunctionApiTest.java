@@ -114,6 +114,13 @@ class WorkflowInvokeFunctionApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("bpmnXml", bpmn))))
                 .andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/workflows/by-path/status")
+                        .param("path", WORKFLOW)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"status":"ACTIVE"}
+                                """))
+                .andExpect(status().isOk());
     }
 
     @Test

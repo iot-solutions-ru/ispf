@@ -81,6 +81,18 @@ public class DropInUiPackLoader {
 
     public synchronized Map<String, Object> installZipArchive(byte[] zipBytes, String expectedAppId)
             throws IOException {
+        return installZipArchive(zipBytes, expectedAppId, null);
+    }
+
+    /**
+     * @param forceTrust when non-blank, written as {@code uiPackTrust} in the installed manifest
+     *                   (marketplace installs force {@code partner} even if the zip omits trust).
+     */
+    public synchronized Map<String, Object> installZipArchive(
+            byte[] zipBytes,
+            String expectedAppId,
+            String forceTrust
+    ) throws IOException {
         if (zipBytes == null || zipBytes.length == 0) {
             throw new IllegalArgumentException("ui-pack zip is empty");
         }
@@ -93,7 +105,7 @@ public class DropInUiPackLoader {
         try {
             unzip(zipBytes, tempDir);
             Path packRoot = findPackRoot(tempDir);
-            return installPackDirectory(packRoot, expectedAppId);
+            return installPackDirectory(packRoot, expectedAppId, forceTrust);
         } finally {
             deleteRecursively(tempDir);
         }
@@ -101,6 +113,14 @@ public class DropInUiPackLoader {
 
     public synchronized Map<String, Object> installPackDirectory(Path sourceDir, String expectedAppId)
             throws IOException {
+        return installPackDirectory(sourceDir, expectedAppId, null);
+    }
+
+    public synchronized Map<String, Object> installPackDirectory(
+            Path sourceDir,
+            String expectedAppId,
+            String forceTrust
+    ) throws IOException {
         if (sourceDir == null) {
             throw new IllegalArgumentException("ui pack directory is required");
         }
@@ -149,6 +169,9 @@ public class DropInUiPackLoader {
         stored.putIfAbsent("id", appId);
         stored.put("entry", entry);
         stored.putIfAbsent("basePath", "/apps/" + appId + "/");
+        if (forceTrust != null && !forceTrust.isBlank()) {
+            stored.put("uiPackTrust", forceTrust.trim());
+        }
         Files.writeString(targetDir.resolve(MANIFEST_FILE), objectMapper.writeValueAsString(stored));
         log.info("Installed UI pack {} → {}", appId, targetDir);
         return packSummary(targetDir, stored);

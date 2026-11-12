@@ -84,6 +84,21 @@ class DropInUiPackLoaderTest {
     }
 
     @Test
+    void forceTrustOverridesMissingManifestTrust() throws Exception {
+        Path source = tempDir.resolve("no-trust");
+        Files.createDirectories(source);
+        Files.writeString(source.resolve("ui-pack.json"), """
+                {"appId":"market-app","entry":"index.html"}
+                """);
+        Files.writeString(source.resolve("index.html"), "<html></html>");
+        byte[] zip = zipDir(source);
+
+        Map<String, Object> installed = loader.installZipArchive(zip, "market-app", "partner");
+        assertThat(installed.get("uiPackTrust")).isEqualTo("partner");
+        assertThat(loader.uiPackTrust("market-app")).isEqualTo("partner");
+    }
+
+    @Test
     void rejectsPathEscapeEntry() {
         assertThatThrownBy(() -> {
             Path source = tempDir.resolve("bad");

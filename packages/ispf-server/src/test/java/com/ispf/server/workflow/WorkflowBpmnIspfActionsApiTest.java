@@ -54,6 +54,13 @@ class WorkflowBpmnIspfActionsApiTest {
             );
         }
         workflowService.ensureWorkflowStructure(WORKFLOW);
+        mockMvc.perform(put("/api/v1/workflows/by-path/status")
+                        .param("path", WORKFLOW)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"status":"ACTIVE"}
+                                """))
+                .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/v1/applications")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -106,18 +106,19 @@ class UiPackScopedTokenAuthorizationTest {
                 {"objectPath":"root.platform","functionName":"no-such-wave2a"}
                 """;
 
+        // Pack-scoped principal may only invoke functions owned by its app; unknown function → 403.
         mockMvc.perform(post("/api/v1/bff/invoke")
                         .header("Authorization", "Bearer " + scoped)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invoke))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isForbidden());
 
         mockMvc.perform(post("/api/v1/bff/invoke")
                         .header("Authorization", "Bearer " + scoped)
                         .header("Referer", "http://localhost/apps/partner-app/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invoke))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isForbidden());
 
         mockMvc.perform(post("/api/v1/bff/invoke")
                         .header("Authorization", "Bearer " + scoped)
