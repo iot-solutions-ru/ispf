@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *       {@link DriverUnsupportedOperationException} (MQTT TLS is not implemented;
  *       plain TCP is not used as a fallback)</li>
  *   <li>{@code caCertPath}, {@code clientCertPath}, {@code clientKeyPath}
- *       — reserved for a future TLS implementation</li>
+ *       — fail closed with {@link DriverConfigurationException}; mTLS is not implemented</li>
  * </ul>
  * Topic conventions:
  * <ul>

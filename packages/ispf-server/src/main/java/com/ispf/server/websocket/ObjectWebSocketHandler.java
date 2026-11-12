@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Component
@@ -66,6 +67,10 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     private final ClusterPathInterestStore clusterPathInterestStore;
     private final ObjectAccessService objectAccessService;
     private final VariableMemberAccessService variableMemberAccessService;
+    private static final int REPLAY_CAPACITY = 1024;
+    private final Object replayLock = new Object();
+    private final AtomicLong replaySeq = new AtomicLong();
+    private ReplayCursor replayBuffer = new ReplayCursor(0, REPLAY_CAPACITY);
 
     public ObjectWebSocketHandler(
             WebSocketProperties webSocketProperties,
@@ -218,6 +223,78 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         session.getAttributes().put(SUBSCRIBE_ATTR, next);
         updateSubscriptionIndex(session, previous, next);
         refreshFederationPollSubscriptions();
+        replaySince(session, next, node);
+    }
+
+    /**
+     * Re-sends buffered object frames newer than the client's {@code lastSeq}.
+     * A cursor older than the retained window gets {@code replay_gap} instead of a partial delta.
+     */
+    private void replaySince(WebSocketSession session, SessionInterest interest, JsonNode node) {
+        JsonNode cursor = node.get("lastSeq");
+        if (cursor == null || !cursor.isNumber() || interest == null || interest.isEmpty()) {
+            return;
+        }
+        long since = cursor.asLong();
+        List<ReplayCursor.ReplayItem> delta;
+        boolean gap;
+        long newest;
+        synchronized (replayLock) {
+            Long oldest = replayBuffer.oldestSeq();
+            newest = replayBuffer.newestSeq();
+            gap = since > newest || (oldest != null && oldest > since + 1);
+            delta = gap ? List.of() : replayBuffer.deltaSince(since);
+        }
+        if (gap) {
+            Map<String, Object> reset = new java.util.LinkedHashMap<>();
+            reset.put("type", "replay_gap");
+            reset.put("lastSeq", newest);
+            sendJson(session, "replay", reset);
+            return;
+        }
+        for (ReplayCursor.ReplayItem item : delta) {
+            if (!(item.payload() instanceof Map<?, ?> stored)) {
+                continue;
+            }
+            Map<String, Object> message = new java.util.LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : stored.entrySet()) {
+                if (entry.getKey() instanceof String key) {
+                    message.put(key, entry.getValue());
+                }
+            }
+            String eventPath = message.get("path") instanceof String path ? path : "";
+            String variableName = message.get("variableName") instanceof String name ? name : "";
+            if (!sessionMayReceive(session, interest, eventPath, variableName)) {
+                continue;
+            }
+            String pathForClient = virtualizeForSession(eventPath, session);
+            if (pathForClient == null) {
+                continue;
+            }
+            message.put("path", pathForClient);
+            sendJson(session, eventPath, message);
+        }
+    }
+
+    private boolean sessionMayReceive(
+            WebSocketSession session,
+            SessionInterest interest,
+            String eventPath,
+            String variableName
+    ) {
+        if (interest == null || !interest.matches(eventPath, variableName) || !canSessionRead(session, eventPath)) {
+            return false;
+        }
+        if (variableName == null || variableName.isBlank()) {
+            return true;
+        }
+        return canSessionReadVariable(session, eventPath, variableName);
+    }
+
+    void resizeReplayBufferForTest(int capacity) {
+        synchronized (replayLock) {
+            replayBuffer = new ReplayCursor(0, capacity);
+        }
     }
 
     /** Drop subscribed paths the session principal cannot READ, mirroring REST object filtering. */
@@ -358,6 +435,27 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
                 revision = null;
             }
         }
+        Map<String, Object> canonical = new java.util.LinkedHashMap<>();
+        canonical.put("type", event.type().name());
+        canonical.put("path", event.path());
+        canonical.put("variableName", event.variableName() != null ? event.variableName() : "");
+        canonical.put("timestamp", event.timestamp().toString());
+        canonical.put("seq", replaySeq.incrementAndGet());
+        if (revision != null) {
+            canonical.put("revision", revision);
+        }
+        if (event.changedBy() != null) {
+            canonical.put("changedBy", event.changedBy());
+        }
+        if (event.value() != null) {
+            canonical.put("value", event.value());
+        }
+        if (event.previousValue() != null) {
+            canonical.put("previousValue", event.previousValue());
+        }
+        synchronized (replayLock) {
+            replayBuffer.offer((Long) canonical.get("seq"), new java.util.LinkedHashMap<>(canonical));
+        }
         for (WebSocketSession session : sessionsForEvent(event.path(), event.variableName())) {
             if (!session.isOpen()) {
                 continue;
@@ -366,32 +464,21 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
             if (pathForClient == null) {
                 continue;
             }
-            Map<String, Object> message = new java.util.LinkedHashMap<>();
-            message.put("type", event.type().name());
+            Map<String, Object> message = new java.util.LinkedHashMap<>(canonical);
             message.put("path", pathForClient);
-            message.put("variableName", event.variableName() != null ? event.variableName() : "");
-            message.put("timestamp", event.timestamp().toString());
-            if (revision != null) {
-                message.put("revision", revision);
-            }
-            if (event.changedBy() != null) {
-                message.put("changedBy", event.changedBy());
-            }
-            if (event.value() != null) {
-                message.put("value", event.value());
-            }
-            if (event.previousValue() != null) {
-                message.put("previousValue", event.previousValue());
-            }
-            TextMessage payload;
-            try {
-                payload = new TextMessage(objectMapper.writeValueAsString(message));
-            } catch (tools.jackson.core.JacksonException e) {
-                recordSendFailure(session, event.path(), e);
-                continue;
-            }
-            sendAsync(session, event.path(), payload);
+            sendJson(session, event.path(), message);
         }
+    }
+
+    private void sendJson(WebSocketSession session, String path, Map<String, Object> message) {
+        TextMessage payload;
+        try {
+            payload = new TextMessage(objectMapper.writeValueAsString(message));
+        } catch (tools.jackson.core.JacksonException e) {
+            recordSendFailure(session, path, e);
+            return;
+        }
+        sendAsync(session, path, payload);
     }
 
     private void sendAsync(WebSocketSession session, String path, TextMessage payload) {
@@ -711,6 +798,26 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
 
         Set<String> variablesFor(String path) {
             return variablesByPath.getOrDefault(path, Set.of());
+        }
+
+        boolean allowsPath(String eventPath) {
+            for (String path : allPaths()) {
+                if (pathMatches(path, eventPath)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Blank variable name means a structure or event frame: any subscription on the path qualifies.
+         * A named variable still has to be in the variable set, or the path has to be path-wide.
+         */
+        boolean matches(String eventPath, String variableName) {
+            if (variableName == null || variableName.isBlank()) {
+                return allowsPath(eventPath);
+            }
+            return allowsVariable(eventPath, variableName);
         }
 
         boolean allowsVariable(String eventPath, String variableName) {

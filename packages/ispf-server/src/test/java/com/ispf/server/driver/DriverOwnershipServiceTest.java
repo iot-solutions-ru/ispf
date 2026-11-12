@@ -82,4 +82,40 @@ class DriverOwnershipServiceTest {
         assertTrue(replicaB.tryAcquire(DEVICE));
         assertEquals("replica-b", replicaB.findOwner(DEVICE).orElseThrow());
     }
+
+    @Test
+    void tryAcquireSetsPositiveFencingEpoch() {
+        assertTrue(replicaA.tryAcquire(DEVICE));
+        assertEquals(1L, replicaA.currentEpochIfHolder(DEVICE));
+        assertEquals(0L, replicaB.currentEpochIfHolder(DEVICE));
+    }
+
+    @Test
+    void reclaimBumpsFencingEpoch() {
+        assertTrue(replicaA.tryAcquire(DEVICE));
+        long epochA = replicaA.currentEpochIfHolder(DEVICE);
+        jdbcTemplate.update(
+                "UPDATE platform_driver_locks SET expires_at = ? WHERE device_path = ?",
+                Timestamp.from(Instant.now().minusSeconds(5)),
+                DEVICE
+        );
+        assertTrue(replicaB.tryAcquire(DEVICE));
+        long epochB = replicaB.currentEpochIfHolder(DEVICE);
+        assertTrue(epochB > epochA, "steal must bump fencing epoch");
+        assertEquals(0L, replicaA.currentEpochIfHolder(DEVICE));
+    }
+
+    @Test
+    void renewBumpsZeroEpochToOne() {
+        jdbcTemplate.update(
+                """
+                        INSERT INTO platform_driver_locks (device_path, holder_id, expires_at, fencing_epoch)
+                        VALUES (?, ?, CURRENT_TIMESTAMP + INTERVAL '60' SECOND, 0)
+                        """,
+                DEVICE,
+                "replica-a"
+        );
+        assertTrue(replicaA.renew(DEVICE));
+        assertEquals(1L, replicaA.currentEpochIfHolder(DEVICE));
+    }
 }

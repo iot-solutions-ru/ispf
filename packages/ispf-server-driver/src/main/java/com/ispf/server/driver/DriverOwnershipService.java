@@ -5,9 +5,7 @@ import com.ispf.server.config.NatsProperties;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.sql.Timestamp;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,18 +55,18 @@ public class DriverOwnershipService {
         if (!isEnabled()) {
             return true;
         }
-        Instant now = Instant.now();
-        Instant expiresAt = now.plus(ttl);
+        long ttlSeconds = ttl.toSeconds();
         int updated = jdbcTemplate.update(
                 """
                         UPDATE platform_driver_locks
-                        SET holder_id = ?, expires_at = ?
-                        WHERE device_path = ? AND expires_at <= ?
+                        SET holder_id = ?,
+                            expires_at = CURRENT_TIMESTAMP + (CAST(? AS BIGINT) * INTERVAL '1' SECOND),
+                            fencing_epoch = fencing_epoch + 1
+                        WHERE device_path = ? AND expires_at <= CURRENT_TIMESTAMP
                         """,
                 instanceId,
-                Timestamp.from(expiresAt),
-                devicePath,
-                Timestamp.from(now)
+                ttlSeconds,
+                devicePath
         );
         if (updated > 0) {
             return true;
@@ -76,16 +74,16 @@ public class DriverOwnershipService {
         try {
             jdbcTemplate.update(
                     """
-                            INSERT INTO platform_driver_locks (device_path, holder_id, expires_at)
-                            VALUES (?, ?, ?)
+                            INSERT INTO platform_driver_locks (device_path, holder_id, expires_at, fencing_epoch)
+                            VALUES (?, ?, CURRENT_TIMESTAMP + (CAST(? AS BIGINT) * INTERVAL '1' SECOND), 1)
                             """,
                     devicePath,
                     instanceId,
-                    Timestamp.from(expiresAt)
+                    ttlSeconds
             );
             return true;
         } catch (Exception ex) {
-            return holdsLock(devicePath, now);
+            return holdsLock(devicePath);
         }
     }
 
@@ -97,18 +95,17 @@ public class DriverOwnershipService {
         if (!isEnabled()) {
             return true;
         }
-        Instant now = Instant.now();
-        Instant expiresAt = now.plus(ttl);
+        long ttlSeconds = ttl.toSeconds();
         int updated = jdbcTemplate.update(
                 """
                         UPDATE platform_driver_locks
-                        SET expires_at = ?
-                        WHERE device_path = ? AND holder_id = ? AND expires_at > ?
+                        SET expires_at = CURRENT_TIMESTAMP + (CAST(? AS BIGINT) * INTERVAL '1' SECOND),
+                            fencing_epoch = CASE WHEN fencing_epoch < 1 THEN 1 ELSE fencing_epoch END
+                        WHERE device_path = ? AND holder_id = ? AND expires_at > CURRENT_TIMESTAMP
                         """,
-                Timestamp.from(expiresAt),
+                ttlSeconds,
                 devicePath,
-                instanceId,
-                Timestamp.from(now)
+                instanceId
         );
         return updated > 0;
     }
@@ -134,17 +131,62 @@ public class DriverOwnershipService {
         List<String> holders = jdbcTemplate.query(
                 """
                         SELECT holder_id FROM platform_driver_locks
-                        WHERE device_path = ? AND expires_at > ?
+                        WHERE device_path = ? AND expires_at > CURRENT_TIMESTAMP
                         """,
                 (rs, rowNum) -> rs.getString("holder_id"),
-                devicePath,
-                Timestamp.from(Instant.now())
+                devicePath
         );
         return holders.isEmpty() ? Optional.empty() : Optional.of(holders.getFirst());
     }
 
     public boolean holdsLock(String devicePath) {
-        return holdsLock(devicePath, Instant.now());
+        if (!isEnabled()) {
+            return true;
+        }
+        Integer count = jdbcTemplate.queryForObject(
+                """
+                        SELECT COUNT(*) FROM platform_driver_locks
+                        WHERE device_path = ? AND holder_id = ? AND expires_at > CURRENT_TIMESTAMP
+                        """,
+                Integer.class,
+                devicePath,
+                instanceId
+        );
+        return count != null && count > 0;
+    }
+
+    public long currentEpoch(String devicePath) {
+        if (!isEnabled()) {
+            return 0L;
+        }
+        List<Long> epochs = jdbcTemplate.query(
+                """
+                        SELECT fencing_epoch FROM platform_driver_locks
+                        WHERE device_path = ?
+                        """,
+                (rs, rowNum) -> rs.getLong("fencing_epoch"),
+                devicePath
+        );
+        return epochs.isEmpty() ? 0L : epochs.getFirst();
+    }
+
+    /**
+     * Fencing epoch for this replica's active lease, or 0 when not holder / expired.
+     */
+    public long currentEpochIfHolder(String devicePath) {
+        if (!isEnabled()) {
+            return 0L;
+        }
+        List<Long> epochs = jdbcTemplate.query(
+                """
+                        SELECT fencing_epoch FROM platform_driver_locks
+                        WHERE device_path = ? AND holder_id = ? AND expires_at > CURRENT_TIMESTAMP
+                        """,
+                (rs, rowNum) -> rs.getLong("fencing_epoch"),
+                devicePath,
+                instanceId
+        );
+        return epochs.isEmpty() ? 0L : epochs.getFirst();
     }
 
     public List<String> listHeldDevicePaths() {
@@ -154,12 +196,11 @@ public class DriverOwnershipService {
         return jdbcTemplate.query(
                 """
                         SELECT device_path FROM platform_driver_locks
-                        WHERE holder_id = ? AND expires_at > ?
+                        WHERE holder_id = ? AND expires_at > CURRENT_TIMESTAMP
                         ORDER BY device_path
                         """,
                 (rs, rowNum) -> rs.getString("device_path"),
-                instanceId,
-                Timestamp.from(Instant.now())
+                instanceId
         );
     }
 
@@ -170,11 +211,10 @@ public class DriverOwnershipService {
         return jdbcTemplate.query(
                 """
                         SELECT device_path FROM platform_driver_locks
-                        WHERE expires_at <= ?
+                        WHERE expires_at <= CURRENT_TIMESTAMP
                         ORDER BY device_path
                         """,
-                (rs, rowNum) -> rs.getString("device_path"),
-                Timestamp.from(Instant.now())
+                (rs, rowNum) -> rs.getString("device_path")
         );
     }
 
@@ -201,13 +241,12 @@ public class DriverOwnershipService {
         jdbcTemplate.query(
                 """
                         SELECT holder_id, COUNT(*) AS lock_count FROM platform_driver_locks
-                        WHERE expires_at > ?
+                        WHERE expires_at > CURRENT_TIMESTAMP
                         GROUP BY holder_id
                         """,
                 rs -> {
                     counts.put(rs.getString("holder_id"), rs.getInt("lock_count"));
-                },
-                Timestamp.from(Instant.now())
+                }
         );
         return counts;
     }
@@ -219,29 +258,11 @@ public class DriverOwnershipService {
         Integer count = jdbcTemplate.queryForObject(
                 """
                         SELECT COUNT(*) FROM platform_driver_locks
-                        WHERE holder_id = ? AND expires_at > ?
+                        WHERE holder_id = ? AND expires_at > CURRENT_TIMESTAMP
                         """,
                 Integer.class,
-                instanceId,
-                Timestamp.from(Instant.now())
+                instanceId
         );
         return count != null ? count : 0;
-    }
-
-    private boolean holdsLock(String devicePath, Instant now) {
-        if (!isEnabled()) {
-            return true;
-        }
-        Integer count = jdbcTemplate.queryForObject(
-                """
-                        SELECT COUNT(*) FROM platform_driver_locks
-                        WHERE device_path = ? AND holder_id = ? AND expires_at > ?
-                        """,
-                Integer.class,
-                devicePath,
-                instanceId,
-                Timestamp.from(now)
-        );
-        return count != null && count > 0;
     }
 }
