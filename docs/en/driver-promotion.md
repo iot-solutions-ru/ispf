@@ -94,8 +94,8 @@ A driver whose class javadoc documents a **stub** or **placeholder** (connectivi
 | `keyence-hostlink` | STUB | **PRODUCTION** | Keyence Host Link ASCII lab |
 | `panasonic-mewto` | STUB | **PRODUCTION** | MEWTOCOL-COM ASCII lab |
 | `fatek` | STUB | **PRODUCTION** | Fatek FACON ASCII lab |
-| `azure-iot-hub` | STUB | **PRODUCTION** | MQTT 3.1.1 lab + Azure topic conventions (not Azure SDK) |
-| `aws-iot-core` | STUB | **PRODUCTION** | MQTT 3.1.1 lab + AWS topic conventions (not AWS SDK) |
+| `azure-iot-hub` | STUB | **BETA** | MQTT 3.1.1 lab; `useTls=true` fails closed until real mTLS |
+| `aws-iot-core` | STUB | **BETA** | MQTT 3.1.1 lab; `useTls=true` fails closed until real mTLS |
 | `iec101` | STUB | **PRODUCTION** | IEC 60870-5-101 TCP lab subset |
 | `ansi-c12` | STUB | **PRODUCTION** | ANSI C12.18/22 table-read lab subset |
 | `rtsp` | STUB | **PRODUCTION** | RTSP OPTIONS/DESCRIBE/TEARDOWN lab |

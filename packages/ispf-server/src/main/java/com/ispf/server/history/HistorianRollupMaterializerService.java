@@ -10,6 +10,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Incrementally materializes historian rollups into ClickHouse (BL-205).
@@ -28,6 +30,8 @@ public class HistorianRollupMaterializerService {
     private final AnalyticsProperties analyticsProperties;
     private final AnalyticsClusterWorkloadService analyticsClusterWorkloadService;
     private final VariableMemberAccessService variableMemberAccessService;
+    private final ConcurrentHashMap<String, Set<Instant>> dirtyHours = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Set<Instant>> dirtyDays = new ConcurrentHashMap<>();
 
     public HistorianRollupMaterializerService(
             ClickHouseHistorianRollupStore rollupStore,
@@ -66,6 +70,7 @@ public class HistorianRollupMaterializerService {
 
         for (HistorianRollupSubscription subscription : subscriptionIndex.listSubscriptions()) {
             subscriptions++;
+            bucketsWritten += materializeDirty(subscription);
             Instant from = rollupStore.maxMaterializedBucketStart(
                     subscription.objectPath(),
                     subscription.variableName(),
@@ -86,6 +91,48 @@ public class HistorianRollupMaterializerService {
         long latencyMs = (System.nanoTime() - started) / 1_000_000L;
         lastTick = new TickResult(true, subscriptions, bucketsWritten, maxLagMs, latencyMs, null);
         return lastTick;
+    }
+
+    public void noteLateSample(String objectPath, String variableName, String fieldName, Instant sampledAt) {
+        if (!isEnabled() || sampledAt == null || objectPath == null || variableName == null) {
+            return;
+        }
+        if ("$record".equals(fieldName)) {
+            return;
+        }
+        String key = objectPath + "|" + variableName + "|" + (fieldName == null ? "value" : fieldName);
+        markDirty(dirtyHours, key, sampledAt.truncatedTo(ChronoUnit.HOURS));
+        markDirty(dirtyDays, key, sampledAt.truncatedTo(ChronoUnit.DAYS));
+    }
+
+    private static void markDirty(java.util.Map<String, Set<Instant>> dirty, String key, Instant bucket) {
+        Set<Instant> buckets = dirty.computeIfAbsent(key, ignored -> ConcurrentHashMap.newKeySet());
+        if (buckets.size() >= 512) {
+            return;
+        }
+        buckets.add(bucket);
+    }
+
+    private int materializeDirty(HistorianRollupSubscription subscription) {
+        String key = subscription.objectPath() + "|" + subscription.variableName() + "|" + subscription.fieldName();
+        Set<Instant> late;
+        if (Duration.ofHours(1).equals(subscription.bucket())) {
+            late = dirtyHours.get(key);
+        } else if (Duration.ofDays(1).equals(subscription.bucket())) {
+            late = dirtyDays.get(key);
+        } else {
+            return 0;
+        }
+        if (late == null || late.isEmpty()) {
+            return 0;
+        }
+        int written = 0;
+        for (Instant start : Set.copyOf(late)) {
+            Instant end = start.plus(subscription.bucket()).minusMillis(1);
+            written += rollupStore.materializeRange(subscription, start, end, 8);
+            late.remove(start);
+        }
+        return written;
     }
 
     public RebuildResult rebuild(

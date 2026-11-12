@@ -49,6 +49,12 @@ public class VariableHistoryProperties {
      */
     private boolean overflowCoalesceEnabled = true;
 
+    /** Absolute change that must be exceeded before another sample is stored. Zero disables the limit. */
+    private double exceptionDeadband = 0d;
+
+    /** Swinging-door slope, engineering units per second. Zero disables the cone. */
+    private double swingPerSecond = 0d;
+
     /** When true with {@code store=jdbc}, samples are written to PostgreSQL and ClickHouse (BL-116). */
     private boolean dualWriteEnabled = false;
 
@@ -316,6 +322,22 @@ public class VariableHistoryProperties {
 
     public void setDualWriteEnabled(boolean dualWriteEnabled) {
         this.dualWriteEnabled = dualWriteEnabled;
+    }
+
+    public double getExceptionDeadband() {
+        return exceptionDeadband;
+    }
+
+    public void setExceptionDeadband(double exceptionDeadband) {
+        this.exceptionDeadband = Math.max(0d, exceptionDeadband);
+    }
+
+    public double getSwingPerSecond() {
+        return swingPerSecond;
+    }
+
+    public void setSwingPerSecond(double swingPerSecond) {
+        this.swingPerSecond = Math.max(0d, swingPerSecond);
     }
 
     public List<String> getExcludedVariables() {

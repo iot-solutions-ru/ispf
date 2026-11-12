@@ -106,8 +106,8 @@ class ApplicationPlatformApiTest {
                                   "displayName": "Platform Test",
                                   "migrations": [
                                     {
-                                      "id": "platform_item",
-                                      "sql": "CREATE TABLE IF NOT EXISTS platform_item (id UUID PRIMARY KEY, item_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); INSERT INTO platform_item (id, item_code, status) VALUES ('%s', 'IT-TEST-01', 'ready');"
+                                      "id": "platform_item_seed",
+                                      "sql": "INSERT INTO platform_item (id, item_code, status) VALUES ('%s', 'IT-TEST-01', 'ready');"
                                     }
                                   ],
                                   "functions": [

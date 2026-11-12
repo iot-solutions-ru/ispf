@@ -9,6 +9,8 @@ export interface ObjectWsMessage {
   value?: import("../types").DataRecord;
   /** Present when variable has includePreviousValueInEvent. */
   previousValue?: import("../types").DataRecord;
+  /** Monotonic server cursor. The next subscribe sends this as {@code lastSeq}. */
+  seq?: number;
 }
 
 export const OBJECT_WS_EVENT = "ispf-object-ws-message";
