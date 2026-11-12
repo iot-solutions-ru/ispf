@@ -15,6 +15,9 @@
 
 # Один класс
 ./gradlew :packages:ispf-server:test --tests "com.ispf.server.api.DashboardApiTest"
+
+# Полный регрессионный набор логики платформы (golden path по всем движкам)
+./gradlew :packages:ispf-server:test --tests "com.ispf.server.regression.*"
 ```
 
 JUnit 5, Java 25, Spring Boot 4.
@@ -59,6 +62,9 @@ JUnit 5, Java 25, Spring Boot 4.
 | `BlueprintControllerTest` | Blueprints API |
 | `OperatorAccessTest` | RBAC operator vs admin |
 | `ApplicationPlatformApiTest` | REQ-PF: applications, bundle deploy, BFF invoke |
+| `PlatformGoldenPathRegressionTest` | Сквозной сценарий по всем движкам: SHAPE (`SINGLETON`/`INSTANCE`/`MIXIN`/`DEVICE`), SHIP (`validate`/`dryRun`/`deploy`/`reconcile`/W6 `tests[]`), BFF + `sqlBinding`, CEL + `@dashboardContext`, Historian + Analytics, `AlertRule` → `Correlator` → BPMN → `WorkQueue` |
+| `PlatformChangeSetAndBackupRegressionTest` | Пакеты изменений (`change-sets` preview/conflict/apply), блокировки редактирования (`leases` 423), аудит и полный цикл резервного копирования поддерева (`backup` export/dryRun/import) |
+| `PlatformWebSocketLiveRegressionTest` | Живой WebSocket `/ws/objects`: фильтрация подписок, `presence` и каталог событий |
 
 ### Сценарии демо-стенда
 
