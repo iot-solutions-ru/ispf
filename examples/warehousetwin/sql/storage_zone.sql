@@ -1,6 +1,0 @@
-CREATE TABLE IF NOT EXISTS wt_storage_zone (
-  id UUID PRIMARY KEY,
-  zone_code VARCHAR(32) NOT NULL UNIQUE,
-  aisle_count INTEGER NOT NULL DEFAULT 0,
-  status VARCHAR(32) NOT NULL DEFAULT 'active'
-);
