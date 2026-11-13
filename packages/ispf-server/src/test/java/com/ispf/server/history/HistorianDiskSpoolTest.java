@@ -35,6 +35,8 @@ class HistorianDiskSpoolTest {
         assertEquals(1, reopened.replay((id, records) -> seen.add(id + ":" + records.getFirst().valueDouble()), 10));
         assertEquals(List.of(second + ":2.0"), seen);
         assertEquals(0, reopened.replay((id, records) -> seen.add("again"), 10));
+        assertEquals(0, reopened.stats().unackedRecords());
+        assertEquals(0, reopened.stats().oldestAgeMillis());
         reopened.close();
     }
 
@@ -101,6 +103,35 @@ class HistorianDiskSpoolTest {
         List<Double> values = new ArrayList<>();
         assertEquals(1, spool.replay((id, records) -> values.add(records.getFirst().valueDouble()), 10));
         assertEquals(List.of(2.0), values);
+        spool.close();
+    }
+
+    @Test
+    void ackClearsLagAndReclaimsAFullAckedSegment() throws Exception {
+        HistorianDiskSpool spool = spool(350, 64 * 1024, true);
+        spool.open();
+        String first = spool.append(List.of(sample(1)));
+        assertEquals(1, spool.stats().unackedRecords());
+        assertTrue(spool.stats().oldestAgeMillis() >= 0);
+        spool.ack(first);
+        assertEquals(0, spool.stats().unackedRecords());
+        assertEquals(0, spool.stats().oldestAgeMillis());
+        spool.append(List.of(sample(2)));
+        assertEquals(1, spool.stats().unackedRecords());
+        assertEquals(false, spool.stats().quotaHit());
+        spool.close();
+    }
+
+    @Test
+    void claimedAppendIsHiddenFromReplayUntilReleased() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        String id = spool.appendClaimed(List.of(sample(9)));
+        List<String> seen = new ArrayList<>();
+        assertEquals(0, spool.replay((batch, records) -> seen.add(batch), 10));
+        spool.release(id);
+        assertEquals(1, spool.replay((batch, records) -> seen.add(batch), 10));
+        assertEquals(List.of(id), seen);
         spool.close();
     }
 

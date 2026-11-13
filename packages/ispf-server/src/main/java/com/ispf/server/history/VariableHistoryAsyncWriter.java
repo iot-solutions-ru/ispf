@@ -280,6 +280,7 @@ public class VariableHistoryAsyncWriter {
     }
 
     private void holdUntilAccepted(List<VariableSampleEntity> batch) {
+        boolean logged = false;
         while (true) {
             try {
                 flushBatch(batch);
@@ -289,7 +290,10 @@ public class VariableHistoryAsyncWriter {
                     log.error("historian spool is full; {} samples were not accepted", batch.size());
                     return;
                 }
-                log.error("historian spool is full; holding {} samples", batch.size());
+                if (!logged) {
+                    log.error("historian spool is full; holding {} samples", batch.size());
+                    logged = true;
+                }
                 try {
                     Thread.sleep(1_000);
                 } catch (InterruptedException interrupted) {
@@ -315,7 +319,6 @@ public class VariableHistoryAsyncWriter {
                 return;
             }
             if (ex instanceof HistorianSpoolQuotaException) {
-                log.error("historian spool is full; {} samples stay unaccepted", batch.size());
                 throw ex;
             }
             log.error("Variable history batch flush failed (size={}); falling back to per-sample sync", batch.size(), ex);
