@@ -95,8 +95,15 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                             "ALTER TABLE " + qualifiedTable
                                     + " MODIFY SETTING non_replicated_deduplication_window = 10000"
                     );
-                } catch (RuntimeException ex) {
-                    log.info("ClickHouse dedupe window was not applied; replicated MergeTree uses insert_deduplication_token ({})", ex.getMessage());
+                } catch (RuntimeException ignored) {
+                    try {
+                        executeStatement(
+                                "ALTER TABLE " + qualifiedTable
+                                        + " MODIFY SETTING replicated_deduplication_window = 10000"
+                        );
+                    } catch (RuntimeException ex) {
+                        log.info("ClickHouse dedupe window was not applied ({})", ex.getMessage());
+                    }
                 }
             }
         });
@@ -111,7 +118,11 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             );
             try {
                 spool.open();
-                spool.replay(this::insertDeduplicated, spoolConfig.getReplayBatch());
+                int guard = 0;
+                while (guard++ < 100_000
+                        && spool.replay(this::insertDeduplicated, Math.max(1, spoolConfig.getReplayBatch())) > 0) {
+                    // Replay the durable backlog before serving new writes.
+                }
             } catch (java.io.IOException ex) {
                 throw new IllegalStateException("historian spool failed to open", ex);
             }
@@ -148,7 +159,10 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             return;
         }
         try {
-            spool.replay(this::insertDeduplicated, Math.max(1, properties.getSpool().getReplayBatch()));
+            int guard = 0;
+            while (guard++ < 100_000 && spool.replay(this::insertDeduplicated, Math.max(1, properties.getSpool().getReplayBatch())) > 0) {
+                // Drain the backlog in this tick. A failed insert returns zero and waits for the next tick.
+            }
         } catch (java.io.IOException ex) {
             log.warn("historian spool replay failed", ex);
         }
@@ -172,13 +186,6 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
 
     private void insertDeduplicated(String batchId, List<VariableHistoryWriteRecord> records) {
         post(insertQuery(batchId), jsonBody(records));
-        if (spool != null && batchId != null) {
-            try {
-                spool.ack(batchId);
-            } catch (java.io.IOException ex) {
-                throw new IllegalStateException("historian spool ack failed", ex);
-            }
-        }
     }
 
     private String jsonBody(List<VariableHistoryWriteRecord> records) {

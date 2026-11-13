@@ -58,6 +58,8 @@ ISPF_DRIVER_MQTT_CALLBACK_THREADS_MAX=32
 ISPF_DRIVER_MQTT_CALLBACK_QUEUE_CAPACITY=500000
 ISPF_VARIABLE_HISTORY_OVERFLOW_COALESCE=false
 ISPF_VARIABLE_HISTORY_BENCHMARK_SPREAD_SAMPLED_AT=true
+ISPF_PLATFORM_METRICS_PROBE_ENABLED=false
+ISPF_VARIABLE_HISTORY_RECORD_SNAPSHOT_ENABLED=false
 ISPF_VARIABLE_HISTORY_WRITER_THREADS=8
 ISPF_VARIABLE_HISTORY_QUEUE_CAPACITY=8000000
 ISPF_VARIABLE_HISTORY_BATCH_SIZE=5000
@@ -73,6 +75,10 @@ ISPF_VARIABLE_HISTORY_SPOOL_FSYNC=true
 ISPF_VARIABLE_HISTORY_SPOOL_REPLAY_BATCH=32
 ISPF_VARIABLE_HISTORY_SPOOL_REPLAY_INTERVAL_MS=20
 """
+
+
+def is_zero(value):
+    return value in (0, "0")
 
 
 def log(message):
@@ -354,7 +360,7 @@ CREATE TABLE IF NOT EXISTS default.variable_samples (
 ) ENGINE = ReplicatedMergeTree('/clickhouse/tables/1/variable_samples', '{replica}')
 PARTITION BY toYYYYMM(sampled_at)
 ORDER BY (object_path, variable_name, field_name, sampled_at)
-SETTINGS index_granularity = 8192
+SETTINGS index_granularity = 8192, replicated_deduplication_window = 10000
 """
     created = ch(ddl)
     if isinstance(created, dict):
@@ -482,10 +488,14 @@ def load_and_outage(token):
     stored = None
     if isinstance(before_rows, int) and isinstance(after_rows, int):
         stored = after_rows - before_rows
-    loss = None if stored is None else max(0, accepted - stored)
+    loss = None
+    if stored is not None and isinstance(duplicates, int):
+        loss = accepted - (stored - duplicates)
+    accept_p99 = mid_metrics.get("spoolAcceptP99Ms")
+    accept_p99_ms = int(accept_p99) if accept_p99 not in (None, "") else None
     peak = {
         "pass": rate is not None and rate >= RATE_MIN
-        and int(mid_metrics.get("spoolAcceptP99Ms") or 10**9) <= ACCEPT_P99_MAX_MS
+        and accept_p99_ms is not None and accept_p99_ms <= ACCEPT_P99_MAX_MS
         and mid_metrics.get("store") == "clickhouse"
         and mid_metrics.get("spoolEnabled") is True,
         "healthySeconds": HEALTHY_SECONDS,
@@ -500,9 +510,11 @@ def load_and_outage(token):
     }
     outage = {
         "pass": loss == 0 and duplicates == 0
-        and int(caught.get("spoolLag") or 1) == 0
-        and caught.get("queueSize") in (0, "0", None)
-        and caught.get("spoolQuota") is not True,
+        and is_zero(caught.get("spoolLag"))
+        and is_zero(caught.get("queueSize"))
+        and caught.get("spoolQuota") is not True
+        and bench.returncode == 0
+        and after_flushed > mid_flushed,
         "outageSeconds": OUTAGE_SECONDS,
         "accepted": accepted,
         "stored": stored,
@@ -546,6 +558,7 @@ def crash_replay(token):
     count = 40
     sh(["docker", "stop", "ispf-tck-clickhouse"])
     flushed_before = int(history(token).get("flushedTotal") or 0)
+    lag_before = int(history(token).get("spoolLag") or 0)
     for index in range(count):
         status, body = http(
             "PUT", "/api/v1/objects/by-path/variables",
@@ -560,7 +573,9 @@ def crash_replay(token):
     while time.time() < deadline:
         values = history(token)
         flushed = int(values.get("flushedTotal") or 0)
-        if flushed - flushed_before >= count and values.get("queueSize") in (0, "0", None):
+        if (flushed - flushed_before >= count
+                and int(values.get("spoolLag") or 0) - lag_before >= count
+                and is_zero(values.get("queueSize"))):
             break
         time.sleep(0.5)
     else:
@@ -583,12 +598,12 @@ def crash_replay(token):
         "AND variable_name = 'level' AND value_double >= 1000 AND value_double < 1040"
     )
     return {
-        "pass": found == count and unique == count and int(caught.get("spoolLag") or 1) == 0,
+        "pass": found == count and unique == count and is_zero(caught.get("spoolLag")),
         "expected": count,
         "found": found,
         "unique": unique,
         "spoolLag": caught.get("spoolLag"),
-        "loss": None if not isinstance(found, int) else max(0, count - found),
+        "loss": None if not isinstance(found, int) else count - found,
         "duplicates": None if not isinstance(found, int) or not isinstance(unique, int) else found - unique,
     }
 
@@ -659,15 +674,16 @@ def year_rollup(token):
             return {"pass": False, "status": status, "body": body, "rows": YEAR_ROWS}
     samples.sort()
     p99 = samples[min(len(samples) - 1, max(0, math.ceil(len(samples) * 0.99) - 1))]
+    buckets = len((body or {}).get("buckets") or (body or {}).get("points") or [])
     return {
-        "pass": p99 <= ROLLUP_P99_MAX_MS and status == 200,
+        "pass": p99 <= ROLLUP_P99_MAX_MS and status == 200 and buckets >= 365,
         "rows": YEAR_ROWS,
         "bucket": "1d",
         "query": "/api/v1/objects/by-path/variables/history/aggregate bucket=1d year=2025",
         "samples": len(samples),
         "p99Ms": round(p99, 2),
         "p50Ms": round(samples[len(samples) // 2], 2),
-        "buckets": len((body or {}).get("buckets") or body.get("points") or []),
+        "buckets": buckets,
     }
 
 
@@ -701,15 +717,20 @@ def replica_failover(token):
             break
         time.sleep(1)
     sh(["docker", "start", "ispf-tck-clickhouse-b"])
-    time.sleep(5)
-    on_b = sh(
-        ["docker", "exec", "ispf-tck-clickhouse-b", "clickhouse-client",
-         "--user", "default", "--password", "tck", "--query",
-         "SELECT count() FROM default.variable_samples "
-         "WHERE object_path = 'root.platform.devices.tck-field' AND value_double = 4242"],
-        check=False,
-    )
-    copied = (on_b.stdout or "").strip()
+    deadline = time.time() + 60
+    copied = ""
+    while time.time() < deadline:
+        on_b = sh(
+            ["docker", "exec", "ispf-tck-clickhouse-b", "clickhouse-client",
+             "--user", "default", "--password", "tck", "--query",
+             "SELECT count() FROM default.variable_samples "
+             "WHERE object_path = 'root.platform.devices.tck-field' AND value_double = 4242"],
+            check=False,
+        )
+        copied = (on_b.stdout or "").strip()
+        if on_b.returncode == 0 and copied.isdigit() and int(copied) >= 1:
+            break
+        time.sleep(1)
     return {
         "pass": status == 200 and read_back is not None and read_back[0] == 200 and copied.isdigit() and int(copied) >= 1,
         "writeStatus": status,

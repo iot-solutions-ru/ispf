@@ -8,8 +8,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -183,6 +188,51 @@ class HistorianDiskSpoolTest {
         spool.close();
         long segments = segmentCount();
         assertTrue(segments >= 2, "segments=" + segments);
+    }
+
+    @Test
+    void concurrentAppendAndAckReplaysEachUnackedBatchOnce() throws Exception {
+        HistorianDiskSpool spool = spool(8 * 1024 * 1024, 8 * 1024, true);
+        spool.open();
+        int threads = 8;
+        int each = 40;
+        ExecutorService pool = Executors.newFixedThreadPool(threads);
+        CountDownLatch start = new CountDownLatch(1);
+        List<String> ids = new CopyOnWriteArrayList<>();
+        List<java.util.concurrent.Future<?>> futures = new ArrayList<>();
+        for (int thread = 0; thread < threads; thread++) {
+            int base = thread * each;
+            futures.add(pool.submit(() -> {
+                start.await();
+                for (int i = 0; i < each; i++) {
+                    String id = spool.append(List.of(sample(base + i)));
+                    ids.add(id);
+                    if ((i & 1) == 0) {
+                        spool.ack(id);
+                    }
+                }
+                return null;
+            }));
+        }
+        start.countDown();
+        for (java.util.concurrent.Future<?> future : futures) {
+            future.get(30, TimeUnit.SECONDS);
+        }
+        pool.shutdown();
+        spool.close();
+
+        HistorianDiskSpool reopened = spool(8 * 1024 * 1024, 8 * 1024, true);
+        reopened.open();
+        List<String> replayed = new ArrayList<>();
+        int copied;
+        do {
+            copied = reopened.replay((id, records) -> replayed.add(id), 16);
+        } while (copied > 0);
+        assertEquals(threads * each, ids.size());
+        assertEquals(threads * each, new HashSet<>(ids).size());
+        assertEquals(threads * each / 2, replayed.size());
+        assertEquals(replayed.size(), new HashSet<>(replayed).size());
+        reopened.close();
     }
 
     private Path onlySegment() throws Exception {
