@@ -303,6 +303,7 @@ def setup_replicas():
 """
     def replica_xml(name, host):
         return f"""<clickhouse>
+  <listen_host>0.0.0.0</listen_host>
   <macros><shard>1</shard><replica>{name}</replica></macros>
   <interserver_http_host>{host}</interserver_http_host>
   <zookeeper><node><host>ispf-tck-keeper</host><port>9181</port></node></zookeeper>
