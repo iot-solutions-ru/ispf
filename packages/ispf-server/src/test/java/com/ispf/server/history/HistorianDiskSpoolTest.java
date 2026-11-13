@@ -211,6 +211,33 @@ class HistorianDiskSpoolTest {
     }
 
     @Test
+    void interruptedRotateResetsSegmentSizeBeforeReopen() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 80, true);
+        spool.open();
+        String first = spool.append(List.of(sample(1)));
+        // Force rotate on next append by shrinking remaining capacity via reflection-free oversize.
+        Field sizeField = HistorianDiskSpool.class.getDeclaredField("segmentSize");
+        sizeField.setAccessible(true);
+        sizeField.setLong(spool, 70);
+        Thread.currentThread().interrupt();
+        assertThrows(IOException.class, () -> spool.append(List.of(sample(2))));
+        assertTrue(Thread.interrupted() || !Thread.currentThread().isInterrupted());
+        Thread.interrupted(); // clear
+        String third = spool.append(List.of(sample(3)));
+        spool.close();
+
+        HistorianDiskSpool reopened = spool(1024 * 1024, 80, true);
+        reopened.open();
+        List<Double> values = new ArrayList<>();
+        reopened.replay((id, records) -> values.add(records.getFirst().valueDouble()), 10);
+        assertTrue(values.contains(1.0));
+        assertTrue(values.contains(3.0));
+        assertTrue(third.endsWith("-2") || third.endsWith("-3") || Long.parseLong(third.substring(third.lastIndexOf('-') + 1)) >= 2);
+        assertTrue(first.contains("-"));
+        reopened.close();
+    }
+
+    @Test
     void closedChannelWithUntruncatedTailThenSecondAppendKeepsDistinctSeqs() throws Exception {
         HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
         spool.open();

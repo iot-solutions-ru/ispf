@@ -245,12 +245,16 @@ public final class HistorianDiskSpool {
 
     private void rotate() throws IOException {
         if (channel != null) {
-            channel.close();
-            channel = null;
+            try {
+                channel.close();
+            } finally {
+                channel = null;
+            }
         }
         if (segmentSize > 0) {
             closedMaxSeq.put(segmentIndex, nextSeq - 1);
             segmentIndex++;
+            segmentSize = 0;
         }
         reclaimClosedSegments();
         openSegment(segmentIndex, false);
