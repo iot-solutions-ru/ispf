@@ -150,6 +150,12 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             spool.append(records);
             spool.recordAccept((System.nanoTime() - started) / 1_000_000L);
         } catch (java.io.IOException ex) {
+            if (records.size() > 1 && ex.getMessage() != null && ex.getMessage().contains("exceeds max size")) {
+                int midpoint = records.size() / 2;
+                appendBatch(records.subList(0, midpoint));
+                appendBatch(records.subList(midpoint, records.size()));
+                return;
+            }
             throw new IllegalStateException("historian spool append failed", ex);
         }
     }

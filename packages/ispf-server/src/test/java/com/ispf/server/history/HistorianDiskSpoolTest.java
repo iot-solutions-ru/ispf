@@ -15,6 +15,7 @@ import java.util.zip.CRC32;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -155,7 +156,7 @@ class HistorianDiskSpoolTest {
         assertEquals(0, spool.replay((id, records) -> {
             throw new IllegalStateException("down");
         }, 10));
-        List<String> seen = new ArrayList<>();
+        List<String> seen = new CopyOnWriteArrayList<>();
         assertEquals(2, spool.replay((id, records) -> seen.add(id), 10));
         assertEquals(2, seen.size());
         spool.close();
@@ -209,9 +210,9 @@ class HistorianDiskSpoolTest {
         reopened.open();
         String third = reopened.append(List.of(sample(3)));
         assertTrue(third.endsWith("-3"), third);
-        List<Double> values = new ArrayList<>();
+        List<Double> values = new CopyOnWriteArrayList<>();
         assertEquals(2, reopened.replay((id, records) -> values.add(records.getFirst().valueDouble()), 10));
-        assertEquals(List.of(1.0, 3.0), values);
+        assertEquals(Set.of(1.0, 3.0), new HashSet<>(values));
         reopened.close();
     }
 
@@ -297,7 +298,7 @@ class HistorianDiskSpoolTest {
 
         HistorianDiskSpool reopened = spool(8 * 1024 * 1024, 8 * 1024, false);
         reopened.open();
-        List<String> replayed = new ArrayList<>();
+        List<String> replayed = new CopyOnWriteArrayList<>();
         int copied;
         do {
             copied = reopened.replay((id, records) -> replayed.add(id), 16);

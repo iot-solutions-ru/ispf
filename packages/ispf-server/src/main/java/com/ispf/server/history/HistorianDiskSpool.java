@@ -786,15 +786,43 @@ public final class HistorianDiskSpool {
     private void loadOrCreateSpoolId() throws IOException {
         Path path = directory.resolve("spool.id");
         if (Files.exists(path)) {
-            spoolId = Files.readString(path, StandardCharsets.UTF_8).trim();
+            try {
+                spoolId = Files.readString(path, StandardCharsets.UTF_8).trim();
+            } catch (java.nio.charset.CharacterCodingException ex) {
+                spoolId = UUID.randomUUID().toString();
+                writeSpoolId(path);
+                return;
+            } catch (java.io.UncheckedIOException ex) {
+                if (!(ex.getCause() instanceof java.nio.charset.CharacterCodingException)) {
+                    throw ex;
+                }
+                spoolId = UUID.randomUUID().toString();
+                writeSpoolId(path);
+                return;
+            }
             if (spoolId.isBlank()) {
                 spoolId = UUID.randomUUID().toString();
-                Files.writeString(path, spoolId, StandardCharsets.UTF_8);
+                writeSpoolId(path);
             }
             return;
         }
         spoolId = UUID.randomUUID().toString();
-        Files.writeString(path, spoolId, StandardCharsets.UTF_8);
+        writeSpoolId(path);
+    }
+
+    private void writeSpoolId(Path path) throws IOException {
+        Path temporary = directory.resolve("spool.id.tmp");
+        Files.writeString(temporary, spoolId + "\n", StandardCharsets.UTF_8);
+        if (fsync) {
+            try (FileChannel idChannel = FileChannel.open(temporary, StandardOpenOption.WRITE)) {
+                idChannel.force(true);
+            }
+        }
+        try {
+            Files.move(temporary, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException ex) {
+            Files.move(temporary, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     private String batchId(long seq) {
