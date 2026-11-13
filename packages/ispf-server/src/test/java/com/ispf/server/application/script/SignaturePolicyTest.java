@@ -91,6 +91,13 @@ class SignaturePolicyTest {
         assertDoesNotThrow(() -> SignaturePolicy.require(DUAL, signed, verifier));
     }
 
+    @Test
+    void unknownPolicyIsRejected() {
+        login("operator");
+        String body = "{\"signaturePolicy\":\"DOUBLE\",\"steps\":[]}";
+        assertThrows(IllegalStateException.class, () -> SignaturePolicy.require(body, null));
+    }
+
     private static Ed25519FunctionSignatureVerifier verifier(Map<String, String> enrolled) {
         Map<String, String> keys = new HashMap<>(enrolled);
         SignatureKeyDirectory directory = new SignatureKeyDirectory() {
@@ -102,6 +109,11 @@ class SignaturePolicyTest {
             @Override
             public Optional<String> find(String username) {
                 return Optional.ofNullable(keys.get(username));
+            }
+
+            @Override
+            public void delete(String username) {
+                keys.remove(username);
             }
         };
         return new Ed25519FunctionSignatureVerifier(directory);

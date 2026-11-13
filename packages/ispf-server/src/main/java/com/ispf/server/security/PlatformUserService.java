@@ -55,6 +55,7 @@ public class PlatformUserService {
     private final TenantScopeService tenantScopeService;
     private final IspfSecurityProperties securityProperties;
     private final MfaService mfaService;
+    private final SignatureKeyDirectory signatureKeys;
 
     public PlatformUserService(
             PlatformUserStore userStore,
@@ -67,7 +68,8 @@ public class PlatformUserService {
             TenantStore tenantStore,
             TenantScopeService tenantScopeService,
             IspfSecurityProperties securityProperties,
-            MfaService mfaService
+            MfaService mfaService,
+            SignatureKeyDirectory signatureKeys
     ) {
         this.userStore = userStore;
         this.roleService = roleService;
@@ -80,6 +82,7 @@ public class PlatformUserService {
         this.tenantScopeService = tenantScopeService;
         this.securityProperties = securityProperties;
         this.mfaService = mfaService;
+        this.signatureKeys = signatureKeys;
     }
 
     @Transactional
@@ -321,6 +324,9 @@ public class PlatformUserService {
         if (timeZone != null && !timeZone.isBlank()) {
             userStore.updateTimeZone(username, PlatformTimeZones.normalize(timeZone));
         }
+        if (!resolvedEnabled) {
+            signatureKeys.delete(username);
+        }
         PlatformUserStore.PlatformUser updated = userStore.findByUsername(username).orElseThrow();
         objectTreeService.syncUser(updated);
         updated = userStore.findByUsername(username).orElse(updated);
@@ -401,6 +407,7 @@ public class PlatformUserService {
             }
         }
         userStore.delete(username);
+        signatureKeys.delete(username);
         tenantScopeService.invalidateUserCache(username);
         if (objectManager.tree().findByPath(user.objectPath()).isPresent()) {
             objectManager.delete(user.objectPath());
@@ -435,6 +442,9 @@ public class PlatformUserService {
             case "enabled" -> {
                 boolean enabled = Boolean.parseBoolean(fieldValue);
                 userStore.updateProfile(user.username(), user.displayName(), user.rolesJson(), enabled);
+                if (!enabled) {
+                    signatureKeys.delete(user.username());
+                }
             }
             case "displayName" -> userStore.updateProfile(
                     user.username(),

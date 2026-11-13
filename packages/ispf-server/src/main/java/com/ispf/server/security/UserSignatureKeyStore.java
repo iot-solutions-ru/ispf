@@ -54,4 +54,12 @@ public class UserSignatureKeyStore implements SignatureKeyDirectory {
         );
         return keys.stream().findFirst();
     }
+
+    @Override
+    public void delete(String username) {
+        jdbcTemplate.update(
+                "DELETE FROM %s WHERE username = ?".formatted(table),
+                username
+        );
+    }
 }
