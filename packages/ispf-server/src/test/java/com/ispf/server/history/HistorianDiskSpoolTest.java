@@ -264,7 +264,8 @@ class HistorianDiskSpoolTest {
 
     @Test
     void concurrentAppendAndAckReplaysEachUnackedBatchOnce() throws Exception {
-        HistorianDiskSpool spool = spool(8 * 1024 * 1024, 8 * 1024, true);
+        // fsync=false: this test stresses seq assignment / ack races, not durability.
+        HistorianDiskSpool spool = spool(8 * 1024 * 1024, 8 * 1024, false);
         spool.open();
         int threads = 8;
         int each = 40;
@@ -291,9 +292,10 @@ class HistorianDiskSpoolTest {
             future.get(30, TimeUnit.SECONDS);
         }
         pool.shutdown();
+        assertTrue(pool.awaitTermination(30, TimeUnit.SECONDS));
         spool.close();
 
-        HistorianDiskSpool reopened = spool(8 * 1024 * 1024, 8 * 1024, true);
+        HistorianDiskSpool reopened = spool(8 * 1024 * 1024, 8 * 1024, false);
         reopened.open();
         List<String> replayed = new ArrayList<>();
         int copied;

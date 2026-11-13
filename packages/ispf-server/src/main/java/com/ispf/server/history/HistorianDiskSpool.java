@@ -494,6 +494,14 @@ public final class HistorianDiskSpool {
         }
         if (pool != null) {
             pool.shutdownNow();
+            try {
+                if (!pool.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                    pool.shutdownNow();
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                pool.shutdownNow();
+            }
         }
     }
 
