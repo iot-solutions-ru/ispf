@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -264,6 +265,34 @@ class HistorianDiskSpoolTest {
     }
 
     @Test
+    void closedChannelWithUntruncatedTailThenSecondAppendKeepsDistinctSeqs() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        spool.append(List.of(sample(1)));
+        long goodEnd = activeSegmentSize(spool);
+        closeActiveChannel(spool);
+        Files.write(onlySegment(), new byte[] {7, 7, 7, 7}, StandardOpenOption.APPEND);
+
+        String secondId = spool.append(List.of(sample(2)));
+        assertEquals(2, Long.parseLong(secondId.substring(secondId.lastIndexOf('-') + 1)));
+        assertEquals(Files.size(onlySegment()), activeSegmentSize(spool));
+        spool.close();
+
+        HistorianDiskSpool reopened = spool(1024 * 1024, 64 * 1024, true);
+        reopened.open();
+        List<Double> values = new CopyOnWriteArrayList<>();
+        List<Long> seqs = new CopyOnWriteArrayList<>();
+        assertEquals(2, reopened.replay((id, records) -> {
+            values.add(records.getFirst().valueDouble());
+            seqs.add(Long.parseLong(id.substring(id.lastIndexOf('-') + 1)));
+        }, 10));
+        assertEquals(Set.of(1.0, 2.0), new HashSet<>(values));
+        assertEquals(Set.of(1L, 2L), new HashSet<>(seqs));
+        assertTrue(activeSegmentSize(reopened) >= goodEnd);
+        reopened.close();
+    }
+
+    @Test
     void concurrentAppendAndAckReplaysEachUnackedBatchOnce() throws Exception {
         // fsync=false: this test stresses seq assignment / ack races, not durability.
         HistorianDiskSpool spool = spool(8 * 1024 * 1024, 8 * 1024, false);
@@ -352,6 +381,19 @@ class HistorianDiskSpoolTest {
             }
         }
         return true;
+    }
+
+    private static void closeActiveChannel(HistorianDiskSpool spool) throws Exception {
+        Field channelField = HistorianDiskSpool.class.getDeclaredField("channel");
+        channelField.setAccessible(true);
+        FileChannel channel = (FileChannel) channelField.get(spool);
+        channel.close();
+    }
+
+    private static long activeSegmentSize(HistorianDiskSpool spool) throws Exception {
+        Field sizeField = HistorianDiskSpool.class.getDeclaredField("segmentSize");
+        sizeField.setAccessible(true);
+        return sizeField.getLong(spool);
     }
 
     private Path onlySegment() throws Exception {

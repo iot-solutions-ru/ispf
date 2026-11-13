@@ -165,10 +165,17 @@ public final class HistorianDiskSpool {
         }
         int frame = HEADER + payload.length;
         ensureCapacity(frame);
-        if (channel == null || segmentSize + frame > segmentBytes) {
-            rotate();
+        if (channel == null || !channel.isOpen() || segmentSize + frame > segmentBytes) {
+            if (segmentSize + frame > segmentBytes && channel != null && channel.isOpen()) {
+                rotate();
+            } else if (channel == null || !channel.isOpen()) {
+                reopenActiveSegment();
+            }
+            if (segmentSize + frame > segmentBytes) {
+                rotate();
+            }
         }
-        if (channel == null) {
+        if (channel == null || !channel.isOpen()) {
             throw new IOException("historian spool has no open segment");
         }
         long position = segmentSize;
@@ -183,14 +190,19 @@ public final class HistorianDiskSpool {
             writeFully(header);
             writeFully(ByteBuffer.wrap(payload));
         } catch (IOException ex) {
+            boolean interrupted = Thread.interrupted();
             try {
                 if (channel == null || !channel.isOpen()) {
-                    openSegment(segmentIndex, true);
+                    reopenActiveSegment();
                 }
                 channel.truncate(position);
                 segmentSize = position;
             } catch (IOException truncate) {
                 ex.addSuppressed(truncate);
+            } finally {
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
             }
             throw ex;
         }
@@ -635,6 +647,9 @@ public final class HistorianDiskSpool {
     }
 
     private void writeFully(ByteBuffer buffer) throws IOException {
+        if (channel == null || !channel.isOpen()) {
+            reopenActiveSegment();
+        }
         while (buffer.hasRemaining()) {
             if (channel.write(buffer) < 0) {
                 throw new IOException("historian spool write failed");
@@ -656,6 +671,14 @@ public final class HistorianDiskSpool {
                     StandardOpenOption.TRUNCATE_EXISTING);
             segmentSize = 0;
         }
+    }
+
+    /** Reopens the active segment after a failed partial write without adopting torn tail bytes. */
+    private void reopenActiveSegment() throws IOException {
+        Path path = directory.resolve(String.format("%06d.seg", segmentIndex));
+        channel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        channel.truncate(segmentSize);
+        channel.position(segmentSize);
     }
 
     private void truncateTornTail(List<Path> segments) throws IOException {
