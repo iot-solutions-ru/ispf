@@ -12,6 +12,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -58,6 +63,7 @@ public final class HistorianDiskSpool {
     private boolean forceLeader;
     private long forcedThrough;
     private long writtenThrough;
+    private ExecutorService replayPool;
 
     public HistorianDiskSpool(Path directory, long maxBytes, long segmentBytes, boolean fsync, ObjectMapper objectMapper) {
         this.directory = directory;
@@ -242,6 +248,51 @@ public final class HistorianDiskSpool {
                 inFlight.add(frame.seq());
             }
         }
+        if (pending.size() <= 1) {
+            return replayOneByOne(sink, pending);
+        }
+        Set<Long> done = ConcurrentHashMap.newKeySet();
+        List<Future<?>> futures = new ArrayList<>();
+        for (Frame frame : pending) {
+            futures.add(replayPool().submit(() -> {
+                sink.accept(Long.toString(frame.seq()), frame.records());
+                try {
+                    synchronized (HistorianDiskSpool.this) {
+                        ack(Long.toString(frame.seq()));
+                        replayedBatches++;
+                    }
+                } catch (IOException ex) {
+                    throw new IllegalStateException("historian spool ack failed", ex);
+                }
+                done.add(frame.seq());
+                return null;
+            }));
+        }
+        boolean failed = false;
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                failed = true;
+            } catch (ExecutionException ex) {
+                failed = true;
+            }
+        }
+        synchronized (this) {
+            for (Frame frame : pending) {
+                if (!done.contains(frame.seq())) {
+                    inFlight.remove(frame.seq());
+                }
+            }
+            if (failed) {
+                errors++;
+            }
+        }
+        return done.size();
+    }
+
+    private int replayOneByOne(Replay sink, List<Frame> pending) throws IOException {
         int copied = 0;
         for (Frame frame : pending) {
             String id = Long.toString(frame.seq());
@@ -263,6 +314,19 @@ public final class HistorianDiskSpool {
             }
         }
         return copied;
+    }
+
+    private ExecutorService replayPool() {
+        synchronized (this) {
+            if (replayPool == null) {
+                replayPool = Executors.newFixedThreadPool(8, runnable -> {
+                    Thread thread = new Thread(runnable, "historian-spool-replay");
+                    thread.setDaemon(true);
+                    return thread;
+                });
+            }
+            return replayPool;
+        }
     }
 
     public synchronized Stats stats() {
@@ -291,6 +355,10 @@ public final class HistorianDiskSpool {
     }
 
     public synchronized void close() throws IOException {
+        if (replayPool != null) {
+            replayPool.shutdownNow();
+            replayPool = null;
+        }
         if (channel != null) {
             if (fsync) {
                 channel.force(true);

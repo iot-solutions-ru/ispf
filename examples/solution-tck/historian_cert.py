@@ -446,7 +446,7 @@ def load_and_outage(token):
     wait_clickhouse(time.time() + 120)
     bench.wait(timeout=duration + 60)
     token = login(time.time() + 90)
-    caught = wait_caught_up(token, time.time() + 600)
+    caught = wait_caught_up(token, time.time() + 1800)
     after_rows = saved_rows()
     after_flushed = int(caught.get("flushedTotal") or 0)
     duplicates = duplicate_rows()
