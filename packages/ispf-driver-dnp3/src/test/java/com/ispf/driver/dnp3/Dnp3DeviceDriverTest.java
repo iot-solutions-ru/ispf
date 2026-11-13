@@ -182,6 +182,34 @@ class Dnp3DeviceDriverTest {
         driver.disconnect();
     }
 
+    @Test
+    void invalidMappingLeavesThePreviousPointWritable() throws Exception {
+        outstation = new Dnp3LoopbackOutstation(MASTER_ADDRESS, OUTSTATION_ADDRESS);
+        outstation.awaitBound(5_000);
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(outstation.port()),
+                "localAddress", String.valueOf(MASTER_ADDRESS),
+                "outstationAddress", String.valueOf(OUTSTATION_ADDRESS),
+                "timeoutMs", "10000"
+        ));
+        Dnp3DeviceDriver driver = new Dnp3DeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("coil", "0:BINARY_OUTPUT"));
+
+        assertThrows(DriverException.class, () -> driver.readPoints(Map.of("broken", "not-a-mapping")));
+
+        driver.writePoint("coil", DataRecord.single(
+                DataSchema.builder("dnp3Bool").field("value", FieldType.BOOLEAN).build(),
+                Map.of("value", true)
+        ));
+        driver.readPoints(Map.of("coil", "0:BINARY_OUTPUT"));
+        assertEquals(true, driverObject.variables.get("coil").firstRow().get("value"));
+        driver.disconnect();
+    }
+
     private static final class StubDriverObject implements DeviceDriver.DriverObject {
 
         private static final DataSchema STRING_VALUE = DataSchema.builder("stringValue")

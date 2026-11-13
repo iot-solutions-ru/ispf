@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DlmsDeviceDriverTest {
@@ -65,6 +67,22 @@ class DlmsDeviceDriverTest {
 
         assertEquals(77.5, server.energyValue(), 0.001);
         assertEquals("77.5", driverObject.variables.get("energy").firstRow().get("value"));
+        driver.disconnect();
+    }
+
+    @Test
+    void invalidMappingLeavesThePreviousPointWritable() throws Exception {
+        server = new DlmsLoopbackServer(CLIENT_ADDRESS);
+        StubDriverObject driverObject = driverConfig(server.port());
+        DlmsDeviceDriver driver = new DlmsDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("energy", "1:" + DlmsLoopbackServer.ENERGY_OBIS));
+
+        assertThrows(DriverException.class, () -> driver.readPoints(Map.of("broken", "not-a-mapping")));
+
+        driver.writePoint("energy", DataRecord.single(DOUBLE_SCHEMA, Map.of("value", 11.0)));
+        assertEquals(11.0, server.energyValue(), 0.001);
         driver.disconnect();
     }
 
