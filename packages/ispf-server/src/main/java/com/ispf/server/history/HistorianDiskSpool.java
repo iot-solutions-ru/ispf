@@ -63,6 +63,9 @@ public final class HistorianDiskSpool {
     private boolean forceLeader;
     private long forcedThrough;
     private long writtenThrough;
+    private boolean checkpointLeader;
+    private long checkpointCovered;
+    private Set<Long> checkpointGaps = Set.of();
     private ExecutorService replayPool;
 
     public HistorianDiskSpool(Path directory, long maxBytes, long segmentBytes, boolean fsync, ObjectMapper objectMapper) {
@@ -185,7 +188,7 @@ public final class HistorianDiskSpool {
             IOException failure = null;
             try {
                 if (current != null) {
-                    current.force(true);
+                    current.force(false);
                 }
             } catch (IOException ex) {
                 failure = ex;
@@ -204,26 +207,80 @@ public final class HistorianDiskSpool {
         }
     }
 
-    public synchronized void ack(String batchId) throws IOException {
+    public void ack(String batchId) throws IOException {
         if (batchId == null) {
             return;
         }
         long seq = Long.parseLong(batchId);
+        boolean durable;
+        synchronized (this) {
+            durable = applyAck(seq);
+        }
+        if (durable) {
+            forceCheckpoint(seq);
+        }
+    }
+
+    private boolean applyAck(long seq) throws IOException {
         inFlight.remove(seq);
         Pending removed = pending.remove(seq);
         if (removed != null) {
             unackedRecords = Math.max(0, unackedRecords - removed.records());
         }
         if (seq <= ackedThrough) {
-            return;
+            return false;
         }
         ackedAbove.add(seq);
         while (ackedAbove.contains(ackedThrough + 1)) {
             ackedAbove.remove(ackedThrough + 1);
             ackedThrough++;
         }
-        writeCheckpoint();
         reclaimClosedSegments();
+        return true;
+    }
+
+    /** One checkpoint fsync covers every ack that landed before the leader took its snapshot. */
+    private void forceCheckpoint(long seq) throws IOException {
+        for (;;) {
+            long covered;
+            Set<Long> gaps;
+            String body;
+            synchronized (this) {
+                if (seq <= checkpointCovered || checkpointGaps.contains(seq)) {
+                    return;
+                }
+                if (checkpointLeader) {
+                    try {
+                        wait(1_000);
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        throw new IOException("historian spool checkpoint interrupted", ex);
+                    }
+                    continue;
+                }
+                checkpointLeader = true;
+                covered = ackedThrough;
+                gaps = new TreeSet<>(ackedAbove);
+                body = checkpointText(covered, gaps);
+            }
+            IOException failure = null;
+            try {
+                writeCheckpointBody(body);
+            } catch (IOException ex) {
+                failure = ex;
+            }
+            synchronized (this) {
+                checkpointLeader = false;
+                if (failure == null) {
+                    checkpointCovered = Math.max(checkpointCovered, covered);
+                    checkpointGaps = gaps;
+                }
+                notifyAll();
+                if (failure != null) {
+                    throw failure;
+                }
+            }
+        }
     }
 
     public synchronized void claim(String batchId) {
@@ -257,8 +314,8 @@ public final class HistorianDiskSpool {
             futures.add(replayPool().submit(() -> {
                 sink.accept(Long.toString(frame.seq()), frame.records());
                 try {
+                    ack(Long.toString(frame.seq()));
                     synchronized (HistorianDiskSpool.this) {
-                        ack(Long.toString(frame.seq()));
                         replayedBatches++;
                     }
                 } catch (IOException ex) {
@@ -298,8 +355,8 @@ public final class HistorianDiskSpool {
             String id = Long.toString(frame.seq());
             try {
                 sink.accept(id, frame.records());
+                ack(id);
                 synchronized (this) {
-                    ack(id);
                     replayedBatches++;
                 }
                 copied++;
@@ -672,11 +729,14 @@ public final class HistorianDiskSpool {
         }
     }
 
-    private void writeCheckpoint() throws IOException {
-        String gaps = String.join(",", ackedAbove.stream().map(String::valueOf).toList());
+    private static String checkpointText(long covered, Set<Long> gaps) {
+        return covered + "\n" + String.join(",", gaps.stream().map(String::valueOf).toList()) + "\n";
+    }
+
+    private void writeCheckpointBody(String body) throws IOException {
         Path path = directory.resolve("checkpoint");
         Path temporary = directory.resolve("checkpoint.tmp");
-        Files.writeString(temporary, ackedThrough + "\n" + gaps + "\n", StandardCharsets.UTF_8);
+        Files.writeString(temporary, body, StandardCharsets.UTF_8);
         if (fsync) {
             try (FileChannel checkpoint = FileChannel.open(temporary, StandardOpenOption.WRITE)) {
                 checkpoint.force(true);

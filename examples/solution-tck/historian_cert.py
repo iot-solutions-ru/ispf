@@ -64,7 +64,7 @@ ISPF_VARIABLE_HISTORY_BATCH_SIZE=5000
 ISPF_VARIABLE_HISTORY_FLUSH_INTERVAL_MS=10
 ISPF_VARIABLE_HISTORY_WRITER_THREADS_MIN=8
 ISPF_VARIABLE_HISTORY_WRITER_THREADS_MAX=48
-ISPF_VARIABLE_HISTORY_ELASTIC_WRITER_ENABLED=true
+ISPF_VARIABLE_HISTORY_ELASTIC_WRITER_ENABLED=false
 ISPF_VARIABLE_HISTORY_CLICKHOUSE_TABLE=variable_samples
 ISPF_VARIABLE_HISTORY_SPOOL_ENABLED=true
 ISPF_VARIABLE_HISTORY_SPOOL_DIRECTORY=/data/historian-spool
@@ -250,6 +250,7 @@ def wait_clickhouse(deadline):
 
 def wait_keeper(deadline):
     query = "SELECT count() FROM system.zookeeper WHERE path = '/'"
+    last = ""
     while time.time() < deadline:
         probe = sh(
             ["docker", "exec", "ispf-tck-clickhouse", "clickhouse-client",
@@ -258,10 +259,11 @@ def wait_keeper(deadline):
         )
         if probe.returncode == 0:
             return
+        last = ((probe.stderr or "") + (probe.stdout or ""))[:400]
         time.sleep(2)
-    logs = sh(["docker", "logs", "--tail", "30", "ispf-tck-keeper"], check=False)
+    logs = sh(["docker", "logs", "--tail", "40", "ispf-tck-keeper"], check=False)
     text = (logs.stdout or "") + (logs.stderr or "")
-    raise RuntimeError("keeper not ready: " + text[:600])
+    raise RuntimeError("keeper not ready: " + last + " | " + text[-600:])
 
 
 def write_text(path, content):
@@ -286,12 +288,13 @@ def start_single_clickhouse():
 def setup_replicas():
     """Operator-managed keeper and two replicas. ISPF only uses the stable A endpoint."""
     keeper = """<clickhouse>
+  <logger><level>information</level><console>true</console></logger>
+  <listen_host>0.0.0.0</listen_host>
   <keeper_server>
     <tcp_port>9181</tcp_port>
     <server_id>1</server_id>
     <log_storage_path>/var/lib/clickhouse/coordination/log</log_storage_path>
     <snapshot_storage_path>/var/lib/clickhouse/coordination/snapshots</snapshot_storage_path>
-    <listen_host>0.0.0.0</listen_host>
     <raft_configuration>
       <server><id>1</id><hostname>ispf-tck-keeper</hostname><port>9234</port></server>
     </raft_configuration>
@@ -456,7 +459,9 @@ def load_and_outage(token):
     if isinstance(before_rows, int) and isinstance(mid_rows, int):
         gained = mid_rows - before_rows
     rate = None if gained is None else round(gained / HEALTHY_SECONDS, 1)
-    log(f"healthy window rows/s={rate}")
+    mid_flushed = int(mid_metrics.get("flushedTotal") or 0)
+    accepted_rate = round(max(0, mid_flushed - before_flushed) / HEALTHY_SECONDS, 1)
+    log(f"healthy window rows/s={rate} accepted/s={accepted_rate}")
     log("stopping private ClickHouse")
     sh(["docker", "stop", "ispf-tck-clickhouse"])
     time.sleep(OUTAGE_SECONDS)
@@ -480,6 +485,7 @@ def load_and_outage(token):
         and mid_metrics.get("spoolEnabled") is True,
         "healthySeconds": HEALTHY_SECONDS,
         "rowsPerSecond": rate,
+        "acceptedPerSecond": accepted_rate,
         "rows": gained,
         "acceptP99Ms": mid_metrics.get("spoolAcceptP99Ms"),
         "store": mid_metrics.get("store"),
