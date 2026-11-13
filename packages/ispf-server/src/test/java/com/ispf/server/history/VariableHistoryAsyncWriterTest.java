@@ -207,6 +207,41 @@ class VariableHistoryAsyncWriterTest {
         verify(automationMetricsRecorder, times(1)).recordVariableHistoryFlushed(1);
     }
 
+    @Test
+    void clickHouseSpoolBlocksInsteadOfSyncFallbackWhenQueueFull() throws Exception {
+        writer.shutdown();
+        properties.setStore("clickhouse");
+        properties.getSpool().setEnabled(true);
+        properties.setQueueCapacity(1);
+        properties.setBatchSize(1);
+        properties.setFlushIntervalMs(3_600_000);
+        properties.setOverflowCoalesceEnabled(false);
+        properties.setElasticWriterEnabled(false);
+        writer = new VariableHistoryAsyncWriter(properties, batchPersister, automationMetricsRecorder);
+        CountDownLatch persistEntered = new CountDownLatch(1);
+        CountDownLatch allowPersist = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            persistEntered.countDown();
+            allowPersist.await(5, TimeUnit.SECONDS);
+            return null;
+        }).when(batchPersister).persistBatch(anyList());
+        writer.start();
+
+        writer.enqueue(List.of(sample("root.a", "temperature", "value", 1.0)));
+        assertTrue(persistEntered.await(5, TimeUnit.SECONDS), "worker should block on first batch flush");
+        // Fill the capacity-1 queue while the worker still holds the first sample.
+        writer.enqueue(List.of(sample("root.b", "temperature", "value", 2.0)));
+
+        Thread blocked = new Thread(() -> writer.enqueue(List.of(sample("root.c", "temperature", "value", 3.0))));
+        blocked.start();
+        Thread.sleep(80);
+        assertTrue(blocked.isAlive(), "spool mode should block on queue.put instead of sync fallback");
+        verify(batchPersister, never()).persistOne(org.mockito.ArgumentMatchers.any());
+        allowPersist.countDown();
+        blocked.join(5_000);
+        writer.awaitQueueDrain(5, TimeUnit.SECONDS);
+    }
+
     private static VariableSampleEntity sample(String path, String variable, String field, double value) {
         VariableSampleEntity entity = new VariableSampleEntity();
         entity.setObjectPath(path);

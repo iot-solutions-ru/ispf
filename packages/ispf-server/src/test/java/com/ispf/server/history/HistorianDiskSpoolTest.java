@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -172,6 +173,53 @@ class HistorianDiskSpoolTest {
         spool.close();
         long segments = segmentCount();
         assertTrue(segments >= 2, "segments=" + segments);
+    }
+
+    @Test
+    void batchIdsCarryAStableSpoolIdAcrossRestart() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        String first = spool.append(List.of(sample(1)));
+        String spoolId = spool.spoolId();
+        assertTrue(first.startsWith(spoolId + "-"));
+        spool.close();
+
+        HistorianDiskSpool reopened = spool(1024 * 1024, 64 * 1024, true);
+        reopened.open();
+        assertEquals(spoolId, reopened.spoolId());
+        String second = reopened.append(List.of(sample(2)));
+        assertTrue(second.startsWith(spoolId + "-"));
+        reopened.close();
+    }
+
+    @Test
+    void aFreshDirectoryGetsADistinctSpoolId() throws Exception {
+        HistorianDiskSpool first = spool(1024 * 1024, 64 * 1024, true);
+        first.open();
+        String firstId = first.spoolId();
+        first.close();
+
+        Path other = dir.resolve("other");
+        Files.createDirectories(other);
+        HistorianDiskSpool second = new HistorianDiskSpool(other, 1024 * 1024, 64 * 1024, true, new ObjectMapper());
+        second.open();
+        assertFalse(firstId.equals(second.spoolId()));
+        second.close();
+    }
+
+    @Test
+    void oversizedSingleRecordIsRejected() throws Exception {
+        HistorianDiskSpool spool = spool(64L * 1024 * 1024, 64L * 1024 * 1024, true);
+        spool.open();
+        String huge = "x".repeat(HistorianDiskSpool.MAX_FRAME_BYTES);
+        VariableHistoryWriteRecord record = new VariableHistoryWriteRecord(
+                "root.a", "v", "value",
+                Instant.parse("2026-11-13T00:00:00Z"),
+                Instant.parse("2026-11-13T00:00:00Z"),
+                null, huge, "GOOD"
+        );
+        assertThrows(IOException.class, () -> spool.append(List.of(record)));
+        spool.close();
     }
 
     private Path onlySegment() throws Exception {

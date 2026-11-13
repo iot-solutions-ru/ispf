@@ -368,6 +368,13 @@ public class VariableHistoryAsyncWriter {
         if (workers != null) {
             workers.shutdownNow();
         }
-        drainRemaining();
+        boolean interrupted = Thread.interrupted();
+        try {
+            drainRemaining();
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }

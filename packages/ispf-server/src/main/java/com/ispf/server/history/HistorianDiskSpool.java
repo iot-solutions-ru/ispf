@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.zip.CRC32;
 
 /**
@@ -29,7 +30,8 @@ public final class HistorianDiskSpool {
 
     static final int MAGIC = 0x48535031;
     private static final int HEADER = 20;
-    private static final int MAX_FRAME_BYTES = 32 * 1024 * 1024;
+    static final int MAX_FRAME_BYTES = 32 * 1024 * 1024;
+    private static final int REPLAY_PAYLOAD_BUDGET = 16 * 1024 * 1024;
 
     private final Path directory;
     private final long maxBytes;
@@ -50,6 +52,7 @@ public final class HistorianDiskSpool {
     private long replayedBatches;
     private long errors;
     private boolean quotaHit;
+    private String spoolId;
 
     public HistorianDiskSpool(Path directory, long maxBytes, long segmentBytes, boolean fsync, ObjectMapper objectMapper) {
         this.directory = directory;
@@ -61,6 +64,7 @@ public final class HistorianDiskSpool {
 
     public synchronized void open() throws IOException {
         Files.createDirectories(directory);
+        loadOrCreateSpoolId();
         loadCheckpoint();
         List<Path> segments = listSegments();
         if (!segments.isEmpty()) {
@@ -78,26 +82,45 @@ public final class HistorianDiskSpool {
     }
 
     public synchronized String append(List<VariableHistoryWriteRecord> records) throws IOException {
-        return write(records, false);
+        return appendInternal(records, false);
     }
 
     /** Durable append that is invisible to replay until {@link #release(String)}. */
     public synchronized String appendClaimed(List<VariableHistoryWriteRecord> records) throws IOException {
-        return write(records, true);
+        return appendInternal(records, true);
     }
 
-    private String write(List<VariableHistoryWriteRecord> records, boolean claim) throws IOException {
+    public String spoolId() {
+        return spoolId;
+    }
+
+    private String appendInternal(List<VariableHistoryWriteRecord> records, boolean claim) throws IOException {
         if (records == null || records.isEmpty()) {
             return null;
         }
         byte[] payload = encode(records);
+        if (!validLength(payload.length)) {
+            throw new IOException(
+                    "historian spool frame exceeds max size (" + payload.length + " > " + MAX_FRAME_BYTES + ")");
+        }
+        return write(records, payload, claim);
+    }
+
+    private String write(List<VariableHistoryWriteRecord> records, byte[] payload, boolean claim) throws IOException {
         int frame = HEADER + payload.length;
         ensureCapacity(frame);
-        if (channel == null || segmentSize + frame > segmentBytes) {
-            rotate();
+        if (channel == null || !channel.isOpen() || segmentSize + frame > segmentBytes) {
+            if (segmentSize + frame > segmentBytes && channel != null && channel.isOpen()) {
+                rotate();
+            } else if (channel == null || !channel.isOpen()) {
+                openSegment(segmentIndex, true);
+            }
+            if (segmentSize + frame > segmentBytes) {
+                rotate();
+            }
         }
         long seq = nextSeq;
-        long position = channel.position();
+        long position = segmentSize;
         long createdAt = System.currentTimeMillis();
         ByteBuffer header = ByteBuffer.allocate(HEADER);
         header.putInt(MAGIC);
@@ -113,7 +136,11 @@ public final class HistorianDiskSpool {
             }
         } catch (IOException ex) {
             try {
+                if (channel == null || !channel.isOpen()) {
+                    openSegment(segmentIndex, true);
+                }
                 channel.truncate(position);
+                segmentSize = position;
             } catch (IOException truncate) {
                 ex.addSuppressed(truncate);
             }
@@ -127,14 +154,14 @@ public final class HistorianDiskSpool {
         if (claim) {
             inFlight.add(seq);
         }
-        return Long.toString(seq);
+        return batchId(seq);
     }
 
     public synchronized void ack(String batchId) throws IOException {
         if (batchId == null) {
             return;
         }
-        long seq = Long.parseLong(batchId);
+        long seq = parseSeq(batchId);
         inFlight.remove(seq);
         Pending removed = pending.remove(seq);
         if (removed != null) {
@@ -156,14 +183,14 @@ public final class HistorianDiskSpool {
         if (batchId == null || batchId.isBlank()) {
             return;
         }
-        inFlight.add(Long.parseLong(batchId));
+        inFlight.add(parseSeq(batchId));
     }
 
     public synchronized void release(String batchId) {
         if (batchId == null || batchId.isBlank()) {
             return;
         }
-        inFlight.remove(Long.parseLong(batchId));
+        inFlight.remove(parseSeq(batchId));
     }
 
     public int replay(Replay sink, int limit) throws IOException {
@@ -176,7 +203,7 @@ public final class HistorianDiskSpool {
         }
         int copied = 0;
         for (Frame frame : pending) {
-            String id = Long.toString(frame.seq());
+            String id = batchId(frame.seq());
             try {
                 sink.accept(id, frame.records());
                 synchronized (this) {
@@ -271,6 +298,7 @@ public final class HistorianDiskSpool {
             return List.of();
         }
         List<Frame> found = new ArrayList<>();
+        long payloadBytes = 0;
         for (Path segment : listSegments()) {
             if (found.size() >= limit) {
                 break;
@@ -306,8 +334,15 @@ public final class HistorianDiskSpool {
                     if (seq < 0 || seq <= ackedThrough || ackedAbove.contains(seq) || inFlight.contains(seq)) {
                         continue;
                     }
+                    if (payloadBytes + length > REPLAY_PAYLOAD_BUDGET && !found.isEmpty()) {
+                        break;
+                    }
+                    payloadBytes += length;
                     found.add(decode(payload));
                 }
+            }
+            if (found.size() >= limit || (payloadBytes >= REPLAY_PAYLOAD_BUDGET && !found.isEmpty())) {
+                break;
             }
         }
         return found;
@@ -323,6 +358,9 @@ public final class HistorianDiskSpool {
     }
 
     private void writeFully(ByteBuffer buffer) throws IOException {
+        if (channel == null || !channel.isOpen()) {
+            openSegment(segmentIndex, true);
+        }
         while (buffer.hasRemaining()) {
             if (channel.write(buffer) < 0) {
                 throw new IOException("historian spool write failed");
@@ -332,15 +370,18 @@ public final class HistorianDiskSpool {
 
     private void openSegment(int index, boolean append) throws IOException {
         Path path = directory.resolve(String.format("%06d.seg", index));
-        channel = FileChannel.open(
-                path,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.WRITE,
-                append ? StandardOpenOption.APPEND : StandardOpenOption.TRUNCATE_EXISTING
-        );
-        segmentSize = append ? channel.size() : 0;
-        if (!append) {
-            usedBytes += 0;
+        if (append) {
+            channel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            segmentSize = channel.size();
+            channel.position(segmentSize);
+        } else {
+            channel = FileChannel.open(
+                    path,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.TRUNCATE_EXISTING
+            );
+            segmentSize = 0;
         }
     }
 
@@ -469,6 +510,47 @@ public final class HistorianDiskSpool {
         return new Frame(seq, records);
     }
 
+    private void loadOrCreateSpoolId() throws IOException {
+        Path path = directory.resolve("spool.id");
+        if (Files.exists(path)) {
+            spoolId = Files.readString(path, StandardCharsets.UTF_8).trim();
+            if (spoolId.isBlank()) {
+                spoolId = UUID.randomUUID().toString();
+                writeSpoolId(path);
+            }
+            return;
+        }
+        spoolId = UUID.randomUUID().toString();
+        writeSpoolId(path);
+    }
+
+    private void writeSpoolId(Path path) throws IOException {
+        Path temporary = directory.resolve("spool.id.tmp");
+        Files.writeString(temporary, spoolId + "\n", StandardCharsets.UTF_8);
+        if (fsync) {
+            try (FileChannel idChannel = FileChannel.open(temporary, StandardOpenOption.WRITE)) {
+                idChannel.force(true);
+            }
+        }
+        try {
+            Files.move(temporary, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException ex) {
+            Files.move(temporary, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private String batchId(long seq) {
+        return spoolId + "-" + seq;
+    }
+
+    private static long parseSeq(String batchId) {
+        int dash = batchId.lastIndexOf('-');
+        if (dash >= 0 && dash < batchId.length() - 1) {
+            return Long.parseLong(batchId.substring(dash + 1));
+        }
+        return Long.parseLong(batchId);
+    }
+
     private void loadCheckpoint() throws IOException {
         Path path = directory.resolve("checkpoint");
         if (!Files.exists(path)) {
@@ -526,7 +608,7 @@ public final class HistorianDiskSpool {
         }
     }
 
-    private static boolean validLength(int length) {
+    static boolean validLength(int length) {
         return length > 0 && length <= MAX_FRAME_BYTES;
     }
 
