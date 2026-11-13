@@ -144,6 +144,7 @@ def ensure_sent(token):
             time.sleep(2)
     finally:
         server.shutdown()
+        server.server_close()
     raise RuntimeError("outbox did not reach SENT")
 
 
