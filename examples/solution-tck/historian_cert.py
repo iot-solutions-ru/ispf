@@ -243,7 +243,9 @@ def start_writer():
         "--add-host", "host.docker.internal:host-gateway",
         "-p", "127.0.0.1:8081:8080",
         "-v", f"{JAR}:/opt/ispf/ispf-server.jar:ro",
-        "-v", f"{os.environ.get('ISPF_TCK_DRIVERS_DIR', '/home/iot-solutions/ispf-cluster/drivers')}:/opt/ispf/drivers:ro",
+        # Same TCK driver pack as the other replica. Do not mount the
+        # production cluster drivers; that jar is a different MQTT build.
+        "-v", f"{os.environ.get('ISPF_TCK_DRIVERS_DIR', '/home/iot-solutions/ispf-tck/drivers')}:/opt/ispf/drivers:ro",
         "-v", f"{SPOOL_DIR}:/data/historian-spool",
         "--env-file", ENV_FILE,
         "-e", "ISPF_REPLICA_ID=replica-1",

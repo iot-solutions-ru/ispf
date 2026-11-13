@@ -304,7 +304,8 @@ def failover(token):
     import subprocess
     received = []
     subscriber = subprocess.Popen(
-        ["docker", "exec", "ispf-tck-mqtt", "mosquitto_sub", "-h", "127.0.0.1", "-t", "ispf/tck/cmd/command", "-v"],
+        ["docker", "exec", "-t", "ispf-tck-mqtt", "mosquitto_sub", "-h", "localhost",
+         "-t", "ispf/tck/cmd/command", "-v"],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
         text=True,
@@ -395,9 +396,19 @@ def failover(token):
         stop.set()
         thread.join(timeout=5)
         sh(["docker", "start", container], check=False)
+        sh(
+            ["docker", "exec", "ispf-tck-mqtt", "mosquitto_pub", "-h", "localhost",
+             "-t", "ispf/tck/cmd/command", "-m", "sentinel-end"],
+            check=False,
+        )
+        drain_deadline = time.time() + 5
+        while time.time() < drain_deadline and not any("sentinel-end" in line for line in list(received)):
+            time.sleep(0.05)
         delivered = []
         for body in received:
-            payload = body.split()[-1] if body else ""
+            payload = body.replace("\r", "").split()[-1] if body else ""
+            if payload == "sentinel-end":
+                continue
             for n in accepted:
                 if payload == f"cmd-{n}":
                     delivered.append(n)
@@ -423,6 +434,12 @@ def failover(token):
         }
     finally:
         subscriber.terminate()
+        try:
+            subscriber.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            subscriber.kill()
+        if subscriber.stdout is not None:
+            subscriber.stdout.close()
 
 
 def erp_outage():
