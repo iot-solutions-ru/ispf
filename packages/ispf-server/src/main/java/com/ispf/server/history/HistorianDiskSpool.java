@@ -195,11 +195,11 @@ public final class HistorianDiskSpool {
             long covered;
             boolean sameChannel;
             synchronized (this) {
-                if (closed) {
-                    throw new IOException("historian spool is closed");
-                }
                 if (forcedThrough >= seq) {
                     return;
+                }
+                if (closed) {
+                    throw new IOException("historian spool is closed");
                 }
                 if (forceLeader) {
                     try {
@@ -215,26 +215,29 @@ public final class HistorianDiskSpool {
                 covered = writtenThrough;
             }
             IOException failure = null;
+            boolean forced = false;
             try {
                 if (current != null) {
                     current.force(false);
                 }
+                forced = true;
             } catch (IOException ex) {
                 failure = ex;
-            }
-            synchronized (this) {
-                try {
-                    sameChannel = Objects.equals(current, channel);
-                    if (failure == null && current != null) {
-                        forcedThrough = Math.max(forcedThrough, covered);
+            } finally {
+                synchronized (this) {
+                    try {
+                        sameChannel = Objects.equals(current, channel);
+                        if (forced && current != null) {
+                            forcedThrough = Math.max(forcedThrough, covered);
+                        }
+                    } finally {
+                        forceLeader = false;
+                        notifyAll();
                     }
-                } finally {
-                    forceLeader = false;
-                    notifyAll();
                 }
-                if (failure != null && sameChannel) {
-                    throw failure;
-                }
+            }
+            if (failure != null && sameChannel) {
+                throw failure;
             }
         }
     }
@@ -291,25 +294,28 @@ public final class HistorianDiskSpool {
                 body = checkpointText(covered, gaps);
             }
             IOException failure = null;
+            boolean wrote = false;
             try {
                 writeCheckpointBody(body);
+                wrote = true;
             } catch (IOException ex) {
                 failure = ex;
-            }
-            synchronized (this) {
-                checkpointLeader = false;
-                try {
-                    if (failure == null) {
-                        checkpointCovered = Math.max(checkpointCovered, covered);
-                        checkpointGaps = gaps;
-                        reclaimClosedSegments();
+            } finally {
+                synchronized (this) {
+                    try {
+                        if (wrote) {
+                            checkpointCovered = Math.max(checkpointCovered, covered);
+                            checkpointGaps = gaps;
+                            reclaimClosedSegments();
+                        }
+                    } finally {
+                        checkpointLeader = false;
+                        notifyAll();
                     }
-                    if (failure != null) {
-                        throw failure;
-                    }
-                } finally {
-                    notifyAll();
                 }
+            }
+            if (failure != null) {
+                throw failure;
             }
         }
     }

@@ -78,7 +78,7 @@ ISPF_VARIABLE_HISTORY_SPOOL_REPLAY_INTERVAL_MS=20
 
 
 def is_zero(value):
-    return value in (0, "0")
+    return not isinstance(value, bool) and value in (0, "0")
 
 
 def log(message):
@@ -450,9 +450,9 @@ def wait_caught_up(token, deadline):
     while time.time() < deadline:
         values = history(token)
         last = values
-        lag = int(values.get("spoolLag") or 0)
-        queued = values.get("queueSize")
-        if lag == 0 and queued in (0, "0", None) and values.get("spoolQuota") is not True:
+        if (is_zero(values.get("spoolLag"))
+                and is_zero(values.get("queueSize"))
+                and values.get("spoolQuota") is not True):
             return values
         time.sleep(2)
     return last

@@ -95,15 +95,16 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                             "ALTER TABLE " + qualifiedTable
                                     + " MODIFY SETTING non_replicated_deduplication_window = 10000"
                     );
-                } catch (RuntimeException ignored) {
-                    try {
-                        executeStatement(
-                                "ALTER TABLE " + qualifiedTable
-                                        + " MODIFY SETTING replicated_deduplication_window = 10000"
-                        );
-                    } catch (RuntimeException ex) {
-                        log.info("ClickHouse dedupe window was not applied ({})", ex.getMessage());
-                    }
+                } catch (RuntimeException ex) {
+                    log.info("ClickHouse non-replicated dedupe window was not applied ({})", ex.getMessage());
+                }
+                try {
+                    executeStatement(
+                            "ALTER TABLE " + qualifiedTable
+                                    + " MODIFY SETTING replicated_deduplication_window = 10000"
+                    );
+                } catch (RuntimeException ex) {
+                    log.info("ClickHouse replicated dedupe window was not applied ({})", ex.getMessage());
                 }
             }
         });
