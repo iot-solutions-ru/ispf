@@ -164,6 +164,17 @@ class HistorianDiskSpoolTest {
     }
 
     @Test
+    void acceptP99UsesTheDurableAppendSamples() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, false);
+        spool.open();
+        for (int i = 0; i < 100; i++) {
+            spool.recordAccept(i);
+        }
+        assertEquals(98, spool.stats().acceptP99Millis());
+        spool.close();
+    }
+
+    @Test
     void smallSegmentsRollToASecondFile() throws Exception {
         HistorianDiskSpool spool = spool(1024 * 1024, 40, true);
         spool.open();

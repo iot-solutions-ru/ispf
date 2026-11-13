@@ -5,6 +5,8 @@ import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.schedule.PlatformSchedulerService;
 import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.config.AiProperties;
+import com.ispf.server.history.ClickHouseVariableHistoryStore;
+import com.ispf.server.history.HistorianDiskSpool;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.event.EventHistoryRecordCounter;
 import com.ispf.server.event.EventJournalStore;
@@ -19,6 +21,7 @@ import com.ispf.server.security.PlatformUserStore;
 import com.ispf.server.websocket.ObjectWebSocketHandler;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.HikariPoolMXBean;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,6 +57,7 @@ public class PlatformMetricsService {
     private final BindingRuleAsyncExecutor bindingRuleAsyncExecutor;
     private final Optional<AgentMetricsPort> agentMetricsPort;
     private final AiProperties aiProperties;
+    private final ObjectProvider<ClickHouseVariableHistoryStore> clickHouseHistory;
 
     public PlatformMetricsService(
             ObjectNodeRepository objectNodeRepository,
@@ -74,7 +78,8 @@ public class PlatformMetricsService {
             AutomationMetricsRecorder automationMetricsRecorder,
             BindingRuleAsyncExecutor bindingRuleAsyncExecutor,
             Optional<AgentMetricsPort> agentMetricsPort,
-            AiProperties aiProperties
+            AiProperties aiProperties,
+            ObjectProvider<ClickHouseVariableHistoryStore> clickHouseHistory
     ) {
         this.objectNodeRepository = objectNodeRepository;
         this.objectVariableRepository = objectVariableRepository;
@@ -95,6 +100,7 @@ public class PlatformMetricsService {
         this.bindingRuleAsyncExecutor = bindingRuleAsyncExecutor;
         this.agentMetricsPort = agentMetricsPort != null ? agentMetricsPort : Optional.empty();
         this.aiProperties = aiProperties;
+        this.clickHouseHistory = clickHouseHistory;
     }
 
     @Transactional(readOnly = true)
@@ -207,6 +213,16 @@ public class PlatformMetricsService {
         section.put("defaultRetentionDays", variableHistoryProperties.getRetentionDays());
         section.put("queueSize", automationMetricsRecorder.variableHistoryQueueSize());
         section.put("flushedTotal", automationMetricsRecorder.variableHistoryFlushedTotal());
+        section.put("spoolEnabled", variableHistoryProperties.isClickHouseSpoolEnabled());
+        ClickHouseVariableHistoryStore store = clickHouseHistory.getIfAvailable();
+        HistorianDiskSpool.Stats spool = store == null ? null : store.spoolStats();
+        if (spool != null) {
+            section.put("spoolBytes", spool.bytes());
+            section.put("spoolLag", spool.unackedRecords());
+            section.put("spoolOldestAgeMs", spool.oldestAgeMillis());
+            section.put("spoolAcceptP99Ms", spool.acceptP99Millis());
+            section.put("spoolQuota", spool.quotaHit());
+        }
         section.put("historizedVariables", historizedVariables);
         section.put("sampleCount", sampleCount);
         section.put("oldestSampleAt", oldest != null ? oldest.toString() : null);

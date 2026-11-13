@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,6 +51,9 @@ public final class HistorianDiskSpool {
     private long replayedBatches;
     private long errors;
     private boolean quotaHit;
+    private final long[] acceptMillis = new long[1024];
+    private int acceptCount;
+    private int acceptCursor;
 
     public HistorianDiskSpool(Path directory, long maxBytes, long segmentBytes, boolean fsync, ObjectMapper objectMapper) {
         this.directory = directory;
@@ -201,7 +205,25 @@ public final class HistorianDiskSpool {
         long oldest = pending.isEmpty() ? 0 : pending.firstEntry().getValue().createdAtMillis();
         long age = oldest == 0 ? 0 : Math.max(0, System.currentTimeMillis() - oldest);
         long lag = Math.max(0, unackedRecords);
-        return new Stats(usedBytes, lag, age, replayedBatches, errors, quotaHit);
+        return new Stats(usedBytes, lag, age, replayedBatches, errors, quotaHit, acceptP99());
+    }
+
+    public synchronized void recordAccept(long millis) {
+        acceptMillis[acceptCursor] = Math.max(0, millis);
+        acceptCursor = (acceptCursor + 1) % acceptMillis.length;
+        if (acceptCount < acceptMillis.length) {
+            acceptCount++;
+        }
+    }
+
+    private long acceptP99() {
+        if (acceptCount == 0) {
+            return 0;
+        }
+        long[] sample = Arrays.copyOf(acceptMillis, acceptCount);
+        Arrays.sort(sample);
+        int index = (int) Math.min(acceptCount - 1, Math.ceil(acceptCount * 0.99) - 1);
+        return sample[Math.max(0, index)];
     }
 
     public synchronized void close() throws IOException {
@@ -583,7 +605,15 @@ public final class HistorianDiskSpool {
         return (int) crc.getValue();
     }
 
-    public record Stats(long bytes, long unackedRecords, long oldestAgeMillis, long replayedBatches, long errors, boolean quotaHit) {
+    public record Stats(
+            long bytes,
+            long unackedRecords,
+            long oldestAgeMillis,
+            long replayedBatches,
+            long errors,
+            boolean quotaHit,
+            long acceptP99Millis
+    ) {
     }
 
     private record Pending(int records, long createdAtMillis) {

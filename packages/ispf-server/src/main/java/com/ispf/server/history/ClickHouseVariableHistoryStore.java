@@ -135,7 +135,9 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
         }
         String batchId;
         try {
+            long started = System.nanoTime();
             batchId = spool.appendClaimed(records);
+            spool.recordAccept((System.nanoTime() - started) / 1_000_000L);
         } catch (java.io.IOException ex) {
             throw new IllegalStateException("historian spool append failed", ex);
         }
