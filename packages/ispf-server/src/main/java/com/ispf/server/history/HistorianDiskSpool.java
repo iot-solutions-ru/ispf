@@ -519,16 +519,20 @@ public final class HistorianDiskSpool {
 
     private void rotate() throws IOException {
         if (channel != null) {
-            if (fsync) {
-                channel.force(true);
-                forcedThrough = Math.max(forcedThrough, writtenThrough);
+            try {
+                if (fsync) {
+                    channel.force(true);
+                    forcedThrough = Math.max(forcedThrough, writtenThrough);
+                }
+                channel.close();
+            } finally {
+                channel = null;
             }
-            channel.close();
-            channel = null;
         }
         if (segmentSize > 0) {
             closedMaxSeq.put(segmentIndex, writtenThrough);
             segmentIndex++;
+            segmentSize = 0;
         }
         reclaimClosedSegments();
         openSegment(segmentIndex, false);
