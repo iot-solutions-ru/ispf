@@ -123,7 +123,7 @@ public class LicensedDriverPackLoader {
 
     private void registerPack(DriverPackManifest manifest, Path jarPath) throws IOException {
         URL jarUrl = jarPath.toUri().toURL();
-        URLClassLoader classLoader = new URLClassLoader(new URL[] {jarUrl}, DeviceDriver.class.getClassLoader());
+        URLClassLoader classLoader = new DriverPackClassLoader(jarUrl, DeviceDriver.class.getClassLoader());
 
         List<LicensedDriverRegistry.LicensedDriverBinding> bindings = new ArrayList<>();
         if (manifest.drivers() != null && !manifest.drivers().isEmpty()) {

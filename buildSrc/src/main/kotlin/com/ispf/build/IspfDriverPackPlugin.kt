@@ -96,7 +96,23 @@ class IspfDriverPackPlugin : Plugin<Project> {
                             !file.name.startsWith("ispf-core") &&
                             !file.name.startsWith("ispf-driver-api") &&
                             excludedGroups.none { prefix -> file.name.startsWith(prefix) }
-                    }.map { file -> project.zipTree(file) }
+                    }.map { file ->
+                        // Signed dependency jars (Bouncy Castle) leave META-INF/*.SF that no
+                        // longer match once the entries are merged. The JVM then refuses the pack.
+                        project.zipTree(file).matching {
+                            exclude(
+                                "META-INF/*.SF",
+                                "META-INF/*.RSA",
+                                "META-INF/*.DSA",
+                                "META-INF/*.EC",
+                                "META-INF/*.sf",
+                                "META-INF/*.rsa",
+                                "META-INF/*.dsa",
+                                "META-INF/*.ec",
+                                "META-INF/SIG-*",
+                            )
+                        }
+                    }
                 })
             }
 
