@@ -202,6 +202,9 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             return "INSERT INTO " + qualifiedTable() + " FORMAT JSONEachRow";
         }
         String token = batchId.replaceAll("[^A-Za-z0-9_-]", "");
+        if (token.isEmpty()) {
+            throw new IllegalArgumentException("historian spool dedupe token is empty after sanitization");
+        }
         return "INSERT INTO " + qualifiedTable()
                 + " SETTINGS insert_deduplicate = 1, insert_deduplication_token = '"
                 + token

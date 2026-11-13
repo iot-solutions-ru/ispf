@@ -4,9 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.zip.CRC32;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -191,6 +196,73 @@ class HistorianDiskSpoolTest {
     }
 
     @Test
+    void outOfOrderAckedAboveSurvivesTailLossOfAckedFrame() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        spool.append(List.of(sample(1)));
+        String second = spool.append(List.of(sample(2)));
+        spool.ack(second);
+        truncateAfterFrames(1);
+        spool.close();
+
+        HistorianDiskSpool reopened = spool(1024 * 1024, 64 * 1024, true);
+        reopened.open();
+        String third = reopened.append(List.of(sample(3)));
+        assertTrue(third.endsWith("-3"), third);
+        List<Double> values = new ArrayList<>();
+        assertEquals(2, reopened.replay((id, records) -> values.add(records.getFirst().valueDouble()), 10));
+        assertEquals(List.of(1.0, 3.0), values);
+        reopened.close();
+    }
+
+    @Test
+    void batchIdsCarryAStableSpoolIdAcrossRestart() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        String first = spool.append(List.of(sample(1)));
+        String spoolId = spool.spoolId();
+        assertTrue(first.startsWith(spoolId + "-"));
+        spool.close();
+
+        HistorianDiskSpool reopened = spool(1024 * 1024, 64 * 1024, true);
+        reopened.open();
+        assertEquals(spoolId, reopened.spoolId());
+        String second = reopened.append(List.of(sample(2)));
+        assertTrue(second.startsWith(spoolId + "-"));
+        reopened.close();
+    }
+
+    @Test
+    void aFreshDirectoryGetsADistinctSpoolId() throws Exception {
+        HistorianDiskSpool first = spool(1024 * 1024, 64 * 1024, true);
+        first.open();
+        String firstId = first.spoolId();
+        first.close();
+
+        Path other = dir.resolve("other");
+        Files.createDirectories(other);
+        HistorianDiskSpool second = new HistorianDiskSpool(other, 1024 * 1024, 64 * 1024, true, new ObjectMapper());
+        second.open();
+        assertFalse(firstId.equals(second.spoolId()));
+        second.close();
+    }
+
+    @Test
+    void oversizedSingleRecordIsRejected() throws Exception {
+        HistorianDiskSpool spool = spool(64L * 1024 * 1024, 64L * 1024 * 1024, true);
+        spool.open();
+        String huge = "x".repeat(HistorianDiskSpool.MAX_FRAME_BYTES);
+        VariableHistoryWriteRecord record = new VariableHistoryWriteRecord(
+                "root.a", "v", "value",
+                Instant.parse("2026-11-13T00:00:00Z"),
+                Instant.parse("2026-11-13T00:00:00Z"),
+                null, huge, "GOOD"
+        );
+        assertThrows(IOException.class, () -> spool.append(List.of(record)));
+        spool.close();
+    }
+
+    @Test
     void concurrentAppendAndAckReplaysEachUnackedBatchOnce() throws Exception {
         HistorianDiskSpool spool = spool(8 * 1024 * 1024, 8 * 1024, true);
         spool.open();
@@ -233,6 +305,50 @@ class HistorianDiskSpoolTest {
         assertEquals(threads * each / 2, replayed.size());
         assertEquals(replayed.size(), new HashSet<>(replayed).size());
         reopened.close();
+    }
+
+    private void truncateAfterFrames(int frames) throws Exception {
+        Path segment = onlySegment();
+        int headerBytes = 20;
+        try (FileChannel channel = FileChannel.open(
+                segment, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+            long good = 0;
+            ByteBuffer header = ByteBuffer.allocate(headerBytes);
+            for (int frame = 0; frame < frames; frame++) {
+                header.clear();
+                if (!readFully(channel, header)) {
+                    break;
+                }
+                header.flip();
+                int magic = header.getInt();
+                int length = header.getInt();
+                int expected = header.getInt();
+                header.getLong();
+                if (magic != HistorianDiskSpool.MAGIC || length <= 0) {
+                    break;
+                }
+                ByteBuffer body = ByteBuffer.allocate(length);
+                if (!readFully(channel, body)) {
+                    break;
+                }
+                CRC32 crc = new CRC32();
+                crc.update(body.array());
+                if ((int) crc.getValue() != expected) {
+                    break;
+                }
+                good = channel.position();
+            }
+            channel.truncate(good);
+        }
+    }
+
+    private static boolean readFully(FileChannel channel, ByteBuffer buffer) throws IOException {
+        while (buffer.hasRemaining()) {
+            if (channel.read(buffer) < 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private Path onlySegment() throws Exception {

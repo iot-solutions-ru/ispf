@@ -704,6 +704,7 @@ def replica_failover(token):
     )
     deadline = time.time() + 30
     read_back = None
+    saw_while_down = False
     while time.time() < deadline:
         read_status, read_body = http(
             "GET", "/api/v1/objects/by-path/variables/history",
@@ -716,7 +717,13 @@ def replica_failover(token):
             },
         )
         read_back = (read_status, read_body)
-        if read_status == 200 and "4242" in json.dumps(read_body):
+        if read_status == 200 and isinstance(read_body, dict):
+            for sample in read_body.get("samples") or []:
+                value = sample.get("value") if isinstance(sample, dict) else None
+                if value == 4242 or value == 4242.0:
+                    saw_while_down = True
+                    break
+        if saw_while_down:
             break
         time.sleep(1)
     sh(["docker", "start", "ispf-tck-clickhouse-b"])
@@ -735,7 +742,14 @@ def replica_failover(token):
             break
         time.sleep(1)
     return {
-        "pass": status == 200 and read_back is not None and read_back[0] == 200 and copied.isdigit() and int(copied) >= 1,
+        "pass": (
+            status == 200
+            and saw_while_down
+            and read_back is not None
+            and read_back[0] == 200
+            and copied.isdigit()
+            and int(copied) >= 1
+        ),
         "writeStatus": status,
         "readStatus": None if read_back is None else read_back[0],
         "replicaBRows": copied,
