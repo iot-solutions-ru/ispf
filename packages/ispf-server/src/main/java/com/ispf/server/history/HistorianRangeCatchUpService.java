@@ -236,13 +236,13 @@ public class HistorianRangeCatchUpService {
     private void retainUncovered(HistorianCatchUpRangeStore.Range range, Instant coveredFrom, Instant coveredTo) {
         ranges.remove(range.seriesKey(), range.from(), range.to());
         if (coveredFrom.isAfter(range.from())) {
-            Instant headTo = coveredFrom.minusNanos(1);
+            Instant headTo = coveredFrom.minusMillis(1);
             if (!headTo.isBefore(range.from())) {
                 ranges.putExact(range.seriesKey(), range.from(), headTo);
             }
         }
         if (coveredTo.isBefore(range.to())) {
-            Instant tailFrom = coveredTo.plusNanos(1);
+            Instant tailFrom = coveredTo.plusMillis(1);
             if (!tailFrom.isAfter(range.to())) {
                 ranges.putExact(range.seriesKey(), tailFrom, range.to());
             }
