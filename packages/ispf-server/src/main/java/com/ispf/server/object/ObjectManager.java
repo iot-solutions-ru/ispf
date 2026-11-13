@@ -262,7 +262,9 @@ public class ObjectManager {
     }
 
     Variable applyDriverTelemetryInMemory(String path, String name, DataRecord value) {
-        PlatformObject node = require(path);
+        // Memory only. require() re-reads the node from Postgres while the cluster is on,
+        // which caps historian ingress at a few hundred samples per second.
+        PlatformObject node = objectTree.require(path);
         Variable variable = node.getVariable(name).orElseGet(() -> {
             Variable created = new Variable(name, value.schema(), true, false, null);
             node.addVariable(created);

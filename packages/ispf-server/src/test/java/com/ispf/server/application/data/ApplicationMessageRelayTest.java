@@ -40,4 +40,20 @@ class ApplicationMessageRelayTest {
         }
         assertEquals("DLQ", relay.status(id));
     }
+
+    @Test
+    void receiverOutageStaysPendingWithoutDeadLetter() {
+        JdbcTemplate jdbc = new JdbcTemplate(new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2).build());
+        ApplicationMessageRelay relay = new ApplicationMessageRelay(jdbc);
+        relay.ensureTables();
+        String id = relay.enqueue("plant", "sap", "m-outage", "{}");
+        for (int i = 0; i < 30; i++) {
+            assertEquals(0, relay.relayOnce((app, connector, message, body) -> {
+                throw new RetryableOutboxDelivery("down");
+            }));
+        }
+        assertEquals("PENDING", relay.status(id));
+        assertEquals(1, relay.relayOnce((app, connector, message, body) -> { }));
+        assertEquals("SENT", relay.status(id));
+    }
 }

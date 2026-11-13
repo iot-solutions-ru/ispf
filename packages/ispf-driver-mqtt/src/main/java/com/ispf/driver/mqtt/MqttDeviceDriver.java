@@ -56,6 +56,10 @@ public class MqttDeviceDriver implements DeviceDriver {
     private static final DataSchema PAYLOAD_SCHEMA = DataSchema.builder("mqttPayload")
             .field("raw", FieldType.STRING)
             .build();
+    private static final DataSchema NUMERIC_PAYLOAD_SCHEMA = DataSchema.builder("mqttPayload")
+            .field("raw", FieldType.STRING)
+            .field("value", FieldType.DOUBLE)
+            .build();
 
     private static final DataSchema INGRESS_SCHEMA = DataSchema.builder("mqttIngress")
             .field("topic", FieldType.STRING)
@@ -223,11 +227,68 @@ public class MqttDeviceDriver implements DeviceDriver {
                     INGRESS_SCHEMA,
                     Map.of("topic", topic, "raw", payload)
             ), observed);
-        } else {
+            return;
+        }
+        Double numeric = payloadNumber(payload);
+        if (numeric != null) {
             driverObject.updateVariable(variableName, DataRecord.single(
-                    PAYLOAD_SCHEMA,
-                    Map.of("raw", payload)
+                    NUMERIC_PAYLOAD_SCHEMA,
+                    Map.of("raw", payload, "value", numeric)
             ), observed);
+            return;
+        }
+        driverObject.updateVariable(variableName, DataRecord.single(
+                PAYLOAD_SCHEMA,
+                Map.of("raw", payload)
+        ), observed);
+    }
+
+    /** Plain numbers and {@code {"value": <number>}} bodies become a historian DOUBLE. */
+    private static Double payloadNumber(String payload) {
+        if (payload == null || payload.isBlank()) {
+            return null;
+        }
+        String trimmed = payload.trim();
+        if (trimmed.charAt(0) != '{') {
+            return finiteDouble(trimmed);
+        }
+        int key = trimmed.indexOf("\"value\"");
+        if (key < 0) {
+            return null;
+        }
+        int colon = key + 7;
+        while (colon < trimmed.length() && Character.isWhitespace(trimmed.charAt(colon))) {
+            colon++;
+        }
+        if (colon >= trimmed.length() || trimmed.charAt(colon) != ':') {
+            return null;
+        }
+        int start = colon + 1;
+        while (start < trimmed.length() && Character.isWhitespace(trimmed.charAt(start))) {
+            start++;
+        }
+        int end = start;
+        while (end < trimmed.length()) {
+            char c = trimmed.charAt(end);
+            if ((c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+' || c == 'e' || c == 'E') {
+                end++;
+                continue;
+            }
+            break;
+        }
+        return start == end ? null : finiteDouble(trimmed.substring(start, end));
+    }
+
+    /** Plain numeric bodies become a historian DOUBLE. JSON and text stay on the raw field. */
+    private static Double finiteDouble(String payload) {
+        if (payload == null || payload.isBlank() || payload.charAt(0) == '{') {
+            return null;
+        }
+        try {
+            double parsed = Double.parseDouble(payload.trim());
+            return Double.isFinite(parsed) ? parsed : null;
+        } catch (NumberFormatException ex) {
+            return null;
         }
     }
 

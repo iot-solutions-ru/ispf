@@ -1,7 +1,13 @@
 package com.ispf.server.solution;
 
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.server.application.function.ApplicationFunctionStore;
+import com.ispf.server.application.script.Ed25519FunctionSignatureVerifier;
+import com.ispf.server.application.script.FunctionSignature;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
@@ -10,6 +16,12 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Signature;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
@@ -34,6 +46,12 @@ class PlantDiscreteForkTckTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ApplicationFunctionStore functionStore;
+
+    @Autowired
+    private Ed25519FunctionSignatureVerifier signatureVerifier;
 
     @Test
     void cleanInstallRejectsAnUnsignedPassportWrite() throws Exception {
@@ -88,9 +106,35 @@ class PlantDiscreteForkTckTest {
                         .content(invoke("plant_set_lot_passport", """
                                 {"lotId":"BATCH-PLANT-1","passportNote":"heat-42","signature":"planner-1"}
                                 """)))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(post("/api/v1/bff/invoke")
+                        .with(user("planner-1").roles("OPERATOR"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(signedPassport()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.error_code").value("OK"))
                 .andExpect(jsonPath("$.result.lotId").value("BATCH-PLANT-1"));
+    }
+
+    private String signedPassport() throws Exception {
+        var deployed = functionStore.findLatest(HUB, "plant_set_lot_passport").orElseThrow();
+        DataSchema schema = new ObjectMapper().readValue(deployed.inputSchemaJson(), DataSchema.class);
+        KeyPair pair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
+        signatureVerifier.enroll("planner-1", Base64.getEncoder().encodeToString(pair.getPublic().getEncoded()));
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("lotId", "BATCH-PLANT-1");
+        row.put("passportNote", "heat-42");
+        row.put("signature", "pending");
+        byte[] message = FunctionSignature.message(
+                "REQUIRED", deployed.sourceBody(), "planner-1", "", DataRecord.single(schema, row));
+        Signature signer = Signature.getInstance("Ed25519");
+        signer.initSign(pair.getPrivate());
+        signer.update(message);
+        String signature = Base64.getEncoder().encodeToString(signer.sign());
+        return invoke("plant_set_lot_passport", """
+                {"lotId":"BATCH-PLANT-1","passportNote":"heat-42","signature":"%s"}
+                """.formatted(signature));
     }
 
     private static String invoke(String functionName, String rowJson) {

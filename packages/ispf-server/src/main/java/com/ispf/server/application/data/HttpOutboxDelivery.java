@@ -74,12 +74,16 @@ public final class HttpOutboxDelivery implements ApplicationMessageRelay.Deliver
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("outbox HTTP interrupted for " + messageId);
+            throw new RetryableOutboxDelivery("outbox HTTP interrupted for " + messageId);
         } catch (IOException ex) {
-            throw new IllegalStateException("outbox HTTP failed for " + messageId + ": " + ex.getMessage());
+            throw new RetryableOutboxDelivery("outbox HTTP failed for " + messageId + ": " + ex.getMessage());
         }
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new IllegalStateException("outbox HTTP " + response.statusCode() + " for " + messageId);
+        int status = response.statusCode();
+        if (status >= 500 || status == 408 || status == 429) {
+            throw new RetryableOutboxDelivery("outbox HTTP " + status + " for " + messageId);
+        }
+        if (status < 200 || status >= 300) {
+            throw new IllegalStateException("outbox HTTP " + status + " for " + messageId);
         }
     }
 }

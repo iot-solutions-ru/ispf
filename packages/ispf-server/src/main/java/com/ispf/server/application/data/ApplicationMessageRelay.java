@@ -118,6 +118,11 @@ public class ApplicationMessageRelay {
                 delivery.deliver(row.appId(), row.connectorId(), row.messageId(), row.body());
                 jdbcTemplate.update("UPDATE application_outbox SET status = 'SENT' WHERE id = ?", row.id());
                 sent++;
+            } catch (RetryableOutboxDelivery ex) {
+                jdbcTemplate.update(
+                        "UPDATE application_outbox SET status = 'PENDING' WHERE id = ?",
+                        row.id()
+                );
             } catch (RuntimeException ex) {
                 int attempts = row.attempts() + 1;
                 String status = attempts >= DEAD_LETTER_AFTER ? "DLQ" : "PENDING";

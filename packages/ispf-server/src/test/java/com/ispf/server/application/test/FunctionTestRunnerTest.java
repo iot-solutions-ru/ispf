@@ -8,6 +8,7 @@ import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionRuntime;
 import com.ispf.server.application.function.ApplicationFunctionStore;
+import com.ispf.server.application.script.Ed25519FunctionSignatureVerifier;
 import com.ispf.server.application.script.PlatformScriptBridge;
 import com.ispf.server.object.ObjectManager;
 import org.junit.jupiter.api.AfterEach;
@@ -35,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -92,7 +94,8 @@ class FunctionTestRunnerTest {
                 schemaSession,
                 platformScriptBridge,
                 objectManager,
-                objectMapper
+                objectMapper,
+                null
         );
 
         boolean syncActive = TransactionSynchronizationManager.isSynchronizationActive();
@@ -185,7 +188,7 @@ class FunctionTestRunnerTest {
         try {
             FunctionTestRunner.TestResult result = runner.run(functionSpec(true));
             assertThat(result.status()).isEqualTo("PASS");
-            assertThat(duringInvoke.get().getName()).isEqualTo("planner-1");
+            assertThat(duringInvoke.get().getName()).isEqualTo("bundle-test");
             assertThat(SecurityContextHolder.getContext().getAuthentication().getName()).isEqualTo("planner-1");
         } finally {
             if (!syncActive) {
@@ -232,6 +235,71 @@ class FunctionTestRunnerTest {
         }
     }
 
+    @Test
+    void rollbackSmokeSignsAsBundleTestAndLeavesTheCallerKeyAlone() throws Exception {
+        stubRequiredPassport();
+        Ed25519FunctionSignatureVerifier verifier = org.mockito.Mockito.mock(Ed25519FunctionSignatureVerifier.class);
+        FunctionTestRunner runner = new FunctionTestRunner(
+                jdbcTemplate, functionRuntime, functionStore, dataStore, schemaSession,
+                platformScriptBridge, objectManager, objectMapper, verifier
+        );
+        when(functionRuntime.invokeInCurrentTransaction(anyString(), anyString(), any())).thenReturn(DataRecord.single(
+                DataSchema.builder("out").field("error_code", FieldType.STRING).build(),
+                Map.of("error_code", "OK")
+        ));
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                "planner-1", "n/a", List.of(new SimpleGrantedAuthority("ROLE_OPERATOR"))
+        ));
+        TransactionSynchronizationManager.setActualTransactionActive(true);
+        try {
+            assertThat(runner.run(functionSpec(true)).status()).isEqualTo("PASS");
+            verify(verifier).enroll(eq("bundle-test"), anyString());
+            verify(verifier, never()).enroll(eq("planner-1"), anyString());
+            assertThat(SecurityContextHolder.getContext().getAuthentication().getName()).isEqualTo("planner-1");
+        } finally {
+            TransactionSynchronizationManager.setActualTransactionActive(false);
+        }
+    }
+
+    @Test
+    void committedBundleTestDoesNotAutoSign() throws Exception {
+        stubRequiredPassport();
+        Ed25519FunctionSignatureVerifier verifier = org.mockito.Mockito.mock(Ed25519FunctionSignatureVerifier.class);
+        FunctionTestRunner runner = new FunctionTestRunner(
+                jdbcTemplate, functionRuntime, functionStore, dataStore, schemaSession,
+                platformScriptBridge, objectManager, objectMapper, verifier
+        );
+        when(functionRuntime.invokeInCurrentTransaction(anyString(), anyString(), any())).thenReturn(DataRecord.single(
+                DataSchema.builder("out").field("error_code", FieldType.STRING).build(),
+                Map.of("error_code", "OK")
+        ));
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                "planner-1", "n/a", List.of(new SimpleGrantedAuthority("ROLE_OPERATOR"))
+        ));
+        TransactionSynchronizationManager.setActualTransactionActive(true);
+        try {
+            assertThat(runner.run(functionSpec(false)).status()).isEqualTo("PASS");
+            verify(verifier, never()).enroll(anyString(), anyString());
+        } finally {
+            TransactionSynchronizationManager.setActualTransactionActive(false);
+        }
+    }
+
+    private void stubRequiredPassport() throws Exception {
+        DataSchema inputSchema = DataSchema.builder("in").field("signature", FieldType.STRING).build();
+        DataSchema outputSchema = DataSchema.builder("out").field("error_code", FieldType.STRING).build();
+        when(functionStore.findLatest(anyString(), anyString())).thenReturn(Optional.of(
+                new ApplicationFunctionHandler.DeployedFunction(
+                        UUID.randomUUID(), "demo",
+                        "root.platform.singleton-blueprints.demo-app-hub-v1",
+                        "demo_ping", "1", "script",
+                        "{\"signaturePolicy\":\"REQUIRED\",\"steps\":[]}",
+                        objectMapper.writeValueAsString(inputSchema),
+                        objectMapper.writeValueAsString(outputSchema)
+                )
+        ));
+    }
+
     private FunctionTestRunner newRunner() {
         return new FunctionTestRunner(
                 jdbcTemplate,
@@ -241,7 +309,8 @@ class FunctionTestRunnerTest {
                 schemaSession,
                 platformScriptBridge,
                 objectManager,
-                objectMapper
+                objectMapper,
+                null
         );
     }
 
@@ -289,7 +358,8 @@ class FunctionTestRunnerTest {
                 schemaSession,
                 platformScriptBridge,
                 objectManager,
-                objectMapper
+                objectMapper,
+                null
         );
 
         com.ispf.core.object.PlatformObject node = org.mockito.Mockito.mock(com.ispf.core.object.PlatformObject.class);

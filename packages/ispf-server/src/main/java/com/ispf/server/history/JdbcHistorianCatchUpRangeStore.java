@@ -5,11 +5,18 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 @Repository
 public class JdbcHistorianCatchUpRangeStore implements HistorianCatchUpRangeStore {
+
+    /**
+     * Flushes are shorter than the gap between samples, so overlap-only merge inserts a new row
+     * on every batch. A few seconds still covers one outage without joining a later, separate one.
+     */
+    static final Duration MERGE_GAP = Duration.ofSeconds(5);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -22,6 +29,8 @@ public class JdbcHistorianCatchUpRangeStore implements HistorianCatchUpRangeStor
     public void cover(String seriesKey, Instant from, Instant to) {
         Instant start = from.isBefore(to) ? from : to;
         Instant end = from.isBefore(to) ? to : from;
+        Instant windowFrom = start.minus(MERGE_GAP);
+        Instant windowTo = end.plus(MERGE_GAP);
         List<HistorianCatchUpRangeStore.Range> overlapping = jdbcTemplate.query(
                 """
                 SELECT series_key, from_ts, to_ts FROM historian_catchup_ranges
@@ -33,8 +42,8 @@ public class JdbcHistorianCatchUpRangeStore implements HistorianCatchUpRangeStor
                         rs.getTimestamp(3).toInstant()
                 ),
                 seriesKey,
-                Timestamp.from(end),
-                Timestamp.from(start)
+                Timestamp.from(windowTo),
+                Timestamp.from(windowFrom)
         );
         Instant mergedFrom = start;
         Instant mergedTo = end;
@@ -47,7 +56,7 @@ public class JdbcHistorianCatchUpRangeStore implements HistorianCatchUpRangeStor
             }
         }
         jdbcTemplate.update("DELETE FROM historian_catchup_ranges WHERE series_key = ? AND from_ts <= ? AND to_ts >= ?",
-                seriesKey, Timestamp.from(end), Timestamp.from(start));
+                seriesKey, Timestamp.from(windowTo), Timestamp.from(windowFrom));
         jdbcTemplate.update(
                 "INSERT INTO historian_catchup_ranges (series_key, from_ts, to_ts) VALUES (?, ?, ?)",
                 seriesKey, Timestamp.from(mergedFrom), Timestamp.from(mergedTo)
@@ -63,6 +72,19 @@ public class JdbcHistorianCatchUpRangeStore implements HistorianCatchUpRangeStor
                         rs.getTimestamp(2).toInstant(),
                         rs.getTimestamp(3).toInstant()
                 )
+        );
+    }
+
+    @Override
+    public void putExact(String seriesKey, Instant from, Instant to) {
+        Instant start = from.isBefore(to) ? from : to;
+        Instant end = from.isBefore(to) ? to : from;
+        if (start.isAfter(end)) {
+            return;
+        }
+        jdbcTemplate.update(
+                "INSERT INTO historian_catchup_ranges (series_key, from_ts, to_ts) VALUES (?, ?, ?)",
+                seriesKey, Timestamp.from(start), Timestamp.from(end)
         );
     }
 

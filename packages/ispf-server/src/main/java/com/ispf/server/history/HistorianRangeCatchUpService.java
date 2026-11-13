@@ -27,6 +27,14 @@ public class HistorianRangeCatchUpService {
 
     private static final Logger log = LoggerFactory.getLogger(HistorianRangeCatchUpService.class);
 
+    /**
+     * One ClickHouse insert per open range does not finish a multi-minute outage inside the
+     * catch-up wait. The historian flushes faster than sample timestamps overlap, so each flush
+     * becomes its own range, and each range is its own HTTP call (30s budget). Replay in chunks
+     * and stop on the first failure so a downed ClickHouse does not walk every fragment.
+     */
+    static final int REPLAY_CHUNK = 2_000;
+
     private final HistorianSampleWal wal;
     private final HistorianCatchUpRangeStore ranges;
     private final ObjectProvider<ClickHouseVariableHistorySecondaryWriteStore> secondary;
@@ -93,58 +101,72 @@ public class HistorianRangeCatchUpService {
         if (writer == null) {
             return 0;
         }
-        List<HistorianCatchUpRangeStore.Range> open = ranges.list();
-        if (open.isEmpty()) {
+        List<VariableHistoryWriteRecord> pending;
+        synchronized (walLock) {
+            pending = dedupe(wal.readAll());
+        }
+        if (pending.isEmpty()) {
             return 0;
         }
-
-        List<VariableHistoryWriteRecord> indexed;
-        synchronized (walLock) {
-            indexed = dedupe(wal.readAll());
-        }
+        List<HistorianCatchUpRangeStore.Range> open = ranges.list();
 
         int copied = 0;
         List<VariableHistoryWriteRecord> acknowledged = new ArrayList<>();
-        List<HistorianCatchUpRangeStore.Range> clearedRanges = new ArrayList<>();
-
-        for (HistorianCatchUpRangeStore.Range range : open) {
-            List<VariableHistoryWriteRecord> batch = new ArrayList<>();
-            for (VariableHistoryWriteRecord record : indexed) {
-                if (inRange(record, range)) {
-                    batch.add(record);
-                }
-            }
-            if (batch.isEmpty()) {
-                continue;
-            }
+        for (int offset = 0; offset < pending.size(); offset += REPLAY_CHUNK) {
+            List<VariableHistoryWriteRecord> chunk = new ArrayList<>(
+                    pending.subList(offset, Math.min(offset + REPLAY_CHUNK, pending.size()))
+            );
             try {
-                writer.appendBatch(batch);
-                copied += batch.size();
-                acknowledged.addAll(batch);
-                clearedRanges.add(range);
+                writer.appendBatch(chunk);
             } catch (RuntimeException ex) {
-                log.warn("historian catch-up replay failed for {} ({} samples)", range.seriesKey(), batch.size(), ex);
+                log.warn(
+                        "historian catch-up replay failed ({} of {} samples, chunk {})",
+                        acknowledged.size(),
+                        pending.size(),
+                        chunk.size(),
+                        ex
+                );
+                break;
             }
+            copied += chunk.size();
+            acknowledged.addAll(chunk);
         }
 
-        if (!acknowledged.isEmpty() || !clearedRanges.isEmpty()) {
-            Set<String> acked = new HashSet<>();
-            for (VariableHistoryWriteRecord record : acknowledged) {
-                acked.add(identity(record));
+        if (acknowledged.isEmpty()) {
+            return 0;
+        }
+        Set<String> acked = new HashSet<>();
+        for (VariableHistoryWriteRecord record : acknowledged) {
+            acked.add(identity(record));
+        }
+        synchronized (walLock) {
+            List<VariableHistoryWriteRecord> staying = new ArrayList<>();
+            for (VariableHistoryWriteRecord record : dedupe(wal.readAll())) {
+                if (!acked.contains(identity(record))) {
+                    staying.add(record);
+                }
             }
-            synchronized (walLock) {
-                if (!acked.isEmpty()) {
-                    List<VariableHistoryWriteRecord> staying = new ArrayList<>();
-                    for (VariableHistoryWriteRecord record : dedupe(wal.readAll())) {
-                        if (!acked.contains(identity(record))) {
-                            staying.add(record);
-                        }
+            wal.rewrite(staying);
+            for (HistorianCatchUpRangeStore.Range range : open) {
+                boolean stillOpen = false;
+                for (VariableHistoryWriteRecord record : staying) {
+                    if (inRange(record, range)) {
+                        stillOpen = true;
+                        break;
                     }
-                    wal.rewrite(staying);
                 }
-                for (HistorianCatchUpRangeStore.Range range : clearedRanges) {
+                if (stillOpen) {
+                    continue;
+                }
+                Instant[] covered = coveredSpan(pending, range);
+                if (covered == null) {
+                    continue;
+                }
+                if (!covered[0].isAfter(range.from()) && !covered[1].isBefore(range.to())) {
                     ranges.remove(range.seriesKey(), range.from(), range.to());
+                    continue;
                 }
+                retainUncovered(range, covered[0], covered[1]);
             }
         }
         return copied;
@@ -209,6 +231,40 @@ public class HistorianRangeCatchUpService {
                 && seriesKey(record).equals(range.seriesKey())
                 && !at.isBefore(range.from())
                 && !at.isAfter(range.to());
+    }
+
+    private void retainUncovered(HistorianCatchUpRangeStore.Range range, Instant coveredFrom, Instant coveredTo) {
+        ranges.remove(range.seriesKey(), range.from(), range.to());
+        if (coveredFrom.isAfter(range.from())) {
+            Instant headTo = coveredFrom.minusMillis(1);
+            if (!headTo.isBefore(range.from())) {
+                ranges.putExact(range.seriesKey(), range.from(), headTo);
+            }
+        }
+        if (coveredTo.isBefore(range.to())) {
+            Instant tailFrom = coveredTo.plusMillis(1);
+            if (!tailFrom.isAfter(range.to())) {
+                ranges.putExact(range.seriesKey(), tailFrom, range.to());
+            }
+        }
+    }
+
+    private static Instant[] coveredSpan(List<VariableHistoryWriteRecord> pending, HistorianCatchUpRangeStore.Range range) {
+        Instant from = null;
+        Instant to = null;
+        for (VariableHistoryWriteRecord record : pending) {
+            if (!inRange(record, range) || record.sampledAt() == null) {
+                continue;
+            }
+            Instant at = record.sampledAt();
+            if (from == null || at.isBefore(from)) {
+                from = at;
+            }
+            if (to == null || at.isAfter(to)) {
+                to = at;
+            }
+        }
+        return from == null ? null : new Instant[] {from, to};
     }
 
     static String seriesKey(VariableHistoryWriteRecord record) {

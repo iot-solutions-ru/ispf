@@ -3,6 +3,7 @@ package com.ispf.server.history;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.FieldDefinition;
+import com.ispf.core.model.FieldType;
 import com.ispf.core.model.DataRecordValues;
 import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.Variable;
@@ -189,7 +190,7 @@ public class VariableHistoryService {
         Map<String, VariableSampleEntity> coalesced = new LinkedHashMap<>();
         Map<String, DataRecord> historizedCandidates = new LinkedHashMap<>();
         appendSamplesFromDataRecord(
-                objectPath, variableName, record, observedAt, now, nowMs, coalesced, historizedCandidates
+                objectPath, variableName, record, observedAt, now, nowMs, coalesced, historizedCandidates, true
         );
         List<VariableSampleEntity> samples = new ArrayList<>();
         Set<String> acceptedHistorizedKeys = new HashSet<>();
@@ -255,11 +256,12 @@ public class VariableHistoryService {
         if (!isHistorizedVariable(objectPath, variableName)) {
             return;
         }
-        enqueueFromDataRecord(objectPath, variableName, record, observedAt);
+        enqueueFromDataRecord(objectPath, variableName, record, observedAt, true);
     }
 
     /**
      * Fast path when {@link TelemetryHistorianFastPath} already verified historian interest.
+     * Skips the JSON record snapshot so a numeric sample does not serialize on the ingress thread.
      */
     public void recordFromDataRecordTrusted(
             String objectPath,
@@ -274,7 +276,7 @@ public class VariableHistoryService {
                 || variableName.startsWith("driver")) {
             return;
         }
-        enqueueFromDataRecord(objectPath, variableName, record, observedAt);
+        enqueueFromDataRecord(objectPath, variableName, record, observedAt, snapshotUseful(record));
     }
 
     /**
@@ -304,7 +306,8 @@ public class VariableHistoryService {
                     now,
                     nowMs,
                     coalesced,
-                    historizedCandidates
+                    historizedCandidates,
+                    snapshotUseful(update.value())
             );
         }
         List<VariableSampleEntity> samples = new ArrayList<>(coalesced.size());
@@ -332,16 +335,34 @@ public class VariableHistoryService {
         return true;
     }
 
+    /**
+     * Numeric-only fast-path samples skip the JSON snapshot. A text field such as {@code unit}
+     * is not recoverable from the numeric columns, so those records keep the snapshot.
+     */
+    private static boolean snapshotUseful(DataRecord record) {
+        if (record.schema() == null || record.schema().fields() == null) {
+            return true;
+        }
+        for (FieldDefinition field : record.schema().fields()) {
+            FieldType type = field.type();
+            if (type != FieldType.DOUBLE && type != FieldType.INTEGER && type != FieldType.LONG && type != FieldType.BOOLEAN) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void enqueueFromDataRecord(
             String objectPath,
             String variableName,
             DataRecord record,
-            Instant observedAt
+            Instant observedAt,
+            boolean snapshot
     ) {
         long nowMs = System.currentTimeMillis();
         Instant now = Instant.ofEpochMilli(nowMs);
         List<VariableSampleEntity> samples = new ArrayList<>();
-        appendSamplesFromDataRecord(objectPath, variableName, record, observedAt, now, nowMs, samples);
+        appendSamplesFromDataRecord(objectPath, variableName, record, observedAt, now, nowMs, samples, snapshot);
         enqueueSamples(samples);
     }
 
@@ -353,7 +374,8 @@ public class VariableHistoryService {
             Instant now,
             long nowMs,
             Map<String, VariableSampleEntity> samples,
-            Map<String, DataRecord> historizedCandidates
+            Map<String, DataRecord> historizedCandidates,
+            boolean snapshot
     ) {
         if (!acceptHistorianSample(objectPath, variableName, record)) {
             return;
@@ -384,7 +406,9 @@ public class VariableHistoryService {
             applyRowQuality(sample, record);
             samples.put(debounceKey, sample);
         }
-        appendRecordSnapshot(objectPath, variableName, record, observedAt, now, samples);
+        if (snapshot && properties.isRecordSnapshotEnabled()) {
+            appendRecordSnapshot(objectPath, variableName, record, observedAt, now, samples);
+        }
     }
 
     private void appendRecordSnapshot(
@@ -452,12 +476,13 @@ public class VariableHistoryService {
             Instant observedAt,
             Instant now,
             long nowMs,
-            List<VariableSampleEntity> samples
+            List<VariableSampleEntity> samples,
+            boolean snapshot
     ) {
         Map<String, VariableSampleEntity> coalesced = new LinkedHashMap<>();
         Map<String, DataRecord> historizedCandidates = new LinkedHashMap<>();
         appendSamplesFromDataRecord(
-                objectPath, variableName, record, observedAt, now, nowMs, coalesced, historizedCandidates
+                objectPath, variableName, record, observedAt, now, nowMs, coalesced, historizedCandidates, snapshot
         );
         Set<String> acceptedHistorizedKeys = new HashSet<>();
         for (Map.Entry<String, VariableSampleEntity> entry : coalesced.entrySet()) {
@@ -847,8 +872,8 @@ public class VariableHistoryService {
             historizedCache.put(cacheKey, new HistorizedCacheEntry(false, nowMs));
             return false;
         }
-        boolean enabled = objectManager.require(objectPath)
-                .getVariable(variableName)
+        boolean enabled = objectManager.tree().findByPath(objectPath)
+                .flatMap(node -> node.getVariable(variableName))
                 .map(Variable::historyEnabled)
                 .orElse(false);
         historizedCache.put(cacheKey, new HistorizedCacheEntry(enabled, nowMs));
@@ -863,8 +888,8 @@ public class VariableHistoryService {
     private record HistorizedCacheEntry(boolean enabled, long loadedAtMs) {}
 
     private boolean acceptHistorianSample(String objectPath, String variableName, DataRecord record) {
-        HistorySampleMode mode = objectManager.require(objectPath)
-                .getVariable(variableName)
+        HistorySampleMode mode = objectManager.tree().findByPath(objectPath)
+                .flatMap(node -> node.getVariable(variableName))
                 .map(Variable::historySampleMode)
                 .orElse(HistorySampleMode.CHANGES_ONLY);
         if (mode == HistorySampleMode.ALL_VALUES) {

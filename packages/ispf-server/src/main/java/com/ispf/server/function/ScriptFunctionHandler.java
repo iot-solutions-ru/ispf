@@ -8,6 +8,7 @@ import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.script.FunctionScriptEngine;
 import com.ispf.server.application.script.FunctionScriptJdbcScope;
 import com.ispf.server.application.script.FunctionScriptValidator;
+import com.ispf.server.application.script.FunctionSignatureVerifier;
 import com.ispf.server.application.script.ScriptExecutionContext;
 import com.ispf.server.application.script.SignaturePolicy;
 import com.ispf.server.binding.BindingRefreshAfterCommit;
@@ -35,6 +36,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
     private final FunctionService functionService;
     private final BindingRefreshAfterCommit bindingRefreshAfterCommit;
     private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
+    private final FunctionSignatureVerifier signatureVerifier;
 
     public ScriptFunctionHandler(
             ObjectManager objectManager,
@@ -45,7 +47,8 @@ public class ScriptFunctionHandler implements FunctionHandler {
             DataSourceSqlSession dataSourceSqlSession,
             @Lazy FunctionService functionService,
             BindingRefreshAfterCommit bindingRefreshAfterCommit,
-            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard,
+            FunctionSignatureVerifier signatureVerifier
     ) {
         this.objectManager = objectManager;
         this.applicationFunctionStore = applicationFunctionStore;
@@ -56,6 +59,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
         this.functionService = functionService;
         this.bindingRefreshAfterCommit = bindingRefreshAfterCommit;
         this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
+        this.signatureVerifier = signatureVerifier;
     }
 
     @Override
@@ -94,7 +98,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
         });
         String dataSourcePath = descriptor.dataSourcePath();
         DataRecord[] outputHolder = new DataRecord[1];
-        SignaturePolicy.require(descriptor.sourceBody(), input);
+        SignaturePolicy.require(descriptor.sourceBody(), input, signatureVerifier);
         Runnable execute = () -> outputHolder[0] = scriptEngine.execute(
                 descriptor.sourceBody(),
                 input,

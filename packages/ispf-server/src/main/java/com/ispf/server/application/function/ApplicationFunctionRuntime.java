@@ -8,6 +8,7 @@ import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.application.script.FunctionScriptEngine;
+import com.ispf.server.application.script.FunctionSignatureVerifier;
 import com.ispf.server.application.script.ScriptExecutionContext;
 import com.ispf.server.application.script.SignaturePolicy;
 import com.ispf.server.binding.BindingRefreshAfterCommit;
@@ -32,6 +33,7 @@ public class ApplicationFunctionRuntime {
     private final ObjectMapper objectMapper;
     private final BindingRefreshAfterCommit bindingRefreshAfterCommit;
     private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
+    private final FunctionSignatureVerifier signatureVerifier;
 
     public ApplicationFunctionRuntime(
             ApplicationFunctionStore store,
@@ -41,7 +43,8 @@ public class ApplicationFunctionRuntime {
             ObjectManager objectManager,
             ObjectMapper objectMapper,
             BindingRefreshAfterCommit bindingRefreshAfterCommit,
-            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard,
+            FunctionSignatureVerifier signatureVerifier
     ) {
         this.store = store;
         this.scriptEngine = scriptEngine;
@@ -51,6 +54,7 @@ public class ApplicationFunctionRuntime {
         this.objectMapper = objectMapper;
         this.bindingRefreshAfterCommit = bindingRefreshAfterCommit;
         this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
+        this.signatureVerifier = signatureVerifier;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -77,7 +81,7 @@ public class ApplicationFunctionRuntime {
 
         ApplicationFunctionHandler.DeployedFunction deployed = store.findLatest(objectPath, functionName)
                 .orElseThrow(() -> new IllegalStateException("Deployed function missing: " + functionName));
-        SignaturePolicy.require(deployed.sourceBody(), input);
+        SignaturePolicy.require(deployed.sourceBody(), input, signatureVerifier);
 
         ensureDescriptor(objectPath, functionName, deployed);
 

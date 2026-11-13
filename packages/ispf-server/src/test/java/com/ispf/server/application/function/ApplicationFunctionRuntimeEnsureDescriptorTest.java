@@ -67,7 +67,8 @@ class ApplicationFunctionRuntimeEnsureDescriptorTest {
                 objectManager,
                 objectMapper,
                 bindingRefreshAfterCommit,
-                tenantLocalDataAccessGuard
+                tenantLocalDataAccessGuard,
+                com.ispf.server.application.script.FunctionSignatureVerifier.UNSIGNED
         );
         node = new PlatformObject("n1", PATH, ObjectType.BLUEPRINT, "hub", "", null);
         doAnswer(inv -> {
