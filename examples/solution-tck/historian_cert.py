@@ -431,10 +431,12 @@ def arm(token):
 
 
 def start_bench(duration):
+    # Multi-container template mode publishes the plain body "25.0".
+    # --single-container switches to topics-json {"value": 25.0}, which the
+    # mounted production MQTT driver does not historize.
     env = os.environ.copy()
     env["NUMERIC_PAYLOAD"] = "true"
     env["EMQTT_CPU_LIMIT"] = "2.0"
-    env["EMQTT_SHARD_MAX"] = "8"
     handle = open(ROOT + "/historian-bench.log", "w", encoding="utf-8")
     return subprocess.Popen(
         ["bash", "/home/iot-solutions/ispf/loadtest/mqtt-emqtt-bench.sh",
@@ -443,9 +445,7 @@ def start_bench(duration):
          "--messages-per-second", str(TARGET),
          "--duration-seconds", str(duration),
          "--interval-ms", "1",
-         "--topic-prefix", "ispf/tck",
-         "--single-container",
-         "--shard-max", "8"],
+         "--topic-prefix", "ispf/tck"],
         text=True, stdout=handle, stderr=subprocess.STDOUT, env=env,
     )
 
