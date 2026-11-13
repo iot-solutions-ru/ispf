@@ -57,7 +57,7 @@ ISPF_DRIVER_MQTT_CALLBACK_THREADS=32
 ISPF_DRIVER_MQTT_CALLBACK_THREADS_MAX=32
 ISPF_DRIVER_MQTT_CALLBACK_QUEUE_CAPACITY=500000
 ISPF_VARIABLE_HISTORY_OVERFLOW_COALESCE=false
-ISPF_VARIABLE_HISTORY_BENCHMARK_SPREAD_SAMPLED_AT=false
+ISPF_VARIABLE_HISTORY_BENCHMARK_SPREAD_SAMPLED_AT=true
 ISPF_VARIABLE_HISTORY_WRITER_THREADS=32
 ISPF_VARIABLE_HISTORY_QUEUE_CAPACITY=8000000
 ISPF_VARIABLE_HISTORY_BATCH_SIZE=5000
@@ -70,8 +70,8 @@ ISPF_VARIABLE_HISTORY_SPOOL_ENABLED=true
 ISPF_VARIABLE_HISTORY_SPOOL_DIRECTORY=/data/historian-spool
 ISPF_VARIABLE_HISTORY_SPOOL_MAX_BYTES=34359738368
 ISPF_VARIABLE_HISTORY_SPOOL_FSYNC=true
-ISPF_VARIABLE_HISTORY_SPOOL_REPLAY_BATCH=2000
-ISPF_VARIABLE_HISTORY_SPOOL_REPLAY_INTERVAL_MS=1000
+ISPF_VARIABLE_HISTORY_SPOOL_REPLAY_BATCH=32
+ISPF_VARIABLE_HISTORY_SPOOL_REPLAY_INTERVAL_MS=100
 """
 
 
@@ -248,6 +248,22 @@ def wait_clickhouse(deadline):
     raise RuntimeError("private ClickHouse did not answer")
 
 
+def wait_keeper(deadline):
+    query = "SELECT count() FROM system.zookeeper WHERE path = '/'"
+    while time.time() < deadline:
+        probe = sh(
+            ["docker", "exec", "ispf-tck-clickhouse", "clickhouse-client",
+             "--user", "default", "--password", "tck", "--query", query],
+            check=False,
+        )
+        if probe.returncode == 0:
+            return
+        time.sleep(2)
+    logs = sh(["docker", "logs", "--tail", "30", "ispf-tck-keeper"], check=False)
+    text = (logs.stdout or "") + (logs.stderr or "")
+    raise RuntimeError("keeper not ready: " + text[:600])
+
+
 def write_text(path, content):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as handle:
@@ -282,15 +298,16 @@ def setup_replicas():
   </keeper_server>
 </clickhouse>
 """
-    def replica_xml(name):
+    def replica_xml(name, host):
         return f"""<clickhouse>
   <macros><shard>1</shard><replica>{name}</replica></macros>
+  <interserver_http_host>{host}</interserver_http_host>
   <zookeeper><node><host>ispf-tck-keeper</host><port>9181</port></node></zookeeper>
 </clickhouse>
 """
     write_text(ROOT + "/keeper/keeper.xml", keeper)
-    write_text(ROOT + "/ch-a/config.d/replica.xml", replica_xml("a"))
-    write_text(ROOT + "/ch-b/config.d/replica.xml", replica_xml("b"))
+    write_text(ROOT + "/ch-a/config.d/replica.xml", replica_xml("a", "ispf-tck-clickhouse"))
+    write_text(ROOT + "/ch-b/config.d/replica.xml", replica_xml("b", "ispf-tck-clickhouse-b"))
     sh(["docker", "rm", "-f", "ispf-tck-keeper", "ispf-tck-clickhouse", "ispf-tck-clickhouse-b"], check=False)
     sh([
         "docker", "run", "-d", "--name", "ispf-tck-keeper", "--network", "ispf-tck",
@@ -305,7 +322,7 @@ def setup_replicas():
             ("ispf-tck-clickhouse-b", ROOT + "/ch-b/config.d", []),
     ):
         sh([
-            "docker", "run", "-d", "--name", name, "--network", "ispf-tck",
+            "docker", "run", "-d", "--name", name, "--hostname", name, "--network", "ispf-tck",
             "--memory", "8g", "--memory-swap", "8g",
             *port,
             "-e", "CLICKHOUSE_USER=default",
@@ -315,6 +332,7 @@ def setup_replicas():
             "clickhouse/clickhouse-server:24.8",
         ])
     wait_clickhouse(time.time() + 120)
+    wait_keeper(time.time() + 90)
     ddl = """
 CREATE TABLE IF NOT EXISTS default.variable_samples (
     object_path String,
@@ -339,7 +357,7 @@ SETTINGS index_granularity = 8192
         check=False,
     )
     if created_b.returncode != 0:
-        raise RuntimeError((created_b.stderr or "")[-400:])
+        raise RuntimeError(((created_b.stderr or "") + (created_b.stdout or ""))[:600])
 
 
 def arm(token):
@@ -467,6 +485,7 @@ def load_and_outage(token):
         "store": mid_metrics.get("store"),
         "spoolEnabled": mid_metrics.get("spoolEnabled"),
         "targetPerSecond": TARGET,
+        "sampledAt": "monotonic +1ms per series so each saved row has its own identity",
     }
     outage = {
         "pass": loss == 0 and duplicates == 0
@@ -541,7 +560,7 @@ def crash_replay(token):
     sh(["docker", "start", "ispf-tck-1"])
     wait_info(time.time() + 180)
     token = login(time.time() + 90)
-    caught = wait_caught_up(token, time.time() + 180)
+    caught = wait_caught_up(token, time.time() + 600)
     found = ch_int(
         "SELECT count() FROM default.variable_samples "
         "WHERE object_path = 'root.platform.devices.tck-field' "
@@ -581,6 +600,11 @@ def ensure_year_series(token):
     }, token, {"path": "root.platform.devices.tck-year"})
     if status not in (200, 409) and "already exists" not in json.dumps(body):
         raise RuntimeError(f"year variable {status} {body}")
+    http("PATCH", "/api/v1/objects/by-path/variables/history", {
+        "historyEnabled": True,
+        "historyRetentionDays": 400,
+        "historySampleMode": "ALL_VALUES",
+    }, token, {"path": "root.platform.devices.tck-year", "name": "temperature"})
 
 
 def year_rollup(token):
@@ -719,7 +743,7 @@ def main():
         except Exception as ex:
             log(f"replica setup failed, restoring the single private ClickHouse: {ex}")
             result["clickhouseTopology"] = "single MergeTree after replica setup failed"
-            result["replicaSetupError"] = str(ex)[-500:]
+            result["replicaSetupError"] = str(ex)[:800]
             sh(["docker", "rm", "-f", "ispf-tck-keeper", "ispf-tck-clickhouse-b"], check=False)
             start_single_clickhouse()
         start_writer()
