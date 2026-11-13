@@ -250,6 +250,29 @@ class HistorianDiskSpoolTest {
     }
 
     @Test
+    void interruptedRotateResetsSegmentSizeBeforeReopen() throws Exception {
+        // fsync=false so interrupt hits openSegment after segmentIndex++/segmentSize=0, not force().
+        HistorianDiskSpool spool = spool(1024 * 1024, 80, false);
+        spool.open();
+        String first = spool.append(List.of(sample(1)));
+        Thread.currentThread().interrupt();
+        assertThrows(IOException.class, () -> spool.append(List.of(sample(2))));
+        Thread.interrupted(); // clear
+        String third = spool.append(List.of(sample(3)));
+        spool.close();
+
+        HistorianDiskSpool reopened = spool(1024 * 1024, 80, false);
+        reopened.open();
+        List<Double> values = new CopyOnWriteArrayList<>();
+        reopened.replay((id, records) -> values.add(records.getFirst().valueDouble()), 10);
+        assertTrue(new HashSet<>(values).contains(1.0));
+        assertTrue(new HashSet<>(values).contains(3.0));
+        assertTrue(Long.parseLong(third.substring(third.lastIndexOf('-') + 1)) >= 2);
+        assertTrue(first.contains("-"));
+        reopened.close();
+    }
+
+    @Test
     void oversizedSingleRecordIsRejected() throws Exception {
         HistorianDiskSpool spool = spool(64L * 1024 * 1024, 64L * 1024 * 1024, true);
         spool.open();
