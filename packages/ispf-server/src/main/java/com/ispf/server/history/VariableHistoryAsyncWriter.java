@@ -305,6 +305,7 @@ public class VariableHistoryAsyncWriter {
     }
 
     private void flushBatch(List<VariableSampleEntity> batch) {
+        boolean restoreInterrupt = !running && Thread.interrupted();
         try {
             batchPersister.persistBatch(batch);
             automationMetricsRecorder.recordVariableHistoryFlushed(batch.size());
@@ -336,6 +337,10 @@ public class VariableHistoryAsyncWriter {
                     );
                 }
             }
+        } finally {
+            if (restoreInterrupt) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -366,7 +371,16 @@ public class VariableHistoryAsyncWriter {
     void shutdown() {
         running = false;
         if (workers != null) {
-            workers.shutdownNow();
+            workers.shutdown();
+            try {
+                if (!workers.awaitTermination(5, TimeUnit.SECONDS)) {
+                    workers.shutdownNow();
+                    workers.awaitTermination(5, TimeUnit.SECONDS);
+                }
+            } catch (InterruptedException ex) {
+                workers.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
         boolean interrupted = Thread.interrupted();
         try {

@@ -113,7 +113,7 @@ public final class HistorianDiskSpool {
             if (segmentSize + frame > segmentBytes && channel != null && channel.isOpen()) {
                 rotate();
             } else if (channel == null || !channel.isOpen()) {
-                openSegment(segmentIndex, true);
+                reopenActiveSegment();
             }
             if (segmentSize + frame > segmentBytes) {
                 rotate();
@@ -135,14 +135,19 @@ public final class HistorianDiskSpool {
                 channel.force(true);
             }
         } catch (IOException ex) {
+            boolean interrupted = Thread.interrupted();
             try {
                 if (channel == null || !channel.isOpen()) {
-                    openSegment(segmentIndex, true);
+                    reopenActiveSegment();
                 }
                 channel.truncate(position);
                 segmentSize = position;
             } catch (IOException truncate) {
                 ex.addSuppressed(truncate);
+            } finally {
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
             }
             throw ex;
         }
@@ -359,7 +364,7 @@ public final class HistorianDiskSpool {
 
     private void writeFully(ByteBuffer buffer) throws IOException {
         if (channel == null || !channel.isOpen()) {
-            openSegment(segmentIndex, true);
+            reopenActiveSegment();
         }
         while (buffer.hasRemaining()) {
             if (channel.write(buffer) < 0) {
@@ -383,6 +388,14 @@ public final class HistorianDiskSpool {
             );
             segmentSize = 0;
         }
+    }
+
+    /** Reopens the active segment after {@link #truncateTornTail} or a failed partial write. */
+    private void reopenActiveSegment() throws IOException {
+        Path path = directory.resolve(String.format("%06d.seg", segmentIndex));
+        channel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        channel.truncate(segmentSize);
+        channel.position(segmentSize);
     }
 
     private void truncateTornTail(List<Path> segments) throws IOException {
