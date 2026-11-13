@@ -132,7 +132,7 @@ def main():
     log("waiting for private ClickHouse")
     wait_clickhouse(time.time() + 90)
     log("clickhouse ready")
-    node_env = f"""SPRING_DATASOURCE_URL=jdbc:postgresql://192.168.100.10:5432/ispf_solution_tck
+    node_env = f"""SPRING_DATASOURCE_URL=jdbc:postgresql://{os.environ.get("ISPF_TCK_PG_HOST", "host.docker.internal")}:5432/ispf_solution_tck
 SPRING_DATASOURCE_USERNAME=ispf
 SPRING_DATASOURCE_PASSWORD={pg_password}
 SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver

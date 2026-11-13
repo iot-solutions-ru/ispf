@@ -3,6 +3,7 @@ package com.ispf.server.history;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.FieldDefinition;
+import com.ispf.core.model.FieldType;
 import com.ispf.core.model.DataRecordValues;
 import com.ispf.core.object.HistorySampleMode;
 import com.ispf.core.object.Variable;
@@ -275,7 +276,7 @@ public class VariableHistoryService {
                 || variableName.startsWith("driver")) {
             return;
         }
-        enqueueFromDataRecord(objectPath, variableName, record, observedAt, false);
+        enqueueFromDataRecord(objectPath, variableName, record, observedAt, snapshotUseful(record));
     }
 
     /**
@@ -306,7 +307,7 @@ public class VariableHistoryService {
                     nowMs,
                     coalesced,
                     historizedCandidates,
-                    false
+                    snapshotUseful(update.value())
             );
         }
         List<VariableSampleEntity> samples = new ArrayList<>(coalesced.size());
@@ -332,6 +333,23 @@ public class VariableHistoryService {
         }
         lastSampleMs.put(debounceKey, debounceMs);
         return true;
+    }
+
+    /**
+     * Numeric-only fast-path samples skip the JSON snapshot. A text field such as {@code unit}
+     * is not recoverable from the numeric columns, so those records keep the snapshot.
+     */
+    private static boolean snapshotUseful(DataRecord record) {
+        if (record.schema() == null || record.schema().fields() == null) {
+            return true;
+        }
+        for (FieldDefinition field : record.schema().fields()) {
+            FieldType type = field.type();
+            if (type != FieldType.DOUBLE && type != FieldType.INTEGER && type != FieldType.LONG && type != FieldType.BOOLEAN) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void enqueueFromDataRecord(

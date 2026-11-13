@@ -62,6 +62,9 @@ def sh(command):
 
 
 def apply_stress_env():
+    backup = ENV_FILE + ".before-peak"
+    if not os.path.exists(backup):
+        open(backup, "w", encoding="utf-8").write(open(ENV_FILE, encoding="utf-8").read())
     text = open(ENV_FILE, encoding="utf-8").read()
     replacements = {
         "ISPF_VARIABLE_HISTORY_STORE=jdbc": "ISPF_VARIABLE_HISTORY_STORE=clickhouse",

@@ -35,9 +35,16 @@ public final class FunctionSignature {
                     fields.put(key, value == null ? "" : String.valueOf(value));
                 }
             });
-            fields.forEach((key, value) -> builder.append(key).append('=').append(value).append('\n'));
+            fields.forEach((key, value) -> builder.append(escape(key)).append('=').append(escape(value)).append('\n'));
         }
         return builder.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    static String escape(String value) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+        return value.replace("\\", "\\\\").replace("\r", "\\r").replace("\n", "\\n");
     }
 
     public static String sha256Hex(String sourceBody) {

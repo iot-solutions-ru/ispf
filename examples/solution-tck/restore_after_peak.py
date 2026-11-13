@@ -17,13 +17,20 @@ def sh(command):
 
 
 def main():
-    text = open(ENV_FILE, encoding="utf-8").read()
+    backup = ENV_FILE + ".before-peak"
+    if os.path.exists(backup):
+        text = open(backup, encoding="utf-8").read()
+        os.remove(backup)
+    else:
+        text = open(ENV_FILE, encoding="utf-8").read()
     text = text.replace("ISPF_VARIABLE_HISTORY_STORE=clickhouse", "ISPF_VARIABLE_HISTORY_STORE=jdbc")
     text = text.replace("ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=false", "ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=true")
     text = text.replace(
         "JAVA_TOOL_OPTIONS=-Xms8g -Xmx16g -XX:+UseG1GC -XX:MaxGCPauseMillis=100",
         "JAVA_TOOL_OPTIONS=-Xms1g -Xmx4g",
     )
+    if "ISPF_VARIABLE_HISTORY_STORE=jdbc" not in text:
+        text = text.replace("ISPF_VARIABLE_HISTORY_STORE=clickhouse", "ISPF_VARIABLE_HISTORY_STORE=jdbc")
     if "ISPF_VARIABLE_HISTORY_STORE=jdbc" not in text:
         raise SystemExit("jdbc store was not restored")
     with open(ENV_FILE, "w", encoding="utf-8") as handle:

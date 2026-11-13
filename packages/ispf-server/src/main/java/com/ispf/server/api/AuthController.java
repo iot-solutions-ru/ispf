@@ -206,7 +206,12 @@ public class AuthController {
             @Valid @RequestBody SignatureKeyRequest request,
             Authentication authentication
     ) {
-        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof org.springframework.security.authentication.AnonymousAuthenticationToken
+                || authentication.getName() == null
+                || authentication.getName().isBlank()
+                || "anonymousUser".equals(authentication.getName())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "authentication required");
         }
         try {
@@ -214,6 +219,14 @@ public class AuthController {
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
         }
+        auditEventService.log(
+                "security",
+                "signature_key_enrolled",
+                authentication.getName(),
+                "user",
+                authentication.getName(),
+                java.util.Map.of()
+        );
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("username", authentication.getName());
         response.put("enrolled", true);

@@ -2,6 +2,7 @@ package com.ispf.server.application.script;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.server.security.SignatureKeyDirectory;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -88,7 +89,12 @@ public class Ed25519FunctionSignatureVerifier implements FunctionSignatureVerifi
 
     private static String authenticatedUsername() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken
+                || authentication.getName() == null
+                || authentication.getName().isBlank()
+                || "anonymousUser".equals(authentication.getName())) {
             throw new IllegalStateException("signaturePolicy requires an authenticated principal");
         }
         return authentication.getName();

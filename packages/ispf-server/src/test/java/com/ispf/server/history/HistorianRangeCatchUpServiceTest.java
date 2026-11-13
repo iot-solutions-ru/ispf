@@ -208,6 +208,29 @@ class HistorianRangeCatchUpServiceTest {
         assertEquals(true, p99 / 1_000_000L <= 500, "p99 batch append ms=" + (p99 / 1_000_000L));
     }
 
+    @Test
+    void replayDoesNotDeleteRangesThisNodeNeverHeld() {
+        MemoryRanges ranges = new MemoryRanges();
+        ranges.cover("root.other|temp|value", Instant.parse("2026-11-12T09:00:00Z"), Instant.parse("2026-11-12T09:00:05Z"));
+        HistorianSampleWal wal = new HistorianSampleWal(dir, 1_000_000);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<ClickHouseVariableHistorySecondaryWriteStore> secondary = mock(ObjectProvider.class);
+        ClickHouseVariableHistorySecondaryWriteStore writer = mock(ClickHouseVariableHistorySecondaryWriteStore.class);
+        when(secondary.getIfAvailable()).thenReturn(writer);
+        HistorianRangeCatchUpService service = new HistorianRangeCatchUpService(wal, ranges, secondary);
+        VariableHistoryWriteRecord local = new VariableHistoryWriteRecord(
+                "root.local", "temp", "value",
+                Instant.parse("2026-11-12T10:00:00Z"),
+                Instant.parse("2026-11-12T10:00:00Z"),
+                1.0, null, "GOOD"
+        );
+        service.noteSecondaryFailure(List.of(local));
+
+        assertEquals(1, service.replay());
+        assertEquals(1, ranges.list().size());
+        assertEquals("root.other|temp|value", ranges.list().getFirst().seriesKey());
+    }
+
     private static final class MemoryRanges implements HistorianCatchUpRangeStore {
         private final List<Range> ranges = new ArrayList<>();
 

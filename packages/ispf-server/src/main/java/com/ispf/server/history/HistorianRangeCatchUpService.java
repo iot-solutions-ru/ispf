@@ -113,6 +113,15 @@ public class HistorianRangeCatchUpService {
         if (pending.isEmpty()) {
             return 0;
         }
+        Set<String> coveredHere = new HashSet<>();
+        for (HistorianCatchUpRangeStore.Range range : open) {
+            for (VariableHistoryWriteRecord record : pending) {
+                if (inRange(record, range)) {
+                    coveredHere.add(rangeIdentity(range));
+                    break;
+                }
+            }
+        }
 
         int copied = 0;
         List<VariableHistoryWriteRecord> acknowledged = new ArrayList<>();
@@ -159,7 +168,7 @@ public class HistorianRangeCatchUpService {
                         break;
                     }
                 }
-                if (!stillOpen) {
+                if (!stillOpen && coveredHere.contains(rangeIdentity(range))) {
                     ranges.remove(range.seriesKey(), range.from(), range.to());
                 }
             }
@@ -226,6 +235,10 @@ public class HistorianRangeCatchUpService {
                 && seriesKey(record).equals(range.seriesKey())
                 && !at.isBefore(range.from())
                 && !at.isAfter(range.to());
+    }
+
+    private static String rangeIdentity(HistorianCatchUpRangeStore.Range range) {
+        return range.seriesKey() + "|" + range.from().toEpochMilli() + "|" + range.to().toEpochMilli();
     }
 
     static String seriesKey(VariableHistoryWriteRecord record) {

@@ -92,7 +92,8 @@ class FunctionTestRunnerTest {
                 schemaSession,
                 platformScriptBridge,
                 objectManager,
-                objectMapper
+                objectMapper,
+                null
         );
 
         boolean syncActive = TransactionSynchronizationManager.isSynchronizationActive();
@@ -241,7 +242,8 @@ class FunctionTestRunnerTest {
                 schemaSession,
                 platformScriptBridge,
                 objectManager,
-                objectMapper
+                objectMapper,
+                null
         );
     }
 
@@ -289,7 +291,8 @@ class FunctionTestRunnerTest {
                 schemaSession,
                 platformScriptBridge,
                 objectManager,
-                objectMapper
+                objectMapper,
+                null
         );
 
         com.ispf.core.object.PlatformObject node = org.mockito.Mockito.mock(com.ispf.core.object.PlatformObject.class);
