@@ -225,10 +225,14 @@ public class VariableHistoryAsyncWriter {
                 }
                 List<VariableSampleEntity> batch = new ArrayList<>(batchSize);
                 drainOverflowInto(batch, batchSize);
-                VariableSampleEntity first = queue.poll(flushIntervalMs, TimeUnit.MILLISECONDS);
-                if (first != null) {
-                    batch.add(first);
-                    queue.drainTo(batch, batchSize - batch.size());
+                if (properties.isClickHouseSpoolEnabled()) {
+                    fillBatch(batch, batchSize, Math.min(flushIntervalMs, 10));
+                } else {
+                    VariableSampleEntity first = queue.poll(flushIntervalMs, TimeUnit.MILLISECONDS);
+                    if (first != null) {
+                        batch.add(first);
+                        queue.drainTo(batch, batchSize - batch.size());
+                    }
                 }
                 if (!batch.isEmpty()) {
                     holdUntilAccepted(batch);
@@ -240,6 +244,27 @@ public class VariableHistoryAsyncWriter {
             Thread.currentThread().interrupt();
         } finally {
             activeWorkers.decrementAndGet();
+        }
+    }
+
+    /**
+     * Hold a short batch open for the flush interval so one durable append covers
+     * the rows that arrive together, instead of fsyncing a single sample.
+     */
+    private void fillBatch(List<VariableSampleEntity> batch, int batchSize, long flushIntervalMs)
+            throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(flushIntervalMs);
+        while (batch.size() < batchSize) {
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0 && !batch.isEmpty()) {
+                break;
+            }
+            VariableSampleEntity next = queue.poll(Math.max(1L, remaining), TimeUnit.NANOSECONDS);
+            if (next == null) {
+                break;
+            }
+            batch.add(next);
+            queue.drainTo(batch, batchSize - batch.size());
         }
     }
 

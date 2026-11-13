@@ -220,11 +220,15 @@ def apply_spool_env():
 
 
 def start_writer():
-    os.makedirs(SPOOL_DIR, exist_ok=True)
     sh(["docker", "stop", "ispf-tck-2"], check=False)
+    sh(["docker", "rm", "-f", "ispf-tck-1"], check=False)
+    os.makedirs(SPOOL_DIR, exist_ok=True)
+    for name in os.listdir(SPOOL_DIR):
+        path = os.path.join(SPOOL_DIR, name)
+        if os.path.isfile(path):
+            os.remove(path)
     sh(["docker", "update", "--memory", "12g", "--memory-swap", "12g", "ispf-tck-clickhouse"], check=False)
     apply_spool_env()
-    sh(["docker", "rm", "-f", "ispf-tck-1"], check=False)
     sh([
         "docker", "run", "-d", "--name", "ispf-tck-1", "--network", "ispf-tck",
         "--add-host", "host.docker.internal:host-gateway",
