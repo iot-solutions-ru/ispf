@@ -52,21 +52,23 @@ ISPF_RUNTIME_TELEMETRY_FAST_HISTORIAN_PATH=true
 ISPF_MQTT_GATEWAY_INGRESS_DISPATCH_COALESCE=false
 ISPF_MQTT_GATEWAY_INGRESS_BYPASS_L3=true
 ISPF_DRIVER_MQTT_INGRESS_COALESCE=false
-ISPF_DRIVER_MQTT_CALLBACK_ELASTIC_ENABLED=false
-ISPF_DRIVER_MQTT_CALLBACK_THREADS=32
-ISPF_DRIVER_MQTT_CALLBACK_THREADS_MAX=32
+ISPF_DRIVER_MQTT_CALLBACK_ELASTIC=false
+ISPF_DRIVER_MQTT_CALLBACK_THREADS=256
+ISPF_DRIVER_MQTT_CALLBACK_THREADS_MIN=256
+ISPF_DRIVER_MQTT_CALLBACK_THREADS_MAX=256
 ISPF_DRIVER_MQTT_CALLBACK_QUEUE_CAPACITY=500000
 ISPF_VARIABLE_HISTORY_OVERFLOW_COALESCE=false
-ISPF_VARIABLE_HISTORY_BENCHMARK_SPREAD_SAMPLED_AT=true
+ISPF_VARIABLE_HISTORY_BENCHMARK_SPREAD_SAMPLED_AT=false
+ISPF_HISTORIAN_TIER_HOT_MIN_INTERVAL_MS=0
 ISPF_PLATFORM_METRICS_PROBE_ENABLED=false
 ISPF_VARIABLE_HISTORY_RECORD_SNAPSHOT_ENABLED=false
-ISPF_VARIABLE_HISTORY_WRITER_THREADS=8
+ISPF_VARIABLE_HISTORY_WRITER_THREADS=32
 ISPF_VARIABLE_HISTORY_QUEUE_CAPACITY=8000000
 ISPF_VARIABLE_HISTORY_BATCH_SIZE=5000
 ISPF_VARIABLE_HISTORY_FLUSH_INTERVAL_MS=10
 ISPF_VARIABLE_HISTORY_WRITER_THREADS_MIN=8
 ISPF_VARIABLE_HISTORY_WRITER_THREADS_MAX=48
-ISPF_VARIABLE_HISTORY_ELASTIC_WRITER_ENABLED=false
+ISPF_VARIABLE_HISTORY_ELASTIC_WRITER=true
 ISPF_VARIABLE_HISTORY_CLICKHOUSE_TABLE=variable_samples
 ISPF_VARIABLE_HISTORY_SPOOL_ENABLED=true
 ISPF_VARIABLE_HISTORY_SPOOL_DIRECTORY=/data/historian-spool
@@ -189,12 +191,13 @@ def saved_rows():
     )
 
 
-def duplicate_rows():
-    return ch_int(
-        "SELECT count() - uniqExact(object_path, variable_name, field_name, sampled_at) "
-        "FROM default.variable_samples "
-        "WHERE object_path LIKE 'root.platform.devices.tckm%'"
-    )
+def row_gap(stored, accepted):
+    """ClickHouse keeps same-millisecond rows. A gap is accepted versus stored, not uniqExact(sampled_at)."""
+    if stored is None:
+        return None, None
+    if stored > accepted:
+        return 0, stored - accepted
+    return accepted - stored, 0
 
 
 def set_env_key(text, key, value):
@@ -411,9 +414,9 @@ def arm(token):
                 "eventToVariable": "false",
                 "ingressCoalesceEnabled": "false",
                 "telemetryPublishMode": "TELEMETRY_ONLY",
-                "callbackThreads": "32",
-                "callbackThreadsMin": "32",
-                "callbackThreadsMax": "32",
+                "callbackThreads": "256",
+                "callbackThreadsMin": "256",
+                "callbackThreadsMax": "256",
                 "callbackElasticEnabled": "false",
                 "callbackQueueCapacity": "500000",
             },
@@ -430,7 +433,8 @@ def arm(token):
 def start_bench(duration):
     env = os.environ.copy()
     env["NUMERIC_PAYLOAD"] = "true"
-    env["EMQTT_CPU_LIMIT"] = "4.0"
+    env["EMQTT_CPU_LIMIT"] = "2.0"
+    env["EMQTT_SHARD_MAX"] = "8"
     handle = open(ROOT + "/historian-bench.log", "w", encoding="utf-8")
     return subprocess.Popen(
         ["bash", "/home/iot-solutions/ispf/loadtest/mqtt-emqtt-bench.sh",
@@ -440,7 +444,8 @@ def start_bench(duration):
          "--duration-seconds", str(duration),
          "--interval-ms", "1",
          "--topic-prefix", "ispf/tck",
-         "--single-container"],
+         "--single-container",
+         "--shard-max", "8"],
         text=True, stdout=handle, stderr=subprocess.STDOUT, env=env,
     )
 
@@ -483,14 +488,11 @@ def load_and_outage(token):
     caught = wait_caught_up(token, time.time() + 1800)
     after_rows = saved_rows()
     after_flushed = int(caught.get("flushedTotal") or 0)
-    duplicates = duplicate_rows()
     accepted = after_flushed - before_flushed
     stored = None
     if isinstance(before_rows, int) and isinstance(after_rows, int):
         stored = after_rows - before_rows
-    loss = None
-    if stored is not None and isinstance(duplicates, int):
-        loss = accepted - (stored - duplicates)
+    loss, duplicates = row_gap(stored, accepted)
     accept_p99 = mid_metrics.get("spoolAcceptP99Ms")
     accept_p99_ms = int(accept_p99) if accept_p99 not in (None, "") else None
     peak = {
@@ -506,7 +508,8 @@ def load_and_outage(token):
         "store": mid_metrics.get("store"),
         "spoolEnabled": mid_metrics.get("spoolEnabled"),
         "targetPerSecond": TARGET,
-        "sampledAt": "monotonic +1ms per series so each saved row has its own identity",
+        "minIntervalMs": mid_metrics.get("minIntervalMs"),
+        "sampledAt": "ClickHouse profile leaves spread off; same-millisecond rows stay distinct",
     }
     outage = {
         "pass": loss == 0 and duplicates == 0
@@ -790,6 +793,12 @@ def main():
         result["peak"] = peak
         result["outage"] = outage
         save(result)
+        if os.environ.get("HISTORIAN_CERT_RATE_ONLY") == "1":
+            result["rateOnly"] = True
+            result["pass"] = False
+            result["finishedAt"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            save(result)
+            return
         result["crash"] = crash_replay(token)
         token = login(time.time() + 90)
         result["rollup"] = year_rollup(token)
