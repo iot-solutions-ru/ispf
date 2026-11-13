@@ -164,7 +164,8 @@ def ch(query):
         check=False,
     )
     if proc.returncode != 0:
-        return {"error": (proc.stderr or proc.stdout or "")[-400:]}
+        text = (proc.stderr or "") + (proc.stdout or "")
+        return {"error": text[:600]}
     return (proc.stdout or "").strip()
 
 
@@ -274,6 +275,7 @@ def setup_replicas():
     <server_id>1</server_id>
     <log_storage_path>/var/lib/clickhouse/coordination/log</log_storage_path>
     <snapshot_storage_path>/var/lib/clickhouse/coordination/snapshots</snapshot_storage_path>
+    <listen_host>0.0.0.0</listen_host>
     <raft_configuration>
       <server><id>1</id><hostname>ispf-tck-keeper</hostname><port>9234</port></server>
     </raft_configuration>
@@ -293,6 +295,7 @@ def setup_replicas():
     sh([
         "docker", "run", "-d", "--name", "ispf-tck-keeper", "--network", "ispf-tck",
         "--memory", "1g",
+        "--hostname", "ispf-tck-keeper",
         "-v", ROOT + "/keeper/keeper.xml:/etc/clickhouse-keeper/keeper.xml:ro",
         "clickhouse/clickhouse-server:24.8",
         "clickhouse-keeper", "--config-file=/etc/clickhouse-keeper/keeper.xml",

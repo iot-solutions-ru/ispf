@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -54,6 +55,9 @@ public final class HistorianDiskSpool {
     private final long[] acceptMillis = new long[1024];
     private int acceptCount;
     private int acceptCursor;
+    private boolean forceLeader;
+    private long forcedThrough;
+    private long writtenThrough;
 
     public HistorianDiskSpool(Path directory, long maxBytes, long segmentBytes, boolean fsync, ObjectMapper objectMapper) {
         this.directory = directory;
@@ -81,12 +85,12 @@ public final class HistorianDiskSpool {
         openSegment(segmentIndex, true);
     }
 
-    public synchronized String append(List<VariableHistoryWriteRecord> records) throws IOException {
+    public String append(List<VariableHistoryWriteRecord> records) throws IOException {
         return write(records, false);
     }
 
     /** Durable append that is invisible to replay until {@link #release(String)}. */
-    public synchronized String appendClaimed(List<VariableHistoryWriteRecord> records) throws IOException {
+    public String appendClaimed(List<VariableHistoryWriteRecord> records) throws IOException {
         return write(records, true);
     }
 
@@ -94,13 +98,33 @@ public final class HistorianDiskSpool {
         if (records == null || records.isEmpty()) {
             return null;
         }
-        byte[] payload = encode(records);
+        long seq;
+        synchronized (this) {
+            seq = nextSeq++;
+        }
+        byte[] payload = encode(seq, records);
+        synchronized (this) {
+            try {
+                place(payload, seq, records, claim);
+            } catch (IOException | RuntimeException ex) {
+                if (nextSeq == seq + 1) {
+                    nextSeq = seq;
+                }
+                throw ex;
+            }
+        }
+        if (fsync) {
+            forceThrough(seq);
+        }
+        return Long.toString(seq);
+    }
+
+    private void place(byte[] payload, long seq, List<VariableHistoryWriteRecord> records, boolean claim) throws IOException {
         int frame = HEADER + payload.length;
         ensureCapacity(frame);
-        if (channel == null || segmentSize + frame > segmentBytes) {
+        if (channel == null || (segmentSize + frame > segmentBytes && !forceLeader)) {
             rotate();
         }
-        long seq = nextSeq;
         long position = channel.position();
         long createdAt = System.currentTimeMillis();
         ByteBuffer header = ByteBuffer.allocate(HEADER);
@@ -112,9 +136,6 @@ public final class HistorianDiskSpool {
         try {
             writeFully(header);
             writeFully(ByteBuffer.wrap(payload));
-            if (fsync) {
-                channel.force(true);
-            }
         } catch (IOException ex) {
             try {
                 channel.truncate(position);
@@ -123,15 +144,58 @@ public final class HistorianDiskSpool {
             }
             throw ex;
         }
-        nextSeq = seq + 1;
         segmentSize += frame;
         usedBytes += frame;
         pending.put(seq, new Pending(records.size(), createdAt));
         unackedRecords += records.size();
+        writtenThrough = seq;
         if (claim) {
             inFlight.add(seq);
         }
-        return Long.toString(seq);
+    }
+
+    private void forceThrough(long seq) throws IOException {
+        for (;;) {
+            FileChannel current;
+            long covered;
+            boolean sameChannel;
+            synchronized (this) {
+                if (forcedThrough >= seq) {
+                    return;
+                }
+                if (forceLeader) {
+                    try {
+                        wait(1_000);
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        throw new IOException("historian spool fsync interrupted", ex);
+                    }
+                    continue;
+                }
+                forceLeader = true;
+                current = channel;
+                covered = writtenThrough;
+            }
+            IOException failure = null;
+            try {
+                if (current != null) {
+                    current.force(true);
+                }
+            } catch (IOException ex) {
+                failure = ex;
+            }
+            synchronized (this) {
+                sameChannel = Objects.equals(current, channel);
+                if (failure == null) {
+                    forcedThrough = Math.max(forcedThrough, covered);
+                }
+                forceLeader = false;
+                notifyAll();
+                if (failure != null && sameChannel) {
+                    throw failure;
+                }
+            }
+        }
     }
 
     public synchronized void ack(String batchId) throws IOException {
@@ -228,6 +292,10 @@ public final class HistorianDiskSpool {
 
     public synchronized void close() throws IOException {
         if (channel != null) {
+            if (fsync) {
+                channel.force(true);
+                forcedThrough = Math.max(forcedThrough, nextSeq - 1);
+            }
             channel.close();
             channel = null;
         }
@@ -235,11 +303,15 @@ public final class HistorianDiskSpool {
 
     private void rotate() throws IOException {
         if (channel != null) {
+            if (fsync) {
+                channel.force(true);
+                forcedThrough = Math.max(forcedThrough, writtenThrough);
+            }
             channel.close();
             channel = null;
         }
         if (segmentSize > 0) {
-            closedMaxSeq.put(segmentIndex, nextSeq - 1);
+            closedMaxSeq.put(segmentIndex, writtenThrough);
             segmentIndex++;
         }
         reclaimClosedSegments();
@@ -256,7 +328,7 @@ public final class HistorianDiskSpool {
             quotaHit = false;
             return;
         }
-        if (segmentSize > 0 && nextSeq - 1 <= ackedThrough) {
+        if (segmentSize > 0 && writtenThrough > 0 && writtenThrough <= ackedThrough) {
             rotate();
         }
         if (usedBytes + frame > maxBytes) {
@@ -447,11 +519,12 @@ public final class HistorianDiskSpool {
             }
         }
         nextSeq = max + 1;
+        writtenThrough = max;
     }
 
-    private byte[] encode(List<VariableHistoryWriteRecord> records) throws IOException {
+    private byte[] encode(long seq, List<VariableHistoryWriteRecord> records) throws IOException {
         StringBuilder body = new StringBuilder();
-        body.append(nextSeq).append('\n');
+        body.append(seq).append('\n');
         for (VariableHistoryWriteRecord record : records) {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("objectPath", record.objectPath());
