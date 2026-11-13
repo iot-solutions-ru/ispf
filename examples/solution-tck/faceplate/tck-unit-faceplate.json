@@ -1,0 +1,93 @@
+{
+  "instanceType": {
+    "name": "tck-unit-faceplate",
+    "description": "INSTANCE twin whose faceplate binds level and alarm. Not a DEVICE.",
+    "targetObjectType": "CUSTOM",
+    "variables": [
+      {
+        "name": "level",
+        "description": "Unit level",
+        "group": "telemetry",
+        "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] },
+        "readable": true,
+        "writable": true,
+        "defaultValue": {
+          "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] },
+          "rows": [{ "value": 42.0 }]
+        }
+      },
+      {
+        "name": "alarm",
+        "description": "Alarm text visible to the alarm role",
+        "group": "alarm",
+        "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] },
+        "readable": true,
+        "writable": false,
+        "defaultValue": {
+          "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] },
+          "rows": [{ "value": "ACTIVE" }]
+        }
+      }
+    ],
+    "events": [],
+    "functions": [],
+    "bindings": [],
+    "parameters": {}
+  },
+  "parentPath": "root.platform.instances.tck-units",
+  "instanceCount": 1000,
+  "faceplatePath": "root.platform.dashboards.tck-unit-faceplate",
+  "indexPath": "root.platform.dashboards.tck-unit-index",
+  "faceplateLayout": {
+    "columns": 84,
+    "rowHeight": 8,
+    "widgets": [
+      {
+        "id": "unit-level",
+        "type": "value",
+        "title": "Level",
+        "x": 0,
+        "y": 0,
+        "w": 20,
+        "h": 12,
+        "selectionKey": "unit",
+        "variableName": "level",
+        "valueField": "value",
+        "decimals": 1
+      },
+      {
+        "id": "unit-alarm",
+        "type": "value",
+        "title": "Alarm",
+        "x": 22,
+        "y": 0,
+        "w": 20,
+        "h": 12,
+        "selectionKey": "unit",
+        "variableName": "alarm",
+        "valueField": "value"
+      }
+    ]
+  },
+  "indexLayout": {
+    "columns": 84,
+    "rowHeight": 8,
+    "widgets": [
+      {
+        "id": "tck-units",
+        "type": "object-table",
+        "title": "Units",
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 28,
+        "parentPath": "root.platform.instances.tck-units",
+        "columnsJson": "[{\"label\":\"Unit\",\"objectField\":\"displayName\"}]",
+        "selectionKey": "unit",
+        "rowSelectionKey": "unit",
+        "rowTargetDashboard": "root.platform.dashboards.tck-unit-faceplate",
+        "rowOpenMode": "modal"
+      }
+    ]
+  }
+}
