@@ -35,6 +35,7 @@ public class VariableHistoryAsyncWriter {
     private ExecutorService workers;
     private ElasticWorkerScaler scaler;
     private final AtomicInteger activeWorkers = new AtomicInteger();
+    private final AtomicInteger enqueueAdjustSkips = new AtomicInteger();
     private volatile boolean running;
 
     public VariableHistoryAsyncWriter(
@@ -111,7 +112,7 @@ public class VariableHistoryAsyncWriter {
 
     private void enqueueOne(VariableSampleEntity sample) {
         if (queue.offer(sample)) {
-            adjustWorkers();
+            maybeAdjustWorkers();
             return;
         }
         if (overflowCoalesce != null) {
@@ -122,7 +123,7 @@ public class VariableHistoryAsyncWriter {
             } else {
                 automationMetricsRecorder.recordVariableHistoryCoalesced();
             }
-            adjustWorkers();
+            maybeAdjustWorkers();
             return;
         }
         automationMetricsRecorder.recordVariableHistorySyncFallback();
@@ -180,6 +181,17 @@ public class VariableHistoryAsyncWriter {
                 return true;
             }
         }
+    }
+
+    /** Scaling under a global lock on every sample caps ingress around ten thousand per second. */
+    private void maybeAdjustWorkers() {
+        if (scaler == null || !running) {
+            return;
+        }
+        if ((enqueueAdjustSkips.incrementAndGet() & 127) != 0) {
+            return;
+        }
+        adjustWorkers();
     }
 
     private void adjustWorkers() {

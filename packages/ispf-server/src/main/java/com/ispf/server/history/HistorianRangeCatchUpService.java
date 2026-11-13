@@ -27,6 +27,14 @@ public class HistorianRangeCatchUpService {
 
     private static final Logger log = LoggerFactory.getLogger(HistorianRangeCatchUpService.class);
 
+    /**
+     * One ClickHouse insert per open range does not finish a multi-minute outage inside the
+     * catch-up wait. The historian flushes faster than sample timestamps overlap, so each flush
+     * becomes its own range, and each range is its own HTTP call (30s budget). Replay in chunks
+     * and stop on the first failure so a downed ClickHouse does not walk every fragment.
+     */
+    static final int REPLAY_CHUNK = 2_000;
+
     private final HistorianSampleWal wal;
     private final HistorianCatchUpRangeStore ranges;
     private final ObjectProvider<ClickHouseVariableHistorySecondaryWriteStore> secondary;
@@ -98,51 +106,60 @@ public class HistorianRangeCatchUpService {
             return 0;
         }
 
-        List<VariableHistoryWriteRecord> indexed;
+        List<VariableHistoryWriteRecord> pending;
         synchronized (walLock) {
-            indexed = dedupe(wal.readAll());
+            pending = dedupe(wal.readAll());
+        }
+        if (pending.isEmpty()) {
+            return 0;
         }
 
         int copied = 0;
         List<VariableHistoryWriteRecord> acknowledged = new ArrayList<>();
-        List<HistorianCatchUpRangeStore.Range> clearedRanges = new ArrayList<>();
-
-        for (HistorianCatchUpRangeStore.Range range : open) {
-            List<VariableHistoryWriteRecord> batch = new ArrayList<>();
-            for (VariableHistoryWriteRecord record : indexed) {
-                if (inRange(record, range)) {
-                    batch.add(record);
-                }
-            }
-            if (batch.isEmpty()) {
-                continue;
-            }
+        for (int offset = 0; offset < pending.size(); offset += REPLAY_CHUNK) {
+            List<VariableHistoryWriteRecord> chunk = new ArrayList<>(
+                    pending.subList(offset, Math.min(offset + REPLAY_CHUNK, pending.size()))
+            );
             try {
-                writer.appendBatch(batch);
-                copied += batch.size();
-                acknowledged.addAll(batch);
-                clearedRanges.add(range);
+                writer.appendBatch(chunk);
             } catch (RuntimeException ex) {
-                log.warn("historian catch-up replay failed for {} ({} samples)", range.seriesKey(), batch.size(), ex);
+                log.warn(
+                        "historian catch-up replay failed ({} of {} samples, chunk {})",
+                        acknowledged.size(),
+                        pending.size(),
+                        chunk.size(),
+                        ex
+                );
+                break;
             }
+            copied += chunk.size();
+            acknowledged.addAll(chunk);
         }
 
-        if (!acknowledged.isEmpty() || !clearedRanges.isEmpty()) {
-            Set<String> acked = new HashSet<>();
-            for (VariableHistoryWriteRecord record : acknowledged) {
-                acked.add(identity(record));
-            }
-            synchronized (walLock) {
-                if (!acked.isEmpty()) {
-                    List<VariableHistoryWriteRecord> staying = new ArrayList<>();
-                    for (VariableHistoryWriteRecord record : dedupe(wal.readAll())) {
-                        if (!acked.contains(identity(record))) {
-                            staying.add(record);
-                        }
-                    }
-                    wal.rewrite(staying);
+        if (acknowledged.isEmpty()) {
+            return 0;
+        }
+        Set<String> acked = new HashSet<>();
+        for (VariableHistoryWriteRecord record : acknowledged) {
+            acked.add(identity(record));
+        }
+        synchronized (walLock) {
+            List<VariableHistoryWriteRecord> staying = new ArrayList<>();
+            for (VariableHistoryWriteRecord record : dedupe(wal.readAll())) {
+                if (!acked.contains(identity(record))) {
+                    staying.add(record);
                 }
-                for (HistorianCatchUpRangeStore.Range range : clearedRanges) {
+            }
+            wal.rewrite(staying);
+            for (HistorianCatchUpRangeStore.Range range : open) {
+                boolean stillOpen = false;
+                for (VariableHistoryWriteRecord record : staying) {
+                    if (inRange(record, range)) {
+                        stillOpen = true;
+                        break;
+                    }
+                }
+                if (!stillOpen) {
                     ranges.remove(range.seriesKey(), range.from(), range.to());
                 }
             }

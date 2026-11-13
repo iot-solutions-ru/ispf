@@ -13,8 +13,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -92,6 +94,57 @@ class HistorianRangeCatchUpServiceTest {
         verify(writer).appendBatch(List.of(sample));
         assertEquals(0, ranges.list().size());
         assertEquals(0, wal.readAll().size());
+    }
+
+    @Test
+    void fragmentedRangesReplayAsOneBatch() {
+        MemoryRanges ranges = new MemoryRanges();
+        HistorianSampleWal wal = new HistorianSampleWal(dir, 8_000_000);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<ClickHouseVariableHistorySecondaryWriteStore> secondary = mock(ObjectProvider.class);
+        ClickHouseVariableHistorySecondaryWriteStore writer = mock(ClickHouseVariableHistorySecondaryWriteStore.class);
+        when(secondary.getIfAvailable()).thenReturn(writer);
+        HistorianRangeCatchUpService service = new HistorianRangeCatchUpService(wal, ranges, secondary);
+        Instant start = Instant.parse("2026-11-12T10:00:00Z");
+        for (int i = 0; i < 12; i++) {
+            Instant at = start.plusSeconds(i);
+            service.noteSecondaryFailure(List.of(new VariableHistoryWriteRecord(
+                    "root.platform.devices.line", "temp", "value", at, at, (double) i, null, "GOOD")));
+        }
+        assertEquals(12, ranges.list().size());
+
+        int copied = service.replay();
+
+        assertEquals(12, copied);
+        verify(writer, times(1)).appendBatch(anyList());
+        assertEquals(0, ranges.list().size());
+        assertEquals(0, wal.readAll().size());
+    }
+
+    @Test
+    void replayStopsAfterTheFirstFailedChunk() {
+        MemoryRanges ranges = new MemoryRanges();
+        HistorianSampleWal wal = new HistorianSampleWal(dir, 64_000_000);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<ClickHouseVariableHistorySecondaryWriteStore> secondary = mock(ObjectProvider.class);
+        ClickHouseVariableHistorySecondaryWriteStore writer = mock(ClickHouseVariableHistorySecondaryWriteStore.class);
+        when(secondary.getIfAvailable()).thenReturn(writer);
+        doThrow(new RuntimeException("clickhouse down")).when(writer).appendBatch(anyList());
+        HistorianRangeCatchUpService service = new HistorianRangeCatchUpService(wal, ranges, secondary);
+        Instant start = Instant.parse("2026-11-12T10:00:00Z");
+        int count = HistorianRangeCatchUpService.REPLAY_CHUNK + 1;
+        List<VariableHistoryWriteRecord> samples = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            Instant at = start.plusMillis(i);
+            samples.add(new VariableHistoryWriteRecord(
+                    "root.platform.devices.line", "temp", "value", at, at, (double) i, null, "GOOD"));
+        }
+        service.noteSecondaryFailure(samples);
+
+        assertEquals(0, service.replay());
+        verify(writer, times(1)).appendBatch(anyList());
+        assertEquals(count, wal.readAll().size());
+        assertEquals(1, ranges.list().size());
     }
 
     @Test

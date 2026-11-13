@@ -37,7 +37,8 @@ class AuthControllerTest {
                 "",
                 mock(AuditEventService.class),
                 loginAttemptLimiter,
-                mock(UiPackPartnerLoginGuard.class)
+                mock(UiPackPartnerLoginGuard.class),
+                mock(com.ispf.server.application.script.Ed25519FunctionSignatureVerifier.class)
         );
         when(userService.login(any(), any(), any())).thenReturn(Map.of("token", "t"));
     }

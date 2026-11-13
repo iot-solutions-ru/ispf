@@ -14,6 +14,7 @@ public final class DriverIngressFifoExecutor implements AutoCloseable {
     private final ThreadPoolExecutor executor;
     private final IngressElasticSettings elastic;
     private final ElasticWorkerScaler scaler;
+    private volatile int appliedWorkers = -1;
 
     public DriverIngressFifoExecutor(
             IngressElasticSettings elastic,
@@ -57,7 +58,6 @@ public final class DriverIngressFifoExecutor implements AutoCloseable {
 
     public void execute(Runnable task) {
         executor.execute(task);
-        adjustPool();
     }
 
     private void adjustPool() {
@@ -67,7 +67,11 @@ public final class DriverIngressFifoExecutor implements AutoCloseable {
         scaler.adjust(executor.getQueue().size());
         int maxWorkers = elastic.resolvedMaxWorkers();
         int target = Math.min(scaler.targetWorkers(), maxWorkers);
+        if (target == appliedWorkers) {
+            return;
+        }
         ThreadPoolResize.apply(executor, maxWorkers, target);
+        appliedWorkers = target;
     }
 
     @Override

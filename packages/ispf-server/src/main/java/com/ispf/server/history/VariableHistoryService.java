@@ -189,7 +189,7 @@ public class VariableHistoryService {
         Map<String, VariableSampleEntity> coalesced = new LinkedHashMap<>();
         Map<String, DataRecord> historizedCandidates = new LinkedHashMap<>();
         appendSamplesFromDataRecord(
-                objectPath, variableName, record, observedAt, now, nowMs, coalesced, historizedCandidates
+                objectPath, variableName, record, observedAt, now, nowMs, coalesced, historizedCandidates, true
         );
         List<VariableSampleEntity> samples = new ArrayList<>();
         Set<String> acceptedHistorizedKeys = new HashSet<>();
@@ -255,11 +255,12 @@ public class VariableHistoryService {
         if (!isHistorizedVariable(objectPath, variableName)) {
             return;
         }
-        enqueueFromDataRecord(objectPath, variableName, record, observedAt);
+        enqueueFromDataRecord(objectPath, variableName, record, observedAt, true);
     }
 
     /**
      * Fast path when {@link TelemetryHistorianFastPath} already verified historian interest.
+     * Skips the JSON record snapshot so a numeric sample does not serialize on the ingress thread.
      */
     public void recordFromDataRecordTrusted(
             String objectPath,
@@ -274,7 +275,7 @@ public class VariableHistoryService {
                 || variableName.startsWith("driver")) {
             return;
         }
-        enqueueFromDataRecord(objectPath, variableName, record, observedAt);
+        enqueueFromDataRecord(objectPath, variableName, record, observedAt, false);
     }
 
     /**
@@ -304,7 +305,8 @@ public class VariableHistoryService {
                     now,
                     nowMs,
                     coalesced,
-                    historizedCandidates
+                    historizedCandidates,
+                    false
             );
         }
         List<VariableSampleEntity> samples = new ArrayList<>(coalesced.size());
@@ -336,12 +338,13 @@ public class VariableHistoryService {
             String objectPath,
             String variableName,
             DataRecord record,
-            Instant observedAt
+            Instant observedAt,
+            boolean snapshot
     ) {
         long nowMs = System.currentTimeMillis();
         Instant now = Instant.ofEpochMilli(nowMs);
         List<VariableSampleEntity> samples = new ArrayList<>();
-        appendSamplesFromDataRecord(objectPath, variableName, record, observedAt, now, nowMs, samples);
+        appendSamplesFromDataRecord(objectPath, variableName, record, observedAt, now, nowMs, samples, snapshot);
         enqueueSamples(samples);
     }
 
@@ -353,7 +356,8 @@ public class VariableHistoryService {
             Instant now,
             long nowMs,
             Map<String, VariableSampleEntity> samples,
-            Map<String, DataRecord> historizedCandidates
+            Map<String, DataRecord> historizedCandidates,
+            boolean snapshot
     ) {
         if (!acceptHistorianSample(objectPath, variableName, record)) {
             return;
@@ -384,7 +388,9 @@ public class VariableHistoryService {
             applyRowQuality(sample, record);
             samples.put(debounceKey, sample);
         }
-        appendRecordSnapshot(objectPath, variableName, record, observedAt, now, samples);
+        if (snapshot && properties.isRecordSnapshotEnabled()) {
+            appendRecordSnapshot(objectPath, variableName, record, observedAt, now, samples);
+        }
     }
 
     private void appendRecordSnapshot(
@@ -452,12 +458,13 @@ public class VariableHistoryService {
             Instant observedAt,
             Instant now,
             long nowMs,
-            List<VariableSampleEntity> samples
+            List<VariableSampleEntity> samples,
+            boolean snapshot
     ) {
         Map<String, VariableSampleEntity> coalesced = new LinkedHashMap<>();
         Map<String, DataRecord> historizedCandidates = new LinkedHashMap<>();
         appendSamplesFromDataRecord(
-                objectPath, variableName, record, observedAt, now, nowMs, coalesced, historizedCandidates
+                objectPath, variableName, record, observedAt, now, nowMs, coalesced, historizedCandidates, snapshot
         );
         Set<String> acceptedHistorizedKeys = new HashSet<>();
         for (Map.Entry<String, VariableSampleEntity> entry : coalesced.entrySet()) {
@@ -847,8 +854,8 @@ public class VariableHistoryService {
             historizedCache.put(cacheKey, new HistorizedCacheEntry(false, nowMs));
             return false;
         }
-        boolean enabled = objectManager.require(objectPath)
-                .getVariable(variableName)
+        boolean enabled = objectManager.tree().findByPath(objectPath)
+                .flatMap(node -> node.getVariable(variableName))
                 .map(Variable::historyEnabled)
                 .orElse(false);
         historizedCache.put(cacheKey, new HistorizedCacheEntry(enabled, nowMs));
@@ -863,8 +870,8 @@ public class VariableHistoryService {
     private record HistorizedCacheEntry(boolean enabled, long loadedAtMs) {}
 
     private boolean acceptHistorianSample(String objectPath, String variableName, DataRecord record) {
-        HistorySampleMode mode = objectManager.require(objectPath)
-                .getVariable(variableName)
+        HistorySampleMode mode = objectManager.tree().findByPath(objectPath)
+                .flatMap(node -> node.getVariable(variableName))
                 .map(Variable::historySampleMode)
                 .orElse(HistorySampleMode.CHANGES_ONLY);
         if (mode == HistorySampleMode.ALL_VALUES) {

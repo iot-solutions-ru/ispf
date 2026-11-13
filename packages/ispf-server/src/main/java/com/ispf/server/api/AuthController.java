@@ -2,6 +2,7 @@ package com.ispf.server.api;
 
 import com.ispf.server.application.uipack.UiPackPartnerLoginGuard;
 import com.ispf.server.application.uipack.UiPackSupport;
+import com.ispf.server.application.script.Ed25519FunctionSignatureVerifier;
 import com.ispf.server.audit.AuditEventService;
 import com.ispf.server.security.LoginAttemptLimiter;
 import com.ispf.server.security.PlatformUserService;
@@ -42,6 +43,7 @@ public class AuthController {
     private final AuditEventService auditEventService;
     private final LoginAttemptLimiter loginAttemptLimiter;
     private final UiPackPartnerLoginGuard uiPackPartnerLoginGuard;
+    private final Ed25519FunctionSignatureVerifier signatureVerifier;
 
     public AuthController(
             PlatformUserService userService,
@@ -50,7 +52,8 @@ public class AuthController {
             @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}") String oauthIssuerUri,
             AuditEventService auditEventService,
             LoginAttemptLimiter loginAttemptLimiter,
-            UiPackPartnerLoginGuard uiPackPartnerLoginGuard
+            UiPackPartnerLoginGuard uiPackPartnerLoginGuard,
+            Ed25519FunctionSignatureVerifier signatureVerifier
     ) {
         this.userService = userService;
         this.securityProperties = securityProperties;
@@ -59,6 +62,7 @@ public class AuthController {
         this.auditEventService = auditEventService;
         this.loginAttemptLimiter = loginAttemptLimiter;
         this.uiPackPartnerLoginGuard = uiPackPartnerLoginGuard;
+        this.signatureVerifier = signatureVerifier;
     }
 
     @GetMapping("/config")
@@ -197,9 +201,31 @@ public class AuthController {
         return false;
     }
 
+    @PutMapping("/signature-key")
+    public Map<String, Object> enrollSignatureKey(
+            @Valid @RequestBody SignatureKeyRequest request,
+            Authentication authentication
+    ) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "authentication required");
+        }
+        try {
+            signatureVerifier.enroll(authentication.getName(), request.publicKey());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("username", authentication.getName());
+        response.put("enrolled", true);
+        return response;
+    }
+
     public record LoginRequest(@NotBlank String username, @NotBlank String password, String totpCode) {
     }
 
     public record UpdateTimeZoneRequest(@NotBlank String timeZone) {
+    }
+
+    public record SignatureKeyRequest(@NotBlank String publicKey) {
     }
 }

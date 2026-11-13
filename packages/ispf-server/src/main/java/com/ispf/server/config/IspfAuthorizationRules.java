@@ -200,6 +200,8 @@ public final class IspfAuthorizationRules {
 
         auth.requestMatchers(HttpMethod.PUT, "/api/v1/auth/me/timezone")
                 .hasAnyRole(IspfRoles.ROLES_READ);
+        auth.requestMatchers(HttpMethod.PUT, "/api/v1/auth/signature-key")
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers("/api/v1/**").hasAnyRole(IspfRoles.ROLES_CONFIG);
     }
