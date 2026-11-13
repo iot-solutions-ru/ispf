@@ -186,7 +186,9 @@ public final class HistorianDiskSpool {
                 copied++;
             } catch (RuntimeException ex) {
                 synchronized (this) {
-                    inFlight.remove(frame.seq());
+                    for (int index = copied; index < pending.size(); index++) {
+                        inFlight.remove(pending.get(index).seq());
+                    }
                     errors++;
                 }
                 return copied;
@@ -224,6 +226,7 @@ public final class HistorianDiskSpool {
 
     private void ensureCapacity(int frame) throws IOException {
         if (usedBytes + frame <= maxBytes) {
+            quotaHit = false;
             return;
         }
         reclaimClosedSegments();

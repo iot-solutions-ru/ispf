@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -132,6 +133,33 @@ class HistorianDiskSpoolTest {
         spool.release(id);
         assertEquals(1, spool.replay((batch, records) -> seen.add(batch), 10));
         assertEquals(List.of(id), seen);
+        spool.close();
+    }
+
+    @Test
+    void failedReplayReleasesEveryFrameInTheBatch() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        spool.append(List.of(sample(1)));
+        spool.append(List.of(sample(2)));
+        assertEquals(0, spool.replay((id, records) -> {
+            throw new IllegalStateException("down");
+        }, 10));
+        List<String> seen = new ArrayList<>();
+        assertEquals(2, spool.replay((id, records) -> seen.add(id), 10));
+        assertEquals(2, seen.size());
+        spool.close();
+    }
+
+    @Test
+    void aSmallerBatchClearsQuotaAfterALargerBatchWasRejected() throws Exception {
+        HistorianDiskSpool spool = spool(350, 64 * 1024, true);
+        spool.open();
+        assertThrows(HistorianSpoolQuotaException.class, () -> spool.append(List.of(
+                sample(1), sample(2), sample(3), sample(4), sample(5))));
+        assertTrue(spool.stats().quotaHit());
+        spool.append(List.of(sample(1)));
+        assertFalse(spool.stats().quotaHit());
         spool.close();
     }
 
