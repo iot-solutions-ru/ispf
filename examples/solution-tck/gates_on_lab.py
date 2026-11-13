@@ -262,6 +262,44 @@ def arm_command_driver(token):
     api("POST", "/api/v1/drivers/runtime/start", token, query={"devicePath": CMD_DEVICE})
 
 
+def reject_stale_fencing_epoch(token, holder):
+    """The holder still has the epoch from when it acquired the lease.
+
+    Advancing the database generation makes that in-memory epoch stale. The
+    write must be refused, then the generation is put back.
+    """
+    if holder not in PORTS:
+        return {"pass": False, "reason": f"holder {holder!r} has no API port"}
+    epoch = psql(
+        "SELECT fencing_epoch FROM platform_driver_locks "
+        f"WHERE device_path = '{CMD_DEVICE}' AND holder_id = '{holder}';"
+    )
+    if not epoch.isdigit() or int(epoch) < 1:
+        return {"pass": False, "reason": f"no fencing epoch ({epoch!r})"}
+    psql(
+        "UPDATE platform_driver_locks SET fencing_epoch = fencing_epoch + 1 "
+        f"WHERE device_path = '{CMD_DEVICE}' AND holder_id = '{holder}';"
+    )
+    try:
+        status, body = api(
+            "POST", "/api/v1/drivers/runtime/write", token,
+            {"rows": [{"value": "stale-epoch"}]},
+            {"devicePath": CMD_DEVICE, "pointId": "command"},
+            port=PORTS[holder],
+        )
+    finally:
+        psql(
+            "UPDATE platform_driver_locks SET fencing_epoch = "
+            f"{int(epoch)} WHERE device_path = '{CMD_DEVICE}' AND holder_id = '{holder}';"
+        )
+    text = json.dumps(body)
+    return {
+        "pass": status == 409 and "stale fencing epoch" in text,
+        "status": status,
+        "detail": body.get("detail") if isinstance(body, dict) else text[:300],
+    }
+
+
 def failover(token):
     import subprocess
     received = []
@@ -367,8 +405,12 @@ def failover(token):
         missing = [n for n in accepted if n not in set(delivered)]
         lease_ok = elapsed is not None and elapsed < 5.0
         commands_ok = len(accepted) > 0 and not missing and duplicates == 0
+        stale = reject_stale_fencing_epoch(token, moved) if moved in PORTS else {
+            "pass": False,
+            "reason": f"lease did not move to a known replica ({moved!r})",
+        }
         return {
-            "pass": lease_ok and commands_ok,
+            "pass": lease_ok and commands_ok and stale.get("pass") is True,
             "previousHolder": holder,
             "newHolder": moved,
             "seconds": None if elapsed is None else round(elapsed, 3),
@@ -377,6 +419,7 @@ def failover(token):
             "duplicateCommands": duplicates,
             "lostCommands": len(missing),
             "lastError": last_error["text"],
+            "staleEpoch": stale,
         }
     finally:
         subscriber.terminate()
