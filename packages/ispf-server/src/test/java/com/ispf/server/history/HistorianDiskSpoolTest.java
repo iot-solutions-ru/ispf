@@ -1,0 +1,126 @@
+package com.ispf.server.history;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class HistorianDiskSpoolTest {
+
+    @TempDir
+    Path dir;
+
+    @Test
+    void restartReplaysOnlyTheUnackedBatch() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        String first = spool.append(List.of(sample(1)));
+        String second = spool.append(List.of(sample(2)));
+        spool.ack(first);
+        spool.close();
+
+        HistorianDiskSpool reopened = spool(1024 * 1024, 64 * 1024, true);
+        reopened.open();
+        List<String> seen = new ArrayList<>();
+        assertEquals(1, reopened.replay((id, records) -> seen.add(id + ":" + records.getFirst().valueDouble()), 10));
+        assertEquals(List.of(second + ":2.0"), seen);
+        assertEquals(0, reopened.replay((id, records) -> seen.add("again"), 10));
+        reopened.close();
+    }
+
+    @Test
+    void tornTailIsDroppedAndTheGoodFrameRemains() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        spool.append(List.of(sample(7)));
+        spool.close();
+        Path segment = onlySegment();
+        Files.write(segment, new byte[] {1, 2, 3, 4, 5}, java.nio.file.StandardOpenOption.APPEND);
+
+        HistorianDiskSpool reopened = spool(1024 * 1024, 64 * 1024, true);
+        reopened.open();
+        List<Double> values = new ArrayList<>();
+        assertEquals(1, reopened.replay((id, records) -> values.add(records.getFirst().valueDouble()), 10));
+        assertEquals(List.of(7.0), values);
+        reopened.close();
+    }
+
+    @Test
+    void quotaDoesNotDeleteTheAcceptedFrame() throws Exception {
+        HistorianDiskSpool spool = spool(350, 64 * 1024, true);
+        spool.open();
+        spool.append(List.of(sample(1)));
+        assertThrows(HistorianSpoolQuotaException.class, () -> spool.append(List.of(sample(2))));
+        assertEquals(1, spool.stats().unackedRecords());
+        assertTrue(spool.stats().quotaHit());
+        spool.close();
+        assertTrue(segmentCount() >= 1);
+    }
+
+    @Test
+    void repeatedReplayDoesNotEmitASecondCopy() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        spool.append(List.of(sample(4)));
+        CopyOnWriteArrayList<String> delivered = new CopyOnWriteArrayList<>();
+        spool.replay((id, records) -> delivered.add(id), 10);
+        spool.replay((id, records) -> delivered.add(id), 10);
+        assertEquals(1, delivered.size());
+        spool.close();
+    }
+
+    @Test
+    void fsyncLeavesAReadableSegment() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        spool.append(List.of(sample(3)));
+        spool.close();
+        assertTrue(Files.size(onlySegment()) > 20);
+    }
+
+    @Test
+    void smallSegmentsRollToASecondFile() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 40, true);
+        spool.open();
+        spool.append(List.of(sample(1)));
+        spool.append(List.of(sample(2)));
+        spool.close();
+        long segments = segmentCount();
+        assertTrue(segments >= 2, "segments=" + segments);
+    }
+
+    private Path onlySegment() throws Exception {
+        try (var stream = Files.list(dir)) {
+            return stream.filter(path -> path.getFileName().toString().endsWith(".seg")).findFirst().orElseThrow();
+        }
+    }
+
+    private long segmentCount() throws Exception {
+        try (var stream = Files.list(dir)) {
+            return stream.filter(path -> path.getFileName().toString().endsWith(".seg")).count();
+        }
+    }
+
+    private HistorianDiskSpool spool(long maxBytes, long segmentBytes, boolean fsync) {
+        return new HistorianDiskSpool(dir, maxBytes, segmentBytes, fsync, new ObjectMapper());
+    }
+
+    private static VariableHistoryWriteRecord sample(double value) {
+        return new VariableHistoryWriteRecord(
+                "root.a", "v", "value",
+                Instant.parse("2026-11-13T00:00:00Z"),
+                Instant.parse("2026-11-13T00:00:00Z"),
+                value, null, "GOOD"
+        );
+    }
+}

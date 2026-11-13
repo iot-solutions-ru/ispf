@@ -9,6 +9,7 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -43,6 +44,7 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
     private final VariableHistoryProperties properties;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient;
+    private HistorianDiskSpool spool;
 
     public ClickHouseVariableHistoryStore(VariableHistoryProperties properties) {
         this.properties = properties;
@@ -86,7 +88,33 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                     "ALTER TABLE %s ADD COLUMN IF NOT EXISTS quality Nullable(String)",
                     qualifiedTable
             ));
+            if (properties.getSpool() != null && properties.getSpool().isEnabled()) {
+                try {
+                    executeStatement(
+                            "ALTER TABLE " + qualifiedTable
+                                    + " MODIFY SETTING non_replicated_deduplication_window = 10000"
+                    );
+                } catch (RuntimeException ex) {
+                    log.info("ClickHouse dedupe window was not applied; replicated MergeTree uses insert_deduplication_token ({})", ex.getMessage());
+                }
+            }
         });
+        if (properties.getSpool() != null && properties.getSpool().isEnabled()) {
+            VariableHistoryProperties.Spool spoolConfig = properties.getSpool();
+            spool = new HistorianDiskSpool(
+                    java.nio.file.Path.of(spoolConfig.getDirectory()),
+                    spoolConfig.getMaxBytes(),
+                    spoolConfig.getSegmentBytes(),
+                    spoolConfig.isFsync(),
+                    objectMapper
+            );
+            try {
+                spool.open();
+                spool.replay(this::insertDeduplicated, spoolConfig.getReplayBatch());
+            } catch (java.io.IOException ex) {
+                throw new IllegalStateException("historian spool failed to open", ex);
+            }
+        }
         log.info(
                 "ClickHouse variable history ready (database={}, table={}, retentionDays={})",
                 database,
@@ -100,12 +128,66 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
         if (records.isEmpty()) {
             return;
         }
+        if (spool == null) {
+            post(insertQuery(null), jsonBody(records));
+            return;
+        }
+        String batchId;
+        try {
+            batchId = spool.append(records);
+        } catch (java.io.IOException ex) {
+            throw new IllegalStateException("historian spool append failed", ex);
+        }
+        try {
+            insertDeduplicated(batchId, records);
+        } catch (RuntimeException ex) {
+            log.warn("ClickHouse insert failed after durable spool accept (batch={})", batchId, ex);
+        }
+    }
+
+    @Scheduled(fixedDelayString = "${ispf.variable-history.spool.replay-interval-ms:1000}")
+    void replaySpool() {
+        if (spool == null) {
+            return;
+        }
+        try {
+            spool.replay(this::insertDeduplicated, Math.max(1, properties.getSpool().getReplayBatch()));
+        } catch (java.io.IOException ex) {
+            log.warn("historian spool replay failed", ex);
+        }
+    }
+
+    public HistorianDiskSpool.Stats spoolStats() {
+        return spool == null ? null : spool.stats();
+    }
+
+    private void insertDeduplicated(String batchId, List<VariableHistoryWriteRecord> records) {
+        post(insertQuery(batchId), jsonBody(records));
+        if (spool != null && batchId != null) {
+            try {
+                spool.ack(batchId);
+            } catch (java.io.IOException ex) {
+                throw new IllegalStateException("historian spool ack failed", ex);
+            }
+        }
+    }
+
+    private String jsonBody(List<VariableHistoryWriteRecord> records) {
         StringJoiner body = new StringJoiner("\n");
         for (VariableHistoryWriteRecord record : records) {
             body.add(toJsonLine(record));
         }
-        String insertQuery = "INSERT INTO " + qualifiedTable() + " FORMAT JSONEachRow";
-        post(insertQuery, body.toString());
+        return body.toString();
+    }
+
+    private String insertQuery(String batchId) {
+        if (batchId == null) {
+            return "INSERT INTO " + qualifiedTable() + " FORMAT JSONEachRow";
+        }
+        return "INSERT INTO " + qualifiedTable()
+                + " SETTINGS insert_deduplicate = 1, insert_deduplication_token = '"
+                + batchId.replace("'", "")
+                + "', non_replicated_deduplication_window = 10000 FORMAT JSONEachRow";
     }
 
     @Override

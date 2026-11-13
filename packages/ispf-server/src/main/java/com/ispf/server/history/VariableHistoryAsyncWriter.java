@@ -54,7 +54,7 @@ public class VariableHistoryAsyncWriter {
             return;
         }
         queue = new LinkedBlockingQueue<>(properties.getQueueCapacity());
-        if (properties.isOverflowCoalesceEnabled()) {
+        if (properties.isOverflowCoalesceEnabled() && !properties.getSpool().isEnabled()) {
             overflowCoalesce = new ConcurrentHashMap<>();
         }
         running = true;
@@ -112,6 +112,16 @@ public class VariableHistoryAsyncWriter {
 
     private void enqueueOne(VariableSampleEntity sample) {
         if (queue.offer(sample)) {
+            maybeAdjustWorkers();
+            return;
+        }
+        if (properties.getSpool().isEnabled()) {
+            try {
+                queue.put(sample);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("historian spool backpressure interrupted", ex);
+            }
             maybeAdjustWorkers();
             return;
         }
@@ -221,7 +231,19 @@ public class VariableHistoryAsyncWriter {
                     queue.drainTo(batch, batchSize - batch.size());
                 }
                 if (!batch.isEmpty()) {
-                    flushBatch(batch);
+                    try {
+                        flushBatch(batch);
+                    } catch (HistorianSpoolQuotaException ex) {
+                        for (int i = batch.size() - 1; i >= 0; i--) {
+                            queue.offer(batch.get(i));
+                        }
+                        try {
+                            Thread.sleep(1_000);
+                        } catch (InterruptedException interrupted) {
+                            Thread.currentThread().interrupt();
+                            return;
+                        }
+                    }
                 } else {
                     adjustWorkers();
                 }
@@ -277,6 +299,10 @@ public class VariableHistoryAsyncWriter {
                 );
                 automationMetricsRecorder.recordVariableHistoryFlushed(batch.size());
                 return;
+            }
+            if (ex instanceof HistorianSpoolQuotaException) {
+                log.error("historian spool is full; {} samples stay unaccepted", batch.size());
+                throw ex;
             }
             log.error("Variable history batch flush failed (size={}); falling back to per-sample sync", batch.size(), ex);
             for (VariableSampleEntity sample : batch) {
