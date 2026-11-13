@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "localTests": [
+    "com.ispf.server.regression.PlatformChangeSetAndBackupRegressionTest",
+    "com.ispf.server.application.bundle.BundleUpgradeCompatGateTest",
+    "com.ispf.server.solution.PlantDiscreteForkTckTest"
+  ],
+  "labGates": [
+    "backup-restore",
+    "ispf-node-restart",
+    "nats-restart"
+  ],
+  "externalEvidence": [
+    "pen-test",
+    "field-soak"
+  ],
+  "sharedProductionPostgres": "ispf-db-postgres-1"
+}

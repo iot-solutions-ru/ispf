@@ -11,6 +11,7 @@ import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -28,6 +29,7 @@ import java.security.KeyPairGenerator;
 import java.security.Signature;
 import java.util.Base64;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
@@ -296,6 +298,73 @@ class PlantDiscreteForkTckTest {
                         .param("messageId", "API-1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PENDING"));
+    }
+
+    @Test
+    void upgradeFromThePreviousPlantBundleKeepsTheLedgerRow() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> current = mapper.readValue(
+                Files.readString(plantBundle()),
+                new TypeReference<LinkedHashMap<String, Object>>() {}
+        );
+        Map<String, Object> previous = mapper.readValue(
+                mapper.writeValueAsString(current),
+                new TypeReference<LinkedHashMap<String, Object>>() {}
+        );
+        previous.put("version", "1.9.0");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> migrations = (List<Map<String, Object>>) previous.get("migrations");
+        assertTrue(migrations.removeIf(item -> "plant_lot_passport".equals(item.get("id"))));
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> tests = (List<Map<String, Object>>) previous.get("tests");
+        assertTrue(tests != null && tests.removeIf(item -> "plant-passport".equals(item.get("id"))));
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> functions = (List<Map<String, Object>>) previous.get("functions");
+        assertTrue(functions.removeIf(item -> "plant_set_lot_passport".equals(item.get("functionName"))));
+        retargetUpgrade(previous);
+        retargetUpgrade(current);
+
+        mockMvc.perform(post("/api/v1/applications/plant-discrete-upgrade/deploy")
+                        .with(anonymous())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(previous)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OK"));
+
+        jdbcTemplate.update("""
+                INSERT INTO app_plant_discrete_upgrade.mes_erp_outbox
+                    (id, entity_type, entity_id, payload_json, idempotency_key, status)
+                VALUES ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'WORK_ORDER', 'wo-upgrade', '{}', 'UPGRADE:wo-1', 'pending')
+                """);
+
+        mockMvc.perform(post("/api/v1/applications/plant-discrete-upgrade/deploy")
+                        .with(anonymous())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(current)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OK"));
+
+        Integer kept = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM app_plant_discrete_upgrade.mes_erp_outbox WHERE idempotency_key = ?",
+                Integer.class,
+                "UPGRADE:wo-1"
+        );
+        String ledgerStatus = jdbcTemplate.queryForObject(
+                "SELECT status FROM app_plant_discrete_upgrade.mes_erp_outbox WHERE idempotency_key = ?",
+                String.class,
+                "UPGRADE:wo-1"
+        );
+        assertEquals(1, kept);
+        assertEquals("pending", ledgerStatus);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void retargetUpgrade(Map<String, Object> bundle) {
+        bundle.put("schemaName", "app_plant_discrete_upgrade");
+        Map<String, Object> operatorUi = (Map<String, Object>) bundle.get("operatorUi");
+        if (operatorUi != null) {
+            operatorUi.put("appId", "plant-discrete-upgrade");
+        }
     }
 
     private String signedPassport() throws Exception {
