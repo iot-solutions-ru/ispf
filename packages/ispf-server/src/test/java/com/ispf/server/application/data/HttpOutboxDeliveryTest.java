@@ -52,6 +52,40 @@ class HttpOutboxDeliveryTest {
     }
 
     @Test
+    void aRepeatedMessageIdIsDeliveredOnce() throws Exception {
+        AtomicInteger hits = new AtomicInteger();
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/inbox", exchange -> {
+            hits.incrementAndGet();
+            exchange.sendResponseHeaders(204, -1);
+            exchange.close();
+        });
+        server.start();
+        try {
+            JdbcTemplate jdbc = new JdbcTemplate(new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2).build());
+            ApplicationMessageRelay relay = new ApplicationMessageRelay(jdbc);
+            relay.ensureTables();
+            String first = relay.enqueue("plant-discrete-mes", "erp", "WORK_ORDER:WO-1", "{\"status\":\"complete\"}");
+            String second = relay.enqueue("plant-discrete-mes", "erp", "WORK_ORDER:WO-1", "{\"status\":\"complete\"}");
+            assertEquals(first, second);
+            Integer rows = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM public.application_outbox WHERE message_id = ?",
+                    Integer.class,
+                    "WORK_ORDER:WO-1"
+            );
+            assertEquals(1, rows);
+            String endpoints = "erp=http://127.0.0.1:" + server.getAddress().getPort() + "/inbox";
+            HttpOutboxDelivery delivery = new HttpOutboxDelivery(HttpOutboxDelivery.parseEndpoints(endpoints));
+            assertEquals(1, relay.relayOnce(java.util.Set.of("erp"), delivery));
+            assertEquals("SENT", relay.status(first));
+            assertEquals(0, relay.relayOnce(java.util.Set.of("erp"), delivery));
+            assertEquals(1, hits.get());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
     void emptyEndpointsDoNotTouchTheRelay() {
         ApplicationOutboxPump pump = new ApplicationOutboxPump(new ApplicationMessageRelay(null), "");
         assertEquals(0, pump.relayHttp());

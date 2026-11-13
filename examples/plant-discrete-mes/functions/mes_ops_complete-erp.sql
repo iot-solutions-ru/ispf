@@ -1,0 +1,1 @@
+INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'OPERATION', CONCAT(?, ':', ?), ?, CONCAT('OPERATION:', ?, ':', ?), 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = CONCAT('OPERATION:', ?, ':', ?))

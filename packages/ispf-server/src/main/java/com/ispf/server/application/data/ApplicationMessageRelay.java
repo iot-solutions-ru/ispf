@@ -1,12 +1,19 @@
 package com.ispf.server.application.data;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.UncategorizedSQLException;
 import org.springframework.stereotype.Service;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -26,7 +33,7 @@ public class ApplicationMessageRelay {
     }
 
     /**
-     * Idempotent DDL for unit tests and profiles without Flyway. Production schema is V96.
+     * Idempotent DDL for unit tests and profiles without Flyway. Production schema is V98 plus V100.
      */
     public void ensureTables() {
         jdbcTemplate.execute("""
@@ -42,6 +49,10 @@ public class ApplicationMessageRelay {
                 )
                 """);
         jdbcTemplate.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_application_outbox_idempotency
+                ON application_outbox (app_id, connector_id, message_id)
+                """);
+        jdbcTemplate.execute("""
                 CREATE TABLE IF NOT EXISTS application_inbox (
                     connector_id VARCHAR(128) NOT NULL,
                     external_message_id VARCHAR(256) NOT NULL,
@@ -51,13 +62,96 @@ public class ApplicationMessageRelay {
                 """);
     }
 
+    /**
+     * Inserts a pending row, or returns the existing row when the same app, connector,
+     * and message id were already accepted. The message id is the Idempotency-Key.
+     */
     public String enqueue(String appId, String connectorId, String messageId, String body) {
+        return enqueueReturning(appId, connectorId, messageId, body).id();
+    }
+
+    public Enqueued enqueueReturning(String appId, String connectorId, String messageId, String body) {
+        Optional<OutboxMessage> existing = findMessage(appId, connectorId, messageId);
+        if (existing.isPresent()) {
+            return new Enqueued(existing.get(), false);
+        }
         String id = UUID.randomUUID().toString();
-        jdbcTemplate.update("""
-                INSERT INTO application_outbox (id, app_id, connector_id, message_id, body, status, attempts, created_at)
+        String payload = body == null ? "" : body;
+        Timestamp createdAt = Timestamp.from(Instant.now());
+        try {
+            return jdbcTemplate.execute((Connection connection) -> insertOutbox(
+                    connection, id, appId, connectorId, messageId, payload, createdAt
+            ));
+        } catch (DataAccessException ex) {
+            if (isUniqueViolation(ex)) {
+                return findMessage(appId, connectorId, messageId)
+                        .map(row -> new Enqueued(row, false))
+                        .orElseThrow(() -> ex);
+            }
+            throw ex;
+        }
+    }
+
+    private Enqueued insertOutbox(
+            Connection connection,
+            String id,
+            String appId,
+            String connectorId,
+            String messageId,
+            String body,
+            Timestamp createdAt
+    ) throws SQLException {
+        Savepoint savepoint = connection.getAutoCommit() ? null : connection.setSavepoint();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                INSERT INTO public.application_outbox (id, app_id, connector_id, message_id, body, status, attempts, created_at)
                 VALUES (?, ?, ?, ?, ?, 'PENDING', 0, ?)
-                """, id, appId, connectorId, messageId, body, Timestamp.from(Instant.now()));
-        return id;
+                """)) {
+            statement.setString(1, id);
+            statement.setString(2, appId);
+            statement.setString(3, connectorId);
+            statement.setString(4, messageId);
+            statement.setString(5, body);
+            statement.setTimestamp(6, createdAt);
+            statement.executeUpdate();
+            return new Enqueued(new OutboxMessage(id, messageId, "PENDING", 0), true);
+        } catch (SQLException ex) {
+            if (savepoint != null) {
+                connection.rollback(savepoint);
+            }
+            if (isUniqueViolation(ex)) {
+                return findMessage(appId, connectorId, messageId)
+                        .map(row -> new Enqueued(row, false))
+                        .orElseThrow(() -> new UncategorizedSQLException("outbox enqueue", ex.getSQLState(), ex));
+            }
+            throw ex;
+        }
+    }
+
+    private static boolean isUniqueViolation(Throwable ex) {
+        for (Throwable current = ex; current != null; current = current.getCause()) {
+            if (current instanceof SQLException sql) {
+                for (SQLException nested = sql; nested != null; nested = nested.getNextException()) {
+                    if ("23505".equals(nested.getSQLState())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public Optional<OutboxMessage> findMessage(String appId, String connectorId, String messageId) {
+        List<OutboxMessage> rows = jdbcTemplate.query("""
+                SELECT id, message_id, status, attempts
+                FROM public.application_outbox
+                WHERE app_id = ? AND connector_id = ? AND message_id = ?
+                """, (rs, row) -> new OutboxMessage(
+                rs.getString(1),
+                rs.getString(2),
+                rs.getString(3),
+                rs.getInt(4)
+        ), appId, connectorId, messageId);
+        return rows.stream().findFirst();
     }
 
     public boolean acceptInbox(String connectorId, String externalMessageId) {
@@ -99,7 +193,7 @@ public class ApplicationMessageRelay {
         if (connectorIds == null) {
             pending = jdbcTemplate.query("""
                     SELECT id, app_id, connector_id, message_id, body, attempts
-                    FROM application_outbox
+                    FROM public.application_outbox
                     WHERE status = 'PENDING'
                     ORDER BY created_at
                     """, rowMapper());
@@ -107,7 +201,7 @@ public class ApplicationMessageRelay {
             String placeholders = String.join(",", java.util.Collections.nCopies(connectorIds.size(), "?"));
             pending = jdbcTemplate.query("""
                     SELECT id, app_id, connector_id, message_id, body, attempts
-                    FROM application_outbox
+                    FROM public.application_outbox
                     WHERE status = 'PENDING' AND connector_id IN (%s)
                     ORDER BY created_at
                     """.formatted(placeholders), rowMapper(), connectorIds.toArray());
@@ -116,18 +210,18 @@ public class ApplicationMessageRelay {
         for (Row row : pending) {
             try {
                 delivery.deliver(row.appId(), row.connectorId(), row.messageId(), row.body());
-                jdbcTemplate.update("UPDATE application_outbox SET status = 'SENT' WHERE id = ?", row.id());
+                jdbcTemplate.update("UPDATE public.application_outbox SET status = 'SENT' WHERE id = ?", row.id());
                 sent++;
             } catch (RetryableOutboxDelivery ex) {
                 jdbcTemplate.update(
-                        "UPDATE application_outbox SET status = 'PENDING' WHERE id = ?",
+                        "UPDATE public.application_outbox SET status = 'PENDING' WHERE id = ?",
                         row.id()
                 );
             } catch (RuntimeException ex) {
                 int attempts = row.attempts() + 1;
                 String status = attempts >= DEAD_LETTER_AFTER ? "DLQ" : "PENDING";
                 jdbcTemplate.update(
-                        "UPDATE application_outbox SET attempts = ?, status = ? WHERE id = ?",
+                        "UPDATE public.application_outbox SET attempts = ?, status = ? WHERE id = ?",
                         attempts,
                         status,
                         row.id()
@@ -150,7 +244,7 @@ public class ApplicationMessageRelay {
 
     public String status(String id) {
         return jdbcTemplate.queryForObject(
-                "SELECT status FROM application_outbox WHERE id = ?",
+                "SELECT status FROM public.application_outbox WHERE id = ?",
                 String.class,
                 id
         );
@@ -159,6 +253,15 @@ public class ApplicationMessageRelay {
     @FunctionalInterface
     public interface Delivery {
         void deliver(String appId, String connectorId, String messageId, String body);
+    }
+
+    public record OutboxMessage(String id, String messageId, String status, int attempts) {
+    }
+
+    public record Enqueued(OutboxMessage message, boolean created) {
+        public String id() {
+            return message.id();
+        }
     }
 
     private record Row(String id, String appId, String connectorId, String messageId, String body, int attempts) {

@@ -944,7 +944,7 @@
       "functionName": "mes_dispatch_confirmWorkOrder",
       "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
       "source": {
-        "body": "{\"steps\":[{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.mes.work-orders.wo-line-a01-001\",\"variable\":\"status\",\"fields\":{\"value\":\"complete\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"confirmed\":true,\"workOrderPath\":\"${input.workOrderPath}\"}}]}",
+        "body": "{\"steps\":[{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.mes.work-orders.wo-line-a01-001\",\"variable\":\"status\",\"fields\":{\"value\":\"complete\"}},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), ?, ?, ?, CONCAT(?, ':', ?), 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = CONCAT(?, ':', ?))\",\"params\":[\"WORK_ORDER\",\"${input.workOrderPath}\",\"{\\\"status\\\":\\\"complete\\\"}\",\"WORK_ORDER\",\"${input.workOrderPath}\",\"WORK_ORDER\",\"${input.workOrderPath}\"]},{\"type\":\"enqueueOutbox\",\"connectorId\":\"erp\",\"messageParts\":[\"WORK_ORDER\",\"${input.workOrderPath}\"],\"body\":\"{\\\"status\\\":\\\"complete\\\"}\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"confirmed\":true,\"workOrderPath\":\"${input.workOrderPath}\"}}]}",
         "type": "script"
       },
       "version": "1"
@@ -993,7 +993,7 @@
       "functionName": "mes_erp_enqueueOutbox",
       "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
       "source": {
-        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), ?, ?, ?, CONCAT(?, ':', ?), 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = CONCAT(?, ':', ?))\",\"params\":[\"${input.entityType}\",\"${input.entityId}\",\"${input.payloadJson}\",\"${input.entityType}\",\"${input.entityId}\",\"${input.entityType}\",\"${input.entityId}\"]},{\"type\":\"selectOne\",\"var\":\"keyRow\",\"sql\":\"SELECT CONCAT(?, ':', ?) AS idempotency_key\",\"params\":[\"${input.entityType}\",\"${input.entityId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"enqueued\":true,\"idempotencyKey\":\"${keyRow.idempotency_key}\"}}]}",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), ?, ?, ?, CONCAT(?, ':', ?), 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = CONCAT(?, ':', ?))\",\"params\":[\"${input.entityType}\",\"${input.entityId}\",\"${input.payloadJson}\",\"${input.entityType}\",\"${input.entityId}\",\"${input.entityType}\",\"${input.entityId}\"]},{\"type\":\"selectOne\",\"var\":\"keyRow\",\"sql\":\"SELECT CONCAT(?, ':', ?) AS idempotency_key\",\"params\":[\"${input.entityType}\",\"${input.entityId}\"]},{\"type\":\"enqueueOutbox\",\"connectorId\":\"erp\",\"messageId\":\"${keyRow.idempotency_key}\",\"body\":\"${input.payloadJson}\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"enqueued\":true,\"idempotencyKey\":\"${keyRow.idempotency_key}\"}}]}",
         "type": "script"
       },
       "version": "1"
@@ -1050,7 +1050,7 @@
       "functionName": "mes_erp_pollOutbox",
       "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
       "source": {
-        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"pending\",\"sql\":\"SELECT id::text AS outbox_id, entity_type, entity_id, idempotency_key FROM mes_erp_outbox WHERE status = 'pending' ORDER BY created_at LIMIT 50\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_erp_outbox SET status = 'simulated', processed_at = CURRENT_TIMESTAMP WHERE status = 'pending'\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${pending}\",\"fields\":{\"outboxId\":\"${item.outbox_id}\",\"entityType\":\"${item.entity_type}\",\"entityId\":\"${item.entity_id}\",\"idempotencyKey\":\"${item.idempotency_key}\",\"status\":\"simulated\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_erp_outbox SET status = 'delivered', processed_at = CURRENT_TIMESTAMP WHERE status = 'pending' AND idempotency_key IN (SELECT message_id FROM public.application_outbox WHERE app_id = ? AND connector_id = 'erp' AND status = 'SENT')\",\"params\":[\"${app.id}\"]},{\"type\":\"exec\",\"sql\":\"UPDATE mes_erp_outbox SET status = 'dead', processed_at = CURRENT_TIMESTAMP WHERE status = 'pending' AND idempotency_key IN (SELECT message_id FROM public.application_outbox WHERE app_id = ? AND connector_id = 'erp' AND status = 'DLQ')\",\"params\":[\"${app.id}\"]},{\"type\":\"selectMany\",\"var\":\"pending\",\"sql\":\"SELECT id::text AS outbox_id, entity_type, entity_id, idempotency_key, status FROM mes_erp_outbox ORDER BY created_at DESC LIMIT 50\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${pending}\",\"fields\":{\"outboxId\":\"${item.outbox_id}\",\"entityType\":\"${item.entity_type}\",\"entityId\":\"${item.entity_id}\",\"idempotencyKey\":\"${item.idempotency_key}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
         "type": "script"
       },
       "version": "1"
@@ -1661,7 +1661,7 @@
       "functionName": "mes_ops_complete",
       "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
       "source": {
-        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"operation\",\"sql\":\"SELECT operation_id FROM mes_operation_status WHERE wo_number = ? AND operation_id = ?\",\"params\":[\"${input.workOrderNumber}\",\"${input.operationId}\"]},{\"type\":\"failIfNull\",\"var\":\"operation\",\"message\":\"Operation status not found\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_operation_status SET status = 'complete' WHERE wo_number = ? AND operation_id = ?\",\"params\":[\"${input.workOrderNumber}\",\"${input.operationId}\"]},{\"type\":\"exec\",\"sql\":\"UPDATE mes_operation_status SET status = 'ready' WHERE wo_number = ? AND status = 'pending' AND operation_id IN (SELECT e.successor_op FROM mes_operation_edge e WHERE e.predecessor_op = ? AND NOT EXISTS (SELECT 1 FROM mes_operation_edge pe LEFT JOIN mes_operation_status ps ON ps.wo_number = ? AND ps.operation_id = pe.predecessor_op WHERE pe.routing_id = e.routing_id AND pe.successor_op = e.successor_op AND (ps.status IS NULL OR ps.status <> 'complete')))\",\"params\":[\"${input.workOrderNumber}\",\"${input.operationId}\",\"${input.workOrderNumber}\"]},{\"type\":\"selectMany\",\"var\":\"ready\",\"sql\":\"SELECT s.wo_number, d.operation_id, d.routing_id, d.name, d.work_center, d.sequence_no, s.status FROM mes_operation_status s JOIN mes_operation_def d ON d.operation_id = s.operation_id WHERE s.wo_number = ? AND s.status = 'ready' AND NOT EXISTS (SELECT 1 FROM mes_operation_edge e LEFT JOIN mes_operation_status ps ON ps.wo_number = s.wo_number AND ps.operation_id = e.predecessor_op WHERE e.routing_id = d.routing_id AND e.successor_op = s.operation_id AND (ps.status IS NULL OR ps.status <> 'complete')) ORDER BY d.sequence_no\",\"params\":[\"${input.workOrderNumber}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${ready}\",\"fields\":{\"workOrderNumber\":\"${item.wo_number}\",\"operationId\":\"${item.operation_id}\",\"routingId\":\"${item.routing_id}\",\"name\":\"${item.name}\",\"workCenter\":\"${item.work_center}\",\"sequenceNo\":\"${item.sequence_no}\",\"status\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"workOrderNumber\":\"${input.workOrderNumber}\",\"operationId\":\"${input.operationId}\",\"rows\":\"${rows}\"}}]}",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"operation\",\"sql\":\"SELECT operation_id FROM mes_operation_status WHERE wo_number = ? AND operation_id = ?\",\"params\":[\"${input.workOrderNumber}\",\"${input.operationId}\"]},{\"type\":\"failIfNull\",\"var\":\"operation\",\"message\":\"Operation status not found\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_operation_status SET status = 'complete' WHERE wo_number = ? AND operation_id = ?\",\"params\":[\"${input.workOrderNumber}\",\"${input.operationId}\"]},{\"type\":\"exec\",\"sql\":\"UPDATE mes_operation_status SET status = 'ready' WHERE wo_number = ? AND status = 'pending' AND operation_id IN (SELECT e.successor_op FROM mes_operation_edge e WHERE e.predecessor_op = ? AND NOT EXISTS (SELECT 1 FROM mes_operation_edge pe LEFT JOIN mes_operation_status ps ON ps.wo_number = ? AND ps.operation_id = pe.predecessor_op WHERE pe.routing_id = e.routing_id AND pe.successor_op = e.successor_op AND (ps.status IS NULL OR ps.status <> 'complete')))\",\"params\":[\"${input.workOrderNumber}\",\"${input.operationId}\",\"${input.workOrderNumber}\"]},{\"type\":\"selectMany\",\"var\":\"ready\",\"sql\":\"SELECT s.wo_number, d.operation_id, d.routing_id, d.name, d.work_center, d.sequence_no, s.status FROM mes_operation_status s JOIN mes_operation_def d ON d.operation_id = s.operation_id WHERE s.wo_number = ? AND s.status = 'ready' AND NOT EXISTS (SELECT 1 FROM mes_operation_edge e LEFT JOIN mes_operation_status ps ON ps.wo_number = s.wo_number AND ps.operation_id = e.predecessor_op WHERE e.routing_id = d.routing_id AND e.successor_op = s.operation_id AND (ps.status IS NULL OR ps.status <> 'complete')) ORDER BY d.sequence_no\",\"params\":[\"${input.workOrderNumber}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${ready}\",\"fields\":{\"workOrderNumber\":\"${item.wo_number}\",\"operationId\":\"${item.operation_id}\",\"routingId\":\"${item.routing_id}\",\"name\":\"${item.name}\",\"workCenter\":\"${item.work_center}\",\"sequenceNo\":\"${item.sequence_no}\",\"status\":\"${item.status}\"}},{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'OPERATION', CONCAT(?, ':', ?), ?, CONCAT('OPERATION:', ?, ':', ?), 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = CONCAT('OPERATION:', ?, ':', ?))\",\"params\":[\"${input.workOrderNumber}\",\"${input.operationId}\",\"{\\\"status\\\":\\\"complete\\\"}\",\"${input.workOrderNumber}\",\"${input.operationId}\",\"${input.workOrderNumber}\",\"${input.operationId}\"]},{\"type\":\"enqueueOutbox\",\"connectorId\":\"erp\",\"messageParts\":[\"OPERATION\",\"${input.workOrderNumber}\",\"${input.operationId}\"],\"body\":\"{\\\"status\\\":\\\"complete\\\"}\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"workOrderNumber\":\"${input.workOrderNumber}\",\"operationId\":\"${input.operationId}\",\"rows\":\"${rows}\"}}]}",
         "type": "script"
       },
       "version": "1"
@@ -1896,6 +1896,60 @@
       "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
       "source": {
         "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"samples\",\"sql\":\"SELECT id::text AS sample_id, line_code, measurement_mm, sample_ts::text AS sample_ts FROM mes_spc_sample ORDER BY sample_ts DESC LIMIT 20\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${samples}\",\"fields\":{\"sampleId\":\"${item.sample_id}\",\"lineCode\":\"${item.line_code}\",\"measurementMm\":\"${item.measurement_mm}\",\"sampleTs\":\"${item.sample_ts}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}",
+        "type": "script"
+      },
+      "version": "1"
+    },
+    {
+      "descriptor": {
+        "inputSchema": {
+          "fields": [
+            {
+              "name": "batchId",
+              "type": "STRING"
+            },
+            {
+              "name": "measurement",
+              "type": "DOUBLE"
+            },
+            {
+              "name": "ucl",
+              "type": "DOUBLE"
+            },
+            {
+              "name": "lcl",
+              "type": "DOUBLE"
+            }
+          ],
+          "name": "in"
+        },
+        "outputSchema": {
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "phase",
+              "type": "STRING"
+            },
+            {
+              "name": "holdReason",
+              "nullable": true,
+              "type": "STRING"
+            }
+          ],
+          "name": "out"
+        }
+      },
+      "functionName": "mes_quality_release",
+      "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
+      "source": {
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"batch\",\"sql\":\"SELECT batch_path, phase FROM mes_batch_run WHERE batch_id = ?\",\"params\":[\"${input.batchId}\"]},{\"type\":\"failIfNull\",\"var\":\"batch\",\"message\":\"Batch not found\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_batch_run SET phase = 'charge', hold_reason = NULL, updated_at = CURRENT_TIMESTAMP WHERE batch_id = ? AND phase = 'hold' AND CAST(? AS DOUBLE PRECISION) <= CAST(? AS DOUBLE PRECISION) AND CAST(? AS DOUBLE PRECISION) >= CAST(? AS DOUBLE PRECISION)\",\"params\":[\"${input.batchId}\",\"${input.measurement}\",\"${input.ucl}\",\"${input.measurement}\",\"${input.lcl}\"]},{\"type\":\"selectOne\",\"var\":\"after\",\"sql\":\"SELECT phase, hold_reason FROM mes_batch_run WHERE batch_id = ?\",\"params\":[\"${input.batchId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"phase\":\"${after.phase}\",\"holdReason\":\"${after.hold_reason}\"}}]}",
         "type": "script"
       },
       "version": "1"
@@ -2442,7 +2496,7 @@
   "version": "2.0.0",
   "workflows": [
     {
-      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:ispf=\"http://ispf.io/bpmn\" targetNamespace=\"http://ispf.io/bpmn\"><process id=\"mes-work-order-dispatch\" name=\"MES Work Order Dispatch\" isExecutable=\"true\"><startEvent id=\"start\" name=\"Start\"/><serviceTask id=\"notifyDispatch\" name=\"Log dispatch\" ispf:action=\"log\" ispf:message=\"mes-platform: work order dispatched\"/><userTask id=\"confirmStart\" name=\"Confirm work order start\" ispf:title=\"Confirm work order start\" ispf:instructions=\"Review the dispatched work order and confirm operator acceptance\" ispf:assigneeRole=\"operator\" ispf:targetObject=\"root.platform.singleton-blueprints.plant-discrete-hub-v1\" ispf:function=\"mes_dispatch_confirmWorkOrder\"/><endEvent id=\"end\" name=\"End\"/><sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"notifyDispatch\"/><sequenceFlow id=\"f2\" sourceRef=\"notifyDispatch\" targetRef=\"confirmStart\"/><sequenceFlow id=\"f3\" sourceRef=\"confirmStart\" targetRef=\"end\"/></process></definitions>\n",
+      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:ispf=\"http://ispf.io/bpmn\" targetNamespace=\"http://ispf.io/bpmn\"><process id=\"mes-work-order-dispatch\" name=\"MES Work Order Dispatch\" isExecutable=\"true\"><startEvent id=\"start\" name=\"Start\"/><serviceTask id=\"notifyDispatch\" name=\"Log dispatch\" ispf:action=\"log\" ispf:message=\"mes-platform: work order dispatched\"/><userTask id=\"confirmStart\" name=\"Confirm work order start\" ispf:title=\"Confirm work order start\" ispf:instructions=\"Review the dispatched work order and confirm operator acceptance\" ispf:assigneeRole=\"operator\" ispf:targetObject=\"root.platform.singleton-blueprints.plant-discrete-hub-v1\" ispf:function=\"mes_dispatch_confirmWorkOrder\"/><endEvent id=\"end\" name=\"End\"/><sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"notifyDispatch\"/><sequenceFlow id=\"f2\" sourceRef=\"notifyDispatch\" targetRef=\"confirmStart\"/><sequenceFlow id=\"f3\" sourceRef=\"confirmStart\" targetRef=\"end\"/></process></definitions>\r\n",
       "operatorAppId": "mes-platform",
       "path": "root.platform.workflows.mes-work-order-dispatch",
       "status": "ACTIVE"

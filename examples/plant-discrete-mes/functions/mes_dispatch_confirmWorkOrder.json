@@ -41,7 +41,7 @@
   "functionName": "mes_dispatch_confirmWorkOrder",
   "objectPath": "root.platform.singleton-blueprints.plant-discrete-hub-v1",
   "source": {
-    "body": "{\"steps\":[{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.mes.work-orders.wo-line-a01-001\",\"variable\":\"status\",\"fields\":{\"value\":\"complete\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"confirmed\":true,\"workOrderPath\":\"${input.workOrderPath}\"}}]}",
+    "body": "{\"steps\":[{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.mes.work-orders.wo-line-a01-001\",\"variable\":\"status\",\"fields\":{\"value\":\"complete\"}},{\"type\":\"exec\",\"sql\":\"@file:mes_erp_enqueueOutbox-step.sql\",\"params\":[\"WORK_ORDER\",\"${input.workOrderPath}\",\"{\\\"status\\\":\\\"complete\\\"}\",\"WORK_ORDER\",\"${input.workOrderPath}\",\"WORK_ORDER\",\"${input.workOrderPath}\"]},{\"type\":\"enqueueOutbox\",\"connectorId\":\"erp\",\"messageParts\":[\"WORK_ORDER\",\"${input.workOrderPath}\"],\"body\":\"{\\\"status\\\":\\\"complete\\\"}\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"confirmed\":true,\"workOrderPath\":\"${input.workOrderPath}\"}}]}",
     "type": "script"
   },
   "version": "1"

@@ -35,6 +35,7 @@ public class FunctionScriptValidator {
             "scan_objects",
             "for_each_row",
             "apply_query_patch",
+            "enqueueOutbox",
             "return"
     );
 
@@ -283,6 +284,15 @@ public class FunctionScriptValidator {
             case "apply_query_patch" -> {
                 if (!step.has("patches")) {
                     throw new IllegalArgumentException("apply_query_patch step requires patches");
+                }
+            }
+            case "enqueueOutbox" -> {
+                require(step, "connectorId");
+                boolean hasMessage = step.has("messageId") && !step.get("messageId").asText("").isBlank();
+                boolean hasParts = step.has("messageParts") && step.get("messageParts").isArray()
+                        && !step.get("messageParts").isEmpty();
+                if (!hasMessage && !hasParts) {
+                    throw new IllegalArgumentException("enqueueOutbox step requires messageId or messageParts");
                 }
             }
             case "return" -> {

@@ -88,15 +88,24 @@ public class ApplicationFunctionRuntime {
         DataSchema outputSchema = readSchema(deployed.outputSchemaJson());
         String schemaName = resolveSchemaName(deployed.appId());
         int nextDepth = depth + 1;
-        ScriptExecutionContext context = (nestedPath, nestedName, nestedInput) -> {
-            ApplicationFunctionHandler.DeployedFunction nested = store.findLatest(nestedPath, nestedName)
-                    .orElseThrow(() -> new IllegalStateException("Deployed function missing: " + nestedName));
-            DataSchema nestedInputSchema = readSchema(nested.inputSchemaJson());
-            DataRecord nestedRecord = DataRecord.single(
-                    nestedInputSchema,
-                    nestedInput != null ? nestedInput : Map.of()
-            );
-            return invokeInternal(nestedPath, nestedName, nestedRecord, nextDepth);
+        String callerAppId = deployed.appId() == null ? "" : deployed.appId();
+        ScriptExecutionContext context = new ScriptExecutionContext() {
+            @Override
+            public String appId() {
+                return callerAppId;
+            }
+
+            @Override
+            public DataRecord invokeFunction(String nestedPath, String nestedName, Map<String, Object> nestedInput) {
+                ApplicationFunctionHandler.DeployedFunction nested = store.findLatest(nestedPath, nestedName)
+                        .orElseThrow(() -> new IllegalStateException("Deployed function missing: " + nestedName));
+                DataSchema nestedInputSchema = readSchema(nested.inputSchemaJson());
+                DataRecord nestedRecord = DataRecord.single(
+                        nestedInputSchema,
+                        nestedInput != null ? nestedInput : Map.of()
+                );
+                return invokeInternal(nestedPath, nestedName, nestedRecord, nextDepth);
+            }
         };
 
         try {
