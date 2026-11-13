@@ -376,7 +376,7 @@ public final class HistorianDiskSpool {
     private ExecutorService replayPool() {
         synchronized (this) {
             if (replayPool == null) {
-                replayPool = Executors.newFixedThreadPool(8, runnable -> {
+                replayPool = Executors.newFixedThreadPool(16, runnable -> {
                     Thread thread = new Thread(runnable, "historian-spool-replay");
                     thread.setDaemon(true);
                     return thread;

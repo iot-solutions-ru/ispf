@@ -133,19 +133,12 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             post(insertQuery(null), jsonBody(records));
             return;
         }
-        String batchId;
         try {
             long started = System.nanoTime();
-            batchId = spool.appendClaimed(records);
+            spool.append(records);
             spool.recordAccept((System.nanoTime() - started) / 1_000_000L);
         } catch (java.io.IOException ex) {
             throw new IllegalStateException("historian spool append failed", ex);
-        }
-        try {
-            insertDeduplicated(batchId, records);
-        } catch (RuntimeException ex) {
-            spool.release(batchId);
-            log.warn("ClickHouse insert failed after durable spool accept (batch={})", batchId, ex);
         }
     }
 
