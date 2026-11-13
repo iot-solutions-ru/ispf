@@ -6,6 +6,7 @@ import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.storage.ClickHouseSchemaBootstrap;
 import com.ispf.server.storage.StorageStartupRetry;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -138,9 +139,11 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
         } catch (java.io.IOException ex) {
             throw new IllegalStateException("historian spool append failed", ex);
         }
+        spool.claim(batchId);
         try {
             insertDeduplicated(batchId, records);
         } catch (RuntimeException ex) {
+            spool.release(batchId);
             log.warn("ClickHouse insert failed after durable spool accept (batch={})", batchId, ex);
         }
     }
@@ -154,6 +157,18 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             spool.replay(this::insertDeduplicated, Math.max(1, properties.getSpool().getReplayBatch()));
         } catch (java.io.IOException ex) {
             log.warn("historian spool replay failed", ex);
+        }
+    }
+
+    @PreDestroy
+    void closeSpool() {
+        if (spool == null) {
+            return;
+        }
+        try {
+            spool.close();
+        } catch (java.io.IOException ex) {
+            log.warn("historian spool did not close", ex);
         }
     }
 
@@ -184,10 +199,11 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
         if (batchId == null) {
             return "INSERT INTO " + qualifiedTable() + " FORMAT JSONEachRow";
         }
+        String token = batchId.replaceAll("[^A-Za-z0-9_-]", "");
         return "INSERT INTO " + qualifiedTable()
                 + " SETTINGS insert_deduplicate = 1, insert_deduplication_token = '"
-                + batchId.replace("'", "")
-                + "', non_replicated_deduplication_window = 10000 FORMAT JSONEachRow";
+                + token
+                + "' FORMAT JSONEachRow";
     }
 
     @Override

@@ -89,6 +89,22 @@ class HistorianDiskSpoolTest {
     }
 
     @Test
+    void ackedClosedSegmentFreesItsBytes() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 40, true);
+        spool.open();
+        String first = spool.append(List.of(sample(1)));
+        spool.append(List.of(sample(2)));
+        long before = spool.stats().bytes();
+        spool.ack(first);
+        assertTrue(spool.stats().bytes() < before);
+        assertEquals(1, segmentCount());
+        List<Double> values = new ArrayList<>();
+        assertEquals(1, spool.replay((id, records) -> values.add(records.getFirst().valueDouble()), 10));
+        assertEquals(List.of(2.0), values);
+        spool.close();
+    }
+
+    @Test
     void smallSegmentsRollToASecondFile() throws Exception {
         HistorianDiskSpool spool = spool(1024 * 1024, 40, true);
         spool.open();

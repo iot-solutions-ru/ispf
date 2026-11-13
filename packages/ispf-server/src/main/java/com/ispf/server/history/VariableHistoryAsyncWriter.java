@@ -54,7 +54,7 @@ public class VariableHistoryAsyncWriter {
             return;
         }
         queue = new LinkedBlockingQueue<>(properties.getQueueCapacity());
-        if (properties.isOverflowCoalesceEnabled() && !properties.getSpool().isEnabled()) {
+        if (properties.isOverflowCoalesceEnabled() && !properties.isClickHouseSpoolEnabled()) {
             overflowCoalesce = new ConcurrentHashMap<>();
         }
         running = true;
@@ -88,7 +88,7 @@ public class VariableHistoryAsyncWriter {
                 properties.resolvedWriterThreadsMin(),
                 properties.resolvedWriterThreadsMax(),
                 properties.isElasticWriterEnabled(),
-                properties.isOverflowCoalesceEnabled()
+                overflowCoalesce != null
         );
     }
 
@@ -115,7 +115,7 @@ public class VariableHistoryAsyncWriter {
             maybeAdjustWorkers();
             return;
         }
-        if (properties.getSpool().isEnabled()) {
+        if (properties.isClickHouseSpoolEnabled()) {
             try {
                 queue.put(sample);
             } catch (InterruptedException ex) {
@@ -231,19 +231,7 @@ public class VariableHistoryAsyncWriter {
                     queue.drainTo(batch, batchSize - batch.size());
                 }
                 if (!batch.isEmpty()) {
-                    try {
-                        flushBatch(batch);
-                    } catch (HistorianSpoolQuotaException ex) {
-                        for (int i = batch.size() - 1; i >= 0; i--) {
-                            queue.offer(batch.get(i));
-                        }
-                        try {
-                            Thread.sleep(1_000);
-                        } catch (InterruptedException interrupted) {
-                            Thread.currentThread().interrupt();
-                            return;
-                        }
-                    }
+                    holdUntilAccepted(batch);
                 } else {
                     adjustWorkers();
                 }
@@ -279,9 +267,35 @@ public class VariableHistoryAsyncWriter {
             drainOverflowInto(batch, properties.getBatchSize());
             queue.drainTo(batch, properties.getBatchSize() - batch.size());
             if (!batch.isEmpty()) {
-                flushBatch(batch);
+                try {
+                    flushBatch(batch);
+                } catch (HistorianSpoolQuotaException ex) {
+                    log.error("historian spool is full at shutdown; {} samples were not accepted", batch.size());
+                    break;
+                }
             } else {
                 break;
+            }
+        }
+    }
+
+    private void holdUntilAccepted(List<VariableSampleEntity> batch) {
+        while (true) {
+            try {
+                flushBatch(batch);
+                return;
+            } catch (HistorianSpoolQuotaException ex) {
+                if (!running) {
+                    log.error("historian spool is full; {} samples were not accepted", batch.size());
+                    return;
+                }
+                log.error("historian spool is full; holding {} samples", batch.size());
+                try {
+                    Thread.sleep(1_000);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
             }
         }
     }

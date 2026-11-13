@@ -387,6 +387,10 @@ public class VariableHistoryProperties {
         return "clickhouse".equalsIgnoreCase(store);
     }
 
+    public boolean isClickHouseSpoolEnabled() {
+        return isClickHouseStore() && spool != null && spool.isEnabled();
+    }
+
     public boolean isCassandraStore() {
         return "cassandra".equalsIgnoreCase(store) || "scylla".equalsIgnoreCase(store);
     }

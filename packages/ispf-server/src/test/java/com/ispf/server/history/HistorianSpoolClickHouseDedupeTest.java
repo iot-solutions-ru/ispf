@@ -57,7 +57,7 @@ class HistorianSpoolClickHouseDedupeTest {
     private static void insert(ClickHouseContainer clickhouse, String table, String token, String body) throws Exception {
         exec(clickhouse, "INSERT INTO " + table
                 + " SETTINGS insert_deduplicate = 1, insert_deduplication_token = '" + token
-                + "', non_replicated_deduplication_window = 10000 FORMAT JSONEachRow", body);
+                + "' FORMAT JSONEachRow", body);
     }
 
     private static long count(ClickHouseContainer clickhouse, String table) throws Exception {
