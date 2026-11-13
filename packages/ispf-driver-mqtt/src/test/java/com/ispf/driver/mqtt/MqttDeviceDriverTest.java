@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -177,6 +178,14 @@ class MqttDeviceDriverTest {
         publish(topic, "second", port);
         assertTrue(driverObject.awaitUpdates(2, 5, TimeUnit.SECONDS));
         driver.disconnect();
+    }
+
+    @Test
+    void payloadNumberIgnoresValueWhenItIsAString() throws Exception {
+        var method = MqttDeviceDriver.class.getDeclaredMethod("payloadNumber", String.class);
+        method.setAccessible(true);
+        assertEquals(5.0, method.invoke(null, "{\"value\":5}"));
+        assertNull(method.invoke(null, "{\"label\":\"value\",\"count\":5}"));
     }
 
     @Test

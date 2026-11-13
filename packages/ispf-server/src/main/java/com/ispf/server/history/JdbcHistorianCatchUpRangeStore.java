@@ -76,6 +76,19 @@ public class JdbcHistorianCatchUpRangeStore implements HistorianCatchUpRangeStor
     }
 
     @Override
+    public void putExact(String seriesKey, Instant from, Instant to) {
+        Instant start = from.isBefore(to) ? from : to;
+        Instant end = from.isBefore(to) ? to : from;
+        if (start.isAfter(end)) {
+            return;
+        }
+        jdbcTemplate.update(
+                "INSERT INTO historian_catchup_ranges (series_key, from_ts, to_ts) VALUES (?, ?, ?)",
+                seriesKey, Timestamp.from(start), Timestamp.from(end)
+        );
+    }
+
+    @Override
     public void remove(String seriesKey, Instant from, Instant to) {
         Instant start = from.isBefore(to) ? from : to;
         Instant end = from.isBefore(to) ? to : from;

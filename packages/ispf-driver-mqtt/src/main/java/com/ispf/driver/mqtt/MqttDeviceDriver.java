@@ -256,8 +256,11 @@ public class MqttDeviceDriver implements DeviceDriver {
         if (key < 0) {
             return null;
         }
-        int colon = trimmed.indexOf(':', key + 7);
-        if (colon < 0) {
+        int colon = key + 7;
+        while (colon < trimmed.length() && Character.isWhitespace(trimmed.charAt(colon))) {
+            colon++;
+        }
+        if (colon >= trimmed.length() || trimmed.charAt(colon) != ':') {
             return null;
         }
         int start = colon + 1;

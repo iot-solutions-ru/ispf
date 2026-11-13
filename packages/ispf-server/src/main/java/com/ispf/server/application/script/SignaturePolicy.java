@@ -19,6 +19,10 @@ public final class SignaturePolicy {
     private SignaturePolicy() {
     }
 
+    public static String policyName(String sourceBody) {
+        return readPolicy(sourceBody, new ObjectMapper());
+    }
+
     public static void require(String sourceBody, DataRecord input) {
         require(sourceBody, input, FunctionSignatureVerifier.UNSIGNED);
     }
@@ -55,7 +59,7 @@ public final class SignaturePolicy {
             throw new IllegalStateException("signaturePolicy " + policy + " requires an authenticated principal");
         }
         String name = authentication.getName();
-        if (name == null || name.isBlank()) {
+        if (name == null || name.isBlank() || "anonymousUser".equals(name)) {
             throw new IllegalStateException("signaturePolicy " + policy + " requires an authenticated principal");
         }
     }

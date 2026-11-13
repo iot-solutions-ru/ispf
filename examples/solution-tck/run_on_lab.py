@@ -178,7 +178,7 @@ JAVA_TOOL_OPTIONS=-Xms1g -Xmx4g
             "--add-host", "host.docker.internal:host-gateway",
             "-p", f"127.0.0.1:{port}:8080",
             "-v", f"{JAR}:/opt/ispf/ispf-server.jar:ro",
-            "-v", "/home/iot-solutions/ispf-cluster/drivers:/opt/ispf/drivers:ro",
+            "-v", f"{os.environ.get('ISPF_TCK_DRIVERS_DIR', '/home/iot-solutions/ispf-cluster/drivers')}:/opt/ispf/drivers:ro",
             "--env-file", ENV_FILE,
             "-e", f"ISPF_REPLICA_ID={replica}",
         ]

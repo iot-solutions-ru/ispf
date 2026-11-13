@@ -96,7 +96,7 @@ def restart_writer():
         "--add-host", "host.docker.internal:host-gateway",
         "-p", "127.0.0.1:8081:8080",
         "-v", f"{JAR}:/opt/ispf/ispf-server.jar:ro",
-        "-v", "/home/iot-solutions/ispf-tck/drivers:/opt/ispf/drivers:ro",
+        "-v", f"{os.environ.get('ISPF_TCK_DRIVERS_DIR', '/home/iot-solutions/ispf-cluster/drivers')}:/opt/ispf/drivers:ro",
         "--env-file", ENV_FILE,
         "-e", "ISPF_REPLICA_ID=replica-1",
         "-e", "ISPF_APPLICATION_OUTBOX_HTTP_ENDPOINTS=sap=http://host.docker.internal:8090/inbox",

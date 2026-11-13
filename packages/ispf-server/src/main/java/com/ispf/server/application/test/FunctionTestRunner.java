@@ -10,6 +10,7 @@ import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.script.Ed25519FunctionSignatureVerifier;
 import com.ispf.server.application.script.FunctionSignature;
 import com.ispf.server.application.script.PlatformScriptBridge;
+import com.ispf.server.application.script.SignaturePolicy;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -19,6 +20,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import tools.jackson.databind.ObjectMapper;
@@ -111,20 +113,11 @@ public class FunctionTestRunner {
     }
 
     /**
-     * Rollback-only function smoke tests often exercise {@code signaturePolicy=REQUIRED}.
-     * Deploy is authenticated in production, but the in-process runner may have no principal.
-     * Use a fresh SecurityContext so the previous thread context is never mutated in place.
+     * Rollback-only function smoke tests run as {@code bundle-test}, even when deploy
+     * was started by a real user. The caller's key must not be replaced by the smoke key.
      */
     private static boolean installBundleTestPrincipalIfNeeded(TestSpec spec) {
         if (!spec.rollback() || !"function".equalsIgnoreCase(spec.kind())) {
-            return false;
-        }
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null
-                && authentication.isAuthenticated()
-                && !(authentication instanceof AnonymousAuthenticationToken)
-                && authentication.getName() != null
-                && !authentication.getName().isBlank()) {
             return false;
         }
         SecurityContext testContext = SecurityContextHolder.createEmptyContext();
@@ -148,7 +141,7 @@ public class FunctionTestRunner {
         runFixtureSql(deployed.appId(), spec.fixtureSql());
         DataSchema inputSchema = objectMapper.readValue(deployed.inputSchemaJson(), DataSchema.class);
         Map<String, Object> fields = spec.input() != null ? new LinkedHashMap<>(spec.input()) : new LinkedHashMap<>();
-        signBundleSmoke(deployed.sourceBody(), inputSchema, fields);
+        signBundleSmoke(spec, deployed.sourceBody(), inputSchema, fields);
         DataRecord input = DataRecord.single(inputSchema, fields);
         DataRecord output = functionRuntime.invokeInCurrentTransaction(spec.objectPath(), spec.functionName(), input);
         Map<String, Object> row = output.rowCount() > 0 ? new LinkedHashMap<>(output.firstRow()) : Map.of();
@@ -157,12 +150,22 @@ public class FunctionTestRunner {
         assertExpectations(spec.expect(), output.rowCount(), row, errors);
     }
 
-    private void signBundleSmoke(String sourceBody, DataSchema schema, Map<String, Object> fields) throws Exception {
-        if (signatureVerifier == null || sourceBody == null || !sourceBody.contains("\"REQUIRED\"")) {
+    private void signBundleSmoke(TestSpec spec, String sourceBody, DataSchema schema, Map<String, Object> fields) throws Exception {
+        if (signatureVerifier == null || spec == null || !spec.rollback()) {
+            return;
+        }
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            return;
+        }
+        if (!"REQUIRED".equalsIgnoreCase(SignaturePolicy.policyName(sourceBody))) {
             return;
         }
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
+        if (authentication == null
+                || authentication instanceof AnonymousAuthenticationToken
+                || authentication.getName() == null
+                || authentication.getName().isBlank()
+                || "anonymousUser".equals(authentication.getName())) {
             return;
         }
         KeyPair pair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
