@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0023-haystack-query-runtime.md](../../en/decisions/0023-haystack-query-runtime.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0023-haystack-query-runtime.md](../../en/decisions/0023-haystack-query-runtime.md).
 
 # ADR-0023: Haystack query runtime (filter subset)
 

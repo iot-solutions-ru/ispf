@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/hmi-quality-gates.md](../en/hmi-quality-gates.md).
+> **Язык:** русская версия. Английский оригинал: [en/hmi-quality-gates.md](../en/hmi-quality-gates.md).
 
 # Контроль качества HMI (S21 / BL-92–95, BL-152)
 

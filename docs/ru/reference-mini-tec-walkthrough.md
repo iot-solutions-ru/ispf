@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/reference-mini-tec-walkthrough.md](../en/reference-mini-tec-walkthrough.md).
+> **Язык:** русская версия. Английский оригинал: [en/reference-mini-tec-walkthrough.md](../en/reference-mini-tec-walkthrough.md).
 
 # Mini-TEC reference walkthrough
 

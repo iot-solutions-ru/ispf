@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0032-replica-profiles-and-capabilities.md](../../en/decisions/0032-replica-profiles-and-capabilities.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0032-replica-profiles-and-capabilities.md](../../en/decisions/0032-replica-profiles-and-capabilities.md).
 
 # ADR-0032: Replica profiles and capabilities
 

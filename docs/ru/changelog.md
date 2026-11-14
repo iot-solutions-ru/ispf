@@ -144,7 +144,7 @@ Changelog отдельных application bundles — в манифестах п�
   байты MQTT publish / Basic-auth / DLMS больше не зависят от default charset JVM, закрыты потоки `Files.walk`,
   гоночные `volatile`-счётчики в тестовых фикстурах, мёртвые условия в `PlatformUserService` /
   `EventCorrelatorService`. `-Pispf.errorprone=false` для быстрой локальной итерации; см.
-  [testing § Статический анализ](docs/ru/testing.md).
+  [testing § Статический анализ](testing.md).
 - Ночной гейт уязвимостей зависимостей: `./gradlew cyclonedxBom` собирает один CycloneDX SBOM по `runtimeClasspath`
   всех модулей; job `dependency-vulnerabilities` в nightly сканирует его Trivy и падает на исправимых
   CRITICAL/HIGH (полный отчёт и SBOM — артефакт). Первый прогон закрыт пинами Tomcat 11.0.26, Netty 4.2.18 для

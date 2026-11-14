@@ -1,4 +1,4 @@
-﻿# ADR-0011: Blueprint + three kinds (MIXIN / INSTANCE / SINGLETON)
+# ADR-0011: Blueprint + three kinds (MIXIN / INSTANCE / SINGLETON)
 
 > **Amendment (2026-10-11):** Terminology and catalogs are **MIXIN / INSTANCE / SINGLETON** (`BlueprintType`, V88 rename from RELATIVE→MIXIN and ABSOLUTE→SINGLETON). Catalogs: `mixin-blueprints`, `instance-types`, `singleton-blueprints`. Older RELATIVE/ABSOLUTE wording is historical only.
 

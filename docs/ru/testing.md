@@ -1,193 +1,125 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/testing.md](../en/testing.md).
+> **Язык:** русская версия. Английский оригинал: [en/testing.md](../en/testing.md).
 
-# Тестирование
+# Тестирование платформы
 
-> **Статус:** Stable — Unit, integration. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — модульные, интеграционные, регрессионные и статические проверки кода. Метки зрелости: [doc-status.md](doc-status.md).
 
-## Запуск
+Руководство по запуску автотестов и проверок качества для разработчиков, вносящих изменения в репозиторий ISPF.
+
+---
+
+## Быстрый запуск тестов
+
+> **Совет:** для повседневной проверки перед отправкой PR используйте быстрый набор `testPrFast` (или скрипт `./tools/ci/pr-fast.sh` / `.\tools\ci\pr-fast.ps1`), а не полный `./gradlew test` по всем 162 модулям драйверов.
 
 ```bash
-# Все модули
-./gradlew test
+# Быстрый пред-PR прогон серверного ядра (как в CI pr-fast)
+./gradlew testPrFast \
+  -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev
 
-# Только server
+# Один конкретный тестовый класс
+./gradlew :packages:ispf-server:test --tests "com.ispf.server.api.DashboardApiTest" \
+  -Dispf.test.skipLoad=true
+
+# Сквозной регрессионный набор по всем основным движкам платформы (golden path)
+./gradlew :packages:ispf-server:test --tests "com.ispf.server.regression.*" \
+  -Dispf.test.skipLoad=true
+
+# Все тесты модуля ispf-server (включая нагрузочные)
 ./gradlew :packages:ispf-server:test
-
-# Один класс
-./gradlew :packages:ispf-server:test --tests "com.ispf.server.api.DashboardApiTest"
-
-# Полный регрессионный набор логики платформы (golden path по всем движкам)
-./gradlew :packages:ispf-server:test --tests "com.ispf.server.regression.*"
 ```
 
-JUnit 5, Java 25, Spring Boot 4.
+Стек тестирования бэкенда: **JUnit 5**, **Java 25**, **Spring Boot 4** (`spring-boot-starter-webmvc-test`, `spring-boot-starter-security-test`, `spring-boot-starter-data-jpa-test`), сериализация Jackson 3 (`tools.jackson` с аннотациями `com.fasterxml.jackson.annotation`).
 
-В бэкэнд-тестах используются модульные стартеры Boot 4 (`spring-boot-starter-webmvc-test`, `spring-boot-starter-security-test`, `spring-boot-starter-data-jpa-test`). JSON использует Джексон 3 (`tools.jackson`); `@JsonProperty` / `@JsonCreator` оставайтесь на `com.fasterxml.jackson.annotation`.
+### Профиль `test` (`application-test.yml`)
 
-## Тест профиля
+- База данных H2 в оперативной памяти с накатом миграций **Flyway**;
+- внешние брокеры MQTT и NATS по умолчанию отключены;
+- для изолированных API-тестов ролевая проверка может отключаться или настраиваться в конкретном тесте.
 
-`application-test.yml`:
+---
 
-- H2 в памяти
-- `ispf.security.rbac-enabled: false`
-- MQTT/NATS отключен.
-- Применены миграции пролетных путей.
+## Уровни тестов
 
-## Уровни испытаний
+### 1. Модульные тесты библиотек (`packages/*`)
 
-### Единица (пакеты)
+| Модуль | Примеры тестовых классов |
+|--------|--------------------------|
+| `ispf-core` | `ObjectTreeTest`, `DataRecordTest`, `BindingCascadeAnalyzerTest` |
+| `ispf-expression` | `BindingEvaluatorTest`, `ExpressionEngineTest` |
+| `ispf-plugin-blueprint` | `BlueprintEngineTest` |
+| `ispf-plugin-workflow` | `BpmnParserTest`, `WorkflowEngineV2Test`, `WorkflowEngineV3Test` |
+| `ispf-driver-*` | Loopback- и парсер-тесты протоколов (`ModbusTcpDeviceDriverTest`, `SnmpPointTest` и др.) |
 
-| Модуль | Примеры |
-|--------|---------|
-| ispf-core | `ObjectTreeTest`, `DataRecordTest` |
-| ispf-expression | `BindingEvaluatorTest` (expression eval), `ExpressionEngineTest` |
-| ispf-plugin-blueprint | `BlueprintEngineTest` |
-| ispf-plugin-workflow | `BpmnParserTest`, `WorkflowEngineV2/V3Test` |
-| ispf-driver-modbus | `ModbusPointTest` |
-| ispf-driver-snmp | `SnmpPointTest` |
+### 2. Интеграционные и сквозные тесты (`packages/ispf-server`)
 
-### Интеграция (ispf-сервер)
+Запускаются с `@SpringBootTest` + `@AutoConfigureMockMvc` + `@ActiveProfiles("test")`:
 
-`@SpringBootTest` + `@AutoConfigureMockMvc` + `@ActiveProfiles("test")`:
+| Класс | Что проверяет |
+|-------|---------------|
+| `IspfServerApplicationTests` | Подъём контекста Spring Boot |
+| `DashboardApiTest`, `WorkflowApiTest`, `WorkQueueApiTest` | Работа с дашбордами, процессами BPMN и очередью задач оператора |
+| `AlertRuleApiTest`, `EventCorrelatorApiTest` | Правила тревог, гистерезис и корреляторы событий |
+| `BlueprintControllerTest`, `OperatorAccessTest` | Шаблоны объектов и разграничение прав `operator` / `admin` |
+| `ApplicationPlatformApiTest` | Деплой пакетов `bundle.json`, миграции SQL и вызовы `/api/v1/bff/invoke` |
+| `PlatformGoldenPathRegressionTest` | Сквозной сценарий по всем подсистемам: шаблоны (`SINGLETON` / `INSTANCE` / `MIXIN`) + `DEVICE`, валидация и деплой пакета, BFF, `sqlBinding`, CEL, архив историй, тревога → коррелятор → BPMN → очередь оператора |
+| `PlatformChangeSetAndBackupRegressionTest` | Наборы изменений (`change-sets`), блокировки редактирования (`leases`), аудит и экспорт/импорт ветки дерева |
+| `PlatformWebSocketLiveRegressionTest` | Живые подписки по WebSocket `/ws/objects` |
+| `AdrHonestyGateTest`, `DriverProductionMatrixTest` | Автоматическая сверка таблиц готовности драйверов и ADR с реальным кодом |
 
-| Класс | Область |
-|-------|---------|
-| `IspfServerApplicationTests` | Context load |
-| `MesPlatformApiTest` | Objects, variables, demo sensor |
-| `DashboardApiTest` | Dashboard CRUD |
-| `WorkflowApiTest` | BPMN save, run |
-| `WorkQueueApiTest` | Claim/complete |
-| `AlertRuleApiTest` | Alert rules CRUD |
-| `EventCorrelatorApiTest` | Correlators CRUD |
-| `BlueprintControllerTest` | Blueprints API |
-| `OperatorAccessTest` | RBAC operator vs admin |
-| `ApplicationPlatformApiTest` | REQ-PF: applications, bundle deploy, BFF invoke |
-| `PlatformGoldenPathRegressionTest` | Сквозной сценарий по всем движкам: SHAPE (`SINGLETON`/`INSTANCE`/`MIXIN`/`DEVICE`), SHIP (`validate`/`dryRun`/`deploy`/`reconcile`/W6 `tests[]`), BFF + `sqlBinding`, CEL + `@dashboardContext`, Historian + Analytics, `AlertRule` → `Correlator` → BPMN → `WorkQueue` |
-| `PlatformChangeSetAndBackupRegressionTest` | Пакеты изменений (`change-sets` preview/conflict/apply), блокировки редактирования (`leases` 423), аудит и полный цикл резервного копирования поддерева (`backup` export/dryRun/import) |
-| `PlatformWebSocketLiveRegressionTest` | Живой WebSocket `/ws/objects`: фильтрация подписок, `presence` и каталог событий |
-
-### Сценарии демо-стенда
-
-1. Виртуальный драйвер → обновления температуры
-2. Привязка `alarmActive` при температуре > порога
-3. Функция `acknowledgeAlarm`
-4. Правило оповещения → `thresholdExceeded` событие
-5. Коррелятор → запуск рабочего процесса
-6. Задача пользователя в рабочей очереди
-
-## Дым (ручной)
-
-После `bootRun --spring.profiles.active=local`:
-
-```bash
-curl http://localhost:8080/api/v1/info
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin"}' | jq -r .token)
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
-```
-
-(`X-ISPF-Role` **выключен по умолчанию**; не использовать в smoke, пока не включён `ispf.security.local-role-header-enabled=true`.)
-
-Web Console: открыть `demo-sensor` dashboard, убедиться в live-значениях.
-
-## Веб-консоль
+### 3. Фронтенд веб-консоли (`apps/web-console`)
 
 ```bash
 cd apps/web-console
-npm test        # vitest (routing, driver maturity)
-npm run build   # tsc + vite build
+npm run lint        # ESLint
+npm test            # модульные тесты Vitest
+npm run i18n:check  # полнота ключей локализации RU/EN
+npm run build       # проверка типов TypeScript (tsc) + сборка Vite
 ```
 
-Строгая проверка TypeScript в локальном эквиваленте CI.
+---
 
-## Нагрузка/пропускная способность (прод VPS)
+## Ручная быстрая проверка запуска (`smoke`)
 
-Сценарии HTTP и внутреннего автоматического нагрузочного тестирования, базовые метрики и зонд дашборда — **[load-testing](load-testing.md)**.
+После локального запуска сервера (`--spring.profiles.active=local`):
 
 ```bash
-python deploy/events-load-test.py --base-url ${ISPF_BASE_URL:-https://ispf.example.invalid}
-python deploy/events-internal-load-test.py --skip-monitor-setup --condition-expr-file deploy/loadtest-sinewave-condition.txt
+curl http://localhost:8080/api/v1/info
+
+TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin"}' | jq -r .token)
+
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
 ```
 
-## Кластерные испытания (БЛ-137/138 + Wave 6)
+Откройте дашборд `demo-sensor` в браузере, запустите драйвер `demo-sensor-01` и убедитесь, что показания обновляются в реальном времени.
 
-Владение драйвером JDBC и аварийное переключение между репликами:
+---
 
-```bash
-./gradlew :packages:ispf-server:test \
-  --tests com.ispf.server.driver.DriverOwnershipServiceTest \
-  --tests com.ispf.server.driver.ClusterFailoverIntegrationTest
-```
+## Кластерные и нагрузочные испытания
 
-Compose smoke (Docker, несколько реплик):
+- **Распределение драйверов и отказоустойчивость реплик:**
+  ```bash
+  ./gradlew :packages:ispf-server:test \
+    --tests com.ispf.server.driver.DriverOwnershipServiceTest \
+    --tests com.ispf.server.driver.ClusterFailoverIntegrationTest
+  ```
+- **Многоузловой стенд Docker Compose:** `bash deploy/cluster-quickstart.sh` и `bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag` (регламент длительных испытаний — [cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md)).
+- **Нагрузочные замеры пропускной способности:** методики и скрипты описаны в разделе [Нагрузочное тестирование](load-testing.md).
 
-```bash
-bash deploy/cluster-quickstart.sh          # build + up + smoke
-ISPF_CLUSTER_REQUIRE_DRIVER_LOCKS=1 \
-  bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag
-python deploy/cluster-scale-load-test.py   # 1 vs 3 replica throughput (floor 1.8×)
-```
+---
 
-CI: [`.github/workflows/cluster-load-test.yml`](../../.github/workflows/cluster-load-test.yml) — JDBC ownership (еженедельно) + compose smoke/scale (`workflow_dispatch`).
+## Автоматические проверки качества кода в CI
 
-Chaos / soak под нагрузкой (журнал REAL vs PARTIAL): **[cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md)**. CI **не** доказывает multi-hour soak и kill-owner под sustained ingress.
+### 1. Контроль покрытия тестами (JaCoCo)
 
-## Гейт покрытия (JaCoCo)
+В корневом `build.gradle.kts` заданы минимальные пороги покрытия строк и ветвлений (`coverageFloors`) по ключевым модулям. При падении покрытия ниже зафиксированного порога задача `./gradlew coverageVerify` завершается с ошибкой (отчёты формируются командой `./gradlew coverageReport`).
 
-Backend-джоб pr-fast падает, если покрытие модуля опускается ниже его порога. Пороги
-(LINE / BRANCH covered ratio) заданы в `coverageFloors` в корневом `build.gradle.kts`
-и работают как «трещотка»: поднимайте порог, когда покрытие растёт, и не понижайте молча.
+### 2. Статический анализ компилятора (Error Prone)
 
-```bash
-./gradlew testPrFast -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev
-./gradlew coverageVerify   # гейт
-./gradlew coverageReport   # HTML/XML в <module>/build/reports/jacoco/test/
-```
+Компиляция Java подключена к анализатору [Error Prone](https://errorprone.info/). Критичные категории дефектов (`DefaultCharset`, `StreamResourceLeak`, `NonAtomicVolatileUpdate`, `OrphanedFormatString`, `ArgumentSelectionDefectChecker`, `AlreadyChecked`, `DuplicateBranches`, `MissingOverride`) переведены в статус ошибки компиляции (`ERROR`). Для ускоренной черновой сборки на локальной машине анализ можно временно пропустить флагом `-Pispf.errorprone=false` (в CI он всегда включён).
 
-Модули без порога (драйверы, аналитика, AI-провайдеры) получают только отчёт.
-## Статический анализ (Error Prone)
+### 3. Проверка уязвимостей сторонних библиотек (CycloneDX + Trivy)
 
-Каждый `javac` в Gradle-сборке идёт через [Error Prone](https://errorprone.info/) (`net.ltgt.errorprone`,
-`error_prone_core` — версии закреплены в корневом `build.gradle.kts`). Паттерны уровня **ERROR** валят
-компиляцию, отдельной задачи нет: `./gradlew compileJava compileTestJava` (или любой `test`) и есть гейт.
-
-- Поднято до ERROR после того, как sweep 2026-09 исправил все вхождения: `DefaultCharset`, `StreamResourceLeak`,
-  `NonAtomicVolatileUpdate`, `OrphanedFormatString`, `ArgumentSelectionDefectChecker`, `AlreadyChecked`,
-  `DuplicateBranches`, `MissingOverride`. Понижать нельзя — правьте код или ставьте точечный
-  `@SuppressWarnings("<Pattern>")` с причиной в одну строку рядом (принятая форма — `JmxDeviceDriver.connect`,
-  `ApplicationSchemaSession`).
-- Глобальный `disable(...)` — только для Javadoc-стилевых проверок (`MissingSummary`, `InvalidInlineTag`,
-  `EscapedEntity`) и `AddressSelection`; у каждой записи есть причина в `build.gradle.kts`.
-- Оставшиеся WARNING видны в логе компиляции; поднимать паттерн до ERROR — только в том же PR, где исправлены
-  все его вхождения.
-- Локально без чекера для быстрой итерации: `./gradlew ... -Pispf.errorprone=false`. CI этот флаг не ставит.
-
-## Гейт уязвимостей зависимостей (nightly)
-
-Job `dependency-vulnerabilities` в `.github/workflows/nightly.yml` собирает один CycloneDX SBOM по
-`runtimeClasspath` всех модулей (`./gradlew cyclonedxBom` → `build/reports/cyclonedx/bom.json`) и сканирует
-его Trivy:
-
-- **CRITICAL / HIGH** с доступным фиксом валят ночь; **MEDIUM / LOW** — только в отчёте.
-- Полная таблица по всем severity и сам SBOM выкладываются артефактом `dependency-vulnerabilities-<run>`
-  (30 дней).
-- Находка закрывается апгрейдом прямой зависимости, либо — если она транзитивная и владелец отстаёт —
-  `resolutionStrategy.force` / override BOM в `build.gradle.kts` **с записью в реестре пинов ADR-0059**
-  (CVE и условие снятия пина). Не подавлять через `.trivyignore`.
-- Dependabot (`.github/dependabot.yml`) двигает прямые версии; nightly-скан — страховка от того, чего Dependabot
-  не видит (транзитивные члены BOM).
-
-Локально: `./gradlew cyclonedxBom -Pispf.errorprone=false && trivy sbom build/reports/cyclonedx/bom.json`.
-
-## CI (рекомендация)
-
-```bash
-./gradlew test          # компиляция с Error Prone; ERROR-паттерны падают здесь
-cd apps/web-console && npm ci && npm test && npm run build
-# nightly: ./gradlew cyclonedxBom + Trivy (гейт CRITICAL/HIGH)
-```
-
-## App bundle smoke (вне `main`)
-
-E2E дым показывает результаты приложения в репозитории App Bundle, а не в фреймворке `main`.
+Ночной конвейер `.github/workflows/nightly.yml` собирает полный перечень зависимостей (`./gradlew cyclonedxBom` → `build/reports/cyclonedx/bom.json`) и проверяет его сканером Trivy: уязвимости уровней `CRITICAL` и `HIGH` с выпущенным исправлением блокируют сборку ([ADR-0059](decisions/0059-toolchain-version-policy.md)).

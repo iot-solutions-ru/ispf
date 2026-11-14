@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0005-tree-first-ai-agent.md](../../en/decisions/0005-tree-first-ai-agent.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0005-tree-first-ai-agent.md](../../en/decisions/0005-tree-first-ai-agent.md).
 
 # ADR-0005: Tree-first AI agent (FW-44)
 

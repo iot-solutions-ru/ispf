@@ -1,134 +1,134 @@
 > **Language:** Canonical English. Russian edition: [ru/learn.md](../ru/learn.md).
 
-# Learn ISPF — transparent entry
+# How ISPF works — engineer's starting guide
 
-> **Status:** Stable — Learning hub. Hub tags: [doc-status.md](doc-status.md).
+> **Status:** Stable — Learning hub. Status tags: [doc-status.md](doc-status.md).
 
-**One page to decide where you are and what to open next.**  
-Everything else (guides, labs, certification) hangs off this map.
-
-Learning spine: **Getting started → Quick start → Curriculum → How-to → How not to → Troubleshooting**.  
-Text-first: read + do labs; no video track required.
+This page explains how ISPF is put together in plain engineering terms, defines the handful of platform concepts you will see across the docs, and gives a step-by-step path from your first local run to shipping a complete project.
 
 ---
 
-## 60-second orientation
+## 1. The mental model in 3 minutes (on one concrete example)
 
-| Question | Answer in ISPF |
-|----------|----------------|
-| Where does my solution live? | **Object tree** (`root.platform…`) — one runtime |
-| Where does logic go? | **SINGLETON** hub or **INSTANCE** twin — never `DEVICE` |
-| How do I ship? | **Bundle** (`ispf pack` / deploy) + optional **ui-pack** |
-| What must I not do? | Heavy widget logic, MQTT journal flood, binding cycles — [anti-patterns](anti-patterns.md) |
+Suppose you are automating a **pumping station** with two Modbus pressure/temperature sensors, an automatic high-temperature alarm, a shift operator screen, and an archive of readings.
 
----
+In many setups, you stitch together separate tools: a protocol gateway, a time-series database, an alarm engine, a dashboard tool, and a backend service. In ISPF, all of those pieces live as **nodes in one hierarchical object tree** (`root.platform.*`) on one server:
 
-**Showing a customer on a demostand (not self-study):** use [customer-demo-playbook](customer-demo-playbook.md) (MES live or OT+HMI+air-gap, 30–60 min). Path A/B below are for learners and engineers.
+```text
+root.platform
+├── devices
+│   ├── pump-01                     (DEVICE — polls Modbus registers: pressure, temperature)
+│   └── pump-02                     (DEVICE — polls Modbus registers: pressure, temperature)
+├── singleton-blueprints
+│   └── station-controller          (SINGLETON — calculates total flow, station status, SQL logs)
+├── alert-rules
+│   └── pump-01-overheat            (ALERT — fires an event when temperature > 80 °C)
+├── workflows
+│   └── overheat-response           (WORKFLOW — creates an operator task & logs escalation)
+└── dashboards
+    └── station-overview            (DASHBOARD — trends, mimic diagram, and acknowledge button)
+```
 
-## Path A — First hour (try + understand)
+How data flows at runtime:
 
-| Step | Time | Do this | Doc |
-|------|------|---------|-----|
-| 1 | 15 min | Run platform, sign in, open demo sensor + dashboard | [Getting started — Try](getting-started.md#try-ispf-15-minutes) |
-| 2 | 10 min | Start demo driver; watch temperature / alarm | Getting started § First steps |
-| 3 | 10 min | Operator mode (`?mode=operator`) | [Operator guide](operator-guide.md) |
-| 4 | 15 min | Skim object tree concepts | [Object model](object-model.md) |
-| 5 | 10 min | Read “what not to build” | [Anti-patterns](anti-patterns.md) |
-
-**Done when:** you can explain tree → variable → binding/alert → dashboard without opening Java.
-
----
-
-## Path B — First solution day (engineer)
-
-Quick-start spine (device → data → viz → automation → ship):
-
-| Step | Goal | Doc / lab |
-|------|------|-----------|
-| 1 | Hub + DEVICE child (or use lab pack) | [Application principles](application-principles.md) § Logic objects · [Lab training](lab-training.md) |
-| 2 | Driver RUNNING | [Drivers](drivers.md) |
-| 3 | Binding rule or hub function | [Bindings](bindings.md)#execution · [Expression language](expression-language.md) |
-| 4 | Dashboard / SCADA widget | [Dashboards](dashboards.md) · [Widgets](widgets.md) |
-| 5 | Alert → optional workflow | [Automation](automation.md) · [Workflows](workflows.md) |
-| 6 | Pack & validate (or APPLICATION Git: Pull release / Push tree → PR — ADR-0063) | [Solution developer guide](solution-developer-guide.md) § solution-as-repo · [Applications — Git](applications.md#application-git-adr-0063) |
-
-**Done when:** `validate_bundle` is green and operator UI opens without Admin Explorer.
+1. **Driver polls the equipment:** `pump-01` has type `DEVICE` and runs the Modbus driver. Every polling cycle it writes fresh values into typed **variables** on `pump-01` (for example, `temperature = 82.4 °C`).
+2. **History is recorded automatically:** if `historyEnabled = true` on `temperature`, ISPF writes samples to the time-series store (H2 locally; PostgreSQL/TimescaleDB and optionally ClickHouse in production).
+3. **Calculations update:** `station-controller` has **calculation rules** (*binding rules*) that read `pump-01/temperature` and `pump-02/temperature` and compute station-wide KPIs.
+4. **Alarms and workflows react:** `pump-01-overheat` evaluates a formula (`self.temperature.value > 80.0`), records an alarm event, and optionally triggers a BPMN workflow (`overheat-response`) that puts a task into the operator's queue.
+5. **Operators see live screens:** WebSocket pushes variable and event updates to the browser. Operators open `http://<server>:8080?mode=operator` and see only the dashboards and SCADA mnemonics — without the admin tree or configuration editors.
 
 ---
 
-## Path C — By role
+## 2. Six terms worth knowing up front
 
-| I am… | Follow | Then certify |
-|-------|--------|--------------|
-| **Operator / HMI user** | Path A → [Operator guide](operator-guide.md) → [SCADA](scada.md) | — |
-| **Solution developer** | Path A → B → Curriculum below → [External AI IDE](external-ide.md) (optional SPA) | [Certification — Solution developer](certification.md#solution-developer-track) |
-| **OT / drivers** | Path A → [Drivers](drivers.md) → [Field pilot](field-pilot-playbook.md) | Admin L2 modules in certification |
-| **Platform admin** | [Deployment](deployment.md) → [Security](security.md) → [Observability](observability.md) | [Certification — Platform admin](certification.md#platform-admin-track) |
-| **AI / agent author** | [AI development](ai-development.md) → [Agent knowledge](agent-knowledge.md) → [OT Automation tutorials](ot-automation-excellence-tutorials.md) | Solution developer L3 |
+Before reading deeper guides, here is what ISPF's core terms mean in everyday engineering language:
+
+| Term in ISPF | What it actually means |
+|--------------|------------------------|
+| **Object tree** (`root.platform.*`) | Hierarchical address space of everything on the server. Paths use dots: `root.platform.devices.pump-01`. Every node can hold variables, events, functions, and calculation rules. |
+| **`DEVICE` vs logic objects (`SINGLETON` / `INSTANCE`)** | A `DEVICE` node represents physical or simulated equipment (PLC, sensor, broker connection) and runs a protocol driver. **Never put plant-wide calculations or application SQL logic on a `DEVICE`.** Instead, use a **`SINGLETON`** node when there is one central controller/hub for the whole application, or an **`INSTANCE`** template when you have many identical units (for example, 20 boiler houses or 100 retail stores) that each carry their own logic. |
+| **Blueprint (template)** | A reusable template defining variables, events, functions, and rules so you do not recreate tags by hand. Three kinds: `SINGLETON` (one unique hub object), `INSTANCE` (type stamped out many times), and `MIXIN` (add-on set of variables attached to existing objects). |
+| **Binding rule & CEL** | A formula attached to an object that recalculates a variable when an input variable changes, when an event fires, or on a timer. Formulas use **CEL** (Google's Common Expression Language, e.g. `self.temperature.value > 80.0`) or built-in signal functions (`scale`, `clamp`, `movingAvg`, `counterRate`). |
+| **Application bundle (`bundle.json`)** | A JSON package containing your project's object templates, SQL table migrations, backend functions, dashboards, and workflows. You keep it in Git, validate it (`ispf validate`), and deploy it to test/production servers instead of copying nodes by hand. |
+| **Built-in Dashboard vs UI pack** | ISPF includes a built-in drag-and-drop Dashboard & SCADA mimic editor for standard HMI screens. When a product needs a custom web application (maps, 3D, custom forms/tables), you build a regular React SPA in your IDE, zip the static build as a **`ui-pack`**, and ISPF serves it at `/apps/<appId>/` while your SPA calls backend functions via `POST /api/v1/bff/invoke`. |
+
+Full dictionary: [Glossary](glossary.md).
+
+---
+
+## Path A — Your first hour (install and explore)
+
+Goal: run ISPF locally and trace how a sensor value reaches an alarm and an operator screen.
+
+| Step | Time | Action | Guide |
+|------|------|--------|-------|
+| 1 | 15 min | Start ISPF locally (portable zip, Docker, or source) and sign in (`admin` / `admin`) | [Getting started — Try ISPF](getting-started.md#try-ispf-15-minutes) |
+| 2 | 10 min | Start the built-in `demo-sensor-01` driver and watch `temperature` and `alarmActive` change | [Getting started § First steps](getting-started.md) |
+| 3 | 10 min | Open `?mode=operator` to see what a shift operator sees vs an administrator | [Operator guide](operator-guide.md) |
+| 4 | 15 min | Inspect how nodes, variables (`DataRecord`), events, and functions are structured | [Object model](object-model.md) |
+| 5 | 10 min | Review the 7 common design mistakes before building your own project | [Common design mistakes](anti-patterns.md) |
+
+---
+
+## Path B — Your first project (one engineering day)
+
+Goal: connect a device, compute a derived value, build an operator screen, add an alarm, and package the solution for deployment.
+
+| Step | Goal | Guide |
+|------|------|-------|
+| 1 | Create a logic hub (`SINGLETON` or `INSTANCE`) and a child `DEVICE` node | [Application architecture rules](application-principles.md) · [Blueprints](blueprints.md) |
+| 2 | Configure a protocol driver (`virtual`, `modbus-tcp`, `mqtt`, `opcua`, `snmp`) and verify `RUNNING` status | [Device drivers](drivers.md) |
+| 3 | Add a calculation rule (binding) or an object function on the hub | [Calculation rules (bindings)](bindings.md) · [Expression language](expression-language.md) |
+| 4 | Build a dashboard or SCADA mimic diagram bound to your variables | [Dashboards](dashboards.md) · [SCADA mnemonics](scada.md) · [Widgets](widgets.md) |
+| 5 | Add a threshold alert rule and (optionally) a BPMN workflow for operator tasks | [Automation](automation.md) · [BPMN workflows](workflows.md) |
+| 6 | Package, validate, and deploy as a `bundle.json` (or sync via Application Git) | [Solution developer guide](solution-developer-guide.md) · [Applications — Git](applications.md#application-git-adr-0063) |
+
+> **Need to run a 30–60 minute live product demo for a customer instead?** Follow the [Customer demostand playbook](customer-demo-playbook.md).
+
+---
+
+## Path C — Reading tracks by role
+
+| Your role | Recommended sequence | Certification |
+|-----------|----------------------|---------------|
+| **Shift operator / dispatcher** | Path A → [Operator guide](operator-guide.md) → [SCADA](scada.md) | — |
+| **Automation / solution engineer** | Path A → Path B → Curriculum below → [Custom React UI](external-ide.md) (if building custom web screens) | [Certification — Solution developer](certification.md#solution-developer-track) |
+| **OT / PLC / driver engineer** | Path A → [Device drivers](drivers.md) → [Driver DDK](driver-ddk.md) → [Field pilot playbook](field-pilot-playbook.md) | Admin L2 modules |
+| **DevOps / system administrator** | [Deployment](deployment.md) → [Security](security.md) → [Historian tiers](historian-tiers.md) → [Observability](observability.md) | [Certification — Platform admin](certification.md#platform-admin-track) |
+| **Engineer using AI Studio / Cursor MCP** | Path A → [AI Studio & MCP](ai-development.md) → [Custom React UI](external-ide.md) → [Automation tutorials](ot-automation-excellence-tutorials.md) | Solution developer L3 |
 
 ---
 
 ## Curriculum — deep track (text)
 
-After Path A/B: work the modules in order. Each row is **read the doc → do the practice** (lab pack, demo tree, or mini exercise). Same progression as a classic platform course: goals → model → I/O → logic → history → UI → ship → ops.
+Work through these 12 modules in order when onboarding new engineers to a project team. Each module pairs one reference page with a concrete hands-on exercise:
 
-| # | Module | Learn | Practice | Doc |
-|---|--------|-------|----------|-----|
-| 1 | Platform goals & layers | Why one object tree; what an application is | Sketch your plant as folders under `root.platform` | [Product](product.md) · [Architecture](architecture.md) |
-| 2 | Object model | Objects, variables, events, functions | Name paths for hub + one DEVICE | [Object model](object-model.md) |
-| 3 | Drivers & protocols | Connect OT/IT; start/stop; status | Bring demo or Modbus/MQTT device to RUNNING | [Drivers](drivers.md) |
-| 4 | Unified model | Logic on SINGLETON/INSTANCE; DEVICE = I/O only | Create hub; put DEVICE under it | [Application principles](application-principles.md) § Logic objects · [Blueprints](blueprints.md) |
-| 5 | Bindings & expressions | Rules, order, multi-pass; CEL | One binding writing a display variable | [Bindings](bindings.md)#execution · [Expression language](expression-language.md) |
-| 6 | Storage & historian | Last-value vs history; rollups; journal off by default | Chart a variable; leave MQTT journal off | [Variable history](variable-history.md) · [Anti-patterns](anti-patterns.md) § MQTT |
-| 7 | Alerts & automation | Threshold → alert → optional workflow | Reuse demo alarm; add one rule | [Automation](automation.md) · [Workflows](workflows.md) |
-| 8 | Visualization | Dashboards, widgets, SCADA; thin client | Bind widgets to hub vars only | [Dashboards](dashboards.md) · [Widgets](widgets.md) · [SCADA](scada.md) |
-| 9 | Access control | Roles, object/variable permissions | Operator vs admin login | [Security](security.md) · [Operator guide](operator-guide.md) |
-| 10 | Ship the solution | Bundle, validate, deploy; optional ui-pack | `ispf pack` / `validate_bundle` green | [Solution developer guide](solution-developer-guide.md) · [Applications](applications.md) · [External AI IDE](external-ide.md) |
-| 11 | Operations | Deploy, observe, recover | One observability check on a running stand | [Deployment](deployment.md) · [Observability](observability.md) |
-| 12 | Authoring standard | Names, short expressions, dictionaries | Rename hub functions with verb prefixes | [Anti-patterns](anti-patterns.md) § Authoring naming · [Application principles](application-principles.md) |
+| # | Module | What you learn | Hands-on practice | Guide |
+|---|--------|----------------|-------------------|-------|
+| 1 | Platform overview | Why telemetry, HMI, alarms, and workflows share one object tree | Sketch your site's hierarchy under `root.platform` | [Product](product.md) · [Architecture](architecture.md) |
+| 2 | Object model | Paths, `ObjectType`, typed `DataRecord` variables, events, functions | Create paths for one station hub and two `DEVICE` nodes | [Object model](object-model.md) |
+| 3 | Equipment drivers | Driver packs, point mappings, polling intervals, error diagnostics | Bring a simulator, Modbus, or MQTT device to `RUNNING` | [Device drivers](drivers.md) |
+| 4 | Templates & logic separation | Why `DEVICE` is I/O only; when to choose `SINGLETON`, `INSTANCE`, or `MIXIN` | Create a template and instantiate two identical units | [Blueprints](blueprints.md) · [Application rules](application-principles.md) |
+| 5 | Calculations & formulas | Reactive vs periodic rules, execution order, cycle protection, CEL | Compute a scaled or aggregated variable on the hub | [Bindings](bindings.md#execution) · [Expression language](expression-language.md) |
+| 6 | Historian & rollups | Recording time series, retention, hot/warm/cold storage, hourly/shift rollups | Enable history on a tag, plot a trend, and configure a rollup | [Variable history](variable-history.md) · [Historian cookbook](analytics-historian-cookbook.md) |
+| 7 | Alarms & workflows | Threshold alerts, hysteresis (`deactivateExpr`), correlators, BPMN tasks | Trigger an overheat alarm that creates an operator task | [Automation](automation.md) · [BPMN workflows](workflows.md) |
+| 8 | Dashboards & SCADA | 84×8 layout grid, `selectionKey` master-detail tables, P&ID mnemonics | Build an overview screen with a device table and detail chart | [Dashboards](dashboards.md) · [Widgets](widgets.md) · [SCADA](scada.md) |
+| 9 | Security & roles | `admin` vs `operator`, Keycloak/OIDC, per-object and per-variable permissions | Verify operator login cannot edit tree nodes or layouts | [Security](security.md) · [Operator guide](operator-guide.md) |
+| 10 | Packaging & custom UI | SQL migrations, script functions, `bundle.json` validation, optional React `ui-pack` | Validate and deploy a bundle without validation warnings | [Solution developer guide](solution-developer-guide.md) · [Custom React UI](external-ide.md) |
+| 11 | Production operations | Docker/Linux deployment, backups, Prometheus metrics, health checks | Inspect `/actuator/health` and the System metrics tab | [Deployment](deployment.md) · [Observability](observability.md) |
+| 12 | Engineering hygiene | Naming conventions, short expressions, avoiding event-journal floods | Audit your project against the 7 common mistakes | [Common design mistakes](anti-patterns.md) |
 
-**Done when:** you can build Path B from scratch **and** explain why each anti-pattern is blocked or warned.
-
-Optional intensives (timed, still text): [OT Automation tutorials](ot-automation-excellence-tutorials.md).  
-Reference packs: [Lab training](lab-training.md) · [MES](reference-mes-walkthrough.md) · [mini-TEC](reference-mini-tec-walkthrough.md) · [HVAC](reference-building-hvac-walkthrough.md).
+Ready-to-explore reference examples in `examples/`: [Lab training](lab-training.md) · [Mini-CHP station](reference-mini-tec-walkthrough.md) · [Building HVAC](reference-building-hvac-walkthrough.md) · [MES walkthrough](reference-mes-walkthrough.md).
 
 ---
 
-## Topic map → ISPF docs
+## Quick topic lookup
 
-| Topic | ISPF home |
-|-------|-----------|
-| Getting started / Install | [Getting started](getting-started.md) · [Deployment](deployment.md) |
-| Quick start | **Path B** |
-| Deep curriculum | **Curriculum** above |
-| How to | Topic docs + [expression-language](expression-language.md) |
-| How **not** to | [Anti-patterns](anti-patterns.md) |
-| Troubleshooting | [Observability](observability.md) · lab stress docs · [product](product.md) |
-| Glossary | [Glossary](glossary.md) |
-| Certification | [Certification](certification.md) |
-
----
-
-## Teaching tips (for trainers / partners)
-
-1. **Demo first, theory second** — Path A before object-model lectures.  
-2. **Show the anti-pattern** — one bad widget expression vs hub function.  
-3. **Always end with ship** — pack/validate, not a snowflake tree.  
-4. **One hub rule** — SINGLETON/INSTANCE vs DEVICE until it sticks.  
-5. **Use lab packs** — `examples/lab-training`, `mes-reference` beat empty sandboxes.  
-6. **Text modules, not slides** — walk Curriculum #1–12 with docs open; assign one practice per module.
-
-Partner hours: [Certification](certification.md) · [Partner program](partner-program.md).
-
----
-
-## Related
-
-| Doc | Role |
-|-----|------|
-| [docs/en/readme](readme.md) | Full catalog |
-| [Getting started](getting-started.md) | Boot + first login |
-| [Anti-patterns](anti-patterns.md) | What not to build + naming standard |
-| [Application principles](application-principles.md) | P1–P10 for authors & agents |
-
-*Keep this page short. Add links, not essays — detail lives in topic docs.*
+| Question | Page |
+|----------|------|
+| How do I install and start ISPF? | [Getting started](getting-started.md) · [Deployment](deployment.md) |
+| What does a specific term mean? | [Glossary](glossary.md) |
+| Which functions are available in formulas? | [Expression language](expression-language.md) |
+| What mistakes should I avoid? | [Common design mistakes](anti-patterns.md) |
+| How do I diagnose a slow or failing node? | [Observability](observability.md) · [Device drivers](drivers.md) |
+| Where is the full list of all ~130 docs? | [Documentation index](readme.md) |

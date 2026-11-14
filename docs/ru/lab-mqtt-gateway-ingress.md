@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/lab-mqtt-gateway-ingress.md](../en/lab-mqtt-gateway-ingress.md).
+> **Язык:** русская версия. Английский оригинал: [en/lab-mqtt-gateway-ingress.md](../en/lab-mqtt-gateway-ingress.md).
 
 # Лаборатория: MQTT gateway ingress (сценарий I-02)
 

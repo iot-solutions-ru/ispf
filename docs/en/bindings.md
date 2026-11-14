@@ -1,6 +1,6 @@
 > **Language:** Canonical English. Russian edition: [ru/bindings.md](../ru/bindings.md).
 
-# Binding rules (mandatory rules)
+# Binding rules (calculation rules)
 
 > **Status:** Stable — CEL and platform bindings. Hub: [doc-status.md](doc-status.md).
 
@@ -101,7 +101,7 @@ Cross-object write (rule on hub, result on remote device):
 | `windowBucket` | Historian only: aggregate window (`5m`, `1h`, `8h`, …) |
 | `rollupBuckets` | Historian only: optional materialized rollup windows |
 
-### Execution {#execution}
+### Execution
 
 How ISPF avoids the “bindings queue, conditions already flipped” pain:
 

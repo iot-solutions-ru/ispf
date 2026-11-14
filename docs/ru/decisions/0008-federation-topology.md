@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0008-federation-topology.md](../../en/decisions/0008-federation-topology.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0008-federation-topology.md](../../en/decisions/0008-federation-topology.md).
 
 # ADR-0008: Federation topology
 

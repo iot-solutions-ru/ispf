@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0004-ai-artifact-generation-gates.md](../../en/decisions/0004-ai-artifact-generation-gates.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0004-ai-artifact-generation-gates.md](../../en/decisions/0004-ai-artifact-generation-gates.md).
 
 # ADR-0004: Генерация и валидация AI-артефактов
 

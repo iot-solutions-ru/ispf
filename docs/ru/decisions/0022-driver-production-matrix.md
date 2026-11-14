@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0022-driver-production-matrix.md](../../en/decisions/0022-driver-production-matrix.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0022-driver-production-matrix.md](../../en/decisions/0022-driver-production-matrix.md).
 
 # ADR-0022: Driver production matrix
 

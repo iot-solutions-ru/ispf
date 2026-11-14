@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/deployment.md](../en/deployment.md).
+> **Язык:** русская версия. Английский оригинал: [en/deployment.md](../en/deployment.md).
 
 # Развёртывание и конфигурация
 
-> **Статус:** Stable — Docker, env vars. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — запуск в Docker Compose, переменные окружения, профили БД, Kubernetes и обновление сервера. Метки зрелости: [doc-status.md](doc-status.md).
 
 ## Docker Compose
 
@@ -10,91 +10,91 @@
 docker compose up -d
 ```
 
-| Сервис | Image | Порты | Credentials |
-|--------|-------|-------|-------------|
-| postgres | timescale/timescaledb:latest-pg16 | 5432 | ispf/ispf |
+| Сервис | Образ | Порты | Учётные данные |
+|--------|-------|-------|----------------|
+| postgres | timescale/timescaledb:latest-pg16 | 5432 | ispf / ispf |
 | redis | redis:7-alpine | 6379 | — |
 | nats | nats:2.10-alpine (-js) | 4222, 8222 | — |
-| mosquitto | eclipse-mosquitto:2 | 1883 | config: deploy/mosquitto/ |
-| keycloak | keycloak:26.0 dev | 8180 | admin/admin |
+| mosquitto | eclipse-mosquitto:2 | 1883 | конфиг: `deploy/mosquitto/` |
+| keycloak | keycloak:26.0 (dev) | 8180 | admin / admin |
 
-Volume: `ispf_pg_data`.
+Том данных: `ispf_pg_data`.
 
-Profiles Compose **не используются** — все сервисы стартуют вместе.
+Профили Compose **не используются** — все сервисы стартуют вместе.
 
-## Spring Boot Server
+## Сервер Spring Boot
 
 Артефакт: `:packages:ispf-server:bootRun` или JAR из `build/libs/`.
 
 ### Переменные окружения
 
-| Переменная | Default | Описание |
-|------------|---------|----------|
+| Переменная | По умолчанию | Описание |
+|------------|--------------|----------|
 | `ISPF_DB_URL` | `jdbc:postgresql://localhost:5432/ispf` | JDBC URL |
-| `ISPF_DB_USER` | ispf | DB user |
-| `ISPF_DB_PASSWORD` | ispf | DB password |
-| `ISPF_SERVER_PORT` | 8080 | HTTP port |
-| `ISPF_OAUTH_ISSUER` | Keycloak realm URL | JWT issuer |
-| `ISPF_MQTT_ENABLED` | false | MQTT integration |
-| `ISPF_MQTT_BROKER` | tcp://localhost:1883 | Broker URL |
-| `ISPF_NATS_ENABLED` | false | NATS integration |
-| `ISPF_NATS_URL` | nats://localhost:4222 | NATS URL |
-| `ISPF_BOOTSTRAP_FIXTURES_ENABLED` | true | Demo/lab fixture models и demo-узлы (`mqtt-sensor-v1`, …). См. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md). **Prod VPS:** `vps-deploy-direct.ps1` выставляет `false`; lab demo — `vps-factory-reset.sh --fixtures`. |
+| `ISPF_DB_USER` | ispf | Пользователь БД |
+| `ISPF_DB_PASSWORD` | ispf | Пароль БД |
+| `ISPF_SERVER_PORT` | 8080 | HTTP-порт |
+| `ISPF_OAUTH_ISSUER` | URL realm Keycloak | Издатель JWT |
+| `ISPF_MQTT_ENABLED` | false | Интеграция MQTT |
+| `ISPF_MQTT_BROKER` | tcp://localhost:1883 | URL брокера MQTT |
+| `ISPF_NATS_ENABLED` | false | Интеграция NATS |
+| `ISPF_NATS_URL` | nats://localhost:4222 | URL NATS |
+| `ISPF_BOOTSTRAP_FIXTURES_ENABLED` | true | Demo/lab-модели и demo-узлы (`mqtt-sensor-v1`, …). См. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md). **Prod VPS:** `vps-deploy-direct.ps1` ставит `false`; lab demo — `vps-factory-reset.sh --fixtures`. |
 
 ### Профили
 
-| Profile | Файл | Сценарий |
+| Профиль | Файл | Сценарий |
 |---------|------|----------|
 | default | application.yml | PostgreSQL + JWT |
-| local | application-local.yml | H2 file, Bearer после `POST /api/v1/auth/login` (`X-ISPF-Role` выключен по умолчанию) |
-| dev | application-dev.yml | Full stack + MQTT/NATS |
-| test | application-test.yml | H2 memory, tests |
+| local | application-local.yml | Файл H2, Bearer после `POST /api/v1/auth/login` (`X-ISPF-Role` выключен по умолчанию) |
+| dev | application-dev.yml | Полный стек + MQTT/NATS |
+| test | application-test.yml | H2 в памяти, автотесты |
 
 ### База данных
 
-- **Flyway** — миграции при старте (`ddl-auto: validate`); locations по `RelationalDialect` (см. [0037-relational-core-portability](decisions/0037-relational-core-portability.md))
-- **local:** H2 `./data/ispf-local` (PostgreSQL compatibility mode)
-- **prod:** PostgreSQL; TimescaleDB extension (docker image `timescale/timescaledb`) — hypertables `variable_samples` и `event_history`, retention 90d ([0009-timescaledb-retention](decisions/0009-timescaledb-retention.md), [0015-event-history-timescale](decisions/0015-event-history-timescale.md))
+- **Flyway** — миграции при старте (`ddl-auto: validate`); каталоги по `RelationalDialect` (см. [ADR-0037](decisions/0037-relational-core-portability.md))
+- **local:** H2 `./data/ispf-local` (режим совместимости с PostgreSQL)
+- **prod:** PostgreSQL; расширение TimescaleDB (образ `timescale/timescaledb`) — hypertables `variable_samples` и `event_history`, retention 90 дней ([ADR-0009](decisions/0009-timescaledb-retention.md), [ADR-0015](decisions/0015-event-history-timescale.md))
 
 #### Режимы хранилища
 
-| Режим | Metadata (`ISPF_DB_*`) | События | История переменных |
-|-------|------------------------|---------|-------------------|
-| **Одна БД** (default) | PostgreSQL | `ISPF_EVENT_JOURNAL_STORE=jdbc` | `ISPF_VARIABLE_HISTORY_STORE=jdbc` |
-| **Split telemetry** | PostgreSQL | `clickhouse` / `cassandra` | `clickhouse` / `cassandra` |
+| Режим | Метаданные (`ISPF_DB_*`) | События | История переменных |
+|-------|--------------------------|---------|-------------------|
+| **Одна БД** (по умолчанию) | PostgreSQL | `ISPF_EVENT_JOURNAL_STORE=jdbc` | `ISPF_VARIABLE_HISTORY_STORE=jdbc` |
+| **Разделённая телеметрия** | PostgreSQL | `clickhouse` / `cassandra` | `clickhouse` / `cassandra` |
 
 Одна БД — штатный сценарий: конфигурация, объекты, `event_history` и `variable_samples` в одном PostgreSQL. ClickHouse/Cassandra — только при высокой нагрузке на time-series.
 
 Опционально: `ISPF_METADATA_DB_KIND` (`postgresql`, `h2`, `mssql`, …) — см. [storage-portability-inventory](storage-portability-inventory.md).
 
-**Смена движка metadata (greenfield, до v1.0):** новая пустая БД, Flyway baseline выбранного dialect, конфигурация — импорт бандлов. In-place миграция PG→MSSQL не поддерживается.
+**Смена движка метаданных (с нуля, до v1.0):** новая пустая БД, baseline Flyway выбранного dialect, конфигурация — импорт бандлов. Миграция «на месте» PG→MSSQL не поддерживается.
 
-Platform **Data Sources** (`root.platform.data-sources.*`): `internal` — схема в `ISPF_DB`; `external` — JDBC к внешней БД для отчётов и SQL bindings (не metadata).
+Источники данных платформы (`root.platform.data-sources.*`): `internal` — схема в `ISPF_DB`; `external` — JDBC к внешней БД для отчётов и SQL-привязок (не метаданные).
 
-### Messaging
+### Шины сообщений
 
-| Broker | Включение | Использование |
+| Брокер | Включение | Использование |
 |--------|-----------|---------------|
-| MQTT | `ispf.mqtt.enabled=true` | Device drivers |
-| NATS | `ispf.nats.enabled=true` | Workflow messageTask |
+| MQTT | `ispf.mqtt.enabled=true` | Драйверы устройств |
+| NATS | `ispf.nats.enabled=true` | Задачи BPMN `messageTask` |
 
-## Web Console
+## Веб-консоль
 
-Static build:
+Сборка статики:
 
 ```bash
 cd apps/web-console && npm run build
 ```
 
-`dist/` — раздавать через nginx/ingress с proxy на API.
+Каталог `dist/` раздавайте через nginx/ingress с прокси на API.
 
-Dev: `npm run dev`, proxy на backend.
+Разработка: `npm run dev`, прокси на backend.
 
-## Production quick start (BL-127)
+## Быстрый старт «как lab / localhost» (BL-127)
 
-Одна команда поднимает **lab / localhost** стек на Linux-хосте с Docker (PostgreSQL + Redis + `ispf-server` + nginx для UI). Не привязан к VPS `ispf.example.invalid`.
+Одна команда поднимает стек на Linux-хосте с Docker (PostgreSQL + Redis + `ispf-server` + nginx для UI). Не привязан к VPS `ispf.example.invalid`.
 
-**Не для internet-facing production без hardening:** порты привязаны к `127.0.0.1`, demo-fixtures выключены, дефолтные пароли БД (`ispf/ispf`) нужно сменить перед выносом в сеть. Образы — pinned tags из `deploy/air-gap-images.env`. Полный чеклист prod: [DEMOSTANDS.md § Production](demostands.md).
+**Не для выставления в интернет без hardening:** порты на `127.0.0.1`, demo-fixtures выключены, пароли БД по умолчанию (`ispf/ispf`) нужно сменить перед выносом в сеть. Образы — pinned tags из `deploy/air-gap-images.env`. Полный чеклист: [demostands.md](demostands.md).
 
 **Требования:** Docker Engine + Compose v2, JDK 25 (для сборки), Node.js 20+ (для UI).
 
@@ -110,11 +110,11 @@ bash deploy/prod-quickstart.sh
 4. Запускает `deploy/docker-compose.prod-stack.yml`.
 5. Ждёт readiness через `deploy/health-check.sh`.
 
-| Endpoint | URL |
-|----------|-----|
-| API info | http://127.0.0.1:8080/api/v1/info |
-| Actuator health | http://127.0.0.1:8080/actuator/health (не проксируется через nginx) |
-| Web UI (nginx) | http://127.0.0.1:8088/ |
+| Точка входа | URL |
+|-------------|-----|
+| Сведения API | http://127.0.0.1:8080/api/v1/info |
+| Health (actuator) | http://127.0.0.1:8080/actuator/health (через nginx не проксируется) |
+| Веб-UI (nginx) | http://127.0.0.1:8088/ |
 
 Остановка:
 
@@ -135,21 +135,21 @@ Volumes PostgreSQL сохраняются (`ispf_prod_pg`). Полная очи�
 
 **Prod VPS:** для `ispf.example.invalid` по-прежнему используйте `deploy/vps-deploy-direct.ps1` (direct SCP + staging), не этот quick start.
 
-## Kubernetes Helm chart (BL-186)
+## Helm-чарт Kubernetes (BL-186)
 
-Chart: [`deploy/helm/ispf`](../../deploy/helm/ispf/). Устанавливается Helm 3.14+; lint/template smoke без кластера.
+Чарт: [`deploy/helm/ispf`](../../deploy/helm/ispf/). Нужен Helm 3.14+; lint/template можно прогнать без кластера.
 
 ```bash
-# Статический smoke (локальный helm или Docker alpine/helm)
+# Статическая проверка (локальный helm или Docker alpine/helm)
 bash deploy/helm/ispf/validate.sh
 
-# Install
+# Установка
 helm upgrade --install ispf deploy/helm/ispf \
   --namespace ispf --create-namespace \
   --set secrets.dbPassword='change-me' \
   --set ispf.bootstrap.fixturesEnabled=false
 
-# Runtime smoke
+# Дымовая проверка runtime
 kubectl -n ispf rollout status deploy/ispf --timeout=180s
 kubectl -n ispf port-forward svc/ispf 8080:80 &
 curl -sf http://127.0.0.1:8080/actuator/health
@@ -158,16 +158,16 @@ curl -sf http://127.0.0.1:8080/api/v1/info
 
 | Артефакт | Назначение |
 |----------|------------|
-| [`deploy/helm/ispf/Chart.yaml`](../../deploy/helm/ispf/Chart.yaml) | Метаданные chart |
-| [`deploy/helm/ispf/values.yaml`](../../deploy/helm/ispf/values.yaml) | Defaults (historian tiers, analytics replicas, edge hints) |
-| [`deploy/helm/ispf/validate.sh`](../../deploy/helm/ispf/validate.sh) | Gate `helm lint` + `helm template` (CI job `helm-chart`) |
-| [`deploy/helm/ispf/README.md`](../../deploy/helm/ispf/README.md) | Заметки по install |
+| [`deploy/helm/ispf/Chart.yaml`](../../deploy/helm/ispf/Chart.yaml) | Метаданные чарта |
+| [`deploy/helm/ispf/values.yaml`](../../deploy/helm/ispf/values.yaml) | Значения по умолчанию (уровни historian, реплики analytics, edge) |
+| [`deploy/helm/ispf/validate.sh`](../../deploy/helm/ispf/validate.sh) | `helm lint` + `helm template` (CI job `helm-chart`) |
+| [`deploy/helm/ispf/README.md`](../../deploy/helm/ispf/README.md) | Заметки по установке |
 
-ARM edge в K8s: `edge.enabled=true` / `edge.arm64=true` (см. [edge/arm64](../../deploy/edge/arm64/README.md)). Compose-профиль для Pi/шлюзов: BL-187.
+ARM edge в Kubernetes: `edge.enabled=true` / `edge.arm64=true` (см. [edge/arm64](../../deploy/edge/arm64/README.md)). Compose-профиль для Pi/шлюзов: BL-187.
 
-## Air-gap deployment (BL-128)
+## Развёртывание без интернета (air-gap, BL-128)
 
-Hosts без исходящего интернета: offline bundle (JAR, UI zip, driver packs, Docker images) и runbook.
+Хосты без исходящего интернета: offline-пакет (JAR, UI zip, пакеты драйверов, образы Docker) и runbook.
 
 ```bash
 # Build host (connected)
@@ -499,6 +499,6 @@ docker compose exec postgres psql -U ispf -d postgres \
 | Сессии / timeout | Keycloak realm: SSO idle timeout, max session; см. [security](security.md) |
 | Email/SMS алармы | `ISPF_NOTIFICATIONS_EMAIL_RELAY_URL` + webhook на SMS gateway; [automation](automation.md) |
 | Offline operator HMI | PWA cache web-console static; HMI layout в `dashboard-v1.layout` |
-| OPC-UA полевой уровень | Driver pack `opcua`; mapping переменных GPU — lab note в [examples/mini-tec/README.md](readme.md) |
+| OPC-UA полевой уровень | Пакет драйвера `opcua`; сопоставление переменных ГПУ — см. [прохождение эталона мини-ТЭЦ](reference-mini-tec-walkthrough.md) |
 
 **Lab demo mini-TEC:** `ISPF_BOOTSTRAP_FIXTURES_ENABLED=true` (default local). **Prod VPS:** fixtures off — импорт через `POST /api/v1/applications/mini-tec/deploy` или factory-reset с `--fixtures`.

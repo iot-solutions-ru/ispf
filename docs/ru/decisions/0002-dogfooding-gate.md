@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0002-dogfooding-gate.md](../../en/decisions/0002-dogfooding-gate.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0002-dogfooding-gate.md](../../en/decisions/0002-dogfooding-gate.md).
 
 # ADR-0002: Dogfooding gate для изменений platform
 

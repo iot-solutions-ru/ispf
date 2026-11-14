@@ -46,8 +46,8 @@ will answer `GET /apps/<appId>/` with the **admin console** SPA (title “ISPF A
 
 | Layer | Templates |
 |-------|-----------|
-| Public TLS | [`deploy/nginx-ispf.conf`](../../deploy/nginx-ispf.conf), [`deploy/nginx-vps-ssl.conf`](../../deploy/nginx-vps-ssl.conf) → inner `:8080` |
-| Inner LB (`docker-compose.vps-single` / cluster) | [`deploy/nginx-vps-single.conf`](../../deploy/nginx-vps-single.conf), [`deploy/nginx-vps-cluster.conf`](../../deploy/nginx-vps-cluster.conf) → JVM `:8081` (edge-api) |
+| Public TLS | [`deploy/nginx-ispf.conf`](../../../deploy/nginx-ispf.conf), [`deploy/nginx-vps-ssl.conf`](../../../deploy/nginx-vps-ssl.conf) → inner `:8080` |
+| Inner LB (`docker-compose.vps-single` / cluster) | [`deploy/nginx-vps-single.conf`](../../../deploy/nginx-vps-single.conf), [`deploy/nginx-vps-cluster.conf`](../../../deploy/nginx-vps-cluster.conf) → JVM `:8081` (edge-api) |
 
 ```nginx
 location ^~ /apps/ {

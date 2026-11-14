@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0012-visual-groups.md](../../en/decisions/0012-visual-groups.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0012-visual-groups.md](../../en/decisions/0012-visual-groups.md).
 
 # ADR-0012: Visual groups
 

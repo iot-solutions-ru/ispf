@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/russian-software-registry.md](../en/russian-software-registry.md).
+> **Язык:** русская версия. Английский оригинал: [en/russian-software-registry.md](../en/russian-software-registry.md).
 
 # Включение ISPF в реестр российского ПО
 
-> **Статус:** Internal — Правообладатель / RU market. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Internal — Правообладатель / RU market. Метки зрелости: [doc-status.md](doc-status.md).
 
 Руководство для правообладателя: подготовить, как собрать техпакет и подать заявку на [reestr.digital.gov.ru](https://reestr.digital.gov.ru).
 

@@ -1,182 +1,137 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/air-gap-deployment.md](../en/air-gap-deployment.md).
+> **Язык:** русская версия. Английский оригинал: [en/air-gap-deployment.md](../en/air-gap-deployment.md).
 
-# Развертывание воздушного зазора (БЛ-128)
+# Установка в закрытом контуре без интернета (air-gap)
 
-> **Статус:** Stable — Офлайн-установка. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — автономное развёртывание и обновление в изолированных сетях. Метки зрелости: [doc-status.md](doc-status.md).
 
-Runbook для установки и обновления ISPF на хостах **без исходящего Интернета**. Дополняет [deployment](deployment.md) (быстрый онлайн-старт) и [commercial-licensing](commercial-licensing.md) (лицензии пакета RSA/пакета драйверов).
+Инструкция по установке и обновлению сервера ISPF на площадках **без доступа в интернет** (технологические сети, ДМЗ предприятия). Онлайн-установка в Docker описана в разделе [Развёртывание](deployment.md), подпись коммерческих пакетов — в [Коммерческом лицензировании](commercial-licensing.md).
 
-## Когда использовать
+---
 
-| Сценарий | Подход |
-|----------|----------|
-| Lab / factory DMZ, no egress | Air-gap bundle + `air-gap-apply.sh` |
-| Connected Linux + Docker | [Production quick start](deployment.md) (`prod-quickstart.sh`) |
-| Managed VPS with SSH | `deploy/vps-deploy-direct.ps1` (direct SCP) |
+## Когда использовать этот сценарий
 
-## Архитектура
+| Сценарий | Подходящий способ |
+|----------|-------------------|
+| Закрытый цеховой сегмент / ДМЗ без выхода во внешнюю сеть | Автономный архив `ispf-airgap-*.tar.gz` + скрипт `air-gap-apply.sh` |
+| Linux-сервер с доступом в интернет и Docker | Онлайн-запуск из [Развёртывания](deployment.md) |
+| Выделенный сервер с доступом по SSH | Прямая выкладка артефактов по SCP/SSH |
+
+---
+
+## Схема подготовки и переноса
 
 ```text
-[Build host — has internet]
-  air-gap-pack.sh → ispf-airgap-<version>.tar.gz
-        │  (USB / sneakernet / internal file share)
-        ▼
-[Target host — no internet]
-  air-gap-apply.sh → docker load + compose up
+[Машина сборки — с интернетом]
+  air-gap-pack.sh  ──►  ispf-airgap-<версия>.tar.gz + контрольная сумма SHA-256
+                              │
+               (перенос на съёмном носителе / через шлюз)
+                              ▼
+[Целевой сервер — без интернета]
+  air-gap-apply.sh  ──►  docker load + docker compose up
 ```
 
-Содержимое комплекта:
+Что входит в автономный архив:
 
-| Путь | Описание |
-|------|-------------|
-| `artifacts/ispf-server.jar` | Platform server |
-| `artifacts/web-console/` | Built SPA (also `web-console.zip`) |
-| `artifacts/driver-packs.tar.gz` | Optional; extracted to `artifacts/drivers/` |
-| `images/prod-stack.tar` | `docker save` закрепленных postgres, redis, temurin JRE, nginx (+ опционально ClickHouse) |
-| `deploy/docker-compose.air-gap.yml` | Self-contained stack |
-| `deploy/air-gap-images.env` | Pinned image tags used at pack time |
-| `MANIFEST.json` / `CHECKSUMS.sha256` | Version + integrity (corruption check) |
+| Путь внутри архива | Содержимое |
+|--------------------|------------|
+| `artifacts/ispf-server.jar` | Сервер платформы ISPF |
+| `artifacts/web-console/` | Собранная статика веб-консоли (также `web-console.zip`) |
+| `artifacts/driver-packs.tar.gz` | Пакеты протокольных драйверов (распаковываются в `artifacts/drivers/`) |
+| `images/prod-stack.tar` | Сохранённые образы Docker (`docker save`): PostgreSQL/Timescale, Redis, JRE Temurin, nginx (и опционально ClickHouse) |
+| `deploy/docker-compose.air-gap.yml` | Автономный файл запуска Compose |
+| `deploy/air-gap-images.env` | Зафиксированные версии образов |
+| `MANIFEST.json` / `CHECKSUMS.sha256` | Паспорт сборки и контрольные суммы файлов для проверки целостности при копировании |
 
-Необязательный `--with-clickhouse` добавляет `clickhouse/clickhouse-server:24.8` к tar-образу образа (включите переменные CH env отдельно — см. [DEPLOYMENT.md § ClickHouse](deployment.md)).
-
----
-
-## Контрольный список — сторона сборки (подключено)
-
-Предварительные требования для **машины сборки**: git checkout, JDK 25, Node.js 20+, Docker, оболочка Gradle.
-
-- [ ] Choose release version (e.g. `0.9.32`)
-- [ ] Комплект сборки:
-
-```bash
-bash deploy/air-gap-pack.sh --version 0.9.32
-```
-
-- [ ] Optional flags: `--skip-build`, `--skip-driver-packs`, `--with-clickhouse`
-- [ ] Verify output: `build/air-gap/ispf-airgap-0.9.32.tar.gz`
-- [ ] Запись **внеполосного** SHA256 архива для обеспечения целостности передачи (КОНТРОЛЬНЫЕ СУММЫ внутри пакета ≠ защита от несанкционированного доступа)
-- [ ] Optional: `--with-clickhouse` adds ClickHouse image + compose profile
-- [ ] **Коммерческие приложения**: подписывайте манифесты пакета на стороне сборки перед упаковкой приложений (см. § Лицензирование ниже).
-- [ ] Скопировать архив на съемный носитель или во внутренний репозиторий артефактов.
+Флаг `--with-clickhouse` дополнительно включает образ `clickhouse/clickhouse-server:24.8` в архив (переменные подключения ClickHouse включаются отдельно — см. [Развёртывание](deployment.md)).
 
 ---
 
-## Контрольный список — целевая сторона (с воздушным зазором)
+## Шаг 1. Сборка архива (на машине с интернетом)
 
-Предварительные требования на **целевом хосте**: только Docker Engine + Compose v2 (JDK/Node не требуется).
+Требования на сборочной машине: Git-репозиторий ISPF, JDK 25, Node.js 20+, Docker.
 
-- [ ] Transfer `ispf-airgap-<version>.tar.gz`
-- [ ] Убедитесь, что архив SHA256 соответствует записи на стороне сборки.
-- [ ] Установить среду коммерческой лицензии (если применимо) — см. § Лицензирование.
-- [ ] Применять:
-
-```bash
-bash deploy/air-gap-apply.sh /media/ispf-airgap-0.9.32.tar.gz
-```
-
-Или сначала извлеките, а затем примените каталог:
-
-```bash
-tar -xzf ispf-airgap-0.9.32.tar.gz
-bash ispf-airgap-0.9.32/deploy/air-gap-apply.sh ispf-airgap-0.9.32/
-```
-
-- [ ] Confirm health: `curl http://localhost:8080/api/v1/info`
-- [ ] Open UI: http://localhost:8088/
-- [ ] Note `installationId` for future license issuance: `GET /api/v1/platform/installation-id`
+1. Соберите автономный пакет нужной версии:
+   ```bash
+   bash deploy/air-gap-pack.sh --version 0.9.32
+   ```
+   Необязательные флаги: `--skip-build` (взять уже собранные артефакты), `--skip-driver-packs`, `--with-clickhouse`.
+2. Проверьте созданный файл `build/air-gap/ispf-airgap-0.9.32.tar.gz` и отдельно сохраните его контрольную сумму `sha256sum` для сверки после переноса на площадку.
+3. Если поставляются коммерческие прикладные пакеты, подпишите их манифесты до переноса (см. раздел о лицензиях ниже).
+4. Скопируйте архив на защищённый носитель или во внутреннее файловое хранилище предприятия.
 
 ---
 
-## Обновление без интернета
+## Шаг 2. Установка на целевом сервере (без интернета)
 
-1. На хосте сборки: создайте более новую версию `ispf-airgap-<new-version>.tar.gz`.
-2. Трансфер к цели.
-3. Достигнув цели, остановите выполнение стека (сохраняет том БД):
+На целевом Linux-сервере требуется только **Docker Engine и Docker Compose v2** (устанавливать JDK и Node.js не нужно).
 
-```bash
-cd /path/to/current/ispf-airgap-<old>/
-docker compose -f deploy/docker-compose.air-gap.yml down
-```
-
-4. Примените новый пакет (загружает изображения, если они были изменены, заменяет JAR/UI/драйверы):
-
-```bash
-bash deploy/air-gap-apply.sh /media/ispf-airgap-<new-version>.tar.gz
-```
-
-5. Миграция Flyway запускается автоматически при запуске сервера. Для установки в стиле systemd/VPS используйте `deploy/apply-platform-update.sh` с промежуточным каталогом, содержащим `ispf-server.jar`, `web-console.zip`, необязательно `driver-packs.tar.gz`.
-
-**Rollback:** keep previous `.tar.gz`; re-apply after `docker compose down`.
+1. Скопируйте `ispf-airgap-<версия>.tar.gz` на сервер и сверьте контрольную сумму `sha256sum`.
+2. Если используется проверка подписи пакетов (включена в профиле air-gap по умолчанию), задайте публичный ключ до запуска:
+   ```bash
+   export ISPF_LICENSE_PUBLIC_KEY_PEM="$(cat license-public.pem)"
+   ```
+3. Запустите установку:
+   ```bash
+   bash deploy/air-gap-apply.sh /media/ispf-airgap-0.9.32.tar.gz
+   ```
+   *(Либо сначала распакуйте `tar -xzf ispf-airgap-0.9.32.tar.gz` и передайте путь к распакованной папке.)*
+4. Проверьте готовность сервера:
+   - API: `curl http://localhost:8080/api/v1/info`
+   - Веб-консоль: `http://localhost:8088/`
+   - Идентификатор инсталляции (для привязки лицензии): `GET /api/v1/platform/installation-id`
 
 ---
 
-## Порядок коммерческого лицензирования (RSA — Done)
+## Обновление установленного сервера без интернета
 
-Compose air-gap по умолчанию включает prod license posture: `ISPF_LICENSE_ENFORCE=true` и `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true`. Экспортируйте публичный ключ **до** `air-gap-apply.sh`. Канон: [en/air-gap-deployment.md](../en/air-gap-deployment.md).
+1. Соберите архив новой версии `ispf-airgap-<новая-версия>.tar.gz` и перенесите на целевой сервер.
+2. Остановите контейнеры текущей версии (том базы данных PostgreSQL при этом сохраняется):
+   ```bash
+   cd /path/to/current/ispf-airgap-<старая-версия>/
+   docker compose -f deploy/docker-compose.air-gap.yml down
+   ```
+3. Примените новый архив (обновятся изменившиеся Docker-образы, JAR сервера, консоль и драйверы; миграции БД Flyway выполнятся автоматически при старте):
+   ```bash
+   bash deploy/air-gap-apply.sh /media/ispf-airgap-<новая-версия>.tar.gz
+   ```
 
-```bash
-export ISPF_LICENSE_PUBLIC_KEY_PEM="$(cat license-public.pem)"
-bash deploy/air-gap-apply.sh /media/ispf-airgap-<version>.tar.gz
-# optional smoke: bash deploy/tools/air-gap-signed-gate-smoke.sh
-```
-
-Lab override: `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=false`. Evidence: [air-gap-signing](../evidence/air-gap-signing/README.md).
-
-### Подписи издателя (Cosign) — Lab Done / field Gap
-
-RSA app-bundle gate — **Done**. Cosign tooling (CI smoke + keyless sign GHCR в `release.yml`) — **Lab Done**; датированный verify на customer air-gap host — **Gap**. `CHECKSUMS.sha256` — только проверка целостности, не publisher signature. Канон: [en/air-gap-deployment.md](../en/air-gap-deployment.md) § Publisher signatures.
-
----
-
-## установка systemd (нет Docker на хосте приложения)
-
-Некоторые сайты запускают JAR + nginx на «голом железе» и используют Docker для PostgreSQL только на соседнем хосте.
-
-1. Извлечь пакет; копировать `artifacts/ispf-server.jar` → `/opt/ispf/`
-2. Разархивируйте `artifacts/web-console.zip` → `/opt/ispf/web-console/`.
-3. Извлечь `artifacts/driver-packs.tar.gz` → `/opt/ispf/data/drivers/`
-4. Настройте `/opt/ispf/ispf-server.env` (URL-адрес базы данных, варианты лицензий)
-5. Используйте `deploy/remote-setup-ispf.sh` или существующие файлы модулей из [DEPLOYMENT.md § Удаленный хост](deployment.md).
-6. Обновления: режиссура + `deploy/apply-platform-update.sh /opt/ispf/staging/<version>`
+Для отката достаточно остановить стек (`docker compose down`) и повторно применить предыдущий архив `.tar.gz`.
 
 ---
 
-## Список артефактов вручную (без сценария упаковки)
+## Установка через `systemd` (без Docker на сервере приложения)
 
-If you cannot run `air-gap-pack.sh` on Linux, assemble the same layout manually:
+Если политика безопасности запрещает Docker на сервере приложения, ISPF запускается напрямую как системная служба Linux:
 
-| Артефакт | Источник |
-|----------|--------|
-| `ispf-server.jar` | `./gradlew :packages:ispf-server:bootJar -Pversion=<ver>` |
-| `web-console.zip` | `apps/web-console/dist` → zip |
-| `driver-packs.tar.gz` | `./gradlew syncAllDriverPacks` → tar `build/driver-packs/` |
-| Docker images | `docker pull` + `docker save` for images listed in `MANIFEST.json` |
-
----
-
-## Поиск неисправностей
-
-| Симптом | Проверить |
-|---------|-------|
-| `docker load` fails | Archive truncated; re-verify out-of-band SHA256 |
-| `Invalid bundle kind` | Archive is not an ISPF air-gap bundle |
-| Health check timeout | `docker compose logs ispf-server`; DB credentials |
-| 403 on app deploy | License / `require-signed-bundles`; installation ID mismatch |
-| Empty driver list | `artifacts/drivers/` not populated; rebuild with driver packs |
+1. Распакуйте архив и скопируйте `artifacts/ispf-server.jar` в `/opt/ispf/`.
+2. Распакуйте `artifacts/web-console.zip` в `/opt/ispf/web-console/`.
+3. Распакуйте `artifacts/driver-packs.tar.gz` в `/opt/ispf/data/drivers/`.
+4. Заполните настройки подключения к СУБД и ключи лицензии в `/opt/ispf/ispf-server.env`.
+5. Настройте unit-файл `systemd` и конфигурацию nginx по инструкции [Развёртывание](deployment.md) (скрипт `deploy/remote-setup-ispf.sh`, обновление через `deploy/apply-platform-update.sh`).
 
 ---
 
-## Локальная LLM на демостенде (воздушный зазор)
+## Проверка подписей и лицензирование
 
-Кратко. Канон: [en/air-gap-deployment.md](../en/air-gap-deployment.md) § Local LLM demostand. Статус: **Partial**.
+В профиле `docker-compose.air-gap.yml` по умолчанию включена строгая проверка: `ISPF_LICENSE_ENFORCE=true` и `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true` (для лабораторного стенда без ключей можно явно выставить `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=false`). Подробнее об артефактах проверки RSA и статусе подписи образов Cosign см. [en/air-gap-deployment.md](../en/air-gap-deployment.md) и [air-gap-signing](../evidence/air-gap-signing/README.md).
 
-- Агент ходит только на `ISPF_AI_BASE_URL` (`ispf.ai.base-url`). OpenAI-совместимый сервер на площадке: `ISPF_AI_PROVIDER=openai-compatible` и URL с `/v1` (или хост без пути — клиент дописывает `/v1`). Нативный Ollama: `ISPF_AI_PROVIDER=ollama`, `ISPF_AI_BASE_URL=http://127.0.0.1:11434` (это `/api/chat`, не `/v1`).
-- Офлайн-установка платформы — `deploy/air-gap-pack.sh` / `air-gap-apply.sh`. Веса модели в tar **не** входят; их переносят отдельно.
-- Граница утверждения «данные не покидают площадку»: промпты агента уходят на настроенный base URL. Это не доказательство нулевого egress для marketplace/лицензий. Cosign tooling — Lab Done; customer-host transcript — Gap. Журнал LLM — заготовка [evidence/air-gap-llm](../evidence/air-gap-llm/README.md); пока там нет датированного прогона, ось air-gap в scorecard остаётся **Partial**.
+---
 
-## Сопутствующие документы
+## Локальная языковая модель (LLM) в изолированном контуре
 
-- [deployment](deployment.md) — онлайн-развертывание, подписание бандла, ClickHouse
-- [commercial-licensing](commercial-licensing.md) — заявки на лицензию, флаги принудительного применения
-- [licensed-driver-packs](licensed-driver-packs.md) — макет пакета драйверов.
-- [tools/license-builder/README.md](readme.md) — подписывать пакеты в автономном режиме на стороне поставщика.
+Встроенный ИИ-помощник обращается только по адресу `ISPF_AI_BASE_URL`:
+- локальный OpenAI-совместимый сервер (vLLM и аналоги): `ISPF_AI_PROVIDER=openai-compatible`, `ISPF_AI_BASE_URL=http://<внутренний-хост>:8000/v1`;
+- локальный сервер Ollama: `ISPF_AI_PROVIDER=ollama`, `ISPF_AI_BASE_URL=http://127.0.0.1:11434`.
+
+Веса языковой модели в архив `ispf-airgap-*.tar.gz` не входят и доставляются во внутренний контур отдельно.
+
+---
+
+## Диагностика частых проблем
+
+| Симптом | Что проверить |
+|---------|---------------|
+| Ошибка при `docker load` | Архив скопировался не полностью — сверьте `sha256sum` с исходным файлом |
+| Таймаут ожидания запуска | Логи контейнера `docker compose logs ispf-server` и параметры подключения к PostgreSQL |
+| Ошибка `403` при деплое пакета приложения | Не задан `ISPF_LICENSE_PUBLIC_KEY_PEM` или пакет не подписан при включённом `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true` |
+| Пустой каталог драйверов | Архив собирался с `--skip-driver-packs` или папка `artifacts/drivers/` не примонтирована |

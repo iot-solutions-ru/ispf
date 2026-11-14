@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/symbol-marketplace.md](../en/symbol-marketplace.md).
+> **Язык:** русская версия. Английский оригинал: [en/symbol-marketplace.md](../en/symbol-marketplace.md).
 
 # Symbol marketplace (BL-185)
 
-> **Статус:** Done (local GA). Теги: [doc-status](../en/doc-status.md). Канон: [en/symbol-marketplace.md](../en/symbol-marketplace.md).
+> **Статус:** Done (local GA). Метки зрелости: [doc-status.md](doc-status.md). Канон: [en/symbol-marketplace.md](../en/symbol-marketplace.md).
 
 Каталог и распространение пакетов символов SCADA/HMI — примитивы P&ID, значки оборудования, анимированные состояния и привязки мнемосхем, совместимые с [scada](scada.md) и `diagramJson` v2.
 

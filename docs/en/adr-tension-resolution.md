@@ -14,13 +14,13 @@ Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 | Tension | Status | Owner ADR | Wave | Done when |
 |---------|--------|-----------|------|-----------|
 | Secrets key / envelope | **Closed** | [0065](decisions/0065-secrets-key-rotation.md) | — | Envelope + rotation shipped; KMS → [0076](decisions/0076-external-secrets-providers.md) non-claim |
-| FIELD=0 vs marketplace pilots | **Closed** | [0067](decisions/0067-field-certified-maturity.md) §1b | — | REAL catalog ≠ driver FIELD; scorecard must not mix lanes |
-| Poka-yoke vs WARNING | **Closed** (Wave 1A) | [0060](decisions/0060-solution-authoring-constraints.md) × [0051](decisions/0051-poka-yoke-constraints-over-guards.md) | 1A | `ispf validate --strict` + catalog gate treat `LOGIC_HOST_DEVICE` as ERROR; authoring default stays WARNING |
+| FIELD=0 vs marketplace pilots | **Closed** | [driver-promotion](driver-promotion.md) | — | REAL catalog ≠ driver FIELD; scorecard must not mix lanes |
+| Strict validation vs WARNING | **Closed** (Wave 1A) | [0060](decisions/0060-solution-authoring-constraints.md) × [0051](decisions/0051-poka-yoke-constraints-over-guards.md) | 1A | `ispf validate --strict` + catalog gate treat `LOGIC_HOST_DEVICE` as ERROR; authoring default stays WARNING |
 | Knobs vs profiles | **Closed** (Wave 1B) | [0033](decisions/0033-prod-idle-demostand-tuning.md) × [0026](decisions/0026-elastic-telemetry-ingress.md) | 1B | Effective-config API exposes resolved profile; demostand docs prefer profiles |
 | Silent cluster degradation | **Closed** (Wave 1C) | [0069](decisions/0069-cluster-consistency.md) × [0029](decisions/0029-cluster-live-variable-replica-sync.md)/[0030](decisions/0030-cluster-config-structure-replica-sync.md) | 1C | Cluster start fail-closed without JetStream (structure) / Redis when live mirror required |
 | Ui-pack on console origin | **Closed** (Wave 2A) | [0073](decisions/0073-hosted-ui-pack-trust.md) × [0054](decisions/0054-hosted-ui-packs.md) | 2A | CSP on `/apps/` **Done**. Scoped `uiPackAppId` denies admin APIs **Done**. Partner login blocked on same-origin signals (Referer, `X-ISPF-Ui-Pack-App`, `ISPF_UI_PACK_CTX` cookie) **Done**. **Residual:** rare no-cookie + stripped signals; Cosign/`require-signed-bundles` **Partial**; separate pack origin **not claimed** |
 | Five time-series stores | **Closed Partial** (Wave 2B) | [0074](decisions/0074-historian-quality-persistence.md) × [0025b](decisions/0025-cassandra-scylla-timeseries-store.md)/[0035](decisions/0035-historian-dual-write.md) | 2B | Quality TCK green on jdbc + ClickHouse (CH opt-in `ISPF_CLICKHOUSE_QUALITY_TCK`); Scylla stays experimental; dual-write secondary failure metric |
-| Breadth vs depth (OT) | **Planned** | [0067](decisions/0067-field-certified-maturity.md) × [0022](decisions/0022-driver-production-matrix.md) | 3A | **Done when (ops):** first customer-plant C1 pack complete per [field-c1-evidence-checklist](field-c1-evidence-checklist.md) + `FIELD_EVIDENCE_PATHS` matrix row merged (**FIELD=0** until then). Wave 3A ops shipped: [docs/evidence/field-c1/](../evidence/field-c1/README.md) template |
+| Breadth vs depth (OT) | **Planned** | [driver-promotion](driver-promotion.md) × [0022](decisions/0022-driver-production-matrix.md) | 3A | **Done when (ops):** first customer-plant C1 pack complete per [field-c1-evidence-checklist](field-c1-evidence-checklist.md) + `FIELD_EVIDENCE_PATHS` matrix row merged (**FIELD=0** until then). Wave 3A ops shipped: [docs/evidence/field-c1/](../evidence/field-c1/README.md) template |
 | External KMS / GOST | **Closed** (Wave 3B policy) | [0076](decisions/0076-external-secrets-providers.md) | 3B | Policy non-claim without code: provider SPI **only** under named tender; envelope stays **Closed** on [0065](decisions/0065-secrets-key-rotation.md) |
 
 ## Wave summary
@@ -28,7 +28,7 @@ Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 | Wave | Kind | Deliverables |
 |------|------|--------------|
 | **0** | Docs | This page, canvas RESOLUTION, `AGENTS.md` / principles align with 0060 modes |
-| **1A** | Code | `--strict` validate/deploy, catalog gate, `hostKind` poka-yoke, agent ship-canon acceptance (**shipped**; unqualified HTTP deploy without `strict` still WARNING by design) |
+| **1A** | Code | `--strict` validate/deploy, catalog gate, `hostKind` schema validation, agent ship-canon acceptance (**shipped**; unqualified HTTP deploy without `strict` still WARNING by design) |
 | **1B** | Code | Effective configuration surface + 0033 docs (**shipped**) |
 | **1C** | Code | Cluster fail-closed JetStream/Redis (**shipped** — `ClusterDependencyValidator`) |
 | **2A** | Code | Ui-pack CSP + scoped token; partner login blocked via Referer / header / context cookie (**shipped**) |
@@ -48,7 +48,7 @@ Source audit: canvas `adr-review-best-in-class` (TENSIONS → RESOLUTION).
 
 Full checklist: [field-c1-evidence-checklist.md](field-c1-evidence-checklist.md). Evidence folder template: [docs/evidence/field-c1/README.md](../evidence/field-c1/README.md).
 
-Do not promote a driver to FIELD until all checklist sections pass for a **named customer plant** ([field-pilot-playbook](field-pilot-playbook.md), [0067](decisions/0067-field-certified-maturity.md) §1b). Marketplace REAL installs and lab VLAN soaks never substitute.
+Do not promote a driver to FIELD until all checklist sections pass for a **named customer plant** ([field-pilot-playbook](field-pilot-playbook.md), [driver-promotion](driver-promotion.md)). Marketplace REAL installs and lab VLAN soaks never substitute.
 
 **Wave 3A docs status:** checklist + template **Done**; matrix FIELD count remains **0** until the first plant pack and code path above land.
 
@@ -56,4 +56,4 @@ Do not promote a driver to FIELD until all checklist sections pass for a **named
 
 - [decisions/readme.md](decisions/readme.md)
 - [competitive-scorecard](competitive-scorecard.md)
-- [0060](decisions/0060-solution-authoring-constraints.md), [0067](decisions/0067-field-certified-maturity.md), [0069](decisions/0069-cluster-consistency.md), [0073](decisions/0073-hosted-ui-pack-trust.md)
+- [0060](decisions/0060-solution-authoring-constraints.md), [driver-promotion](driver-promotion.md), [0069](decisions/0069-cluster-consistency.md), [0073](decisions/0073-hosted-ui-pack-trust.md)

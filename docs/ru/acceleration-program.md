@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/acceleration-program.md](../en/acceleration-program.md).
+> **Язык:** русская версия. Английский оригинал: [en/acceleration-program.md](../en/acceleration-program.md).
 
 # Программа ускорения (S19–S23)
 

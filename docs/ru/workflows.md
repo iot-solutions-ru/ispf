@@ -1,342 +1,149 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/workflows.md](../en/workflows.md).
+> **Язык:** русская версия. Английский оригинал: [en/workflows.md](../en/workflows.md).
 
-# Рабочий процесс и BPMN
+# Процессы BPMN (Workflows)
 
-> **Статус:** Beta — Подмножество BPMN (не полный 2.0). Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Beta — встроенный движок поддерживаемого подмножества BPMN 2.0. Метки зрелости: [doc-status.md](doc-status.md).
 
-## Обзор
+Узел типа **`WORKFLOW`** (шаблон `workflow-v1`, ветка `root.platform.workflows`) описывает пошаговый процесс: автоматические действия на сервере, ветвления по условиям CEL, ожидание таймеров/сигналов и постановку задач дежурному оператору в рабочую очередь (**Work Queue**). Движок написан на чистой Java в модуле `ispf-plugin-workflow` без внешних тяжёлых серверов Camunda/Flowable.
 
-Рабочий процесс — объект типа `WORKFLOW` с blueprint `workflow-v1`. Движок: чистая Java в `ispf-plugin-workflow` (без Camunda/Flowable).
+---
 
-Переменные объект рабочего процесса:
+## Переменные узла `WORKFLOW` и статусы
 
-| Переменная | Описание |
-|------------|----------|
-| `title` | Название |
-| `status` | `DRAFT` / `ACTIVE` / `STOPPED` |
-| `bpmnXml` | BPMN 2.0 XML |
-| `triggerJson` | Триггер по изменению переменных / событию |
-| `operatorAppId` | Operator App для user task в sidebar |
-| `instanceState` | JSON состояния последнего экземпляра |
-| `lastRunAt` | Время последнего запуска |
-| `lastAction` | Последнее действие service task |
-| `inputSchemaJson` / `outputSchemaJson` / `toolDescription` / `sideEffectClass` | Контракт workflow-as-tool (ADR-0049). ACTIVE + непустой `toolDescription` публикуются в MCP как `wf_<name>` |
-| `webhookSlug` / `cronExpression` / `errorWorkflowPath` | Webhook, cron, error workflow |
+| Переменная | Назначение |
+|------------|------------|
+| `title` | Человекочитаемое название процесса |
+| `status` | Состояние описания: `DRAFT` (черновик, только ручной пуск), `ACTIVE` (принимает автозапуск по триггерам и корреляторам), `STOPPED` (остановлен) |
+| `bpmnXml` | XML-схема процесса в формате BPMN 2.0 с расширениями `ispf:*` |
+| `triggerJson` | Условие автоматического запуска при изменении переменных или приходе события |
+| `operatorAppId` | Идентификатор приложения оператора, в боковую очередь которого попадают задачи `userTask` |
+| `instanceState`, `lastRunAt`, `lastAction` | Диагностика последнего запуска |
+| `inputSchemaJson`, `outputSchemaJson`, `toolDescription`, `sideEffectClass` | Публикация активного процесса как инструмента MCP (`wf_<имя>`) при заполненном `toolDescription` |
+| `webhookSlug`, `cronExpression`, `errorWorkflowPath` | Запуск по вебхуку, расписанию cron и маршрут обработки сбоев |
 
-## Жизненный цикл
+Состояния запущенного экземпляра процесса (`InstanceStatus`):
+- **`RUNNING`** — выполняется прямо сейчас;
+- **`WAITING`** — ожидает действия оператора (`userTask`), внешнего сигнала/сообщения или срабатывания таймера;
+- **`COMPLETED`** — успешно дошёл до конечного узла;
+- **`FAILED`** — остановлен из-за необработанной ошибки или отменён оператором.
 
-**Объект рабочего процесса:**
-- `DRAFT` — редактирование, запуск вручную
-- `ACTIVE` — слушает триггеры + ручной run
-- `STOPPED` — не запускается
-
-**Instance (`InstanceStatus`):**
-- `RUNNING` — выполняется
-- `WAITING` — ожидает user task, signal catch или timer
-- `COMPLETED` — завершён
-- `FAILED` — ошибка
+---
 
 ## Поддерживаемые элементы BPMN
 
-ISPF реализует **подмножество BPMN**, не полный BPMN 2.0. Движок: чистая Java в `ispf-plugin-workflow`. Решение: [0047-custom-bpmn-subset-engine](../en/decisions/0047-custom-bpmn-subset-engine.md) (**Accepted** 2026-07-18 — freeze subset). Русское краткое зеркало: [decisions/0047-custom-bpmn-subset-engine](decisions/0047-custom-bpmn-subset-engine.md).
+ISPF поддерживает фиксированное практическое подмножество BPMN 2.0 ([ADR-0047](decisions/0047-custom-bpmn-subset-engine.md)). Неподдерживаемые конструкции сторонних редакторов (такие как `inclusiveGateway`, `eventBasedGateway`, `multiInstanceLoopCharacteristics`, `compensation`, DMN-таблицы) парсер **явно отклоняет с понятной ошибкой** при сохранении, а не игнорирует молча.
 
-| Элемент | Поддержка |
-|---------|-----------|
-| `startEvent` | Да |
-| `endEvent` | Да |
-| `serviceTask` | LOG, SET_VARIABLE, PUBLISH_NATS, **INVOKE_FUNCTION** |
-| `userTask` | Очередь оператора, claim/complete |
-| `intermediateCatchEvent` | Ожидание сигнала (`ispf:signal`), таймера (`ispf:durationSeconds`) или сообщения (`messageEventDefinition` / `ispf:message`) |
-| `boundaryEvent` | Таймер на user task (`attachedToRef`, `ispf:durationSeconds`, `cancelActivity`) или перехват ошибки активности (`errorEventDefinition` / `ispf:errorCode`) |
-| `messageTask` | Публикация в NATS (если enabled) |
-| `exclusiveGateway` | Условные переходы (CEL) |
-| `parallelGateway` | Fork/join, execution tokens |
-| `subProcess` | Встроенный подпроцесс — вход во внутреннее начало, выход во внутренний конец (вложенный embedded OK; не event subprocess) |
-| `callActivity` | Запуск другого WORKFLOW с **ожиданием** завершения (`ispf:workflowPath` или `calledElement`; опционально `ispf:objectPath`, `ispf:inputMap`). Переменные дочернего — `call.{id}.*`. Fire-and-forget — `serviceTask` + `start_workflow`. |
-| `sequenceFlow` | `ispf:condition`, `ispf:default` |
-| Message catch / throw | Да — catch ждёт `deliverMessage`; throw — `intermediateThrowEvent` + `messageEventDefinition` (не-message throw отклоняется при parse) |
+| Элемент BPMN | Что делает в ISPF |
+|--------------|-------------------|
+| `startEvent` / `endEvent` | Начало и завершение процесса |
+| `serviceTask` | Автоматический шаг: запись в лог (`log`), изменение переменной (`set_variable`), отправка в NATS (`publish_nats`) или вызов функции объекта/приложения (`invoke_function`) |
+| `userTask` | Задача человеку: появляется в **Work Queue**, ждёт взятия в работу (`claim`) и выполнения (`complete`) |
+| `exclusiveGateway` | Ветвление «ИЛИ» по условиям CEL на исходящих стрелках (`sequenceFlow`) |
+| `parallelGateway` | Параллельное разветвление и синхронизация веток («И») |
+| `intermediateCatchEvent` | Ожидание именованного сигнала (`ispf:signal`), сообщения (`ispf:message`) или паузы по таймеру (`ispf:durationSeconds`) |
+| `intermediateThrowEvent` | Отправка сообщения (`messageEventDefinition`) |
+| `boundaryEvent` | Граничный таймер SLA на задаче оператора (`ispf:durationSeconds`, `cancelActivity`) либо перехват ошибки шага (`errorEventDefinition` / `ispf:errorCode`) |
+| `subProcess` | Встроенный подпроцесс |
+| `callActivity` | Вызов другого узла `WORKFLOW` с ожиданием его завершения (`ispf:workflowPath`) |
+| `messageTask` | Публикация сообщения в шину NATS |
 
-Namespace расширений: `http://ispf.io/bpmn` (префикс `ispf:`).
+Пространство имён атрибутов платформы в XML: `xmlns:ispf="http://ispf.io/bpmn"`.
 
-## Не поддерживается (явные non-goals)
+---
 
-Вне subset ISPF. Парсер **отклоняет** их с понятной ошибкой (freeze ADR-0047); на silent ignore полагаться нельзя. Палитра WorkflowBuilder не должна намекать на поддержку.
+## Примеры настройки шагов (`ispf:*`)
 
-| Элемент / возможность | Статус |
-|-----------------------|--------|
-| Multi-instance (`multiInstanceLoopCharacteristics`) | Не поддерживается |
-| `inclusiveGateway` | Не поддерживается |
-| `eventBasedGateway` | Не поддерживается |
-| Compensation / compensate events | Не поддерживается |
-| Event subprocess | Не поддерживается |
-| DMN / business rule task | Не поддерживается |
-| Полный импорт BPMN 2.0 из моделей Camunda/Flowable | Не цель — проектируйте по этой странице |
+### Автоматический шаг (`serviceTask`)
 
-Типичный BPMN из других инструментов часто не заработает, пока не сведён к таблице поддерживаемых элементов.
-
-## ISPF-атрибуты
-
-### сервисная задача
+Вызов прикладной или объектной функции:
 
 ```xml
-<serviceTask id="log1" name="Log alarm"
-             ispf:action="log"
-             ispf:message="Threshold exceeded"/>
-```
-
-| действие | Параметры |
-|--------|-----------|
-| `log` | `ispf:message` |
-| `set_variable` | `ispf:targetPath`, `ispf:variable`, `ispf:value` |
-| `publish_nats` | `ispf:subject`, `ispf:message`, `ispf:channel` |
-| `invoke_function` | `ispf:objectPath`, `ispf:functionName`, `ispf:inputMap`, `ispf:outputMap` |
-
-Панель свойств берёт `functionName`, `function` пользовательской задачи, `variable`, `payloadVariable` и `eventName` из дескриптора объекта (`objectPath`, либо `targetObject`, если путь только он). `inputMap` — пары `key=value` или JSON-объект из скаляров. `payloadJson` — JSON-объект из скаляров; движок берёт его, когда `payloadVariable` пуст.
-
-Пример `invoke_function` (прикладные функции — [applications](applications.md)):
-
-```xml
-<serviceTask id="assign" name="Assign tank"
+<serviceTask id="assign" name="Назначить резервуар"
              ispf:action="invoke_function"
-             ispf:objectPath="root.platform.devices.demo-sensor-01"
-             ispf:functionName="myapp_acknowledge"
+             ispf:objectPath="root.platform.singleton-blueprints.terminal-hub"
+             ispf:functionName="ot_assignTank"
              ispf:inputMap="orderId=${workflow.orderId}"
              ispf:outputMap="assignResult=result"/>
 ```
 
-### пользовательская задача
+Поддерживаемые значения `ispf:action`:
+- `log` — запись сообщения `ispf:message` в журнал шагов;
+- `set_variable` — запись `ispf:value` в переменную `ispf:variable` объекта `ispf:targetPath`;
+- `publish_nats` — отправка `ispf:message` в тему `ispf:subject`;
+- `invoke_function` — вызов функции `ispf:functionName` на узле `ispf:objectPath`.
+
+### Задача оператора (`userTask`)
 
 ```xml
-<userTask id="approve" name="Approve"
-          ispf:title="Подтвердить аларм"
-          ispf:instructions="Проверьте датчик"
+<userTask id="approve" name="Подтверждение смены"
+          ispf:title="Подтвердить тревогу перегрева"
+          ispf:instructions="Проверьте показания датчика и состояние охлаждения"
           ispf:assigneeRole="operator"
           ispf:targetObjectPath="root.platform.devices.demo-sensor-01"
           ispf:function="acknowledgeAlarm"/>
 ```
 
-### последовательность потоков
+Если указан атрибут `ispf:function`, эта функция автоматически вызывается в момент нажатия оператором кнопки **Завершить (Complete)**; если функция вернёт ошибку, задача останется открытой.
+
+### Условия переходов (`sequenceFlow`)
 
 ```xml
-<sequenceFlow sourceRef="gw" targetRef="approve" ispf:condition="needsApproval"/>
+<sequenceFlow sourceRef="gw" targetRef="approve" ispf:condition="needsApproval == true"/>
 <sequenceFlow sourceRef="gw" targetRef="end" ispf:default="true"/>
 ```
 
-Условие — экземпляр рабочего процесса CEL в большей степени.
+### Граничный таймер эскалации (`boundaryEvent`)
 
-### задача сообщения
-
-```xml
-<messageTask id="notify" name="Notify"
-             ispf:subject="ispf.ops.alarm"
-             ispf:message="Alarm fired"
-             ispf:channel="nats"/>
-```
-
-### промежуточныйCatchEvent (сигнал)
+Если оператор не закрыл задачу за отведённое время (например, 300 секунд), процесс переходит на ветку эскалации:
 
 ```xml
-<intermediateCatchEvent id="waitIncident" name="Wait incident"
-                        ispf:signal="incidentRegistered"/>
-```
-
-Экземпляр переходит в `WAITING` к доставке сигнала. Альтернатива отмене через API отмены — инцидент может «разбудить» процесс и продолжить ветку обработки.
-
-### промежуточныйCatchEvent (сообщение)
-
-```xml
-<intermediateCatchEvent id="waitAck" name="Wait ERP ack">
-  <messageEventDefinition messageRef="erpAck"/>
-</intermediateCatchEvent>
-```
-
-Или `ispf:message="erpAck"` на catch. Экземпляр ждёт, пока `deliverMessage` передаст совпадающее имя.
-
-### промежуточныйThrowEvent (сообщение)
-
-```xml
-<intermediateThrowEvent id="shipMsg" name="Ship order">
-  <messageEventDefinition messageRef="orderShipped"/>
-</intermediateThrowEvent>
-```
-
-Публикация через message executor (`channel=bpmn-throw`, subject = имя сообщения). Не-message throw отклоняется при parse.
-
-### промежуточныйCatchEvent (таймер)
-
-```xml
-<intermediateCatchEvent id="waitDelay" name="Wait delay"
-                        ispf:durationSeconds="300"/>
-```
-
-Экземпляр ждёт истечения срока; продолжение — встроенный планировщик due-таймеров
-(`ispf.workflow.timer-poll-ms`, по умолчанию 2 с) или `POST .../timer` (см. ниже).
-
-### borderEvent (таймер пользовательской задачи)
-
-```xml
-<boundaryEvent id="ackTimeout" attachedToRef="operatorAck"
+<boundaryEvent id="ackTimeout" attachedToRef="approve"
                cancelActivity="true" ispf:durationSeconds="300"/>
 <sequenceFlow sourceRef="ackTimeout" targetRef="escalate"/>
 ```
 
-Пока пользовательская задача находится в `WAITING`, параллельно отсчитывается SLA. При реализации таймера достижения ветки эскалации (прерывания). Шаблон: [reference-escalation-templates](reference-escalation-templates.md).
+Аналогично граничное событие с `ispf:errorCode` на `serviceTask` или `callActivity` позволяет перехватить сбой вызова и направить процесс по ветке восстановления вместо падения в `FAILED`.
 
-### boundaryEvent (ошибка активности)
+---
 
-```xml
-<error id="errLocked" errorCode="E_LOCKED"/>
-<boundaryEvent id="onLock" attachedToRef="assign">
-  <errorEventDefinition errorRef="errLocked"/>
-</boundaryEvent>
-<sequenceFlow sourceRef="onLock" targetRef="recover"/>
-```
+## Очередь задач оператора (`Work Queue`)
 
-Если service task, message task или call activity падает, подходящая граница ведёт по своему исходящему потоку, и экземпляр не переходит в FAILED. `ispf:errorCode` на границе задаёт тот же код без элемента `error`. Пустой код ловит любой сбой. Код совпадает, если он входит в текст исключения; побеждает самый длинный. Перед этой веткой выставляются переменные экземпляра `errorCode` и `errorMessage`. Второй токен на упавшей активности не остаётся.
-
-## Рабочая очередь
-
-User tasks попадают в `GET /api/v1/work-queue`.
-
-### Привязка к приложению Оператора
-
-На объекте рабочего процесса (blueprint `workflow-v1`) задаётся переменная **`operatorAppId`** — идентификатор приложения-оператора, в боковой панели «Задачи», который попадает в задачу пользователя в этом процессе.
-
-- Настройка: редактор workflow → панель **Operator App** (или `PUT /api/v1/workflows/by-path/operator-app`)
-- При создании user task значение копируется в `workflow_user_tasks.operator_app_id`
-- Фильтр sidebar: `GET /api/v1/work-queue?operatorAppId=platform`
-
-Если `operatorAppId` пусто — задача **не отображается** в боковой панели «Приложения оператора» (виджет `work-queue` на дашборде по-прежнему показывает все).
-
-| Статус задачи | Действие |
-|---------------|----------|
-| `OPEN` | claim → `CLAIMED` |
-| `CLAIMED` | complete → workflow продолжается |
+Все активные шаги `userTask` попадают в очередь `GET /api/v1/work-queue`:
+- Чтобы задача отображалась в боковой панели конкретного приложения оператора (`?mode=operator&app=platform`), укажите у процесса переменную **`operatorAppId`** (например, `platform`). Виджет `work-queue` на самом дашборде умеет показывать задачи независимо от боковой панели.
+- Оператор сначала берёт задачу себе (**Claim** → статус `CLAIMED`), выполняет регламентное действие и нажимает **Complete** — после чего процесс двигается дальше по схеме.
 
 ```http
 POST /api/v1/work-queue/claim?taskId=...&operatorId=operator
 POST /api/v1/work-queue/complete?taskId=...&operatorId=operator
 ```
 
-При `ispf:function` на user task — функция вызывается при complete.
-Сбой вызова отклоняет complete; задача остаётся открытой.
+---
 
-## Триггеры
+## Редактор в веб-консоли
 
-`triggerJson` на объекте рабочего процесса. `WorkflowTriggerListener` сравнивает изменения функций с условиями и запускает АКТИВНЫЙ рабочий процесс.
+![Визуальный редактор BPMN в веб-консоли ISPF](../assets/ispf-bpmn-workflow.png)
 
-## Корреляторы событий → Рабочий процесс
+Двойной клик по узлу `WORKFLOW` открывает встроенный графический редактор диаграмм (`WorkflowBuilder` / `IspfBpmnEditor`):
+- все пути объектов, имена функций и переменных выбираются из выпадающих списков дерева объектов на правой панели свойств;
+- если загружен XML без координат блоков (`bpmndi`), редактор расставляет элементы автоматически;
+- кнопка **Import BPMN** адаптирует внешние схемы к поддерживаемому набору элементов и подсвечивает предупреждения.
 
-Коррелятор с действием `RUN_WORKFLOW` и `actionTarget` = путь рабочего процесса. См. [automation](automation.md).
+---
 
-## Демонстрационный рабочий процесс
-
-`root.platform.workflows.demo-alarm-handler` — BPMN с gateway, user task, service log.
-
-Определение: `WorkflowDefinitions.DEMO_ALARM_HANDLER`.
-
-## Пользовательский интерфейс
-
-![BPMN-редактор workflow — MES work-order dispatch](../assets/ispf-bpmn-workflow.png)
-
-- **WorkflowBuilder** — статус, запуск, ISPF Workflow Diagram Editor; статус продукта **Beta — подмножество BPMN** (см. таблицы выше)
-- **IspfBpmnEditor** / **IspfBpmnViewer** (ADR-0052) — свой React+SVG редактор (без bpmn.io / без watermark). Модель сериализуется в BPMN 2.0 + `bpmndi` + `ispf:*`. Свойства — в панели; XML — для ИИ и крайних случаев. `ispf:targetObject` у `setVariable` и пользовательской задачи принимает хаб CUSTOM (SINGLETON или INSTANCE), DEVICE или узел APPLICATION. `start_workflow` записывает объект запуска в `ispf:objectPath`; если атрибут пуст, движок читает `ispf:targetObject`.
-- **Импорт** — чужой BPMN через **Import BPMN**; `adaptForeignBpmn` перестраивает модель и показывает предупреждения. Жёсткий gate — reject при parse (ADR-0047).
-
-### Диаграмма без разметки (DI)
-
-BPMN из движка часто без `bpmndi`. Редактор расставляет узлы автоматически; при сохранении XML получает `bpmndi`. Шаблон (`EMPTY_BPMN`) уже содержит минимальную разметку.
-
-Если диаграмма не отображается: вкладка **Исходник** или **Import BPMN** для чужих файлов.
-
-## Отмена экземпляра
-
-```http
-POST /api/v1/workflows/instances/{instanceId}/cancel
-Content-Type: application/json
-
-{
-  "reason": "incident",
-  "detailJson": "{\"incidentId\":\"...\"}",
-  "cancelledBy": "operator-1"
-}
-```
-
-Экземпляр переводится в `FAILED`, запись пишется в `workflow_cancel_journal`.  
-Роли: `operator`, `admin`.
-
-## Сигнал доставки
-
-```http
-POST /api/v1/workflows/instances/{instanceId}/signal
-Content-Type: application/json
-
-{"signal":"incidentRegistered","operatorId":"operator-1"}
-```
-
-Broadcast ко всем `WAITING` экземплярам workflow, ожидающим этот сигнал:
-
-```http
-POST /api/v1/workflows/signal
-Content-Type: application/json
-
-{
-  "workflowPath": "root.platform.workflows.signal-demo",
-  "signal": "incidentRegistered",
-  "operatorId": "operator-1"
-}
-```
-
-## Доставка сообщения
-
-```http
-POST /api/v1/workflows/instances/{instanceId}/message
-Content-Type: application/json
-
-{"message":"erpAck","operatorId":"operator-1"}
-```
-
-Продолжает `WAITING` экземпляр на message catch с совпадающим именем. Неверное имя → явная ошибка.
-
-## Срабатывание таймера
-
-```http
-POST /api/v1/workflows/instances/{instanceId}/timer
-Content-Type: application/json
-
-{"operatorId":"operator-1"}
-```
-
-Продолжается экземпляр, если таймер границы крайнего срока или отлов промежуточного таймера уже наступил.
-Платформа также опрашивает ожидающие экземпляры по расписанию и сама исполняет наступившие сроки;
-этот endpoint остаётся для проверки и принудительного срабатывания.
-
-## API
+## Основные методы REST API
 
 ```http
 GET  /api/v1/workflows/by-path?path=...
 PUT  /api/v1/workflows/by-path/bpmn?path=...
-PUT  /api/v1/workflows/by-path/status?path=...   body: { "status": "ACTIVE" }
-POST /api/v1/workflows/by-path/run?path=...
-POST /api/v1/workflows/by-path/invoke-tool?path=...
-GET  /api/v1/workflows/by-path/runs?path=...
-GET  /api/v1/workflows/instances/{instanceId}/steps
-POST /api/v1/workflows/instances/{instanceId}/cancel
-POST /api/v1/workflows/instances/{instanceId}/signal
-POST /api/v1/workflows/instances/{instanceId}/message
-POST /api/v1/workflows/instances/{instanceId}/timer
-POST /api/v1/workflows/signal
-POST /api/v1/webhooks/workflows/{slug}
-GET  /api/v1/workflows/by-path/dead-letters?path=...&unresolvedOnly=true
-POST /api/v1/workflows/dead-letters/{id}/resolve
+PUT  /api/v1/workflows/by-path/status?path=...           # { "status": "ACTIVE" }
+POST /api/v1/workflows/by-path/run?path=...              # ручной запуск
+GET  /api/v1/workflows/by-path/runs?path=...             # история запусков
+GET  /api/v1/workflows/instances/{instanceId}/steps      # журнал пройденных шагов
+POST /api/v1/workflows/instances/{instanceId}/cancel     # отмена экземпляра
+POST /api/v1/workflows/instances/{instanceId}/signal     # доставка сигнала
+POST /api/v1/workflows/instances/{instanceId}/message    # доставка сообщения
+POST /api/v1/workflows/signal                            # широковещательный сигнал по имени
+POST /api/v1/webhooks/workflows/{slug}                   # запуск по вебхуку
 ```
 
-Практика: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
-
-## Персистентность
-
-Таблицы: `workflow_instances`, `workflow_user_tasks`, `workflow_execution_steps`, `workflow_dead_letters` (ADR-0049 / Flyway V81).
-
-## Тесты
-
-`WorkflowEngineTest`, `WorkflowEngineV2Test`, `WorkflowEngineV3Test`, `WorkflowEngineSignalTest`, `WorkflowEngineTimerTest`, `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`, `EscalationTemplateSmokeTest`, `BpmnParserTest` (включая reject-list неподдерживаемых элементов), `WorkflowApiTest`, `WorkflowSignalApiTest`, `WorkQueueApiTest`, `WorkflowWebhookApiTest`, `WorkflowDeadLetterApiTest`, `WorkflowDeadLetterServiceTest`.
+Пошаговые практические упражнения: [Практикум по автоматизации](ot-automation-excellence-tutorials.md).

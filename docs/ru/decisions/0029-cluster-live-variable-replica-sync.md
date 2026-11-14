@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0029-cluster-live-variable-replica-sync.md](../../en/decisions/0029-cluster-live-variable-replica-sync.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0029-cluster-live-variable-replica-sync.md](../../en/decisions/0029-cluster-live-variable-replica-sync.md).
 
 # ADR-0029: Cluster live variable replica sync
 

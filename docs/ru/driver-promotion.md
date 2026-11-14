@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/driver-promotion.md](../en/driver-promotion.md).
+> **Язык:** русская версия. Английский оригинал: [en/driver-promotion.md](../en/driver-promotion.md).
 
 # Процесс продвижения драйверов
 
-> **Статус:** Stable — PRODUCTION + ready-for-field. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Stable — уровни PRODUCTION и готовность к полю. Метки зрелости: [doc-status.md](doc-status.md).
 
 Как перевести драйверы из **stub** / **beta** в **production** (Phase 3.2).
 

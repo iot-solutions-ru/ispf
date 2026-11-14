@@ -1,14 +1,14 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/tutorial-ot-credentials-vault.md](../en/tutorial-ot-credentials-vault.md).
+> **Язык:** русская версия. Английский оригинал: [en/tutorial-ot-credentials-vault.md](../en/tutorial-ot-credentials-vault.md).
 
 # Туториал: credentials vault
 
-> **Статус:** Beta — ADR-0049 Wave 4. Хаб: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
+> **Статус:** Beta — ADR-0049 Wave 4. См. также: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
 
 ## Цель
 
 Сохранить зашифрованный API key и указать его в BPMN через `modelRef`.
 
-Нужен secrets key: `ISPF_SECURITY_SECRETS_KEY` / `ispf.security.secrets-key`, либо разово `POST /api/v1/federation/secrets-key`. Иначе upsert → **409**. Новые записи — envelope `ispf1.<keyId>.…`; ротация YAML-ключа: `ISPF_SECURITY_SECRETS_PREVIOUS_KEY` → restart → `POST /api/v1/federation/secrets-key/reencrypt` ([ADR-0065](0065-secrets-key-rotation.md)).
+Нужен ключ шифрования секретов: переменная окружения `ISPF_SECURITY_SECRETS_KEY` / `ispf.security.secrets-key`, либо разовая установка через `POST /api/v1/federation/secrets-key`. Без ключа запись учётных данных вернёт **409**. Новые записи сохраняются в конверте `ispf1.<keyId>.…`; для смены YAML-ключа задайте `ISPF_SECURITY_SECRETS_PREVIOUS_KEY`, перезапустите сервер и вызовите `POST /api/v1/federation/secrets-key/reencrypt` ([ADR-0065](decisions/0065-secrets-key-rotation.md)).
 
 ## Шаги
 

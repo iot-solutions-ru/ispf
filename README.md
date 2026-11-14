@@ -2,7 +2,9 @@
 
 **One self-hosted system for a plant.** Devices on the network, operator screens, alarms, history, production accounting, and the workflows between them. Same object tree, same API, same console — on your server or in your cloud.
 
-Website: [ispf.ai](https://ispf.ai) · Demo: [demo.iot-solutions.ru](https://demo.iot-solutions.ru/) · Repo: [github.com/iot-solutions-ru/ispf](https://github.com/iot-solutions-ru/ispf)
+Website: [ispf.ai](https://ispf.ai) · Demo: [demo.iot-solutions.ru](https://demo.iot-solutions.ru/) · Wiki: [github.com/iot-solutions-ru/ispf/wiki](https://github.com/iot-solutions-ru/ispf/wiki) · Repo: [github.com/iot-solutions-ru/ispf](https://github.com/iot-solutions-ru/ispf)
+
+> **По-русски:** **[Как устроен ISPF](docs/ru/learn.md)** · **[Быстрый старт за 15 мин](docs/ru/getting-started.md#попробовать-ispf-15-минут)** · **[Полное оглавление документации](docs/ru/readme.md)** · **[Краткое руководство в Wiki](https://github.com/iot-solutions-ru/ispf/wiki)**
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-English%20%7C%20Русский-0A7EA4)](docs/README.md)
@@ -177,7 +179,7 @@ Full guide: [Getting started](docs/en/getting-started.md) · [Начать ра�
 | License | [license.md](docs/en/license.md) | [license.md](docs/ru/license.md) |
 | Roadmap | [roadmap.md](docs/en/roadmap.md) | [roadmap.md](docs/ru/roadmap.md) |
 
-More: [operator guide](docs/en/operator-guide.md) · [anti-patterns](docs/en/anti-patterns.md) · [glossary](docs/en/glossary.md) · [ADRs](docs/en/decisions/readme.md) · [doc hub](docs/README.md)
+More: [operator guide](docs/en/operator-guide.md) · [common design mistakes](docs/en/anti-patterns.md) · [glossary](docs/en/glossary.md) · [ADRs](docs/en/decisions/readme.md) · [doc hub](docs/README.md)
 
 ## Repository layout
 

@@ -2,76 +2,85 @@
 
 # Getting started
 
-> **Status:** Stable — Try path + contributor QA. Hub tags: [doc-status.md](doc-status.md).
+> **Status:** Stable — local quick start and contributor QA workflow. Status tags: [doc-status.md](doc-status.md).
 
-Two tracks:
+This guide has two parts:
 
-1. **[Try ISPF](#try-ispf-15-minutes)** — run the platform and open the demo (newcomers).  
-2. **[Contribute](#contribute-local-dev--qa)** — fast local QA / pre-push (contributors).
+1. **[Try ISPF (≈15 minutes)](#try-ispf-15-minutes)** — start ISPF on your machine, log in, and explore the built-in sensor, alarm, and operator screen.
+2. **[Contribute: local dev & QA](#contribute-local-dev--qa)** — build and run fast local checks if you are modifying platform code.
 
-**Learning map** (first hour → first solution → by role → certification): **[Learn ISPF](learn.md)**.
+New to ISPF concepts? Read **[How ISPF works](learn.md)** alongside this guide.
 
 ---
 
 ## Try ISPF (≈15 minutes)
 
-### Option A — all-in-one JAR (fastest)
+### Option A — Portable release archive (fastest, no database install)
 
-Download **`ispf-*-portable.zip`** from [GitHub Releases](https://github.com/iot-solutions-ru/ispf/releases) (JDK **25**). Unzip, then:
+1. Install **JDK 25** and download **`ispf-*-portable.zip`** from [GitHub Releases](https://github.com/iot-solutions-ru/ispf/releases).
+2. Extract the archive and start the server:
 
 ```bash
-# Windows: double-click start.bat
+# Windows: double-click start.bat (or run in PowerShell/cmd)
+start.bat
+
 # Linux / macOS:
 ./start.sh
 ```
 
-No PostgreSQL needed — the portable build uses **embedded H2** (`data/ispf-local.mv.db` after first start).
+PostgreSQL is not required for local evaluation: the portable build uses an **embedded H2 file database** (`data/ispf-local.mv.db` created next to the JAR on first start).
 
-Open http://localhost:8080 — login `admin` / `admin`. Then continue from [§2 Sign in](#2-sign-in-local-profile) (use port 8080 instead of 5173).
+3. Open **http://localhost:8080** in your browser and sign in with **`admin` / `admin`**. Continue from [Step 2 — Sign in](#2-sign-in-local-profile) below (using port `8080`).
 
-### Option B — from source
-
-### Requirements
-
-| Component | Version |
-|-----------|---------|
-| JDK | **25** (Gradle toolchain; `JavaLanguageVersion.of(25)`) |
-| Gradle | Wrapper in the repository |
-| Node.js | 20+ |
-| Docker Desktop | Optional — only for PostgreSQL / Keycloak / MQTT full stack |
-
-### 1. Start API + console
+### Option B — Container (Docker)
 
 ```bash
-# Terminal 1 — local profile (H2 file DB; syncs a small set of dev driver packs)
+docker pull ghcr.io/iot-solutions-ru/ispf-server:latest
+docker run --rm -p 8080:8080 -v ispf-data:/opt/ispf/data ghcr.io/iot-solutions-ru/ispf-server:latest
+```
+
+Open **http://localhost:8080** and sign in with **`admin` / `admin`**.
+
+### Option C — Run from source
+
+#### Prerequisites
+
+| Tool | Required version | Notes |
+|------|------------------|-------|
+| JDK | **25** | Gradle toolchain (`JavaLanguageVersion.of(25)`) |
+| Gradle | Included (`./gradlew` / `gradlew.bat`) | No separate installation needed |
+| Node.js | **20+** | For running `apps/web-console` in dev mode |
+| Docker | Optional | Needed only if you want PostgreSQL, Keycloak, Mosquitto, and NATS locally |
+
+#### 1. Start the backend and web console
+
+```bash
+# Terminal 1 — API server in 'local' profile (H2 file DB + dev driver packs)
 ./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
 
-# Terminal 2 — Web Console
+# Terminal 2 — React Web Console (proxies /api and /ws to localhost:8080)
 cd apps/web-console && npm install && npm run dev
 ```
 
-| URL | Purpose |
-| --- | ------- |
-| http://localhost:8080 | Admin console (all-in-one JAR) |
-| http://localhost:5173 | Admin console (Vite dev) |
-| http://localhost:8080?mode=operator | Operator HMI (all-in-one JAR) |
-| http://localhost:5173?mode=operator | Operator HMI (Vite dev) |
-| http://localhost:8080/api/v1/info | Version / capabilities |
-| http://localhost:8080/actuator/health | Health |
+| URL | What opens |
+|-----|------------|
+| `http://localhost:8080` | Admin Console (when running portable JAR or Docker) |
+| `http://localhost:5173` | Admin Console (when running Vite dev server) |
+| `http://localhost:8080?mode=operator` | Operator HMI (portable JAR / Docker) |
+| `http://localhost:5173?mode=operator` | Operator HMI (Vite dev server) |
+| `http://localhost:8080/api/v1/info` | Server version and enabled capabilities |
+| `http://localhost:8080/actuator/health` | Health status |
 
-`bootRun` uses **`syncDevDriverPacks`** by default (the short local set, including `jdbc`). Full catalog: `-Dispf.driver.packs=all`.
-
-### Solution pack (repeatable ship)
-
-Author as a folder → `tools/ispf-cli` (`ispf pack|validate|diff|deploy`) → `bundle.json`. Prefer that over hand-copied trees: see [solution-developer-guide](solution-developer-guide.md) § solution-as-repo and [anti-patterns](anti-patterns.md) § Hand-copied trees.
-
-Avoid: heavy widget expressions, MQTT event journal on flood topics, logic on `DEVICE` hubs ([anti-patterns](anti-patterns.md)).
+By default, `bootRun` synchronizes a small set of core development drivers (`syncDevDriverPacks`, including `virtual`, `mqtt`, `modbus`, `http`, `jdbc`). To build all 160+ protocol driver packs, pass `-Dispf.driver.packs=all`.
 
 ### 2. Sign in (`local` profile)
 
-Default empty DB seeds: **`admin` / `admin`** (also `developer` / `developer`, `operator` / `operator`). Use the Web Console login screen.
+On an empty database, ISPF creates three local accounts for testing:
+- **`admin` / `admin`** — full access to the object tree, builders, and settings
+- **`developer` / `developer`** — solution authoring access
+- **`operator` / `operator`** — opens Operator HMI directly (read-only screens, commands, and work queue)
 
-API (Bearer token — required for most calls):
+To call the REST API from a terminal, obtain a Bearer token first:
 
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
@@ -81,104 +90,108 @@ TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
 ```
 
-`X-ISPF-Role` header auth is **off by default** (`ispf.security.local-role-header-enabled=false`). Do not rely on a Role selector in the header for normal local use. Details: [security](security.md).
+> Note: the legacy `X-ISPF-Role` debug header is disabled by default (`ispf.security.local-role-header-enabled=false`). Always authenticate via `/api/v1/auth/login`. Details: [Security](security.md).
 
-### 3. First steps in the UI
+### 3. Walk through the built-in demo in the browser
 
 ![Admin Explorer — object tree after first login](../assets/ispf-object-tree.png)
 
-1. Open the object tree — branch `root.platform`.  
-2. Expand `devices` → `demo-sensor-01` — temperature, threshold, alarm variables.  
-3. Double-click `dashboards.demo-sensor` — **Dashboard Builder**.  
-4. Expand `alert-rules` → `temperature-threshold-exceeded` — CEL alert.  
-5. Double-click `workflows.demo-alarm-handler` — **BPMN** demo.  
-6. Open operator mode: `http://localhost:8080?mode=operator` (all-in-one JAR) or `http://localhost:5173?mode=operator` (Vite), or log in as `operator`.
+1. In the left **Explorer** tree, expand `root` → `platform`.
+2. Expand `devices` → click **`demo-sensor-01`**. In the right **Inspector** panel you will see its variables: `temperature`, `threshold`, `alarmActive`, and `temperaturePercent`.
+3. Expand `dashboards` → double-click **`demo-sensor`** to open it in **Dashboard Builder**.
+4. Expand `alert-rules` → click **`temperature-threshold-exceeded`** to inspect the CEL threshold formula watching `demo-sensor-01`.
+5. Expand `workflows` → double-click **`demo-alarm-handler`** to view the sample **BPMN** alarm-handling workflow.
+6. Switch to **Operator mode** (`http://localhost:8080?mode=operator` or `http://localhost:5173?mode=operator`) to see the clean operator view without configuration menus.
 
-Language: use the console language selector (**English** recommended for screenshots / OSS).
+You can switch the interface language between **Russian** and **English** in the top header bar.
 
-### 4. Start the demo sensor driver
+### 4. Start the simulated sensor driver
+
+Start polling on `demo-sensor-01` (either from the device Inspector in the UI or via `curl`):
 
 ```bash
 curl -X POST "http://localhost:8080/api/v1/drivers/runtime/start?devicePath=root.platform.devices.demo-sensor-01" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-Temperature is a sine wave; when the threshold is exceeded, `alarmActive` and the alert rule may fire.
+`demo-sensor-01` generates a sine-wave temperature signal. Whenever the temperature crosses `threshold`, `alarmActive` turns `true` and the alert rule fires an event into the journal.
 
-### Next after the demo
+### Where to go next
 
-- **[Learn ISPF](learn.md)** — Path B (first solution day) or Path C (by role)  
-- [Product overview](product.md) · [Object model](object-model.md) · [Anti-patterns](anti-patterns.md)  
-- [Solution developer guide](solution-developer-guide.md) — build a real bundle  
-- [External AI IDE](external-ide.md) — product React SPA in Cursor (hosted ui-pack)  
-- [Architecture](architecture.md) · [API](api.md)
+- **[How ISPF works](learn.md)** — follow **Path B** to build your first own station/device project.
+- **[Solution developer guide](solution-developer-guide.md)** — package SQL tables, functions, and dashboards into a repeatable `bundle.json` (`ispf pack` / `ispf validate` / `ispf deploy`).
+- **[Common design mistakes](anti-patterns.md)** — seven practical rules to keep screens fast and configurations clean.
+- **[Custom React UI](external-ide.md)** — build a custom React SPA (`ui-pack`) in Cursor or VS Code.
 
 ---
 
-## Optional: full local stack
+## Optional: full local infrastructure stack (`dev` profile)
+
+If you want PostgreSQL/TimescaleDB, MQTT (Mosquitto), NATS JetStream, and Keycloak OAuth2 locally:
 
 ```bash
 docker compose up -d
 ./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=dev"
 ```
 
-| Service | Port | Purpose |
-|---------|------|---------|
-| PostgreSQL (TimescaleDB) | 5432 | Primary database `ispf` |
-| Redis | 6379 | Cache (reserved) |
-| NATS JetStream | 4222, 8222 | Messaging |
-| Mosquitto | 1883 | MQTT broker |
-| Keycloak | 8180 | OAuth2 (`dev` profile) |
+| Service | Port | Role |
+|---------|------|------|
+| PostgreSQL (TimescaleDB) | `5432` | Primary relational & hot time-series database (`ispf`) |
+| Redis | `6379` | Cache |
+| NATS JetStream | `4222`, `8222` | Internal/workflow messaging |
+| Eclipse Mosquitto | `1883` | Local MQTT broker for device testing |
+| Keycloak | `8180` | OAuth2 / OIDC identity provider (`dev` profile) |
 
-### Spring profiles
+### Summary of Spring profiles
 
-| Profile | DB | Auth | MQTT/NATS |
-|---------|-----|------|-----------|
-| *(default)* | PostgreSQL | JWT Keycloak | off |
-| `local` | H2 file | Bearer after `POST /api/v1/auth/login` | off |
-| `dev` | PostgreSQL | JWT Keycloak localhost:8180 | on |
-| `test` | H2 memory | off | off |
+| Profile | Database | Authentication | MQTT / NATS |
+|---------|----------|----------------|-------------|
+| *(default)* | PostgreSQL | Keycloak OAuth2 JWT | Disabled unless configured via env vars |
+| `local` | Embedded H2 file (`./data/ispf-local`) | Built-in Bearer login (`POST /api/v1/auth/login`) | Disabled |
+| `dev` | PostgreSQL (`localhost:5432`) | Keycloak JWT (`localhost:8180`) | Enabled |
+| `test` | In-memory H2 | Disabled for unit/slice tests | Disabled |
 
-More: [deployment](deployment.md), [security](security.md).
+Full server configuration reference: [Deployment](deployment.md) and [Security](security.md).
 
-### Driver packs
+### How driver packs are loaded
 
-Protocol drivers are **not** inside `ispf-server.jar`. Local `bootRun` / server tests sync **dev packs** automatically.
+Protocol drivers are packaged as separate plugins outside `ispf-server.jar` and loaded at startup from `./data/drivers` (override via `ISPF_DRIVER_PACKS_DIR`).
 
 ```bash
-./gradlew syncDevDriverPacks          # default — fast local
-./gradlew syncAllDriverPacks          # all packs — driver work / prod parity
+./gradlew syncDevDriverPacks          # fast default subset for everyday development
+./gradlew syncAllDriverPacks          # builds all 160+ driver packs into build/driver-packs
 ```
 
-Runtime dir: `./data/drivers` (or `ISPF_DRIVER_PACKS_DIR`). Gradle output: `build/driver-packs`.  
-Details: [licensed-driver-packs](licensed-driver-packs.md).
+Details: [Device drivers](drivers.md) and [Driver packs](licensed-driver-packs.md).
 
 ---
 
 ## Contribute: local dev & QA
 
-**Do not** start with `./gradlew test` or `syncAllDriverPacks` unless you are changing drivers or running full regression. Those paths build **all 162 driver packs** and can run **1000+** tests — often **hours** on a cold machine ([issue #65](https://github.com/iot-solutions-ru/ispf/issues/65)).
+> **Important:** Do **not** run `./gradlew test` or `syncAllDriverPacks` for routine changes unless you are modifying drivers. Building all 160+ driver packs and running 1,000+ tests from cold state can take **hours** ([issue #65](https://github.com/iot-solutions-ru/ispf/issues/65)). Use the targeted commands below instead.
 
-### Pre-push check (matches CI pr-fast)
+### Fast pre-push check (matches CI `pr-fast`)
 
 ```bash
-# Linux/macOS
+# Linux / macOS
 ./tools/ci/pr-fast.sh
 
-# Windows
+# Windows PowerShell
 .\tools\ci\pr-fast.ps1
 ```
 
-Gradle backend slice:
+Or run the backend and frontend checks directly:
 
 ```bash
+# Backend core checks (skips heavy load and multi-node federation suites)
 ./gradlew testPrFast \
   -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev
+
+# Web Console lint, tests, i18n check, and production build
+cd apps/web-console && npm test && npm run i18n:check && npm run build
 ```
 
-Web console: `cd apps/web-console && npm test && npm run i18n:check && npm run build`.
-
-### Targeted feedback (&lt; 2 min)
+### Running a single test class (< 2 minutes)
 
 ```bash
 ./gradlew :packages:ispf-core:test --tests com.ispf.core.model.DataRecordTest
@@ -187,19 +200,14 @@ Web console: `cd apps/web-console && npm test && npm run i18n:check && npm run b
   -Dispf.test.skipLoad=true
 ```
 
-### When you need the full pipeline
+### Reference table of test suites
 
-| Goal | Command |
-|------|---------|
-| All driver packs | `./gradlew syncAllDriverPacks` or `-Dispf.driver.packs=all` |
-| PR-fast driver packs | `./gradlew testDevDriverPacks syncDevDriverPacks` (CI job `driver-packs`, separate from platform `backend`) |
-| PR-fast backend | `./gradlew testPrFast -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev` |
-| Nightly backend | `./tools/ci/nightly.sh` or `./gradlew testNightlyBackend …` |
-| Full server tests | `./gradlew :packages:ispf-server:test` (no `skipLoad`) |
-| Everything | `./gradlew build` (slow — avoid daily) |
+| What you changed | Command to run |
+|------------------|----------------|
+| Core / server logic | `./gradlew testPrFast -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev` |
+| Dev driver packs | `./gradlew testDevDriverPacks syncDevDriverPacks` |
+| All protocol driver packs | `./gradlew syncAllDriverPacks` |
+| Load & federation suites (nightly equivalent) | `./tools/ci/nightly.sh` |
+| Full `ispf-server` suite including load tests | `./gradlew :packages:ispf-server:test` |
 
-**Test tiers (issue #65):** PR-fast skips `@Tag("load")` and `@Tag("federation")`; nightly runs them (`tools/ci/nightly.sh`, [nightly.yml](../../.github/workflows/nightly.yml)). Subproject tests run in parallel locally; serialize with `-Dispf.test.serializeSubprojects=true`. CI splits **driver packs** (`testDevDriverPacks` / job `driver-packs`) from **platform backend** (`testPrFast` / job `backend`); packs may be cached (`ISPF_DRIVER_PACKS_PREBUILT=true` on cache hit). Protocol loopback stays in [driver-interop.yml](../../.github/workflows/driver-interop.yml).
-
-Optional: [gradle.properties.example](../../gradle.properties.example) for more Gradle workers.
-
-See also: [testing](testing.md).
+See [Testing](testing.md) and [gradle.properties.example](../../gradle.properties.example) for parallel worker tuning.

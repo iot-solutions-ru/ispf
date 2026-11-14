@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/pid-symbols-legal.md](../en/pid-symbols-legal.md).
+> **Язык:** русская версия. Английский оригинал: [en/pid-symbols-legal.md](../en/pid-symbols-legal.md).
 
 # Пакет символов P&ID — правовой статус
 

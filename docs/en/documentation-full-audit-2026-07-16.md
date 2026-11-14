@@ -41,7 +41,7 @@ Docs are **deep and professionally maintained** as an internal platform wiki. Fo
 | 6 | Links | `../packages`, `../examples`, `../LICENSE` from `docs/en/` resolve wrong | `license.md`, `driver-ddk.md`, `ai-*.md`, MES refs, … (~56) | Bulk `../` → `../../` |
 | 7 | Deploy/BFF | ZIP+multipart vs JSON deploy; divergent BFF body shapes | `solution-developer-guide.md`, `applications.md` | One canonical contract; mark legacy |
 | 8 | Ecosystem | Partner benefits / marketplace GA checklist read as live; APIs stub | `partner-program.md`, `marketplace.md` | **Draft / Partial** banners; match scorecard dim 12 |
-| 9 | RU product | Severe MT/drift (“слово”, “автоматический пожар”, …) | `docs/ru/product.md` | Re-translate from current EN; drop “proofread” claim until done |
+| 9 | RU product | Severe MT/drift (literal word-for-word mistranslations such as “automatic fire”) | `docs/ru/product.md` | Re-translate from current EN; drop “proofread” claim until done |
 | 10 | Drivers claim | “58 built-in drivers” vs packs-not-in-JAR + many STUB/BETA | `product.md`, `glossary.md`, README | “~60 packs; maturity varies — see matrix” |
 
 ---

@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/decisions/0061-high-rate-telemetry-history-defaults.md](../../en/decisions/0061-high-rate-telemetry-history-defaults.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0061-high-rate-telemetry-history-defaults.md](../../en/decisions/0061-high-rate-telemetry-history-defaults.md).
 
 # ADR-0061: Defaults истории для high-rate телеметрии
 

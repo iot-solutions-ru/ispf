@@ -20,7 +20,7 @@
 | **External KMS** (cloud or on-prem) | Wraps/unwraps data keys | **Not started** — SPI **only** under named tender |
 | **HSM** | Same, hardware-backed | **Not started** — SPI **only** under named tender |
 | **HashiCorp Vault** (or equivalent) | Transit / KV for master or data keys | **Not started** — SPI **only** under named tender |
-| **GOST crypto** | TLS and/or envelope algorithms for КИИ РФ | **Not started** — separate compliance track; **only** under named tender / КИИ ADR amendment |
+| **GOST crypto** | TLS and/or envelope algorithms for Russian critical infrastructure (CII) | **Not started** — separate compliance track; **only** under named tender / CII ADR amendment |
 
 **Wave 3B (docs):** This ADR closes the external-provider tension as an honest **non-claim**. Implementing `SecretsProvider` (or equivalent) remains **out of scope** until tender + ADR amendment name the provider, migration, and reencrypt contract — same spirit as 0065, no plaintext logging.
 

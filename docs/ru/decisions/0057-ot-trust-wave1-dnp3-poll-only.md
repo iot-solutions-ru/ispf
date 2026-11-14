@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/decisions/0057-ot-trust-wave1-dnp3-poll-only.md](../../en/decisions/0057-ot-trust-wave1-dnp3-poll-only.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0057-ot-trust-wave1-dnp3-poll-only.md](../../en/decisions/0057-ot-trust-wave1-dnp3-poll-only.md).
 
 # ADR-0057: OT Trust Wave 1 — DNP3 остаётся PRODUCTION и только POLL
 

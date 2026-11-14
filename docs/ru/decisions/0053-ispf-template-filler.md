@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/decisions/0053-ispf-template-filler.md](../../en/decisions/0053-ispf-template-filler.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0053-ispf-template-filler.md](../../en/decisions/0053-ispf-template-filler.md).
 
 # ADR-0053: ISPF Template Filler (POI) заменяет YARG для spreadsheet-шаблонов
 

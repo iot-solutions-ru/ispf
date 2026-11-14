@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0025-cassandra-scylla-timeseries-store.md](../../en/decisions/0025-cassandra-scylla-timeseries-store.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0025-cassandra-scylla-timeseries-store.md](../../en/decisions/0025-cassandra-scylla-timeseries-store.md).
 
 # ADR-0025: Cassandra/Scylla SPI для time-series хранилищ
 

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/lab-event-journal-stress.md](../en/lab-event-journal-stress.md).
+> **Язык:** русская версия. Английский оригинал: [en/lab-event-journal-stress.md](../en/lab-event-journal-stress.md).
 
 # Лаборатория: стресс журнала событий (Scylla + MQTT)
 

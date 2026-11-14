@@ -2,198 +2,146 @@
 
 # ISPF Glossary
 
-> **Status:** Stable — Terms and definitions. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — Plain-language dictionary of platform terms. Status tags: [doc-status.md](doc-status.md).
 
-A concise dictionary of platform terms. Product overview: [product](product.md).
-
----
-
-## Core principle (cross-cutting term)
-
-**Business logic in platform mechanisms** — the ISPF architectural principle: application rules and behavior are described by declarative configuration of the **object tree** (models, variables, events, functions, workflow, alert rules, correlators), not by domain-specific Java in `ispf-server`. The platform implements generic engines; bundle deploy delivers configuration into those mechanisms. See [architecture](architecture.md).
+Plain-language definitions of the terms used across ISPF screens, APIs, and documentation. For a 3-minute introduction to how these pieces fit together, start with [How ISPF works](learn.md).
 
 ---
 
 ## A
 
-**Alert rule** — an automation rule: a CEL condition on an object variable. When true, an event is fired automatically. An `ALERT` node in `root.platform.alert-rules`.
+**Alert rule (`ALERT`)** — a threshold or state check watching an object variable via a CEL formula (for example, `self.temperature.value > 80.0`). Supports activation delay, hysteresis/latching (`deactivateExpr`), notifications, and automatic event firing. Stored as a node under `root.platform.alert-rules`. See [Automation](automation.md).
 
-**Application (deploy application)** — a registered application solution with an isolated SQL schema, JSON functions, and an optional bundle. Registered via `POST /applications`. Appears in the tree under `root.platform.applications`.
+**Application** — a packaged project deployed onto ISPF: its own isolated database schema (`app_<id>`), SQL migrations, JSON script functions, object tree nodes, dashboards, workflows, and operator navigation. Registered under `root.platform.applications`. Note: at runtime all live tags, alarms, and screens execute through the shared object tree, not in a separate server process. See [Solution developer guide](solution-developer-guide.md).
 
-**Application function** — an application function described as a JSON script (steps `selectOne`, `update`, …). Runs in a sandbox without Java code in the core.
+**Application bundle (`bundle.json`)** — the JSON manifest describing an entire application so it can be stored in Git, validated (`ispf validate`), diffed, and deployed to another server via `POST /api/v1/applications/{id}/deploy`.
 
 ---
 
 ## B
 
-**Binding** — a rule for computing variable values (`BindingRule` in `@bindingRules`). Recalculated by `BindingRuleEngine` on activators (local and cross-object changes). Expression — Google **CEL** or a platform function. See [bindings](bindings.md).
+**BFF (`POST /api/v1/bff/invoke`)** — "Backend for Frontend" HTTP endpoint used by operator screens and custom React web apps (`ui-pack`) to invoke functions on hub objects with consistent input/output formatting and user permissions.
 
-**BFF (Backend-for-Frontend)** — the `POST /bff/invoke` gateway for calling application functions from the UI. Wire profile `ispf-operator-v1` — contract for the legacy manifest.
+**Binding rule** — a calculation rule attached to an object (stored in `@bindingRules`). Automatically recalculates a target variable, updates dashboard context, or fires an event whenever input variables change, an event arrives, or a timer (`periodicMs`) ticks. See [Calculation rules (bindings)](bindings.md).
 
-**Blueprint** — see **Model**.
+**Blueprint (template / model)** — a reusable definition of variables, events, functions, and binding rules (`BlueprintDefinition`). ISPF provides three blueprint kinds:
+- **`SINGLETON`** — creates one unique controller/orchestrator object for a whole solution (for example, `station-controller`).
+- **`INSTANCE`** — defines an object type (for example, `boiler-unit-v1`) from which you instantiate many identical units, each with its own variables and logic.
+- **`MIXIN`** — an add-on group of variables/rules merged into existing objects (explicitly or via a CEL applicability condition).
+See [Blueprints](blueprints.md).
 
-**Bundle** — a JSON application manifest (SQL migrations, functions, operator UI, reports, objects). Deployed via `POST /api/v1/applications/{id}/deploy` (`Content-Type: application/json`). Not a multipart ZIP upload.
-
-**BPMN** — Business Process Model and Notation. Notation for describing workflow. ISPF uses BPMN 2.0 XML with namespace extensions `http://ispf.io/bpmn`.
+**BPMN** — Business Process Model and Notation 2.0 XML used to draw and execute multi-step automated and human-in-the-loop processes (`WORKFLOW` nodes). ISPF runs a built-in Java engine supporting a documented subset of BPMN elements. See [BPMN workflows](workflows.md).
 
 ---
 
 ## C
 
-**CEL (Common Expression Language)** — Google's expression language. Used in bindings, alert rules, and workflow gateway conditions. Full ISPF reference (literals, operators, platform bindings, historian helpers): [expression-language](expression-language.md).
+**CEL (Common Expression Language)** — a fast, side-effect-free expression syntax (originally by Google) used across ISPF for formulas, alert conditions, and workflow branches: e.g. `self.pressure.value >= 4.5 && !self.maintenanceMode.value`. Full syntax and functions: [Expression language](expression-language.md).
 
-**Claim** — an operator action in the work queue: assigning a user task to oneself.
+**Change set** — a staged batch of object-tree edits that can be previewed and reviewed before applying them at once. See [Collaboration](collaboration.md).
+
+**Claim** — an operator action in the **Work Queue** that assigns a pending BPMN user task to the current shift operator before completing it.
+
+**Correlator (`CORRELATOR`)** — a rule under `root.platform.correlators` that watches a sequence, count, or time window of events (for example, three pump trips within 10 minutes) and triggers an action or starts a BPMN workflow. See [Automation](automation.md).
 
 ---
 
 ## D
 
-**Dashboard** — an object of type `DASHBOARD` with layout JSON (widget grid). Created in Dashboard Builder, displayed in operator HMI.
+**Dashboard (`DASHBOARD`)** — an operator HMI screen arranged on an **84×8** grid of widgets (values, trend charts, tables, gauges, SCADA mimics, buttons). Created in Dashboard Builder under `root.platform.dashboards`. See [Dashboards](dashboards.md).
 
-**DataRecord** — a typed record on an object variable. Contains `DataSchema` (fields) and values.
+**DataRecord & DataSchema** — the typed tabular value stored inside every ISPF variable. `DataSchema` declares field names and types (`DOUBLE`, `STRING`, `BOOLEAN`, `DATETIME`, …), and `DataRecord` holds one or more rows of values (for a scalar sensor tag, typically one row `{ "value": 23.5, "unit": "C" }`). See [Object model](object-model.md).
 
-**DeviceDriver** — SPI interface for a device driver. Implementations: mqtt, modbus, snmp, virtual, … (58 modules).
+**Device (`DEVICE`)** — an object tree node representing a physical or simulated controller, PLC, meter, broker channel, or IT endpoint. A `DEVICE` runs a protocol driver and holds raw/mapped telemetry tags; application-wide logic belongs on `SINGLETON` or `INSTANCE` objects instead.
 
-**Driver runtime** — device polling service. Start/stop via `POST /drivers/runtime/start|stop`.
+**Driver & Driver pack** — a pluggable protocol adapter (`modbus-tcp`, `opcua`, `s7`, `mqtt`, `snmp`, `iec104`, `dnp3`, `jdbc`, `virtual`, …) loaded from `data/drivers` (`ISPF_DRIVER_PACKS_DIR`) that polls or subscribes to external equipment and updates `DEVICE` variables. See [Device drivers](drivers.md).
 
 ---
 
 ## E
 
-**Event** — a typed notification from an object. Has a descriptor (name, payload schema, level). Published via `POST /events/fire` or an alert rule.
+**Event** — a timestamped notification emitted by an object (`INFO`, `WARNING`, `ERROR`, `CRITICAL`), validated against an `EventDescriptor`, broadcast over WebSocket, and optionally persisted to `event_history`.
 
-**Event correlator** — a rule: event chain → workflow start. A `CORRELATOR` node in `root.platform.correlators`.
-
-**Explorer** — the panel for viewing properties of the selected tree node in the admin console.
+**Explorer & Inspector** — the two main panels of the Admin Console: **Explorer** navigates the object tree hierarchy on the left, while **Inspector** edits properties, variables, functions, events, and calculation rules of the selected node.
 
 ---
 
 ## F
 
-**Flyway** — SQL migration tool for the platform. Application migrations **do not** use Flyway — only the `data/migrate` API.
+**Federation** — linking remote edge ISPF servers to a central hub ISPF server so operators can monitor distributed sites from one console, including store-and-forward buffering across unstable links. See [Federation](federation.md).
 
-**Function (platform function)** — an executable function on a platform object (not an application function). Defined in the object model.
+**Function (object / script / Java function)** — a callable operation on an object (`POST /api/v1/objects/by-path/functions/invoke` or `/api/v1/bff/invoke`). Can be a built-in server handler (e.g. `acknowledgeAlarm`), a declarative JSON/SQL script (`selectMany`, `exec`, `return`), or a compiled `ObjectJavaFunction`. See [Object functions](object-functions.md).
 
 ---
 
 ## H
 
-**HMI (Human-Machine Interface)** — the operator interface. In ISPF — operator HMI based on dashboards, plus optional **hosted application SPA** at `/apps/<appId>/` ([external-ide](external-ide.md)).
+**Historian** — ISPF's time-series storage and aggregation subsystem for variables with `historyEnabled = true`. Supports single-DB PostgreSQL/TimescaleDB (**hot** tier), ClickHouse (**warm** tier for high-rate / long-horizon analytics), and Parquet object storage (**cold** archive), plus windowed rollups (`kind: "historian"`). See [Variable history](variable-history.md) and [Historian storage tiers](historian-tiers.md).
 
-**Hosted UI pack** — zip of a static React (or HTML) SPA plus `ui-pack.json`, installed under `ISPF_UI_PACKS_DIR/<appId>/` and served at `/apps/<appId>/`. Companion of an application bundle (`uiPackSlug`). See [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md).
-
----
-
-## I
-
-**Inspector** — the object details panel: properties, variables, events, functions.
-
-**Instance (workflow instance)** — a running BPMN process instance. Statuses: `RUNNING`, `WAITING`, `COMPLETED`, `FAILED`.
-
----
-
-## L
-
-**Layout** — JSON description of a dashboard widget grid. Stored in the `layout` variable of a `DASHBOARD` object.
-
-**Legacy manifest** — legacy operator shell format (`operatorManifest` in JSON). Replaced by `operatorUi` + platform dashboards.
+**Hosted UI pack (`ui-pack`)** — a zip archive containing a compiled standalone web frontend (typically React + Vite) and a `ui-pack.json` manifest. Installed into ISPF and served at `/apps/<appId>/` when a project needs custom operator screens beyond standard dashboard widgets. See [Custom React UI](external-ide.md).
 
 ---
 
 ## M
 
-**Blueprint (BlueprintDefinition)** — object structure template: variables, events, functions, bindings. Kinds: `MIXIN`, `SINGLETON`, `INSTANCE`. MIXIN blueprints auto-apply on create only when CEL is non-empty (*Applicability condition* / `suitabilityExpression`). Explicit apply — via `templateId` or API.
+**MCP (Model Context Protocol)** — standard protocol endpoint (`POST /api/v1/ai/mcp`) allowing external developer IDEs (such as Cursor or VS Code) to inspect the object tree, validate bundles, and call ISPF tools with role-based permissions. See [AI Studio & MCP](ai-development.md).
 
-**Fixture model** — demo/lab model (`mqtt-sensor-v1`, `mqtt-gateway-v1`, …), registered when `ispf.bootstrap.fixtures-enabled=true`. Not part of the core built-in registry. See [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
-
-**MCP (Model Context Protocol)** — adapter that exposes platform agent tools to external IDEs (Cursor, CI). Endpoint `POST /api/v1/ai/mcp`. See [ai-development](ai-development.md), [external-ide](external-ide.md).
-
-**Model engine** — the `ispf-plugin-blueprint` plugin that applies models to objects.
+**Mimic (`MIMIC` / `scada-mimic`)** — an interactive vector technological diagram (P&ID, single-line electrical schematic, station layout) built from SVG symbols bound to live variables and equipment commands. Stored under `root.platform.mimics.*` and displayed via the `scada-mimic` widget. See [SCADA mnemonics](scada.md).
 
 ---
 
 ## O
 
-**Object tree** — hierarchy of platform nodes with dot-path addressing (`root.platform.devices.sensor-01`).
+**Object tree** — the single hierarchy of all nodes on an ISPF server, addressed with dot-separated paths starting at `root.platform` (for example, `root.platform.devices.pump-01`).
 
-**ObjectType** — node type: `DEVICE`, `DASHBOARD`, `WORKFLOW`, `ALERT`, `CORRELATOR`, `MODEL`, `APPLICATION`, `USER`, `PLATFORM`, `ALERT_RULES`, … System folders have a semantic type, not `CUSTOM`.
-
-**Operator app** — operator UI configuration for a specific application. Stored in `operator_app_ui`, edited in `root.platform.operator-apps`.
-
-**Operator HMI** — Web Console mode for operators: read-only dashboards, work queue, event journal.
-
-**Operator UI** — JSON config: title, dashboard list, default dashboard. Loaded via `GET /operator-apps/{id}/ui`.
+**Operator app & Operator HMI** — the full-screen operator mode (`?mode=operator&app=<appId>`) showing read-only dashboards, interactive mimic controls, the event log, and the BPMN Work Queue — without administrative editors. Configured under `root.platform.operator-apps` or in `bundle.json` (`operatorUi`). See [Operator guide](operator-guide.md).
 
 ---
 
 ## P
 
-**Platform object** — a node in the ISPF object tree (as opposed to an application record in the `applications` table).
-
-**Plugin** — a platform extension. In the repository: `ispf-plugin-blueprint`, `ispf-plugin-workflow`. Commercial plugins live outside `main`.
-
----
-
-## R
-
-**RBAC** — Role-Based Access Control. Roles: `admin`, `operator`.
-
-**REQ-PF** — requirements for the application platform layer. Status: [roadmap.md § Part A](roadmap.md).
+**PlatformRef** — slash-separated reference string addressing a variable, field, function, event, or historian tag inside expressions and widget bindings:
+- `@/temperature` — `temperature` on the current object (`@`)
+- `root.platform.devices.pump-01/temperature/value` — `value` field on a specific object
+- `@/fn/acknowledgeAlarm` — function on the current object
+- `@/evt/overheat` — event on the current object
 
 ---
 
 ## S
 
-**selectionKey** — name of a dynamic object selection slot on a dashboard. A widget with `selectionKey: "device"` reads the path from `selection.device`, set by clicking a table row.
-
-**Service task** — a BPMN element: an automatic action (LOG, SET_VARIABLE, INVOKE_FUNCTION, PUBLISH_NATS).
-
-**SPI (Service Provider Interface)** — extension contract. Example: `DeviceDriver` for drivers.
-
----
-
-## U
-
-**UI pack** — see **Hosted UI pack**.
-
-**User task** — a BPMN element: a task for an operator. Appears in the Work Queue until claim/complete.
+**`selectionKey`** — a shared selection slot name on a dashboard (for example, `"device"`). Clicking a row in an `object-table` widget with `selectionKey: "device"` updates all charts, gauges, and indicators on the same screen that carry `selectionKey: "device"` to show that chosen object. See [Dashboards](dashboards.md).
 
 ---
 
 ## V
 
-**Variable** — a named value on an object. Typed via `DataRecord`. May have a CEL binding.
-
-**Virtual driver** — a simulator driver. Generates test data (for example, sinusoidal temperature for `demo-sensor-01`).
+**Variable** — a named, typed data point on an object (tag, setpoint, configuration parameter, or calculated KPI) holding a `DataRecord` value, access flags (`readable` / `writable`), optional calculation rules, and optional history recording.
 
 ---
 
 ## W
 
-**Web Console** — React application for admin + operator UI. Directory: `apps/web-console/`.
+**Web Console** — the built-in browser interface of ISPF (`apps/web-console/`), serving both the Administrator environment and Operator HMI.
 
-**WebSocket** — `WS /ws/objects` — live updates for variables and events.
+**Work Queue** — the operator's task list in Operator HMI where active BPMN `userTask` steps appear for claiming and completion during a shift.
 
-**Widget** — a dashboard element: value, chart, object-table, spreadsheet, work-queue, … Reference: [widgets](widgets.md).
-
-**Work Queue** — queue of BPMN user tasks for operators.
-
-**Workflow** — an object of type `WORKFLOW` with BPMN XML. Object statuses: `DRAFT`, `ACTIVE`, `STOPPED`.
-
-**Workflow engine** — pure Java in `ispf-plugin-workflow` (without Camunda/Flowable).
+**Workflow (`WORKFLOW`)** — an executable BPMN process under `root.platform.workflows` combining automatic service steps (calling functions, setting variables, sending messages), conditional gateways, timers, and operator tasks.
 
 ---
 
-## Abbreviations
+## Common abbreviations
 
-| Abbreviation | Expansion |
-|--------------|-----------|
-| ISPF | IoT Solutions Platform Framework |
-| HMI | Human-Machine Interface |
-| SCADA | Supervisory Control and Data Acquisition |
-| MES | Manufacturing Execution System |
-| OPC UA | Open Platform Communications Unified Architecture |
-| SNMP | Simple Network Management Protocol |
-| MQTT | Message Queuing Telemetry Transport |
-| JWT | JSON Web Token |
-| OIDC | OpenID Connect |
+| Abbreviation | Full name | Meaning in context |
+|--------------|-----------|--------------------|
+| **ISPF** | IoT Solutions Platform Framework | This platform |
+| **HMI** | Human-Machine Interface | Operator screens, dashboards, and controls |
+| **SCADA** | Supervisory Control and Data Acquisition | Real-time telemetry monitoring, mimics, and supervisory commands |
+| **MES** | Manufacturing Execution System | Shop-floor order tracking, OEE, batches, quality, and genealogy |
+| **PLC / RTU** | Programmable Logic Controller / Remote Terminal Unit | Industrial field controllers polled by ISPF drivers |
+| **P&ID** | Piping and Instrumentation Diagram | Technological process schematic with pumps, valves, tanks, and sensors |
+| **OPC UA** | Open Platform Communications Unified Architecture | Industrial interoperability protocol (`opcua` / `opcua-server` drivers) |
+| **MQTT** | Message Queuing Telemetry Transport | Lightweight publish/subscribe telemetry broker protocol |
+| **SNMP** | Simple Network Management Protocol | Network and server equipment monitoring protocol |
+| **RBAC** | Role-Based Access Control | Permission model based on user roles (`admin`, `operator`, custom roles) |
+| **OIDC / JWT** | OpenID Connect / JSON Web Token | Single sign-on authentication (e.g., via Keycloak) and API bearer tokens |

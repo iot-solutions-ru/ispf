@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0007-bundle-tree-packaging.md](../../en/decisions/0007-bundle-tree-packaging.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0007-bundle-tree-packaging.md](../../en/decisions/0007-bundle-tree-packaging.md).
 
 # ADR-0007: Bundle = tree packaging
 

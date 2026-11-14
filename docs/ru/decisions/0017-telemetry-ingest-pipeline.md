@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0017-telemetry-ingest-pipeline.md](../../en/decisions/0017-telemetry-ingest-pipeline.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0017-telemetry-ingest-pipeline.md](../../en/decisions/0017-telemetry-ingest-pipeline.md).
 
 # ADR-0017: Telemetry ingest pipeline (MQTT gateway, thread pools, JDBC historian)
 

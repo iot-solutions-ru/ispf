@@ -3,7 +3,7 @@
 > **Status:** Ops template — **no driver is FIELD in the matrix until a named customer plant pack is complete.**  
 > **Today:** `DriverMaturity.FIELD` count = **0** (C1 open). Lab VLAN soaks and marketplace REAL installs do **not** fill this folder for matrix promotion.
 
-Canonical gates: [ADR-0067 §1b](../../en/decisions/0067-field-certified-maturity.md), [field C1 checklist](../../en/field-c1-evidence-checklist.md), [field-pilot-playbook](../../en/field-pilot-playbook.md).
+Canonical gates: [driver-promotion](../../en/driver-promotion.md), [field C1 checklist](../../en/field-c1-evidence-checklist.md), [field-pilot-playbook](../../en/field-pilot-playbook.md).
 
 ## When to create a subfolder
 
@@ -49,5 +49,5 @@ docs/evidence/field-c1/<pilot-id>/
 | Lane | Path | Matrix FIELD? |
 |------|------|----------------|
 | BL-140 lab Modbus soak | [ot-trust/pilot1-modbus-plant.checklist.md](../ot-trust/pilot1-modbus-plant.checklist.md) | No — internal lab |
-| Marketplace REAL pilots | [marketplace-pilots](../../en/marketplace-pilots.md) | No — solution lane ([0067 §1b](../../en/decisions/0067-field-certified-maturity.md)) |
+| Marketplace REAL pilots | [marketplace](../../en/marketplace.md) | No — solution lane ([driver-promotion](../../en/driver-promotion.md)) |
 | OT Trust codec promotions | [ot-trust/](../ot-trust/) | No — PRODUCTION lab CI only |

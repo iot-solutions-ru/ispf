@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/web-console.md](../en/web-console.md).
+> **Язык:** русская версия. Английский оригинал: [en/web-console.md](../en/web-console.md).
 
-# Web Console
+# Веб-консоль (Web Console)
 
-> **Статус:** Stable — Explorer, System, AI Studio. Теги: [doc-status](doc-status.md).
+> **Статус:** Stable — консоль администратора, пульт оператора, системная диагностика и ИИ-студия. Метки зрелости: [doc-status.md](doc-status.md).
 
 React 19 + Vite 6 + TanStack Query. Каталог: `apps/web-console/`.
 
@@ -16,68 +16,68 @@ URL: `http://localhost:8080` (JAR) или `http://localhost:5173` (Vite dev)
 
 | Область | Возможности |
 |---------|-------------|
-| Object tree | Поиск, раскрытие, CRUD, drag-and-drop порядка соседей |
-| Explorer | Список дочерних объектов |
-| Inspector | Свойства, переменные, события; alert rules и correlators |
+| Дерево объектов | Поиск, раскрытие, создание/правка/удаление, перестановка соседей drag-and-drop |
+| Проводник (Explorer) | Список дочерних объектов |
+| Инспектор | Свойства, переменные, события; правила тревог и корреляторы |
 
-![Admin Explorer — дерево объектов и свойства устройства](../assets/ispf-object-tree.png)
+![Консоль администратора — дерево объектов и свойства устройства](../assets/ispf-object-tree.png)
 
 ### Редакторы по типу объекта
 
 Двойной клик в дереве:
 
-| ObjectType | Компонент |
-|------------|-----------|
+| Тип объекта | Компонент |
+|-------------|-----------|
 | `DASHBOARD` | `DashboardBuilder` |
 | `WORKFLOW` | `WorkflowBuilder` |
 | `ALERT` | `AlertRuleInspector` |
 | `CORRELATOR` | `CorrelatorInspector` |
 | Остальные | `ObjectPropertiesEditor` |
 
-### Operator HMI
+### Режим оператора (HMI)
 
 URL: `http://localhost:8080?mode=operator` (JAR) или `http://localhost:5173?mode=operator` (Vite dev)
 
-![Operator HMI — обзор мини-ТЭЦ с AI-ассистентом](../assets/ispf-operator-hmi.png)
+![Режим оператора — обзор мини-ТЭЦ с ИИ-помощником](../assets/ispf-operator-hmi.png)
 
-- Полноэкранный дашборд (read-only)
-- Sidebar: work queue + журнал событий
-- Без редактирования layout и объектов
+- Полноэкранный дашборд (только просмотр)
+- Боковая панель: очередь задач смены + журнал событий
+- Без правки макета и объектов
 
-### Operator app (дашборды)
+### Приложение оператора (дашборды)
 
 URL: `http://localhost:8080?mode=operator&app=platform` (JAR) или `http://localhost:5173?mode=operator&app=platform` (Vite dev)
 
-Generic operator shell без отраслевого кода в `main`:
+Оболочка оператора общая для всех приложений (отраслевой код в `ispf-server` не добавляется):
 
-- Operator UI: `GET /api/v1/operator-apps/{appId}/ui` (встроенные apps, настройка в `root.platform.operator-apps`), затем `GET /api/v1/applications/{appId}/operator-ui` (bundle), legacy fallback `public/operator-apps/<appId>.ui.json`
-- Навигация по вкладкам дашбордов; виджеты те же, что в Dashboard Builder (`DashboardBuilder` + `operatorMode`)
-- BFF (`POST /api/v1/bff/invoke`) — только когда виджеты/функции приложения вызывают backend (не отдельный manifest shell)
+- UI приложения: сначала `GET /api/v1/operator-apps/{appId}/ui` (встроенные apps из `root.platform.operator-apps`), затем `GET /api/v1/applications/{appId}/operator-ui` (из `bundle.json`); в dev при отсутствии обоих возможен резервный файл `public/operator-apps/<appId>.ui.json`
+- Навигация по вкладкам дашбордов; те же виджеты, что в конструкторе (`DashboardBuilder` + `operatorMode`)
+- BFF (`POST /api/v1/bff/invoke`) вызывается только когда виджет или функция приложения обращается к backend
 
-### Legacy: operator manifest
+### Устаревший operator manifest
 
-`?mode=operator&app=demo` + `operatorManifest` — deprecated. Используйте `operatorUi` и объекты `DASHBOARD`.
+Параметры `?mode=operator&app=demo` вместе с `operatorManifest` больше не используются. Настраивайте `operatorUi` и объекты `DASHBOARD`.
 
 ## Навигация
 
 Клиентский роутер не используется. Состояние в `App.tsx`:
 
 - `mode`: `admin` | `operator`
-- `app`: id operator application (опционально)
-- `dashboard`: path объекта `DASHBOARD` (опционально)
-- `screen`: id экрана в legacy manifest (deprecated)
+- `app`: id приложения оператора (опционально)
+- `dashboard`: путь объекта `DASHBOARD` (опционально)
+- `screen`: id экрана в устаревшем manifest (не используется)
 - `selectedPath`, `editorPath`
 
 ## Роли
 
 Вход через экран login; консоль использует **Bearer** после `POST /api/v1/auth/login`. Роль берётся из аутентифицированного пользователя.
 
-`X-ISPF-Role` / селектор роли в заголовке **выключены по умолчанию** (`ispf.security.local-role-header-enabled=false`) — opt-in только для локальных экспериментов. См. [security](security.md), [getting-started](getting-started.md).
+`X-ISPF-Role` / селектор роли в заголовке **выключены по умолчанию** (`ispf.security.local-role-header-enabled=false`) — включать только для локальных экспериментов. См. [Безопасность](security.md), [Быстрый старт](getting-started.md).
 
-| Роль | UI |
-|------|-----|
-| `admin` | Полный доступ, automation, save |
-| `operator` | Просмотр, функции, work queue |
+| Роль | Интерфейс |
+|------|-----------|
+| `admin` | Полный доступ, автоматизация, сохранение |
+| `operator` | Просмотр, вызов функций, очередь задач |
 
 ## Структура исходников
 
@@ -101,129 +101,127 @@ src/
     ├── ObjectTree.tsx
     ├── ExplorerView.tsx
     ├── ObjectPropertiesEditor.tsx
-    ├── dashboard/          # Builder + 14 widgets
-    ├── workflow/           # BPMN editor/viewer
+    ├── dashboard/          # Конструктор дашбордов и более 40 типов виджетов
+    ├── workflow/           # Встроенный редактор и просмотрщик BPMN
     ├── automation/         # AlertRuleInspector, CorrelatorInspector, automationPath
     └── operator/           # OperatorView, OperatorDashboardApp, sidebar panels
 ```
 
-`public/operator-apps/` — legacy fallback `{appId}.ui.json` (dev). Конфигурация встроенных app: admin → `root.platform.operator-apps`.
+`public/operator-apps/` — резервный каталог dev-режима `{appId}.ui.json`. Настройка приложений оператора выполняется в `root.platform.operator-apps`.
 
-## Dashboard builder
+## Конструктор дашбордов (Dashboard Builder)
 
 ![Конструктор дашбордов — палитра виджетов и холст](../assets/ispf-dashboard-builder.png)
 
-- Fine grid **84 колонки**, drag-and-drop, resize
-- Панель добавления виджетов (все 14 типов)
-- `WidgetEditorPanel` — свойства выбранного виджета
-- JSON preview layout
-- Сохранение через API
+- Сетка **84 колонки × шаг высоты 8 пикселей**, перетаскивание и изменение размеров карточек
+- Палитра добавления виджетов (свыше 40 типов)
+- `WidgetEditorPanel` — настройка свойств выбранного виджета
+- Просмотр и экспорт JSON макета
+- Сохранение через REST API
 
-См. [dashboards](dashboards.md).
+См. [Дашборды](dashboards.md) и [Справочник виджетов](widgets.md).
 
-## Workflow builder
+## Редактор процессов (Workflow Builder)
 
-![BPMN-редактор workflow — MES work-order dispatch](../assets/ispf-bpmn-workflow.png)
+![Визуальный редактор BPMN в веб-консоли](../assets/ispf-bpmn-workflow.png)
 
-- Переключатель DRAFT / ACTIVE / STOPPED
-- Кнопка Run
-- BPMN-редактор (bpmn-js) с ISPF moddle
-- **Auto-layout:** если в XML нет `bpmndi`, `ensureDiagram.ts` вызывает `bpmn-auto-layout` перед показом (см. [workflows](workflows.md))
-- Fallback XML viewer
+- Переключатель статуса `DRAFT` / `ACTIVE` / `STOPPED` и кнопка ручного запуска
+- Собственный векторный редактор диаграмм BPMN (`IspfBpmnEditor`, [ADR-0052](decisions/0052-ispf-workflow-diagram-editor.md))
+- Автоматическая раскладка блоков для схем без координат (`bpmndi`) и режим просмотра XML
 
-См. [workflows](workflows.md).
+См. [Процессы BPMN](workflows.md).
 
-## Live-данные
+## Живые данные
 
-1. **Polling** — `refetchInterval` = `refreshIntervalMs` дашборда
-2. **WebSocket** — `useObjectWebSocket` инвалидирует кэш при `VARIABLE_UPDATED`
-3. **Большие папки** — развёрнутая папка дерева с более чем 64 детьми не подписывается на живые обновления. У строки метка «Без live»; чтобы обновить список, сверните и снова разверните папку.
+1. **Опрос (polling)** — `refetchInterval` = `refreshIntervalMs` дашборда
+2. **WebSocket** — `useObjectWebSocket` сбрасывает кэш при `VARIABLE_UPDATED`
+3. **Большие папки** — развёрнутая папка с более чем 64 детьми не подписывается на live-обновления. У строки метка «Без live»; чтобы обновить список, сверните и снова разверните папку.
 
-Proxy (`vite.config.ts`): `/api`, `/ws` → `:8080`.
+Прокси Vite (`vite.config.ts`): `/api`, `/ws` → `:8080`.
 
 ## Сборка
 
 ```bash
 cd apps/web-console
 npm install
-npm run dev      # dev server
+npm run dev      # dev-сервер
 npm run build    # production dist/
-npm run i18n:check   # locale keys vs en (canonical)
-npm run i18n:translate   # regenerate ru/de/zh from en (tools/i18n/generate-locales.py)
+npm run i18n:check   # ключи локалей против en (канон)
+npm run i18n:translate   # пересобрать ru/de/zh из en (tools/i18n/generate-locales.py)
 ```
 
-## Локализация (Phase 19)
+## Локализация (фаза 19)
 
-- **Canonical locale:** English (`apps/web-console/src/locales/en/*.json`)
-- **UI locales:** `en`, `ru`, `de`, `zh` — dropdown в шапке admin/operator и на карточке login
-- **Persistence:** `localStorage` (`ispf.ui.locale`), URL `?lang=`, fallback `en`
-- **Добавление строк:** ключ в `en/{namespace}.json` → `useTranslation` + `t('key')` → `npm run i18n:translate` → `npm run i18n:check`
+- **Каноническая локаль:** английский (`apps/web-console/src/locales/en/*.json`)
+- **Локали UI:** `en`, `ru`, `de`, `zh` — выпадающий список в шапке admin/operator и на карточке входа
+- **Хранение:** `localStorage` (`ispf.ui.locale`), URL `?lang=`, запасной вариант `en`
+- **Новые строки:** ключ в `en/{namespace}.json` → `useTranslation` + `t('key')` → `npm run i18n:translate` → `npm run i18n:check`
 
-См. [0013-web-console-i18n](decisions/0013-web-console-i18n.md).
+См. [ADR-0013](decisions/0013-web-console-i18n.md).
 
 ## Федерация
 
-Раздел **Federation** (`root.platform.federation`, только admin) — вкладки:
+Раздел **Федерация** (`root.platform.federation`, только `admin`) — вкладки:
 
 | Вкладка | Содержимое |
 |---------|------------|
-| **Peers** | Таблица пиров, форма нового узла, **Sync catalog** (preview конфликтов → SKIP/BIND) |
-| **Tokens** | Выпуск локального federation token для другого ISPF |
-| **Tunnel** | Inbound registrations, outbound agents, secrets key (если capability `federation-tunnel`) |
-| **Probe** | Proxy read probe для выбранного узла |
+| **Соседи (Peers)** | Таблица соседей, форма нового узла, **Sync catalog** (предпросмотр конфликтов → SKIP/BIND) |
+| **Токены** | Выпуск локального federation-токена для другого ISPF |
+| **Туннель** | Входящие регистрации, исходящие агенты, secrets key (если есть capability `federation-tunnel`) |
+| **Probe** | Пробное чтение через прокси для выбранного узла |
 
-На объектах device/dashboard — панель **Federation bind** (`FederationBindPanel`): проверка remote path, bind/rebind, inline-подтверждение unbind. Для catalog mirror — callout «Host locally».
+На объектах device/dashboard — панель **Привязка федерации** (`FederationBindPanel`): проверка remote path, bind/rebind, подтверждение unbind. Для зеркала каталога — подсказка «Разместить локально».
 
 Компоненты: `FederationPeersPanel`, `FederationCatalogSyncDialog`, `components/federation/*`, `FederationBindPanel`.
 
-## System (admin)
+## Система (admin)
 
-![System → Metrics overview](../assets/ispf-system-metrics.png)
+![Система → обзор метрик](../assets/ispf-system-metrics.png)
 
-Раздел **System** (`SystemView`) — вкладки:
+Раздел **Система** (`SystemView`) — вкладки:
 
 | Вкладка | Содержимое |
 |---------|------------|
-| **Metrics** | Метрики платформы, health cards (Redis, NATS, YARG, MCP), **Platform backup** |
+| **Метрики** | Метрики платформы, карточки health (Redis, NATS, YARG, MCP), **резервная копия платформы** |
 | **Runtime settings** | `GET/PATCH /api/v1/platform/runtime-settings`; **Перезапуск сервера** → `POST .../runtime-settings/restart` |
-| **Events / Functions / Bindings** | Invoke/audit logs |
-| **Change sets** | Управление изменениями платформы |
-| **App schedules** | `GET/POST /api/v1/schedules` — JDBC `platform_schedules` (не путать с object-tree `SCHEDULE` → `ScheduleEditor`) |
+| **Events / Functions / Bindings** | Журналы вызовов и аудита |
+| **Change sets** | Управление наборами изменений платформы |
+| **App schedules** | `GET/POST /api/v1/schedules` — JDBC `platform_schedules` (не путать с узлом дерева `SCHEDULE` → `ScheduleEditor`) |
 | **Semantic export** | Haystack JSON + Brick JSON-LD/Turtle (`GET /platform/haystack/export`, `GET /platform/brick/export`) |
 
-**Application deploy (Inspector → APPLICATION → Deploy):**
+**Развёртывание приложения (Инспектор → APPLICATION → Deploy):**
 
 | Панель | API |
 |--------|-----|
 | ApplicationBundlePanel | export, validate, deploy, pull-from-tree |
-| ApplicationDeployPanel | deploy history, rollback, event catalog, function versions, bundle-objects lifecycle |
-| ApplicationLifecyclePanel | `data/migrate`, `data/seed`, `data/status`, bindings deploy/refresh, reports deploy, functions deploy |
+| ApplicationDeployPanel | история deploy, rollback, каталог событий, версии функций, жизненный цикл объектов бандла |
+| ApplicationLifecyclePanel | `data/migrate`, `data/seed`, `data/status`, deploy/refresh привязок, deploy отчётов и функций |
 
-**WorkflowBuilder:** cancel/signal активного BPMN instance (`POST /workflows/instances/{id}/cancel|signal`).
+**WorkflowBuilder:** отмена / сигнал активному экземпляру BPMN (`POST /workflows/instances/{id}/cancel|signal`).
 
-**Platform backup** (`PlatformBackupPanel`, BL-47): экспорт JSON-поддерева `root.platform`; импорт с dry-run preview. API: `GET /api/v1/platform/backup/export`, `POST /api/v1/platform/backup/import?dryRun=true|false`. Federation proxy nodes при импорте пропускаются. В папке каталога есть **Импорт из JSON**: экспорт поддерева ровно с одним узлом создаёт новый объект в открытой папке. Путь в файле не используется, имя вводится при импорте. Импорт в каталог mixin, типов экземпляров или singleton регистрирует blueprint. Цель остаётся `CUSTOM` или `DEVICE`; другой тип исходного узла становится `CUSTOM`. API: `POST /api/v1/platform/backup/import-node?parentPath=&name=`.
+**Резервная копия платформы** (`PlatformBackupPanel`, BL-47): экспорт JSON-поддерева `root.platform`; импорт с dry-run. API: `GET /api/v1/platform/backup/export`, `POST /api/v1/platform/backup/import?dryRun=true|false`. Прокси-узлы федерации при импорте пропускаются. В папке каталога есть **Импорт из JSON**: экспорт поддерева ровно с одним узлом создаёт новый объект в открытой папке. Путь в файле не используется, имя вводится при импорте. Импорт в каталог mixin, типов экземпляров или singleton регистрирует blueprint. Цель остаётся `CUSTOM` или `DEVICE`; другой тип исходного узла становится `CUSTOM`. API: `POST /api/v1/platform/backup/import-node?parentPath=&name=`.
 
-## AI Studio
+## ИИ-студия
 
-Вкладка **AI Studio** (admin): режимы **Agent** | **Bundle** | **Settings** (`.tabs`).
+Вкладка **ИИ-студия** (admin): режимы **Агент** | **Bundle** | **Настройки**.
 
-![AI Studio — чат tree-first агента](../assets/ispf-ai-studio.png)
+![ИИ-студия — чат tree-first агента](../assets/ispf-ai-studio.png)
 
-- **Agent** — chat sidebar; состояние в `AgentChatProvider` (не размонтируется при переключении вкладок или разделов консоли)
-- **Settings** — LLM provider, список моделей (`GET /ai/models`), Context Pack, session root path, список tools, очистка локального chat cache
-- **Bundle** — prompt, generate/validate/dry-run/publish, deploy history
+- **Агент** — боковая панель чата; состояние в `AgentChatProvider` (не сбрасывается при смене вкладок)
+- **Настройки** — провайдер LLM, список моделей (`GET /ai/models`), Context Pack, корневой путь сессии, список tools, очистка локального кэша чата
+- **Bundle** — prompt, generate/validate/dry-run/publish, история deploy
 
-Фоновое выполнение: HTTP-запрос агента продолжается при переходе в Explorer; индикатор в шапке и точка на вкладке AI Studio. После закрытия окна незавершённый запрос восстанавливается из `localStorage` (polling server session).
+Фоновое выполнение: HTTP-запрос агента продолжается при переходе в проводник; индикатор в шапке и точка на вкладке ИИ-студии. После закрытия окна незавершённый запрос восстанавливается из `localStorage` (опрос серверной сессии).
 
-См. [ai-development](ai-development.md).
+См. [ИИ-студия и MCP](ai-development.md).
 
 ## UI-зависимости
 
-| Package | Назначение |
-|---------|------------|
-| @tanstack/react-query | Server state |
+| Пакет | Назначение |
+|-------|------------|
+| @tanstack/react-query | Состояние серверных данных |
 | recharts | chart, sparkline |
-| bpmn-js | BPMN editor/viewer |
+| bpmn-js | Редактор / просмотр BPMN |
 | bpmn-auto-layout | Генерация DI для BPMN без графической разметки |
 
 ## Кастомизация

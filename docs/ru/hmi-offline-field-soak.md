@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/hmi-offline-field-soak.md](../en/hmi-offline-field-soak.md).
+> **Язык:** русская версия. Английский оригинал: [en/hmi-offline-field-soak.md](../en/hmi-offline-field-soak.md).
 
 # Полевой soak HMI offline (BL-151 / Post-S33)
 
-> **Статус:** Lab — PWA offline validation. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Lab — проверка офлайн-режима PWA. Метки зрелости: [doc-status.md](doc-status.md).
 
 Процедура **offline operator PWA** на video wall / планшете. CI FPS/Lighthouse **Готово**; хвост — **2 ч / 8 ч** на объекте.
 

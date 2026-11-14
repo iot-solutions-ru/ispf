@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/ai-agent.md](../en/ai-agent.md).
+> **Язык:** русская версия. Английский оригинал: [en/ai-agent.md](../en/ai-agent.md).
 
 # Операции AI-агента (BL-177…181)
 
-> **Статус:** Beta — Agent API; БЛ-178 live ≥95% **выполнен** (52/52 @100%). Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Beta — Agent API; БЛ-178 live ≥95% **выполнен** (52/52 @100%). Метки зрелости: [doc-status.md](doc-status.md).
 
 Справочник для операторов и интеграторов по агенту ISPF Tree-First, набору регрессии, генератору решений и виджетам наблюдения.
 
@@ -110,7 +110,7 @@ bash tools/agent-regression/run-live-generator-oneshot.sh
 | `hvac` | hvac, building, comfort, zone, ahu, chiller |
 | `scada` | scada, pump, tank, mimic, modbus, snmp, historian |
 
-Полный конвейер: [AgentSolutionGeneratorPlaybook](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java).
+Полный конвейер: [AgentSolutionGeneratorPlaybook](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java).
 
 ---
 
@@ -194,7 +194,7 @@ node tools/agent-regression/validate-scenarios.mjs --results build/agent-regress
 
 | ID | Особенность | Док |
 |----|---------|-----|
-| БЛ-177 | Комплексное развертывание агента | [AgentDeployPlaybook](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) |
+| BL-177 | Сквозное развёртывание агента | [AgentDeployPlaybook](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) |
 | БЛ-178 | Пакет регрессионного агента | [agent-regression](agent-regression.md) |
 | БЛ-179 | Draft API генератора решений | Этот документ § Генератор решений |
 | БЛ-180 | Live apply генератора + виджет метрик | `AiSolutionGeneratorLiveSmokeTest`, playbook |

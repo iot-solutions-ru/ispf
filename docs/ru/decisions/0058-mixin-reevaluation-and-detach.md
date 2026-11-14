@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/decisions/0058-mixin-reevaluation-and-detach.md](../../en/decisions/0058-mixin-reevaluation-and-detach.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0058-mixin-reevaluation-and-detach.md](../../en/decisions/0058-mixin-reevaluation-and-detach.md).
 
 # ADR-0058: Reevaluation MIXIN и ownership-aware detach
 

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0018-fixture-models-and-cel-applicability.md](../../en/decisions/0018-fixture-models-and-cel-applicability.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0018-fixture-models-and-cel-applicability.md](../../en/decisions/0018-fixture-models-and-cel-applicability.md).
 
 # ADR-0018: Fixture-модели и CEL applicability для MIXIN
 

@@ -1,210 +1,147 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/blueprints.md](../en/blueprints.md).
+> **Язык:** русская версия. Английский оригинал: [en/blueprints.md](../en/blueprints.md).
 
-﻿# Плагин Blueprints
+# Шаблоны объектов (Blueprints)
 
-> **Статус:** Stable — Модели / шаблоны. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — типовые модели структуры объектов (`SINGLETON`, `INSTANCE`, `MIXIN`). Метки зрелости: [doc-status.md](doc-status.md).
 
-Модуль `ispf-plugin-blueprint` — система **blueprint** (шаблоны структуры объектов). Один движок, три вида в дереве и API.
+Модуль `ispf-plugin-blueprint` реализует систему **шаблонов объектов** (*blueprints*) — переиспользуемых моделей, которые задают набор переменных, событий, функций и правил расчёта на узлах дерева.
 
-## Три вида моделей (`BlueprintType`)
+---
 
-![Каталог Instance Types (blueprints)](../assets/ispf-blueprints.png)
+## Три вида шаблонов (`BlueprintType`)
 
-| Тип | Каталог | Поведение |
-|-----|---------|-----------|
-| `MIXIN` | `root.platform.mixin-blueprints` | Необязательные примеси — переменные/события/функции **вливаются** в существующий объект |
-| `INSTANCE` | `root.platform.instance-types` | Шаблон **типа объекта** — создание экземпляров через instantiate |
-| `SINGLETON` | `root.platform.singleton-blueprints` | Уникальный live-узел в каталоге (`root.platform.singleton-blueprints.*`) — blueprint **и** логика приложения на одном объекте |
+![Каталог шаблонов Instance Types в веб-консоли](../assets/ispf-blueprints.png)
 
-**Где живёт логика приложения:**
+| Вид шаблона | Каталог в дереве | Назначение и поведение |
+|-------------|------------------|------------------------|
+| **`SINGLETON`** | `root.platform.singleton-blueprints` | **Одиночный узел логики.** Создаёт единственный рабочий экземпляр прямо в каталоге `root.platform.singleton-blueprints.<имя>` — используется для центрального контроллера/оркестратора всего решения. |
+| **`INSTANCE`** | `root.platform.instance-types` | **Шаблон типа объекта.** Описывает типовой агрегат или цифровой двойник (например, котельную, резервуар, магазин); из него создаётся любое количество однотипных экземпляров (`instantiate`). |
+| **`MIXIN`** | `root.platform.mixin-blueprints` | **Примесь.** Дополнительный набор переменных, событий, функций и правил, который подключается к уже существующему объекту. |
 
-| Роль | Вид blueprint | Правило |
-|------|---------------|---------|
-| Уникальный оркестратор (один на решение/кластер) | **SINGLETON** | Предпочтительно `root.platform.singleton-blueprints.{name}` + `ensure_singleton_instance` |
-| Цифровой двойник с логикой на twin (много) | **INSTANCE** | `instantiate_instance_type`; каждый инстанс несёт логику twin |
-| Точка телеметрии | — | Только **DEVICE** |
+### Где размещать прикладную логику
 
-**Жёсткое правило:** объект с логикой **не** должен быть `ObjectType.DEVICE`. Кластер может разместить non-DEVICE хаб в дереве `devices` с DEVICE-детьми — **раскладка пути** это выбор реализации; **тип** хаба — нет. См. [application-principles](application-principles.md) § Объекты логики vs DEVICE.
+| Роль в проекте | Вид шаблона | Правило |
+|----------------|-------------|---------|
+| Центральный оркестратор решения (один на проект) | **`SINGLETON`** | Размещайте в `root.platform.singleton-blueprints.<имя>` |
+| Цифровой двойник или типовой агрегат (много одинаковых) | **`INSTANCE`** | Создавайте экземпляры из шаблона типа; каждый узел хранит свои расчёты |
+| Физический прибор / контроллер / канал связи | — | Узел **`DEVICE`** — только драйвер и телеметрия |
 
-**Внутренние схемы** (1:1 с `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) хранятся в реестре для начальной загрузки, но **не отображаются** в каталоге mixin-blueprints и **не используются** в `appliedBlueprintIds`. Структура вшивается в экземпляре через `*ObjectService.ensureStructure()`.
+> **Обязательное правило:** узел, на котором живут функции приложения и сводные расчёты, **не должен иметь тип `ObjectType.DEVICE`**. Группировать дочерние узлы `DEVICE` под родительским узлом `SINGLETON` / `INSTANCE` или в папке внутри `devices` можно, но сам узел логики не может быть `DEVICE`. Подробнее: [Правила архитектуры приложений](application-principles.md).
 
-См. [0011-model-type-semantics](decisions/0011-model-type-semantics.md).
+**Внутренние системные схемы** (`dashboard-v1`, `workflow-v1`, `alert-rule-v1`, `correlator-v1`, `report-v1`, `data-source-v1`, `schedule-v1`) создаются сервером автоматически для соответствующих системных типов узлов и не отображаются в пользовательском каталоге примесей.
 
-### Связь с объектом
+---
 
-- `templateId` — primary model (INSTANCE/SINGLETON)
-- `appliedBlueprintIds` — JSON-массив id всех применённых моделей (persisted)
-- При слиянии коллизий имён: **последние победы + предупреждение** (не ошибка)
+## Как шаблон связывается с объектом
 
-### Автоматическое применение MIXIN
+- `templateId` — основной шаблон объекта (`INSTANCE` или `SINGLETON`).
+- `appliedBlueprintIds` — сохранённый в БД массив идентификаторов всех подключённых к объекту шаблонов.
+- При совпадении имён переменных или функций во время слияния нескольких шаблонов побеждает **последний применённый шаблон**, а в журнал пишется предупреждение.
 
-При `POST /objects` с `autoApplyMixinBlueprints=true` (default) вызывается `BlueprintEngine.applyMixinBlueprints()`.
+### Автоматическое и явное подключение `MIXIN`
 
-**Условия автоматически применяются** (все обязательно):
+При создании объекта (`POST /api/v1/objects` с флагом `autoApplyMixinBlueprints = true` по умолчанию) сервер проверяет все пользовательские примеси `MIXIN`.
 
-1. `BlueprintType.MIXIN`, не системный
-2. `targetObjectType` соответствует типу объекта
-3. **`suitabilityExpression` (Условие применимости, CEL) не пустой** и остается в `true`
-4. Модель ещё не в `appliedBlueprintIds`
+**Примесь подключается автоматически только если выполнены все четыре условия:**
+1. Вид шаблона — `BlueprintType.MIXIN` (не системная схема).
+2. Поле `targetObjectType` совпадает с типом создаваемого объекта.
+3. **Условие применимости `suitabilityExpression` (выражение CEL) не пустое** и возвращает `true`.
+4. Этот шаблон ещё не числится в `appliedBlueprintIds` объекта.
 
-**Пустой CEL** → модель **никогда** не применяется автоматически. Для миксина без условий воспользуйтесь явным применением: `templateId` при создании, `POST /api/v1/mixin-blueprints/{id}/apply`, модели-компаньоны в комплекте.
+> Если поле CEL пустое, примесь **никогда не применяется автоматически** — её можно подключить только явно (через `templateId` при создании или запросом `POST /api/v1/mixin-blueprints/{id}/apply`). При явном подключении проверяется `targetObjectType`, а `suitabilityExpression` проверяется только если оно заполнено ([ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md)).
 
-**Явный применить** (шаблон/API): вчерася `targetObjectType`; CEL optionalen — если задано, должно быть `true`.
+| Значение `suitabilityExpression` | Автоподключение при создании | Явное подключение через API / UI |
+|----------------------------------|------------------------------|----------------------------------|
+| *(пусто)* | Нет | Да (при совпадении `targetObjectType`) |
+| `true` | Да, ко всем объектам `targetObjectType` | Да |
+| `self.flag.value == true` | Только если условие истинно | Да, если условие истинно |
 
-См. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
+### Повторная проверка примесей (`reevaluation`, ADR-0058)
 
-### Opt-in reevaluation (ADR-0058)
+При желании у примеси `MIXIN` можно включить автоматический пересмотр (`reevaluation.enabled = true`) по событиям `OBJECT_CREATED` и `SERVER_READY`. Если условие CEL становится `true`, примесь подключается; если `false` — отключаются элементы, владельцем которых записана эта примесь (`blueprintContributions`).
 
-MIXIN может включить **reevaluation** (`reevaluation.enabled` + triggers). По умолчанию выкл. — поведение ADR-0018.
+Методы управления: `POST /api/v1/mixin-blueprints/{id}/detach`, `.../reevaluate`, `POST /api/v1/objects/by-path/reevaluate-mixins?path=...`.
 
-| Триггер (v1) | Когда |
-|--------------|-------|
-| `OBJECT_CREATED` | Появление объекта |
-| `SERVER_READY` | После restore дерева на старте |
+---
 
-CEL true → **attach**; CEL false → **detach** вклада, которым mixin всё ещё владеет (`blueprintContributions`). Без манифеста (legacy apply) detach только снимает attachment / `appliedBlueprintIds`, **не** hard-delete по именам модели.
+## Состав шаблона и параметризация (`${...}`)
 
-API: `POST /api/v1/mixin-blueprints/{id}/detach`, `.../reevaluate`, `POST /api/v1/objects/by-path/reevaluate-mixins?path=`.
+Описание `BlueprintDefinition` может включать:
+- **Переменные** (`ModelVariableDefinition`) — схема полей, значение по умолчанию, группа, права чтения/записи, настройки истории;
+- **События** (`EventDescriptor`) и **функции** (`FunctionDescriptor`);
+- **Правила расчёта** (`ModelBindingRule`) — см. [Правила расчёта](bindings.md);
+- **Шаблонные SQL-привязки** (`sqlBindings`) и **шаблонные правила тревог** (`alertRules`), которые разворачиваются для каждого созданного экземпляра.
 
-### Условие применимости (CEL)
+При создании экземпляра подставляются встроенные переменные (`${self.path}`, `${self.name}`, `${self.displayName}`) и пользовательские параметры из `parameters`:
 
-Поле `suitabilityExpression` в `BlueprintDefinition` — в Web Console: *Applicability condition (CEL)*.
+```json
+{
+  "name": "oil-control-tank-v1",
+  "type": "INSTANCE",
+  "sqlBindings": [
+    {
+      "variable": "levelCm",
+      "query": "SELECT COALESCE((SELECT level_cm FROM oc_measurement WHERE tank_code='${code}' ORDER BY measured_at DESC LIMIT 1), 0) AS value, 'cm' AS unit",
+      "dataSourcePath": "root.platform.data-sources.oil-control",
+      "refreshIntervalMs": 5000,
+      "valueField": "value"
+    }
+  ],
+  "alertRules": [
+    {
+      "name": "tank-${code}-high",
+      "watchVariable": "levelCm",
+      "conditionExpr": "self.levelCm.value > 1000",
+      "eventName": "levelHigh",
+      "enabled": true
+    }
+  ]
+}
+```
 
-| Значение | Автоматическое применение | Явный подать заявку |
-|----------|------------|-------------|
-| пусто | нет | да (по типу объекта) |
-| `true` | ко всем объектам `targetObjectType` | да |
-| `self.flag.value == true` | только при выполнении | да, если CEL true |
+Использование такого шаблона в `bundle.json` (секция `blueprints[]` всегда обрабатывается раньше `objects[]`):
 
-Выражение продолжается через `ExpressionEngine` в число `self` = переменные целевого объекта.
+```json
+{
+  "parentPath": "root.platform.devices.oil-control.tanks",
+  "name": "rvs-1",
+  "type": "CUSTOM",
+  "templateId": "oil-control-tank-v1",
+  "parameters": { "code": "RVS-1" }
+}
+```
 
-## Модели трех уровней
+---
 
-| Уровень | Источник | Когда в реестре |
-|---------|----------|------------------|
-| **System-intrinsic** | `ModelBootstrap` | Всегда; не в каталоге mixin-blueprints |
-| **Platform built-in** | `ModelBootstrap` | Всегда (`dashboard-v1`, `alert-rule-v1`, …) |
-| **Fixtures** | `FixtureModelBootstrap` | Только `ispf.bootstrap.fixtures-enabled=true` |
-| **Solution** | `bundle.json` → `models[]` | При deploy bundle |
+## Уровни шаблонов на сервере
 
-**Внутренняя система** (схема вшивается в экземпляре, без `appliedBlueprintIds`): `data-source-v1`, `schedule-v1`, `sql-binding-v1`, `migration-v1`, `alert-rule-v1`, `correlator-v1`, `dashboard-v1`, `report-v1`, `workflow-v1`.
+| Уровень | Откуда загружается | Когда доступен |
+|---------|--------------------|----------------|
+| **Системные схемы** | `ModelBootstrap` | Всегда (`dashboard-v1`, `workflow-v1`, `alert-rule-v1`, `correlator-v1`, `report-v1` и др.) |
+| **Демонстрационные (fixtures)** | `FixtureModelBootstrap` | При `ispf.bootstrap.fixtures-enabled=true` (`mqtt-sensor-v1`, `mqtt-gateway-v1`, `snmp-agent-v1`, `device-driver-v1`) |
+| **Прикладные (пользовательские)** | `bundle.json` (`blueprints[]` / `models[]`) или БД `blueprint_definitions` | После деплоя пакета или сохранения в консоли |
 
-**Fixtures** (демо/лаборатория, не часть ядра): `device-driver-v1`, `mqtt-gateway-v1`, `mqtt-sensor-v1`, `base-sensor-v1`, `vendor-sensor-ext-v1`, `snmp-agent-v1`. Конфиг: `ispf.bootstrap.fixtures-enabled` (по умолчанию `true`).
+### Примеры демонстрационных шаблонов (`fixtures`)
 
-См. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
+- **`mqtt-sensor-v1`** — учебный датчик температуры (`demo-sensor-01`): переменные `temperature`, `threshold`, `alarmActive`, `alarmAcknowledged`, `temperaturePercent`, событие `thresholdExceeded` и функция `acknowledgeAlarm`.
+- **`mqtt-gateway-v1`** — входной шлюз MQTT, распределяющий сообщения из `lastIngress` по дочерним датчикам через функцию `dispatchTelemetry`.
+- **`snmp-agent-v1`** — мониторинг хоста по SNMP (MIB-II и HOST-RESOURCES: `sysName`, `sysUpTime`, `hrMemorySize`, `hrProcessorLoad`, `ifInOctets`, `ifOutOctets`); используется на демо-экране `snmp-host-monitoring`.
 
-## API
+---
 
-| Метод | Путь | Описание |
-|--------|------|----------|
-| GET/POST/… | `/api/v1/mixin-blueprints` | MIXIN facades |
-| GET/POST/… | `/api/v1/instance-types` | INSTANCE facades (+ `?platformType=` для create dialog) |
-| GET/POST/… | `/api/v1/singleton-blueprints` | SINGLETON facades |
-| GET/POST/… | `/api/v1/blueprints` | Legacy unified API (совместимость) |
+## Основные методы REST API
 
-## Состав модели (`BlueprintDefinition`)
+| Метод | Путь | Назначение |
+|-------|------|------------|
+| `GET / POST / ...` | `/api/v1/singleton-blueprints` | Управление одиночными шаблонами `SINGLETON` |
+| `GET / POST / ...` | `/api/v1/instance-types` | Управление шаблонами типов `INSTANCE` |
+| `GET / POST / ...` | `/api/v1/mixin-blueprints` | Управление примесями `MIXIN` |
+| `GET / POST / PUT / DELETE` | `/api/v1/blueprints` | Унифицированный API всех видов шаблонов |
+| `POST` | `/api/v1/blueprints/{id}/apply?objectPath=...` | Применить шаблон к существующему объекту |
+| `POST` | `/api/v1/blueprints/{id}/instantiate` | Создать новый узел по шаблону |
+| `POST` | `/api/v1/blueprints/from-object` | Сохранить структуру существующего узла как новый шаблон |
 
-- Переменные (`ModelVariableDefinition`) — schema, default, group, readable/writable
-- События (`EventDescriptor`)
-- Функции (`FunctionDescriptor`)
-- Binding rules (`ModelBindingRule`) — см. [bindings](bindings.md)
-- Метаданные: name, description, `ObjectType`, `BlueprintType`
-
-## Двигатель
-
-| Класс | Назначение |
-|-------|------------|
-| `ModelRegistry` | In-memory каталог моделей |
-| `BlueprintEngine` | CRUD, apply, instantiate, fromObject, `applyRelativeModels` (CEL-gated) |
-| `ModelBootstrap` | Platform built-in + system-intrinsic models |
-| `FixtureModelBootstrap` | Demo/lab fixture models (`fixtures-enabled`) |
-| `ModelPersistenceService` | Сохранение пользовательских моделей в `blueprint_definitions` (REQ-PF-07) |
-
-Пользовательские модели (не `builtin`) управляются из БД при старте сервера после `ensureBuiltInModels()`.
-
-## API
-
-| Метод | Путь | Описание |
-|--------|------|----------|
-| GET | `/api/v1/blueprints` | Список |
-| GET | `/api/v1/blueprints/{id}` | По ID |
-| GET | `/api/v1/blueprints/by-name/{name}` | По имени |
-| POST | `/api/v1/blueprints` | Создать |
-| PUT | `/api/v1/blueprints/{id}` | Обновить |
-| DELETE | `/api/v1/blueprints/{id}` | Удалить |
-| POST | `/api/v1/blueprints/{id}/apply?objectPath=` | Применить к объекту |
-| POST | `/api/v1/blueprints/{id}/instantiate` | Создать экземпляр |
-| POST | `/api/v1/blueprints/from-object` | Экспорт модели из объекта |
-| GET | `/api/v1/blueprints/attachments` | Привязки model↔type |
-
-Доступ: **админ**. См. [api](api.md).
-
-## Встроенные и крепеж-модели
-
-### Платформа встроена (всегда)
-
-| Модель | Тип | Назначение |
-|--------|-----|------------|
-| `dashboard-v1` | intrinsic MIXIN | Layout HMI |
-| `workflow-v1` | intrinsic MIXIN | BPMN workflow |
-| `report-v1` | intrinsic MIXIN | SQL report |
-| `alert-rule-v1` | intrinsic MIXIN | CEL alert rule |
-| `correlator-v1` | intrinsic MIXIN | Event correlator |
-| `data-source-v1`, `schedule-v1`, … | intrinsic MIXIN | Схемы system object types |
-
-### Fixtures (`ispf.bootstrap.fixtures-enabled=true`)
-
-Демонстрационные/лабораторные модели **не** включены в ядро ​​`ModelBootstrap`. Регистрируются `FixtureModelBootstrap` при старте (если fixtures включены).
-
-#### mqtt-сенсор-v1
-
-Демо-датчик температуры MQTT. Применяется к `demo-sensor-01` через `templateId`, а не через автоматическое применение (CEL по умолчанию пусто).
-
-| Переменная | Группа | Описание |
-|------------|--------|----------|
-| `temperature` | telemetry | value, unit (history) |
-| `threshold` | config | Порог |
-| `alarmActive`, `alarmAcknowledged` | status | Alarm state |
-| `temperaturePercent` | telemetry | Binding |
-
-Событие: `thresholdExceeded`. Функция: `acknowledgeAlarm`.
-
-#### mqtt-gateway-v1
-
-Входной шлюз MQTT — один брокер, маршрутизация `lastIngress` на дочерние датчики через `dispatchTelemetry`. См. [0017-telemetry-ingest-pipeline](decisions/0017-telemetry-ingest-pipeline.md).
-
-#### драйвер-v1 устройства
-
-MIXIN mixin с переменными группами `driver` — для демо/лаборатории и явного применения. **Не** используется для автоматического применения при создании УСТРОЙСТВА.
-
-На production path схема драйвера provisioning через `provisionDriver()` без относительного миксина (см. [drivers](drivers.md)).
-
-#### snmp-агент-v1
-
-SNMP-устройство (MIB-II + HOST-RESOURCES). Демо: `root.platform.devices.snmp-localhost`.
-
-| Переменная | ОИД | Описание |
-|------------|-----|----------|
-| `sysName` | 1.3.6.1.2.1.1.5.0 | Имя хоста |
-| `sysDescr` | 1.3.6.1.2.1.1.1.0 | Описание системы / ОС |
-| `sysUpTime` | 1.3.6.1.2.1.1.3.0 | Uptime (TimeTicks) |
-| `sysLocation` | 1.3.6.1.2.1.1.6.0 | Расположение |
-| `sysContact` | 1.3.6.1.2.1.1.4.0 | Контакт |
-| `hrMemorySize` | 1.3.6.1.2.1.25.2.2.0 | Объём RAM (KB) |
-| `hrSystemProcesses` | 1.3.6.1.2.1.25.1.6.0 | Число процессов |
-| `hrSystemNumUsers` | 1.3.6.1.2.1.25.1.5.0 | Число пользователей |
-| `ifNumber` | 1.3.6.1.2.1.2.1.0 | Число сетевых интерфейсов |
-| `ifInOctets` | 1.3.6.1.2.1.2.2.1.10.1 | Входящие octets (интерфейс #1) |
-| `ifOutOctets` | 1.3.6.1.2.1.2.2.1.16.1 | Исходящие octets (интерфейс #1) |
-| `hrProcessorLoad` | 1.3.6.1.2.1.25.3.3.1.2.1 | Загрузка CPU % (ядро #1) |
-
-Используется дашборд `root.platform.dashboards.snmp-host-monitoring`.
-
-#### базовый-сенсор-v1 / вендор-сенсор-ext-v1
-
-Расширение Семейство INSTANCE + MIXIN для наследования моделей производителей (см. `ModelUpgradeApiTest`).
-
-## Пример: создать экземпляр
+Пример создания экземпляра по шаблону:
 
 ```http
 POST /api/v1/blueprints/{id}/instantiate
@@ -217,10 +154,11 @@ Content-Type: application/json
 }
 ```
 
-## Связанные документы
+---
 
-- [object-model](object-model.md) — переменные, DataRecord
-- [dashboards](dashboards.md) — макет Dashboard-v1.
-- [workflows](workflows.md) — рабочий процесс-v1
-- [drivers](drivers.md) — переменные драйвера, инициализация
-- [decisions/0018-fixture-models-and-cel-applicability.md](decisions/0018-fixture-models-and-cel-applicability.md) — fixtures + автоматическое применение CEL
+## Связанные разделы
+
+- [Модель объектов](object-model.md) — переменные, схемы `DataRecord`, события и функции
+- [Правила расчёта (привязки)](bindings.md) — формулы пересчёта переменных в шаблонах
+- [Драйверы устройств](drivers.md) — автоматическое создание переменных драйвера на узлах `DEVICE`
+- [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md) — правила автоприменения примесей по условию CEL

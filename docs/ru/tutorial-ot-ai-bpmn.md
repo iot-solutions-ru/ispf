@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/tutorial-ot-ai-bpmn.md](../en/tutorial-ot-ai-bpmn.md).
+> **Язык:** русская версия. Английский оригинал: [en/tutorial-ot-ai-bpmn.md](../en/tutorial-ot-ai-bpmn.md).
 
 # Туториал: AI service tasks в BPMN
 
-> **Статус:** Beta — ADR-0049 Wave 2. Хаб: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
+> **Статус:** Beta — ADR-0049 Wave 2. См. также: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
 
 ## Цель
 

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/roadmap-phase-25.md](../en/roadmap-phase-25.md).
+> **Язык:** русская версия. Английский оригинал: [en/roadmap-phase-25.md](../en/roadmap-phase-25.md).
 
 # Redirect — влито в единый roadmap
 

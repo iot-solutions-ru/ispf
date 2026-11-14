@@ -1,8 +1,8 @@
-> **Язык:** полный русский перевод. Канонический английский: [en/expression-language.md](../en/expression-language.md).
+> **Язык:** русская версия. Английский оригинал: [en/expression-language.md](../en/expression-language.md).
 
-# Справочник языка выражений
+# Справочник языка выражений (CEL и функции расчёта)
 
-> **Статус:** Stable — пользовательский справочник CEL, platform bindings и historian helpers. Теги: [doc-status.md](doc-status.md).
+> **Статус:** Stable — справочник синтаксиса CEL, встроенных функций обработки сигналов и исторических агрегатов. Метки зрелости: [doc-status.md](doc-status.md).
 
 Полный справочник языка выражений ISPF: правила привязок, условия алертов, gateway в BPMN и historian-вычисления.
 
@@ -17,23 +17,23 @@
 | Formal verify | `POST /api/v1/expressions/verify` · `…/verify-equivalence` |
 | Решение | [ADR-0055](../en/decisions/0055-cel-formal-verification-ai-gate.md) |
 
-**Источник истины в коде:** `PlatformBindingRegistry` / `PlatformBindingCatalog` (`ispf-expression`), `AnalyticsEvaluatorRegistry` + `HistorianCelPreprocessor`, Google CEL через `ExpressionEngine`, formal gate через `ExpressionFormalVerifier` / `ExpressionFormalVerificationService` (CEL verifier + Z3).
+**Реализация в коде:** каталоги `PlatformBindingRegistry` / `PlatformBindingCatalog` (`ispf-expression`), `AnalyticsEvaluatorRegistry` и `HistorianCelPreprocessor`, исполнение Google CEL через `ExpressionEngine`, формальная проверка — `ExpressionFormalVerifier` / `ExpressionFormalVerificationService` (CEL verifier + Z3).
 
 ---
 
-## Formal verification (ADR-0055)
+## Формальная проверка выражений (ADR-0055)
 
-Булев CEL в алертах, bindings, platform context, BPMN design-time и AI-инструментах проверяется **CEL verifier 0.14** (Z3). По умолчанию reject unsatisfiable/tautology на apply/validate (`ispf.expression.formal-verification.*`).
+Булевы выражения CEL в тревогах, правилах расчёта, контексте экрана, BPMN на этапе проектирования и в ИИ-инструментах проверяются **CEL verifier 0.14** (через Z3). По умолчанию при apply/validate отклоняются невыполнимые и тавтологичные условия (`ispf.expression.formal-verification.*`).
 
-| API | Роль |
-| --- | ---- |
-| `POST /api/v1/expressions/validate` | Compile + formal; `verification`; enforce может дать `valid=false` |
-| `POST /api/v1/expressions/verify` | Только formal |
-| `POST /api/v1/expressions/verify-equivalence` | Доказать `left ≡ right` |
+| API | Назначение |
+| --- | ---------- |
+| `POST /api/v1/expressions/validate` | Компиляция + формальная проверка; при enforce поле `valid` может стать `false` |
+| `POST /api/v1/expressions/verify` | Только формальная проверка |
+| `POST /api/v1/expressions/verify-equivalence` | Доказать эквивалентность `left ≡ right` |
 
-Коды findings: `SATISFIABLE`, `UNSATISFIABLE`, `TAUTOLOGY`, … — [ADR-0055](../en/decisions/0055-cel-formal-verification-ai-gate.md). Smoke demostand 0.9.202: [`docs/evidence/cel-formal/2026-08-31-ispf-vps-0.9.202-verify-smoke.json`](../evidence/cel-formal/2026-08-31-ispf-vps-0.9.202-verify-smoke.json) (архив 0.9.195 сохранён).
+Коды результатов: `SATISFIABLE`, `UNSATISFIABLE`, `TAUTOLOGY` и др. — [ADR-0055](../en/decisions/0055-cel-formal-verification-ai-gate.md). Пример прогона на демостенде 0.9.202: [`docs/evidence/cel-formal/2026-08-31-ispf-vps-0.9.202-verify-smoke.json`](../evidence/cel-formal/2026-08-31-ispf-vps-0.9.202-verify-smoke.json).
 
-**Non-goal:** CEL Policy aggregate packs — не продуктовая поверхность.
+**Вне объёма продукта:** пакеты CEL Policy aggregate — не пользовательская поверхность ISPF.
 
 ---
 

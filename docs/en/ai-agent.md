@@ -127,7 +127,7 @@ Domain detection keywords:
 | `hvac` | hvac, building, comfort, zone, ahu, chiller |
 | `scada` | scada, pump, tank, mimic, modbus, snmp, historian |
 
-Full pipeline: [AgentSolutionGeneratorPlaybook](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java).
+Full pipeline: [AgentSolutionGeneratorPlaybook](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java).
 
 ---
 
@@ -212,7 +212,7 @@ Reference layout and BFF mapping live under `examples/agent-metrics-dashboard/`.
 
 | ID | Feature | Doc |
 |----|---------|-----|
-| BL-177 | End-to-end agent deploy | [AgentDeployPlaybook](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) |
+| BL-177 | End-to-end agent deploy | [AgentDeployPlaybook](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) |
 | BL-178 | Agent regression suite | [agent-regression](agent-regression.md) |
 | BL-179 | Solution generator draft API | This doc § Solution generator |
 | BL-180 | Solution generator live apply + metrics widget | `AiSolutionGeneratorLiveSmokeTest`, playbook |

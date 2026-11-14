@@ -1,207 +1,97 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/observability.md](../en/observability.md).
+> **Язык:** русская версия. Английский оригинал: [en/observability.md](../en/observability.md).
 
-# Наблюдаемость (ISPF)
+# Мониторинг и диагностика (Observability)
 
-> **Статус:** Stable — Метрики, диагностика. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — метрики Prometheus, экспорт OpenTelemetry (OTLP) и встроенная диагностика нагрузки. Метки зрелости: [doc-status.md](doc-status.md).
 
-Конвейер автоматизации экспорта метрик: **Prometheus Scraping** (pull) и **OTLP** (push, серверные части, совместимые с OpenTelemetry).
+ISPF предоставляет встроенную панель диагностики в веб-консоли, отдаёт метрики в формате **Prometheus** (`/actuator/prometheus`) и при необходимости отправляет метрики и распределённые трассировки по протоколу **OTLP** в коллекторы OpenTelemetry (Grafana, Uptrace и аналоги).
 
-## Прометей (по умолчанию в проде)
+---
 
-![System → Metrics overview](../assets/ispf-system-metrics.png)
+## 1. Метрики Prometheus
 
-| Конечная точка | Авторизация | Формат |
-|----------|------|--------|
-| `/actuator/prometheus` | admin role | Prometheus text |
+![Вкладка «Система → Метрики» в консоли администратора](../assets/ispf-system-metrics.png)
 
-Ключевые метрики ISPF (микрометр):
+Маршрут `/actuator/prometheus` (требуется роль `admin`) отдаёт как стандартные показатели JVM, HTTP и пула БД (`jvm.*`, `http.server.requests`, `hikaricp.*`), так и прикладные метрики движков ISPF:
 
-| Метрическая | Тип | Описание |
-|--------|------|----------|
-| `ispf.events.fired.total{source=...}` | counter | Fires по источнику (alert, api, correlator, function) |
-| `ispf.alert.fires.total` | counter | Срабатывания alert rules |
-| `ispf.alert.evaluations.total` | counter | Оценки CEL |
-| `ispf.correlator.triggers.total` | counter | Срабатывания correlators |
-| `ispf.telemetry.coalesce_drops.total` | counter | Last-value coalesce: пропущенные/заменённые сэмплы |
-| `ispf.telemetry.binding_bypass.total` | counter | Есть binding-consumer — coalesce пропущен |
-| `ispf.telemetry.historian_only.total` | counter | Historian fast path без object-change bus |
-| `ispf.object_change.queue.size{lane=telemetry\|automation\|total}` | gauge | Глубина async-очередей |
-| `ispf.object_change.workers.active{lane=telemetry\|automation}` | gauge | Активные worker-потоки (elastic mode) |
-| `ispf.object_change.processed.total` | gauge | Обработанные object-change events |
-| `ispf.object_change.queue.dropped.total` | counter | Dropped events (queue full) |
-| `ispf.event_journal.queue.size` | gauge | Очередь async writer журнала |
-| `ispf.event_journal.flushed.total` | gauge | Записано в journal (cumulative) |
-| `ispf.event_journal.queue_full.sync_fallback.total` | counter | Sync fallback при переполнении очереди |
-| `ispf.workflow.starts.total{trigger=...}` | counter | Старты workflow по триггеру |
-| `ispf.event_history.records` | gauge | Записей в журнале событий |
-| `ispf.workflow_instances.running` | gauge | Активные workflow instances |
-| `ispf.drivers.active` / `connected` | gauge | Драйверы |
-| `ispf.websocket.clients` | gauge | Открытые object-tree WebSocket-сессии (`websocketClients`) |
-| `ispf.object_tree.ready` | gauge | `1`, когда дерево `ObjectManager` готово для API/scheduler |
-| `ispf.database.connections.*` | gauge | HikariCP pool |
+| Метрика Micrometer | Тип | Что показывает |
+|--------------------|-----|----------------|
+| `ispf.object_tree.ready` | gauge | `1`, когда дерево объектов полностью инициализировано и готово к работе |
+| `ispf.drivers.active` / `connected` | gauge | Количество запущенных и подключённых драйверов оборудования |
+| `ispf.driver.errors.total{driver,op,kind}` | counter | Счётчик ошибок драйверов с разбивкой по типу (`transient`, `configuration`, `permanent`, `unsupported`) |
+| `ispf.telemetry.coalesce_drops.total` | counter | Число промежуточных сэмплов, схлопнутых до последнего значения при высокой частоте входа |
+| `ispf.telemetry.historian_only.total` | counter | Точки, записанные по прямому быстрому пути в архив истории |
+| `ispf.object_change.queue.size{lane=...}` | gauge | Текущая глубина асинхронных очередей обработки (`telemetry`, `automation`, `total`) |
+| `ispf.object_change.workers.active{lane=...}` | gauge | Число активных потоков обработки изменений |
+| `ispf.object_change.queue.dropped.total` | counter | Отброшенные уведомления при переполнении очереди |
+| `ispf.events.fired.total{source=...}` | counter | Опубликованные события по источникам (`alert`, `api`, `correlator`, `function`) |
+| `ispf.alert.fires.total` / `evaluations.total` | counter | Срабатывания и общее число проверок правил тревог |
+| `ispf.correlator.triggers.total` | counter | Срабатывания корреляторов событий |
+| `ispf.event_journal.queue.size` / `flushed.total` | gauge / counter | Очередь и общее число записей, сброшенных в журнал событий |
+| `ispf.workflow.starts.total` / `workflow_instances.running` | counter / gauge | Запуски процессов BPMN и число активных экземпляров |
+| `ispf.websocket.clients` | gauge | Активные клиентские сессии WebSocket (`/ws/objects`) |
 
-### Проверка метрик (синхронизация дерева объектов)
+Готовый дашборд для внешней Grafana лежит в [`deploy/grafana/ispf-automation-pipeline.json`](../../deploy/grafana/ispf-automation-pipeline.json) (описание — [`deploy/grafana/README.md`](../../deploy/grafana/README.md)).
 
-Текущая синхронизация `/api/v1/platform/metrics` → `root.platform.devices.platform-metrics-probe` (переменные `eventsPerSecond`, `objectChangeQueueSize`, `heapUsedMb`, …). Альтернатива внешнему Прометею во время нагрузочного теста.
+---
 
-| Конечная точка | Авторизация | Описание |
-|----------|------|----------|
-| `GET /api/v1/platform/diagnostics/metrics-probe` | admin | `{ enabled, devicePath, devicePresent }` |
-| `PUT /api/v1/platform/diagnostics/metrics-probe` | admin | `{ "enabled": true\|false }` — вкл/выкл sync |
+## 2. Встроенная диагностика нагрузки в веб-консоли
 
-**Интерфейс (рекомендуется):** Администратор → Система → Метрики → **Загрузить диагностику** → чекбокс «Синхронизировать метрики с зондирующим устройством». При закрытии страницы датчик **автоматически включается** (не создает фоновую нагрузку).
+В разделе **Система → Метрики (System → Metrics)** карточка **Диагностика нагрузки** позволяет без SSH и внешних систем понять, на что расходуется процессор и где копятся очереди:
 
-Env `ISPF_PLATFORM_METRICS_PROBE_ENABLED` и время загрузки `ispf.platform-metrics-probe.enabled` **не запускают** планировщик — только переключение времени выполнения через API/UI. Интервал: `ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS` (по умолчанию 5000) или Настройки времени выполнения → `metrics-probe.interval-ms`.
+| Метод API | Роль | Назначение |
+|-----------|------|------------|
+| `GET /api/v1/platform/metrics` | `admin` | Сводка метрик текущего узла JVM и блок `diagnostics` (загрузка ЦП, подозрительные подсистемы, топ потоков) |
+| `GET /api/v1/platform/cluster/diagnostics` | `admin` | Сводка по всем узлам кластера с ранжированием реплик по загрузке ЦП |
 
-Перед включением создайте probe device: `python deploy/setup-platform-metrics-monitor.py`.
+Детализация внутри узла показывает:
+- **Группы потоков:** загрузку ЦП по пулам `ispf-driver-io`, `driver-ingress`, `object-change` и топ-5 самых активных потоков;
+- **Драйверы:** какие именно устройства (`devicePath`, `driverId`) создают наибольший входной поток;
+- **Фоновые задания и активные процессы BPMN** (`platform_jobs`, `workflow_instances`).
 
-## Диагностика пользовательского интерфейса метрик (0.9.97+)
+> Если загрузка ЦП внутри всех процессов `ispf-server` низкая, а хост нагружен — проверьте соседние контейнеры СУБД (`PostgreSQL`, `ClickHouse`) командой `docker stats`.
 
-Админ → **Система → Метрика** — карточка **«Диагностика нагрузки»** (кластерный разветвление).
+### Временная запись метрик в пробное устройство дерева
 
-| Конечная точка | Авторизация | Описание |
-|----------|------|----------|
-| `GET /api/v1/platform/metrics` | admin | Метрики **текущей** JVM + `diagnostics` (CPU, suspects, `detail`) |
-| `GET /api/v1/platform/cluster/diagnostics` | admin | Все реплики: CPU rank, suspects, drill-down по ноде |
+Во время нагрузочных испытаний метрики сервера можно временно транслировать прямо в переменные объекта `root.platform.devices.platform-metrics-probe` (через чекбокс на вкладке **Система → Метрики** или `PUT /api/v1/platform/diagnostics/metrics-probe` с `{"enabled": true}`).
 
-**Уровень 1 — кластер:** какая реплика грузит ЦП (`processCpuPercent`), очередь конвейера, `clusterTopSuspect`.
+> **Важно:** при уходе со страницы диагностики синхронизация с пробным устройством **автоматически выключается**, чтобы не оставлять лишнюю фоновую запись в рабочем режиме.
 
-**Уровень 2 — внутри ноды** (развернуть в пользовательском интерфейсе):
+Для быстрой диагностики по SSH без браузера можно запустить скрипт [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py), который снимает два среза `/api/v1/platform/metrics` с интервалом 6 секунд и выводит активные потоки в консоль.
 
-| Блок | Содержимое |
-|------|------------|
-| Thread groups | `ispf-driver-io`, `driver-ingress`, `object-change`, top-5 потоков по CPU Δ |
-| Driver bindings | `devicePath`, `driverId`, ingress pending/coalesced, `pressureScore` |
-| Jobs | `platform_jobs` со статусом `RUNNING` на `holder_id` |
-| Workflows | top `workflow_instances` в статусе `RUNNING` |
+---
 
-Подозреваемые Эвристики: невыполненные изменения объектов/журнал событий/историк, пул JDBC, давление кучи, горячая привязка драйвера.
+## 3. Экспорт метрик и трассировок по протоколу OpenTelemetry (OTLP)
 
-Равноправное разветвление: сердцебиение пишет `http_port` в `platform_cluster_replicas` (V65); агрегатор опрашивает `http://127.0.0.1:{port}/api/v1/platform/metrics` в хост-сети VPS.
+По умолчанию отправка OTLP выключена. Включается переменными окружения при подключении централизованного коллектора:
 
-Если все JVM с низким процессором — виновник вне ISPF (Scylla, ClickHouse, Postgres): `docker stats` на хосте.
-
-### CLI (один узел, SSH)
-
-Скрипт [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py) — два образца `GET /api/v1/platform/metrics` с интервалом ~6 с, выводят группы потоков и подозреваемых в стандартный вывод. Удобен по SSH без пользовательского интерфейса.
+### Метрики OTLP
 
 ```bash
-scp deploy/vps-idle-thread-sample.py deploy-user@production-host:/tmp/
-ssh deploy-user@production-host python3 /tmp/vps-idle-thread-sample.py
-```
-
-Подробнее: [demostands](demostands.md) (раздел проверки), [vps-demostand](vps-demostand.md) (пример ops).
-
-**Опциональный экспорт Grafana** (те же серии Micrometer): [`deploy/grafana/ispf-automation-pipeline.json`](../../deploy/grafana/ispf-automation-pipeline.json) — см. [`deploy/grafana/README.md`](../../deploy/grafana/README.md). Предпочитайте first-party dashboards выше, если Prometheus уже не эксплуатируете.
-
-**Golden path smoke (alarm → journal → ack):** [`deploy/tools/golden-path-alarm-smoke.py`](../../deploy/tools/golden-path-alarm-smoke.py) на сервере с fixtures (`demo-sensor-01`).
-
-## Экспорт метрик OTLP (необязательно, 0.9.9+)
-
-Отправьте метрику в OpenTelemetry Collector / Grafana Cloud / Uptrace через реестр Micrometer OTLP.
-
-**Выключено по умолчанию** — без `ISPF_OTLP_METRICS_ENABLED=true` экспорт не выполняется.
-
-```yaml
-# /opt/ispf/ispf-server.env
 ISPF_OTLP_METRICS_ENABLED=true
 ISPF_OTLP_METRICS_URL=http://otel-collector:4318/v1/metrics
 ISPF_OTLP_METRICS_STEP=30s
 ISPF_ENVIRONMENT=prod
 ```
 
-Spring properties (`application.yml`):
-
-| Недвижимость | Окружение | По умолчанию |
-|----------|-----|---------|
+| Свойство Spring | Переменная окружения | По умолчанию |
+|-----------------|----------------------|--------------|
 | `management.otlp.metrics.export.enabled` | `ISPF_OTLP_METRICS_ENABLED` | `false` |
 | `management.otlp.metrics.export.url` | `ISPF_OTLP_METRICS_URL` | `http://localhost:4318/v1/metrics` |
 | `management.otlp.metrics.export.step` | `ISPF_OTLP_METRICS_STEP` | `30s` |
 
-Resource attributes: `service.name=ispf-server`, `deployment.environment` из `ISPF_ENVIRONMENT`.
+### Распределённая трассировка OTLP
 
-Все счетчики/датчики ISPF выше экспортируются в OTLP вместе со стандартными метриками JVM/Spring Boot (`jvm.*`, `http.server.requests`, `hikaricp.*`).
-
-### Пример: локальный OTel Collector
-
-```yaml
-# docker-compose snippet
-otel-collector:
-  image: otel/opentelemetry-collector-contrib:latest
-  ports:
-    - "4318:4318"
-  volumes:
-    - ./otel-collector.yaml:/etc/otelcol/config.yaml
-```
-
-Prometheus и OTLP могут работать одновременно: Prometheus Scrape для VPS без коллектора, OTLP — для централизованного стека наблюдаемости.
-
-## OTLP-трассировка (необязательно, 0.9.10+)
-
-Распределенные трассировки для конвейера автоматизации через Micrometer Observation → мост OpenTelemetry.
-
-**Выключено по умолчанию.**
-
-```yaml
+```bash
 ISPF_OTLP_TRACING_ENABLED=true
 ISPF_OTLP_TRACING_URL=http://otel-collector:4318/v1/traces
-ISPF_OTLP_TRACING_SAMPLING=0.1   # 1.0 для dev/debug
+ISPF_OTLP_TRACING_SAMPLING=0.1   # доля трассируемых событий (1.0 для стенда отладки)
 ```
 
-| Недвижимость | Окружение | По умолчанию |
-|----------|-----|---------|
+| Свойство Spring | Переменная окружения | По умолчанию |
+|-----------------|----------------------|--------------|
 | `management.tracing.enabled` | `ISPF_OTLP_TRACING_ENABLED` | `false` |
 | `management.opentelemetry.tracing.export.otlp.endpoint` | `ISPF_OTLP_TRACING_URL` | `http://localhost:4318/v1/traces` |
 | `management.tracing.sampling.probability` | `ISPF_OTLP_TRACING_SAMPLING` | `0.1` |
 
-### Промежутки автоматизации
-
-Каждый async handler object-change bus создаёт span `ispf.object-change.handler` с тегами:
-
-| Тег | Пример |
-|-----|--------|
-| `handler` | `AlertRuleListener`, `EventCorrelatorListener`, `WorkflowTriggerListener` |
-| `lane` | `telemetry`, `automation` |
-| `change_type` | `VARIABLE_UPDATED`, `EVENT_FIRED` |
-| `path` | object path |
-| `variable` / `event_name` | при наличии |
-
-HTTP requests получают стандартные Spring Boot spans (`http.server.requests`) автоматически.
-
-### Локальный коллектор
-
-Готовый конфиг: [`deploy/otel-collector-minimal.yaml`](../../deploy/otel-collector-minimal.yaml) — OTLP HTTP `:4318`, отладка + Прометей `:8889`.
-
-```bash
-docker run --rm -p 4318:4318 -p 8889:8889 \
-  -v $(pwd)/deploy/otel-collector-minimal.yaml:/etc/otelcol/config.yaml \
-  otel/opentelemetry-collector-contrib:latest
-```
-
-## Эластичные работники изменения объектов (0.9.11+)
-
-По умолчанию шина изменения объекта использует **эластичные** рабочие пулы на полосе (телеметрия/автоматизация): потоки чисел масштабируются между минимальными и максимальными значениями в последовательном порядке:
-
-- **scale up** — когда `queue.size >= elastic-scale-up-queue-threshold`, target workers растёт (до max);
-- **масштаб вниз** — после `elastic-scale-down-steps` подряда измерения с пустой очередью целевой выброс на 1 (до мин);
-- периодическая проверка — `elastic-scale-check-interval-ms`; Дополнительное масштабирование при постановке в очередь, если очередь уже выше порога.
-
-**Включено по умолчанию** (`ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=true`). Включить: `ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=false` или **Система → Настройки выполнения** (`GET/PATCH /api/v1/platform/runtime-settings`).
-
-```yaml
-# /opt/ispf/ispf-server.env — тонкая настройка prod load (elastic уже true по умолчанию)
-ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MIN=2
-ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MAX=16
-ISPF_OBJECT_CHANGE_ELASTIC_SCALE_UP_THRESHOLD=50
-ISPF_OBJECT_CHANGE_ELASTIC_SCALE_DOWN_STEPS=6
-ISPF_OBJECT_CHANGE_ELASTIC_SCALE_CHECK_MS=500
-ISPF_OBJECT_CHANGE_AUTOMATION_QUEUE_CAPACITY=10000
-```
-
-Кратковременный рост `ispf.object_change.queue.size` при всплеске — нормален; устойчивый при росте на низком `workers.active` или на максимальном уровне работники сигнализируют о узком месте в нисходящем направлении (CEL, журнал, DB).
-
-## Связанные документы
-
-- [load-testing](load-testing.md) — базовые показатели и скрипты нагрузочного тестирования
-- [messaging](messaging.md) — дополнительные транспорты JetStream / Redis (0014)
-- [decisions/0014-automation-pipeline-evolution.md](decisions/0014-automation-pipeline-evolution.md)
+При включённой трассировке HTTP-запросы (`http.server.requests`) и асинхронные обработчики шины изменений (`ispf.object-change.handler` с тегами `handler`, `lane`, `change_type`, `path`) формируют связанные spans в OpenTelemetry. Минимальный конфигурационный файл локального коллектора для проверки: [`deploy/otel-collector-minimal.yaml`](../../deploy/otel-collector-minimal.yaml).

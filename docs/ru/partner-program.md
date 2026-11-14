@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/partner-program.md](../en/partner-program.md).
+> **Язык:** русская версия. Английский оригинал: [en/partner-program.md](../en/partner-program.md).
 
 # Партнерская программа (BL-184)
 

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/reference-escalation-templates.md](../en/reference-escalation-templates.md).
+> **Язык:** русская версия. Английский оригинал: [en/reference-escalation-templates.md](../en/reference-escalation-templates.md).
 
 # Шаблоны workflow эскалации (BL-123)
 

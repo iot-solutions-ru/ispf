@@ -1,80 +1,64 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/solution-developer-public-api.md](../en/solution-developer-public-api.md).
+> **Язык:** русская версия. Английский оригинал: [en/solution-developer-public-api.md](../en/solution-developer-public-api.md).
 
-﻿# Публичный API для решений разработчиков
+# Публичный контракт разработчика решений (`bundle.json` и API)
 
-> **Статус:** Stable — Граница platform ↔ bundle. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — стабильная граница совместимости между ядром платформы ISPF и прикладными пакетами. Метки зрелости: [doc-status.md](doc-status.md).
 
-Стабильная граница между **платформой** (ядро ISPF) и **решением** (ваш пакет). Подробный рабочий процесс — [solution-developer-guide](solution-developer-guide.md). Архитектурные границы — [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md).
+Этот документ фиксирует, какие API и секции манифеста `bundle.json` являются поддерживаемым контрактом для прикладных решений, а какие внутренние механизмы сервера трогать нельзя. Пошаговая инструкция по сборке проекта — в [Руководстве разработчика решений](solution-developer-guide.md); обоснование границы — в [ADR-0001](decisions/0001-app-platform-boundary.md).
 
 ---
 
-## Разрешено (стабильный контракт)
+## Поддерживаемые интерфейсы (разрешённый контракт)
 
-| Область | API / ссылки | Примечание |
-|---------|----------------|------------|
-| Регистрация app | `POST /api/v1/applications` | `appId`, `schemaName`, `tablePrefix` |
-| SQL schema app | `POST .../data/migrate`, `.../data/seed` | Не Flyway platform |
-| Bundle deploy | `POST .../deploy`, `POST /api/v1/platform/packages/import` | Один manifest JSON |
-| Script functions | `POST .../functions/deploy`, tree path `{appId}.functions.*` | JSON script steps |
-| Invoke | `POST .../functions/invoke`, `POST /api/v1/bff/invoke` | Operator wire profile |
-| Object tree | `GET/POST/PATCH /api/v1/objects/**` | CRUD, variables, functions |
-| Models | `POST /api/v1/blueprints`, apply to device | Blueprint |
-| Панели мониторинга/рабочие процессы | Дерево объектов + REST | Макет JSON, BPMN XML |
-| Автоматизация | Правила оповещения, корреляторы в деревне | CEL, шаблоны корреляторов |
-| Operator UI | `operatorUi` / `dashboards[]` в bundle | `GET .../operator-ui` |
-| Hosted SPA | `artifactKind: ui-pack`, `operatorUi.spaNav` / `uiPack` | Vite `base: '/apps/<appId>/'`; [external-ide](external-ide.md) |
-| Reports | Tree-first `root.platform.reports.*` | SQL + optional YARG |
-| Вебсокет | `/ws/objects` — `subscribe`, `subscribe_events` | Параметр запроса токена; см. [messaging](messaging.md) |
-| Event catalog | `events[]` в bundle, `GET .../events` | Роли для WS subscribe (FW-31) |
-| Bundle dependencies | `requires[]` в bundle | minVersion другого appId (FW-12) |
-| Drivers | SPI `DeviceDriver` в отдельном JAR | [drivers](drivers.md) |
-| Инструменты искусственного интеллекта (администратор платформы) | `POST /api/v1/ai/tools/*`, Студия | [ai-development](ai-development.md) — не меняет контракт на стабильный пакет |
+| Область | API / секция манифеста | Примечание |
+|---------|------------------------|------------|
+| Регистрация приложения | `POST /api/v1/applications` | Задаёт `appId`, изолированную схему `schemaName` и `tablePrefix` |
+| SQL-схема приложения | `POST .../data/migrate`, `.../data/seed` | Миграции таблиц приложения (отдельно от системного Flyway) |
+| Пакетный деплой | `POST /api/v1/applications/{id}/deploy`, `POST /api/v1/platform/packages/import` | Единый JSON-манифест `bundle.json` |
+| Серверные функции | `POST .../functions/deploy`, секция `functions[]` | JSON-скрипты (`selectMany`, `exec`, `return`) на узлах логики |
+| Вызов функций из UI | `POST /api/v1/bff/invoke`, `POST .../functions/invoke` | Стандартный профиль обмена `ispf-operator-v1` |
+| Дерево объектов | `GET / POST / PATCH /api/v1/objects/**` | Узлы, переменные, события, функции |
+| Шаблоны объектов | `/api/v1/singleton-blueprints`, `/api/v1/instance-types`, `/api/v1/mixin-blueprints` | Модели `SINGLETON`, `INSTANCE`, `MIXIN` |
+| Дашборды и процессы | Секции `dashboards[]`, `workflows[]`, узлы дерева | Макеты сетки `84×8` и поддерживаемое подмножество BPMN XML |
+| Автоматизация | Секции `alertRules[]`, `correlators[]`, узлы дерева | Условия на языке CEL и шаблоны корреляции событий |
+| Меню оператора | Секция `operatorUi` в `bundle.json`, `/api/v1/operator-apps/**` | Вкладки экранов и стартовый дашборд |
+| Внешний React UI | Пакет `ui-pack`, поля `operatorUi.spaNav` и `uiPack` | Статика на `/apps/<appId>/` ([Разработка своего React-интерфейса](external-ide.md)) |
+| Отчёты | Узлы `root.platform.reports.*`, секция `reports[]` | Запросы `SELECT` + опциональные шаблоны XLSX/DOCX/HTML |
+| Подписка в реальном времени | WebSocket `WS /ws/objects` (`subscribe`, `subscribe_events`) | Живые значения переменных и поток событий ([Шины сообщений](messaging.md)) |
+| Зависимости между пакетами | Секция `requires[]` в `bundle.json` | Проверка минимальной версии другого приложения (`appId`, `minVersion`) |
+| Драйверы протоколов | SPI `DeviceDriver` в отдельном пакете драйвера | Подключается из каталога драйверов ([SDK драйверов](driver-ddk.md)) |
 
-## Запрещено
+---
 
-| Действие | Почему |
-|----------|--------|
-| Java в `packages/ispf-server/` | [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md) |
-| Отраслевой React в `apps/web-console/` | Hosted ui-pack ([external-ide](external-ide.md), [0054](decisions/0054-hosted-ui-packs.md)) |
-| Таблицы приложений Flyway на платформе | Схема приложения только через API миграции |
-| Отраслевые BFF routes | Только `/api/v1/bff/invoke` |
-| Сервер платформы Fork для одного клиента | Пакетное развертывание + настройка |
+## Что запрещено делать в прикладных проектах
 
-## Манифест пакета (semver)
+| Запрещённое действие | Почему это ломает сопровождение | Как правильно |
+|----------------------|---------------------------------|---------------|
+| Добавлять отраслевой Java-код в `packages/ispf-server/` | Превращает сервер в необновляемый форк ([ADR-0001](decisions/0001-app-platform-boundary.md)) | Функции `script` на узлах логики + `bundle.json` |
+| Добавлять отраслевые страницы в `apps/web-console/` | Смешивает консоль администрирования с конкретным внедрением | Отдельное приложение Vite/React в формате `ui-pack` |
+| Класть таблицы проекта в системные миграции Flyway | Нарушает изоляцию схем и обновление платформы | Секция `migrations[]` в собственной схеме `schemaName` |
+| Создавать кастомные REST-маршруты `/api/v1/<app>/...` | Обходит единую проверку прав и аудит | Вызов функций через `POST /api/v1/bff/invoke` |
+| Размещать логику приложения на узлах `DEVICE` | Вывод датчика в ремонт ломает расчёты и функции (`LOGIC_HOST_DEVICE`) | Узлы `SINGLETON` или `INSTANCE` |
 
-Поле `version` в манифесте — **semver** (`MAJOR.MINOR.PATCH`). Сравнение при `requires[].minVersion` и `license.minPlatformVersion` — числовой семвер (платформа `GET /api/v1/info`).
+---
 
-| Изменение | Уровень | Пример |
-|-----------|---------|--------|
-| Удаление/переименование function, event, object | **MAJOR** | удалён `mes_listOrders` |
-| Изменение схемы ввода/вывода относительной функции | **ГЛАВНЫЙ** | новое обязательное поле ввода |
-| Добавление optional events, objects, dashboards | **MINOR** | новый `events[]` id |
-| Описания исправлений, начальные данные, неразрывный скрипт | **ИСПРАВЛЕНИЕ** | текстовый операторUi |
+## Правила версионирования пакета (`SemVer`)
 
-| Поле | Стабильность |
-|------|--------------|
-| `version` | Semver bundle; история deploy |
-| `schemaName`, `migrations`, `functions` | Stable |
-| `objects`, `dashboards`, `workflows`, `models` | Stable (Phase 5 tree-first) |
-| `alertRules`, `correlators`, `operatorUi` | Stable |
-| `events[]` | Stable — id, roles, optional payloadSchema |
-| `requires[]` | Stable — appId, minVersion |
-| `license` | Необязательный; коммерческое — [commercial-licensing](commercial-licensing.md) |
+Поле `version` в `bundle.json` задаётся в строгом формате **`MAJOR.MINOR.PATCH`** (например, `1.2.0`):
 
-## Версия платформы
+| Характер изменений в пакете | Какой разряд увеличивать | Пример |
+|-----------------------------|--------------------------|--------|
+| Удаление или переименование функции, события, узла; несовместимое изменение входной/выходной схемы | **`MAJOR`** (`1.x.x → 2.0.0`) | Удалена функция `mes_listOrders` или добавлено обязательное входное поле |
+| Добавление новых объектов, экранов, необязательных полей или событий с сохранением совместимости | **`MINOR`** (`1.1.0 → 1.2.0`) | Добавлен новый отчёт или дашборд |
+| Исправление текстов, вёрстки макета или внутренней логики скрипта без смены контракта | **`PATCH`** (`1.2.0 → 1.2.1`) | Поправлена подпись на экране или условие фильтра |
 
-- `GET /api/v1/info` → `version` — для `minPlatformVersion` в license.
-- Совместимость: platform ≥ `minPlatformVersion` в commercial license.
+Для коммерческих пакетов необязательная секция `license` позволяет указать минимальную версию платформы `minPlatformVersion` (сверяется с `GET /api/v1/info`) и цифровую подпись RSA — см. [Коммерческое лицензирование](commercial-licensing.md) и [ADR-0003](decisions/0003-commercial-bundle-licensing.md).
 
-## Коммерческий пакет
+---
 
-Секция `license` в манифесте — см. [0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md). Эталонные пакеты Apache (`warehouse`, `lab-training`, `mes-reference`) — без `license`.
+## Связанные разделы
 
-## Связанные документы
-
-- [applications](applications.md) — полный API развертывания.
-- [messaging](messaging.md) — асинхронность и синхронизация, субъекты NATS, события WS
-- [ai-development](ai-development.md) — уровень AI (FW-40…43), инструменты администратора.
-- [external-ide](external-ide.md) — Cursor / hosted SPA / ui-pack
-- [api](api.md) — справочник REST
-- [plugins](plugins.md) — границы `main`
+- [Руководство разработчика решений](solution-developer-guide.md) — полный цикл разработки и сборки через `ispf-cli`
+- [API приложений](applications.md) — детальное описание всех REST-методов деплоя и BFF
+- [Разработка своего React-интерфейса](external-ide.md) — создание и упаковка `ui-pack`
+- [Модули и плагины](plugins.md) — границы между ядром, драйверами и пакетами решений

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0028-horizontal-active-active-cluster.md](../../en/decisions/0028-horizontal-active-active-cluster.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0028-horizontal-active-active-cluster.md](../../en/decisions/0028-horizontal-active-active-cluster.md).
 
 # ADR-0028: Горизонтальный active-active кластер
 

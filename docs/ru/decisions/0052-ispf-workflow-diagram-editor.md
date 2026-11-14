@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/decisions/0052-ispf-workflow-diagram-editor.md](../../en/decisions/0052-ispf-workflow-diagram-editor.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0052-ispf-workflow-diagram-editor.md](../../en/decisions/0052-ispf-workflow-diagram-editor.md).
 
 # ADR-0052: ISPF Workflow Diagram Editor (без bpmn.io)
 

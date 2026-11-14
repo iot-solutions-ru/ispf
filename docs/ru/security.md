@@ -1,38 +1,34 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/security.md](../en/security.md).
+> **Язык:** русская версия. Английский оригинал: [en/security.md](../en/security.md).
 
-﻿# Безопасность и RBAC
+# Безопасность, аутентификация и разграничение прав (RBAC и ACL)
 
-> **Статус:** Stable — RBAC, MFA. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — вход в систему, OAuth2/Keycloak, двухфакторная проверка TOTP, ролевой и пообъектный доступ. Метки зрелости: [doc-status.md](doc-status.md).
 
-Граница продуктовых заявлений (слои, жёсткие правила, честность): [0066-security-model](decisions/0066-security-model.md). Ротация secrets: [0065](decisions/0065-secrets-key-rotation.md). MFA follow-up: [0056](decisions/0056-webauthn-idp-mfa.md).
+Связанные архитектурные документы: [Модель безопасности (ADR-0066)](decisions/0066-security-model.md) · [Шифрование и ротация ключей секретов (ADR-0065)](decisions/0065-secrets-key-rotation.md) · [Дальнейшее развитие MFA (ADR-0056)](decisions/0056-webauthn-idp-mfa.md).
 
-## Модель
+---
 
-![Ветка Security в дереве объектов](../assets/ispf-security.png)
+## Базовые роли пользователей
 
-ISPF использует **ролевой доступ** на уровне HTTP API:
+![Раздел пользователей и ролей в дереве объектов](../assets/ispf-security.png)
 
-| Роль | Весенняя власть |
-|------|------------------|
-| `admin` | `ROLE_admin` |
-| `developer` | `ROLE_developer` |
-| `operator` | `ROLE_operator` |
+На уровне HTTP API и веб-консоли действуют три стандартные системные роли (плюс произвольные прикладные роли для переменных и функций):
 
-Пообъектный ACL — см. [security](security.md) (`object_acl_entries`, вкладка «Доступ» в веб-консоли).
+| Роль | Внутреннее имя Spring Security | Полномочия |
+|------|--------------------------------|------------|
+| **`admin`** | `ROLE_admin` | Полный доступ: настройка сервера, управление пользователями и правами, резервное копирование, кластер, федерация, деплой решений |
+| **`developer`** | `ROLE_developer` | Разработка и отладка решений: дерево объектов, шаблоны, функции, деплой `bundle.json`, расписания, тревоги и ИИ-студия (без доступа к системным настройкам безопасности и кластера) |
+| **`operator`** | `ROLE_operator` | Работа на смене: просмотр экранов и историй, вызов разрешённых функций, запись уставок (`writable`), работа с очередью задач BPMN |
 
-## Профили аутентификации
+---
 
-### местный
+## Режимы аутентификации (по профилям запуска)
 
-Файл: `application-local.yml`
+### 1. Локальный профиль (`local`, `application-local.yml`)
 
-- OAuth отключен (фиктивный эмитент)
-- RBAC включён; аутентификация по **Bearer-токену** после `POST /api/v1/auth/login`
-- `ispf.security.token-auth-enabled: true`
-- `ispf.security.local-default-role:` пусто — без токена доступ запрещён
-- `LocalBearerTokenFilter` + опциональный резервный вариант `X-ISPF-Role` (только dev, **выключен по умолчанию** — `ispf.security.local-role-header-enabled`)
-
-Учётные записи по умолчанию (если БД пуста): `admin/admin`, `developer/developer`, `operator/operator`.
+- Аутентификация выполняется по **токену Bearer**, выдаваемому методом `POST /api/v1/auth/login`.
+- Без токена доступ к защищённым маршрутам закрыт (`ispf.security.local-default-role` пуст; отладочный заголовок `X-ISPF-Role` по умолчанию выключен).
+- На чистой базе автоматически создаются тестовые учётные записи: `admin / admin`, `developer / developer`, `operator / operator`.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/login \
@@ -42,171 +38,92 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/objects
 ```
 
-Веб-консоль: экран входа; сессия хранится в `sessionStorage` (одноразовая миграция из устаревшего `localStorage`). В профиле `dev`/prod — **Код авторизации OIDC + PKCE** через Keycloak (кнопка «Войти через Keycloak»). Конфигурация: `GET /api/v1/auth/config`. Админ руководят пользователями в дереве `root.platform.security.users`.
+У любой учётной записи можно включить **автозапуск рабочего места оператора** (`autoStartEnabled = true`, `autoStartApp = "<appId>"`): тогда сразу после входа откроется нужный пульт оператора вместо консоли администратора.
 
-**Автозапуск приложения:** у пользователя можно включить `autoStartEnabled` и указать `autoStartApp` (id оператора приложения, список — `GET /api/v1/operator-apps`). После входа в веб-консоль открывается оператор-приложение вместо админ-консоли.
+### 2. Промышленный профиль и разработка с единым входом (`default` / `dev`)
 
-### Управление пользователями (admin)
+- Сервер работает как OAuth2 Resource Server и проверяет JWT-токены от **Keycloak** (или совместимого провайдера OIDC).
+- В веб-консоли вход выполняется по протоколу **OIDC Authorization Code + PKCE** (кнопка **Войти через Keycloak**, клиент `ispf-web-console`; режим определяется через `GET /api/v1/auth/config`).
+- Роли извлекаются из поля `realm_access.roles` токена JWT (`admin`, `developer`, `operator` и пользовательские роли).
+- При локальном запуске `docker compose up -d` пространство (`realm`) **`ispf`** автоматически импортируется из `deploy/keycloak/ispf-realm.json` на порту `8180`.
 
-| Конечная точка | Описание |
-|----------|----------|
+### 3. Тестовый профиль (`test`)
+
+Используется только при прогоне изолированных автотестов в памяти.
+
+---
+
+## Управление локальными учётными записями (`admin`)
+
+| Метод и путь | Назначение |
+|--------------|------------|
 | `GET /api/v1/security/users` | Список пользователей |
 | `POST /api/v1/security/users` | Создать пользователя |
-| `PUT /api/v1/security/users/{username}` | Обновить (роли, включено, displayName, **autoStartEnabled**, **autoStartApp**) |
-| `DELETE /api/v1/security/users/{username}` | Удалить |
+| `PUT /api/v1/security/users/{username}` | Изменить роли, имя, статус `enabled`, настройки `autoStartEnabled` / `autoStartApp` |
+| `DELETE /api/v1/security/users/{username}` | Удалить пользователя |
 | `POST /api/v1/security/users/{username}/password` | Сменить пароль |
-| `POST /api/v1/auth/logout` | Завершить сессию |
-| `GET /api/v1/auth/me` | Текущий пользователь (с токеном) |
-| `GET /api/v1/auth/config` | Режим auth (`local` / `oidc`) для Web Console |
+| `GET /api/v1/auth/me` | Проверить текущего пользователя и его роли |
+| `POST /api/v1/auth/logout` | Завершить текущую сессию |
 
-Пользователи и ролики синхронизируются в дереве объектов (см. [object-model](object-model.md)).
+Все учётные записи и роли автоматически отображаются в дереве объектов по пути `root.platform.security.users.*` и `root.platform.security.roles.*`.
 
-### dev/default (как в рабочей среде)
+---
 
-- Сервер ресурсов OAuth2, JWT от Keycloak
-- Issuer: `http://localhost:8180/realms/ispf`
-- Роли из JWT: `realm_access.roles` → `ROLE_admin`, `ROLE_operator`
+## Сводная таблица прав по группам API (`IspfAuthorizationRules`)
 
-### тест
+| Маршрут | `admin` | `developer` | `operator` | Без входа |
+|---------|:-------:|:-----------:|:----------:|:---------:|
+| `GET /api/v1/info`, `POST /api/v1/auth/login`, `GET /actuator/health` | ✓ | ✓ | ✓ | ✓ |
+| `GET /api/v1/**` (чтение с учётом ACL узлов и переменных) | ✓ | ✓ | ✓ | — |
+| `POST .../functions/invoke`, `POST /api/v1/bff/**` | ✓ | ✓ | ✓ | — |
+| `GET/POST /api/v1/work-queue/**`, отмена экземпляра BPMN | ✓ | ✓ | ✓ | — |
+| `POST /api/v1/events/fire` | ✓ | ✓ | ✓ | — |
+| Конфигурация объектов, шаблонов, тревог, расписаний, деплой приложений, ИИ-студия | ✓ | ✓ | — | — |
+| Настройка прав (`.../acl`), пользователей (`/security/**`), бэкапов, метрик, федерации и тенантов | ✓ | — | — | — |
 
-- RBAC отключён (`rbac-enabled: false`)
-- Все конечные точки доступны без авторизации.
+---
 
-## Матрица доступа
+## Пообъектные права (ACL) и права на отдельные переменные
 
-Правила: `IspfAuthorizationRules.java`.
+### 1. Списки доступа на узлах дерева (`ACL`)
 
-| Конечная точка | админ | разработчик | оператор | общественный |
-|----------|:-----:|:---------:|:--------:|:------:|
-| `GET /api/v1/info` | ✓ | ✓ | ✓ | ✓ |
-| `POST /api/v1/auth/login` | | | | ✓ |
-| `POST /api/v1/auth/logout` | | | | ✓ |
-| `GET /api/v1/auth/me` | ✓ | ✓ | ✓ | ✓ |
-| `GET /actuator/health` | ✓ | ✓ | ✓ | ✓ |
-| `WS /ws/**` | ✓ | ✓ | ✓ | ✓ |
-| `GET /api/v1/**` | ✓ | ✓ | ✓ | |
-| `POST /api/v1/events/journal/purge` | ✓ | | | |
-| `POST /api/v1/events/**` | ✓ | ✓ | ✓ | |
-| `POST .../functions/invoke` | ✓ | ✓ | ✓ | |
-| `POST /api/v1/bff/**` | ✓ | ✓ | ✓ | |
-| `POST /api/v1/workflows/instances/*/cancel` | ✓ | ✓ | ✓ | |
-| `GET/POST /api/v1/work-queue/**` | ✓ | ✓ | ✓ | |
-| `POST/PUT/PATCH/DELETE` конфигурация решений (`/objects`, `/applications`, data-sources, …) | ✓ | ✓ | | |
-| `PUT /api/v1/objects/by-path/acl` | ✓ | | | |
-| `/api/v1/platform/backup/**` | ✓ | | | |
-| `/api/v1/platform/metrics`, `/runtime-settings`, `/update/**`, … | ✓ | | | |
-| `/api/v1/security/**`, `/federation/**`, `/tenants/**` | ✓ | | | |
-| `/api/v1/ai/**` (кроме `GET /ai/provider`) | ✓ | ✓ | | |
-| `/api/v1/applications/**` deploy | ✓ | ✓ | | |
-| `/api/v1/schedules/**` | ✓ | ✓ | | |
-| `/api/v1/alert-rules/**`, `/correlators/**` | ✓ | ✓ | | |
-| `/api/v1/blueprints/**` (write) | ✓ | ✓ | | |
+На вкладке **Доступ** в инспекторе любого узла (или через `GET / PUT /api/v1/objects/by-path/acl?path=...`) администратор может задать правила доступа для конкретных ролей (`ROLE`) или пользователей (`USER`):
+- разрешения: `READ` (чтение), `WRITE` (изменение), `INVOKE` (вызов функций);
+- если на узле и его родительских папках нет отдельных записей ACL, действует базовая ролевая модель; роль `admin` всегда сохраняет полный доступ.
 
-**оператор** может: читать объекты/дашборды/рабочие процессы, переменные функции (кроме только для скриптов вроде `executeQuery`), рабочую очередь, запускать события, записывать значения записываемых-переменных.
+### 2. Разграничение на уровне переменных и функций
 
-**разработчик** может: всё для конфигурации решений (объекты, приложения, инструменты платформы SQL, `executeQuery`, **AI Studio**), но **нет** системные настройки, безопасность, федерация, тенанты, лицензия/кластер.
+- На отдельных переменных можно задать списки ролей **`readRoles`** и **`writeRoles`**, а на функциях и событиях — **`invokeRoles`**.
+- Все пользовательские обращения — прямое чтение/запись и история, запросы Object Query, формулы, вызовы функций из браузера и ИИ-агента, рассылка по WebSocket и прокси-запросы федерации от имени пользователя — проверяют эти списки прав и скрывают недоступные поля.
+- Внутренние фоновые планировщики и движок пересчёта правил работают в системном контексте (`SYSTEM`). При федерации между серверами полномочия делегированного запроса ограничиваются пересечением прав сервисного канала и ролей конечного пользователя (`FederationOnBehalfOfFilter`), исключая повышение привилегий.
 
-**admin** может: всё выше + платформенное администрирование.
+---
 
-Резервное копирование платформы остаётся доступным только администратору. Экспорт создаёт привилегированный снимок в стиле SYSTEM, а не отфильтрованную в режиме MEMBER полную выгрузку, доступную операторам.
+## Двухфакторная аутентификация (MFA TOTP)
 
-## Keycloak (разработчик)
+| Параметр конфигурации | Переменная окружения | По умолчанию | Назначение |
+|-----------------------|----------------------|--------------|------------|
+| `ispf.security.mfa.enabled` | `ISPF_MFA_ENABLED` | `false` | Включить привязку и проверку одноразовых кодов TOTP |
+| `ispf.security.mfa.required-for-admin` | `ISPF_MFA_REQUIRED_FOR_ADMIN` | `false` | Обязательный второй фактор для всех пользователей с ролью `admin` |
+| `ispf.security.mfa.time-window-steps` | — | `1` (±30 с) | Допустимое расхождение часов для 6-значного кода |
 
-Docker Compose поднимает Keycloak на порт **8180**.
+Методы настройки второго фактора для вошедшего пользователя:
+- `GET /api/v1/security/mfa/status` — проверить статус привязки;
+- `POST /api/v1/security/mfa/enroll` — сгенерировать секрет и `otpauth://` ссылку (QR-код для приложения-аутентификатора);
+- `POST /api/v1/security/mfa/verify` — подтвердить привязку 6-значным кодом;
+- `DELETE /api/v1/security/mfa/enroll` — отменить незавершённую привязку.
 
-Настройка realm `ispf`:
+При входе через `POST /api/v1/auth/login` одноразовый код передаётся в поле `totpCode`.
 
-1. Консоль администратора: http://localhost:8180 — пользователь `admin` / `admin`
-2. Создайте область **ispf**.
-3. Создайте клиент (публичный или конфиденциальный) для веб/API.
-4. Роли в королевстве: `admin`, `operator`
-5. Назначить ролики пользователей
-6. Запуск сервера: `--spring.profiles.active=dev`
+---
 
-Веб-консоль (профиль `dev`): кнопка **Войти через Keycloak** (OIDC PKCE, клиент `ispf-web-console`). Царство импортируется с `deploy/keycloak/ispf-realm.json` по `docker compose up`.
+## Шифрование учётных данных и ключевые настройки безопасности
 
-### ACL для каждого объекта
+Секреты подключений (хранилище учётных данных и токены федерации) никогда не хранятся в переменных дерева объектов — они шифруются в БД алгоритмом AES-GCM в версионированном конверте `ispf1.<keyId>.…` ([ADR-0065](decisions/0065-secrets-key-rotation.md)):
 
-| Конечная точка | Описание |
-|----------|----------|
-| `GET /api/v1/objects/by-path/acl?path=` | Список правил ACL объекта |
-| `PUT /api/v1/objects/by-path/acl?path=` | Заменить правила ACL |
-
-Правила: `principalType` (`ROLE`/`USER`), `principalId`, `permission` (`READ`/`WRITE`/`INVOKE`). Если на объекте или предке нет правил — используйте глобальный RBAC. `admin` всегда имеет полный доступ.
-
-Веб-консоль: вкладка **Доступ** в инспекторе объекта (admin).
-
-## Переменные
-
-| Переменная | Описание |
-|------------|----------|
-| `ISPF_OAUTH_ISSUER` | JWT issuer URI |
-| `ispf.security.rbac-enabled` | Вкл/выкл RBAC |
-| `ispf.security.token-auth-enabled` | Bearer-сессии (local) |
-| `ispf.security.local-default-role` | Роль по умолчанию без токена (local, dev only) |
-| `ispf.security.trusted-proxy-ips` | IP reverse-proxy, чей `X-Forwarded-For` доверен для rate-limiting логина; пусто = заголовок игнорируется |
-| `ispf.security.secrets-key` | Master-ключ AES-GCM для vault + federation (`ISPF_SECURITY_SECRETS_KEY`) |
-| `ispf.security.secrets-previous-key` | Предыдущий ключ только для decrypt при ротации (`ISPF_SECURITY_SECRETS_PREVIOUS_KEY`); см. [ADR-0065](decisions/0065-secrets-key-rotation.md) |
-| `ispf.security.mfa.enabled` | Включить TOTP enrollment API (`/api/v1/security/mfa/**`) |
-
-## MFA (TOTP)
-
-| Свойство | Env | По умолчанию |
-|----------|-----|--------------|
-| `ispf.security.mfa.enabled` | `ISPF_MFA_ENABLED` | `false` |
-| `ispf.security.mfa.required-for-admin` | `ISPF_MFA_REQUIRED_FOR_ADMIN` | `false` |
-| `ispf.security.mfa.time-window-steps` | — | `1` (±30 с) |
-
-Когда MFA включён, аутентифицированные пользователи могут:
-
-| Конечная точка | Описание |
-|----------------|----------|
-| `GET /api/v1/security/mfa/status` | Статус; для pending также `pendingSecret` / `pendingOtpauthUri` (возобновление QR) |
-| `POST /api/v1/security/mfa/enroll` | Начать TOTP enrollment (secret + `otpauth://` URI) |
-| `POST /api/v1/security/mfa/verify` | Подтвердить 6-значный TOTP (`TotpUtil`) |
-| `DELETE /api/v1/security/mfa/enroll` | Отменить pending enrollment |
-
-Локальный логин принимает опциональный `totpCode` в `POST /api/v1/auth/login`. При `required-for-admin=true` для роли admin нужен enrolled secret и валидный код.
-
-**REAL сейчас (BL-153 Готово — TOTP GA):** персистентные enrollments (`mfa_enrollments`), проверка TOTP, enforcement для admin, UI enrollment + поле TOTP на логине.  
-**Follow-up (BL-194 Планируется):** WebAuthn / passkeys; Keycloak OTP как основной IdP MFA — ADR [0056](../en/decisions/0056-webauthn-idp-mfa.md). Подготовка pen-test (G-01): [pen-test-scope.md](pen-test-scope.md) · [pen-test-prep.md](pen-test-prep.md) · RoE EN [pen-test-roe.md](../en/pen-test-roe.md).
-
-## ACL для каждой переменной
-
-На переменных можно задать `readRoles` / `writeRoles` (JSON-массив имён ролей). Пустой список = наследование объекта ACL.
-
-Интерактивные пути доступа к переменным выполняются в режиме `VariableAclRequestContext.MEMBER` и проверяют `readRoles` / `writeRoles` через `VariableMemberAccessService`. Это относится к прямому чтению, записи, истории и экспорту, сканированию Object Query и historian-колонкам, вызову функций по HTTP и через AI-агента, интерактивным binding-запросам и вычислению выражений, семантическому export/query Haystack/Brick, запросам, экспорту и выражениям аналитики, инструментам истории и аналитики AI-агента, доставке по WebSocket, редактору объектов и федеративным прокси-запросам от имени пользователя. Object Query пропускает запрещённые колонки переменных и строки их развёртки, не возвращая закрытые live- или historian-значения. У событий и функций опционально задаётся `invokeRoles` (пусто = только object INVOKE); в веб-консоли доступны редакторы ACL переменной и `invokeRoles` (**BL-154 Готово**).
-
-Для федеративных HTTP-пиров аутентификация канала использует `authToken` пира (статический Bearer или Bearer сервисной учётной записи), а при отсутствии токена пира — перенаправленный Bearer вызывающего пользователя. Хаб также передаёт `X-ISPF-On-Behalf-Of-User`, `X-ISPF-On-Behalf-Of-Roles` со списком ролей через запятую и `X-ISPF-On-Behalf-Of-Tenant`. На пире `FederationOnBehalfOfFilter` устанавливает делегированный principal только с пересечением ролей аутентифицированного канала и ролей, заявленных в on-behalf-of заголовке, после чего применяется режим `MEMBER`. Поэтому учётная запись канала задаёт верхнюю границу полномочий, а не передаёт конечному пользователю свои привилегии. Для прокси-запросов через туннель сохраняется установка principal доверенного канала, так как канал WebSocket уже аутентифицирован.
-
-Фоновые планировщики, вычисления binding engine и материализаторы остаются в режиме `SYSTEM`: ACL конечного пользователя к ним не применяется. Проверки состояния федеративных пиров аутентифицируют только канал и не передают on-behalf-of identity; они не могут возвращать значения переменных или историю.
-
-## Изоляция multi-tenancy
-
-Канон: [multi-tenant](../en/multi-tenant.md). Tender: [compliance-tender-pack G-03](../en/compliance-tender-pack.md).
-
-| Слой | Статус |
-| ---- | ------ |
-| Logical SaaS A≠B (path + API + `tenant-admin`) | **Done** |
-| OIDC `tenant_id` + hard mode schema provision/drop | **Done** |
-| PostgreSQL RLS на shared tables (`ispf.tenant.db-row-isolation`) | **Done** (на H2 no-op) |
-| Physical per-tenant table routing | **Опционально / не заявляется** |
-
-Не заявлять H2 row isolation и physical schema isolation для shared tables.
-
-## Рекомендации для производства
-
-- Предпочтительно `--spring.profiles.active=prod` (см. `application-prod.yml`) или переменные окружения ниже
-- Не выставлять профиль `local` на internet-facing хостах
-- Keycloak или другой IdP с самым коротким TTL JWT
-- TLS на входе
-- Ограничить `permitAll` endpoints
-- Секреты через хранилище, не в конфиге
-- `ISPF_LICENSE_ENFORCE=true` и `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true`
-- `ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS` — origin(ы) консоли (по умолчанию localhost; в `local`/`test` остаётся `*`)
-- `ispf.security.local-role-header-enabled=false`
-- Federation outbound login: `ISPF_FEDERATION_BLOCK_LOOPBACK=true` (prod) и опционально `ISPF_FEDERATION_OUTBOUND_URL_ALLOWLIST`
-
-Учётные записи по умолчанию (`admin`/`admin` и т.п.) допустимы только в **local / test / lab** — это не дефект.
-
-`StartupSecurityGuard` пишет предупреждения при старте, если вне `local`/`test` ослаблены license enforce, signed bundles, WS origins или RBAC.
+| Параметр / переменная окружения | Назначение |
+|---------------------------------|------------|
+| `ISPF_OAUTH_ISSUER` | Адрес издателя JWT-токенов (Keycloak realm URL) |
+| `ISPF_SECURITY_SECRETS_KEY` (`ispf.security.secrets-key`) | Основной мастер-ключ шифрования хранилища секретов и федерации |
+| `ISPF_SECURITY_SECRETS_PREVIOUS_KEY` (`ispf.security.secrets-previous-key`) | Предыдущий мастер-ключ на время плановой ротации ключей |
+| `ispf.security.trusted-proxy-ips` | Список IP доверенных обратных прокси (nginx), от которых учитывается заголовок `X-Forwarded-For` при защите входа от перебора паролей |

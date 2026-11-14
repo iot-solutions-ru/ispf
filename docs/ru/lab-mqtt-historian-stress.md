@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/lab-mqtt-historian-stress.md](../en/lab-mqtt-historian-stress.md).
+> **Язык:** русская версия. Английский оригинал: [en/lab-mqtt-historian-stress.md](../en/lab-mqtt-historian-stress.md).
 
 # Лаборатория: стресс historian MQTT (Scylla vs ClickHouse)
 

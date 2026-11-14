@@ -2,58 +2,47 @@
 
 # Solution Developer Guide
 
-> **Status:** Stable — Deploy, operator UI, bundles. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — building, packaging, and deploying complete applications on ISPF. Status tags: [doc-status.md](doc-status.md).
 
-How to build an application solution on ISPF **without changing core Java**: application registration, SQL data, JSON functions, bundle deploy, operator UI, and reports.
+This guide walks through building an application on ISPF **without modifying the Java server core**: registering an isolated database schema, creating SQL migrations, writing backend script functions, building operator screens, and packaging everything into a repeatable `bundle.json`.
 
-Product overview: [product](product.md). Full API: [applications](applications.md). **Stable platform ↔ solution boundary:** [solution-developer-public-api](solution-developer-public-api.md).
+Related guides: [How ISPF works](learn.md) · [Application architecture rules](application-principles.md) · [Applications API](applications.md) · [Public bundle contract](solution-developer-public-api.md) · [Custom React UI](external-ide.md).
 
 ---
 
-## Core principle
+## How an ISPF application is put together
 
 ![Deployed applications and marketplace solutions](../assets/ispf-marketplace.png)
 
-**Business logic lives on the platform** — in models, variables, events, functions, and workflows on the **object tree**. Your solution does not add Java to the server: it configures ISPF mechanisms with declarative configuration (blueprints, BPMN, script functions, objects, alert rules). Bundle deploy is how you **deliver** that configuration to the platform. Full P1–P10 principles (for humans and agents): [application-principles](application-principles.md). See also [architecture](architecture.md).
+An application on ISPF combines **isolated SQL tables** for business records (orders, batches, shift logs) with **object tree nodes** for live equipment, calculations, alarms, workflows, and screens:
 
-## What is a "solution" on ISPF
+| Part of your project | Where it lives on the server | Example |
+|----------------------|------------------------------|---------|
+| **Equipment I/O** | `DEVICE` nodes under `root.platform.devices.*` | `root.platform.devices.pump-01` |
+| **Calculations & backend functions** | `SINGLETON` hub or `INSTANCE` twins | `root.platform.singleton-blueprints.terminal-hub` |
+| **Business tables (SQL)** | Isolated PostgreSQL schema (`schemaName`) | `oil_terminal.ot_order` |
+| **Alarms & workflows** | `ALERT` and `WORKFLOW` nodes in the tree | `root.platform.workflows.order-dispatch` |
+| **Operator screens** | `DASHBOARD` / `MIMIC` nodes (or a React `ui-pack`) | `root.platform.dashboards.terminal-overview` |
+| **Operator navigation** | `operator_app_ui` (`root.platform.operator-apps`) | `?mode=operator&app=my-terminal` |
 
-A **solution (application)** is a registered app with an isolated SQL schema, script functions, a bundle (objects, dashboards, BPMN, blueprints), and operator UI. Solution logic **runs** on object tree nodes and through the platform runtime; the `applications` record is a registry and app schema, not a parallel engine.
-
-| Concept | Where it lives | Example |
-|---------|----------------|---------|
-| **Business logic** | Object tree mechanisms | blueprint, variable + CEL, `WORKFLOW`, `ALERT`, script function |
-| **Platform object** | Object tree | `root.platform.devices.pump-01` |
-| **Application** | Registry + schema `app_myapp` | `my-terminal` |
-| **Operator app** | `operator_app_ui` + `operator-apps` tree | `platform`, `oil-terminal` |
-
-**Tree-first convergence (Phase 5.5):** after `POST .../deploy`, functions are addressed as `{appId}.functions.{name}` on the object path; SQL bindings may live as `bindingExpression: sqlBinding('appId','var')` on a variable; `objects[]` in the bundle updates existing nodes (reconcile), not only creates new ones.
-
-> **Do not use the application layer as runtime.** The `applications` record is a registry and isolated SQL schema; invoke, workflow, alerts, and dashboards run through the **object tree API**. If a bundle still calls only `/applications/{appId}/functions/invoke` without tree paths — migrate to tree-first (see [applications](applications.md)).
-
-### Legacy bundle migration to tree-first
-
-| Was (legacy) | Now (target approach) |
-|--------------|------------------|
-| Only `POST .../functions/invoke` by appId | `POST /bff/invoke` or `objects/by-path/functions/invoke` on `{appId}.functions.*` |
-| `screens[]` in operator manifest | `operatorUi` + dashboards in `dashboards[]` / tree |
-| `objects[]` only creates new nodes | Reconcile: redeploy updates existing nodes |
-| Imperative Java sync → variables | CEL bindings, `sqlBinding()`, script steps |
+> **Key rule:** The record in `applications` only registers your app's ID and isolated SQL schema. At runtime, function calls, alarms, bindings, and dashboards all execute through the **object tree**. Keep calculations and functions on `SINGLETON` or `INSTANCE` objects — never on `DEVICE` nodes ([Application architecture rules](application-principles.md)).
 
 ---
 
-## Solution lifecycle
+## Step-by-step lifecycle
 
 ```mermaid
 flowchart LR
-    A[1. Register] --> B[2. Migrate SQL]
-    B --> C[3. Deploy functions]
-    C --> D[4. Bundle deploy]
-    D --> E[5. Operator UI]
-    E --> F[6. Operator HMI]
+    A["1. Register app"] --> B["2. Migrate SQL tables"]
+    B --> C["3. Define functions"]
+    C --> D["4. Pack & deploy bundle.json"]
+    D --> E["5. Configure operator menu"]
+    E --> F["6. Open Operator HMI"]
 ```
 
-### Step 1. Registration
+You can either deploy everything at once via a single `bundle.json` (Step 4 — recommended for Git/CI) or test individual pieces step by step via REST.
+
+### Step 1. Register the application
 
 ```http
 POST /api/v1/applications
@@ -68,14 +57,15 @@ Content-Type: application/json
 }
 ```
 
-Or via admin console: select `root.platform.applications` → **+ Deploy application**.
+Or in the Admin Console: select `root.platform.applications` → **+ Deploy application**.
 
-### Step 2. SQL migration
+### Step 2. Apply SQL table migrations
 
-Application SQL is **not** managed by platform Flyway. Migrations deploy to an isolated schema:
+Application tables are stored in `schemaName` (`oil_terminal`), completely isolated from ISPF's own Flyway system tables:
 
 ```http
 POST /api/v1/applications/my-terminal/data/migrate
+Authorization: Bearer <admin-token>
 Content-Type: application/json
 
 {
@@ -89,28 +79,26 @@ Content-Type: application/json
 }
 ```
 
-Repeat call with the same `version` + `id` is idempotent.
-
-Check result:
+Re-running the same `version` + `id` is idempotent (already-applied scripts are skipped). Check migration status at any time:
 
 ```http
 GET /api/v1/applications/my-terminal/data/status
 ```
 
-### Step 3. JSON functions
+### Step 3. Deploy JSON script functions
 
-Functions are JSON **scripts** with steps (`selectOne`, `selectMany`, `exec`, `return`).
-Field names are **`sql`** + **`var`** (not `query` / `into`); every script must end with `return.fields`:
+Backend CRUD and domain operations are written as declarative JSON **script** steps (`selectOne`, `selectMany`, `exec`, `setVar`, `if`, `return`) running in a single database transaction per call. Use field names **`sql`** and **`var`**, and end every script with a **`return`** step:
 
 ```http
 POST /api/v1/applications/my-terminal/functions/deploy
+Authorization: Bearer <admin-token>
 Content-Type: application/json
 
 {
   "functions": [
     {
       "name": "listOrders",
-      "description": "Active orders",
+      "description": "List active terminal orders",
       "script": {
         "steps": [
           {
@@ -131,13 +119,11 @@ Content-Type: application/json
 }
 ```
 
-Invoke from BPMN (service task `INVOKE_FUNCTION`) or via BFF. For listing SQL rows on a dashboard use a **report** widget (`configure_report` + `type: report`), not `object-table` (tree children only).
+> **Tip for dashboards:** To display rows from a SQL table on a built-in dashboard, use a **`report`** widget (`type: "report"`), not `object-table` (`object-table` lists child nodes of an object-tree folder).
 
-### Step 4. Bundle deploy (canonical: JSON)
+### Step 4. Deploy as a single `bundle.json` (recommended)
 
-**Canonical API:** `POST /api/v1/applications/{appId}/deploy` with a **JSON** body (`Content-Type: application/json`). There is no multipart ZIP deploy on the current server. Full field reference: [applications](applications.md#bundle-deploy-req-pf-03).
-
-Minimal example:
+In day-to-day work, you deliver migrations, functions, objects, dashboards, workflows, reports, and operator navigation together via `POST /api/v1/applications/{appId}/deploy` (`Content-Type: application/json`). Re-deploying reconciles existing tree nodes rather than failing on duplicates. Full field specification: [Applications API](applications.md#bundle-deploy-req-pf-03).
 
 ```http
 POST /api/v1/applications/my-terminal/deploy
@@ -175,75 +161,39 @@ Content-Type: application/json
 }
 ```
 
-Dashboard layouts must use the **84×8** grid ([dashboards](dashboards.md)) — never legacy `columns: 12` / `rowHeight: 72`.
+Always author dashboard layouts on the **84×8** grid (`"columns": 84, "rowHeight": 8`) — see [Dashboards](dashboards.md).
 
-### Step 5. Operator interface
+### Step 5. Configure the operator menu
 
-Operator UI defines which dashboards the operator sees and how they are organized.
+`operatorUi` controls which screens appear as tabs for shift operators. You can manage it in three ways:
 
-**Method A — operator apps API (recommended):**
+1. **Inside `bundle.json` (`operatorUi` section above)** — applied automatically on deploy.
+2. **Via REST API:**
+   ```http
+   PUT /api/v1/operator-apps/my-terminal/ui
+   Content-Type: application/json
 
-```http
-PUT /api/v1/operator-apps/my-terminal/ui
-Content-Type: application/json
+   {
+     "title": "Oil Terminal",
+     "dashboards": [
+       { "dashboardPath": "root.platform.dashboards.terminal-overview", "label": "Overview" },
+       { "dashboardPath": "root.platform.dashboards.terminal-queue", "label": "Queue" }
+     ],
+     "defaultDashboardPath": "root.platform.dashboards.terminal-overview"
+   }
+   ```
+3. **In the Admin Console:** `root.platform.operator-apps` → **+ Operator app**.
 
-{
-  "title": "Oil Terminal",
-  "dashboards": [
-    {
-      "dashboardPath": "root.platform.dashboards.terminal-overview",
-      "label": "Overview"
-    },
-    {
-      "dashboardPath": "root.platform.dashboards.terminal-queue",
-      "label": "Queue"
-    }
-  ],
-  "defaultDashboardPath": "root.platform.dashboards.terminal-overview"
-}
-```
+### Step 6. Open Operator HMI
 
-**Method B — admin console:**
-
-1. `root.platform.operator-apps` → **+ Operator app**
-2. Open the created node → Operator Apps panel.
-3. Configure title, dashboard list, default dashboard.
-
-**Method C — in bundle** (`operatorUi` in manifest) — applied on deploy.
-
-### Step 6. Verification
-
-```
-http://localhost:5173?mode=operator&app=my-terminal
-```
+- All-in-one JAR / Docker: `http://localhost:8080?mode=operator&app=my-terminal`
+- Vite dev server: `http://localhost:5173?mode=operator&app=my-terminal`
 
 ---
 
-## Dashboards for solutions
+## Calling functions from screens (`POST /api/v1/bff/invoke`)
 
-Dashboards are platform **objects** of type `DASHBOARD`. Create them in admin console:
-
-1. `root.platform.dashboards` → **+ Object**
-2. Double-click → Dashboard Builder
-3. Add widgets, bind to objects (`objectPath`) or tables (`selectionKey`)
-4. Reference dashboard path in operator UI.
-
-Widgets for application screens:
-
-| Widget | Use |
-|--------|-----|
-| `object-table` | Order/device list with row selection |
-| `function-button` | Invoke platform or app function |
-| `dashboard-link` | Navigation between screens |
-| `card-grid` | KPI cards |
-
-See [dashboards](dashboards.md).
-
----
-
-## BFF (backend for frontend)
-
-For complex screens (paginated tables, forms) use BFF. **Canonical body** (tree-first):
+Both built-in form/button widgets and custom React UI packs call backend functions through the BFF endpoint:
 
 ```http
 POST /api/v1/bff/invoke
@@ -261,25 +211,21 @@ Content-Type: application/json
 }
 ```
 
-After deploy, functions are also addressable on the tree as `{appId}.functions.{name}`. Details and wire rules: [applications](applications.md#bff-req-pf-06). Prefer **dashboards + function-button / function-form** over a custom operator manifest shell. For a **product React UI** (unlimited components) ship a hosted ui-pack from an external IDE instead of extending `apps/web-console` — [external-ide](external-ide.md).
+Functions placed on a `SINGLETON` hub (for example, `root.platform.singleton-blueprints.my-terminal-hub`) are invoked the exact same way by passing that hub's `objectPath`. Wire format details: [Applications API § BFF](applications.md#bff-req-pf-06).
 
 ---
 
-## SQL reports
+## Reports, schedules, and BPMN integration
+
+### SQL reports
 
 ```http
 GET /api/v1/applications/my-terminal/reports/daily-summary?format=csv
 ```
 
-Report is defined in bundle (`reports[]`) or deployed separately. Export is CSV.
+Reports declared in `reports[]` can be rendered on dashboards or exported as CSV/documents. Details: [Reports](reports.md).
 
-See [reports](reports.md).
-
----
-
-## Schedules
-
-Periodic function invocation:
+### Scheduled jobs
 
 ```http
 POST /api/v1/schedules
@@ -294,11 +240,9 @@ Content-Type: application/json
 }
 ```
 
----
+### Calling functions from BPMN workflows
 
-## BPMN integration
-
-Service task with `ispf:actionType="INVOKE_FUNCTION"`:
+Use a BPMN `serviceTask` with `ispf:actionType="INVOKE_FUNCTION"` (or `ispf:action="invoke_function"` on an object path):
 
 ```xml
 <bpmn:serviceTask id="Task_ListOrders" name="List orders"
@@ -308,85 +252,53 @@ Service task with `ispf:actionType="INVOKE_FUNCTION"`:
   ispf:resultVariable="orders"/>
 ```
 
-User task → Work Queue task for operator.
-
-See [workflows](workflows.md).
+BPMN `userTask` steps automatically appear in the operator's **Work Queue**. Details: [BPMN workflows](workflows.md).
 
 ---
 
 ## Repository layout (solution-as-repo)
 
-Author solutions as a **folder** and compile to monolithic `bundle.json` for deploy (ADR-0060 W4). CLI: `tools/ispf-cli` (`ispf pack|unpack|validate|diff|deploy`).
+Instead of editing one huge JSON file by hand, keep your project in Git as a structured folder and compile it into `bundle.json` with **`tools/ispf-cli`** (`ispf pack | unpack | validate | diff | deploy`):
 
-| Path | Bundle section |
-|------|----------------|
+| File / folder in Git | Compiled section in `bundle.json` |
+|----------------------|-----------------------------------|
 | `solution.json` | `version`, `displayName`, `tablePrefix`, `schemaName`, `operatorUi`, `metadata`, `license`, `requires` |
-| `sql/V*__*.sql` | `migrations[]` (`id` = suffix after `V{n}__`) |
-| `functions/<name>.json` | `functions[]` (SQL steps may use `@file:step.sql` beside the JSON) |
+| `sql/V*__*.sql` | `migrations[]` (`id` is taken from the suffix after `V{n}__`) |
+| `functions/<name>.json` | `functions[]` (SQL steps can reference `@file:step.sql` next to the JSON file) |
 | `blueprints/*.json` | `blueprints[]` |
 | `objects.json` | `objects[]` |
-| `dashboards/*.layout.json` + optional `*.meta.json` | `dashboards[]` |
+| `dashboards/*.layout.json` (+ optional `*.meta.json`) | `dashboards[]` |
 | `reports/<id>.sql` + `<id>.json` | `reports[]` |
 | `alerts/*.json`, `correlators/*.json` | `alertRules[]`, `correlators[]` |
 | `events.json` | `events[]` |
 | `workflows/*.bpmn` + `*.meta.json` | `workflows[]` |
 
+Typical CLI workflow:
+
 ```bash
 cd tools/ispf-cli && npm install
+
+# Pack folder -> bundle.json
 node bin/ispf.mjs pack ../../examples/demo-app -o ../../examples/demo-app/bundle.json
+
+# Validate locally (add --strict before release)
 node bin/ispf.mjs validate ../../examples/demo-app --local
-node bin/ispf.mjs deploy ../../examples/demo-app --app demo   # ISPF_API_TOKEN, ISPF_BASE_URL
+
+# Compare local folder against a running server
+node bin/ispf.mjs diff ../../examples/demo-app --app demo
+
+# Deploy to server (uses ISPF_BASE_URL and ISPF_API_TOKEN)
+node bin/ispf.mjs deploy ../../examples/demo-app --app demo
 ```
-
-Compare repo to the active server bundle: `ispf diff <dir> --app <id>` (uses `GET …/export?canonical=true`).
-
-## Example structure
-
-```
-examples/demo-app/
-├── solution.json
-├── bundle.json                 # `ispf pack` output (committed ship artifact)
-├── sql/V1__schema_and_seed.sql
-├── reports/
-├── dashboards/
-└── functions/                  # optional
-```
-
-Run demo: register app, then `POST …/deploy` JSON (or `ispf deploy`) per [applications](applications.md).
-
----
-
-## Constraints and best practices
-
-| Rule | Why |
-|------|-----|
-| SQL only in app schema | Isolation from platform tables |
-| Table prefix (`tablePrefix`) | Collision guard |
-| Do not change Java `ispf-server` | Domain code lives in bundle |
-| Dashboards are platform objects | Single HMI for admin and operator |
-| Operator UI on server | Do not store config in `public/` |
-| Functions are idempotent deploys | Safe redeploy |
 
 ---
 
 ## Pre-production checklist
 
-- [ ] Application registered, schema created
-- [ ] Migrations applied (`GET .../data/status`)
-- [ ] Functions deployed and tested via BFF
-- [ ] Dashboards created and set in operator UI
-- [ ] Operator app available at `?mode=operator&app=<id>`
-- [ ] RBAC: operators have `operator` role, not `admin`
-- [ ] Keycloak configured (`dev`/prod profile)
-
----
-
-## Related documents
-
-- [applications](applications.md) — full REQ-PF API
-- [external-ide](external-ide.md) — Cursor / VS Code: hosted SPA + MCP + ui-pack
-- [reports](reports.md) — SQL reports
-- [dashboards](dashboards.md) — widgets
-- [web-console](web-console.md) — admin UI for setup
-- [glossary](glossary.md) — terms
-- [roadmap](roadmap.md) — REQ-PF status
+- [ ] Application registered with an isolated `schemaName` and `tablePrefix`
+- [ ] SQL migrations applied cleanly (`GET .../data/status`)
+- [ ] `ispf validate --strict` passes with zero errors (`LOGIC_HOST_DEVICE`, `HEAVY_WIDGET_EXPRESSION`, cycle checks)
+- [ ] Functions tested via `POST /api/v1/bff/invoke`
+- [ ] Operator screens verified at `?mode=operator&app=<appId>` (or `/apps/<appId>/` if shipping a React `ui-pack`)
+- [ ] Shift accounts use the `operator` role (or a scoped custom role), not `admin`
+- [ ] Production authentication (Keycloak OIDC / strong credentials) is enabled

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0010-binding-rules-only.md](../../en/decisions/0010-binding-rules-only.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0010-binding-rules-only.md](../../en/decisions/0010-binding-rules-only.md).
 
 # ADR-0010: Binding rules only (v0.8.0)
 

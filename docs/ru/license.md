@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/license.md](../en/license.md).
+> **Язык:** русская версия. Английский оригинал: [en/license.md](../en/license.md).
 
 # Лицензия и граница поставки
 
-> **Статус:** Stable — **AGPL v3** + dual-license. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — **AGPL v3** + dual-license. Метки зрелости: [doc-status.md](doc-status.md).
 
 ## Платформа (ядро ISPF)
 

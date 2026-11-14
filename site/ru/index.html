@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ISPF — открытая промышленная IoT / SCADA платформа</title>
-  <meta name="description" content="Self-hosted промышленная IoT и SCADA: дерево объектов для устройств, HMI, аварий, историка и BPMN. Один API, один UI. AGPL." />
+  <title>ISPF — серверная платформа промышленной автоматизации, SCADA и IoT</title>
+  <meta name="description" content="Платформа промышленной автоматизации, SCADA, IoT и MES на ваших серверах: единое дерево объектов для оборудования, экранов оператора, тревог, архива историй и процессов BPMN. AGPL v3." />
   <link rel="canonical" href="https://ispf.ai/ru/" />
   <link rel="alternate" hreflang="en" href="https://ispf.ai/" />
   <link rel="alternate" hreflang="ru" href="https://ispf.ai/ru/" />
@@ -38,9 +38,10 @@
     <section class="hero wrap">
       <div class="hero-copy">
         <h1>ISP<em>F</em></h1>
-        <p class="lead">Self-hosted промышленная IoT / SCADA — устройства, HMI, аварии, историк и BPMN на одном дереве объектов.</p>
+        <p class="lead">Серверная платформа промышленной автоматизации, SCADA и IoT на вашем контуре — опрос оборудования, экраны оператора, тревоги, архив историй и процессы BPMN в едином дереве объектов.</p>
         <div class="cta-row">
-          <a class="btn btn-primary" href="https://github.com/iot-solutions-ru/ispf#quick-start">Быстрый старт</a>
+          <a class="btn btn-primary" href="https://github.com/iot-solutions-ru/ispf/blob/main/docs/ru/getting-started.md">Быстрый старт (15 мин)</a>
+          <a class="btn btn-ghost" href="https://github.com/iot-solutions-ru/ispf/blob/main/docs/ru/learn.md">Как устроен ISPF</a>
           <a class="btn btn-ghost" href="https://github.com/iot-solutions-ru/ispf/blob/main/docs/ru/readme.md">Документация</a>
         </div>
       </div>
@@ -51,24 +52,24 @@
 
     <section class="section" id="platform">
       <div class="wrap">
-        <h2>Одна модель завода</h2>
-        <p>Обычные стеки склеивают OPC, историк, HMI, аварии и workflow как отдельные продукты. В ISPF это узлы одного иерархического дерева — один API, одни права, один UI.</p>
+        <h2>Единая модель площадки</h2>
+        <p>Вместо связки разрозненных шлюзов, баз историй, редакторов мнемосхем и систем оповещений все элементы в ISPF работают как узлы одного иерархического дерева — с общим API, правами доступа и веб-консолью.</p>
         <ul class="feature-list">
           <li>
             <strong>Дерево объектов</strong>
-            <span>Типизированные переменные, события и функции через REST и WebSocket.</span>
+            <span>Типизированные переменные, формулы расчёта, события и функции через REST API и WebSocket.</span>
           </li>
           <li>
-            <strong>HMI и SCADA</strong>
-            <span>Конструктор дашбордов, графики с историей и мнемосхемы для операторов.</span>
+            <strong>Экраны оператора и SCADA</strong>
+            <span>Конструктор дашбордов, графики трендов, мнемосхемы P&amp;ID и подключение собственных веб-приложений на React.</span>
           </li>
           <li>
-            <strong>Автоматизация</strong>
-            <span>Правила аварий на CEL, корреляторы и BPMN-процессы как узлы дерева.</span>
+            <strong>Тревоги и процессы BPMN</strong>
+            <span>Уставки на языке CEL с гистерезисом, корреляторы серий событий и маршруты смены с рабочей очередью задач.</span>
           </li>
           <li>
-            <strong>Драйверы и приложения</strong>
-            <span>160+ протокольных driver-паков (top-20 industrial в interop lab) и декларативные бандлы — решения без форка ядра.</span>
+            <strong>Драйверы и пакеты решений</strong>
+            <span>Более 160 пакетов протоколов (Modbus, OPC UA, S7, MQTT, SNMP, МЭК-104, DNP3, JDBC) и поставка прикладных решений пакетом <code>bundle.json</code> без доработки ядра.</span>
           </li>
         </ul>
       </div>
@@ -76,8 +77,8 @@
 
     <section class="section" id="product">
       <div class="wrap">
-        <h2>Для операторов и разработчиков</h2>
-        <p>Admin Explorer для модели. Operator mode для цеха. Кадры с живого демостенда.</p>
+        <h2>Для инженеров и сменных операторов</h2>
+        <p>Консоль администратора для настройки модели и полноэкранный режим оператора для дежурной смены.</p>
         <div class="shot-grid">
           <img src="../assets/ispf-scada-snmp.png" width="1024" height="501" loading="lazy" alt="Редактор SCADA-мнемосхемы — магистральный нефтепровод и библиотека символов" />
           <img src="../assets/ispf-dashboard-builder.png" width="1855" height="946" loading="lazy" alt="Конструктор дашбордов — графики, network graph и spreadsheet" />
@@ -89,8 +90,8 @@
 
     <section class="section" id="start">
       <div class="wrap">
-        <h2>Запуск локально</h2>
-        <p>Portable zip со встроенным H2 или контейнер. Логин по умолчанию: <code>admin</code> / <code>admin</code>.</p>
+        <h2>Запуск на своей машине</h2>
+        <p>Готовый архив со встроенной файловой БД H2 или контейнер Docker (PostgreSQL для пробы не нужен). Вход по умолчанию: <code>admin</code> / <code>admin</code>.</p>
         <div class="start-box">
           <pre><code>docker pull ghcr.io/iot-solutions-ru/ispf-server:latest
 docker run --rm -p 8080:8080 -v ispf-data:/opt/ispf/data ghcr.io/iot-solutions-ru/ispf-server:latest

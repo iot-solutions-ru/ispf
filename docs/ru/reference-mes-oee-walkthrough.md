@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/reference-mes-oee-walkthrough.md](../en/reference-mes-oee-walkthrough.md).
+> **Язык:** русская версия. Английский оригинал: [en/reference-mes-oee-walkthrough.md](../en/reference-mes-oee-walkthrough.md).
 
 # MES OEE: справочный walkthrough (BL-121)
 

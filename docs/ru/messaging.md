@@ -1,10 +1,10 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/messaging.md](../en/messaging.md).
+> **Язык:** русская версия. Английский оригинал: [en/messaging.md](../en/messaging.md).
 
 # Контракт обмена сообщениями (ISPF)
 
-> **Статус:** Stable — NATS / MQTT notes. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Stable — контракт REST/BFF, WebSocket, журнала событий, NATS и MQTT. Метки зрелости: [doc-status.md](doc-status.md).
 
-Контракт шин и синхронных вызовов платформы ↔ решение. REQ-FW-32.
+Какими каналами платформа и прикладное решение обмениваются данными (REQ-FW-32).
 
 ## Принцип
 
@@ -27,10 +27,11 @@
 
 ```json
 { "type": "subscribe", "paths": ["root.platform.devices.demo-sensor-01"] }
+```
 
-Узкий интерес (рекомендуется для HMI-виджетов) — только перечисленные переменные.
-Отсутствие `variablesByPath` для path = path-wide (все переменные объекта).
-Пустой `paths` = тишина (не broadcast на весь сервер).
+Узкая подписка (для виджетов HMI) — только перечисленные переменные.
+Если для пути нет `variablesByPath`, подписка идёт на **все** переменные объекта.
+Пустой `paths` — подписки нет (сервер не рассылает всё дерево).
 
 ```json
 {
@@ -40,7 +41,6 @@
     "root.platform.devices.demo-sensor-01": ["temperature", "online"]
   }
 }
-```
 ```
 
 ```json
@@ -74,7 +74,7 @@
 
 ### JetStream (необязательно, 0014)
 
-When `ispf.nats.jet-stream-enabled=true` (requires `ispf.nats.enabled=true`):
+Если `ispf.nats.jet-stream-enabled=true` (нужно также `ispf.nats.enabled=true`):
 
 | Настройка | Окружение | По умолчанию |
 |---------|-----|---------|
@@ -88,7 +88,7 @@ When `ispf.nats.jet-stream-enabled=true` (requires `ispf.nats.enabled=true`):
 
 ### Окна коррелятора Redis (необязательно, 0014)
 
-When `ispf.redis.enabled=true` and `ispf.redis.correlator-windows-enabled=true`:
+Если `ispf.redis.enabled=true` и `ispf.redis.correlator-windows-enabled=true`:
 
 | Настройка | Окружение | По умолчанию |
 |---------|-----|---------|

@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/driver-ddk.md](../en/driver-ddk.md).
+> **Язык:** русская версия. Английский оригинал: [en/driver-ddk.md](../en/driver-ddk.md).
 
 # Комплект разработки драйверов (DDK)
 
-> **Статус:** Stable — Custom driver SDK. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Stable — SDK для собственных драйверов. Метки зрелости: [doc-status.md](doc-status.md).
 
 **BL-144** — каркас для пользовательских пакетов драйверов вне ядра monorepo или как новый `ispf-driver-*` модуль.
 

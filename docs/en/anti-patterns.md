@@ -1,105 +1,105 @@
 > **Language:** Canonical English. Russian edition: [ru/anti-patterns.md](../ru/anti-patterns.md).
 
-# Anti-patterns (field pain → ISPF design)
+# Common design mistakes and how to avoid them
 
-> **Status:** Stable — poka-yoke mappings with **existing** ISPF enforcement. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — engineering rules backed by platform validators, engine limits, and safe defaults. Status tags: [doc-status.md](doc-status.md).
 
-This page lists field footguns that **already have** an ISPF answer (validator code, binding engine, driver default, or ADR). It is not a dump of prior-platform docs and does not invent features.
+Every rule on this page addresses a concrete failure mode seen in real SCADA and IoT deployments — slow operator screens, runaway recalculation loops, bloated event tables, and unrepeatable manual configurations — and documents how ISPF prevents or flags it automatically.
 
-See also: [learn](learn.md), [application-principles](application-principles.md), [bindings](bindings.md)#execution, [variable-history](variable-history.md), [ADR-0061](decisions/0061-high-rate-telemetry-history-defaults.md), [solution-developer-guide](solution-developer-guide.md) § solution-as-repo.
-
----
-
-## 1. Heavy logic in widgets / client expressions
-
-| Field pitfall | ISPF |
-|-----------|------|
-| Branching / multi-step logic living in dashboard widgets | Widgets bind variables; logic on a **SINGLETON / INSTANCE** hub (object functions, binding rules) |
-| Same logic scattered where HMI cannot reuse or test it | Hosted SPA calls hub via `POST /api/v1/bff/invoke` |
-
-**Enforced:** `BundleManifestValidator` warns `HEAVY_WIDGET_EXPRESSION` when a widget `expression` / `condition` / `script` field is ≥ **400** characters. Heavy binding expressions are warned by `BindingCascadeAnalyzer` on rule save.
-
-**Rule:** if a widget needs branches or multi-step logic → hub function via expression `call(@/fn/…)` (or a binding that writes a display variable). See [expression-language](expression-language.md).
+Related guides: [How ISPF works](learn.md) · [Application architecture rules](application-principles.md) · [Calculation rules (bindings)](bindings.md#execution) · [Variable history](variable-history.md) · [Solution developer guide](solution-developer-guide.md).
 
 ---
 
-## 2. Binding cascade / activation queue
+## 1. Putting multi-step calculations inside dashboard widgets
 
-| Field pitfall | ISPF |
-|-----------|------|
-| Several rules on one change run as a strict queue; later rules see mid-wave writes and lock each other out | Per object: rules sorted by **`order`**; **multi-pass** until stable (`MAX_PASSES=8`); cross-object activation **`MAX_DEPTH=16`** |
-| No warning when write↔activate cycles exist | `BindingCascadeAnalyzer` warns on save; truncations are logged |
+**What goes wrong:** Engineers write long conditional formulas or scripts directly inside individual dashboard widgets. Soon the same formula is copied across five screens, cannot be tested without opening a browser, and slows down UI rendering.
 
-**Rule:** one write owner per variable; set `activators.async=true` only for independent side effects; put branching in hub functions.
+**How to do it in ISPF:** Keep widgets thin — bind them directly to object variables (`temperature`, `pumpStatusText`, `shiftEfficiency`). Put calculations, unit conversions, and branching in **calculation rules** (*binding rules*) or **functions** on a `SINGLETON` or `INSTANCE` logic object. If you build a custom React web UI, call those same object functions via `POST /api/v1/bff/invoke`.
 
-Details: [bindings.md § Execution](bindings.md#execution).
+**Platform check:** `BundleManifestValidator` raises warning `HEAVY_WIDGET_EXPRESSION` whenever a widget `expression`, `condition`, or `script` reaches **400 characters or more**. Overly long binding formulas are also flagged on save by `BindingCascadeAnalyzer`.
 
 ---
 
-## 3. Unbounded MQTT / high-rate event history
+## 2. Circular or conflicting variable calculation rules
 
-| Field pitfall | ISPF |
-|-----------|------|
-| High-rate ingress kept as a full event history → UI/DB melt | MQTT driver default **`eventToVariable=false`** (last-value / coalesce). New objects keep **`eventJournalEnabled=false`** |
-| Journal turned on for catch-all topics without retention | Enable journal only with an explicit audit + retention plan (ADR-0061) |
+**What goes wrong:** Multiple rules write to the same variable, or Rule A updates Variable X which triggers Rule B to update Variable Y which triggers Rule A again. Under load, values oscillate or queue up behind intermediate updates.
 
-**Rule:** do not enable object event journal on flood paths in production without retention.
+**How to do it in ISPF:**
+- Give **each calculated variable a single owner rule** that writes to it.
+- Set explicit `order` numbers on rules within an object so upstream values are calculated before downstream ones.
+- Use `activators.async = true` only for independent side effects (for example, logging or notifications), not for sequential math.
 
----
-
-## 4. Previous value for change logic
-
-| Field pitfall | ISPF |
-|-----------|------|
-| Previous sample attached to every update (payload and load cost) | **`Variable.includePreviousValueInEvent`** is opt-in; when enabled, WS/automation payloads may include `previousValue` |
-
-**Rule:** enable only on variables that rules or audit need; do not turn on globally.
+**Platform check:** On rule save, `BindingCascadeAnalyzer` detects write-to-activator cycles and warns immediately. At runtime (`BindingRuleEngine`), per-object rules run in `order` across at most **`MAX_PASSES = 8`** stabilization passes, and cross-object propagation stops at **`MAX_DEPTH = 16`** with a warning in the server log. Details: [bindings.md § Execution](bindings.md#execution).
 
 ---
 
-## 5. Hand-rolled time buckets as events
+## 3. Recording an unbounded event journal on high-rate telemetry
 
-| Field pitfall | ISPF |
-|-----------|------|
-| Custom “granules” stored as device events with ad-hoc bucket expressions | Historian **materialized rollups**: binding rules with `kind: historian`, `windowBucket` / **`rollupBuckets`**, plus aggregate query APIs |
+**What goes wrong:** A gateway or MQTT topic receives thousands of messages per second, and every incoming packet is written as a row in the object event journal (`event_history`) without retention. Database storage fills up and event-log queries slow down.
 
-Prefer historian rules over inventing event streams for time buckets. See [analytics-historian-cookbook](analytics-historian-cookbook.md).
+**How to do it in ISPF:**
+- Treat high-frequency telemetry as **variable updates** (latest value + optional time-series historian with retention), not audit events.
+- Enable the object event journal (`eventJournalEnabled = true`) only on objects where discrete state changes or operator actions require an audit trail, and always configure retention ([ADR-0061](decisions/0061-high-rate-telemetry-history-defaults.md)).
 
----
-
-## 6. Hand-copied trees instead of a ship artifact
-
-| Field pitfall | ISPF |
-|-----------|------|
-| Whole-solution snapshot by copying live trees / ad-hoc export | **Solution-as-repo**: `ispf pack` / `validate` / `diff` / `deploy` → `bundle.json` (+ optional ui-pack) |
-
-Do not hand-copy trees between environments. SHIP layer = bundle ([ADR-0060](decisions/0060-solution-authoring-constraints.md)). Guide: [solution-developer-guide](solution-developer-guide.md).
+**Platform defaults:** By default, the MQTT driver keeps **`eventToVariable = false`** (coalescing latest variable values instead of emitting an event per message), and newly created objects start with **`eventJournalEnabled = false`**.
 
 ---
 
-## 7. Authoring naming
+## 4. Attaching previous values to every telemetry update globally
 
-| Practice | Why |
-|----------|-----|
-| `lowerCamelCase` for variables, functions, rule ids | Sortable, expression-friendly |
-| Verbs for functions (`getTelemetry`, `ackAlarm`) | Intent at call site |
-| No type prefix in names (`pump01`, not `devicePump01`) | Type is object path / `ObjectType` |
-| Descriptions on functions and non-obvious variables | Operators + AI tools |
+**What goes wrong:** Copying the previous record onto every variable update across thousands of tags doubles message payload size over WebSocket and internal event buses, even though 99% of tags only display the current reading.
 
-Logic hosts stay **SINGLETON / INSTANCE**, never `ObjectType.DEVICE` ([application-principles](application-principles.md) § Logic objects vs DEVICE). Authoring validate **warns** `LOGIC_HOST_DEVICE`; ship/`--strict`/catalog **error** ([adr-tension-resolution](adr-tension-resolution.md)).
+**How to do it in ISPF:** Turn on **`includePreviousValueInEvent = true`** only on the specific variables where an alert rule, audit log, or script explicitly compares the previous and new value. Leave it off everywhere else.
 
 ---
 
-## Agent checklist
+## 5. Building hourly or shift aggregates out of custom events
 
-Before finishing a solution:
+**What goes wrong:** To get 5-minute, hourly, or shift averages, engineers create timer scripts that emit custom "bucket" events and parse event payloads in reports. Backfilling or querying across days becomes brittle and slow.
 
-1. No `LOGIC_HOST_DEVICE` — hub functions over widget scripts.
-2. No unresolved `HEAVY_WIDGET_EXPRESSION` — move logic to the hub.
-3. Flood paths: `eventJournalEnabled=false`; MQTT `eventToVariable=false` unless a designed fan-out is required.
-4. Binding cycles: clear `BindingCascadeAnalyzer` warnings; keep `order` intentional.
-5. Ship artifact: `ispf pack` / agent `validate_bundle` green — or APPLICATION **Git → Push tree** (PR); never leave tree-only edits without Catalog sync ([ADR-0063](decisions/0063-application-git-lifecycle.md)).
+**How to do it in ISPF:** Use **historian calculation rules** (`kind: "historian"`) with `windowBucket` (for example, `5m`, `1h`, `8h`) and optional materialized `rollupBuckets`, or query aggregated buckets directly via `GET /api/v1/objects/by-path/variables/history/aggregate`. Recipes and examples: [Historian cookbook](analytics-historian-cookbook.md).
 
 ---
 
-*Add a row only when a field pain maps to shipping validator code, engine limits, or an accepted ADR — not when a prior-platform recipe has no ISPF counterpart.*
+## 6. Placing application or plant logic on `DEVICE` nodes
+
+**What goes wrong:** Plant-wide KPIs, SQL queries, or multi-device control scripts are attached directly to a `DEVICE` node (such as a PLC or sensor). When an engineer replaces, disables, or re-provisions that device driver, application functions and screens break.
+
+**How to do it in ISPF:**
+- Keep **`DEVICE`** nodes strictly for protocol drivers and raw/mapped device tags.
+- Put application, orchestration, and digital-twin logic on a **`SINGLETON`** hub (one central controller per application) or an **`INSTANCE`** object (one per twin/unit, created from an Instance Type template).
+
+**Platform check:** Validation reports **`LOGIC_HOST_DEVICE`** (warning during interactive authoring; hard error in `--strict` deploys, `examples/` CI, and the marketplace catalog — see [ADR-0060](decisions/0060-solution-authoring-constraints.md)).
+
+---
+
+## 7. Copying live object trees by hand instead of packaging a bundle
+
+**What goes wrong:** Changes are clicked together directly on a production or test server and transferred between environments via manual exports. Nobody knows which version is running, and updates overwrite site-specific settings.
+
+**How to do it in ISPF:** Keep your solution in version control as an **application bundle** (`bundle.json`, plus an optional `ui-pack` zip for custom React screens). Use `ispf pack`, `ispf validate`, `ispf diff`, and `ispf deploy` — or sync changes into a pull request through **Application Git** ([ADR-0063](decisions/0063-application-git-lifecycle.md)). Full workflow: [Solution developer guide](solution-developer-guide.md).
+
+---
+
+## Naming and authoring conventions
+
+Consistent naming makes expressions, tables, and API calls predictable across a team:
+
+| Element | Convention | Reason |
+|---------|------------|--------|
+| Variables, functions, rule IDs | `lowerCamelCase` (`supplyTemp`, `totalFlow`) | Works cleanly in CEL expressions (`self.supplyTemp.value`) without quoting |
+| Function names | Start with a verb (`getTelemetry`, `acknowledgeAlarm`, `createOrder`) | Makes button bindings and API calls self-explanatory |
+| Object names in paths | Omit redundant type prefixes (`pump-01`, not `device-pump-01`) | Parent path (`devices`) and `ObjectType` already carry the type |
+| Descriptions | Fill in `description` on functions and non-obvious variables | Shown as tooltips in the console, operator forms, and API schemas |
+
+---
+
+## Pre-deployment engineering checklist
+
+Before deploying a project to a test or production server, verify:
+
+1. **Logic separation:** No `LOGIC_HOST_DEVICE` findings — calculations and functions live on `SINGLETON` or `INSTANCE` objects, not on `DEVICE` nodes.
+2. **Thin screens:** No `HEAVY_WIDGET_EXPRESSION` warnings — widgets display variables and call hub functions rather than running embedded scripts.
+3. **High-rate channels:** `eventJournalEnabled = false` on high-frequency devices; MQTT `eventToVariable = false` unless every packet must be audited with retention.
+4. **Clean rule graph:** Zero cycle warnings from `BindingCascadeAnalyzer`; every calculated variable has one clear owner rule and sensible `order`.
+5. **Repeatable package:** `ispf validate` (or `validate_bundle`) passes cleanly, and all tree changes are saved in `bundle.json` / Git rather than left only on a live stand.

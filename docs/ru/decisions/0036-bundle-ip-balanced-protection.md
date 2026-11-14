@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0036-bundle-ip-balanced-protection.md](../../en/decisions/0036-bundle-ip-balanced-protection.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0036-bundle-ip-balanced-protection.md](../../en/decisions/0036-bundle-ip-balanced-protection.md).
 
 # ADR-0036: Защита IP commercial bundle — сбалансированная политика
 

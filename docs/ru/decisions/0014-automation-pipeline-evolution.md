@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0014-automation-pipeline-evolution.md](../../en/decisions/0014-automation-pipeline-evolution.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0014-automation-pipeline-evolution.md](../../en/decisions/0014-automation-pipeline-evolution.md).
 
 # ADR-0014: Эволюция automation pipeline
 

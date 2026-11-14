@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/operator-pwa-android-smoke.md](../en/operator-pwa-android-smoke.md).
+> **Язык:** русская версия. Английский оригинал: [en/operator-pwa-android-smoke.md](../en/operator-pwa-android-smoke.md).
 
 # Оператор PWA — контрольный список дыма для Android Chrome (BL-90)
 

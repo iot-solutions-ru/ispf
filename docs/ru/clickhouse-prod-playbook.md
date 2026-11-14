@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/clickhouse-prod-playbook.md](../en/clickhouse-prod-playbook.md).
+> **Язык:** русская версия. Английский оригинал: [en/clickhouse-prod-playbook.md](../en/clickhouse-prod-playbook.md).
 
 # ClickHouse production playbook (BL-114)
 
-> **Статус:** Lab — Production rollout. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Lab — вывод ClickHouse в промышленную эксплуатацию. Метки зрелости: [doc-status.md](doc-status.md).
 
 Руководство по эксплуатации ClickHouse в рабочей среде ISPF: **журнал событий**, **variable historian** и путь миграции **двойная запись**.
 

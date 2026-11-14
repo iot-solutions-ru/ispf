@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0033-prod-idle-demostand-tuning.md](../../en/decisions/0033-prod-idle-demostand-tuning.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0033-prod-idle-demostand-tuning.md](../../en/decisions/0033-prod-idle-demostand-tuning.md).
 
 # ADR-0033: Профили demostand (idle / edge) и read-only hot paths
 

@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/decisions/0055-cel-formal-verification-ai-gate.md](../../en/decisions/0055-cel-formal-verification-ai-gate.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0055-cel-formal-verification-ai-gate.md](../../en/decisions/0055-cel-formal-verification-ai-gate.md).
 
 # ADR-0055: Формальная верификация CEL как продуктовый gate AI и условий
 

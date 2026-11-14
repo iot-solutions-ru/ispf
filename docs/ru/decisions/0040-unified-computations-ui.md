@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [../../en/decisions/0040-unified-computations-ui.md](../../en/decisions/0040-unified-computations-ui.md).
+> **Язык:** русская версия. Английский оригинал: [../../en/decisions/0040-unified-computations-ui.md](../../en/decisions/0040-unified-computations-ui.md).
 
 # ADR-0040: Единая вкладка «Вычисления» (привязки + historian)
 

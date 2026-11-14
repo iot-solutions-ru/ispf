@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/ot-automation-excellence-tutorials.md](../en/ot-automation-excellence-tutorials.md).
+> **Язык:** русская версия. Английский оригинал: [en/ot-automation-excellence-tutorials.md](../en/ot-automation-excellence-tutorials.md).
 
 # OT Automation Excellence — туториалы
 
-> **Статус:** Beta — Практические гайды по ADR-0049. Хаб: [doc-status](../en/doc-status.md).
+> **Статус:** Beta — практические руководства по ADR-0049. Метки зрелости: [doc-status.md](doc-status.md).
 
 Решение: [0049-ot-automation-excellence](decisions/0049-ot-automation-excellence.md).  
 Справочник: [workflows](workflows.md), [формулы аналитики](analytics-formulas-and-packs.md), [AI development](ai-development.md).

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [../../en/decisions/0039-unified-alarm-architecture.md](../../en/decisions/0039-unified-alarm-architecture.md).
+> **Язык:** русская версия. Английский оригинал: [../../en/decisions/0039-unified-alarm-architecture.md](../../en/decisions/0039-unified-alarm-architecture.md).
 
 # ADR-0039: Эволюция alert rule
 

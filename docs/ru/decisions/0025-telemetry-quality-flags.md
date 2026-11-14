@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0025-telemetry-quality-flags.md](../../en/decisions/0025-telemetry-quality-flags.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0025-telemetry-quality-flags.md](../../en/decisions/0025-telemetry-quality-flags.md).
 
 # ADR-0025: Telemetry quality flags
 

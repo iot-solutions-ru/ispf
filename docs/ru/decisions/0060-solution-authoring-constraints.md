@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/decisions/0060-solution-authoring-constraints.md](../../en/decisions/0060-solution-authoring-constraints.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0060-solution-authoring-constraints.md](../../en/decisions/0060-solution-authoring-constraints.md).
 
 # ADR-0060: Constraints авторства solution (AI-first)
 

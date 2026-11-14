@@ -1,71 +1,86 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/getting-started.md](../en/getting-started.md).
+> **Язык:** русская версия. Английский оригинал: [en/getting-started.md](../en/getting-started.md).
 
 # Быстрый старт
 
-> **Статус:** Stable — Try ISPF + QA для контрибьюторов. Теги: [doc-status](doc-status.md).
+> **Статус:** Stable — первый запуск платформы и локальная проверка кода. Метки зрелости: [doc-status.md](doc-status.md).
 
-Два трека:
+В этом руководстве два раздела:
 
-1. **[Попробовать ISPF](#попробовать-ispf-15-минут)** — запуск и демо (новички).  
-2. **[Контрибут](#контрибут-локальный-dev--qa)** — быстрый local QA / pre-push (контрибьюторы).
+1. **[Попробовать ISPF (≈15 минут)](#попробовать-ispf-15-минут)** — запустить платформу на своей машине, войти в консоль и посмотреть встроенный пример с датчиком, тревогой и экраном оператора.
+2. **[Контрибут: локальный dev & QA](#контрибут-локальный-dev--qa)** — как собирать проект и быстро гонять тесты, если вы дорабатываете саму платформу.
 
-**Карта обучения** (первый час → первое решение → по ролям → сертификация): **[Обучение ISPF](learn.md)**.
+Если хотите сначала понять общую картину, откройте параллельно **[Как устроен ISPF](learn.md)**.
 
 ---
 
 ## Попробовать ISPF (≈15 минут)
 
-### Вариант A — all-in-one JAR (быстрее всего)
+### Вариант А — Готовый архив (быстрее всего, без установки СУБД)
 
-Скачайте **`ispf-*-portable.zip`** с [GitHub Releases](https://github.com/iot-solutions-ru/ispf/releases) (JDK **25**). Распакуйте, затем:
+1. Установите **JDK 25** и скачайте архив **`ispf-*-portable.zip`** со страницы [GitHub Releases](https://github.com/iot-solutions-ru/ispf/releases).
+2. Распакуйте архив в любую папку и запустите стартовый скрипт:
 
 ```bash
-# Windows: двойной клик по start.bat
+# Windows: двойной клик по start.bat (или запуск из PowerShell / cmd)
+start.bat
+
 # Linux / macOS:
 ./start.sh
 ```
 
-Отдельный PostgreSQL не нужен — portable использует **встроенный H2** (после первого старта файл `data/ispf-local.mv.db`).
+Устанавливать PostgreSQL для знакомства не нужно: переносная сборка хранит данные во **встроенной файловой базе H2** (файл `data/ispf-local.mv.db` появится автоматически при первом старте).
 
-Откройте http://localhost:8080 — логин `admin` / `admin`. Дальше с [§2 Вход](#2-вход-local) (порт 8080 вместо 5173).
+3. Откройте в браузере **http://localhost:8080** и войдите с логином **`admin`** и паролем **`admin`**. Далее переходите к [шагу 2 — Вход в систему](#2-вход-local) (используйте порт `8080`).
 
-### Вариант B — из исходников
-
-### Требования
-
-| Компонент | Версия |
-|-----------|--------|
-| JDK | **25** (Gradle toolchain; `JavaLanguageVersion.of(25)`) |
-| Gradle | Wrapper в репозитории |
-| Node.js | 20+ |
-| Docker Desktop | Опционально — только для полного стека PostgreSQL / Keycloak / MQTT |
-
-### 1. Запуск API + консоли
+### Вариант Б — Запуск в Docker
 
 ```bash
-# Терминал 1 — профиль local (H2 file DB; sync небольшого набора dev driver packs)
+docker pull ghcr.io/iot-solutions-ru/ispf-server:latest
+docker run --rm -p 8080:8080 -v ispf-data:/opt/ispf/data ghcr.io/iot-solutions-ru/ispf-server:latest
+```
+
+Откройте **http://localhost:8080** и войдите под **`admin` / `admin`**.
+
+### Вариант В — Запуск из исходного кода
+
+#### Что понадобится
+
+| Компонент | Версия | Примечание |
+|-----------|--------|------------|
+| JDK | **25** | Подтягивается и проверяется через Gradle Toolchain |
+| Gradle | В репозитории (`./gradlew` / `gradlew.bat`) | Ставить отдельно не нужно |
+| Node.js | **20+** | Для запуска фронтенда `apps/web-console` в режиме разработки |
+| Docker | Необязательно | Нужен только для полного окружения с PostgreSQL, Keycloak, MQTT и NATS |
+
+#### 1. Запустите сервер и веб-консоль
+
+```bash
+# Терминал 1 — сервер API в профиле local (файловая БД H2 + базовый набор драйверов)
 ./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
 
-# Терминал 2 — Web Console
+# Терминал 2 — веб-консоль React (проксирует /api и /ws на localhost:8080)
 cd apps/web-console && npm install && npm run dev
 ```
 
-| URL | Назначение |
-| --- | ---------- |
-| http://localhost:8080 | Консоль администратора (all-in-one JAR) |
-| http://localhost:5173 | Консоль администратора (Vite dev) |
-| http://localhost:8080?mode=operator | Operator HMI (all-in-one JAR) |
-| http://localhost:5173?mode=operator | Operator HMI (Vite dev) |
-| http://localhost:8080/api/v1/info | Версия / capabilities |
-| http://localhost:8080/actuator/health | Health |
+| Адрес | Что открывается |
+|-------|-----------------|
+| `http://localhost:8080` | Консоль администратора (при запуске готового архива или Docker) |
+| `http://localhost:5173` | Консоль администратора (при запуске через Vite dev) |
+| `http://localhost:8080?mode=operator` | Рабочее место оператора (готовый архив / Docker) |
+| `http://localhost:5173?mode=operator` | Рабочее место оператора (Vite dev) |
+| `http://localhost:8080/api/v1/info` | Версия сервера и включённые модули |
+| `http://localhost:8080/actuator/health` | Проверка работоспособности (Health check) |
 
-`bootRun` по умолчанию вызывает **`syncDevDriverPacks`** (короткий локальный набор, включая `jdbc`). Полный каталог: `-Dispf.driver.packs=all`.
+При локальном `bootRun` автоматически собирается компактный набор драйверов разработки (`syncDevDriverPacks`: `virtual`, `mqtt`, `modbus`, `http`, `jdbc` и др.). Если нужен полный каталог из 160+ протоколов, добавьте параметр `-Dispf.driver.packs=all`.
 
 ### 2. Вход (`local`)
 
-Пустая БД создаёт пользователей: **`admin` / `admin`** (также `developer` / `developer`, `operator` / `operator`). Войдите через экран логина Web Console.
+При первом запуске на чистой базе создаются три тестовые учётные записи:
+- **`admin` / `admin`** — полный доступ к дереву объектов, конструкторам и системным настройкам;
+- **`developer` / `developer`** — учётная запись инженера-разработчика решений;
+- **`operator` / `operator`** — сразу открывает полноэкранный режим оператора (экраны, квитирование, очередь задач).
 
-API (Bearer — нужен для большинства вызовов):
+Для запросов к REST API из терминала получите токен авторизации:
 
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
@@ -75,41 +90,44 @@ TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
 ```
 
-Заголовок `X-ISPF-Role` по умолчанию **выключен** (`ispf.security.local-role-header-enabled=false`). Не рассчитывайте на селектор Role в шапке для обычного local. Подробнее: [security](security.md).
+> Примечание: отладочный заголовок `X-ISPF-Role` по умолчанию выключен (`ispf.security.local-role-header-enabled=false`). Для всех запросов используйте токен из `/api/v1/auth/login`. Подробнее: [Безопасность](security.md).
 
-### 3. Первые шаги в UI
+### 3. Первые шаги в веб-консоли
 
-![Admin Explorer — дерево объектов после первого входа](../assets/ispf-object-tree.png)
+![Консоль администратора — дерево объектов после первого входа](../assets/ispf-object-tree.png)
 
-1. Откройте дерево объектов — ветка `root.platform`.  
-2. Раскройте `devices` → `demo-sensor-01` — temperature, threshold, alarm.  
-3. Дважды кликните `dashboards.demo-sensor` — **Dashboard Builder**.  
-4. Раскройте `alert-rules` → `temperature-threshold-exceeded` — CEL-правило.  
-5. Дважды кликните `workflows.demo-alarm-handler` — демо **BPMN**.  
-6. Режим оператора: `http://localhost:8080?mode=operator` (all-in-one JAR) или `http://localhost:5173?mode=operator` (Vite), или вход как `operator`.
+1. В левой панели **проводника (Explorer)** раскройте ветку `root` → `platform`.
+2. Откройте папку `devices` и выберите **`demo-sensor-01`**. Справа в **инспекторе** отобразятся переменные датчика: температура (`temperature`), уставка порога (`threshold`) и флаг аварии (`alarmActive`).
+3. Откройте `dashboards` и дважды кликните по **`demo-sensor`** — откроется визуальный конструктор дашборда (**Dashboard Builder**).
+4. Откройте `alert-rules` → **`temperature-threshold-exceeded`** — здесь задано условие срабатывания тревоги по температуре на языке CEL.
+5. Откройте `workflows` и дважды кликните по **`demo-alarm-handler`** — откроется пример процесса обработки тревоги в нотации **BPMN**.
+6. Перейдите по ссылке режима оператора (`http://localhost:8080?mode=operator` или `http://localhost:5173?mode=operator`), чтобы увидеть, как этот же экран выглядит на посту дежурной смены без административных меню.
 
-Язык: селектор в шапке (**English** удобен для OSS-скриншотов).
+Переключатель языка интерфейса (**Русский / English**) находится в верхней панели консоли.
 
-### 4. Старт драйвера demo-sensor
+### 4. Запустите опрос демо-датчика
+
+Запустите драйвер симулятора на `demo-sensor-01` (кнопкой запуска драйвера в карточке устройства или командой `curl`):
 
 ```bash
 curl -X POST "http://localhost:8080/api/v1/drivers/runtime/start?devicePath=root.platform.devices.demo-sensor-01" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-Температура — синусоида; при превышении порога срабатывают `alarmActive` и alert rule.
+Драйвер начнёт генерировать синусоиду температуры. Как только значение превысит порог `threshold`, выставится `alarmActive = true`, сработает правило тревоги и в журнале появится событие.
 
-### Дальше после демо
+### Куда двигаться дальше
 
-- **[Обучение ISPF](learn.md)** — путь B (день первого решения) или путь C (по ролям)  
-- [Обзор продукта](product.md) · [Модель объектов](object-model.md) · [Anti-patterns](anti-patterns.md)  
-- [Разработчик решений](solution-developer-guide.md) — реальный bundle  
-- [Внешняя AI IDE](external-ide.md) — продуктовый React SPA в Cursor (hosted ui-pack)  
-- [Архитектура](architecture.md) · [API](api.md)
+- **[Как устроен ISPF](learn.md)** — пройдите **Маршрут Б**, чтобы за день собрать свой первый проект с оборудованием и расчётами.
+- **[Руководство разработчика решений](solution-developer-guide.md)** — как оформить таблицы SQL, функции и экраны в переносимый пакет `bundle.json` (`ispf pack` / `validate` / `deploy`).
+- **[Частые ошибки при проектировании](anti-patterns.md)** — семь практических правил, которые уберегут от тормозов и путаницы в проекте.
+- **[Разработка своего React-интерфейса](external-ide.md)** — как написать кастомный веб-интерфейс оператора (`ui-pack`) в Cursor или VS Code.
 
 ---
 
-## Опционально: полный локальный стек
+## Дополнительно: полный стек с PostgreSQL, MQTT и Keycloak (`dev`)
+
+Если для разработки нужны PostgreSQL/TimescaleDB, брокер MQTT (Mosquitto), шина NATS JetStream и авторизация через Keycloak:
 
 ```bash
 docker compose up -d
@@ -118,61 +136,62 @@ docker compose up -d
 
 | Сервис | Порт | Назначение |
 |--------|------|------------|
-| PostgreSQL (TimescaleDB) | 5432 | БД `ispf` |
-| Redis | 6379 | Кэш (зарезервировано) |
-| NATS JetStream | 4222, 8222 | Messaging |
-| Mosquitto | 1883 | MQTT |
-| Keycloak | 8180 | OAuth2 (`dev`) |
+| PostgreSQL (TimescaleDB) | `5432` | Основная база данных и оперативный архив историй (`ispf`) |
+| Redis | `6379` | Кэш |
+| NATS JetStream | `4222`, `8222` | Шина сообщений и шагов процессов |
+| Eclipse Mosquitto | `1883` | Локальный MQTT-брокер для проверки устройств |
+| Keycloak | `8180` | Сервер единого входа OAuth2 / OIDC (профиль `dev`) |
 
-### Профили Spring
+### Профили запуска сервера
 
-| Профиль | БД | Auth | MQTT/NATS |
-|---------|-----|------|-----------|
-| *(default)* | PostgreSQL | JWT Keycloak | выкл. |
-| `local` | H2 file | Bearer после `POST /api/v1/auth/login` | выкл. |
-| `dev` | PostgreSQL | JWT Keycloak localhost:8180 | вкл. |
-| `test` | H2 memory | выкл. | выкл. |
+| Профиль Spring | База данных | Авторизация | MQTT / NATS |
+|----------------|-------------|-------------|-------------|
+| *(по умолчанию)* | PostgreSQL | JWT через Keycloak | По переменным окружения |
+| `local` | Файловая H2 (`./data/ispf-local`) | Встроенный вход (`POST /api/v1/auth/login`) | Выкл. |
+| `dev` | PostgreSQL (`localhost:5432`) | JWT через Keycloak (`localhost:8180`) | Вкл. |
+| `test` | H2 в памяти | Выкл. (для автотестов) | Выкл. |
 
-Подробнее: [deployment](deployment.md), [security](security.md).
+Подробное описание переменных окружения для продакшена: [Развёртывание](deployment.md) и [Безопасность](security.md).
 
-### Driver packs
+### Как подключаются пакеты драйверов
 
-Драйверы протоколов **не** внутри `ispf-server.jar`. Локальный `bootRun` / тесты сервера синхронизируют **dev packs** автоматически.
+Протокольные драйверы поставляются отдельными модулями вне `ispf-server.jar` и подгружаются сервером из папки `./data/drivers` (путь можно переопределить через `ISPF_DRIVER_PACKS_DIR`).
 
 ```bash
-./gradlew syncDevDriverPacks          # по умолчанию — быстро
-./gradlew syncAllDriverPacks          # все packs — работа над драйверами / prod
+./gradlew syncDevDriverPacks          # быстрый базовый набор (используется по умолчанию)
+./gradlew syncAllDriverPacks          # сборка всех 160+ драйверов в build/driver-packs
 ```
 
-Каталог runtime: `./data/drivers` (или `ISPF_DRIVER_PACKS_DIR`). Gradle: `build/driver-packs`.  
-Подробно: [licensed-driver-packs](licensed-driver-packs.md).
+Подробнее: [Драйверы устройств](drivers.md) и [Пакеты драйверов](licensed-driver-packs.md).
 
 ---
 
 ## Контрибут: локальный dev & QA
 
-**Не начинайте** с `./gradlew test` или `syncAllDriverPacks`, если не меняете драйверы и не гоняете полную регрессию. Эти пути собирают **все 162 driver packs** и могут прогнать **1000+** тестов — на холодной машине часто **часы** ([issue #65](https://github.com/iot-solutions-ru/ispf/issues/65)).
+> **Важно:** **не запускайте** `./gradlew test` или `syncAllDriverPacks` при обычной разработке ядра или интерфейса, если вы не правите сами драйверы. Полная сборка всех 162 пакетов драйверов и свыше тысячи интеграционных тестов на холодной машине может занять **несколько часов** ([issue #65](https://github.com/iot-solutions-ru/ispf/issues/65)). Используйте быстрые команды ниже.
 
-### Проверка перед push (как CI pr-fast)
+### Быстрая проверка перед отправкой PR (совпадает с CI `pr-fast`)
 
 ```bash
-# Linux/macOS
+# Linux / macOS
 ./tools/ci/pr-fast.sh
 
-# Windows
+# Windows PowerShell
 .\tools\ci\pr-fast.ps1
 ```
 
-Backend в Gradle:
+Те же проверки по отдельности:
 
 ```bash
+# Серверная часть (пропускает длительные нагрузочные и кластерные тесты)
 ./gradlew testPrFast \
   -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev
+
+# Веб-консоль: тесты, проверка локализации и сборка статики
+cd apps/web-console && npm test && npm run i18n:check && npm run build
 ```
 
-Web console: `cd apps/web-console && npm test && npm run i18n:check && npm run build`.
-
-### Точечная проверка (&lt; 2 мин)
+### Точечный запуск одного теста (быстрее 2 минут)
 
 ```bash
 ./gradlew :packages:ispf-core:test --tests com.ispf.core.model.DataRecordTest
@@ -181,19 +200,14 @@ Web console: `cd apps/web-console && npm test && npm run i18n:check && npm run b
   -Dispf.test.skipLoad=true
 ```
 
-### Когда нужен полный pipeline
+### Шпаргалка по наборам тестов
 
-| Цель | Команда |
-|------|---------|
-| Все driver packs | `./gradlew syncAllDriverPacks` или `-Dispf.driver.packs=all` |
-| PR-fast driver packs | `./gradlew testDevDriverPacks syncDevDriverPacks` (CI job `driver-packs`, отдельно от platform `backend`) |
-| PR-fast backend | `./gradlew testPrFast -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev` |
-| Nightly backend | `./tools/ci/nightly.sh` или `./gradlew testNightlyBackend …` |
-| Полные тесты сервера | `./gradlew :packages:ispf-server:test` (без `skipLoad`) |
-| Всё | `./gradlew build` (медленно — не каждый день) |
+| Что вы меняли | Какую команду запустить |
+|---------------|-------------------------|
+| Логику сервера или ядра | `./gradlew testPrFast -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev` |
+| Базовые драйверы разработки | `./gradlew testDevDriverPacks syncDevDriverPacks` |
+| Весь каталог драйверов протоколов | `./gradlew syncAllDriverPacks` |
+| Нагрузочные тесты и федерацию (ночной прогон) | `./tools/ci/nightly.sh` |
+| Все тесты `ispf-server` без пропусков | `./gradlew :packages:ispf-server:test` |
 
-**Уровни тестов (issue #65):** PR-fast пропускает `@Tag("load")` и `@Tag("federation")`; nightly гоняет их (`tools/ci/nightly.sh`, [nightly.yml](../../.github/workflows/nightly.yml)). Подпроекты локально параллельны; сериализация: `-Dispf.test.serializeSubprojects=true`. CI разделяет **driver packs** (`testDevDriverPacks` / job `driver-packs`) и **platform backend** (`testPrFast` / job `backend`); packs могут кэшироваться (`ISPF_DRIVER_PACKS_PREBUILT=true`). Protocol loopback — в [driver-interop.yml](../../.github/workflows/driver-interop.yml).
-
-Опционально: [gradle.properties.example](../../gradle.properties.example).
-
-См. также: [testing](testing.md).
+Настройки параллельности сборки описаны в [gradle.properties.example](../../gradle.properties.example), подробности о тестах — в разделе [Тестирование](testing.md).

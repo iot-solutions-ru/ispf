@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0015-event-history-timescale.md](../../en/decisions/0015-event-history-timescale.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0015-event-history-timescale.md](../../en/decisions/0015-event-history-timescale.md).
 
 # ADR-0015: TimescaleDB tier для event journal
 

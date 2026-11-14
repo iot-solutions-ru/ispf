@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/release-dogfood.md](../en/release-dogfood.md).
+> **Язык:** русская версия. Английский оригинал: [en/release-dogfood.md](../en/release-dogfood.md).
 
 # Чеклист dogfood перед релизом
 
-> **Статус:** Internal — Чеклист релиза. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Internal — Чеклист релиза. Метки зрелости: [doc-status.md](doc-status.md).
 
 Короткий шлюз перед тегом релиза. Лучше провалить шаг, чем пропустить его.
 

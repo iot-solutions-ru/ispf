@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0013-web-console-i18n.md](../../en/decisions/0013-web-console-i18n.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0013-web-console-i18n.md](../../en/decisions/0013-web-console-i18n.md).
 
 # ADR-0013: Web Console i18n
 

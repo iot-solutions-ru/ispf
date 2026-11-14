@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0030-cluster-config-structure-replica-sync.md](../../en/decisions/0030-cluster-config-structure-replica-sync.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0030-cluster-config-structure-replica-sync.md](../../en/decisions/0030-cluster-config-structure-replica-sync.md).
 
 # ADR-0030: Cluster config and structure replica sync
 

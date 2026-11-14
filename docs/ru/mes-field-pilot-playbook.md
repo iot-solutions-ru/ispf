@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/mes-field-pilot-playbook.md](../en/mes-field-pilot-playbook.md).
+> **Язык:** русская версия. Английский оригинал: [en/mes-field-pilot-playbook.md](../en/mes-field-pilot-playbook.md).
 
 # Playbook полевого MES-пилота (BL-164…170 / Post-S33)
 
-> **Статус:** Lab — runbook цеха. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Lab — runbook внедрения MES в цехе. Метки зрелости: [doc-status.md](doc-status.md).
 
 Повторяемый цикл **MES на реальной линии** через `mes-platform-production`. Lab/marketplace **Готово**; хвост — **7 дней на площадке**, не новые модули MES.
 

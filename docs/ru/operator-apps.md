@@ -1,49 +1,55 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/operator-apps.md](../en/operator-apps.md).
+> **Язык:** русская версия. Английский оригинал: [en/operator-apps.md](../en/operator-apps.md).
 
-# Operator Apps
+# Приложения оператора (Operator Apps)
 
-> **Статус:** Stable — Operator shell configuration. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Stable — настройка меню экранов и стартовых рабочих мест для дежурного персонала. Метки зрелости: [doc-status.md](doc-status.md).
 
-Операторские приложения — конфиги **dashboard-UI** (`operator_app_ui`), указывающие на объекты `DASHBOARD` в дереве. Legacy `*.manifest.json` устарел.
+**Приложение оператора (`Operator App`)** определяет набор вкладок дашбордов, заголовок и стартовый экран (либо адрес встроенного React-интерфейса `/apps/<appId>/`), которые открываются сменному персоналу в режиме оператора. Настройки хранятся на сервере в таблице `operator_app_ui` и отображаются в дереве по пути `root.platform.operator-apps.<appId>`.
 
-## URL
+---
 
-![Лаунчер Operator Apps](../assets/ispf-operator-apps-launcher.png)
+## Адреса запуска
 
-| App | URL |
-|-----|-----|
-| Launcher | `/?mode=operator` |
-| Alarm Console | `/?mode=operator&app=alarm-console` |
-| Work Queue | `/?mode=operator&app=work-queue` |
-| HMI Wall | `/?mode=operator&app=hmi-wall` |
-| Platform HMI (fixtures) | `/?mode=operator&app=platform` |
+![Экран выбора приложений оператора](../assets/ispf-operator-apps-launcher.png)
 
-Дерево: `root.platform.operator-apps.{appId}`.
+| Режим / приложение | URL |
+|--------------------|-----|
+| Экран выбора приложений (лаунчер) | `/?mode=operator` |
+| Пульт тревог | `/?mode=operator&app=alarm-console` |
+| Рабочая очередь задач смены | `/?mode=operator&app=work-queue` |
+| Видеостена (мозаика 2×2) | `/?mode=operator&app=hmi-wall` |
+| Обзорный пульт платформы | `/?mode=operator&app=platform` |
 
-## Стартовые шаблоны (Wave 4)
+---
 
-| appId | Dashboard | Назначение |
-|-------|-----------|------------|
-| `alarm-console` | `root.platform.dashboards.alarm-console` | Лента событий + alarm bar (`thresholdExceeded` / ack) |
-| `work-queue` | `root.platform.dashboards.work-queue` | Full-bleed виджет work-queue |
-| `hmi-wall` | `root.platform.dashboards.hmi-wall` | Хост мозаики `video-wall-2x2` |
+## Встроенные стартовые шаблоны
 
-- **Fixtures on:** сидируются при старте вместе с Platform HMI.
-- **Clean install:** Operator launcher → **Install starter templates**, или `POST /api/v1/operator-apps/starters/install` (admin).
+| `appId` | Целевой дашборд | Назначение |
+|---------|-----------------|------------|
+| `alarm-console` | `root.platform.dashboards.alarm-console` | Живая лента событий и панель квитирования активных тревог |
+| `work-queue` | `root.platform.dashboards.work-queue` | Полноэкранная очередь задач оператора из процессов BPMN |
+| `hmi-wall` | `root.platform.dashboards.hmi-wall` | Экран для диспетчерской видеостены (раскладка 2×2) |
 
-## API
+- При включённых демонстрационных данных (`fixtures-enabled=true`) эти приложения создаются автоматически при первом старте сервера.
+- На чистой установке их можно развернуть одной кнопкой с экрана выбора приложений (**Установить стартовые шаблоны**) или запросом `POST /api/v1/operator-apps/starters/install` (роль `admin`).
 
-| Method | Path |
-|--------|------|
-| `GET` | `/api/v1/operator-apps` |
-| `GET` | `/api/v1/operator-apps/{appId}/ui` |
-| `POST` | `/api/v1/operator-apps/{appId}` |
-| `PUT` | `/api/v1/operator-apps/{appId}/ui` |
-| `GET` | `/api/v1/operator-apps/starters` |
-| `POST` | `/api/v1/operator-apps/starters/install` |
+---
 
-## Связанное
+## REST API
 
-- [web-console](web-console.md) — operator vs admin shell
-- [external-ide](external-ide.md) — hosted SPA / Open app UI из внешней IDE
-- [release-dogfood](release-dogfood.md) — pre-tag gate
+| Метод | Путь | Назначение |
+|-------|------|------------|
+| `GET` | `/api/v1/operator-apps` | Список всех приложений оператора |
+| `GET` | `/api/v1/operator-apps/{appId}/ui` | Получить конфигурацию меню и экранов |
+| `POST` | `/api/v1/operator-apps/{appId}` | Создать приложение оператора |
+| `PUT` | `/api/v1/operator-apps/{appId}/ui` | Обновить заголовок, вкладки дашбордов и ссылки на `ui-pack` |
+| `GET` | `/api/v1/operator-apps/starters` | Список доступных стартовых шаблонов |
+| `POST` | `/api/v1/operator-apps/starters/install` | Установить стартовые шаблоны |
+
+---
+
+## Связанные разделы
+
+- [Руководство оператора](operator-guide.md) — ежедневная работа с экранами и очередью задач
+- [Веб-консоль](web-console.md) — отличие режима администратора и режима оператора
+- [Разработка своего React-интерфейса](external-ide.md) — подключение внешних веб-пакетов `ui-pack`

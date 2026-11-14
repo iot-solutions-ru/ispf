@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/driver-interop-lab.md](../en/driver-interop-lab.md).
+> **Язык:** русская версия. Английский оригинал: [en/driver-interop-lab.md](../en/driver-interop-lab.md).
 
 # Лаборатория взаимодействия драйверов (BL-141)
 
@@ -12,7 +12,7 @@
 
 ## Топ-20 промышленных матриц
 
-Источник истины: `DriverProductionMatrix.TOP_20_INDUSTRIAL` в `packages/ispf-server`.
+Актуальный список протоколов: `DriverProductionMatrix.TOP_20_INDUSTRIAL` в `packages/ispf-server`.
 
 | `driverId` | Gradle module | Loopback test |
 | ---------- | ------------- | ------------- |
