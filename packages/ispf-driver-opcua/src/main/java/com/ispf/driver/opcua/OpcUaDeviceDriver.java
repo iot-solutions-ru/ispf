@@ -162,7 +162,9 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
         } catch (Exception e) {
             connected = false;
             releaseClient();
-            throw new DriverTransientException("OPC UA connect failed", e);
+            throw new DriverTransientException(
+                    "OPC UA connect failed: " + java.util.Objects.toString(e.getMessage(), e.getClass().getSimpleName()),
+                    e);
         }
     }
 

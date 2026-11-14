@@ -204,15 +204,33 @@ public class ModbusUdpDeviceDriver implements DeviceDriver {
     }
 
     private static long extractNumeric(DataRecord value) {
-        Object raw = value.firstRow().get("raw");
-        if (raw instanceof Number number) {
+        Long parsed = numericField(value.firstRow().get("raw"));
+        if (parsed == null) {
+            parsed = numericField(value.firstRow().get("value"));
+        }
+        if (parsed == null) {
+            throw new IllegalArgumentException("Modbus write requires numeric raw/value field");
+        }
+        return parsed;
+    }
+
+    private static Long numericField(Object field) {
+        if (field instanceof Number number) {
             return number.longValue();
         }
-        Object numeric = value.firstRow().get("value");
-        if (numeric instanceof Number number) {
-            return number.longValue();
+        if (field instanceof String text && !text.isBlank()) {
+            try {
+                String trimmed = text.trim();
+                if (trimmed.indexOf('.') >= 0 || trimmed.indexOf('e') >= 0 || trimmed.indexOf('E') >= 0) {
+                    double parsed = Double.parseDouble(trimmed);
+                    return Double.isFinite(parsed) ? (long) parsed : null;
+                }
+                return Long.parseLong(trimmed);
+            } catch (NumberFormatException ex) {
+                return null;
+            }
         }
-        throw new IllegalArgumentException("Modbus write requires numeric raw/value field");
+        return null;
     }
 
     private void readConfig(String name, java.util.function.Consumer<String> consumer) {

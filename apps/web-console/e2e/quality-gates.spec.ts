@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { mockAuthConfig, mockAuthenticatedApi, seedAuthSession } from "./fixtures/apiMocks";
+import { mockAuthConfig, mockAuthenticatedApi, seedAuthSession, type MockAuthSession } from "./fixtures/apiMocks";
 import { buildStressMimicDocument, STRESS_MIMIC_BIND_PATH } from "./fixtures/stressMimic";
 
 const OPERATOR_E2E_URL = "/?mode=operator&app=e2e-operator";
@@ -334,5 +334,174 @@ test.describe("mimic live FPS (unmocked demostand)", () => {
 
     expect(result.wsUpdates, "expected real Object WS VARIABLE_UPDATED during sample").toBeGreaterThan(0);
     expect(result.fpsMedian).toBeGreaterThanOrEqual(MIN_MIMIC_FPS_LIVE);
+  });
+});
+
+/**
+ * 1000 INSTANCE faceplates. This is not the 500-element mimic stress gate.
+ * The table pages 50 rows and reports the full count; opening one row loads
+ * the bound faceplate.
+ */
+const FACEPLATE_COUNT = Number(process.env.FACEPLATE_INSTANCE_COUNT ?? 1000);
+const FACEPLATE_LIST_MS = Number(process.env.FACEPLATE_LIST_MS ?? 3000);
+const FACEPLATE_OPEN_MS = Number(process.env.FACEPLATE_OPEN_MS ?? 2000);
+const FACEPLATE_MIN_FPS = Number(process.env.FACEPLATE_MIN_FPS ?? 30);
+const FACEPLATE_PARENT = "root.platform.instances.tck-units";
+const FACEPLATE_PATH = "root.platform.dashboards.tck-unit-faceplate";
+const FACEPLATE_SAMPLE = `${FACEPLATE_PARENT}.unit-0007`;
+
+const FACEPLATE_ADMIN: MockAuthSession = {
+  token: "e2e-faceplate-admin",
+  username: "admin",
+  displayName: "Admin",
+  roles: ["admin"],
+};
+
+const FACEPLATE_VIEWER: MockAuthSession = {
+  token: "e2e-faceplate-viewer",
+  username: "viewer",
+  displayName: "Viewer",
+  roles: ["viewer"],
+};
+
+function faceplateLayouts() {
+  return {
+    dashboardLayout: {
+      widgets: [
+        {
+          id: "tck-units",
+          type: "object-table",
+          title: "Units",
+          x: 0,
+          y: 0,
+          w: 48,
+          h: 28,
+          parentPath: FACEPLATE_PARENT,
+          columnsJson: JSON.stringify([{ label: "Unit", objectField: "displayName" }]),
+          selectionKey: "unit",
+          rowSelectionKey: "unit",
+          rowTargetDashboard: FACEPLATE_PATH,
+          rowOpenMode: "modal",
+        },
+      ],
+    },
+    faceplate: {
+      parentPath: FACEPLATE_PARENT,
+      total: FACEPLATE_COUNT,
+      faceplatePath: FACEPLATE_PATH,
+      alarmRole: "admin",
+      samplePath: FACEPLATE_SAMPLE,
+      sampleLevel: 42,
+      faceplateLayout: {
+        widgets: [
+          {
+            id: "unit-level",
+            type: "value",
+            title: "Level",
+            x: 0,
+            y: 0,
+            w: 20,
+            h: 12,
+            selectionKey: "unit",
+            variableName: "level",
+            valueField: "value",
+            decimals: 1,
+          },
+          {
+            id: "unit-alarm",
+            type: "value",
+            title: "Alarm",
+            x: 22,
+            y: 0,
+            w: 20,
+            h: 12,
+            selectionKey: "unit",
+            variableName: "alarm",
+            valueField: "value",
+          },
+        ],
+      },
+    },
+  };
+}
+
+async function openFaceplateBoard(page: import("@playwright/test").Page, session: MockAuthSession) {
+  const layouts = faceplateLayouts();
+  await mockAuthenticatedApi(page, { session, ...layouts });
+  await seedAuthSession(page, session);
+  await openOperatorE2e(page);
+  const started = Date.now();
+  await expect(page.locator(".dash-table-pager")).toContainText(String(FACEPLATE_COUNT), { timeout: FACEPLATE_LIST_MS });
+  return Date.now() - started;
+}
+
+test.describe("1000 instance faceplates", () => {
+  test("loads the instance page, opens one faceplate, and follows a live update", async ({ page }) => {
+    const listMs = await openFaceplateBoard(page, FACEPLATE_ADMIN);
+    expect(listMs).toBeLessThanOrEqual(FACEPLATE_LIST_MS);
+    await expect(page.getByTestId("operator-alarm-bar")).toContainText("High temperature");
+
+    const started = Date.now();
+    await page.locator(".dash-object-table").getByRole("cell", { name: "unit-0007", exact: true }).first().click();
+    const faceplate = page.locator(".dashboard-modal");
+    await expect(faceplate.locator(".dash-widget-metric")).toHaveText("42.0", { timeout: FACEPLATE_OPEN_MS });
+    const openMs = Date.now() - started;
+    expect(openMs).toBeLessThanOrEqual(FACEPLATE_OPEN_MS);
+
+    await page.evaluate(
+      ({ path, eventName }) => {
+        window.dispatchEvent(
+          new CustomEvent(eventName, {
+            detail: {
+              type: "VARIABLE_UPDATED",
+              path,
+              variableName: "level",
+              timestamp: new Date().toISOString(),
+              value: {
+                schema: { name: "level", fields: [{ name: "value", type: "DOUBLE" }] },
+                rows: [{ value: 55 }],
+              },
+            },
+          })
+        );
+      },
+      { path: FACEPLATE_SAMPLE, eventName: "ispf-object-ws-message" }
+    );
+    await expect(faceplate.locator(".dash-widget-metric")).toHaveText("55.0");
+    await expect(faceplate).toContainText("ACTIVE");
+
+    const fps = await page.evaluate(async () => {
+      const samples: number[] = [];
+      let frames = 0;
+      let start = performance.now();
+      await new Promise<void>((resolve) => {
+        const onFrame = (now: number) => {
+          frames += 1;
+          if (now - start >= 1000) {
+            samples.push((frames * 1000) / (now - start));
+            if (samples.length >= 3) {
+              resolve();
+              return;
+            }
+            frames = 0;
+            start = now;
+          }
+          requestAnimationFrame(onFrame);
+        };
+        requestAnimationFrame(onFrame);
+      });
+      samples.sort((a, b) => a - b);
+      return samples[1] ?? samples[0] ?? 0;
+    });
+    expect(fps).toBeGreaterThanOrEqual(FACEPLATE_MIN_FPS);
+  });
+
+  test("a viewer without the alarm role does not see the unit alarm", async ({ page }) => {
+    await openFaceplateBoard(page, FACEPLATE_VIEWER);
+    await expect(page.getByTestId("operator-alarm-bar")).toHaveCount(0);
+    await page.locator(".dash-object-table").getByRole("cell", { name: "unit-0007", exact: true }).first().click();
+    const faceplate = page.locator(".dashboard-modal");
+    await expect(faceplate.locator(".dash-widget-metric")).toHaveText("42.0");
+    await expect(faceplate).not.toContainText("ACTIVE");
   });
 });

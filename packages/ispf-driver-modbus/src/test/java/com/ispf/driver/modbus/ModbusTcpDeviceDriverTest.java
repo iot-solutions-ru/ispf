@@ -116,6 +116,35 @@ class ModbusTcpDeviceDriverTest {
     }
 
     @Test
+    void writeHoldingRegisterAcceptsTheApiStringValue() throws Exception {
+        int port = freePort();
+        SimpleProcessImage image = holdingImage(100);
+        startTcpSlave(port, image);
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "timeoutMs", "3000"
+        ));
+        ModbusTcpDeviceDriver driver = new ModbusTcpDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("setpoint", "1:HOLDING:0"));
+
+        DataSchema apiSchema = DataSchema.builder("driverWrite").field("value", FieldType.STRING).build();
+        driver.writePoint("setpoint", DataRecord.single(apiSchema, Map.of("value", "250")));
+        assertEquals(250, image.getRegister(0).getValue());
+
+        driver.writePoint("setpoint", DataRecord.single(apiSchema, Map.of("value", "250.7")));
+        assertEquals(250, image.getRegister(0).getValue());
+
+        assertThrows(DriverException.class, () ->
+                driver.writePoint("setpoint", DataRecord.single(apiSchema, Map.of("value", "abc"))));
+        assertEquals(250, image.getRegister(0).getValue());
+        driver.disconnect();
+    }
+
+    @Test
     void writeCoilUpdatesSlaveAndVariable() throws Exception {
         int port = freePort();
         SimpleProcessImage image = coilImage(false);

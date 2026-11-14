@@ -190,7 +190,9 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
         } catch (Exception e) {
             connected = false;
             shutdownServer();
-            throw new DriverTransientException("OPC UA server start failed", e);
+            throw new DriverTransientException(
+                    "OPC UA server start failed: " + java.util.Objects.toString(e.getMessage(), e.getClass().getSimpleName()),
+                    e);
         }
     }
 

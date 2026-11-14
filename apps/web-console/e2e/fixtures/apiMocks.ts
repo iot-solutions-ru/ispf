@@ -21,10 +21,11 @@ export const MOCK_DEMO_SENSOR_DASHBOARD_PATH = "root.platform.dashboards.demo-se
 
 const NOW = "2026-06-28T00:00:00.000Z";
 
-function json(route: Route, body: unknown, status = 200) {
+function json(route: Route, body: unknown, status = 200, headers?: Record<string, string>) {
   return route.fulfill({
     status,
     contentType: "application/json",
+    headers,
     body: JSON.stringify(body),
   });
 }
@@ -224,6 +225,21 @@ export async function mockAuthConfig(
   await page.route("**/hmi/api/v1/auth/config", handler);
 }
 
+export interface MockFaceplateGate {
+  parentPath: string;
+  total: number;
+  faceplatePath: string;
+  faceplateLayout: {
+    columns?: number;
+    rowHeight?: number;
+    widgets: unknown[];
+  };
+  /** Session role that receives the alarm event and the alarm variable. */
+  alarmRole: string;
+  samplePath: string;
+  sampleLevel: number;
+}
+
 export interface MockAuthenticatedApiOptions {
   session?: MockAuthSession;
   dashboardLayout?: {
@@ -231,6 +247,7 @@ export interface MockAuthenticatedApiOptions {
     rowHeight?: number;
     widgets: unknown[];
   };
+  faceplate?: MockFaceplateGate;
 }
 
 function normalizeMockApiPathname(pathname: string): string {
@@ -257,6 +274,53 @@ export async function mockAuthenticatedApi(
     layoutJson: JSON.stringify(layout),
     layout,
   };
+  const faceplate = opts.faceplate;
+  const faceplateView = faceplate
+    ? {
+        path: faceplate.faceplatePath,
+        title: "Unit faceplate",
+        refreshIntervalMs: 5000,
+        layoutJson: JSON.stringify(faceplate.faceplateLayout),
+        layout: { columns: 84, rowHeight: 8, ...faceplate.faceplateLayout },
+      }
+    : null;
+  const seesAlarm = Boolean(faceplate && session.roles.includes(faceplate.alarmRole));
+  const faceplateVariables = (path: string) => {
+    if (!faceplate || path !== faceplate.samplePath) {
+      return null;
+    }
+    const level = {
+      name: "level",
+      value: {
+        schema: { name: "level", fields: [{ name: "value", type: "DOUBLE" }] },
+        rows: [{ value: faceplate.sampleLevel }],
+      },
+      readable: true,
+      writable: true,
+      updatedAt: NOW,
+      historyEnabled: false,
+      historyRetentionDays: null,
+    };
+    if (!seesAlarm) {
+      return [level];
+    }
+    return [
+      level,
+      {
+        name: "alarm",
+        value: {
+          schema: { name: "alarm", fields: [{ name: "value", type: "STRING" }] },
+          rows: [{ value: "ACTIVE" }],
+        },
+        readable: true,
+        writable: false,
+        readRoles: [faceplate.alarmRole],
+        updatedAt: NOW,
+        historyEnabled: false,
+        historyRetentionDays: null,
+      },
+    ];
+  };
 
   await mockAuthConfig(page);
 
@@ -265,6 +329,19 @@ export async function mockAuthenticatedApi(
     const url = new URL(request.url());
     const { pathname, searchParams } = url;
     const apiPath = normalizeMockApiPathname(pathname);
+
+    if (faceplate && apiPath.startsWith("/api/v1/objects/variables/batch")) {
+      return json(route, {});
+    }
+
+    if (apiPath === "/api/v1/dashboards/by-path/context" && request.method() === "PUT") {
+      const emptyContext = { selection: {}, params: {}, widgets: {} };
+      return json(route, {
+        path: searchParams.get("path"),
+        context: emptyContext,
+        contextJson: JSON.stringify(emptyContext),
+      });
+    }
 
     if (request.method() !== "GET") {
       return json(route, { message: "mock not implemented" }, 501);
@@ -461,9 +538,40 @@ export async function mockAuthenticatedApi(
           },
         ]);
       case "/api/v1/events":
-        return json(route, []);
+        if (!seesAlarm || !faceplate) {
+          return json(route, []);
+        }
+        return json(route, [
+          {
+            id: "tck-unit-alarm",
+            objectPath: faceplate.samplePath,
+            eventName: "high-temp",
+            level: "WARNING",
+            payload: { schema: { name: "alarm", fields: [] }, rows: [{ value: "ACTIVE" }] },
+            timestamp: NOW,
+          },
+        ]);
       case "/api/v1/alert-rules":
-        return json(route, []);
+        if (!seesAlarm || !faceplate) {
+          return json(route, []);
+        }
+        return json(route, [
+          {
+            id: "tck-unit-high-temp",
+            name: "Unit high temperature",
+            objectPath: faceplate.samplePath,
+            watchVariable: "level",
+            conditionExpr: "value > 80",
+            eventName: "high-temp",
+            payloadVariable: null,
+            enabled: true,
+            edgeTrigger: false,
+            lastConditionMet: true,
+            latchedActive: true,
+            createdAt: NOW,
+            updatedAt: NOW,
+          },
+        ]);
       case "/api/v1/alarm-shelves":
         return json(route, []);
       case "/api/v1/objects/by-path/binding-rules": {
@@ -475,6 +583,10 @@ export async function mockAuthenticatedApi(
       }
       case "/api/v1/objects/by-path/variables": {
         const objectPath = searchParams.get("path");
+        const faceplateRows = objectPath ? faceplateVariables(objectPath) : null;
+        if (faceplateRows) {
+          return json(route, faceplateRows);
+        }
         if (objectPath === MOCK_DEVICE_PATH) {
           return json(route, MOCK_DEVICE_EDITOR.variables);
         }
@@ -514,6 +626,9 @@ export async function mockAuthenticatedApi(
       }
       case "/api/v1/dashboards/by-path": {
         const dashboardPath = searchParams.get("path");
+        if (faceplateView && dashboardPath === faceplateView.path) {
+          return json(route, faceplateView);
+        }
         if (dashboardPath === MOCK_DASHBOARD_PATH) {
           return json(route, dashboardView);
         }
@@ -524,6 +639,17 @@ export async function mockAuthenticatedApi(
       }
       case "/api/v1/objects": {
         const parent = searchParams.get("parent") ?? "";
+        if (faceplate && parent === faceplate.parentPath && searchParams.has("offset")) {
+          const offset = Number(searchParams.get("offset") ?? "0");
+          const limit = Number(searchParams.get("limit") ?? "50");
+          const end = Math.min(faceplate.total, offset + limit);
+          const items = [];
+          for (let index = offset; index < end; index += 1) {
+            const name = `unit-${String(index).padStart(4, "0")}`;
+            items.push(mockObject(`${parent}.${name}`, "CUSTOM", name));
+          }
+          return json(route, items, 200, { "X-Total-Count": String(faceplate.total) });
+        }
         if (!parent) {
           return json(route, FLAT_MOCK_TREE);
         }
@@ -581,7 +707,11 @@ export async function mockAuthenticatedApi(
 
     if (apiPath === "/api/v1/dashboards/by-path/context") {
       const dashboardPath = searchParams.get("path");
-      if (dashboardPath === MOCK_DASHBOARD_PATH || dashboardPath === MOCK_DEMO_SENSOR_DASHBOARD_PATH) {
+      if (
+        dashboardPath === MOCK_DASHBOARD_PATH
+        || dashboardPath === MOCK_DEMO_SENSOR_DASHBOARD_PATH
+        || dashboardPath === faceplate?.faceplatePath
+      ) {
         const emptyCtx = { selection: {}, params: {}, widgets: {} };
         return json(route, {
           path: dashboardPath,

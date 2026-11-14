@@ -262,11 +262,50 @@ def arm_command_driver(token):
     api("POST", "/api/v1/drivers/runtime/start", token, query={"devicePath": CMD_DEVICE})
 
 
+def reject_stale_fencing_epoch(token, holder):
+    """The holder still has the epoch from when it acquired the lease.
+
+    Advancing the database generation makes that in-memory epoch stale. The
+    write must be refused, then the generation is put back.
+    """
+    if holder not in PORTS:
+        return {"pass": False, "reason": f"holder {holder!r} has no API port"}
+    epoch = psql(
+        "SELECT fencing_epoch FROM platform_driver_locks "
+        f"WHERE device_path = '{CMD_DEVICE}' AND holder_id = '{holder}';"
+    )
+    if not epoch.isdigit() or int(epoch) < 1:
+        return {"pass": False, "reason": f"no fencing epoch ({epoch!r})"}
+    psql(
+        "UPDATE platform_driver_locks SET fencing_epoch = fencing_epoch + 1 "
+        f"WHERE device_path = '{CMD_DEVICE}' AND holder_id = '{holder}';"
+    )
+    try:
+        status, body = api(
+            "POST", "/api/v1/drivers/runtime/write", token,
+            {"rows": [{"value": "stale-epoch"}]},
+            {"devicePath": CMD_DEVICE, "pointId": "command"},
+            port=PORTS[holder],
+        )
+    finally:
+        psql(
+            "UPDATE platform_driver_locks SET fencing_epoch = "
+            f"{int(epoch)} WHERE device_path = '{CMD_DEVICE}' AND holder_id = '{holder}';"
+        )
+    text = json.dumps(body)
+    return {
+        "pass": status == 409 and "stale fencing epoch" in text,
+        "status": status,
+        "detail": body.get("detail") if isinstance(body, dict) else text[:300],
+    }
+
+
 def failover(token):
     import subprocess
     received = []
     subscriber = subprocess.Popen(
-        ["docker", "exec", "ispf-tck-mqtt", "mosquitto_sub", "-h", "127.0.0.1", "-t", "ispf/tck/cmd/command", "-v"],
+        ["docker", "exec", "-t", "ispf-tck-mqtt", "mosquitto_sub", "-h", "localhost",
+         "-t", "ispf/tck/cmd/command", "-v"],
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
         text=True,
@@ -357,9 +396,19 @@ def failover(token):
         stop.set()
         thread.join(timeout=5)
         sh(["docker", "start", container], check=False)
+        sh(
+            ["docker", "exec", "ispf-tck-mqtt", "mosquitto_pub", "-h", "localhost",
+             "-t", "ispf/tck/cmd/command", "-m", "sentinel-end"],
+            check=False,
+        )
+        drain_deadline = time.time() + 5
+        while time.time() < drain_deadline and not any("sentinel-end" in line for line in list(received)):
+            time.sleep(0.05)
         delivered = []
         for body in received:
-            payload = body.split()[-1] if body else ""
+            payload = body.replace("\r", "").split()[-1] if body else ""
+            if payload == "sentinel-end":
+                continue
             for n in accepted:
                 if payload == f"cmd-{n}":
                     delivered.append(n)
@@ -367,8 +416,12 @@ def failover(token):
         missing = [n for n in accepted if n not in set(delivered)]
         lease_ok = elapsed is not None and elapsed < 5.0
         commands_ok = len(accepted) > 0 and not missing and duplicates == 0
+        stale = reject_stale_fencing_epoch(token, moved) if moved in PORTS else {
+            "pass": False,
+            "reason": f"lease did not move to a known replica ({moved!r})",
+        }
         return {
-            "pass": lease_ok and commands_ok,
+            "pass": lease_ok and commands_ok and stale.get("pass") is True,
             "previousHolder": holder,
             "newHolder": moved,
             "seconds": None if elapsed is None else round(elapsed, 3),
@@ -377,9 +430,16 @@ def failover(token):
             "duplicateCommands": duplicates,
             "lostCommands": len(missing),
             "lastError": last_error["text"],
+            "staleEpoch": stale,
         }
     finally:
         subscriber.terminate()
+        try:
+            subscriber.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            subscriber.kill()
+        if subscriber.stdout is not None:
+            subscriber.stdout.close()
 
 
 def erp_outage():
@@ -620,7 +680,302 @@ def double_signature(admin_token):
     }
 
 
+def container_modbus_host():
+    """Address the Modbus peer uses from inside the TCK node.
+
+    A node started by run_on_lab.py resolves host.docker.internal. A node
+    without that alias uses the Docker bridge gateway of ispf-tck-1.
+    """
+    configured = os.environ.get("SOLUTION_TCK_MODBUS_HOST")
+    if configured:
+        return configured
+    import subprocess
+    probe = subprocess.run(
+        ["docker", "exec", "ispf-tck-1", "getent", "hosts", "host.docker.internal"],
+        text=True, capture_output=True,
+    )
+    if probe.returncode == 0 and (probe.stdout or "").strip():
+        return "host.docker.internal"
+    gateway = subprocess.run(
+        ["docker", "inspect", "-f", "{{range .NetworkSettings.Networks}}{{.Gateway}}{{end}}", "ispf-tck-1"],
+        text=True, capture_output=True,
+    )
+    address = (gateway.stdout or "").strip()
+    return address or "host.docker.internal"
+
+
+def modbus_server_script():
+    configured = os.environ.get("SOLUTION_TCK_MODBUS_SERVER")
+    if configured:
+        return configured
+    bundled = os.path.normpath(os.path.join(
+        os.path.dirname(__file__), "..", "..", "deploy", "driver-interop", "modbus", "server.py",
+    ))
+    if os.path.isfile(bundled):
+        return bundled
+    return "/tmp/server.py"
+
+
+def modbus_register(port=15020):
+    import socket
+    import struct
+    pdu = struct.pack(">BHH", 3, 0, 1)
+    header = struct.pack(">HHHB", 1, 0, len(pdu) + 1, 1)
+    with socket.create_connection(("127.0.0.1", port), 3) as sock:
+        sock.sendall(header + pdu)
+        data = sock.recv(256)
+    if len(data) < 11 or data[7] != 3:
+        raise OSError("short FC3 reply")
+    return struct.unpack(">H", data[-2:])[0]
+
+
+def modbus_peer(port=15020):
+    import subprocess
+    try:
+        modbus_register(port)
+        return None
+    except OSError:
+        proc = subprocess.Popen(
+            ["python3", modbus_server_script(), "--host", "0.0.0.0", "--port", str(port)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        deadline = time.time() + 5
+        while time.time() < deadline:
+            try:
+                modbus_register(port)
+                return proc
+            except OSError:
+                time.sleep(0.1)
+        raise RuntimeError("modbus peer did not listen on %s" % port)
+
+
+def modbus_peer_pid(port=15020):
+    import subprocess
+    proc = subprocess.run(["ps", "-ef"], text=True, capture_output=True)
+    needle = "--port %s" % port
+    for line in (proc.stdout or "").splitlines():
+        if "server.py" in line and needle in line:
+            parts = line.split()
+            if len(parts) > 1 and parts[1].isdigit():
+                return int(parts[1])
+    return None
+
+
+def driver_call(token, method, path, query, port=8081, body=None):
+    return api(method, path, token, body, query, port=port)
+
+
+def ensure_device(token, name):
+    status, body = api("POST", "/api/v1/objects", token, {
+        "parentPath": "root.platform.devices",
+        "name": name,
+        "type": "DEVICE",
+        "displayName": name,
+    })
+    if status not in (200, 409) and "already exists" not in json.dumps(body):
+        return False, status, body
+    return True, status, body
+
+
+def stop_everywhere(token, device):
+    last = (200, {})
+    for replica_port in PORTS.values():
+        last = driver_call(token, "POST", "/api/v1/drivers/runtime/stop", {"devicePath": device}, port=replica_port)
+    return last
+
+
+def interop(token):
+    """OPC UA restart, Modbus peer loss, and one MQTT command on the live stand."""
+    import subprocess
+    opc_server = "root.platform.devices.tck-opcua-server"
+    opc_client = "root.platform.devices.tck-opcua"
+    modbus = "root.platform.devices.tck-modbus"
+    modbus_host = container_modbus_host()
+    port = 8081
+    spawned = []
+
+    def stopped_write(status, body):
+        text = json.dumps(body).lower()
+        return status == 409 and (
+            "not permitted" in text or "not running" in text or "not connected" in text or "write failed" in text
+        )
+
+    for name in ("tck-opcua-server", "tck-opcua"):
+        created, create_status, create_body = ensure_device(token, name)
+        if not created:
+            return {"pass": False, "stage": "create " + name, "status": create_status, "detail": create_body}
+
+    for device, driver_id, configuration, mapping in (
+        (opc_server, "opcua-server", {"bindPort": "4840", "namespace": "2", "timeoutMs": "10000"}, "Level"),
+        (opc_client, "opcua", {
+            "endpointUrl": "opc.tcp://127.0.0.1:4840/ispf",
+            "securityPolicy": "None",
+            "securityMode": "None",
+            "readMode": "poll",
+            "timeoutMs": "10000",
+        }, "ns=2;s=Level"),
+    ):
+        status, body = driver_call(token, "PUT", "/api/v1/drivers/runtime/configure", {"devicePath": device}, body={
+            "driverId": driver_id,
+            "pollIntervalMs": 1000,
+            "configuration": configuration,
+            "pointMappings": {"Level": mapping},
+            "autoStart": False,
+        })
+        if status != 200:
+            return {"pass": False, "stage": "configure " + driver_id, "status": status, "detail": body}
+        stop_everywhere(token, device)
+    server_status, _ = driver_call(token, "POST", "/api/v1/drivers/runtime/start", {"devicePath": opc_server})
+    time.sleep(1)
+    client_status, _ = driver_call(token, "POST", "/api/v1/drivers/runtime/start", {"devicePath": opc_client})
+    before_status, _ = driver_call(
+        token, "POST", "/api/v1/drivers/runtime/write",
+        {"devicePath": opc_client, "pointId": "Level"},
+        body={"rows": [{"value": "77.1"}]},
+    )
+    owner = psql(
+        "SELECT holder_id FROM platform_driver_locks "
+        f"WHERE device_path = '{opc_client}' AND expires_at > CURRENT_TIMESTAMP;"
+    )
+    owner_port = PORTS.get(owner, port)
+    driver_call(token, "POST", "/api/v1/drivers/runtime/stop", {"devicePath": opc_client}, port=owner_port)
+    stopped_status, stopped_body = driver_call(
+        token, "POST", "/api/v1/drivers/runtime/write",
+        {"devicePath": opc_client, "pointId": "Level"},
+        port=owner_port,
+        body={"rows": [{"value": "77.2"}]},
+    )
+    restart_status, _ = driver_call(token, "POST", "/api/v1/drivers/runtime/start", {"devicePath": opc_client}, port=owner_port)
+    time.sleep(0.5)
+    again_status, _ = driver_call(
+        token, "POST", "/api/v1/drivers/runtime/write",
+        {"devicePath": opc_client, "pointId": "Level"},
+        port=owner_port,
+        body={"rows": [{"value": "77.3"}]},
+    )
+    read_status, read_body = api("GET", "/api/v1/objects/by-path/variables", token, query={"path": opc_client}, port=owner_port)
+    readback = None
+    if isinstance(read_body, list):
+        for item in read_body:
+            if item.get("name") != "Level":
+                continue
+            value = item.get("value") or {}
+            rows = value.get("rows") if isinstance(value, dict) else None
+            if rows:
+                readback = rows[0].get("value")
+    opc_ok = (
+        server_status == 200 and client_status == 200 and before_status == 200
+        and stopped_write(stopped_status, stopped_body)
+        and restart_status == 200 and again_status == 200 and str(readback) == "77.3" and read_status == 200
+    )
+
+    created, create_status, create_body = ensure_device(token, "tck-modbus")
+    if not created:
+        return {"pass": False, "stage": "create tck-modbus", "status": create_status, "detail": create_body}
+    peer = modbus_peer()
+    if peer is not None:
+        spawned.append(peer)
+    configure_status, configure_body = driver_call(token, "PUT", "/api/v1/drivers/runtime/configure", {"devicePath": modbus}, body={
+        "driverId": "modbus-tcp",
+        "pollIntervalMs": 1000,
+        "configuration": {"host": modbus_host, "port": "15020", "timeoutMs": "2000"},
+        "pointMappings": {"level": "1:HOLDING:0"},
+        "autoStart": False,
+    })
+    stop_everywhere(token, modbus)
+    modbus_start, _ = driver_call(token, "POST", "/api/v1/drivers/runtime/start", {"devicePath": modbus})
+    modbus_write, _ = driver_call(
+        token, "POST", "/api/v1/drivers/runtime/write",
+        {"devicePath": modbus, "pointId": "level"},
+        body={"rows": [{"value": "471"}]},
+    )
+    register = modbus_register() if modbus_write == 200 else None
+    pid = None if peer is None else peer.pid
+    if pid is None:
+        pid = modbus_peer_pid()
+    if pid:
+        subprocess.run(["kill", str(pid)], check=False)
+        time.sleep(0.4)
+    down_status, down_body = driver_call(
+        token, "POST", "/api/v1/drivers/runtime/write",
+        {"devicePath": modbus, "pointId": "level"},
+        body={"rows": [{"value": "472"}]},
+    )
+    recovered_peer = modbus_peer()
+    if recovered_peer is not None:
+        spawned.append(recovered_peer)
+    time.sleep(0.3)
+    driver_call(token, "POST", "/api/v1/drivers/runtime/start", {"devicePath": modbus})
+    back_status, _ = driver_call(
+        token, "POST", "/api/v1/drivers/runtime/write",
+        {"devicePath": modbus, "pointId": "level"},
+        body={"rows": [{"value": "473"}]},
+    )
+    recovered = modbus_register() if back_status == 200 else None
+    modbus_ok = (
+        configure_status == 200 and modbus_start == 200 and modbus_write == 200 and register == 471
+        and stopped_write(down_status, down_body) and back_status == 200 and recovered == 473
+    )
+
+    arm_command_driver(token)
+    subscriber = subprocess.Popen(
+        ["docker", "exec", "-t", "ispf-tck-mqtt", "mosquitto_sub", "-h", "localhost",
+         "-t", "ispf/tck/cmd/command", "-C", "1", "-W", "8"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+    )
+    time.sleep(0.4)
+    mqtt_status, mqtt_body = driver_call(
+        token, "POST", "/api/v1/drivers/runtime/write",
+        {"devicePath": CMD_DEVICE, "pointId": "command"},
+        body={"rows": [{"value": "mqtt-rt-1"}]},
+    )
+    try:
+        mqtt_out, _mqtt_err = subscriber.communicate(timeout=10)
+    except subprocess.TimeoutExpired:
+        subscriber.kill()
+        mqtt_out = ""
+    mqtt_ok = mqtt_status == 200 and "mqtt-rt-1" in (mqtt_out or "")
+
+    for proc in spawned:
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+
+    return {
+        "pass": opc_ok and modbus_ok and mqtt_ok,
+        "opc": {
+            "pass": opc_ok,
+            "holder": owner,
+            "writeWhileStopped": stopped_status,
+            "stoppedDetail": stopped_body.get("detail") if isinstance(stopped_body, dict) else stopped_body,
+            "readback": readback,
+        },
+        "modbus": {
+            "pass": modbus_ok,
+            "register": register,
+            "peerDown": down_status,
+            "peerDownDetail": down_body.get("detail") if isinstance(down_body, dict) else down_body,
+            "recoveredRegister": recovered,
+        },
+        "mqtt": {"pass": mqtt_ok, "status": mqtt_status, "payload": (mqtt_out or "")[-200:], "detail": mqtt_body},
+    }
+
+
 def main():
+    phase = os.environ.get("SOLUTION_TCK_PHASE", "").strip()
+    if phase == "interop":
+        log("solution-tck interop")
+        token = login(8081, time.time() + 60)
+        result = {"interop": interop(token)}
+        result["green"] = result["interop"].get("pass") is True
+        print(json.dumps(result))
+        if not result["green"]:
+            raise SystemExit(1)
+        return
     log("solution-tck gates")
     token = login(8081, time.time() + 60)
     login(8082, time.time() + 60)
