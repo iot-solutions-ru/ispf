@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -161,6 +162,78 @@ class BundleTreeArtifactsApplierDataSourceTest {
         assertThat(captor.getValue().actionType()).isEqualTo("invoke_function");
         assertThat(captor.getValue().actionJson()).contains("tick");
         assertThat(log.applied()).contains("schedule:fleet-tick");
+    }
+
+    @Test
+    void upgradeDoesNotDeletePlantPathsAbsentFromTheManifest() {
+        String appId = "mes-platform";
+        String path = "root.platform.data-sources.mes-platform";
+        when(dataSourceObjectService.pathForNodeName(appId)).thenReturn(path);
+        doNothing().when(dataSourceObjectService).ensureDataSource(anyString(), anyString(), anyString(), anyString());
+        when(objectManager.tree()).thenReturn(objectTree);
+        when(objectTree.findByPath(path)).thenReturn(Optional.of(
+                new PlatformObject(appId, path, ObjectType.DATA_SOURCE, "MES", "", null)
+        ));
+
+        BundleTreeArtifactsApplier applier = newApplier();
+        applier.apply(appId, emptyManifest("MES"), false, path, BundleApplyLog.empty());
+
+        verify(objectManager, never()).delete(anyString());
+        verify(objectManager, never()).deleteFunction(anyString(), anyString());
+        verify(objectManager, never()).removePathFromMemoryIfPresent(anyString());
+    }
+
+    @Test
+    void createMissingOnlySkipsAnExistingPlantFunction() throws Exception {
+        String appId = "mes-platform";
+        String path = "root.platform.data-sources.mes-platform";
+        when(dataSourceObjectService.pathForNodeName(appId)).thenReturn(path);
+        doNothing().when(dataSourceObjectService).ensureDataSource(anyString(), anyString(), anyString(), anyString());
+        when(objectManager.tree()).thenReturn(objectTree);
+        when(objectTree.findByPath(path)).thenReturn(Optional.of(
+                new PlatformObject(appId, path, ObjectType.DATA_SOURCE, "MES", "", null)
+        ));
+        when(functionStore.listVersions(appId, "root.plant.hub", "plantRule"))
+                .thenReturn(java.util.List.of(java.util.Map.of("version", "1")));
+
+        ApplicationBundleDeployService.BundleFunction function = new ApplicationBundleDeployService.BundleFunction(
+                "root.plant.hub",
+                "plantRule",
+                "1",
+                null,
+                null
+        );
+        BundleManifest manifest = new BundleManifest(
+                "2.0.0",
+                "MES",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                java.util.List.of(function),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+        BundleApplyLog log = BundleApplyLog.empty();
+        newApplier().apply(appId, manifest, true, path, log);
+
+        assertThat(log.skipped()).contains("function:plantRule");
+        verify(deployers, never()).deployFunction(anyString(), anyString(), org.mockito.ArgumentMatchers.any());
     }
 
     private BundleTreeArtifactsApplier newApplier() {
