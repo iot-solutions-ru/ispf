@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -111,6 +113,13 @@ public class HistorianRangeCatchUpService {
         return walBytes;
     }
 
+    @EventListener(ApplicationReadyEvent.class)
+    public void seedCatchUpSnapshot() {
+        synchronized (walLock) {
+            refreshSnapshotLocked();
+        }
+    }
+
     @Scheduled(fixedDelayString = "${ispf.variable-history.catchup.delay-ms:5000}")
     public int replay() {
         try {
@@ -129,9 +138,10 @@ public class HistorianRangeCatchUpService {
         List<VariableHistoryWriteRecord> pending;
         synchronized (walLock) {
             pending = dedupe(wal.readAll());
-        }
-        if (pending.isEmpty()) {
-            return 0;
+            if (pending.isEmpty()) {
+                refreshSnapshotLocked();
+                return 0;
+            }
         }
         List<HistorianCatchUpRangeStore.Range> open = ranges.list();
 
@@ -158,6 +168,9 @@ public class HistorianRangeCatchUpService {
         }
 
         if (acknowledged.isEmpty()) {
+            synchronized (walLock) {
+                refreshSnapshotLocked();
+            }
             return 0;
         }
         Set<String> acked = new HashSet<>();

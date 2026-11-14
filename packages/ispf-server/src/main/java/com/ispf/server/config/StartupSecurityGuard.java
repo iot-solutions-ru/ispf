@@ -55,7 +55,11 @@ public class StartupSecurityGuard {
             soft.add("ispf.license.require-signed-bundles=false (unsigned bundles can deploy)");
         }
         String origins = webSocketProperties.getAllowedOriginPatterns();
-        if (origins == null || origins.isBlank() || "*".equals(origins.trim())) {
+        boolean wildcardOrigin = origins == null
+                || origins.isBlank()
+                || java.util.Arrays.stream(webSocketProperties.resolvedAllowedOriginPatterns())
+                        .anyMatch("*"::equals);
+        if (wildcardOrigin) {
             hard.add("ispf.websocket.allowed-origin-patterns=* (set ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS in prod)");
         }
         if (securityProperties.isLocalRoleHeaderEnabled()) {

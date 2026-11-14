@@ -40,7 +40,7 @@ Sites may publish stricter numbers only with dated restore evidence under `docs/
 ## Consequences
 
 - Runbooks: [deployment](../deployment.md), [air-gap-deployment](../air-gap-deployment.md).
-- Lab T2 dump→restore script: [`deploy/tools/dr-restore-drill.sh`](../../deploy/tools/dr-restore-drill.sh) + claim board [`docs/evidence/dr-restore/`](../evidence/dr-restore/README.md). Optional login when `ISPF_BASE_URL` is set. T1 import remains covered by `PlatformBackup*` tests. Archive a dated transcript before treating Deploy as field-proven.
+- Lab T2 dump→restore script: [`deploy/tools/dr-restore-drill.sh`](../../../deploy/tools/dr-restore-drill.sh) + claim board [`docs/evidence/dr-restore/`](../../evidence/dr-restore/README.md). Optional login when `ISPF_BASE_URL` is set. T1 import remains covered by `PlatformBackup*` tests. Archive a dated transcript before treating Deploy as field-proven.
 - Scorecard Deploy must not jump to 9+ without site drill evidence (lab dump alone is not enough).
 
 ## Related

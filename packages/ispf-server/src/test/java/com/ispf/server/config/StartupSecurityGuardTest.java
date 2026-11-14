@@ -34,6 +34,18 @@ class StartupSecurityGuardTest {
     }
 
     @Test
+    void prodStrictWithWildcardMixedInListThrows() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setActiveProfiles("prod");
+        assertThatThrownBy(
+                        newGuard(environment, true, true, false, "https://console.example.com, *")
+                                ::warnOnUnsafeDefaults
+                )
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("allowed-origin-patterns");
+    }
+
+    @Test
     void prodStrictWithRbacOffThrows() {
         MockEnvironment environment = new MockEnvironment();
         environment.setActiveProfiles("prod");

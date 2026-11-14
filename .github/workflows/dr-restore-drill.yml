@@ -9,6 +9,9 @@ on:
       - ".github/workflows/dr-restore-drill.yml"
       - "docs/evidence/dr-restore/**"
 
+permissions:
+  contents: read
+
 jobs:
   t2-dump-restore:
     runs-on: ubuntu-latest
@@ -23,4 +26,5 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: dr-restore-drill
-          path: build/dr-restore-drill/
+          path: build/dr-restore-drill/transcript.md
+          if-no-files-found: warn

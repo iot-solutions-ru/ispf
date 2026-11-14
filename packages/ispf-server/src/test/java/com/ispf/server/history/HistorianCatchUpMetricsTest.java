@@ -37,6 +37,27 @@ class HistorianCatchUpMetricsTest {
                 .isGreaterThan(0.0);
     }
 
+    @Test
+    void seedSnapshotReflectsPreexistingWalWithoutNewFailure() {
+        MemoryRanges ranges = new MemoryRanges();
+        HistorianSampleWal wal = new HistorianSampleWal(tempDir, 1_000_000);
+        Instant at = Instant.parse("2026-01-01T00:00:00Z");
+        VariableHistoryWriteRecord sample = sample("root.a", "temp", at, 1.0);
+        wal.append(List.of(sample));
+        ranges.cover("root.a|temp|value", at, at);
+
+        HistorianRangeCatchUpService catchUp =
+                new HistorianRangeCatchUpService(wal, ranges, unusedSecondary());
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        new HistorianCatchUpMetrics(catchUp, provider(registry));
+
+        catchUp.seedCatchUpSnapshot();
+
+        assertThat(registry.get("ispf.historian.dual_write.catchup.ranges").gauge().value()).isEqualTo(1.0);
+        assertThat(registry.get("ispf.historian.dual_write.catchup.wal_bytes").gauge().value())
+                .isGreaterThan(0.0);
+    }
+
     private static VariableHistoryWriteRecord sample(String path, String name, Instant at, double value) {
         return new VariableHistoryWriteRecord(path, name, "value", at, at, value, null, "GOOD");
     }
