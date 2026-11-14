@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/agent-recipes.md](../en/agent-recipes.md).
+> **Язык:** русская версия. Английский оригинал: [en/agent-recipes.md](../en/agent-recipes.md).
 
 # AGENT_RECIPES
 

@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/reference-mes-walkthrough.md](../en/reference-mes-walkthrough.md).
+> **Язык:** русская версия. Английский оригинал: [en/reference-mes-walkthrough.md](../en/reference-mes-walkthrough.md).
 
 # MES reference walkthrough
 
-> **Статус:** Lab — Сквозной MES-путь. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Lab — Сквозной MES-путь. Метки зрелости: [doc-status.md](doc-status.md).
 
 Сквозной reference-сценарий ISPF для разработчиков решений: **наряд на отгрузку → резервуар → эстакада → завершение**. Без custom Java в `ispf-server`.
 

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0034-agent-observability-and-session-knowledge.md](../../en/decisions/0034-agent-observability-and-session-knowledge.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0034-agent-observability-and-session-knowledge.md](../../en/decisions/0034-agent-observability-and-session-knowledge.md).
 
 # ADR-0034: Наблюдаемость агента, session knowledge и глубина плана
 

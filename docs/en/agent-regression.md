@@ -67,7 +67,7 @@ Reproduce these on a console (local JAR or demostand [ispf.iot-solutions.ru](htt
 | MES | `mes-reference-deploy`, `mes-dispatch-workflow`, `mes-defect-demo`, `mes-oee-dispatch`, `mes-platform-production`, `mes-solution-generator-factory`, `mes-workflow-escalation` |
 | HVAC | `hvac-building-app`, `hvac-zone-comfort`, `hvac-ahu-comfort`, `hvac-scheduler-setpoints`, `hvac-solution-generator-site`, `hvac-chiller-plant` |
 
-Typical admin chrome (RU labels on demostand): **Исследователь** (Explorer), **Система → Решения** (Solutions/Marketplace), **ИИ-студия** (AI Studio). Operator: `/?mode=operator&app=<appId>`, starter apps **Work Queue** and **Alarm Console**.
+Typical admin navigation: **Explorer**, **System → Solutions** (Solutions/Marketplace), **AI Studio**. Operator: `/?mode=operator&app=<appId>`, starter apps **Work Queue** and **Alarm Console**.
 
 **Caveats for hand UI journeys:**
 
@@ -129,6 +129,6 @@ See [competitive-scorecard](competitive-scorecard.md).
 - [ai-development](ai-development.md) — agent tools and playbooks
 - [operator-guide](operator-guide.md) — Operator HMI / Work Queue
 - [web-console](web-console.md) — admin Explorer / System / AI Studio
-- [AgentDeployPlaybook](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) — BL-177 e2e deploy recipe
-- [AgentSolutionGeneratorPlaybook](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) — BL-180 factory spec recipe
+- [AgentDeployPlaybook](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) — BL-177 e2e deploy recipe
+- [AgentSolutionGeneratorPlaybook](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) — BL-180 factory spec recipe
 - [roadmap](roadmap.md) — BL-177, BL-178

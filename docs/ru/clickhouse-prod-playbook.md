@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/clickhouse-prod-playbook.md](../en/clickhouse-prod-playbook.md).
+> **Язык:** русская версия. Английский оригинал: [en/clickhouse-prod-playbook.md](../en/clickhouse-prod-playbook.md).
 
 # ClickHouse production playbook (BL-114)
 

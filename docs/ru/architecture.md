@@ -1,179 +1,149 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/architecture.md](../en/architecture.md).
+> **Язык:** русская версия. Английский оригинал: [en/architecture.md](../en/architecture.md).
 
 # Архитектура ISPF
 
-> **Статус:** Stable — Видение, слои, расширяемость. Теги: [doc-status](doc-status.md).
+> **Статус:** Stable — устройство сервера, слои исполнения, потоки данных и точки расширения. Метки зрелости: [doc-status.md](doc-status.md).
 
-**См. также:** [object-model](object-model.md), [cluster](cluster.md), [application-principles](application-principles.md), [decisions/readme.md](decisions/readme.md).
+**Связанные разделы:** [Как устроен ISPF](learn.md) · [Модель объектов](object-model.md) · [Кластер высокой доступности](cluster.md) · [Правила архитектуры приложений](application-principles.md) · [Архитектурные решения (ADR)](decisions/readme.md).
 
-## Видение
+---
 
-**IoT Solutions Platform Framework (ISPF)** — middleware для IoT, промышленной автоматизации и IT-операций. Единая модель данных и API для устройств, HMI-дашбордов, алертов и BPMN-автоматизации.
+## Общий замысел
 
-## Основной принцип: бизнес-логика в механизмах платформы
+**ISPF (IoT Solutions Platform Framework)** — серверная платформа для промышленной автоматизации, диспетчеризации (SCADA), IoT-мониторинга и цехового учёта (MES). Она предоставляет единую модель данных, систему прав и REST/WebSocket API для работы с оборудованием, экранами оператора, тревогами, архивом историй и процессами BPMN.
 
-Бизнес-логика прикладного решения **живёт на платформе** — в декларативной конфигурации **дерева объектов**, а не в отраслевом Java-коде сервера.
+<a id="основной-принцип-бизнес-логика-в-механизмах-платформы"></a>
 
-| Механизм | Что описывает |
-|----------|---------------|
-| **Модели** | Blueprint: переменные, события, функции, bindings |
-| **Переменные** | Состояние, вычисления (CEL, platform bindings), historian |
-| **События** | Типы событий; alert rules и correlators — узлы дерева |
-| **Функции** | Вызываемая логика на объекте (script, `INVOKE_FUNCTION`) |
-| **Workflow** | BPMN-процессы, user tasks, эскалация |
+## Основной принцип: логика в механизмах дерева объектов
 
-**Платформа (framework)** реализует **generic-движки один раз**: CEL, bindings, historian, BPMN, script runtime, drivers, event bus.
+Прикладная логика конкретного завода или объекта описывается **конфигурацией дерева объектов**, а не доработкой Java-кода сервера `ispf-server`:
 
-**Решение (solution)** наполняет эти механизмы конфигурацией: модели, пороги, процессы, функции, дашборды.
+| Механизм платформы | За что отвечает |
+|--------------------|-----------------|
+| **Шаблоны (`Blueprints`)** | Типовой состав узла: переменные, события, функции и правила расчёта (`SINGLETON`, `INSTANCE`, `MIXIN`) |
+| **Переменные (`Variables`)** | Текущие значения (`DataRecord`), формулы пересчёта (CEL и встроенные функции), запись истории |
+| **События и тревоги (`ALERT`, `CORRELATOR`)** | Уведомления, контроль уставок с гистерезисом и корреляция серий событий |
+| **Функции (`Functions`)** | Вызываемые операции на узлах дерева (встроенные обработчики, SQL/JSON-скрипты, песочница Java) |
+| **Процессы (`WORKFLOW`)** | Маршруты BPMN, задачи в рабочей очереди оператора и таймеры эскалации |
 
-Bundle deploy ([applications](applications.md)) — **упаковка и доставка** конфигурации в дерево объектов и app schema, а не отдельный runtime вне платформы.
+- **Ядро платформы (`main`)** один раз реализует универсальные серверные движки: опрос протоколов, дерево объектов, вычисление формул CEL, архив историй, контроль уставок, BPMN и выполнение SQL-скриптов.
+- **Прикладное решение (`bundle.json`)** поставляет настройки этих движков и собственные таблицы в изолированной SQL-схеме приложения (а при необходимости кастомного фронтенда — пакет `ui-pack` на `/apps/<appId>/`). См. [ADR-0001](decisions/0001-app-platform-boundary.md).
 
-**Запрещено в `main`:** отраслевой Java в `ispf-server`, hardcoded BFF routes, дублирование логики вне object tree. См. [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md).
+---
 
-**Развитие платформы:** усиление выразительности механизмов object tree (Phase 5). См. [roadmap.md § Phase 5](roadmap.md).
-
-## Базовая доменная модель
+## Доменная модель
 
 ```mermaid
 graph TB
-    subgraph ObjectTree["Object Tree"]
+    subgraph ObjectTree["Дерево объектов"]
         ROOT[root]
         PLATFORM[platform]
         DEVICES[devices]
-        DEVICE[device instance]
+        DEVICE["Узел устройства (DEVICE)"]
         ROOT --> PLATFORM --> DEVICES --> DEVICE
     end
 
-    DEVICE --> VARS[Variables]
-    DEVICE --> FUNCS[Functions]
-    DEVICE --> EVENTS[Events]
-    VARS --> DR[DataRecord]
-    DR --> SCHEMA[DataSchema]
-    VARS --> CEL[CEL Bindings]
+    DEVICE --> VARS["Переменные (Variables)"]
+    DEVICE --> FUNCS["Функции (Functions)"]
+    DEVICE --> EVENTS["События (Events)"]
+    VARS --> DR["Запись DataRecord"]
+    DR --> SCHEMA["Схема полей DataSchema"]
+    VARS --> CEL["Правила расчёта (CEL)"]
 ```
 
-Подробнее: [object-model](object-model.md).
+- **Узел дерева (`PlatformObject`):** адресуется путём через точку (`root.platform.devices.pump-01`) и имеет семантический тип `ObjectType` (`DEVICE`, `DASHBOARD`, `MIMIC`, `WORKFLOW`, `ALERT`, `CORRELATOR`, `REPORT` и др.).
+- **Запись данных (`DataRecord` и `DataSchema`):** строго типизированная строка (или таблица строк) с проверкой типов полей и необязательной меткой достоверности `quality`.
+- **Выражения:** язык Google **CEL** и встроенные функции обработки сигналов (`scale`, `clamp`, `movingAvg`, `counterRate`, чтение соседних узлов `read`) — см. [Правила расчёта](bindings.md).
 
-### Объект платформы
-
-Адресуемый узел: `root.platform.devices.pump-01`. Типы: `DEVICE`, `DASHBOARD`, `WORKFLOW`, `ALERT`, `CORRELATOR`, `PLATFORM`, `ALERT_RULES`, … Системные каталоги имеют семантический `ObjectType`, не `CUSTOM`.
-
-### DataRecord
-
-- `DataSchema` — поля (`FieldType`)
-- `DataRecord` — строки с валидацией
-
-### Модели (шаблоны)
-
-`BlueprintDefinition` — blueprint: variables, events, functions, bindings.  
-См. [blueprints](blueprints.md).
-
-### Выражения
-
-Google CEL для bindings, alert rules, workflow gateways. Переменные объектов также поддерживают **platform bindings** (`counterRate`, `scale`, `clamp`, …) — см. [bindings](bindings.md).
-
-```
+```text
 self.temperature.value > self.threshold.value
 counterRate(ifInOctets)
 ```
 
-## Слои runtime
+---
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  Web Console (React 19 + Vite + TanStack Query)         │
-│  Admin │ Operator HMI │ Dashboard/Workflow builders     │
-├─────────────────────────────────────────────────────────┤
-│  API Layer (Spring Boot 4.0, Java 25)                   │
-│  REST / WebSocket / OAuth2 JWT / RBAC                   │
-├─────────────────────────────────────────────────────────┤
-│  Domain Services                                        │
-│  ObjectManager │ EventService │ WorkflowService         │
-│  DashboardService │ AlertRuleService │ CorrelatorService│
+## Слои сервера во время работы
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  Веб-консоль (React 19 + Vite + TanStack Query)             │
+│  Консоль администратора │ Пульт оператора │ Редакторы схем  │
+├─────────────────────────────────────────────────────────────┤
+│  Слой API (Spring Boot 4, Java 25)                          │
+│  REST API / WebSocket (/ws/objects) / OAuth2 JWT / RBAC     │
+├─────────────────────────────────────────────────────────────┤
+│  Доменные сервисы сервера                                   │
+│  ObjectManager │ EventService │ WorkflowService             │
+│  DashboardService │ AlertRuleService │ CorrelatorService    │
 │  DriverRuntimeService │ BlueprintEngine                     │
-│  ApplicationPlatform (functions, data, BFF, scheduler)  │
-├─────────────────────────────────────────────────────────┤
-│  Plugins & Libraries                                    │
-│  ispf-core │ ispf-expression │ ispf-plugin-blueprint         │
-│  ispf-plugin-workflow                                   │
-├─────────────────────────────────────────────────────────┤
-│  Driver SPI                                             │
-│  virtual │ mqtt │ modbus-tcp │ snmp                     │
-├─────────────────────────────────────────────────────────┤
-│  Persistence & Messaging                                │
-│  PostgreSQL/H2 │ Flyway │ NATS* │ MQTT*                 │
-└─────────────────────────────────────────────────────────┘
+│  ApplicationPlatform (миграции, функции, BFF, расписания)   │
+├─────────────────────────────────────────────────────────────┤
+│  Библиотеки и плагины ядра                                  │
+│  ispf-core │ ispf-expression │ ispf-plugin-blueprint        │
+│  ispf-plugin-workflow │ ispf-analytics-* │ ispf-ai-*        │
+├─────────────────────────────────────────────────────────────┤
+│  Протокольные драйверы (Driver SPI, внешние пакеты)         │
+│  modbus-* │ opcua │ s7 │ mqtt │ snmp │ iec104 │ dnp3 │ jdbc │
+├─────────────────────────────────────────────────────────────┤
+│  Хранение данных и шины сообщений                           │
+│  PostgreSQL/TimescaleDB (или H2) │ ClickHouse* │ NATS*      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## Карта пакетов
+### Основные модули репозитория (`packages/`)
 
-| Package | Role |
-|---------|------|
-| `ispf-core` | ObjectTree, PlatformObject, DataRecord |
-| `ispf-expression` | CEL engine, BindingExpressionEvaluator |
-| `ispf-driver-*` | Device protocol adapters |
-| `ispf-plugin-blueprint` | Model registry & engine |
-| `ispf-plugin-workflow` | BPMN parser & executor |
-| `ispf-server` | Spring Boot wiring, REST, JPA, security |
+| Модуль | Назначение |
+|--------|------------|
+| `ispf-core` | Дерево объектов, `PlatformObject`, `DataRecord`, базовые модели |
+| `ispf-expression` | Движок Google CEL, функции привязок и формальная проверка выражений |
+| `ispf-driver-api` и `ispf-driver-*` | Контракт `DeviceDriver` SPI и пакеты промышленных/ИТ-протоколов |
+| `ispf-plugin-blueprint` | Реестр и применение шаблонов объектов (`SINGLETON`, `INSTANCE`, `MIXIN`) |
+| `ispf-plugin-workflow` | Парсер и исполнитель процессов BPMN |
+| `ispf-analytics-*` | Исторические расчёты, агрегация временных рядов и пакеты формул |
+| `ispf-ai-*` | Инструменты ИИ-студии, адаптер MCP и поиск по документации |
+| `ispf-server` | Сборка Spring Boot, REST/WebSocket контроллеры, безопасность, работа с СУБД |
 
-## Модель безопасности
+---
 
-OAuth2 JWT (Keycloak) или Bearer после `POST /api/v1/auth/login` (`local`).  
-Роли: `admin`, `operator`.  
-Заголовок `X-ISPF-Role` по умолчанию выключен. См. [security](security.md).
+## Потоки данных
 
-## Поток данных: телеметрия
+### Путь телеметрии от прибора до браузера
 
-```
+```text
 DeviceDriver.readPoints()
   → DriverRuntimeService
-  → ObjectManager.setVariableValue() / setDriverTelemetryValue()
-  → BindingPropagationListener → BindingRuleEngine
-  → AlertRuleListener
-  → ObjectChangeEvent → WebSocket → Web Console
+  → ObjectManager (обновление переменной на узле DEVICE)
+  → Запись в архив истории (асинхронно, если historyEnabled = true)
+  → BindingPropagationListener → BindingRuleEngine (пересчёт зависимых формул)
+  → AlertRuleListener (проверка аварийных порогов)
+  → ObjectChangeEvent → WebSocket (/ws/objects) → обновление экранов оператора
 ```
 
-## Поток данных: автоматизация
+### Путь обработки тревог и задач смены
 
+```text
+Срабатывание события (EventService) → запись в event_history
+  → EventCorrelatorListener → запуск процесса BPMN (WorkflowService)
+  → шаг userTask → рабочая очередь (Work Queue) → выполнение оператором
 ```
-Event fire → event_history
-  → EventCorrelatorListener → WorkflowService.run
-  → UserTask → WorkQueue → Operator HMI
-```
 
-## Топология развёртывания
+---
 
-**Development:** `docker compose` + Gradle bootRun + Vite dev server.
+## Безопасность и варианты развёртывания
 
-**Production (target):**
+- **Аутентификация:** токены OAuth2 JWT (через Keycloak / OIDC) в промышленном контуре или встроенный вход `POST /api/v1/auth/login` в локальном профиле (`local`), с поддержкой ролей (`admin`, `operator` и пользовательских ролей) и двухфакторной проверки TOTP. Подробнее: [Безопасность](security.md).
+- **Одиночный сервер:** `ispf-server` + PostgreSQL/TimescaleDB (при большом потоке телеметрии — дополнительно ClickHouse). Подробнее: [Развёртывание](deployment.md).
+- **Кластер высокой доступности vs Федерация:**
+  - **Кластер ([cluster.md](cluster.md))** — несколько узлов `ispf-server` поверх общей БД и одного дерева `root.platform.*` с распределением опроса драйверов и синхронизацией через NATS/Redis.
+  - **Федерация ([federation.md](federation.md))** — связка самостоятельных серверов на удалённых площадках с центральным диспетчерским сервером и буферизацией при потере канала связи.
 
-- `ispf-server` — stateless replicas
-- Managed PostgreSQL, Redis, NATS
-- Keycloak / OIDC
-- Static web-console behind CDN/ingress
+---
 
-**Горизонтальное масштабирование ≠ федерация:** реплики делят одну БД и одно дерево `root.platform.*`. Multi-replica: driver ownership, NATS live mirror — см. **[cluster](cluster.md)**. Несколько площадок / edge-агентов — [federation](federation.md), [roadmap.md § Phase 4–8](roadmap.md).
+## Штатные способы расширения
 
-См. [deployment](deployment.md).
+1. **Новый протокол связи** — реализация интерфейса `DeviceDriver` в отдельном пакете драйвера ([SDK драйверов](driver-ddk.md)).
+2. **Типовое оборудование или цифровой двойник** — шаблон `BlueprintDefinition` ([Шаблоны объектов](blueprints.md)).
+3. **Прикладное решение под отрасль** — пакет `bundle.json` (изолированная SQL-схема, функции, экраны, процессы) + при необходимости веб-интерфейс `ui-pack` ([Руководство разработчика решений](solution-developer-guide.md), [Внешний React UI](external-ide.md)).
+4. **Внешние интеграции** — REST API, вебхуки и шины MQTT/NATS ([API](api.md), [Шины сообщений](messaging.md)).
 
-## Точки расширения
-
-1. **DeviceDriver** — новый протокол ([drivers](drivers.md))
-2. **BlueprintDefinition** — шаблон устройства/процесса ([blueprints](blueprints.md))
-3. **FunctionHandler** — бизнес-операции на объектах
-4. **Dashboard widgets** — новые типы в web-console ([dashboards](dashboards.md))
-5. **REST / Webhook** — внешние интеграции ([api](api.md))
-6. **NATS subjects** — messageTask в BPMN ([workflows](workflows.md))
-7. **Application bundle** — deploy функций и миграций **вне** ядра ([applications](applications.md), [plugins](plugins.md))
-
-Коммерческие и отраслевые расширения **не** входят в AGPL community-дерево `main` (опционально Enterprise dual-license — [license](license.md)).
-
-## Эталонные стенды
-
-| Stand | Branch | Description |
-|-------|--------|-------------|
-| Demo sensor | `main` | virtual driver, alert, workflow |
-
-## Указатель документации
-
-Полный комплект: [docs/en/readme.md](readme.md).
+Полное оглавление документации: **[docs/ru/readme.md](readme.md)**.

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0024-demand-driven-variable-change-pubsub.md](../../en/decisions/0024-demand-driven-variable-change-pubsub.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0024-demand-driven-variable-change-pubsub.md](../../en/decisions/0024-demand-driven-variable-change-pubsub.md).
 
 # ADR-0024: Demand-driven object change pub/sub (single JVM)
 

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0020-time-and-timezones.md](../../en/decisions/0020-time-and-timezones.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0020-time-and-timezones.md](../../en/decisions/0020-time-and-timezones.md).
 
 # ADR-0020: Time & timezones
 

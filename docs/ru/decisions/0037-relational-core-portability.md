@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0037-relational-core-portability.md](../../en/decisions/0037-relational-core-portability.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0037-relational-core-portability.md](../../en/decisions/0037-relational-core-portability.md).
 
 # ADR-0037: Relational core portability
 

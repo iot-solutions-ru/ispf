@@ -12,7 +12,7 @@
 | **Driver FIELD** | Every section below ✅ for a **named customer plant** |
 | OT scorecard depth | Moves only after first FIELD row + linked evidence |
 
-Lanes must not be mixed: [ADR-0067 §1b](decisions/0067-field-certified-maturity.md) — marketplace REAL ≠ driver FIELD; lab VLAN ≠ customer plant FIELD.
+Lanes must not be mixed: see [driver-promotion](driver-promotion.md) — marketplace REAL ≠ driver FIELD; lab VLAN ≠ customer plant FIELD.
 
 Evidence root template: [docs/evidence/field-c1/README.md](../evidence/field-c1/README.md).
 
@@ -80,7 +80,6 @@ Wave 3A ops deliverable: this checklist + [field-c1 evidence template](../eviden
 
 ## Related
 
-- [0067-field-certified-maturity](decisions/0067-field-certified-maturity.md)
 - [0022-driver-production-matrix](decisions/0022-driver-production-matrix.md)
 - [driver-promotion](driver-promotion.md)
-- [marketplace-pilots](marketplace-pilots.md)
+- [marketplace](marketplace.md)

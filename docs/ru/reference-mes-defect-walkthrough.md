@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/reference-mes-defect-walkthrough.md](../en/reference-mes-defect-walkthrough.md).
+> **Язык:** русская версия. Английский оригинал: [en/reference-mes-defect-walkthrough.md](../en/reference-mes-defect-walkthrough.md).
 
 # MES: walkthrough распределения брака
 

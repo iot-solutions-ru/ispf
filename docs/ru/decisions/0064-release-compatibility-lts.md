@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/decisions/0064-release-compatibility-lts.md](../../en/decisions/0064-release-compatibility-lts.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0064-release-compatibility-lts.md](../../en/decisions/0064-release-compatibility-lts.md).
 
 # ADR-0064: Релизы, совместимость и LTS
 

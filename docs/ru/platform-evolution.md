@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/platform-evolution.md](../en/platform-evolution.md).
+> **Язык:** русская версия. Английский оригинал: [en/platform-evolution.md](../en/platform-evolution.md).
 
 # Эволюция ISPF — ретроспективный бэклог
 

@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/decisions/0043-unified-platform-ref.md](../../en/decisions/0043-unified-platform-ref.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0043-unified-platform-ref.md](../../en/decisions/0043-unified-platform-ref.md).
 
 # ADR-0043: Единый адрес PlatformRef
 

@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/agent-regression.md](../en/agent-regression.md).
+> **Язык:** русская версия. Английский оригинал: [en/agent-regression.md](../en/agent-regression.md).
 
 # Пакет регрессии агентов (BL-178)
 
-> **Статус:** Lab — Полный live suite доказан (52/52 @100%, `mode=full`); nightly CI по-прежнему режим **platform**. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Lab — Полный live suite доказан (52/52 @100%, `mode=full`); nightly CI по-прежнему режим **platform**. Метки зрелости: [doc-status.md](doc-status.md).
 
 Основа CI-валидации сценариев агента: курируемые промпты, **человеческие UI-маршруты**, ссылки на bundle и проверки схемы **до** живого прогона агента на экземпляре платформы.
 
@@ -128,6 +128,6 @@ bash tools/agent-regression/run-live-suite.sh
 - [ai-development](ai-development.md) — инструменты и playbook агента
 - [operator-guide](operator-guide.md) — HMI оператора / Work Queue
 - [web-console](web-console.md) — Explorer / Система / ИИ-студия
-- [AgentDeployPlaybook](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) — рецепт e2e-деплоя BL-177
-- [AgentSolutionGeneratorPlaybook](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) — рецепт factory spec BL-180
+- [AgentDeployPlaybook](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) — сценарий сквозного развёртывания
+- [AgentSolutionGeneratorPlaybook](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) — сценарий генератора решений
 - [roadmap](roadmap.md) — BL-177, BL-178

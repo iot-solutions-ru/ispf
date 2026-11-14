@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/analytics-historian-cookbook.md](../en/analytics-historian-cookbook.md).
+> **Язык:** русская версия. Английский оригинал: [en/analytics-historian-cookbook.md](../en/analytics-historian-cookbook.md).
 
 # Cookbook: historian-вычисления
 

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/licensed-driver-packs.md](../en/licensed-driver-packs.md).
+> **Язык:** русская версия. Английский оригинал: [en/licensed-driver-packs.md](../en/licensed-driver-packs.md).
 
 # Пакеты лицензионных драйверов (FW-50)
 

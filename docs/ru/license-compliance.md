@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/license-compliance.md](../en/license-compliance.md).
+> **Язык:** русская версия. Английский оригинал: [en/license-compliance.md](../en/license-compliance.md).
 
 # Соответствие лицензии (инженерный контрольный список)
 

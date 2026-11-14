@@ -1,26 +1,26 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/platform-logic.md](../en/platform-logic.md).
+> **Язык:** русская версия. Английский оригинал: [en/platform-logic.md](../en/platform-logic.md).
 
-# Единая логика платформы (Platform Rule)
+# Единая модель правил платформы (Platform Rule)
 
-> **Статус:** Beta — Правила; @dashboardContext — зрелость разная. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Beta — единая схема `КОГДА → ЕСЛИ → ТО` для переменных, событий и контекста экрана (`@dashboardContext`). Метки зрелости: [doc-status.md](doc-status.md).
 
-Один механизм для variable bindings, логики дашборда и event side effects.
+Один и тот же каркас правила для пересчёта переменных, логики экрана и побочных эффектов событий.
 
-**Статус:** спецификация (ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md), **Proposed**). Runtime-расширения — фазы 1–3.
+Сейчас это **спецификация** (ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md), статус **Proposed**). Расширения runtime идут по фазам 1–3.
 
 ---
 
-## Модель для человека
+## Модель для инженера
 
 ```
-WHEN  →  IF (CEL)  →  THEN (write result)
+КОГДА  →  ЕСЛИ (CEL)  →  ТО (записать результат)
 ```
 
-Тот же паттерн, что у [binding rules](bindings.md):
+Тот же шаблон, что у [правил расчёта](bindings.md):
 
-- **Binding rule** на устройстве → пишет в переменную.
-- **Dashboard rule** на объекте `DASHBOARD` → пишет в `@dashboardContext` или публикует event.
-- **Alert rule** на `ALERT` → отдельный объект, но условие = CEL (будущая унификация UI — вне scope v1).
+- **Правило на переменной** — пишет результат в переменную объекта.
+- **Правило на `DASHBOARD`** — пишет в `@dashboardContext` или публикует событие.
+- **Правило на `ALERT`** — отдельный объект тревоги; условие уже на CEL (единый UI правил — вне первой версии).
 
 ---
 

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/opcua-server-interop.md](../en/opcua-server-interop.md).
+> **Язык:** русская версия. Английский оригинал: [en/opcua-server-interop.md](../en/opcua-server-interop.md).
 
 # Драйвер сервера OPC UA — Руководство по взаимодействию (BL-143)
 

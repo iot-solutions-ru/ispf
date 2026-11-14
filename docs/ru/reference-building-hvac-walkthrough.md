@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/reference-building-hvac-walkthrough.md](../en/reference-building-hvac-walkthrough.md).
+> **Язык:** русская версия. Английский оригинал: [en/reference-building-hvac-walkthrough.md](../en/reference-building-hvac-walkthrough.md).
 
 # Справочное руководство: HVAC здания
 

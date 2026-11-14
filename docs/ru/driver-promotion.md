@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/driver-promotion.md](../en/driver-promotion.md).
+> **Язык:** русская версия. Английский оригинал: [en/driver-promotion.md](../en/driver-promotion.md).
 
 # Процесс продвижения драйверов
 

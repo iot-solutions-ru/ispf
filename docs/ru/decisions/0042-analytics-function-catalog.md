@@ -1,10 +1,10 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [../../en/decisions/0042-analytics-function-catalog.md](../../en/decisions/0042-analytics-function-catalog.md).
+> **Язык:** русская версия. Английский оригинал: [../../en/decisions/0042-analytics-function-catalog.md](../../en/decisions/0042-analytics-function-catalog.md).
 
 
 
 # ADR-0042: Единый каталог analytics-функций и расширяемость
 
-> **Статус:** Stable — Каталог функций. Теги: [doc-status](../../en/doc-status.md).
+> **Статус:** Stable — Каталог функций. Метки зрелости: [../doc-status.md](../doc-status.md).
 
 
 ## Статус

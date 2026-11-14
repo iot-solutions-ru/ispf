@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/analytics-tag-catalog.md](../en/analytics-tag-catalog.md).
+> **Язык:** русская версия. Английский оригинал: [en/analytics-tag-catalog.md](../en/analytics-tag-catalog.md).
 
 # Каталог analytics-тегов (BL-209 / ADR-0041)
 

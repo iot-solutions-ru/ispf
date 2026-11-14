@@ -1,12 +1,12 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/scada.md](../en/scada.md).
+> **Язык:** русская версия. Английский оригинал: [en/scada.md](../en/scada.md).
 
 # SCADA — мнемосхемы ISPF
 
-> **Статус:** Stable — Mimics, symbols, bindings. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Stable — мнемосхемы, библиотека SVG-символов и привязки к переменным. Метки зрелости: [doc-status.md](doc-status.md).
 
-Конфигурируемые мнемосхемы / P&ID / однолинейные схемы с каталогом SVG-символов, live-привязками к переменным дерева объектов и управлением с HMI.
+Конфигурируемые мнемосхемы, P&ID и однолинейные схемы с каталогом SVG-символов, живыми привязками к переменным дерева объектов и управлением с экрана оператора.
 
-**См. также:** [scada-mimic](scada-mimic.md) (схема `diagramJson`, REST API), [widgets.md § scada-mimic](widgets.md), [dashboards](dashboards.md), [bindings](bindings.md).
+**Связанные разделы:** [Формат mimic (`diagramJson`)](scada-mimic.md) · [Виджет scada-mimic](widgets.md) · [Дашборды](dashboards.md) · [Правила расчёта](bindings.md).
 
 ---
 

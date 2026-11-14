@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/reference-mes-ogp-events-walkthrough.md](../en/reference-mes-ogp-events-walkthrough.md).
+> **Язык:** русская версия. Английский оригинал: [en/reference-mes-ogp-events-walkthrough.md](../en/reference-mes-ogp-events-walkthrough.md).
 
 # MES OGP Events — walkthrough (UC-25)
 

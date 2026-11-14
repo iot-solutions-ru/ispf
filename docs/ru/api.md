@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/api.md](../en/api.md).
+> **Язык:** русская версия. Английский оригинал: [en/api.md](../en/api.md).
 
-# REST API (v1)
+# Справочник REST API (v1)
 
-> **Статус:** Stable — справочник endpoints. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Stable — основные HTTP-маршруты сервера ISPF. Метки зрелости: [doc-status.md](doc-status.md).
 
 Base URL: `http://localhost:8080`
 

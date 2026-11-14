@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/tutorial-ot-workflow-as-tool.md](../en/tutorial-ot-workflow-as-tool.md).
+> **Язык:** русская версия. Английский оригинал: [en/tutorial-ot-workflow-as-tool.md](../en/tutorial-ot-workflow-as-tool.md).
 
 # Туториал: workflow как типизированный tool
 

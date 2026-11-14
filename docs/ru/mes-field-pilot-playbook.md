@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/mes-field-pilot-playbook.md](../en/mes-field-pilot-playbook.md).
+> **Язык:** русская версия. Английский оригинал: [en/mes-field-pilot-playbook.md](../en/mes-field-pilot-playbook.md).
 
 # Playbook полевого MES-пилота (BL-164…170 / Post-S33)
 

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/analytics-formulas-and-packs.md](../en/analytics-formulas-and-packs.md).
+> **Язык:** русская версия. Английский оригинал: [en/analytics-formulas-and-packs.md](../en/analytics-formulas-and-packs.md).
 
 # Формулы analytics и пакеты расширений
 

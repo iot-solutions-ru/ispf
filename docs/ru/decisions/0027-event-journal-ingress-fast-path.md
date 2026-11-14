@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0027-event-journal-ingress-fast-path.md](../../en/decisions/0027-event-journal-ingress-fast-path.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0027-event-journal-ingress-fast-path.md](../../en/decisions/0027-event-journal-ingress-fast-path.md).
 
 # ADR-0027: Event journal ingress fast path
 

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0026-elastic-telemetry-ingress.md](../../en/decisions/0026-elastic-telemetry-ingress.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0026-elastic-telemetry-ingress.md](../../en/decisions/0026-elastic-telemetry-ingress.md).
 
 # ADR-0026: Многоуровневый асинхронный ingress телеметрии
 

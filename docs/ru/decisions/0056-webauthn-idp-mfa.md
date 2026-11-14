@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/decisions/0056-webauthn-idp-mfa.md](../../en/decisions/0056-webauthn-idp-mfa.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0056-webauthn-idp-mfa.md](../../en/decisions/0056-webauthn-idp-mfa.md).
 
 # ADR-0056: WebAuthn / OTP IdP как продолжение MFA (BL-194)
 

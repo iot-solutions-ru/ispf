@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/tutorial-ot-analytics-ai.md](../en/tutorial-ot-analytics-ai.md).
+> **Язык:** русская версия. Английский оригинал: [en/tutorial-ot-analytics-ai.md](../en/tutorial-ot-analytics-ai.md).
 
 # Туториал: Analytics AI
 

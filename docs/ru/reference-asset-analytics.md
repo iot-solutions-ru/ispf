@@ -1,4 +1,4 @@
-> **Язык:** русская редакция. Канонический английский: [en/reference-asset-analytics.md](../en/reference-asset-analytics.md).
+> **Язык:** русская версия. Английский оригинал: [en/reference-asset-analytics.md](../en/reference-asset-analytics.md).
 
 # Аналитика активов (BL-160 / BL-201)
 

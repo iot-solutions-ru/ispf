@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0006-mcp-agent-tool-adapter.md](../../en/decisions/0006-mcp-agent-tool-adapter.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0006-mcp-agent-tool-adapter.md](../../en/decisions/0006-mcp-agent-tool-adapter.md).
 
 # ADR-0006: MCP adapter поверх platform agent tools
 

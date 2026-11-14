@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0003-commercial-bundle-licensing.md](../../en/decisions/0003-commercial-bundle-licensing.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0003-commercial-bundle-licensing.md](../../en/decisions/0003-commercial-bundle-licensing.md).
 
 # ADR-0003: Лицензирование commercial bundle
 

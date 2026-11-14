@@ -620,13 +620,13 @@ Operator and admin traffic use **different URL prefixes** on purpose ([ADR-0032]
 | Admin (`?mode=admin` or default) | `/api/...` | `/ws/...` |
 | Operator (`?mode=operator`) | `/hmi/api/...` | `/hmi/ws/...` |
 
-Implementation: `resolveIngressPath()` in [`apps/web-console/src/utils/ingressPath.ts`](../../apps/web-console/src/utils/ingressPath.ts). The browser always talks to **one origin**; it does not pick individual replicas.
+Implementation: `resolveIngressPath()` in [`apps/web-console/src/utils/ingress/ingressPath.ts`](../../apps/web-console/src/utils/ingress/ingressPath.ts). The browser always talks to **one origin**; it does not pick individual replicas.
 
 #### Client-side fallback (no nginx / single JVM / Caddy)
 
 Ingress is not always nginx. The web console probes `/hmi` on first operator requests and **falls back to `/api`** when the `/hmi` path is not wired (SPA HTML, 502/504, etc.):
 
-- [`fetchWithIngressFallback()`](../../apps/web-console/src/utils/ingressFetch.ts) — REST
+- [`fetchWithIngressFallback()`](../../apps/web-console/src/utils/ingress/ingressFetch.ts) — REST
 - WebSocket — try `/hmi/ws/objects`, then `/ws/objects` on failed connect
 - Result cached in `sessionStorage` (`ispf-ingress-route`) for the browser session; cleared on logout
 

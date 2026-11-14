@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/ai-development.md](../en/ai-development.md).
+> **Язык:** русская версия. Английский оригинал: [en/ai-development.md](../en/ai-development.md).
 
 # Уровень разработки искусственного интеллекта (REQ-FW-40…44)
 
-> **Статус:** Beta — ContextPack, Studio; BL-178 live ≥95% выполнен (52/52 @100%, 2026-07-19). Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Beta — ContextPack, Studio; BL-178 live ≥95% выполнен (52/52 @100%, 2026-07-19). Метки зрелости: [doc-status.md](doc-status.md).
 
 Инфраструктура разработки на стороне платформы для разработчиков решений. ИИ считывает курируемый контекст, генерирует **декларативный пакет JSON**, запускает шлюзы проверки и публикует через существующий API развертывания. **Агент с приоритетом дерева** (FW-44) работает с деревом живых объектов шаг за шагом.
 
@@ -156,7 +156,7 @@ Audit log: table `ai_tool_audit` (migration `V37__ai_tool_audit.sql`).
 | FW-52 | `GET /agent/metrics`, `AgentPromptVersions` | `AgentMetricsService`, AI Studio |
 | FW-53 | `PlanDepth.LITE` default | `AgentSpecPlanValidator`, `AgentPlanPromptSection` |
 
-В **режиме запроса** используется выделенный [`AgentAskPromptBuilder`](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentAskPromptBuilder.java) — конвейер планирования отсутствует.
+В **режиме вопроса (Ask)** используется выделенный [`AgentAskPromptBuilder`](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentAskPromptBuilder.java) — конвейер планирования не запускается.
 
 Audit columns (migration `V67__ai_tool_audit_metrics.sql`): `latency_ms`, `prompt_tokens`, `completion_tokens`, `turn_id`, `step_no`, `interaction_mode`, `prompt_profile`.
 

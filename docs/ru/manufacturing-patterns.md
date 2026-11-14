@@ -1,4 +1,4 @@
-> **Язык:** русская краткая версия. Канонический английский: [../en/manufacturing-patterns.md](../en/manufacturing-patterns.md).
+> **Язык:** русская версия. Английский оригинал: [../en/manufacturing-patterns.md](../en/manufacturing-patterns.md).
 
 # Производственные паттерны ISPF
 

@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/commercial-licensing.md](../en/commercial-licensing.md).
+> **Язык:** русская версия. Английский оригинал: [en/commercial-licensing.md](../en/commercial-licensing.md).
 
 # Лицензирование коммерческого пакета
 
-> **Статус:** Stable — Enterprise. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — Enterprise. Метки зрелости: [doc-status.md](doc-status.md).
 
 Коммерческий пакет RSA-лицензирование при развертывании. Архитектурное решение: [0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md).
 

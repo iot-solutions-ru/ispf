@@ -1,12 +1,12 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/widgets.md](../en/widgets.md).
+> **Язык:** русская версия. Английский оригинал: [en/widgets.md](../en/widgets.md).
 
 # Справочник виджетов дашборда
 
-> **Статус:** Stable — All widget types. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Stable — полный перечень типов виджетов, поля настроек и примеры. Метки зрелости: [doc-status.md](doc-status.md).
 
-Полное описание всех типов виджетов ISPF: назначение, использование в HMI, расположение полей и примеры.
+Полное описание всех типов виджетов ISPF: назначение, использование на экранах оператора, расположение полей и примеры.
 
-**См. также:** [dashboards](dashboards.md) (сетка, `selectionKey`, навигация), [operator-guide](operator-guide.md) (роль оператора), [bindings](bindings.md) (привязки платформы в переменных), [spreadsheet-widget](spreadsheet-widget.md) (формулы и таблицы).
+**Связанные разделы:** [Дашборды](dashboards.md) · [Руководство оператора](operator-guide.md) · [Правила расчёта](bindings.md) · [Виджет spreadsheet](spreadsheet-widget.md).
 
 ![Конструктор дашборда — палитра виджетов, холст и панель Widget editor](../assets/ispf-widget-inspector.png)
 

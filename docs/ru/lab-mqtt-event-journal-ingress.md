@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/lab-mqtt-event-journal-ingress.md](../en/lab-mqtt-event-journal-ingress.md).
+> **Язык:** русская версия. Английский оригинал: [en/lab-mqtt-event-journal-ingress.md](../en/lab-mqtt-event-journal-ingress.md).
 
 # Лаборатория: MQTT event journal ingress (сценарий I-03)
 

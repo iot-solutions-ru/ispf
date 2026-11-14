@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/tutorial-ot-workflow-journal.md](../en/tutorial-ot-workflow-journal.md).
+> **Язык:** русская версия. Английский оригинал: [en/tutorial-ot-workflow-journal.md](../en/tutorial-ot-workflow-journal.md).
 
 # Туториал: журнал выполнения workflow
 

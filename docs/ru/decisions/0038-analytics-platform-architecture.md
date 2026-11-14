@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0038-analytics-platform-architecture.md](../../en/decisions/0038-analytics-platform-architecture.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0038-analytics-platform-architecture.md](../../en/decisions/0038-analytics-platform-architecture.md).
 
 # ADR-0038: Архитектура аналитической платформы (AF-capable)
 
-> **Статус:** Stable — Архитектура. Теги: [doc-status](../../en/doc-status.md).
+> **Статус:** Stable — Архитектура. Метки зрелости: [../doc-status.md](../doc-status.md).
 
 Статус: **Принято** (2026-07-09; реализация в продукте — движок, rollups, multi-tag query; вычисления historian через ADR-0041)
 

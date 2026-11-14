@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/web-console.md](../en/web-console.md).
+> **Язык:** русская версия. Английский оригинал: [en/web-console.md](../en/web-console.md).
 
-# Web Console
+# Веб-консоль (Web Console)
 
-> **Статус:** Stable — Explorer, System, AI Studio. Теги: [doc-status](doc-status.md).
+> **Статус:** Stable — консоль администратора, пульт оператора, системная диагностика и ИИ-студия. Метки зрелости: [doc-status.md](doc-status.md).
 
 React 19 + Vite 6 + TanStack Query. Каталог: `apps/web-console/`.
 
@@ -48,15 +48,15 @@ URL: `http://localhost:8080?mode=operator` (JAR) или `http://localhost:5173?m
 
 URL: `http://localhost:8080?mode=operator&app=platform` (JAR) или `http://localhost:5173?mode=operator&app=platform` (Vite dev)
 
-Generic operator shell без отраслевого кода в `main`:
+Оболочка оператора общая для всех приложений (отраслевой код в `ispf-server` не добавляется):
 
-- Operator UI: `GET /api/v1/operator-apps/{appId}/ui` (встроенные apps, настройка в `root.platform.operator-apps`), затем `GET /api/v1/applications/{appId}/operator-ui` (bundle), legacy fallback `public/operator-apps/<appId>.ui.json`
-- Навигация по вкладкам дашбордов; виджеты те же, что в Dashboard Builder (`DashboardBuilder` + `operatorMode`)
-- BFF (`POST /api/v1/bff/invoke`) — только когда виджеты/функции приложения вызывают backend (не отдельный manifest shell)
+- UI приложения: сначала `GET /api/v1/operator-apps/{appId}/ui` (встроенные apps из `root.platform.operator-apps`), затем `GET /api/v1/applications/{appId}/operator-ui` (из `bundle.json`); в dev при отсутствии обоих возможен резервный файл `public/operator-apps/<appId>.ui.json`
+- Навигация по вкладкам дашбордов; те же виджеты, что в конструкторе (`DashboardBuilder` + `operatorMode`)
+- BFF (`POST /api/v1/bff/invoke`) вызывается только когда виджет или функция приложения обращается к backend
 
-### Legacy: operator manifest
+### Устаревший operator manifest
 
-`?mode=operator&app=demo` + `operatorManifest` — deprecated. Используйте `operatorUi` и объекты `DASHBOARD`.
+Параметры `?mode=operator&app=demo` вместе с `operatorManifest` больше не используются. Настраивайте `operatorUi` и объекты `DASHBOARD`.
 
 ## Навигация
 
@@ -101,37 +101,35 @@ src/
     ├── ObjectTree.tsx
     ├── ExplorerView.tsx
     ├── ObjectPropertiesEditor.tsx
-    ├── dashboard/          # Builder + 14 widgets
-    ├── workflow/           # BPMN editor/viewer
+    ├── dashboard/          # Конструктор дашбордов и более 40 типов виджетов
+    ├── workflow/           # Встроенный редактор и просмотрщик BPMN
     ├── automation/         # AlertRuleInspector, CorrelatorInspector, automationPath
     └── operator/           # OperatorView, OperatorDashboardApp, sidebar panels
 ```
 
-`public/operator-apps/` — legacy fallback `{appId}.ui.json` (dev). Конфигурация встроенных app: admin → `root.platform.operator-apps`.
+`public/operator-apps/` — резервный каталог dev-режима `{appId}.ui.json`. Настройка приложений оператора выполняется в `root.platform.operator-apps`.
 
-## Dashboard builder
+## Конструктор дашбордов (Dashboard Builder)
 
 ![Конструктор дашбордов — палитра виджетов и холст](../assets/ispf-dashboard-builder.png)
 
-- Fine grid **84 колонки**, drag-and-drop, resize
-- Панель добавления виджетов (все 14 типов)
-- `WidgetEditorPanel` — свойства выбранного виджета
-- JSON preview layout
-- Сохранение через API
+- Сетка **84 колонки × шаг высоты 8 пикселей**, перетаскивание и изменение размеров карточек
+- Палитра добавления виджетов (свыше 40 типов)
+- `WidgetEditorPanel` — настройка свойств выбранного виджета
+- Просмотр и экспорт JSON макета
+- Сохранение через REST API
 
-См. [dashboards](dashboards.md).
+См. [Дашборды](dashboards.md) и [Справочник виджетов](widgets.md).
 
-## Workflow builder
+## Редактор процессов (Workflow Builder)
 
-![BPMN-редактор workflow — MES work-order dispatch](../assets/ispf-bpmn-workflow.png)
+![Визуальный редактор BPMN в веб-консоли](../assets/ispf-bpmn-workflow.png)
 
-- Переключатель DRAFT / ACTIVE / STOPPED
-- Кнопка Run
-- BPMN-редактор (bpmn-js) с ISPF moddle
-- **Auto-layout:** если в XML нет `bpmndi`, `ensureDiagram.ts` вызывает `bpmn-auto-layout` перед показом (см. [workflows](workflows.md))
-- Fallback XML viewer
+- Переключатель статуса `DRAFT` / `ACTIVE` / `STOPPED` и кнопка ручного запуска
+- Собственный векторный редактор диаграмм BPMN (`IspfBpmnEditor`, [ADR-0052](decisions/0052-ispf-workflow-diagram-editor.md))
+- Автоматическая раскладка блоков для схем без координат (`bpmndi`) и режим просмотра XML
 
-См. [workflows](workflows.md).
+См. [Процессы BPMN](workflows.md).
 
 ## Live-данные
 

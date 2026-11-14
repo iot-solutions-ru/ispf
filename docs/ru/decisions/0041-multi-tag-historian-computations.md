@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [../../en/decisions/0041-multi-tag-historian-computations.md](../../en/decisions/0041-multi-tag-historian-computations.md).
+> **Язык:** русская версия. Английский оригинал: [../../en/decisions/0041-multi-tag-historian-computations.md](../../en/decisions/0041-multi-tag-historian-computations.md).
 
 # ADR-0041: Мультитеговые historian-вычисления (binding rules)
 

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/field-pilot-playbook.md](../en/field-pilot-playbook.md).
+> **Язык:** русская версия. Английский оригинал: [en/field-pilot-playbook.md](../en/field-pilot-playbook.md).
 
 # Playbook полевого пилота (BL-140)
 

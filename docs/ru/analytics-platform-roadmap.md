@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/analytics-platform-roadmap.md](../en/analytics-platform-roadmap.md).
+> **Язык:** русская версия. Английский оригинал: [en/analytics-platform-roadmap.md](../en/analytics-platform-roadmap.md).
 
 # Roadmap аналитической платформы — БЛ-200…211 (AF-capable)
 
-> **Статус:** Charter — Чартер BL-200…210. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Charter — Чартер BL-200…210. Метки зрелости: [doc-status.md](doc-status.md).
 
 **Цель:** эволюция от **AF-lite** (БЛ-160) к **AF-capable** analytics plane — derived tags, материализованные rollups, мультитеговые запросы — на **одном сервере** или в **кластере с разделением ролей**.
 

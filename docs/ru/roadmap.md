@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/roadmap.md](../en/roadmap.md).
+> **Язык:** русская версия. Английский оригинал: [en/roadmap.md](../en/roadmap.md).
 
 # Дорожная карта платформы ISPF
 
-> **Статус:** Charter — Фазы и бэклог. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Charter — Фазы и бэклог. Метки зрелости: [doc-status.md](doc-status.md).
 
 Единый источник правды: фазы, спринты, REQ-PF/FW, BL-01…210. **Один файл** — новые фазы добавлять сюда; не дробить на `roadmap-phase-N.md`.
 
@@ -378,7 +378,7 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 | 20,6 | Очистка типов диаграмм | БЛ-06 | Готово |
 | 20,7 | типы виджетов i18n | БЛ-07 | Готово |
 | 20,8 | Просмотрщик каталога событий | БЛ-08 | Готово |
-| 20,9 | Построитель связывающих выражений | БЛ-09 | Готово |
+| 20,9 | Конструктор выражений привязок | БЛ-09 | Готово |
 | 20.10 | сетевой график, Ганта, таблица истории | БЛ-10…12 | Готово |
 | 20.11 | Системные настройки переключаются | БЛ-13 | Готово |
 | 20.12 | Индекс автоматизации + журналы | БЛ-14…16 | Готово |
@@ -503,7 +503,7 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 | БЛ-06 | Очистка типов диаграмм | Р1 | Этап 20 | Готово |
 | БЛ-07 | Типы виджетов i18n + подсказки по привязке | Р1 | Этап 20 | Готово |
 | БЛ-08 | Средство просмотра каталога событий приложений | Р1 | Этап 20 | Готово |
-| БЛ-09 | Построитель связывающих выражений | П2 | Этап 20 | Готово |
+| БЛ-09 | Конструктор выражений привязок | П2 | Этап 20 | Готово |
 | БЛ-10 | макет сетевого графика | П2 | Этап 20 | Готово |
 | БЛ-11 | интерактивная диаграмма Ганта | П2 | Этап 20 | Готово |
 | БЛ-12 | окно таблицы истории | П2 | Этап 20 | Готово |
@@ -1566,7 +1566,7 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 | **S31** | июл–авг 2026 | БЛ-177/178 **Готово** (52/52 live suite; multi-app smoke harness; live нужен `ISPF_LLM_SMOKE`) |
 | **S32** | авг 2026 | БЛ-180 **Готово** (multi-domain live apply harness HVAC/MES/SCADA); continuity по необходимости |
 | **S33** | сен 2026 | **БЛ-193** genealogy lite |
-| **Post-S33** | ongoing | [AI field soak](en/ai-field-soak-playbook.md) · [MES field pilot](en/mes-field-pilot-playbook.md) · [HMI offline soak](en/hmi-offline-field-soak.md) + evidence under `docs/evidence/` — **не** новые волны фич |
+| **Post-S33** | ongoing | [AI field soak](ai-field-soak-playbook.md) · [MES field pilot](mes-field-pilot-playbook.md) · [HMI offline soak](hmi-offline-field-soak.md) + evidence under `docs/evidence/` — **не** новые волны фич |
 
 Parked: OT [Backlog Волна 1](#s31-wave-1-execution-backlog); живой ERP БЛ-169; расширение BPMN/DMN.
 

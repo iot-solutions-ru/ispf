@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0021-haystack-semantic-overlay.md](../../en/decisions/0021-haystack-semantic-overlay.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0021-haystack-semantic-overlay.md](../../en/decisions/0021-haystack-semantic-overlay.md).
 
 # ADR-0021: Haystack semantic overlay
 

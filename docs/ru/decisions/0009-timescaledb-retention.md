@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0009-timescaledb-retention.md](../../en/decisions/0009-timescaledb-retention.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0009-timescaledb-retention.md](../../en/decisions/0009-timescaledb-retention.md).
 
 # ADR-0009: TimescaleDB retention для variable history
 

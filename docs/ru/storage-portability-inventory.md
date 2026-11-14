@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/storage-portability-inventory.md](../en/storage-portability-inventory.md).
+> **Язык:** русская версия. Английский оригинал: [en/storage-portability-inventory.md](../en/storage-portability-inventory.md).
 
 # Инвентаризация зависимостей PostgreSQL (ADR-0037)
 

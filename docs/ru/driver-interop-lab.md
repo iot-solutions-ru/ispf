@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/driver-interop-lab.md](../en/driver-interop-lab.md).
+> **Язык:** русская версия. Английский оригинал: [en/driver-interop-lab.md](../en/driver-interop-lab.md).
 
 # Лаборатория взаимодействия драйверов (BL-141)
 

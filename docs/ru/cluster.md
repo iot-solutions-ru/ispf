@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/cluster.md](../en/cluster.md).
+> **Язык:** русская версия. Английский оригинал: [en/cluster.md](../en/cluster.md).
 
 # Кластер ISPF (мультиреплика)
 
@@ -598,13 +598,13 @@ Chaos под нагрузкой и soak 30–60 мин (лаб-журнал): [c
 | Admin (`?mode=admin` или по умолчанию) | `/api/...` | `/ws/...` |
 | Operator (`?mode=operator`) | `/hmi/api/...` | `/hmi/ws/...` |
 
-Реализация: `resolveIngressPath()` в [`apps/web-console/src/utils/ingressPath.ts`](../../apps/web-console/src/utils/ingressPath.ts). Браузер всегда обращается к **одному origin**; выбор конкретной реплики ему недоступен.
+Реализация: `resolveIngressPath()` в [`apps/web-console/src/utils/ingress/ingressPath.ts`](../../apps/web-console/src/utils/ingress/ingressPath.ts). Браузер всегда обращается к **одному origin**; выбор конкретной реплики ему недоступен.
 
 #### Client-side fallback (без nginx / single JVM / Caddy)
 
 Ingress — не всегда nginx. Web console при первых operator-запросах пробует `/hmi` и **переключается на `/api`**, если путь `/hmi` не обслуживается API (HTML от SPA, 502/504 и т.п.):
 
-- [`fetchWithIngressFallback()`](../../apps/web-console/src/utils/ingressFetch.ts) — REST
+- [`fetchWithIngressFallback()`](../../apps/web-console/src/utils/ingress/ingressFetch.ts) — REST
 - WebSocket — сначала `/hmi/ws/objects`, при неудаче `/ws/objects`
 - Результат кэшируется в `sessionStorage` (`ispf-ingress-route`) на сессию браузера; сбрасывается при logout
 

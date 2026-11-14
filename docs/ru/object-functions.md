@@ -9,7 +9,7 @@
 
 Глобального пути вида `root/.../myFn` нет.
 
-См. также: [object-model](object-model.md), [applications](applications.md) (развертывание функций приложений), [workflows](workflows.md) (BPMN `invoke_function`).
+**Связанные разделы:** [Модель объектов](object-model.md) · [Приложения и bundle](applications.md) · [Процессы BPMN](workflows.md) (`invoke_function`).
 
 ## Дескриптор `FunctionDescriptor`
 

@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/deployment.md](../en/deployment.md).
+> **Язык:** русская версия. Английский оригинал: [en/deployment.md](../en/deployment.md).
 
 # Развёртывание и конфигурация
 
-> **Статус:** Stable — Docker, env vars. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — запуск в Docker Compose, переменные окружения, профили БД, Kubernetes и обновление сервера. Метки зрелости: [doc-status.md](doc-status.md).
 
 ## Docker Compose
 
@@ -499,6 +499,6 @@ docker compose exec postgres psql -U ispf -d postgres \
 | Сессии / timeout | Keycloak realm: SSO idle timeout, max session; см. [security](security.md) |
 | Email/SMS алармы | `ISPF_NOTIFICATIONS_EMAIL_RELAY_URL` + webhook на SMS gateway; [automation](automation.md) |
 | Offline operator HMI | PWA cache web-console static; HMI layout в `dashboard-v1.layout` |
-| OPC-UA полевой уровень | Driver pack `opcua`; mapping переменных GPU — lab note в [examples/mini-tec/README.md](readme.md) |
+| OPC-UA полевой уровень | Пакет драйвера `opcua`; сопоставление переменных ГПУ — см. [прохождение эталона мини-ТЭЦ](reference-mini-tec-walkthrough.md) |
 
 **Lab demo mini-TEC:** `ISPF_BOOTSTRAP_FIXTURES_ENABLED=true` (default local). **Prod VPS:** fixtures off — импорт через `POST /api/v1/applications/mini-tec/deploy` или factory-reset с `--fixtures`.

@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/tutorial-ot-ai-bpmn.md](../en/tutorial-ot-ai-bpmn.md).
+> **Язык:** русская версия. Английский оригинал: [en/tutorial-ot-ai-bpmn.md](../en/tutorial-ot-ai-bpmn.md).
 
 # Туториал: AI service tasks в BPMN
 

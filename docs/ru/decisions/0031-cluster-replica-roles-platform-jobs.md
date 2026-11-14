@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0031-cluster-replica-roles-platform-jobs.md](../../en/decisions/0031-cluster-replica-roles-platform-jobs.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0031-cluster-replica-roles-platform-jobs.md](../../en/decisions/0031-cluster-replica-roles-platform-jobs.md).
 
 # ADR-0031: Cluster replica roles and platform job queue
 

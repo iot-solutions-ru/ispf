@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/competitive-scorecard.md](../en/competitive-scorecard.md).
+> **Язык:** русская версия. Английский оригинал: [en/competitive-scorecard.md](../en/competitive-scorecard.md).
 
 # Конкурентный scorecard ISPF (BL-189)
 
-> **Статус:** Stable — Готовность по коду. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — Готовность по коду. Метки зрелости: [doc-status.md](doc-status.md).
 
 Матрица публичной готовности для Phases 25–33 (фазы 25–33).
 

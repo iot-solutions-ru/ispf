@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/certification.md](../en/certification.md).
+> **Язык:** русская версия. Английский оригинал: [en/certification.md](../en/certification.md).
 
 # Пути сертификации (BL-190)
 
-> **Статус: Готово (curriculum paths).** Треки Solution developer + Platform admin, labs и machine-readable question banks — в repo. Теги: [doc-status](../en/doc-status.md). Полный LMS / proctoring — Partner Portal (external).
+> **Статус: Готово (curriculum paths).** Треки Solution developer + Platform admin, labs и machine-readable question banks — в repo. Метки зрелости: [doc-status.md](doc-status.md). Полный LMS / proctoring — Partner Portal (external).
 
 Учебная программа и exam stubs сертификации ISPF. Лаборатории ниже можно запустить сегодня на lab/VPS-хостах.
 

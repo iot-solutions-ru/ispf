@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0035-historian-dual-write.md](../../en/decisions/0035-historian-dual-write.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0035-historian-dual-write.md](../../en/decisions/0035-historian-dual-write.md).
 
 # ADR-0035: Historian dual-write (PostgreSQL + ClickHouse)
 

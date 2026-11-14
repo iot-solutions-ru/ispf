@@ -2,7 +2,7 @@
 
 # Compliance tender pack (БЛ-192)
 
-> **Статус:** Stable — документационный пакет для enterprise-тендеров. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — документационный пакет для enterprise-тендеров. Метки зрелости: [doc-status.md](doc-status.md).
 
 Честное описание **уже существующей** безопасности ISPF для тендерных приложений (IEC 62443-lite + GAMP-lite). Это **не** сертификат IEC 62443, не GAMP/CSV-пакет и не отчёт о pen-test.
 

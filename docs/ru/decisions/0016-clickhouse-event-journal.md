@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0016-clickhouse-event-journal.md](../../en/decisions/0016-clickhouse-event-journal.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0016-clickhouse-event-journal.md](../../en/decisions/0016-clickhouse-event-journal.md).
 
 # ADR-0016: ClickHouse SPI для event journal (P3b)
 

@@ -2,7 +2,7 @@
 
 # Теги статуса документов
 
-> **Статус:** Stable — Словарь статусов. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — Словарь статусов. Метки зрелости: [doc-status.md](doc-status.md).
 
 Краткий указатель на канонический словарь тегов (Stable · Beta · Draft · Charter · Lab · Internal):
 

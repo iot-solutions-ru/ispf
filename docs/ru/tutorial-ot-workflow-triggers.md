@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/tutorial-ot-workflow-triggers.md](../en/tutorial-ot-workflow-triggers.md).
+> **Язык:** русская версия. Английский оригинал: [en/tutorial-ot-workflow-triggers.md](../en/tutorial-ot-workflow-triggers.md).
 
 # Туториал: webhook, cron и восстановление после ошибок
 

@@ -1,153 +1,89 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/scada-symbol-library.md](../en/scada-symbol-library.md).
+> **Язык:** русская версия. Английский оригинал: [en/scada-symbol-library.md](../en/scada-symbol-library.md).
 
-# Библиотека символов SCADA (BL-94)
+# Библиотека символов SCADA
 
-> **Статус:** Stable — P&ID pack (218 символов). Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Stable — встроенный каталог из 218 символов P&ID / энергетики и загрузка собственных SVG. Метки зрелости: [doc-status.md](doc-status.md).
 
-Полный справочник по **символам P&ID pack**, **загрузке пользовательского SVG** и **библиотеке документа** в редакторе мнемосхем ISPF.
+Справочник по работе со стандартным каталогом промышленных символов, загрузкой собственных векторных изображений SVG и динамической анимацией элементов в редакторе мнемосхем ISPF.
 
-См. также: [scada](scada.md), [scada-mimic](scada-mimic.md), [tools/symbol-pack-isa](readme.md).
-
----
-
-## Обзор каталога
-
-![Библиотека символов в редакторе мнемосхем](../assets/ispf-mimic-editor.png)
-
-| Source | Palette category | `symbolId` | Count |
-|--------|------------------|------------|-------|
-| ISA/ISO P&ID pack | `pack-valves`, `pack-pumps`, … | `pack.ispf-pid.*` | **218** (`manifest.json` `totalSymbols`) |
-| Inline SVG | `common` | `custom.svg` | 1 template |
-| User library | `custom` | `custom:{id}` | Per mimic document |
-
-Pack manifest: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/manifest.json`  
-Regenerate: `npm run build:pid-symbols --prefix apps/web-console`
+Связанные разделы: [Мнемосхемы SCADA](scada.md) · [Формат `diagramJson` и API](scada-mimic.md) · [Правовой статус пакета символов](pid-symbols-legal.md).
 
 ---
 
-## Символы стандартного pack
+## Состав палитры символов
 
-1. Откройте редактор мнемосхем (Explorer → mimic → **Edit diagram**).
-2. Инструмент **Place** → категория **pack-tanks** / **pack-valves** / …
-3. Клик по холсту → элемент получает `symbolId: pack.ispf-pid.vertical-tank` (пример).
-4. Bindings в панели свойств → переменные устройства.
+![Палитра символов в редакторе мнемосхем](../assets/ispf-mimic-editor.png)
 
-Символы пакета в репозитории представлены в виде **статического SVG**; они не копируются в `diagramJson`, если вы не конвертируете их в библиотеку (ниже).
+| Источник | Категории в палитре | Формат `symbolId` | Количество |
+|----------|---------------------|-------------------|------------|
+| Встроенный пакет ISA/ISO P&ID | `pack-valves`, `pack-pumps`, `pack-tanks`, `pack-pipes`, `pack-instruments`, `pack-electrical`, `pack-isa`, `pack-misc` | `pack.ispf-pid.*` | **218** символов |
+| Одиночный встроенный SVG | `common` | `custom.svg` | Базовый шаблон |
+| Библиотека документа («Свои SVG») | `custom` | `custom:<id>` | Произвольный набор в рамках мнемосхемы |
 
----
-
-## Пользовательский SVG — три режима
-
-| Режим | Когда использовать | Хранение |
-|------|-------------|---------|
-| **Inline** | One-off graphic | `element.props.svg` on element with `symbolId: custom.svg` |
-| **Document library** | Reuse across one mimic | `customSymbols[]` + `symbolId: custom:{id}` |
-| **Настройка пакета** | Начните со стандарта, подкорректируйте геометрию | Преобразовать пакет → запись в библиотеке |
+Манифест встроенного пакета: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/manifest.json` (пересборка: `npm run build:pid-symbols --prefix apps/web-console`).
 
 ---
 
-## Загрузить SVG (пользовательскую библиотеку)
+## Использование стандартных символов пакета
 
-1. Редактор мнемосхем → категория палитры **Пользовательская** (Свои SVG).
-2. **Загрузить SVG** → выберите файл `.svg` (рекомендуемый максимальный размер — 256 КБ).
-3. Символ появится на палитре `inUserLibrary: true`.
-4. Разместите на холсте, как любой символ упаковки.
+1. Откройте мнемосхему в редакторе (`root.platform.mimics` → выбрать узел `MIMIC`).
+2. Выберите инструмент **Размещение (Place, `P`)** и раскройте нужную категорию палитры (например, ёмкости `pack-tanks` или арматуру `pack-valves`).
+3. Кликните по холсту — создастся элемент со ссылкой `symbolId: "pack.ispf-pid.vertical-tank"`, без дублирования SVG-кода в JSON документа.
+4. На правой панели свойств привяжите сигналы оборудования к свойствам элемента.
 
-**Серверная сторона:** SVG хранится в мнемосхеме `diagramJson` объекта MIMIC (отдельного хранилища ресурсов нет).
+---
 
-### Правила загрузки (применяются в пользовательском интерфейсе)
+## Три способа работы с собственными SVG
 
-`sanitizeSvgMarkup()` strips:
+| Режим | Когда удобно использовать | Где хранится разметка |
+|-------|---------------------------|-----------------------|
+| **На одном элементе (`Inline`)** | Разовая уникальная плашка или подложка на схеме | В поле `element.props.svg` у элемента с `symbolId: "custom.svg"` |
+| **В библиотеке документа (`customSymbols[]`)** | Типовой агрегат (например, ячейка РУ или ГПУ), повторяющийся на схеме несколько раз | В массиве `customSymbols[]` документа (`symbolId: "custom:<id>"`) |
+| **Доработка стандартного символа** | Нужно взять готовый насос/клапан из пакета и добавить свои индикаторы | Кнопка **Редактировать как SVG** → **Обновить символ в библиотеке** |
 
-- Tags: `script`, `iframe`, `object`, `embed`, `link`, `meta`, `style`, `foreignObject`
-- Event handlers: `onclick`, `onload`, …
-- Dangerous `href` / `xlink:href` (`javascript:`, `data:text/html`)
+---
 
-Используйте простую векторную разметку (`path`, `rect`, `circle`, `g`, `text`). Предпочитайте `fill="var(--text)"` для цветов с учетом темы.
+## Загрузка своего файла `.svg`
 
-### Пример минимального файла SVG
+1. В редакторе мнемосхемы откройте категорию палитры **Свои SVG (Custom)**.
+2. Нажмите **Загрузить SVG (Upload SVG)** и выберите файл `.svg` (рекомендуемый размер — до 256 КБ).
+3. Символ сохранится в `customSymbols[]` текущего документа с флагом `inUserLibrary: true`, получит стандартные точки присоединения линий по сторонам света (N/S/E/W) и сразу станет доступен для размещения на холсте.
+
+### Требования безопасности к загружаемому SVG
+
+При загрузке фильтр `sanitizeSvgMarkup()` автоматически удаляет потенциально опасные конструкции:
+- теги `script`, `iframe`, `object`, `embed`, `link`, `meta`, `style`, `foreignObject`;
+- обработчики событий (`onclick`, `onload` и т.п.) и ссылки `javascript:` / `data:text/html`.
+
+Используйте чистые векторные примитивы (`path`, `rect`, `circle`, `line`, `polygon`, `g`, `text`). Для корректного отображения в светлой и тёмной темах используйте CSS-переменные `var(--text)` и `var(--border)`.
 
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <rect x="4" y="4" width="56" height="56" rx="8" fill="#161b22" stroke="#30363d" stroke-width="2"/>
-  <text x="32" y="36" text-anchor="middle" fill="#8b949e" font-size="10">PUMP</text>
+  <text x="32" y="36" text-anchor="middle" fill="#8b949e" font-size="10">НАСОС</text>
 </svg>
 ```
 
-После загрузки: внутренний HTML сохраняется в `customSymbols[].svg`, **порты** по умолчанию** находятся в средних точках С/Ю/В/З.
+---
+
+## Динамическая индикация (`behaviors` и `bindingSchema`)
+
+Чтобы части пользовательского SVG меняли цвет заливки, обводки, высоту столба жидкости, текст или мигание по живым переменным объектов, в записи `customSymbols[]` описываются слоты `bindingSchema` и правила `behaviors[]` с целевыми `id` внутри SVG (например, `#ispf-status`, `#ispf-power`). Полный рабочий пример — в `packages/ispf-server/src/main/resources/bootstrap/mini-tec-mimic.json` и разделе [Мнемосхемы SCADA](scada.md).
 
 ---
 
-## Преобразование символа пакета в редактируемую библиотеку
+## Лицензионная чистота графики
 
-1. Разместите символ упаковки (например, задвижку).
-2. Выберите элемент → **Редактировать как SVG** (Редактировать как SVG).
-3. Отредактируйте разметку на панели кода или загрузите замену.
-4. **Обновить символ в библиотеке** → устанавливает `inUserLibrary: true`, добавляет в **Пользовательскую** палитру.
-5. В новых экземплярах используется `symbolId: custom:{id}`; исходный идентификатор пакета сохраняется в `props.sourceSymbolId` при преобразовании через редактор.
-
-Массовое преобразование (устаревшие диаграммы): меню редактора **Преобразовать встроенные модули в библиотеку** — однократная миграция для старых идентификаторов символов React.
+- Встроенный пакет **`ispf-pid-v1`** (218 символов) создан специально для ISPF и распространяется под свободной лицензией **Apache-2.0** ([pid-symbols-legal.md](pid-symbols-legal.md)).
+- Не загружайте в публичные и тиражируемые пакеты проприетарную графику из коммерческих SCADA-библиотек сторонних вендоров.
 
 ---
 
-## Поведения и привязки
+## Частые вопросы и диагностика
 
-Для живого HMI (цвет, уровень, видимость):
-
-```json
-{
-  "id": "tank-1",
-  "symbolId": "custom:lib-tank-a",
-  "bindings": [
-    { "target": "fill", "objectPath": "root.platform.devices.t1", "variable": "level", "field": "value" }
-  ],
-  "props": { "behaviors": [{ "type": "tankLevel", "binding": "level" }] }
-}
-```
-
-Define `bindingSchema` on `customSymbols[]` entry for editor hints. Reference: `packages/ispf-server/src/main/resources/bootstrap/mini-tec-mimic.json`.
-
----
-
-## Импорт/экспорт
-
-| Действие | Путь |
-|--------|------|
-| Export full diagram | Editor → Import/Export → copy `diagramJson` |
-| CI re-export | `npx tsx src/scada/templates/exportTankFarmMimic.ts` |
-| Bootstrap seed | `PUT /api/v1/mimics/by-path/diagram` |
-
-`customSymbols` travels with `diagramJson` — backup mimics before bulk edits.
-
----
-
-## CI/тесты
-
-| Тест | Путь |
-|------|------|
-| Pack manifest load | `symbolPackLoader.test.ts` — ≥60 symbols, 8 categories |
-| SVG sanitize / upload parse | `customSvg.test.ts` |
-| Behavior engine | `symbolBehaviors.test.ts`, `svgSymbolEngine.test.ts` |
-
-```bash
-cd apps/web-console && npm run test -- src/scada/customSvg.test.ts src/scada/symbols/symbolPackLoader.test.ts
-```
-
----
-
-## Юридическая информация
-
-- Пакет **ispf-pid-v1**: оригинальная работа Apache-2.0 ([pid-symbols-legal.md](pid-symbols-legal.md), [LICENSE](../../apps/web-console/src/scada/symbols/packs/ispf-pid-v1/LICENSE.md) пакета).
-- **Не** импортируйте изображения производителей SymbolFactory/TIA/P&ID, защищенные авторским правом.
-- Legacy WMF importer (`tools/symbol-import/`) is **deprecated**.
-
----
-
-## Поиск неисправностей
-
-| Выпуск | Исправить |
-|-------|-----|
-| Custom symbol not in palette | Set `inUserLibrary: true` on `customSymbols[]` entry |
-| Upload blank / broken | Ensure root `<svg>` with valid `viewBox`; avoid `<style>` blocks |
-| Colors wrong in dark theme | Use `var(--text)`, `var(--border)` or pack CSS vars |
-| Pack category empty | Run `npm run build:pid-symbols`; hard-refresh browser |
+| Ситуация | Решение |
+|----------|---------|
+| Добавленный символ из `customSymbols[]` не виден в палитре «Свои SVG» | Убедитесь, что у записи установлен флаг `"inUserLibrary": true` |
+| Загруженный SVG отображается пустым | Проверьте наличие корректного атрибута `viewBox` на корневом `<svg>` и перенесите цвета из `<style>` в атрибуты `fill`/`stroke` |
+| Цвета символа сливаются с фоном при смене темы | Используйте `var(--text)` и `var(--border)` вместо жёсткого чёрного/белого цвета |
+| Стандартные категории пакета пусты при сборке из исходников | Выполните `npm run build:pid-symbols --prefix apps/web-console` и обновите вкладку браузера |

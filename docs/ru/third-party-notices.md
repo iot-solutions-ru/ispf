@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/third-party-notices.md](../en/third-party-notices.md).
+> **Язык:** русская версия. Английский оригинал: [en/third-party-notices.md](../en/third-party-notices.md).
 
 # Уведомления о стороннем ПО (Уведомления третьих лиц)
 

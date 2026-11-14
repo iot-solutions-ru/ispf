@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0019-platform-rule-unification.md](../../en/decisions/0019-platform-rule-unification.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0019-platform-rule-unification.md](../../en/decisions/0019-platform-rule-unification.md).
 
 # ADR-0019: Единая модель Platform Rule (dashboard + bindings)
 

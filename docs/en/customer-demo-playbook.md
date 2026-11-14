@@ -12,7 +12,7 @@ Pick **one** track. Do not mix both in the same hour unless the room asks for a 
 | Track | Buyer | Time | One-sentence story |
 |-------|-------|------|--------------------|
 | **A — MES live** | Ops / MES / IT+OT | ~30–40 min | From dispatch to alarm on one production walkthrough |
-| **B — OT + HMI + air-gap story** | OT / SCADA / ИБ-curious | ~40–60 min | Live mimic + “we can run without internet; apps are RSA-signed” |
+| **B — OT + HMI + air-gap story** | OT / SCADA / security-conscious | ~40–60 min | Live mimic + “we can run without internet; apps are RSA-signed” |
 
 ---
 
@@ -54,7 +54,7 @@ Talk track: *“Sensors and HMI are live; logic stays on SINGLETON/INSTANCE hubs
 | 0–5 | Tree | DEVICE under a hub (never claim DEVICE holds orchestration) — [application-principles](application-principles.md) § Logic objects |
 | 5–20 | Live I/O + HMI | RUNNING driver → variable → dashboard or SCADA mimic; optional FPS honesty if asked ([hmi-quality-gates](hmi-quality-gates.md), evidence under `docs/evidence/hmi-fps/`) |
 | 20–35 | Automation light | One alert or binding — keep widgets thin ([anti-patterns](anti-patterns.md)) |
-| 35–50 | Air-gap story | Walk [air-gap-deployment](air-gap-deployment.md) checklist verbally: pack → sneakernet → apply; **RSA require-signed default** on air-gap compose; Cosign = lab tooling (release GHCR + CI smoke); customer-host transcript still Gap unless their ИБ has a dated run |
+| 35–50 | Air-gap story | Walk [air-gap-deployment](air-gap-deployment.md) checklist verbally: pack → sneakernet → apply; **RSA require-signed default** on air-gap compose; Cosign = lab tooling (release GHCR + CI smoke); customer-host transcript still Gap unless their security team has a dated run |
 | 50–60 | Q&A | Local LLM optional ([air-gap-deployment § Local LLM](air-gap-deployment.md#local-llm-demostand-air-gapped-site)); FIELD only with named plant |
 
 **Done when:** customer hears a clear split: live OT/HMI demo vs offline install story vs “we will certify FIELD on your site.”

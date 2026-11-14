@@ -1,120 +1,93 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/reports.md](../en/reports.md).
+> **Язык:** русская версия. Английский оригинал: [en/reports.md](../en/reports.md).
 
-# Отчёты приложений (REQ-PF-12)
+# Отчёты (`REPORT`)
 
-> **Статус:** Stable — SQL-отчёты, CSV. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — табличные SQL-отчёты, отчёты по переменным дерева и выгрузка по шаблонам XLSX/PDF/HTML/CSV. Метки зрелости: [doc-status.md](doc-status.md).
 
-Generic-слой SQL-отчётов. **Сначала дерево (этапы 12–14):** определение объекта `REPORT` в `root.platform.reports.*` (blueprint `report-v1`); Схема SQL — через **`dataSourcePath`** → `root.platform.data-sources.*`.
+Отчёты в ISPF хранятся как узлы типа **`REPORT`** в ветке `root.platform.reports.*` (шаблон `report-v1`). Запрос данных выполняется только на чтение (`SELECT` / `WITH`) через привязанный источник данных **`DATA_SOURCE`** (`root.platform.data-sources.*`) — например, по изолированной SQL-схеме вашего приложения или внешней реляционной БД.
 
-Legacy API `/api/v1/applications/{appId}/reports/*` сохранён и делегирует в дерево. Импорт bundle: `POST /api/v1/platform/packages/import`.
+---
 
-## Дерево объектов
+## Структура узла `REPORT` в дереве
 
-![Каталог Reports в Explorer](../assets/ispf-reports.png)
+![Каталог отчётов в консоли администратора](../assets/ispf-reports.png)
 
-| Узел | Тип | Blueprint |
-|------|-----|--------|
-| `root.platform.reports` | `REPORTS` | — |
-| `root.platform.reports.{reportId}` | `REPORT` | `report-v1` |
+| Путь в дереве | Тип узла | Шаблон |
+|---------------|----------|--------|
+| `root.platform.reports` | `REPORTS` | Каталог отчётов |
+| `root.platform.reports.<reportId>` | `REPORT` | `report-v1` (или `tree-variables-report-v1`) |
 
-Переменные объекты:
+### Переменные SQL-отчёта (`report-v1`)
 
-| Переменная | Описание |
-|----------|----------|
-| `title` | Заголовок |
-| `dataSourcePath` | Путь к `DATA_SOURCE` (`root.platform.data-sources.*`) — schema для SQL |
-| `query` | SELECT / WITH |
-| `parameters` | JSON array имён `?`-параметров |
-| `columns` | JSON array `{field, label}` |
-| `defaultParameters` | JSON object значений по умолчанию |
-| `maxRows` | Лимит строк (default 1000) |
-| `refreshIntervalMs` | Auto-refresh в UI (default 30000) |
-| `templateFormat` | Формат YARG-шаблона: `xlsx`, `docx`, `html` (пусто = нет шаблона) |
+| Переменная | Назначение |
+|------------|------------|
+| `title` | Заголовок отчёта на экране и в выгрузке |
+| `dataSourcePath` | Путь к источнику данных `DATA_SOURCE` (`root.platform.data-sources.*`) |
+| `query` | SQL-запрос (`SELECT` или `WITH`; изменяющие запросы запрещены) |
+| `parameters` | Массив JSON с именами позиционных параметров `?` |
+| `columns` | Массив JSON `{ "field", "label" }` для заголовков колонок |
+| `defaultParameters` | Объект JSON со значениями параметров по умолчанию |
+| `maxRows` | Ограничение числа возвращаемых строк (по умолчанию `1000`) |
+| `refreshIntervalMs` | Период автообновления на экране в мс (по умолчанию `30000`) |
+| `templateFormat` | Формат прикреплённого файла шаблона: `xlsx`, `docx`, `html` (пусто — табличный вывод без шаблона) |
 
-Бинарный шаблон хранится в таблице `report_templates` (не в object_variables).
+Сам бинарный файл печатного шаблона хранится в системной таблице `report_templates`. В консоли администратора узел открывается в визуальном **конструкторе отчётов (Report Builder)** с предпросмотром выборки, настройкой колонок без ручного редактирования JSON и загрузкой шаблона.
 
-Веб-консоль: **Report Builder** — структурированный редактор (параметры/столбцы, без ручного JSON), предварительный просмотр SQL, CSV, вкладка **Шаблон YARG**, экспорт PDF/XLSX/HTML. Переключатель **sql** | **дерево-переменные**.
+### Отчёт по переменным дерева (`tree-variables-report-v1`)
 
-### tree-variables (blueprint `tree-variables-report-v1`)
+Позволяет собрать сводную ведомость текущих значений одноимённой переменной сразу по группе устройств (без SQL):
+- `reportType`: `"tree-variables"`;
+- `devicePathPattern`: префикс или маска пути объектов (`*`, `?`);
+- `variableName`: имя переменной на каждом узле;
+- `columns`: список выводимых полей (по умолчанию путь объекта и значение).
 
-| Переменная | Описание |
-|----------|----------|
-| `reportType` | `tree-variables` |
-| `devicePathPattern` | Префикс или glob пути устройств (`*`, `?`) |
-| `variableName` | Имя переменной на каждом объекте |
-| `columns` | JSON array `{field, label}` (по умолчанию path, value) |
+---
 
-Сохранение: `PUT /api/v1/reports/by-path/tree-variables-definition?path=...`
+## Форматы просмотра и выгрузки
 
-## Экспорт матрицы (UI)
+| Где открыт отчёт | Выгрузка в CSV | Печатная форма XLSX / PDF / HTML |
+|------------------|----------------|----------------------------------|
+| Конструктор отчётов (Admin Console) | Да | Да |
+| Виджет дашборда `type: "report"` | Настраивается (`showCsv`) | Настраивается (`showXlsx`, `showPdf`, `showHtml`) |
+| Меню отчётов в приложении оператора (`operatorUi.reports[]`) | Да | Да |
 
-| поверхность | CSV | PDF/XLSX/HTML |
-|-------------|-----|----------------|
-| Построитель отчетов | да | да (если шаблон YARG) |
-| Dashboard widget `report` | настраивается (`showCsv`, …) | настраивается + template |
-| Operator manifest `screen.report` | да | да (если template) |
-| Приложение оператора (ReportBuilder) | да | да (если шаблон) |
+### Виджет `report` на дашборде
 
-## Dashboard widget `type: "report"`
+| Поле виджета | Назначение |
+|--------------|------------|
+| `reportPath` | **Обязательно.** Путь к узлу `root.platform.reports.<id>` |
+| `parametersJson` | Постоянные параметры запуска отчёта |
+| `contextParamsJson` | Подстановка параметров из контекста экрана `{ "параметрОтчёта": "ключСессии" }` |
+| `showCsv`, `showPdf`, `showXlsx`, `showHtml` | Какие кнопки скачивания показывать оператору |
+| `selectable`, `rowSelectionKey` | Передача выбранной строки отчёта другим виджетам экрана |
 
-| Поле | Описание |
-|------|----------|
-| `reportPath` | Путь REPORT |
-| `parametersJson` | Статические параметры run |
-| `contextParamsJson` | `{reportParam: sessionParamKey}` |
-| `showCsv` / `showPdf` / `showXlsx` / `showHtml` | Кнопки export |
-| `showTruncatedWarning` | Banner при truncated rows |
+---
 
-## API на основе пути (основной)
+## Печатные шаблоны Excel (`Band1`) и Word
 
-```http
-GET  /api/v1/reports/by-path?path=root.platform.reports.ready-items
-PUT  /api/v1/reports/by-path/definition?path=...
-PUT  /api/v1/reports/by-path/tree-variables-definition?path=...
-POST /api/v1/reports/by-path/run?path=...
-GET  /api/v1/reports/by-path/export?path=...&format=csv|pdf|xlsx|html
-POST /api/v1/reports/by-path/template?path=...&format=xlsx   (multipart file)
-GET  /api/v1/reports/by-path/template?path=...
-DELETE /api/v1/reports/by-path/template?path=...
-```
+Табличные шаблоны `.xlsx` заполняются встроенным движком на базе Apache POI ([ADR-0053](decisions/0053-ispf-template-filler.md)):
+1. Подготовьте файл `.xlsx` с именованной областью строки данных **`Band1`** и подстановками вида `${Band1.ИМЯ_КОЛОНКИ}` (имена колонок выборки в верхнем регистре).
+2. Загрузите файл на вкладке **Шаблон отчёта** в конструкторе (`POST /api/v1/reports/by-path/template?path=...&format=xlsx`).
+3. Выгружайте готовый документ через кнопки виджета или запрос `GET .../export?format=xlsx|pdf|html`.
 
-### Запуск (по пути)
+Даже если шаблон не загружен, отчёт всегда можно скачать в виде CSV или стандартной таблицы XLSX/HTML.
 
-```http
-POST /api/v1/reports/by-path/run?path=root.platform.reports.ready-items
-Content-Type: application/json
+---
 
-{ "parameters": { "status": "ready" } }
-```
+## Поставка отчёта в пакете `bundle.json`
 
-## Шаблоны отчётов (Band1)
-
-Заполнение spreadsheet-шаблонов — **ISPF Template Filler** (Apache POI; [ADR-0053](decisions/0053-ispf-template-filler.md)). DOCX/HTML пока могут идти через YARG.
-
-1. Excel-шаблон с именованным диапазоном **`Band1`** и полями `${Band1.COLUMN}` (колонки SQL в **верхнем регистре**).
-2. Загрузка во вкладке **Шаблон отчёта** в Report Builder (`POST .../template`).
-3. Экспорт: `GET .../export?format=pdf|xlsx|html`.
-
-Конфиг: `ispf.reports.template-engine=poi` (по умолчанию) или `yarg`.
-
-**Ограничение:** YARG + docx4j 8.3.x запинены для DOCX; не поднимать docx4j до 17+, пока DOCX на YARG.
-
-Без шаблона доступны CSV и табличные HTML/XLSX.
-
-## Развертывать
-
-Через bundle (`reports[]` создаёт объект в `root.platform.reports.{reportId}`):
+Секция `reports[]` при деплое пакета автоматически создаёт или обновляет узлы `root.platform.reports.<reportId>`:
 
 ```json
 {
   "reports": [
     {
       "reportId": "ready-items",
-      "title": "Готовые позиции",
+      "title": "Готовые партии на складе",
       "query": "SELECT item_code, status FROM demo_item WHERE status = ?",
       "parameters": ["status"],
       "columns": [
-        { "field": "item_code", "label": "Код" },
+        { "field": "item_code", "label": "Код партии" },
         { "field": "status", "label": "Статус" }
       ],
       "maxRows": 500
@@ -123,47 +96,27 @@ Content-Type: application/json
 }
 ```
 
-Устаревшее развертывание:
+---
+
+## Основные методы REST API
 
 ```http
-POST /api/v1/applications/{appId}/reports/deploy
+GET    /api/v1/reports/by-path?path=root.platform.reports.ready-items
+PUT    /api/v1/reports/by-path/definition?path=...
+PUT    /api/v1/reports/by-path/tree-variables-definition?path=...
+POST   /api/v1/reports/by-path/run?path=...
+GET    /api/v1/reports/by-path/export?path=...&format=csv|pdf|xlsx|html
+POST   /api/v1/reports/by-path/template?path=...&format=xlsx
+DELETE /api/v1/reports/by-path/template?path=...
 ```
 
-## API устаревшего приложения
+Пример запуска с параметрами (доступно ролям `operator` и `admin`):
 
 ```http
-GET  /api/v1/applications/{appId}/reports
-POST /api/v1/applications/{appId}/reports/{reportId}/run
-GET  /api/v1/applications/{appId}/reports/{reportId}/export?format=csv|pdf|xlsx|html
+POST /api/v1/reports/by-path/run?path=root.platform.reports.ready-items
+Content-Type: application/json
+
+{ "parameters": { "status": "ready" } }
 ```
 
-## Пользовательский интерфейс оператора
-
-- **operatorUi `reports[]`:** навигация по path отчётов (как `dashboards[]`).
-- **Виджет дашборда `type: "report"`** — таблица по `reportPath` с `parametersJson`/сопоставление сеансов и панель инструментов экспорта.
-- **Legacy manifest** `screen.report` — CSV + PDF/XLSX/HTML при YARG template.
-
-## Права
-
-| Конечная точка | Роль |
-|----------|------|
-| `GET .../reports/by-path`, export | `operator`, `admin` |
-| `PUT .../definition`, template upload/delete | `admin` |
-| `POST .../run` | `operator`, `admin` |
-| `POST .../applications/.../deploy` (reports.md) | `admin` |
-
-## Ограничения
-
-- Только read-only SQL (без `INSERT`/`UPDATE`/`DELETE`/DDL).
-- Запрос выполняется в schema объекта data source (`dataSourcePath`).
-- PDF/XLSX/HTML со spreadsheet-шаблоном — Band1 (POI по умолчанию); DOCX требует Word-шаблон.
-
-## Пример
-
-[examples/demo-app/](../../examples/demo-app/) — `POST /api/v1/platform/packages/import?packageId=demo` или устаревшее развертывание на `demo`, отчёты в `root.platform.reports.*`.
-
-## Связанные документы
-
-- [applications](applications.md) — развертывание пакета
-- [dashboards](dashboards.md) — аналогичная древовидная модель
-- [roadmap](roadmap.md) — Этапы 12–13.
+См. также: [Руководство разработчика решений](solution-developer-guide.md) · [Дашборды](dashboards.md) · [Справочник виджетов](widgets.md).

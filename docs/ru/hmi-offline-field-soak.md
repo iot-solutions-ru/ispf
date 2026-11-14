@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/hmi-offline-field-soak.md](../en/hmi-offline-field-soak.md).
+> **Язык:** русская версия. Английский оригинал: [en/hmi-offline-field-soak.md](../en/hmi-offline-field-soak.md).
 
 # Полевой soak HMI offline (BL-151 / Post-S33)
 

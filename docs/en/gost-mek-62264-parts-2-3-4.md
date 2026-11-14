@@ -37,13 +37,13 @@ Stand: [mes.iot-solutions.ru](https://mes.iot-solutions.ru/) (`?mode=operator`, 
 
 | # | Step | UI | Expect |
 |---|------|-----|--------|
-| 1 | GOST dashboard | Operator → **ГОСТ 62264** | RRN / Containers / Tools / Software / Ops Def / Work Cap / Alerts with seed rows |
-| 2 | RRN edges | ГОСТ 62264 → RRN Edges | `WU-A01`→tool/container; site→software |
+| 1 | GOST dashboard | Operator → **GOST 62264** | RRN / Containers / Tools / Software / Ops Def / Work Cap / Alerts with seed rows |
+| 2 | RRN edges | GOST 62264 → RRN Edges | `WU-A01`→tool/container; site→software |
 | 3 | Ack alert | Acknowledge form | WA-DEMO-001 → ACKNOWLEDGED |
 | 4 | Ops Definition upsert | form on GOST dashboard | OK + row visible |
-| 5 | Maintenance | **ТОиР** | MR/MWO demo + create→accept→complete |
-| 6 | Quality | **Качество** | Defects + QA tests |
-| 7 | Inventory | **Склад** | INV-DEMO-001 Submit/Accept |
+| 5 | Maintenance | **Maintenance (TOiR)** | MR/MWO demo + create→accept→complete |
+| 6 | Quality | **Quality** | Defects + QA tests |
+| 7 | Inventory | **Inventory** | INV-DEMO-001 Submit/Accept |
 | 8 | MOM matrix | **MOM 62264-3** | 32 COVERED cells |
 | 9 | CMMS (optional) | **erp-mes-cmms** | Spares / PM depth |
 

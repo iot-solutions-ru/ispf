@@ -27,7 +27,7 @@ See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-ga
 | FW-47 | Agent discovery tools | `AgentDiscoveryTools` — functions, events, variable schemas |
 | FW-48 | Agent automation tools | `AgentAutomationTools` — alerts, correlators, operator UI, `create_variable`, cluster playbooks |
 | ADR-0049 | OT Automation Excellence | Workflow journal, `invoke_workflow_tool`, BPMN `LLM_COMPLETE`/`INVOKE_AGENT`, analytics analysis tools — tutorials: [ot-automation-excellence-tutorials](ot-automation-excellence-tutorials.md) |
-| ADR-0051 | Poka-yoke quality | Constraints over guards; tool schemas before native FC; guard demount inventory |
+| ADR-0051 | Schema-first validation | Schema constraints over ad-hoc guards; typed tool schemas before native function calling |
 
 ---
 
@@ -167,7 +167,7 @@ See [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observ
 | FW-52 | `GET /agent/metrics`, `AgentPromptVersions` | `AgentMetricsService`, AI Studio |
 | FW-53 | `PlanDepth.LITE` default | `AgentSpecPlanValidator`, `AgentPlanPromptSection` |
 
-**Ask mode** uses dedicated [`AgentAskPromptBuilder`](../../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentAskPromptBuilder.java) — no planning pipeline.
+**Ask mode** uses dedicated [`AgentAskPromptBuilder`](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentAskPromptBuilder.java) — no planning pipeline.
 
 Audit columns (migration `V67__ai_tool_audit_metrics.sql`): `latency_ms`, `prompt_tokens`, `completion_tokens`, `turn_id`, `step_no`, `interaction_mode`, `prompt_profile`.
 

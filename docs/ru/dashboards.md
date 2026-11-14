@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/dashboards.md](../en/dashboards.md).
+> **Язык:** русская версия. Английский оригинал: [en/dashboards.md](../en/dashboards.md).
 
 # Дашборды и виджеты
 
-> **Статус:** Stable — сетка 84×8 канонична. Скриншоты: [assets/README](../assets/README.md). Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Stable — сетка 84×8, привязки виджетов и навигация между экранами. Метки зрелости: [doc-status.md](doc-status.md). Скриншоты: [assets/README](../assets/README.md).
 
 **Справочник всех виджетов** (назначение, настройки, примеры): **[widgets](widgets.md)**.
 

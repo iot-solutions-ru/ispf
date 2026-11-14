@@ -10,7 +10,7 @@
 
 **Полный справочник языка** (литералы/операторы CEL, все platform bindings, historian helpers, примеры): **[expression-language](expression-language.md)**.
 
-См. также: [object-model](object-model.md), [blueprints](blueprints.md), ADR [0010-binding-rules-only](decisions/0010-binding-rules-only.md), ADR [0043-unified-platform-ref](decisions/0043-unified-platform-ref.md).
+**Связанные разделы:** [Модель объектов](object-model.md) · [Шаблоны (blueprints)](blueprints.md) · [ADR-0010](decisions/0010-binding-rules-only.md) · [ADR-0043](decisions/0043-unified-platform-ref.md).
 
 ---
 

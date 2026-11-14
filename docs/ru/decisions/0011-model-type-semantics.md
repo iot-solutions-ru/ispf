@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/decisions/0011-model-type-semantics.md](../../en/decisions/0011-model-type-semantics.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0011-model-type-semantics.md](../../en/decisions/0011-model-type-semantics.md).
 
 # ADR-0011: Blueprint + три вида (MIXIN / INSTANCE / SINGLETON)
 

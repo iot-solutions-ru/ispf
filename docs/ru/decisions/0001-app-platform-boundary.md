@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0001-app-platform-boundary.md](../../en/decisions/0001-app-platform-boundary.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0001-app-platform-boundary.md](../../en/decisions/0001-app-platform-boundary.md).
 
 # ADR-0001: Граница platform и solution (app/platform boundary)
 

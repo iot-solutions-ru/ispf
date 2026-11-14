@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/ai-field-soak-playbook.md](../en/ai-field-soak-playbook.md).
+> **Язык:** русская версия. Английский оригинал: [en/ai-field-soak-playbook.md](../en/ai-field-soak-playbook.md).
 
 # Playbook полевого soak AI generator (BL-180 / Post-S33)
 

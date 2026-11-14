@@ -1,4 +1,4 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/decisions/0016-agpl-dual-licensing.md](../../en/decisions/0016-agpl-dual-licensing.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0016-agpl-dual-licensing.md](../../en/decisions/0016-agpl-dual-licensing.md).
 
 # ADR-0016: AGPL platform + driver packs + dual licensing
 

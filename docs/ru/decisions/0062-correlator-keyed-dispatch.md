@@ -1,4 +1,4 @@
-> **Язык:** русская версия. Канонический английский: [en/decisions/0062-correlator-keyed-dispatch.md](../../en/decisions/0062-correlator-keyed-dispatch.md).
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0062-correlator-keyed-dispatch.md](../../en/decisions/0062-correlator-keyed-dispatch.md).
 
 # ADR-0062: Keyed dispatch коррелятора и транзакции на каждый коррелятор
 

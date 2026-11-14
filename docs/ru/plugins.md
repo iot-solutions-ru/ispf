@@ -1,8 +1,8 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/plugins.md](../en/plugins.md).
+> **Язык:** русская версия. Английский оригинал: [en/plugins.md](../en/plugins.md).
 
 # Плагины и прикладные решения
 
-> **Статус:** Stable — Core vs packs vs bundles. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — Core vs packs vs bundles. Метки зрелости: [doc-status.md](doc-status.md).
 
 ## Принцип
 

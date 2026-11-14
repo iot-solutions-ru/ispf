@@ -39,7 +39,7 @@ location / { try_files $uri $uri/ /index.html; }
 
 отвечает на `GET /apps/<appId>/` **админской консолью** («ISPF Admin Console»), хотя ui-pack уже стоит в `ISPF_UI_PACKS_DIR/<appId>/` и Java на `:8080` отдаёт его корректно.
 
-**Нужно:** проксировать `/apps/` на JVM **до** SPA fallback. Шаблоны: [`deploy/nginx-ispf.conf`](../../deploy/nginx-ispf.conf), [`deploy/nginx-vps-ssl.conf`](../../deploy/nginx-vps-ssl.conf):
+**Нужно:** проксировать `/apps/` на JVM **до** SPA fallback. Шаблоны: [`deploy/nginx-ispf.conf`](../../../deploy/nginx-ispf.conf), [`deploy/nginx-vps-ssl.conf`](../../../deploy/nginx-vps-ssl.conf):
 
 ```nginx
 location ^~ /apps/ {
