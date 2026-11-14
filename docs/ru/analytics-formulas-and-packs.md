@@ -2,7 +2,7 @@
 
 # Формулы analytics и пакеты расширений
 
-> **Статус:** Stable — Expression packs, deploy. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Stable — пакеты формул и их развёртывание. Метки зрелости: [doc-status.md](doc-status.md).
 
 Как создавать, переиспользовать и распространять historian-вычисления сверх одного binding rule. Охватывает **Tier A** (встроенные), **Tier B** (свои формулы) и **Tier C** (Java-пакеты + маркетплейс).
 

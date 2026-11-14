@@ -142,14 +142,14 @@ Content-Type: application/json
 | GET | `/api/v1/schedules` | admin | Список расписаний |
 | POST | `/api/v1/schedules` | admin | Создать или обновить расписание |
 
-См. также: [applications](applications.md), [reports](reports.md), [plugins](plugins.md).
+**Связанные разделы:** [Приложения](applications.md) · [Отчёты](reports.md) · [Плагины](plugins.md).
 
-## Work Queue
+## Очередь задач смены (`Work Queue`)
 
 | Method | Path | Roles | Description |
 |--------|------|-------|-------------|
-| GET | `/api/v1/work-queue` | operator+ | Открытые задачи пользователя (`limit`) |
-| POST | `/api/v1/work-queue/claim` | operator+ | `taskId`, `operatorId` |
+| GET | `/api/v1/work-queue` | operator+ | Открытые задачи текущего пользователя (`limit`) |
+| POST | `/api/v1/work-queue/claim` | operator+ | Взять задачу в работу (`taskId`, `operatorId`) |
 | POST | `/api/v1/work-queue/complete` | operator+ | Завершить задачу |
 
 ## События

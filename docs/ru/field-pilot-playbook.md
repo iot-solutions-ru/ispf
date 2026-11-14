@@ -2,7 +2,7 @@
 
 # Playbook полевого пилота (BL-140)
 
-> **Статус:** Lab — OT validation runbooks. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Lab — runbook проверки OT на площадке. Метки зрелости: [doc-status.md](doc-status.md).
 
 Повторяемые runbook'и OT field-pilot для трёх эталонных сценариев. Каждый пилот проверяет драйверы с меткой **PRODUCTION**, write round-trip, ingest в historian и operator HMI без middleware между ISPF и plant edge.
 

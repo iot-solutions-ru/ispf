@@ -12,7 +12,7 @@
 
 ## Топ-20 промышленных матриц
 
-Источник истины: `DriverProductionMatrix.TOP_20_INDUSTRIAL` в `packages/ispf-server`.
+Актуальный список протоколов: `DriverProductionMatrix.TOP_20_INDUSTRIAL` в `packages/ispf-server`.
 
 | `driverId` | Gradle module | Loopback test |
 | ---------- | ------------- | ------------- |

@@ -2,7 +2,7 @@
 
 # Туториал: webhook, cron и восстановление после ошибок
 
-> **Статус:** Beta — ADR-0049 Wave 3. Хаб: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
+> **Статус:** Beta — ADR-0049 Wave 3. См. также: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
 
 ## Цель
 

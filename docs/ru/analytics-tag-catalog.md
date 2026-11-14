@@ -2,7 +2,7 @@
 
 # Каталог analytics-тегов (BL-209 / ADR-0041)
 
-> **Статус:** Stable — Deployed analytics tags. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Stable — каталог развёрнутых аналитических тегов. Метки зрелости: [doc-status.md](doc-status.md).
 
 Развёрнутые **historian-вычисления** обнаруживаются из `@bindingRules` с `kind: historian` на объектах `DEVICE`. Одно правило = один тег каталога и одна live-переменная.
 

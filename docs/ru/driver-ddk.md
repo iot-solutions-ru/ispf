@@ -2,7 +2,7 @@
 
 # Комплект разработки драйверов (DDK)
 
-> **Статус:** Stable — Custom driver SDK. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Stable — SDK для собственных драйверов. Метки зрелости: [doc-status.md](doc-status.md).
 
 **BL-144** — каркас для пользовательских пакетов драйверов вне ядра monorepo или как новый `ispf-driver-*` модуль.
 

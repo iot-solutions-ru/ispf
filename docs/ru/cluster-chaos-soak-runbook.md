@@ -1,8 +1,8 @@
-> **Язык:** краткое зеркало. Канонические процедуры: [en/cluster-chaos-soak-runbook.md](../en/cluster-chaos-soak-runbook.md).
+> **Язык:** русская версия. Английский оригинал: [en/cluster-chaos-soak-runbook.md](../en/cluster-chaos-soak-runbook.md).
 
 # Runbook chaos / soak кластера (Wave 6)
 
-> **Статус:** Lab — доказательство кластера воспроизводимыми шагами. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Lab — доказательство кластера воспроизводимыми шагами. Метки зрелости: [doc-status.md](doc-status.md).
 
 Wave 6 risk burn-down: **доказательство кластера** (chaos/soak + усиленный smoke), без изменений промышленных драйверов и без рефакторинга ObjectManager / AI / BPMN.
 

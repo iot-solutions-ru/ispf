@@ -2,7 +2,7 @@
 
 # Полевой soak HMI offline (BL-151 / Post-S33)
 
-> **Статус:** Lab — PWA offline validation. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Lab — проверка офлайн-режима PWA. Метки зрелости: [doc-status.md](doc-status.md).
 
 Процедура **offline operator PWA** на video wall / планшете. CI FPS/Lighthouse **Готово**; хвост — **2 ч / 8 ч** на объекте.
 

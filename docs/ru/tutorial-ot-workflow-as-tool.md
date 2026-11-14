@@ -2,7 +2,7 @@
 
 # Туториал: workflow как типизированный tool
 
-> **Статус:** Beta — ADR-0049 Wave 1 / 5. Хаб: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
+> **Статус:** Beta — ADR-0049 Wave 1 / 5. См. также: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
 
 ## Цель
 

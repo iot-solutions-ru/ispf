@@ -2,7 +2,7 @@
 
 # Cookbook: historian-вычисления
 
-> **Статус:** Stable — Recipes, binding rules, rollups. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Stable — рецепты расчётов, правила привязок и агрегаты. Метки зрелости: [doc-status.md](doc-status.md).
 
 Рецепты для **historian binding rules** (`kind: historian` в `@bindingRules`). Одно правило = один analytics-тег со своей выходной переменной, расписанием и выражением.
 

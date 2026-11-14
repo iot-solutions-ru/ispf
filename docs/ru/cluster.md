@@ -2,7 +2,7 @@
 
 # Кластер ISPF (мультиреплика)
 
-> **Статус:** Beta — Multi-replica HA (capability vs demostand). Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Beta — несколько реплик и высокая доступность (возможности платформы vs демостенд). Метки зрелости: [doc-status.md](doc-status.md).
 
 Руководство по горизонтальному масштабированию API: несколько JVM-реплик, одно дерево объектов в PostgreSQL, синхронизация live-значений через NATS ([0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md)).
 

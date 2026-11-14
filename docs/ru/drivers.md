@@ -563,9 +563,9 @@ Loopback-тест: `CoapDeviceDriverTest` (in-process Californium CoAP server).
 | `iec62056` | `ispf-driver-iec62056` | PRODUCTION | Apache-2.0 | IEC 62056: IEC 62056 DLMS companion / push драйвер (beyond existing DLMS pack) (лабораторный кодек и loopback-тест) |
 | `ieee2030-5` | `ispf-driver-ieee2030-5` | PRODUCTION | Apache-2.0 | IEEE 2030.5: IEEE 2030.5 (SEP2) драйвер (лабораторный кодек и loopback-тест) |
 | `imap` | `ispf-driver-imap` | PRODUCTION | Apache-2.0 | Опрос IMAP почтового ящика |
-| `ingress-sflow` | `ispf-driver-ingress-sflow` | PRODUCTION | Apache-2.0 | sFlow v5 UDP listener (сырой ingress) |
-| `ingress-snmp-trap` | `ispf-driver-ingress-snmp-trap` | PRODUCTION | Apache-2.0 | SNMP trap UDP listener (сырой ingress) |
-| `ingress-syslog` | `ispf-driver-ingress-syslog` | PRODUCTION | Apache-2.0 | Syslog UDP listener (сырой ingress) |
+| `ingress-sflow` | `ispf-driver-ingress-sflow` | PRODUCTION | Apache-2.0 | Приём sFlow v5 по UDP (без разбора payload) |
+| `ingress-snmp-trap` | `ispf-driver-ingress-snmp-trap` | PRODUCTION | Apache-2.0 | Приём SNMP trap по UDP (без разбора payload) |
+| `ingress-syslog` | `ispf-driver-ingress-syslog` | PRODUCTION | Apache-2.0 | Приём Syslog по UDP (без разбора payload) |
 | `interbus` | `ispf-driver-interbus` | BETA | Apache-2.0 | INTERBUS: INTERBUS fieldbus gateway шлюз/подмножество (TCP-шлюз / лабораторное подмножество) |
 | `io-link` | `ispf-driver-io-link` | BETA | Apache-2.0 | IO-Link: IO-Link master REST/MQTT bridge шлюз/подмножество (TCP-шлюз / лабораторное подмножество) |
 | `ip-host` | `ispf-driver-ip-host` | PRODUCTION | Apache-2.0 | Мультипроверка хоста (PING/HTTP/TCP/DNS/SMTP/FTP) |

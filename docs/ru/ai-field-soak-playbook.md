@@ -2,7 +2,7 @@
 
 # Playbook полевого soak AI generator (BL-180 / Post-S33)
 
-> **Статус:** Lab — runbook field evidence. Хаб: [doc-status.md](doc-status.md).
+> **Статус:** Lab — полевой runbook со сбором evidence. Метки зрелости: [doc-status.md](doc-status.md).
 
 Процедура для **живого generator** на именованной площадке. Harness в коде **Готово**; этот документ закрывает хвост Post-S33: **датированный JSON + журнал интегратора**.
 
