@@ -54,7 +54,7 @@ final class Iec104Codec {
             values.add(decoded.value());
             offset = decoded.nextOffset();
         }
-        return new Iec104Asdu(typeId, causeField & 0x3f, (causeField >>> 8) & 0xff, commonAddress, values);
+        return new Iec104Asdu(typeId, causeField & 0x7f, (causeField >>> 8) & 0xff, commonAddress, values);
     }
 
     private static void writeValue(ByteArrayOutputStream out, int typeId, Iec104Value value) throws IOException {
@@ -63,17 +63,17 @@ final class Iec104Codec {
             case Iec104Type.M_DP_NA_1 -> out.write((value.numericValue() == 0.0 ? 1 : (int) value.numericValue()) & 0x03);
             case Iec104Type.M_ME_NA_1, Iec104Type.C_SE_NA_1 -> {
                 writeLittle16(out, encodeNormalized(value.numericValue()));
-                out.write(typeId == Iec104Type.C_SE_NA_1 ? 0 : encodeQuality(value.quality()));
+                out.write(typeId == Iec104Type.C_SE_NA_1 ? selectBit(value) : encodeQuality(value.quality()));
             }
             case Iec104Type.M_ME_NC_1, Iec104Type.M_ME_TF_1, Iec104Type.C_SE_NC_1 -> {
                 writeFloat32(out, (float) value.numericValue());
-                out.write(typeId == Iec104Type.C_SE_NC_1 ? 0 : encodeQuality(value.quality()));
+                out.write(typeId == Iec104Type.C_SE_NC_1 ? selectBit(value) : encodeQuality(value.quality()));
                 if (typeId == Iec104Type.M_ME_TF_1) {
                     out.write(new byte[7]);
                 }
             }
-            case Iec104Type.C_SC_NA_1 -> out.write(value.booleanValue() ? 1 : 0);
-            case Iec104Type.C_DC_NA_1 -> out.write((int) value.numericValue() & 0x03);
+            case Iec104Type.C_SC_NA_1 -> out.write((value.booleanValue() ? 1 : 0) | selectBit(value));
+            case Iec104Type.C_DC_NA_1 -> out.write(((int) value.numericValue() & 0x03) | selectBit(value));
             case Iec104Type.C_IC_NA_1 -> out.write((int) value.numericValue() & 0xff);
             case Iec104Type.C_RD_NA_1 -> {
                 // Read command has only the IOA.
@@ -112,20 +112,26 @@ final class Iec104Codec {
             }
             case Iec104Type.C_SC_NA_1 -> {
                 ensureRemaining(payload, offset, 1, "single command");
-                yield new DecodedValue(new Iec104Value(ioa, typeId, (payload[offset] & 0x01) != 0, "GOOD"), offset + 1);
+                int sco = unsigned(payload[offset]);
+                yield new DecodedValue(new Iec104Value(ioa, typeId, (sco & 0x01) != 0, commandQuality(sco)), offset + 1);
             }
             case Iec104Type.C_DC_NA_1 -> {
                 ensureRemaining(payload, offset, 1, "double command");
-                yield new DecodedValue(new Iec104Value(ioa, typeId, unsigned(payload[offset]) & 0x03, "GOOD"), offset + 1);
+                int dco = unsigned(payload[offset]);
+                yield new DecodedValue(new Iec104Value(ioa, typeId, dco & 0x03, commandQuality(dco)), offset + 1);
             }
             case Iec104Type.C_SE_NA_1 -> {
                 ensureRemaining(payload, offset, 3, "normalized setpoint");
                 double value = (short) little16(payload, offset) / 32768.0;
-                yield new DecodedValue(new Iec104Value(ioa, typeId, value, "GOOD"), offset + 3);
+                int qos = unsigned(payload[offset + 2]);
+                yield new DecodedValue(new Iec104Value(ioa, typeId, value, commandQuality(qos)), offset + 3);
             }
             case Iec104Type.C_SE_NC_1 -> {
                 ensureRemaining(payload, offset, 5, "float setpoint");
-                yield new DecodedValue(new Iec104Value(ioa, typeId, (double) readFloat32(payload, offset), "GOOD"), offset + 5);
+                int qos = unsigned(payload[offset + 4]);
+                yield new DecodedValue(
+                        new Iec104Value(ioa, typeId, (double) readFloat32(payload, offset), commandQuality(qos)),
+                        offset + 5);
             }
             case Iec104Type.C_IC_NA_1 -> {
                 ensureRemaining(payload, offset, 1, "interrogation qualifier");
@@ -134,6 +140,14 @@ final class Iec104Codec {
             case Iec104Type.C_RD_NA_1 -> new DecodedValue(new Iec104Value(ioa, typeId, 0.0, "GOOD"), offset);
             default -> throw new IOException("Unsupported IEC104 ASDU type for decode: " + typeId);
         };
+    }
+
+    private static int selectBit(Iec104Value value) {
+        return "SELECT".equals(value.quality()) ? 0x80 : 0;
+    }
+
+    private static String commandQuality(int qualifier) {
+        return (qualifier & 0x80) != 0 ? "SELECT" : "GOOD";
     }
 
     private static int encodeNormalized(double value) {

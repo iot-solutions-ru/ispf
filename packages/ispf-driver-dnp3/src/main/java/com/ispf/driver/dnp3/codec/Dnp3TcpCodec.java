@@ -33,7 +33,11 @@ public final class Dnp3TcpCodec {
     private static final int APP_REQUEST = 0xC0;
     private static final int APP_RESPONSE = 0xC0;
     public static final int FUNCTION_READ = 0x01;
+    public static final int FUNCTION_SELECT = 0x03;
+    public static final int FUNCTION_OPERATE = 0x04;
     public static final int FUNCTION_DIRECT_OPERATE = 0x05;
+    public static final int STATUS_TIMEOUT = 1;
+    public static final int STATUS_NO_SELECT = 2;
     private static final int FUNCTION_RESPONSE = 0x81;
     private static final int GROUP_CROB = 12;
     private static final int CROB_VARIATION = 1;
@@ -79,10 +83,25 @@ public final class Dnp3TcpCodec {
      */
     public static byte[] directOperateRequest(int masterAddress, int outstationAddress, int sequence,
             ControlCommand command) {
+        return controlRequest(masterAddress, outstationAddress, sequence, command, FUNCTION_DIRECT_OPERATE);
+    }
+
+    public static byte[] selectRequest(int masterAddress, int outstationAddress, int sequence,
+            ControlCommand command) {
+        return controlRequest(masterAddress, outstationAddress, sequence, command, FUNCTION_SELECT);
+    }
+
+    public static byte[] operateRequest(int masterAddress, int outstationAddress, int sequence,
+            ControlCommand command) {
+        return controlRequest(masterAddress, outstationAddress, sequence, command, FUNCTION_OPERATE);
+    }
+
+    private static byte[] controlRequest(int masterAddress, int outstationAddress, int sequence,
+            ControlCommand command, int function) {
         byte[] object = encodeOperateObject(command, OPERATE_SUCCESS);
         ByteBuffer app = ByteBuffer.allocate(2 + object.length).order(ByteOrder.LITTLE_ENDIAN);
         app.put((byte) (APP_REQUEST | (sequence & 0x0F)));
-        app.put((byte) FUNCTION_DIRECT_OPERATE);
+        app.put((byte) function);
         app.put(object);
         return frame(masterAddress, outstationAddress, slice(app), sequence, true);
     }
@@ -90,7 +109,12 @@ public final class Dnp3TcpCodec {
     /** Echo of a direct-operate request with status 0 and internal indications cleared. */
     public static byte[] directOperateResponse(int outstationAddress, int masterAddress, ControlCommand command,
             int sequence) {
-        byte[] object = encodeOperateObject(command, OPERATE_SUCCESS);
+        return controlResponse(outstationAddress, masterAddress, command, sequence, OPERATE_SUCCESS);
+    }
+
+    public static byte[] controlResponse(int outstationAddress, int masterAddress, ControlCommand command,
+            int sequence, int status) {
+        byte[] object = encodeOperateObject(command, status);
         ByteBuffer app = ByteBuffer.allocate(4 + object.length).order(ByteOrder.LITTLE_ENDIAN);
         app.put((byte) (APP_RESPONSE | (sequence & 0x0F)));
         app.put((byte) FUNCTION_RESPONSE);
@@ -182,7 +206,11 @@ public final class Dnp3TcpCodec {
         return parseOperate(frame, false);
     }
 
-    /** Accepts a direct-operate response whose echoed object status is 0. */
+    public static ControlCommand parseOperateResponse(Frame frame) throws DriverException {
+        return parseOperate(frame, true);
+    }
+
+    /** Accepts a control response whose echoed object status is 0. */
     public static void applyOperateResponse(Frame frame) throws DriverException {
         parseOperate(frame, true);
     }
@@ -392,6 +420,15 @@ public final class Dnp3TcpCodec {
         };
     }
 
+    private static boolean acceptedOperateFunction(int function, boolean response) {
+        if (response) {
+            return function == FUNCTION_RESPONSE;
+        }
+        return function == FUNCTION_SELECT
+                || function == FUNCTION_OPERATE
+                || function == FUNCTION_DIRECT_OPERATE;
+    }
+
     private static ControlCommand parseOperate(Frame frame, boolean response) throws DriverException {
         ByteBuffer app = ByteBuffer.wrap(frame.application()).order(ByteOrder.LITTLE_ENDIAN);
         if (app.remaining() < 2) {
@@ -400,8 +437,7 @@ public final class Dnp3TcpCodec {
         int control = Byte.toUnsignedInt(app.get());
         int function = Byte.toUnsignedInt(app.get());
         int expectedControl = response ? APP_RESPONSE : APP_REQUEST;
-        int expectedFunction = response ? FUNCTION_RESPONSE : FUNCTION_DIRECT_OPERATE;
-        if ((control & 0xC0) != expectedControl || function != expectedFunction) {
+        if ((control & 0xC0) != expectedControl || !acceptedOperateFunction(function, response)) {
             throw new DriverPermanentException("Unexpected DNP3 operate header");
         }
         if (response) {

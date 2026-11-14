@@ -70,15 +70,32 @@ final class Dnp3MasterSession implements AutoCloseable {
         return readCache;
     }
 
+    synchronized void selectBeforeOperate(Dnp3Point point, Object value) throws DriverException {
+        ControlCommand command = new ControlCommand(point.dataType(), point.index(), value);
+        exchangeControl(command, true);
+        exchangeControl(command, false);
+    }
+
     synchronized void directOperate(Dnp3Point point, Object value) throws DriverException {
+        exchangeControl(new ControlCommand(point.dataType(), point.index(), value), false);
+    }
+
+    private void exchangeControl(ControlCommand command, boolean select) throws DriverException {
         if (!isConnected()) {
             throw new DriverTransientException("Not connected");
         }
         try {
             int operateSequence = sequence++ & 0x0F;
-            ControlCommand command = new ControlCommand(point.dataType(), point.index(), value);
-            byte[] request = Dnp3TcpCodec.directOperateRequest(
-                    masterAddress, outstationAddress, operateSequence, command);
+            byte[] request;
+            if (select) {
+                request = Dnp3TcpCodec.selectRequest(masterAddress, outstationAddress, operateSequence, command);
+                operateArmed = true;
+            } else if (operateArmed) {
+                request = Dnp3TcpCodec.operateRequest(masterAddress, outstationAddress, operateSequence, command);
+                operateArmed = false;
+            } else {
+                request = Dnp3TcpCodec.directOperateRequest(masterAddress, outstationAddress, operateSequence, command);
+            }
             Dnp3TcpCodec.writeFrame(socket.getOutputStream(), request);
             Dnp3TcpCodec.Frame response = Dnp3TcpCodec.readFrame(socket.getInputStream());
             if (response.source() != outstationAddress || response.destination() != masterAddress) {
@@ -87,13 +104,31 @@ final class Dnp3MasterSession implements AutoCloseable {
             if (Dnp3TcpCodec.applicationSequence(response) != operateSequence) {
                 throw new DriverPermanentException("DNP3 operate response sequence mismatch");
             }
-            Dnp3TcpCodec.applyOperateResponse(response);
+            ControlCommand echoed = Dnp3TcpCodec.parseOperateResponse(response);
+            if (echoed.type() != command.type() || echoed.index() != command.index()
+                    || !sameValue(command.value(), echoed.value())) {
+                throw new DriverPermanentException("DNP3 control echo mismatch");
+            }
         } catch (DriverException ex) {
+            operateArmed = false;
             throw ex;
         } catch (Exception ex) {
-            throw new DriverTransientException("DNP3 direct operate failed", ex);
+            operateArmed = false;
+            throw new DriverTransientException(select ? "DNP3 select failed" : "DNP3 operate failed", ex);
         }
     }
+
+    private static boolean sameValue(Object expected, Object actual) {
+        if (expected instanceof Boolean bool) {
+            return bool.equals(actual);
+        }
+        if (expected instanceof Number expectedNumber && actual instanceof Number actualNumber) {
+            return Float.compare(expectedNumber.floatValue(), actualNumber.floatValue()) == 0;
+        }
+        return false;
+    }
+
+    private boolean operateArmed;
 
     @Override
     public synchronized void close() {

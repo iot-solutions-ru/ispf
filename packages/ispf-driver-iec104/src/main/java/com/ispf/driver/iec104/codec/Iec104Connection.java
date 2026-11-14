@@ -8,6 +8,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class Iec104Connection implements AutoCloseable {
@@ -28,6 +30,7 @@ public final class Iec104Connection implements AutoCloseable {
     private final AtomicBoolean dataTransferActive = new AtomicBoolean();
     private int sendSequence;
     private int receiveSequence;
+    private final ArrayBlockingQueue<Iec104Asdu> commandReplies = new ArrayBlockingQueue<>(4);
     private Thread readerThread;
 
     public static Iec104Connection connect(
@@ -83,8 +86,61 @@ public final class Iec104Connection implements AutoCloseable {
     }
 
     public void singleCommand(int commonAddress, int ioa, boolean on) throws IOException {
-        sendAsdu(Iec104Asdu.single(Iec104Type.C_SC_NA_1, Iec104Cause.ACTIVATION, commonAddress,
-                new Iec104Value(ioa, Iec104Type.C_SC_NA_1, on, "GOOD")));
+        command(commonAddress, ioa, on, false, true);
+    }
+
+    public void singleCommandSelect(int commonAddress, int ioa, boolean on) throws IOException {
+        command(commonAddress, ioa, on, true, true);
+    }
+
+    public void doubleCommandSelect(int commonAddress, int ioa, boolean on) throws IOException {
+        command(commonAddress, ioa, on, true, false);
+    }
+
+    private void command(int commonAddress, int ioa, boolean on, boolean select, boolean single) throws IOException {
+        String quality = select ? "SELECT" : "GOOD";
+        if (single) {
+            sendAsdu(Iec104Asdu.single(Iec104Type.C_SC_NA_1, Iec104Cause.ACTIVATION, commonAddress,
+                    new Iec104Value(ioa, Iec104Type.C_SC_NA_1, on, quality)));
+        } else {
+            int dcs = on ? 2 : 1;
+            sendAsdu(Iec104Asdu.single(Iec104Type.C_DC_NA_1, Iec104Cause.ACTIVATION, commonAddress,
+                    new Iec104Value(ioa, Iec104Type.C_DC_NA_1, dcs, quality)));
+        }
+    }
+
+    public void clearCommandReplies() {
+        commandReplies.clear();
+    }
+
+    public Iec104Asdu awaitCommandReply(
+            long timeoutMs,
+            int typeId,
+            int commonAddress,
+            int ioa,
+            boolean select
+    ) throws IOException {
+        try {
+            Iec104Asdu reply = commandReplies.poll(timeoutMs, TimeUnit.MILLISECONDS);
+            if (reply == null) {
+                throw new IOException("IEC104 command confirmation timed out");
+            }
+            if ((reply.cause() & 0x40) != 0) {
+                throw new IOException("IEC104 command rejected");
+            }
+            if (reply.typeId() != typeId || reply.commonAddress() != commonAddress || reply.values().isEmpty()) {
+                throw new IOException("IEC104 command confirmation does not match the request");
+            }
+            Iec104Value echoed = reply.values().get(0);
+            boolean echoedSelect = "SELECT".equals(echoed.quality());
+            if (echoed.ioa() != ioa || echoedSelect != select) {
+                throw new IOException("IEC104 command confirmation does not match the request");
+            }
+            return reply;
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IOException("IEC104 command confirmation interrupted", ex);
+        }
     }
 
     /**
@@ -94,6 +150,23 @@ public final class Iec104Connection implements AutoCloseable {
         int dcs = on ? 2 : 1;
         sendAsdu(Iec104Asdu.single(Iec104Type.C_DC_NA_1, Iec104Cause.ACTIVATION, commonAddress,
                 new Iec104Value(ioa, Iec104Type.C_DC_NA_1, dcs, "GOOD")));
+    }
+
+    public void setShortFloatSelect(int commonAddress, int ioa, double value) throws IOException {
+        sendAsdu(Iec104Asdu.single(Iec104Type.C_SE_NC_1, Iec104Cause.ACTIVATION, commonAddress,
+                new Iec104Value(ioa, Iec104Type.C_SE_NC_1, value, "SELECT")));
+    }
+
+    public void setNormalizedSelect(int commonAddress, int ioa, double value) throws IOException {
+        sendAsdu(Iec104Asdu.single(Iec104Type.C_SE_NA_1, Iec104Cause.ACTIVATION, commonAddress,
+                new Iec104Value(ioa, Iec104Type.C_SE_NA_1, value, "SELECT")));
+    }
+
+    private static boolean isControlCommand(int typeId) {
+        return typeId == Iec104Type.C_SC_NA_1
+                || typeId == Iec104Type.C_DC_NA_1
+                || typeId == Iec104Type.C_SE_NA_1
+                || typeId == Iec104Type.C_SE_NC_1;
     }
 
     public void setShortFloatCommand(int commonAddress, int ioa, double value) throws IOException {
@@ -199,7 +272,12 @@ public final class Iec104Connection implements AutoCloseable {
             receiveSequence = (receiveSequence + 1) & 0x7fff;
             byte[] asduBytes = new byte[body.length - 4];
             System.arraycopy(body, 4, asduBytes, 0, asduBytes.length);
-            listener.onAsdu(this, Iec104Codec.decodeAsdu(asduBytes));
+            Iec104Asdu asdu = Iec104Codec.decodeAsdu(asduBytes);
+            int cause = asdu.cause() & 0x3f;
+            if (cause == Iec104Cause.ACTIVATION_CONFIRMATION && isControlCommand(asdu.typeId())) {
+                commandReplies.offer(asdu);
+            }
+            listener.onAsdu(this, asdu);
             return;
         }
         if ((control0 & 0x03) == 0x03) {

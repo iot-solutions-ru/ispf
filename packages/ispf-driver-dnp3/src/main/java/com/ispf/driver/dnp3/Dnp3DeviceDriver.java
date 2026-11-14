@@ -24,7 +24,7 @@ public class Dnp3DeviceDriver implements DeviceDriver {
             "dnp3",
             "DNP3 Driver",
             "0.2.0",
-            "DNP3 TCP master with Class 0/1/2/3 poll and direct operate (ISPF clean-room codec)",
+            "DNP3 TCP master with Class 0/1/2/3 poll, direct operate, and optional select-before-operate",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -32,7 +32,8 @@ public class Dnp3DeviceDriver implements DeviceDriver {
                     "localAddress", "1",
                     "outstationAddress", "1024",
                     "timeoutMs", "5000",
-                    "pollIntervalMs", "1000"
+                    "pollIntervalMs", "1000",
+                    "commandMode", "direct"
             )
     );
 
@@ -58,6 +59,7 @@ public class Dnp3DeviceDriver implements DeviceDriver {
     private int masterAddress = 1;
     private int outstationAddress = 1024;
     private int timeoutMs = 5000;
+    private boolean selectBeforeOperate;
     /** Replaced as a whole before poll I/O so a later write never sees an empty map. */
     private volatile Map<String, Dnp3Point> points = Map.of();
 
@@ -74,6 +76,7 @@ public class Dnp3DeviceDriver implements DeviceDriver {
         readConfig("localAddress", value -> masterAddress = parseAddress(value, 1));
         readConfig("outstationAddress", value -> outstationAddress = parseAddress(value, 1024));
         readConfig("timeoutMs", value -> timeoutMs = Integer.parseInt(value));
+        readConfig("commandMode", value -> selectBeforeOperate = parseCommandMode(value));
     }
 
     @Override
@@ -135,11 +138,19 @@ public class Dnp3DeviceDriver implements DeviceDriver {
             throw new DriverConfigurationException("Unknown point: " + pointId);
         }
         switch (point.dataType()) {
-            case BINARY_OUTPUT -> session.directOperate(point, extractBoolean(value));
-            case ANALOG_OUTPUT -> session.directOperate(point, extractDouble(value));
+            case BINARY_OUTPUT -> operate(point, extractBoolean(value));
+            case ANALOG_OUTPUT -> operate(point, extractDouble(value));
             default -> throw new DriverPermanentException("DNP3 point type cannot be written: " + point.dataType());
         }
         driverObject.updateVariable(pointId, writeResult(point, value));
+    }
+
+    private void operate(Dnp3Point point, Object raw) throws DriverException {
+        if (selectBeforeOperate) {
+            session.selectBeforeOperate(point, raw);
+        } else {
+            session.directOperate(point, raw);
+        }
     }
 
     private static DataRecord writeResult(Dnp3Point point, DataRecord value) throws DriverException {
@@ -255,7 +266,22 @@ public class Dnp3DeviceDriver implements DeviceDriver {
         return parsed > 0 ? parsed : defaultValue;
     }
 
+    private static boolean parseCommandMode(String value) {
+        String mode = value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
+        if (mode.isEmpty() || "direct".equals(mode)) {
+            return false;
+        }
+        if ("sbo".equals(mode)) {
+            return true;
+        }
+        throw new IllegalArgumentException("commandMode must be direct or sbo: " + value);
+    }
+
     private void readConfig(String name, java.util.function.Consumer<String> consumer) {
+        String configured = driverObject.configuration().get(name);
+        if (configured != null && !configured.isBlank()) {
+            consumer.accept(configured);
+        }
         driverObject.getVariable(name).ifPresent(record -> {
             Object raw = record.firstRow().get("raw");
             if (raw == null) {

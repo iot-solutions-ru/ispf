@@ -24,6 +24,12 @@ final class Dnp3LoopbackOutstation implements AutoCloseable {
     private final ServerSocket serverSocket;
     private final Thread serverThread;
     private volatile boolean running = true;
+    private volatile boolean rejectSelect;
+    private final java.util.concurrent.atomic.AtomicInteger operateFrames =
+            new java.util.concurrent.atomic.AtomicInteger();
+    private volatile ControlCommand armed;
+    private volatile long armedUntilMillis;
+    private long selectTimeoutMs = 8_000;
 
     Dnp3LoopbackOutstation(int masterAddress, int outstationAddress) throws Exception {
         this.masterAddress = masterAddress;
@@ -41,6 +47,18 @@ final class Dnp3LoopbackOutstation implements AutoCloseable {
 
     void awaitBound(long timeoutMs) throws InterruptedException {
         bound.await(timeoutMs, TimeUnit.MILLISECONDS);
+    }
+
+    void rejectSelect(boolean reject) {
+        rejectSelect = reject;
+    }
+
+    void selectTimeoutMs(long timeoutMs) {
+        selectTimeoutMs = timeoutMs;
+    }
+
+    int operateFrames() {
+        return operateFrames.get();
     }
 
     private void serve() {
@@ -80,17 +98,50 @@ final class Dnp3LoopbackOutstation implements AutoCloseable {
                             List.copyOf(state.values()),
                             sequence
                     );
-                } else if (function == Dnp3TcpCodec.FUNCTION_DIRECT_OPERATE) {
+                } else if (function == Dnp3TcpCodec.FUNCTION_DIRECT_OPERATE
+                        || function == Dnp3TcpCodec.FUNCTION_SELECT
+                        || function == Dnp3TcpCodec.FUNCTION_OPERATE) {
                     ControlCommand command = Dnp3TcpCodec.parseDirectOperate(request);
-                    state.put(
-                            new PointKey(command.type(), command.index()),
-                            new Dnp3TcpCodec.Measurement(command.type(), command.index(), command.value(), 0x01)
-                    );
-                    response = Dnp3TcpCodec.directOperateResponse(
+                    int status = Dnp3TcpCodec.STATUS_NO_SELECT;
+                    boolean apply = false;
+                    if (function == Dnp3TcpCodec.FUNCTION_DIRECT_OPERATE) {
+                        status = 0;
+                        apply = true;
+                    } else if (function == Dnp3TcpCodec.FUNCTION_SELECT) {
+                        if (!rejectSelect) {
+                            armed = command;
+                            armedUntilMillis = System.currentTimeMillis() + selectTimeoutMs;
+                            status = 0;
+                        }
+                    } else {
+                        operateFrames.incrementAndGet();
+                        ControlCommand selected = armed;
+                        boolean live = selected != null
+                                && System.currentTimeMillis() <= armedUntilMillis
+                                && selected.type() == command.type()
+                                && selected.index() == command.index()
+                                && String.valueOf(selected.value()).equals(String.valueOf(command.value()));
+                        if (live) {
+                            status = 0;
+                            apply = true;
+                            armed = null;
+                        } else if (selected != null && System.currentTimeMillis() > armedUntilMillis) {
+                            status = Dnp3TcpCodec.STATUS_TIMEOUT;
+                            armed = null;
+                        }
+                    }
+                    if (apply) {
+                        state.put(
+                                new PointKey(command.type(), command.index()),
+                                new Dnp3TcpCodec.Measurement(command.type(), command.index(), command.value(), 0x01)
+                        );
+                    }
+                    response = Dnp3TcpCodec.controlResponse(
                             outstationAddress,
                             masterAddress,
                             command,
-                            sequence
+                            sequence,
+                            status
                     );
                 } else {
                     continue;

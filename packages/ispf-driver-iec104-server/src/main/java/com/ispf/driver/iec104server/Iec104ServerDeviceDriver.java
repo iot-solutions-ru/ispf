@@ -45,7 +45,8 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
             Map.of(
                     "listenPort", "2404",
                     "commonAddress", "1",
-                    "pollIntervalMs", "1000"
+                    "pollIntervalMs", "1000",
+                    "commandMode", "direct"
             )
     );
 
@@ -72,6 +73,10 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     private volatile boolean listening;
     private DriverIngressBuffer<String, Iec104ServerPoint> ingressBuffer;
     private DriverIngressFifoExecutor ingressFifo;
+    private boolean requireSelect;
+    private boolean rejectSelect;
+    private long selectTimeoutMs = 10_000;
+    private final Map<Integer, ArmedCommand> armedCommands = new ConcurrentHashMap<>();
 
     @Override
     public DriverMetadata metadata() {
@@ -84,6 +89,9 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
         driverObject.configuration().forEach(this::applyConfig);
         readConfig("listenPort", value -> listenPort = Integer.parseInt(value));
         readConfig("commonAddress", value -> commonAddress = Integer.parseInt(value));
+        readConfig("commandMode", value -> requireSelect = parseCommandMode(value));
+        readConfig("selectTimeoutMs", value -> selectTimeoutMs = Long.parseLong(value.trim()));
+        readConfig("rejectSelect", value -> rejectSelect = Boolean.parseBoolean(value.trim()));
     }
 
     private void applyConfig(String key, String value) {
@@ -93,6 +101,9 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
         switch (key) {
             case "listenPort" -> listenPort = Integer.parseInt(value.trim());
             case "commonAddress" -> commonAddress = Integer.parseInt(value.trim());
+            case "commandMode" -> requireSelect = parseCommandMode(value);
+            case "selectTimeoutMs" -> selectTimeoutMs = Long.parseLong(value.trim());
+            case "rejectSelect" -> rejectSelect = Boolean.parseBoolean(value.trim());
             default -> { }
         }
     }
@@ -215,12 +226,48 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
         for (Iec104Value value : asdu.values()) {
             int ioa = value.ioa();
             Double parsed = decodeWriteValue(value);
-            if (parsed != null) {
-                ioaValues.put(ioa, parsed);
-                ioaTypes.put(ioa, measurementTypeFor(value.typeId()));
-                refreshPointsForIoa(ioa);
+            if (parsed == null) {
+                continue;
             }
+            if ("SELECT".equals(value.quality())) {
+                if (requireSelect && !rejectSelect) {
+                    armedCommands.put(ioa, new ArmedCommand(
+                            value.typeId(), parsed, System.currentTimeMillis() + selectTimeoutMs));
+                    confirm(connection, asdu.typeId(), value, true);
+                } else {
+                    confirm(connection, asdu.typeId(), value, false);
+                }
+                continue;
+            }
+            if (requireSelect) {
+                ArmedCommand armed = armedCommands.remove(ioa);
+                boolean accepted = armed != null
+                        && armed.typeId() == value.typeId()
+                        && System.currentTimeMillis() <= armed.untilMillis()
+                        && Double.compare(armed.value(), parsed) == 0;
+                confirm(connection, asdu.typeId(), value, accepted);
+                if (!accepted) {
+                    continue;
+                }
+            }
+            ioaValues.put(ioa, parsed);
+            ioaTypes.put(ioa, measurementTypeFor(value.typeId()));
+            refreshPointsForIoa(ioa);
         }
+    }
+
+    private void confirm(Iec104Connection connection, int typeId, Iec104Value value, boolean accepted) {
+        int cause = accepted
+                ? Iec104Cause.ACTIVATION_CONFIRMATION
+                : Iec104Cause.ACTIVATION_CONFIRMATION | 0x40;
+        try {
+            connection.sendAsdu(new Iec104Asdu(typeId, cause, 0, commonAddress, List.of(value)));
+        } catch (IOException ex) {
+            driverObject.log(DriverLogLevel.DEBUG, "IEC104 command confirmation failed: " + ex.getMessage());
+        }
+    }
+
+    private record ArmedCommand(int typeId, double value, long untilMillis) {
     }
 
     private void refreshPointsForIoa(int ioa) {
@@ -305,6 +352,17 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
             case Iec104Type.C_SE_NC_1 -> Iec104Type.M_ME_NC_1;
             default -> typeId;
         };
+    }
+
+    private static boolean parseCommandMode(String value) {
+        String mode = value == null ? "" : value.trim().toLowerCase(java.util.Locale.ROOT);
+        if (mode.isEmpty() || "direct".equals(mode)) {
+            return false;
+        }
+        if ("sbo".equals(mode)) {
+            return true;
+        }
+        throw new IllegalArgumentException("commandMode must be direct or sbo: " + value);
     }
 
     private void readConfig(String name, java.util.function.Consumer<String> consumer) {

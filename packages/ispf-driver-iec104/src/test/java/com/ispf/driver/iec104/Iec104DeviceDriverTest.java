@@ -118,6 +118,111 @@ class Iec104DeviceDriverTest {
     }
 
     @Test
+    void selectBeforeOperateUpdatesThePoint() throws Exception {
+        int port = freePort();
+        StubDriverObject serverObject = new StubDriverObject(Map.of(
+                "listenPort", String.valueOf(port),
+                "commonAddress", "1",
+                "commandMode", "sbo"
+        ));
+        serverDriver = new Iec104ServerDeviceDriver();
+        serverDriver.initialize(serverObject);
+        serverDriver.connect();
+        awaitPortOpen(port);
+        serverDriver.readPoints(Map.of("relay", "2001"));
+
+        StubDriverObject clientObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "commonAddress", "1",
+                "timeoutMs", "10000",
+                "commandMode", "sbo"
+        ));
+        Iec104DeviceDriver client = new Iec104DeviceDriver();
+        client.initialize(clientObject);
+        client.connect();
+        client.readPoints(Map.of("relay", "2001:BOOL"));
+        client.writePoint("relay", DataRecord.single(BOOL_SCHEMA, Map.of("value", true)));
+        awaitServerValue(serverObject, "relay", 1.0);
+        client.disconnect();
+    }
+
+    @Test
+    void bareExecuteDoesNotChangeASelectBeforeOperatePoint() throws Exception {
+        int port = freePort();
+        StubDriverObject serverObject = new StubDriverObject(Map.of(
+                "listenPort", String.valueOf(port),
+                "commonAddress", "1",
+                "commandMode", "sbo"
+        ));
+        serverDriver = new Iec104ServerDeviceDriver();
+        serverDriver.initialize(serverObject);
+        serverDriver.connect();
+        awaitPortOpen(port);
+        serverDriver.readPoints(Map.of("relay", "2001"));
+
+        StubDriverObject clientObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "commonAddress", "1",
+                "timeoutMs", "10000"
+        ));
+        Iec104DeviceDriver client = new Iec104DeviceDriver();
+        client.initialize(clientObject);
+        client.connect();
+        client.readPoints(Map.of("relay", "2001:BOOL"));
+        client.writePoint("relay", DataRecord.single(BOOL_SCHEMA, Map.of("value", true)));
+        TimeUnit.MILLISECONDS.sleep(300);
+        DataRecord record = serverObject.variables.get("relay");
+        double value = record == null ? 0.0 : ((Number) record.firstRow().get("value")).doubleValue();
+        assertEquals(0.0, value, 0.001);
+        client.disconnect();
+    }
+
+    @Test
+    void rejectedSelectDoesNotExecute() throws Exception {
+        int port = freePort();
+        StubDriverObject serverObject = server(port, Map.of(
+                "commandMode", "sbo",
+                "rejectSelect", "true"
+        ));
+        Iec104DeviceDriver client = client(port, Map.of("commandMode", "sbo"));
+        client.readPoints(Map.of("relay", "2001:BOOL"));
+        assertThrows(DriverException.class, () ->
+                client.writePoint("relay", DataRecord.single(BOOL_SCHEMA, Map.of("value", true))));
+        TimeUnit.MILLISECONDS.sleep(200);
+        assertEquals(0.0, serverValue(serverObject, "relay"), 0.001);
+        client.disconnect();
+    }
+
+    @Test
+    void expiredSelectDoesNotExecute() throws Exception {
+        int port = freePort();
+        StubDriverObject serverObject = server(port, Map.of(
+                "commandMode", "sbo",
+                "selectTimeoutMs", "-60000"
+        ));
+        Iec104DeviceDriver client = client(port, Map.of("commandMode", "sbo"));
+        client.readPoints(Map.of("relay", "2001:M_DP_NA_1"));
+        assertThrows(DriverException.class, () ->
+                client.writePoint("relay", DataRecord.single(BOOL_SCHEMA, Map.of("value", true))));
+        TimeUnit.MILLISECONDS.sleep(200);
+        assertEquals(0.0, serverValue(serverObject, "relay"), 0.001);
+        client.disconnect();
+    }
+
+    @Test
+    void selectBeforeOperateWritesAFloatSetpoint() throws Exception {
+        int port = freePort();
+        StubDriverObject serverObject = server(port, Map.of("commandMode", "sbo"));
+        Iec104DeviceDriver client = client(port, Map.of("commandMode", "sbo"));
+        client.readPoints(Map.of("setpoint", "2002:FLOAT"));
+        client.writePoint("setpoint", DataRecord.single(FLOAT_SCHEMA, Map.of("value", 12.34)));
+        awaitServerValue(serverObject, "setpoint", 12.34);
+        client.disconnect();
+    }
+
+    @Test
     void writeShortFloatUpdatesServerState() throws Exception {
         int port = freePort();
         StubDriverObject serverObject = new StubDriverObject(Map.of(
@@ -202,6 +307,42 @@ class Iec104DeviceDriverTest {
                 client.writePoint("missing", DataRecord.single(BOOL_SCHEMA, Map.of("value", true))));
         assertTrue(error.getMessage().contains("Unknown point"));
         client.disconnect();
+    }
+
+    private StubDriverObject server(int port, Map<String, String> extra) throws Exception {
+        Map<String, String> config = new HashMap<>();
+        config.put("listenPort", String.valueOf(port));
+        config.put("commonAddress", "1");
+        config.putAll(extra);
+        StubDriverObject serverObject = new StubDriverObject(config);
+        serverDriver = new Iec104ServerDeviceDriver();
+        serverDriver.initialize(serverObject);
+        serverDriver.connect();
+        awaitPortOpen(port);
+        serverDriver.readPoints(Map.of("relay", "2001", "setpoint", "2002"));
+        return serverObject;
+    }
+
+    private Iec104DeviceDriver client(int port, Map<String, String> extra) throws Exception {
+        Map<String, String> config = new HashMap<>();
+        config.put("host", "127.0.0.1");
+        config.put("port", String.valueOf(port));
+        config.put("commonAddress", "1");
+        config.put("timeoutMs", "10000");
+        config.putAll(extra);
+        Iec104DeviceDriver client = new Iec104DeviceDriver();
+        client.initialize(new StubDriverObject(config));
+        client.connect();
+        return client;
+    }
+
+    private static double serverValue(StubDriverObject serverObject, String pointId) {
+        DataRecord record = serverObject.variables.get(pointId);
+        if (record == null) {
+            return 0.0;
+        }
+        Object value = record.firstRow().get("value");
+        return value instanceof Number number ? number.doubleValue() : 0.0;
     }
 
     private void startServer(int port) throws Exception {
