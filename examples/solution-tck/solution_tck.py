@@ -27,7 +27,7 @@ class Inbox(BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length", "0"))
         self.rfile.read(length)
-        HITS.append(self.headers.get("Idempotency-Key"))
+        HITS.append(self.headers.get("Idempotency-Key") or "")
         self.send_response(200)
         self.end_headers()
         self.wfile.write(b"ok")
@@ -133,12 +133,13 @@ def erp_outage():
     server = ThreadingHTTPServer(("0.0.0.0", 8090), Inbox)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     delivered = {}
+    poll_token = login()
     try:
         until = time.time() + 40
         while time.time() < until:
             read_code, delivered = http(
                 "GET", "/api/v1/applications/plant-discrete/outbox",
-                token=login(),
+                token=poll_token,
                 query={"connectorId": "erp", "messageId": MESSAGE},
             )
             print("erp-poll", read_code, delivered.get("status"), len(HITS), flush=True)
