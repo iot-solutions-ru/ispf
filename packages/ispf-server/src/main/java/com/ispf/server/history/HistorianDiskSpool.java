@@ -10,12 +10,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -52,6 +59,17 @@ public final class HistorianDiskSpool {
     private long replayedBatches;
     private long errors;
     private boolean quotaHit;
+    private final long[] acceptMillis = new long[1024];
+    private int acceptCount;
+    private int acceptCursor;
+    private boolean forceLeader;
+    private long forcedThrough;
+    private long writtenThrough;
+    private boolean checkpointLeader;
+    private long checkpointCovered;
+    private Set<Long> checkpointGaps = Set.of();
+    private boolean closed;
+    private ExecutorService replayPool;
     private String spoolId;
 
     public HistorianDiskSpool(Path directory, long maxBytes, long segmentBytes, boolean fsync, ObjectMapper objectMapper) {
@@ -60,6 +78,10 @@ public final class HistorianDiskSpool {
         this.segmentBytes = Math.max(HEADER + 64, segmentBytes);
         this.fsync = fsync;
         this.objectMapper = objectMapper;
+    }
+
+    public String spoolId() {
+        return spoolId;
     }
 
     public synchronized void open() throws IOException {
@@ -77,36 +99,70 @@ public final class HistorianDiskSpool {
         }
         truncateTornTail(segments);
         recoverNextSeq(segments);
+        forcedThrough = writtenThrough;
+        checkpointCovered = ackedThrough;
+        checkpointGaps = new TreeSet<>(ackedAbove);
         reclaimClosedSegments();
         openSegment(segmentIndex, true);
     }
 
-    public synchronized String append(List<VariableHistoryWriteRecord> records) throws IOException {
-        return appendInternal(records, false);
+    public String append(List<VariableHistoryWriteRecord> records) throws IOException {
+        return write(records, false);
     }
 
     /** Durable append that is invisible to replay until {@link #release(String)}. */
-    public synchronized String appendClaimed(List<VariableHistoryWriteRecord> records) throws IOException {
-        return appendInternal(records, true);
+    public String appendClaimed(List<VariableHistoryWriteRecord> records) throws IOException {
+        return write(records, true);
     }
 
-    public String spoolId() {
-        return spoolId;
-    }
-
-    private String appendInternal(List<VariableHistoryWriteRecord> records, boolean claim) throws IOException {
+    private String write(List<VariableHistoryWriteRecord> records, boolean claim) throws IOException {
         if (records == null || records.isEmpty()) {
             return null;
         }
-        byte[] payload = encode(records);
+        byte[] rows = encodeRows(records);
+        long seq;
+        synchronized (this) {
+            if (closed) {
+                throw new IOException("historian spool is closed");
+            }
+            seq = commitFrame(rows, records, claim);
+        }
+        if (!fsync) {
+            return batchId(seq);
+        }
+        try {
+            forceThrough(seq);
+        } catch (IOException ex) {
+            synchronized (this) {
+                inFlight.remove(seq);
+            }
+            throw ex;
+        }
+        return batchId(seq);
+    }
+
+    /** Assigns the sequence only after the frame bytes are in the segment, in write order. */
+    private long commitFrame(byte[] rows, List<VariableHistoryWriteRecord> records, boolean claim) throws IOException {
+        while (forceLeader) {
+            try {
+                wait(1_000);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new IOException("historian spool fsync interrupted", ex);
+            }
+        }
+        if (closed) {
+            throw new IOException("historian spool is closed");
+        }
+        long seq = nextSeq;
+        byte[] prefix = (seq + "\n").getBytes(StandardCharsets.UTF_8);
+        byte[] payload = new byte[prefix.length + rows.length];
+        System.arraycopy(prefix, 0, payload, 0, prefix.length);
+        System.arraycopy(rows, 0, payload, prefix.length, rows.length);
         if (!validLength(payload.length)) {
             throw new IOException(
                     "historian spool frame exceeds max size (" + payload.length + " > " + MAX_FRAME_BYTES + ")");
         }
-        return write(records, payload, claim);
-    }
-
-    private String write(List<VariableHistoryWriteRecord> records, byte[] payload, boolean claim) throws IOException {
         int frame = HEADER + payload.length;
         ensureCapacity(frame);
         if (channel == null || !channel.isOpen() || segmentSize + frame > segmentBytes) {
@@ -119,7 +175,9 @@ public final class HistorianDiskSpool {
                 rotate();
             }
         }
-        long seq = nextSeq;
+        if (channel == null || !channel.isOpen()) {
+            throw new IOException("historian spool has no open segment");
+        }
         long position = segmentSize;
         long createdAt = System.currentTimeMillis();
         ByteBuffer header = ByteBuffer.allocate(HEADER);
@@ -131,9 +189,6 @@ public final class HistorianDiskSpool {
         try {
             writeFully(header);
             writeFully(ByteBuffer.wrap(payload));
-            if (fsync) {
-                channel.force(true);
-            }
         } catch (IOException ex) {
             boolean interrupted = Thread.interrupted();
             try {
@@ -156,17 +211,78 @@ public final class HistorianDiskSpool {
         usedBytes += frame;
         pending.put(seq, new Pending(records.size(), createdAt));
         unackedRecords += records.size();
+        writtenThrough = seq;
         if (claim) {
             inFlight.add(seq);
         }
-        return batchId(seq);
+        return seq;
     }
 
-    public synchronized void ack(String batchId) throws IOException {
+    private void forceThrough(long seq) throws IOException {
+        for (;;) {
+            FileChannel current;
+            long covered;
+            boolean sameChannel;
+            synchronized (this) {
+                if (forcedThrough >= seq) {
+                    return;
+                }
+                if (closed) {
+                    throw new IOException("historian spool is closed");
+                }
+                if (forceLeader) {
+                    try {
+                        wait(1_000);
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        throw new IOException("historian spool fsync interrupted", ex);
+                    }
+                    continue;
+                }
+                forceLeader = true;
+                current = channel;
+                covered = writtenThrough;
+            }
+            IOException failure = null;
+            boolean forced = false;
+            try {
+                if (current != null) {
+                    current.force(false);
+                }
+                forced = true;
+            } catch (IOException ex) {
+                failure = ex;
+            } finally {
+                synchronized (this) {
+                    try {
+                        sameChannel = Objects.equals(current, channel);
+                        if (forced && current != null) {
+                            forcedThrough = Math.max(forcedThrough, covered);
+                        }
+                    } finally {
+                        forceLeader = false;
+                        notifyAll();
+                    }
+                }
+            }
+            if (failure != null && sameChannel) {
+                throw failure;
+            }
+        }
+    }
+
+    public void ack(String batchId) throws IOException {
         if (batchId == null) {
             return;
         }
         long seq = parseSeq(batchId);
+        synchronized (this) {
+            applyAck(seq);
+        }
+        forceCheckpoint(seq);
+    }
+
+    private void applyAck(long seq) {
         inFlight.remove(seq);
         Pending removed = pending.remove(seq);
         if (removed != null) {
@@ -180,8 +296,57 @@ public final class HistorianDiskSpool {
             ackedAbove.remove(ackedThrough + 1);
             ackedThrough++;
         }
-        writeCheckpoint();
-        reclaimClosedSegments();
+    }
+
+    /** One checkpoint fsync covers every ack that landed before the leader took its snapshot. */
+    private void forceCheckpoint(long seq) throws IOException {
+        for (;;) {
+            long covered;
+            Set<Long> gaps;
+            String body;
+            synchronized (this) {
+                if (seq <= checkpointCovered || checkpointGaps.contains(seq)) {
+                    return;
+                }
+                if (checkpointLeader) {
+                    try {
+                        wait(1_000);
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                        throw new IOException("historian spool checkpoint interrupted", ex);
+                    }
+                    continue;
+                }
+                checkpointLeader = true;
+                covered = ackedThrough;
+                gaps = new TreeSet<>(ackedAbove);
+                body = checkpointText(covered, gaps);
+            }
+            IOException failure = null;
+            boolean wrote = false;
+            try {
+                writeCheckpointBody(body);
+                wrote = true;
+            } catch (IOException ex) {
+                failure = ex;
+            } finally {
+                synchronized (this) {
+                    try {
+                        if (wrote) {
+                            checkpointCovered = Math.max(checkpointCovered, covered);
+                            checkpointGaps = gaps;
+                            reclaimClosedSegments();
+                        }
+                    } finally {
+                        checkpointLeader = false;
+                        notifyAll();
+                    }
+                }
+            }
+            if (failure != null) {
+                throw failure;
+            }
+        }
     }
 
     public synchronized void claim(String batchId) {
@@ -199,20 +364,69 @@ public final class HistorianDiskSpool {
     }
 
     public int replay(Replay sink, int limit) throws IOException {
-        List<Frame> pending;
+        List<byte[]> raws;
         synchronized (this) {
-            pending = readUnacked(limit);
-            for (Frame frame : pending) {
-                inFlight.add(frame.seq());
+            raws = readUnacked(limit);
+            for (byte[] payload : raws) {
+                inFlight.add(sequenceOf(payload));
             }
         }
+        List<Frame> pending = new ArrayList<>(raws.size());
+        for (byte[] payload : raws) {
+            pending.add(decode(payload));
+        }
+        if (pending.size() <= 1) {
+            return replayOneByOne(sink, pending);
+        }
+        Set<Long> done = ConcurrentHashMap.newKeySet();
+        List<Future<?>> futures = new ArrayList<>();
+        for (Frame frame : pending) {
+            futures.add(replayPool().submit(() -> {
+                sink.accept(batchId(frame.seq()), frame.records());
+                try {
+                    ack(batchId(frame.seq()));
+                    synchronized (HistorianDiskSpool.this) {
+                        replayedBatches++;
+                    }
+                } catch (IOException ex) {
+                    throw new IllegalStateException("historian spool ack failed", ex);
+                }
+                done.add(frame.seq());
+                return null;
+            }));
+        }
+        boolean failed = false;
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                failed = true;
+            } catch (ExecutionException ex) {
+                failed = true;
+            }
+        }
+        synchronized (this) {
+            for (Frame frame : pending) {
+                if (!done.contains(frame.seq())) {
+                    inFlight.remove(frame.seq());
+                }
+            }
+            if (failed) {
+                errors++;
+            }
+        }
+        return done.size();
+    }
+
+    private int replayOneByOne(Replay sink, List<Frame> pending) throws IOException {
         int copied = 0;
         for (Frame frame : pending) {
             String id = batchId(frame.seq());
             try {
                 sink.accept(id, frame.records());
+                ack(id);
                 synchronized (this) {
-                    ack(id);
                     replayedBatches++;
                 }
                 copied++;
@@ -229,30 +443,94 @@ public final class HistorianDiskSpool {
         return copied;
     }
 
+    private ExecutorService replayPool() {
+        synchronized (this) {
+            if (replayPool == null) {
+                replayPool = Executors.newFixedThreadPool(16, runnable -> {
+                    Thread thread = new Thread(runnable, "historian-spool-replay");
+                    thread.setDaemon(true);
+                    return thread;
+                });
+            }
+            return replayPool;
+        }
+    }
+
     public synchronized Stats stats() {
         long oldest = pending.isEmpty() ? 0 : pending.firstEntry().getValue().createdAtMillis();
         long age = oldest == 0 ? 0 : Math.max(0, System.currentTimeMillis() - oldest);
         long lag = Math.max(0, unackedRecords);
-        return new Stats(usedBytes, lag, age, replayedBatches, errors, quotaHit);
+        return new Stats(usedBytes, lag, age, replayedBatches, errors, quotaHit, acceptP99());
     }
 
-    public synchronized void close() throws IOException {
-        if (channel != null) {
-            channel.close();
-            channel = null;
+    public synchronized void recordAccept(long millis) {
+        acceptMillis[acceptCursor] = Math.max(0, millis);
+        acceptCursor = (acceptCursor + 1) % acceptMillis.length;
+        if (acceptCount < acceptMillis.length) {
+            acceptCount++;
+        }
+    }
+
+    private long acceptP99() {
+        if (acceptCount == 0) {
+            return 0;
+        }
+        long[] sample = Arrays.copyOf(acceptMillis, acceptCount);
+        Arrays.sort(sample);
+        int index = (int) Math.min(acceptCount - 1, Math.ceil(acceptCount * 0.99) - 1);
+        return sample[Math.max(0, index)];
+    }
+
+    public void close() throws IOException {
+        ExecutorService pool;
+        synchronized (this) {
+            closed = true;
+            while (forceLeader) {
+                try {
+                    wait(1_000);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("historian spool close interrupted", ex);
+                }
+            }
+            pool = replayPool;
+            replayPool = null;
+            if (channel != null) {
+                if (fsync && forcedThrough < writtenThrough) {
+                    channel.force(true);
+                    forcedThrough = Math.max(forcedThrough, writtenThrough);
+                }
+                channel.close();
+                channel = null;
+            }
+        }
+        if (pool != null) {
+            pool.shutdownNow();
+            try {
+                if (!pool.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                    pool.shutdownNow();
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                pool.shutdownNow();
+            }
         }
     }
 
     private void rotate() throws IOException {
         if (channel != null) {
             try {
+                if (fsync) {
+                    channel.force(true);
+                    forcedThrough = Math.max(forcedThrough, writtenThrough);
+                }
                 channel.close();
             } finally {
                 channel = null;
             }
         }
         if (segmentSize > 0) {
-            closedMaxSeq.put(segmentIndex, nextSeq - 1);
+            closedMaxSeq.put(segmentIndex, writtenThrough);
             segmentIndex++;
             segmentSize = 0;
         }
@@ -270,7 +548,7 @@ public final class HistorianDiskSpool {
             quotaHit = false;
             return;
         }
-        if (segmentSize > 0 && nextSeq - 1 <= ackedThrough) {
+        if (segmentSize > 0 && writtenThrough > 0 && writtenThrough <= checkpointCovered) {
             rotate();
         }
         if (usedBytes + frame > maxBytes) {
@@ -284,7 +562,7 @@ public final class HistorianDiskSpool {
         var iterator = closedMaxSeq.entrySet().iterator();
         while (iterator.hasNext()) {
             var entry = iterator.next();
-            if (entry.getKey() == segmentIndex || entry.getValue() > ackedThrough) {
+            if (entry.getKey() == segmentIndex || entry.getValue() > checkpointCovered) {
                 continue;
             }
             Path path = directory.resolve(String.format("%06d.seg", entry.getKey()));
@@ -302,14 +580,17 @@ public final class HistorianDiskSpool {
         }
     }
 
-    private List<Frame> readUnacked(int limit) throws IOException {
+    private List<byte[]> readUnacked(int limit) throws IOException {
         if (limit <= 0 || pending.isEmpty() || allPendingInFlight()) {
             return List.of();
         }
-        List<Frame> found = new ArrayList<>();
+        List<byte[]> found = new ArrayList<>();
         long payloadBytes = 0;
         for (Path segment : listSegments()) {
             if (found.size() >= limit) {
+                break;
+            }
+            if (payloadBytes >= REPLAY_PAYLOAD_BUDGET && !found.isEmpty()) {
                 break;
             }
             Long closedMax = closedMaxSeq.get((int) segmentNumber(segment));
@@ -343,11 +624,14 @@ public final class HistorianDiskSpool {
                     if (seq < 0 || seq <= ackedThrough || ackedAbove.contains(seq) || inFlight.contains(seq)) {
                         continue;
                     }
+                    if (fsync && seq > forcedThrough) {
+                        break;
+                    }
                     if (payloadBytes + length > REPLAY_PAYLOAD_BUDGET && !found.isEmpty()) {
                         break;
                     }
                     payloadBytes += length;
-                    found.add(decode(payload));
+                    found.add(payload);
                 }
             }
             if (found.size() >= limit || (payloadBytes >= REPLAY_PAYLOAD_BUDGET && !found.isEmpty())) {
@@ -388,13 +672,12 @@ public final class HistorianDiskSpool {
                     path,
                     StandardOpenOption.CREATE,
                     StandardOpenOption.WRITE,
-                    StandardOpenOption.TRUNCATE_EXISTING
-            );
+                    StandardOpenOption.TRUNCATE_EXISTING);
             segmentSize = 0;
         }
     }
 
-    /** Reopens the active segment after {@link #truncateTornTail} or a failed partial write. */
+    /** Reopens the active segment after a failed partial write without adopting torn tail bytes. */
     private void reopenActiveSegment() throws IOException {
         Path path = directory.resolve(String.format("%06d.seg", segmentIndex));
         channel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
@@ -442,7 +725,7 @@ public final class HistorianDiskSpool {
     }
 
     private void recoverNextSeq(List<Path> segments) throws IOException {
-        long max = ackedThrough;
+        long max = ackedAbove.isEmpty() ? ackedThrough : Math.max(ackedThrough, ackedAbove.last());
         for (Path segment : segments) {
             long segmentMax = 0;
             boolean sawFrame = false;
@@ -483,11 +766,11 @@ public final class HistorianDiskSpool {
             }
         }
         nextSeq = max + 1;
+        writtenThrough = max;
     }
 
-    private byte[] encode(List<VariableHistoryWriteRecord> records) throws IOException {
+    private byte[] encodeRows(List<VariableHistoryWriteRecord> records) throws IOException {
         StringBuilder body = new StringBuilder();
-        body.append(nextSeq).append('\n');
         for (VariableHistoryWriteRecord record : records) {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("objectPath", record.objectPath());
@@ -530,7 +813,20 @@ public final class HistorianDiskSpool {
     private void loadOrCreateSpoolId() throws IOException {
         Path path = directory.resolve("spool.id");
         if (Files.exists(path)) {
-            spoolId = Files.readString(path, StandardCharsets.UTF_8).trim();
+            try {
+                spoolId = Files.readString(path, StandardCharsets.UTF_8).trim();
+            } catch (java.nio.charset.CharacterCodingException ex) {
+                spoolId = UUID.randomUUID().toString();
+                writeSpoolId(path);
+                return;
+            } catch (java.io.UncheckedIOException ex) {
+                if (!(ex.getCause() instanceof java.nio.charset.CharacterCodingException)) {
+                    throw ex;
+                }
+                spoolId = UUID.randomUUID().toString();
+                writeSpoolId(path);
+                return;
+            }
             if (spoolId.isBlank()) {
                 spoolId = UUID.randomUUID().toString();
                 writeSpoolId(path);
@@ -608,11 +904,14 @@ public final class HistorianDiskSpool {
         }
     }
 
-    private void writeCheckpoint() throws IOException {
-        String gaps = String.join(",", ackedAbove.stream().map(String::valueOf).toList());
+    private static String checkpointText(long covered, Set<Long> gaps) {
+        return covered + "\n" + String.join(",", gaps.stream().map(String::valueOf).toList()) + "\n";
+    }
+
+    private void writeCheckpointBody(String body) throws IOException {
         Path path = directory.resolve("checkpoint");
         Path temporary = directory.resolve("checkpoint.tmp");
-        Files.writeString(temporary, ackedThrough + "\n" + gaps + "\n", StandardCharsets.UTF_8);
+        Files.writeString(temporary, body, StandardCharsets.UTF_8);
         if (fsync) {
             try (FileChannel checkpoint = FileChannel.open(temporary, StandardOpenOption.WRITE)) {
                 checkpoint.force(true);
@@ -625,7 +924,7 @@ public final class HistorianDiskSpool {
         }
     }
 
-    static boolean validLength(int length) {
+    private static boolean validLength(int length) {
         return length > 0 && length <= MAX_FRAME_BYTES;
     }
 
@@ -682,7 +981,15 @@ public final class HistorianDiskSpool {
         return (int) crc.getValue();
     }
 
-    public record Stats(long bytes, long unackedRecords, long oldestAgeMillis, long replayedBatches, long errors, boolean quotaHit) {
+    public record Stats(
+            long bytes,
+            long unackedRecords,
+            long oldestAgeMillis,
+            long replayedBatches,
+            long errors,
+            boolean quotaHit,
+            long acceptP99Millis
+    ) {
     }
 
     private record Pending(int records, long createdAtMillis) {

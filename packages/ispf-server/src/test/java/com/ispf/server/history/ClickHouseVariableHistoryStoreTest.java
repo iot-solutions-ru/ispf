@@ -197,6 +197,8 @@ class ClickHouseVariableHistoryStoreTest {
                 42.0,
                 null
         )));
+        // Cert-branch store durably appends then inserts on replay.
+        target.replaySpool();
         return queries.stream()
                 .filter(q -> q != null && q.contains("insert_deduplication_token"))
                 .findFirst()

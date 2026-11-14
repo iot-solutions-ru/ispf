@@ -96,7 +96,15 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                                     + " MODIFY SETTING non_replicated_deduplication_window = 10000"
                     );
                 } catch (RuntimeException ex) {
-                    log.info("ClickHouse dedupe window was not applied; replicated MergeTree uses insert_deduplication_token ({})", ex.getMessage());
+                    log.info("ClickHouse non-replicated dedupe window was not applied ({})", ex.getMessage());
+                }
+                try {
+                    executeStatement(
+                            "ALTER TABLE " + qualifiedTable
+                                    + " MODIFY SETTING replicated_deduplication_window = 10000"
+                    );
+                } catch (RuntimeException ex) {
+                    log.info("ClickHouse replicated dedupe window was not applied ({})", ex.getMessage());
                 }
             }
         });
@@ -111,7 +119,11 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             );
             try {
                 spool.open();
-                spool.replay(this::insertDeduplicated, spoolConfig.getReplayBatch());
+                int guard = 0;
+                while (guard++ < 100_000
+                        && spool.replay(this::insertDeduplicated, Math.max(1, spoolConfig.getReplayBatch())) > 0) {
+                    // Replay the durable backlog before serving new writes.
+                }
             } catch (java.io.IOException ex) {
                 throw new IllegalStateException("historian spool failed to open", ex);
             }
@@ -133,27 +145,18 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             post(insertQuery(null), jsonBody(records));
             return;
         }
-        appendSpoolBatch(records);
-    }
-
-    private void appendSpoolBatch(List<VariableHistoryWriteRecord> records) {
-        String batchId;
         try {
-            batchId = spool.appendClaimed(records);
+            long started = System.nanoTime();
+            spool.append(records);
+            spool.recordAccept((System.nanoTime() - started) / 1_000_000L);
         } catch (java.io.IOException ex) {
             if (records.size() > 1 && ex.getMessage() != null && ex.getMessage().contains("exceeds max size")) {
                 int midpoint = records.size() / 2;
-                appendSpoolBatch(records.subList(0, midpoint));
-                appendSpoolBatch(records.subList(midpoint, records.size()));
+                appendBatch(records.subList(0, midpoint));
+                appendBatch(records.subList(midpoint, records.size()));
                 return;
             }
             throw new IllegalStateException("historian spool append failed", ex);
-        }
-        try {
-            insertDeduplicated(batchId, records);
-        } catch (RuntimeException ex) {
-            spool.release(batchId);
-            log.warn("ClickHouse insert failed after durable spool accept (batch={})", batchId, ex);
         }
     }
 
@@ -163,7 +166,10 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             return;
         }
         try {
-            spool.replay(this::insertDeduplicated, Math.max(1, properties.getSpool().getReplayBatch()));
+            int guard = 0;
+            while (guard++ < 100_000 && spool.replay(this::insertDeduplicated, Math.max(1, properties.getSpool().getReplayBatch())) > 0) {
+                // Drain the backlog in this tick. A failed insert returns zero and waits for the next tick.
+            }
         } catch (java.io.IOException ex) {
             log.warn("historian spool replay failed", ex);
         }
@@ -187,13 +193,6 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
 
     private void insertDeduplicated(String batchId, List<VariableHistoryWriteRecord> records) {
         post(insertQuery(batchId), jsonBody(records));
-        if (spool != null && batchId != null) {
-            try {
-                spool.ack(batchId);
-            } catch (java.io.IOException ex) {
-                throw new IllegalStateException("historian spool ack failed", ex);
-            }
-        }
     }
 
     private String jsonBody(List<VariableHistoryWriteRecord> records) {
@@ -210,7 +209,7 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
         }
         String token = batchId.replaceAll("[^A-Za-z0-9_-]", "");
         if (token.isEmpty()) {
-            throw new IllegalArgumentException("historian spool batch id is empty after sanitization");
+            throw new IllegalArgumentException("historian spool dedupe token is empty after sanitization");
         }
         return "INSERT INTO " + qualifiedTable()
                 + " SETTINGS insert_deduplicate = 1, insert_deduplication_token = '"
