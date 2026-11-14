@@ -1,0 +1,50 @@
+{
+  "config": "clickhouse+spool split-host fsync_after_insert=1 replay-coalesced",
+  "startedAt": "2026-11-14T16:16:47Z",
+  "rateJarSha256": "f4781f76a59cd09f6a80bc1feacd3beb6c6aa83f7be950d67d89eed7306a4723",
+  "yearJarSha256": "2fc55b9fce29e88294bfec6cf904288b940682b543eb82ef43e5c0703e5d7bb5",
+  "clickhouse": "24.8.14.39",
+  "peak": {
+    "pass": true,
+    "healthySeconds": 3600,
+    "rowsPerSecond": 190858.0,
+    "acceptedPerSecond": 190893.8,
+    "acceptP99Ms": 27,
+    "forceP99Ms": 26,
+    "store": "clickhouse",
+    "spoolEnabled": true,
+    "fsyncAfterInsert": 1
+  },
+  "outage": {
+    "pass": true,
+    "outageSeconds": 600,
+    "accepted": 819317255,
+    "stored": 819317255,
+    "loss": 0,
+    "duplicates": 0,
+    "spoolLag": 0
+  },
+  "crash": {
+    "pass": true,
+    "expected": 40,
+    "found": 40,
+    "unique": 40,
+    "loss": 0,
+    "duplicates": 0
+  },
+  "replica": {
+    "pass": true,
+    "writeStatus": 200,
+    "readStatus": 200,
+    "replicaBRows": "1"
+  },
+  "year": {
+    "pass": false,
+    "rows": 525600,
+    "buckets": 365,
+    "rawP99Ms": 123.32,
+    "rollupP50Ms": 22.34,
+    "rollupP99Ms": 69.26,
+    "dataSource": "rollup"
+  }
+}

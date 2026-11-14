@@ -121,7 +121,7 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                 spool.open();
                 int guard = 0;
                 while (guard++ < 100_000
-                        && spool.replay(this::insertDeduplicated, Math.max(1, spoolConfig.getReplayBatch())) > 0) {
+                        && spool.replayJson(this::insertJson, Math.max(1, spoolConfig.getReplayBatch())) > 0) {
                     // Replay the durable backlog before serving new writes.
                 }
             } catch (java.io.IOException ex) {
@@ -167,7 +167,7 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
         }
         try {
             int guard = 0;
-            while (guard++ < 100_000 && spool.replay(this::insertDeduplicated, Math.max(1, properties.getSpool().getReplayBatch())) > 0) {
+            while (guard++ < 100_000 && spool.replayJson(this::insertJson, Math.max(1, properties.getSpool().getReplayBatch())) > 0) {
                 // Drain the backlog in this tick. A failed insert returns zero and waits for the next tick.
             }
         } catch (java.io.IOException ex) {
@@ -191,8 +191,8 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
         return spool == null ? null : spool.stats();
     }
 
-    private void insertDeduplicated(String batchId, List<VariableHistoryWriteRecord> records) {
-        post(insertQuery(batchId), jsonBody(records));
+    private void insertJson(String batchId, String jsonEachRow) {
+        post(insertQuery(batchId), jsonEachRow);
     }
 
     private String jsonBody(List<VariableHistoryWriteRecord> records) {
