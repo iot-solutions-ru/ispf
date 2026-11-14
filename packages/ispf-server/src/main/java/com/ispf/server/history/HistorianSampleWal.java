@@ -32,6 +32,14 @@ public final class HistorianSampleWal {
         }
     }
 
+    public synchronized long sizeBytes() {
+        try {
+            return Files.exists(file) ? Files.size(file) : 0L;
+        } catch (IOException ex) {
+            return 0L;
+        }
+    }
+
     public synchronized void append(List<VariableHistoryWriteRecord> records) {
         if (records == null || records.isEmpty()) {
             return;

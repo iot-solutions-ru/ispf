@@ -15,6 +15,7 @@ import java.util.Set;
 
 /**
  * Logs production-hardening warnings when unsafe defaults are active outside local/test.
+ * With {@code ispf.security.strict-startup=true}, hard violations refuse startup.
  * Default users (admin/admin) in local/dev are intentional and are not flagged.
  */
 @Component
@@ -45,23 +46,35 @@ public class StartupSecurityGuard {
         if (isRelaxedProfile()) {
             return;
         }
-        List<String> warnings = new ArrayList<>();
+        List<String> hard = new ArrayList<>();
+        List<String> soft = new ArrayList<>();
         if (!licenseProperties.isEnforce()) {
-            warnings.add("ispf.license.enforce=false (unsigned/open analytics & driver packs may load)");
+            soft.add("ispf.license.enforce=false (unsigned/open analytics & driver packs may load)");
         }
         if (!licenseProperties.isRequireSignedBundles()) {
-            warnings.add("ispf.license.require-signed-bundles=false (unsigned bundles can deploy)");
+            soft.add("ispf.license.require-signed-bundles=false (unsigned bundles can deploy)");
         }
         String origins = webSocketProperties.getAllowedOriginPatterns();
         if (origins == null || origins.isBlank() || "*".equals(origins.trim())) {
-            warnings.add("ispf.websocket.allowed-origin-patterns=* (set ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS in prod)");
+            hard.add("ispf.websocket.allowed-origin-patterns=* (set ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS in prod)");
         }
         if (securityProperties.isLocalRoleHeaderEnabled()) {
-            warnings.add("ispf.security.local-role-header-enabled=true (must stay false outside local/test)");
+            hard.add("ispf.security.local-role-header-enabled=true (must stay false outside local/test)");
         }
         if (!securityProperties.isRbacEnabled()) {
-            warnings.add("ispf.security.rbac-enabled=false (API open)");
+            hard.add("ispf.security.rbac-enabled=false (API open)");
         }
+        if (securityProperties.isStrictStartup() && !hard.isEmpty()) {
+            throw new IllegalStateException(
+                    "Startup security guard refused boot (profiles="
+                            + Arrays.toString(environment.getActiveProfiles())
+                            + ", ispf.security.strict-startup=true): "
+                            + String.join("; ", hard)
+            );
+        }
+        List<String> warnings = new ArrayList<>(hard.size() + soft.size());
+        warnings.addAll(hard);
+        warnings.addAll(soft);
         if (warnings.isEmpty()) {
             log.info("Startup security guard: license enforce, signed bundles, and WS origins look hardened");
             return;

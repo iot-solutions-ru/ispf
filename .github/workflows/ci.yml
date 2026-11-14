@@ -234,6 +234,15 @@ jobs:
       - name: Validate marketplace-catalog bundles (BL-183)
         run: node tools/marketplace-catalog/validate-catalog.mjs
 
+      - name: ispf-cli unit tests
+        working-directory: tools/ispf-cli
+        run: |
+          npm ci
+          node --test test/*.test.mjs
+
+      - name: Marketplace ship-canon gate test
+        run: node --test tools/marketplace-catalog/ship-canon-gate.test.mjs
+
       - name: Tracked binaries / oversized files gate
         run: node tools/repo-hygiene/check-tracked-binaries.mjs
 

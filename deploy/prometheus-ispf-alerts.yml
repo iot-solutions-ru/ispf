@@ -1,0 +1,31 @@
+# Optional Prometheus alert rules for ISPF historian dual-write / catch-up (ADR-0035).
+# Merge via rule_files in your prometheus.yml, e.g.:
+#   rule_files:
+#     - /etc/prometheus/prometheus-ispf-alerts.yml
+#
+# Metric names follow Micrometer → Prometheus naming (dots → underscores, counters get _total).
+
+groups:
+  - name: ispf-historian-dual-write
+    rules:
+      - alert: IspfHistorianDualWriteSecondaryFailures
+        expr: increase(ispf_historian_dual_write_secondary_failures_total[10m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: ISPF dual-write secondary (ClickHouse) append failures
+          description: >-
+            Secondary historian append failures in the last 10m. Check ClickHouse health
+            and ispf.historian.dual_write.catchup.* gauges.
+
+      - alert: IspfHistorianDualWriteCatchUpLag
+        expr: ispf_historian_dual_write_catchup_oldest_age_ms > 600000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: ISPF dual-write catch-up lag over 10 minutes
+          description: >-
+            Oldest open catch-up range is older than 10m. Inspect WAL under
+            {ISPF_DATA_DIR}/historian-catchup and ClickHouse connectivity.

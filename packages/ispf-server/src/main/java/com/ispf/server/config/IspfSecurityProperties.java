@@ -31,6 +31,13 @@ public class IspfSecurityProperties {
     private boolean localRoleHeaderEnabled = false;
 
     /**
+     * When true (and the active profile is not {@code local}/{@code test}), refuse startup if
+     * RBAC is off, the local role header is on, or WebSocket origins are {@code *}/blank.
+     * Default false so {@code dev} keeps working; {@code application-prod.yml} turns it on.
+     */
+    private boolean strictStartup = false;
+
+    /**
      * OIDC client id for Web Console (Authorization Code + PKCE).
      */
     private String oidcClientId = "ispf-web-console";
@@ -100,6 +107,14 @@ public class IspfSecurityProperties {
 
     public void setLocalRoleHeaderEnabled(boolean localRoleHeaderEnabled) {
         this.localRoleHeaderEnabled = localRoleHeaderEnabled;
+    }
+
+    public boolean isStrictStartup() {
+        return strictStartup;
+    }
+
+    public void setStrictStartup(boolean strictStartup) {
+        this.strictStartup = strictStartup;
     }
 
     public Login getLogin() {

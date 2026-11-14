@@ -40,6 +40,11 @@ public class HistorianRangeCatchUpService {
     private final ObjectProvider<ClickHouseVariableHistorySecondaryWriteStore> secondary;
     private final Object walLock = new Object();
 
+    /** Snapshot for Micrometer scrapes — refreshed after failure note / replay (no JDBC per scrape). */
+    private volatile int openRangeCount;
+    private volatile long oldestFromEpochMs;
+    private volatile long walBytes;
+
     @Autowired
     public HistorianRangeCatchUpService(
             HistorianCatchUpRangeStore ranges,
@@ -83,7 +88,27 @@ public class HistorianRangeCatchUpService {
         synchronized (walLock) {
             wal.append(kept);
             coverSpans(kept);
+            refreshSnapshotLocked();
         }
+    }
+
+    /** Open catch-up ranges still owed to ClickHouse (gauge). */
+    public int openRangeCount() {
+        return openRangeCount;
+    }
+
+    /** Age of the oldest open range start, or 0 when caught up (gauge). */
+    public long oldestAgeMillis() {
+        long from = oldestFromEpochMs;
+        if (from <= 0L) {
+            return 0L;
+        }
+        return Math.max(0L, System.currentTimeMillis() - from);
+    }
+
+    /** On-disk WAL size in bytes (gauge). */
+    public long walBytes() {
+        return walBytes;
     }
 
     @Scheduled(fixedDelayString = "${ispf.variable-history.catchup.delay-ms:5000}")
@@ -168,8 +193,26 @@ public class HistorianRangeCatchUpService {
                 }
                 retainUncovered(range, covered[0], covered[1]);
             }
+            refreshSnapshotLocked();
         }
         return copied;
+    }
+
+    private void refreshSnapshotLocked() {
+        List<HistorianCatchUpRangeStore.Range> open = ranges.list();
+        openRangeCount = open.size();
+        long oldest = 0L;
+        for (HistorianCatchUpRangeStore.Range range : open) {
+            if (range.from() == null) {
+                continue;
+            }
+            long epoch = range.from().toEpochMilli();
+            if (oldest == 0L || epoch < oldest) {
+                oldest = epoch;
+            }
+        }
+        oldestFromEpochMs = oldest;
+        walBytes = wal.sizeBytes();
     }
 
     private void coverSpans(List<VariableHistoryWriteRecord> records) {

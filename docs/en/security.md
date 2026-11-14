@@ -151,6 +151,7 @@ Web Console: **Access** tab in object inspector (admin).
 |------------|----------|
 | `ISPF_OAUTH_ISSUER` | JWT issuer URI |
 | `ispf.security.rbac-enabled` | Enable/disable RBAC |
+| `ispf.security.strict-startup` | When true (prod default), refuse boot if RBAC off / role header on / WS origins `*` (`ISPF_SECURITY_STRICT_STARTUP`) |
 | `ispf.security.token-auth-enabled` | Bearer sessions (local) |
 | `ispf.security.local-default-role` | Default role without token (local, dev only) |
 | `ispf.security.trusted-proxy-ips` | Reverse-proxy IPs whose `X-Forwarded-For` is trusted for login rate-limiting; empty = header ignored |

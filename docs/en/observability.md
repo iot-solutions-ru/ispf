@@ -47,6 +47,10 @@ Key ISPF metrics (Micrometer):
 | `ispf.event_journal.queue.size` | gauge | Journal async writer queue |
 | `ispf.event_journal.flushed.total` | gauge | Written to journal (cumulative) |
 | `ispf.event_journal.queue_full.sync_fallback.total` | counter | Sync fallback on queue overflow |
+| `ispf.historian.dual_write.secondary_failures` | counter | ClickHouse secondary append failures (dual-write) |
+| `ispf.historian.dual_write.catchup.ranges` | gauge | Open catch-up ranges owed to ClickHouse |
+| `ispf.historian.dual_write.catchup.oldest_age_ms` | gauge | Age of oldest open catch-up range |
+| `ispf.historian.dual_write.catchup.wal_bytes` | gauge | Catch-up WAL size on disk |
 | `ispf.workflow.starts.total{trigger=...}` | counter | Workflow starts by trigger |
 | `ispf.event_history.records` | gauge | Event journal record count |
 | `ispf.workflow_instances.running` | gauge | Active workflow instances |
@@ -54,6 +58,8 @@ Key ISPF metrics (Micrometer):
 | `ispf.websocket.clients` | gauge | Open object-tree WebSocket sessions (`websocketClients`) |
 | `ispf.object_tree.ready` | gauge | `1` when `ObjectManager` tree is initialized for API/scheduler work |
 | `ispf.database.connections.*` | gauge | HikariCP pool |
+
+Optional alert rules for dual-write catch-up: [`deploy/prometheus-ispf-alerts.yml`](../../deploy/prometheus-ispf-alerts.yml) (wire via Prometheus `rule_files`; see comment in [`prometheus-ispf-scrape.yml`](../../deploy/prometheus-ispf-scrape.yml)).
 
 ### Metrics probe (object tree sync)
 

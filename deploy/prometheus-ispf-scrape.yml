@@ -12,6 +12,10 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+# Optional dual-write / catch-up alerts — see prometheus-ispf-alerts.yml
+# rule_files:
+#   - /etc/prometheus/prometheus-ispf-alerts.yml
+
 scrape_configs:
   # Direct scrape — ISPF server (prod example; adjust target + auth)
   - job_name: ispf-server

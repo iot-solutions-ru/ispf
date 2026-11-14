@@ -191,6 +191,8 @@ ispf:
   security:
     oidc-client-id: ${ISPF_OIDC_CLIENT_ID:ispf-web-console}
     local-role-header-enabled: ${ISPF_LOCAL_ROLE_HEADER_ENABLED:false}
+    # Default false (dev-friendly). application-prod.yml sets true.
+    strict-startup: ${ISPF_SECURITY_STRICT_STARTUP:false}
     login:
       max-failed-attempts: ${ISPF_LOGIN_MAX_FAILED_ATTEMPTS:5}
       lockout-minutes: ${ISPF_LOGIN_LOCKOUT_MINUTES:15}
