@@ -77,7 +77,7 @@ public class VariableHistoryProperties {
         private long maxBytes = 8L * 1024 * 1024 * 1024;
         private long segmentBytes = 64L * 1024 * 1024;
         private boolean fsync = true;
-        private int replayBatch = 2_000;
+        private int replayBatch = 32;
         private long replayIntervalMs = 1_000;
 
         public boolean isEnabled() {
