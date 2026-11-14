@@ -176,6 +176,17 @@ public final class HistorianDiskSpool {
         int frame = HEADER + payload.length;
         ensureCapacity(frame);
         if (channel == null || !channel.isOpen() || segmentSize + frame > segmentBytes) {
+            while (forceLeader) {
+                if (closed) {
+                    throw new IOException("historian spool is closed");
+                }
+                try {
+                    wait(1_000);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("historian spool rotate interrupted", ex);
+                }
+            }
             if (segmentSize + frame > segmentBytes && channel != null && channel.isOpen()) {
                 rotate();
             } else if (channel == null || !channel.isOpen()) {
@@ -264,25 +275,29 @@ public final class HistorianDiskSpool {
                         if (forcedThrough >= seq && writtenThrough <= forcedThrough) {
                             return;
                         }
+                        if (channel == null || !channel.isOpen()) {
+                            reopenActiveSegment();
+                        }
                         current = channel;
                         covered = writtenThrough;
                     }
                     boolean forced = false;
                     try {
-                        if (current != null) {
-                            current.force(false);
+                        if (current == null) {
+                            throw new IOException("historian spool has no open segment");
                         }
+                        current.force(false);
                         forced = true;
                     } catch (IOException ex) {
                         failure = ex;
                         synchronized (this) {
-                            failedOnLiveChannel = Objects.equals(current, channel);
+                            failedOnLiveChannel = current == null || Objects.equals(current, channel);
                         }
                         break;
                     }
                     boolean caughtUp;
                     synchronized (this) {
-                        boolean sameChannel = Objects.equals(current, channel);
+                        boolean sameChannel = current != null && Objects.equals(current, channel);
                         if (forced && sameChannel) {
                             forcedThrough = Math.max(forcedThrough, covered);
                         }
@@ -501,6 +516,9 @@ public final class HistorianDiskSpool {
             }
             long seq = sequenceOf(payload);
             String json = new String(payload, split + 1, payload.length - split - 1, StandardCharsets.UTF_8);
+            if (!json.startsWith("{\"object_path\":")) {
+                json = new String(encodeRows(decode(payload).records()), StandardCharsets.UTF_8);
+            }
             pending.add(new RawJson(seq, json));
         }
         if (pending.isEmpty()) {
@@ -713,10 +731,10 @@ public final class HistorianDiskSpool {
     private void rotate() throws IOException {
         if (channel != null) {
             try {
-            if (fsync && (forceLeader || forcedThrough < writtenThrough)) {
-                channel.force(false);
-                forcedThrough = Math.max(forcedThrough, writtenThrough);
-            }
+                if (fsync && forcedThrough < writtenThrough) {
+                    channel.force(false);
+                    forcedThrough = Math.max(forcedThrough, writtenThrough);
+                }
                 channel.close();
             } finally {
                 channel = null;
@@ -789,10 +807,12 @@ public final class HistorianDiskSpool {
         if (limit <= 0 || pending.isEmpty() || allPendingInFlight()) {
             return List.of();
         }
+        boolean sealed = replaySealedThrough > ackedThrough;
+        int effectiveLimit = sealed ? Integer.MAX_VALUE : limit;
         List<byte[]> found = new ArrayList<>();
         long payloadBytes = 0;
         for (Path segment : listSegments()) {
-            if (found.size() >= limit) {
+            if (found.size() >= effectiveLimit) {
                 break;
             }
             if (payloadBytes >= REPLAY_PAYLOAD_BUDGET && !found.isEmpty()) {
@@ -804,7 +824,7 @@ public final class HistorianDiskSpool {
             }
             try (FileChannel reader = FileChannel.open(segment, StandardOpenOption.READ)) {
                 ByteBuffer header = ByteBuffer.allocate(HEADER);
-                while (found.size() < limit) {
+                while (found.size() < effectiveLimit) {
                     header.clear();
                     if (!readFully(reader, header)) {
                         break;
@@ -842,7 +862,7 @@ public final class HistorianDiskSpool {
                     found.add(payload);
                 }
             }
-            if (found.size() >= limit || (payloadBytes >= REPLAY_PAYLOAD_BUDGET && !found.isEmpty())) {
+            if (found.size() >= effectiveLimit || (payloadBytes >= REPLAY_PAYLOAD_BUDGET && !found.isEmpty())) {
                 break;
             }
         }
@@ -1131,7 +1151,9 @@ public final class HistorianDiskSpool {
 
     private void sealReplay(long seq) throws IOException {
         synchronized (this) {
-            replaySealedThrough = seq;
+            if (replaySealedThrough > ackedThrough && seq <= replaySealedThrough) {
+                return;
+            }
         }
         Path path = directory.resolve("replay.seal");
         Path temporary = directory.resolve("replay.seal.tmp");
@@ -1145,6 +1167,11 @@ public final class HistorianDiskSpool {
             Files.move(temporary, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING, java.nio.file.StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException ex) {
             Files.move(temporary, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
+        synchronized (this) {
+            if (seq > replaySealedThrough) {
+                replaySealedThrough = seq;
+            }
         }
     }
 

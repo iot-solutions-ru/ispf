@@ -479,6 +479,65 @@ class HistorianDiskSpoolTest {
         reopened.close();
     }
 
+    @Test
+    void forceThroughReopensAClosedChannelBeforeAdvancingForcedThrough() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        spool.append(List.of(sample(1)));
+        closeActiveChannel(spool);
+        Field forced = HistorianDiskSpool.class.getDeclaredField("forcedThrough");
+        forced.setAccessible(true);
+        forced.setLong(spool, 0);
+        Field written = HistorianDiskSpool.class.getDeclaredField("writtenThrough");
+        written.setAccessible(true);
+        long seq = written.getLong(spool);
+        var method = HistorianDiskSpool.class.getDeclaredMethod("forceThrough", long.class);
+        method.setAccessible(true);
+        method.invoke(spool, seq);
+        assertEquals(seq, forced.getLong(spool));
+        Field channelField = HistorianDiskSpool.class.getDeclaredField("channel");
+        channelField.setAccessible(true);
+        FileChannel channel = (FileChannel) channelField.get(spool);
+        assertTrue(channel != null && channel.isOpen());
+        spool.close();
+    }
+
+    @Test
+    void replayJsonRewritesLegacyCamelCaseFrames() throws Exception {
+        HistorianDiskSpool seed = spool(1024 * 1024, 64 * 1024, true);
+        seed.open();
+        String spoolId = seed.spoolId();
+        seed.close();
+        writeLegacyCamelCaseFrame(dir.resolve("000001.seg"), 1, 42.5);
+        Files.writeString(dir.resolve("checkpoint"), "0\n");
+
+        HistorianDiskSpool reopened = spool(1024 * 1024, 64 * 1024, true);
+        reopened.open();
+        assertEquals(spoolId, reopened.spoolId());
+        List<String> bodies = new ArrayList<>();
+        assertEquals(1, reopened.replayJson((id, json) -> bodies.add(json), 10));
+        assertTrue(bodies.getFirst().startsWith("{\"object_path\":"));
+        assertTrue(bodies.getFirst().contains("\"value_double\":42.5"));
+        assertFalse(bodies.getFirst().contains("objectPath"));
+        reopened.close();
+    }
+
+    @Test
+    void sealedReplayIgnoresASmallerLimitOnRetry() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        spool.append(List.of(sample(1)));
+        spool.append(List.of(sample(2)));
+        spool.append(List.of(sample(3)));
+        assertEquals(0, spool.replayJson((id, json) -> {
+            throw new IllegalStateException("clickhouse down");
+        }, 10));
+        List<String> tokens = new ArrayList<>();
+        assertEquals(3, spool.replayJson((id, json) -> tokens.add(id), 1));
+        assertTrue(tokens.getFirst().contains("g1x3n3"));
+        spool.close();
+    }
+
     private static boolean readFully(FileChannel channel, ByteBuffer buffer) throws IOException {
         while (buffer.hasRemaining()) {
             if (channel.read(buffer) < 0) {
@@ -515,6 +574,30 @@ class HistorianDiskSpoolTest {
 
     private HistorianDiskSpool spool(long maxBytes, long segmentBytes, boolean fsync) {
         return new HistorianDiskSpool(dir, maxBytes, segmentBytes, fsync, new ObjectMapper());
+    }
+
+    private static void writeLegacyCamelCaseFrame(Path segment, long seq, double value) throws IOException {
+        String json = "{\"objectPath\":\"root.a\",\"variableName\":\"v\",\"fieldName\":\"value\","
+                + "\"sampledAt\":1731456000000,\"observedAt\":1731456000000,\"valueDouble\":" + value
+                + ",\"valueText\":null,\"quality\":\"GOOD\"}\n";
+        byte[] payload = (seq + "\n" + json).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        CRC32 crc = new CRC32();
+        crc.update(payload);
+        ByteBuffer header = ByteBuffer.allocate(20);
+        header.putInt(HistorianDiskSpool.MAGIC);
+        header.putInt(payload.length);
+        header.putInt((int) crc.getValue());
+        header.putLong(System.currentTimeMillis());
+        header.flip();
+        try (FileChannel channel = FileChannel.open(
+                segment,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.WRITE,
+                StandardOpenOption.TRUNCATE_EXISTING
+        )) {
+            channel.write(header);
+            channel.write(ByteBuffer.wrap(payload));
+        }
     }
 
     private static VariableHistoryWriteRecord sample(double value) {

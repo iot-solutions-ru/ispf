@@ -67,7 +67,7 @@ final class ClickHouseDateTimes {
         if (month <= 2) {
             year++;
         }
-        if (year < 0 || year > 9999) {
+        if (year < 1 || year > 9999) {
             body.append(WRITE.format(instant));
             return;
         }
