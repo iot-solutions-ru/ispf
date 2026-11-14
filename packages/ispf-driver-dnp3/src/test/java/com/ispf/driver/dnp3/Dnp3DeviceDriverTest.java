@@ -249,6 +249,20 @@ class Dnp3DeviceDriverTest {
     }
 
     @Test
+    void mismatchedSelectEchoDoesNotSendOperate() throws Exception {
+        outstation = new Dnp3LoopbackOutstation(MASTER_ADDRESS, OUTSTATION_ADDRESS);
+        outstation.awaitBound(5_000);
+        outstation.echoSelectMismatch(true);
+        Dnp3DeviceDriver driver = connectedDriver(Map.of("commandMode", "sbo"));
+        driver.readPoints(Map.of("coil", "0:BINARY_OUTPUT"));
+        assertThrows(DriverException.class, () -> driver.writePoint("coil", boolRecord(true)));
+        assertEquals(0, outstation.operateFrames());
+        driver.readPoints(Map.of("coil", "0:BINARY_OUTPUT"));
+        assertEquals(false, lastCoil());
+        driver.disconnect();
+    }
+
+    @Test
     void expiredSelectDoesNotChangeTheOutput() throws Exception {
         outstation = new Dnp3LoopbackOutstation(MASTER_ADDRESS, OUTSTATION_ADDRESS);
         outstation.awaitBound(5_000);

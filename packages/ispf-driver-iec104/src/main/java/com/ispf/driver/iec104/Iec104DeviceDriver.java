@@ -12,6 +12,7 @@ import com.ispf.driver.DriverTransientException;
 import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.iec104.codec.Iec104Asdu;
 import com.ispf.driver.iec104.codec.Iec104Cause;
+import com.ispf.driver.iec104.codec.Iec104Codec;
 import com.ispf.driver.iec104.codec.Iec104Connection;
 import com.ispf.driver.iec104.codec.Iec104ConnectionListener;
 import com.ispf.driver.iec104.codec.Iec104Type;
@@ -169,45 +170,45 @@ public class Iec104DeviceDriver implements DeviceDriver {
                 case BOOL, M_SP_NA_1 -> {
                     boolean on = extractBoolean(value);
                     if (selectBeforeOperate) {
-                        confirmSelect(Iec104Type.C_SC_NA_1, point.ioa(), () ->
+                        confirmSelect(Iec104Type.C_SC_NA_1, point.ioa(), on, () ->
                                 connection.singleCommandSelect(commonAddress, point.ioa(), on));
                     }
                     connection.singleCommand(commonAddress, point.ioa(), on);
                     if (selectBeforeOperate) {
-                        confirmExecute(Iec104Type.C_SC_NA_1, point.ioa());
+                        confirmExecute(Iec104Type.C_SC_NA_1, point.ioa(), on);
                     }
                 }
                 case M_DP_NA_1 -> {
                     boolean on = extractDoubleCommandOn(value);
                     if (selectBeforeOperate) {
-                        confirmSelect(Iec104Type.C_DC_NA_1, point.ioa(), () ->
+                        confirmSelect(Iec104Type.C_DC_NA_1, point.ioa(), on, () ->
                                 connection.doubleCommandSelect(commonAddress, point.ioa(), on));
                     }
                     connection.doubleCommand(commonAddress, point.ioa(), on);
                     if (selectBeforeOperate) {
-                        confirmExecute(Iec104Type.C_DC_NA_1, point.ioa());
+                        confirmExecute(Iec104Type.C_DC_NA_1, point.ioa(), on);
                     }
                 }
                 case FLOAT, M_ME_NC_1, M_ME_TF_1 -> {
                     double raw = extractDouble(value);
                     if (selectBeforeOperate) {
-                        confirmSelect(Iec104Type.C_SE_NC_1, point.ioa(), () ->
+                        confirmSelect(Iec104Type.C_SE_NC_1, point.ioa(), raw, () ->
                                 connection.setShortFloatSelect(commonAddress, point.ioa(), raw));
                     }
                     connection.setShortFloatCommand(commonAddress, point.ioa(), raw);
                     if (selectBeforeOperate) {
-                        confirmExecute(Iec104Type.C_SE_NC_1, point.ioa());
+                        confirmExecute(Iec104Type.C_SE_NC_1, point.ioa(), raw);
                     }
                 }
                 case INT, M_ME_NA_1 -> {
                     double raw = extractDouble(value);
                     if (selectBeforeOperate) {
-                        confirmSelect(Iec104Type.C_SE_NA_1, point.ioa(), () ->
+                        confirmSelect(Iec104Type.C_SE_NA_1, point.ioa(), raw, () ->
                                 connection.setNormalizedSelect(commonAddress, point.ioa(), raw));
                     }
                     connection.setNormalizedValueCommand(commonAddress, point.ioa(), raw);
                     if (selectBeforeOperate) {
-                        confirmExecute(Iec104Type.C_SE_NA_1, point.ioa());
+                        confirmExecute(Iec104Type.C_SE_NA_1, point.ioa(), raw);
                     }
                 }
                 default -> throw new DriverUnsupportedOperationException("Unsupported IEC104 write data type: " + point.dataType());
@@ -324,21 +325,39 @@ public class Iec104DeviceDriver implements DeviceDriver {
         }
     }
 
-    private void confirmSelect(int typeId, int ioa, IoAction send) throws DriverException {
+    private void confirmSelect(int typeId, int ioa, Object expected, IoAction send) throws DriverException {
         connection.clearCommandReplies();
         try {
             send.run();
-            connection.awaitCommandReply(timeoutMs, typeId, commonAddress, ioa, true);
+            Iec104Asdu reply = connection.awaitCommandReply(timeoutMs, typeId, commonAddress, ioa, true);
+            assertEchoMatches(typeId, expected, reply.values().getFirst());
         } catch (IOException ex) {
             throw new DriverPermanentException("IEC104 select rejected for IOA " + ioa, ex);
         }
     }
 
-    private void confirmExecute(int typeId, int ioa) throws DriverException {
+    private void confirmExecute(int typeId, int ioa, Object expected) throws DriverException {
         try {
-            connection.awaitCommandReply(timeoutMs, typeId, commonAddress, ioa, false);
+            Iec104Asdu reply = connection.awaitCommandReply(timeoutMs, typeId, commonAddress, ioa, false);
+            assertEchoMatches(typeId, expected, reply.values().getFirst());
         } catch (IOException ex) {
             throw new DriverPermanentException("IEC104 execute rejected for IOA " + ioa, ex);
+        }
+    }
+
+    private static void assertEchoMatches(int typeId, Object expected, Iec104Value echoed) throws IOException {
+        boolean match = switch (typeId) {
+            case Iec104Type.C_SC_NA_1 -> echoed.booleanValue() == (Boolean) expected;
+            case Iec104Type.C_DC_NA_1 -> ((int) echoed.numericValue() & 0x03) == ((Boolean) expected ? 2 : 1);
+            case Iec104Type.C_SE_NC_1 -> Float.compare(
+                    (float) echoed.numericValue(),
+                    (float) ((Double) expected).doubleValue()
+            ) == 0;
+            case Iec104Type.C_SE_NA_1 -> Iec104Codec.sameNormalized((Double) expected, echoed.numericValue());
+            default -> false;
+        };
+        if (!match) {
+            throw new IOException("IEC104 command confirmation echo does not match the request");
         }
     }
 

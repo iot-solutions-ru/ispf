@@ -196,19 +196,43 @@ class Iec104DeviceDriverTest {
     }
 
     @Test
-    void expiredSelectDoesNotExecute() throws Exception {
+    void mismatchedSelectEchoDoesNotExecute() throws Exception {
         int port = freePort();
         StubDriverObject serverObject = server(port, Map.of(
                 "commandMode", "sbo",
-                "selectTimeoutMs", "-60000"
+                "echoSelectMismatch", "true"
         ));
         Iec104DeviceDriver client = client(port, Map.of("commandMode", "sbo"));
-        client.readPoints(Map.of("relay", "2001:M_DP_NA_1"));
+        client.readPoints(Map.of("relay", "2001:BOOL"));
         assertThrows(DriverException.class, () ->
                 client.writePoint("relay", DataRecord.single(BOOL_SCHEMA, Map.of("value", true))));
         TimeUnit.MILLISECONDS.sleep(200);
         assertEquals(0.0, serverValue(serverObject, "relay"), 0.001);
         client.disconnect();
+    }
+
+    @Test
+    void expiredSelectDoesNotExecute() throws Exception {
+        int port = freePort();
+        StubDriverObject serverObject = server(port, Map.of(
+                "commandMode", "sbo",
+                "selectTimeoutMs", "40"
+        ));
+        try (Iec104Connection first = Iec104Connection.connect(
+                java.net.InetAddress.getByName("127.0.0.1"), port, 5000,
+                new Iec104ConnectionListener() {
+                    @Override
+                    public void onAsdu(Iec104Connection connection, Iec104Asdu asdu) {
+                        // confirmations are ignored; this test only arms then waits out the window
+                    }
+                })) {
+            first.startDataTransfer();
+            first.singleCommandSelect(1, 2001, true);
+            TimeUnit.MILLISECONDS.sleep(80);
+            first.singleCommand(1, 2001, true);
+            TimeUnit.MILLISECONDS.sleep(200);
+            assertEquals(0.0, serverValue(serverObject, "relay"), 0.001);
+        }
     }
 
     @Test

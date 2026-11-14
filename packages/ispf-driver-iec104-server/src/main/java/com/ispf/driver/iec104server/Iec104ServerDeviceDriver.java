@@ -46,7 +46,8 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
                     "listenPort", "2404",
                     "commonAddress", "1",
                     "pollIntervalMs", "1000",
-                    "commandMode", "direct"
+                    "commandMode", "direct",
+                    "selectTimeoutMs", "10000"
             )
     );
 
@@ -75,6 +76,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     private DriverIngressFifoExecutor ingressFifo;
     private boolean requireSelect;
     private boolean rejectSelect;
+    private boolean echoSelectMismatch;
     private long selectTimeoutMs = 10_000;
     private final Map<Integer, ArmedCommand> armedCommands = new ConcurrentHashMap<>();
 
@@ -90,8 +92,9 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
         readConfig("listenPort", value -> listenPort = Integer.parseInt(value));
         readConfig("commonAddress", value -> commonAddress = Integer.parseInt(value));
         readConfig("commandMode", value -> requireSelect = parseCommandMode(value));
-        readConfig("selectTimeoutMs", value -> selectTimeoutMs = Long.parseLong(value.trim()));
+        readConfig("selectTimeoutMs", this::applySelectTimeoutMs);
         readConfig("rejectSelect", value -> rejectSelect = Boolean.parseBoolean(value.trim()));
+        readConfig("echoSelectMismatch", value -> echoSelectMismatch = Boolean.parseBoolean(value.trim()));
     }
 
     private void applyConfig(String key, String value) {
@@ -102,10 +105,19 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
             case "listenPort" -> listenPort = Integer.parseInt(value.trim());
             case "commonAddress" -> commonAddress = Integer.parseInt(value.trim());
             case "commandMode" -> requireSelect = parseCommandMode(value);
-            case "selectTimeoutMs" -> selectTimeoutMs = Long.parseLong(value.trim());
+            case "selectTimeoutMs" -> applySelectTimeoutMs(value);
             case "rejectSelect" -> rejectSelect = Boolean.parseBoolean(value.trim());
+            case "echoSelectMismatch" -> echoSelectMismatch = Boolean.parseBoolean(value.trim());
             default -> { }
         }
+    }
+
+    private void applySelectTimeoutMs(String value) {
+        long parsed = Long.parseLong(value.trim());
+        if (parsed <= 0) {
+            throw new IllegalArgumentException("selectTimeoutMs must be > 0: " + value);
+        }
+        selectTimeoutMs = parsed;
     }
 
     @Override
@@ -131,6 +143,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     private void releaseResources() {
         listening = false;
         clientConnected = false;
+        armedCommands.clear();
         activeConnection.set(null);
         shutdownIngress();
         if (server != null) {
@@ -229,22 +242,43 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
             if (parsed == null) {
                 continue;
             }
+            if (!isControlCommand(value.typeId())) {
+                ioaValues.put(ioa, parsed);
+                ioaTypes.put(ioa, measurementTypeFor(value.typeId()));
+                refreshPointsForIoa(ioa);
+                continue;
+            }
+            int cause = asdu.cause() & 0x3f;
+            if (cause == Iec104Cause.DEACTIVATION) {
+                disarm(connection, ioa);
+                continue;
+            }
+            if (cause != Iec104Cause.ACTIVATION) {
+                continue;
+            }
             if ("SELECT".equals(value.quality())) {
                 if (requireSelect && !rejectSelect) {
                     armedCommands.put(ioa, new ArmedCommand(
-                            value.typeId(), parsed, System.currentTimeMillis() + selectTimeoutMs));
-                    confirm(connection, asdu.typeId(), value, true);
+                            connection, value.typeId(), parsed, System.nanoTime()));
+                    Iec104Value echo = echoSelectMismatch ? mismatchedSelectEcho(value) : value;
+                    confirm(connection, asdu.typeId(), echo, true);
                 } else {
                     confirm(connection, asdu.typeId(), value, false);
                 }
                 continue;
             }
             if (requireSelect) {
-                ArmedCommand armed = armedCommands.remove(ioa);
+                ArmedCommand armed = armedCommands.get(ioa);
                 boolean accepted = armed != null
+                        && armed.connection() == connection
                         && armed.typeId() == value.typeId()
-                        && System.currentTimeMillis() <= armed.untilMillis()
-                        && Double.compare(armed.value(), parsed) == 0;
+                        && System.nanoTime() - armed.armedAtNanos() <= selectTimeoutNanos()
+                        && Double.compare(armed.value(), parsed) == 0
+                        && armedCommands.remove(ioa, armed);
+                if (!accepted && armed != null && armed.connection() == connection
+                        && System.nanoTime() - armed.armedAtNanos() > selectTimeoutNanos()) {
+                    armedCommands.remove(ioa, armed);
+                }
                 confirm(connection, asdu.typeId(), value, accepted);
                 if (!accepted) {
                     continue;
@@ -254,6 +288,44 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
             ioaTypes.put(ioa, measurementTypeFor(value.typeId()));
             refreshPointsForIoa(ioa);
         }
+    }
+
+    private void disarm(Iec104Connection connection, Integer ioa) {
+        if (ioa != null) {
+            ArmedCommand armed = armedCommands.get(ioa);
+            if (armed != null && armed.connection() == connection) {
+                armedCommands.remove(ioa, armed);
+            }
+            return;
+        }
+        armedCommands.entrySet().removeIf(entry -> entry.getValue().connection() == connection);
+    }
+
+    private long selectTimeoutNanos() {
+        return java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(selectTimeoutMs);
+    }
+
+    private static boolean isControlCommand(int typeId) {
+        return typeId == Iec104Type.C_SC_NA_1
+                || typeId == Iec104Type.C_DC_NA_1
+                || typeId == Iec104Type.C_SE_NA_1
+                || typeId == Iec104Type.C_SE_NC_1;
+    }
+
+    private static Iec104Value mismatchedSelectEcho(Iec104Value value) {
+        return switch (value.typeId()) {
+            case Iec104Type.C_SC_NA_1 -> Iec104Value.singlePoint(value.ioa(), !value.booleanValue(), "SELECT");
+            case Iec104Type.C_DC_NA_1 -> {
+                int dcs = (int) value.numericValue() & 0x03;
+                yield Iec104Value.doublePoint(value.ioa(), dcs == 2 ? 1 : 2, "SELECT");
+            }
+            case Iec104Type.C_SE_NC_1 -> Iec104Value.shortFloat(value.ioa(), value.numericValue() + 1.0, "SELECT");
+            case Iec104Type.C_SE_NA_1 -> {
+                double raw = value.numericValue();
+                yield Iec104Value.normalized(value.ioa(), raw >= 0.0 ? -0.5 : 0.5, "SELECT");
+            }
+            default -> value;
+        };
     }
 
     private void confirm(Iec104Connection connection, int typeId, Iec104Value value, boolean accepted) {
@@ -267,7 +339,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
         }
     }
 
-    private record ArmedCommand(int typeId, double value, long untilMillis) {
+    private record ArmedCommand(Iec104Connection connection, int typeId, double value, long armedAtNanos) {
     }
 
     private void refreshPointsForIoa(int ioa) {
@@ -411,12 +483,16 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
             clientConnected = false;
             clientOriginatorAddress.set(-1);
             activeConnection.compareAndSet(connection, null);
+            disarm(connection, null);
             driverObject.log(DriverLogLevel.INFO, "IEC104 client disconnected");
         }
 
         @Override
         public void onDataTransferStateChanged(Iec104Connection connection, boolean active) {
             clientConnected = active;
+            if (!active) {
+                disarm(connection, null);
+            }
         }
     };
 }

@@ -25,6 +25,7 @@ final class Dnp3LoopbackOutstation implements AutoCloseable {
     private final Thread serverThread;
     private volatile boolean running = true;
     private volatile boolean rejectSelect;
+    private volatile boolean echoSelectMismatch;
     private final java.util.concurrent.atomic.AtomicInteger operateFrames =
             new java.util.concurrent.atomic.AtomicInteger();
     private volatile ControlCommand armed;
@@ -51,6 +52,10 @@ final class Dnp3LoopbackOutstation implements AutoCloseable {
 
     void rejectSelect(boolean reject) {
         rejectSelect = reject;
+    }
+
+    void echoSelectMismatch(boolean mismatch) {
+        echoSelectMismatch = mismatch;
     }
 
     void selectTimeoutMs(long timeoutMs) {
@@ -113,6 +118,9 @@ final class Dnp3LoopbackOutstation implements AutoCloseable {
                             armedUntilMillis = System.currentTimeMillis() + selectTimeoutMs;
                             status = 0;
                         }
+                        if (echoSelectMismatch) {
+                            command = mismatchedSelectEcho(command);
+                        }
                     } else {
                         operateFrames.incrementAndGet();
                         ControlCommand selected = armed;
@@ -151,6 +159,15 @@ final class Dnp3LoopbackOutstation implements AutoCloseable {
         } catch (Exception ignored) {
             // Client disconnects end the test session.
         }
+    }
+
+    private static ControlCommand mismatchedSelectEcho(ControlCommand command) {
+        Object flipped = switch (command.value()) {
+            case Boolean on -> !on;
+            case Number number -> number.doubleValue() + 1.0;
+            default -> command.value();
+        };
+        return new ControlCommand(command.type(), command.index(), flipped);
     }
 
     private record PointKey(Dnp3Point.Dnp3DataType type, int index) {
