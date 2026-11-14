@@ -1,0 +1,10 @@
+2026-11-14T16:16:47Z split-host historian run started on spark-3b26.
+Writer jar f4781f76a59cd09f6a80bc1feacd3beb6c6aa83f7be950d67d89eed7306a4723.
+Store clickhouse, spool fsync on the writer host, ClickHouse on spark-1f58, table fsync_after_insert=1, ReplicatedMergeTree.
+One writer, batch 20000, flush 80ms, replay batch 128, frames coalesced into one insert.
+Healthy 3600s: saved 190858.0/s, accepted 190893.8/s, accept p99 27ms, force p99 26ms.
+ClickHouse stopped 600s while publish continued. After restore stored=accepted=819317255, loss=0, duplicates=0, spool lag 0, queue 0.
+kill -9 of the writer while ClickHouse was down: 40/40 samples, unique 40, loss 0, duplicates 0, spool lag 0.
+Replica B stopped: write 770077 read back on A, then 1 row on B.
+Year rollup of 525600 minute points, 365 daily buckets. Raw API p99 123.32ms. After materializing variable_rollups, same API on jar 2fc55b9fce29e88294bfec6cf904288b940682b543eb82ef43e5c0703e5d7bb5: dataSource=rollup, p50 22.34ms, p99 69.26ms. p99 is above 50ms.
+No SAP. No real PLC. No SBO. No pen-test. No field acceptance. No 30-day soak.

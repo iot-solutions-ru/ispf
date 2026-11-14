@@ -179,6 +179,7 @@ class HistorianDiskSpoolTest {
     void acceptP99UsesTheDurableAppendSamples() throws Exception {
         HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, false);
         spool.open();
+        spool.beginSteadyWindow();
         for (int i = 0; i < 100; i++) {
             spool.recordAccept(i);
         }
@@ -395,6 +396,87 @@ class HistorianDiskSpoolTest {
             }
             channel.truncate(good);
         }
+    }
+
+    @Test
+    void replayJsonPostsOneInsertForManyFramesAndRetriesTheSameToken() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        spool.append(List.of(sample(1)));
+        spool.append(List.of(sample(2)));
+        spool.append(List.of(sample(3)));
+        List<String> tokens = new ArrayList<>();
+        List<String> bodies = new ArrayList<>();
+        assertEquals(0, spool.replayJson((id, json) -> {
+            tokens.add(id);
+            bodies.add(json);
+            throw new IllegalStateException("clickhouse down");
+        }, 10));
+        spool.append(List.of(sample(4)));
+        assertEquals(3, spool.replayJson((id, json) -> {
+            tokens.add(id);
+            bodies.add(json);
+        }, 10));
+        assertEquals(tokens.get(0), tokens.get(1));
+        assertTrue(tokens.get(1).contains("g1x3n3"));
+        assertFalse(bodies.get(1).contains("\"value_double\":4.0"));
+        assertEquals(1, spool.replayJson((id, json) -> {
+            tokens.add(id);
+            bodies.add(json);
+        }, 10));
+        assertTrue(tokens.get(2).contains("g4x4n1"));
+        assertTrue(bodies.get(2).contains("\"value_double\":4.0"));
+        spool.close();
+    }
+
+    @Test
+    void replaySealKeepsTheFailedGroupAfterRestart() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        spool.append(List.of(sample(1)));
+        spool.append(List.of(sample(2)));
+        spool.append(List.of(sample(3)));
+        assertEquals(0, spool.replayJson((id, json) -> {
+            throw new IllegalStateException("clickhouse down");
+        }, 10));
+        spool.close();
+
+        HistorianDiskSpool reopened = spool(1024 * 1024, 64 * 1024, true);
+        reopened.open();
+        reopened.append(List.of(sample(4)));
+        List<String> tokens = new ArrayList<>();
+        List<String> bodies = new ArrayList<>();
+        assertEquals(3, reopened.replayJson((id, json) -> {
+            tokens.add(id);
+            bodies.add(json);
+        }, 10));
+        assertTrue(tokens.getFirst().contains("g1x3n3"));
+        assertFalse(bodies.getFirst().contains("\"value_double\":4.0"));
+        int second = reopened.replayJson((id, json) -> {
+            tokens.add(id);
+            bodies.add(json);
+        }, 10);
+        assertEquals(1, second, "tokens=" + tokens + " seal=" + java.nio.file.Files.exists(dir.resolve("replay.seal")));
+        assertTrue(bodies.get(1).contains("\"value_double\":4.0"));
+        reopened.close();
+    }
+
+    @Test
+    void nonFiniteValuesReplayAsNull() throws Exception {
+        HistorianDiskSpool spool = spool(1024 * 1024, 64 * 1024, true);
+        spool.open();
+        spool.append(List.of(sample(Double.NaN)));
+        spool.append(List.of(sample(Double.POSITIVE_INFINITY)));
+        spool.close();
+
+        HistorianDiskSpool reopened = spool(1024 * 1024, 64 * 1024, true);
+        reopened.open();
+        List<String> bodies = new ArrayList<>();
+        assertEquals(2, reopened.replayJson((id, json) -> bodies.add(json), 10));
+        assertTrue(bodies.getFirst().contains("\"value_double\":null"));
+        assertFalse(bodies.getFirst().contains("NaN"));
+        assertFalse(bodies.getFirst().contains("Infinity"));
+        reopened.close();
     }
 
     private static boolean readFully(FileChannel channel, ByteBuffer buffer) throws IOException {

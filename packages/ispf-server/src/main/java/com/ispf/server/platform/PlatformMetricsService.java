@@ -221,6 +221,9 @@ public class PlatformMetricsService {
             section.put("spoolLag", spool.unackedRecords());
             section.put("spoolOldestAgeMs", spool.oldestAgeMillis());
             section.put("spoolAcceptP99Ms", spool.acceptP99Millis());
+            section.put("spoolEncodeP99Ms", spool.encodeP99Millis());
+            section.put("spoolWriteP99Ms", spool.writeP99Millis());
+            section.put("spoolForceP99Ms", spool.forceP99Millis());
             section.put("spoolQuota", spool.quotaHit());
         }
         section.put("historizedVariables", historizedVariables);

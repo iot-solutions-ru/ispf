@@ -15,21 +15,14 @@ import java.util.Optional;
 public class HistorianRollupQueryService {
 
     private final ClickHouseHistorianRollupStore rollupStore;
-    private final HistorianRollupSubscriptionIndex subscriptionIndex;
     private final AnalyticsProperties analyticsProperties;
 
     public HistorianRollupQueryService(
             ClickHouseHistorianRollupStore rollupStore,
-            HistorianRollupSubscriptionIndex subscriptionIndex,
             AnalyticsProperties analyticsProperties
     ) {
         this.rollupStore = rollupStore;
-        this.subscriptionIndex = subscriptionIndex;
         this.analyticsProperties = analyticsProperties;
-    }
-
-    public boolean isRollupQueryEnabled() {
-        return analyticsProperties.materializerEnabled() && rollupStore.isConfigured();
     }
 
     public Optional<RollupQueryResult> tryRollupQuery(
@@ -41,28 +34,45 @@ public class HistorianRollupQueryService {
             Duration bucket,
             int maxBuckets
     ) {
-        if (!isRollupQueryEnabled()) {
+        if (!rollupStore.isConfigured() || !rangeLongEnoughForRollup(from, to)) {
             return Optional.empty();
         }
-        if (!rangeLongEnoughForRollup(from, to)) {
+        List<VariableHistoryService.VariableHistoryBucket> buckets;
+        try {
+            buckets = rollupStore.queryBuckets(
+                    objectPath,
+                    variableName,
+                    fieldName,
+                    bucket,
+                    from,
+                    to,
+                    maxBuckets
+            );
+        } catch (RuntimeException ex) {
             return Optional.empty();
         }
-        if (!subscriptionIndex.isSubscribed(objectPath, variableName, fieldName, bucket)) {
-            return Optional.empty();
-        }
-        List<VariableHistoryService.VariableHistoryBucket> buckets = rollupStore.queryBuckets(
-                objectPath,
-                variableName,
-                fieldName,
-                bucket,
-                from,
-                to,
-                maxBuckets
-        );
-        if (buckets.isEmpty()) {
+        if (!covers(buckets, from, to, bucket)) {
             return Optional.empty();
         }
         return Optional.of(new RollupQueryResult(buckets, "rollup"));
+    }
+
+    /** A partial rollup must not hide the raw samples outside its first and last bucket. */
+    private static boolean covers(
+            List<VariableHistoryService.VariableHistoryBucket> buckets,
+            Instant from,
+            Instant to,
+            Duration bucket
+    ) {
+        if (buckets.isEmpty()) {
+            return false;
+        }
+        Instant first = buckets.getFirst().ts();
+        Instant last = buckets.getLast().ts();
+        return first != null
+                && last != null
+                && !first.isAfter(from.plus(bucket))
+                && !last.isBefore(to.minus(bucket));
     }
 
     /**
