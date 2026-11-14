@@ -16,11 +16,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
  */
 public final class SignaturePolicy {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private SignaturePolicy() {
     }
 
     public static String policyName(String sourceBody) {
-        return readPolicy(sourceBody, new ObjectMapper());
+        return readPolicy(sourceBody);
     }
 
     public static void require(String sourceBody, DataRecord input) {
@@ -28,9 +30,12 @@ public final class SignaturePolicy {
     }
 
     public static void require(String sourceBody, DataRecord input, FunctionSignatureVerifier verifier) {
-        String policy = readPolicy(sourceBody, new ObjectMapper());
+        String policy = readPolicy(sourceBody);
         if (policy == null || policy.isBlank() || "NONE".equalsIgnoreCase(policy)) {
             return;
+        }
+        if (!isKnownPolicy(policy)) {
+            throw new IllegalStateException("Unsupported signaturePolicy: " + policy);
         }
         if (requiresAuthenticatedPrincipal(policy)) {
             requireAuthenticatedPrincipal(policy);
@@ -38,6 +43,13 @@ public final class SignaturePolicy {
         if (requiresSignatureMaterial(policy)) {
             verifier.verify(policy, sourceBody, input);
         }
+    }
+
+    private static boolean isKnownPolicy(String policy) {
+        return "REQUIRED".equalsIgnoreCase(policy)
+                || "DUAL".equalsIgnoreCase(policy)
+                || "AUTHENTICATED".equalsIgnoreCase(policy)
+                || "REQUIRE_AUTH".equalsIgnoreCase(policy);
     }
 
     private static boolean requiresAuthenticatedPrincipal(String policy) {
@@ -64,12 +76,12 @@ public final class SignaturePolicy {
         }
     }
 
-    private static String readPolicy(String sourceBody, ObjectMapper objectMapper) {
+    private static String readPolicy(String sourceBody) {
         if (sourceBody == null || !sourceBody.trim().startsWith("{")) {
             return null;
         }
         try {
-            JsonNode root = objectMapper.readTree(sourceBody);
+            JsonNode root = OBJECT_MAPPER.readTree(sourceBody);
             JsonNode policy = root.get("signaturePolicy");
             return policy == null || policy.isNull() ? null : policy.asText();
         } catch (RuntimeException ex) {

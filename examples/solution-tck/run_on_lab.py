@@ -178,8 +178,6 @@ JAVA_TOOL_OPTIONS=-Xms1g -Xmx4g
             "--add-host", "host.docker.internal:host-gateway",
             "-p", f"127.0.0.1:{port}:8080",
             "-v", f"{JAR}:/opt/ispf/ispf-server.jar:ro",
-            # Production cluster drivers publish the literal "null" for a write
-            # that sends the value field. Both replicas must use the TCK pack.
             "-v", f"{os.environ.get('ISPF_TCK_DRIVERS_DIR', '/home/iot-solutions/ispf-tck/drivers')}:/opt/ispf/drivers:ro",
             "--env-file", ENV_FILE,
             "-e", f"ISPF_REPLICA_ID={replica}",
