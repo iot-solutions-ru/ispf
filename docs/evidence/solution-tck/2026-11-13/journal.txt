@@ -1,0 +1,6 @@
+2026-11-13T21:24Z runner started on spark-1f58, pid 2654154.
+ops pass: CUSTOM marker restored, tck-ops-outbox-1 stayed SENT attempts 0 after ispf-tck-1 restart and after NATS INFO on 4222. Peer 8082 stayed up. Postgres restart refused.
+erp hold: runner-outage-1794604982 was 1 row PENDING attempts 0 with the receiver down.
+1800s later: one POST, stored 1|SENT|0, enqueue row is in audit_event_chain, tamper detected, restored chain intact.
+clickhouse 24.8.14.39. Historian rate, year p99, and ClickHouse-outage zero-loss were not part of this green.
+No pen-test. No field soak.

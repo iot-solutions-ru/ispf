@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "green": true,
+  "runnerCommit": "22d380aef5d962eb8ab9d31aa79bf2146018560f",
+  "measuredAt": "2026-11-13T21:56:02Z",
+  "note": "This process produced the ops and ERP phases. The committed script also closes the receiver socket, requires the ops exit code, and copies postgresRestart from the ops phase. Those edits do not change the counts below.",
+  "phases": {
+    "ops": {
+      "pass": true,
+      "exitCode": 0,
+      "messageId": "tck-ops-outbox-1",
+      "backup": {
+        "pass": true,
+        "missing": 404,
+        "restored": 200,
+        "created": 1,
+        "present": 200,
+        "type": "CUSTOM"
+      },
+      "before": [200, "SENT", 0],
+      "afterNodeRestart": [200, "SENT", 0],
+      "afterNatsRestart": [200, "SENT", 0],
+      "nodeUp": true,
+      "natsUp": true,
+      "peerUp": true,
+      "marker": 200,
+      "postgresRestart": "refused"
+    },
+    "erpOutage": {
+      "pass": true,
+      "executedThisProcess": true,
+      "messageId": "runner-outage-1794604982",
+      "outageSeconds": 1800,
+      "stored": "1|SENT|0",
+      "deliveries": 1,
+      "keys": ["runner-outage-1794604982"],
+      "enqueueChained": "1",
+      "tamperDetected": true,
+      "restoredIntact": true
+    },
+    "historian": {
+      "required": false,
+      "reason": "year p99, 250-500k, and ClickHouse-outage zero-loss were not required"
+    }
+  },
+  "externalEvidence": ["pen-test", "field-soak"],
+  "jarSha256": "0b31ca36525e450b275fc428a90677f15094106503ad4199525c2684fdf77b1a",
+  "clickhouseVersion": "24.8.14.39",
+  "postgresRestart": "refused",
+  "pullRequests": [
+    "https://github.com/iot-solutions-ru/ispf/pull/721",
+    "https://github.com/iot-solutions-ru/ispf/pull/722",
+    "https://github.com/iot-solutions-ru/ispf/pull/723",
+    "https://github.com/iot-solutions-ru/ispf/pull/724",
+    "https://github.com/iot-solutions-ru/ispf/pull/725",
+    "https://github.com/iot-solutions-ru/ispf/pull/726",
+    "https://github.com/iot-solutions-ru/ispf/pull/727"
+  ]
+}

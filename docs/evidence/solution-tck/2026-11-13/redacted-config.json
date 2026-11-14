@@ -1,0 +1,10 @@
+{
+  "stand": "192.168.100.10",
+  "nodes": ["ispf-tck-1", "ispf-tck-2"],
+  "nats": "ispf-tck-nats",
+  "clickhouse": "ispf-tck-clickhouse 24.8.14.39",
+  "postgres": "ispf-db-postgres-1 was not restarted; it is the shared production database",
+  "erpEndpoint": "erp=http://172.20.0.1:8090/inbox on replica-1 only",
+  "database": "ispf_solution_tck",
+  "jarSha256": "0b31ca36525e450b275fc428a90677f15094106503ad4199525c2684fdf77b1a"
+}
