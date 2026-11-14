@@ -137,6 +137,46 @@ class Iec104ServerDeviceDriverTest {
     }
 
     @Test
+    void spontaneousMeasurementStillUpdatesWhenSelectBeforeOperateIsRequired() throws Exception {
+        int port = freePort();
+        StubDriverObject object = startServer(port, Map.of("commandMode", "sbo"));
+        driver.readPoints(Map.of("temperature", "4001", "relay", "2001"));
+
+        Iec104Connection client = newClient(port);
+        client.startDataTransfer();
+        client.singleCommandSelect(COMMON_ADDRESS, 2001, true);
+        TimeUnit.MILLISECONDS.sleep(100);
+        Iec104Asdu measurement = new Iec104Asdu(Iec104Type.M_ME_NC_1, Iec104Cause.SPONTANEOUS, 0,
+                COMMON_ADDRESS, List.of(Iec104Value.shortFloat(4001, 19.5, "GOOD")));
+        client.sendAsdu(measurement);
+        awaitValue(object, "temperature", 19.5);
+
+        client.singleCommand(COMMON_ADDRESS, 2001, true);
+        awaitValue(object, "relay", 1.0);
+    }
+
+    @Test
+    void disconnectClearsArmedSelectBeforeOperate() throws Exception {
+        int port = freePort();
+        StubDriverObject object = startServer(port, Map.of("commandMode", "sbo"));
+        driver.readPoints(Map.of("relay", "2001"));
+
+        Iec104Connection first = newClient(port);
+        first.startDataTransfer();
+        first.singleCommandSelect(COMMON_ADDRESS, 2001, true);
+        TimeUnit.MILLISECONDS.sleep(100);
+        first.close();
+        clientConnection = null;
+        TimeUnit.MILLISECONDS.sleep(100);
+
+        Iec104Connection second = newClient(port);
+        second.startDataTransfer();
+        second.singleCommand(COMMON_ADDRESS, 2001, true);
+        TimeUnit.MILLISECONDS.sleep(300);
+        assertEquals(0.0, number(object.variables.get("relay"), "value"), 0.001);
+    }
+
+    @Test
     void asduWithForeignCommonAddressIsIgnored() throws Exception {
         int port = freePort();
         StubDriverObject object = startServer(port);
@@ -173,10 +213,15 @@ class Iec104ServerDeviceDriverTest {
     }
 
     private StubDriverObject startServer(int port) throws Exception {
-        StubDriverObject object = new StubDriverObject(Map.of(
-                "listenPort", String.valueOf(port),
-                "commonAddress", String.valueOf(COMMON_ADDRESS)
-        ));
+        return startServer(port, Map.of());
+    }
+
+    private StubDriverObject startServer(int port, Map<String, String> extra) throws Exception {
+        Map<String, String> config = new java.util.HashMap<>();
+        config.put("listenPort", String.valueOf(port));
+        config.put("commonAddress", String.valueOf(COMMON_ADDRESS));
+        config.putAll(extra);
+        StubDriverObject object = new StubDriverObject(config);
         driver = new Iec104ServerDeviceDriver();
         driver.initialize(object);
         driver.connect();

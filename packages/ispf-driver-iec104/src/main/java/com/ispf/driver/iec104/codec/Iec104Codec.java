@@ -7,7 +7,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
-final class Iec104Codec {
+public final class Iec104Codec {
 
     private Iec104Codec() {
     }
@@ -153,6 +153,11 @@ final class Iec104Codec {
     private static int encodeNormalized(double value) {
         double clamped = Math.max(-1.0, Math.min(0.999969482421875, value));
         return ((short) Math.round(clamped * 32768.0)) & 0xffff;
+    }
+
+    /** True when both values quantize to the same 16-bit normalized setpoint on the wire. */
+    public static boolean sameNormalized(double expected, double echoed) {
+        return encodeNormalized(expected) == encodeNormalized(echoed);
     }
 
     private static int encodeQuality(String quality) {
