@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -169,6 +170,14 @@ public class KafkaDeviceDriver implements DeviceDriver {
         consumerRunning.set(false);
         if (consumerExecutor != null) {
             consumerExecutor.shutdownNow();
+            try {
+                if (!consumerExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    consumerExecutor.shutdownNow();
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                consumerExecutor.shutdownNow();
+            }
             consumerExecutor = null;
         }
     }

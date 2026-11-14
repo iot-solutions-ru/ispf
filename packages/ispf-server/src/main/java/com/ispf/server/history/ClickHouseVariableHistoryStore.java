@@ -150,6 +150,12 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             spool.append(records);
             spool.recordAccept((System.nanoTime() - started) / 1_000_000L);
         } catch (java.io.IOException ex) {
+            if (records.size() > 1 && ex.getMessage() != null && ex.getMessage().contains("exceeds max size")) {
+                int midpoint = records.size() / 2;
+                appendBatch(records.subList(0, midpoint));
+                appendBatch(records.subList(midpoint, records.size()));
+                return;
+            }
             throw new IllegalStateException("historian spool append failed", ex);
         }
     }
@@ -202,6 +208,9 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             return "INSERT INTO " + qualifiedTable() + " FORMAT JSONEachRow";
         }
         String token = batchId.replaceAll("[^A-Za-z0-9_-]", "");
+        if (token.isEmpty()) {
+            throw new IllegalArgumentException("historian spool dedupe token is empty after sanitization");
+        }
         return "INSERT INTO " + qualifiedTable()
                 + " SETTINGS insert_deduplicate = 1, insert_deduplication_token = '"
                 + token

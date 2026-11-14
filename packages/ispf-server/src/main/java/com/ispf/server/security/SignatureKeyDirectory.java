@@ -8,4 +8,6 @@ public interface SignatureKeyDirectory {
     void upsert(String username, String publicKey);
 
     Optional<String> find(String username);
+
+    void delete(String username);
 }

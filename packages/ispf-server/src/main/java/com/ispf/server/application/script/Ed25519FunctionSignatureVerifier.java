@@ -1,7 +1,11 @@
 package com.ispf.server.application.script;
 
 import com.ispf.core.model.DataRecord;
+import com.ispf.server.config.IspfRoles;
+import com.ispf.server.security.PlatformUserStore;
 import com.ispf.server.security.SignatureKeyDirectory;
+import com.ispf.server.tenant.TenantStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,6 +17,8 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Verifies Ed25519 signatures over {@link FunctionSignature#message}.
@@ -22,9 +28,22 @@ import java.util.Base64;
 public class Ed25519FunctionSignatureVerifier implements FunctionSignatureVerifier {
 
     private final SignatureKeyDirectory keys;
+    private final PlatformUserStore users;
+    private final TenantStore tenants;
 
     public Ed25519FunctionSignatureVerifier(SignatureKeyDirectory keys) {
+        this(keys, null, null);
+    }
+
+    @Autowired
+    public Ed25519FunctionSignatureVerifier(
+            SignatureKeyDirectory keys,
+            PlatformUserStore users,
+            TenantStore tenants
+    ) {
         this.keys = keys;
+        this.users = users;
+        this.tenants = tenants;
     }
 
     public void enroll(String username, String publicKey) {
@@ -47,11 +66,37 @@ public class Ed25519FunctionSignatureVerifier implements FunctionSignatureVerifi
             if (countersigner.equals(signer)) {
                 throw new IllegalStateException("signaturePolicy DUAL requires a second signer");
             }
+            requireEligibleCountersigner(signer, countersigner);
         }
         byte[] message = FunctionSignature.message(policy, sourceBody, signer, dual ? countersigner : "", input);
         verifyOne(signer, text(input, "signature"), message, policy);
         if (dual) {
             verifyOne(countersigner, text(input, "countersignature"), message, policy);
+        }
+    }
+
+    private void requireEligibleCountersigner(String signer, String countersigner) {
+        if (users == null) {
+            return;
+        }
+        PlatformUserStore.PlatformUser counter = users.findByUsername(countersigner)
+                .orElseThrow(() -> new IllegalStateException(
+                        "signaturePolicy DUAL countersigner is not an enrolled local user: " + countersigner));
+        if (!counter.enabled()) {
+            throw new IllegalStateException("signaturePolicy DUAL countersigner is disabled: " + countersigner);
+        }
+        if (tenants == null) {
+            return;
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (IspfRoles.isGlobalAdmin(authentication)) {
+            return;
+        }
+        Optional<String> signerTenant = tenants.findTenantIdForUser(signer);
+        Optional<String> counterTenant = tenants.findTenantIdForUser(countersigner);
+        if (!Objects.equals(signerTenant.orElse(null), counterTenant.orElse(null))) {
+            throw new IllegalStateException(
+                    "signaturePolicy DUAL countersigner must share the caller's tenant: " + countersigner);
         }
     }
 
