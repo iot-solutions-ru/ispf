@@ -259,7 +259,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
             if ("SELECT".equals(value.quality())) {
                 if (requireSelect && !rejectSelect) {
                     armedCommands.put(ioa, new ArmedCommand(
-                            connection, value.typeId(), parsed, System.nanoTime() + selectTimeoutMs * 1_000_000L));
+                            connection, value.typeId(), parsed, System.nanoTime()));
                     Iec104Value echo = echoSelectMismatch ? mismatchedSelectEcho(value) : value;
                     confirm(connection, asdu.typeId(), echo, true);
                 } else {
@@ -272,10 +272,12 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
                 boolean accepted = armed != null
                         && armed.connection() == connection
                         && armed.typeId() == value.typeId()
-                        && System.nanoTime() <= armed.untilNanos()
-                        && Double.compare(armed.value(), parsed) == 0;
-                if (accepted) {
-                    armedCommands.remove(ioa);
+                        && System.nanoTime() - armed.armedAtNanos() <= selectTimeoutNanos()
+                        && Double.compare(armed.value(), parsed) == 0
+                        && armedCommands.remove(ioa, armed);
+                if (!accepted && armed != null && armed.connection() == connection
+                        && System.nanoTime() - armed.armedAtNanos() > selectTimeoutNanos()) {
+                    armedCommands.remove(ioa, armed);
                 }
                 confirm(connection, asdu.typeId(), value, accepted);
                 if (!accepted) {
@@ -292,11 +294,15 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
         if (ioa != null) {
             ArmedCommand armed = armedCommands.get(ioa);
             if (armed != null && armed.connection() == connection) {
-                armedCommands.remove(ioa);
+                armedCommands.remove(ioa, armed);
             }
             return;
         }
         armedCommands.entrySet().removeIf(entry -> entry.getValue().connection() == connection);
+    }
+
+    private long selectTimeoutNanos() {
+        return java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(selectTimeoutMs);
     }
 
     private static boolean isControlCommand(int typeId) {
@@ -314,7 +320,10 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
                 yield Iec104Value.doublePoint(value.ioa(), dcs == 2 ? 1 : 2, "SELECT");
             }
             case Iec104Type.C_SE_NC_1 -> Iec104Value.shortFloat(value.ioa(), value.numericValue() + 1.0, "SELECT");
-            case Iec104Type.C_SE_NA_1 -> Iec104Value.normalized(value.ioa(), -value.numericValue(), "SELECT");
+            case Iec104Type.C_SE_NA_1 -> {
+                double raw = value.numericValue();
+                yield Iec104Value.normalized(value.ioa(), raw >= 0.0 ? -0.5 : 0.5, "SELECT");
+            }
             default -> value;
         };
     }
@@ -330,7 +339,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
         }
     }
 
-    private record ArmedCommand(Iec104Connection connection, int typeId, double value, long untilNanos) {
+    private record ArmedCommand(Iec104Connection connection, int typeId, double value, long armedAtNanos) {
     }
 
     private void refreshPointsForIoa(int ioa) {
