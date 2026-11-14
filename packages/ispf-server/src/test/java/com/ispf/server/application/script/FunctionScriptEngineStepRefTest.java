@@ -129,4 +129,44 @@ class FunctionScriptEngineStepRefTest {
         );
         assertThat(rows).isEqualTo(1);
     }
+
+    @Test
+    void enqueueOutboxRejectsACrossAppId() {
+        JdbcTemplate jdbc = new JdbcTemplate(new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2).build());
+        ApplicationMessageRelay relay = new ApplicationMessageRelay(jdbc);
+        relay.ensureTables();
+        FunctionScriptEngine outboxEngine = new FunctionScriptEngine(
+                jdbc,
+                new ObjectMapper(),
+                mock(WorkflowInstanceCancelService.class),
+                mock(PlatformScriptBridge.class),
+                relay,
+                mock(AuditEventService.class),
+                mock(TenantLocalDataAccessGuard.class)
+        );
+        DataSchema schema = DataSchema.builder("out")
+                .field("error_code", FieldType.STRING)
+                .field("error_message", FieldType.STRING)
+                .build();
+        String script = """
+                {"steps":[
+                  {"type":"enqueueOutbox","appId":"other-app","connectorId":"erp","messageId":"K-x","body":"{}"},
+                  {"type":"return","fields":{"error_code":"OK","error_message":""}}
+                ]}
+                """;
+        ScriptExecutionContext context = new ScriptExecutionContext() {
+            @Override
+            public String appId() {
+                return "plant-discrete";
+            }
+
+            @Override
+            public DataRecord invokeFunction(String objectPath, String functionName, Map<String, Object> input) {
+                throw new IllegalStateException("nested invoke");
+            }
+        };
+        assertThatThrownBy(() -> outboxEngine.execute(script, null, schema, context))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("must match caller appId");
+    }
 }

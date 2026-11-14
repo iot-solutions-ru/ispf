@@ -276,6 +276,11 @@ class PlantDiscreteForkTckTest {
                         .param("connectorId", "erp")
                         .param("messageId", "API-1"))
                 .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/v1/applications/plant-discrete/outbox")
+                        .with(user("planner-1").roles("operator"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"connectorId\":\"erp\",\"messageId\":\"API-1\",\"body\":\"{}\"}"))
+                .andExpect(status().isForbidden());
 
         mockMvc.perform(post("/api/v1/applications/plant-discrete/outbox")
                         .with(user("planner-1").roles("admin"))

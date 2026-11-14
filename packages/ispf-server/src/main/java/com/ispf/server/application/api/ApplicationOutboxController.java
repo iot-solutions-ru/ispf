@@ -4,6 +4,7 @@ import com.ispf.server.application.data.ApplicationMessageRelay;
 import com.ispf.server.application.data.ApplicationMessageRelay.Enqueued;
 import com.ispf.server.application.data.ApplicationMessageRelay.OutboxMessage;
 import com.ispf.server.audit.AuditEventService;
+import com.ispf.server.config.IspfRoles;
 import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -49,6 +50,9 @@ public class ApplicationOutboxController {
             Authentication authentication
     ) {
         requireUser(authentication);
+        if (!IspfRoles.isConfigurator(authentication)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "configurator role required");
+        }
         tenantLocalDataAccessGuard.requireExternalDataAccess(authentication);
         String cleanAppId = required(appId, "appId", 128);
         String connectorId = required(request == null ? null : request.connectorId(), "connectorId", 128);
