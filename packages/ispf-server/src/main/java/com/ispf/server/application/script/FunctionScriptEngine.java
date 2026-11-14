@@ -180,7 +180,7 @@ public class FunctionScriptEngine {
                 if (tenantLocalDataAccessGuard != null) {
                     tenantLocalDataAccessGuard.requireExternalDataAccess();
                 }
-                String appId = outboxAppId(step, vars);
+                String appId = outboxAppId(step, vars, context);
                 String connectorId = requiredOutboxText(step.get("connectorId"), vars, "connectorId");
                 String messageId = outboxMessageId(step, vars);
                 Object bodyValue = step.has("body") ? resolveStepValue(step.get("body"), vars) : "{}";
@@ -793,8 +793,15 @@ public class FunctionScriptEngine {
         return Double.parseDouble(String.valueOf(value));
     }
 
-    private String outboxAppId(JsonNode step, Map<String, Object> vars) {
+    private String outboxAppId(JsonNode step, Map<String, Object> vars, ScriptExecutionContext context) {
+        String contextAppId = context == null || context.appId() == null ? "" : context.appId().trim();
         String fromStep = step.has("appId") ? requiredOutboxText(step.get("appId"), vars, "appId") : "";
+        if (!contextAppId.isEmpty()) {
+            if (!fromStep.isBlank() && !fromStep.equals(contextAppId)) {
+                throw new IllegalArgumentException("enqueueOutbox appId must match caller appId");
+            }
+            return contextAppId;
+        }
         if (!fromStep.isBlank()) {
             return fromStep;
         }
