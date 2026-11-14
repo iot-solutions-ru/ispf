@@ -96,8 +96,8 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
 
 ![Консоль администратора — дерево объектов после первого входа](../assets/ispf-object-tree.png)
 
-1. В левой панели **Explorer** раскройте ветку `root` → `platform`.
-2. Откройте папку `devices` и выберите **`demo-sensor-01`**. Справа в панели **Inspector** отобразятся переменные датчика: температура (`temperature`), уставка порога (`threshold`) и флаг аварии (`alarmActive`).
+1. В левой панели **проводника (Explorer)** раскройте ветку `root` → `platform`.
+2. Откройте папку `devices` и выберите **`demo-sensor-01`**. Справа в **инспекторе** отобразятся переменные датчика: температура (`temperature`), уставка порога (`threshold`) и флаг аварии (`alarmActive`).
 3. Откройте `dashboards` и дважды кликните по **`demo-sensor`** — откроется визуальный конструктор дашборда (**Dashboard Builder**).
 4. Откройте `alert-rules` → **`temperature-threshold-exceeded`** — здесь задано условие срабатывания тревоги по температуре на языке CEL.
 5. Откройте `workflows` и дважды кликните по **`demo-alarm-handler`** — откроется пример процесса обработки тревоги в нотации **BPMN**.

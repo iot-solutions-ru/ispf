@@ -422,15 +422,15 @@ SQL-отчёты в схеме приложения: развертывание 
 1. `GET /api/v1/operator-apps/{appId}/ui` — встроенные и настроенные в админке приложения (таблица `operator_app_ui`, узел дерева `root.platform.operator-apps`)
 2. Поле `operatorUi` в deploy bundle → `GET /api/v1/applications/{appId}/operator-ui`
 3. Автогенерация из `dashboards[]` в bundle (path + title)
-4. Legacy fallback: `public/operator-apps/{appId}.ui.json` (только dev)
+4. Резерв для dev: `public/operator-apps/{appId}.ui.json`
 
 URL: `?mode=operator&app=platform&dashboard=<path>` (JAR `:8080`, Vite dev `:5173`).
 
-### Legacy: operator manifest
+### Устаревший operator manifest
 
-Поле `operatorManifest` в deploy bundle → `GET /api/v1/applications/{appId}/operator-manifest` — **deprecated** (таблицы/отчёты через BFF). Для новых приложений используйте `operatorUi` + dashboards.
+Поле `operatorManifest` в deploy bundle → `GET /api/v1/applications/{appId}/operator-manifest` — **устарело** (таблицы/отчёты через BFF). Для новых приложений используйте `operatorUi` и дашборды.
 
-Web Console: API first, fallback `public/operator-apps/<appId>.manifest.json` (legacy shell only).
+Веб-консоль сначала ходит в API; файл `public/operator-apps/<appId>.manifest.json` — только запасной dev-shell.
 
 ### Объекты дерева
 
@@ -451,14 +451,14 @@ Web Console: API first, fallback `public/operator-apps/<appId>.manifest.json` (l
 
 ## Связанная документация
 
-- [api](api.md) — таблица endpoints
-- [workflows](workflows.md) — BPMN `invoke_function`, отмена instances
-- [web-console](web-console.md) — BPMN editor и auto-layout
-- [roadmap](roadmap.md) — REQ-PF, sprint roadmap
-- [plugins](plugins.md) — граница core vs commercial plugins
-- [security](security.md) — матрица RBAC
+- [Справочник REST API](api.md)
+- [Процессы BPMN](workflows.md) — `invoke_function`, отмена экземпляров
+- [Веб-консоль](web-console.md) — редактор BPMN
+- [Дорожная карта](roadmap.md)
+- [Плагины](plugins.md) — граница ядра и коммерческих модулей
+- [Безопасность](security.md) — матрица RBAC
 
-## Deprecation path (PF-03, Phase 5.5)
+## Устаревший путь (PF-03, фаза 5.5)
 
 Таблица `applications` и REST `/api/v1/applications/*` — **только metadata и schema isolation** (реестр приложений, SQL migrations, deploy history). Не параллельный runtime.
 

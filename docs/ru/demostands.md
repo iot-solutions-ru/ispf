@@ -2,22 +2,22 @@
 
 # Профили развёртывания ISPF
 
-> **Статус:** Lab — Prod, lab, edge. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Lab — промышленная площадка, нагрузочный стенд, демо и edge. Метки зрелости: [doc-status.md](doc-status.md).
 
-Руководство по выбору конфигурации в зависимости от цели: **промышленный продукт**, **высокая пропускная способность**, **демо/HMI**, **edge с ограниченным процессором**.
+Как выбрать конфигурацию под задачу: **промышленная эксплуатация**, **высокая пропускная способность**, **демо / HMI** или **edge со слабым CPU**.
 
 Не привязано к конкретному хосту. Примеры скриптов и env — в [`deploy/`](../../deploy/).
 
-См. также: [customer-demo-playbook](customer-demo-playbook.md) (показ заказчику 30–60 мин), [deployment](deployment.md), [security](security.md), [cluster](cluster.md), [load-testing](load-testing.md), [observability](observability.md), [release-dogfood](release-dogfood.md), [operator-apps](operator-apps.md), [0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md), [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
+**Связанные разделы:** [Показ заказчику](customer-demo-playbook.md) · [Развёртывание](deployment.md) · [Безопасность](security.md) · [Кластер](cluster.md) · [Нагрузочное тестирование](load-testing.md) · [Наблюдаемость](observability.md) · [Приложения оператора](operator-apps.md) · [ADR-0026](decisions/0026-elastic-telemetry-ingress.md) · [ADR-0033](decisions/0033-prod-idle-demostand-tuning.md).
 
 ## Как выбрать профиль
 
-| Профиль | Типичная цель | Устройств / сообщения/с | ЦП/ОЗУ | Топология |
-|---------|---------------|-------------------|-----------|-----------|
-| **Производство** | Эксплуатация на объекте, SLA, операторы 24/7 | десять–сотни устройств, умеренный–высокий поток | 4+ виртуальных ЦП на JVM; кластер при ГА | 1–N реплика, эластичная по свойствам, PG + TS/CH |
-| **Пропускная способность** | Нагрузочное тестирование, бенчмарк, планирование мощности | стоимости–тысячи мсг/с | 4+ виртуальных ЦП, 8+ ГБ на JVM | 1–N реплика, эластичная **вкл**, CH/Scylla |
-| **Демо/холостой** | Публичный демостенд, учебный стенд | качество–десятки, низкий опрос | 2–4 виртуальных ЦП, **одна** JVM | одиночный узел, эластичный **выкл** |
-| **Край** | Шлюз на устройствах, слабый процессор | 1–5 устройств | 1–2 ядра, 512 МБ–2 ГБ | одиночный узел; драйверы локально или API к хабу |
+| Профиль | Типичная цель | Устройства / сообщ./с | CPU / RAM | Топология |
+|---------|---------------|------------------------|-----------|-----------|
+| **Производство** | Эксплуатация на объекте, SLA, операторы 24/7 | десятки–сотни устройств, умеренный–высокий поток | 4+ vCPU на JVM; кластер при HA | 1–N реплик, elastic по нагрузке, PG + Timescale/ClickHouse |
+| **Пропускная способность** | Нагрузочный тест, бенчмарк, оценка ёмкости | сотни–тысячи сообщ./с | 4+ vCPU, 8+ ГБ на JVM | 1–N реплик, elastic **вкл.**, ClickHouse/Scylla |
+| **Демо / idle** | Публичный демостенд, учебный стенд | единицы–десятки устройств, редкий опрос | 2–4 vCPU, **одна** JVM | один узел, elastic **выкл.** |
+| **Edge** | Шлюз у оборудования, слабый CPU | 1–5 устройств | 1–2 ядра, 512 МБ–2 ГБ | один узел; драйверы локально или API к hub |
 
 ```text
   Эксплуатация, SLA ──► Production     cluster?, elastic ON, PG+TS/CH, RBAC
@@ -28,7 +28,7 @@
 
 **Главное правило:** значения по умолчанию ([0026-elastic-telemetry-ingress](decisions/0026-elastic-telemetry-ingress.md)) — для **производительности** и нагрузочного теста. Профиль **demo-idle** (`prod-idle.env`) — **не** заменяет prod при реальной нагрузке. Для продукта с малым фоном на одной JVM можно сознательно вырезать пулы, но не копировать оверлей без анализа очередей.
 
-**Предпочтительны именованные профили.** Выберите строку выше и примените её оверлей (`ISPF_DEPLOY_PROFILE` = `production` | `demo-idle` | `edge` | `throughput`). Отдельные `ISPF_*_WORKERS` / `ISPF_*_THREADS` — **устаревший escape hatch** для разбора бага профиля ([0033](decisions/0033-prod-idle-demostand-tuning.md)). После recreate оператор читает `GET /api/v1/platform/effective-config`: `profile` и `resolvedPools` (снимок min/max, не дамп окружения).
+**Предпочтительны именованные профили.** Выберите строку выше и примените её оверлей (`ISPF_DEPLOY_PROFILE` = `production` | `demo-idle` | `edge` | `throughput`). Отдельные `ISPF_*_WORKERS` / `ISPF_*_THREADS` — **устаревший аварийный рычаг** для разбора бага профиля ([0033](decisions/0033-prod-idle-demostand-tuning.md)). После recreate оператор читает `GET /api/v1/platform/effective-config`: `profile` и `resolvedPools` (снимок min/max, не дамп окружения).
 
 ---
 
@@ -42,13 +42,13 @@
 
 | Подвариант | Устройства | Топология | Журнал / историк |
 |------------|------------|-----------|---------------------|
-| **Prod S** — один объект, один узел | &lt; ~50 активных драйверов, умеренный опрос | `ISPF_CLUSTER_ENABLED=false`, `replicaRole=all` | `jdbc` + Временная шкала (изображение PG по умолчанию) |
+| **Prod S** — один объект, один узел | &lt; ~50 активных драйверов, умеренный опрос | `ISPF_CLUSTER_ENABLED=false`, `replicaRole=all` | `jdbc` + Timescale (образ PostgreSQL по умолчанию) |
 | **Prod M** — HA, горизонтальный API | 50–500+, операторы, аварийное переключение REST/WS | 2–4 реплики, nginx, NATS + Redis ([cluster](cluster.md)) | Timescale или журнал ClickHouse при росте событий |
-| **Prod L** — телеметрия с высоким потоком | устойчивые значения–тысячи мсг/с | Кластер + выделенные `io` / `compute` реплики ([0032-replica-profiles-and-capabilities](decisions/0032-replica-profiles-and-capabilities.md)) | ClickHouse / Scylla ([0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md), [0025-cassandra-scylla-timeseries-store](decisions/0025-cassandra-scylla-timeseries-store.md)) |
+| **Prod L** — телеметрия с высоким потоком | устойчивые сотни–тысячи сообщ./с | Кластер + выделенные `io` / `compute` реплики ([0032-replica-profiles-and-capabilities](decisions/0032-replica-profiles-and-capabilities.md)) | ClickHouse / Scylla ([0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md), [0025-cassandra-scylla-timeseries-store](decisions/0025-cassandra-scylla-timeseries-store.md)) |
 
-Правило определения размера: **не более 1 JVM на 2 виртуальных ЦП** при постоянной нагрузке драйвера+автоматизации. Четыре реплики на четырех виртуальных ЦП — только если большая часть времени простаивает.
+Правило размера: **не более 1 JVM на 2 vCPU** при постоянной нагрузке драйверов и автоматизации. Четыре реплики на четырёх vCPU — только если большую часть времени узлы простаивают.
 
-### Топология и ролики
+### Топология и роли
 
 **Один сайт (Prod S):**
 
@@ -78,7 +78,7 @@ Operators → nginx (ip_hash / health) → replica-1..N
 
 ### Эластичные пулы и конвейер
 
-На проде **предоставлен эластичный включенный** (по умолчанию), если есть:
+На production **elastic по умолчанию включён**, если есть:
 
 - MQTT/push ingress с Burst;
 - много binding/alert rules на `FULL` устройствах;
@@ -119,7 +119,7 @@ Operators → nginx (ip_hash / health) → replica-1..N
 |--------|----------|--------|
 | Конфигурация, ACL, объекты | PostgreSQL | PostgreSQL |
 | Variable history | Timescale `variable_samples` (jdbc) | ClickHouse / Scylla опционально |
-| Журнал событий | Временная шкала `event_history` (jdbc) | ClickHouse (сборник правил [deployment](deployment.md)) |
+| Журнал событий | Timescale `event_history` (jdbc) | ClickHouse (см. [развёртывание](deployment.md)) |
 | Удержание | `ISPF_*_RETENTION_DAYS`, Политика временных рамок ([0009-timescaledb-retention](decisions/0009-timescaledb-retention.md)) | + архив CH |
 
 Пролетный путь: прибытие при старте; перед обновлением — резервное копирование БД. Ремонт: [`deploy/vps-flyway-repair.sh`](../../deploy/vps-flyway-repair.sh).
@@ -173,7 +173,7 @@ Prod L: добавьте `ISPF_EVENT_JOURNAL_STORE=clickhouse`, `ISPF_VARIABLE_H
 | Ошибка | Последствие |
 |--------|-------------|
 | `prod-idle.env` на объекте с сотнями устройств | Отставание, задержка, потеря событий при пике |
-| 4 реплики на 4 виртуальных ЦП без запаса | Постоянный высокая нагрузка, давление ГХ |
+| 4 реплики на 4 vCPU без запаса | Постоянная высокая нагрузка, давление на GC |
 | Все драйверы `FULL` | Лишний CPU, лавина object-change |
 | `docker restart` после смены env | Старая конфигурация в контейнере |
 | Сброс к заводским настройкам при рассинхронизации | Потеря данных вместо развертывания fix |
@@ -303,7 +303,7 @@ SERVER_TOMCAT_THREADS_MAX=50
 
 ### A. Edge шлюз — локальные драйверы
 
-ISPF на устройстве запрашивает ПЛК/датчики и предоставляет HMI или синхронизируется с концентратором ([federation](federation.md)).
+ISPF на устройстве опрашивает ПЛК/датчики и отдаёт HMI локально либо синхронизируется с центральным hub ([федерация](federation.md)).
 
 | Параметр | Рекомендация |
 |----------|--------------|
@@ -311,7 +311,7 @@ ISPF на устройстве запрашивает ПЛК/датчики и �
 | Кластер | `ISPF_CLUSTER_ENABLED=false` |
 | JVM heap | `-Xms128m -Xmx256m` … `-Xmx512m` (подбор по `docker stats` / heap %) |
 | Elastic | **все** `ISPF_*_ELASTIC=false` |
-| Пулы потоки | **1** (критичный минимум) или **2** (если 2 ядра) — см. бездельничать, уменьшите ещё |
+| Пулы потоков | **1** (минимум) или **2** (если есть 2 ядра); при нехватке CPU уменьшайте дальше |
 | Tomcat | `SERVER_TOMCAT_THREADS_MAX=20` … `30` |
 | Historian | `jdbc`; `ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS=10000`+; writers=1 |
 | Journal | `jdbc`; writers=1; `ISPF_EVENT_JOURNAL_ELASTIC_WRITER=false` |
@@ -344,7 +344,7 @@ ISPF_RUNTIME_TELEMETRY_COALESCE_MS=5000
 JAVA_OPTS=-Xms128m -Xmx256m -XX:+UseG1GC
 ```
 
-**Не включаете** на край: кластер, эластичное масштабирование, десять параллельных правил оповещения на каждый опрос, разветвление WebSocket на несколько клиентов одновременно.
+**Не включайте на edge:** кластер, elastic-масштабирование, десятки параллельных правил тревог на каждый опрос, рассылку WebSocket сразу на многих клиентов.
 
 ### B. Edge API — без локальных драйверов
 

@@ -2,9 +2,11 @@
 
 # Интеграция с маркетплейсом
 
-> **Статус: Готово (BL-183).** Просмотр remote catalog, free/paid install, подпись, версионирование, offline local install, multi-endpoint partner catalogs и CI validate каталога — реальны. Symbol **packs** — Done (BL-185, `ISPF_SYMBOL_PACKS_DIR` + scada API); `GET /api/v1/marketplace/symbols` отдаёт bundled/local (`source`: `bundled` | `local`), не remote partner store. Partner **directory** (3 seeded DB partners) — Done (BL-184) — см. [partner-program](partner-program.md). Seeded `marketplaceUrl` партнёров — плейсхолдеры `.example`; реальные partner hosts настраиваются через `ispf.marketplace.endpoints`. Sync Partner Portal остаётся external.
+> **Статус:** Stable — каталог пакетов, установка бесплатных и платных бандлов, подпись и офлайн-установка (BL-183…185). Метки зрелости: [doc-status.md](doc-status.md).
 
-Платформа ISPF может просматривать **удалённые серверы маркетплейса**, устанавливать бесплатные bundle и активировать платные листинги с ключом entitlement.
+ISPF умеет просматривать **удалённые серверы маркетплейса**, ставить бесплатные `bundle.json` и активировать платные позиции по ключу entitlement.
+
+Что уже есть в продукте: просмотр каталога, установка, подпись, версии, локальная офлайн-установка, несколько endpoint партнёров и проверка каталога в CI. Пакеты символов SCADA — BL-185 (`ISPF_SYMBOL_PACKS_DIR` + scada API); `GET /api/v1/marketplace/symbols` отдаёт bundled/local (`source`: `bundled` | `local`), не удалённый магазин символов. Справочник партнёров (BL-184) — см. [Партнёрская программа](partner-program.md). Seeded URL партнёров — плейсхолдеры `.example`; боевые хосты задаются в `ispf.marketplace.endpoints`. Синхронизация с Partner Portal остаётся внешней.
 
 URL маркетплейса по умолчанию **настраивается** (`ISPF_MARKETPLACE_DEFAULT_URL`). Для production укажите свой совместимый хост.
 

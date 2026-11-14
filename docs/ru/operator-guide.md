@@ -4,9 +4,9 @@
 
 > **Статус:** Stable — работа с экранами, очередью задач смены, событиями и отчётами. Метки зрелости: [doc-status.md](doc-status.md).
 
-Руководство для пользователей с ролью **operator** — мониторинг оборудования, задачи из work queue, события и отчёты.
+Руководство для пользователей с ролью **operator** — мониторинг оборудования, очередь задач смены, события и отчёты.
 
-Обзор продукта: [product](product.md). Технические детали UI: [web-console](web-console.md).
+Обзор продукта: [Продукт](product.md). Технические детали UI: [Веб-консоль](web-console.md).
 
 ---
 
@@ -227,17 +227,17 @@ http://<host>:5173?mode=admin
 
 Ассистент отвечает **на языке оператора** (русский / английский). Память приложения (`remember_app_memory`) автоматически использует заголовки ru/en в промптах.
 
-### Доступные инструменты (read-only)
+### Доступные инструменты (только чтение)
 
-| Tool | Назначение |
-|------|------------|
+| Инструмент | Назначение |
+|------------|------------|
 | `get_operator_scope` | Разрешённые префиксы путей приложения |
 | `list_objects` / `get_object` / `search_objects` | Обзор объектов в scope |
 | `list_variables` / `describe_variables` | Текущие значения и схема |
 | `get_variable_history` / `get_variable_trend` | Historian и агрегаты |
 | `list_events` / `list_event_catalog` | Журнал и каталог событий |
 | `list_reports` / `run_report` | Отчёты, разрешённые для приложения |
-| `invoke_bff` / `invoke_tree_function` | Операционные функции (read-only данные) |
+| `invoke_bff` / `invoke_tree_function` | Операционные функции (данные только на чтение) |
 | `list_work_queue` | Открытые BPMN-задачи |
 | `list_app_memory` / `remember_app_memory` | Долговременная память смены (глоссарий, нормы) |
 | `list_app_documents` / `read_app_document` / `search_app_documents` | Загруженные SOP/инструкции |
@@ -266,8 +266,8 @@ http://<host>:5173?mode=admin
 
 ## Связанные документы
 
-- [product](product.md) — обзор продукта
-- [dashboards](dashboards.md) — layout, selectionKey, навигация
-- [widgets](widgets.md) — справочник всех виджетов
-- [workflows](workflows.md) — как задачи попадают в work queue
-- [security](security.md) — роли и права доступа
+- [Продукт](product.md) — обзор
+- [Дашборды](dashboards.md) — макет, `selectionKey`, навигация
+- [Виджеты](widgets.md) — справочник всех виджетов
+- [Процессы BPMN](workflows.md) — как задачи попадают в очередь смены
+- [Безопасность](security.md) — роли и права доступа

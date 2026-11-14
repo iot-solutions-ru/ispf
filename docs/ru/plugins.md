@@ -2,67 +2,67 @@
 
 # Плагины и прикладные решения
 
-> **Статус:** Stable — Core vs packs vs bundles. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Stable — граница ядра, пакетов драйверов и прикладных бандлов. Метки зрелости: [doc-status.md](doc-status.md).
 
 ## Принцип
 
 | Слой | Репозиторий / ветка | Лицензия |
 |------|---------------------|----------|
-| **Ядро ISPF** | `main` | GNU AGPL-3.0 (+ optional Enterprise EULA) |
-| **Device driver packs** | `packages/ispf-driver-*` → `build/driver-packs/` | Per-pack `licenseType` in `driver-pack.json` |
-| **Справочники/отраслевые стенды** | Отдельная ветка или репозиторий (не `main`) | Указано в поставке |
-| **Коммерческие плагины** | Отдельные репозитории или документы | Коммерческое / Лицензионное соглашение — **явно в пакете** |
-| **Заказчик проекта** | Репозиторий проекта | По договору |
+| **Ядро ISPF** | `main` | GNU AGPL-3.0 (+ опциональный Enterprise EULA) |
+| **Пакеты драйверов** | `packages/ispf-driver-*` → `build/driver-packs/` | `licenseType` в каждом `driver-pack.json` |
+| **Справочники / отраслевые стенды** | Отдельная ветка или репозиторий (не `main`) | Указано в поставке |
+| **Коммерческие плагины** | Отдельный репозиторий или артефакт | Коммерческая / EULA — **явно в пакете** |
+| **Проект заказчика** | Репозиторий проекта | По договору |
 
-Ядро **не содержит** отраслевую бизнес-логику на Java, **не включает драйверы устройств в серверный JAR** и **не меняет** с коммерческими модулями без явной границы лицензии.
+Ядро **не содержит** отраслевую бизнес-логику на Java, **не вшивает драйверы устройств в серверный JAR** и **не смешивается** с коммерческими модулями без явной лицензионной границы.
 
-**Основной принцип ISPF:** бизнес-логика решений живёт **на платформе** — в моделях, функциях, событиях, функциях и дереве объектов рабочих процессов. Ядро предлагает только generic-движки; Решение — декларативная конфигурация. См. [architecture](architecture.md).
+**Основной принцип ISPF:** прикладная логика живёт **на платформе** — в шаблонах, переменных, событиях, функциях и процессах дерева объектов. Ядро даёт универсальные движки; решение — декларативная конфигурация. См. [Архитектура](architecture.md).
 
-## Как подключить расширения (кроме Java во ядре)
+## Как подключить расширения (без Java в ядре)
 
-Прикладное решение выполняет механизмы платформы **через API и пакетное развертывание**, а не через слияние отраслевого Java в `ispf-server`:
+Прикладное решение наполняет механизмы платформы **через API и пакетный деплой**, а не слиянием отраслевого Java в `ispf-server`:
 
 1. `POST /api/v1/applications` — регистрация `appId`
 2. `POST /api/v1/applications/{appId}/data/migrate` — SQL-таблицы приложения
-3. `POST /api/v1/applications/{appId}/functions/deploy` — скрипт-функции
-4. `POST /api/v1/applications/{appId}/deploy` — связать один запрос
-5. Объекты, дашборды, BPMN — через события платформы REST API
+3. `POST /api/v1/applications/{appId}/functions/deploy` — script-функции
+4. `POST /api/v1/applications/{appId}/deploy` — пакет `bundle.json` одним запросом
+5. Объекты, дашборды, BPMN — через обычные REST API платформы
 
-См. [applications](applications.md).
+См. [Приложения](applications.md).
 
-## Коммерческий плагин: требования к поставкам
+## Коммерческий плагин: что должно быть в поставке
 
-Каждый коммерческий плагин **обязан** включает:
+Каждый коммерческий плагин **обязан** включать:
 
 - `LICENSE` или `license.json` с явным типом лицензии
 - `README` с ограничениями использования и контактом правообладателя
-- Версия и список совместимых версий ISPF
+- версию и список совместимых версий ISPF
 
-Рекламный пакет с секцией `license` — см. [commercial-licensing](commercial-licensing.md) и [0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md).
+Коммерческий bundle с секцией `license` — см. [Коммерческое лицензирование](commercial-licensing.md) и [ADR-0003](decisions/0003-commercial-bundle-licensing.md).
 
-Плагин **не коммитится** в `packages/ispf-server/` и **не** вливается в `main` без отдельного решения о open-source.
+Плагин **не коммитится** в `packages/ispf-server/` и **не** вливается в `main` без отдельного решения об open source.
 
-## Поставщики LLM (уровень AI, FW-40)
+## Поставщики LLM (слой ИИ, FW-40)
 
-Как и device drivers, LLM adapters живут **вне** `ispf-server` core:
+Как и драйверы устройств, адаптеры LLM живут **вне** ядра `ispf-server`:
 
 | Модуль | Назначение |
 |--------|------------|
 | `packages/ispf-ai-api` | SPI `LlmProvider` |
-| `packages/ispf-ai-openai-compatible` | OpenAI-compatible HTTP API |
-| `packages/ispf-ai-ollama` | Ollama local API |
+| `packages/ispf-ai-openai-compatible` | HTTP API, совместимый с OpenAI |
+| `packages/ispf-ai-ollama` | Локальный API Ollama |
 
-`ispf-server` содержит только реестр, ToolRegistry, аудит и администратор REST. Конфигурация — Профиль Spring/env (`ispf.ai.*`). См. [ai-development](ai-development.md), [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md).
+В `ispf-server` остаются только реестр, ToolRegistry, аудит и admin REST. Конфигурация — профиль Spring / env (`ispf.ai.*`). См. [ИИ-студия](ai-development.md), [ADR-0004](decisions/0004-ai-artifact-generation-gates.md).
 
 ## Чеклист перед PR в `main`
 
-- [ ] Нет отраслевого Java и отраслевых маршрутов BFF.
+- [ ] Нет отраслевого Java и отраслевых маршрутов BFF
 - [ ] Нет Flyway-миграций таблиц приложения в `packages/ispf-server/.../db/migration/`
 - [ ] Нет `examples/<industry-app>/` в корне репозитория
-- [ ] Новые возможности платформы — только общий REQ-PF/API/docs
+- [ ] Новые возможности платформы — только общий REQ-PF / API / docs
 
-## Связь
+## Связанные разделы
 
-- [license](license.md) — платформа AGPL, пакеты драйверов, коммерческие модули
-- [applications](applications.md) — развернуть API
-- [decisions/](decisions/) — ADR (0008 boundary, 0009 gate, 0010 licensing)
+- [Лицензия](license.md) — AGPL платформы, пакеты драйверов, коммерческие модули
+- [Приложения](applications.md) — API деплоя
+- [ADR](decisions/) — архитектурные решения

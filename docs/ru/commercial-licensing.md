@@ -2,17 +2,17 @@
 
 # Лицензирование коммерческого пакета
 
-> **Статус:** Stable — Enterprise. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Stable — коммерческие пакеты и Enterprise-условия. Метки зрелости: [doc-status.md](doc-status.md).
 
-Коммерческий пакет RSA-лицензирование при развертывании. Архитектурное решение: [0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md).
+Проверка RSA-лицензии коммерческого `bundle.json` в момент деплоя. Архитектурное решение: [ADR-0003](decisions/0003-commercial-bundle-licensing.md).
 
 ## Принцип
 
 | Слой | Лицензия |
 |------|----------|
-| Платформа (`ispf-server`, веб-консоль) | **GNU AGPL v3** (+ необязательный [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)) |
+| Платформа (`ispf-server`, веб-консоль) | **GNU AGPL v3** (+ опциональный [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)) |
 | Пакет драйверов устройств | `licenseType` в упаковке — см. [licensed-driver-packs](licensed-driver-packs.md) |
-| Commercial bundle | Optional секция `license` в manifest; verify при deploy |
+| Коммерческий bundle | Опциональная секция `license` в манифесте; проверка при deploy |
 
 ## Конфигурация сервера
 
