@@ -4,6 +4,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Elastic FIFO executor for driver ingress when last-value-wins coalesce is disabled (L0 MQTT journal path).
@@ -14,7 +15,9 @@ public final class DriverIngressFifoExecutor implements AutoCloseable {
     private final ThreadPoolExecutor executor;
     private final IngressElasticSettings elastic;
     private final ElasticWorkerScaler scaler;
-    private volatile int appliedWorkers = -1;
+    private final AtomicInteger enqueueAdjustSkips = new AtomicInteger();
+    private final Object resizeLock = new Object();
+    private int appliedWorkers = -1;
 
     public DriverIngressFifoExecutor(
             IngressElasticSettings elastic,
@@ -58,20 +61,33 @@ public final class DriverIngressFifoExecutor implements AutoCloseable {
 
     public void execute(Runnable task) {
         executor.execute(task);
+        maybeAdjustOnEnqueue();
+    }
+
+    private void maybeAdjustOnEnqueue() {
+        if (scaler == null) {
+            return;
+        }
+        if ((enqueueAdjustSkips.incrementAndGet() & 127) != 0) {
+            return;
+        }
+        adjustPool();
     }
 
     private void adjustPool() {
         if (scaler == null) {
             return;
         }
-        scaler.adjust(executor.getQueue().size());
-        int maxWorkers = elastic.resolvedMaxWorkers();
-        int target = Math.min(scaler.targetWorkers(), maxWorkers);
-        if (target == appliedWorkers) {
-            return;
+        synchronized (resizeLock) {
+            scaler.adjust(executor.getQueue().size());
+            int maxWorkers = elastic.resolvedMaxWorkers();
+            int target = Math.min(scaler.targetWorkers(), maxWorkers);
+            if (target == appliedWorkers) {
+                return;
+            }
+            ThreadPoolResize.apply(executor, maxWorkers, target);
+            appliedWorkers = target;
         }
-        ThreadPoolResize.apply(executor, maxWorkers, target);
-        appliedWorkers = target;
     }
 
     @Override
