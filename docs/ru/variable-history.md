@@ -50,6 +50,12 @@ ispf:
     #   historySampleMode: CHANGES_ONLY | ALL_VALUES
     #   includePreviousValueInEvent: boolean
     #   storageMode: PERSISTENT | TRANSIENT
+    # Disk spool (только sole-store ClickHouse; игнорируется, если store≠clickhouse). Выкл. по умолчанию.
+    # store: clickhouse
+    # spool:
+    #   enabled: true
+    #   directory: /opt/ispf/data/historian-spool
+    #   max-bytes: 8589934592
     slo:
       aggregate-max-points: 1000000
       aggregate-max-latency-ms: 2000
@@ -57,6 +63,22 @@ ispf:
       raw-query-max-latency-ms: 500
       export-max-points: 10000
 ```
+
+## Disk spool (sole-store ClickHouse)
+
+Локальный store-and-forward перед **`store=clickhouse`**. **Выкл. по умолчанию.** Для `jdbc` / dual-write не используется. Квота **fail-closed**.
+
+| Ключ / env | По умолчанию | Заметка |
+|------------|--------------|---------|
+| `ispf.variable-history.spool.enabled` / `ISPF_VARIABLE_HISTORY_SPOOL_ENABLED` | `false` | Включать после cutover на CH |
+| `…spool.directory` / `ISPF_VARIABLE_HISTORY_SPOOL_DIRECTORY` | `data/historian-spool` | В контейнере — абсолютный путь на PVC |
+| `…spool.max-bytes` | `8589934592` (8 GiB) | Жёсткая квота |
+| `…spool.fsync` | `true` | Долговечность vs пропускная способность |
+| `…spool.segment-bytes` | `67108864` (64 MiB) | Размер сегмента |
+| `…spool.replay-batch` | `32` | Размер батча replay |
+| `…spool.replay-interval-ms` | `1000` | Интервал replay |
+
+**Helm:** PVC на `/opt/ispf/data` → задайте `/opt/ispf/data/historian-spool`. Метрики: `ispf.historian.spool.*`. Отложено: второй буфер на другом узле; ISPF-managed CH cluster — [known-limitations](known-limitations.md). Канон EN: [en/variable-history.md](../en/variable-history.md) § Disk spool.
 
 ---
 

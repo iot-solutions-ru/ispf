@@ -2,10 +2,11 @@
 
 ## Status
 
-**Proposed** (2026-09-05) — product intent locked; implementation **not** started.  
-Parent: BL-153 TOTP GA **Done**; backlog row **BL-194 Planned**.
+**Parked** (2026-11-15) — product intent remains locked; implementation **not** started.  
+Originally **Proposed** 2026-09-05; the 60-day revisit window closed without a named tender, so this ADR is explicitly **Parked** (not Rejected — unpark when criteria below are met).  
+Parent: BL-153 TOTP GA **Done**; backlog **BL-194** / [parked-backlog](../parked-backlog.md) **P-WEBAUTHN**.
 
-**Revisit when:** named tender requires passkeys/IdP MFA, or **60 days** without a trigger → accept, park, or reject explicitly (do not leave Proposed forever).
+**Unpark when:** named tender or customer requires passkeys / IdP MFA.
 
 ## Context
 
@@ -25,8 +26,8 @@ Enterprise tenders increasingly ask for phishing-resistant MFA (passkeys / WebAu
 | Claim | Status |
 |-------|--------|
 | TOTP GA (BL-153) | **Done** (sibling work — not this ADR) |
-| This ADR’s decision (split air-gap TOTP vs IdP/passkeys) | **Done** (intent) |
-| WebAuthn / IdP OTP implementation | **Gap** |
+| This ADR’s decision (split air-gap TOTP vs IdP/passkeys) | **Done** (intent; status **Parked**) |
+| WebAuthn / IdP OTP implementation | **Gap** (parked) |
 | Scorecard Security credit for WebAuthn | **Gap** until evidence under `docs/evidence/security-webauthn/` |
 
 ### Non-goals (this ADR)
@@ -51,7 +52,7 @@ Enterprise tenders increasingly ask for phishing-resistant MFA (passkeys / WebAu
 | D | OIDC docs: Keycloak OTP/WebAuthn as primary MFA; ISPF claim checks |
 | E | Evidence under `docs/evidence/security-webauthn/` + update G-04 |
 
-**Unpark trigger:** named tender or customer MFA requirement (see [parked-backlog](../parked-backlog.md) **P-WEBAUTHN** when present).
+**Unpark trigger:** named tender or customer MFA requirement (see [parked-backlog](../parked-backlog.md) **P-WEBAUTHN**).
 
 ## Related
 

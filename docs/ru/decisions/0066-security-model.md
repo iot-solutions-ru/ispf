@@ -8,7 +8,7 @@
 
 ## Контекст
 
-Поведение размазано по [security](../security.md), [multi-tenant](../multi-tenant.md), federation on-behalf-of и ADR [0056](0056-webauthn-idp-mfa.md) / [0065](0065-secrets-key-rotation.md). Нужна **одна** запись решения: что ISPF заявляет сегодня, что optional, что Proposed.
+Поведение размазано по [security](../security.md), [multi-tenant](../multi-tenant.md), federation on-behalf-of и ADR [0056](0056-webauthn-idp-mfa.md) / [0065](0065-secrets-key-rotation.md). Нужна **одна** запись решения: что ISPF заявляет сегодня, что optional, что Parked.
 
 ## Решение
 
@@ -39,7 +39,7 @@ Logical SaaS + virtual root + OIDC claim + PG RLS — **Done**. Hard schema hook
 
 ### 4. Вне скоупа
 
-WebAuthn / IdP OTP — [0056](0056-webauthn-idp-mfa.md) (Proposed). Pen-test G-01 — evidence, не смена модели.
+WebAuthn / IdP OTP — [0056](0056-webauthn-idp-mfa.md) (**Parked**, BL-194). Pen-test G-01 — evidence, не смена модели.
 
 ## Последствия
 

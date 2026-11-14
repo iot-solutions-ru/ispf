@@ -49,7 +49,7 @@ ispf:
 
 - Duplicate storage; monitor failure counter + catch-up lag gauges (and optional Prometheus rules).
 - Query migration — separate BL (optional read replica routing).
-- `store=clickhouse` without dual-write — still single-store mode (optional local disk spool is separate).
+- `store=clickhouse` without dual-write — still single-store mode; optional local [disk spool](../variable-history.md#disk-spool-sole-store-clickhouse) is separate (`ispf.variable-history.spool`, off by default).
 
 See [deployment](../deployment.md) § ClickHouse, [roadmap](../roadmap.md).
 

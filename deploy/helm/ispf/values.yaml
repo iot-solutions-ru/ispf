@@ -109,6 +109,11 @@ resources:
       memory: 64Mi
 
 persistence:
+  # Mounted at /opt/ispf/data. If enabling sole-store ClickHouse disk spool
+  # (ISPF_VARIABLE_HISTORY_SPOOL_ENABLED), set ISPF_VARIABLE_HISTORY_SPOOL_DIRECTORY
+  # to /opt/ispf/data/historian-spool (or set ispf.variable-history.spool.* via
+  # configMap.applicationYaml) so segments survive pod restarts. Size data.size
+  # above spool max-bytes (default 8GiB) or lower max-bytes.
   data:
     enabled: true
     size: 10Gi

@@ -107,7 +107,7 @@ Regressions: [`strip-neuro-slang.py`](../../../tools/docs-audit/strip-neuro-slan
 | [0053-ispf-template-filler](0053-ispf-template-filler.md) | ISPF Template Filler (POI) replaces YARG for spreadsheet — **Accepted** |
 | [0054-hosted-ui-packs](0054-hosted-ui-packs.md) | Hosted UI packs (`/apps/<appId>/`) for marketplace SPAs — **Accepted** |
 | [0055-cel-formal-verification-ai-gate](0055-cel-formal-verification-ai-gate.md) | CEL formal verification as AI condition gate — **Accepted** |
-| [0056-webauthn-idp-mfa](0056-webauthn-idp-mfa.md) | WebAuthn / IdP OTP MFA follow-up (BL-194) — **Proposed** |
+| [0056-webauthn-idp-mfa](0056-webauthn-idp-mfa.md) | WebAuthn / IdP OTP MFA follow-up (BL-194) — **Parked** |
 | [0057-ot-trust-wave1-dnp3-poll-only](0057-ot-trust-wave1-dnp3-poll-only.md) | OT Trust Wave 1 — DNP3 stays PRODUCTION poll-only — **Accepted** |
 | [0058-mixin-reevaluation-and-detach](0058-mixin-reevaluation-and-detach.md) | MIXIN opt-in reevaluation + ownership-aware detach — **Accepted** |
 | [0059-toolchain-version-policy](0059-toolchain-version-policy.md) | Toolchain / dependency version policy (N or N-1, pins with owners, heavy deps in modules) — **Accepted** |

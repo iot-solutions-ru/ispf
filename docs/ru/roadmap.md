@@ -9,7 +9,7 @@
 | | |
 | --- | --- |
 | **Baseline** | `main`, июль 2026 |
-| **Обновлено** | 19.07.2026 (политика «качество вместо фич») |
+| **Обновлено** | 15.11.2026 (Known limitations; spool shipped; ADR-0056 Parked) |
 | **Target approach** | Открытая автономная платформа промышленных приложений — дерево объектов + SCADA HMI + автоматизация + приложения + AI ([architecture](architecture.md)) |
 
 ---
@@ -27,9 +27,11 @@
 | Спринт S01–S30 | 30 | 30 | 0 | 0 | — |
 | Спринт S31–S46 | 16 | 0 | 16 | 0 | — |
 
-**Текущий фокус:** **качество вместо новых фич** — hardening уже отгруженного; новая поверхность возможностей по умолчанию не открывается — [Политика исполнения](#политика-исполнения--качество-вместо-фич). Остаток AI field soak / soft &lt;15 min (БЛ-177…180 Готово; live smoke opt-in `ISPF_LLM_SMOKE`) — см. [Ближайшие 90 дней](#ближайшие-90-дней). **Отложено:** фаза 25 OT Trust; живой ERP (БЛ-169); глубина BPMN/DMN сверх freeze [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md).
+**Как читать сводку:** строки фаз 25–33 остаются **Partial**, пока нет field/customer close-out ([parked-backlog](parked-backlog.md)). Многие **BL внутри фаз Done в lab** — см. glance в EN [roadmap](../en/roadmap.md). Done=0 у фаз — **не** «ничего не отгружено». Non-claims: [known-limitations](known-limitations.md).
 
-**Закрыто:** БЛ-01…139 Готово (БЛ-112 Отменено); Фаза 0–24 закрыта — [Этап 24](#phase-24--закрыта). **Активный backlog:** БЛ-140…210 (OT + живой ERP на паузе; новые строки БЛ — только именованный blocker заказчика или honesty/hardening).
+**Текущий фокус:** **качество вместо новых фич** — hardening уже отгруженного; новая поверхность возможностей по умолчанию не открывается — [Политика исполнения](#политика-исполнения--качество-вместо-фич). Остаток AI field soak / soft &lt;15 min (БЛ-177…180 Готово; live smoke opt-in `ISPF_LLM_SMOKE`) — см. [Ближайшие 90 дней](#ближайшие-90-дней). **Parked / отложено:** фаза 25 OT Trust field; живой ERP (БЛ-169); глубина BPMN/DMN сверх freeze [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md); WebAuthn (БЛ-194 / ADR-0056).
+
+**Закрыто:** БЛ-01…139 Готово (БЛ-112 Отменено); Фаза 0–24 закрыта — [Этап 24](#phase-24--закрыта). **Активный backlog:** БЛ-140…210 (OT + живой ERP + WebAuthn на паузе; новые строки БЛ — только именованный blocker заказчика или honesty/hardening).
 
 Acceleration program: [acceleration-program](acceleration-program.md).
 
@@ -71,7 +73,7 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 | **Фаза 0–22** | История | Ядро: дерево объектов, SPI драйверов, HMI, BPMN, REQ-PF/FW, OIDC, Timescale, NATS, федерация | **Закрыто — Готово** |
 | **Фаза 23 + S01–S26** | REQ-EX + ускорение | OT trust, operator HMI/PWA, AI production, семантика (Haystack/Brick), MES wave, multi-tenant, cluster | **Закрыто — Готово** |
 | **Фаза 24 / S27–S30** | 07.07.2026 | Federation hardening, dual-write historian на VPS, HMI a11y/Lighthouse, техпак реестра РФ | **Закрыто — Готово** |
-| **Фаза 25–33** | Активно | Phases 25–33: OT→HMI→Security→Historian→MES→Automation→AI→Ecosystem→Analytics | **Открыто — всё Partial** |
+| **Фаза 25–33** | Активно | Phases 25–33: OT→HMI→Security→Historian→MES→Automation→AI→Ecosystem→Analytics | **Открыто — фазы Partial** (многие lab BL Done; field/parked residual) |
 
 ### Закрытый backlog (не переоткрывать)
 
@@ -99,7 +101,7 @@ Acceleration program: [acceleration-program](acceleration-program.md).
 | ---- | ---- | ---------------- | --------------------- |
 | **25** OT Trust | Драйверы / edge | БЛ-141 interop lab | **Отложено** — БЛ-140 поле / БЛ-191 честность / edge soak (parked) |
 | **26** HMI | Mimics / operator | БЛ-146…152 Готово (CI FPS @55; LH≥95 ops stretch) | — |
-| **27** Security | MFA / tenancy | БЛ-153/154/155/156/157/158 Готово; TOTP GA; SaaS tenant-admin | Опциональный hard schema table routing; WebAuthn → БЛ-194 |
+| **27** Security | MFA / tenancy | БЛ-153/154/155/156/157/158 Готово; TOTP GA; SaaS tenant-admin | Опциональный hard schema table routing; WebAuthn → БЛ-194 **Parked** |
 | **28** Historian | Tiers / SLA | БЛ-159…163 **Done** | Enterprise L 1B CH optional (scorecard) |
 | **29** MES / ERP L4 | ISA-95 | **БЛ-164…168, БЛ-170, БЛ-193 Готово** на marketplace `mes-platform` | Field sites; **живой ERP (БЛ-169) отложен** |
 | **30** Automation | CEP / BPMN | БЛ-171…175 **Готово**; БЛ-176 Готово | DMN / дальнейшая глубина BPMN **заблокированы** без именованного заказчика + ADR (freeze subset) |
@@ -1300,7 +1302,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | **БЛ-191** | 25 | **Честность PRODUCTION-матрицы OT** | **Отложено** | `opc-da` снят с PRODUCTION или реализован; DNP3 `writePoint` работает **или** maturity → BETA; обновлено измерение OT в scorecard; ноль stub с меткой PRODUCTION | — **снято с 90-дневного P0 (14.07.2026)**
 | **БЛ-192** | 27 / 32 | **Compliance tender pack** | **Готово** | Маппинг IEC 62443-lite + GAMP-lite + gap register — [compliance-tender-pack](compliance-tender-pack.md) (канон EN). **Не** сертификация продукта |
 | **БЛ-193** | 29 | **MES genealogy / прослеживаемость lite** | **Готово** | Граф lot ↔ material ↔ work-order ↔ quality record + отчёт оператора на `mes-platform` (BFF `mes_genealogy_*`, reports, дашборд Genealogy); seed lot `BATCH-LINE-A01-001`; тест `MesGenealogyLiteIntegrationTest`; [mes.md](mes.md). Расширяет БЛ-167 за пределы SPC. **Не** живой ERP (БЛ-169) |
-| **БЛ-194** | 27 | **WebAuthn / IdP OTP MFA** | Планируется | Passkeys / WebAuthn + Keycloak OTP как основной IdP MFA. Выделено из БЛ-153 (TOTP GA **Готово**) — [security](security.md) |
+| **БЛ-194** | 27 | **WebAuthn / IdP OTP MFA** | **Parked** | Passkeys / WebAuthn + Keycloak OTP как основной IdP MFA. Выделено из БЛ-153 (TOTP GA **Готово**) — [ADR-0056](decisions/0056-webauthn-idp-mfa.md) · [parked-backlog](parked-backlog.md) **P-WEBAUTHN** · [security](security.md) |
 
 ---
 

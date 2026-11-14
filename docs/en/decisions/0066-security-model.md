@@ -6,7 +6,7 @@
 
 ## Context
 
-Security behaviour is documented across [security](../security.md), [multi-tenant](../multi-tenant.md), federation on-behalf-of notes, and ADRs [0056](0056-webauthn-idp-mfa.md) / [0065](0065-secrets-key-rotation.md). Tenders and agents need **one decision record** that states what ISPF claims today, what is optional, and what remains Proposed — without inventing a new stack.
+Security behaviour is documented across [security](../security.md), [multi-tenant](../multi-tenant.md), federation on-behalf-of notes, and ADRs [0056](0056-webauthn-idp-mfa.md) / [0065](0065-secrets-key-rotation.md). Tenders and agents need **one decision record** that states what ISPF claims today, what is optional, and what remains Parked — without inventing a new stack.
 
 Related field evidence: BL-153 (TOTP), BL-154 (per-variable ACL + trusted channel), BL-155 (tenant-admin + RLS), ADR-0065 (secrets-key rotation).
 
@@ -49,7 +49,7 @@ Denial order: unauthenticated → RBAC → tenant path visibility → object ACL
 ### 4. MFA and identity follow-ups (explicit non-goals of this ADR)
 
 - **TOTP GA** (BL-153) is the local MFA path — shipped.
-- **WebAuthn / IdP OTP** remain [0056](0056-webauthn-idp-mfa.md) (**Proposed**, BL-194) until a named tender unparks them.
+- **WebAuthn / IdP OTP** remain [0056](0056-webauthn-idp-mfa.md) (**Parked**, BL-194) until a named tender unparks them.
 - Hired pen-test (G-01) is evidence work, not a model change — see [pen-test-scope](../pen-test-scope.md).
 
 ### 5. Operator / agent profiles

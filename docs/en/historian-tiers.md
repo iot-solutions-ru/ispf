@@ -101,6 +101,8 @@ Set `ISPF_HISTORIAN_TIER_WARM_ENABLED=true` with a reachable ClickHouse URL (inc
 
 **Warm read cutover (full CH primary):** set `ISPF_VARIABLE_HISTORY_STORE=clickhouse` only after dual-write soak and lab SLO gate — see [variable-history](variable-history.md). Tier routing is bypassed when store is `clickhouse`.
 
+**Optional disk spool after cutover:** for sole-store ClickHouse, enable `ISPF_VARIABLE_HISTORY_SPOOL_ENABLED=true` and point `ISPF_VARIABLE_HISTORY_SPOOL_DIRECTORY` at a path on the data volume (Helm: `/opt/ispf/data/historian-spool`). Off by default; details in [variable-history](variable-history.md) § Disk spool.
+
 ---
 
 ## Ops checklist
@@ -110,6 +112,7 @@ Set `ISPF_HISTORIAN_TIER_WARM_ENABLED=true` with a reachable ClickHouse URL (inc
 3. Set `ISPF_HISTORIAN_DEPLOY_PROFILE=three-tier` and tier retention env vars above.
 4. Monitor CH append errors in server logs (warm path is best-effort on dual-write).
 5. Enable `ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED=true` when Parquet archive is required; sync `local-root` tree to S3 or mount bucket path. Cold **query** via Athena/Trino is out of scope (export-only in BL-202).
+6. After sole-store CH cutover, optionally enable disk spool on a persistent volume; monitor `ispf.historian.spool.*` gauges.
 
 ---
 

@@ -82,6 +82,16 @@ ispf:
     #   includePreviousValueInEvent: boolean  # opt-in previousValue on WS/automation (ADR-0061)
     #   storageMode: PERSISTENT | TRANSIENT
     # High-rate MQTT: keep object eventJournalEnabled=false (anti-patterns.md / ADR-0061)
+    # Disk spool (sole-store ClickHouse only; ignored unless store=clickhouse). Off by default.
+    # store: clickhouse
+    # spool:
+    #   enabled: true
+    #   directory: /opt/ispf/data/historian-spool   # use a persistent volume in containers
+    #   max-bytes: 8589934592   # 8 GiB; fail-closed when full
+    #   segment-bytes: 67108864
+    #   fsync: true
+    #   replay-batch: 32
+    #   replay-interval-ms: 1000
     slo:
       aggregate-max-points: 1000000
       aggregate-max-latency-ms: 2000
@@ -89,6 +99,26 @@ ispf:
       raw-query-max-latency-ms: 500
       export-max-points: 10000
 ```
+
+## Disk spool (sole-store ClickHouse)
+
+Local store-and-forward in front of **`store=clickhouse`**. **Off by default.** Ignored for `jdbc` / dual-write (those use the JDBC primary + catch-up WAL). Quota is **fail-closed**: when `max-bytes` is hit, new accepts are rejected until replay frees space. With `async-enabled=true` (default), that rejection holds writer batches and applies blocking backpressure once the in-memory queue fills (no drop-oldest).
+
+| Key / env | Default | Notes |
+|-----------|---------|-------|
+| `ispf.variable-history.spool.enabled` / `ISPF_VARIABLE_HISTORY_SPOOL_ENABLED` | `false` | Enable only after CH cutover |
+| `…spool.directory` / `ISPF_VARIABLE_HISTORY_SPOOL_DIRECTORY` | `data/historian-spool` | Relative to process cwd unless absolute |
+| `…spool.max-bytes` / `ISPF_VARIABLE_HISTORY_SPOOL_MAX_BYTES` | `8589934592` (8 GiB) | Hard quota |
+| `…spool.segment-bytes` / `ISPF_VARIABLE_HISTORY_SPOOL_SEGMENT_BYTES` | `67108864` (64 MiB) | Segment size |
+| `…spool.fsync` / `ISPF_VARIABLE_HISTORY_SPOOL_FSYNC` | `true` | Durability vs throughput |
+| `…spool.replay-batch` / `ISPF_VARIABLE_HISTORY_SPOOL_REPLAY_BATCH` | `32` | Replay batch size |
+| `…spool.replay-interval-ms` / `ISPF_VARIABLE_HISTORY_SPOOL_REPLAY_INTERVAL_MS` | `1000` | Replay interval |
+
+**Containers / Helm:** data PVC mounts at `/opt/ispf/data`. Set directory to `/opt/ispf/data/historian-spool` (or another path on that volume). A relative `data/…` path only survives restarts if the process cwd already lives on the PVC.
+
+**Metrics:** `ispf.historian.spool.bytes`, `.lag`, `.oldest_age_ms`, `.replayed`, `.errors`, `.quota` (also under platform metrics `spool*`). Dual-write secondary failures and catch-up lag gauges: `ispf.historian.dual_write.*` ([ADR-0035](decisions/0035-historian-dual-write.md)).
+
+**Still deferred (do not implement in passing):** second copy of the historian buffer on another ISPF node; ISPF-managed ClickHouse cluster. See [known-limitations](known-limitations.md).
 
 ## Query SLO (BL-161)
 

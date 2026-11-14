@@ -62,7 +62,7 @@ Goal: run ISPF locally and trace how a sensor value reaches an alarm and an oper
 
 | Step | Time | Action | Guide |
 |------|------|--------|-------|
-| 1 | 15 min | Start ISPF locally (portable zip, Docker, or source) and sign in (`admin` / `admin`) | [Getting started — Try ISPF](getting-started.md#try-ispf-15-minutes) |
+| 1 | 15 min | Start ISPF locally (portable zip, Docker, or source) and sign in (`admin` / `admin` — demo only; **change before network exposure**) | [Getting started — Try ISPF](getting-started.md#try-ispf-15-minutes) · [Security](security.md) |
 | 2 | 10 min | Start the built-in `demo-sensor-01` driver and watch `temperature` and `alarmActive` change | [Getting started § First steps](getting-started.md) |
 | 3 | 10 min | Open `?mode=operator` to see what a shift operator sees vs an administrator | [Operator guide](operator-guide.md) |
 | 4 | 15 min | Inspect how nodes, variables (`DataRecord`), events, and functions are structured | [Object model](object-model.md) |
@@ -132,3 +132,4 @@ Ready-to-explore reference examples in `examples/`: [Lab training](lab-training.
 | What mistakes should I avoid? | [Common design mistakes](anti-patterns.md) |
 | How do I diagnose a slow or failing node? | [Observability](observability.md) · [Device drivers](drivers.md) |
 | Where is the full list of all ~130 docs? | [Documentation index](readme.md) |
+| What do we not claim yet? | [Known limitations](known-limitations.md) |

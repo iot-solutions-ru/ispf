@@ -34,8 +34,9 @@ ispf:
 
 ## Последствия
 
-- Дублирование storage; мониторинг lag/failures на CH append.
+- Дублирование storage; мониторинг secondary failures (и после cutover — gauges disk spool).
 - Query migration — отдельный BL (optional read replica routing).
-- `store=clickhouse` без dual-write — по-прежнему single-store mode.
+- `store=clickhouse` без dual-write — single-store; опциональный spool (`ispf.variable-history.spool`, выкл. по умолчанию) — отдельно.
+- Счётчик `ispf.historian.dual_write.secondary_failures` есть. **Открытый gap:** lag vs primary и default alert на счётчик.
 
-См. [DEPLOYMENT.md § ClickHouse](../deployment.md), [roadmap](../roadmap.md).
+См. [DEPLOYMENT.md § ClickHouse](../deployment.md), [variable-history](../variable-history.md), [roadmap](../roadmap.md). Канон EN: [0035](../../en/decisions/0035-historian-dual-write.md).

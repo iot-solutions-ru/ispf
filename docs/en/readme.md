@@ -36,7 +36,7 @@ If you are opening ISPF for the first time, read these four pages in order:
 | **Deploy to a server, cluster, or offline site** | [Deployment](deployment.md) · [Air-gap (offline) install](air-gap-deployment.md) · [Security & RBAC](security.md) · [Observability](observability.md) |
 | **Contribute to the platform core** | [Local dev & QA](getting-started.md#contribute-local-dev--qa) · [Testing](testing.md) · [Architecture](architecture.md) · [ADRs](decisions/readme.md) |
 
-Document maturity labels (`Stable`, `Beta`, `Lab`, `Charter`, `Internal`) are explained in [doc-status.md](doc-status.md). Release notes: [CHANGELOG.md](../../CHANGELOG.md).
+Document maturity labels (`Stable`, `Beta`, `Lab`, `Charter`, `Internal`) are explained in [doc-status.md](doc-status.md). What we do **not** claim yet: [Known limitations](known-limitations.md) · [Parked backlog](parked-backlog.md). Release notes: [CHANGELOG.md](../../CHANGELOG.md).
 
 ---
 
@@ -115,7 +115,7 @@ Document maturity labels (`Stable`, `Beta`, `Lab`, `Charter`, `Internal`) are ex
 | [Driver promotion](driver-promotion.md) | Stable | Criteria for moving a driver from lab tests to field readiness |
 | [Driver interop lab](driver-interop-lab.md) | Lab | Docker testbed with protocol emulators and brokers |
 | [Field pilot playbook](field-pilot-playbook.md) | Lab | Checklist for testing drivers on real plant equipment |
-| [Variable history](variable-history.md) | Stable | Recording time-series samples, retention, export, and aggregation API |
+| [Variable history](variable-history.md) | Stable | Time-series samples, optional sole-store CH disk spool, retention, export, and aggregation SLO |
 | [Historian storage tiers](historian-tiers.md) | Beta | PostgreSQL/Timescale (hot), ClickHouse (warm), and Parquet archive (cold) |
 | [ClickHouse production guide](clickhouse-prod-playbook.md) | Lab | Deploying and verifying ClickHouse for high-rate telemetry |
 | [Historian cookbook](analytics-historian-cookbook.md) | Stable | Practical recipes: rolling averages, OEE, multi-tag calculations, rollups |
@@ -173,6 +173,8 @@ Document maturity labels (`Stable`, `Beta`, `Lab`, `Charter`, `Internal`) are ex
 | [Symbol marketplace](symbol-marketplace.md) | Stable | Installing additional SVG symbol libraries for SCADA |
 | [Certification](certification.md) | Stable | Training tracks and exam topics for engineers and administrators |
 | [Competitive scorecard](competitive-scorecard.md) | Stable | Code-verified comparison with commercial SCADA/IIoT/MES platforms |
+| [Known limitations](known-limitations.md) | Stable | Non-claims, parked items, and deferred features |
+| [Parked backlog](parked-backlog.md) | Charter | Unpark criteria board |
 | [Roadmap](roadmap.md) | Charter | Engineering backlog and historical phases |
 | [Architecture decisions (ADRs)](decisions/readme.md) | Stable | Index of Architecture Decision Records |
 | [Doc status tags](doc-status.md) | Stable | Definitions of document maturity tags |

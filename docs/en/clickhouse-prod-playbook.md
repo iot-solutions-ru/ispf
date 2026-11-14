@@ -92,6 +92,18 @@ bash /opt/ispf/bin/vps-variable-history-clickhouse.sh
 
 Sets `ISPF_VARIABLE_HISTORY_STORE=clickhouse`. Reads and writes use CH only.
 
+### Option C — Disk spool (after Option B)
+
+Optional local store-and-forward when ClickHouse is the **sole** historian store. **Off by default.** Does not apply to dual-write (Option A).
+
+| Variable | Recommended |
+|----------|-------------|
+| `ISPF_VARIABLE_HISTORY_SPOOL_ENABLED` | `true` |
+| `ISPF_VARIABLE_HISTORY_SPOOL_DIRECTORY` | `/opt/ispf/data/historian-spool` (Helm / VPS data volume) |
+| `ISPF_VARIABLE_HISTORY_SPOOL_MAX_BYTES` | size the volume can hold (default 8 GiB); fail-closed when full |
+
+Metrics: `ispf.historian.spool.lag`, `.bytes`, `.quota`. Full knobs: [variable-history](variable-history.md) § Disk spool. Non-claims (no cross-node buffer, no ISPF-managed CH cluster): [known-limitations](known-limitations.md).
+
 ### Rollback
 
 | From | Action |

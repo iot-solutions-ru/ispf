@@ -11,7 +11,7 @@
 | P-OT | Фаза 25 OT Trust (BL-140…) | **Учтено (lab)** — soak **остановлен** 2026-09-14 | Именованный plant soak + OT sign-off (только field) | Таймеры сняты; P1/P2/P3 JSON до 2026-09-14 — `pass: true`. [stop](../evidence/ot-trust/2026-09-14-bl140-lab-soak-stopped.md) · [pull](../evidence/ot-trust/2026-09-14-bl140-lab-soak-pull.md). **Не** field Done / **не** OT 10/10. |
 | P-ERP | Живой ERP (BL-169) | **Отложено** | Именованная интеграция 1C/SAP | Sandbox ≠ live |
 | P-BPMN | Глубина BPMN/DMN сверх ADR-0047 | **Отложено** | Blocker заказчика + ADR | Freeze |
-| P-WEBAUTHN | WebAuthn (BL-194) | **Отложено (Planned)** | Требование тендера / MFA | TOTP GA уже есть |
+| P-WEBAUTHN | WebAuthn (BL-194) | **Parked** | Требование тендера / MFA | TOTP GA уже есть. ADR [0056](../en/decisions/0056-webauthn-idp-mfa.md) явно **Parked** (2026-11-15). |
 | P-PENTEST | Сторонний pen-test (G-01) | **Отложено** (vendor-pack готов) | Контракт + отчёт + retest | **Отправить:** [черновик письма](pen-test-vendor-outreach-draft.md) · [vendor-pack](pen-test-vendor-pack.md). Dogfood: [web-console-dogfood-checklist.md](web-console-dogfood-checklist.md). Docs ≠ cert. |
 
 ## Lab (операторы)
