@@ -12,5 +12,9 @@ public interface ScriptExecutionContext {
         return "";
     }
 
+    default String appId() {
+        return "";
+    }
+
     DataRecord invokeFunction(String objectPath, String functionName, Map<String, Object> input);
 }

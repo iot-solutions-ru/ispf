@@ -6,10 +6,17 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.model.DataSchema;
+import com.ispf.server.application.data.ApplicationMessageRelay;
 import com.ispf.server.application.function.ApplicationFunctionRuntime;
+import com.ispf.server.audit.AuditEventService;
+import com.ispf.server.tenant.TenantLocalDataAccessGuard;
 import com.ispf.server.workflow.WorkflowInstanceCancelService;
 import com.ispf.server.audit.AuditChainStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
@@ -34,6 +41,9 @@ public class FunctionScriptEngine {
     private final ObjectMapper objectMapper;
     private final WorkflowInstanceCancelService workflowCancelService;
     private final PlatformScriptBridge platformScriptBridge;
+    private final ApplicationMessageRelay outboxRelay;
+    private final AuditEventService auditEventService;
+    private final TenantLocalDataAccessGuard tenantLocalDataAccessGuard;
 
     public FunctionScriptEngine(
             JdbcTemplate jdbcTemplate,
@@ -41,10 +51,26 @@ public class FunctionScriptEngine {
             WorkflowInstanceCancelService workflowCancelService,
             PlatformScriptBridge platformScriptBridge
     ) {
+        this(jdbcTemplate, objectMapper, workflowCancelService, platformScriptBridge, null, null, null);
+    }
+
+    @Autowired
+    public FunctionScriptEngine(
+            JdbcTemplate jdbcTemplate,
+            ObjectMapper objectMapper,
+            WorkflowInstanceCancelService workflowCancelService,
+            PlatformScriptBridge platformScriptBridge,
+            ApplicationMessageRelay outboxRelay,
+            AuditEventService auditEventService,
+            TenantLocalDataAccessGuard tenantLocalDataAccessGuard
+    ) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
         this.workflowCancelService = workflowCancelService;
         this.platformScriptBridge = platformScriptBridge;
+        this.outboxRelay = outboxRelay;
+        this.auditEventService = auditEventService;
+        this.tenantLocalDataAccessGuard = tenantLocalDataAccessGuard;
     }
 
     public DataRecord execute(
@@ -64,6 +90,7 @@ public class FunctionScriptEngine {
                     : new LinkedHashMap<>();
             Map<String, Object> vars = new LinkedHashMap<>();
             vars.put("input", inputMap);
+            vars.put("app", Map.of("id", context == null || context.appId() == null ? "" : context.appId()));
             return executeSteps(steps, vars, outputSchema, context, true);
         } catch (RuntimeException ex) {
             throw ex;
@@ -144,6 +171,25 @@ public class FunctionScriptEngine {
                 String sql = step.path("sql").asText();
                 List<Object> params = resolveParams(step.get("params"), vars);
                 jdbc().update(sql, params.toArray());
+                yield null;
+            }
+            case "enqueueOutbox" -> {
+                if (outboxRelay == null) {
+                    throw new IllegalStateException("enqueueOutbox is not available");
+                }
+                if (tenantLocalDataAccessGuard != null) {
+                    tenantLocalDataAccessGuard.requireExternalDataAccess();
+                }
+                String appId = outboxAppId(step, vars, context);
+                String connectorId = requiredOutboxText(step.get("connectorId"), vars, "connectorId");
+                String messageId = outboxMessageId(step, vars);
+                Object bodyValue = step.has("body") ? resolveStepValue(step.get("body"), vars) : "{}";
+                String body = outboxBody(bodyValue);
+                String id = outboxRelay.enqueue(appId, connectorId, messageId, body);
+                if (step.has("var") && !step.get("var").asText("").isBlank()) {
+                    vars.put(step.get("var").asText(), id);
+                }
+                auditOutboxEnqueue(appId, connectorId, messageId);
                 yield null;
             }
             case "setVar" -> {
@@ -745,5 +791,91 @@ public class FunctionScriptEngine {
             return 0.0;
         }
         return Double.parseDouble(String.valueOf(value));
+    }
+
+    private String outboxAppId(JsonNode step, Map<String, Object> vars, ScriptExecutionContext context) {
+        String contextAppId = context == null || context.appId() == null ? "" : context.appId().trim();
+        String fromStep = step.has("appId") ? requiredOutboxText(step.get("appId"), vars, "appId") : "";
+        if (!contextAppId.isEmpty()) {
+            if (!fromStep.isBlank() && !fromStep.equals(contextAppId)) {
+                throw new IllegalArgumentException("enqueueOutbox appId must match caller appId");
+            }
+            return contextAppId;
+        }
+        if (!fromStep.isBlank()) {
+            return fromStep;
+        }
+        Object app = vars.get("app");
+        if (app instanceof Map<?, ?> map && map.get("id") != null && !String.valueOf(map.get("id")).isBlank()) {
+            return String.valueOf(map.get("id"));
+        }
+        throw new IllegalArgumentException("enqueueOutbox appId is empty");
+    }
+
+    private String requiredOutboxText(JsonNode node, Map<String, Object> vars, String name) {
+        Object value = resolveStepValue(node, vars);
+        if (value == null || String.valueOf(value).isBlank() || "null".equals(String.valueOf(value))) {
+            throw new IllegalArgumentException("enqueueOutbox " + name + " is empty");
+        }
+        return String.valueOf(value);
+    }
+
+    private String outboxBody(Object bodyValue) {
+        if (bodyValue == null) {
+            return "{}";
+        }
+        if (bodyValue instanceof CharSequence || bodyValue instanceof Number || bodyValue instanceof Boolean) {
+            return String.valueOf(bodyValue);
+        }
+        try {
+            return objectMapper.writeValueAsString(bodyValue);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("enqueueOutbox body is not JSON", ex);
+        }
+    }
+
+    private String outboxMessageId(JsonNode step, Map<String, Object> vars) {
+        JsonNode parts = step.get("messageParts");
+        if (parts != null && parts.isArray() && !parts.isEmpty()) {
+            List<String> resolved = new ArrayList<>();
+            for (JsonNode part : parts) {
+                Object value = resolveStepValue(part, vars);
+                if (value == null || String.valueOf(value).isBlank()) {
+                    throw new IllegalArgumentException("enqueueOutbox message part is empty");
+                }
+                resolved.add(String.valueOf(value));
+            }
+            return String.join(":", resolved);
+        }
+        Object messageId = resolveStepValue(step.get("messageId"), vars);
+        if (messageId == null || String.valueOf(messageId).isBlank()) {
+            throw new IllegalArgumentException("enqueueOutbox messageId is empty");
+        }
+        return String.valueOf(messageId);
+    }
+
+    private void auditOutboxEnqueue(String appId, String connectorId, String messageId) {
+        if (auditEventService == null) {
+            return;
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String actor = "system";
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)) {
+            actor = authentication.getName();
+        }
+        try {
+            auditEventService.logInNewTransaction(
+                    "integration",
+                    "outbox.enqueue",
+                    actor,
+                    "outbox",
+                    messageId,
+                    Map.of("appId", appId, "connectorId", connectorId)
+            );
+        } catch (RuntimeException ex) {
+            // The outbox row is already stored. A failed audit sink must not enqueue again.
+        }
     }
 }

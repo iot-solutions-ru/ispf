@@ -1,0 +1,1 @@
+UPDATE mes_batch_run SET phase = 'charge', hold_reason = NULL, updated_at = CURRENT_TIMESTAMP WHERE batch_id = ? AND phase = 'hold' AND CAST(? AS DOUBLE PRECISION) <= CAST(? AS DOUBLE PRECISION) AND CAST(? AS DOUBLE PRECISION) >= CAST(? AS DOUBLE PRECISION)

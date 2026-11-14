@@ -5,6 +5,7 @@ import com.ispf.server.persistence.AuditEventRepository;
 import com.ispf.server.persistence.entity.AuditEventEntity;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
@@ -44,6 +45,22 @@ public class AuditEventService {
         this.objectMapper = objectMapper;
         this.siemWebhookDispatcher = siemWebhookDispatcher;
         this.auditChainStore = auditChainStore;
+    }
+
+    /**
+     * Writes the audit row on its own connection. A plant function runs with the
+     * application schema selected, and a failed audit insert must not roll that work back.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logInNewTransaction(
+            String category,
+            String action,
+            String actor,
+            String targetType,
+            String targetId,
+            Map<String, ?> details
+    ) {
+        log(category, action, actor, targetType, targetId, details);
     }
 
     @Transactional

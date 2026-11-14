@@ -1,8 +1,10 @@
 package com.ispf.server.application.data;
 
+import com.ispf.server.audit.AuditEventService;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -26,13 +28,24 @@ public class ApplicationOutboxPump {
     private final Map<String, URI> endpoints;
     private final HttpClient client;
     private final HttpOutboxDelivery delivery;
+    private final AuditEventService auditEventService;
 
     public ApplicationOutboxPump(
             ApplicationMessageRelay relay,
             @Value("${ispf.application.outbox.http-endpoints:}") String endpoints
     ) {
+        this(relay, endpoints, null);
+    }
+
+    @Autowired
+    public ApplicationOutboxPump(
+            ApplicationMessageRelay relay,
+            @Value("${ispf.application.outbox.http-endpoints:}") String endpoints,
+            AuditEventService auditEventService
+    ) {
         this.relay = relay;
         this.endpoints = HttpOutboxDelivery.parseEndpoints(endpoints);
+        this.auditEventService = auditEventService;
         if (this.endpoints.isEmpty()) {
             this.client = null;
             this.delivery = null;
@@ -55,7 +68,24 @@ public class ApplicationOutboxPump {
             return 0;
         }
         try {
-            return relay.relayOnce(endpoints.keySet(), delivery);
+            return relay.relayOnce(endpoints.keySet(), (appId, connectorId, messageId, body) -> {
+                delivery.deliver(appId, connectorId, messageId, body);
+                if (auditEventService == null) {
+                    return;
+                }
+                try {
+                    auditEventService.logInNewTransaction(
+                            "integration",
+                            "outbox.deliver",
+                            "system",
+                            "outbox",
+                            messageId,
+                            Map.of("appId", appId, "connectorId", connectorId)
+                    );
+                } catch (RuntimeException auditFailure) {
+                    log.warn("outbox delivery audit skipped: {}", auditFailure.getMessage());
+                }
+            });
         } catch (RuntimeException ex) {
             log.warn("outbox HTTP relay skipped: {}", ex.getMessage());
             return 0;

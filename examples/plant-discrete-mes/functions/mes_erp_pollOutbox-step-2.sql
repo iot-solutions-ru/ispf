@@ -1,1 +1,1 @@
-UPDATE mes_erp_outbox SET status = 'simulated', processed_at = CURRENT_TIMESTAMP WHERE status = 'pending'
+UPDATE mes_erp_outbox SET status = 'delivered', processed_at = CURRENT_TIMESTAMP WHERE status = 'pending' AND idempotency_key IN (SELECT message_id FROM public.application_outbox WHERE app_id = ? AND connector_id = 'erp' AND status = 'SENT')
