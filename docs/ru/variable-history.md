@@ -1,81 +1,52 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/variable-history.md](../en/variable-history.md).
+> **Язык:** русская версия. Английский оригинал: [en/variable-history.md](../en/variable-history.md).
 
-# История применения — этапы
+# История переменных (архив временных рядов)
 
-> **Статус:** Stable — Time-series, retention. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — запись временных рядов, сроки хранения, агрегация и выгрузка. Метки зрелости: [doc-status.md](doc-status.md).
 
-## Этап 1 — Хранение и запись (готово)
+Подсистема истории переменных (*Historian*) сохраняет изменения выбранных переменных во времени, отдаёт необработанные точки и предрассчитанные агрегаты для графиков и отчётов, а также очищает устаревшие записи по сроку хранения.
 
-- Таблица `variable_samples`, запись на `VARIABLE_UPDATED` с debounce
-- Флаги на переменной: `historyEnabled`, `historyRetentionDays`
-- REST: `GET/PATCH .../variables/history`
-- Очистка по расписанию с учётом сохранения каждой переменной.
+Связанные разделы: [Модель объектов](object-model.md) · [Уровни хранения истории (PostgreSQL / ClickHouse / Parquet)](historian-tiers.md) · [Рецепты аналитических расчётов](analytics-historian-cookbook.md).
 
-## Этап 2 — Настройка пользовательского интерфейса (готово)
+---
 
-- Редактор объектов, инспектор, редактор моделей
--Диалог переменный
+## Возможности подсистемы
 
-## Этап 3 — Просмотр истории (готово)
+### 1. Запись и хранение точек
+- Точки записываются при обновлении переменной (`VARIABLE_UPDATED`) с ограничением минимального интервала (`min-interval-ms`), чтобы не перегружать БД лишними дублями.
+- На каждой переменной индивидуально настраиваются флаг записи **`historyEnabled`** и срок хранения в сутках **`historyRetentionDays`**.
+- Фоновый планировщик автоматически удаляет данные старше срока хранения каждой переменной.
+- Вместе со значением сохраняется флаг достоверности **`quality`** (`GOOD`, `UNCERTAIN`, `BAD`, либо `NULL` для старых записей без метки качества — см. [ADR-0074](decisions/0074-historian-quality-persistence.md)).
 
-- Компонент `VariableHistoryPanel` с выбором периода (1 ч … 7 д … всё)
-- В инспекторе объекта: кнопка **График** для переменных с `historyEnabled`
-- Хук `useVariableHistory` для произвольных экранов
+### 2. Настройка и просмотр в веб-консоли
+- Включение истории и глубины хранения доступно в инспекторе объекта, диалоге свойств переменной и редакторе шаблонов (`Blueprints`).
+- У переменных с включённой историей в инспекторе отображается кнопка **График (Chart)**, открывающая панель `VariableHistoryPanel` с выбором периода (`1 ч`, `6 ч`, `24 ч`, `7 д`, `Всё`), числового поля схемы и выгрузкой в **CSV** / **JSON**.
 
-## Этап 4 — Интеграция с дашбордами (готово)
+### 3. Работа на дашбордах оператора
+- Виджеты **chart** (график) и **sparkline** поддерживают настройку диапазона `historyRange` (`live`, `1h`, `6h`, `24h`, `7d`, `all`).
+- Для коротких интервалов (`1h–24h`) загружаются исходные точки с живым достраиванием по WebSocket; для длинных интервалов (`7d`, `all`) автоматически запрашиваются часовые и шестичасовые агрегаты (среднее, минимум, максимум).
+- Кнопка **История** на карточке графика открывает модальное окно детального просмотра и экспорта.
 
-- `useTrendSeries` загружает серверную историю только если `historyEnabled`
-- Виджеты диаграммы/спарклайна отображаются подсказкой, если история отключена.
-- API-запрос возвращает пустой массив, если история выключена
+### 4. REST API чтения, агрегации и выгрузки
+- **Сырые точки:** `GET /api/v1/objects/by-path/variables/history?path=...&name=temperature&field=value&limit=500`
+- **Агрегаты по окнам:** `GET /api/v1/objects/by-path/variables/history/aggregate?bucket=1m|5m|15m|30m|1h|6h|1d` → возвращает интервалы `{ ts, avg, min, max, count }`.
+- **Выгрузка файла:** `GET /api/v1/objects/by-path/variables/history/export?format=csv|json` (до 10 000 точек; параметр `field=$record` позволяет выгрузить полный снимок строки `DataRecord` в JSON).
+- **Изменение настроек хранения:** `PATCH /api/v1/objects/by-path/variables/history?path=...&name=temperature`.
 
-## Этап 5 — Синхронизация с моделью (готово)
+> **Разделение задач:** модуль истории отвечает только за хранение и выборку временных рядов. Пороговые уставки (`ALERT`) и корреляция событий (`CORRELATOR`) настраиваются в разделе [Автоматизация](automation.md).
 
-- При старте: `syncAllModelBackedVariableMetadata()` для всех объектов с `templateId`
-- Метаданные истории подтягиваются из моделей и сохраняются в БД.
+---
 
-## Этап 6 — Экспорт и поле схемы (готово)
-
-- REST: `GET .../variables/history/export?format=csv|json` (до 10 000 точек, `Content-Disposition: attachment`)
-- Параметр `field` — выбор поля схемы переменной (как в query); для полного снимка переменной — `field=$record` (JSON `DataRecord` в `text`)
-- В `VariableHistoryPanel`: выпадающий список полей (если в схеме несколько числовых) и кнопки **CSV**/**JSON**
-
-## Этап 7 — Агрегации (готово)
-
-- REST: `GET .../variables/history/aggregate?bucket=1m|5m|15m|30m|1h|6h|1d`
-- Ответ: `{ buckets: [{ ts, avg, min, max, count }] }`
-- Период: `from` / `to` (если `from` не задан — от retention переменной)
-- Пользовательский интерфейс: для диапазонов **7 д** и **Всё** график строится по уровням (`1h` и `6h` соответственно)
-
-## Этап 8 — Историк на дашбордах (готово)
-
-- Виджеты **chart** и **sparkline**: свойство `historyRange` (`live`, `1h` … `all`) в редакторе виджета
-- `live` — последние N точек с live-хвостом (как раньше)
-- Периоды **1ч–24ч** — сырые точки с сервером; **7д** / **все** — агрегаты ср/мин/макс
-- Кнопка **История** на виджете → модное окно с полной панелью (график, период, поле, экспорт)
-
-Историк **завершён** для текущих задач. Мониторинг состояния платформы — вкладка **Система** в консоли администратора (`GET /api/v1/platform/metrics`), не реализована история Prometheus-метрики. Scrape `/actuator/prometheus` остается для внешнего Диптиха JVM/Spring.
-
-## Дорожная карта (вне историка)
-
-Следующие темы **не включены** в модуль истории адаптеров — платформы объектов и сервисов:
-
-| Тема | Примечание |
-|------|------------|
-| Алерты по порогам / трендам | Узлы `ALERT` в деревенском; см. [automation](automation.md) |
-| Корреляторы событий | Узлы `CORRELATOR` в деревенском; API `/api/v1/correlators` — см. [automation](automation.md) |
-
-Историк только **хранит и отдаёт** временные ряды; генерация событий и эскалация — уровень автоматизации.
-
-## Конфигурация
+## Конфигурация сервера (`application.yml`)
 
 ```yaml
 ispf:
   variable-history:
     enabled: true
     min-interval-ms: 5000
-    retention-days: 90   # default, если у переменной retention = null
-    record-snapshot-enabled: true   # поле $record — полный JSON DataRecord в value_text
-    # Per-variable policy (PATCH .../variables/history):
+    retention-days: 90          # срок хранения по умолчанию, если у переменной retention = null
+    record-snapshot-enabled: true # сохранять ли полный JSON DataRecord для чтения через field=$record
+    # Настройки конкретной переменной (PATCH .../variables/history):
     #   historySampleMode: CHANGES_ONLY | ALL_VALUES
     #   includePreviousValueInEvent: boolean
     #   storageMode: PERSISTENT | TRANSIENT
@@ -87,26 +58,29 @@ ispf:
       export-max-points: 10000
 ```
 
-## Запрос SLO (BL-161)
+---
 
-Документированные цели уровня обслуживания для запросов REST архиватора. Значения по умолчанию привязываются через `VariableHistorySloProperties` (`ispf.variable-history.slo`).
+## Целевые показатели скорости запросов (SLO)
 
-| Запрос | Область применения | Цель (стр.95) |
-|-------|-------|--------------|
-| **Aggregate** | ≤ 1M raw samples bucketed (`GET .../history/aggregate`) | **< 2 s** |
-| **Raw trend** | ≤ 10k points (`GET .../history`) | **< 500 ms** |
-| **Export** | ≤ 10k points (`GET .../history/export`) | best-effort; same point cap |
+### Одиночные запросы истории (`ispf.variable-history.slo`)
 
-**CI / lab gates (БЛ-161 Done):**
+| Вид запроса | Объём выборки | Целевое время ответа (p95) |
+|-------------|---------------|----------------------------|
+| **Агрегация по интервалам** (`GET .../history/aggregate`) | до 1 млн исходных точек | **< 2 с** |
+| **Сырой тренд** (`GET .../history`) | до 10 тыс. точек | **< 500 мс** |
+| **Экспорт в файл** (`GET .../history/export`) | до 10 тыс. точек | Ограничение по числу точек |
 
-| Gate | Путь | Цель |
-|------|------|------|
-| JVM aggregate | `HistorianAggregateQueryLoadTest` / `tools/historian-scale/historian-scale-benchmark.sh` | ≤1M точек, **p95 &lt; 2 s** |
-| Nightly | `.github/workflows/load-test.yml` | тот же JVM gate |
-| Combined | `tools/historian-scale/analytics-scale-gate.sh` | aggregate + multi-tag; optional CH/catalog |
+### Многотеговая аналитика и ClickHouse (`ispf.analytics.slo`)
 
-Ссылка на дашборд: [examples/historian-sla-dashboard](../../examples/historian-sla-dashboard/) (макет виджета BL-161 + BFF sketch).
+| Проверка | Сценарий | Целевой показатель |
+|----------|----------|--------------------|
+| **Многотеговый запрос** (`POST .../platform/analytics/query`) | 10 тегов × 7 суток × шаг 1 ч | **p95 < 3 с** (стенд ClickHouse 8 vCPU) |
+| **Каталог тегов** | Число переменных с историей | **≥ 50 000** устройств |
+| **Объём архива ClickHouse** | Таблица `variable_samples` | **≥ 1 млрд** строк |
+| **Отставание расчёта агрегатов** | Задержка материализации окон | **< 5 мин** от текущего времени |
 
-Многоуровневые профили хранения и развертывания: [historian-tiers](historian-tiers.md).
+Скрипты нагрузочной проверки в репозитории:
+- `tools/historian-scale/historian-scale-benchmark.sh` — замер агрегации одиночного тега;
+- `tools/historian-scale/analytics-scale-gate.sh` — комплексная проверка многотеговых запросов и агрегатов.
 
-См. также [object-model](object-model.md), [api](api.md).
+Текущие целевые значения и фактические метрики доступны через `GET /api/v1/platform/analytics/analytics-slo` и вкладку **Система (System)** в консоли администратора. Многоуровневая схема хранения (PostgreSQL → ClickHouse → Parquet) описана в разделе [Уровни хранения истории](historian-tiers.md).

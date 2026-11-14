@@ -1,18 +1,22 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/object-model.md](../en/object-model.md).
+> **Язык:** русская версия. Английский оригинал: [en/object-model.md](../en/object-model.md).
 
 # Модель объектов
 
-> **Статус:** Stable — Дерево, переменные, события, функции. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — дерево объектов, переменные, события, функции и хранение данных. Метки зрелости: [doc-status.md](doc-status.md).
 
-Бизнес-логика ISPF выражается через **состав узлов дерева**: модели (blueprints), переменные, события, функции, workflow и узлы автоматизации. См. [architecture.md § Основной принцип](architecture.md).
+Все сущности в ISPF — подключённые устройства, узлы расчётов, экраны оператора, мнемосхемы, правила тревог, процессы BPMN, отчёты и учётные записи — организованы в **единое дерево объектов**. Каждый узел дерева адресуется по пути через точку и работает через один и тот же набор API и WebSocket-уведомлений.
 
-## Иерархия
+См. также: [Как устроен ISPF](learn.md) · [Архитектура](architecture.md) · [Шаблоны объектов (Blueprints)](blueprints.md) · [Правила расчёта (привязки)](bindings.md).
 
-![Дерево объектов в Admin Explorer](../assets/ispf-object-tree.png)
+---
 
-Все сущности платформы — **узлы дерева объектов** с путями в точечной нотации:
+## Иерархия дерева и пути
 
-```
+![Дерево объектов в консоли администратора](../assets/ispf-object-tree.png)
+
+Сегменты пути разделяются **точкой** (`.`), а не косой чертой: дочерний адрес образуется как `путьРодителя + "." + имяУзла`.
+
+```text
 root
 └── root.platform
     ├── root.platform.devices
@@ -24,6 +28,7 @@ root
     ├── root.platform.instances
     ├── root.platform.dashboards
     │   └── root.platform.dashboards.demo-sensor
+    ├── root.platform.mimics
     ├── root.platform.reports
     │   └── root.platform.reports.ready-items
     ├── root.platform.security
@@ -41,66 +46,53 @@ root
         └── root.platform.correlators.alarm-handler-on-threshold-event
 ```
 
-Пути разделяются **точкой** (`.`), не слэшем. Дочерний путь: `parentPath + "." + name`.
+---
 
-## Типы объектов (`ObjectType`)
+## Типы узлов (`ObjectType`)
 
-| Тип | Назначение |
-|-----|------------|
-| `ROOT` | Корень дерева |
-| `TENANT` | Тенант (multi-tenancy, планируется) |
-| `PLATFORM` | Узел `root.platform` |
-| `DEVICES` | Каталог устройств |
-| `DEVICE` | Устройство с драйвером |
-| `DRIVER` | Экземпляр драйвера |
-| `MODEL` | Определение модели |
-| `DASHBOARDS` | Каталог дашбордов |
-| `DASHBOARD` | HMI-экран |
-| `WORKFLOWS` | Каталог workflow |
-| `WORKFLOW` | BPMN-процесс |
-| `ALERT_RULES` | Каталог alert rules |
-| `ALERT` | Правило алерта |
-| `CORRELATORS` | Каталог correlators |
-| `CORRELATOR` | Коррелятор событий |
-| `APPLICATIONS` | Каталог приложений |
-| `APPLICATION` | Приложение (bundle) |
-| `OPERATOR_APPS` | Каталог operator UI |
-| `SECURITY` | Корень RBAC |
-| `USERS` / `USER` | Пользователи |
-| `ROLES` / `ROLE` | Роли |
-| `FUNCTIONS` / `FUNCTION` | Функции приложения |
-| `REPORTS` / `REPORT` | Каталог `root.platform.reports` и SQL-отчёты (`report-v1`) |
-| `AGENT` | Edge-агент |
-| `VISUAL_GROUP` | Визуальная группа — ссылки на объекты в `@groupMembers` без изменения их путей |
-| `CUSTOM` | Произвольный контейнер (fallback для неизвестных узлов) |
+Каждому узлу при создании назначается тип (`ObjectType`), определяющий его роль и редактор в консоли:
 
-Системные папки (`PLATFORM`, `DEVICES`, `ALERT_RULES`, …) получают семантический тип при bootstrap и через миграцию `V22__system_object_types.sql`. Пользовательские узлы — из шаблона модели или `CUSTOM`.
+| Тип (`ObjectType`) | Назначение |
+|--------------------|------------|
+| `ROOT` / `PLATFORM` | Корень дерева (`root`) и системный раздел `root.platform` |
+| `TENANT` | Изолированный контур организации при мультитенантности |
+| `DEVICES` / `DEVICE` | Каталог устройств и конкретное устройство с протокольным драйвером |
+| `DRIVER` | Служебный экземпляр драйвера |
+| `MODEL` | Шаблон объекта (blueprint) в каталогах моделей |
+| `DASHBOARDS` / `DASHBOARD` | Каталог дашбордов и экран оператора |
+| `MIMICS` / `MIMIC` | Каталог мнемосхем и векторная мнемосхема SCADA |
+| `WORKFLOWS` / `WORKFLOW` | Каталог маршрутов и исполняемый процесс BPMN |
+| `ALERT_RULES` / `ALERT` | Каталог тревог и правило контроля порога/условия |
+| `CORRELATORS` / `CORRELATOR` | Каталог корреляторов и правило связки событий по окну времени |
+| `APPLICATIONS` / `APPLICATION` | Каталог установленных решений и паспорт прикладного пакета |
+| `OPERATOR_APPS` | Настройки меню и стартовых экранов рабочих мест оператора |
+| `REPORTS` / `REPORT` | Каталог `root.platform.reports` и SQL-отчёт |
+| `SECURITY`, `USERS` / `USER`, `ROLES` / `ROLE` | Пользователи и роли доступа |
+| `FUNCTIONS` / `FUNCTION` | Каталог и узел прикладной функции |
+| `AGENT` | Удалённый периферийный агент (edge) |
+| `VISUAL_GROUP` | Визуальная папка со ссылками на объекты (`@groupMembers`) без смены их реальных путей |
+| `CUSTOM` | Произвольная папка или контейнер общего назначения |
 
-## Безопасность в дереве
+> **Разделение ролей:** узлы `DEVICE` используются только для связи с оборудованием. Сводные расчёты, функции и логику цифровых двойников размещают на узлах шаблонов **`SINGLETON`** или **`INSTANCE`** — см. [Правила архитектуры приложений](application-principles.md).
 
-Узлы под `root.platform.security` создаются автоматически при старте и при изменении пользователей:
+---
 
-| Путь | Тип | Переменные |
-|------|-----|------------|
-| `...security.users.{username}` | `USER` | `username`, `displayName`, `roles`, `enabled` |
-| `...security.roles.{role}` | `CUSTOM` | `roleName`, `description` |
+## Из чего состоит объект (`PlatformObject`)
 
-CRUD пользователей — через `POST/PUT/DELETE /api/v1/security/users` (роль `admin`). Удаление узла `USER` в дереве также удаляет учётную запись.
+Любой узел дерева может содержать четыре группы элементов:
 
-## Состав объекта (`PlatformObject`)
+1. **Паспортные свойства:** `id`, `path`, `displayName`, `description`, `templateId`, `sortOrder`, `createdAt`.
+2. **Переменные (`Variable`)** — именованные типизированные значения (показания приборов, уставки, настройки, расчётные показатели).
+3. **Функции (`FunctionDescriptor`)** — вызываемые операции с входной и выходной схемой параметров.
+4. **События (`EventDescriptor`)** — объявленные типы уведомлений и тревог, которые может публиковать объект.
 
-Каждый узел содержит:
+---
 
-- **Метаданные:** `id`, `path`, `displayName`, `description`, `templateId`, `sortOrder`, `createdAt`
-- **Переменные** (`Variable`) — типизированные значения
-- **Функции** (`FunctionDescriptor`) — вызываемые операции
-- **События** (`EventDescriptor`) — публикуемые типы событий
+## Типизированные данные (`DataSchema` и `DataRecord`)
 
-## Типизированные данные
+Значение любой переменной в ISPF хранится не как «сырая строка», а как типизированная табличная структура **`DataRecord`**, описанная схемой полей **`DataSchema`**.
 
-### DataSchema
-
-Описание полей записи:
+### Схема полей (`DataSchema`)
 
 ```json
 {
@@ -112,122 +104,133 @@ CRUD пользователей — через `POST/PUT/DELETE /api/v1/security
 }
 ```
 
-Типы полей (`FieldType`): `BOOLEAN`, `INTEGER`, `LONG`, `DOUBLE`, `STRING`, `DATETIME`, `BINARY`, `RECORD`, `RECORD_LIST`.
+Поддерживаемые типы полей (`FieldType`): `BOOLEAN`, `INTEGER`, `LONG`, `DOUBLE`, `STRING`, `DATETIME`, `BINARY`, `RECORD`, `RECORD_LIST`.
 
-### Качество телеметрии (BL-82)
+### Запись значения (`DataRecord`)
 
-Необязательное поле `quality` в строках телеметрии: `GOOD`, `UNCERTAIN`, `BAD` ([0025-telemetry-quality-flags](decisions/0025-telemetry-quality-flags.md)). Драйверы сопоставляют статус протокола (например, OPC UA StatusCode) с этими уровнями. Виджеты графиков пропускают сэмплы `BAD` (разрыв линии). JDBC-историк хранит тот же флаг в сэмпле ([0074-historian-quality-persistence](decisions/0074-historian-quality-persistence.md)); null — неизвестно / до v2, не GOOD. Флагманские хранилища — jdbc и ClickHouse. Cassandra/Scylla остаётся experimental и quality не пишет.
-
-### DataRecord
-
-Табличная структура со строками данных. Типичный однострочный формат REST:
+Для обычного датчика или уставки `DataRecord` содержит одну строку (`rows` из одного элемента):
 
 ```json
 {
-  "schema": { "name": "temperature", "fields": [...] },
-  "rows": [{ "value": 23.5, "unit": "C" }]
+  "schema": {
+    "name": "temperature",
+    "fields": [
+      { "name": "value", "type": "DOUBLE" },
+      { "name": "unit", "type": "STRING" }
+    ]
+  },
+  "rows": [
+    { "value": 23.5, "unit": "C" }
+  ]
 }
 ```
 
-Виджеты и API читают поле через `valueField` (по умолчанию `"value"`).
+Виджеты дашборда и формулы по умолчанию читают поле `"value"` (при необходимости имя поля уточняется свойством `valueField`).
 
-## Переменные
+<a id="telemetry-quality-bl-82"></a>
 
-| Свойство | Описание |
-|----------|----------|
-| `name` | Имя на объекте |
-| `schema` | `DataSchema` |
-| `readable` / `writable` | Права доступа |
-| `value` | Текущий `DataRecord` |
+### Флаг достоверности телеметрии (`quality`)
 
-### Вычисляемые привязки (binding rules)
+Строка телеметрии может содержать необязательное поле `quality` со значениями `GOOD` (достоверно), `UNCERTAIN` (сомнительно) или `BAD` (недостоверно / обрыв датчика) — см. [ADR-0025](decisions/0025-telemetry-quality-flags.md).
+- Протокольные драйверы (например, OPC UA) автоматически переводят коды статуса прибора в этот флаг.
+- Графики на дашбордах не соединяют точки со статусом `BAD` сплошной линией, наглядно показывая разрыв измерения.
+- Архив истории в PostgreSQL/Timescale и ClickHouse сохраняет флаг `quality` вместе со значением ([ADR-0074](decisions/0074-historian-quality-persistence.md)). Значение `null` означает старую запись без метки качества, а не `GOOD`.
 
-Правила на объекте в `@bindingRules` (см. [bindings](bindings.md)). Runtime — `BindingRuleEngine`; межобъектные — через активаторы и `read(remote/ref)`.
+---
 
-Краткий список platform bindings:
+## Переменные и правила расчёта
 
-| Функция | Назначение |
-|---------|------------|
-| `selectField` | Поле source-переменной |
-| `scale` | Линейное отображение диапазона |
-| `clamp` | Ограничение min…max |
-| `format` | Строка по шаблону `String.format` |
-| `delta` | Δ к предыдущему сэмплу (stateful) |
-| `counterRate` | B/s из Counter32 с wrap (stateful) |
+Основные свойства переменной:
+- `name` — имя переменной внутри объекта (например, `temperature`);
+- `schema` — схема полей `DataSchema`;
+- `readable` / `writable` — разрешено ли чтение и запись;
+- `value` — текущее значение `DataRecord`.
 
-Валидация: `POST /api/v1/expressions/validate`.
+### Автоматический пересчёт (`@bindingRules`)
+
+На объекте можно задать правила расчёта (*binding rules*), которые пересчитывают переменные по формуле CEL или встроенной функции при изменении входных данных либо по расписанию:
+
+| Встроенная функция | Что делает |
+|--------------------|------------|
+| `selectField` | Извлекает отдельное поле из составной переменной |
+| `scale` | Линейно пересчитывает шкалу (например, 4–20 мА → 0–10 бар) |
+| `clamp` | Ограничивает число диапазоном `min…max` |
+| `format` | Формирует строку по шаблону (`String.format`) |
+| `delta` | Считает разницу с предыдущим измерением |
+| `counterRate` | Переводит нарастающий счётчик (например, `Counter32` в SNMP) в скорость в секунду |
+
+Проверить синтаксис формулы можно через `POST /api/v1/expressions/validate` или кнопкой проверки в инспекторе. Подробное описание: [Правила расчёта (привязки)](bindings.md) и [Справочник языка выражений](expression-language.md).
+
+---
 
 ## События
 
-`EventDescriptor` задаёт имя, описание, схему payload и уровень (`DEBUG` … `CRITICAL`).
+Дескриптор `EventDescriptor` задаёт на объекте имя события, схему его полей и уровень важности (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`).
 
-Публикация:
+При возникновении события (от правила тревоги, функции или запроса `POST /api/v1/events/fire`) сервер проверяет данные по дескриптору, рассылает уведомление подписчикам WebSocket, передаёт его корреляторам и (если включён журнал) сохраняет в `event_history`.
 
-```http
-POST /api/v1/events/fire
-```
+---
 
-Событие валидируется по дескриптору объекта, пишется в `event_history` и рассылается через WebSocket.
+## Функции на объектах
 
-## Функции
+`FunctionDescriptor` объявляет вызываемую операцию на узле дерева: имя, входную и выходную схемы `DataSchema`, а также способ реализации (`sourceType`):
 
-`FunctionDescriptor` — имя, input/output `DataSchema`, опционально `sourceType` + `sourceBody`.
+| `sourceType` | Как исполняется функция |
+|--------------|-------------------------|
+| *(пусто)* | Встроенный серверный обработчик Java по имени функции (`acknowledgeAlarm`, `dispatchTelemetry` и др.) |
+| `script` | Декларативный JSON-скрипт из шагов (`selectMany`, `exec`, `setVar`, `return`) для работы с БД и переменными |
+| `java` | Исходный код класса `ObjectJavaFunction`, компилируемый сервером при сохранении в песочнице |
 
-| `sourceType` | Поведение |
-|--------------|-----------|
-| *(пусто)* | Встроенный platform `FunctionHandler` по имени функции на объекте |
-| `script` | JSON DSL (`steps`) — `ScriptFunctionHandler` |
-| `java` | Исходник public-класса → `ObjectJavaFunction`; **компиляция при сохранении** (`PUT .../functions`), вызов через `JavaFunctionHandler` |
-
-**Подробные примеры всех типов:** [object-functions](object-functions.md) (built-in handlers, script steps, Java, bindings, workflow, REST).
-
-Вызов:
+Вызов по прямому пути объекта:
 
 ```http
-POST /api/v1/objects/by-path/functions/invoke?path=...&name=...
+POST /api/v1/objects/by-path/functions/invoke?path=root.platform.devices.demo-sensor-01&name=acknowledgeAlarm
 Content-Type: application/json
 
-{ "schema": {...}, "rows": [{...}] }
+{ "schema": { "name": "in", "fields": [] }, "rows": [{}] }
 ```
 
-**Java-функция:** класс `implements com.ispf.core.function.ObjectJavaFunction`; компиляция при сохранении; см. [object-functions.md § Java](object-functions.md).
+Примеры всех видов функций собраны в документе [Функции на объектах](object-functions.md).
 
-Встроенные handlers (имя функции на объекте + handler на сервере): `acknowledgeAlarm`, Virtual Lab (`calculate`, `fireEvent1`, …), Mini-TEC (`gpu_start`, …), `dispatchTelemetry` (MQTT gateway). Полный список и payload — в [object-functions](object-functions.md).
+---
 
-Расширение платформы: реализовать `FunctionHandler` в `ispf-server` и зарегистрировать как Spring `@Component`.
+## Шаблоны объектов (`Blueprints`)
 
-## Модели (шаблоны)
+Объекты создаются либо вручную, либо по **шаблону** (`templateId`), который сразу наделяет узел нужными переменными, событиями, функциями и формулами:
+- **`SINGLETON`** и **`INSTANCE`** задают основную структуру узлов логики и оборудования.
+- **`MIXIN`** (примесь) подключается к объектам дополнительно; автоматическое подключение при создании срабатывает только если у примеси явно задано непустое условие применимости на CEL (*Applicability condition*).
+- Переменные настройки драйвера (`driver*`) на узлах `DEVICE` создаются автоматически при привязке драйвера (`provisionDriver()`).
 
-Объекты создаются вручную или из **модели** (`templateId`). Модель задаёт переменные, события, функции и bindings.
+Подробнее: [Шаблоны объектов (Blueprints)](blueprints.md).
 
-**MIXIN blueprints** при создании применяются автоматически только при **непустом** CEL (*Applicability condition*). Пустой CEL → только явное применение (`templateId`, API). Fixture blueprints (`mqtt-sensor-v1`, …) не входят в core registry.
+---
 
-**DEVICE + драйвер:** переменные `driver*` встраиваются при `provisionDriver()`, не через MIXIN auto-apply.
+## Пользователи в дереве объектов
 
-См. [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
+Узлы в разделе `root.platform.security` автоматически отражают список пользователей и ролей системы:
+- `root.platform.security.users.<логин>` (`USER`) — учётная запись (`username`, `displayName`, `roles`, `enabled`);
+- `root.platform.security.roles.<роль>` — описание роли.
 
-## Персистентность
+Управление учётными записями выполняется через `POST/PUT/DELETE /api/v1/security/users` (требуется роль `admin`); удаление узла `USER` в дереве удаляет соответствующего пользователя.
 
-Flyway-миграции (`packages/ispf-server/src/main/resources/db/migration/`):
+---
 
-| Таблица | Содержимое |
-|--------|------------|
-| `object_nodes` | Узлы дерева (включая alert rules и correlators) |
-| `object_variables` | Значения переменных (`@bindingRules` — reserved var на объекте) |
-| `variable_samples` | История телеметрии (time-series; Timescale hypertable — [0009-timescaledb-retention](decisions/0009-timescaledb-retention.md)) |
-| `event_history` | Журнал событий (Timescale hypertable — [0015-event-history-timescale](decisions/0015-event-history-timescale.md)) |
-| `workflow_instances` | Экземпляры BPMN |
-| `workflow_user_tasks` | Задачи оператора |
-| `correlator_hits` | Срабатывания correlators (runtime) |
-| `alert_rules` / `event_correlators` | Legacy; мигрируются в дерево при старте |
+## Хранение в базе данных и живые обновления
 
-При старте `ObjectManager` загружает дерево из БД или выполняет `PlatformBootstrap` (пустая БД).
+Основные системные таблицы СУБД (управляются миграциями Flyway при старте сервера):
 
-## Live-обновления
+| Таблица | Что хранит |
+|---------|------------|
+| `object_nodes` | Иерархия и свойства всех узлов дерева |
+| `object_variables` | Текущие значения переменных и правила `@bindingRules` |
+| `variable_samples` | Архив временных рядов телеметрии (в PostgreSQL — гипертаблица TimescaleDB) |
+| `event_history` | Журнал событий |
+| `workflow_instances`, `workflow_user_tasks` | Состояние запущенных процессов BPMN и очередь задач операторов |
+| `correlator_hits` | Текущие срабатывания корреляторов событий |
 
-`ObjectChangeEvent` публикуется при create/update/delete объектов и переменных.
+### Обновления по WebSocket
 
-WebSocket `WS /ws/objects` рассылает JSON:
+При любом изменении объектов или значений переменных сервер рассылает сообщение в `WS /ws/objects`:
 
 ```json
 {
@@ -238,44 +241,33 @@ WebSocket `WS /ws/objects` рассылает JSON:
 }
 ```
 
-Web Console подписывается через `useObjectWebSocket` и инвалидирует кэш TanStack Query.
+Веб-консоль и экраны оператора подписаны на этот канал и обновляют показания без ручной перезагрузки страницы.
 
-## CRUD через API
+### Основные методы REST API для работы с деревом
 
-| Операция | Endpoint |
-|----------|----------|
-| Список | `GET /api/v1/objects?parent=` |
-| Получить | `GET /api/v1/objects/by-path?path=` |
-| Редактор | `GET /api/v1/objects/by-path/editor?path=` |
-| Создать | `POST /api/v1/objects` |
-| Обновить | `PATCH /api/v1/objects/by-path?path=` |
-| Удалить | `DELETE /api/v1/objects/by-path?path=` |
-| Порядок дочерних | `PUT /api/v1/objects/reorder` (`parentPath`, `orderedPaths`) |
-| Переменные | `GET/PUT .../variables` |
+| Операция | Запрос |
+|----------|--------|
+| Получить дочерние узлы | `GET /api/v1/objects?parent=root.platform.devices` |
+| Получить объект по пути | `GET /api/v1/objects/by-path?path=...` |
+| Создать узел | `POST /api/v1/objects` |
+| Изменить свойства узла | `PATCH /api/v1/objects/by-path?path=...` |
+| Удалить узел | `DELETE /api/v1/objects/by-path?path=...` |
+| Изменить порядок соседних узлов | `PUT /api/v1/objects/reorder` |
+| Прочитать / записать переменные | `GET / PUT /api/v1/objects/by-path/variables?path=...` |
 
-При создании `DASHBOARD` / `WORKFLOW` автоматически применяется соответствующая встроенная модель.
+---
 
-## История переменных
+## Запись истории переменных
 
-Текущее значение — в `object_variables`. **История** пишется в `variable_samples` только для переменных с `historyEnabled = true` при каждом `VARIABLE_UPDATED` (debounce по `min-interval-ms`).
-
-У каждой переменной (в модели и на объекте):
-
-| Поле | Описание |
-|------|----------|
-| `historyEnabled` | Писать ли временной ряд |
-| `historyRetentionDays` | Срок хранения в днях; `null` — default платформы из `ispf.variable-history.retention-days` |
+Текущее значение каждой переменной всегда лежит в `object_variables`. Запись временного ряда в архив (`variable_samples` и/или ClickHouse) включается индивидуально для нужных переменных флагом **`historyEnabled = true`** (с защитой от слишком частой записи через `min-interval-ms` и сроком хранения `historyRetentionDays`).
 
 ```http
-GET /api/v1/objects/by-path/variables/history?path=...&name=temperature&field=value&limit=500
-PATCH /api/v1/objects/by-path/variables/history?path=...&name=temperature
+GET /api/v1/objects/by-path/variables/history?path=root.platform.devices.demo-sensor-01&name=temperature&field=value&limit=500
+
+PATCH /api/v1/objects/by-path/variables/history?path=root.platform.devices.demo-sensor-01&name=temperature
 Content-Type: application/json
 
 {"historyEnabled": true, "historyRetentionDays": 30}
 ```
 
-Конфиг платформы: `ispf.variable-history` в `application.yml` (`enabled`, `min-interval-ms`, `retention-days`).
-
-Графики (`useTrendSeries`) загружают историю с сервера и дополняют live-точками через WebSocket/polling.
-
-Подробный roadmap: [variable-history](variable-history.md).
+Подробно об архиве и агрегациях: [История переменных](variable-history.md) и [Уровни хранения истории](historian-tiers.md).

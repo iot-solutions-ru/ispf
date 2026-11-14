@@ -68,7 +68,7 @@
 
 ## Виджет `scada-mimic` на дашборде
 
-Виджет отображает документ мнемосхемы на макете дашборда (строитель + оператор HMI). Привязанные переменные идут по WebSocket объектов (`collectBindingInterests`). Интервал обновления дашборда — HTTP-батч, пока этот сокет недоступен; после переподключения батч запрашивается один раз.
+Виджет отображает документ мнемосхемы на сетке дашборда (в конструкторе и в режиме оператора). Привязанные переменные обновляются в реальном времени по WebSocket (`WS /ws/objects`); HTTP-опрос используется только как резерв при обрыве сокета.
 
 | Поле | Описание |
 |------|----------|
@@ -199,7 +199,7 @@
 | `qualityField` | Поле качества OPC/надёжности на той же переменной (для `{key}Quality` в runtime) |
 | `transform` | `bool` / `number` / `string` |
 
-Привязка ключа (`fillLevel`, `open`, `running`, …) должна совпадать с ключом в **`bindingSchema`** символа (в пакете каталога или в `customSymbols[]` документе) и с полем ** `bind`** в `behaviors[]`, если поведение предписано к данным.
+Ключ привязки (`fillLevel`, `open`, `running`, …) должен совпадать с ключом в **`bindingSchema`** символа (в пакете каталога или в `customSymbols[]` документа) и с полем **`bind`** в `behaviors[]`, если поведение привязано к данным.
 
 ### Управление с мнемосхемы (действия)
 
@@ -219,9 +219,9 @@
 
 ---
 
-## Схема документа (diagramJson)
+## Схема документа (`diagramJson`)
 
-Формат **версия 2** (единственный терапевтический). Документы v1 при включении нормализуются в v2 без макета runtime-миграции.
+Актуальный формат документа — **версия 2** (единственный канонический формат). Документы старой версии v1 при открытии автоматически приводятся к формату v2.
 
 ```json
 {
@@ -257,7 +257,7 @@ Pack-символы: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/`. Г
 
 **Полное руководство (загрузка, библиотека, поведение):** [scada-symbol-library](scada-symbol-library.md) (BL-94).
 
-### Три выхода размещения
+### Три способа размещения символов
 
 | Способ | `symbolId` на элементе | Где хранится SVG |
 |--------|------------------------|------------------|
@@ -265,7 +265,7 @@ Pack-символы: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/`. Г
 | Inline custom | `custom.svg` | `element.props.svg` |
 | Ссылка на библиотеку документа | `custom:lib-gen-block` | `customSymbols[].svg` |
 
-**«Свои SVG» в палитре** — только записи `customSymbols[]` с `"inUserLibrary": true`. Bootstrap-определения (mini-TEC, конвейер) и пакета копий, созданные ключом «Редактировать как SVG», **не** использовать в палитру, пока вы не сохраните изменения («Обновить символ в библиотеке» или загрузку SVG).
+**Категория «Свои SVG» в палитре** содержит только записи `customSymbols[]` с флагом `"inUserLibrary": true`. Предзагруженные демо-символы (mini-TEC, трубопровод) и копии из пакета, открытые кнопкой «Редактировать как SVG», попадают в пользовательскую палитру только после явного нажатия «Обновить символ в библиотеке» или загрузки нового SVG.
 
 ### Рабочий процесс в редакторе
 
@@ -339,7 +339,7 @@ Pack-символы: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/`. Г
 
 Полный эталон: `packages/ispf-server/src/main/resources/bootstrap/mini-tec-mimic.json` → `customSymbols`.
 
-### столкновение по SVG
+### Требования к разметке SVG
 
 | Правило | Зачем |
 |---------|--------|
@@ -349,7 +349,7 @@ Pack-символы: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/`. Г
 | CSS-переменные `var(--border)`, `var(--bg-elevated)` | Тема light/dark (pack-символы) |
 | `ports[]` — координаты в системе символа (0…width/height) | Инструмент Connect |
 
-Переопределение SVG **только для одного экземпляра**: `element.props.svg` (кнопка «Применить к экземпляру»). Сброс — «Сброс переопределение».
+Переопределение SVG **только для одного экземпляра**: `element.props.svg` (кнопка «Применить к экземпляру»). Сброс — «Сбросить переопределение».
 
 ### Типы `behaviors`
 
@@ -362,7 +362,7 @@ Pack-символы: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/`. Г
 | `stroke` | `bind`, `target`, `trueColor`, `falseColor` | Обводка по bool |
 | `visibility` | `bind`, `target`, `when` (`truthy` \| `falsy`) | `display: none` |
 | `hidden` | то же | Инверсия visibility |
-| `fillLevel` | `bind`, `target` (обычно `<rect>`), `maxBind`, `inset` | Высота наклона по отношению (уровень в ёмкости) |
+| `fillLevel` | `bind`, `target` (обычно `<rect>`), `maxBind`, `inset` | Высота заливки прямоугольника пропорционально уровню в ёмкости |
 | `blink` | `bind`, `target`, `when` | CSS-класс мигания при тревоге |
 
 `target` — CSS-селектор (`#ispf-lamp`) или `data-ispf-bind-target` на узле SVG.
@@ -375,7 +375,7 @@ Pack-символы: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/`. Г
 { "key": "open", "labelKey": "bindings.open", "type": "boolean", "optional": true }
 ```
 
-Типы: `boolean`, `number`, `string`, `enum`. Ключ `key` = ключ в `element.bindings` и в `behaviors[].bind` (для динамиков).
+Типы: `boolean`, `number`, `string`, `enum`. Ключ `key` совпадает с ключом в `element.bindings` и полем `behaviors[].bind` (для динамических привязок).
 
 ### Пакет-символы и привязки
 
@@ -395,13 +395,13 @@ cd tools/symbol-pack-isa && npm install && npm run build
 
 ---
 
-## ОТДЫХ API
+## REST API
 
 | Метод | Путь | Назначение |
 |--------|------|------------|
-| GET | `/api/v1/mimics/by-path?path=` | Загрузить mimic |
+| GET | `/api/v1/mimics/by-path?path=` | Загрузить мнемосхему |
 | PUT | `/api/v1/mimics/by-path/diagram?path=` | Сохранить `diagramJson` |
-| PUT | `/api/v1/mimics/by-path/title?path=` | Сохранить title |
+| PUT | `/api/v1/mimics/by-path/title?path=` | Сохранить заголовок |
 
 Требуется доступ для записи по пути (RBAC).
 
@@ -411,7 +411,7 @@ cd tools/symbol-pack-isa && npm install && npm run build
 
 При `ispf.bootstrap.fixtures-enabled=true`:
 
-| Объект МИМИЦ | Дашборд | Описание |
+| Объект `MIMIC` | Дашборд | Описание |
 |--------------|---------|----------|
 | `root.platform.mimics.mini-tec-single-line` | `root.platform.dashboards.mini-tec-single-line` | Однолинейная схема mini-TEC |
 | `root.platform.mimics.tank-farm-demo` | `root.platform.dashboards.tank-farm-hmi` | Резервуарный парк (app `tank-farm-demo`, анонимизированное демо) |

@@ -1,126 +1,111 @@
 > **Language:** Canonical English. Russian edition: [ru/external-ide.md](../ru/external-ide.md).
 
-# Solution development in an external AI IDE
+# Building a custom React operator UI (external IDE & UI packs)
 
-> **Status:** Stable — Hosted UI packs (ADR-0054) + MCP (ADR-0006). Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — Hosted UI packs ([ADR-0054](decisions/0054-hosted-ui-packs.md)) and MCP IDE integration ([ADR-0006](decisions/0006-mcp-agent-tool-adapter.md)). Status tags: [doc-status.md](doc-status.md).
 
-**Platform value:** industry solutions are built **outside** `ispf-server` and `apps/web-console`. Partners use any AI IDE (Cursor, VS Code, …) with unlimited React components, then ship a **bundle** (logic) plus a **ui-pack** (SPA). The platform hosts both: BFF on the object tree, static UI at `/apps/<appId>/`.
+ISPF's built-in Dashboard Builder and SCADA Mimic Editor cover standard operator displays without writing frontend code. When a product requires a completely custom web interface — interactive maps, 3D equipment views, custom design systems, or dense MES scheduling boards — you develop a standalone **React + Vite single-page application (SPA)** in your own IDE (Cursor, VS Code, WebStorm) and install it on ISPF as a **`ui-pack`**.
 
-This is the path used by Oil Control, FarmTwin, StoreTwin, and IT-infra monitoring — not a workaround.
+This is the standard architecture behind ISPF's reference applications (`Oil Control`, `FarmTwin`, `StoreTwin`, `WarehouseTwin`, and `IT Infrastructure Monitoring`).
 
-Hub links: [application-principles](application-principles.md) (P2, P7, P9), [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md), [0006-mcp-agent-tool-adapter](decisions/0006-mcp-agent-tool-adapter.md), [solution-developer-guide](solution-developer-guide.md), [marketplace](marketplace.md).
-
-**Agent:** `search_context(query=hosted ui-pack Cursor, topic=external-ide)`.
+Related guides: [Solution developer guide](solution-developer-guide.md) · [Application architecture rules](application-principles.md) · [Applications API](applications.md) · [Marketplace](marketplace.md).
 
 ---
 
-## Why this is a platform capability
+## How responsibilities are split
 
-ISPF is middleware. The console widget kit (~42 types, 84×8 grid) is a **generic HMI** for lab, SNMP, and SCADA fallback. Product UIs need arbitrary React: maps, 3D, design systems, dense tables, branded shells.
+Your custom UI lives in its own repository — **never** inside `apps/web-console` or `packages/ispf-server`:
 
-| Layer | What the partner owns | What the platform owns |
-|-------|------------------------|-------------------------|
-| Pixels | Vite/React SPA, any components | Hosting at `/apps/<appId>/` (ui-pack) |
-| Data / rules | Script functions, SQL in app schema, CEL, alerts, BPMN | Engines, BFF gateway, tree, historian, WS |
-| Delivery | `bundle.json` + `ui-pack` zip | `validate → dry-run → deploy` / marketplace install |
-
-**Forbidden in `main`:** industry React in `apps/web-console`, industry Java in `ispf-server`, hardcoded BFF routes, platform Flyway for app tables.
-
-Two artifacts, one solution:
+| Part of the solution | Built and owned in your project | Provided by ISPF |
+|----------------------|---------------------------------|------------------|
+| **Frontend screens** | Standalone Vite/React SPA (`ui-pack` zip) | Static hosting under `/apps/<appId>/` (`HostedUiPackFilter`) |
+| **Business logic & data** | Hub functions (`script` / SQL), CEL rules, alerts, BPMN (`bundle.json`) | `POST /api/v1/bff/invoke`, isolated SQL schema, historian, WebSocket |
+| **Deployment** | `bundle.json` + `<app>-ui.zip` | Bundle validation, atomic deploy, and Marketplace installation |
 
 ```text
-React SPA (external IDE)          ISPF
-  Vite base /apps/<appId>/          HostedUiPackFilter
-  POST /api/v1/auth/login    ──►    session
-  POST /api/v1/bff/invoke    ──►    hub script functions
-  WS /ws/objects             ──►    live variables (optional)
+Custom React SPA (/apps/<appId>/)       ISPF Server
+  POST /api/v1/auth/login        ──►    Authentication & session token
+  POST /api/v1/bff/invoke        ──►    Functions on SINGLETON / INSTANCE hub
+  WS /ws/objects                 ──►    Live variable & alarm updates (optional)
 ```
 
-Reference listings: `examples/oil-control` + `oil-control-ui`, `examples/farmtwin` + `farmtwin-ui`, `examples/storetwin` + `storetwin-ui`, `examples/marketplace-ui-pack-demo`.
+### When to choose a custom `ui-pack` vs built-in dashboards
+
+| Criterion | Custom React SPA (`ui-pack`) | Built-in Dashboards & SCADA mimics |
+|-----------|------------------------------|------------------------------------|
+| **Best for** | Branded product UI, maps, 3D, complex forms and workflows | P&ID schematics, trend screens, SNMP/lab monitoring, quick HMI |
+| **Where you build it** | Separate frontend repository in your IDE | Directly in the browser (Dashboard / Mimic Builder) |
+| **How operators open it** | `/apps/<appId>/` (or **Open app UI** in Operator mode) | `?mode=operator&app=<appId>` |
+
+You can ship both: a custom `ui-pack` as the primary operator interface and a lightweight built-in dashboard as a fallback if the UI pack is not installed yet.
 
 ---
 
-## Choose UI path (do not mix)
+## 1. Repository structure
 
-| | **Hosted SPA (this page)** | **Platform widget kit** |
-|---|----------------------------|-------------------------|
-| When | Product operator UI, unlimited React | Lab, SNMP, SCADA fallback, AI Studio HMI |
-| AUTHOR | External IDE on a **separate** SPA repo | Admin Console / in-server agent |
-| SHIP | ui-pack zip + application bundle | `dashboards[]` + `operatorUi` |
-| Operator | **Open app UI** → `/apps/<appId>/` | `?mode=operator&app=` dashboards |
-| Source | Never inside `apps/web-console` | `DASHBOARD.layout` widgets |
+Keep frontend source code separate from your ISPF configuration folder:
 
-Keep a thin Operator dashboard as fallback when the pack is missing (FarmTwin pattern). Do not duplicate business logic in widgets.
+```text
+my-app-web/                         # Frontend repository (React + Vite)
+  src/
+  vite.config.ts                    # base: '/apps/my-app/'
+  openapi.yaml                      # Contract of hub functions called by the UI
+  package.json                      # "pack:ui" script producing zip archive
 
-P7 layers stay the same: SPA authoring is **AUTHOR**; bundle + ui-pack is **SHIP**. See [application-principles P7](application-principles.md).
+my-app-solution/                    # ISPF solution folder (packed via ispf-cli)
+  solution.json
+  sql/
+  functions/
+  bundle.json                       # Output of `ispf pack`
+  ui-pack/
+    ui-pack.json
+    my-app-ui-1.0.0.zip
+```
 
 ---
 
-## 1. Connect the IDE to ISPF (MCP)
+## 2. Optional: connect Cursor or VS Code to ISPF via MCP
 
-External IDEs must call **ISPF** tools, not a third-party SCADA MCP. Profile `mcp` exposes the same ACL-aware registry as AI Studio ([ai-development](ai-development.md#mcp-adapter-0006)).
+If you use an AI-assisted IDE (such as Cursor or VS Code), connect it to your local or dev ISPF server's **MCP endpoint** so it can inspect live tree paths, schemas, and validate bundles directly ([ai-development](ai-development.md#mcp-adapter-0006)):
 
-1. Enable MCP on the server (`spring.profiles.include=mcp`, `ispf.mcp.enabled=true`).
-2. Login: `POST /api/v1/auth/login` → Bearer token (admin for mutate).
-3. Cursor / MCP host:
+1. Enable the `mcp` profile on ISPF (`spring.profiles.include=mcp` or `ispf.mcp.enabled=true`).
+2. Obtain an admin Bearer token via `POST /api/v1/auth/login`.
+3. Add the server to your IDE's MCP configuration:
 
 ```json
 {
   "mcpServers": {
     "ispf": {
-      "url": "https://<ispf-host>/api/v1/ai/mcp",
-      "headers": { "Authorization": "Bearer <admin-token>" }
+      "url": "http://localhost:8080/api/v1/ai/mcp",
+      "headers": {
+        "Authorization": "Bearer <admin-token>"
+      }
     }
   }
 }
 ```
 
-Local: `http://localhost:8080/api/v1/ai/mcp`.
-
-4. Confirm tools include `list_objects`, `validate_bundle`, `import_package`, `get_example_bundle`. ContextPack slices: `contextpack://bundle-manifest`, `contextpack://example-summaries`.
-
-Use MCP to mutate the **tree and bundle**. Use the IDE filesystem for the **SPA**. Do not ask the agent to patch `apps/web-console` for industry screens.
-
 ---
 
-## 2. Repository layout
+## 3. HTTP & WebSocket contract between React and ISPF
 
-Keep SPA sources out of the platform JAR:
+### Authentication
 
-```text
-my-app-web/                      ← Cursor workspace for UI
-  src/
-  vite.config.ts                 ← base: '/apps/my-app/'
-  openapi.yaml                   ← SPA ↔ BFF contract
-  package.json                   ← pack:ui
-
-ispf/  or sibling checkout       ← bundle + pack zip only
-  examples/my-app/solution.json   ← solution-as-repo folder (see solution-developer-guide)
-  examples/my-app/bundle.json     ← `ispf pack` output
-  examples/my-app-ui/ui-pack.json
-  examples/my-app-ui/my-app-ui-x.y.z.zip
-```
-
-Solution folder layout and `tools/ispf-cli` (`ispf pack|validate|deploy`): [solution-developer-guide](solution-developer-guide.md) § Repository layout.
-
-SPA git history does not belong in `ispf-server`. Marketplace copies under `examples/marketplace-catalog/` are listings + zip, not Vite source.
-
----
-
-## 3. HTTP contract (SPA ↔ platform)
-
-### Auth
+First-party UI packs sign in via:
 
 ```http
 POST /api/v1/auth/login
-{ "username": "admin", "password": "admin" }
+Content-Type: application/json
+
+{ "username": "operator", "password": "operator" }
 ```
 
-Store `token`; send `Authorization: Bearer`. On 401, return to login. Same-origin when hosted; Vite proxy in dev.
+Store the returned `token` and pass `Authorization: Bearer <token>` on subsequent requests (returning to the login screen on HTTP `401`).
+*(Note: third-party partner packs configured with restricted `uiPackTrust` (`partner` / `signedPartner`) do not call `/api/v1/auth/login` directly and instead receive a BFF-scoped token carrying `uiPackAppId` — see [ADR-0073](decisions/0073-hosted-ui-pack-trust.md).)*
 
-### BFF — the only business API
+### Calling backend functions (`POST /api/v1/bff/invoke`)
 
-Do **not** add `/api/v1/<app>/…` controllers. Every screen calls:
+Every screen reads data and submits commands through `/api/v1/bff/invoke` targeting your application's **`SINGLETON`** or **`INSTANCE`** hub object (never a `DEVICE` node):
 
 ```http
 POST /api/v1/bff/invoke
@@ -138,19 +123,19 @@ Content-Type: application/json
 }
 ```
 
-Success: `error_code === "OK"`. List functions often unwrap to `result` as a row array. Full wire: [applications](applications.md#bff-req-pf-06).
+A successful call returns `error_code === "OK"` with payload data in `result`. Full wire specification: [Applications API § BFF](applications.md#bff-req-pf-06). Prefix your function names (for example, `my_getKpi`, `my_ackAlarm`) so they are easy to trace in logs.
 
-Pin `objectPath` and `functionName` in an OpenAPI file (see `examples/oil-control/api/openapi.yaml`). Prefix functions (`oc_`, `ft_`, `st_`, `my_`).
+### Subscribing to live tag updates (optional)
 
-**Hub type:** SINGLETON orchestrator (prefer `root.platform.singleton-blueprints.{app}-hub`) or INSTANCE twin — **never** `ObjectType.DEVICE`. Existing dogfood apps may use path `root.platform.devices.{app}.hub`; the path is an implementation choice, the type must not be DEVICE.
+For real-time values without polling, open `WS /ws/objects` with header `Sec-WebSocket-Protocol: ispf-bearer, <token>` and subscribe to the relevant object paths. See [Messaging](messaging.md).
 
-### Live telemetry (optional)
+### Vite dev server configuration
 
-`WS /ws/objects` with `Sec-WebSocket-Protocol: ispf-bearer, <token>`. Subscribe to device paths; do not poll protocols from the browser. See [messaging](messaging.md).
-
-### Vite
+Set `base` (and your React Router `basename`) to `'/apps/<appId>/'` and proxy `/api` and `/ws` to ISPF during local development:
 
 ```ts
+import { defineConfig } from 'vite';
+
 export default defineConfig({
   base: '/apps/my-app/',
   server: {
@@ -159,61 +144,40 @@ export default defineConfig({
       '/ws': { target: 'ws://localhost:8080', ws: true },
     },
   },
-})
+});
 ```
 
-React Router `basename` must match `base`. Dev URL: `http://localhost:5173/apps/my-app/`. Optional `VITE_DATA_SOURCE=mock` for offline UI work (StoreTwin).
-
-Local bridge before the pack is installed: bundle `operatorUi.externalSpaUrl` = `http://127.0.0.1:5173` (see `examples/m11-monitor-ui`). The operator app editor can set or clear **Hosted app URL** and **External app URL**. While a UI pack is installed, **Hosted app URL** stays read-only and is not written back.
+During local frontend work, open `http://localhost:5173/apps/my-app/`.
 
 ---
 
-## 4. Map screens before pixels
+## 4. Declaring routes in `bundle.json` (`operatorUi`)
 
-For each operator screen:
-
-| SPA route | Label | BFF functions |
-|-----------|-------|----------------|
-| `/` | Overview | `my_getKpi`, `my_listItems` |
-| `/alarms` | Alarms | `my_listAlarms`, `my_ackAlarm` |
-
-Persist the same map in the bundle (`operatorUi.spaNav`). Routes in React **must** match `to`.
+List your SPA's routes and the hub functions they use inside `operatorUi` in `bundle.json`:
 
 ```json
 "operatorUi": {
-  "title": "My App",
+  "title": "My Application",
   "spaNav": [
-    { "to": "/", "label": "Overview", "bff": ["my_getKpi", "my_listItems"] }
+    { "to": "/", "label": "Overview", "bff": ["my_getKpi", "my_listItems"] },
+    { "to": "/alarms", "label": "Alarms", "bff": ["my_listAlarms", "my_ackAlarm"] }
   ],
   "externalSpaUrl": "/apps/my-app/",
-  "uiPack": { "packId": "my-app-ui", "version": "1.0.0", "entry": "index.html" }
+  "uiPack": {
+    "packId": "my-app-ui",
+    "version": "1.0.0",
+    "entry": "index.html"
+  }
 }
 ```
 
-`spaNav` is metadata for Open app UI and agents — it does not host the SPA by itself.
-
-A new screen = new route + `spaNav` row + hub function(s). Not a new server URL.
+Adding a new screen to your product simply means adding a React route, a `spaNav` entry, and the corresponding hub function(s) — no changes to ISPF server endpoints.
 
 ---
 
-## 5. Bundle (logic SHIP)
+## 5. Packaging and installing the `ui-pack`
 
-Canonical lifecycle: [solution-developer-guide](solution-developer-guide.md).
-
-1. Register `appId`, isolated `schemaName`, `tablePrefix`.
-2. `migrations[]` — app SQL only (not platform Flyway).
-3. Hub object + `functions[]` (script steps `selectMany` / `insert` / `return`).
-4. Optional DEVICE children, alerts, workflows, fallback dashboards.
-5. `operatorUi` as above.
-6. Gates in **one run:** `validate_bundle` → `dry_run_deploy` → `import_package` or `POST /api/v1/applications/{appId}/deploy`.
-
-Prefer `get_example_bundle` when a reference covers ≥70% of the spec.
-
----
-
-## 6. UI pack (pixels SHIP)
-
-`ui-pack.json` at zip **root** with `index.html` and `assets/` (not wrapped in `dist/`):
+Place `ui-pack.json` at the **root** of the zip archive alongside `index.html` and `assets/` (zip the contents of `dist/`, not the `dist/` folder itself):
 
 ```json
 {
@@ -222,83 +186,27 @@ Prefer `get_example_bundle` when a reference covers ≥70% of the spec.
   "version": "1.0.0",
   "entry": "index.html",
   "basePath": "/apps/my-app/",
-  "title": "My App",
+  "title": "My Application",
   "minIspfVersion": "0.9.30"
 }
 ```
 
-`appId` is the install directory (`ISPF_UI_PACKS_DIR/<appId>/`). Listing slug may differ (`oil-control-ui` vs appId `oil-control`).
-
-Build: `vite build` then zip the dist root. Dogfood scripts: `npm run pack:ui` in Oil Control / StoreTwin SPA repos.
-
-Install:
+Install the UI pack either via the Marketplace API:
 
 ```http
 POST /api/v1/marketplace/ui-packs/{id}/install
 ```
 
-Or drop-in unpack to `ISPF_UI_PACKS_DIR/my-app/`. Application listing field `uiPackSlug` installs BFF + SPA together ([marketplace](marketplace.md)).
+or by unpacking it into `ISPF_UI_PACKS_DIR/my-app/` on the server.
 
-Smoke: `GET /apps/my-app/` must **not** return the Admin Console title. Split nginx **must** `proxy_pass` `location ^~ /apps/` to the JVM — [ADR-0054](decisions/0054-hosted-ui-packs.md).
-
----
-
-## 7. IDE prompt (copy)
-
-Paste into the SPA workspace so the model does not treat ISPF as “a React monolith to extend”:
-
-```text
-This is an ISPF hosted UI pack (ADR-0054), not the admin console.
-
-Stack: Vite + React, base and Router basename '/apps/<appId>/'.
-Data: POST /api/v1/bff/invoke on the hub. First-party packs may call POST /api/v1/auth/login.
-Partner uiPackTrust (partner / signedPartner) must not call login; use a BFF-scoped token with claim uiPackAppId (ADR-0073).
-Do not add Java to ispf-server or pages to apps/web-console.
-A new screen = route + spaNav entry + BFF function with the app prefix.
-Contract: openapi.yaml (enum functionName). Optional VITE_DATA_SOURCE=mock.
-Build: pack:ui → zip with ui-pack.json at zip root.
-Hub logic object is SINGLETON or INSTANCE, never DEVICE.
-```
-
-For the platform checkout, a second agent session with ISPF MCP owns migrations, functions, and `operatorUi`.
+> **Reverse proxy note (split nginx):** When nginx sits in front of `ispf-server`, ensure `location ^~ /apps/` is proxied (`proxy_pass`) to the ISPF backend just like `/api/` — otherwise nginx's SPA fallback will serve the Admin Console HTML instead of your UI pack ([ADR-0054](decisions/0054-hosted-ui-packs.md)).
 
 ---
 
-## 8. Acceptance
+## 6. Verification checklist
 
-- [ ] First-party: login on `/apps/<appId>/` succeeds; BFF `error_code=OK` on every `spaNav` route
-- [ ] Partner `uiPackTrust` (`partner` / `signedPartner`): no `/api/v1/auth/login` inside the pack; BFF uses a scoped token (`uiPackAppId`)
-- [ ] Writes (ack, create) persist in the app schema and refresh the UI
-- [ ] Operator `/?mode=operator&app=<appId>` → **Open app UI** opens the pack (not the console shell)
-- [ ] `curl /apps/<appId>/` is the SPA, not `<title>ISPF Admin Console</title>`
-- [ ] No industry files under `apps/web-console` or `packages/ispf-server`
-
----
-
-## Anti-patterns
-
-| Anti-pattern | Correct |
-|--------------|---------|
-| Industry pages in `apps/web-console` | Separate Vite app + ui-pack |
-| `@RestController` / Flyway for the domain | `functions[]` + `migrations[]` + `/bff/invoke` |
-| `base: '/'` in production | `base: '/apps/<appId>/'` |
-| Business rules only in React | SQL/CEL/alerts on the platform; SPA renders |
-| Logic hub typed as DEVICE | SINGLETON or INSTANCE |
-| Third-party MCP instead of `/api/v1/ai/mcp` | ISPF MCP with admin Bearer |
-| Ten `add_dashboard_widget` calls as the product UI | Widget kit is fallback; SPA is the product |
-
----
-
-## Related documents
-
-| Document | Purpose |
-|----------|---------|
-| [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md) | Serve `/apps/<appId>/`, nginx, PWA denylist |
-| [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md) | No industry Java/React in `main` |
-| [0006-mcp-agent-tool-adapter](decisions/0006-mcp-agent-tool-adapter.md) | External IDE tool bridge |
-| [ai-development](ai-development.md) | MCP enablement, Cursor JSON example |
-| [applications](applications.md) | Bundle, BFF wire, migrations |
-| [marketplace](marketplace.md) | `artifactKind: ui-pack`, `uiPackSlug` |
-| [operator-apps](operator-apps.md) | Operator shell; Open app UI |
-| [widgets](widgets.md) / [dashboards](dashboards.md) | Fallback HMI kit |
-| [agent-knowledge](agent-knowledge.md) | Approach **I** (hosted UI pack) |
+- [ ] Opening `/apps/<appId>/` serves your custom SPA (not `<title>ISPF Admin Console</title>`)
+- [ ] Every route in `spaNav` loads data cleanly with `error_code === "OK"` from `POST /api/v1/bff/invoke`
+- [ ] User actions (creating records, acknowledging alarms) persist in the isolated SQL schema and update the screen
+- [ ] Clicking **Open app UI** in `/?mode=operator&app=<appId>` opens `/apps/<appId>/`
+- [ ] All backend logic sits on a `SINGLETON` or `INSTANCE` hub (not `DEVICE`), and zero project files were added to `apps/web-console` or `packages/ispf-server`

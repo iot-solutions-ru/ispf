@@ -1,11 +1,11 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/object-functions.md](../en/object-functions.md).
+> **Язык:** русская версия. Английский оригинал: [en/object-functions.md](../en/object-functions.md).
 
-# функции на объектах
+# Функции на объектах
 
-Функция — **названный вызываемый** на узле деревьев объектов. Адресация всегда парой:
+Функция — **именованная вызываемая операция** на узле дерева объектов. Она всегда адресуется парой параметров:
 
-- **путь объекта** — абсолютный, например `root.platform.devices.test`
-- **имя функции** — локальное на объекте, например `calculate`
+- **путь объекта** — полный путь в дереве, например `root.platform.devices.test`;
+- **имя функции** — локальное имя внутри этого объекта, например `calculate`.
 
 Глобального пути вида `root/.../myFn` нет.
 
@@ -56,7 +56,7 @@ Content-Type: application/json
 
 Пустой ввод (схема без полей) — тело запроса можно не отправлять.
 
-## Как вы осуществляете реализацию
+## Порядок выбора обработчика при вызове
 
 ```mermaid
 flowchart TD
@@ -384,11 +384,11 @@ POST .../invoke?path=root.platform.mini-tec-plant.rumb-10kv&name=breaker_operate
 }
 ```
 
-Если вложенная функция активируется `error_code` ≠ `OK`, скрипт прерывается и выдает эту ошибку.
+Если вложенная функция возвращает `error_code` ≠ `OK`, выполнение скрипта останавливается и возвращает эту ошибку.
 
 ### 2.6 SQL-шаги (`selectOne`, `selectMany`, `exec`)
 
-Требуется `dataSourcePath` на дескрипторе (путь источник данных приложения) **или** каталог платформы по умолчанию.
+Требуется `dataSourcePath` на дескрипторе функции (путь к источнику данных приложения) **или** источник данных платформы по умолчанию.
 
 ```json
 {
@@ -477,7 +477,7 @@ POST .../invoke?path=root.platform.mini-tec-plant.rumb-10kv&name=breaker_operate
 
 ### 2.12 Ошибки: `failIfNull`, `failIfNotEquals`
 
-Стандартный провод для ошибок в схеме вывода:
+Стандартные поля ошибок в выходной схеме функции (`outputSchema`):
 
 ```json
 {
@@ -516,13 +516,13 @@ POST .../invoke?path=root.platform.mini-tec-plant.rumb-10kv&name=breaker_operate
 
 ## 3. Java-функции (`sourceType: "java"`)
 
-`sourceBody` — один общественный класс, реализующий `com.ispf.core.function.ObjectJavaFunction`. **Компиляция при сохранении**; ошибка компиляции → `400`, объект не обновляется.
+`sourceBody` — один публичный класс (`public class`), реализующий `com.ispf.core.function.ObjectJavaFunction`. **Компилируется на сервере при сохранении**; при ошибке компиляции возвращается `400`, а объект не изменяется.
 
-По умолчанию выключены (`ispf.function.java.enabled` / `ISPF_FUNCTION_JAVA_ENABLED`). Исходник пишут только админы; остальные роли вызывают уже развёрнутые функции. Код выполняется в процессе сервера — denylist ниже не является изоляцией процесса (ADR-0045).
+По умолчанию отключены (`ispf.function.java.enabled` / `ISPF_FUNCTION_JAVA_ENABLED`). Сохранять исходный код могут только администраторы; остальные роли могут вызывать уже сохранённые функции. Код выполняется внутри JVM сервера — список запретов ниже не заменяет полную изоляцию процесса ([ADR-0045](decisions/0045-java-function-sandbox.md)).
 
-Контекст: `JavaFunctionContext(objectPath, functionName)` — путь вызывающего объекта и имя функции.
+Контекст вызова: `JavaFunctionContext(objectPath, functionName)` — путь целевого объекта и имя функции.
 
-Ограничения (`JavaFunctionSecurity`): запрещены `Runtime`, `ProcessBuilder`, `System.exit`, отражение, `java.net.*` (кроме `InetAddress`), `java.io.File`, `java.nio.file`, Пружинные пакеты и др.
+Ограничения песочницы (`JavaFunctionSecurity`): запрещены `Runtime`, `ProcessBuilder`, `System.exit`, рефлексия (`java.lang.reflect`), сетевые вызовы `java.net.*` (кроме `InetAddress`), файловая система (`java.io.File`, `java.nio.file`), внутренние пакеты Spring (`org.springframework.*`) и др.
 
 ### 3.1 Минимальный ОК
 
@@ -611,36 +611,36 @@ public class ThresholdFn implements ObjectJavaFunction {
 }
 ```
 
-### 3.5 Когда выбирают Java и Script
+### 3.5 Когда выбирать Java, а когда Script
 
-| | Ява | Скрипт |
-|---|------|--------|
-| Компиляция | При сохранении (JDK на расстоянии) | Нет |
-| SQL/рабочий процесс/readVariable | Нет (только ввод/вывод) | Да |
-| Сложная логика | Удобно | `when` + шаги |
-| Чтение переменных дерева | Через input или script | `readVariable` |
+| Критерий | Java (`sourceType: "java"`) | Script (`sourceType: "script"`) |
+|----------|-----------------------------|---------------------------------|
+| Компиляция | При сохранении (JDK на сервере) | Не требуется |
+| Запросы SQL / чтение переменных дерева / управление процессами | Нет (работает только с входным/выходным `DataRecord`) | Да (`selectMany`, `exec`, `readVariable`, `cancel_workflows`) |
+| Сложная математика и алгоритмы | Удобно на чистой Java | Условия `when` / `if` и цепочка шагов |
+| Чтение переменных дерева | Передача через вход функции | Шаг `readVariable` напрямую |
 
-Для доступа к переменным объекта без передачи всего во входе используйте **script** или `call(@/fn/...)` в binding.
+Для работы с SQL-таблицами приложения и переменными дерева без лишней обвязки используйте **`script`**.
 
 ---
 
-## 4. Приложение функций (развертывание)
+## 4. Прикладные функции (`applications/.../functions/deploy`)
 
-Отдельный канал: Функция деплоится из приложения (`POST /api/v1/applications/{appId}/functions/deploy`), дескриптор появляется на объекте дерева, вызов идёт через `ApplicationFunctionHandler`.
+Прикладные функции разворачиваются через API приложения (`POST /api/v1/applications/{appId}/functions/deploy` или в составе `bundle.json`): дескриптор регистрируется на узле дерева, а вызов обслуживает `ApplicationFunctionHandler`.
 
-Сценарий-тело и шаги — то же самое, что в §2. Подробно: [APPLICATIONS.md § Развертывание функций](applications.md).
+Формат тела и набор шагов полностью совпадают с §2. Подробнее: [API приложений](applications.md).
 
 ```http
 POST /api/v1/applications/myapp/functions/deploy
 ```
 
-Если на объекте уже есть `sourceType=script|java` с телом — обработчик приложения **не перехватывает** вызов.
+Если на самом объекте явно задана функция с `sourceType=script|java` и заполненным телом, приоритет остаётся у неё.
 
 ---
 
-## 5. Возможности вызова
+## 5. Способы вызова функций
 
-### 5.1 ОТДЫХ
+### 5.1 REST API
 
 ```http
 POST /api/v1/objects/by-path/functions/invoke?path={objectPath}&name={functionName}
@@ -648,7 +648,7 @@ POST /api/v1/objects/by-path/functions/invoke?path={objectPath}&name={functionNa
 
 Требуется право вызова на объект (RBAC).
 
-### 5.2 Привязки
+### 5.2 Правила расчёта (привязки)
 
 На **текущем** объекте:
 
@@ -666,7 +666,7 @@ call(root.platform.devices.test/fn/myFn, @/payloadVar)
 read(root.platform.devices.test/temperature)
 ```
 
-### 5.3 Задача службы рабочего процесса
+### 5.3 Шаг `serviceTask` в процессе BPMN
 
 ```xml
 <serviceTask ispf:action="invoke_function"

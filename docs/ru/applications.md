@@ -1,27 +1,25 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/applications.md](../en/applications.md).
+> **Язык:** русская версия. Английский оригинал: [en/applications.md](../en/applications.md).
 
-# Приложения на платформе (REQ-PF)
+# API прикладных решений (Applications)
 
-> **Статус:** Stable — Bundles, BFF, scheduler. Теги: [doc-status](doc-status.md).
+> **Статус:** Stable — деплой пакетов `bundle.json`, миграции SQL, шлюз BFF, расписания и Git. Метки зрелости: [doc-status.md](doc-status.md).
 
-Платформенный уровень для разработки прикладных решений **без Java-кода отрасли в `ispf-server`**. Соответствует [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md) и требованиям REQ-PF.
+Серверный уровень платформы для развёртывания отраслевых решений **без добавления прикладного Java-кода в `ispf-server`** ([ADR-0001](decisions/0001-app-platform-boundary.md)). Пошаговое введение см. в [Руководстве разработчика решений](solution-developer-guide.md).
 
-**Дорожная карта и статус REQ-PF:** [roadmap](roadmap.md) (Часть A).
+## Обзор возможностей
 
-## Обзор
+![Каталог Applications в консоли администратора](../assets/ispf-applications.png)
 
-![Каталог Applications в Explorer](../assets/ispf-applications.png)
-
-| РЕК-ПФ | Возможность | API / компонент |
-|--------|------------|-----------------|
-| 01 | Application Function Runtime | `POST /api/v1/applications/{appId}/functions/deploy`, JSON script engine |
-| 02 | Application Data Layer | `POST /api/v1/applications/{appId}/data/migrate` |
-| 03 | Application Package Deploy | `POST /api/v1/applications/{appId}/deploy` (JSON body) |
-| 04 | BPMN `invoke_function` | `WorkflowActionType.INVOKE_FUNCTION` |
-| 05 | Platform Scheduler | `GET/POST /api/v1/schedules` |
-| 06 | BFF Wire Gateway | `POST /api/v1/bff/invoke` |
-| 07 | Model Registry Persistence | `model_definitions` + автосохранение при CRUD моделей |
-| 10 | Workflow Cancel | `POST /api/v1/workflows/instances/{id}/cancel` |
+| Код | Возможность | API / компонент |
+|-----|-------------|-----------------|
+| REQ-PF-01 | Выполнение скриптовых функций | `POST /api/v1/applications/{appId}/functions/deploy`, JSON script engine |
+| REQ-PF-02 | Изолированная SQL-схема приложения | `POST /api/v1/applications/{appId}/data/migrate` |
+| REQ-PF-03 | Пакетный деплой решения (`bundle.json`) | `POST /api/v1/applications/{appId}/deploy` (JSON body) |
+| REQ-PF-04 | Вызов функций из процессов BPMN | `WorkflowActionType.INVOKE_FUNCTION` |
+| REQ-PF-05 | Планировщик расписаний | `GET/POST /api/v1/schedules` |
+| REQ-PF-06 | Единый шлюз интерфейса (BFF) | `POST /api/v1/bff/invoke` |
+| REQ-PF-07 | Хранение шаблонов объектов в БД | Таблица `blueprint_definitions` |
+| REQ-PF-10 | Отмена экземпляров BPMN | `POST /api/v1/workflows/instances/{id}/cancel` |
 
 ## Регистрация приложений
 
@@ -55,13 +53,13 @@ Content-Type: application/json
 
 Повторный вызов с тем же `version` + `id` — **идемпотентен** (скрипт пропускается).
 
-**Guard:** DDL не может создавать платформы-таблицы (`applications`, `workflow_*`, …). При непустом `tablePrefix` названия таблиц следует начинать с префикса.
+**Защита схемы:** миграции приложения не могут создавать или менять системные таблицы платформы (`applications`, `workflow_*` и др.). При заданном `tablePrefix` имена таблиц должны начинаться с указанного префикса.
 
 ```http
 GET /api/v1/applications/myapp/data/status
 ```
 
-### Семя (дым)
+### Тестовое наполнение данных (`seed`)
 
 ```http
 POST /api/v1/applications/myapp/data/seed
@@ -70,7 +68,7 @@ Content-Type: application/json
 { "profile": "smoke-demo" }
 ```
 
-Встроенный профиль `smoke-demo` — идемпотентные INSERT в генерических-таблицах (`demo_category`, `demo_item`, `demo_metric`). Повторный вызов пропускает уже применённые семенные блоки.
+Встроенный профиль `smoke-demo` выполняет идемпотентные `INSERT` в демонстрационные таблицы (`demo_category`, `demo_item`, `demo_metric`). Повторный вызов пропускает уже добавленные блоки тестовых данных.
 
 ```http
 GET /api/v1/applications/myapp/data/status
@@ -108,7 +106,7 @@ POST /api/v1/applications/myapp/functions/deploy
 Content-Type: application/json
 
 {
-  "objectPath": "root.platform.devices.demo-sensor-01",
+  "objectPath": "root.platform.singleton-blueprints.myapp-hub",
   "functionName": "myapp_ping",
   "version": "1",
   "descriptor": {
@@ -132,18 +130,20 @@ Content-Type: application/json
 
 Параметры в SQL: `"${input.orderId}"` или `"$input.orderId"`.
 
-## Развертывание пакета (REQ-PF-03)
+<a id="bundle-deploy-req-pf-03"></a>
 
-### Semver и формат (БЛ-97 / ADR-0064)
+## Деплой пакета решения (`bundle.json`)
 
-`manifest.version` является **обязательным** и должно быть строгим значением `MAJOR.MINOR.PATCH` (например, `1.0.0`). Недопустимые значения отклоняются при анализе, проверке и развертывании.
+### Версионирование SemVer и формат манифеста (ADR-0064)
 
-`manifest.formatVersion` — опциональное **целое** для формы JSON (не semver решения). Нет поля ⇒ `1`. Неподдерживаемые значения отклоняются. Pull-from-tree пишет `formatVersion: 1`. См. [0064-release-compatibility-lts](decisions/0064-release-compatibility-lts.md) и lab-гейт [release-upgrade](release-upgrade.md) (не cluster N→N+1).
+`manifest.version` является **обязательным** и должно быть строгим значением `MAJOR.MINOR.PATCH` (например, `1.0.0`). Недопустимые значения отклоняются при анализе, проверке и развёртывании.
 
-Необязательные поля:
+`manifest.formatVersion` — необязательное **целое число** для версии структуры JSON (не версия решения). Если поле не указано, используется `1`; неподдерживаемые номера версий отклоняются. Подробнее: [ADR-0064](decisions/0064-release-compatibility-lts.md) и [Обновление версий](release-upgrade.md).
 
-- `changelog` — top-level string shown in the solution catalog
-- `metadata.changelog` — alternative location for the same text
+Необязательные поля истории изменений:
+
+- `changelog` — строка верхнего уровня, отображаемая в каталоге решений;
+- `metadata.changelog` — альтернативное расположение того же текста.
 
 При обновлении установленного приложения `POST …/bundle/validate` предупреждает о **major**-обновлениях версии (`1.x.x` → `2.0.0`), чтобы интеграторы проверили миграции и breaking changes operator UI.
 
@@ -184,10 +184,10 @@ Content-Type: application/json
   ],
   "blueprints": [
     {
-      "name": "my-device-v1",
-      "description": "Custom device template",
-      "type": "DEVICE",
-      "targetObjectType": "DEVICE",
+      "name": "my-unit-v1",
+      "description": "Типовой шаблон агрегата",
+      "type": "INSTANCE",
+      "targetObjectType": "CUSTOM",
       "variables": []
     }
   ],
@@ -210,7 +210,9 @@ Content-Type: application/json
 
 Ответ: `{ "status": "OK", "applied": [...], "skipped": [...], "errors": [] }`.
 
-## BFF (REQ-PF-06)
+<a id="bff-req-pf-06"></a>
+
+## Шлюз вызова функций из UI (`BFF`)
 
 Универсальный шлюз для Operator UI:
 
@@ -219,7 +221,7 @@ POST /api/v1/bff/invoke
 Content-Type: application/json
 
 {
-  "objectPath": "root.platform.devices.demo-sensor-01",
+  "objectPath": "root.platform.singleton-blueprints.myapp-hub",
   "functionName": "myapp_processRecord",
   "input": {
     "schema": { "name": "in", "fields": [{"name": "orderId", "type": "STRING"}] },
@@ -257,7 +259,7 @@ POST /api/v1/schedules
 
 ```xml
 <ispf:serviceTask action="invoke_function"
-  objectPath="root.platform.devices.demo-sensor-01"
+  objectPath="root.platform.singleton-blueprints.myapp-hub"
   functionName="myapp_acknowledge"
   inputMap="deviceId=${workflow.deviceId}"
   outputMap="ackResult=result" />
@@ -290,12 +292,12 @@ Content-Type: application/json
 
 ## Привязки SQL (REQ-PF-08)
 
-Декларативная переменная объекта синхронизации ← SQL в схеме приложения:
+Автоматическая синхронизация переменной узла логики по SQL-запросу к схеме приложения:
 
 ```http
 POST /api/v1/applications/{appId}/bindings/deploy
 {
-  "objectPath": "root.platform.devices.demo-sensor-01",
+  "objectPath": "root.platform.singleton-blueprints.myapp-hub",
   "variable": "readyCount",
   "query": "SELECT COUNT(*) AS value FROM demo_item WHERE status = 'ready'",
   "refresh": "on_schedule",
@@ -360,7 +362,7 @@ Deploy всегда прогоняет `BundleManifestValidator` до приме
 
 `runTests` по умолчанию **true**: `tests[]` манифеста выполняются после apply, провал попадает в результат deploy. `runTests=false` пропускает их.
 
-До записи объектов бандла deploy делает сухой прогон дерева (обязательные поля, известный тип, родитель уже есть или создаётся более ранним объектом этого манифеста, повторяющиеся пути) и выполняет `migrations[]` на одном соединении с БД. Ошибка сухого прогона не меняет живое дерево (`treeMutated: false`) и не запускает SQL. Ошибка оператора откатывает это соединение и удаляет таблицы, которые создал именно этот неуспешный пакет, поэтому более поздняя ошибка не оставляет их в схеме. Регистрация по-прежнему создаёт схему приложения и data source, чтобы операторам было куда выполняться. Уже зафиксированный DDL не откатывается, если следующая запись объекта завершилась ошибкой.
+До записи объектов пакета операция `deploy` выполняет пробную проверку дерева (обязательные поля, известный тип узла, наличие родительского пути и отсутствие дубликатов) и запускает `migrations[]` в одном соединении с БД. Ошибка пробной проверки не изменяет дерево объектов (`treeMutated: false`) и не запускает SQL. Ошибка SQL-выражения откатывает текущее соединение и удаляет таблицы, созданные именно этим неуспешным деплоем, чтобы в схеме не оставалось полуприменённых таблиц (сама схема приложения и источник данных при регистрации сохраняются, чтобы запросам было где выполняться). Уже зафиксированные ранее миграции не откатываются, если на следующем шаге возникнет ошибка записи узла дерева.
 
 `export` возвращает активный (или указанный) манифест моментального снимка из `application_bundle_deployments`. Веб-консоль: вкладка **Deploy** на узле `APPLICATION` — редактор JSON, проверка, развертывание, таблица ресурсов (добавление/удаление в манифесте).
 
@@ -373,9 +375,11 @@ POST /api/v1/applications/{appId}/bundle/pull-from-tree
 }
 ```
 
-Собирает манифест из **дерева живых объектов** (визуальные группы + магазины приложений). `paths` — опционально, только перечисленные узлы; без `paths` — все участники visual groups. `displayName` / `tablePrefix` / `schemaName` обновляются из регистрации приложения; `operatorUi`, `metadata`, `license`, `requires` берутся из активного snapshot (не reverse-engineering из дерева). `blueprints[]` обновляются из registry по именам базового манифеста. `models[]` не reverse-engineering (остаётся из base).
+Собирает манифест из **текущего дерева объектов** (визуальные группы + хранилища приложения). `paths` — опционально, только перечисленные узлы; без `paths` — все участники visual groups. `displayName` / `tablePrefix` / `schemaName` обновляются из регистрации приложения; `operatorUi`, `metadata`, `license`, `requires` берутся из активного снимка. `blueprints[]` обновляются из реестра по именам базового манифеста.
 
-Дерево объектов Поддерево (JSON, `formatVersion: 1`): `GET /api/v1/platform/backup/export?rootPath=root.platform.devices.demo-sensor-01` — вкладка **Экспорт JSON** в Инспекторе.
+Экспорт отдельной ветки дерева объектов в JSON (`formatVersion: 1`): `GET /api/v1/platform/backup/export?rootPath=root.platform.devices.demo-sensor-01` (или вкладка **Экспорт JSON** в инспекторе узла).
+
+<a id="application-git-adr-0063"></a>
 
 ## Application Git (ADR-0063)
 
@@ -465,13 +469,4 @@ Web Console: API first, fallback `public/operator-apps/<appId>.manifest.json` (l
 - Invoke: `POST /api/v1/bff/invoke` или `POST /api/v1/objects/by-path/functions/invoke` по tree path.
 - SQL bindings: `bindingExpression: sqlBinding('appId','var')` на переменной узла.
 
-**Legacy (deprecated, warn-only):** operator manifest `screens[]` in bundle — Phase 3.5; предпочитайте `operatorUi` + dashboards в дереве. Legacy manifest screen types: `table`/`report` (BFF), `dashboard` (embedded DASHBOARD path), `chart` (single-variable trend), `map` (child devices). См. [solution-developer-guide](solution-developer-guide.md).
-
-## Next steps (backlog)
-
-Фаза 17 и Фаза 19 закрыты. Текущая волна — **[ROADMAP.md § Phase 18](roadmap.md)**:
-
-- **18.1** Администратор Playwrightа e2e (Explorer, оператор глубокой ссылки) — хвост Фаза 3.4
-- **18.2** Продвижение заглушек драйверов (по требованию)
-
-Планирование спринта: [roadmap](roadmap.md).
+**Устаревший формат (только предупреждение):** секция `operatorManifest` (`screens[]`) в пакете сохранена для обратной совместимости; для всех новых решений используйте `operatorUi` и дашборды дерева (либо пакет `ui-pack` — см. [Руководство разработчика решений](solution-developer-guide.md)).

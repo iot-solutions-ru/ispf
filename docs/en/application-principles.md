@@ -1,350 +1,155 @@
 > **Language:** Canonical English. Russian edition: [ru/application-principles.md](../ru/application-principles.md).
 
-# ISPF application development principles
+# Application architecture rules on ISPF
 
-> **Status:** Stable — P1–P10 target approach. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — core engineering rules for designing solutions on ISPF. Status tags: [doc-status.md](doc-status.md).
 
-Canonical rules for **solution developers** and **AI agents** (tree-first agent, AI Studio, MCP). Hub links: [architecture.md](architecture.md), [ADR-0001](decisions/0001-app-platform-boundary.md), [solution-developer-guide.md](solution-developer-guide.md), [agent-knowledge.md](agent-knowledge.md), [platform-logic.md](platform-logic.md).
+This guide explains how to structure an application on ISPF so that equipment connections, calculations, SQL tables, operator screens, and deployments remain clean and maintainable.
 
-API and widget details live in linked docs below.
-
-**Agent:** `search_context(query=..., topic=application-principles)`.
+Related guides: [How ISPF works](learn.md) · [Solution developer guide](solution-developer-guide.md) · [Object model](object-model.md) · [Blueprints](blueprints.md) · [Custom React UI](external-ide.md) · [Common design mistakes](anti-patterns.md).
 
 ---
 
-## Target approach
+## Core idea
 
-**Application business logic lives in declarative object-tree configuration; the platform supplies generic engines; bundle deploy is packaging and delivery of configuration, not a separate runtime.**
+An application on ISPF does **not** fork the Java server (`ispf-server`) or modify the Admin Console (`apps/web-console`). Instead:
 
----
-
-## Principles P1–P10
-
-Each principle has two layers: narrative for humans and actionable rules for agents.
-
-### P1. Object tree is the only runtime
-
-**For humans:** After deploy everything runs through tree nodes (`root.platform.devices.*`, `{appId}.functions.*`, `DASHBOARD`, `WORKFLOW`, `ALERT`). A row in `applications` is **registry + isolated SQL schema**, not a separate engine. Invoke, alerts, dashboards, bindings — via tree API and WebSocket.
-
-**For agents:**
-
-- Address functions by tree path: `{appId}.functions.{name}`; use `invoke_bff` / `invoke_tree_function` — do not invent REST.
-- `list_applications` — for appId/schema only; runtime — `list_objects`, `get_object`, `list_variables`.
+1. **The platform provides general-purpose engines:** protocol drivers, the object tree, the CEL expression and binding engine, time-series storage, threshold alerts, BPMN workflows, and a sandboxed SQL/script runner.
+2. **Your project configures those engines:** you define templates (*blueprints*), object nodes, SQL tables in your application's isolated database schema, script functions, dashboards, and workflows.
+3. **Deployment is an application bundle (`bundle.json`):** packaging delivers your configuration into the server's object tree and application schema (plus an optional `ui-pack` zip if you build a custom React interface).
 
 ```mermaid
 flowchart TB
-    subgraph delivery [Configuration delivery]
-        Bundle[Bundle deploy]
-        Tools[Agent tools / Admin UI]
-        REST[Step-by-step REST API]
+    subgraph Delivery["How configuration arrives"]
+        Bundle["Application bundle (bundle.json)"]
+        Console["Admin Console / CLI / MCP"]
     end
-    subgraph runtime [Single runtime]
-        Tree[Object tree]
-        Engines[CEL / BPMN / Script / Drivers]
+    subgraph Runtime["Single server runtime"]
+        Tree["Object tree (root.platform.*)"]
+        Schema["Isolated SQL schema (app_<id>)"]
+        Engines["Drivers · Bindings (CEL) · Historian · Alerts · BPMN · Script SQL"]
     end
     Bundle --> Tree
-    Tools --> Tree
-    REST --> Tree
+    Bundle --> Schema
+    Console --> Tree
     Tree --> Engines
+    Schema --> Engines
 ```
 
 ---
 
-### P2. Platform is engines; solution is configuration
+## Ten engineering rules (P1–P10)
 
-**For humans:** ISPF is middleware/framework. Platform (`main`) implements generic mechanisms **once**: CEL, bindings, historian, BPMN, script runtime, drivers, event bus. Your solution **fills** them with declarative JSON: models, variables, events, functions, workflows, dashboards.
+### P1. Everything runs through the object tree
 
-**For agents:**
+After you deploy an application, all live tags, functions, dashboards, alarms, and workflows live as nodes in the object tree (`root.platform.*`) and communicate over the same REST and WebSocket APIs. The record in `root.platform.applications.<appId>` only registers the application's metadata and its isolated PostgreSQL schema (`app_<appId>`) — it is **not** a separate runtime process.
 
-- **Forbidden:** Java in `ispf-server`, React in `apps/web-console`, platform Flyway for app tables, hardcoded BFF routes.
-- New platform capability requires explicit platform approval, not a bundle workaround.
+### P2. Keep domain code out of the platform core
 
-See [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [plugins](plugins.md).
+Never add plant-specific or industry-specific Java controllers to `ispf-server`, Flyway migrations to the platform database schema, or custom pages to `apps/web-console`. Doing so turns your installation into an un-upgradable fork. Domain tables go into your application's `migrations[]`, domain queries go into `functions[]`, and custom operator screens go into a standalone `ui-pack` ([ADR-0001](decisions/0001-app-platform-boundary.md)).
 
-Manufacturing depth follows the same boundary: traceability DAG, BoM, CTO, QMS lite, reports-as-documents, operations DAG, Level 4 outbox, and agent-facing capability maps are [solution patterns](manufacturing-patterns.md), not platform Java domains. See [ADR-0050](decisions/0050-manufacturing-patterns-as-solutions.md) and [MES capability MCP map](mes-capability-mcp.md).
+### P3. Prefer declarative rules over custom code
 
----
+Before writing custom code, use the built-in declarative mechanism designed for the job:
+- **Tag scaling, unit conversion, KPI math:** calculation rules (*binding rules*) with CEL or built-in functions (`scale`, `clamp`, `movingAvg`, `counterRate`).
+- **Threshold monitoring with hysteresis/delay:** `ALERT` nodes.
+- **Multi-step operator procedures and approvals:** `WORKFLOW` (BPMN) nodes.
+- **CRUD queries on application SQL tables:** declarative JSON `script` functions (`selectMany`, `selectOne`, `exec`, `return`).
 
-### P3. Declarative over custom code
+### P4. An application bundle is a delivery package, not a black box
 
-**For humans:** If a task can be expressed with CEL, a binding rule, BPMN, a script function, or driver mapping — **do not write** custom Java. The more logic in the object tree, the easier deploy, audit, and AI-assisted editing.
+`bundle.json` is how your project moves cleanly from Git to test and production servers (`ispf pack` → `ispf validate` → `ispf deploy`, or `POST /api/v1/applications/{appId}/deploy`). Re-deploying a bundle reconciles existing tree nodes and applies any new SQL migrations idempotently.
 
-**For agents:**
+### P5. One consistent model for reactive rules
 
-- Before a script function: check CEL / `create_variable` / binding rules / `configure_alert`.
-- Script steps — for CRUD on app schema (`selectMany`, `insert`, `update`), not UI logic.
-
----
-
-### P4. Bundle = packaging, not a parallel runtime
-
-**For humans:** A bundle manifest is a **way to deliver** configuration into the tree and app schema. After import everything is addressed by tree paths; the bundle does not “live separately” from the platform.
-
-**For agents:**
-
-- Production path: `validate_bundle` → `dry_run_deploy` → `import_package` (in one run).
-- POC/lab: tree-first tools without bundle — allowed; bundle import only after gates OK.
-
-Manifest sections: `objects[]`, `models[]`, `dashboards[]`, `workflows[]`, `migrations[]`, `functions[]`, `bindings[]`, `operatorUi`, … — see [solution-developer-public-api](solution-developer-public-api.md).
-
----
-
-### P5. One logic model: Platform Rule
-
-**For humans:** All reactive logic follows one workflow:
+Reactive rules across ISPF follow one pattern:
 
 ```text
-WHEN (activator)  →  IF (CEL condition)  →  THEN (effect)
+WHEN (input changes / event fires / timer ticks)
+  → IF (CEL condition is true)
+  → THEN (write variable / update dashboard context / emit event)
 ```
 
-Three effects (`target.kind`): `variable`, `context` (`@dashboardContext`), `event` (journal/workflow). Do not add parallel DSLs on widgets (`showWhen`, `behaviorJson`, `visibleWhen`).
+Do not embed long scripts or custom visibility mini-languages inside individual dashboard widgets. Keep rules on objects so they can be validated and inspected in one place ([platform-logic](platform-logic.md)).
 
-**For agents:**
+### P6. One job — one mechanism
 
-- Dashboard show/hide → rules with `target.kind=context`, path `widgets.{id}.visible`.
-- UI mode/selection → `context.params.*`, `context.selection.*`.
-- Activators: `onVariableChange`, `onContextChange`, `onEvent`, `onStartup`, `periodicMs`.
-- `search_context topic=platform-logic`.
+Avoid solving the same problem in two places at once:
 
-See [platform-logic](platform-logic.md), [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md).
+| Engineering task | Standard ISPF mechanism | What to avoid |
+|------------------|-------------------------|---------------|
+| Polling PLCs, meters, brokers | `DEVICE` node + protocol driver + point mappings | Polling hardware from external scripts or browsers |
+| Derived tags & cross-device math | Binding rules (`@bindingRules`) on a hub object | Complex formulas inside dashboard widgets |
+| High/low threshold alarms | `ALERT` node (`root.platform.alert-rules.*`) | Custom polling loops in SQL scripts |
+| Multi-event patterns in a time window | `CORRELATOR` node (`root.platform.correlators.*`) | Hand-rolled state machines in variables |
+| Shift procedures with human sign-off | `WORKFLOW` (BPMN `userTask` + `serviceTask`) | Chaining ad-hoc button scripts |
+| Reading/writing business tables (orders, batches) | JSON script functions in an isolated app SQL schema | Writing to platform system tables |
+| Reflecting SQL query results in a tag | `sqlBinding` | Periodic external cron scripts |
 
----
+### P7. How templates, live editing, bundles, and change sets fit together
 
-### P6. One task — one mechanism
+Newcomers sometimes wonder whether **Admin Console**, **Blueprints**, **Bundles**, and **Change sets** are competing ways to build a project. They are not — each solves a different step of engineering work:
 
-**For humans:** Do not duplicate logic in multiple places.
+1. **Templates (`Blueprint`) define the structure of repeated objects.** If you have 30 identical heat exchangers, define one `INSTANCE` blueprint (`heat-exchanger-v1`) so every unit gets the exact same variables, alarms, and rules.
+2. **Interactive editing (Admin Console or IDE/MCP) is how you build and test on a dev stand.** For a quick lab test or SNMP monitor without custom SQL tables, editing the tree directly is enough.
+3. **An application bundle (`bundle.json`) is how you version and ship a repeatable solution.** As soon as you need Git history, CI checks, SQL tables, or deployment to test/production servers, pack your work into a bundle (`ispf pack`).
+4. **A change set is for reviewing a batch of edits on an existing tree** (`preview → apply`), not for bootstrapping a new application from scratch ([collaboration](collaboration.md)).
 
-| Task | Mechanism | Do not use |
-|------|-----------|------------|
-| Variable computation | CEL / binding rules | Java handler |
-| UI show/hide, HMI mode | Platform Rule → `@dashboardContext` | Widget fields |
-| Threshold → event | ALERT + CEL | Custom polling |
-| Event pattern | Correlator | Ad-hoc scripts |
-| Process with tasks | BPMN WORKFLOW | Imperative chain |
-| SQL CRUD | Script function | Platform Java |
-| SQL → live variable | `sqlBinding` / bindings[] | Manual sync |
-| Telemetry | Driver + mappings | Fake variables |
+### P8. Address functions and data through the object tree
 
-**For agents:** `get_automation_schema` before `configure_alert` / `configure_correlator`; layout only in variable `layout`, not `set_variable name=widgets`.
+After deploying an application, its functions are exposed on the tree (for example, `root.platform.singleton-blueprints.<hub>` or `root.platform.applications.<appId>.functions`) and invoked uniformly through `POST /api/v1/bff/invoke`. Use `operatorUi` in `bundle.json` (not the deprecated `operatorManifest` format).
 
----
+### P9. Choose the right operator UI for the job
 
-### P7. One creation stack — four layers, one default path
+ISPF supports two ways to present screens to shift operators:
+- **Built-in Dashboards & SCADA mnemonics (`?mode=operator&app=<appId>`):** fastest for P&ID diagrams, single-line electrical schematics, trend charts, alarm tables, and standard forms — zero frontend code required.
+- **Hosted React web app (`ui-pack` at `/apps/<appId>/`):** best when your product needs custom layouts, interactive maps, 3D views, or dense domain tables. Built in a separate Vite/React repo and served by ISPF ([Custom React UI](external-ide.md)). You can also keep a simple built-in dashboard as a fallback.
 
-**For humans:** Blueprint, bundle, change set, agent, and Admin UI are **not five alternative ways to build an application**. They answer **four different questions**. Treating them as peers is the main cognitive tax for newcomers and for weak models.
+### P10. Validate before deploying
 
-| Layer | Question | Mechanism | Document |
-|-------|----------|-----------|----------|
-| **AUTHOR** | Who is editing right now, and how? | Admin UI **or** Agent (AI Studio / MCP) | [ai-development](ai-development.md) |
-| **SHAPE** | What structure should this typed object have? | **Blueprint** (mixin / singleton / intrinsic) | [blueprints](blueprints.md) |
-| **SHIP** | What is the durable, repeatable delivery artifact? | **Bundle** (manifest + migrations + gates) | [solution-developer-guide](solution-developer-guide.md), P4 |
-| **PROMOTE** | How do I preview and apply a batch of already-authored ops? | **Change set** | [collaboration](collaboration.md) § change-sets |
-
-```text
-AUTHOR  = UI | Agent      → writes into the tree and/or drafts a bundle
-SHAPE   = Blueprint       → defines typed object structure
-SHIP    = Bundle          → canonical repeatable delivery (+ app SQL / CI)
-PROMOTE = Change set      → preview/apply of existing ops (not greenfield bootstrap)
-DONE    = validate → dry-run/preview → apply  (P10)
-```
-
-**Hard rule:** Do not choose a mechanism until you know which layer you are on.
-
-- UI and Agent are two **clients** of the same tree/bundle contracts — not two platforms.
-- Blueprint is **shape**, never “another way to ship an app.”
-- Change set is **promotion/review**, never “another way to create from scratch.”
-- Bundle is **packaging into the one runtime** (P1, P4), not a parallel engine.
-
-#### Intent → default path
-
-| Intent | Default | Allowed | Not the same thing |
-|--------|---------|---------|--------------------|
-| Lab / SNMP / monitoring **without** app schema | **AUTHOR** tree-first (UI or Agent) | Platform HMI only | Bundle “because bundles exist” |
-| Production solution with **SQL** and/or **CI** | **SHIP** bundle: `validate → dry_run → import` | AUTHOR only as draft until gates pass | Live-tree-only with no packaging |
-| Draft from a natural-language prompt | Agent / AI Studio → **bundle gates** | Short tree-first POC, then export/import | Import without validate |
-| Start from a known baseline (MES / lab / commercial) | Reference or commercial **bundle** | Adapt after import | Hand-copy dozens of objects |
-| Give a typed object its variables / events / functions | **SHAPE** — blueprint apply / instantiate (or `models[]` in bundle) | — | Re-create the same variables by hand each time |
-| Review or promote a package of existing tree ops | **PROMOTE** — change set `preview → apply` | `force` only when explicit | Change set as greenfield app bootstrap |
-| Iterative HMI without a release train | **AUTHOR** Admin UI on the tree | Agent in ask/plan | Change set as a substitute for Explorer |
-| Product React operator UI (any components) | **AUTHOR** SPA in Cursor/VS Code + **SHIP** bundle + ui-pack | Widget kit as Operator fallback | Merge SPA into `apps/web-console` |
-
-#### Decision flow (one pass)
-
-```text
-Need isolated app SQL and/or repeatable release?
-  YES → SHIP = bundle
-        (use reference/commercial bundle when a baseline exists)
-  NO  → AUTHOR = tree-first (UI or Agent)
-        SHAPE  = blueprints for typed objects
-
-Moving or reviewing already-authored ops (people / environments)?
-  → PROMOTE = change set (preview → apply)
-
-Before any shipping mutate: validate → dry-run/preview → apply (P10)
-```
-
-Labels A–I (tree-first, console, bundle, REST, AI Studio, reference, platform HMI, commercial, **hosted UI pack**) are **AUTHOR/SHIP variants** under this stack — tool and Operator UI detail only. Canonical selection is this section; the expanded table lives in [agent-knowledge § Approaches](agent-knowledge.md). Hosted SPA how-to: [external-ide](external-ide.md).
-
-Quality doctrine for this stack (prevention over guards): [ADR-0051](decisions/0051-poka-yoke-constraints-over-guards.md).
-
-**For agents:**
-
-1. Resolve **layer** first (AUTHOR / SHAPE / SHIP / PROMOTE), then pick tools.
-2. If `needAppSchema` or `needCi` → **SHIP** bundle path; else **AUTHOR** tree-first.
-3. Creating typed objects → prefer blueprint / model apply for **SHAPE**; do not invent parallel variable sets.
-4. Never offer blueprint or change set as peer alternatives to bundle for greenfield solutions.
-5. Path selection: `search_context topic=application-principles` (this section), then `topic=agent-knowledge` for A–I tool detail; use `get_example_bundle` / playbooks when the default is a baseline bundle. Hosted SPA: `topic=external-ide`.
+Always run validation before applying changes to a shared or production environment:
+- Validate expressions via `POST /api/v1/expressions/validate` (or the **Validate** button in the console).
+- Validate bundles via `ispf validate` (use `--strict` before shipping) and run dry-run checks before deployment.
 
 ---
 
-### P8. Tree-first convergence
-
-**For humans:** After deploy functions live on `{appId}.functions.*`; redeploy **updates** existing nodes (reconcile); SQL bindings — via `sqlBinding('appId','var')` on the variable.
-
-**For agents:**
-
-- Legacy `POST .../functions/invoke` by appId — deprecated; prefer `invoke_bff` / tree path.
-- `operatorUi` in manifest, not legacy `operatorManifest`.
-- Reconcile: redeploy updates nodes, not create-only.
-
-| Was (legacy) | Now (target approach) |
-|--------------|------------------|
-| Only `POST .../functions/invoke` by appId | `POST /bff/invoke` or tree path `{appId}.functions.*` |
-| `screens[]` in operator manifest | `operatorUi` + dashboards |
-| New `objects[]` create-only | Reconcile on redeploy |
-| Imperative sync Java → variables | CEL, `sqlBinding()`, script steps |
-
----
-
-### P9. Operator UI — declarative, from bundle or tools
-
-**For humans:** Operator HMI: `?mode=operator&app={appId}`. Menu and default dashboard — from `operatorUi` in bundle or `configure_operator_ui`. Priority: DB `operator_app_ui` → bundle `operatorUi` → autogen from dashboards.
-
-**Product UI:** a hosted React SPA at `/apps/<appId>/` (ui-pack) is the preferred operator shell when the solution needs arbitrary components. Widget dashboards remain the fallback and the lab/SCADA kit. How-to: [external-ide](external-ide.md).
-
-**For agents:** After tree-first POC — `configure_operator_ui`; in `finish` — URL with `?mode=operator&app=...&dashboard=...`. For a hosted SPA: also `operatorUi.spaNav` / `externalSpaUrl` / `uiPack` and `/apps/<appId>/`.
-
----
-
-### P10. Validate before mutate
-
-**For humans:** Every deploy passes semantic validation. CI: validate → dry-run → import. CEL: `POST /api/v1/expressions/validate`.
-
-**For agents:**
-
-- `import_package` only after `validate_bundle` + `dry_run_deploy` OK **in the same run**.
-- Do not invent REST paths — only documented tools/endpoints.
-- Commercial bundle: sign after edits — [commercial-licensing](commercial-licensing.md).
-
-See [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md).
-
----
-
-## Where to express logic
-
-| Task | Mechanism | Document |
-|------|-----------|----------|
-| Variable computation | CEL / platform bindings / binding rules | [bindings](bindings.md) |
-| Dashboard UI (show/hide, mode) | Platform Rule → `@dashboardContext` | [platform-logic](platform-logic.md), [dashboards](dashboards.md) |
-| Threshold → event | ALERT node + CEL | [automation](automation.md) |
-| Event pattern → workflow | Correlator | [automation](automation.md) |
-| Process with operator tasks | BPMN WORKFLOW | [workflows](workflows.md) |
-| SQL CRUD on app schema | Script function (steps) | [applications](applications.md), [object-functions](object-functions.md) |
-| SQL → variable poll | sqlBinding / bindings[] | [applications](applications.md) |
-| Device telemetry | Driver + point mappings on **DEVICE** | [drivers](drivers.md) |
-| Unique project orchestrator (one logic hub) | **SINGLETON** — prefer `root.platform.singleton-blueprints.{project}` | [blueprints](blueprints.md), [agent-knowledge](agent-knowledge.md) |
-| Digital-twin logic (many alike) | **INSTANCE** type → `instantiate_instance_type` (each twin holds its logic; not DEVICE) | [blueprints](blueprints.md) |
-| HMI table | Widget `object-table` + `selectionKey` | [dashboards](dashboards.md), [widgets](widgets.md) |
-| Product React operator UI | Hosted ui-pack + `POST /bff/invoke` | [external-ide](external-ide.md), [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md) |
-| Legacy mini-DSL on widget | **Deprecated** → Platform rules | [platform-logic](platform-logic.md) § legacy |
+## Separating equipment from logic
 
 ### Logic objects vs DEVICE (mandatory)
 
-**Hard rule (canon):** the object that holds application / orchestration / twin logic must **not** be `ObjectType.DEVICE`. DEVICE is for drivers and telemetry only.
+**Core engineering rule:** An object that holds application logic, multi-device orchestration, SQL functions, or digital-twin calculations **must not** have `ObjectType.DEVICE`.
 
-**Enforcement (ADR-0060):** default authoring validate/deploy reports `LOGIC_HOST_DEVICE` as **WARNING** (does not alone set `status: ERROR`). Ship surfaces treat the same code as **ERROR**: `examples/` CI, `ispf validate --strict`, marketplace catalog gate. Prefer `root.platform.singleton-blueprints.{name}` via a SINGLETON blueprint. Program: [adr-tension-resolution](adr-tension-resolution.md).
+**Why this matters in practice:** A `DEVICE` node is tied to a communication driver (IP address, slave ID, polling loop, connection state). In real plants, sensors and PLCs get disabled for maintenance, swapped out, or re-addressed. If plant KPIs, order management functions, or BFF endpoints sit on a `DEVICE` node, maintaining a single controller breaks the application.
 
-| Need | Blueprint kind | Typical placement | Notes |
-|------|----------------|-------------------|-------|
-| One orchestrator for the solution/cluster | **SINGLETON** | Prefer `root.platform.singleton-blueprints.{name}` | Unique live hub; `ensure_singleton_instance` |
-| Many digital twins with per-twin logic | **INSTANCE** | Often under `root.platform.devices.{plant}.*` or `instances` | Create via Instance Type; children may be DEVICE endpoints |
-| Cluster tree: hub + devices under it | Hub = SINGLETON or INSTANCE (**not** DEVICE); children = DEVICE | e.g. `…devices.{cluster}/` children, or hub parent with DEVICE kids | **Path under `devices` is an implementation choice**; the hub’s **type** must not be DEVICE |
+Choose the object kind according to its role:
 
-Do **not** invent a fake “hub DEVICE” and hang KPIs on it. A CUSTOM/folder container under `devices` is fine for grouping; logic lives on SINGLETON (orchestrator) or INSTANCE (twin).
+| Role in your project | What to use | Typical path | Notes |
+|----------------------|-------------|--------------|-------|
+| **One central controller / orchestrator** for the whole solution or station | **`SINGLETON`** blueprint | `root.platform.singleton-blueprints.<project>-hub` | One unique instance; ideal host for application functions, BFF calls, and station-wide KPIs |
+| **Many identical units / digital twins** (lines, boiler houses, stores, tanks) | **`INSTANCE`** blueprint (Instance Type) | `root.platform.instances.*` or `root.platform.devices.<site>.*` | Stamp out N instances from one template; each twin carries its own calculations |
+| **Physical or simulated equipment** (PLC, meter, sensor, broker) | **`DEVICE`** node | Under `root.platform.devices.*` (or as a child under a site/twin node) | Driver configuration and raw/mapped telemetry tags only |
 
----
+> **Grouping under `devices`:** Placing `DEVICE` children underneath a `SINGLETON` or `INSTANCE` parent (or inside a `CUSTOM` folder under `root.platform.devices.<site>`) is completely fine. Only the hub's **type** must not be `DEVICE`.
 
-## Anti-patterns
-
-| Anti-pattern | Why it is bad | Correct approach |
-|--------------|---------------|------------------|
-| Industry Java in server | Breaks platform/solution boundary | Script function + tree |
-| Industry React in `apps/web-console` | Breaks platform/solution boundary | Hosted ui-pack ([external-ide](external-ide.md)) |
-| App layer as runtime | Duplicates object tree | Tree paths |
-| Logic on widget | N mini-DSL, AI/people get confused | Platform Rule |
-| sessionStorage-only context | Not durable, not multi-client | `@dashboardContext` + WS |
-| Bundle without validate | Silent breakage | Gates [0004-ai-artifact-generation-gates](decisions/0004-ai-artifact-generation-gates.md) |
-| Platform Flyway for app tables | Mixes schemas | `migrations[]` in app schema |
-| Blueprint / change set / UI / agent as peer “ways to build an app” | Five doors, no rule of the game (P7) | Layers: AUTHOR → SHAPE → SHIP → PROMOTE |
-| Change set for greenfield bootstrap | Wrong layer; no durable ship artifact | Bundle (SHIP) or tree-first AUTHOR |
-| Hand-duplicating blueprint structure | Breaks SHAPE; drift across instances | Blueprint apply / `models[]` |
-| Logic object typed as **DEVICE** (including “hub” DEVICE) | Wrong role: driver lifecycle, not orchestration/twin logic | SINGLETON orchestrator **or** INSTANCE twin; DEVICE only for I/O children |
-| Heavy CEL/script in dashboard widgets | Logic belongs on the hub, not in HMI fields | Hub function / binding → widget binds a variable ([anti-patterns](anti-patterns.md)) |
-| Binding write↔activate cycles | Pass/depth truncation under load | One owner per variable; see [bindings § Execution](bindings.md#execution) |
-| MQTT / flood topics with event journal on | History DB and UI melt | Last-value variables; `eventJournalEnabled` opt-in only ([anti-patterns](anti-patterns.md)) |
-
-Field pain → ISPF constraints (only enforced items): **[anti-patterns.md](anti-patterns.md)**.
+**How validation enforces this ([ADR-0060](decisions/0060-solution-authoring-constraints.md)):**
+- Default interactive validate/deploy reports `LOGIC_HOST_DEVICE` as a **WARNING** so you can iterate while prototyping.
+- Strict ship checks (`ispf validate --strict`, `POST .../deploy?strict=true`, `examples/` CI, and marketplace publishing) treat `LOGIC_HOST_DEVICE` as an **ERROR**.
 
 ---
 
-## Agent checklists
+## Quick reference: where each piece belongs
 
-### “Create application / solution” (with SQL)
+| What you are building | Where it lives | Guide |
+|-----------------------|----------------|-------|
+| Equipment polling (Modbus, OPC UA, S7, MQTT, SNMP) | `DEVICE` node + driver point mappings | [Device drivers](drivers.md) |
+| Station / application orchestrator (1 per app) | `SINGLETON` hub object | [Blueprints](blueprints.md) |
+| Repeated equipment unit / digital twin (N per app) | `INSTANCE` template + instantiated nodes | [Blueprints](blueprints.md) |
+| Tag math and cross-object aggregation | Binding rules (`@bindingRules`) | [Calculation rules](bindings.md) |
+| Hourly / shift averages and OEE | Historian rules (`kind: "historian"`) | [Historian cookbook](analytics-historian-cookbook.md) |
+| Threshold alarms & hysteresis | `ALERT` node | [Automation](automation.md) |
+| Multi-step procedures & operator queue tasks | `WORKFLOW` (BPMN) node | [BPMN workflows](workflows.md) |
+| Business tables & SQL CRUD | `migrations[]` + JSON `script` functions on hub | [Solution developer guide](solution-developer-guide.md) |
+| Standard operator screens & P&ID schematics | `DASHBOARD` + `MIMIC` nodes | [Dashboards](dashboards.md) · [SCADA](scada.md) |
+| Custom React operator web app | Separate Vite/React repo → `ui-pack` + `/api/v1/bff/invoke` | [Custom React UI](external-ide.md) |
 
-1. P7: layer = **SHIP** (app schema / release). Prefer reference/commercial bundle when a baseline exists.
-2. Clarify appId, whether operator UI is needed.
-3. `search_context topic=application-principles` + `topic=agent-knowledge`; `get_example_bundle` if MES/lab-like.
-4. register (or bundle) → migrations → functions → objects/dashboards; **SHAPE** via blueprints / `models[]`.
-5. `validate_bundle` → `dry_run_deploy` → `import_package`.
-6. `configure_operator_ui` if not in manifest.
-7. `finish` with `?mode=operator&app=...` and dashboard paths.
-
-### “Create monitoring / SNMP / dashboard” (no app schema)
-
-1. P7: layer = **AUTHOR** tree-first (not bundle-for-its-own-sake); **SHAPE** via blueprints for typed devices.
-2. Logic hub first: **SINGLETON** orchestrator (`ensure_singleton_instance`) or **INSTANCE** twin — **never** type DEVICE.
-3. Tree-first playbook (SNMP / virtual cluster): DEVICE children for I/O; bindings on the non-DEVICE hub.
-4. Driver + dashboard template.
-5. Platform rules as needed (detail mode, widget visibility).
-6. `configure_operator_ui` for platform app.
-
-### “Do not break platform” (P2, P10)
-
-- Do not invent REST paths — tools only.
-- Bundle import only after validate + dry_run OK in the same run.
-- No platform Flyway for app tables.
-- Prefer `operatorUi` over legacy `operatorManifest`.
-
----
-
-## Related documents
-
-| Document | Purpose |
-|----------|---------|
-| [solution-developer-guide](solution-developer-guide.md) | Lifecycle: register → migrate → deploy → operator |
-| [agent-knowledge](agent-knowledge.md) | AUTHOR/SHIP variants A–I, docs map, search_context topics |
-| [blueprints](blueprints.md) | SHAPE — object structure templates |
-| [collaboration](collaboration.md) | PROMOTE — change sets, preview/apply |
-| [architecture](architecture.md) | Platform layers, core domain model |
-| [platform-logic](platform-logic.md) | Platform Rule, `@dashboardContext` |
-| [ai-development](ai-development.md) | Agent tools, ContextPack, MCP |
-| [external-ide](external-ide.md) | Cursor / VS Code: hosted SPA + MCP + ui-pack |
-| [manufacturing-patterns](manufacturing-patterns.md) | MES solution patterns and boundary |
-| [mes-capability-mcp](mes-capability-mcp.md) | Agent capability to MES function mapping |
-| [solution-developer-public-api](solution-developer-public-api.md) | Stable manifest contract |
-| [decisions/readme.md](decisions/readme.md) | ADR-0001, 0004, 0005, 0019, **0051** (poka-yoke) |
-| [0051-poka-yoke-constraints-over-guards](decisions/0051-poka-yoke-constraints-over-guards.md) | Constraints over guards; guard demount inventory |
-
----
-
-*Update when the target approach changes (ADR, platform approval process) and agent tools expand.*
+> **Note for AI Studio / MCP tool authors:** internal tool routing tables and agent execution gates are documented separately in [agent-knowledge.md](agent-knowledge.md) and [ai-development.md](ai-development.md).

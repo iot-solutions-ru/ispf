@@ -1,212 +1,193 @@
-# ISPF Documentation (English)
+# ISPF Documentation
 
-**IoT Solutions Platform Framework** — self-hosted middleware for IoT, SCADA, and industrial automation.
+**ISPF (IoT Solutions Platform Framework)** is a self-hosted server platform for industrial automation, SCADA, IoT monitoring, and shop-floor (MES) applications. It connects field equipment and IT data sources, calculates derived tags, tracks alarms, stores time-series history, serves operator screens, and runs multi-step workflows in a single system.
 
-> Canonical language: **English**. Russian mirror: [../ru/readme.md](../ru/readme.md).  
-> Website: [ispf.ai](https://ispf.ai) · Repo: [iot-solutions-ru/ispf](https://github.com/iot-solutions-ru/ispf)
+> Russian edition: **[../ru/readme.md](../ru/readme.md)**  
+> Website: [ispf.ai](https://ispf.ai) · Live demo: [demo.iot-solutions.ru](https://demo.iot-solutions.ru/) · Repository: [iot-solutions-ru/ispf](https://github.com/iot-solutions-ru/ispf) · Wiki: [ispf/wiki](https://github.com/iot-solutions-ru/ispf/wiki)
 
-**License:** platform is [GNU AGPL v3](license.md) (optional commercial dual-license). Not Apache 2.0 for the core.
-
----
-
-## Start here (≈15 min)
-
-0. **[Learn ISPF](learn.md)** — transparent learning map (first hour → first solution → by role)  
-1. [Getting started — Try ISPF](getting-started.md#try-ispf-15-minutes) — local API + Web Console  
-2. [Product overview](product.md) — what the platform is for  
-3. [Object model](object-model.md) — the tree (devices, dashboards, rules as nodes)  
-4. [License](license.md) — AGPL / Enterprise boundary  
-
-Demo path after boot: `devices.demo-sensor-01` → alert rule → `dashboards.demo-sensor` → operator mode ([JAR](http://localhost:8080?mode=operator) / [Vite](http://localhost:5173?mode=operator)).
+**License:** GNU AGPL v3 with an optional commercial license ([license.md](license.md)).
 
 ---
 
-## Choose your path
+## Start here (first 30 minutes)
 
-| I am… | Read next |
-|-------|-----------|
-| **Learning / teaching** | **[Learn ISPF](learn.md)** → [Certification](certification.md) |
-| **Trying the product** | [Getting started](getting-started.md) → [Operator guide](operator-guide.md) |
-| **Building a solution / bundle** | [Solution developer guide](solution-developer-guide.md) · [Applications](applications.md) · [Application principles](application-principles.md) · [External AI IDE](external-ide.md) |
-| **Wiring OT / drivers** | [Drivers](drivers.md) · [Driver DDK](driver-ddk.md) · [Field pilot](field-pilot-playbook.md) |
-| **Building HMI / SCADA** | [Dashboards](dashboards.md) · [SCADA](scada.md) · [Widgets](widgets.md) |
-| **Writing expressions / CEL** | [Expression language](expression-language.md) · [Bindings](bindings.md) |
-| **Automating alarms / workflows** | [Automation](automation.md) · [Workflows](workflows.md) · [OT Automation tutorials](ot-automation-excellence-tutorials.md) |
-| **Using AI Studio / agent** | [AI development](ai-development.md) · [AI agent](ai-agent.md) · [External AI IDE](external-ide.md) |
-| **Deploying / operating** | [Deployment](deployment.md) · [Security](security.md) · [Observability](observability.md) |
-| **Contributing to the core** | [Getting started — Contribute](getting-started.md#contribute-local-dev--qa) · [Testing](testing.md) · [ADR index](decisions/readme.md) |
+If you are opening ISPF for the first time, read these four pages in order:
 
-**Status vs commercial platforms:** [Competitive scorecard](competitive-scorecard.md) (code-verified). Long backlog: [Roadmap](roadmap.md). Platform release notes: [CHANGELOG.md](../../CHANGELOG.md).
-
-**Doc status tags:** [doc-status.md](doc-status.md) — Stable · Beta · Draft · Charter · Lab · Internal.
+1. **[How ISPF works & learning guide](learn.md)** — plain-language mental model, core concepts explained on one concrete example, and step-by-step learning tracks.
+2. **[Getting started](getting-started.md#try-ispf-15-minutes)** — start ISPF locally in 15 minutes (portable archive, Docker, or source) and click through the built-in sensor, alarm, and dashboard.
+3. **[Object model](object-model.md)** — how devices, variables, events, functions, alarms, and screens are organized into one object tree (`root.platform.*`).
+4. **[Common design mistakes](anti-patterns.md)** — practical engineering rules that prevent performance bottlenecks and unmaintainable projects.
 
 ---
 
-## Screenshots (product UI)
+## Guides by engineering task
 
-Product UI frames are in [`docs/assets/`](../assets/README.md) and embedded in the matching topic pages (EN + RU). Start with [getting-started](getting-started.md), [web-console](web-console.md), [operator-guide](operator-guide.md), [scada](scada.md), [dashboards](dashboards.md), [workflows](workflows.md), [automation](automation.md), [ai-development](ai-development.md).
+| What you want to do | Where to read |
+|---------------------|---------------|
+| **Understand what ISPF does and who uses it** | [Product overview](product.md) · [Glossary](glossary.md) |
+| **Operate screens, alarms, and shift tasks** | [Operator guide](operator-guide.md) · [Web Console](web-console.md) |
+| **Connect PLCs, sensors, brokers, or databases** | [Device drivers](drivers.md) · [Custom driver SDK (DDK)](driver-ddk.md) · [Field pilot runbook](field-pilot-playbook.md) |
+| **Write formulas and cross-object calculations** | [Calculation rules (bindings)](bindings.md) · [Expression language (CEL & functions)](expression-language.md) |
+| **Build operator dashboards and P&ID mnemonics** | [Dashboards](dashboards.md) · [SCADA mnemonics](scada.md) · [Widgets catalog](widgets.md) |
+| **Configure alarms and BPMN workflows** | [Alarms, events, and correlators](automation.md) · [BPMN workflows](workflows.md) |
+| **Store trends and compute shift/hourly aggregates** | [Variable history](variable-history.md) · [Historian storage tiers](historian-tiers.md) · [Historian cookbook](analytics-historian-cookbook.md) |
+| **Build and package a complete application** | [Solution developer guide](solution-developer-guide.md) · [Application architecture rules](application-principles.md) · [Applications API](applications.md) |
+| **Build a custom React web UI for operators** | [Custom React UI (external IDE & UI packs)](external-ide.md) |
+| **Deploy to a server, cluster, or offline site** | [Deployment](deployment.md) · [Air-gap (offline) install](air-gap-deployment.md) · [Security & RBAC](security.md) · [Observability](observability.md) |
+| **Contribute to the platform core** | [Local dev & QA](getting-started.md#contribute-local-dev--qa) · [Testing](testing.md) · [Architecture](architecture.md) · [ADRs](decisions/readme.md) |
+
+Document maturity labels (`Stable`, `Beta`, `Lab`, `Charter`, `Internal`) are explained in [doc-status.md](doc-status.md). Release notes: [CHANGELOG.md](../../CHANGELOG.md).
 
 ---
 
-## Full catalog
+## Full documentation catalog
 
 <details>
-<summary><strong>Product</strong></summary>
+<summary><strong>Overview, roles, and architecture</strong></summary>
 
-| Document | Status | Description |
-|----------|--------|-------------|
-| [Product overview](product.md) | Stable | Capabilities, scenarios, doc map |
-| [Operator guide](operator-guide.md) | Stable | HMI, work queue, events |
-| [Solution developer guide](solution-developer-guide.md) | Stable | Deploy, operator UI, bundles |
-| [External AI IDE](external-ide.md) | Stable | Cursor/VS Code: hosted SPA + MCP + ui-pack |
-| [Application principles](application-principles.md) | Stable | P1–P10; P7 creation stack (AUTHOR/SHAPE/SHIP/PROMOTE) |
-| [ADR-0051 poka-yoke](decisions/0051-poka-yoke-constraints-over-guards.md) | Accepted | Constraints over guards; tool schemas first |
-| [Public API](solution-developer-public-api.md) | Stable | Stable platform ↔ bundle boundary |
-| [Glossary](glossary.md) | Stable | Terms and definitions |
-| [Web Console](web-console.md) | Stable | Explorer, System, AI Studio |
+| Document | Status | Contents |
+|----------|--------|----------|
+| [Learning guide](learn.md) | Stable | Mental model, first-hour walkthrough, first-project plan, curriculum |
+| [Getting started](getting-started.md) | Stable | Local installation, first login, demo sensor, contributor QA |
+| [Product overview](product.md) | Stable | Capabilities, typical scenarios, user roles |
+| [Architecture](architecture.md) | Stable | Server components, runtime layers, package layout |
+| [Object model](object-model.md) | Stable | Object tree paths, typed variables (`DataRecord`), events, functions |
+| [Blueprints (templates)](blueprints.md) | Stable | Reusable object templates (`SINGLETON`, `INSTANCE`, `MIXIN`) |
+| [Glossary](glossary.md) | Stable | Plain-language definitions of platform terms |
+| [Web Console](web-console.md) | Stable | Admin console, Explorer, Inspector, and Operator mode |
 
 </details>
 
 <details>
-<summary><strong>Platform</strong></summary>
+<summary><strong>Building applications and solutions</strong></summary>
 
-| Document | Status | Description |
-|----------|--------|-------------|
-| [Learn ISPF](learn.md) | Stable | Transparent entry: paths, tutorials, topic map |
-| [Getting started](getting-started.md) | Stable | Try ISPF + contributor QA |
-| [Architecture](architecture.md) | Stable | Vision, layers, extensibility |
-| [Object model](object-model.md) | Stable | Tree, variables, events, functions |
-| [Bindings](bindings.md) | Stable | CEL and platform bindings |
-| [Expression language](expression-language.md) | Stable | Full CEL / bindings / historian function reference |
-| [Platform logic](platform-logic.md) | Beta | Rules; `@dashboardContext` readiness varies |
-| [Blueprints](blueprints.md) | Stable | Models / templates |
-| [Variable history](variable-history.md) | Stable | Time-series, retention |
-| [API](api.md) | Stable | Endpoints reference |
-| [Applications](applications.md) | Stable | Bundles, BFF, scheduler |
-| [Reports](reports.md) | Stable | SQL reports, CSV export |
-| [Roadmap](roadmap.md) | Charter | Phases and backlog |
-| [Competitive scorecard](competitive-scorecard.md) | Stable | Code-verified readiness |
-| [ADR index](decisions/readme.md) | Stable | Architecture decision records |
-| [ADR tension resolution](adr-tension-resolution.md) | Charter | Claim-boundary waves (Closed / Planned) |
-| [Doc status tags](doc-status.md) | Stable | Status vocabulary |
+| Document | Status | Contents |
+|----------|--------|----------|
+| [Solution developer guide](solution-developer-guide.md) | Stable | Registering an app, SQL tables, script functions, deploying `bundle.json` |
+| [Application architecture rules](application-principles.md) | Stable | How to structure devices, logic objects, screens, SQL, and deployments |
+| [Common design mistakes](anti-patterns.md) | Stable | Typical pitfalls in SCADA/IoT projects and how ISPF prevents them |
+| [Custom React UI (external IDE)](external-ide.md) | Stable | Developing standalone React SPAs (`ui-pack`) against ISPF `POST /api/v1/bff/invoke` |
+| [Applications API](applications.md) | Stable | Reference for bundle deploy, SQL migrations, BFF gateway, schedules, Git sync |
+| [Object functions](object-functions.md) | Stable | Built-in, JSON script, and Java functions on tree objects |
+| [Public bundle contract](solution-developer-public-api.md) | Stable | Supported fields and compatibility boundaries for `bundle.json` |
+| [Reports](reports.md) | Stable | SQL reports and CSV/document export |
 
 </details>
 
 <details>
-<summary><strong>SCADA / HMI</strong></summary>
+<summary><strong>Calculations, alarms, and workflows</strong></summary>
 
-| Document | Status | Description |
-|----------|--------|-------------|
-| [SCADA overview](scada.md) | Stable | Mimics, symbols, bindings |
-| [SCADA mimic reference](scada-mimic.md) | Stable | `diagramJson`, REST API |
-| [Symbol library](scada-symbol-library.md) | Stable | P&ID pack (218 symbols) |
-| [Widgets catalog](widgets.md) | Stable | All widget types |
-| [Dashboards](dashboards.md) | Stable | Layout 84×8, `selectionKey` |
-| [HMI quality gates](hmi-quality-gates.md) | Lab | Lighthouse, axe, FPS |
-| [Spreadsheet widget](spreadsheet-widget.md) | Stable | Formulas and bindings |
-| [Operator apps](operator-apps.md) | Stable | Operator shell configuration |
+| Document | Status | Contents |
+|----------|--------|----------|
+| [Calculation rules (bindings)](bindings.md) | Stable | Reactive and periodic variable rules, execution order, cross-object reads/writes |
+| [Expression language](expression-language.md) | Stable | Google CEL syntax, built-in signal processing functions, historian functions |
+| [Platform rules](platform-logic.md) | Beta | Unified `WHEN → IF → THEN` rule model and dashboard context |
+| [Alarms, events, and correlators](automation.md) | Stable | Threshold alerts, hysteresis/latching, event journal, event correlation |
+| [BPMN workflows](workflows.md) | Beta | Supported BPMN 2.0 elements, operator tasks, service tasks, timers |
+| [Automation tutorials](ot-automation-excellence-tutorials.md) | Beta | Step-by-step exercises for workflows, MCP tools, and analytics |
 
 </details>
 
 <details>
-<summary><strong>OT / drivers / historian</strong></summary>
+<summary><strong>Dashboards, SCADA mnemonics, and operator UI</strong></summary>
 
-| Document | Status | Description |
-|----------|--------|-------------|
-| [Drivers catalog](drivers.md) | Beta | Packs; maturity honesty vs PRODUCTION matrix |
-| [Driver DDK](driver-ddk.md) | Stable | Custom driver SDK |
-| [Driver promotion](driver-promotion.md) | Stable | PRODUCTION + ready-for-field |
-| [Field pilot playbook](field-pilot-playbook.md) | Lab | OT validation runbooks |
-| [Historian tiers](historian-tiers.md) | Beta | JDBC, ClickHouse, dual-write |
-| [ClickHouse prod playbook](clickhouse-prod-playbook.md) | Lab | Production rollout |
-| [Cluster](cluster.md) | Beta | Multi-replica HA (capability vs demostand) |
-| [Cluster chaos / soak runbook](cluster-chaos-soak-runbook.md) | Lab | Wave 6 evidence: kill-owner SLO, config sync, live-var lag |
-| [Messaging](messaging.md) | Stable | NATS / MQTT notes |
-
-</details>
-
-<details>
-<summary><strong>Analytics</strong></summary>
-
-| Document | Status | Description |
-|----------|--------|-------------|
-| [Historian cookbook](analytics-historian-cookbook.md) | Stable | Recipes, binding rules, rollups |
-| [Formulas and packs](analytics-formulas-and-packs.md) | Stable | Expression packs, deploy |
-| [Analytics roadmap](analytics-platform-roadmap.md) | Charter | BL-200…210 charter |
-| [Tag catalog API](analytics-tag-catalog.md) | Stable | Deployed analytics tags |
-| [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md) | Stable | Architecture ADR |
-| [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) | Stable | Function catalog |
+| Document | Status | Contents |
+|----------|--------|----------|
+| [Operator guide](operator-guide.md) | Stable | Working in Operator mode: screens, alarms, work queue, spreadsheets |
+| [Dashboards](dashboards.md) | Stable | 84×8 layout grid, static paths (`objectPath`), dynamic row selection (`selectionKey`) |
+| [Widgets catalog](widgets.md) | Stable | Configuration reference for all dashboard widgets |
+| [SCADA overview](scada.md) | Stable | Interactive P&ID / single-line mnemonics, symbol bindings, equipment commands |
+| [SCADA mimic format](scada-mimic.md) | Stable | `diagramJson` structure and REST endpoints |
+| [Symbol library](scada-symbol-library.md) | Stable | Built-in ISA / P&ID symbol catalog (218 SVG symbols) |
+| [Spreadsheet widget](spreadsheet-widget.md) | Stable | Excel-style cells, formulas, and live tag bindings |
+| [Operator apps](operator-apps.md) | Stable | Navigation menus and startup screens for operators |
+| [HMI quality gates](hmi-quality-gates.md) | Lab | Accessibility, rendering performance, and Lighthouse checks |
 
 </details>
 
 <details>
-<summary><strong>AI / automation / MES</strong></summary>
+<summary><strong>Equipment drivers, historian, and analytics</strong></summary>
 
-| Document | Status | Description |
-|----------|--------|-------------|
-| [AI development](ai-development.md) | Beta | ContextPack, Studio; BL-178 live ≥95% met |
-| [AI agent](ai-agent.md) | Beta | Agent API; BL-178 ≥95% met (52/52) |
-| [Agent knowledge](agent-knowledge.md) | Internal | Agent routing map |
-| [Agent regression](agent-regression.md) | Lab | Full suite proven; nightly platform mode |
-| [Automation](automation.md) | Stable | Alerts, correlators |
-| [Workflows](workflows.md) | Beta | BPMN subset (not full 2.0) |
-| [OT Automation tutorials](ot-automation-excellence-tutorials.md) | Beta | ADR-0049 hands-on (journal, AI-BPMN, MCP, analytics AI) |
-| [Manufacturing patterns](manufacturing-patterns.md) | Charter | ISPF solution patterns for traceability, BoM, CTO, QMS, integration |
-| [MES capability MCP map](mes-capability-mcp.md) | Stable | Agent capability names mapped to MES hub functions |
-| [MES platform reference](reference-mes-platform.md) | Beta | Marketplace MES; smoke ≠ plant |
-| [MES operator (genealogy)](mes.md) | Stable | Operator path for BL-193 genealogy lite |
-| [MES walkthrough](reference-mes-walkthrough.md) | Lab | End-to-end MES path |
-
-</details>
-
-<details>
-<summary><strong>Operations</strong> (deploy, labs, CI — heavier runbooks)</summary>
-
-| Document | Status | Description |
-|----------|--------|-------------|
-| [Deployment](deployment.md) | Stable | Docker, env vars |
-| [Demostand profiles](demostands.md) | Lab | Prod, lab, edge topologies |
-| [Customer demostand playbook](customer-demo-playbook.md) | Lab | 30–60 min show-the-customer agenda (MES / OT+HMI+air-gap) |
-| [Air-gap deployment](air-gap-deployment.md) | Stable | Offline installs |
-| [Federation](federation.md) | Beta | Hub / edge (maturity caveats) |
-| [Security](security.md) | Stable | RBAC, MFA |
-| [Observability](observability.md) | Stable | Metrics, diagnostics |
-| [Testing](testing.md) | Stable | Unit, integration |
-| [Load testing](load-testing.md) | Lab | Throughput baselines |
-| [Release dogfood](release-dogfood.md) | Internal | Release checklist |
-| [Lab training](lab-training.md) | Lab | Training sample packs |
+| Document | Status | Contents |
+|----------|--------|----------|
+| [Device drivers](drivers.md) | Beta | Protocol catalog (Modbus, OPC UA, S7, MQTT, SNMP, IEC-104, DNP3, …) and readiness levels |
+| [Driver DDK](driver-ddk.md) | Stable | Writing and testing a custom protocol driver in Java |
+| [Driver promotion](driver-promotion.md) | Stable | Criteria for moving a driver from lab tests to field readiness |
+| [Driver interop lab](driver-interop-lab.md) | Lab | Docker testbed with protocol emulators and brokers |
+| [Field pilot playbook](field-pilot-playbook.md) | Lab | Checklist for testing drivers on real plant equipment |
+| [Variable history](variable-history.md) | Stable | Recording time-series samples, retention, export, and aggregation API |
+| [Historian storage tiers](historian-tiers.md) | Beta | PostgreSQL/Timescale (hot), ClickHouse (warm), and Parquet archive (cold) |
+| [ClickHouse production guide](clickhouse-prod-playbook.md) | Lab | Deploying and verifying ClickHouse for high-rate telemetry |
+| [Historian cookbook](analytics-historian-cookbook.md) | Stable | Practical recipes: rolling averages, OEE, multi-tag calculations, rollups |
+| [Formulas and analytics packs](analytics-formulas-and-packs.md) | Stable | Reusable formula templates and Java extension packs |
+| [Analytics tag catalog](analytics-tag-catalog.md) | Stable | Querying deployed calculation tags via REST |
+| [Messaging (MQTT & NATS)](messaging.md) | Stable | Broker configuration and message routing |
 
 </details>
 
 <details>
-<summary><strong>Ecosystem & legal</strong></summary>
+<summary><strong>MES, digital twins, and AI assistant</strong></summary>
 
-| Document | Status | Description |
-|----------|--------|-------------|
-| [Marketplace](marketplace.md) | Stable | BL-183 Done (CI catalog gate + honest partner endpoints) |
-| [Symbol marketplace](symbol-marketplace.md) | Stable | Local install + scada API (BL-185) |
-| [Partner program](partner-program.md) | Draft | In-server directory Done (BL-184); Partner Portal external |
-| [Certification](certification.md) | Stable | BL-190 curriculum paths + question banks |
-| [License](license.md) | Stable | **AGPL v3** + dual-license |
-| [Commercial licensing](commercial-licensing.md) | Stable | Enterprise terms |
-| [License compliance](license-compliance.md) | Stable | Obligations checklist |
-| [Compliance tender pack](compliance-tender-pack.md) | Stable | BL-192 tender annex (not certification) |
-| [Plugins](plugins.md) | Stable | Core vs packs vs bundles |
-| [Documentation audit](documentation-audit.md) | Internal | Structure, naming, link audit |
-| [Full docs audit 2026-07-16](documentation-full-audit-2026-07-16.md) | Internal | Content honesty pass |
-| [Russian software registry](russian-software-registry.md) | Internal | Rights-holder / RU market |
+| Document | Status | Contents |
+|----------|--------|----------|
+| [MES operator guide](mes.md) | Stable | Production orders, batches, genealogy, and shift screens |
+| [MES reference solution](reference-mes-platform.md) | Beta | Structure of the `mes-platform` reference bundle |
+| [MES end-to-end walkthrough](reference-mes-walkthrough.md) | Lab | Running a complete work-order scenario |
+| [Manufacturing patterns](manufacturing-patterns.md) | Charter | Designing traceability, BoM, quality checks, and ERP exchange as bundles |
+| [AI Studio & MCP](ai-development.md) | Beta | Using the built-in AI assistant and connecting external IDEs via MCP |
+| [AI agent API](ai-agent.md) | Beta | REST endpoints, approval flow, and execution modes for the AI agent |
+| [Agent routing reference](agent-knowledge.md) | Internal | Internal reference used by the AI ContextPack |
+
+</details>
+
+<details>
+<summary><strong>Deployment, security, cluster, and operations</strong></summary>
+
+| Document | Status | Contents |
+|----------|--------|----------|
+| [Deployment](deployment.md) | Stable | Docker Compose, environment variables, Spring profiles, database setup |
+| [Air-gap deployment](air-gap-deployment.md) | Stable | Installing and updating ISPF without internet access |
+| [Security & access control](security.md) | Stable | Authentication, OAuth2/Keycloak, TOTP MFA, roles, object/variable permissions |
+| [Multi-tenancy](multi-tenant.md) | Stable | Isolating multiple organizations or sites |
+| [Observability](observability.md) | Stable | Health checks, Prometheus metrics, logs, and diagnostics |
+| [Cluster (HA)](cluster.md) | Beta | Multi-node active-active setup, driver ownership, failover |
+| [Federation](federation.md) | Beta | Connecting edge ISPF instances to a central hub |
+| [Release & upgrade](release-upgrade.md) | Stable | Upgrading servers and checking bundle compatibility |
+| [Testing](testing.md) | Stable | Running unit, integration, and fast pre-PR checks |
+| [Load testing](load-testing.md) | Lab | Telemetry ingestion and historian throughput benchmarks |
+| [Demostand profiles](demostands.md) | Lab | Standard configurations for demo and lab servers |
+| [Customer demo guide](customer-demo-playbook.md) | Lab | Script for a 30–60 minute live product demonstration |
+
+</details>
+
+<details>
+<summary><strong>Licensing, marketplace, and project records</strong></summary>
+
+| Document | Status | Contents |
+|----------|--------|----------|
+| [License](license.md) | Stable | GNU AGPL v3 and commercial dual-licensing overview |
+| [Commercial licensing](commercial-licensing.md) | Stable | Enterprise license terms and signed artifacts |
+| [License compliance](license-compliance.md) | Stable | Third-party dependencies and compliance checks |
+| [Plugins & extension boundaries](plugins.md) | Stable | How core, driver packs, and application bundles relate |
+| [Marketplace](marketplace.md) | Stable | Installing and publishing application bundles and UI packs |
+| [Symbol marketplace](symbol-marketplace.md) | Stable | Installing additional SVG symbol libraries for SCADA |
+| [Certification](certification.md) | Stable | Training tracks and exam topics for engineers and administrators |
+| [Competitive scorecard](competitive-scorecard.md) | Stable | Code-verified comparison with commercial SCADA/IIoT/MES platforms |
+| [Roadmap](roadmap.md) | Charter | Engineering backlog and historical phases |
+| [Architecture decisions (ADRs)](decisions/readme.md) | Stable | Index of Architecture Decision Records |
+| [Doc status tags](doc-status.md) | Stable | Definitions of document maturity tags |
 
 </details>
 
 ---
 
-## Quick links (local)
+## Default local URLs
 
-| | |
-| --- | --- |
-| API | http://localhost:8080/api/v1 |
-| Health | http://localhost:8080/actuator/health |
-| Admin (all-in-one JAR) | http://localhost:8080 |
-| Operator HMI (all-in-one JAR) | http://localhost:8080?mode=operator |
-| Admin (Vite dev) | http://localhost:5173 |
-| Operator HMI (Vite dev) | http://localhost:5173?mode=operator |
+| Interface | URL |
+|-----------|-----|
+| REST API | `http://localhost:8080/api/v1` |
+| Health check | `http://localhost:8080/actuator/health` |
+| Admin Console (portable / JAR / Docker) | `http://localhost:8080` |
+| Operator screens (portable / JAR / Docker) | `http://localhost:8080?mode=operator` |
+| Admin Console (Vite frontend dev server) | `http://localhost:5173` |
+| Operator screens (Vite frontend dev server) | `http://localhost:5173?mode=operator` |

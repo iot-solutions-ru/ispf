@@ -1,331 +1,147 @@
 > **Language:** Canonical English. Russian edition: [ru/product.md](../ru/product.md).
 
-# ISPF — Product Documentation
+# ISPF — Product Overview
 
-> **Status:** Stable — public product entry. Hub tags: [doc-status.md](doc-status.md).
+> **Status:** Stable — product overview for engineers, operators, and decision-makers. Status tags: [doc-status.md](doc-status.md).
 
-**IoT Solutions Platform Framework (ISPF)** is middleware for IoT, SCADA, and industrial automation. It provides a unified data model, HMI, automation, and an application layer without domain-specific Java in the core.
+**ISPF (IoT Solutions Platform Framework)** is a self-hosted industrial automation, SCADA, IoT, and shop-floor (MES) platform. It combines equipment polling, real-time calculations, time-series history, threshold alarms, BPMN workflows, and operator screens on top of one unified object model — without requiring custom Java code in the platform core for each new site or industry.
 
-This document is the **entry point for all roles**. Implementation details live in the other sections of [docs/en/readme.md](readme.md).
-
----
-
-## Who This Product Is For
-
-| Role | Responsibilities | Start here |
-|------|------------------|------------|
-| **Operator** | Monitoring, control, work queue, reports | [Operator guide](operator-guide.md) |
-| **Administrator** | Object tree, dashboards, workflow, users | [Getting started](getting-started.md) → [Web Console](web-console.md) |
-| **Solution developer** | Deploy applications, functions, operator UI, reports | [Solution developer guide](solution-developer-guide.md) · [External AI IDE](external-ide.md) |
-| **Platform developer** | Drivers, REQ-PF, core extensions | [Roadmap](roadmap.md) |
-| **DevOps / SRE** | Deployment, profiles, infrastructure | [Deployment](deployment.md) |
+New here? Start with **[How ISPF works](learn.md)** or jump straight to **[Getting started (15 minutes)](getting-started.md#try-ispf-15-minutes)**.
 
 ---
 
-## What ISPF Solves
+## Who uses ISPF
 
-A typical SCADA/MES stack grows as separate modules: OPC server, historian, HMI, workflow, reports. ISPF unifies them around **one object tree** with a single API and UI.
+| Role | Typical daily work | Best starting page |
+|------|--------------------|--------------------|
+| **Shift operator / dispatcher** | Watching live screens and mnemonics, acknowledging alarms, completing shift tasks, viewing reports | [Operator guide](operator-guide.md) |
+| **Automation / solution engineer** | Modelling plant objects, connecting drivers, writing formulas, building screens, packaging applications | [How ISPF works](learn.md) → [Solution developer guide](solution-developer-guide.md) |
+| **Frontend developer (custom HMI)** | Building custom React web interfaces (`ui-pack`) backed by ISPF functions | [Custom React UI](external-ide.md) |
+| **System administrator / DevOps** | Deploying servers or clusters, configuring PostgreSQL/ClickHouse, Keycloak SSO, backups, and monitoring | [Deployment](deployment.md) · [Security](security.md) |
+| **Platform / driver developer** | Writing custom protocol drivers (`DeviceDriver` SPI) or extending the open-source core | [Driver DDK](driver-ddk.md) · [Architecture](architecture.md) |
+
+---
+
+## What problem ISPF solves
+
+On a typical industrial site, teams end up integrating four or five separate products: a protocol gateway, a historian database, a SCADA/dashboard tool, an alarm engine, and a custom web backend for production accounting. Every tag rename or new line requires changes in all five places.
+
+ISPF brings these layers together around **one hierarchical object tree** (`root.platform.*`) with a single REST + WebSocket API and role-based access model:
 
 ```mermaid
 graph LR
-    subgraph Sources["Data sources"]
-        DEV[Devices / OPC / SNMP / MQTT]
-        IT[HTTP / JDBC / Kafka]
+    subgraph Sources["Field & IT data sources"]
+        DEV["PLCs & sensors (Modbus, OPC UA, S7, MQTT, SNMP, IEC-104)"]
+        IT["Databases & HTTP APIs (JDBC, REST)"]
     end
 
-    subgraph ISPF["ISPF"]
-        TREE[Object tree]
-        HMI[HMI dashboards]
-        WF[BPMN workflow]
-        APP[Application functions]
+    subgraph ISPF["ISPF Server"]
+        TREE["Unified object tree (tags, templates, calculation rules)"]
+        HIST["Historian (PostgreSQL/Timescale, ClickHouse, Parquet)"]
+        AUTO["Alarms, correlators & BPMN workflows"]
+        UI["Dashboards, SCADA mnemonics & hosted React UI packs"]
     end
 
-    subgraph Users["Users"]
-        OP[Operator]
-        ADM[Administrator]
+    subgraph Users["Plant personnel"]
+        OP["Shift operators"]
+        ENG["Engineers & admins"]
     end
 
     DEV --> TREE
     IT --> TREE
-    TREE --> HMI
-    TREE --> WF
-    TREE --> APP
-    HMI --> OP
-    WF --> OP
-    APP --> OP
-    HMI --> ADM
-    WF --> ADM
+    TREE --> HIST
+    TREE --> AUTO
+    TREE --> UI
+    UI --> OP
+    AUTO --> OP
+    UI --> ENG
 ```
-
-### Core principle
-
-**Business logic lives on the platform** — in models, variables, events, functions, and workflows of the **object tree**. The platform supplies generic engines (CEL, bindings, BPMN, script runtime, drivers); the solution configures them declaratively. Bundle deploy packages configuration, not a separate runtime. Summary for developers and agents: [application-principles](application-principles.md). Details: [architecture](architecture.md). Backlog: [roadmap](roadmap.md).
-
-### Key capabilities
-
-- **Unified model** — device, dashboard, workflow, and alert rule are tree nodes; logic uses variables, events, functions, and BPMN.
-- **Bundles, not core forks** — industry solutions deploy as configuration into platform mechanisms ([applications](applications.md)). Rich operator UI is a **hosted React SPA** (any components) in an external IDE, shipped as a ui-pack — [external-ide](external-ide.md).
-- **Stack** — Spring Boot 4, Java 25, PostgreSQL/TimescaleDB, React 19, REST + WebSocket; optional NATS/MQTT/Keycloak.
-- **~60 driver packs** (not inside `ispf-server.jar`; maturity varies — see [drivers](drivers.md)).
-- **AGPL v3 platform** — optional Enterprise dual-license; driver packs and application bundles may use separate terms ([license](license.md), [plugins](plugins.md)).
 
 ---
 
-## Product Capabilities
+## Main capabilities
 
-### 1. Object tree
+### 1. Unified object tree and templates (`Blueprints`)
 
-The central platform abstraction. Each node has a path (`root.platform.devices.pump-01`), type, variables, events, and functions.
+Every entity — a PLC, a pumping station controller, a dashboard, a SCADA diagram, an alarm rule, or a BPMN workflow — is an addressable node in the tree (for example, `root.platform.devices.pump-01`).
+- **Variables (`DataRecord`):** typed values (`DOUBLE`, `INTEGER`, `BOOLEAN`, `STRING`, `DATETIME`, tables) with optional quality flags (`GOOD`, `UNCERTAIN`, `BAD`) and time-series history.
+- **Templates (`Blueprints`):** define a standard structure once and instantiate as many identical units (`INSTANCE`) or central controllers (`SINGLETON`) as needed.
+- **Clean separation:** `DEVICE` nodes handle hardware drivers and raw tags; `SINGLETON` and `INSTANCE` nodes hold calculations and application functions.
+Details: [Object model](object-model.md) · [Blueprints](blueprints.md).
 
-| Node type | Purpose |
-|-----------|---------|
-| `PLATFORM`, `DEVICES`, `DASHBOARDS`, … | System catalogs (`root.platform.*`) |
-| `DEVICE` | Physical or virtual device with a driver |
-| `DASHBOARD` | HMI screen (layout JSON + widgets) |
-| `WORKFLOW` | BPMN automation process |
-| `ALERT` / `CORRELATOR` | Automation rules (tree nodes) |
-| `MODEL` | Template (blueprint) for creating objects |
-| `APPLICATION` | Registered deploy application |
-| `USER` / `ROLE` | Users and roles (mirror of security API) |
-| `CUSTOM` | Arbitrary container (fallback) |
+### 2. Equipment and IT connectivity (drivers)
 
-Details: [object-model](object-model.md), [glossary](glossary.md).
+Pluggable driver packs connect industrial and IT protocols to `DEVICE` variables: Modbus TCP/RTU/UDP, OPC UA (client and server), Siemens S7, MQTT, SNMP, BACnet, IEC 60870-5-104, DNP3, EtherNet/IP, DLMS, HTTP, JDBC, and more. Each driver pack carries an explicit, test-verified maturity rating (`PRODUCTION` vs `BETA`, plus field-pilot checklists).
+Details: [Device drivers](drivers.md) · [Driver DDK](driver-ddk.md).
 
-### 2. Models (templates)
+### 3. Real-time calculations and time-series historian
 
-`BlueprintDefinition` describes a set of variables, events, functions, and CEL bindings. MIXINs auto-apply only when a non-empty *Applicability condition* (CEL) is set. The demo blueprint `mqtt-sensor-v1` is a fixture applied via `templateId`.
+- **Calculation rules (*binding rules*):** reactive or periodic rules written in Google **CEL** or built-in signal-processing functions (`scale`, `clamp`, `movingAvg`, `hysteresis`, `counterRate`, cross-object `read`).
+- **Historian:** automatic recording of selected variables with configurable retention and aggregation (`1m`, `5m`, `1h`, shift `8h`). Scales from an embedded H2 file (laptop) to single-DB PostgreSQL/TimescaleDB, up to ClickHouse for high-rate streams and Parquet for multi-year archives.
+Details: [Calculation rules](bindings.md) · [Variable history](variable-history.md) · [Historian tiers](historian-tiers.md).
 
-Details: [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
+### 4. Dashboards, SCADA mnemonics, and custom React apps
 
-### 3. Device drivers
+- **Dashboard Builder:** 84×8 grid layout with 40+ widget types (numeric cards, trends, gauges, master-detail object tables via `selectionKey`, Excel-like spreadsheets, reports, work queues).
+- **SCADA Mimic Editor:** browser-based vector P&ID and single-line diagram editor with 218 industrial symbols bound directly to live variables and equipment commands.
+- **Hosted React UI packs (`ui-pack`):** when a project requires a bespoke web interface (maps, 3D, complex MES boards), teams build a standalone React SPA in their IDE and serve it directly from ISPF at `/apps/<appId>/`.
+Details: [Dashboards](dashboards.md) · [SCADA](scada.md) · [Widgets](widgets.md) · [Custom React UI](external-ide.md).
 
-The `DeviceDriver` SPI connects protocols to object variables. The administrator configures `driverId`, configuration, and point mapping; the runtime polls the device and writes values into the tree.
+### 5. Alarms, event correlation, and BPMN workflows
 
-Demo after first startup:
+- **Alert rules:** watch variables with CEL conditions, activation delays, hysteresis/latching (`deactivateExpr`), and webhook/email notifications.
+- **Event correlators:** detect repeated events or multi-event sequences across a time window.
+- **BPMN workflows:** visual process editor for automated actions (calling functions, setting tags, publishing messages) and human-in-the-loop tasks that appear in the operator's **Work Queue**.
+Details: [Automation](automation.md) · [BPMN workflows](workflows.md).
 
-| Object | Driver | Purpose |
-|--------|--------|---------|
-| `demo-sensor-01` | virtual | Sinusoidal temperature + alarm binding |
-| `snmp-localhost` | snmp | localhost SNMP agent |
+### 6. Packaging applications without forking the server
 
-Details: [drivers](drivers.md).
+Complete industry applications — isolated PostgreSQL tables (`migrations[]`), SQL/JSON backend functions (`functions[]`), object templates, screens, reports, and schedules — are packaged into a single JSON manifest (`bundle.json`), validated in CI (`ispf validate`), and deployed via REST API or Git sync.
+Details: [Solution developer guide](solution-developer-guide.md) · [Applications API](applications.md).
 
-### 4. Dashboards and HMI
+### 7. Security, multi-site federation, and offline installs
 
-Dashboard Builder (admin) and Operator HMI (read-only) use the same widgets:
-
-| Category | Widgets |
-|----------|---------|
-| Values | `value`, `indicator`, `sparkline`, `chart`, `gauge` |
-| Tables | `object-table`, `card-grid`, `work-queue` |
-| Navigation | `dashboard-link` (switch between screens) |
-| SCADA | `scada-mimic` (P&ID / single-line mimic diagrams) |
-| Other | `text`, `iframe`, `image`, `event-log`, `function-button` |
-
-Widgets bind to data via `objectPath` (static) or `selectionKey` (dynamic row selection from a table).
-
-Details: [dashboards](dashboards.md), [scada](scada.md), widget reference: [widgets](widgets.md).
-
-### 5. Workflow (BPMN)
-
-Visual BPMN editor in the Web Console. Supports service tasks (including application function calls), user tasks (operator queue), gateways with CEL conditions, parallel branches, signals, and NATS.
-
-Details: [workflows](workflows.md).
-
-### 6. Automation
-
-- **Events** — typed notifications from objects; journal + WebSocket.
-- **Alert rules** — CEL condition on a variable → automatic event fire. `ALERT` nodes in `root.platform.alert-rules`.
-- **Event correlators** — event chain → workflow start. `CORRELATOR` nodes in `root.platform.correlators`.
-
-Details: [automation](automation.md).
-
-### 7. Application solutions (Application Platform)
-
-The REQ-PF layer lets you deploy industry applications **without changing the Java core**:
-
-| Stage | API |
-|-------|-----|
-| Registration | `POST /applications` |
-| SQL migrations | `POST /applications/{id}/data/migrate` |
-| Functions (JSON script) | `POST /applications/{id}/functions/deploy` |
-| Bundle deploy | `POST /applications/{id}/deploy` |
-| BFF for UI | `POST /bff/invoke` |
-| Schedules | `GET/POST /schedules` |
-| SQL reports | `GET /applications/{id}/reports/{name}` |
-
-Details: [applications](applications.md), [reports](reports.md).
-
-### 8. Operator UI
-
-The operator shell is a full-screen HMI for operators:
-
-```
-http://localhost:5173?mode=operator&app=<appId>
-```
-
-Operator UI configuration is stored on the server (`operator_app_ui`) and edited in the admin console → `root.platform.operator-apps`. Load priority:
-
-1. `GET /api/v1/operator-apps/{appId}/ui`
-2. `GET /api/v1/applications/{appId}/operator-ui` (from bundle)
-3. Legacy fallback `public/operator-apps/{appId}.ui.json`
-
-Details: [operator-guide](operator-guide.md), [web-console](web-console.md).
-
-### 9. Security
-
-Two roles: **admin** (full access) and **operator** (view, functions, work queue). Profile `local` — Bearer token after login; profile `dev`/prod — OAuth2 JWT via Keycloak.
-
-Details: [security](security.md).
+- Role-based access control (`admin`, `operator`, custom roles) down to objects, variables, and functions; local login or enterprise SSO via OAuth2/Keycloak; optional TOTP MFA.
+- Air-gapped installation bundles for isolated industrial networks.
+- Clustering (HA) and hub-edge federation with store-and-forward buffering.
+Details: [Security](security.md) · [Air-gap deployment](air-gap-deployment.md) · [Cluster](cluster.md) · [Federation](federation.md).
 
 ---
 
-## Web Console Modes
+## Admin Console vs Operator HMI
 
 ![Operator HMI — Mini-CHP station overview](../assets/ispf-operator-hmi.png)
 
-```mermaid
-flowchart TD
-    LOGIN[Login] --> ROLE{Role?}
-    ROLE -->|admin| ADMIN[Admin Console]
-    ROLE -->|operator| OP[Operator HMI]
-    ADMIN --> EXPLORER[Object explorer]
-    ADMIN --> BUILDER[Dashboard / Workflow Builder]
-    EXPLORER --> AUTO[Alert rules / Correlators in tree]
-    ADMIN --> OPBTN["Operator · demo button"]
-    OPBTN --> OP
-    OP --> DASH[Read-only dashboards]
-    OP --> WQ[Work Queue]
-    OP --> EJ[Event journal]
-```
+ISPF serves two distinct interfaces from the same server depending on user role and URL:
 
-| Mode | URL | Who sees it |
-|------|-----|-------------|
-| Admin | `http://localhost:5173` | admin (default) |
-| Operator HMI | `?mode=operator` | operator; admin via link |
-| Operator app | `?mode=operator&app=platform` | specific application |
-| Admin explicit | `?mode=admin` | admin even with autostart |
+| Mode | URL | Purpose |
+|------|-----|---------|
+| **Admin Console** | `http://<host>:8080` | Object tree explorer, device/rule inspectors, Dashboard Builder, SCADA Mimic Editor, BPMN Workflow Builder, system diagnostics |
+| **Operator HMI** | `http://<host>:8080?mode=operator` | Clean full-screen view for shift personnel: read-only dashboards, interactive mimic controls, event log, and BPMN Work Queue |
+| **Specific operator app** | `http://<host>:8080?mode=operator&app=<appId>` | Opens the navigation menu and default screen of a specific deployed application (or launches its hosted `/apps/<appId>/` UI pack) |
 
 ---
 
-## Typical Scenarios
+## Typical end-to-end scenarios
 
-### Scenario 1: Sensor monitoring
+### 1. Equipment telemetry and alarm handling
+1. An engineer creates a `DEVICE` node (for example, Modbus or MQTT), maps registers/topics to variables, and starts the driver.
+2. A dashboard and P&ID mimic display live values and trends to the shift operator.
+3. When temperature exceeds its threshold, an `ALERT` rule logs a critical event and starts a BPMN workflow.
+4. A task appears in the operator's **Work Queue**; the operator claims the task, inspects the trend, acknowledges the alarm, and completes the step.
 
-1. Administrator opens `devices.demo-sensor-01` — sees temperature, threshold, alarm.
-2. Double-clicks `dashboards.demo-sensor` — edits the HMI.
-3. Operator opens `?mode=operator` — sees the same dashboard without editing.
-4. When the threshold is exceeded, an alert rule fires → event in the journal → optional workflow.
-
-### Scenario 2: Operator task handling
-
-1. A BPMN workflow contains a **user task** “Confirm action”.
-2. The task appears in the **Work Queue** in the operator sidebar.
-3. Operator clicks **Claim** → performs the action → **Complete**.
-4. The workflow continues (service task, gateway, etc.).
-
-### Scenario 3: Deploying an industry application
-
-1. Developer registers the app (`POST /applications`).
-2. Deploys SQL migrations and JSON functions.
-3. Uploads a bundle with `operatorUi` and reports.
-4. Administrator creates an operator app in the tree → configures dashboards.
-5. Operators work via `?mode=operator&app=my-terminal`.
-
-Step-by-step walkthrough: [solution-developer-guide](solution-developer-guide.md).
+### 2. Deploying a shop-floor / terminal accounting app
+1. A developer creates an application folder with SQL table migrations (`orders`, `batches`), JSON script functions (`listOrders`, `completeOrder`), and dashboards (or a React `ui-pack`).
+2. `ispf pack` and `ispf validate --strict` verify the bundle before deployment.
+3. `ispf deploy` (or `POST /api/v1/applications/<appId>/deploy`) provisions the isolated SQL schema, functions, and tree nodes in one step.
+4. Operators sign in and work immediately at `?mode=operator&app=<appId>` or `/apps/<appId>/`.
 
 ---
 
-## Quick Start (5 minutes)
+## Technology stack and licensing
 
-```bash
-# 1. API (H2 + local auth)
-./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
+- **Backend:** Java 25, Spring Boot 4, PostgreSQL / TimescaleDB (H2 embedded for local evaluation; optional ClickHouse, NATS, MQTT, Keycloak).
+- **Frontend:** React 19, TypeScript, Vite, REST + WebSocket (`WS /ws/objects`).
+- **License:** Core platform (`main`) is licensed under **GNU AGPL v3**, with an optional commercial license for proprietary deployments. Driver packs and application bundles can carry separate licenses — see [License](license.md) and [Plugins](plugins.md).
 
-# 2. Web Console
-cd apps/web-console && npm install && npm run dev
-```
-
-| URL | Purpose |
-|-----|---------|
-| http://localhost:5173 | Admin console (login: `admin` / `admin`) |
-| http://localhost:5173?mode=operator | Operator HMI |
-| http://localhost:8080/api/v1/info | Platform version |
-| http://localhost:8080/actuator/health | Health check |
-
-Full instructions: [getting-started](getting-started.md).
-
----
-
-## Architecture (brief)
-
-```
-Web Console (React)  ←→  REST / WebSocket  ←→  ispf-server (Spring Boot)
-                                                      │
-                    ObjectManager │ WorkflowService │ DriverRuntime
-                    ApplicationPlatform │ EventService │ AlertRules
-                                                      │
-                    PostgreSQL/H2 │ Flyway │ NATS* │ MQTT*
-```
-
-Details: [architecture](architecture.md).
-
----
-
-## API
-
-Base URL: `http://localhost:8080/api/v1`
-
-| Group | Examples |
-|-------|----------|
-| Objects | `GET /objects`, `PUT /objects/by-path/{path}/variables/{name}` |
-| Dashboards | `GET /dashboards/by-path/{path}/layout` |
-| Workflow | `POST /workflows/by-path/{path}/run` |
-| Applications | `POST /applications/{id}/deploy` |
-| Operator apps | `GET /operator-apps/{id}/ui` |
-| Drivers | `POST /drivers/runtime/start?devicePath=...` |
-| Events | `GET /events`, `POST /events/fire` |
-
-Full reference: [api](api.md).
-
----
-
-## License and Boundaries
-
-| Component | License |
-|-----------|---------|
-| ISPF platform (`main`) | GNU AGPL v3 (+ optional Enterprise dual-license) |
-| Driver packs / commercial plugins / app bundles | Separate terms — see [license](license.md), [plugins](plugins.md) |
-
-Details: [license](license.md), [plugins](plugins.md).
-
----
-
-## Documentation Map
-
-### Product documentation
-
-| Document | Description |
-|----------|-------------|
-| **product.md** (this file) | Product overview, capabilities, scenarios |
-| [operator-guide](operator-guide.md) | Operator HMI usage |
-| [solution-developer-guide](solution-developer-guide.md) | Building application solutions |
-| [external-ide](external-ide.md) | Cursor / VS Code: hosted SPA, MCP, ui-pack |
-| [glossary](glossary.md) | Terms and definitions |
-
-### Technical documentation
-
-| Document | Description |
-|----------|-------------|
-| [getting-started](getting-started.md) | Installation and first run |
-| [object-model](object-model.md) | Tree, variables, CEL |
-| [dashboards](dashboards.md) | Layout, selectionKey, builder |
-| [scada](scada.md) | Mimic diagrams, MIMIC objects, mimic editor (align, distribute, flip, resize, smart-snap) |
-| [widgets](widgets.md) | Reference for all widgets |
-| [workflows](workflows.md) | BPMN engine |
-| [applications](applications.md) | REQ-PF deploy API |
-| [drivers](drivers.md) | Driver catalog |
-| [security](security.md) | RBAC and authentication |
-| [deployment](deployment.md) | Production |
-
-Full index: [readme](readme.md).
+Full documentation catalog: **[docs/en/readme.md](readme.md)**.

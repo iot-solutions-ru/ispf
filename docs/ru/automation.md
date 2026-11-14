@@ -1,52 +1,47 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/automation.md](../en/automation.md).
+> **Язык:** русская версия. Английский оригинал: [en/automation.md](../en/automation.md).
 
-# Автоматизация: события, оповещения, корреляторы
+# Автоматизация: события, правила тревог и корреляторы
 
-> **Статус:** Stable — Алерты, корреляторы. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — журнал событий, пороговые тревоги, корреляция событий и каналы уведомлений. Метки зрелости: [doc-status.md](doc-status.md).
 
-## События
+Подсистема автоматизации ISPF отслеживает выход технологических параметров за допустимые пределы, фиксирует события в журнале, выявляет цепочки повторяющихся сбоев и запускает уведомления либо маршруты BPMN.
 
-### Дескриптор
+Связанные разделы: [Модель объектов](object-model.md) · [Процессы BPMN](workflows.md) · [Справочник языка выражений (CEL)](expression-language.md).
 
-На объекте задаётся `EventDescriptor`: имя, схема payload, уровень.
+---
 
-Уровни (`EventLevel`): `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.
+## 1. События и журнал событий
 
-### Публикация
+### Описание события (`EventDescriptor`)
 
-**API (ручной огонь, любители):**
+На объекте объявляются допустимые типы событий (`EventDescriptor`): имя, схема полей данных (`payload`) и уровень важности (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`).
 
-```http
-POST /api/v1/events/fire
-```
+### Как формируются события
 
-**Вход драйвера (высокая частота, без HTTP):** при `telemetryPublishMode=EVENT_JOURNAL_ONLY` каждом обновлении переменной от драйвера возникает `EventService.fireIngress` → асинхронный журнал. Событие задаётся `ingressEventName` в конфигурации драйвера (по умолчанию `messageReceived`). См. [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md).
+1. **Автоматически по правилу тревоги (`ALERT`)** или из правила расчёта (`fire(@/evt/...)`).
+2. **Явным вызовом REST API** (из внешних систем, скриптов или тестов):
+   ```http
+   POST /api/v1/events/fire
+   ```
+3. **Напрямую из драйвера** (режим `telemetryPublishMode=EVENT_JOURNAL_ONLY` для специализированного пакетного аудита — см. [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md)). На обычной потоковой телеметрии журнал событий объекта оставляют выключенным (`eventJournalEnabled=false`), чтобы не раздувать БД — см. [Частые ошибки при проектировании](anti-patterns.md).
 
-Общий горячий путь после валидации дескриптора:
+После проверки по дескриптору событие асинхронно записывается в `event_history` (PostgreSQL/TimescaleDB или ClickHouse), рассылается в интерфейс по WebSocket и передаётся на вход корреляторам событий.
 
-1. Запись в `event_history` (асинхронный пакет — Timescale [0015-event-history-timescale](decisions/0015-event-history-timescale.md) или ClickHouse [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md))
-2. `ObjectChangeEvent` → WebSocket
-3. Слушатели: корреляторы, интерфейс.
-
-### Журнал
+### Чтение журнала событий
 
 ```http
 GET /api/v1/events?objectPath=root.platform.devices.demo-sensor-01&limit=50
 ```
 
-Без `objectPath` — глобальный журнал (до 200 записей). Необязательный `expr` — CEL по `payload.*` (те же привязки, что у `filterExpression` сохранённого фильтра); невалидный CEL даёт 400.
-
-### Демо
-
-`mqtt-sensor-v1` → событие `thresholdExceeded` при превышении порога (через правило оповещения или ручной огонь); `messageReceived` — для loadtest/audit ingress ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)).
+Без параметра `objectPath` возвращается общий журнал (до 200 последних записей). Необязательный параметр `expr` позволяет отфильтровать записи выражением CEL по полям `payload.*`.
 
 ---
 
-## Хранение в дереве объектов
+## 2. Расположение правил в дереве объектов
 
-Правила оповещений и корреляторы событий — **узлы дерева** под `root.platform`, как дашборды и рабочие процессы:
+Правила тревог и корреляторы хранятся как обычные узлы дерева под `root.platform`:
 
-```
+```text
 root.platform
 ├── root.platform.alert-rules
 │   └── root.platform.alert-rules.temperature-threshold-exceeded
@@ -55,254 +50,117 @@ root.platform
     └── root.platform.correlators.threshold-then-alarm-active-sequence-demo
 ```
 
-| Сущность | Тип узла | Модель | Папка |
-|----------|----------|--------|-------|
-| Alert rule | `ALERT` | `alert-rule-v1` | `root.platform.alert-rules` |
-| Correlator | `CORRELATOR` | `correlator-v1` | `root.platform.correlators` |
+| Сущность | Тип узла | Встроенный шаблон | Раздел в дереве |
+|----------|----------|-------------------|-----------------|
+| Правило тревоги | `ALERT` | `alert-rule-v1` | `root.platform.alert-rules` |
+| Коррелятор событий | `CORRELATOR` | `correlator-v1` | `root.platform.correlators` |
 
-Конфигурация сохраняется в объекте запроса (`objectPath`, `watchVariable`, `conditionExpr`, …). Сервис `AutomationTreeService` читает и записывает узлы; при старте `AutomationBootstrap` перемещает Legacy-строки из таблиц `alert_rules` / `event_correlators` (если есть) и создаёт демо-правила.
-
-Пользовательский интерфейс: **Обозреватель** → выберите узел в `alert-rules` или `correlators` → инспектор (`AlertRuleInspector`, `CorrelatorInspector`). Создание — контекстное меню дерева или `POST /api/v1/alert-rules` / `POST /api/v1/correlators`.
+Настройка в консоли администратора: выберите узел в папке `alert-rules` или `correlators` — справа откроется специализированный инспектор (`AlertRuleInspector` / `CorrelatorInspector`).
 
 ---
 
-## Правила оповещений
+## 3. Правила тревог (`Alert rules`)
 
-CEL-правило изменения переменной. При истинности условий — генерируется fire event.
+Правило тревоги проверяет условие CEL при каждом обновлении контролируемой переменной (и при необходимости дополнительно по таймеру `pollIntervalMs`).
 
-![Инспектор alert rule — CEL-условие и уведомления](../assets/ispf-alert-rule.png)
+![Инспектор правила тревоги — условие CEL и настройка оповещений](../assets/ispf-alert-rule.png)
 
-### Поля
+### Основные поля настройки
 
-| Поле | Описание |
-|------|----------|
-| `objectPath` | Объект |
-| `watchVariable` | Имя переменной |
-| `conditionExpr` | CEL (контекст: поля переменной) |
-| `eventName` | Имя события для fire |
-| `payloadVariable` | Переменная для payload (опц.) |
-| `enabled` | Вкл/выкл |
-| `edgeTrigger` | Только на фронте false→true |
-| `delaySeconds` | Секунды, пока условие должно оставаться истинным до активации (0 = сразу) |
-| `sustainWhileTrue` | Повторный fire, пока условие истинно (с учётом `rateLimitSeconds`) |
-| `rateLimitSeconds` | Минимальный интервал между повторными срабатываниями при sustain |
-| `priority` | `CRITICAL` / `HIGH` / `MEDIUM` / `LOW` |
-| `ackRequired` | Метаданные подтверждения оператором |
-| `deactivateExpr` | CEL-условие сброса (опц.; пусто = сброс при ложном `conditionExpr`) |
-| `deactivateDelaySeconds` | Секунды, пока `deactivateExpr` должно оставаться истинным до сброса (0 = сразу) |
-| `clearEventName` | Событие при сбросе (опц., напр. `thresholdCleared`) |
-| `pollIntervalMs` | Интервал периодической переоценки (0 = только при изменении `watchVariable`) |
-| `triggerMessage` | Статическое или CEL-сообщение в payload события при срабатывании |
-| `latchedActive` | Runtime: правило в защёлкнутом активном состоянии (только чтение в инспекторе) |
-| `notificationWebhookUrl` | URL для HTTP POST при срабатывании (опц.) |
-| `notificationEmailTarget` | Email: `to@host\|subject\|body` (опц., нужен relay) |
+| Поле | Назначение |
+|------|------------|
+| `objectPath` | Путь контролируемого объекта (например, `root.platform.devices.demo-sensor-01`) |
+| `watchVariable` | Имя отслеживаемой переменной на объекте (например, `temperature`) |
+| `conditionExpr` | Условие срабатывания на языке CEL (например, `self.temperature.value > 80.0`) |
+| `eventName` | Имя события, публикуемого при срабатывании |
+| `payloadVariable` | Переменная, чьи данные прикладываются к событию (необязательно) |
+| `enabled` | Включено ли правило |
+| `edgeTrigger` | Срабатывать только на переходе `false → true` (по фронту) |
+| `delaySeconds` | Выдержка времени (в секундах), в течение которой условие должно держаться истинным до тревоги (`0` — сразу) |
+| `sustainWhileTrue` | Повторно публиковать событие, пока держится авария (не чаще `rateLimitSeconds`) |
+| `rateLimitSeconds` | Минимальная пауза между повторными уведомлениями |
+| `priority` | Приоритет: `CRITICAL` / `HIGH` / `MEDIUM` / `LOW` |
+| `ackRequired` | Требуется ли подтверждение (квитирование) оператором |
+| `deactivateExpr` | Условие возврата в норму с гистерезисом (например, `self.temperature.value < 70.0`) |
+| `deactivateDelaySeconds` | Выдержка времени перед сбросом тревоги |
+| `clearEventName` | Имя события при возврате в норму (например, `thresholdCleared`) |
+| `pollIntervalMs` | Периодическая перепроверка в мс (`0` — проверять только при изменении переменной) |
+| `triggerMessage` | Текст сообщения (статический или выражение CEL) |
+| `notificationWebhookUrl` | HTTP URL для отправки POST-уведомления |
+| `notificationEmailTarget` | Получатель письма в формате `to@host\|тема\|текст` |
 
-**Режим latch** включается, если заданы `deactivateExpr`, `clearEventName` или `deactivateDelaySeconds > 0`. В latch-режиме правило остаётся активным после срабатывания условия активации, пока не завершится путь деактивации (с опциональной задержкой), затем генерируется `clearEventName`, если задано.
+### Режим защёлки и гистерезиса (`latch`)
 
-При возникновении fire events, если задан вебхук и/или адрес электронной почты — дополнительно вызывается `NotificationDispatchService` (ошибки логируются, оповещение не блокируется).
+Если задано условие сброса `deactivateExpr`, имя события возврата `clearEventName` или задержка сброса `deactivateDelaySeconds > 0`, правило работает с **защёлкой**: после превышения верхнего порога (например, `> 80 °C`) тревога остаётся активной (`latchedActive = true`), пока параметр уверенно не вернётся ниже порога сброса (`< 70 °C`). Это защищает журнал от «дребезга» сигнала возле уставки.
 
-### Пример (простой edge)
+Оценка одного правила потокобезопасна (параллельные обновления не вызывают двойного срабатывания). Ошибка вычисления формулы на одном правиле пишется в лог и счётчик `ispf.alert.rule_failures.total`, не останавливая остальные правила.
 
-Объект: `demo-sensor-01`, watch: `alarmActive`, условие: `self.alarmActive["value"] == true`, событие: `thresholdExceeded`.
+### REST API правил тревог
 
-### Пример (температура + latch, ADR-0039 фаза B)
-
-Объект: `demo-sensor-01`, watch: `temperature`, активация: `self.temperature["value"] > 80.0`, деактивация: `self.temperature["value"] < 70.0`, события: `thresholdExceeded` / `thresholdCleared`. См. [`examples/alert-rule-evolution/temperature-high.json`](../../examples/alert-rule-evolution/temperature-high.json).
-
-`AlertRuleListener` реагирует на `VARIABLE_UPDATED`; правила с `pollIntervalMs > 0` дополнительно оценивает `AlertRulePeriodicScheduler`.
-
-Оценки одного правила не пересекаются: воркеры изменений переменных, планировщик опроса и обновления SQL-привязок берут блокировку правила, поэтому состояние фронта, удержания и защёлки не читается дважды до записи (двойного срабатывания нет). Правило, которое падает (невычислимое условие или любая другая ошибка), пишется в лог, учитывается в `ispf.alert.rule_failures.total{reason=condition|error}` (Системные метрики → «Сбои правил алертов») и пропускается; остальные правила того же изменения переменной или такта опроса выполняются, а упавшее правило не отключается. Состояние правил сбрасывается в БД каждые `ispf.alert-rule.runtime.flush-interval-ms` (30 с); изменение, сделанное во время записи правила, попадёт в следующий сброс.
-
-### API
-
-| Метод | Путь | Роли |
-|--------|------|------|
-| GET | `/api/v1/alert-rules` | admin |
-| GET | `/api/v1/alert-rules/by-path?path=` | admin |
-| POST | `/api/v1/alert-rules` | admin |
-| PUT | `/api/v1/alert-rules/by-path?path=` | admin |
-| DELETE | `/api/v1/alert-rules/by-path?path=` | admin |
+| Метод | Путь | Роль |
+|-------|------|------|
+| `GET` | `/api/v1/alert-rules` | `admin` |
+| `GET` | `/api/v1/alert-rules/by-path?path=...` | `admin` |
+| `POST` | `/api/v1/alert-rules` | `admin` |
+| `PUT` | `/api/v1/alert-rules/by-path?path=...` | `admin` |
+| `DELETE` | `/api/v1/alert-rules/by-path?path=...` | `admin` |
 
 ---
 
-## Корреляторы событий
+## 4. Корреляторы событий (`Event correlators`)
 
-![Каталог event correlators](../assets/ispf-correlator.png)
+![Настройка коррелятора событий](../assets/ispf-correlator.png)
 
-Агрегация нескольких событий → действие (запуск рабочего процесса).
+Коррелятор отслеживает комбинацию или серию событий за заданное окно времени (`windowSeconds`) и выполняет ответное действие (чаще всего — запускает процесс BPMN).
 
-### Паттерны (`CorrelatorPatternType`)
+### Шаблоны корреляции (`patternType`)
 
-| Тип | Описание |
-|-----|----------|
-| `COUNT` | N событий `eventName` за `windowSeconds` |
-| `SEQUENCE` | Событие A, затем B на том же объекте |
-| `EVENT_CHAIN` | Упорядоченная цепочка 3+ событий (`eventName` + `secondEventName` через запятую) |
-| `WINDOW` | Набор событий (A + список в `secondEventName`) — каждое хотя бы раз за `windowSeconds` |
+| Тип шаблона | Когда срабатывает |
+|-------------|-------------------|
+| `COUNT` | Событие `eventName` повторилось `minOccurrences` раз за `windowSeconds` |
+| `SEQUENCE` | На одном объекте сначала произошло событие A (`eventName`), а затем событие B (`secondEventName`) в пределах окна |
+| `EVENT_CHAIN` | Упорядоченная цепочка из 3 и более событий (`eventName` + список в `secondEventName` через запятую; посторонние события между ними игнорируются) |
+| `WINDOW` | Все перечисленные события произошли на объекте хотя бы по одному разу за `windowSeconds` в любом порядке |
 
-### WINDOW / EVENT_CHAIN (BL-171)
+После срабатывания выдерживается пауза `cooldownSeconds`, чтобы не плодить дублирующие инциденты.
 
-**WINDOW (неупорядоченное):** все события на одном объекте внутри `windowSeconds`, порядок не важен.
+### Ответные действия (`actionType`)
 
-**EVENT_CHAIN (упорядоченное):** события в заданном порядке (посторонние события пропускаются) внутри окна.
+| `actionType` | Поле `actionTarget` | Что выполняется |
+|--------------|---------------------|-----------------|
+| `RUN_WORKFLOW` | Путь к узлу `WORKFLOW` | Запускается процесс BPMN (например, разбор аварии сменой) |
+| `FIRE_EVENT` | Имя сводного события | Публикуется укрупнённое событие на объекте |
+| `SET_VARIABLE` | `имяПеременной=значение` | Записывается значение в переменную |
+| `OPEN_OPERATOR_REPORT` | Путь к отчёту | Отправляется команда открытия отчёта оператору |
+| `SEND_WEBHOOK` | HTTP URL | Отправляется JSON POST с контекстом события |
+| `SEND_EMAIL` | `кому\|тема\|текст` | Отправка письма через настроенный почтовый шлюз |
+| `SEND_SMS` | `+7900...\|текст` | Отправка SMS через HTTP-шлюз |
 
-| Поле | Роль |
-|------|------|
-| `eventName` | Первое обязательное событие |
-| `secondEventName` | Дополнительные события через запятую |
-| `windowSeconds` | Ширина скользящего окна (> 0) |
-| `sequenceGapSeconds` | Опциональный макс. разрыв между шагами цепочки |
+### REST API корреляторов
 
-Пример: MES dispatch — `workOrderCreated` + `workOrderReleased` + `workOrderStarted` за 120 с → `RUN_WORKFLOW`.
-
-### Поля
-
-| Поле | Описание |
-|------|----------|
-| `name` | Имя |
-| `patternType` | COUNT / SEQUENCE / EVENT_CHAIN / WINDOW |
-| `eventName` | Первое событие (A) |
-| `secondEventName` | Второе (для SEQUENCE) |
-| `windowSeconds` | Окно наблюдения |
-| `minOccurrences` | Порог (COUNT) |
-| `cooldownSeconds` | Пауза после срабатывания |
-| `actionType` | См. таблицу ниже |
-| `actionTarget` | Зависит от `actionType` |
-| `enabled` | Вкл/выкл |
-
-### Типы действий (`CorrelatorActionType`)
-
-| `actionType` | `actionTarget` | Описание |
-|--------------|----------------|----------|
-| `RUN_WORKFLOW` | path workflow | Запуск BPMN |
-| `FIRE_EVENT` | имя события | `EventService.fire` на объекте |
-| `SET_VARIABLE` | `varName=value` | Запись переменной |
-| `OPEN_OPERATOR_REPORT` | path отчёта | Событие `openOperatorReport` |
-| `SEND_WEBHOOK` | URL | HTTP POST JSON (`NotificationDispatchService`) |
-| `SEND_EMAIL` | `to\|subject\|body` | POST на email relay (см. конфиг ниже) |
-| `SEND_SMS` | `msisdn\|body` | POST на SMS relay (`sms-relay-url`) или write на SMPP DEVICE |
-
-### Пример ПОСЛЕДОВАТЕЛЬНОСТЬ
-
-A = `thresholdExceeded`, B = `thresholdExceeded` (повтор), window = 60s → запуск `demo-alarm-handler`.
-
-`EventCorrelatorListener` на `EVENT_FIRED` → `CorrelatorDispatchService` (keyed-lanes по id correlator, `REQUIRES_NEW` на каждый). Хиты в `correlator_hits` / Redis window store. См. [ADR-0062](../en/decisions/0062-correlator-keyed-dispatch.md).
-
-### API
-
-| Метод | Путь | Роли |
-|--------|------|------|
-| GET | `/api/v1/correlators` | admin |
-| GET | `/api/v1/correlators/by-path?path=` | admin |
-| POST | `/api/v1/correlators` | admin |
-| PUT | `/api/v1/correlators/by-path?path=` | admin |
-| DELETE | `/api/v1/correlators/by-path?path=` | admin |
+`GET / POST /api/v1/correlators` и `GET / PUT / DELETE /api/v1/correlators/by-path?path=...` (роль `admin`).
 
 ---
 
-## Каналы уведомлений (BL-44 / BL-230 / BL-231)
+## 5. Шлюзы внешних уведомлений (почта, SMS, вебхуки)
 
-`NotificationDispatchService` — HTTP webhook, опциональный email-relay и SMS-relay для alert rules и correlator.
-
-Шлюзы — **отдельный драйвер на канал** (отдельный pack и DEVICE-конфиг):
-
-| driverId | Pack | Config | Поля write |
-|----------|------|--------|------------|
-| `email` | `ispf-driver-email` | `relayUrl`, опц. `defaultTo` / `defaultSubject` | `to`, `subject`, `body` |
-| `sms` | `ispf-driver-sms` | `relayUrl`, опц. `defaultTo` | `to`, `body`/`text` |
-| `webhook` | `ispf-driver-webhook` | `targetUrl` (или `relayUrl`) | JSON-поля или `value` |
-
-Маппинг точки: `outbound` / `send` / имя канала. Schedule: `actionType: write_point`.  
-(`smpp` — протокол SMSC; `sms` — HTTP SMS-relay шлюз уведомлений.)
-
-### Конфигурация
-
-| Свойство | Env (слабая привязка) | Описание |
-|----------|----------------------|----------|
-| `ispf.notifications.email-relay-url` | `ISPF_NOTIFICATIONS_EMAIL_RELAY_URL` | Глобальный relay для correlator/alert `SEND_EMAIL` (не DEVICE email) |
-| `ispf.notifications.sms-relay-url` | `ISPF_NOTIFICATIONS_SMS_RELAY_URL` | Глобальный relay для correlator `SEND_SMS` |
-| `ispf.notifications.timeout-seconds` | `ISPF_NOTIFICATIONS_TIMEOUT_SECONDS` | Таймаут HTTP (по умолчанию 15) |
-
-DEVICE-шлюзы используют **свой** `relayUrl` / `targetUrl` и не требуют глобальных свойств.
-
-### Schedule → DEVICE-шлюз (BL-230)
-
-```json
-{
-  "actionType": "write_point",
-  "action": {
-    "objectPath": "root.platform.devices.noc-email",
-    "pointId": "outbound",
-    "fields": {
-      "to": "noc@example.com",
-      "subject": "Суточный отчёт",
-      "body": "См. портал"
-    }
-  }
-}
-```
-
-Создайте DEVICE с `driverId=email`, `relayUrl=…`, mapping `{"outbound":"outbound"}`. SMS: `driverId=sms`. Webhook: `driverId=webhook`.
-
-### Вебхук / контекст
-
-Базовые поля (`NotificationDispatchService.baseContext`):
-
-```json
-{
-  "source": "alert-rule | correlator",
-  "sourceId": "<path узла правила/коррелятора>",
-  "objectPath": "<объект, на котором сработало>",
-  "eventName": "<имя события>",
-  "timestamp": "2026-06-28T12:00:00Z"
-}
-```
-
-### Где настройки
-
-| Источник | Пользовательский интерфейс | Переменные / поля |
-|----------|-----|-------------------|
-| Alert rule | Explorer → `alert-rules` → inspector | `notificationWebhookUrl`, `notificationEmailTarget` |
-| Correlator | Explorer → `correlators` → inspector | `actionType` = `SEND_WEBHOOK` / `SEND_EMAIL` / `SEND_SMS`, `actionTarget` |
-
-API alert rules принимает те же поля в `POST/PUT` body (`CreateAlertRuleRequest` / `UpdateAlertRuleRequest`).
-
-Формат `SEND_SMS`: `msisdn|body` (пример `+79001234567|Объект недоступен`).
+Помимо глобальных настроек `ISPF_NOTIFICATIONS_EMAIL_RELAY_URL` и `ISPF_NOTIFICATIONS_SMS_RELAY_URL`, каналы оповещения можно оформлять как отдельные узлы `DEVICE` с драйверами `email`, `sms` или `webhook` (вызываются из расписаний и сценариев через запись в точку `outbound`).
 
 ---
 
-## Программы процесса (BL-172)
+## 6. Циклические программы, фильтры событий и контекст CEL
 
-Циклические контуры в `root.platform.process-programs`. Поля: `targetObjectPath`, `outputVariable`, `controlExpression`, `interlockExpression`, `enabled`, runtime `lastCycleAt` / `lastOutput` / `lastError`. Планировщик: `ProcessProgramRunner`.
+- **Программы управления (`root.platform.process-programs`):** периодические контуры с выражением расчёта `controlExpression` и условием блокировки безопасности `interlockExpression`.
+- **Сохранённые фильтры журнала (`root.platform.event-filters`):** именованные CEL-фильтры для быстрого отбора событий через `GET /api/v1/events?filterPath=...`.
 
-## Фильтры событий (BL-174)
+### Какие переменные доступны в выражениях CEL
 
-Объекты в `root.platform.event-filters`. Применение к журналу: `GET /api/v1/events?filterPath=…`, `GET /api/v1/events?expr=payload.eventName=="alarmActive"` или `GET /api/v1/event-filters/by-path/events?path=…`.
-
-## ML hooks (BL-175)
-
-`AnomalyDetectionSpi` + эталон `ThresholdAnomalyDetectionSpi` (`ispf.ml.anomaly.enabled=true`).
-
-## CEL в автоматизации
-
-| Место | Контекст |
-|-------|----------|
-| Variable binding | `self.var.field` |
-| Правило оповещения | поля часы-переменной |
+| Где пишется формула | Доступные поля в CEL |
+|---------------------|----------------------|
+| Правило расчёта на объекте (`@bindingRules`) | `self.<переменная>.<поле>` |
+| Правило тревоги (`ALERT`) | `self.<переменная>.<поле>` контролируемого объекта |
 | Программа процесса | `self.*` целевого объекта |
-| Фильтр событий | `payload.*` |
-| Шлюз рабочего процесса | переменный экземпляр |
-| API проверки выражений | произвольная схема |
+| Фильтр журнала событий | `payload.*` (поля события) |
+| Шлюз ветвления в процессе BPMN | Переменные текущего экземпляра процесса |
 
-Валидация: `POST /api/v1/expressions/validate`.
-
----
-
-## HMI оператора
-
-В режиме `?mode=operator`:
-
-- **EventJournalPanel** — события в прямом эфире
-- **WorkQueuePanel** — задачи из пользовательских задач.
-
-Виджеты дашборда `event-feed` и `work-queue` дублируют функциональность на HMI-экране.
+В рабочем месте оператора (`?mode=operator`) живой поток событий отображается в боковой панели журнала и виджете `event-log` / `event-feed`, а задачи из запущенных процессов — в панели **Work Queue** и виджете `work-queue`.

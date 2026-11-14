@@ -1,123 +1,111 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/external-ide.md](../en/external-ide.md).
+> **Язык:** русская версия. Английский оригинал: [en/external-ide.md](../en/external-ide.md).
 
-# Разработка решений во внешней AI IDE
+# Разработка собственного React-интерфейса оператора (внешняя IDE и `ui-pack`)
 
-> **Статус:** Stable — Hosted UI packs (ADR-0054) + MCP (ADR-0006). Хаб: [doc-status.md](../en/doc-status.md).
+> **Статус:** Stable — пакеты веб-интерфейса ([ADR-0054](decisions/0054-hosted-ui-packs.md)) и подключение IDE по MCP ([ADR-0006](decisions/0006-mcp-agent-tool-adapter.md)). Метки зрелости: [doc-status.md](doc-status.md).
 
-**Ценность платформы:** отраслевые решения собираются **вне** `ispf-server` и `apps/web-console`. Партнёр работает в любой AI IDE (Cursor, VS Code, …) с неограниченным набором React-компонентов и поставляет **bundle** (логика) плюс **ui-pack** (SPA). Платформа хостит оба артефакта: BFF на дереве объектов и статику на `/apps/<appId>/`.
+Встроенный конструктор дашбордов и редактор мнемосхем закрывают типовые пульты диспетчера и схемы P&ID без программирования фронтенда. Если же вашему проекту нужен полностью индивидуальный веб-интерфейс — интерактивные геокарты, 3D-сцены цеха, фирменная дизайн-система или плотные производственные доски MES — вы пишете обычное **одностраничное приложение на React + Vite (SPA)** в любой удобной среде разработки (Cursor, VS Code, WebStorm) и устанавливаете его на сервер ISPF как пакет **`ui-pack`**.
 
-Так сделаны Oil Control, FarmTwin, StoreTwin и IT-мониторинг — это целевой путь, не обходной.
+По этой схеме построены готовые отраслевые решения на платформе (`Oil Control`, `FarmTwin`, `StoreTwin`, `WarehouseTwin`, мониторинг ИТ-инфраструктуры).
 
-Связанные хабы: [application-principles](application-principles.md) (P2, P7, P9), [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md), [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md), [0006-mcp-agent-tool-adapter](decisions/0006-mcp-agent-tool-adapter.md), [solution-developer-guide](solution-developer-guide.md), [marketplace](marketplace.md).
-
-**Агент:** `search_context(query=hosted ui-pack Cursor, topic=external-ide)`.
+Связанные разделы: [Руководство разработчика решений](solution-developer-guide.md) · [Правила архитектуры приложений](application-principles.md) · [API приложений](applications.md) · [Каталог решений (Marketplace)](marketplace.md).
 
 ---
 
-## Почему это возможность платформы
+## Как разделена ответственность
 
-ISPF — middleware. Виджетный kit консоли (~42 типа, сетка 84×8) — **универсальный HMI** для лаборатории, SNMP и запасного SCADA. Продуктовый UI требует произвольный React: карты, 3D, design system, плотные таблицы, брендированная оболочка.
+Исходный код вашего фронтенда живёт в собственном репозитории — **никогда** не добавляйте отраслевые экраны внутрь `apps/web-console` или Java-контроллеры внутрь `packages/ispf-server`:
 
-| Слой | Что принадлежит партнёру | Что принадлежит платформе |
-|------|--------------------------|---------------------------|
-| Пиксели | Vite/React SPA, любые компоненты | Раздача `/apps/<appId>/` (ui-pack) |
-| Данные / правила | Script functions, SQL в схеме приложения, CEL, alerts, BPMN | Движки, BFF, дерево, historian, WS |
-| Поставка | `bundle.json` + zip ui-pack | `validate → dry-run → deploy` / установка из marketplace |
-
-**Запрещено в `main`:** отраслевой React в `apps/web-console`, отраслевая Java в `ispf-server`, захардкоженные BFF-маршруты, platform Flyway для таблиц приложения.
-
-Два артефакта, одно решение:
+| Слой | Что разрабатываете вы | Что даёт сервер ISPF |
+|------|-----------------------|----------------------|
+| **Веб-интерфейс** | Приложение Vite + React, собранное в zip-архив `ui-pack` | Раздача статики по адресу `/apps/<appId>/` (`HostedUiPackFilter`) |
+| **Логика и данные** | Функции на узле логики (`script` / SQL), формулы CEL, тревоги, BPMN (`bundle.json`) | Шлюз `POST /api/v1/bff/invoke`, изолированная схема БД, архив историй, WebSocket |
+| **Поставка на стенд** | `bundle.json` + архив `<app>-ui.zip` | Проверка пакета, атомарный деплой и установка из каталога решений |
 
 ```text
-React SPA (внешняя IDE)           ISPF
-  Vite base /apps/<appId>/          HostedUiPackFilter
-  POST /api/v1/auth/login    ──►    сессия
-  POST /api/v1/bff/invoke    ──►    script functions на хабе
-  WS /ws/objects             ──►    живые переменные (опционально)
+Ваше React-приложение (/apps/<appId>/)   Сервер ISPF
+  POST /api/v1/auth/login        ──►     Авторизация и выдача токена
+  POST /api/v1/bff/invoke        ──►     Вызов функций на узле SINGLETON / INSTANCE
+  WS /ws/objects                 ──►     Живые обновления переменных и тревог (по желанию)
 ```
 
-Эталоны: `examples/oil-control` + `oil-control-ui`, `examples/farmtwin` + `farmtwin-ui`, `examples/storetwin` + `storetwin-ui`, `examples/marketplace-ui-pack-demo`.
+### Когда выбирать `ui-pack`, а когда встроенные дашборды
+
+| Критерий | Собственное приложение React (`ui-pack`) | Встроенные дашборды и мнемосхемы SCADA |
+|----------|------------------------------------------|----------------------------------------|
+| **Для каких задач** | Тиражируемый отраслевой продукт, карты, 3D, сложные формы и таблицы | Технологические схемы P&ID, графики трендов, быстрый пульт КИПиА/SNMP |
+| **Где создаётся** | Отдельный фронтенд-репозиторий в IDE | Прямо в браузере (Dashboard / Mimic Builder) |
+| **Как открывает оператор** | `/apps/<appId>/` (или кнопка **Open app UI** в режиме оператора) | `?mode=operator&app=<appId>` |
+
+Оба подхода можно сочетать: основной интерфейс поставлять как `ui-pack`, а в `bundle.json` оставить простой обзорный дашборд на случай, если веб-пакет ещё не установлен на стенде.
 
 ---
 
-## Выбор UI (не смешивать)
+## 1. Структура репозиториев проекта
 
-| | **Hosted SPA (эта страница)** | **Виджетный kit платформы** |
-|---|------------------------------|-----------------------------|
-| Когда | Продуктовый UI оператора, любой React | Lab, SNMP, запасной SCADA, HMI AI Studio |
-| AUTHOR | Внешняя IDE, **отдельный** репозиторий SPA | Admin Console / встроенный агент |
-| SHIP | zip ui-pack + application bundle | `dashboards[]` + `operatorUi` |
-| Оператор | **Open app UI** → `/apps/<appId>/` | дашборды `?mode=operator&app=` |
-| Исходники | Никогда в `apps/web-console` | виджеты `DASHBOARD.layout` |
+Держите фронтенд-репозиторий отдельно от папки конфигурации ISPF:
 
-Тонкий Operator-дашборд можно оставить fallback, если pack не установлен (паттерн FarmTwin). Бизнес-логику в виджетах не дублировать.
+```text
+my-app-web/                         # Репозиторий фронтенда (React + Vite)
+  src/
+  vite.config.ts                    # base: '/apps/my-app/'
+  openapi.yaml                      # Спецификация функций узла логики для фронтенда
+  package.json                      # Скрипт "pack:ui" для сборки zip-архива
 
-Слои P7 те же: сборка SPA — **AUTHOR**; bundle + ui-pack — **SHIP**. См. [application-principles P7](application-principles.md).
+my-app-solution/                    # Папка серверного решения ISPF (под ispf-cli)
+  solution.json
+  sql/
+  functions/
+  bundle.json                       # Результат команды `ispf pack`
+  ui-pack/
+    ui-pack.json
+    my-app-ui-1.0.0.zip
+```
 
 ---
 
-## 1. Подключить IDE к ISPF (MCP)
+## 2. Подключение IDE (Cursor / VS Code) к серверу по MCP (по желанию)
 
-Внешняя IDE должна вызывать инструменты **ISPF**, а не чужой SCADA MCP. Профиль `mcp` отдаёт тот же ACL-aware реестр, что и AI Studio ([ai-development](ai-development.md)).
+Если вы используете ИИ-помощника в IDE, подключите его к штатному интерфейсу **MCP** вашего локального или тестового сервера ISPF — тогда IDE сможет сама смотреть пути объектов, схемы переменных и проверять `bundle.json` ([ИИ-студия и MCP](ai-development.md)):
 
-1. Включить MCP на сервере (`spring.profiles.include=mcp`, `ispf.mcp.enabled=true`).
-2. Логин: `POST /api/v1/auth/login` → Bearer (admin для мутаций).
-3. Cursor / MCP host:
+1. Включите профиль `mcp` на сервере (`spring.profiles.include=mcp` или `ispf.mcp.enabled=true`).
+2. Получите токен администратора через `POST /api/v1/auth/login`.
+3. Добавьте подключение в настройки MCP вашей IDE:
 
 ```json
 {
   "mcpServers": {
     "ispf": {
-      "url": "https://<ispf-host>/api/v1/ai/mcp",
-      "headers": { "Authorization": "Bearer <admin-token>" }
+      "url": "http://localhost:8080/api/v1/ai/mcp",
+      "headers": {
+        "Authorization": "Bearer <admin-token>"
+      }
     }
   }
 }
 ```
 
-Локально: `http://localhost:8080/api/v1/ai/mcp`.
-
-4. Проверка: есть `list_objects`, `validate_bundle`, `import_package`, `get_example_bundle`. Срезы ContextPack: `contextpack://bundle-manifest`, `contextpack://example-summaries`.
-
-MCP — для **дерева и бандла**. Файловая система IDE — для **SPA**. Не просите агента править `apps/web-console` ради отраслевых экранов.
-
 ---
 
-## 2. Раскладка репозиториев
+## 3. Обмен данными между React и ISPF (HTTP и WebSocket)
 
-Исходники SPA не входят в JAR платформы:
+### Авторизация
 
-```text
-my-app-web/                      ← workspace Cursor для UI
-  src/
-  vite.config.ts                 ← base: '/apps/my-app/'
-  openapi.yaml                   ← контракт SPA ↔ BFF
-  package.json                   ← pack:ui
-
-ispf/  или соседний checkout     ← только bundle + zip pack
-  examples/my-app/bundle.json
-  examples/my-app-ui/ui-pack.json
-  examples/my-app-ui/my-app-ui-x.y.z.zip
-```
-
-История git SPA не должна жить в `ispf-server`. Копии в `examples/marketplace-catalog/` — листинги и zip, не исходники Vite.
-
----
-
-## 3. HTTP-контракт (SPA ↔ платформа)
-
-### Auth
+Собственные веб-пакеты выполняют вход стандартным запросом:
 
 ```http
 POST /api/v1/auth/login
-{ "username": "admin", "password": "admin" }
+Content-Type: application/json
+
+{ "username": "operator", "password": "operator" }
 ```
 
-Хранить `token`; заголовок `Authorization: Bearer`. При 401 — экран логина. Same-origin после хостинга pack; в dev — proxy Vite.
+Сохраните полученный `token` и передавайте заголовок `Authorization: Bearer <token>` во всех запросах (при ответе `401` возвращайте пользователя на страницу входа).
+*(Примечание: сторонние партнёрские пакеты с ограниченным уровнем доверия `partner` / `signedPartner` не вызывают `/api/v1/auth/login` напрямую, а работают по ограниченному BFF-токену с полем `uiPackAppId` — см. [ADR-0073](../en/decisions/0073-hosted-ui-pack-trust.md).)*
 
-### BFF — единственный бизнес-API
+### Вызов серверных функций (`POST /api/v1/bff/invoke`)
 
-**Не** добавляйте контроллеры `/api/v1/<app>/…`. Каждый экран вызывает:
+Все данные для экранов и команды записи проходят через единый метод `/api/v1/bff/invoke`, указывающий на ваш узел логики типа **`SINGLETON`** или **`INSTANCE`** (но не `DEVICE`):
 
 ```http
 POST /api/v1/bff/invoke
@@ -135,19 +123,19 @@ Content-Type: application/json
 }
 ```
 
-Успех: `error_code === "OK"`. Списки часто приходят как массив в `result`. Wire: [applications](applications.md).
+При успешном вызове сервер возвращает `error_code === "OK"` и данные в поле `result`. Подробности протокола: [API приложений § BFF](applications.md#bff-req-pf-06). Рекомендуется давать функциям префикс проекта (`my_getKpi`, `my_ackAlarm`).
 
-Зафиксируйте `objectPath` и `functionName` в OpenAPI (см. `examples/oil-control/api/openapi.yaml`). Префикс функций (`oc_`, `ft_`, `st_`, `my_`).
+### Живые обновления показаний (WebSocket)
 
-**Тип хаба:** оркестратор SINGLETON (предпочтительно `root.platform.singleton-blueprints.{app}-hub`) или близнец INSTANCE — **никогда** `ObjectType.DEVICE`. В dogfood-примерах путь может быть `root.platform.devices.{app}.hub`; путь — выбор реализации, тип хаба не DEVICE.
+Чтобы не опрашивать сервер таймерами из браузера, откройте соединение `WS /ws/objects` с заголовком `Sec-WebSocket-Protocol: ispf-bearer, <token>` и подпишитесь на нужные пути устройств и узлов расчёта. Подробнее: [Шины сообщений](messaging.md).
 
-### Живая телеметрия (опционально)
+### Настройка Vite для локальной разработки
 
-`WS /ws/objects` с `Sec-WebSocket-Protocol: ispf-bearer, <token>`. Подписка на пути устройств; протоколы из браузера не опрашивать. См. [messaging](messaging.md).
-
-### Vite
+Задайте в `vite.config.ts` базовый путь `'/apps/<appId>/'` (и такой же `basename` у React Router), а запросы `/api` и `/ws` проксируйте на локальный сервер ISPF:
 
 ```ts
+import { defineConfig } from 'vite';
+
 export default defineConfig({
   base: '/apps/my-app/',
   server: {
@@ -156,61 +144,40 @@ export default defineConfig({
       '/ws': { target: 'ws://localhost:8080', ws: true },
     },
   },
-})
+});
 ```
 
-`basename` React Router совпадает с `base`. Dev: `http://localhost:5173/apps/my-app/`. Опционально `VITE_DATA_SOURCE=mock` (StoreTwin).
-
-Мост до установки pack: в бандле `operatorUi.externalSpaUrl` = `http://127.0.0.1:5173` (см. `examples/m11-monitor-ui`). Редактор операторского приложения задаёт и очищает адрес встроенного и внешнего приложения. Пока UI-пакет установлен, адрес встроенного приложения только для чтения и не записывается обратно.
+При локальной вёрстке интерфейс будет доступен по адресу `http://localhost:5173/apps/my-app/`.
 
 ---
 
-## 4. Карта экранов до вёрстки
+## 4. Описание маршрутов экранов в `bundle.json` (`operatorUi`)
 
-Для каждого экрана оператора:
-
-| SPA route | Подпись | BFF |
-|-----------|---------|-----|
-| `/` | Обзор | `my_getKpi`, `my_listItems` |
-| `/alarms` | Аварии | `my_listAlarms`, `my_ackAlarm` |
-
-Ту же карту сохранить в бандле (`operatorUi.spaNav`). Роуты React **должны** совпадать с `to`.
+Перечислите маршруты вашего React-приложения и вызываемые ими функции в секции `operatorUi` файла `bundle.json`:
 
 ```json
 "operatorUi": {
-  "title": "My App",
+  "title": "Моё приложение",
   "spaNav": [
-    { "to": "/", "label": "Обзор", "bff": ["my_getKpi", "my_listItems"] }
+    { "to": "/", "label": "Обзор", "bff": ["my_getKpi", "my_listItems"] },
+    { "to": "/alarms", "label": "Тревоги", "bff": ["my_listAlarms", "my_ackAlarm"] }
   ],
   "externalSpaUrl": "/apps/my-app/",
-  "uiPack": { "packId": "my-app-ui", "version": "1.0.0", "entry": "index.html" }
+  "uiPack": {
+    "packId": "my-app-ui",
+    "version": "1.0.0",
+    "entry": "index.html"
+  }
 }
 ```
 
-`spaNav` — метаданные для Open app UI и агентов, сами по себе SPA не хостят.
-
-Новый экран = новый route + строка `spaNav` + функция(и) на хабе. Не новый URL сервера.
+Добавление нового экрана сводится к трём понятным шагам: маршрут в React + строка в `spaNav` + функция на узле логики. Никаких новых HTTP-маршрутов на самом сервере создавать не нужно.
 
 ---
 
-## 5. Bundle (SHIP логики)
+## 5. Сборка и установка архива `ui-pack`
 
-Канон: [solution-developer-guide](solution-developer-guide.md).
-
-1. Регистрация `appId`, изолированная `schemaName`, `tablePrefix`.
-2. `migrations[]` — только SQL приложения (не Flyway платформы).
-3. Объект-хаб + `functions[]` (шаги `selectMany` / `insert` / `return`).
-4. По необходимости DEVICE-дети, alerts, workflows, запасные дашборды.
-5. `operatorUi` как выше.
-6. Gates **в одном прогоне:** `validate_bundle` → `dry_run_deploy` → `import_package` или `POST /api/v1/applications/{appId}/deploy`.
-
-Если референс покрывает ≥70% ТЗ — `get_example_bundle`.
-
----
-
-## 6. UI pack (SHIP пикселей)
-
-`ui-pack.json` в **корне** zip вместе с `index.html` и `assets/` (не обёртка `dist/`):
+В **корне** zip-архива (рядом с `index.html` и папкой `assets/`, без лишней вложенной папки `dist/`) должен лежать паспорт `ui-pack.json`:
 
 ```json
 {
@@ -219,81 +186,27 @@ export default defineConfig({
   "version": "1.0.0",
   "entry": "index.html",
   "basePath": "/apps/my-app/",
-  "title": "My App",
+  "title": "Моё приложение",
   "minIspfVersion": "0.9.30"
 }
 ```
 
-`appId` — каталог установки (`ISPF_UI_PACKS_DIR/<appId>/`). Slug листинга может отличаться (`oil-control-ui` vs appId `oil-control`).
-
-Сборка: `vite build`, затем zip от корня dist. В SPA-репозиториях Oil Control / StoreTwin: `npm run pack:ui`.
-
-Установка:
+Установить собранный пакет можно через API каталога:
 
 ```http
 POST /api/v1/marketplace/ui-packs/{id}/install
 ```
 
-Или drop-in в `ISPF_UI_PACKS_DIR/my-app/`. Поле листинга приложения `uiPackSlug` ставит BFF + SPA вместе ([marketplace](marketplace.md)).
+либо распаковав содержимое архива на сервере в каталог `ISPF_UI_PACKS_DIR/my-app/`.
 
-Smoke: `GET /apps/my-app/` **не** должен отдавать заголовок Admin Console. Split nginx **обязан** проксировать `location ^~ /apps/` на JVM — [ADR-0054](decisions/0054-hosted-ui-packs.md).
-
----
-
-## 7. Промпт для IDE (копировать)
-
-Вставить в workspace SPA, чтобы модель не воспринимала ISPF как «монолит React, который надо расширять»:
-
-```text
-Это hosted UI pack ISPF (ADR-0054), не админ-консоль.
-
-Стек: Vite + React, base и basename Router '/apps/<appId>/'.
-Данные: только POST /api/v1/auth/login и POST /api/v1/bff/invoke на хаб.
-Не добавляй Java в ispf-server и страницы в apps/web-console.
-Новый экран = route + пункт spaNav + BFF-функция с префиксом приложения.
-Контракт: openapi.yaml (enum functionName). Опционально VITE_DATA_SOURCE=mock.
-Сборка: pack:ui → zip с ui-pack.json в корне архива.
-Хаб логики — SINGLETON или INSTANCE, никогда DEVICE.
-```
-
-Для checkout платформы — вторая сессия агента с MCP ISPF: миграции, functions, `operatorUi`.
+> **Важно при работе за внешним nginx:** если статика веб-консоли раздаётся через отдельный nginx, префикс `location ^~ /apps/` обязательно должен проксироваться (`proxy_pass`) на JVM-сервер `ispf-server` так же, как `/api/`. Иначе nginx отдаст вместо вашего приложения страницу консоли администратора ([ADR-0054](decisions/0054-hosted-ui-packs.md)).
 
 ---
 
-## 8. Приёмка
+## 6. Проверка готовности перед сдачей
 
-- [ ] Логин на `/apps/<appId>/` успешен; на каждом маршруте `spaNav` BFF `error_code=OK`
-- [ ] Запись (ack, create) сохраняется в схеме приложения и обновляет UI
-- [ ] Operator `/?mode=operator&app=<appId>` → **Open app UI** открывает pack (не оболочку консоли)
-- [ ] `curl /apps/<appId>/` — SPA, не `<title>ISPF Admin Console</title>`
-- [ ] Нет отраслевых файлов в `apps/web-console` и `packages/ispf-server`
-
----
-
-## Анти-паттерны
-
-| Анти-паттерн | Правильно |
-|--------------|-----------|
-| Отраслевые страницы в `apps/web-console` | Отдельное Vite-приложение + ui-pack |
-| `@RestController` / Flyway под домен | `functions[]` + `migrations[]` + `/bff/invoke` |
-| `base: '/'` в production | `base: '/apps/<appId>/'` |
-| Правила только в React | SQL/CEL/alerts на платформе; SPA рисует |
-| Хаб логики типа DEVICE | SINGLETON или INSTANCE |
-| Чужой MCP вместо `/api/v1/ai/mcp` | MCP ISPF с admin Bearer |
-| Десять `add_dashboard_widget` как продуктовый UI | Kit — fallback; SPA — продукт |
-
----
-
-## Связанные документы
-
-| Документ | Назначение |
-|----------|------------|
-| [0054-hosted-ui-packs](decisions/0054-hosted-ui-packs.md) | Раздача `/apps/<appId>/`, nginx, PWA denylist |
-| [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md) | Нет отраслевой Java/React в `main` |
-| [0006-mcp-agent-tool-adapter](decisions/0006-mcp-agent-tool-adapter.md) | Мост инструментов для внешней IDE |
-| [ai-development](ai-development.md) | Включение MCP, пример JSON для Cursor |
-| [applications](applications.md) | Bundle, BFF wire, миграции |
-| [marketplace](marketplace.md) | `artifactKind: ui-pack`, `uiPackSlug` |
-| [operator-apps](operator-apps.md) | Оболочка оператора; Open app UI |
-| [widgets](widgets.md) / [dashboards](dashboards.md) | Запасной HMI kit |
-| [agent-knowledge](agent-knowledge.md) | Подход **I** (hosted UI pack) |
+- [ ] По адресу `/apps/<appId>/` открывается ваше приложение, а не `<title>ISPF Admin Console</title>`
+- [ ] На всех страницах из `spaNav` вызовы `POST /api/v1/bff/invoke` возвращают `error_code === "OK"`
+- [ ] Операции записи (создание записей, квитирование тревог) сохраняются в SQL-схеме приложения и сразу обновляют экран
+- [ ] Кнопка **Open app UI** в режиме оператора (`/?mode=operator&app=<appId>`) переводит на `/apps/<appId>/`
+- [ ] Вся серверная логика расположена на узле `SINGLETON` или `INSTANCE` (не `DEVICE`), а в `apps/web-console` и `packages/ispf-server` нет проектных правок

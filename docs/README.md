@@ -1,33 +1,32 @@
 # ISPF Documentation / Документация ISPF
 
-Technical documentation lives in language-specific trees:
+ISPF (IoT Solutions Platform Framework) is a self-hosted platform for industrial telemetry, SCADA screens, alarm handling, time-series history, and shop-floor applications.
 
-| Language | Index |
-|----------|-------|
-| **English** (canonical) | [en/readme.md](en/readme.md) — **start here** (role paths + catalog) |
-| **Русский** | [ru/readme.md](ru/readme.md) |
+Choose your language:
 
-**New to ISPF?** [Try ISPF in ≈15 minutes](en/getting-started.md#try-ispf-15-minutes) · [Попробовать за ≈15 минут](ru/getting-started.md#попробовать-ispf-15-минут)
+| Language / Язык | Start here / С чего начать |
+|-----------------|----------------------------|
+| **Русский** | **[Оглавление документации](ru/readme.md)** · [Как устроен ISPF и с чего начать](ru/learn.md) · [Быстрый старт за 15 минут](ru/getting-started.md#попробовать-ispf-15-минут) |
+| **English** (canonical) | **[Documentation index](en/readme.md)** · [How ISPF works & learning guide](en/learn.md) · [Try ISPF in 15 minutes](en/getting-started.md#try-ispf-15-minutes) |
 
-## Layout
+GitHub Wiki (short reader guide): [github.com/iot-solutions-ru/ispf/wiki](https://github.com/iot-solutions-ru/ispf/wiki)
 
-```
+## Directory layout
+
+```text
 docs/
-  en/           # Canonical English (kebab-case filenames)
-  ru/           # Russian editions (proofread, mirror structure)
-  assets/       # Screenshots for the root README / launch
-  internal/     # Maintainers/counsel only — not public product docs
+  en/           # Canonical English documentation
+  ru/           # Russian documentation (same file names and structure)
+  assets/       # Product UI screenshots and diagrams
+  decisions/    # Architecture Decision Records (under en/decisions/ and ru/decisions/)
+  evidence/     # Lab and test verification artifacts
 ```
 
-ADR: [en/decisions/](en/decisions/) · [ru/decisions/](ru/decisions/)
+**License:** the core platform is licensed under GNU AGPL v3 (with an optional commercial license) — see [en/license.md](en/license.md) / [ru/license.md](ru/license.md).
 
-**License:** platform is GNU AGPL v3 — see [en/license.md](en/license.md).
+## Documentation checks (for contributors)
 
-## Maintenance
-
-- [doc-status](en/doc-status.md) — Stable / Beta / Draft / Charter / Lab / Internal tags
-- [documentation-audit](en/documentation-audit.md) — structure, naming, link policy, **anonymization**
-- `python deploy/tools/anonymize-repo.py` — replace real hosts/users in all committed text files
-- `python deploy/tools/anonymize-docs.py` — markdown-only (wrapper)
-- `python tools/docs-audit/audit_links.py` — verify internal + repo-root relative links
-- `python tools/docs-audit/audit_en_language.py` — no Cyrillic in `docs/en/`
+- [doc-status.md](en/doc-status.md) — meaning of `Stable`, `Beta`, `Draft`, `Charter`, `Lab`, and `Internal` tags
+- [documentation-audit.md](en/documentation-audit.md) — file naming, link rules, and host anonymization
+- `python tools/docs-audit/audit_links.py` — check all relative Markdown and repository links
+- `python tools/docs-audit/audit_en_language.py` — verify `docs/en/` contains no accidental Cyrillic text

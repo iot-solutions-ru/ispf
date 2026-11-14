@@ -1,209 +1,193 @@
-# Документация ISPF (русский)
+# Документация ISPF
 
-**IoT Solutions Platform Framework** — self-hosted middleware для IoT, SCADA и промышленной автоматизации.
+**ISPF (IoT Solutions Platform Framework)** — серверная платформа для промышленной автоматизации, SCADA, IoT-мониторинга и цехового учёта (MES), которую вы разворачиваете на своих серверах или в своём контуре. В одной системе работают опрос оборудования по промышленным протоколам, расчёт показателей, контроль аварий, архив временных рядов, экраны оператора (дашборды и мнемосхемы) и маршруты обработки событий.
 
-> Канонический язык: **английский** ([../en/readme.md](../en/readme.md)). Ниже — русское оглавление; тела страниц в `docs/ru/` со ссылкой на EN.  
-> Сайт: [ispf.ai](https://ispf.ai) · Репозиторий: [iot-solutions-ru/ispf](https://github.com/iot-solutions-ru/ispf)
+> Английская версия (исходник): **[../en/readme.md](../en/readme.md)**  
+> Сайт: [ispf.ai](https://ispf.ai) · Живой демостенд: [demo.iot-solutions.ru](https://demo.iot-solutions.ru/) · Репозиторий: [iot-solutions-ru/ispf](https://github.com/iot-solutions-ru/ispf) · Краткая Wiki: [ispf/wiki](https://github.com/iot-solutions-ru/ispf/wiki)
 
-**Лицензия:** платформа — [GNU AGPL v3](license.md) (опционально commercial dual-license). Ядро **не** Apache 2.0.
-
----
-
-## Начните здесь (≈15 мин)
-
-0. **[Обучение ISPF](learn.md)** — прозрачная карта (первый час → первое решение → по ролям)  
-1. [Быстрый старт — Попробовать ISPF](getting-started.md#попробовать-ispf-15-минут) — локальный API + Web Console  
-2. [Обзор продукта](product.md) — зачем платформа  
-3. [Модель объектов](object-model.md) — дерево (устройства, дашборды, правила — узлы)  
-4. [Лицензия](license.md) — граница AGPL / Enterprise  
-
-После запуска: `devices.demo-sensor-01` → правило тревоги → `dashboards.demo-sensor` → режим оператора ([JAR](http://localhost:8080?mode=operator) / [Vite](http://localhost:5173?mode=operator)).
+**Лицензия:** ядро платформы распространяется под [GNU AGPL v3](license.md) (доступна также коммерческая лицензия для закрытых внедрений).
 
 ---
 
-## Выберите путь
+## С чего начать (первые 30 минут)
 
-| Я… | Дальше |
-|----|--------|
-| **Учусь / обучаю** | **[Обучение ISPF](learn.md)** → [Сертификация](certification.md) |
-| **Пробую продукт** | [Быстрый старт](getting-started.md) → [Руководство оператора](operator-guide.md) |
-| **Делаю решение / bundle** | [Разработчик решений](solution-developer-guide.md) · [Приложения](applications.md) · [Принципы](application-principles.md) · [Внешняя AI IDE](external-ide.md) |
-| **Подключаю OT / драйверы** | [Драйверы](drivers.md) · [Driver DDK](driver-ddk.md) · [Field pilot](field-pilot-playbook.md) |
-| **Собираю HMI / SCADA** | [Дашборды](dashboards.md) · [SCADA](scada.md) · [Виджеты](widgets.md) |
-| **Пишу выражения / CEL** | [Язык выражений](expression-language.md) · [Привязки](bindings.md) |
-| **Автоматизирую тревоги / BPMN** | [Автоматизация](automation.md) · [Workflows](workflows.md) · [OT Automation туториалы](ot-automation-excellence-tutorials.md) |
-| **Использую ИИ-студию / агента** | [AI development](ai-development.md) · [AI agent](ai-agent.md) · [Внешняя AI IDE](external-ide.md) |
-| **Внедряю / эксплуатирую** | [Развёртывание](deployment.md) · [Безопасность](security.md) · [Наблюдаемость](observability.md) |
-| **Контрибьючу в ядро** | [Быстрый старт — Contribute](getting-started.md#контрибут-локальный-dev--qa) · [Тестирование](testing.md) · [ADR](decisions/readme.md) |
+Если вы открыли ISPF впервые, прочитайте эти четыре страницы по порядку — без прыжков по всему каталогу:
 
-**Статус vs коммерческие платформы:** [Competitive scorecard](competitive-scorecard.md). Бэклог: [Roadmap](roadmap.md). Журнал изменений платформы: [changelog.md](changelog.md) (канон: [CHANGELOG.md](../../CHANGELOG.md)).
-
-**Теги статуса документов:** [doc-status.md](doc-status.md) — Stable · Beta · Draft · Charter · Lab · Internal.
+1. **[Как устроен ISPF и план изучения](learn.md)** — понятное объяснение модели платформы на одном инженерном примере, базовые термины простыми словами и маршрут на первый день.
+2. **[Быстрый старт за 15 минут](getting-started.md#попробовать-ispf-15-минут)** — как запустить сервер на ноутбуке (архивом, в Docker или из исходников), войти в веб-консоль и посмотреть работающий датчик, тревогу и экран оператора.
+3. **[Модель объектов](object-model.md)** — как устроено дерево объектов (`root.platform.*`), что такое переменные, события, функции и шаблоны.
+4. **[Частые ошибки при проектировании](anti-patterns.md)** — чего избегать при настройке экранов, правил расчёта и MQTT, чтобы система не тормозила под нагрузкой и легко переносилась между стендами.
 
 ---
 
-## Скриншоты (UI продукта)
+## Навигация по инженерным задачам
 
-Кадры UI — в [`docs/assets/`](../assets/README.md), встроены в соответствующие темы (EN + RU). Начните с [getting-started](getting-started.md), [web-console](web-console.md), [operator-guide](operator-guide.md), [scada](scada.md), [dashboards](dashboards.md), [workflows](workflows.md), [automation](automation.md), [ai-development](ai-development.md).
+| Ваша задача | Что открыть |
+|-------------|-------------|
+| **Понять возможности платформы и термины** | [Обзор продукта](product.md) · [Глоссарий терминов](glossary.md) |
+| **Работать за пультом оператора (экраны, аварии, смена)** | [Руководство оператора](operator-guide.md) · [Устройство веб-консоли](web-console.md) |
+| **Подключить ПЛК, счётчики, датчики, MQTT или БД** | [Драйверы устройств](drivers.md) · [Разработка своего драйвера (DDK)](driver-ddk.md) · [Проверка на объекте](field-pilot-playbook.md) |
+| **Настроить формулы и пересчёт значений** | [Правила расчёта (привязки)](bindings.md) · [Справочник формул и выражений CEL](expression-language.md) |
+| **Собрать дашборд или мнемосхему SCADA** | [Дашборды и сетка](dashboards.md) · [Мнемосхемы SCADA](scada.md) · [Справочник виджетов](widgets.md) |
+| **Настроить аварии, уведомления и процессы BPMN** | [События, тревоги и корреляторы](automation.md) · [Процессы BPMN](workflows.md) |
+| **Хранить историю сигналов и считать агрегаты за смену/час** | [История переменных](variable-history.md) · [Хранилища истории (PostgreSQL / ClickHouse / архив)](historian-tiers.md) · [Примеры аналитических расчётов](analytics-historian-cookbook.md) |
+| **Собрать и перенести готовое прикладное решение** | [Руководство разработчика решений](solution-developer-guide.md) · [Архитектурные правила решений](application-principles.md) · [API приложений](applications.md) |
+| **Написать отдельный веб-интерфейс оператора на React** | [Внешний React-интерфейс (IDE и UI-пакеты)](external-ide.md) |
+| **Развернуть сервер в продакшене или закрытом контуре** | [Развёртывание и настройка](deployment.md) · [Установка без интернета (air-gap)](air-gap-deployment.md) · [Безопасность и права](security.md) · [Мониторинг и диагностика](observability.md) |
+| **Разрабатывать саму платформу ISPF** | [Локальная сборка и проверка](getting-started.md#контрибут-локальный-dev--qa) · [Тестирование](testing.md) · [Архитектура сервера](architecture.md) · [Архитектурные решения (ADR)](decisions/readme.md) |
+
+Метки готовности разделов (`Stable`, `Beta`, `Lab`, `Charter`, `Internal`) расшифрованы в [doc-status.md](doc-status.md). История изменений релизов: [changelog.md](changelog.md) (полный журнал — [CHANGELOG.md](../../CHANGELOG.md)).
 
 ---
 
-## Полный каталог
+## Полный каталог документации
 
 <details>
-<summary><strong>Продукт</strong></summary>
+<summary><strong>Обзор, устройство платформы и обучение</strong></summary>
 
-| Документ | Статус | Описание |
-|----------|--------|----------|
-| [Обзор продукта](product.md) | Stable | Возможности, сценарии, карта документации |
-| [Руководство оператора](operator-guide.md) | Stable | HMI, work queue, события |
-| [Руководство разработчика решений](solution-developer-guide.md) | Stable | Deploy, operator UI, bundles |
-| [Внешняя AI IDE](external-ide.md) | Stable | Cursor/VS Code: hosted SPA + MCP + ui-pack |
-| [Принципы приложений](application-principles.md) | Stable | P1–P10; стек творения P7 (AUTHOR/SHAPE/SHIP/PROMOTE) |
-| [ADR-0051 poka-yoke](decisions/0051-poka-yoke-constraints-over-guards.md) | Accepted | Constraints вместо гвардов; сначала схемы tools |
-| [Публичный API](solution-developer-public-api.md) | Stable | Граница platform ↔ bundle |
-| [Глоссарий](glossary.md) | Stable | Термины |
-| [Web Console](web-console.md) | Stable | Explorer, System, AI Studio |
+| Документ | Статус | О чём страница |
+|----------|--------|----------------|
+| [Как устроен ISPF и обучение](learn.md) | Stable | Принцип работы на примере, словарь базовых понятий, учебные маршруты |
+| [Быстрый старт](getting-started.md) | Stable | Запуск за 15 минут, первый вход, демо-датчик, команды для разработчиков |
+| [Обзор продукта](product.md) | Stable | Что умеет платформа, сценарии применения, роли пользователей |
+| [Архитектура](architecture.md) | Stable | Компоненты сервера, модули, хранение данных и взаимодействие с UI |
+| [Модель объектов](object-model.md) | Stable | Дерево объектов, адресация через точку, переменные, события, функции |
+| [Шаблоны объектов (Blueprints)](blueprints.md) | Stable | Типовые модели объектов: одиночные (`SINGLETON`), тиражируемые (`INSTANCE`) и примеси (`MIXIN`) |
+| [Глоссарий](glossary.md) | Stable | Перевод и простое объяснение всех терминов ISPF |
+| [Веб-консоль](web-console.md) | Stable | Режим администратора (дерево, редакторы) и режим оператора |
 
 </details>
 
 <details>
-<summary><strong>Платформа</strong></summary>
+<summary><strong>Разработка и поставка прикладных решений</strong></summary>
 
-| Документ | Статус | Описание |
-|----------|--------|----------|
-| [Обучение ISPF](learn.md) | Stable | Прозрачный вход: пути, туториалы; полный хаб — EN |
-| [Быстрый старт](getting-started.md) | Stable | Try ISPF + QA для контрибьюторов |
-| [Архитектура](architecture.md) | Stable | Видение, слои, расширяемость |
-| [Модель объектов](object-model.md) | Stable | Дерево, переменные, события, функции |
-| [Привязки](bindings.md) | Stable | CEL и platform bindings |
-| [Язык выражений](expression-language.md) | Stable | Полный справочник CEL / bindings / historian |
-| [Логика платформы](platform-logic.md) | Beta | Правила; `@dashboardContext` — зрелость разная |
-| [Blueprints](blueprints.md) | Stable | Модели / шаблоны |
-| [История переменных](variable-history.md) | Stable | Time-series, retention |
-| [API](api.md) | Stable | Справочник endpoints |
-| [Приложения](applications.md) | Stable | Bundles, BFF, scheduler |
-| [Отчёты](reports.md) | Stable | SQL-отчёты, CSV |
-| [Roadmap](roadmap.md) | Charter | Фазы и бэклог |
-| [Конкурентный scorecard](competitive-scorecard.md) | Stable | Готовность по коду |
-| [Индекс ADR](decisions/readme.md) | Stable | Архитектурные решения |
-| [Теги статуса](doc-status.md) | Stable | Словарь статусов |
+| Документ | Статус | О чём страница |
+|----------|--------|----------------|
+| [Руководство разработчика решений](solution-developer-guide.md) | Stable | Пошаговая сборка приложения: таблицы БД, функции, экраны, экспорт и деплой `bundle.json` |
+| [Правила архитектуры приложений](application-principles.md) | Stable | Как разделять устройства, узлы расчётов, экраны и базу данных |
+| [Частые ошибки при проектировании](anti-patterns.md) | Stable | Типичные ошибки в SCADA/IoT-проектах и как делать правильно в ISPF |
+| [Разработка своего React-интерфейса](external-ide.md) | Stable | Как написать отдельное веб-приложение (SPA), упаковать в `ui-pack` и подключить к ISPF |
+| [API приложений](applications.md) | Stable | Справочник REST API: деплой пакетов, миграции SQL, шлюз `/api/v1/bff/invoke`, расписания, Git |
+| [Функции на объектах](object-functions.md) | Stable | Встроенные, скриптовые (JSON/SQL) и Java-функции на узлах дерева |
+| [Контракт манифеста пакета](solution-developer-public-api.md) | Stable | Стабильная схема `bundle.json` и правила совместимости |
+| [Отчёты](reports.md) | Stable | Табличные и шаблонные отчёты по SQL, выгрузка в CSV и документы |
 
 </details>
 
 <details>
-<summary><strong>SCADA / HMI</strong></summary>
+<summary><strong>Формулы, тревоги и процессы (автоматизация)</strong></summary>
 
-| Документ | Статус | Описание |
-|----------|--------|----------|
-| [Обзор SCADA](scada.md) | Stable | Мнемосхемы, символы, привязки |
-| [Справочник SCADA mimic](scada-mimic.md) | Stable | `diagramJson`, REST API |
-| [Библиотека символов](scada-symbol-library.md) | Stable | P&ID pack (218 символов) |
-| [Каталог виджетов](widgets.md) | Stable | Все типы виджетов |
-| [Дашборды](dashboards.md) | Stable | Layout 84×8, `selectionKey` |
-| [HMI quality gates](hmi-quality-gates.md) | Lab | Lighthouse, axe, FPS |
-| [Виджет spreadsheet](spreadsheet-widget.md) | Stable | Формулы и привязки |
-| [Operator apps](operator-apps.md) | Stable | Конфигурация operator shell |
+| Документ | Статус | О чём страница |
+|----------|--------|----------------|
+| [Правила расчёта (привязки)](bindings.md) | Stable | Автоматический пересчёт переменных по изменению входов или таймеру |
+| [Справочник выражений (CEL)](expression-language.md) | Stable | Синтаксис формул, встроенные функции обработки сигналов и агрегаты по истории |
+| [Единая модель правил](platform-logic.md) | Beta | Схема `КОГДА → ЕСЛИ → ТО` для переменных, событий и контекста экрана |
+| [События, тревоги и корреляторы](automation.md) | Stable | Пороговые уставки, гистерезис (защёлка), журнал событий, связка нескольких событий |
+| [Процессы BPMN](workflows.md) | Beta | Визуальные маршруты обработки: автоматические шаги, задачи оператору, таймеры, условия |
+| [Практикум по автоматизации](ot-automation-excellence-tutorials.md) | Beta | Пошаговые лабораторные работы по процессам, MCP и аналитике |
 
 </details>
 
 <details>
-<summary><strong>OT / драйверы / historian</strong></summary>
+<summary><strong>Экраны оператора, дашборды и SCADA-мнемосхемы</strong></summary>
 
-| Документ | Статус | Описание |
-|----------|--------|----------|
-| [Каталог драйверов](drivers.md) | Beta | Packs; честность зрелости vs матрица PRODUCTION |
-| [Driver DDK](driver-ddk.md) | Stable | SDK пользовательских драйверов |
-| [Driver promotion](driver-promotion.md) | Stable | PRODUCTION + ready-for-field |
-| [Field pilot playbook](field-pilot-playbook.md) | Lab | Runbook OT-валидации |
-| [Уровни historian](historian-tiers.md) | Beta | JDBC, ClickHouse, dual-write |
-| [ClickHouse prod playbook](clickhouse-prod-playbook.md) | Lab | Продакшен rollout |
-| [Кластер](cluster.md) | Beta | Multi-replica HA (capability vs demostand) |
-| [Cluster chaos / soak runbook](cluster-chaos-soak-runbook.md) | Lab | Wave 6: kill-owner SLO, config sync, live-var lag |
-| [Messaging](messaging.md) | Stable | NATS / MQTT |
-
-</details>
-
-<details>
-<summary><strong>Analytics</strong></summary>
-
-| Документ | Статус | Описание |
-|----------|--------|----------|
-| [Historian cookbook](analytics-historian-cookbook.md) | Stable | Рецепты, binding rules, rollups |
-| [Formulas and packs](analytics-formulas-and-packs.md) | Stable | Пакеты выражений |
-| [Analytics roadmap](analytics-platform-roadmap.md) | Charter | Чартер BL-200…210 |
-| [Tag catalog API](analytics-tag-catalog.md) | Stable | Analytics-теги |
-| [0038-analytics-platform-architecture](decisions/0038-analytics-platform-architecture.md) | Stable | Архитектура |
-| [0042-analytics-function-catalog](decisions/0042-analytics-function-catalog.md) | Stable | Каталог функций |
+| Документ | Статус | О чём страница |
+|----------|--------|----------------|
+| [Руководство оператора](operator-guide.md) | Stable | Работа в смену: просмотр экранов, квитирование и разбор задач из очереди |
+| [Дашборды](dashboards.md) | Stable | Сетка 84×8, привязка к конкретному объекту (`objectPath`) и выбор строки таблицы (`selectionKey`) |
+| [Справочник виджетов](widgets.md) | Stable | Все типы виджетов дашборда и их настройки |
+| [Мнемосхемы SCADA](scada.md) | Stable | Технологические и однолинейные схемы, привязка символов к сигналам, подача команд |
+| [Формат мнемосхемы](scada-mimic.md) | Stable | Структура JSON-документа мнемосхемы и REST API |
+| [Библиотека символов SCADA](scada-symbol-library.md) | Stable | Каталог из 218 символов P&ID / энергетики (насосы, задвижки, ёмкости, аппараты) |
+| [Электронная таблица (Spreadsheet)](spreadsheet-widget.md) | Stable | Виджет расчётного листа с формулами в стиле Excel и живыми значениями тегов |
+| [Приложения оператора](operator-apps.md) | Stable | Настройка меню экранов и стартовой страницы для рабочих мест операторов |
+| [Проверка качества экранов](hmi-quality-gates.md) | Lab | Доступность, скорость отрисовки и автопроверки интерфейса |
 
 </details>
 
 <details>
-<summary><strong>AI / автоматизация / MES</strong></summary>
+<summary><strong>Опрос оборудования, архив истории и аналитика</strong></summary>
 
-| Документ | Статус | Описание |
-|----------|--------|----------|
-| [AI development](ai-development.md) | Beta | ContextPack, Studio; BL-178 live ≥95% выполнен |
-| [AI agent](ai-agent.md) | Beta | Agent API; BL-178 ≥95% выполнен (52/52) |
-| [Agent knowledge](agent-knowledge.md) | Internal | Карта маршрутизации агента |
-| [Agent regression](agent-regression.md) | Lab | Полный suite доказан; nightly — platform |
-| [Автоматизация](automation.md) | Stable | Алерты, корреляторы |
-| [Workflows](workflows.md) | Beta | Подмножество BPMN (не полный 2.0) |
-| [OT Automation туториалы](ot-automation-excellence-tutorials.md) | Beta | ADR-0049 hands-on (journal, AI-BPMN, MCP, analytics AI) |
-| [MES platform reference](reference-mes-platform.md) | Beta | Marketplace MES; smoke ≠ завод |
-| [MES оператор (genealogy)](mes.md) | Stable | Операторский путь BL-193 genealogy lite |
-| [MES walkthrough](reference-mes-walkthrough.md) | Lab | Сквозной MES-путь |
-
-</details>
-
-<details>
-<summary><strong>Эксплуатация</strong> (deploy, labs, CI)</summary>
-
-| Документ | Статус | Описание |
-|----------|--------|----------|
-| [Развёртывание](deployment.md) | Stable | Docker, env vars |
-| [Профили демостендов](demostands.md) | Lab | Prod, lab, edge |
-| [Плейбук показа заказчику](customer-demo-playbook.md) | Lab | 30–60 мин MES / OT+HMI+air-gap |
-| [Air-gap](air-gap-deployment.md) | Stable | Офлайн-установка |
-| [Федерация](federation.md) | Beta | Hub / edge (caveats зрелости) |
-| [Безопасность](security.md) | Stable | RBAC, MFA |
-| [Наблюдаемость](observability.md) | Stable | Метрики, диагностика |
-| [Тестирование](testing.md) | Stable | Unit, integration |
-| [Нагрузочное тестирование](load-testing.md) | Lab | Baseline throughput |
-| [Release dogfood](release-dogfood.md) | Internal | Чеклист релиза |
-| [Lab training](lab-training.md) | Lab | Учебные packs |
+| Документ | Статус | О чём страница |
+|----------|--------|----------------|
+| [Драйверы устройств](drivers.md) | Beta | Протоколы (Modbus, OPC UA, S7, MQTT, SNMP, МЭК-104, DNP3 и др.), настройка и реальная зрелость |
+| [SDK драйверов (Driver DDK)](driver-ddk.md) | Stable | Как написать и протестировать собственный драйвер протокола на Java |
+| [Допуск драйверов к объекту](driver-promotion.md) | Stable | Чем лабораторный драйвер отличается от проверенного на реальном железе |
+| [Лаборатория совместимости драйверов](driver-interop-lab.md) | Lab | Стенд с эмуляторами ПЛК и брокерами для проверки протоколов |
+| [Регламент полевых испытаний](field-pilot-playbook.md) | Lab | Чеклист проверки связи на промышленной площадке |
+| [История переменных](variable-history.md) | Stable | Запись временных рядов, глубина хранения, агрегация и выгрузка в CSV/JSON |
+| [Уровни хранения истории](historian-tiers.md) | Beta | Оперативное хранение в PostgreSQL/Timescale, длинные ряды в ClickHouse и холодный архив Parquet |
+| [Настройка ClickHouse в продакшене](clickhouse-prod-playbook.md) | Lab | Подключение и проверка ClickHouse при большом потоке телеметрии |
+| [Рецепты расчётов по истории](analytics-historian-cookbook.md) | Stable | Скользящие средние, сменный OEE, агрегаты по окнам времени |
+| [Шаблоны формул и пакеты аналитики](analytics-formulas-and-packs.md) | Stable | Переиспользуемые формулы и расширения на Java |
+| [Каталог расчётных тегов](analytics-tag-catalog.md) | Stable | API просмотра всех активных исторических расчётов |
+| [Шины сообщений (MQTT и NATS)](messaging.md) | Stable | Настройка брокеров и обмена сообщениями |
 
 </details>
 
 <details>
-<summary><strong>Экосистема и право</strong></summary>
+<summary><strong>Производственный учёт (MES) и ИИ-помощник</strong></summary>
 
-| Документ | Статус | Описание |
-|----------|--------|----------|
-| [Marketplace](marketplace.md) | Stable | BL-183 Готово (CI catalog gate + честные partner endpoints) |
-| [Symbol marketplace](symbol-marketplace.md) | Stable | Local install + scada API (BL-185) |
-| [Партнёрская программа](partner-program.md) | Draft | In-server directory Готово (BL-184); Partner Portal external |
-| [Сертификация](certification.md) | Stable | BL-190 curriculum paths + question banks |
-| [Лицензия](license.md) | Stable | **AGPL v3** + dual-license |
-| [Commercial licensing](commercial-licensing.md) | Stable | Enterprise |
-| [License compliance](license-compliance.md) | Stable | Чеклист обязательств |
-| [Compliance tender pack](compliance-tender-pack.md) | Stable | БЛ-192 тендерный annex (не сертификация) |
-| [Plugins](plugins.md) | Stable | Core vs packs vs bundles |
-| [Аудит документации](documentation-audit.md) | Internal | Структура, ссылки |
-| [Полный аудит docs 2026-07-16](../en/documentation-full-audit-2026-07-16.md) | Internal | Content honesty pass |
-| [Реестр российского ПО](russian-software-registry.md) | Internal | Правообладатель / RU market |
+| Документ | Статус | О чём страница |
+|----------|--------|----------------|
+| [Рабочее место MES (прослеживаемость)](mes.md) | Stable | Партии, производственные задания, генеалогия продукции |
+| [Эталонное решение MES](reference-mes-platform.md) | Beta | Устройство демонстрационного пакета `mes-platform` |
+| [Сквозной сценарий MES](reference-mes-walkthrough.md) | Lab | Пошаговое прохождение производственного заказа |
+| [Паттерны производственных решений](manufacturing-patterns.md) | Charter | Как строить рецептуры, контроль качества и обмен с учётными системами |
+| [ИИ-студия и протокол MCP](ai-development.md) | Beta | Встроенный помощник в веб-консоли и подключение Cursor / VS Code по MCP |
+| [API ИИ-агента](ai-agent.md) | Beta | Вызов агента по HTTP, подтверждение изменений и контроль прав |
+| [Внутренняя карта для ИИ-агента](agent-knowledge.md) | Internal | Справочный файл для контекста встроенного агента |
+
+</details>
+
+<details>
+<summary><strong>Развёртывание, безопасность, кластер и эксплуатация</strong></summary>
+
+| Документ | Статус | О чём страница |
+|----------|--------|----------------|
+| [Развёртывание и конфигурация](deployment.md) | Stable | Docker Compose, переменные окружения, профили запуска, настройка СУБД |
+| [Установка в закрытом контуре (air-gap)](air-gap-deployment.md) | Stable | Развёртывание и обновление без доступа в интернет |
+| [Безопасность и разграничение прав](security.md) | Stable | Вход по паролю и Keycloak/OIDC, двухфакторная защита (TOTP), роли и права на узлы |
+| [Мультитенантность](multi-tenant.md) | Stable | Разделение нескольких площадок или заказчиков на одном сервере |
+| [Мониторинг и диагностика](observability.md) | Stable | Метрики Prometheus, проверка здоровья, журналы и поиск узких мест |
+| [Кластер высокой доступности](cluster.md) | Beta | Несколько узлов сервера, распределение опроса устройств, переключение при отказе |
+| [Федерация площадок](federation.md) | Beta | Объединение удалённых площадок (edge) с центральным диспетчерским сервером |
+| [Обновление версий](release-upgrade.md) | Stable | Порядок обновления платформы и совместимость пакетов решений |
+| [Тестирование](testing.md) | Stable | Быстрый запуск модульных и интеграционных тестов |
+| [Нагрузочное тестирование](load-testing.md) | Lab | Методика и результаты замеров пропускной способности |
+| [Конфигурации демостендов](demostands.md) | Lab | Примеры настроек серверов для демонстрации и лаборатории |
+| [Сценарий показа заказчику](customer-demo-playbook.md) | Lab | План живой демонстрации на 30–60 минут |
+
+</details>
+
+<details>
+<summary><strong>Лицензирование, каталог решений и проектная документация</strong></summary>
+
+| Документ | Статус | О чём страница |
+|----------|--------|----------------|
+| [Лицензия](license.md) | Stable | Условия GNU AGPL v3 и когда нужна коммерческая лицензия |
+| [Коммерческое лицензирование](commercial-licensing.md) | Stable | Поставка Enterprise-версии и подпись пакетов |
+| [Лицензионная чистота](license-compliance.md) | Stable | Сторонние библиотеки и автоматическая проверка лицензий |
+| [Модули и границы расширений](plugins.md) | Stable | Что входит в ядро, пакеты драйверов и прикладные решения |
+| [Каталог решений (Marketplace)](marketplace.md) | Stable | Установка готовых пакетов приложений и веб-интерфейсов |
+| [Каталог символов SCADA](symbol-marketplace.md) | Stable | Подключение дополнительных наборов графических символов |
+| [Обучение и сертификация](certification.md) | Stable | Программы подготовки инженеров и администраторов |
+| [Сравнение с аналогами](competitive-scorecard.md) | Stable | Честная сверка возможностей по коду с промышленными платформами |
+| [Дорожная карта (Roadmap)](roadmap.md) | Charter | История этапов разработки и открытые задачи |
+| [Архитектурные решения (ADR)](decisions/readme.md) | Stable | Журнал принятых инженерных решений по архитектуре |
+| [Статусы документов](doc-status.md) | Stable | Что означают метки зрелости на страницах документации |
 
 </details>
 
 ---
 
-## Быстрые ссылки (local)
+## Адреса при локальном запуске
 
-| | |
-| --- | --- |
-| API | http://localhost:8080/api/v1 |
-| Health | http://localhost:8080/actuator/health |
-| Admin (all-in-one JAR) | http://localhost:8080 |
-| Operator HMI (all-in-one JAR) | http://localhost:8080?mode=operator |
-| Admin (Vite dev) | http://localhost:5173 |
-| Operator HMI (Vite dev) | http://localhost:5173?mode=operator |
+| Назначение | URL |
+|------------|-----|
+| REST API | `http://localhost:8080/api/v1` |
+| Проверка состояния (Health) | `http://localhost:8080/actuator/health` |
+| Консоль администратора (готовая сборка / Docker) | `http://localhost:8080` |
+| Экраны оператора (готовая сборка / Docker) | `http://localhost:8080?mode=operator` |
+| Консоль администратора (при запуске фронтенда через Vite) | `http://localhost:5173` |
+| Экраны оператора (при запуске фронтенда через Vite) | `http://localhost:5173?mode=operator` |

@@ -1,331 +1,147 @@
-> **Язык:** русская версия (вычитка). Канонический английский: [en/product.md](../en/product.md).
+> **Язык:** русская версия. Английский оригинал: [en/product.md](../en/product.md).
 
-# ISPF — продуктовая документация
+# ISPF — Обзор продукта
 
-> **Статус:** Stable — Возможности, сценарии, карта документации. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — обзор возможностей платформы для инженеров, операторов и руководителей проектов. Метки зрелости: [doc-status.md](doc-status.md).
 
-**IoT Solutions Platform Framework (ISPF)** — middleware для IoT, SCADA и промышленной автоматизации. Единая модель данных, HMI, автоматизация и прикладной слой без отраслевого Java в ядре.
+**ISPF (IoT Solutions Platform Framework)** — серверная платформа для промышленной автоматизации, диспетчеризации (SCADA), IoT-мониторинга и цехового производственного учёта (MES), разворачиваемая на серверах заказчика. Платформа объединяет опрос оборудования, расчёт показателей в реальном времени, архив истории, сигнализацию тревог, маршруты BPMN и экраны оператора вокруг единой модели данных — без необходимости дописывать Java-ядро сервера под каждый новый объект или отрасль.
 
-Этот документ — **точка входа для всех ролей**. Детали реализации — в других разделах [docs/ru/readme.md](readme.md) (канон: [docs/en/readme.md](../en/readme.md)).
-
----
-
-## Для кого продукт
-
-| Роль | Задачи | С чего начать |
-|------|--------|---------------|
-| **Оператор** | Мониторинг, управление, work queue, отчёты | [Руководство оператора](operator-guide.md) |
-| **Администратор** | Дерево объектов, дашборды, workflow, пользователи | [Быстрый старт](getting-started.md) → [Web Console](web-console.md) |
-| **Разработчик решений** | Deploy приложений, функции, operator UI, отчёты | [Разработчик решений](solution-developer-guide.md) · [Внешняя AI IDE](external-ide.md) |
-| **Разработчик платформы** | Драйверы, REQ-PF, расширения ядра | [Roadmap](roadmap.md) |
-| **DevOps / SRE** | Развёртывание, профили, инфраструктура | [Развёртывание](deployment.md) |
+Только начинаете знакомство? Откройте **[Как устроен ISPF](learn.md)** или сразу переходите к **[Быстрому старту за 15 минут](getting-started.md#попробовать-ispf-15-минут)**.
 
 ---
 
-## Что решает ISPF
+## Для кого предназначена платформа
 
-Типичный стек SCADA/MES растёт отдельными модулями: OPC-сервер, historian, HMI, workflow, отчёты. ISPF объединяет их вокруг **одного object tree** с единым API и UI.
+| Роль | Основные задачи | С чего начать |
+|------|-----------------|---------------|
+| **Дежурный оператор / диспетчер** | Контроль параметров на экранах и мнемосхемах, квитирование тревог, выполнение задач смены, выгрузка отчётов | [Руководство оператора](operator-guide.md) |
+| **Инженер АСУ ТП / разработчик решений** | Настройка структуры площадки, подключение драйверов, написание формул, сборка экранов и пакетов приложений | [Как устроен ISPF](learn.md) → [Руководство разработчика решений](solution-developer-guide.md) |
+| **Фронтенд-разработчик (кастомный UI)** | Создание специализированных веб-приложений оператора на React (`ui-pack`) поверх API платформы | [Разработка своего React-интерфейса](external-ide.md) |
+| **Системный администратор / DevOps** | Установка в Docker или закрытом контуре, настройка PostgreSQL/ClickHouse, Keycloak, резервного копирования и мониторинга | [Развёртывание](deployment.md) · [Безопасность](security.md) |
+| **Разработчик драйверов и ядра** | Написание собственных драйверов протоколов (`DeviceDriver` SPI) и развитие открытого ядра | [SDK драйверов (DDK)](driver-ddk.md) · [Архитектура](architecture.md) |
+
+---
+
+## Какую проблему решает ISPF
+
+На типичном промышленном объекте со временем вырастает «зоопарк» из четырёх-пяти разрозненных систем: шлюз протоколов (OPC/Modbus), отдельная база временных рядов, редактор мнемосхем, система оповещений и самописный веб-бэкенд для сменных журналов и заказов. Любое добавление нового агрегата превращается в ручную правку во всех пяти местах.
+
+ISPF собирает все эти задачи вокруг **одного дерева объектов** (`root.platform.*`) с единым API, общей системой прав доступа и единой консолью:
 
 ```mermaid
 graph LR
-    subgraph Sources["Источники данных"]
-        DEV[Devices / OPC / SNMP / MQTT]
-        IT[HTTP / JDBC / Kafka]
+    subgraph Sources["Оборудование и внешние ИТ-системы"]
+        DEV["ПЛК, счётчики, датчики (Modbus, OPC UA, S7, MQTT, SNMP, МЭК-104)"]
+        IT["СУБД и внешние сервисы (JDBC, HTTP)"]
     end
 
-    subgraph ISPF["ISPF"]
-        TREE[Object tree]
-        HMI[HMI dashboards]
-        WF[BPMN workflow]
-        APP[Application functions]
+    subgraph ISPF["Сервер ISPF"]
+        TREE["Единое дерево объектов (теги, шаблоны, формулы расчёта)"]
+        HIST["Архив истории (PostgreSQL/Timescale, ClickHouse, Parquet)"]
+        AUTO["Тревоги, корреляторы событий и процессы BPMN"]
+        UI["Дашборды, мнемосхемы SCADA и веб-пакеты React"]
     end
 
-    subgraph Users["Пользователи"]
-        OP[Оператор]
-        ADM[Администратор]
+    subgraph Users["Персонал площадки"]
+        OP["Операторы смены"]
+        ENG["Инженеры и администраторы"]
     end
 
     DEV --> TREE
     IT --> TREE
-    TREE --> HMI
-    TREE --> WF
-    TREE --> APP
-    HMI --> OP
-    WF --> OP
-    APP --> OP
-    HMI --> ADM
-    WF --> ADM
+    TREE --> HIST
+    TREE --> AUTO
+    TREE --> UI
+    UI --> OP
+    AUTO --> OP
+    UI --> ENG
 ```
 
-### Главный принцип
+---
 
-**Бизнес-логика живёт на платформе** — в blueprints, переменных, событиях, функциях и workflow **дерева объектов**. Платформа даёт generic-движки (CEL, bindings, BPMN, script runtime, драйверы); решение конфигурирует их декларативно. Bundle deploy — это упаковка конфигурации, а не отдельный runtime. Кратко: [application-principles](application-principles.md). Детали: [architecture](architecture.md). Бэклог: [roadmap](roadmap.md).
+## Ключевые возможности
 
-### Ключевые возможности
+### 1. Единое дерево объектов и шаблоны (`Blueprints`)
 
-- **Единая модель** — устройство, дашборд, workflow и правило тревоги — узлы дерева; логика через variables, events, functions и BPMN.
-- **Bundles, а не форки ядра** — отраслевые решения деплоятся как конфигурация в механизмы платформы ([applications](applications.md)). Продуктовый UI оператора — **hosted React SPA** (любые компоненты) во внешней IDE, поставка ui-pack — [external-ide](external-ide.md).
-- **Стек** — Spring Boot 4, Java 25, PostgreSQL/TimescaleDB, React 19, REST + WebSocket; опционально NATS/MQTT/Keycloak.
-- **~60 driver packs** (не внутри `ispf-server.jar`; maturity разный — см. [drivers](drivers.md)).
-- **Платформа AGPL v3** — опционально Enterprise dual-license; driver packs и application bundles могут иметь отдельные условия ([license](license.md), [plugins](plugins.md)).
+Любая сущность системы — контроллер ПЛК, узел расчёта насосной станции, экран оператора, мнемосхема, правило тревоги или маршрут BPMN — является узлом дерева с понятным адресом через точку (например, `root.platform.devices.pump-01`).
+- **Переменные (`DataRecord`):** строго типизированные поля (`DOUBLE`, `INTEGER`, `BOOLEAN`, `STRING`, `DATETIME`, таблицы) с поддержкой флагов достоверности телеметрии (`GOOD`, `UNCERTAIN`, `BAD`) и записи истории.
+- **Шаблоны (`Blueprints`):** позволяют один раз описать структуру типового агрегата (`INSTANCE`) или центрального узла станции (`SINGLETON`) и тиражировать объекты без ручного копирования переменных.
+- **Чёткое разделение ролей:** узлы `DEVICE` отвечают только за связь с приборами, а узлы `SINGLETON` и `INSTANCE` — за прикладные расчёты и функции.
+Подробнее: [Модель объектов](object-model.md) · [Шаблоны объектов](blueprints.md).
+
+### 2. Подключение оборудования и ИТ-источников (драйверы)
+
+Модульные пакеты драйверов связывают протоколы с переменными узлов `DEVICE`: Modbus TCP/RTU/UDP, OPC UA (клиент и сервер), Siemens S7, MQTT, SNMP, BACnet, МЭК 60870-5-104, DNP3, EtherNet/IP, DLMS, HTTP, JDBC и др. Для каждого драйвера в каталоге открыто указан реальный уровень готовности (`PRODUCTION` с автотестами или `BETA`, а также статус полевых испытаний).
+Подробнее: [Драйверы устройств](drivers.md) · [SDK драйверов (DDK)](driver-ddk.md).
+
+### 3. Расчёты в реальном времени и архив истории (Historian)
+
+- **Правила расчёта (*binding rules*):** автоматический пересчёт по изменению входных сигналов, по событию или по таймеру. Формулы пишутся на языке **CEL** либо через встроенные функции обработки сигналов (`scale`, `clamp`, `movingAvg`, `hysteresis`, `counterRate`, чтение соседних узлов `read`).
+- **Архив истории:** запись выбранных переменных со сроками хранения и готовыми окнами агрегации (`1m`, `5m`, `1h`, смена `8h`). Масштабируется от встроенной файловой H2 (на ноутбуке) до PostgreSQL/TimescaleDB (единая БД), ClickHouse (высокочастотные потоки и длинная аналитика) и выгрузки холодного архива в Parquet.
+Подробнее: [Правила расчёта](bindings.md) · [История переменных](variable-history.md) · [Уровни хранения истории](historian-tiers.md).
+
+### 4. Дашборды, мнемосхемы SCADA и кастомные веб-приложения
+
+- **Конструктор дашбордов:** сетка **84×8** и более 40 типов виджетов (числовые карточки, тренды, шкалы, связанные таблицы объектов через `selectionKey`, расчётные листы в стиле Excel, отчёты, очередь задач).
+- **Редактор мнемосхем SCADA:** браузерный векторный редактор технологических (P&ID) и однолинейных электрических схем с библиотекой из 218 промышленных символов, живой индикацией и подачей команд управления.
+- **Пакеты веб-интерфейса (`ui-pack`):** если решению нужен полностью индивидуальный интерфейс (интерактивные карты, 3D, плотные диспетчерские таблицы MES), команда собирает отдельное React-приложение в привычной IDE, и ISPF раздаёт его по адресу `/apps/<appId>/`.
+Подробнее: [Дашборды](dashboards.md) · [Мнемосхемы SCADA](scada.md) · [Виджеты](widgets.md) · [Разработка своего React-интерфейса](external-ide.md).
+
+### 5. Тревоги, корреляция событий и процессы BPMN
+
+- **Правила тревог (`ALERT`):** контроль порогов и состояний с выдержкой времени, защёлкой/гистерезисом сброса (`deactivateExpr`) и отправкой оповещений по вебхуку или почте.
+- **Корреляторы событий (`CORRELATOR`):** обнаружение серий или цепочек событий на заданном интервале времени.
+- **Процессы BPMN (`WORKFLOW`):** визуальный редактор регламентов, сочетающий автоматические шаги (вызов функций, запись переменных, отправка сообщений) и задачи для дежурного оператора в рабочей очереди (**Work Queue**).
+Подробнее: [Автоматизация](automation.md) · [Процессы BPMN](workflows.md).
+
+### 6. Поставка готовых решений без доработки ядра сервера
+
+Отраслевое приложение — собственные таблицы БД (`migrations[]`), серверные функции на SQL/JSON (`functions[]`), шаблоны объектов, экраны, отчёты и расписания — упаковывается в единый JSON-пакет (`bundle.json`), проверяется валидатором (`ispf validate`) и раскатывается через REST API или встроенную интеграцию с Git.
+Подробнее: [Руководство разработчика решений](solution-developer-guide.md) · [API приложений](applications.md).
+
+### 7. Безопасность, работа без интернета и распределённые площадки
+
+- Ролевой доступ (`admin`, `operator` и пользовательские роли) с разграничением вплоть до отдельных объектов, переменных и функций; локальная авторизация или единый вход через Keycloak (OIDC); двухфакторная аутентификация TOTP.
+- Полностью автономная установка (*air-gap*) для изолированных технологических сетей.
+- Отказоустойчивый кластер и федерация удалённых площадок с буферизацией данных при потере связи.
+Подробнее: [Безопасность](security.md) · [Установка в закрытом контуре](air-gap-deployment.md) · [Кластер](cluster.md) · [Федерация](federation.md).
 
 ---
 
-## Возможности продукта
+## Режимы работы веб-консоли
 
-### 1. Object tree
+![Рабочее место оператора — обзор мини-ТЭЦ](../assets/ispf-operator-hmi.png)
 
-Центральная абстракция. У каждого узла есть путь (`root.platform.devices.pump-01`), тип, переменные, события и функции.
+Один и тот же сервер отдаёт два режима интерфейса в зависимости от роли пользователя и адреса:
 
-| Тип узла | Назначение |
-|----------|------------|
-| `PLATFORM`, `DEVICES`, `DASHBOARDS`, … | Системные каталоги (`root.platform.*`) |
-| `DEVICE` | Физическое или виртуальное устройство с драйвером |
-| `DASHBOARD` | HMI-экран (layout JSON + виджеты) |
-| `WORKFLOW` | BPMN-процесс автоматизации |
-| `ALERT` / `CORRELATOR` | Правила автоматизации (узлы дерева) |
-| `MODEL` | Шаблон (blueprint) для создания объектов |
-| `APPLICATION` | Зарегистрированное deploy-приложение |
-| `USER` / `ROLE` | Пользователи и роли (зеркало security API) |
-| `CUSTOM` | Произвольный контейнер (fallback) |
-
-Подробнее: [object-model](object-model.md), [glossary](glossary.md).
-
-### 2. Модели (шаблоны)
-
-`BlueprintDefinition` описывает набор переменных, событий, функций и CEL-привязок. MIXIN’ы auto-apply только при непустом *Applicability condition* (CEL). Демо-blueprint `mqtt-sensor-v1` — fixture через `templateId`.
-
-Подробнее: [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
-
-### 3. Драйверы устройств
-
-SPI `DeviceDriver` связывает протоколы с переменными объектов. Администратор задаёт `driverId`, конфигурацию и point mapping; runtime опрашивает устройство и пишет значения в дерево.
-
-Демо после первого старта:
-
-| Объект | Драйвер | Назначение |
-|--------|---------|------------|
-| `demo-sensor-01` | virtual | Синусоида температуры + alarm binding |
-| `snmp-localhost` | snmp | SNMP-агент localhost |
-
-Подробнее: [drivers](drivers.md).
-
-### 4. Дашборды и HMI
-
-Dashboard Builder (admin) и Operator HMI (read-only) используют одни и те же виджеты:
-
-| Категория | Виджеты |
-|-----------|---------|
-| Values | `value`, `indicator`, `sparkline`, `chart`, `gauge` |
-| Tables | `object-table`, `card-grid`, `work-queue` |
-| Navigation | `dashboard-link` (переключение экранов) |
-| SCADA | `scada-mimic` (P&ID / однолинейные мнемосхемы) |
-| Other | `text`, `iframe`, `image`, `event-log`, `function-button` |
-
-Привязка данных: `objectPath` (статика) или `selectionKey` (выбор строки таблицы). Сетка layout — **84×8** ([dashboards](dashboards.md)).
-
-Подробнее: [dashboards](dashboards.md), [scada](scada.md), справочник виджетов: [widgets](widgets.md).
-
-### 5. Workflow (BPMN)
-
-Визуальный BPMN-редактор в Web Console. Service tasks (в т.ч. вызов application functions), user tasks (очередь оператора), gateway с CEL, параллельные ветки, signals и NATS.
-
-Подробнее: [workflows](workflows.md).
-
-### 6. Автоматизация
-
-- **Events** — типизированные уведомления от объектов; журнал + WebSocket.
-- **Alert rules** — CEL-условие на переменной → автоматический fire события. Узлы `ALERT` в `root.platform.alert-rules`.
-- **Event correlators** — цепочка событий → старт workflow. Узлы `CORRELATOR` в `root.platform.correlators`.
-
-Подробнее: [automation](automation.md).
-
-### 7. Прикладные решения (Application Platform)
-
-Слой REQ-PF позволяет деплоить отраслевые приложения **без изменения Java-ядра**:
-
-| Этап | API |
-|------|-----|
-| Регистрация | `POST /api/v1/applications` |
-| SQL-миграции | `POST /api/v1/applications/{id}/data/migrate` |
-| Функции (JSON script) | `POST /api/v1/applications/{id}/functions/deploy` |
-| Bundle deploy | `POST /api/v1/applications/{id}/deploy` |
-| BFF для UI | `POST /api/v1/bff/invoke` |
-| Schedules | `GET/POST /api/v1/schedules` |
-| SQL-отчёты | `GET /api/v1/applications/{id}/reports/{name}` |
-
-Подробнее: [applications](applications.md), [reports](reports.md).
-
-### 8. Operator UI
-
-Полноэкранный HMI для операторов:
-
-```
-http://localhost:5173?mode=operator&app=<appId>
-```
-
-Конфигурация хранится на сервере (`operator_app_ui`) и редактируется в admin console → `root.platform.operator-apps`. Приоритет загрузки:
-
-1. `GET /api/v1/operator-apps/{appId}/ui`
-2. `GET /api/v1/applications/{appId}/operator-ui` (из bundle)
-3. Legacy fallback `public/operator-apps/{appId}.ui.json`
-
-Подробнее: [operator-guide](operator-guide.md), [web-console](web-console.md).
-
-### 9. Безопасность
-
-Две роли: **admin** (полный доступ) и **operator** (просмотр, функции, work queue). Профиль `local` — Bearer token после логина; `dev`/prod — OAuth2 JWT через Keycloak.
-
-Подробнее: [security](security.md).
+| Режим | Адрес | Кто и зачем использует |
+|-------|-------|------------------------|
+| **Консоль администратора** | `http://<хост>:8080` | Дерево объектов, настройка драйверов и формул, конструкторы дашбордов, мнемосхем и процессов BPMN, диагностика сервера |
+| **Рабочее место оператора** | `http://<хост>:8080?mode=operator` | Полноэкранный пульт дежурной смены без дерева настроек: экраны мониторинга, управление с мнемосхем, журнал событий и очередь задач |
+| **Конкретное приложение оператора** | `http://<хост>:8080?mode=operator&app=<appId>` | Открывает меню экранов выбранного решения (либо переводит в установленный React-интерфейс `/apps/<appId>/`) |
 
 ---
 
-## Режимы Web Console
+## Типовые сценарии работы
 
-![Operator HMI — обзор мини-ТЭЦ](../assets/ispf-operator-hmi.png)
+### 1. Мониторинг оборудования и обработка аварии
+1. Инженер создаёт узел `DEVICE` (например, Modbus или MQTT), привязывает регистры к переменным и запускает драйвер.
+2. На дашборде и мнемосхеме P&ID оператор видит текущие параметры и графики трендов.
+3. При выходе температуры за порог правило тревоги фиксирует событие и запускает процесс BPMN.
+4. В очереди задач (**Work Queue**) у оператора появляется задание: он берёт его в работу, проверяет показания, подтверждает тревогу и закрывает шаг регламента.
 
-```mermaid
-flowchart TD
-    LOGIN[Login] --> ROLE{Role?}
-    ROLE -->|admin| ADMIN[Admin Console]
-    ROLE -->|operator| OP[Operator HMI]
-    ADMIN --> EXPLORER[Object explorer]
-    ADMIN --> BUILDER[Dashboard / Workflow Builder]
-    EXPLORER --> AUTO[Alert rules / Correlators in tree]
-    ADMIN --> OPBTN["Operator · demo button"]
-    OPBTN --> OP
-    OP --> DASH[Read-only dashboards]
-    OP --> WQ[Work Queue]
-    OP --> EJ[Event journal]
-```
-
-| Режим | URL | Кто видит |
-|-------|-----|-----------|
-| Admin | `http://localhost:5173` | admin (по умолчанию) |
-| Operator HMI | `?mode=operator` | operator; admin по ссылке |
-| Operator app | `?mode=operator&app=platform` | конкретное приложение |
-| Admin explicit | `?mode=admin` | admin даже при autostart |
+### 2. Развёртывание учётного или диспетчерского приложения
+1. Разработчик собирает папку проекта: SQL-миграции прикладных таблиц (заказы, партии), функции чтения/записи и экраны (дашборды либо свой `ui-pack` на React).
+2. Команды `ispf pack` и `ispf validate --strict` проверяют целостность пакета до выкатки.
+3. Команда `ispf deploy` (или запрос `POST /api/v1/applications/<appId>/deploy`) создаёт изолированную схему БД, функции и узлы дерева за один шаг.
+4. Операторы входят под своей ролью и работают по адресу `?mode=operator&app=<appId>` или `/apps/<appId>/`.
 
 ---
 
-## Типовые сценарии
+## Технологический стек и лицензия
 
-### Сценарий 1: мониторинг сенсора
+- **Сервер:** Java 25, Spring Boot 4, PostgreSQL / TimescaleDB (встроенная H2 для локального запуска; опционально ClickHouse, NATS, MQTT, Keycloak).
+- **Интерфейс:** React 19, TypeScript, Vite, обмен по REST API и WebSocket (`WS /ws/objects`).
+- **Лицензирование:** ядро платформы (`main`) распространяется под свободной лицензией **GNU AGPL v3** (предусмотрена также коммерческая лицензия Enterprise для закрытых проектов). Пакеты драйверов и прикладные решения могут поставляться на отдельных условиях — см. [Лицензия](license.md) и [Модули и плагины](plugins.md).
 
-1. Администратор открывает `devices.demo-sensor-01` — temperature, threshold, alarm.
-2. Дважды кликает `dashboards.demo-sensor` — правит HMI.
-3. Оператор открывает `?mode=operator` — тот же дашборд без редактирования.
-4. При превышении порога срабатывает alert rule → событие в журнале → опционально workflow.
-
-### Сценарий 2: задача оператора
-
-1. В BPMN есть **user task** «Confirm action».
-2. Задача появляется в **Work Queue** в сайдбаре оператора.
-3. Оператор делает **Claim** → действие → **Complete**.
-4. Workflow продолжается (service task, gateway и т.д.).
-
-### Сценарий 3: деплой отраслевого приложения
-
-1. Разработчик регистрирует app (`POST /api/v1/applications`).
-2. Деплоит SQL-миграции и JSON-функции.
-3. Делает `POST …/deploy` с JSON-bundle (`operatorUi`, reports, dashboards).
-4. Администратор создаёт operator app в дереве → настраивает дашборды.
-5. Операторы работают через `?mode=operator&app=my-terminal`.
-
-Пошагово: [solution-developer-guide](solution-developer-guide.md).
-
----
-
-## Быстрый старт (≈5 минут)
-
-```bash
-# 1. API (H2 + local auth)
-./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
-
-# 2. Web Console
-cd apps/web-console && npm install && npm run dev
-```
-
-| URL | Назначение |
-|-----|------------|
-| http://localhost:5173 | Admin console (логин: `admin` / `admin`) |
-| http://localhost:5173?mode=operator | Operator HMI |
-| http://localhost:8080/api/v1/info | Версия платформы |
-| http://localhost:8080/actuator/health | Health check |
-
-Полная инструкция: [getting-started](getting-started.md).
-
----
-
-## Архитектура (кратко)
-
-```
-Web Console (React)  ←→  REST / WebSocket  ←→  ispf-server (Spring Boot)
-                                                      │
-                    ObjectManager │ WorkflowService │ DriverRuntime
-                    ApplicationPlatform │ EventService │ AlertRules
-                                                      │
-                    PostgreSQL/H2 │ Flyway │ NATS* │ MQTT*
-```
-
-Подробнее: [architecture](architecture.md).
-
----
-
-## API
-
-Base URL: `http://localhost:8080/api/v1`
-
-| Группа | Примеры |
-|--------|---------|
-| Objects | `GET /objects`, `PUT /objects/by-path/{path}/variables/{name}` |
-| Dashboards | `GET /dashboards/by-path/{path}/layout` |
-| Workflow | `POST /workflows/by-path/{path}/run` |
-| Applications | `POST /applications/{id}/deploy` |
-| Operator apps | `GET /operator-apps/{id}/ui` |
-| Drivers | `POST /drivers/runtime/start?devicePath=...` |
-| Events | `GET /events`, `POST /events/fire` |
-
-Полный справочник: [api](api.md).
-
----
-
-## Лицензия и границы
-
-| Компонент | Лицензия |
-|-----------|----------|
-| Платформа ISPF (`main`) | GNU AGPL v3 (+ опционально Enterprise dual-license) |
-| Driver packs / коммерческие плагины / app bundles | Отдельные условия — см. [license](license.md), [plugins](plugins.md) |
-
-Подробнее: [license](license.md), [plugins](plugins.md).
-
----
-
-## Карта документации
-
-### Продуктовая документация
-
-| Документ | Описание |
-|----------|----------|
-| **product.md** (этот файл) | Обзор продукта, возможности, сценарии |
-| [operator-guide](operator-guide.md) | Работа оператора с HMI |
-| [solution-developer-guide](solution-developer-guide.md) | Сборка прикладных решений |
-| [external-ide](external-ide.md) | Cursor / VS Code: hosted SPA, MCP, ui-pack |
-| [glossary](glossary.md) | Термины |
-
-### Техническая документация
-
-| Документ | Описание |
-|----------|----------|
-| [getting-started](getting-started.md) | Установка и первый запуск |
-| [object-model](object-model.md) | Дерево, переменные, CEL |
-| [dashboards](dashboards.md) | Layout, selectionKey, builder |
-| [scada](scada.md) | Мнемосхемы, MIMIC, редактор |
-| [widgets](widgets.md) | Справочник виджетов |
-| [workflows](workflows.md) | BPMN-движок |
-| [applications](applications.md) | REQ-PF deploy API |
-| [drivers](drivers.md) | Каталог драйверов |
-| [security](security.md) | RBAC и аутентификация |
-| [deployment](deployment.md) | Production |
-
-Полный индекс: [readme](readme.md).
+Полный каталог разделов документации: **[docs/ru/readme.md](readme.md)**.
