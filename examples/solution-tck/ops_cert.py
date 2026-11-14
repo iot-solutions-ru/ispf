@@ -122,20 +122,20 @@ def ensure_sent(token):
     status, state, attempts = outbox(token)
     if status == 200 and state == "SENT" and attempts == 0:
         return (status, state, attempts)
-    if status == 404:
-        created, _body, _text = http(
-            "POST", "/api/v1/applications/plant-discrete/outbox",
-            {"connectorId": "erp", "messageId": MESSAGE, "body": "{}"},
-            token,
-        )
-        if created != 200:
-            raise RuntimeError("enqueue failed: %s" % created)
-    elif not (status == 200 and state == "PENDING"):
-        raise RuntimeError("unexpected outbox %s %s" % (status, state))
     server = ThreadingHTTPServer(("0.0.0.0", 8090), Inbox)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
+        if status == 404:
+            created, _body, _text = http(
+                "POST", "/api/v1/applications/plant-discrete/outbox",
+                {"connectorId": "erp", "messageId": MESSAGE, "body": "{}"},
+                token,
+            )
+            if created != 200:
+                raise RuntimeError("enqueue failed: %s" % created)
+        elif not (status == 200 and state == "PENDING"):
+            raise RuntimeError("unexpected outbox %s %s" % (status, state))
         deadline = time.time() + 30
         while time.time() < deadline:
             status, state, attempts = outbox(token)

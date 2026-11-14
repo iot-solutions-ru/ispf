@@ -99,7 +99,7 @@ def restart_writer():
         "-v", f"{os.environ.get('ISPF_TCK_DRIVERS_DIR', '/home/iot-solutions/ispf-tck/drivers')}:/opt/ispf/drivers:ro",
         "--env-file", ENV_FILE,
         "-e", "ISPF_REPLICA_ID=replica-1",
-        "-e", "ISPF_APPLICATION_OUTBOX_HTTP_ENDPOINTS=sap=http://host.docker.internal:8090/inbox",
+        "-e", "ISPF_APPLICATION_OUTBOX_HTTP_ENDPOINTS=sap=http://host.docker.internal:8090/inbox,erp=http://host.docker.internal:8090/inbox",
         "eclipse-temurin:25-jre-jammy",
         "java", "-jar", "/opt/ispf/ispf-server.jar",
     ])
