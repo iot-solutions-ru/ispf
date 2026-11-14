@@ -805,11 +805,11 @@ Config: `host`, `port` (102), `rack`, `slot`, `timeoutMs`.
 
 ### iec104 (`ispf-driver-iec104`)
 
-IEC 60870-5-104 master (ISPF-owned codec). Config: `host`, `port` (2404), `commonAddress`, `timeoutMs`.
+IEC 60870-5-104 master (ISPF-owned codec). Config: `host`, `port` (2404), `commonAddress`, `timeoutMs`, `commandMode` (`direct` or `sbo`).
 
 Point mapping: `ioa:dataType` (for example `2001:BOOL`, `3001:FLOAT`, `1001:M_ME_NA_1`).
 
-**Write (BL-23):** `BOOL` / `M_SP_NA_1` → `singleCommand`; `M_DP_NA_1` → `doubleCommand` (DCS 2 = ON, 1 = OFF, direct execute); `FLOAT` / `M_ME_NC_1` → `setShortFloatCommand`; `INT` / `M_ME_NA_1` → `setNormalizedValueCommand`. After write the variable is updated locally (`quality=GOOD`); poll read may return `NOT_AVAILABLE` if the outstation does not respond to read command.
+**Write (BL-23):** `BOOL` / `M_SP_NA_1` → `singleCommand`; `M_DP_NA_1` → `doubleCommand` (DCS 2 = ON, 1 = OFF). Default `commandMode=direct` executes at once. `commandMode=sbo` sets the IEC 104 select bit, waits for activation confirmation, then executes; a missing or negative confirmation does not execute. The server with `commandMode=sbo` ignores an execute that has no live select for that address and value. `FLOAT` / `M_ME_NC_1` → `setShortFloatCommand`; `INT` / `M_ME_NA_1` → `setNormalizedValueCommand`. After write the variable is updated locally (`quality=GOOD`); poll read may return `NOT_AVAILABLE` if the outstation does not respond to read command.
 
 Loopback test: `Iec104DeviceDriverTest` against `iec104-server`.
 
@@ -817,7 +817,7 @@ Maturity: **production** (BL-140).
 
 ### iec104-server (`ispf-driver-iec104-server`)
 
-IEC 60870-5-104 **slave/server** (ISPF-owned codec). Config: `listenPort` (2404), `commonAddress` (1). Devices of this driver accept master connections; decoded ASDUs (single command, short-float/normalized setpoints, measured values) update the IOA state and flow to ingress.
+IEC 60870-5-104 **slave/server** (ISPF-owned codec). Config: `listenPort` (2404), `commonAddress` (1), `commandMode` (`direct` or `sbo`), `selectTimeoutMs` (default 10000). Devices of this driver accept master connections; decoded ASDUs (single command, short-float/normalized setpoints, measured values) update the IOA state and flow to ingress.
 
 Point mapping: `<ioa>` (integer, for example `2001`). Variable: `value`, `quality` (`GOOD`/`NOT_CONNECTED`), `clientConnected`, `clientOriginatorAddress`.
 
@@ -852,13 +852,13 @@ Maturity: **production**. Tests: guard-rails + owned UDP `BacnetLoopbackServer`;
 
 DNP3 TCP **master** with integrity poll Class 0/1/2/3 (ISPF-owned codec).
 
-Config: `host`, `port`, `localAddress` (master link address, default `1`), `outstationAddress` (default `1024`), `timeoutMs`.
+Config: `host`, `port`, `localAddress` (master link address, default `1`), `outstationAddress` (default `1024`), `timeoutMs`, `commandMode` (`direct` or `sbo`).
 
 Point mapping: `index:dataType` — `BINARY_INPUT`, `BINARY_OUTPUT`, `ANALOG_INPUT`, `ANALOG_OUTPUT`, `COUNTER` (for example `0:ANALOG_INPUT`).
 
 On each `readPoints`, `Request.classRequest(0,1,2,3)` runs; values and DNP3 flags (`status`) are updated on the object variables.
 
-**Write:** `BINARY_OUTPUT` sends Direct Operate CROB g12v1 latch-on (`0x03`) or latch-off (`0x04`). `ANALOG_OUTPUT` sends g41v3 IEEE float32 plus status. Qualifier is `0x28` (one object). `BINARY_INPUT`, `ANALOG_INPUT`, and `COUNTER` cannot be written. Pulse, trip/close, and select-before-operate are not implemented.
+**Write:** the default is `commandMode=direct`. `BINARY_OUTPUT` sends Direct Operate CROB g12v1 latch-on (`0x03`) or latch-off (`0x04`). `ANALOG_OUTPUT` sends g41v3 IEEE float32 plus status. Qualifier is `0x28` (one object). `commandMode=sbo` sends Select (function `0x03`) and sends Operate (`0x04`) only after an echo with the same address, value, and status 0. A mismatched or expired confirmation does not send Operate. `BINARY_INPUT`, `ANALOG_INPUT`, and `COUNTER` cannot be written. Pulse and trip/close are not implemented.
 
 Maturity: **production** (`POLL` + `WRITE`) for class poll and those two operate objects (loopback `Dnp3DeviceDriverTest`). This subset is not a full DNP3 control profile.
 

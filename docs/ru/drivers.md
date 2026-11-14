@@ -732,11 +732,11 @@ Write (`writePoint`):
 
 ### iec104 (`ispf-driver-iec104`)
 
-IEC 60870-5-104 master. Конфиг: `host`, `port` (2404), `commonAddress`, `timeoutMs`.
+IEC 60870-5-104 master. Конфиг: `host`, `port` (2404), `commonAddress`, `timeoutMs`, `commandMode` (`direct` или `sbo`).
 
 Маппинг точек: `ioa:dataType` (например `2001:BOOL`, `3001:FLOAT`, `1001:M_ME_NA_1`).
 
-**Write (BL-23):** `BOOL` / `M_SP_NA_1` → `singleCommand`; `M_DP_NA_1` → `doubleCommand` (DCS 2 = ON, 1 = OFF, прямое исполнение); `FLOAT` / `M_ME_NC_1` → `setShortFloatCommand`; `INT` / `M_ME_NA_1` → `setNormalizedValueCommand`. После write переменная обновляется локально (`quality=GOOD`); poll read может вернуть `NOT_AVAILABLE`, если outstation не отвечает на read command.
+**Write (BL-23):** `BOOL` / `M_SP_NA_1` → `singleCommand`; `M_DP_NA_1` → `doubleCommand` (DCS 2 = ON, 1 = OFF). По умолчанию `commandMode=direct` исполняет сразу. `commandMode=sbo` ставит бит выбора IEC 104, ждёт подтверждение активации и только потом исполняет; нет подтверждения или отрицательный ответ — исполнения нет. Сервер с `commandMode=sbo` не принимает execute без живого выбора того же адреса и значения. `FLOAT` / `M_ME_NC_1` → `setShortFloatCommand`; `INT` / `M_ME_NA_1` → `setNormalizedValueCommand`. После write переменная обновляется локально (`quality=GOOD`); poll read может вернуть `NOT_AVAILABLE`, если outstation не отвечает на read command.
 
 Loopback-тест: `Iec104DeviceDriverTest` против `iec104-server`.
 
@@ -744,7 +744,7 @@ Loopback-тест: `Iec104DeviceDriverTest` против `iec104-server`.
 
 ### iec104-server (`ispf-driver-iec104-server`)
 
-IEC 60870-5-104 **slave/server** (j60870). Конфиг: `listenPort` (2404), `commonAddress` (1). Устройства этого драйвера принимают подключения master; декодированные ASDU (single command, short-float/normalized setpoints, measured values) обновляют состояние IOA и уходят в ingress.
+IEC 60870-5-104 **slave/server** (j60870). Конфиг: `listenPort` (2404), `commonAddress` (1), `commandMode` (`direct` или `sbo`), `selectTimeoutMs` (по умолчанию 10000). Устройства этого драйвера принимают подключения master; декодированные ASDU (single command, short-float/normalized setpoints, measured values) обновляют состояние IOA и уходят в ingress.
 
 Маппинг точек: `<ioa>` (целое, например `2001`). Переменная: `value`, `quality` (`GOOD`/`NOT_CONNECTED`), `clientConnected`, `clientOriginatorAddress`.
 
@@ -779,13 +779,13 @@ BACnet/IP read/write property (`present-value`). Конфиг:
 
 DNP3 TCP **master** с integrity poll Class 0/1/2/3 (собственный кодек ISPF).
 
-Конфиг: `host`, `port`, `localAddress` (master link address, по умолчанию `1`), `outstationAddress` (по умолчанию `1024`), `timeoutMs`.
+Конфиг: `host`, `port`, `localAddress` (master link address, по умолчанию `1`), `outstationAddress` (по умолчанию `1024`), `timeoutMs`, `commandMode` (`direct` или `sbo`).
 
 Маппинг точек: `index:dataType` — `BINARY_INPUT`, `BINARY_OUTPUT`, `ANALOG_INPUT`, `ANALOG_OUTPUT`, `COUNTER` (например `0:ANALOG_INPUT`).
 
 На каждый `readPoints` выполняется `Request.classRequest(0,1,2,3)`; значения и DNP3 flags (`status`) обновляются в переменных объекта.
 
-**Write:** `BINARY_OUTPUT` отправляет Direct Operate CROB g12v1 latch-on (`0x03`) или latch-off (`0x04`). `ANALOG_OUTPUT` отправляет g41v3 IEEE float32 и байт статуса. Квалификатор `0x28` (один объект). `BINARY_INPUT`, `ANALOG_INPUT` и `COUNTER` записать нельзя. Pulse, trip/close и select-before-operate не реализованы.
+**Write:** по умолчанию `commandMode=direct`. `BINARY_OUTPUT` отправляет Direct Operate CROB g12v1 latch-on (`0x03`) или latch-off (`0x04`). `ANALOG_OUTPUT` отправляет g41v3 IEEE float32 и байт статуса. Квалификатор `0x28` (один объект). `commandMode=sbo` сначала шлёт Select (функция `0x03`) и только после эха с тем же адресом, значением и статусом 0 шлёт Operate (`0x04`). Несовпавшее или просроченное подтверждение Operate не отправляет. `BINARY_INPUT`, `ANALOG_INPUT` и `COUNTER` записать нельзя. Pulse и trip/close не реализованы.
 
 Зрелость: **production** (`POLL` + `WRITE`) для class poll и этих двух объектов operate (loopback `Dnp3DeviceDriverTest`). Это не полный профиль управления DNP3.
 

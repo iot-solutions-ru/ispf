@@ -11,6 +11,7 @@ import com.ispf.driver.DriverPermanentException;
 import com.ispf.driver.DriverTransientException;
 import com.ispf.driver.DriverUnsupportedOperationException;
 import com.ispf.driver.iec104.codec.Iec104Asdu;
+import com.ispf.driver.iec104.codec.Iec104Cause;
 import com.ispf.driver.iec104.codec.Iec104Connection;
 import com.ispf.driver.iec104.codec.Iec104ConnectionListener;
 import com.ispf.driver.iec104.codec.Iec104Type;
@@ -44,7 +45,8 @@ public class Iec104DeviceDriver implements DeviceDriver {
                     "port", "2404",
                     "commonAddress", "1",
                     "timeoutMs", "5000",
-                    "pollIntervalMs", "1000"
+                    "pollIntervalMs", "1000",
+                    "commandMode", "direct"
             )
     );
 
@@ -64,6 +66,7 @@ public class Iec104DeviceDriver implements DeviceDriver {
     private int port = 2404;
     private int commonAddress = 1;
     private int timeoutMs = 5000;
+    private boolean selectBeforeOperate;
     /** Replaced as a whole before poll I/O so a write never sees an empty map. */
     private volatile Map<String, Iec104Point> points = Map.of();
     private final Map<Integer, PendingRead> pendingReads = new ConcurrentHashMap<>();
@@ -81,6 +84,7 @@ public class Iec104DeviceDriver implements DeviceDriver {
         readConfig("port", value -> port = Integer.parseInt(value));
         readConfig("commonAddress", value -> commonAddress = Integer.parseInt(value));
         readConfig("timeoutMs", value -> timeoutMs = Integer.parseInt(value));
+        readConfig("commandMode", value -> selectBeforeOperate = parseCommandMode(value));
     }
 
     @Override
@@ -152,7 +156,7 @@ public class Iec104DeviceDriver implements DeviceDriver {
     }
 
     @Override
-    public void writePoint(String pointId, DataRecord value) throws DriverException {
+    public synchronized void writePoint(String pointId, DataRecord value) throws DriverException {
         if (!isConnected()) {
             throw new DriverTransientException("Not connected");
         }
@@ -162,12 +166,50 @@ public class Iec104DeviceDriver implements DeviceDriver {
         }
         try {
             switch (point.dataType()) {
-                case BOOL, M_SP_NA_1 -> connection.singleCommand(commonAddress, point.ioa(), extractBoolean(value));
-                case M_DP_NA_1 -> connection.doubleCommand(commonAddress, point.ioa(), extractDoubleCommandOn(value));
-                case FLOAT, M_ME_NC_1, M_ME_TF_1 ->
-                        connection.setShortFloatCommand(commonAddress, point.ioa(), extractDouble(value));
-                case INT, M_ME_NA_1 ->
-                        connection.setNormalizedValueCommand(commonAddress, point.ioa(), extractDouble(value));
+                case BOOL, M_SP_NA_1 -> {
+                    boolean on = extractBoolean(value);
+                    if (selectBeforeOperate) {
+                        confirmSelect(Iec104Type.C_SC_NA_1, point.ioa(), () ->
+                                connection.singleCommandSelect(commonAddress, point.ioa(), on));
+                    }
+                    connection.singleCommand(commonAddress, point.ioa(), on);
+                    if (selectBeforeOperate) {
+                        confirmExecute(Iec104Type.C_SC_NA_1, point.ioa());
+                    }
+                }
+                case M_DP_NA_1 -> {
+                    boolean on = extractDoubleCommandOn(value);
+                    if (selectBeforeOperate) {
+                        confirmSelect(Iec104Type.C_DC_NA_1, point.ioa(), () ->
+                                connection.doubleCommandSelect(commonAddress, point.ioa(), on));
+                    }
+                    connection.doubleCommand(commonAddress, point.ioa(), on);
+                    if (selectBeforeOperate) {
+                        confirmExecute(Iec104Type.C_DC_NA_1, point.ioa());
+                    }
+                }
+                case FLOAT, M_ME_NC_1, M_ME_TF_1 -> {
+                    double raw = extractDouble(value);
+                    if (selectBeforeOperate) {
+                        confirmSelect(Iec104Type.C_SE_NC_1, point.ioa(), () ->
+                                connection.setShortFloatSelect(commonAddress, point.ioa(), raw));
+                    }
+                    connection.setShortFloatCommand(commonAddress, point.ioa(), raw);
+                    if (selectBeforeOperate) {
+                        confirmExecute(Iec104Type.C_SE_NC_1, point.ioa());
+                    }
+                }
+                case INT, M_ME_NA_1 -> {
+                    double raw = extractDouble(value);
+                    if (selectBeforeOperate) {
+                        confirmSelect(Iec104Type.C_SE_NA_1, point.ioa(), () ->
+                                connection.setNormalizedSelect(commonAddress, point.ioa(), raw));
+                    }
+                    connection.setNormalizedValueCommand(commonAddress, point.ioa(), raw);
+                    if (selectBeforeOperate) {
+                        confirmExecute(Iec104Type.C_SE_NA_1, point.ioa());
+                    }
+                }
                 default -> throw new DriverUnsupportedOperationException("Unsupported IEC104 write data type: " + point.dataType());
             }
             driverObject.updateVariable(pointId, writeResult(point, value));
@@ -282,7 +324,37 @@ public class Iec104DeviceDriver implements DeviceDriver {
         }
     }
 
+    private void confirmSelect(int typeId, int ioa, IoAction send) throws DriverException {
+        connection.clearCommandReplies();
+        try {
+            send.run();
+            connection.awaitCommandReply(timeoutMs, typeId, commonAddress, ioa, true);
+        } catch (IOException ex) {
+            throw new DriverPermanentException("IEC104 select rejected for IOA " + ioa, ex);
+        }
+    }
+
+    private void confirmExecute(int typeId, int ioa) throws DriverException {
+        try {
+            connection.awaitCommandReply(timeoutMs, typeId, commonAddress, ioa, false);
+        } catch (IOException ex) {
+            throw new DriverPermanentException("IEC104 execute rejected for IOA " + ioa, ex);
+        }
+    }
+
+    @FunctionalInterface
+    private interface IoAction {
+        void run() throws IOException;
+    }
+
     private void handleAsdu(Iec104Asdu asdu) {
+        if (asdu.typeId() == Iec104Type.C_SC_NA_1
+                || asdu.typeId() == Iec104Type.C_DC_NA_1
+                || asdu.typeId() == Iec104Type.C_SE_NA_1
+                || asdu.typeId() == Iec104Type.C_SE_NC_1
+                || (asdu.cause() & 0x3f) == Iec104Cause.ACTIVATION_CONFIRMATION) {
+            return;
+        }
         for (Iec104Value value : asdu.values()) {
             int ioa = value.ioa();
             PendingRead pending = pendingReads.get(ioa);
@@ -317,7 +389,22 @@ public class Iec104DeviceDriver implements DeviceDriver {
         };
     }
 
+    private static boolean parseCommandMode(String value) {
+        String mode = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+        if (mode.isEmpty() || "direct".equals(mode)) {
+            return false;
+        }
+        if ("sbo".equals(mode)) {
+            return true;
+        }
+        throw new IllegalArgumentException("commandMode must be direct or sbo: " + value);
+    }
+
     private void readConfig(String name, java.util.function.Consumer<String> consumer) {
+        String configured = driverObject.configuration().get(name);
+        if (configured != null && !configured.isBlank()) {
+            consumer.accept(configured);
+        }
         driverObject.getVariable(name).ifPresent(record -> {
             Object raw = record.firstRow().get("raw");
             if (raw == null) {

@@ -6,7 +6,7 @@
 
 ## Update (2026-11-11)
 
-Direct Operate is now implemented for two objects: CROB g12v1 latch-on/latch-off and analog output g41v3 (IEEE float32 + status). The matrix capability is `POLL` + `WRITE`. `BINARY_INPUT`, `ANALOG_INPUT`, and `COUNTER` stay read-only. Pulse, trip/close, and select-before-operate are still out of scope. The decision below records why poll-only stayed PRODUCTION until that write existed.
+Direct Operate is now implemented for two objects: CROB g12v1 latch-on/latch-off and analog output g41v3 (IEEE float32 + status). The matrix capability is `POLL` + `WRITE`. `BINARY_INPUT`, `ANALOG_INPUT`, and `COUNTER` stay read-only. Pulse and trip/close are still out of scope. Select-before-operate was added later as optional `commandMode=sbo`; direct operate stays the default. The decision below records why poll-only stayed PRODUCTION until that write existed.
 
 ## Decision
 

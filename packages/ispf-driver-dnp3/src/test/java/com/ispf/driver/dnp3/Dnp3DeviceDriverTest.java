@@ -130,7 +130,7 @@ class Dnp3DeviceDriverTest {
         ));
         driver.writePoint("setpoint", DataRecord.single(
                 DataSchema.builder("dnp3Value").field("value", FieldType.DOUBLE).build(),
-                Map.of("value", 7.25)
+                Map.of("value", 12.34)
         ));
         driver.readPoints(Map.of(
                 "coil", "0:BINARY_OUTPUT",
@@ -139,7 +139,7 @@ class Dnp3DeviceDriverTest {
         ));
 
         assertEquals(true, driverObject.variables.get("coil").firstRow().get("value"));
-        assertEquals(7.25, ((Number) driverObject.variables.get("setpoint").firstRow().get("value")).doubleValue(), 0.001);
+        assertEquals(12.34, ((Number) driverObject.variables.get("setpoint").firstRow().get("value")).doubleValue(), 0.001);
 
         driver.writePoint("coil", DataRecord.single(
                 DataSchema.builder("dnp3Bool").field("value", FieldType.BOOLEAN).build(),
@@ -152,7 +152,7 @@ class Dnp3DeviceDriverTest {
         ));
 
         assertEquals(false, driverObject.variables.get("coil").firstRow().get("value"));
-        assertEquals(7.25, ((Number) driverObject.variables.get("setpoint").firstRow().get("value")).doubleValue(), 0.001);
+        assertEquals(12.34, ((Number) driverObject.variables.get("setpoint").firstRow().get("value")).doubleValue(), 0.001);
         assertEquals(12.34, ((Number) driverObject.variables.get("temp").firstRow().get("value")).doubleValue(), 0.001);
         driver.disconnect();
     }
@@ -208,6 +208,86 @@ class Dnp3DeviceDriverTest {
         driver.readPoints(Map.of("coil", "0:BINARY_OUTPUT"));
         assertEquals(true, driverObject.variables.get("coil").firstRow().get("value"));
         driver.disconnect();
+    }
+
+    @Test
+    void selectBeforeOperateWritesOnlyAfterTheOutstationArmsThePoint() throws Exception {
+        outstation = new Dnp3LoopbackOutstation(MASTER_ADDRESS, OUTSTATION_ADDRESS);
+        outstation.awaitBound(5_000);
+        Dnp3DeviceDriver driver = connectedDriver(Map.of("commandMode", "sbo"));
+        driver.readPoints(Map.of("coil", "0:BINARY_OUTPUT", "setpoint", "0:ANALOG_OUTPUT"));
+        driver.writePoint("coil", boolRecord(true));
+        driver.readPoints(Map.of(
+                "coil", "0:BINARY_OUTPUT",
+                "setpoint", "0:ANALOG_OUTPUT"
+        ));
+        driver.writePoint("setpoint", DataRecord.single(
+                DataSchema.builder("dnp3Value").field("value", FieldType.DOUBLE).build(),
+                Map.of("value", 12.34)
+        ));
+        driver.readPoints(Map.of("coil", "0:BINARY_OUTPUT", "setpoint", "0:ANALOG_OUTPUT"));
+        assertEquals(true, lastCoil());
+        assertEquals(12.34, ((Number) lastObject.variables.get("setpoint").firstRow().get("value")).doubleValue(), 0.001);
+        assertEquals(2, outstation.operateFrames());
+        driver.disconnect();
+    }
+
+    @Test
+    void rejectedSelectDoesNotSendOperate() throws Exception {
+        outstation = new Dnp3LoopbackOutstation(MASTER_ADDRESS, OUTSTATION_ADDRESS);
+        outstation.awaitBound(5_000);
+        outstation.rejectSelect(true);
+        Dnp3DeviceDriver driver = connectedDriver(Map.of("commandMode", "sbo"));
+        driver.readPoints(Map.of("coil", "0:BINARY_OUTPUT"));
+        assertEquals(false, lastCoil());
+        assertThrows(DriverException.class, () -> driver.writePoint("coil", boolRecord(true)));
+        assertEquals(0, outstation.operateFrames());
+        assertEquals(false, lastCoil());
+        driver.readPoints(Map.of("coil", "0:BINARY_OUTPUT"));
+        assertEquals(false, lastCoil());
+        driver.disconnect();
+    }
+
+    @Test
+    void expiredSelectDoesNotChangeTheOutput() throws Exception {
+        outstation = new Dnp3LoopbackOutstation(MASTER_ADDRESS, OUTSTATION_ADDRESS);
+        outstation.awaitBound(5_000);
+        outstation.selectTimeoutMs(-60_000);
+        Dnp3DeviceDriver driver = connectedDriver(Map.of("commandMode", "sbo"));
+        driver.readPoints(Map.of("coil", "0:BINARY_OUTPUT"));
+        assertThrows(DriverException.class, () -> driver.writePoint("coil", boolRecord(true)));
+        assertEquals(1, outstation.operateFrames());
+        driver.readPoints(Map.of("coil", "0:BINARY_OUTPUT"));
+        assertEquals(false, lastCoil());
+        driver.disconnect();
+    }
+
+    private Dnp3DeviceDriver connectedDriver(Map<String, String> extra) throws Exception {
+        Map<String, String> config = new HashMap<>();
+        config.put("host", "127.0.0.1");
+        config.put("port", String.valueOf(outstation.port()));
+        config.put("localAddress", String.valueOf(MASTER_ADDRESS));
+        config.put("outstationAddress", String.valueOf(OUTSTATION_ADDRESS));
+        config.put("timeoutMs", "10000");
+        config.putAll(extra);
+        lastObject = new StubDriverObject(config);
+        Dnp3DeviceDriver driver = new Dnp3DeviceDriver();
+        driver.initialize(lastObject);
+        driver.connect();
+        return driver;
+    }
+
+    private StubDriverObject lastObject;
+
+    private boolean lastCoil() {
+        return (Boolean) lastObject.variables.get("coil").firstRow().get("value");
+    }
+
+    private static DataRecord boolRecord(boolean value) {
+        return DataRecord.single(
+                DataSchema.builder("dnp3Bool").field("value", FieldType.BOOLEAN).build(),
+                Map.of("value", value)
+        );
     }
 
     private static final class StubDriverObject implements DeviceDriver.DriverObject {

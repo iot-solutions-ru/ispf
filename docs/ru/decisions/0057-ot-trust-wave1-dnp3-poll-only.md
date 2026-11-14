@@ -12,7 +12,7 @@ Phase 25: OT Trust снят с парковки для Wave 1. Документ�
 
 ## Обновление (2026-11-11)
 
-Direct Operate реализован для двух объектов: CROB g12v1 latch-on/latch-off и аналоговый выход g41v3 (IEEE float32 + status). В матрице capability теперь `POLL` + `WRITE`. `BINARY_INPUT`, `ANALOG_INPUT` и `COUNTER` остаются только на чтение. Pulse, trip/close и select-before-operate по-прежнему вне объёма. Решение ниже фиксирует, почему poll-only оставался PRODUCTION, пока этой записи не было.
+Direct Operate реализован для двух объектов: CROB g12v1 latch-on/latch-off и аналоговый выход g41v3 (IEEE float32 + status). В матрице capability теперь `POLL` + `WRITE`. `BINARY_INPUT`, `ANALOG_INPUT` и `COUNTER` остаются только на чтение. Pulse и trip/close по-прежнему вне объёма. Select-before-operate позже добавлен как необязательный `commandMode=sbo`; прямая запись остаётся режимом по умолчанию. Решение ниже фиксирует, почему poll-only оставался PRODUCTION, пока этой записи не было.
 
 ## Решение
 
