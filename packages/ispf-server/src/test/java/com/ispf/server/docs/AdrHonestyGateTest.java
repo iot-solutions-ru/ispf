@@ -57,6 +57,33 @@ class AdrHonestyGateTest {
     }
 
     @Test
+    void applicationOutboxTransportsMatchCode() throws IOException {
+        Path root = repoRoot();
+        String doc = Files.readString(root.resolve("docs/en/application-message-relay.md"));
+        assertClaimMatchesFile(doc, "Outbox HTTP delivery",
+                root.resolve("packages/ispf-server/src/main/java/com/ispf/server/application/data/HttpOutboxDelivery.java"));
+        assertClaimMatchesFile(doc, "Outbox NATS JetStream delivery",
+                root.resolve("packages/ispf-server/src/main/java/com/ispf/server/application/data/NatsOutboxDelivery.java"));
+        assertClaimMatchesFile(doc, "Outbox Kafka delivery",
+                root.resolve("packages/ispf-server/src/main/java/com/ispf/server/application/data/KafkaOutboxDelivery.java"));
+        assertClaimMatchesFile(doc, "Late historian dirty rollup rewrite",
+                root.resolve(
+                        "packages/ispf-server/src/main/java/com/ispf/server/history/HistorianRollupMaterializerService.java"));
+    }
+
+    private static void assertClaimMatchesFile(String markdown, String claim, Path implementation) throws IOException {
+        String row = rowContaining(markdown, claim);
+        boolean implemented = Files.exists(implementation);
+        if (implemented) {
+            assertTrue(row.contains("**Done**"), claim + " implementation exists; claim must be Done");
+            assertFalse(row.contains("**Gap**"), claim + " must not stay Gap after implementation");
+        } else {
+            assertTrue(row.contains("**Gap**"), claim + " must stay Gap until " + implementation);
+            assertFalse(row.contains("**Done**"), claim + " must not be Done before implementation");
+        }
+    }
+
+    @Test
     void plainTcpTlsDriversAreNotProduction() throws IOException {
         Path matrix = repoRoot().resolve(
                 "packages/ispf-server-driver/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java");

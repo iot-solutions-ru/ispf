@@ -87,9 +87,9 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.mockito:mockito-core")
-    // Embedded Kafka for BL-142 KafkaDriverRuntimeIntegrationTest (matches ispf-driver-kafka).
+    // Application outbox Kafka transport + BL-142 KafkaDriverRuntimeIntegrationTest.
     // Keep in lockstep with extra["kafka.version"] and ispf-driver-kafka clients.
-    testImplementation("org.apache.kafka:kafka-clients:4.4.0")
+    implementation("org.apache.kafka:kafka-clients:4.4.0")
     testImplementation("io.github.embeddedkafka:embedded-kafka_2.13:4.4.0")
     testRuntimeOnly("org.scala-lang:scala-library:2.13.18")
     // Moquette + Paho for BL-142 MqttDriverRuntimeIntegrationTest (matches ispf-driver-mqtt).

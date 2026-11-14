@@ -9,6 +9,7 @@ import io.nats.client.JetStreamApiException;
 import io.nats.client.JetStreamManagement;
 import io.nats.client.JetStreamSubscription;
 import io.nats.client.MessageHandler;
+import io.nats.client.PublishOptions;
 import io.nats.client.PushSubscribeOptions;
 import io.nats.client.api.AckPolicy;
 import io.nats.client.api.ConsumerConfiguration;
@@ -32,6 +33,8 @@ public class NatsJetStreamSupport {
 
     private static final Logger log = LoggerFactory.getLogger(NatsJetStreamSupport.class);
     static final String REPLICA_EVENTS_SUBJECT = "ispf.events.>";
+    static final String OUTBOX_SUBJECT = "ispf.outbox.>";
+    static final String OUTBOX_SUBJECT_PREFIX = "ispf.outbox.";
 
     private final NatsProperties properties;
     private final NatsEventBridge eventBridge;
@@ -93,7 +96,7 @@ public class NatsJetStreamSupport {
         }
         StreamConfiguration configuration = StreamConfiguration.builder()
                 .name(properties.jetStreamStreamName())
-                .subjects(REPLICA_EVENTS_SUBJECT)
+                .subjects(REPLICA_EVENTS_SUBJECT, OUTBOX_SUBJECT)
                 .storageType(StorageType.File)
                 .retentionPolicy(RetentionPolicy.Limits)
                 .maxAge(Duration.ofHours(properties.jetStreamMaxAgeHours()))
@@ -112,9 +115,46 @@ public class NatsJetStreamSupport {
         log.info(
                 "JetStream stream ready: name={}, subjects={}, maxAgeHours={}",
                 properties.jetStreamStreamName(),
-                REPLICA_EVENTS_SUBJECT,
+                REPLICA_EVENTS_SUBJECT + "," + OUTBOX_SUBJECT,
                 properties.jetStreamMaxAgeHours()
         );
+    }
+
+    /**
+     * Publishes one application-outbox payload. The message id is the JetStream
+     * dedupe id. Failures throw so {@link com.ispf.server.application.data.ApplicationMessageRelay}
+     * keeps the row pending.
+     */
+    public void publishOutbox(String connectorId, String messageId, byte[] payload) {
+        if (!isActive()) {
+            throw new OutboxPublishException("JetStream is not active");
+        }
+        if (!streamReady) {
+            try {
+                ensureStream();
+            } catch (IOException | JetStreamApiException ex) {
+                throw new OutboxPublishException("JetStream stream not ready: " + ex.getMessage(), ex);
+            }
+        }
+        String subject = OUTBOX_SUBJECT_PREFIX + connectorId;
+        try {
+            PublishOptions options = PublishOptions.builder()
+                    .messageId(messageId)
+                    .build();
+            jetStream.publish(subject, payload, options);
+        } catch (IOException | JetStreamApiException ex) {
+            throw new OutboxPublishException("JetStream publish failed: " + ex.getMessage(), ex);
+        }
+    }
+
+    public static final class OutboxPublishException extends RuntimeException {
+        public OutboxPublishException(String message) {
+            super(message);
+        }
+
+        public OutboxPublishException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 
     public void publishReplicaEvent(String subject, byte[] payload) {
