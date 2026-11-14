@@ -63,8 +63,79 @@ public class VariableHistoryProperties {
      * {@code clickhouse} (column store; BL-40 backend), or {@code cassandra}/{@code scylla}.
      */
     private String store = "jdbc";
+    private Spool spool = new Spool();
     private ClickHouse clickhouse = new ClickHouse();
     private CassandraStoreProperties cassandra = new CassandraStoreProperties();
+
+    /**
+     * Local disk store-and-forward in front of sole-store ClickHouse.
+     * Off by default. Ignored unless {@code store=clickhouse}. Quota is fail-closed.
+     */
+    public static class Spool {
+        private boolean enabled = false;
+        private String directory = "data/historian-spool";
+        private long maxBytes = 8L * 1024 * 1024 * 1024;
+        private long segmentBytes = 64L * 1024 * 1024;
+        private boolean fsync = true;
+        private int replayBatch = 32;
+        private long replayIntervalMs = 1_000;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getDirectory() {
+            return directory;
+        }
+
+        public void setDirectory(String directory) {
+            this.directory = directory;
+        }
+
+        public long getMaxBytes() {
+            return maxBytes;
+        }
+
+        public void setMaxBytes(long maxBytes) {
+            this.maxBytes = maxBytes;
+        }
+
+        public long getSegmentBytes() {
+            return segmentBytes;
+        }
+
+        public void setSegmentBytes(long segmentBytes) {
+            this.segmentBytes = segmentBytes;
+        }
+
+        public boolean isFsync() {
+            return fsync;
+        }
+
+        public void setFsync(boolean fsync) {
+            this.fsync = fsync;
+        }
+
+        public int getReplayBatch() {
+            return replayBatch;
+        }
+
+        public void setReplayBatch(int replayBatch) {
+            this.replayBatch = replayBatch;
+        }
+
+        public long getReplayIntervalMs() {
+            return replayIntervalMs;
+        }
+
+        public void setReplayIntervalMs(long replayIntervalMs) {
+            this.replayIntervalMs = replayIntervalMs;
+        }
+    }
 
     public static class ClickHouse {
         private String url = "http://localhost:8123";
@@ -304,8 +375,20 @@ public class VariableHistoryProperties {
         this.cassandra = cassandra;
     }
 
+    public Spool getSpool() {
+        return spool;
+    }
+
+    public void setSpool(Spool spool) {
+        this.spool = spool;
+    }
+
     public boolean isClickHouseStore() {
         return "clickhouse".equalsIgnoreCase(store);
+    }
+
+    public boolean isClickHouseSpoolEnabled() {
+        return isClickHouseStore() && spool != null && spool.isEnabled();
     }
 
     public boolean isCassandraStore() {
