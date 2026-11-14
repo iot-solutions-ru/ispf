@@ -185,7 +185,7 @@ JAVA_TOOL_OPTIONS=-Xms1g -Xmx4g
         if replica == "replica-1":
             command.extend([
                 "-e",
-                f"ISPF_APPLICATION_OUTBOX_HTTP_ENDPOINTS=sap=http://host.docker.internal:{ERP_PORT}/inbox",
+                f"ISPF_APPLICATION_OUTBOX_HTTP_ENDPOINTS=sap=http://host.docker.internal:{ERP_PORT}/inbox,erp=http://host.docker.internal:{ERP_PORT}/inbox",
             ])
         command.extend([
             "eclipse-temurin:25-jre-jammy",
