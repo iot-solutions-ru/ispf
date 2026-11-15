@@ -2,234 +2,114 @@
 
 # Web Console
 
-> **Status:** Stable — admin + operator shells. Capture convention: [assets/README](../assets/README.md).
+> **Status:** Stable — Administrator Console, Operator HMI, Dashboard and BPMN Builders, System Diagnostics, and AI Studio. Status tags: [doc-status.md](doc-status.md).
 
-React 19 + Vite 6 + TanStack Query. Catalog: `apps/web-console/`.
+Built with React 19, Vite 6, and TanStack Query (`apps/web-console/`).
 
-## Operating modes
+**Default URLs:** all-in-one JAR — `http://localhost:8080`; Vite development server — `http://localhost:5173` (proxies `/api` and `/ws` to `:8080`). See [Getting started](getting-started.md).
 
-### Administrator (default)
+---
 
-URL: `http://localhost:8080` (all-in-one JAR) or `http://localhost:5173` (Vite dev)
+## 1. Operating Modes
 
-| Area | Features |
-|------|----------|
-| Object tree | Search, expand, CRUD, drag-and-drop sibling order |
-| Explorer | List of child objects |
-| Inspector | Properties, variables, events; alert rules and correlators |
+### Administrator Mode (Default)
+
+URL: `http://localhost:8080` (JAR) or `http://localhost:5173` (Vite dev)
+
+| Workspace Area | Capabilities |
+|----------------|--------------|
+| **Object tree** | Search, expand, create/edit/delete nodes, drag-and-drop sibling ordering |
+| **Explorer** | Browse child objects of the selected folder |
+| **Inspector** | Edit properties, variables, calculation rules (`@bindingRules`), functions, events, alert rules, correlators, and access control (`ACL`) |
 
 ![Admin Explorer — object tree and device properties](../assets/ispf-object-tree.png)
 
-### Object-type editors
+Double-clicking a node in the object tree opens its dedicated editor:
 
-Double-click in the tree:
-
-| ObjectType | Component |
-|------------|-----------|
-| `DASHBOARD` | `DashboardBuilder` |
-| `WORKFLOW` | `WorkflowBuilder` |
+| `ObjectType` | Editor Component |
+|--------------|------------------|
+| `DASHBOARD` | `DashboardBuilder` (`84×8` grid canvas and widget inspector) |
+| `MIMIC` | `ScadaMimicEditor` (vector P&ID / single-line diagram editor) |
+| `WORKFLOW` | `WorkflowBuilder` (`IspfBpmnEditor`) |
+| `REPORT` | `ReportBuilder` (SQL / tree-variable report editor and template uploader) |
 | `ALERT` | `AlertRuleInspector` |
 | `CORRELATOR` | `CorrelatorInspector` |
-| Other | `ObjectPropertiesEditor` |
+| Other types | `ObjectPropertiesEditor` |
 
-### Operator HMI
+### Operator HMI Mode (`?mode=operator`)
 
-URL: `http://localhost:8080?mode=operator` (JAR) or `http://localhost:5173?mode=operator` (Vite)
+URL: `http://localhost:8080?mode=operator` (or `?mode=operator&app=<appId>`)
 
 ![Operator HMI — Mini-CHP station overview with AI assistant](../assets/ispf-operator-hmi.png)
 
-- Full-screen dashboard (read-only)
-- Sidebar: work queue + event journal
-- No layout or object editing
+- Full-screen read-only dashboard and mimic view without the object tree or configuration editors.
+- Right-hand sidebar for the BPMN **Work Queue** and live **Event Journal**, plus the read-only shift AI assistant.
+- Resolves application navigation from `GET /api/v1/operator-apps/{appId}/ui` (`root.platform.operator-apps`) or `GET /api/v1/applications/{appId}/operator-ui` (`bundle.json`). If the application includes a hosted React `ui-pack`, the **Open app UI** button launches `/apps/<appId>/`.
 
-### Operator app (dashboards)
+---
 
-URL: `http://localhost:8080?mode=operator&app=platform` (JAR) or `http://localhost:5173?mode=operator&app=platform` (Vite)
+## 2. Dashboard Builder and Workflow Builder
 
-Generic operator shell with no industry-specific code in `main`:
-
-- Operator UI: `GET /api/v1/operator-apps/{appId}/ui` (built-in apps, configured in `root.platform.operator-apps`), then `GET /api/v1/applications/{appId}/operator-ui` (bundle), legacy fallback `public/operator-apps/<appId>.ui.json`
-- Dashboard tab navigation; widgets are the same as in Dashboard Builder (`DashboardBuilder` + `operatorMode`)
-- BFF (`POST /api/v1/bff/invoke`) — only when app widgets/functions call the backend (not a separate manifest shell)
-
-### Legacy: operator manifest
-
-`?mode=operator&app=demo` + `operatorManifest` — deprecated. Use `operatorUi` and `DASHBOARD` objects.
-
-## Navigation
-
-No client-side router. State lives in `App.tsx`:
-
-- `mode`: `admin` | `operator`
-- `app`: operator application id (optional)
-- `dashboard`: `DASHBOARD` object path (optional)
-- `screen`: screen id in legacy manifest (deprecated)
-- `selectedPath`, `editorPath`
-
-## Roles
-
-Sign in via the login screen; the console uses **Bearer** after `POST /api/v1/auth/login`. Role comes from the authenticated user.
-
-`X-ISPF-Role` / header Role selector is **off by default** (`ispf.security.local-role-header-enabled=false`) — opt-in for local-only experiments. See [security](security.md).
-
-| Role | UI |
-|------|-----|
-| `admin` | Full access, automation, save |
-| `operator` | View, functions, work queue |
-
-## Source structure
-
-```
-src/
-├── App.tsx                 # Shell, tabs, login
-├── api.ts                  # REST client
-├── api/bff.ts              # POST /bff/invoke (ispf-operator-v1)
-├── types/                  # dashboard, workflow, bff, operatorUi, operatorManifest (legacy)
-├── hooks/
-│   ├── useObjectWebSocket.ts
-│   ├── useBoundVariable.ts
-│   ├── useTrendSeries.ts
-│   ├── useOperatorUi.ts
-│   └── useOperatorManifest.ts (legacy)
-├── bpmn/
-│   ├── ispf-moddle.json    # ISPF BPMN extensions
-│   ├── constants.ts        # EMPTY_BPMN (with minimal bpmndi)
-│   └── ensureDiagram.ts    # auto-layout when DI is missing
-└── components/
-    ├── ObjectTree.tsx
-    ├── ExplorerView.tsx
-    ├── ObjectPropertiesEditor.tsx
-    ├── dashboard/          # Builder + 14 widgets
-    ├── workflow/           # BPMN editor/viewer
-    ├── automation/         # AlertRuleInspector, CorrelatorInspector, automationPath
-    └── operator/           # OperatorView, OperatorDashboardApp, sidebar panels
-```
-
-`public/operator-apps/` — legacy fallback `{appId}.ui.json` (dev). Built-in app configuration: admin → `root.platform.operator-apps`.
-
-## Dashboard builder
-
+### Dashboard Builder
 ![Dashboard builder — widget palette and live canvas](../assets/ispf-dashboard-builder.png)
 
-- 84-column fine grid, drag-and-drop, resize
-- Widget add panel (all 14 types)
-- `WidgetEditorPanel` — selected widget properties
-- JSON preview layout
-- Save via API
+- **84-column × 8 px fine grid** with drag-and-drop placement and resizing.
+- Palette of **40+ widget types** (values, gauges, trend charts, SCADA mimics, object tables, forms, spreadsheets, work queues, reports, and navigation links).
+- Live JSON layout preview and one-click save via REST API. See [Dashboards](dashboards.md) and [Widget reference](widgets.md).
 
-See [dashboards](dashboards.md).
-
-## Workflow builder
-
+### Workflow Builder
 ![BPMN workflow editor — MES work-order dispatch](../assets/ispf-bpmn-workflow.png)
 
-- DRAFT / ACTIVE / STOPPED toggle
-- Run button
-- BPMN editor (bpmn-js) with ISPF moddle
-- **Auto-layout:** if XML has no `bpmndi`, `ensureDiagram.ts` calls `bpmn-auto-layout` before display (see [workflows](workflows.md))
-- Fallback XML viewer
+- Built-in vector BPMN 2.0 editor (`IspfBpmnEditor`, [ADR-0052](decisions/0052-ispf-workflow-diagram-editor.md)) with `DRAFT` / `ACTIVE` / `STOPPED` status toggle and manual **Run** button.
+- Automatic graph layout (`ensureDiagram.ts`) for BPMN XML without `bpmndi` coordinates, plus live step execution timeline. See [Workflows](workflows.md).
 
-See [workflows](workflows.md).
+---
 
-## Live data
+## 3. Live Data, Build Commands, and Localization (i18n)
 
-1. **Polling** — `refetchInterval` = dashboard `refreshIntervalMs`
-2. **WebSocket** — `useObjectWebSocket` invalidates cache on `VARIABLE_UPDATED`
-3. **Large folders** — an expanded object-tree folder with more than 64 children is not subscribed to live updates. The row shows “Live off”; collapse and expand the folder to refresh.
+### Live Data Updates
+1. **WebSocket (`/ws/objects`):** `useObjectWebSocket` subscribes to visible object paths and invalidates the TanStack Query cache on `VARIABLE_UPDATED`.
+2. **Polling fallback:** each dashboard also refetches at its configured `refreshIntervalMs`.
+3. **Large folder guard:** expanding a tree folder with more than 64 children skips live WebSocket subscription on that folder row (`Live off` badge) to avoid flooding the browser; collapse and re-expand to refresh.
 
-Proxy (`vite.config.ts`): `/api`, `/ws` → `:8080`.
-
-## Build
+### Build and Localization Commands
 
 ```bash
 cd apps/web-console
 npm install
-npm run dev      # dev server
-npm run build    # production dist/
-npm run i18n:check   # locale keys vs en (canonical)
-npm run i18n:translate   # regenerate ru/de/zh from en (tools/i18n/generate-locales.py)
+npm run dev              # start Vite dev server on :5173
+npm run build            # production bundle in dist/
+npm run i18n:check       # verify locale keys against canonical English (en/*.json)
+npm run i18n:translate   # update ru/de/zh locale files (tools/i18n/generate-locales.py)
 ```
 
-## Localization (Phase 19)
+Supported UI languages: **English (`en`)**, **Russian (`ru`)**, **German (`de`)**, and **Chinese (`zh`)**, selectable in the top header or via `?lang=` ([ADR-0013](decisions/0013-web-console-i18n.md)).
 
-- **Canonical locale:** English (`apps/web-console/src/locales/en/*.json`)
-- **UI locales:** `en`, `ru`, `de`, `zh` — dropdown in admin/operator header and login card
-- **Persistence:** `localStorage` (`ispf.ui.locale`), URL `?lang=`, fallback `en`
-- **Adding strings:** key in `en/{namespace}.json` → `useTranslation` + `t('key')` → `npm run i18n:translate` → `npm run i18n:check`
+---
 
-See [0013-web-console-i18n](decisions/0013-web-console-i18n.md).
+## 4. System Administration, Federation, and AI Studio
 
-## Federation
-
-**Federation** section (`root.platform.federation`, admin only) — tabs:
-
-| Tab | Content |
-|-----|---------|
-| **Peers** | Peer table, new node form, **Sync catalog** (conflict preview → SKIP/BIND) |
-| **Tokens** | Issue local federation token for another ISPF |
-| **Tunnel** | Inbound registrations, outbound agents, secrets key (if capability `federation-tunnel`) |
-| **Probe** | Proxy read probe for selected node |
-
-On device/dashboard objects — **Federation bind** panel (`FederationBindPanel`): remote path check, bind/rebind, inline unbind confirmation. For catalog mirror — “Host locally” callout.
-
-Components: `FederationPeersPanel`, `FederationCatalogSyncDialog`, `components/federation/*`, `FederationBindPanel`.
-
-## System (admin)
-
-**System** section (`SystemView`) — tabs:
-
-| Tab | Content |
-|-----|---------|
-| **Metrics** | Platform metrics, health cards (Redis, NATS, YARG, MCP), **Platform backup** |
-| **Runtime settings** | `GET/PATCH /api/v1/platform/runtime-settings`; **Restart server** → `POST .../runtime-settings/restart` |
-| **Events / Functions / Bindings** | Invoke/audit logs |
-| **Change sets** | Platform change management |
-| **App schedules** | `GET/POST /api/v1/schedules` — JDBC `platform_schedules` (not to be confused with object-tree `SCHEDULE` → `ScheduleEditor`) |
-| **Semantic export** | Haystack JSON + Brick JSON-LD/Turtle (`GET /platform/haystack/export`, `GET /platform/brick/export`) |
-
-**Application deploy (Inspector → APPLICATION → Deploy):**
-
-| Panel | API |
-|-------|-----|
-| ApplicationBundlePanel | export, validate, deploy, pull-from-tree |
-| ApplicationDeployPanel | deploy history, rollback, event catalog, function versions, bundle-objects lifecycle |
-| ApplicationLifecyclePanel | `data/migrate`, `data/seed`, `data/status`, bindings deploy/refresh, reports deploy, functions deploy |
-
-**WorkflowBuilder:** cancel/signal active BPMN instance (`POST /workflows/instances/{id}/cancel|signal`).
-
-**Platform backup** (`PlatformBackupPanel`, BL-47): export JSON subtree `root.platform`; import with dry-run preview. API: `GET /api/v1/platform/backup/export`, `POST /api/v1/platform/backup/import?dryRun=true|false`. Federation proxy nodes are skipped on import. Catalog folders also offer **Import from JSON**: a subtree export of exactly one node becomes a new child of the open folder. The path inside the file is ignored; the operator enters the new name. Import into a mixin, instance-type, or singleton catalog registers a blueprint. The target stays `CUSTOM` or `DEVICE`; any other source type becomes `CUSTOM`. API: `POST /api/v1/platform/backup/import-node?parentPath=&name=`.
-
-## System metrics
-
+### System Section (`admin`)
 ![System → Metrics overview](../assets/ispf-system-metrics.png)
 
-Admin → **System → Metrics** — hot-path counters, automation index, connected backends. See [observability](observability.md).
+| Tab | Capabilities |
+|-----|--------------|
+| **Metrics** | Platform metrics, backend health cards (Redis, NATS, ClickHouse, MCP), **Load diagnostics**, and **Platform backup** (`GET / POST /api/v1/platform/backup/*`) |
+| **Runtime settings** | Inspect and override live runtime properties (`GET / PATCH /api/v1/platform/runtime-settings`) and schedule a server restart |
+| **Events / Functions / Bindings** | Execution and audit logs |
+| **Change sets** | Preview and apply transactional multi-object change sets ([Collaboration](collaboration.md)) |
+| **App schedules** | Manage periodic schedules (`GET / POST /api/v1/schedules`) |
+| **Semantic export** | Export subtrees as Project Haystack JSON or Brick JSON-LD / Turtle |
+| **Analytics formulas** | Manage site-wide reusable Tier B formulas ([Analytics formulas](analytics-formulas-and-packs.md)) |
 
-## AI Studio
+### Application Lifecycle Panels (`Inspector → APPLICATION → Deploy`)
+- `ApplicationBundlePanel` — export, validate, deploy `bundle.json`, and run `pull-from-tree`.
+- `ApplicationDeployPanel` — deployment history, version rollback, event catalog, and function versions.
+- `ApplicationLifecyclePanel` — run `data/migrate`, `data/seed`, refresh SQL bindings, and deploy reports/functions.
 
-**AI Studio** tab (admin): **Agent** | **Bundle** | **Settings** modes (`.tabs`).
-
+### AI Studio (`admin`)
 ![AI Studio — tree-first agent chat](../assets/ispf-ai-studio.png)
 
-- **Agent** — chat sidebar; state in `AgentChatProvider` (not unmounted when switching tabs or console sections)
-- **Settings** — LLM provider, model list (`GET /ai/models`), Context Pack, session root path, tool list, clear local chat cache
-- **Bundle** — prompt, generate/validate/dry-run/publish, deploy history
-
-Background execution: agent HTTP request continues when navigating to Explorer; indicator in header and dot on AI Studio tab. After closing the window, an incomplete request is restored from `localStorage` (server session polling).
-
-See [ai-development](ai-development.md).
-
-## UI dependencies
-
-| Package | Purpose |
-|---------|---------|
-| @tanstack/react-query | Server state |
-| recharts | chart, sparkline |
-| bpmn-js | BPMN editor/viewer |
-| bpmn-auto-layout | Generate DI for BPMN without graphical markup |
-
-## Customization
-
-- Styles: `src/styles.css` (CSS variables `--bg`, `--border`, …)
-- New widget: type in `types/dashboard.ts`, view in `widgets/`, dispatch in `renderDashboardWidget.tsx` / `DashboardWidgetContent.tsx`, editor in `WidgetEditorPanel.tsx`
-- **40+ widget types** (see `WIDGET_TYPES` in `types/dashboard.ts`)
+- **Agent tab:** multi-turn chat with the tree-first agent (persisted in PostgreSQL; continues running in the background while you browse the Explorer).
+- **Bundle tab:** generate, validate, dry-run, and import `bundle.json` packages from natural-language prompts.
+- **Settings & Status tabs:** configure LLM provider, inspect `ContextPack` metadata, and view per-tool latency/token metrics. See [AI development](ai-development.md).

@@ -1,220 +1,80 @@
 > **Language:** Canonical English. Russian edition: [ru/observability.md](../ru/observability.md).
 
-# Observability (ISPF)
+# Observability: Metrics, Load Diagnostics, and OpenTelemetry
 
-> **Status:** Stable — Metrics, diagnostics. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — built-in load diagnostics, Prometheus metrics (`/actuator/prometheus`), and optional OpenTelemetry (OTLP) metrics and distributed tracing. Status tags: [doc-status.md](doc-status.md).
 
-ISPF is a **universal platform**: primary observability is **first-party** — System → Metrics and the object-tree dashboard `root.platform.dashboards.platform-metrics` (Platform Self-Diagnostics), fed by `platform-metrics-probe`. Prometheus / Grafana / OTLP remain **optional export** for sites that already run an external stack.
+ISPF provides built-in self-diagnostics in the Web Console, exposes **Prometheus** metrics at `/actuator/prometheus`, and optionally exports metrics and distributed traces over **OTLP** to OpenTelemetry Collectors (Grafana, Uptrace, and compatible backends).
 
-## First-party self-diagnostics (preferred)
+---
+
+## 1. Built-in Load Diagnostics and Self-Monitoring
 
 ![System → Metrics overview](../assets/ispf-system-metrics.png)
 
-| Surface | What it shows |
-|---------|----------------|
-| Admin → **System → Metrics** | Hot-path strip (coalesce / binding bypass / historian-only, queues, WebSocket clients) + full section tables |
-| Dashboard **Platform Self-Diagnostics** | Live value/gauge/chart widgets bound to `root.platform.devices.platform-metrics-probe` |
-| Probe sync | `ispf.platform-metrics-probe.enabled=true` (default) writes API snapshot into probe variables every `interval-ms` |
+In the Admin Console under **System → Metrics** (and on the built-in dashboard `root.platform.dashboards.platform-metrics`), operators and administrators can inspect real-time server health without external tools:
 
-Bootstrap (default on):
+| Endpoint / Surface | Role | What It Shows |
+|--------------------|------|---------------|
+| `GET /api/v1/platform/metrics` | `admin` | Current JVM metrics, DB pool, active drivers, queue depths, and CPU load diagnostics (`diagnostics` block) |
+| `GET /api/v1/platform/cluster/diagnostics` | `admin` | Cluster-wide CPU ranking across all replicas, top load suspects (`clusterTopSuspect`), thread groups (`ispf-driver-io`, `driver-ingress`, `object-change`), driver `pressureScore`, and running jobs/workflows |
+| `GET / PUT /api/v1/platform/diagnostics/metrics-probe` | `admin` | Toggles runtime synchronization of platform metrics into the tree device `root.platform.devices.platform-metrics-probe` (automatically turns off when leaving the diagnostics page) |
 
-- `ispf.platform-metrics-probe.ensure-on-startup=true` — creates probe device, variables, and dashboard layout if missing
-- Manual repair / load-test: [`deploy/setup-platform-metrics-monitor.py`](../../deploy/setup-platform-metrics-monitor.py)
+For headless SSH diagnostics on a single host, run [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py), which samples `/api/v1/platform/metrics` twice and prints active thread groups and load suspects.
 
-Open the dashboard from Explorer (`root.platform.dashboards.platform-metrics`) or via the **Open dashboard** button on the Metrics hot-path card.
+---
 
-## Prometheus (optional export)
+## 2. Prometheus Metrics (`/actuator/prometheus`)
 
-| Endpoint | Auth | Format |
-|----------|------|--------|
-| `/actuator/prometheus` | admin role | Prometheus text |
+The endpoint `/actuator/prometheus` (requires `admin` role) exports standard JVM, HTTP, and HikariCP metrics alongside ISPF engine counters and gauges:
 
-Key ISPF metrics (Micrometer):
+| Micrometer Metric | Type | Description |
+|-------------------|------|-------------|
+| `ispf.object_tree.ready` | gauge | `1` when the object tree is initialized and ready |
+| `ispf.drivers.active` / `connected` | gauge | Number of running and connected device drivers |
+| `ispf.driver.errors.total{driver,op,kind}` | counter | Driver errors classified by kind (`transient`, `configuration`, `permanent`, `unsupported`) |
+| `ispf.telemetry.coalesce_drops.total` | counter | Intermediate samples merged by last-value coalescing under high-rate ingress |
+| `ispf.telemetry.historian_only.total` | counter | Samples written via the direct historian fast path (`TELEMETRY_ONLY`) |
+| `ispf.object_change.queue.size{lane=...}` | gauge | Current queue depth for `telemetry`, `automation`, and `total` lanes |
+| `ispf.object_change.workers.active{lane=...}` | gauge | Active worker threads in elastic pools |
+| `ispf.object_change.queue.dropped.total` | counter | Notifications dropped on queue overflow |
+| `ispf.events.fired.total{source=...}` | counter | Events published by source (`alert`, `api`, `correlator`, `function`) |
+| `ispf.alert.fires.total` / `evaluations.total` | counter | Alert rule activations and total CEL evaluations |
+| `ispf.correlator.triggers.total` | counter | Event correlator firings |
+| `ispf.event_journal.queue.size` / `flushed.total` | gauge / counter | Pending and flushed event journal rows |
+| `ispf.historian.dual_write.secondary_failures` | counter | ClickHouse secondary write failures in dual-write mode |
+| `ispf.historian.dual_write.catchup.ranges` / `oldest_age_ms` / `wal_bytes` | gauge | Open catch-up ranges, oldest range age, and WAL size owed to ClickHouse |
+| `ispf.workflow.starts.total` / `workflow_instances.running` | counter / gauge | Workflow starts and currently running BPMN instances |
+| `ispf.websocket.clients` | gauge | Open `/ws/objects` client sessions |
 
-| Metric | Type | Description |
-|--------|------|-------------|
-| `ispf.events.fired.total{source=...}` | counter | Fires by source (alert, api, correlator, function) |
-| `ispf.alert.fires.total` | counter | Alert rule firings |
-| `ispf.alert.evaluations.total` | counter | CEL evaluations |
-| `ispf.correlator.triggers.total` | counter | Correlator triggers |
-| `ispf.telemetry.coalesce_drops.total` | counter | Last-value coalesce skipped/superseded samples |
 | `ispf.telemetry.binding_bypass.total` | counter | Binding consumer present — coalesce skipped |
-| `ispf.telemetry.historian_only.total` | counter | Historian fast path without object-change bus |
-| `ispf.object_change.queue.size{lane=telemetry\|automation\|total}` | gauge | Async queue depth |
-| `ispf.object_change.workers.active{lane=telemetry\|automation}` | gauge | Active worker threads (elastic mode) |
-| `ispf.object_change.processed.total` | gauge | Processed object-change events |
-| `ispf.object_change.queue.dropped.total` | counter | Dropped events (queue full) |
-| `ispf.event_journal.queue.size` | gauge | Journal async writer queue |
-| `ispf.event_journal.flushed.total` | gauge | Written to journal (cumulative) |
-| `ispf.event_journal.queue_full.sync_fallback.total` | counter | Sync fallback on queue overflow |
-| `ispf.historian.dual_write.secondary_failures` | counter | ClickHouse secondary append failures (dual-write) |
-| `ispf.historian.dual_write.catchup.ranges` | gauge | Open catch-up ranges owed to ClickHouse |
-| `ispf.historian.dual_write.catchup.oldest_age_ms` | gauge | Age of oldest open catch-up range |
-| `ispf.historian.dual_write.catchup.wal_bytes` | gauge | Catch-up WAL size on disk |
 | `ispf.historian.spool.bytes` / `.lag` / `.oldest_age_ms` | gauge | Sole-store ClickHouse disk spool backlog |
 | `ispf.historian.spool.quota` | gauge | `1` when spool `max-bytes` rejects new accepts |
 | `ispf.historian.spool.errors` / `.replayed` | gauge | Cumulative spool errors / replayed batches |
-| `ispf.binding.truncations` | counter | Binding cascade stop-loss hits (`MAX_PASSES` / `MAX_DEPTH`) |
-| `ispf.workflow.starts.total{trigger=...}` | counter | Workflow starts by trigger |
-| `ispf.event_history.records` | gauge | Event journal record count |
-| `ispf.workflow_instances.running` | gauge | Active workflow instances |
-| `ispf.drivers.active` / `connected` | gauge | Drivers |
-| `ispf.websocket.clients` | gauge | Open object-tree WebSocket sessions (`websocketClients`) |
-| `ispf.object_tree.ready` | gauge | `1` when `ObjectManager` tree is initialized for API/scheduler work |
-| `ispf.database.connections.*` | gauge | HikariCP pool |
+| `ispf.binding.truncations` | counter | Binding cascade stop-loss hits (`MAX_PASSES` / `MAX_DEPTH`); also System → Metrics `bindingTruncationsTotal` |
 
-Optional alert rules for dual-write catch-up, sole-store spool, and binding stop-loss: [`deploy/prometheus-ispf-alerts.yml`](../../deploy/prometheus-ispf-alerts.yml) (wire via Prometheus `rule_files`; see comment in [`prometheus-ispf-scrape.yml`](../../deploy/prometheus-ispf-scrape.yml)). First-party System → Metrics also exposes `bindingTruncationsTotal` and catch-up/spool fields when those paths are enabled.
+Ready-to-use Grafana dashboard: [`deploy/grafana/ispf-automation-pipeline.json`](../../deploy/grafana/ispf-automation-pipeline.json). Optional alert rules for dual-write catch-up, sole-store spool, and binding stop-loss: [`deploy/prometheus-ispf-alerts.yml`](../../deploy/prometheus-ispf-alerts.yml).
 
-### Metrics probe (object tree sync)
+---
 
-In-process sync `/api/v1/platform/metrics` → `root.platform.devices.platform-metrics-probe` (variables `eventsPerSecond`, `objectChangeQueueSize`, `heapUsedMb`, …). Alternative to external Prometheus during load test.
+## 3. OpenTelemetry (OTLP) Metrics and Distributed Tracing
 
-| Endpoint | Auth | Description |
-|----------|------|-------------|
-| `GET /api/v1/platform/diagnostics/metrics-probe` | admin | `{ enabled, devicePath, devicePresent }` |
-| `PUT /api/v1/platform/diagnostics/metrics-probe` | admin | `{ "enabled": true\|false }` — enable/disable sync |
+Both OTLP metrics and OTLP tracing are **disabled by default** and can be enabled via environment variables:
 
-**UI (recommended):** Admin → System → Metrics → **Load diagnostics** → checkbox "Sync metrics to probe device". When leaving the page probe **automatically disables** (do not leave background load).
+| Feature | Environment Variables | Default |
+|---------|-----------------------|---------|
+| **OTLP Metrics** | `ISPF_OTLP_METRICS_ENABLED=true`, `ISPF_OTLP_METRICS_URL=http://otel-collector:4318/v1/metrics`, `ISPF_OTLP_METRICS_STEP=30s` | `false` |
+| **OTLP Tracing** | `ISPF_OTLP_TRACING_ENABLED=true`, `ISPF_OTLP_TRACING_URL=http://otel-collector:4318/v1/traces`, `ISPF_OTLP_TRACING_SAMPLING=0.1` | `false` |
 
-Env `ISPF_PLATFORM_METRICS_PROBE_ENABLED` and boot-time `ispf.platform-metrics-probe.enabled` **do not start** scheduler — only runtime toggle via API/UI. Interval: `ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS` (default 5000) or Runtime settings → `metrics-probe.interval-ms`.
+When tracing is enabled, every asynchronous handler on the object-change bus emits an `ispf.object-change.handler` span tagged with `handler`, `lane`, `change_type`, `path`, and `variable` / `event_name` alongside standard Spring Boot HTTP spans (`http.server.requests`). A minimal collector configuration for local testing is provided in [`deploy/otel-collector-minimal.yaml`](../../deploy/otel-collector-minimal.yaml).
 
-Before enabling create probe device: `python deploy/setup-platform-metrics-monitor.py`.
+---
 
-## Metrics UI diagnostics (0.9.97+)
+## 4. Elastic Worker Pool Tuning
 
-Admin → **System → Metrics** — **Load diagnostics** card (cluster fan-out).
+By default (`ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=true`), the object-change bus scales worker threads between `min` and `max` based on queue depth:
 
-| Endpoint | Auth | Description |
-|----------|------|-------------|
-| `GET /api/v1/platform/metrics` | admin | Metrics of **current** JVM + `diagnostics` (CPU, suspects, `detail`) |
-| `GET /api/v1/platform/cluster/diagnostics` | admin | All replicas: CPU rank, suspects, drill-down per node |
-
-**Level 1 — cluster:** which replica loads CPU (`processCpuPercent`), pipeline queues, `clusterTopSuspect`.
-
-**Level 2 — inside node** (expand in UI):
-
-| Block | Contents |
-|-------|----------|
-| Thread groups | `ispf-driver-io`, `driver-ingress`, `object-change`, top-5 threads by CPU Δ |
-| Driver bindings | `devicePath`, `driverId`, ingress pending/coalesced, `pressureScore` |
-| Jobs | `platform_jobs` with status `RUNNING` on `holder_id` |
-| Workflows | top `workflow_instances` in `RUNNING` status |
-
-Suspect heuristics: object-change / event journal / historian backlog, JDBC pool, heap pressure, hot driver binding.
-
-Peer fan-out: heartbeat writes `http_port` to `platform_cluster_replicas` (V65); aggregator polls `http://127.0.0.1:{port}/api/v1/platform/metrics` on VPS host network.
-
-If all JVMs show low CPU — culprit outside ISPF (Scylla, ClickHouse, Postgres): `docker stats` on host.
-
-### CLI (single-node, SSH)
-
-Script [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py) — two samples of `GET /api/v1/platform/metrics` ~6s apart, prints thread groups and suspects to stdout. Handy over SSH without UI.
-
-```bash
-scp deploy/vps-idle-thread-sample.py deploy-user@production-host:/tmp/
-ssh deploy-user@production-host python3 /tmp/vps-idle-thread-sample.py
-```
-
-Details: [demostands](demostands.md) (verification section), [vps-demostand](vps-demostand.md) (ops example).
-
-**Optional Grafana export** (same Micrometer series): [`deploy/grafana/ispf-automation-pipeline.json`](../../deploy/grafana/ispf-automation-pipeline.json) — see [`deploy/grafana/README.md`](../../deploy/grafana/README.md). Prefer first-party dashboards above unless you already operate Prometheus.
-
-**Golden path smoke (alarm → journal → ack):** [`deploy/tools/golden-path-alarm-smoke.py`](../../deploy/tools/golden-path-alarm-smoke.py) against a fixtures-enabled server (`demo-sensor-01`).
-
-## OTLP metrics export (optional, 0.9.9+)
-
-Push metrics to OpenTelemetry Collector / Grafana Cloud / Uptrace via Micrometer OTLP registry.
-
-**Disabled by default** — without `ISPF_OTLP_METRICS_ENABLED=true` export does not run.
-
-```yaml
-# /opt/ispf/ispf-server.env
-ISPF_OTLP_METRICS_ENABLED=true
-ISPF_OTLP_METRICS_URL=http://otel-collector:4318/v1/metrics
-ISPF_OTLP_METRICS_STEP=30s
-ISPF_ENVIRONMENT=prod
-```
-
-Spring properties (`application.yml`):
-
-| Property | Env | Default |
-|----------|-----|---------|
-| `management.otlp.metrics.export.enabled` | `ISPF_OTLP_METRICS_ENABLED` | `false` |
-| `management.otlp.metrics.export.url` | `ISPF_OTLP_METRICS_URL` | `http://localhost:4318/v1/metrics` |
-| `management.otlp.metrics.export.step` | `ISPF_OTLP_METRICS_STEP` | `30s` |
-
-Resource attributes: `service.name=ispf-server`, `deployment.environment` from `ISPF_ENVIRONMENT`.
-
-All ISPF counters/gauges above export to OTLP together with standard JVM/Spring Boot metrics (`jvm.*`, `http.server.requests`, `hikaricp.*`).
-
-### Example: local OTel Collector
-
-```yaml
-# docker-compose snippet
-otel-collector:
-  image: otel/opentelemetry-collector-contrib:latest
-  ports:
-    - "4318:4318"
-  volumes:
-    - ./otel-collector.yaml:/etc/otelcol/config.yaml
-```
-
-Prometheus and OTLP can run simultaneously: Prometheus scrape for VPS without collector, OTLP — for centralized observability stack.
-
-## OTLP tracing (optional, 0.9.10+)
-
-Distributed traces for automation pipeline via Micrometer Observation → OpenTelemetry bridge.
-
-**Disabled by default.**
-
-```yaml
-ISPF_OTLP_TRACING_ENABLED=true
-ISPF_OTLP_TRACING_URL=http://otel-collector:4318/v1/traces
-ISPF_OTLP_TRACING_SAMPLING=0.1   # 1.0 for dev/debug
-```
-
-| Property | Env | Default |
-|----------|-----|---------|
-| `management.tracing.enabled` | `ISPF_OTLP_TRACING_ENABLED` | `false` |
-| `management.opentelemetry.tracing.export.otlp.endpoint` | `ISPF_OTLP_TRACING_URL` | `http://localhost:4318/v1/traces` |
-| `management.tracing.sampling.probability` | `ISPF_OTLP_TRACING_SAMPLING` | `0.1` |
-
-### Automation spans
-
-Each async handler on object-change bus creates span `ispf.object-change.handler` with tags:
-
-| Tag | Example |
-|-----|---------|
-| `handler` | `AlertRuleListener`, `EventCorrelatorListener`, `WorkflowTriggerListener` |
-| `lane` | `telemetry`, `automation` |
-| `change_type` | `VARIABLE_UPDATED`, `EVENT_FIRED` |
-| `path` | object path |
-| `variable` / `event_name` | when present |
-
-HTTP requests get standard Spring Boot spans (`http.server.requests`) automatically.
-
-### Local collector
-
-Ready config: [`deploy/otel-collector-minimal.yaml`](../../deploy/otel-collector-minimal.yaml) — OTLP HTTP `:4318`, debug + Prometheus `:8889`.
-
-```bash
-docker run --rm -p 4318:4318 -p 8889:8889 \
-  -v $(pwd)/deploy/otel-collector-minimal.yaml:/etc/otelcol/config.yaml \
-  otel/opentelemetry-collector-contrib:latest
-```
-
-## Elastic object-change workers (0.9.11+)
-
-By default object-change bus uses **elastic** worker pools per lane (telemetry / automation): thread count scales between min and max by queue depth:
-
-- **scale up** — when `queue.size >= elastic-scale-up-queue-threshold`, target workers grow (to max);
-- **scale down** — after `elastic-scale-down-steps` consecutive checks with empty queue target decreases by 1 (to min);
-- periodic check — `elastic-scale-check-interval-ms`; additional scale-up on enqueue if queue already above threshold.
-
-**Enabled by default** (`ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=true`). Disable: `ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=false` or **System → Runtime settings** (`GET/PATCH /api/v1/platform/runtime-settings`).
-
-```yaml
-# /opt/ispf/ispf-server.env — fine-tune prod load (elastic already true by default)
+```properties
 ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MIN=2
 ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MAX=16
 ISPF_OBJECT_CHANGE_ELASTIC_SCALE_UP_THRESHOLD=50
@@ -223,10 +83,4 @@ ISPF_OBJECT_CHANGE_ELASTIC_SCALE_CHECK_MS=500
 ISPF_OBJECT_CHANGE_AUTOMATION_QUEUE_CAPACITY=10000
 ```
 
-Short spike in `ispf.object_change.queue.size` is normal; sustained growth with low `workers.active` or at max workers signals downstream bottleneck (CEL, journal, DB).
-
-## Related documents
-
-- [load-testing](load-testing.md) — baselines and load test scripts
-- [messaging](messaging.md) — JetStream / Redis optional transports (0014)
-- [decisions/0014-automation-pipeline-evolution.md](decisions/0014-automation-pipeline-evolution.md)
+**Related guides:** [Deployment profiles (`demostands.md`)](demostands.md) · [Load testing (`load-testing.md`)](load-testing.md) · [Messaging (`messaging.md`)](messaging.md).

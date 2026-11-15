@@ -1,71 +1,53 @@
 > **Language:** Canonical English. Russian edition: [ru/scada-symbol-library.md](../ru/scada-symbol-library.md).
 
-# SCADA symbol library (BL-94)
+# SCADA Symbol Library
 
-> **Status:** Stable — P&ID pack (218 symbols). Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — built-in ISA/ISO P&ID symbol pack (218 symbols), custom SVG upload, and per-document symbol libraries. Status tags: [doc-status.md](doc-status.md).
 
-Complete reference for **P&ID pack symbols**, **custom SVG upload**, and **document library** in ISPF mimic editor.
+Complete reference for using the built-in **P&ID symbol pack (`ispf-pid-v1`)**, uploading **custom SVG symbols**, and managing the **per-document symbol library** in the ISPF SCADA mimic editor.
 
-See also: [scada](scada.md), [scada-mimic](scada-mimic.md), [tools/symbol-pack-isa](readme.md).
+**Related guides:** [SCADA mimics (`scada.md`)](scada.md) · [Mimic `diagramJson` & REST API (`scada-mimic.md`)](scada-mimic.md) · [Symbol marketplace (`symbol-marketplace.md`)](symbol-marketplace.md) · [P&ID symbol legal status (`pid-symbols-legal.md`)](pid-symbols-legal.md).
 
 ---
 
-## Catalog overview
+## 1. Symbol Catalog Overview
 
 ![Mimic editor symbol library](../assets/ispf-mimic-editor.png)
 
-| Source | Palette category | `symbolId` | Count |
-|--------|------------------|------------|-------|
-| ISA/ISO P&ID pack | `pack-valves`, `pack-pumps`, … | `pack.ispf-pid.*` | **218** (`manifest.json` `totalSymbols`) |
-| Inline SVG | `common` | `custom.svg` | 1 template |
-| User library | `custom` | `custom:{id}` | Per mimic document |
+| Symbol Source | Palette Category | `symbolId` Format | Symbol Count |
+|---------------|------------------|-------------------|--------------|
+| Built-in ISA/ISO P&ID pack | `pack-valves`, `pack-pumps`, `pack-tanks`, … | `pack.ispf-pid.<name>` | **218** (`manifest.json` `totalSymbols`) |
+| Inline custom SVG | `common` | `custom.svg` | 1 template |
+| Document user library | `custom` (**My SVG**) | `custom:<id>` | Stored per mimic document in `customSymbols[]` |
 
-Pack manifest: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/manifest.json`  
-Regenerate: `npm run build:pid-symbols --prefix apps/web-console`
-
----
-
-## Standard pack symbols
-
-1. Open mimic editor (Explorer → mimic → **Edit diagram**).
-2. Tool **Place** → category **pack-tanks** / **pack-valves** / …
-3. Click canvas → element gets `symbolId: pack.ispf-pid.vertical-tank` (example).
-4. Bindings in properties panel → device variables.
-
-Pack symbols are **static SVG** in the repo; they are not copied into `diagramJson` unless you convert to library (below).
+Built-in pack manifest: `apps/web-console/src/scada/symbols/packs/ispf-pid-v1/manifest.json` (regenerate from source with `npm run build:pid-symbols --prefix apps/web-console`).
 
 ---
 
-## Custom SVG — three modes
+## 2. Placing Standard P&ID Pack Symbols
 
-| Mode | When to use | Storage |
-|------|-------------|---------|
-| **Inline** | One-off graphic | `element.props.svg` on element with `symbolId: custom.svg` |
-| **Document library** | Reuse across one mimic | `customSymbols[]` + `symbolId: custom:{id}` |
-| **Pack customization** | Start from standard, tweak geometry | Convert pack → library entry |
+1. Open the mimic editor (select a `MIMIC` node in `root.platform.mimics.*` → **Edit diagram**).
+2. Select the **Place (`P`)** tool and pick a category (`pack-tanks`, `pack-valves`, `pack-pumps`, etc.).
+3. Click the canvas — the element is created with `symbolId: "pack.ispf-pid.vertical-tank"` (for example).
+4. Configure live variable bindings (`fillLevel`, `alarmState`, etc.) and click actions in the right-hand Properties panel.
 
 ---
 
-## Upload SVG (user library)
+## 3. Custom SVG Symbols — Three Modes
 
-1. Mimic editor → palette category **Custom** (My SVG).
-2. **Upload SVG** → select `.svg` file (max recommended 256 KB).
-3. Symbol appears in palette with `inUserLibrary: true`.
-4. Place on canvas like any pack symbol.
+| Mode | When to Use | Where SVG Markup Lives |
+|------|-------------|------------------------|
+| **Inline SVG** | One-off graphic on a single element | `element.props.svg` on an element with `symbolId: "custom.svg"` |
+| **Document Library (`My SVG`)** | Reusable custom equipment symbol across a mimic diagram | `customSymbols[]` in `diagramJson` + `symbolId: "custom:<id>"` |
+| **Customized Pack Symbol** | Start from a standard P&ID symbol and modify its SVG geometry | Select element → **Edit as SVG** → **Update symbol in library** |
 
-**Server-side:** SVG is stored in mimic `diagramJson` on the MIMIC object (no separate asset store).
+### Uploading Your Own SVG File
 
-### Upload rules (enforced in UI)
+1. In the mimic editor palette, open the **Custom (My SVG)** category and click **Upload SVG** (recommended file size ≤ 256 KB).
+2. `sanitizeSvgMarkup()` automatically strips unsafe tags (`<script>`, `<iframe>`, `<object>`, `<foreignObject>`, `<style>`) and inline event attributes (`onclick`, `onload`, `javascript:` URLs).
+3. Use clean vector elements (`<path>`, `<rect>`, `<circle>`, `<g>`, `<text>`) and theme-aware CSS variables such as `fill="var(--text)"` and `stroke="var(--border)"`.
 
-`sanitizeSvgMarkup()` strips:
-
-- Tags: `script`, `iframe`, `object`, `embed`, `link`, `meta`, `style`, `foreignObject`
-- Event handlers: `onclick`, `onload`, …
-- Dangerous `href` / `xlink:href` (`javascript:`, `data:text/html`)
-
-Use plain vector markup (`path`, `rect`, `circle`, `g`, `text`). Prefer `fill="var(--text)"` for theme-aware colors.
-
-### Example minimal SVG file
+Minimal custom SVG example:
 
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
@@ -74,80 +56,33 @@ Use plain vector markup (`path`, `rect`, `circle`, `g`, `text`). Prefer `fill="v
 </svg>
 ```
 
-After upload: inner HTML stored in `customSymbols[].svg`, default **ports** at N/S/E/W midpoints.
-
 ---
 
-## Convert pack symbol to editable library
+## 4. Dynamic Behaviors and Bindings on Custom Symbols
 
-1. Place a pack symbol (e.g. gate valve).
-2. Select element → **Edit as SVG**.
-3. Edit markup in code panel or upload replacement.
-4. **Update symbol in library** → sets `inUserLibrary: true`, adds to **Custom** palette.
-5. New instances use `symbolId: custom:{id}`; original pack id preserved in `props.sourceSymbolId` if converted via editor.
-
-Bulk convert (legacy diagrams): editor menu **Convert built-ins to library** — one-time migration for old React symbol ids.
-
----
-
-## Behaviors and bindings
-
-For live HMI (color, level, visibility):
+Custom library entries in `customSymbols[]` can declare `bindingSchema` slots and dynamic `behaviors` (fill level, state colors, text substitution, rotation):
 
 ```json
 {
   "id": "tank-1",
   "symbolId": "custom:lib-tank-a",
-  "bindings": [
-    { "target": "fill", "objectPath": "root.platform.devices.t1", "variable": "level", "field": "value" }
-  ],
-  "props": { "behaviors": [{ "type": "tankLevel", "binding": "level" }] }
+  "bindings": {
+    "fillLevel": {
+      "objectPath": "root.platform.devices.t1",
+      "variableName": "level",
+      "valueField": "value",
+      "transform": "number"
+    }
+  }
 }
 ```
 
-Define `bindingSchema` on `customSymbols[]` entry for editor hints. Reference: `packages/ispf-server/src/main/resources/bootstrap/mini-tec-mimic.json`.
-
 ---
 
-## Import / export
+## 5. Troubleshooting
 
-| Action | Path |
-|--------|------|
-| Export full diagram | Editor → Import/Export → copy `diagramJson` |
-| CI re-export | `npx tsx src/scada/templates/exportTankFarmMimic.ts` |
-| Bootstrap seed | `PUT /api/v1/mimics/by-path/diagram` |
-
-`customSymbols` travels with `diagramJson` — backup mimics before bulk edits.
-
----
-
-## CI / tests
-
-| Test | Path |
-|------|------|
-| Pack manifest load | `symbolPackLoader.test.ts` — ≥60 symbols, 8 categories |
-| SVG sanitize / upload parse | `customSvg.test.ts` |
-| Behavior engine | `symbolBehaviors.test.ts`, `svgSymbolEngine.test.ts` |
-
-```bash
-cd apps/web-console && npm run test -- src/scada/customSvg.test.ts src/scada/symbols/symbolPackLoader.test.ts
-```
-
----
-
-## Legal
-
-- **ispf-pid-v1** pack: Apache-2.0 original work ([pid-symbols-legal.md](pid-symbols-legal.md), pack [LICENSE](../../apps/web-console/src/scada/symbols/packs/ispf-pid-v1/LICENSE.md)).
-- Do **not** import vendor SymbolFactory / TIA / copyrighted P&ID art.
-- Legacy WMF importer (`tools/symbol-import/`) is **deprecated**.
-
----
-
-## Troubleshooting
-
-| Issue | Fix |
-|-------|-----|
-| Custom symbol not in palette | Set `inUserLibrary: true` on `customSymbols[]` entry |
-| Upload blank / broken | Ensure root `<svg>` with valid `viewBox`; avoid `<style>` blocks |
-| Colors wrong in dark theme | Use `var(--text)`, `var(--border)` or pack CSS vars |
-| Pack category empty | Run `npm run build:pid-symbols`; hard-refresh browser |
+| Symptom | Resolution |
+|---------|------------|
+| Custom symbol does not appear in the **My SVG** palette | Ensure `"inUserLibrary": true` is set on its `customSymbols[]` entry |
+| Uploaded SVG renders blank | Verify the root `<svg>` element has a valid `viewBox` and does not rely on stripped `<style>` blocks |
+| Symbol colors look inverted in dark/light theme | Replace hardcoded hex strokes/fills with `var(--text)` and `var(--border)` |

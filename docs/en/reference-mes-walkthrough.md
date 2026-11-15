@@ -1,62 +1,43 @@
 > **Language:** Canonical English. Russian edition: [ru/reference-mes-walkthrough.md](../ru/reference-mes-walkthrough.md).
 
-# MES reference walkthrough
+# Reference Walkthrough: Product Dispatch and Loading (`mes-reference`)
 
-> **Status:** Lab — End-to-end MES path. Hub: [doc-status.md](doc-status.md).
+> **Status:** Lab — end-to-end reference bundle demonstrating shipment dispatch orders, tank level tracking, loading rack control, and overheat protection. Status tags: [doc-status.md](doc-status.md).
 
-End-to-end reference scenario for ISPF solution developers: **dispatch order → tank → loading rack → completion**. No custom Java in `ispf-server`.
+The **`mes-reference`** bundle ([`examples/mes-reference/`](../../examples/mes-reference/)) demonstrates how to connect application SQL tables (dispatch orders and tanks) with live equipment telemetry and alarm rules in the ISPF object tree without adding custom Java code to `ispf-server`.
 
-Artifacts: [examples/mes-reference/](../../examples/mes-reference/), bundle `appId` = `mes-reference`.
+---
 
-## Domain (simplified MES)
+## 1. Domain Model
 
-| Entity | Description |
-|----------|----------|
-| **Dispatch order** (`mes_dispatch_order`) | Shipment order: number, tank, volume, status |
-| **Tank** (`mes_tank`) | Fill level (demo: `T-01`, 72%) |
-| **Logic hub** | SINGLETON `root.platform.singleton-blueprints.mes-reference-hub-v1` — BFF functions |
-| **Loading rack** | Object path `root.platform.devices.demo-sensor-01` — telemetry, alert rule, event journal |
-| **Rack device** | `root.platform.devices.mes-rack-01` — created from `objects[]` in bundle |
+| Entity | Representation in the Bundle | Purpose |
+|--------|------------------------------|---------|
+| **Dispatch Order** (`mes_dispatch_order`) | Table in SQL schema `app_mes_ref` | Order number (`DO-1001`, `DO-1002`), source tank, target volume, and status (`pending` → `filling` → `completed`) |
+| **Storage Tank** (`mes_tank`) | Table in SQL schema `app_mes_ref` | Current tank fill percentage (demo seed: `T-01` at `72%`) |
+| **Application Logic Hub** | `SINGLETON` node at `root.platform.singleton-blueprints.mes-reference-hub-v1` | Hosts the BFF script functions `mes_listOrders`, `mes_startFilling`, and `mes_completeFilling` |
+| **Loading Rack & Sensor** | `DEVICE` nodes (`root.platform.devices.demo-sensor-01`, `mes-rack-01`) | Field telemetry (`temperature`, `meterLiters`, `flowRate`) and overheat alert rule |
 
-Order statuses: `pending` → `filling` → `completed`.
+---
 
-## Scenario steps
+## 2. Walkthrough Steps
 
-| # | Action | Object path / API | Event / effect | Operator |
-|---|----------|-------------------|------------------|----------|
-| 1 | Deploy bundle | `POST /api/v1/applications/mes-reference/deploy` | schema `app_mes_ref`, migrations, functions | Admin |
-| 2 | List orders | BFF `mes_listOrders` @ `mes-reference-hub-v1` | SQL read | Operator UI journal path |
-| 3 | Start filling | BFF `mes_startFilling` + `orderNo` | status → `filling` | Form button (future dashboard) |
-| 4 | Virtual meter | `virtual` driver profile `meter` + `filling=true` | `meterLiters`, `flowRate` | See [MesPlatformApiTest](../../packages/ispf-server/src/test/java/com/ispf/server/mes/MesPlatformApiTest.java) |
-| 5 | Complete | BFF `mes_completeFilling` | status → `completed` | Operator confirm |
-| 6 | Rack overheat | alert `mesRackOverTemp` when `temperature > 85` | correlator → `alarmActive=true` | Alarm panel |
-| 7 | *(optional)* BPMN workflow | `workflows[]` in bundle → deploy | side-effect via `publish_nats` or `fire_event` | Admin / automation |
+1. **Deploy the bundle:** `POST /api/v1/applications/mes-reference/deploy` creates schema `app_mes_ref`, runs SQL migrations with two seed orders, registers the `SINGLETON` logic hub, and deploys the BFF functions.
+2. **List dispatch orders:** call `mes_listOrders` on `root.platform.singleton-blueprints.mes-reference-hub-v1` via `POST /api/v1/bff/invoke`.
+3. **Start loading:** call `mes_startFilling` with `orderNo = "DO-1001"` to transition the order status to `filling`.
+4. **Complete loading:** call `mes_completeFilling` to record the loaded volume and transition the order to `completed`.
+5. **Overheat protection:** when the loading rack temperature exceeds `85 °C`, the alert rule fires `mesRackOverTemp` and the correlator sets `alarmActive = true`.
 
-## REQ-PF mapping
+---
 
-| Mechanism | Usage in MES reference |
-|----------|-------------------------------|
-| **PF-01** bundle deploy | `migrations`, `functions`, `operatorUi` |
-| **PF-05** objects[] | `mes-rack-01` device |
-| **PF-02** BFF invoke | `mes_listOrders`, `mes_startFilling`, `mes_completeFilling` |
-| **Correlators** | `mesRackOverTemp` → SET_VARIABLE |
-| **Alert rules** | temperature guard on loading rack |
-| **PF-09** virtual driver | optional step 4 (meter profile) |
+## 3. Smoke Test Commands
 
-## Readiness criteria
-
-- [x] Bundle deploys on `test` profile without custom Java
-- [x] `mes_listOrders` returns 2 seed orders
-- [x] Lifecycle `startFilling` → `completeFilling` for `DO-1001`
-- [x] CI: `MesReferenceBundleSmokeTest`
-
-## Smoke commands
+Run the automated integration test:
 
 ```bash
 ./gradlew :packages:ispf-server:test --tests "com.ispf.server.application.MesReferenceBundleSmokeTest"
 ```
 
-Locally (server running):
+Deploy and invoke manually against a running local server:
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/applications/mes-reference/deploy \
@@ -68,8 +49,4 @@ curl -s -X POST http://localhost:8080/api/v1/bff/invoke \
   -d '{"objectPath":"root.platform.singleton-blueprints.mes-reference-hub-v1","functionName":"mes_listOrders","input":{"schema":{"name":"in","fields":[]},"rows":[{}]}}'
 ```
 
-## Related documents
-
-- [solution-developer-guide](solution-developer-guide.md)
-- [solution-developer-public-api](solution-developer-public-api.md)
-- [applications](applications.md)
+**Related guides:** [Solution developer guide](solution-developer-guide.md) · [Solution developer public API](solution-developer-public-api.md) · [Application solutions (`applications.md`)](applications.md).

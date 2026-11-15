@@ -1,59 +1,38 @@
 > **Language:** Canonical English. Russian edition: [ru/reference-mes-defect-walkthrough.md](../ru/reference-mes-defect-walkthrough.md).
 
-# MES defect distribution walkthrough
+# Reference Walkthrough: Scrap Routing and Disposition (`mes-defect-demo`)
 
-End-to-end reference scenario: **line scrap event → order binding → route forecast → dispatcher confirm → MES record**.
+> **Status:** Lab — end-to-end example combining automated scrap route calculation with dispatcher confirmation in the BPMN Work Queue. Status tags: [doc-status.md](doc-status.md).
 
-All data is **fictional** (demo lines, orders `DEMO-*`, neutral route codes).
+The **`mes-defect-demo`** bundle ([`examples/mes-defect-demo/`](../../examples/mes-defect-demo/)) demonstrates how a production scrap event from a line is linked to an active work order, evaluated for a recommended rework/transport route, and confirmed by a dispatcher via a BPMN workflow (`root.platform.workflows.mes-defect-distribution`).
 
-Artifacts: [examples/mes-defect-demo/](../../examples/mes-defect-demo/), bundle `appId` = `mes-defect-demo`.
+---
 
-Reference BPMN (drawio): [docs/assets/mes-defect-bpmn.drawio.xml](assets/mes-defect-bpmn.drawio.xml).
+## 1. Domain Entities and Routing Rules
 
-## Domain (simplified MES)
+| Table / Node | Purpose |
+|--------------|---------|
+| `mes_line` | Production lines of types `A`, `B`, and `D` (`LINE-A01`, `LINE-B01`, `LINE-D01`) |
+| `mes_order` | Production order with status (`open`, `closing`, `closed`) and accumulated scrap |
+| `mes_defect_event` | Recorded scrap volume and special-scrap flag (`isSpecialScrap`) |
+| `mes_recommendation` | Recommended disposition route: `REWORK_A`, `FEED_QUEUE`, `TRANSPORT_HUB`, or `SPECIAL_ROUTE` |
+| **Application Logic Hub** | `SINGLETON` at `root.platform.singleton-blueprints.mes-defect-demo-hub-v1` (hosts BFF functions `mes_listLines`, `mes_simulateDefect`, `mes_calculateRoute`, `mes_confirmRoute`, `mes_finalizeDefect`) |
+| **BPMN Workflow** | `root.platform.workflows.mes-defect-distribution` |
 
-| Entity | Description |
-|----------|----------|
-| **Line** (`mes_line`) | Type A/B/D, demo node loads |
-| **Order** (`mes_order`) | Mock ERP: status `open` / `closing` / `closed`, accumulated scrap |
-| **Scrap event** (`mes_defect_event`) | Volume, special-type flag, transitional remainder |
-| **Recommendation** (`mes_recommendation`) | Route: `REWORK_A` / `FEED_B` / `TRANSPORT_HUB` / `SPECIAL_ROUTE` |
-| **MES Hub** | `root.platform.devices.mes-hub-01` — BFF, bindings, event journal |
-| **Workflow** | `root.platform.workflows.mes-defect-distribution` |
+---
 
-## Line types
+## 2. Walkthrough Steps
 
-| Type | Line | Forecast (demo) |
-|-----|-------|----------------|
-| A | LINE-A01 | Rework on line or transfer to adjacent |
-| B | LINE-B01 | Feed or queue |
-| D | LINE-D01 | Transport to hub; special type → alternate route |
+1. **Deploy the bundle:** `POST /api/v1/applications/mes-defect-demo/deploy` creates the schema, functions, BPMN workflow, and operator dashboards.
+2. **Simulate a scrap event:** on dashboard `mes-defect-simulator`, invoke `mes_simulateDefect` to insert a new defect event.
+3. **Run the BPMN disposition workflow:** the workflow calls `mes_calculateRoute`, writes a route recommendation into `mes_recommendation`, and places a confirmation task into the operator **Work Queue**.
+4. **Dispatcher confirmation:** open `?mode=operator&app=mes-defect-demo`, review and confirm the route (`mes_confirmRoute`), and complete the task.
+5. **Finalization:** the workflow executes `mes_finalizeDefect` and publishes `mesDefectRouted`.
 
-## Scenario steps
+Run the automated test:
 
-| # | Action | API / UI | Effect |
-|---|----------|----------|--------|
-| 1 | Deploy bundle | `POST /api/v1/applications/mes-defect-demo/deploy` | schema, functions, workflow, dashboards |
-| 2 | List lines | BFF `mes_listLines` @ `mes-hub-01` | 3 demo lines |
-| 3 | SCADA simulation | Dashboard `mes-defect-simulator` → `mes_simulateDefect` | INSERT event |
-| 4 | Start BPMN | Run distribution button | workflow to user task |
-| 5 | Forecast | `mes_calculateRoute` in BPMN | INSERT `mes_recommendation` |
-| 6 | Confirm | Work queue Operator App `mes-defect-demo` | `mes_confirmRoute` |
-| 7 | Finalize | `mes_finalizeDefect` + `mesDefectRouted` | status `routed` |
+```bash
+./gradlew :packages:ispf-server:test --tests "com.ispf.server.application.MesDefectDemoBundleSmokeTest"
+```
 
-## Demo cases
-
-1. **LINE-A01**, 12 kg, `active` → `REWORK_A` → work-queue task.
-2. **LINE-A01**, `orderScenario=closing`, volume > 10 kg → transitional remainder.
-3. **LINE-B01**, 8 kg → `FEED_QUEUE`.
-4. **LINE-D01**, normal scrap → `TRANSPORT_HUB`.
-5. **LINE-D01**, `isSpecialScrap=1` → `SPECIAL_ROUTE`.
-
-## CI
-
-`MesDefectDemoBundleSmokeTest` — deploy, list lines, simulate + workflow run + work-queue, special scrap → `SPECIAL_ROUTE`.
-
-## Related documents
-
-- [workflows](workflows.md) — BPMN on ISPF
-- [applications](applications.md) — bundle deploy
+**Related guides:** [Workflows & BPMN (`workflows.md`)](workflows.md) · [Application solutions (`applications.md`)](applications.md).

@@ -1,55 +1,57 @@
 > **Language:** Canonical English. Russian edition: [ru/deployment.md](../ru/deployment.md).
 
-# Deployment and configuration
+# Server Deployment and Configuration
 
-> **Status:** Stable — Docker, env vars. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — Docker Compose stack, environment variables, database storage modes, Kubernetes Helm chart, multi-replica cluster, and server upgrades. Status tags: [doc-status.md](doc-status.md).
 
-## Docker Compose
+## 1. Local Infrastructure with Docker Compose
+
+Start the local development and lab infrastructure with a single command:
 
 ```bash
 docker compose up -d
 ```
 
-| Service | Image | Ports | Credentials |
-|--------|-------|-------|-------------|
-| postgres | timescale/timescaledb:latest-pg16 | 5432 | ispf/ispf |
-| redis | redis:7-alpine | 6379 | — |
-| nats | nats:2.10-alpine (-js) | 4222, 8222 | — |
-| mosquitto | eclipse-mosquitto:2 | 1883 | config: deploy/mosquitto/ |
-| keycloak | keycloak:26.0 dev | 8180 | admin/admin |
+| Service | Docker Image | Ports | Default Credentials |
+|---------|--------------|-------|---------------------|
+| `postgres` | `timescale/timescaledb:latest-pg16` | `5432` | `ispf` / `ispf` |
+| `redis` | `redis:7-alpine` | `6379` | — |
+| `nats` | `nats:2.10-alpine` (`-js`) | `4222`, `8222` | — |
+| `mosquitto` | `eclipse-mosquitto:2` | `1883` | config: `deploy/mosquitto/` |
+| `keycloak` | `keycloak:26.0` (`dev` mode) | `8180` | `admin` / `admin` |
 
-Volume: `ispf_pg_data`.
+PostgreSQL data volume: `ispf_pg_data`. All services in `docker-compose.yml` start together without extra Compose profiles.
 
-Compose profiles **are not used** — all services start together.
+---
 
-## Spring Boot Server
+## 2. Spring Boot Server (`ispf-server`)
 
-Artifact: `:packages:ispf-server:bootRun` or JAR from `build/libs/`.
+Run from source with `./gradlew :packages:ispf-server:bootRun` or run the fat JAR from `packages/ispf-server/build/libs/`.
 
-### Environment variables
+### Core Environment Variables
 
 | Variable | Default | Description |
-|------------|---------|----------|
-| `ISPF_DB_URL` | `jdbc:postgresql://localhost:5432/ispf` | JDBC URL |
-| `ISPF_DB_USER` | ispf | DB user |
-| `ISPF_DB_PASSWORD` | ispf | DB password |
-| `ISPF_SERVER_PORT` | 8080 | HTTP port |
-| `ISPF_OAUTH_ISSUER` | Keycloak realm URL | JWT issuer |
-| `ISPF_MQTT_ENABLED` | false | MQTT integration |
-| `ISPF_MQTT_BROKER` | tcp://localhost:1883 | Broker URL |
-| `ISPF_NATS_ENABLED` | false | NATS integration |
-| `ISPF_NATS_URL` | nats://localhost:4222 | NATS URL |
-| `ISPF_BOOTSTRAP_FIXTURES_ENABLED` | true | Demo/lab fixture models and demo nodes (`mqtt-sensor-v1`, …). See [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md). **Prod VPS:** `vps-deploy-direct.ps1` sets `false`; lab demo — `vps-factory-reset.sh --fixtures`. |
+|----------|---------|-------------|
+| `ISPF_DB_URL` | `jdbc:postgresql://localhost:5432/ispf` | Primary relational database JDBC URL |
+| `ISPF_DB_USER` | `ispf` | Database username |
+| `ISPF_DB_PASSWORD` | `ispf` | Database password |
+| `ISPF_SERVER_PORT` | `8080` | HTTP listen port |
+| `ISPF_OAUTH_ISSUER` | Keycloak realm URL | OIDC / JWT issuer URL |
+| `ISPF_MQTT_ENABLED` | `false` | Enable built-in MQTT broker integration |
+| `ISPF_MQTT_BROKER` | `tcp://localhost:1883` | MQTT broker URL |
+| `ISPF_NATS_ENABLED` | `false` | Enable NATS integration (cluster sync and BPMN `messageTask`) |
+| `ISPF_NATS_URL` | `nats://localhost:4222` | NATS server URL |
+| `ISPF_BOOTSTRAP_FIXTURES_ENABLED` | `true` | Seed demo blueprints and devices (`mqtt-sensor-v1`, etc., see [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md)). Always set to `false` on production servers. |
 
-### Profiles
+### Spring Profiles
 
-| Profile | File | Scenario |
-|---------|------|----------|
-| default | application.yml | PostgreSQL + JWT |
-| local | application-local.yml | H2 file, Bearer after `POST /api/v1/auth/login` (`X-ISPF-Role` off by default) |
-| dev | application-dev.yml | Full stack + MQTT/NATS |
-| prod | application-prod.yml | `ispf.security.strict-startup=true` by default |
-| test | application-test.yml | H2 memory, tests |
+| Profile | Configuration File | Typical Use |
+|---------|--------------------|-------------|
+| `default` | `application.yml` | Production baseline: PostgreSQL + OIDC JWT |
+| `local` | `application-local.yml` | Quick local evaluation: file-based H2 database, Bearer login via `POST /api/v1/auth/login` (`X-ISPF-Role` disabled by default) |
+| `dev` | `application-dev.yml` | Full local development stack with PostgreSQL, MQTT, and NATS |
+| `prod` | `application-prod.yml` | Hardened production: `ispf.security.strict-startup=true` by default |
+| `test` | `application-test.yml` | Automated tests (in-memory H2) |
 
 #### Shipped entrypoints and profiles
 
@@ -65,160 +67,120 @@ Compose **dependency** stack (`docker compose up` at repo root) does not start I
 
 `StartupSecurityGuard` skips `local` and `test` entirely (no warn, env flag ignored). Before any network exposure, leave `local` for `--spring.profiles.active=prod`, or set `ISPF_SECURITY_STRICT_STARTUP=true` on a **non-`local`/`test`** profile — [security](security.md).
 
-### Database
+### Database and Time-Series Storage Modes
 
-- **Flyway** — migrations on startup (`ddl-auto: validate`); locations per `RelationalDialect` (see [0037-relational-core-portability](decisions/0037-relational-core-portability.md))
-- **local:** H2 `./data/ispf-local` (PostgreSQL compatibility mode)
-- **prod:** PostgreSQL; TimescaleDB extension (docker image `timescale/timescaledb`) — hypertables `variable_samples` and `event_history`, retention 90d ([0009-timescaledb-retention](decisions/0009-timescaledb-retention.md), [0015-event-history-timescale](decisions/0015-event-history-timescale.md))
+- **Flyway schema migrations** run automatically at startup (`ddl-auto: validate`), selecting the script directory via `RelationalDialect` ([ADR-0037](decisions/0037-relational-core-portability.md)).
+- **Production PostgreSQL** uses the **TimescaleDB** extension (`variable_samples` and `event_history` hypertables with 90-day retention policies — see [ADR-0009](decisions/0009-timescaledb-retention.md) and [ADR-0015](decisions/0015-event-history-timescale.md)).
 
-#### Storage modes
+| Storage Mode | Metadata & Tree (`ISPF_DB_*`) | Event Journal | Variable History |
+|--------------|-------------------------------|---------------|------------------|
+| **Single Database (default)** | PostgreSQL | `ISPF_EVENT_JOURNAL_STORE=jdbc` | `ISPF_VARIABLE_HISTORY_STORE=jdbc` |
+| **Split High-Rate Telemetry** | PostgreSQL | `clickhouse` or `cassandra` | `clickhouse` or `cassandra` |
 
-| Mode | Metadata (`ISPF_DB_*`) | Events | Variable history |
-|-------|------------------------|---------|-------------------|
-| **Single DB** (default) | PostgreSQL | `ISPF_EVENT_JOURNAL_STORE=jdbc` | `ISPF_VARIABLE_HISTORY_STORE=jdbc` |
-| **Split telemetry** | PostgreSQL | `clickhouse` / `cassandra` | `clickhouse` / `cassandra` |
+For most sites, a **single PostgreSQL database** handles configuration, the object tree, `event_history`, and `variable_samples`. Offloading history and events to ClickHouse is recommended only under high sustained telemetry rates (see [ClickHouse production playbook](clickhouse-prod-playbook.md) and [Historian storage tiers](historian-tiers.md)).
 
-Single DB is the standard scenario: configuration, objects, `event_history`, and `variable_samples` in one PostgreSQL. ClickHouse/Cassandra — only under high time-series load.
+**Application Data Sources (`root.platform.data-sources.*`):**
+- `internal` — isolated schema inside the primary `ISPF_DB`;
+- `external` — JDBC connection to an external database for SQL reports and `sqlBinding` queries.
 
-Optionally: `ISPF_METADATA_DB_KIND` (`postgresql`, `h2`, `mssql`, …) — see [storage-portability-inventory](storage-portability-inventory.md).
+---
 
-**Changing metadata engine (greenfield, before v1.0):** new empty DB, Flyway baseline for the chosen dialect, configuration — import bundles. In-place PG→MSSQL migration is not supported.
+## 3. Building the Web Console (`apps/web-console`)
 
-Platform **Data Sources** (`root.platform.data-sources.*`): `internal` — schema in `ISPF_DB`; `external` — JDBC to external DB for reports and SQL bindings (not metadata).
-
-### Messaging
-
-| Broker | Enable | Usage |
-|--------|-----------|---------------|
-| MQTT | `ispf.mqtt.enabled=true` | Device drivers |
-| NATS | `ispf.nats.enabled=true` | Workflow messageTask |
-
-## Web Console
-
-Static build:
+Build static assets for nginx or ingress:
 
 ```bash
 cd apps/web-console && npm run build
 ```
 
-`dist/` — serve via nginx/ingress with proxy to API.
+Serve `dist/` behind nginx/ingress with `/api/`, `/ws/`, and `/apps/` proxied to `ispf-server`. For local hot-reload development, run `npm run dev` (port `5173`).
 
-Dev: `npm run dev`, proxy to backend.
+---
 
-## Production quick start (BL-127)
+## 4. Local Pre-Production Stack Quick Start (`prod-quickstart.sh`)
 
-One command brings up the **lab / localhost** stack on a Linux host with Docker (PostgreSQL + Redis + `ispf-server` + nginx for UI). Not tied to VPS `ispf.example.invalid`.
-
-**Not for internet-facing production without hardening:** ports are bound to `127.0.0.1`, demo fixtures are disabled, default DB passwords (`ispf/ispf`) must be changed before exposing to the network. Images use pinned tags from `deploy/air-gap-images.env`. Full prod checklist: [demostands.md § Production](demostands.md).
-
-**Requirements:** Docker Engine + Compose v2, JDK 25 (for build), Node.js 20+ (for UI).
+On a Linux host with Docker Engine + Compose v2, JDK 25, and Node.js 20+, one script builds the server JAR and Web Console from source and starts a pre-production container stack (PostgreSQL + Redis + `ispf-server` + nginx):
 
 ```bash
 bash deploy/prod-quickstart.sh
 ```
 
-The script:
-
-1. Builds `ispf-server` JAR (`bootJar`, no tests).
-2. Builds `apps/web-console` (`npm ci && npm run build`).
-3. Copies JAR to `deploy/staging/ispf-server.jar`.
-4. Starts `deploy/docker-compose.prod-stack.yml`.
-5. Waits for readiness via `deploy/health-check.sh`.
+> **Note:** this script binds ports to `127.0.0.1` and disables demo fixtures, but uses default database credentials (`ispf/ispf`). Before exposing a host to the network, change all database passwords and configure TLS. See **[Deployment profiles (`demostands.md`)](demostands.md)** for full production sizing and security guidance.
 
 | Endpoint | URL |
 |----------|-----|
-| API info | http://127.0.0.1:8080/api/v1/info |
-| Actuator health | http://127.0.0.1:8080/actuator/health (not proxied through nginx) |
-| Web UI (nginx) | http://127.0.0.1:8088/ |
+| Server API info | `http://127.0.0.1:8080/api/v1/info` |
+| Actuator health | `http://127.0.0.1:8080/actuator/health` (internal only; not proxied by nginx) |
+| Web Console (nginx) | `http://127.0.0.1:8088/` |
 
-Stop:
+Stop the stack (preserving the `ispf_prod_pg` volume; pass `-v` to wipe data):
 
 ```bash
 docker compose -f deploy/docker-compose.prod-stack.yml down
 ```
 
-PostgreSQL volumes are preserved (`ispf_prod_pg`). Full cleanup: add `-v`.
+---
 
-**Files:**
+## 5. Kubernetes Helm Chart (`deploy/helm/ispf`)
 
-| File | Purpose |
-|------|------------|
-| `deploy/docker-compose.prod-stack.yml` | postgres, redis, ispf-server (Temurin JRE + mounted JAR), nginx |
-| `deploy/air-gap-images.env` | Pinned image tags (shared with BL-128 air-gap pack) |
-| `deploy/nginx-local-prod.conf` | proxy `/api/`, `/ws/` → server; static SPA (no `/actuator/`) |
-| `deploy/health-check.sh` | Poll `/actuator/health` + smoke `/api/v1/info` |
-
-**Prod VPS:** for `ispf.example.invalid`, continue to use `deploy/vps-deploy-direct.ps1` (direct SCP + staging), not this quick start.
-
-## Kubernetes Helm chart (BL-186)
-
-Chart: [`deploy/helm/ispf`](../../deploy/helm/ispf/). Installable with Helm 3.14+; lint/template smoke needs no cluster.
+The Helm chart in [`deploy/helm/ispf`](../../deploy/helm/ispf/) requires Helm 3.14+:
 
 ```bash
-# Static smoke (local helm or Docker alpine/helm)
+# Lint and template validation (no cluster required)
 bash deploy/helm/ispf/validate.sh
 
-# Install
+# Install into Kubernetes
 helm upgrade --install ispf deploy/helm/ispf \
   --namespace ispf --create-namespace \
   --set secrets.dbPassword='change-me' \
   --set ispf.bootstrap.fixturesEnabled=false
 
-# Runtime smoke
+# Verify rollout
 kubectl -n ispf rollout status deploy/ispf --timeout=180s
 kubectl -n ispf port-forward svc/ispf 8080:80 &
 curl -sf http://127.0.0.1:8080/actuator/health
 curl -sf http://127.0.0.1:8080/api/v1/info
 ```
 
-| Artifact | Purpose |
-|----------|---------|
-| [`deploy/helm/ispf/Chart.yaml`](../../deploy/helm/ispf/Chart.yaml) | Chart metadata |
-| [`deploy/helm/ispf/values.yaml`](../../deploy/helm/ispf/values.yaml) | Defaults (historian tiers, analytics replicas, edge hints) |
-| [`deploy/helm/ispf/validate.sh`](../../deploy/helm/ispf/validate.sh) | `helm lint` + `helm template` gate (CI job `helm-chart`) |
-| [`deploy/helm/ispf/README.md`](../../deploy/helm/ispf/README.md) | Install notes |
+For ARM64 edge gateways on Kubernetes, set `edge.enabled=true` and `edge.arm64=true` (for Docker Compose on ARM64 gateways, see [`deploy/edge/arm64/README.md`](../../deploy/edge/arm64/README.md)).
 
-ARM edge on K8s: set `edge.enabled=true` / `edge.arm64=true` (see [edge/arm64](../../deploy/edge/arm64/README.md)). Compose profile for Pi/gateways: BL-187.
+---
 
-## Air-gap deployment (BL-128)
+## 6. Offline / Air-Gapped Installation (`air-gap`)
 
-Hosts without outbound internet: offline bundle (JAR, UI zip, driver packs, Docker images) and runbook.
+For isolated plant networks and DMZs without internet access, build a self-contained offline archive on a connected machine and apply it on the target host:
 
 ```bash
-# Build host (connected)
+# On connected build host
 bash deploy/air-gap-pack.sh --version 0.9.32
 
-# Target host (isolated)
+# On isolated target host
 bash deploy/air-gap-apply.sh /path/to/ispf-airgap-0.9.32.tar.gz
 ```
 
-Full checklist, licensing, and offline update: [air-gap-deployment](air-gap-deployment.md).
+Full runbook: **[Air-gapped deployment (`air-gap-deployment.md`)](air-gap-deployment.md)**.
 
-## Bundle signing (BL-100)
+---
 
-Commercial bundle manifests may contain an RSA-signed `license` block. Signing is **optional** by default; for production marketplace, enable mandatory verification:
+## 7. Bundle Signature Verification (`bundle.json`)
 
-| Variable / property | Default | Description |
-|-----------------------|---------|----------|
-| `ISPF_LICENSE_PUBLIC_KEY_PEM` / `ispf.license.public-key-pem` | empty | PEM RSA public key(s); multiple blocks for rotation |
-| `ISPF_LICENSE_ENFORCE` / `ispf.license.enforce` | `false` | invalid license → HTTP 403 on deploy/import |
-| `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES` / `ispf.license.require-signed-bundles` | `false` | manifest **without** `license` or with invalid signature → 403 |
+Commercial bundles can carry an RSA-signed `license` block. To require valid signatures on production servers:
 
-Import/deploy behavior:
+| Environment Variable / Property | Default | Description |
+|---------------------------------|---------|-------------|
+| `ISPF_LICENSE_PUBLIC_KEY_PEM` / `ispf.license.public-key-pem` | empty | RSA public key(s) in PEM format (multiple blocks supported for key rotation) |
+| `ISPF_LICENSE_ENFORCE` / `ispf.license.enforce` | `false` | Reject invalid signatures with HTTP `403` |
+| `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES` / `ispf.license.require-signed-bundles` | `false` | Reject unsigned manifests (or invalid signatures) with HTTP `403` |
 
-| Condition | `require-signed-bundles=false` | `require-signed-bundles=true` |
-|---------|-------------------------------|------------------------------|
-| No `license` | OK | HTTP 403 |
-| Valid signed `license` | OK | OK |
-| Invalid / tampered signature | WARN (if `enforce=false`) or 403 | HTTP 403 |
+Details: **[Commercial bundle licensing (`commercial-licensing.md`)](commercial-licensing.md)**.
 
-Details: [commercial-licensing](commercial-licensing.md) (deploy behavior, key rotation).
+---
 
-## Production topology (target)
+## 8. Multi-Replica High-Availability Cluster
 
-```
+```text
                     ┌─────────────┐
-   Clients ────────►│   Ingress   │  nginx round-robin (REST) + sticky WS
+   Clients ────────►│    nginx    │  round-robin REST + sticky WebSocket
                     └──────┬──────┘
            ┌───────────────┼───────────────┐
            ▼               ▼               ▼
@@ -229,292 +191,44 @@ Details: [commercial-licensing](commercial-licensing.md) (deploy behavior, key r
               PostgreSQL + Redis + NATS JetStream
 ```
 
-- Stateless API replicas share one PostgreSQL tree ([0028-horizontal-active-active-cluster](decisions/0028-horizontal-active-active-cluster.md)).
-- Driver poll loops: exactly-one owner per device via `platform_driver_locks` (BL-136).
-- Singleton schedulers: JDBC leader locks (`platform_leader_locks`).
+- Stateless `ispf-server` replicas share one PostgreSQL object tree ([ADR-0028](decisions/0028-horizontal-active-active-cluster.md)).
+- Device polling is partitioned across replicas via `platform_driver_locks`, and singleton schedulers use `platform_leader_locks`.
+- Full architecture, replica profiles (`edge-api`, `io`, `hmi-read`, `compute`, `analytics`), and staged startup order: **[ISPF Cluster (`cluster.md`)](cluster.md)**.
 
-## Multi-instance cluster (BL-134…139)
-
-Detailed guide: **[cluster](cluster.md)** — topology, bindings, ADR-0029, tuning, and **[cluster startup order](cluster.md#cluster-startup-and-configuration)** (staged bootstrap, profiles, nginx, lab BL-210).
-
-**Lab / Enterprise L (4 profiles: edge×2 + analytics + io):**
-
-```bash
-# On lab host after jar/UI upload:
-bash ~/ispf/lab-cluster-bootstrap.sh
-# Ingress: http://<lab>:8000/
-```
-
-Artifacts: [`deploy/lab-cluster-compose.yml`](../../deploy/lab-cluster-compose.yml), [`deploy/lab-cluster-bootstrap.sh`](../../deploy/lab-cluster-bootstrap.sh), [`deploy/local/nginx/cluster-lab.conf`](../../deploy/local/nginx/cluster-lab.conf).
-
-**Local CI stack (3 generic replicas):**
+### Local 3-Replica Cluster Quick Start
 
 ```bash
 bash deploy/cluster-quickstart.sh
-# UI + API via LB: http://127.0.0.1:8088/
+# Web Console + API behind nginx load balancer: http://127.0.0.1:8088/
 ```
 
-Compose: [`deploy/docker-compose.cluster.yml`](../../deploy/docker-compose.cluster.yml).  
-Ingress: [`deploy/nginx-cluster.conf`](../../deploy/nginx-cluster.conf).
+### Required Environment Variables per Cluster Replica
 
-### Required env (each replica)
+| Variable | Example | Purpose |
+|----------|---------|---------|
+| `ISPF_REPLICA_ID` | `replica-1` | Unique node identifier (returned in `/api/v1/info`) |
+| `ISPF_DB_URL` | `jdbc:postgresql://postgres:5432/ispf` | Shared PostgreSQL database |
+| `ISPF_CLUSTER_ENABLED` | `true` | Enables driver lock partitioning and cluster health APIs |
+| `ISPF_NATS_ENABLED` | `true` | Enables cross-replica event fan-out |
+| `ISPF_NATS_REPLICA_EVENTS` | `true` | Synchronizes tree changes and WebSocket notifications across replicas |
+| `ISPF_NATS_JETSTREAM_ENABLED` | `true` | Durable structure sync stream ([ADR-0069](decisions/0069-cluster-consistency.md)) |
+| `ISPF_CLUSTER_LIVE_VARIABLE_SYNC` | `true` | Mirrors live telemetry values in RAM across replicas over NATS ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)) |
+| `ISPF_CLUSTER_PATH_INTEREST` | `true` | Tracks active WebSocket subscriptions cluster-wide in Redis |
+| `ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS` | `500` | Coalescing window for NATS live-value fan-out |
+| `ISPF_REDIS_ENABLED` | `true` | Required for cluster path interest, live mirror, correlator windows, and ACL cache |
 
-| Variable | Example | Notes |
-|----------|---------|-------|
-| `ISPF_REPLICA_ID` | `replica-1` | Unique per node; exposed in `/api/v1/info` |
-| `ISPF_DB_URL` | `jdbc:postgresql://postgres:5432/ispf` | Same DB for all replicas |
-| `ISPF_CLUSTER_ENABLED` | `true` | Enables driver ownership + cluster health API |
-| `ISPF_NATS_ENABLED` | `true` | Cross-replica WS/object-change fan-out |
-| `ISPF_NATS_REPLICA_EVENTS` | `true` | Required for multi-replica UI sync |
-| `ISPF_NATS_JETSTREAM_ENABLED` | `true` | Structure sync fails startup without a ready JetStream stream ([0069](decisions/0069-cluster-consistency.md)) |
-| `ISPF_CLUSTER_LIVE_VARIABLE_SYNC` | `true` | NATS live-value RAM mirror ([0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md)) |
-| `ISPF_CLUSTER_PATH_INTEREST` | `true` | Redis global WS interest (requires Redis) |
-| `ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS` | `500` | NATS fan-out coalesce (separate from `ISPF_RUNTIME_TELEMETRY_COALESCE_MS`) |
-| `ISPF_REDIS_ENABLED` | `true` | Required when live mirror or path interest is on; also correlator windows and ACL cache |
+---
 
-Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUSTER_DRIVER_LOCK_RENEW_MS` (default 10000).
+## 9. Standalone All-in-One JAR and Linux `systemd` Setup
 
-### Ops runbook
-
-**Add node**
-
-1. Copy an existing `ispf-server-N` service block in compose; set unique `ISPF_REPLICA_ID`.
-2. Add `server ispf-server-N:8080` to `upstream ispf_backend` and `ispf_ws_backend` in nginx config.
-3. `docker compose -f deploy/docker-compose.cluster.yml up -d ispf-server-N nginx`
-4. Verify: `GET /api/v1/platform/cluster/health` (admin) shows `replicaId` and held driver locks.
-
-**Remove node (graceful)**
-
-1. `docker stop ispf-server-N` — nginx marks upstream down after `max_fails`.
-2. Driver locks on that node expire within TTL; another replica reclaims via `DriverOwnershipScheduler`.
-3. Remove service from compose/nginx when drained.
-
-**Failover verify**
-
-1. `curl -sf http://127.0.0.1:8088/api/v1/info` — should succeed with any replica up.
-2. Stop one replica: REST must not 502; WS clients on other replicas stay connected; NATS propagates live variable snapshots ([0029-cluster-live-variable-replica-sync](decisions/0029-cluster-live-variable-replica-sync.md)).
-3. Admin → System → Metrics → cluster health card (`/api/v1/platform/cluster/health`).
-
-**Ops checklist (BL-139)**
-
-- [ ] `ISPF_CLUSTER_ENABLED=true` and unique `ISPF_REPLICA_ID` on every replica
-- [ ] Shared PostgreSQL reachable from all nodes; Flyway migrations applied once
-- [ ] NATS enabled with `ISPF_NATS_REPLICA_EVENTS=true` and `ISPF_NATS_JETSTREAM_ENABLED=true` (NATS started with `-js`)
-- [ ] Redis enabled and reachable when live mirror or path interest is on
-- [ ] Nginx: API upstream round-robin (or least_conn); `/ws/` uses `ip_hash` (`deploy/nginx-cluster.conf`)
-- [ ] `GET /api/v1/platform/cluster/health` (admin) — all nodes `UP`, driver locks visible
-- [ ] Smoke: `bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag` (round-robin, REST failover, reclaim SLO, ADR-0030, ADR-0029 lag)
-- [ ] Scale gate (lab/CI): `python deploy/cluster-scale-load-test.py --scale-factor-floor 1.8`
-- [ ] Kill one replica: REST via LB stays 200; driver locks migrate within TTL + failover scan
-- [ ] Chaos/soak journal when claiming HA under load: [cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md) (REAL vs PARTIAL)
-
-**Automated gates**
-
-| Gate | Command / workflow |
-| ---- | ------------------ |
-| JDBC ownership | `./gradlew :packages:ispf-server:test --tests com.ispf.server.driver.ClusterFailoverIntegrationTest` |
-| Compose smoke | `bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag` |
-| Scale-out 1.8× | `python deploy/cluster-scale-load-test.py` |
-| Chaos / soak evidence | [cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md) |
-| CI | [`.github/workflows/cluster-load-test.yml`](../../.github/workflows/cluster-load-test.yml) |
-
-### Prod VPS (single-node example)
-
-The current public example uses a **single unified node**. Generalized deployment profiles: **[demostands](demostands.md)** (production, throughput, demo-idle, edge). Single-node ops template: [vps-demostand](vps-demostand.md).
-
-| Script | When |
-|--------|------|
-| [`vps-single-rollout.sh`](../../deploy/vps-single-rollout.sh) | Jar + UI on single-node; cluster → single migration |
-| [`vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh) | Merge prod-idle overlay + **recreate** container (not `docker restart`) |
-| [`vps-demostand-tune-drivers.sh`](../../deploy/vps-demostand-tune-drivers.sh) | After recreate: SNMP `TELEMETRY_ONLY`, demo-sensor `FULL` |
-| [`vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py) | Thread CPU diagnostic (SSH) |
-| [`ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env) | Demo-idle overlay ([demostands](demostands.md)) |
-| [`vps-deploy-direct.ps1`](../../deploy/vps-deploy-direct.ps1) | Local build + SCP staging |
-
-```powershell
-.\deploy\vps-deploy-direct.ps1 -Version <ver> -SkipTests -SkipDriverPacks
-```
-
-On the host after upload:
+### All-in-One JAR
+Release builds (`-PembedWebConsole=true`) embed the Web Console directly inside `ispf-server.jar`. On any machine with JDK 25+ (Windows, Linux, macOS):
 
 ```bash
-bash /opt/ispf/bin/vps-single-rollout.sh /opt/ispf/staging/<ver>
-bash /opt/ispf/bin/vps-demostand-tune-drivers.sh   # if demo-idle driver profile is needed
-curl -sf http://127.0.0.1:8080/api/v1/info
-```
-
-**Do not use** [`apply-platform-update.sh`](../../deploy/apply-platform-update.sh) on Docker single-node — the script is for **systemd** `:8080`.
-
-#### Multi-replica cluster (optional)
-
-| Script | When |
-|--------|------|
-| [`vps-deploy-direct.ps1 -Cluster`](../../deploy/vps-deploy-direct.ps1) | Routine jar + UI rollout |
-| [`vps-cluster-rollout.sh`](../../deploy/vps-cluster-rollout.sh) | Restart replicas after staging upload |
-| [`vps-cluster-bootstrap.sh`](../../deploy/vps-cluster-bootstrap.sh) | First-time cluster install only |
-| [`vps-cluster-factory-reset.sh`](../../deploy/vps-cluster-factory-reset.sh) | Drop PG + reset Scylla/Redis |
-| [`vps-cluster-verify.sh`](../../deploy/vps-cluster-verify.sh) | Post-deploy health; `--config-sync` smoke |
-
-```powershell
-.\deploy\vps-deploy-direct.ps1 -Version <ver> -SkipTests -Cluster
-ssh user@host 'bash /opt/ispf/bin/vps-cluster-verify.sh --config-sync'
-```
-
-**Rollback cluster → single:** [demostands](demostands.md), [vps-demostand](vps-demostand.md).
-
-## ClickHouse variable history (prod playbook, BL-114)
-
-Full ops guide: **[clickhouse-prod-playbook](clickhouse-prod-playbook.md)** — install, event journal, historian cutover, **dual-write** (BL-116), verify, rollback.
-
-Default historian: PostgreSQL/Timescale (`ISPF_VARIABLE_HISTORY_STORE=jdbc`). Dual-write: `ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=true` + CH credentials (reads remain in PG).
-
-## Monitoring
-
-Actuator endpoints:
-
-- `/actuator/health` — liveness/readiness
-- `/actuator/prometheus` — metrics (admin role); ISPF gauges `ispf_event_history_records`, `ispf_alert_fires_total`, `ispf_object_change_queue_size`, …
-- `/actuator/metrics` — Micrometer
-
-**Metrics probe:** sync `/api/v1/platform/metrics` → `root.platform.devices.platform-metrics-probe`. Enable at **runtime** via Admin → System → Metrics → Load diagnostics (checkbox) or `PUT /api/v1/platform/diagnostics/metrics-probe` with `{ "enabled": true }`. Boot env `ISPF_PLATFORM_METRICS_PROBE_ENABLED` does not start the scheduler (see [observability](observability.md)). Create device: `python deploy/setup-platform-metrics-monitor.py`.
-
-## Logging
-
-```yaml
-logging.level.com.ispf: INFO   # default
-logging.level.com.ispf: DEBUG  # local/dev
-```
-
-## Local data
-
-| Profile | Data path |
-|---------|-------------|
-| local | `./data/ispf-local.mv.db` |
-| dev | PostgreSQL volume `ispf_pg_data` |
-
-Stand cleanup: delete H2 file or `docker compose down -v` (PostgreSQL).
-
-## Remote host (systemd + nginx)
-
-Script `deploy/remote-setup-ispf.sh` — one-time install on Linux VPS (Ubuntu 24.04+):
-
-1. Stops extra services on the host (configured for the specific server).
-2. Installs Temurin JDK 25.
-3. Places artifacts in `/opt/ispf`:
-   - `ispf-server.jar` ← `/tmp/ispf-server.jar`
-   - `web-console/` ← `/tmp/ispf-web-console-dist/`
-4. Creates `ispf-server.service` (port **8080**). On **prod VPS** (`ispf.example.invalid`), datasource is set via `/opt/ispf/ispf-server.env` → **PostgreSQL** in Docker (`ispf-postgres`), despite `--spring.profiles.active=local` in the unit file. Directory `/opt/ispf/data/` — service files (auto-update, installation-id), **not** H2.
-5. Configures nginx on **80** (`ai.example.invalid`): static UI + proxy `/api/`, `/ws/`, `/actuator/`.
-6. Optional: if `/tmp/snmpd-ispf.conf` is present — installs snmpd for demo `snmp-localhost`.
-
-Prepare and run on the server:
-
-```bash
-# Local: build
-./gradlew :packages:ispf-server:bootJar
-cd apps/web-console && npm run build
-scp packages/ispf-server/build/libs/ispf-server-*.jar user@host:/tmp/ispf-server.jar
-scp -r apps/web-console/dist user@host:/tmp/ispf-web-console-dist
-scp deploy/remote-setup-ispf.sh deploy/snmpd-ispf.conf user@host:/tmp/
-ssh user@host 'bash /tmp/remote-setup-ispf.sh'
-```
-
-Verify: `http://host/` (UI), `http://host/api/v1/info`.
-
-Additional scripts:
-
-| Script | Purpose |
-|--------|------------|
-| `deploy/remote-cleanup-apache-ispf-only.sh` | Remove Apache/ISPmanager, keep only ISPF on :80 |
-| `deploy/update-snmp-mappings.sh` | Update OID mappings on a running server |
-| `deploy/start-snmp-driver.sh` | Login + start SNMP driver |
-| `deploy/apply-platform-update.sh` | Install jar + UI from staging and restart systemd (called by update API) |
-| `deploy/remote-update-ispf.sh` | Manual update from `/tmp` artifacts |
-
-### All-in-one JAR (trial / single host)
-
-Release workflow embeds the web console into `ispf-server.jar` (`-PembedWebConsole=true`). Same file runs on Windows, Linux, and macOS (JDK 25+):
-
-```bash
-# Portable zip from Releases: start.bat (Windows) or ./start.sh (Linux/macOS)
 java -jar ispf-server.jar --spring.profiles.active=local
 ```
 
-UI + API: http://localhost:8080. For production with nginx, keep serving `web-console.zip` from disk (split deploy below).
+Open `http://localhost:8080` for both the Web Console and REST API.
 
-### Auto-update from GitHub Releases
-
-1. Publish a release: `git tag v0.1.1 && git push origin v0.1.1` — workflow `.github/workflows/release.yml` builds all-in-one `ispf-server.jar` and `web-console.zip` (nginx split deploy).
-2. On VPS, `ispf-server.service` has:
-   - `ISPF_UPDATE_CHECK_ENABLED=true` — periodic check (default: once per hour)
-   - `ISPF_UPDATE_APPLY_ENABLED=true` — "Update and restart" button in admin console
-3. Admin sees a banner when GitHub has a newer version than the current jar (`/api/v1/info` → `version` from build-info).
-
-Locally `apply-enabled=false` — notification only / link to release.
-
-### SNMP demo driver on remote
-
-After deploying the SNMP agent on the host (`127.0.0.1:161`, see `deploy/snmpd-ispf.conf`) and device `root.platform.devices.snmp-localhost`:
-
-```bash
-bash deploy/start-snmp-driver.sh
-```
-
-The script logs in (`admin`/`admin`), calls `POST /api/v1/drivers/runtime/start?devicePath=...`, and prints status. Default `API=http://127.0.0.1:8080` (JVM); via nginx: `API=http://127.0.0.1`.
-
-## Upgrade to v0.8.0+
-
-> **Runbook for upgrading from pre-0.8.0.** One-time breaking change [0010-binding-rules-only](decisions/0010-binding-rules-only.md): column `binding_expr` removed (`V41`), checksum `V1` changed — **easier to recreate the DB** than migrate legacy bindings. On prod 0.9.x, normal deploy via [vps-deploy-direct.ps1](../../deploy/vps-deploy-direct.ps1) — no DB recreation.
-
-### Prod VPS (`ispf.example.invalid`) — PostgreSQL in Docker
-
-DB: container **`ispf-postgres`** (`timescale/timescaledb`), JDBC from `/opt/ispf/ispf-server.env` (`SPRING_DATASOURCE_URL=jdbc:postgresql://127.0.0.1:5432/ispf`).
-
-```bash
-# 1. Backup (optional)
-docker exec ispf-postgres pg_dump -U ispf ispf > ispf-pre-0.8.27.sql
-
-# 2. Stop server, recreate DB
-systemctl stop ispf-server
-docker exec ispf-postgres psql -U ispf -d postgres \
-  -c 'DROP DATABASE IF EXISTS ispf;' \
-  -c 'CREATE DATABASE ispf OWNER ispf;'
-
-# 3. Deploy jar + UI (deploy/vps-deploy-direct.ps1 or apply-platform-update.sh)
-#    If jar/UI already in staging — systemctl start is enough
-systemctl start ispf-server
-
-# 4. Flyway applies schema from V1 without binding_expr on clean DB
-curl -sf ${ISPF_BASE_URL:-https://ispf.example.invalid}/api/v1/info
-```
-
-After recreation: binding rules — Web Console → Bindings; mini-TEC — `MiniTecPlatformBootstrap` on startup.
-
-### PostgreSQL (generic / docker compose)
-
-```bash
-docker compose exec postgres psql -U ispf -d postgres \
-  -c 'DROP DATABASE IF EXISTS ispf;' -c 'CREATE DATABASE ispf OWNER ispf;'
-```
-
-### H2 (local dev only)
-
-Delete `./data/ispf-local.mv.db` or change `spring.datasource.url`. See [bindings](bindings.md).
-
-## SCADA NFR (mini-TEC / production)
-
-Targets from mini-TEC mimic requirements (§4) — **operational**, not bootstrap:
-
-| Requirement | ISPF recommendation |
-|------------|-------------------|
-| 99.9% availability | `ispf-server` cluster + health checks; see [cluster](cluster.md) |
-| ≤50 concurrent operators | Redis session/cache (`redis` in compose); nginx sticky sessions |
-| 7-year telemetry archive | TimescaleDB retention policies + ClickHouse `store=clickhouse` for events |
-| Backup | `pg_dump` / volume snapshots; runbook in [air-gap-deployment](air-gap-deployment.md) |
-| Zero-downtime update | Blue/green via `apply-platform-update.sh` + staged jar/UI |
-| Sessions / timeout | Keycloak realm: SSO idle timeout, max session; see [security](security.md) |
-| Email/SMS alarms | `ISPF_NOTIFICATIONS_EMAIL_RELAY_URL` + webhook to SMS gateway; [automation](automation.md) |
-| Offline operator HMI | PWA cache web-console static; HMI layout in `dashboard-v1.layout` |
-| OPC-UA field level | Driver pack `opcua`; GPU variable mapping — lab note in [examples/mini-tec/README.md](readme.md) |
-
-**Lab demo mini-TEC:** `ISPF_BOOTSTRAP_FIXTURES_ENABLED=true` (default local). **Prod VPS:** fixtures off — import via `POST /api/v1/applications/mini-tec/deploy` or factory-reset with `--fixtures`.
+### Linux `systemd` + `nginx` Installation
+The script `deploy/remote-setup-ispf.sh` provisions an Ubuntu 24.04+ server with Temurin JDK 25, installs `/opt/ispf/ispf-server.jar` and `/opt/ispf/web-console/`, registers `ispf-server.service` on port `8080`, and configures `nginx` on port `80`.

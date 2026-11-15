@@ -16,6 +16,7 @@
 | `mes_order` | Производственный заказ со статусом (`open`, `closing`, `closed`) и счётчиком накопленного брака |
 | `mes_defect_event` | Зарегистрированный объём несоответствующей продукции и признак особого вида отхода (`isSpecialScrap`) |
 | `mes_recommendation` | Рассчитанный маршрут движения брака: возврат на свою линию (`REWORK_A`), подача в очередь соседней линии (`FEED_QUEUE`), вывоз на центральный узел (`TRANSPORT_HUB`) или спецмаршрут (`SPECIAL_ROUTE`) |
+| **Узел логики (`SINGLETON`)** | `root.platform.singleton-blueprints.mes-defect-demo-hub-v1` — функции `mes_listLines`, `mes_simulateDefect`, `mes_calculateRoute`, `mes_confirmRoute`, `mes_finalizeDefect` |
 
 ---
 

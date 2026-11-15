@@ -1,36 +1,37 @@
 > **Language:** Canonical English. Russian edition: [ru/messaging.md](../ru/messaging.md).
 
-# Messaging contract (ISPF)
+# Messaging Channels: REST/BFF, WebSocket, Event Journal, and NATS
 
-> **Status:** Stable — NATS / MQTT notes. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — communication channels between the platform, operator browsers, cluster replicas, and external integrations. Status tags: [doc-status.md](doc-status.md).
 
-Contract for buses and synchronous platform ↔ solution calls. REQ-FW-32.
+In ISPF, each communication channel serves a distinct purpose: synchronous commands and queries use HTTP REST/BFF, live screen updates use WebSocket, durable audit trails use the database event journal, and inter-replica or external pub/sub uses NATS.
 
-## Principle
+---
 
-| Channel | Semantics | When to use |
+## 1. When to Use Each Channel
+
+| Channel | Semantics | Typical Use |
 |---------|-----------|-------------|
-| **REST / BFF invoke** | Sync request/response | CRUD, application functions, deploy, reports |
-| **WebSocket `/ws/objects`** | Push object tree changes | Live HMI, explorer, variable updates |
-| **Event journal (DB)** | Durable async log | Operator event feed, audit, correlators |
-| **NATS** | Async pub/sub between replicas | Replica fan-out, workflow side-effects |
+| **REST API & BFF Gateway** (`/api/v1/**`) | Synchronous request / response | Object tree CRUD, invoking application functions (`POST /api/v1/bff/invoke`), deploying `bundle.json`, running reports |
+| **WebSocket** (`/ws/objects`) | Real-time server push to browsers | Live updates for dashboard widgets, SCADA mimics, and the Admin Explorer tree |
+| **Event Journal (Database)** | Durable asynchronous log | Operator event feed, alarm history, audit trail, and input to event correlators |
+| **NATS Bus** (`ispf.events.*`, `ispf.object.*`) | Asynchronous server-to-server pub/sub | Cluster replica synchronization, external enterprise integrations, and BPMN `publish_nats` tasks |
 
-Do not mix sync RPC and async bus in one "universal" channel.
+---
 
-## WebSocket object tree
+## 2. Browser WebSocket Subscriptions (`/ws/objects`)
 
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /ws/objects` + `Sec-WebSocket-Protocol: ispf-bearer, <token>` | Subscribe paths, presence, **event catalog** |
+Clients connect to `GET /ws/objects` passing the Bearer token in the header `Sec-WebSocket-Protocol: ispf-bearer, <token>`.
 
-### Client messages
+### Subscribing to All Variables on an Object
 
 ```json
 { "type": "subscribe", "paths": ["root.platform.devices.demo-sensor-01"] }
+```
 
-Narrow interest (recommended for HMI widgets) — only listed variables.
-Omitting `variablesByPath` for a path means path-wide (all variables on that object).
-Empty `paths` is silence (not whole-server broadcast).
+### Narrow Variable Subscription (Recommended for HMI Widgets)
+
+To receive notifications only for specific variables displayed on screen, pass `variablesByPath`:
 
 ```json
 {
@@ -41,15 +42,19 @@ Empty `paths` is silence (not whole-server broadcast).
   }
 }
 ```
-```
+
+- Omitting `variablesByPath` for a path subscribes to **all** variables on that object.
+- Sending an empty array `paths: []` clears the subscription (the server never broadcasts the entire object tree without explicit paths).
+
+### Subscribing to Application Event Catalogs (`subscribe_events`)
 
 ```json
 { "type": "subscribe_events", "appId": "mes-reference", "events": ["mesRackOverTemp"] }
 ```
 
-Response `subscribe_events_result`: `accepted[]`, `rejected[]` (roles from bundle `events[]` — FW-31).
+The server checks the user's roles against the bundle's `events[]` catalog and replies with `subscribe_events_result` (`accepted[]`, `rejected[]`).
 
-### Object change push
+### Incoming Variable Change Notification
 
 ```json
 {
@@ -60,60 +65,38 @@ Response `subscribe_events_result`: `accepted[]`, `rejected[]` (roles from bundl
 }
 ```
 
-## NATS subjects (production, `ispf.nats.enabled=true`)
+---
 
-| Subject pattern | Publisher | Consumer | Payload |
-|-----------------|-----------|----------|---------|
-| `ispf.object.{path}.{changeType}` | `NatsEventBridge` | external integrators | path, type, variableName, timestamp, source |
-| `ispf.events.{changeType}` | `NatsEventBridge` (replica fan-out) | `NatsObjectChangeSubscriber` | same |
-| `ispf.events.{changeType}` (JetStream) | `NatsEventBridge` when `jet-stream-enabled` | `NatsObjectChangeSubscriber` durable consumer | same payload, persisted in stream `ispf-automation` |
-| `ispf.workflow.{workflowPath}.{event}` | `WorkflowService` | external / analytics | workflowPath, event, payload |
-| BPMN `publish_nats` task | workflow engine | custom | task-defined subject + message |
+## 3. NATS Subjects (`ispf.nats.enabled=true`)
 
-Configuration: `ispf.nats.url`, `ispf.nats.replica-id`, `ispf.nats.replica-events-enabled`.
+| NATS Subject Pattern | Publisher | Consumer | Payload |
+|----------------------|-----------|----------|---------|
+| `ispf.object.<path>.<changeType>` | `NatsEventBridge` | External integrators | `path`, `type`, `variableName`, `timestamp`, `source` |
+| `ispf.events.<changeType>` | `NatsEventBridge` | Cluster replicas (`NatsObjectChangeSubscriber`) | Same fields + full `DataRecord` `value` snapshot when live variable sync ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)) is enabled |
+| `ispf.workflow.<workflowPath>.<event>` | `WorkflowService` | External subscribers & analytics | `workflowPath`, `event`, `payload` |
+| Custom subject from BPMN `publish_nats` | Workflow engine | External services | Subject and message configured on the BPMN task |
 
-### JetStream (optional, 0014)
+### NATS JetStream for Durable Replica Synchronization
 
-When `ispf.nats.jet-stream-enabled=true` (requires `ispf.nats.enabled=true`):
+When `ispf.nats.jet-stream-enabled=true` (required in cluster mode per [ADR-0069](decisions/0069-cluster-consistency.md)):
 
-| Setting | Env | Default |
-|---------|-----|---------|
+| Setting | Environment Variable | Default |
+|---------|----------------------|---------|
 | Stream name | `ISPF_NATS_JETSTREAM_STREAM` | `ispf-automation` |
-| Retention | `ISPF_NATS_JETSTREAM_MAX_AGE_HOURS` | `24` |
-| Consumer prefix | `ISPF_NATS_JETSTREAM_CONSUMER_PREFIX` | `ispf-replica-` |
+| Retention window | `ISPF_NATS_JETSTREAM_MAX_AGE_HOURS` | `24` (hours) |
+| Durable consumer prefix | `ISPF_NATS_JETSTREAM_CONSUMER_PREFIX` | `ispf-replica-` |
 
-Replica fan-out uses JetStream publish/subscribe instead of core NATS for `ispf.events.>` subjects. Per-replica durable consumers (`ispf-replica-{replicaId}`) allow catch-up after restarts. Object-level subjects (`ispf.object.*`) remain core NATS for external integrators.
+Health check: **System → Metrics** (NATS & JetStream card) or `GET /api/v1/platform/nats/health`.
 
-Cluster structure sync requires this stream: with `ispf.cluster.enabled=true` and NATS replica events, startup fails closed unless JetStream is up ([0069](decisions/0069-cluster-consistency.md)).
+### Redis Sliding Windows for Event Correlators
 
-**Ops:** live status (connection, stream messages/bytes, consumer pending, `PUBLISH_NATS` availability) — **System → Metrics** → NATS & JetStream card; API `GET /api/v1/platform/nats/health`.
+When `ispf.redis.enabled=true` and `ispf.redis.correlator-windows-enabled=true` (`ISPF_REDIS_CORRELATOR_WINDOWS=true`), sliding-window correlator state (`COUNT`, `SEQUENCE`, `EVENT_CHAIN`, `WINDOW`) is stored in Redis sorted sets (`ispf:corr:hits:{correlatorId}:{objectPath}`) instead of PostgreSQL `correlator_hits`. Health check: `GET /api/v1/platform/redis/health`.
 
-### Redis correlator windows (optional, 0014)
+---
 
-When `ispf.redis.enabled=true` and `ispf.redis.correlator-windows-enabled=true`:
+## 4. Application Event Catalog (`events[]` in `bundle.json`)
 
-| Setting | Env | Default |
-|---------|-----|---------|
-| Correlator windows | `ISPF_REDIS_CORRELATOR_WINDOWS` | `false` |
-
-Sliding-window correlator state (COUNT / SEQUENCE / EVENT_CHAIN hits) is stored in Redis sorted sets (`ispf:corr:hits:{correlatorId}:{objectPath}`) instead of PostgreSQL `correlator_hits`. Enables shared windows across replicas; default remains JDBC for single-node deployments.
-
-**Ops:** live status (connection, correlator store backend, ACL cache backend, TTLs, key count) — **System → Metrics** → Redis card; API `GET /api/v1/platform/redis/health`.
-
-## Sync RPC (primary API)
-
-| API | Examples |
-|-----|---------|
-| `POST /api/v1/applications/{appId}/deploy` | Bundle deploy |
-| `POST /api/v1/bff/invoke` | Application functions |
-| `POST /api/v1/objects/by-path/functions/invoke` | Tree functions |
-| Federation proxy | `GET /api/v1/federation/proxy/...` |
-
-Federation proxy — sync read over HTTP; not a replacement for event bus.
-
-## Event catalog in bundle (FW-31)
-
-`events[]` section in manifest:
+Applications can declare a typed event catalog with role restrictions in `bundle.json`:
 
 ```json
 "events": [
@@ -122,91 +105,7 @@ Federation proxy — sync read over HTTP; not a replacement for event bus.
 ]
 ```
 
-- Deploy loads catalog into `application_event_catalog`
-- `GET /api/v1/applications/{appId}/events` — list for solution developers
-- WS `subscribe_events` checks roles (admin bypass)
-- `POST /api/v1/events/fire?appId={appId}` — optional **fire-time** check of `payloadSchema` from catalog (FW-31); object-level `EventDescriptor.payloadSchema` always applies
+- Deployed into `application_event_catalog` and listed via `GET /api/v1/applications/{appId}/events`.
+- Validated at publish time when `POST /api/v1/events/fire?appId={appId}` is called.
 
-## External NATS consumers
-
-For integrating external systems with platform event bus (when `ispf.nats.enabled=true`):
-
-### Connection
-
-```text
-NATS_URL=nats://ispf-nats:4222   # same cluster as ispf.nats.url
-```
-
-Subscription — **core NATS** (not JetStream by default). NATS authentication — network/VPN level; platform does not add JWT on subject.
-
-### Recommended subject patterns
-
-| Pattern | When to subscribe |
-|---------|-------------------|
-| `ispf.object.>` | All object changes (VARIABLE_UPDATED, …) |
-| `ispf.object.root.platform.devices.*.VARIABLE_UPDATED` | Narrow filter by devices |
-| `ispf.workflow.>` | BPMN lifecycle side-effects |
-| Custom from `publish_nats` task | Subject from workflow definition |
-
-### Payload (object change)
-
-```json
-{
-  "path": "root.platform.devices.demo-sensor-01",
-  "type": "VARIABLE_UPDATED",
-  "variableName": "temperature",
-  "timestamp": "2026-06-22T12:00:00Z",
-  "source": "platform"
-}
-```
-
-Fields are stable for `NatsEventBridge`; do not rely on undocumented keys.
-
-### Live variable replica sync (ADR-0029, `ispf.cluster.live-variable-sync-enabled=true`)
-
-Replica fan-out `ispf.events.variable_updated` may include a full value snapshot (coalesced on owner with `ispf.cluster.live-variable-sync-coalesce-ms`, default 500 ms):
-
-```json
-{
-  "type": "VARIABLE_UPDATED",
-  "path": "root.platform.devices.snmp-router-01",
-  "variableName": "ifInOctets",
-  "timestamp": "2026-07-05T12:00:00Z",
-  "source": "replica-2",
-  "observedAt": "2026-07-05T12:00:00.123Z",
-  "value": {
-    "schema": { "name": "ifInOctets", "fields": [{ "name": "value", "type": "DOUBLE" }] },
-    "rows": [{ "value": 1234567890 }]
-  }
-}
-```
-
-Follower replicas apply `value` to local RAM (`ClusterVariableReplicaApplier`); messages without `value` keep legacy notify-only behaviour.
-
-Cluster-wide WebSocket path interest (Redis, `ispf.cluster.cluster-path-interest-enabled`) ensures driver owners publish when UI clients subscribe on any replica.
-
-### Consumer practice
-
-1. One durable consumer process per integration; idempotent handling by `(path, variableName, timestamp)`.
-2. Do not block platform — heavy processing in your own queue/worker.
-3. Read-after-write for consistency — `GET /api/v1/objects/by-path` (sync), do not expect full snapshot from NATS.
-4. Federation events are not duplicated on hub NATS automatically — only local instance changes.
-
-Example (nats-cli): `nats sub 'ispf.object.>'`
-
-## Bundle dependencies (FW-12)
-
-```json
-"requires": [
-  { "appId": "warehouse", "minVersion": "1.0.0" }
-]
-```
-
-Deploy checks active version of dependent bundle before apply.
-
-## Related documents
-
-- [solution-developer-public-api](solution-developer-public-api.md)
-- [automation](automation.md)
-- [federation](federation.md)
-- [applications](applications.md)
+**Related guides:** [Solution developer public API](solution-developer-public-api.md) · [Automation](automation.md) · [Federation](federation.md) · [Applications](applications.md).

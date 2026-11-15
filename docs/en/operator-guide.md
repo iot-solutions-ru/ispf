@@ -2,268 +2,93 @@
 
 # Operator Guide
 
-> **Status:** Stable — HMI, work queue, events. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — working with Operator HMI screens, the BPMN Work Queue, the Event Journal, reports, and the read-only shift AI assistant. Status tags: [doc-status.md](doc-status.md).
 
-Guide for users with the **operator** role — equipment monitoring, work queue tasks, events, and reports.
+This guide is for users with the **`operator`** role who monitor plant equipment, respond to alarms, complete shift tasks in the Work Queue, and run operational reports.
 
-Product overview: [product](product.md). UI technical details: [web-console](web-console.md).
+**Related guides:** [Product overview](product.md) · [Operator applications](operator-apps.md) · [Web Console](web-console.md) · [Widget reference](widgets.md).
 
 ---
 
-## Sign In
+## 1. Signing In to Operator HMI
 
-1. Open the Web Console: `http://<host>:8080` (all-in-one JAR) or `http://<host>:5173` (Vite dev)
-2. Sign in with an operator account (demo: `operator` / `operator`).
-3. After sign-in, **Operator HMI** opens — full-screen mode without the object tree or editors.
+1. Open the Web Console (`http://<host>:8080` or your plant URL).
+2. Sign in with your operator credentials (on local demo stands: `operator` / `operator`).
+3. **Operator HMI** opens in full-screen mode without the administrative object tree or configuration editors.
 
 ![Operator applications launcher](../assets/ispf-operator-apps-launcher.png)
 
-If you have the admin role but need operator mode:
-
-```
-http://<host>:8080?mode=operator
-http://<host>:5173?mode=operator
-```
-
-For a specific application:
-
-```
-http://<host>:8080?mode=operator&app=platform
-http://<host>:5173?mode=operator&app=platform
-```
-
-### Application auto-start
-
-An administrator can configure **auto-start** for your account: after sign-in, the configured operator app opens immediately (for example, `platform` or an industry application).
+- To open the operator application launcher directly: `http://<host>:8080/?mode=operator`
+- To open a specific application directly: `http://<host>:8080/?mode=operator&app=platform`
+- Administrators can also configure **auto-start** on a user account (`autoStartEnabled = true`, `autoStartApp = "<appId>"`) so the assigned workspace opens immediately after sign-in.
 
 ---
 
-## Operator HMI
+## 2. Operator HMI Layout and Permissions
 
 ![Operator HMI — Mini-CHP station overview with AI assistant](../assets/ispf-operator-hmi.png)
 
-Left: dashboard (widgets, charts, tables). Right: **Work Queue** / event journal sidebar. Bottom-right: shift AI assistant (read-only).
+The main area displays the active dashboard or SCADA mimic diagram; the right-hand sidebar contains the **Work Queue** and **Event Journal**; the bottom-right icon opens the read-only **Shift AI Assistant**.
 
-### What operators can do
-
-| Action | Available |
-|--------|:---------:|
-| View dashboards and values | ✓ |
-| Live data updates (WebSocket) | ✓ |
-| Invoke functions (dashboard buttons) | ✓ |
-| Work queue: claim / complete | ✓ |
-| Event journal | ✓ |
-| Edit layout, objects, workflow | ✗ |
-| User management | ✗ |
-| Application deploy | ✗ |
+| Action | Permitted for `operator` |
+|--------|:------------------------:|
+| View dashboards, SCADA mimics, and historical trends | ✓ |
+| Receive live WebSocket updates | ✓ |
+| Invoke allowed operational functions (dashboard buttons & forms) | ✓ |
+| Claim and complete tasks in the BPMN Work Queue | ✓ |
+| View and filter the Event Journal and export reports | ✓ |
+| Edit dashboard layouts, object tree structure, or BPMN diagrams | ✗ |
+| Manage user accounts or deploy application bundles | ✗ |
 
 ---
 
-## Working with Dashboards
+## 3. Working with Dashboards and Widgets
 
-### Navigating between screens
+### Screen Navigation and Master-Detail Selection
+- When an application defines multiple dashboards, they appear as **tabs** across the top bar.
+- Clicking a row in an **Object Table (`object-table`)** or **Card Grid (`card-grid`)** configured with a `selectionKey` (such as `"device"` or `"order"`) automatically updates all linked charts, gauges, and detail cards on the screen to show data for the selected item.
 
-If the application has multiple dashboards, they appear as **tabs** at the top of the screen. Switch tabs to move between screens (for example, “Overview”, “Details”, “Reports”).
+### Common Operator Widgets
 
-A **dashboard-link** widget on a screen can open another dashboard — in the current tab or in a modal.
-
-### On-screen widgets
-
-| Widget | What it shows | Operator actions |
-|--------|---------------|------------------|
-| **value** / **indicator** | Current variable value | View only |
-| **chart** / **sparkline** | Trend graph | View only |
-| **gauge** | Scale | View only |
-| **object-table** | Table of objects | Click row → selection for other widgets |
-| **card-grid** | Object cards | Click → selection |
-| **function-button** | Action button | Click → invoke object function |
-| **work-queue** | List of BPMN tasks | Claim / Complete |
-| **event-log** | Event journal | View, filter |
-| **spreadsheet** | A1 grid with formulas | Enter values and formulas (if `editable`) |
-| **text** / **image** | Static content | — |
-
-Full reference for all widgets (what each setting does, examples): **[widgets](widgets.md)**.
-
-On screens with a device table (`object-table` widget with `selectionKey`), clicking a row updates linked widgets — charts and indicators show data for the **selected** device.
-
-### Spreadsheet widget
-
-The **spreadsheet** widget is a table with Excel-style cell addressing (A1, B2, …). Values and formulas recalculate on screen without server round-trips (except live **binding** cells).
-
-Detailed instructions: [spreadsheet-widget](spreadsheet-widget.md).
-
-**Summary:**
-
-| Element | Purpose |
-|---------|---------|
-| Formula bar | Selected cell address on the left; value or formula for editing on the right |
-| Grid | Displayed results; in **free** mode — any cell is editable (except binding cells) |
-| Toolbar | In **free** mode: undo/redo, copy/paste, CSV export |
-
-**Selection and input (free mode):**
-
-1. **Click** a cell — select it; contents appear in the formula bar.
-2. **Double-click** or **F2** — edit directly in the cell.
-3. **Formula bar** — enter a number (`10`), text, or formula (`=A1+B2`); **Enter** — save.
-4. **Tab** / **Shift+Tab** — next / previous cell; **arrow keys** — move in the grid.
-
-**Keyboard shortcuts (free mode, when focus is on the grid):**
-
-| Keys | Action |
-|------|--------|
-| F2 | Edit cell |
-| Enter | Open editing / after entry — move down |
-| Esc | Cancel editing |
-| Ctrl+Z / Ctrl+Y | Undo / redo |
-| Ctrl+C / Ctrl+V | Copy / paste cell |
-
-**Persistence:** entered values and formulas are saved automatically (dashboard session or object variable — as configured by the developer). After **F5**, data remains if the widget is bound to a variable (`persistMode: variable`).
-
-**Lab example:** dashboard `root.platform.dashboards.lab-calculator` — template calculator (**configured** mode): only cells A2 and B2 are editable; sums recalculate automatically.
-
-### Dynamic object selection
-
-On screens with a device table (`object-table` widget with `selectionKey`), clicking a row updates linked widgets — charts and indicators show data for the **selected** device.
+| Widget Type | What It Displays | Operator Interaction |
+|-------------|------------------|----------------------|
+| `value`, `indicator`, `gauge` | Live variable value and status | View (and click to open history modal if enabled) |
+| `chart`, `sparkline` | Real-time and historical trend lines | Switch time range, inspect values, export CSV/JSON |
+| `scada-mimic` | Interactive P&ID or single-line diagram | Pan/zoom, click equipment to select or invoke commands, export PNG |
+| `object-table`, `card-grid` | List of devices, lines, or orders | Click a row/card to drive screen selection |
+| `function`, `function-form` | Command button or parameter input form | Execute an object or BFF function |
+| `work-queue` | Active BPMN shift tasks | **Claim** and **Complete** tasks |
+| `event-feed` | Live stream of platform events and alarms | Filter by severity or object |
+| `spreadsheet` | Excel-style `A1` formula grid | Enter numbers/formulas in editable cells, undo/redo, export CSV ([Spreadsheet widget guide](spreadsheet-widget.md)) |
+| `report` | Tabular SQL or tree-variable report | Filter and export CSV / XLSX / PDF / HTML |
 
 ---
 
-## Work Queue
+## 4. Shift Task Queue (`Work Queue`)
 
-The Work Queue holds BPMN **user tasks** assigned to operators.
+The **Work Queue** displays human tasks (`userTask`) generated by active BPMN workflows:
 
-### Typical flow
-
-1. A workflow starts (manually by an administrator or triggered by an event).
-2. The process reaches a user task → the task appears in the Work Queue.
-3. Operator clicks **Claim** — the task is assigned to them.
-4. Operator performs the action (for example, confirms on the dashboard).
-5. Clicks **Complete** — the workflow continues.
-
-### Where to look
-
-- **Sidebar** on the right in Operator HMI — Work Queue panel.
-- **work-queue** widget on a dashboard — embedded queue on the screen.
-
-### If a task is unavailable
-
-- The task is already **claimed** by another operator — wait for completion or contact an administrator.
-- Workflow status is `STOPPED` — no new tasks are created.
+1. **Task arrival:** when an automated workflow (triggered by an alarm correlator, schedule, or production order) reaches a `userTask`, the task appears in the right-hand **Work Queue** sidebar and any on-screen `work-queue` widget.
+2. **Claim:** click **Claim** to assign the task to yourself (`status = CLAIMED`).
+3. **Perform action & Complete:** carry out the required check or confirmation and click **Complete** — the BPMN workflow immediately resumes its next step.
 
 ---
 
-## Event Journal
+## 5. Event Journal and Reports
 
-The **Event Journal** sidebar shows recent platform events:
-
-- Sensor threshold exceeded
-- Alert rule fired
-- Manual event fire
-- System notifications
-
-Levels: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.
-
-An **event-log** widget on a dashboard can filter events for a specific object.
+- **Event Journal sidebar:** shows recent events (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`) such as threshold alarms, equipment state changes, and operator actions.
+- **Reports:** open any report tab or `report` widget to run read-only queries and download formatted **CSV**, **XLSX**, **PDF**, or **HTML** documents ([Reports guide](reports.md)).
 
 ---
 
-## Reports
+## 6. Shift AI Assistant (Read-Only Operator Copilot)
 
-SQL reports from application solutions are available via BFF or built-in operator app screens. Export format — CSV.
+The built-in **Shift AI Assistant** (bottom-right chat icon) helps operators inspect live values, summarize 24-hour trends, run allowed reports, and check the Work Queue using natural language — **without any permission to modify platform configuration**.
 
-Example (if application `demo` is configured):
-
-- “Reports” screen in the operator app
-- Or direct API call (integrators only)
-
-Details: [reports](reports.md).
-
----
-
-## Frequently Asked Questions
-
-### Data is not updating
-
-- Verify the API server is running (`GET /actuator/health`).
-- Refresh the page — WebSocket reconnects automatically.
-- Ensure the device driver is in `RUNNING` status (configured by an administrator).
-
-### Missing dashboard or tab
-
-Contact an administrator — dashboards and operator UI are configured in the admin console → `root.platform.operator-apps`.
-
-### Error when invoking a function
-
-- Insufficient permissions — operators can invoke functions, but not all functions are allowed for the operator role.
-- Check the event journal and report the error text to an administrator.
-
-### How to return to the admin console
-
-Only users with the **admin** role can switch:
-
-```
-http://<host>:5173?mode=admin
-```
-
----
-
-## Operator Agent (AI Copilot)
-
-Operator HMI includes a **built-in AI assistant** — a read-only copilot for the shift: trends, reports, event journal, task queue. It does not change platform configuration.
-
-Details: [ai-development](ai-development.md), BL-179.
-
-### How to open
-
-- Chat panel in Operator HMI (assistant icon).
-- Same URL as the operator app: `?mode=operator&app=<appId>`.
-
-An administrator sets instructions and uploads documents in the **operator app** (`root.platform.operator-apps` → Agent instructions / Knowledge base).
-
-### Language
-
-The assistant responds **in the operator's language** (Russian / English). Application memory (`remember_app_memory`) automatically uses ru/en headers in prompts.
-
-### Available tools (read-only)
-
-| Tool | Purpose |
-|------|---------|
-| `get_operator_scope` | Allowed application path prefixes |
-| `list_objects` / `get_object` / `search_objects` | Object overview within scope |
-| `list_variables` / `describe_variables` | Current values and schema |
-| `get_variable_history` / `get_variable_trend` | Historian and aggregates |
-| `list_events` / `list_event_catalog` | Journal and event catalog |
-| `list_reports` / `run_report` | Reports allowed for the application |
-| `invoke_bff` / `invoke_tree_function` | Operational functions (read-only data) |
-| `list_work_queue` | Open BPMN tasks |
-| `list_app_memory` / `remember_app_memory` | Long-term shift memory (glossary, norms) |
-| `list_app_documents` / `read_app_document` / `search_app_documents` | Uploaded SOPs/instructions |
-| `get_operator_link` | Link to a dashboard or report in HMI |
-| `get_dashboard_layout` / `list_automation` | View layout and automation (no writes) |
-
-**Forbidden in operator mode:** `create_object`, `configure_driver`, `import_package`, `configure_alert`, `set_dashboard_layout`, and any mutating tools.
-
-### Typical requests
-
-| Operator request | What the agent does |
-|------------------|---------------------|
-| “What is the temperature on line 2?” | `list_variables` → answer with current value |
-| “Show pressure trend for the last 24 hours” | `get_variable_trend` |
-| “Run the shift report” | `list_reports` → `run_report` → brief numeric summary |
-| “What is in the task queue?” | `list_work_queue` |
-| “Remember: GPU-03 — line 2” | `remember_app_memory` |
-
-### Application memory
-
-- Shared by all operators of one `appId`.
-- Types: `fact`, `glossary`, `preference`, `playbook`, `correction`.
-- Phrases like “remember…” and corrections — the agent saves via `remember_app_memory`.
-
----
-
-## Related Documents
-
-- [product](product.md) — product overview
-- [dashboards](dashboards.md) — layout, selectionKey, navigation
-- [widgets](widgets.md) — reference for all widgets (settings and examples)
-- [workflows](workflows.md) — how tasks reach the work queue
-- [security](security.md) — roles and access rights
+| Example Operator Prompt | Assistant Action |
+|-------------------------|------------------|
+| *"What is the current temperature on line 2?"* | Reads live variables within the application's allowed scope (`list_variables`) |
+| *"Show the pressure trend over the last 24 hours"* | Queries historian aggregates (`get_variable_trend`) |
+| *"Run the shift summary report"* | Executes the permitted report (`run_report`) and summarizes key numbers |
+| *"What tasks are open in the work queue?"* | Lists open BPMN tasks (`list_work_queue`) |
+| *"Remember: GPU-03 supplies section B"* | Saves a shared shift note for the application (`remember_app_memory`) |

@@ -67,7 +67,7 @@ curl -s -X POST http://localhost:8080/api/v1/applications/mes-platform-productio
 - На экране **Dispatch** оператор видит очередь задач и подтверждает выполнение заказа через функцию `mes_dispatch_confirmWorkOrder`.
 
 ### Расчёт OEE по сменам
-На узле логики приложения развёрнуты скриптовые функции:
+На узле логики приложения (`SINGLETON`: `root.platform.singleton-blueprints.mes-platform-hub-v1` в базовом пакете и `root.platform.singleton-blueprints.mes-platform-production-hub-v1` в полном пакете) развёрнуты скриптовые функции:
 - `mes_platform_listLines` — список производственных линий (`LINE-A01`);
 - `mes_oee_listShifts` — список смен;
 - `mes_oee_getKpi` — расчёт `oeePct`, доступности, производительности и качества (на демонстрационной смене `dddddddd-dddd-dddd-dddd-dddddddddddd` возвращает OEE ≈ `85 %`);

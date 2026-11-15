@@ -1,313 +1,140 @@
 > **Language:** Canonical English. Russian edition: [ru/api.md](../ru/api.md).
 
-# REST API (v1)
+# REST API Reference (v1)
 
-> **Status:** Stable — Endpoints reference. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — primary HTTP REST endpoints and WebSocket channels of `ispf-server`. Status tags: [doc-status.md](doc-status.md).
 
-Base URL: `http://localhost:8080`
+Default base URL: `http://localhost:8080`
 
-Authentication: **Bearer** token after `POST /api/v1/auth/login` (`local` seeds `admin`/`admin`; JWT/Keycloak in other profiles). Optional `X-ISPF-Role` header auth is **off by default** (`ispf.security.local-role-header-enabled=false`).  
-Role matrix: [security](security.md).
+**Authentication:** pass `Authorization: Bearer <token>` obtained from `POST /api/v1/auth/login` (in the `local` profile, demo accounts `admin`/`admin`, `developer`/`developer`, and `operator`/`operator` are seeded on an empty database; in production profiles, OIDC JWT tokens from Keycloak are also supported). For the complete role authorization matrix, see **[Security and RBAC (`security.md`)](security.md)**.
 
-## Platform
+---
+
+## 1. Platform Info, Runtime Settings, and Semantic Search
 
 | Method | Path | Roles | Description |
 |--------|------|-------|-------------|
-| GET | `/api/v1/info` | public | Name, version, `javaVersion`, `springBootVersion`, `capabilities[]` |
-| GET | `/api/v1/platform/effective-config` | operator+ | Resolved replica profile + `resolvedPools` min/max snapshot ([0033](decisions/0033-prod-idle-demostand-tuning.md)) |
-| GET | `/api/v1/platform/metrics` | admin | Platform summary metrics (runtime, DB, tree, drivers, connections, security, historian, automation) |
-| GET | `/api/v1/platform/haystack/export` | operator+ | Haystack grid export for a subtree (`rootPath`, `includePoints`) |
-| GET | `/api/v1/platform/haystack/search` | operator+ | AND tag search (`tags`, `rootPath`, `entityKind`, `limit`) |
-| GET | `/api/v1/platform/haystack/query` | operator+ | Haystack filter query (`filter`, `rootPath`, `entityKind`, `offset`, `limit`) — see [0023-haystack-query-runtime](decisions/0023-haystack-query-runtime.md) |
-| GET | `/api/v1/platform/runtime-settings` | admin | Effective runtime settings (file overrides beat env) |
-| PATCH | `/api/v1/platform/runtime-settings` | admin | Write override file; live keys apply immediately, others need restart |
-| POST | `/api/v1/platform/runtime-settings/restart` | admin | Schedule process restart (`systemd` unit or JVM exit) |
-| GET | `/api/v1/platform/update/status` | admin | Check for updates from GitHub Releases |
-| POST | `/api/v1/platform/update/check` | admin | Force release check |
-| POST | `/api/v1/platform/update/apply` | admin | Download release and restart server (VPS, `apply-enabled=true`) |
-| GET | `/api/v1/auth/me` | public | Principal and roles |
-| POST | `/api/v1/expressions/validate` | admin | CEL validation |
+| `GET` | `/api/v1/info` | public | Server name, version, `javaVersion`, `springBootVersion`, and enabled `capabilities[]` |
+| `GET` | `/api/v1/auth/me` | public | Current authenticated principal and roles |
+| `POST` | `/api/v1/auth/login` | public | Authenticate with username/password (and optional `totpCode`) |
+| `GET` | `/api/v1/platform/effective-config` | `operator+` | Active deploy profile and resolved worker pool sizes ([ADR-0033](decisions/0033-prod-idle-demostand-tuning.md)) |
+| `GET` | `/api/v1/platform/metrics` | `admin` | Summary metrics (JVM, DB pool, object tree, drivers, queues, historian, load diagnostics) |
+| `GET` | `/api/v1/platform/runtime-settings` | `admin` | Read effective runtime settings |
+| `PATCH` | `/api/v1/platform/runtime-settings` | `admin` | Persist runtime setting overrides |
+| `POST` | `/api/v1/platform/runtime-settings/restart` | `admin` | Schedule a server process restart |
+| `GET / POST` | `/api/v1/platform/update/status` (`/check`, `/apply`) | `admin` | Check and apply GitHub release updates |
+| `POST` | `/api/v1/expressions/validate` | `admin` | Compile and formally verify a CEL expression ([ADR-0055](decisions/0055-cel-formal-verification-ai-gate.md)) |
+| `GET` | `/api/v1/platform/haystack/export` | `operator+` | Export subtree as a Project Haystack grid (`rootPath`, `includePoints`) |
+| `GET` | `/api/v1/platform/haystack/query` | `operator+` | Query objects and points by Haystack filter (`filter`, `rootPath`, `entityKind`, `offset`, `limit`) |
 
-**Haystack filter query (BL-102):**
+Example Project Haystack filter query:
 
 ```http
 GET /api/v1/platform/haystack/query?filter=point+and+temp&rootPath=root.platform.devices.lab-userA-01&entityKind=point
 ```
 
-```json
-{
-  "formatVersion": 1,
-  "filter": "point and temp",
-  "count": 1,
-  "matches": [
-    {
-      "entityKind": "point",
-      "path": "root.platform.devices.lab-userA-01",
-      "variableName": "sineWave",
-      "tags": { "point": true, "temp": true, "sensor": true },
-      "curVal": 0.42,
-      "unit": "°C"
-    }
-  ]
-}
-```
+---
 
-Filter v1: marker conjunction with `and` (e.g. `equip and ahu`). Legacy tag search: `GET /platform/haystack/search?tags=equip&tags=temp`.
-
-## Objects
+## 2. Object Tree and Variables (`/api/v1/objects/**`)
 
 | Method | Path | Roles | Description |
 |--------|------|-------|-------------|
-| GET | `/api/v1/objects` | operator+ | List (`?parent=` — children) |
-| GET | `/api/v1/objects/by-path` | operator+ | Object by `path` |
-| GET | `/api/v1/objects/by-path/editor` | operator+ | Object + events + functions |
-| POST | `/api/v1/objects` | admin | Create object |
-| PATCH | `/api/v1/objects/by-path` | admin | displayName, description |
-| DELETE | `/api/v1/objects/by-path` | admin | Delete subtree |
-| PUT | `/api/v1/objects/reorder` | admin | Child order (`parentPath`, `orderedPaths`) |
-| GET | `/api/v1/objects/by-path/variables` | operator+ | List variables |
-| GET | `/api/v1/objects/by-path/variables/detail` | operator+ | One variable (`name`) |
-| GET | `/api/v1/objects/by-path/variables/history` | operator+ | Variable history (`path`, `name`, `field`, `from`, `to`, `limit`; only when `historyEnabled`) |
-| GET | `/api/v1/objects/by-path/variables/history/aggregate` | operator+ | Aggregates (`bucket`, `from`, `to`, `limit` — up to 2000 buckets; `avg`/`min`/`max`/`count`; `dataSource`: `rollup`/`raw`/`none`) |
-| GET | `/api/v1/objects/by-path/variables/history/export` | operator+ | Download history (`format=csv\|json`, same filters, `limit` up to 10000) |
-| PATCH | `/api/v1/objects/by-path/variables/history` | admin | `historyEnabled`, `historyRetentionDays` |
-| PUT | `/api/v1/objects/by-path/variables` | admin | Write value |
+| `GET` | `/api/v1/objects` | `operator+` | List child objects (`?parent=<path>`) |
+| `GET` | `/api/v1/objects/by-path` | `operator+` | Read object metadata by path (`?path=...`) |
+| `GET` | `/api/v1/objects/by-path/editor` | `operator+` | Read object together with its variables, events, and functions |
+| `POST` | `/api/v1/objects` | `admin` | Create a new tree node |
+| `PATCH` | `/api/v1/objects/by-path` | `admin` | Update `displayName` and `description` |
+| `DELETE` | `/api/v1/objects/by-path` | `admin` | Delete an object and its subtree |
+| `PUT` | `/api/v1/objects/reorder` | `admin` | Reorder sibling nodes (`parentPath`, `orderedPaths`) |
+| `GET` | `/api/v1/objects/by-path/variables` | `operator+` | List all variables and current values on an object |
+| `GET` | `/api/v1/objects/by-path/variables/detail` | `operator+` | Read one variable (`?path=...&name=...`) |
+| `PUT` | `/api/v1/objects/by-path/variables` | `operator+` / `admin` | Write variable value (`writable` variables for operators) |
+| `GET` | `/api/v1/objects/by-path/variables/history` | `operator+` | Query raw historical samples (`path`, `name`, `field`, `from`, `to`, `limit`) |
+| `GET` | `/api/v1/objects/by-path/variables/history/aggregate` | `operator+` | Query bucketed aggregates (`bucket`, `from`, `to`, `limit`: `avg`, `min`, `max`, `count`) |
+| `GET` | `/api/v1/objects/by-path/variables/history/export` | `operator+` | Export variable history (`format=csv\|json`, up to 10,000 points) |
+| `PATCH` | `/api/v1/objects/by-path/variables/history` | `admin` | Configure `historyEnabled`, `historyRetentionDays`, `historySampleMode` |
 
-### Create object
+---
 
-```http
-POST /api/v1/objects
-Content-Type: application/json
+## 3. Functions, Dashboards, Mimics, and BPMN Workflows
 
-{
-  "parentPath": "root.platform.devices",
-  "name": "pump-01",
-  "type": "DEVICE",
-  "displayName": "Pump 01",
-  "description": "",
-  "templateId": "mqtt-sensor-v1",
-  "driverId": "mqtt",
-  "autoApplyMixinBlueprints": true
-}
-```
+### Object Functions and BFF Gateway
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
+| `POST` | `/api/v1/objects/by-path/functions/invoke` | `operator+` | Invoke an object function (`path`, `name`, input `DataRecord`) |
+| `POST` | `/api/v1/objects/by-path/functions/invoke-batch` | `operator+` | Batch invoke up to 100 function calls with per-item ACL checks |
+| `POST` | `/api/v1/bff/invoke` | `operator+` | Universal UI Backend-for-Frontend gateway (`wireProfile: "ispf-operator-v1"`) |
 
-| Field | Description |
-|-------|-------------|
-| `templateId` | Explicit blueprint apply (INSTANCE name or MIXIN) |
-| `driverId` | For `DEVICE`: driver provisioning after create |
-| `autoApplyMixinBlueprints` | Default `true`. MIXINs with **empty** CEL are not applied; non-empty `suitabilityExpression` required |
+### Dashboards (`DASHBOARD`) and SCADA Mimics (`MIMIC`)
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
+| `GET` | `/api/v1/dashboards/by-path` | `operator+` | Read dashboard `title`, `layoutJson`, and `refreshIntervalMs` |
+| `PUT` | `/api/v1/dashboards/by-path/layout` (`/title`) | `admin` | Save dashboard layout JSON or title |
+| `GET` | `/api/v1/mimics/by-path` | `operator+` | Read SCADA mimic diagram (`diagramJson`) |
+| `PUT` | `/api/v1/mimics/by-path/diagram` (`/title`) | `admin` | Save SCADA mimic `diagramJson` or title |
 
-`mqtt-sensor-v1` is a fixture blueprint (`ispf.bootstrap.fixtures-enabled`). See [blueprints](blueprints.md), [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
+### BPMN Workflows (`WORKFLOW`) and Shift Work Queue
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
+| `GET` | `/api/v1/workflows/by-path` | `operator+` | Read BPMN XML, status, and latest instance state |
+| `PUT` | `/api/v1/workflows/by-path/bpmn` (`/status`) | `admin` | Save BPMN XML or set status (`DRAFT`, `ACTIVE`, `STOPPED`) |
+| `POST` | `/api/v1/workflows/by-path/run` | `admin` | Start a new workflow instance |
+| `POST` | `/api/v1/workflows/instances/{instanceId}/cancel` | `operator+` | Cancel a running workflow instance |
+| `GET` | `/api/v1/work-queue` | `operator+` | List open operator tasks (`limit`, optional `operatorAppId`) |
+| `POST` | `/api/v1/work-queue/claim` (`/complete`) | `operator+` | Claim or complete a BPMN operator task (`taskId`, `operatorId`) |
 
-## Functions
+---
+
+## 4. Application Bundles (`bundle.json`), Reports, and Schedules
+
+Full specification: **[Application Solutions (`applications.md`)](applications.md)**.
 
 | Method | Path | Roles | Description |
 |--------|------|-------|-------------|
-| POST | `/api/v1/objects/by-path/functions/invoke` | operator+ | Invoke (`path`, `name`, body) |
-| POST | `/api/v1/objects/by-path/functions/invoke-batch` | operator+ | Batch invoke (≤100 items; per-item ACL) |
+| `POST` | `/api/v1/applications` | `admin` | Register an application (`appId`, `schemaName`, `tablePrefix`) |
+| `POST` | `/api/v1/applications/{appId}/deploy` | `admin` | Deploy a full `bundle.json` manifest (`?strict=true\|false&runTests=true\|false`) |
+| `POST` | `/api/v1/applications/{appId}/bundle/validate` | `admin` | Validate a `bundle.json` manifest (`?dryRun=true\|false&strict=true\|false`) |
+| `GET` | `/api/v1/applications/{appId}/export` | `admin` | Export the active deployed bundle manifest |
+| `POST` | `/api/v1/applications/{appId}/data/migrate` | `admin` | Run SQL migrations in the application's isolated schema |
+| `GET` | `/api/v1/applications/{appId}/data/status` | `admin` | Check applied SQL migration versions |
+| `POST` | `/api/v1/applications/{appId}/functions/deploy` | `admin` | Deploy a JSON step-script function |
+| `GET / POST` | `/api/v1/reports/by-path` (`/run`, `/export`) | `operator+` | Read, execute, and export reports (`csv`, `xlsx`, `pdf`, `html`) |
+| `GET / POST` | `/api/v1/schedules` | `admin` | List and create periodic schedules |
 
-## Dashboards
+---
 
-| Method | Path | Roles | Description |
-|--------|------|-------|-------------|
-| GET | `/api/v1/dashboards/by-path` | operator+ | title, layoutJson, refreshIntervalMs |
-| PUT | `/api/v1/dashboards/by-path/layout` | admin | Save layout JSON |
-| PUT | `/api/v1/dashboards/by-path/title` | admin | Screen title |
-
-## Workflows
-
-| Method | Path | Roles | Description |
-|--------|------|-------|-------------|
-| GET | `/api/v1/workflows/by-path` | operator+ | BPMN, status, instance state |
-| PUT | `/api/v1/workflows/by-path/bpmn` | admin | Save BPMN XML |
-| PUT | `/api/v1/workflows/by-path/status` | admin | `DRAFT` / `ACTIVE` / `STOPPED` |
-| POST | `/api/v1/workflows/by-path/run` | admin | Start instance |
-| POST | `/api/v1/workflows/instances/{instanceId}/cancel` | operator+ | Cancel instance |
-
-## Applications (REQ-PF)
-
-Platform layer for deploying application solutions without Java in `ispf-server`.  
-Full description: [applications](applications.md).
+## 5. Events, Alert Rules, Correlators, Drivers, and Blueprints
 
 | Method | Path | Roles | Description |
 |--------|------|-------|-------------|
-| POST | `/api/v1/applications` | admin | Register application |
-| POST | `/api/v1/applications/{appId}/deploy` | admin | Bundle deploy (migrations + functions + schedules + reports) |
-| GET | `/api/v1/applications/{appId}/reports` | admin | List SQL reports |
-| POST | `/api/v1/applications/{appId}/reports/deploy` | admin | Deploy one report |
-| POST | `/api/v1/applications/{appId}/reports/{reportId}/run` | operator+ | Run report |
-| GET | `/api/v1/applications/{appId}/reports/{reportId}/export` | operator+ | CSV export |
-| POST | `/api/v1/applications/{appId}/data/migrate` | admin | Application SQL migrations |
-| GET | `/api/v1/applications/{appId}/data/status` | admin | Migration status |
-| POST | `/api/v1/applications/{appId}/functions/deploy` | admin | Deploy script function |
-| POST | `/api/v1/bff/invoke` | operator+ | Universal BFF gateway to functions |
-| GET | `/api/v1/schedules` | admin | List schedules |
-| POST | `/api/v1/schedules` | admin | Create/update schedule |
+| `GET` | `/api/v1/events` | `operator+` | Query the event journal (`objectPath`, `limit` ≤ 200, optional CEL `expr`) |
+| `POST` | `/api/v1/events/fire` | `operator+` | Publish an event on an object |
+| `POST` | `/api/v1/events/journal/purge` | `admin` | Purge persisted event rows older than `olderThan` (ISO-8601) |
+| `GET / POST / PUT / DELETE` | `/api/v1/alert-rules` (`/by-path?path=`) | `admin` | Manage `ALERT` rules |
+| `GET / POST / PUT / DELETE` | `/api/v1/correlators` (`/by-path?path=`) | `admin` | Manage `CORRELATOR` rules |
+| `GET` | `/api/v1/drivers` | `operator+` | List registered protocol drivers and maturity levels |
+| `GET` | `/api/v1/drivers/runtime/status` | `operator+` | Inspect driver polling status (`?devicePath=...`) |
+| `PUT` | `/api/v1/drivers/runtime/configure` | `admin` | Configure device connection properties and `pointMappings` |
+| `POST` | `/api/v1/drivers/runtime/start` (`/stop`) | `admin` | Start or stop a device driver |
+| `GET / POST / PUT / DELETE` | `/api/v1/blueprints/**` | `admin` | Manage `SINGLETON`, `INSTANCE`, and `MIXIN` blueprints |
 
-See also: [applications](applications.md), [reports](reports.md), [plugins](plugins.md).
+---
 
-## Work Queue
+## 6. Platform Analytics (`/api/v1/platform/analytics/**`)
 
 | Method | Path | Roles | Description |
 |--------|------|-------|-------------|
-| GET | `/api/v1/work-queue` | operator+ | Open user tasks (`limit`) |
-| POST | `/api/v1/work-queue/claim` | operator+ | `taskId`, `operatorId` |
-| POST | `/api/v1/work-queue/complete` | operator+ | Complete task |
+| `GET` | `/api/v1/platform/analytics/tags?path=` | `operator+` | List deployed `kind: "historian"` analytics tags and lineage |
+| `GET` | `/api/v1/platform/analytics/tags/by-path?path=` | `operator+` | Read a single analytics tag (`objectPath/tag/ruleId`) |
+| `POST` | `/api/v1/platform/analytics/query` | `operator+` | Aligned multi-tag bucketed query (up to 20 tags) |
+| `POST` | `/api/v1/platform/analytics/query/export?format=csv\|parquet` | `operator+` | Export multi-tag query results |
+| `POST` | `/api/v1/platform/analytics/tags/backfill` | `admin` | Recompute a derived historian tag over a past window |
+| `GET` | `/api/v1/platform/analytics/catalog` | `operator+` | Unified catalog of Tier A/B/C analytics functions |
+| `POST` | `/api/v1/platform/analytics/expression/validate` (`/evaluate`) | `operator+` | Validate or evaluate a historian CEL expression |
 
-## Events
+---
 
-| Method | Path | Roles | Description |
-|--------|------|-------|-------------|
-| GET | `/api/v1/events` | operator+ | Journal (`objectPath`, `limit` ≤ 200) |
-| POST | `/api/v1/events/fire` | operator+ | Publish event |
-| POST | `/api/v1/events/journal/purge` | admin (tenant-admin if `objectPath` is in scope) | One-statement delete of persisted rows older than `olderThan`. Body: `{ "olderThan": "<ISO-8601>", "objectPath": "<optional>" }`. Cassandra/Scylla returns 409 (TTL only). |
+## 7. WebSocket and HTTP Status Codes
 
-### Fire event
-
-```http
-POST /api/v1/events/fire
-Content-Type: application/json
-
-{
-  "objectPath": "root.platform.devices.demo-sensor-01",
-  "eventName": "thresholdExceeded",
-  "payload": {
-    "schema": { "name": "payload", "fields": [...] },
-    "rows": [{ "temperature": 95.0, "threshold": 80.0 }]
-  }
-}
-```
-
-## Alert Rules
-
-| Method | Path | Roles |
-|--------|------|-------|
-| GET | `/api/v1/alert-rules` | admin |
-| GET | `/api/v1/alert-rules/by-path?path=` | admin |
-| POST | `/api/v1/alert-rules` | admin |
-| PUT | `/api/v1/alert-rules/by-path?path=` | admin |
-| DELETE | `/api/v1/alert-rules/by-path?path=` | admin |
-
-## Event Correlators
-
-| Method | Path | Roles |
-|--------|------|-------|
-| GET | `/api/v1/correlators` | admin |
-| GET | `/api/v1/correlators/by-path?path=` | admin |
-| POST | `/api/v1/correlators` | admin |
-| PUT | `/api/v1/correlators/by-path?path=` | admin |
-| DELETE | `/api/v1/correlators/by-path?path=` | admin |
-
-## Drivers
-
-| Method | Path | Roles | Description |
-|--------|------|-------|-------------|
-| GET | `/api/v1/drivers` | operator+ | SPI driver catalog |
-| GET | `/api/v1/drivers/runtime/status` | operator+ | Poll loop status |
-| POST | `/api/v1/drivers/runtime/start` | admin | Start (`devicePath`) |
-| POST | `/api/v1/drivers/runtime/stop` | admin | Stop |
-| PUT | `/api/v1/drivers/runtime/configure` | admin | Config + point mappings |
-
-## Blueprints Plugin
-
-| Method | Path | Roles |
-|--------|------|-------|
-| GET | `/api/v1/blueprints` | admin |
-| GET | `/api/v1/blueprints/{id}` | admin |
-| GET | `/api/v1/blueprints/by-name/{name}` | admin |
-| POST | `/api/v1/blueprints` | admin |
-| PUT | `/api/v1/blueprints/{id}` | admin |
-| DELETE | `/api/v1/blueprints/{id}` | admin |
-| POST | `/api/v1/blueprints/{id}/apply?objectPath=` | admin |
-| POST | `/api/v1/blueprints/{id}/instantiate` | admin |
-| POST | `/api/v1/blueprints/from-object` | admin |
-| GET | `/api/v1/blueprints/attachments` | admin |
-
-## Platform analytics (BL-160, BL-206)
-
-| Method | Path | Roles | Description |
-|--------|------|-------|-------------|
-| GET | `/api/v1/platform/analytics/templates` | operator+ | List analytics templates |
-| GET | `/api/v1/platform/analytics/tags?path=` | operator+ | List deployed analytics tags (catalog, lineage) |
-| GET | `/api/v1/platform/analytics/history-enabled-count?pathPrefix=` | operator+ | Count history-enabled variables under prefix (Enterprise L catalog gate; not binding-rule tags) |
-| GET | `/api/v1/platform/analytics/tags/by-path?path=` | operator+ | Analytics tag catalog entry |
-| POST | `/api/v1/platform/analytics/templates/apply` | admin | Apply template to device |
-| POST | `/api/v1/platform/analytics/query` | operator+ | Multi-tag aligned aggregate query |
-| POST | `/api/v1/platform/analytics/query/export?format=csv\|parquet` | operator+ | Export query result |
-| POST | `/api/v1/platform/analytics/tags/backfill` | admin | Recompute derived tag window |
-| POST | `/api/v1/platform/analytics/rollups/rebuild` | admin | Rebuild materialized rollups |
-| GET | `/api/v1/platform/analytics/frames/active` | operator+ | List active event frames |
-| POST | `/api/v1/platform/analytics/frames/open-shift` | admin | Open shift frame from MES `mes_oee_shift` |
-| POST | `/api/v1/platform/analytics/frames/open` | admin | Open custom event frame |
-| POST | `/api/v1/platform/analytics/frames/close` | admin | Close event frame |
-| GET | `/api/v1/platform/analytics/frames/downtime-report` | operator+ | Downtime minutes per frame |
-| GET | `/api/v1/platform/analytics/historian-sla` | operator+ | Historian query SLA snapshot |
-| GET | `/api/v1/platform/analytics/analytics-slo` | operator+ | Analytics platform SLO targets (BL-210) |
-
-### Multi-tag query
-
-```http
-POST /api/v1/platform/analytics/query
-Content-Type: application/json
-
-{
-  "tags": [
-    { "path": "root.platform.devices.demo-sensor-01", "variable": "temperature", "field": "value", "label": "temp" },
-    { "path": "root.platform.devices.other", "variable": "pressure", "field": "value" }
-  ],
-  "from": "2026-07-01T00:00:00Z",
-  "to": "2026-07-08T00:00:00Z",
-  "bucket": "1h",
-  "agg": "avg",
-  "maxBuckets": 500
-}
-```
-
-Response includes aligned `timestamps[]`, per-series `values[]` (null when bucket missing), `dataSource` per series (`rollup` or `raw`), and `latencyMs`. Single-tag aggregate remains on `GET .../history/aggregate` with `dataSource` field.
-
-Limits (configurable): max 20 tags per query, 3s timeout, soft rate limit 120/min.
-
-### Analytics CEL expression (BL-211)
-
-```http
-POST /api/v1/platform/analytics/expression/validate
-POST /api/v1/platform/analytics/expression/evaluate
-Content-Type: application/json
-
-{
-  "expression": "avg(root.platform.devices.demo/temperature, 5m) * 2",
-  "objectPath": "root.platform.devices.my-derived-tag",
-  "asOf": "2026-07-09T10:00:00Z"
-}
-```
-
-Supported CEL helpers (bare names — not `hist.*`): `avg`, `min`, `max`, `last`, `sum`, `live`. See [expression-language](expression-language.md). Deployed tags: set `analyticsHelper` to `cel` and `analyticsExpression` on the device; engine evaluates on schedule.
-
-## Actuator
-
-| Path | Access |
-|------|--------|
-| `/actuator/health` | public |
-| `/actuator/prometheus` | public |
-| `/actuator/metrics` | authorized |
-
-## WebSocket
-
-**Endpoint:** `WS /ws/objects`
-
-No authentication (dev). Messages on object changes:
-
-```json
-{
-  "type": "VARIABLE_UPDATED | OBJECT_CREATED | OBJECT_DELETED | EVENT_FIRED | ...",
-  "path": "root.platform.devices.demo-sensor-01",
-  "variableName": "temperature",
-  "timestamp": "2026-06-19T12:00:00Z"
-}
-```
-
-Client: `apps/web-console/src/hooks/useObjectWebSocket.ts`.
-
-## Error codes
-
-Standard HTTP: `400` (validation), `404` (ObjectNotFoundException), `403` (RBAC), `500`.
+- **Live object tree WebSocket:** `WS /ws/objects` with header `Sec-WebSocket-Protocol: ispf-bearer, <token>`. Full message protocol: **[Messaging (`messaging.md`)](messaging.md)**.
+- **Standard HTTP status codes:** `200 OK`, `400 Bad Request` (validation error), `401 Unauthorized` / `403 Forbidden` (RBAC/ACL denied), `404 Not Found`, `409 Conflict` (`revision` mismatch), `423 Locked` (active subtree edit lease).

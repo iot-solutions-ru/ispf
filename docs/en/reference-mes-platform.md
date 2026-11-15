@@ -127,7 +127,7 @@ curl -s -X POST http://localhost:8080/api/v1/applications/mes-platform-productio
   --data-binary @examples/mes-platform-production/bundle.json
 ```
 
-Hub: `root.platform.devices.mes-platform-production-hub`  
+Hub (`SINGLETON`): `root.platform.singleton-blueprints.mes-platform-production-hub-v1`  
 Operator UI: `?mode=operator&app=mes-platform-production`
 
 Dashboards: **Dispatch**, **OEE**, **Quality** (SPC chart reference).
@@ -195,14 +195,14 @@ Operator genealogy walkthrough: [mes.md](mes.md).
 
 ## OEE reference functions (BL-165)
 
-| Function | Hub object (`mes-platform`) |
-|----------|----------------------------|
-| `mes_oee_listShifts` | `root.platform.devices.mes-platform-hub` |
+| Function | Hub object (`mes-platform`, `SINGLETON`) |
+|----------|------------------------------------------|
+| `mes_oee_listShifts` | `root.platform.singleton-blueprints.mes-platform-hub-v1` |
 | `mes_oee_getKpi` | same |
 | `mes_oee_addDowntime` | same |
 | `mes_platform_listLines` | same (mes-platform extension) |
 
-Production hub: `root.platform.devices.mes-platform-production-hub` (same function names).
+Production hub (`SINGLETON`): `root.platform.singleton-blueprints.mes-platform-production-hub-v1` (same function names).
 
 Seed shift UUID: `dddddddd-dddd-dddd-dddd-dddddddddddd` → OEE ≈ **85%** for demo data.
 
