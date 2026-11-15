@@ -1,27 +1,31 @@
 > **Язык:** русская версия. Английский оригинал: [en/agent-regression.md](../en/agent-regression.md).
 
-# Пакет регрессии агентов (BL-178)
+# Регрессионные сценарии ИИ-агента и пользовательских маршрутов
 
-> **Статус:** Lab — Полный live suite доказан (52/52 @100%, `mode=full`); nightly CI по-прежнему режим **platform**. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Lab — каталог из 52 проверочных сценариев (SCADA, MES, климат зданий) для автоматической проверки ИИ-агента и ручных маршрутов в веб-консоли. Метки зрелости: [doc-status.md](doc-status.md).
 
-Основа CI-валидации сценариев агента: курируемые промпты, **человеческие UI-маршруты**, ссылки на bundle и проверки схемы **до** живого прогона агента на экземпляре платформы.
+Набор регрессионных сценариев в каталоге `tools/agent-regression/` решает сразу две задачи:
+1. Проверяет, что ИИ-агент корректно собирает и разворачивает типовые инженерные решения по текстовому запросу.
+2. Задаёт пошаговые проверочные маршруты (`humanSteps`) для тестирования тех же сценариев человеком через интерфейс веб-консоли.
 
-**Доказательство БЛ-178 (2026-07-18/19):** `AGENT_LIVE_SUITE_MODE=full bash tools/agent-regression/run-live-suite.sh` → `build/agent-regression/live-suite-results.json` — **52/52 OK @100%**. Nightly с AI secrets по-прежнему **platform** (не full).
+---
 
-## Структура
+## 1. Устройство каталога `tools/agent-regression/`
 
-| Путь | Назначение |
-|------|------------|
-| `tools/agent-regression/scenario-schema.json` | JSON Schema для файлов сценариев |
-| `tools/agent-regression/scenarios/*.json` | Определения сценариев (SCADA, MES, HVAC) |
-| `tools/agent-regression/human-ui-rewrites.json` | Карта переписывания lane/UI |
-| `tools/agent-regression/apply-human-ui-rewrites.mjs` | Применяет карту к `scenarios/*.json` |
-| `tools/agent-regression/run-nightly.sh` | Nightly-заглушка: validate-scenarios + опциональный шлюз live pass rate |
-| `scripts/run-agent-regression.sh` | Проверяет форму сценария и манифеста bundle |
+| Файл / скрипт | Назначение |
+|---------------|------------|
+| `tools/agent-regression/scenario-schema.json` | JSON-схема описания сценария |
+| `tools/agent-regression/scenarios/*.json` | 52 сценария по направлениям `scada`, `mes` и `hvac` |
+| `tools/agent-regression/validate-scenarios.mjs` | Проверка корректности всех JSON-сценариев и связанных манифестов `bundle.json` |
+| `tools/agent-regression/run-platform-gate.sh` | Прогон сценариев на встроенных механизмах платформы (без внешней LLM) |
+| `tools/agent-regression/run-live-suite.sh` | Прогон набора сценариев с подключённой языковой моделью (`platform`, `bundle` или `full`) |
+| `scripts/run-agent-regression.sh` | Быстрый локальный скрипт проверки схем и манифестов |
 
-## Файл сценария
+---
 
-Каждый сценарий — запрос инженера площадки (без имён tool’ов в `prompt`), опциональный UI-маршрут и bundle:
+## 2. Формат файла сценария
+
+Каждый сценарий содержит формулировку задачи на естественном языке (`prompt`), маршрут проверки в интерфейсе (`uiJourney`, `humanSteps`), ссылку на эталонный пакет (`bundle`) и критерии приёмки (`acceptance`):
 
 ```json
 {
@@ -29,12 +33,12 @@
   "version": "1",
   "domain": "mes",
   "lane": "human",
-  "title": "MES reference deploy (UI)",
-  "prompt": "Install the mes-reference application from Solutions/Marketplace…",
-  "uiJourney": "Admin → System → Solutions → Install → Operator → Work Queue",
+  "title": "Развёртывание эталонного решения MES через консоль",
+  "prompt": "Установи приложение mes-reference из каталога решений и открой пульт оператора…",
+  "uiJourney": "Консоль администратора → Система → Решения → Установить → Режим оператора → Очередь задач",
   "humanSteps": [
-    "Sign in as admin; open System → Solutions…",
-    "Deploy the full bundle; open Operator…"
+    "Войдите под учётной записью admin и откройте раздел Система → Решения…",
+    "Разверните пакет и перейдите в режим оператора…"
   ],
   "playbook": "mesReferenceLifecycle",
   "bundle": {
@@ -49,85 +53,51 @@
 }
 ```
 
-| Поле | Смысл |
-|------|--------|
-| `lane` | `human` — клики в веб-консоли; `agent` — AI Studio/playbook + проверка UI; `both` — любой путь |
-| `uiJourney` | Путь по консоли (Исследователь / Система→Решения / Mimic / Dashboard / Operator / Аварии / Work Queue / ИИ-студия) |
-| `humanSteps` | Пошаговые клики без имён agent tools |
-| `acceptance.operatorSurfaces` | Поверхности UI, где должен быть успех |
-| `acceptance.requiredTools` | Для live-suite / playbook агента |
+| Поле | Описание |
+|------|----------|
+| `lane` | Режим прохождения: `human` (пошаговая проверка в веб-консоли), `agent` (автоматическая сборка через ИИ-студию) или `both` (оба способа) |
+| `uiJourney` | Краткая цепочка экранов веб-консоли, задействованных в сценарии |
+| `humanSteps` | Пошаговая инструкция для инженера или тестировщика без привязки к внутренним именам инструментов агента |
+| `acceptance.operatorSurfaces` | Разделы интерфейса, которые должны открываться и работать после выполнения сценария |
+| `acceptance.requiredTools` | Обязательные инструменты при автоматическом прогоне через ИИ-агента |
 
-Домены: `scada`, `mes`, `hvac`.
+---
 
-### Золотой набор (`lane: human`)
+## 3. Основные сценарии для ручной и автоматической проверки
 
-Воспроизводите на консоли (локальный JAR или демо-стенд [ispf.iot-solutions.ru](https://ispf.iot-solutions.ru/), `admin`/`admin`):
+| Направление | Идентификаторы сценариев |
+|-------------|--------------------------|
+| **SCADA и телеметрия** | `scada-pump-station`, `scada-mimic-facility`, `scada-tank-farm`, `scada-alarm-shelf`, `scada-historian-trends`, `scada-solution-generator`, `scada-virtual-cluster`, `scada-water-treatment`, `scada-modbus-device` |
+| **Цеховой учёт (MES)** | `mes-reference-deploy`, `mes-dispatch-workflow`, `mes-defect-demo`, `mes-oee-dispatch`, `mes-platform-production`, `mes-solution-generator-factory`, `mes-workflow-escalation` |
+| **Здания и вентиляция (HVAC)** | `hvac-building-app`, `hvac-zone-comfort`, `hvac-ahu-comfort`, `hvac-scheduler-setpoints`, `hvac-solution-generator-site`, `hvac-chiller-plant` |
 
-| Домен | id сценариев |
-|-------|----------------|
-| SCADA | `scada-pump-station`, `scada-mimic-facility`, `scada-tank-farm`, `scada-alarm-shelf`, `scada-historian-trends`, `scada-solution-generator`, `scada-virtual-cluster`, `scada-water-treatment`, `scada-modbus-device` |
-| MES | `mes-reference-deploy`, `mes-dispatch-workflow`, `mes-defect-demo`, `mes-oee-dispatch`, `mes-platform-production`, `mes-solution-generator-factory`, `mes-workflow-escalation` |
-| HVAC | `hvac-building-app`, `hvac-zone-comfort`, `hvac-ahu-comfort`, `hvac-scheduler-setpoints`, `hvac-solution-generator-site`, `hvac-chiller-plant` |
+---
 
-Хром админки на стенде: **Исследователь**, **Система → Решения**, **ИИ-студия**. Оператор: `/?mode=operator&app=<appId>`, стартеры **Work Queue** и **Alarm Console**.
+## 4. Как запустить проверку локально
 
-**Важно для ручных UI-маршрутов:**
-
-- Листинг маркетплейса на публичном стенде может поставить *catalog stub* без `operatorUi`. Для golden deploy нужен полный `examples/<app>/bundle.json` (ИИ-студия → Пакет приложения), если Operator пишет, что UI не найден.
-- Применение шаблона дашборда `scada-facility-overview` должно **само создать** `root.platform.mimics.facility-overview`, если объекта нет (`DashboardService.applyTemplateLayout` + `MimicService.ensureMimicExists`). 404 по этому пути — баг платформы, не ошибка пользователя.
-
-Остальные сценарии — `lane: agent` или `both` (всего ≥50 для CI).
-
-## Запуск валидации (локально)
-
-Из корня репозитория:
+Быстрая проверка всех файлов сценариев и манифестов без запуска сервера:
 
 ```bash
 bash scripts/run-agent-regression.sh
 ```
 
-Опционально: укажите работающий ISPF для проверки bundle через API (тот же контракт, что и `tools/bundle-validate-cli/validate.mjs`):
+Проверка манифестов через REST API запущенного локального сервера ISPF:
 
 ```bash
 export ISPF_BASE_URL=http://localhost:8080
-export ISPF_API_TOKEN=<admin-jwt>
+export ISPF_API_TOKEN=<токен-администратора>
 bash scripts/run-agent-regression.sh --live
 ```
 
-## Интеграция в CI
-
-| Этап | Шлюз |
-|------|------|
-| PR | job `agent-regression` в [ci.yml](../../.github/workflows/ci.yml): `validate-scenarios.mjs` + `AgentRegressionCiTest` (схема + манифест; **падает при ошибках схемы**). **Только schema/manifest — без живого LLM** |
-| Nightly | `run-nightly.sh` — только схемы. Опциональный BL-177 live one-shot при secrets `ISPF_AI_API_KEY` + `ISPF_AI_BASE_URL` (`run-live-oneshot.sh`). **`nightly-stub-results.json` устарел** — не доказательство live ≥95% |
-| Platform gate | `run-platform-gate.sh` — fixture + generator + **`AgentBundleDeploySuiteTest`** (≥95% bundles) + **BL-179** `OperatorAgentContinuityIntegrationTest` |
-| Live suite | `run-live-suite.sh` — hybrid: сначала tool playbook, LLM fallback; режимы `platform`/`bundle`/`full` |
-| Ручной live | `ISPF_LLM_SMOKE=true` + `AgentLiveDeploySmokeTest` / `run-live-oneshot.sh` (`AGENT_LIVE_APP_ID` опционально) |
-
-**Текущее число сценариев:** 52 (SCADA, MES, HVAC), включая `kind: platform-primitive` — примерно 22 `human`, 18 `agent`, 12 `both`.
-
-Репортёр pass rate:
-
-- Полный suite: `AGENT_LIVE_SUITE_MODE=full bash tools/agent-regression/run-live-suite.sh` → `--enforce-rate` (BL-178; нужен LLM)
-- Subset: `AGENT_LIVE_SUITE_MODE=platform|bundle` → `--enforce-rate --oneshot`
-- One-shot: `--results …/live-oneshot-results.json --enforce-rate --oneshot` — proof BL-177 (S31)
-- Platform gate (без LLM): `bash tools/agent-regression/run-platform-gate.sh`
-
-Nightly CI при AI secrets гоняет live suite в режиме **platform**. Полный gate 52 сценариев **доказан on-demand** (БЛ-178 выполнен); перезапуск вручную при необходимости:
+Полный прогон всех 52 сценариев с подключённой языковой моделью:
 
 ```bash
-export ISPF_LLM_SMOKE=true ISPF_AI_BASE_URL=... ISPF_AI_API_KEY=...
-export AGENT_LIVE_SUITE_MODE=full AGENT_LIVE_SUITE_ENFORCE=true
+export ISPF_LLM_SMOKE=true
+export ISPF_AI_BASE_URL=https://api.openai.com/v1
+export ISPF_AI_API_KEY=<ваш-ключ>
+export AGENT_LIVE_SUITE_MODE=full
+export AGENT_LIVE_SUITE_ENFORCE=true
 bash tools/agent-regression/run-live-suite.sh
 ```
 
-См. [competitive-scorecard](competitive-scorecard.md).
-
-## См. также
-
-- [ai-development](ai-development.md) — инструменты и playbook агента
-- [operator-guide](operator-guide.md) — HMI оператора / Work Queue
-- [web-console](web-console.md) — Explorer / Система / ИИ-студия
-- [AgentDeployPlaybook](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) — сценарий сквозного развёртывания
-- [AgentSolutionGeneratorPlaybook](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) — сценарий генератора решений
-- [roadmap](roadmap.md) — BL-177, BL-178
+**Связанные разделы:** [ИИ-студия и адаптер MCP](ai-development.md) · [Работа с ИИ-агентом](ai-agent.md) · [Руководство оператора](operator-guide.md) · [Веб-консоль](web-console.md).

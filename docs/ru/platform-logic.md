@@ -1,32 +1,22 @@
 > **Язык:** русская версия. Английский оригинал: [en/platform-logic.md](../en/platform-logic.md).
 
-# Единая модель правил платформы (Platform Rule)
+# Единая модель правил платформы (`КОГДА → ЕСЛИ → ТО`)
 
-> **Статус:** Beta — единая схема `КОГДА → ЕСЛИ → ТО` для переменных, событий и контекста экрана (`@dashboardContext`). Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Beta — единая модель правил для пересчёта переменных, управления состоянием экрана оператора (`@dashboardContext`) и публикации событий ([ADR-0019](decisions/0019-platform-rule-unification.md)). Метки зрелости: [doc-status.md](doc-status.md).
 
-Один и тот же каркас правила для пересчёта переменных, логики экрана и побочных эффектов событий.
+В ISPF правила пересчёта переменных, динамическое поведение экранов оператора и генерация событий строятся по одной и той же понятной схеме:
 
-Сейчас это **спецификация** (ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md), статус **Proposed**). Расширения runtime идут по фазам 1–3.
+```text
+КОГДА сработал активатор  →  ЕСЛИ выполнено условие (CEL)  →  ТО записать результат в цель (target)
+```
 
 ---
 
-## Модель для инженера
+## 1. Три вида цели правила (`target.kind`)
 
-```
-КОГДА  →  ЕСЛИ (CEL)  →  ТО (записать результат)
-```
+### 1. Запись в переменную объекта (`kind: "variable"`, по умолчанию)
 
-Тот же шаблон, что у [правил расчёта](bindings.md):
-
-- **Правило на переменной** — пишет результат в переменную объекта.
-- **Правило на `DASHBOARD`** — пишет в `@dashboardContext` или публикует событие.
-- **Правило на `ALERT`** — отдельный объект тревоги; условие уже на CEL (единый UI правил — вне первой версии).
-
----
-
-## JSON: Platform Rule (= BindingRule)
-
-### Effect `variable` (сегодня, default)
+Стандартное правило расчёта на узле логики или устройстве:
 
 ```json
 {
@@ -46,13 +36,9 @@
 }
 ```
 
-Legacy без `kind`:
+### 2. Запись в контекст экрана (`kind: "context"`)
 
-```json
-"target": { "variableName": "avgTemp", "field": "value" }
-```
-
-### Effect `context` (dashboard UI state)
+Правило на объекте дашборда (`DASHBOARD`), управляющее параметрами экрана или видимостью виджетов через переменную `@dashboardContext`:
 
 ```json
 {
@@ -65,7 +51,7 @@ Legacy без `kind`:
     ],
     "onContextChange": true
   },
-  "condition": "context.selection.device != \"\" && read(context.selection.device + \"/temperature\") > 80",
+  "condition": "context.selection.device != \"\" && read(context.selection.device + \"/temperature\") > 80.0",
   "expression": "\"alarm\"",
   "target": {
     "kind": "context",
@@ -74,9 +60,9 @@ Legacy без `kind`:
 }
 ```
 
-`context.*` в CEL — snapshot `@dashboardContext` на момент eval (фаза 1).
+### 3. Публикация события (`kind: "event"`)
 
-### Effect `event` (journal / workflow)
+Когда условие выполняется, правило формирует полезную нагрузку и публикует событие в журнал и шину автоматизации:
 
 ```json
 {
@@ -95,106 +81,41 @@ Legacy без `kind`:
 
 ---
 
-## Активаторы
+## 2. Активаторы правила (`activators`)
 
-| Поле | Статус | Назначение |
-|------|--------|------------|
-| `onStartup` | exists | старт / attach модели |
-| `onVariableChange` | exists | телеметрия, переменные |
-| `onEvent` | exists | имя platform event |
-| `periodicMs` | exists | периодический пересчёт; индекс `platform_binding_periodic_rules`, wake по `next_run_at` ([bindings](bindings.md)) |
-| `onContextChange` | **planned** | изменение `@dashboardContext` |
+| Поле активатора | Когда запускается расчёт |
+|-----------------|--------------------------|
+| `onStartup` | Один раз при запуске сервера или применении шаблона к узлу |
+| `onVariableChange` | При изменении любой из указанных переменных |
+| `onEvent` | При возникновении указанного события на объекте |
+| `periodicMs` | Периодически по таймеру с заданным шагом в миллисекундах (см. [Правила расчёта](bindings.md)) |
+| `onContextChange` | При изменении контекста экрана `@dashboardContext` (выбор строки в таблице, смена фильтра оператором) |
 
 ---
 
-## `@dashboardContext` (planned, фаза 1)
+## 3. Структура контекста экрана (`@dashboardContext`)
 
-Reserved JSON-переменная на объекте `DASHBOARD` (blueprint `dashboard-v1`).
+На каждом объекте `DASHBOARD` (шаблон `dashboard-v1`) зарезервирована системная JSON-переменная `@dashboardContext`, синхронизируемая с сессией экрана оператора:
 
 | Поле | Тип | Назначение |
 |------|-----|------------|
-| `selection` | `Record<string, string>` | слоты выбора (`device`, `order`, …) |
-| `params` | `Record<string, unknown>` | скаляры, режимы, параметры отчёта |
-| `widgets` | `Record<string, { visible?: boolean }>` | runtime visibility по id виджета |
-| `updatedAt` | ISO string | audit |
-| `updatedBy` | string | username |
+| `selection` | `Record<string, string>` | Выбранные оператором объекты по ключам выбора (`device`, `order`, `line` и т.д.) |
+| `params` | `Record<string, unknown>` | Параметры фильтрации, режимы отображения, аргументы отчётов |
+| `widgets` | `Record<string, { visible?: boolean }>` | Динамическое управление видимостью отдельных виджетов по их `id` |
+| `updatedAt`, `updatedBy` | Строки | Время и автор последнего изменения контекста |
 
-Web-console `DashboardSession` зеркалирует эту структуру.
-
-### Издатели контекста
-
-| Источник | Действие |
-|----------|----------|
-| object-table / card-grid / map | `selection.*` + `params.*` из строки |
-| report widget | `rowParamsFromRowJson` → `params` |
-| function-form | `syncFieldsToSessionJson` → `params` |
-| dashboard-link | `contextSelectionJson` / `contextParamsJson` |
-| operator URL `?ctx=` | начальный snapshot |
-
-Все publishers (фаза 1+) → **PUT `@dashboardContext`**, не только React state.
-
-### Потребители
-
-| Поле виджета | Читает из контекста |
-|--------------|---------------------|
-| `selectionKey` | `selection[key]` |
-| `paramKey` | `params[key]` |
-| `contextPathKey` | `params[key]` как object path |
-| visibility | `widgets[widgetId].visible` via rules + runtime merge |
+- **Кто записывает в контекст:** таблицы объектов (`object-table`), сетки карточек (`card-grid`), карты (`map`), формы ввода (`function-form`), кнопки навигации (`dashboard-link`) и адресная строка браузера (`?ctx=`).
+- **Кто читает из контекста:** виджеты с привязками `selectionKey`, `paramKey`, `contextPathKey`, а также правила видимости `widgets.<id>.visible`.
 
 ---
 
-## Legacy inventory → Platform Rule
+## 4. Пример: динамическая панель тревоги на экране мониторинга
 
-| Legacy | Где | Миграция | Статус |
-|--------|-----|----------|--------|
-| `showWhenJson` | поле function-form | CEL rule на объекте формы или dashboard rule на `context.params.*` | runtime сохранён; UI migration — фаза 3 |
-| `payloadFilterExpr` | event-feed | CEL `GET /events?expr=` если выражение содержит `payload`; mini-DSL остаётся на клиенте | runtime сохранён |
-| `requireSessionParamsJson` | link, form | `condition` на непустые ключи в context | runtime сохранён; deprecation hint в редакторе |
-| Dashboard session only (sessionStorage) | operator | `@dashboardContext` + WS | фаза 1 ✅ |
-| Per-widget `visible` boolean | layout | static default; runtime → rules → `widgets.*.visible` | фаза 2 ✅ |
-| Spreadsheet session blob | `params[sheet:…]` | binding cells + `onContextChange`; optional export rules | planned |
-| Alert CEL | объект ALERT | остаётся; тот же CEL editor | — |
+На дашборде `root.platform.dashboards.snmp-host-monitoring` размещены таблица устройств (`selectionKey: "device"`) и скрытая по умолчанию панель деталей аварии (`id: "alarm-panel"`). Четыре простых правила на самом объекте дашборда управляют экраном без единой строчки кода внутри виджетов:
 
-**Не добавлять:** `behaviorJson`, `visibleWhen` на виджете, отдельный dashboard DSL.
+1. Когда температура выбранного в таблице устройства превышает `80.0` → записать `"alarm"` в `params.mode`.
+2. Когда `context.params.mode == "alarm"` → включить видимость панели `widgets.alarm-panel.visible = true`.
+3. Когда `context.params.mode == "normal"` → скрыть панель `widgets.alarm-panel.visible = false`.
+4. При переходе в режим `"alarm"` → опубликовать событие `hmi.dashboard.alarm`.
 
----
-
-## UI
-
-| Место | Компонент |
-|-------|-----------|
-| Object Inspector | `BindingRulesPanel` |
-| Dashboard Builder | `DashboardRulesPanel` + templates (фаза 2) |
-| AI agent | `create_binding_rule` + dashboard templates |
-
----
-
-## REST / engine (planned)
-
-- Существующий CRUD `/binding-rules` — URL без изменений.
-- `BindingRuleEngine.evaluateOnContextChange(dashboardPath, contextJson)` — фаза 1.
-- CEL validate: `POST /api/v1/expressions/validate` (уже есть).
-
----
-
-## Пример: SNMP-мониторинг
-
-**Layout:** object-table `selectionKey: device` + value/chart с тем же key.
-
-**Rules на `root.platform.dashboards.snmp-host-monitoring`:**
-
-1. Когда температура выбранного устройства > 80 → `params.mode = "alarm"`.
-2. Когда `params.mode == "alarm"` → `widgets.alarm-panel.visible = true`.
-3. Когда `params.mode == "normal"` → `widgets.alarm-panel.visible = false`.
-4. Когда mode → alarm → fire `hmi.dashboard.alarm`.
-
-Виджеты **без** условных полей в JSON layout.
-
----
-
-## Связанные документы
-
-- [bindings](bindings.md) — binding rules, CEL, API
-- [dashboards](dashboards.md) — layout, widgets, context
-- [decisions/0019-platform-rule-unification.md](decisions/0019-platform-rule-unification.md)
+**Связанные разделы:** [Правила расчёта (`bindings.md`)](bindings.md) · [Дашборды и виджеты (`dashboards.md`)](dashboards.md) · [ADR-0019](decisions/0019-platform-rule-unification.md).

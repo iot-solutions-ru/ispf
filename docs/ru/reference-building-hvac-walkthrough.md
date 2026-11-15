@@ -1,42 +1,37 @@
 > **Язык:** русская версия. Английский оригинал: [en/reference-building-hvac-walkthrough.md](../en/reference-building-hvac-walkthrough.md).
 
-# Справочное руководство: HVAC здания
+# Разбор эталонного примера: диспетчеризация климата здания (`building-hvac`)
 
-Третье эталонное приложение для разработчиков решений: **зоны офисных этажей**, уставки комфорта и метаданные в стиле Haystack — без custom Java в `ispf-server`.
+> **Статус:** Stable — компактный учебный пакет управления температурными зонами здания с семантической разметкой Project Haystack. Метки зрелости: [doc-status.md](doc-status.md).
 
-Артефакты: [examples/building-hvac-app/](../../examples/building-hvac-app/), bundle `appId` = `building-hvac`.
+Пакет **`building-hvac`** ([`examples/building-hvac-app/`](../../examples/building-hvac-app/)) показывает устройство простого приложения мониторинга и управления микроклиматом по этажам и помещениям здания.
 
-## Домен
+---
 
-![Operator HMI Building HVAC](../assets/ispf-operator-building-hvac.png)
+## 1. Состав примера
 
-| Сущность | Описание |
-|--------|-------------|
-| **Zone** (`hvac_zone`) | Код зоны этажа, температура в помещении, уставка, режим HVAC |
-| **BFF host** | `root.platform.devices.demo-sensor-01` — `hvac_listZones` |
-| **Operator shell** | `?mode=operator&app=building-hvac` |
+![Пульт оператора системы вентиляции и климата здания](../assets/ispf-operator-building-hvac.png)
 
-Seed-зоны: `L1-OPEN-01` (охлаждение), `L2-MEET-02` (обогрев).
+| Элемент | Описание |
+|---------|----------|
+| Таблица зон (`hvac_zone`) | Код климатической зоны (`L1-OPEN-01`, `L2-MEET-02`), текущая температура, уставка комфорта и режим работы (`cooling` / `heating`) |
+| Функция выборки зон (`hvac_listZones`) | Скриптовая функция для отображения состояния помещений на экране оператора |
+| Семантические теги (`metadata.haystackTags`) | Набор стандартных маркеров Project Haystack (`site`, `equip`, `ahu`, `zone`, `temp`) |
+| Пульт оператора | Открывается по адресу `?mode=operator&app=building-hvac` |
 
-## Шаги
+---
 
-| # | Действие | API / path |
-|---|--------|------------|
-| 1 | Deploy bundle | `POST /api/v1/applications/building-hvac/deploy` |
-| 2 | List zones | BFF `hvac_listZones` @ `demo-sensor-01` |
-| 3 | Solution catalog | System → Solutions → **Install** reference `building-hvac-app` |
-| 4 | Operator demo | `/?mode=operator&app=building-hvac` |
+## 2. Установка и проверка
 
-## Haystack
+Установить пакет можно через раздел **Система → Решения** в веб-консоли или HTTP-запросом:
 
-Bundle `metadata.haystackTags` документирует ожидаемый словарь тегов (`site`, `equip`, `ahu`, `zone`, `temp`). При расширении walkthrough привязывайте реальные устройства через MIXIN blueprint `haystack-metadata-v1`.
+```bash
+curl -s -X POST http://localhost:8080/api/v1/applications/building-hvac/deploy \
+  -H "Content-Type: application/json" \
+  --data-binary @examples/building-hvac-app/bundle.json
+```
 
-## CI
-
-- `BuildingHvacBundleSmokeTest` — deploy + `hvac_listZones` возвращает 2 строки
-- Опционально: шаблон `examples/warehouse-app/.github/workflows/bundle-ci.yml` для CI интегратора
-
-## Команды
+Запуск автоматического теста:
 
 ```bash
 ./gradlew :packages:ispf-server:test --tests com.ispf.server.application.BuildingHvacBundleSmokeTest

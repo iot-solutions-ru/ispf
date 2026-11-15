@@ -1,360 +1,118 @@
 > **Language:** Canonical English. Russian edition: [ru/automation.md](../ru/automation.md).
 
-# Automation: events, alerts, correlators
+# Automation: Events, Alert Rules, and Event Correlators
 
-> **Status:** Stable — Alerts, correlators. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — platform events, CEL threshold alert rules with hysteresis/latching, multi-event correlators, notification relays, and cyclic process programs. Status tags: [doc-status.md](doc-status.md).
 
-**See also:** [workflows](workflows.md), [0039-unified-alarm-architecture](decisions/0039-unified-alarm-architecture.md), [0014-automation-pipeline-evolution](decisions/0014-automation-pipeline-evolution.md), [operator-guide](operator-guide.md).
+**Related guides:** [Workflows & BPMN](workflows.md) · [Operator guide](operator-guide.md) · [Escalation workflow templates](reference-escalation-templates.md) · [ADR-0039](decisions/0039-unified-alarm-architecture.md) · [ADR-0062](decisions/0062-correlator-keyed-dispatch.md).
 
-## Events
+---
 
-### Descriptor
+## 1. Platform Events and the Event Journal
 
-An object defines an `EventDescriptor`: name, payload schema, level.
+Every object in the tree can declare typed events (`EventDescriptor`) with a name, payload schema (`DataSchema`), and severity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`).
 
-Levels (`EventLevel`): `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.
+### How Events Are Published
+1. **Via REST API or object rules:** `POST /api/v1/events/fire` (or `fire(@/evt/...)` in a binding rule) validates the payload against the object's `EventDescriptor`, writes the entry to `event_history`, broadcasts it over WebSocket (`/ws/objects`), and forwards it to active event correlators.
+2. **High-rate direct driver ingress (`EVENT_JOURNAL_ONLY`):** when a device driver is configured with `telemetryPublishMode = "EVENT_JOURNAL_ONLY"`, incoming messages bypass CEL evaluation and stream directly into `event_history` via `EventJournalAsyncWriter` ([ADR-0027](decisions/0027-event-journal-ingress-fast-path.md)).
 
-### Publishing
-
-**API (manual fire, integrations):**
-
-```http
-POST /api/v1/events/fire
-```
-
-**Driver ingress (high frequency, no HTTP):** when `telemetryPublishMode=EVENT_JOURNAL_ONLY`, each driver variable update triggers `EventService.fireIngress` → async journal. The event name comes from `ingressEventName` in the driver configuration (default `messageReceived`). See [0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md).
-
-Shared hot path after descriptor validation:
-
-1. Write to `event_history` (async batch — Timescale [0015-event-history-timescale](decisions/0015-event-history-timescale.md) or ClickHouse [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md))
-2. `ObjectChangeEvent` → WebSocket
-3. Listeners: correlators, UI.
-
-### Journal
+### Querying the Event Journal
 
 ```http
 GET /api/v1/events?objectPath=root.platform.devices.demo-sensor-01&limit=50
 ```
 
-Without `objectPath` — global journal (up to 200 entries). Optional `expr` is payload-scoped CEL (same bindings as saved event-filter `filterExpression`); invalid CEL returns 400.
-
-### Demo
-
-`mqtt-sensor-v1` → `thresholdExceeded` when the threshold is exceeded (via alert rule or manual fire); `messageReceived` — for loadtest/audit ingress ([0027-event-journal-ingress-fast-path](decisions/0027-event-journal-ingress-fast-path.md)).
+You can also filter events by a CEL expression on the payload (`GET /api/v1/events?expr=payload.temperature > 80.0`) or apply a saved filter node from `root.platform.event-filters.*` (`?filterPath=...`).
 
 ---
 
-## Storage in the object tree
-
-Alert rules and event correlators are **tree nodes** under `root.platform`, like dashboards and workflows:
-
-```
-root.platform
-├── root.platform.alert-rules
-│   └── root.platform.alert-rules.temperature-threshold-exceeded
-└── root.platform.correlators
-    ├── root.platform.correlators.alarm-handler-on-threshold-event
-    └── root.platform.correlators.threshold-then-alarm-active-sequence-demo
-```
-
-| Entity | Node type | Model | Folder |
-|----------|----------|--------|-------|
-| Alert rule | `ALERT` | `alert-rule-v1` | `root.platform.alert-rules` |
-| Correlator | `CORRELATOR` | `correlator-v1` | `root.platform.correlators` |
-
-Configuration is stored on the object request (`objectPath`, `watchVariable`, `conditionExpr`, …). `AutomationTreeService` reads and writes nodes; on startup `AutomationBootstrap` migrates legacy rows from `alert_rules` / `event_correlators` tables (if present) and creates demo rules.
-
-UI: **Explorer** → select a node in `alert-rules` or `correlators` → inspector (`AlertRuleInspector`, `CorrelatorInspector`). Create via tree context menu or `POST /api/v1/alert-rules` / `POST /api/v1/correlators`.
-
----
-
-## Alert rules
-
-CEL rule on variable change. When the condition is true — fire events.
+## 2. Alert Rules (`ALERT` Nodes in `root.platform.alert-rules.*`)
 
 ![Alert rule inspector — CEL condition and notification settings](../assets/ispf-alert-rule.png)
 
-### Fields
+Alert rules are stored as tree nodes of type `ALERT` (model `alert-rule-v1`) under `root.platform.alert-rules.*`. Whenever the watched variable changes (or on a periodic timer `pollIntervalMs`), `AlertRuleService` evaluates the CEL condition and fires the configured event.
+
+### Alert Rule Configuration Fields
 
 | Field | Description |
-|------|----------|
-| `objectPath` | Object |
-| `watchVariable` | Variable name |
-| `conditionExpr` | CEL (context: variable fields) |
-| `eventName` | Event name to fire |
-| `payloadVariable` | Variable for payload (optional) |
-| `enabled` | On/off |
-| `edgeTrigger` | Only on false→true edge |
-| `delaySeconds` | Seconds condition must stay true before activate (0 = immediate) |
-| `sustainWhileTrue` | Re-fire while condition stays true (subject to `rateLimitSeconds`) |
-| `rateLimitSeconds` | Minimum interval between repeated fires when sustaining |
-| `priority` | `CRITICAL` / `HIGH` / `MEDIUM` / `LOW` |
-| `ackRequired` | Operator acknowledgement metadata |
-| `deactivateExpr` | CEL clear condition (optional; empty = clear when `conditionExpr` is false) |
-| `deactivateDelaySeconds` | Seconds `deactivateExpr` must stay true before clear (0 = immediate) |
-| `clearEventName` | Event fired on deactivate (optional; e.g. `thresholdCleared`) |
-| `pollIntervalMs` | Periodic re-evaluation interval (0 = only on `watchVariable` change) |
-| `triggerMessage` | Static or CEL message stored on the event payload when raised |
-| `latchedActive` | Runtime: rule is in latched active state (read-only in inspector) |
-| `notificationWebhookUrl` | URL for HTTP POST on trigger (optional) |
-| `notificationEmailTarget` | Email: `to@host\|subject\|body` (optional, relay required) |
+|-------|-------------|
+| `objectPath` | Target object being monitored |
+| `watchVariable` | Variable on `objectPath` that triggers evaluation |
+| `conditionExpr` | Boolean Google CEL condition (for example, `self.temperature.value > 80.0`) |
+| `eventName` | Event fired when the alert activates (for example, `thresholdExceeded`) |
+| `priority` | `CRITICAL`, `HIGH`, `MEDIUM`, or `LOW` |
+| `edgeTrigger` | When `true`, fires only on the `false → true` transition |
+| `delaySeconds` | On-delay timer: seconds the condition must remain continuously `true` before firing (`0` = immediate) |
+| `sustainWhileTrue`, `rateLimitSeconds` | Re-fire periodically while the condition remains `true`, throttled by `rateLimitSeconds` |
+| `deactivateExpr`, `deactivateDelaySeconds`, `clearEventName` | **Hysteresis / latch mode:** keeps the alert latched until `deactivateExpr` holds for `deactivateDelaySeconds` (for example, activate at `> 80.0`, clear at `< 70.0` and fire `thresholdCleared`) |
+| `ackRequired` | Marks whether operator acknowledgement is required |
+| `notificationWebhookUrl`, `notificationEmailTarget` | Optional direct HTTP webhook URL or email target (`to@host\|subject\|body`) |
 
-**Latch mode** activates when any of `deactivateExpr`, `clearEventName`, or `deactivateDelaySeconds > 0` is set. In latch mode the rule stays active after the activate condition fires until the deactivate path completes (with optional delay), then fires `clearEventName` if set.
+Each alert rule is evaluated under its own lock so concurrent updates never double-fire or corrupt sustain/latch timers, and a failure in one rule is isolated and counted in `ispf.alert.rule_failures.total{reason=condition|error}` without blocking other rules.
 
-When events fire, if webhook and/or email are set — `NotificationDispatchService` runs additionally (errors are logged; the alert is not blocked).
+### Alert Rules REST API (`admin`)
 
-### Example (simple edge)
-
-Object: `demo-sensor-01`, watch: `alarmActive`, condition: `self.alarmActive["value"] == true`, event: `thresholdExceeded`.
-
-### Example (temperature latch, ADR-0039 phase B)
-
-Object: `demo-sensor-01`, watch: `temperature`, activate: `self.temperature["value"] > 80.0`, deactivate: `self.temperature["value"] < 70.0`, events: `thresholdExceeded` / `thresholdCleared`. See [`examples/alert-rule-evolution/temperature-high.json`](../../examples/alert-rule-evolution/temperature-high.json).
-
-`AlertRuleListener` reacts to `VARIABLE_UPDATED`; rules with `pollIntervalMs > 0` are also evaluated by `AlertRulePeriodicScheduler`.
-
-Evaluations of one rule never overlap: variable-change workers, the poll scheduler, and SQL binding refreshes take the rule's lock, so its edge, sustain, and latch state is not read twice before it is written (no double raise). A rule that fails — an uncomputable condition or any other error — is logged, counted in `ispf.alert.rule_failures.total{reason=condition|error}` (System metrics → *Alert rule failures*), and skipped; the other rules of the same variable change or poll tick still run, and the failing rule stays enabled. Runtime state is flushed every `ispf.alert-rule.runtime.flush-interval-ms` (30 s); a change made while a flush is writing the rule is written by the next flush.
-
-### API
-
-| Method | Path | Roles |
-|--------|------|------|
-| GET | `/api/v1/alert-rules` | admin |
-| GET | `/api/v1/alert-rules/by-path?path=` | admin |
-| POST | `/api/v1/alert-rules` | admin |
-| PUT | `/api/v1/alert-rules/by-path?path=` | admin |
-| DELETE | `/api/v1/alert-rules/by-path?path=` | admin |
+```http
+GET / POST         /api/v1/alert-rules
+GET / PUT / DELETE /api/v1/alert-rules/by-path?path=root.platform.alert-rules.<name>
+```
 
 ---
 
-## Event correlators
+## 3. Event Correlators (`CORRELATOR` Nodes in `root.platform.correlators.*`)
 
 ![Event correlators catalog](../assets/ispf-correlator.png)
 
-Aggregate multiple events → action (start workflow).
+Event correlators (`CORRELATOR`, model `correlator-v1`) watch the stream of events across time windows and trigger an automated action when a multi-event pattern matches.
 
-### Patterns (`CorrelatorPatternType`)
+### Correlation Patterns (`patternType`)
 
-| Type | Description |
-|-----|----------|
-| `COUNT` | N events of `eventName` within `windowSeconds` |
-| `SEQUENCE` | Event A, then B on the same object |
-| `EVENT_CHAIN` | Ordered chain of 3+ events (`eventName` + comma-separated `secondEventName`) within `windowSeconds` |
-| `WINDOW` | Set of events (A + list in `secondEventName`) — each at least once within `windowSeconds` |
+| Pattern Type | When It Triggers |
+|--------------|------------------|
+| **`COUNT`** | The event `eventName` occurs at least `minOccurrences` times within `windowSeconds` |
+| **`SEQUENCE`** | Event A (`eventName`) is followed by Event B (`secondEventName`) on the same object within `windowSeconds` |
+| **`EVENT_CHAIN`** | An ordered chain of 3 or more events (`eventName` followed by comma-separated `secondEventName`, with optional max step gap `sequenceGapSeconds`) completes within `windowSeconds` |
+| **`WINDOW`** | All listed events (`eventName` + comma-separated `secondEventName`) occur at least once within `windowSeconds` in any order |
 
-### WINDOW / EVENT_CHAIN (BL-171)
+### Correlator Actions (`actionType`)
 
-**WINDOW (unordered):** all listed events must occur on one object within `windowSeconds`; order does not matter.
+| `actionType` | `actionTarget` Format | Action Taken |
+|--------------|-----------------------|--------------|
+| `RUN_WORKFLOW` | Workflow tree path (`root.platform.workflows....`) | Starts a BPMN workflow instance |
+| `FIRE_EVENT` | Event name | Fires a synthetic event on the target object |
+| `SET_VARIABLE` | `variableName=value` | Writes a variable on the target object |
+| `OPEN_OPERATOR_REPORT` | Report tree path (`root.platform.reports....`) | Prompts the operator UI to open the specified report |
+| `SEND_WEBHOOK` | `https://...` | Sends an HTTP POST JSON notification |
+| `SEND_EMAIL` | `recipient@example.com\|Subject\|Body` | Sends an email via `ispf.notifications.email-relay-url` |
+| `SEND_SMS` | `+15551234567\|Message text` | Sends an SMS via `ispf.notifications.sms-relay-url` |
 
-**EVENT_CHAIN (ordered):** events must appear in order (gaps allowed for unrelated events) within `windowSeconds`.
+### Correlators REST API (`admin`)
 
-| Field | Role for WINDOW / EVENT_CHAIN |
-|------|-----------------|
-| `eventName` | First required event |
-| `secondEventName` | Additional events comma-separated (e.g. `workOrderReleased,workOrderStarted`) |
-| `windowSeconds` | Sliding window width (> 0) |
-| `minOccurrences` | Not used (leave 1) |
-| `sequenceGapSeconds` | Optional max gap between consecutive chain steps (`EVENT_CHAIN`) |
-
-Example: MES dispatch — `workOrderCreated` + `workOrderReleased` + `workOrderStarted` within 120 s on `mes-platform-hub` → `RUN_WORKFLOW`.
-
-`EventCorrelatorService.processWindowPattern` / `processEventChainPattern` record hits in the window store and fire when the pattern matches.
-
-### Fields
-
-| Field | Description |
-|------|----------|
-| `name` | Name |
-| `patternType` | COUNT / SEQUENCE / EVENT_CHAIN / WINDOW |
-| `eventName` | First event (A) |
-| `secondEventName` | Second (for SEQUENCE) or additional (for WINDOW) |
-| `windowSeconds` | Observation window |
-| `minOccurrences` | Threshold (COUNT) |
-| `cooldownSeconds` | Pause after trigger |
-| `actionType` | See table below |
-| `actionTarget` | Depends on `actionType` |
-| `enabled` | On/off |
-
-### Action types (`CorrelatorActionType`)
-
-| `actionType` | `actionTarget` | Description |
-|--------------|----------------|----------|
-| `RUN_WORKFLOW` | workflow path | Start BPMN |
-| `FIRE_EVENT` | event name | `EventService.fire` on object |
-| `SET_VARIABLE` | `varName=value` | Write variable |
-| `OPEN_OPERATOR_REPORT` | report path | `openOperatorReport` event |
-| `SEND_WEBHOOK` | URL | HTTP POST JSON (`NotificationDispatchService`) |
-| `SEND_EMAIL` | `to\|subject\|body` | POST to email relay (see config below) |
-| `SEND_SMS` | `msisdn\|body` | POST to SMS relay (`sms-relay-url`) or use SMPP device write |
-
-### SEQUENCE example
-
-A = `thresholdExceeded`, B = `thresholdExceeded` (repeat), window = 60s → start `demo-alarm-handler`.
-
-`EventCorrelatorListener` on `EVENT_FIRED` → `CorrelatorDispatchService` (keyed lanes by correlator id, `REQUIRES_NEW` per correlator). Hits in `correlator_hits` / Redis window store. See [ADR-0062](decisions/0062-correlator-keyed-dispatch.md).
-
-### API
-
-| Method | Path | Roles |
-|--------|------|------|
-| GET | `/api/v1/correlators` | admin |
-| GET | `/api/v1/correlators/by-path?path=` | admin |
-| POST | `/api/v1/correlators` | admin |
-| PUT | `/api/v1/correlators/by-path?path=` | admin |
-| DELETE | `/api/v1/correlators/by-path?path=` | admin |
-
----
-
-## Notification channels (BL-44 / BL-230 / BL-231)
-
-`NotificationDispatchService` — HTTP webhook, optional email relay, and optional SMS relay for alert rules and correlator actions.
-
-Device gateways — **one driver per channel** (separate packs, separate DEVICE config):
-
-| driverId | Pack | Config | Write fields |
-|----------|------|--------|--------------|
-| `email` | `ispf-driver-email` | `relayUrl`, optional `defaultTo` / `defaultSubject` | `to`, `subject`, `body` |
-| `sms` | `ispf-driver-sms` | `relayUrl`, optional `defaultTo` | `to`, `body`/`text` |
-| `webhook` | `ispf-driver-webhook` | `targetUrl` (or `relayUrl`) | JSON fields or `value` payload |
-
-Point mapping: `outbound` / `send` / channel name. Schedule ticks use `actionType: write_point`.  
-(`smpp` remains the SMSC protocol driver; `sms` is the HTTP SMS-relay notification gateway.)
-
-### Configuration
-
-| Property | Env (relaxed binding) | Description |
-|----------|----------------------|----------|
-| `ispf.notifications.email-relay-url` | `ISPF_NOTIFICATIONS_EMAIL_RELAY_URL` | Global HTTP relay for correlator/alert `SEND_EMAIL` (not the email DEVICE) |
-| `ispf.notifications.sms-relay-url` | `ISPF_NOTIFICATIONS_SMS_RELAY_URL` | Global HTTP relay for correlator `SEND_SMS` |
-| `ispf.notifications.timeout-seconds` | `ISPF_NOTIFICATIONS_TIMEOUT_SECONDS` | HTTP timeout (default 15) |
-
-Without `email-relay-url`, correlator `SEND_EMAIL` fails in the log; webhooks work without a relay. Device gateways use **per-device** `relayUrl` / `targetUrl` and do not require these globals.
-
-### Schedule → notification DEVICE (BL-230)
-
-```json
-{
-  "actionType": "write_point",
-  "action": {
-    "objectPath": "root.platform.devices.noc-email",
-    "pointId": "outbound",
-    "fields": {
-      "to": "noc@example.com",
-      "subject": "Daily report",
-      "body": "See attachment / portal"
-    }
-  }
-}
+```http
+GET / POST         /api/v1/correlators
+GET / PUT / DELETE /api/v1/correlators/by-path?path=root.platform.correlators.<name>
 ```
 
-Create `noc-email` with `driverId=email`, `relayUrl=https://relay.example/email`, mapping `{"outbound":"outbound"}`. SMS: `driverId=sms`. Webhook: `driverId=webhook`, `targetUrl=…`.
+---
 
-### Platform SCHEDULE cron (BL-232)
+## 4. Notification Relays and Outbound Notification Drivers
 
-Tree schedules (`root.platform.schedules.*`) still default to `intervalMs`. Optional:
+Global relay settings for alert and correlator notifications:
 
-| Variable | Example | Meaning |
-|----------|---------|---------|
-| `cronExpression` | `every:5m` or `0 8 * * *` | When set, replaces interval due-check |
-| `timeZone` | `Europe/Moscow` | IANA zone for calendar cron (default `UTC`) |
+| Property / Environment Variable | Purpose |
+|---------------------------------|---------|
+| `ispf.notifications.email-relay-url` (`ISPF_NOTIFICATIONS_EMAIL_RELAY_URL`) | HTTP relay endpoint for `SEND_EMAIL` |
+| `ispf.notifications.sms-relay-url` (`ISPF_NOTIFICATIONS_SMS_RELAY_URL`) | HTTP relay endpoint for `SEND_SMS` |
+| `ispf.notifications.timeout-seconds` (`ISPF_NOTIFICATIONS_TIMEOUT_SECONDS`) | HTTP request timeout (default `15` s) |
 
-Five-field cron is minute-first (seconds `0` prefixed internally). Blank `cronExpression` keeps `lastTickAt + intervalMs`.
-
-### Webhook payload / email context
-
-Base fields (`NotificationDispatchService.baseContext`):
-
-```json
-{
-  "source": "alert-rule | correlator",
-  "sourceId": "<rule/correlator node path>",
-  "objectPath": "<object where triggered>",
-  "eventName": "<event name>",
-  "timestamp": "2026-06-28T12:00:00Z"
-}
-```
-
-### Where to configure
-
-| Source | UI | Variables / fields |
-|----------|-----|-------------------|
-| Alert rule | Explorer → `alert-rules` → inspector | `notificationWebhookUrl`, `notificationEmailTarget` |
-| Correlator | Explorer → `correlators` → inspector | `actionType` = `SEND_WEBHOOK` / `SEND_EMAIL` / `SEND_SMS`, `actionTarget` |
-
-Alert rules API accepts the same fields in `POST/PUT` body (`CreateAlertRuleRequest` / `UpdateAlertRuleRequest`).
-
-`SEND_SMS` `actionTarget` format: `msisdn|body` (example `+15551234567|Site down`).
+You can also configure dedicated notification `DEVICE` nodes using the `email` (`ispf-driver-email`), `sms` (`ispf-driver-sms`), or `webhook` (`ispf-driver-webhook`) drivers and trigger them from schedules (`root.platform.schedules.*`, supporting both `intervalMs` and `cronExpression` with `timeZone`).
 
 ---
 
-## Process programs (BL-172)
+## 5. Cyclic Process Programs (`root.platform.process-programs.*`)
 
-Cyclic control loops under `root.platform.process-programs` (`PROCESS_PROGRAM` / `process-program-v1`).
-
-| Field | Role |
-|------|------|
-| `cycleIntervalMs` | Tick interval |
-| `targetObjectPath` | Plant object for CEL context + actuator write |
-| `outputVariable` | Variable on target written each cycle |
-| `controlExpression` | CEL result written to `outputVariable` |
-| `interlockExpression` | Optional CEL; write skipped when false (`lastError=interlock blocked`) |
-| `enabled` | On/off |
-| `lastCycleAt` / `lastOutput` / `lastError` | Runtime |
-
-Scheduler: leader-locked `ProcessProgramRunner` (`ispf.process-program.tick-ms`).
-
-## Event filters (BL-174)
-
-Reusable journal filters under `root.platform.event-filters` (`EVENT_FILTER` / `event-filter-v1`).
-
-| Field | Role |
-|------|------|
-| `eventNamePattern` | Glob (`*`, `?`) |
-| `sourceObjectPathPattern` | Object path glob (`*`, `**`) |
-| `minSeverity` / `maxSeverity` | 0–100 scale (DEBUG=10 … CRITICAL=90) |
-| `timeWindowMs` | Keep only events newer than now−window (0 = all) |
-| `filterExpression` | Optional CEL on `payload.*` (includes `eventName`, `severity`, …) |
-
-Apply:
-
-| Method | Path |
-|--------|------|
-| GET | `/api/v1/events?filterPath=root.platform.event-filters.*` |
-| GET | `/api/v1/events?expr=payload.eventName=="alarmActive"` |
-| GET | `/api/v1/event-filters/by-path/events?path=…` |
-
-CRUD: `/api/v1/event-filters`.
-
-## ML hooks (BL-175)
-
-`com.ispf.core.ml.AnomalyDetectionSpi` with reference `ThresholdAnomalyDetectionSpi` (`ispf.ml.anomaly.enabled=true`). Alert rules may set `anomalyModelId` for SPI scoring via `AnomalyAlertRuleEvaluator`.
-
-## CEL in automation
-
-| Place | Context |
-|-------|----------|
-| Variable binding | `self.var.field` |
-| Alert rule | watched variable fields |
-| Process program | target object `self.*` |
-| Event filter | `payload.*` |
-| Workflow gateway | process instance variables |
-| Expression validate API | arbitrary schema |
-
-Validation: `POST /api/v1/expressions/validate`.
-
----
-
-## Operator HMI
-
-In `?mode=operator`:
-
-- **EventJournalPanel** — live events
-- **WorkQueuePanel** — tasks from user tasks.
-
-Dashboard widgets `event-feed` and `work-queue` duplicate functionality on the HMI screen.
-
-## Related
-
-- [0039-unified-alarm-architecture](decisions/0039-unified-alarm-architecture.md) — alert rule field evolution
-- [reference-escalation-templates](reference-escalation-templates.md) — workflow escalation
-- [variable-history](variable-history.md) — event journal storage ([0015-event-history-timescale](decisions/0015-event-history-timescale.md), [0016-clickhouse-event-journal](decisions/0016-clickhouse-event-journal.md))
+For periodic closed-loop calculations with safety interlocks, create a `PROCESS_PROGRAM` node (`process-program-v1`):
+- `cycleIntervalMs` — execution period;
+- `targetObjectPath` and `outputVariable` — where to write the computed output;
+- `controlExpression` — CEL formula evaluated each cycle;
+- `interlockExpression` — optional boolean CEL guard; when `false`, the write is skipped and `lastError` records `"interlock blocked"`.

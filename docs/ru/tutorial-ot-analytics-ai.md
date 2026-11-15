@@ -1,56 +1,37 @@
 > **Язык:** русская версия. Английский оригинал: [en/tutorial-ot-analytics-ai.md](../en/tutorial-ot-analytics-ai.md).
 
-# Туториал: Analytics AI
+# Урок 6: Инструменты анализа временных рядов и кнопка «Спросить ИИ»
 
-> **Статус:** Beta — ADR-0049 Wave 2. См. также: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
+> **Статус:** Beta — статистический анализ истории переменной (поиск выбросов, сравнение периодов, сводка тренда) и формирование текстового пояснения для инженера. См. также: [Все уроки серии](ot-automation-excellence-tutorials.md).
 
-## Цель
+## Цель урока
+Выполнить расчёт статистических характеристик временного ряда (минимум, максимум, среднее, выбросы по z-оценке, сравнение двух смен) и получить краткую текстовую интерпретацию тренда.
 
-Использовать детерминированные analysis tools и кнопку **Ask AI** в inspector тега.
+---
 
-## Подготовка
+## 1. Детерминированные инструменты анализа для ИИ-агента
 
-Тег / переменная с историей. Справка: [формулы аналитики](analytics-formulas-and-packs.md).
+В отличие от «угадывания цифр» языковой моделью, в ISPF все математические показатели ряда сначала точно вычисляются серверным Java-кодом, и лишь готовая числовая сводка передаётся модели для текстового резюме:
 
-## A. Tools агента
+| Инструмент агента | Что вычисляет |
+|-------------------|---------------|
+| `list_analytics_catalog`, `query_analytics_tags`, `get_analytics_tag` | Поиск аналитических функций и развёрнутых исторических тегов в дереве |
+| `evaluate_analytics_expression` | Точный расчёт аналитической формулы за выбранное окно |
+| `detect_anomalies` | Поиск статистических выбросов (аномальных скачков) во временном ряду |
+| `compare_periods` | Числовое сравнение двух интервалов времени (например, текущей и прошлой смены) |
+| `summarize_trend` | Расчёт сводной статистики ряда (`summary`) + текстовое резюме (`narrative`) |
 
-| Tool | Назначение |
-|------|------------|
-| `list_analytics_catalog` | Каталог функций |
-| `get_analytics_tag` | Метаданные тега |
-| `query_analytics_tags` | Поиск по каталогу |
-| `evaluate_analytics_expression` | Вычисление expression |
-| `detect_anomalies` | z-score / anomaly |
-| `compare_periods` | period-over-period |
-| `summarize_trend` | summary → (опц.) LLM narrative |
+---
 
-Сначала убедитесь, что tool вернул **структурированный summary**, и только потом prose.
+## 2. Кнопка «Спросить ИИ» (`Ask AI`) на аналитическом теге
 
-## B. Ask AI в Web Console
-
-Object tree → analytics tag → **Ask AI**.
-
-API:
+Выберите переменную с включённой историей в инспекторе веб-консоли и нажмите **«Спросить ИИ»** — или вызовите метод напрямую по REST API:
 
 ```bash
 curl -s -X POST "$BASE/api/v1/platform/analytics/tags/ask?objectPath=root.platform.devices.demo-sensor-01&variable=temperature&hours=4" \
   -H "Authorization: Bearer $TOKEN" | jq '{status, summary, narrative}'
 ```
 
-## C. Из BPMN (опционально)
+Даже если внешний LLM-провайдер отключён (`provider: noop`), сервер всегда возвращает точный числовой блок `summary` по точкам архива истории.
 
-`invoke_agent` с allowlist `summarize_trend,detect_anomalies,get_variable_history` — см. [AI в BPMN](tutorial-ot-ai-bpmn.md).
-
-## Проверка
-
-- [ ] Каталог показывает analysis kinds
-- [ ] Ask AI / `summarize_trend` дают `summary` + `narrative`
-- [ ] При выключенном AI narrative — noop stub, summary есть
-
-## Вне scope
-
-Forecast / streaming ML — BL-175+, не ADR-0049.
-
-## Дальше
-
-[Хаб](ot-automation-excellence-tutorials.md)
+**Вернуться к оглавлению серии:** [Практические уроки по автоматизации и BPMN](ot-automation-excellence-tutorials.md).

@@ -1,141 +1,64 @@
 > **Language:** Canonical English. Russian edition: [ru/blueprints.md](../ru/blueprints.md).
 
-# Blueprints plugin
+# Object Templates (Blueprints)
 
-> **Status:** Stable — Models / templates. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — `SINGLETON`, `INSTANCE`, and `MIXIN` blueprints, parameterized SQL bindings and alert rules, and CEL applicability rules. Status tags: [doc-status.md](doc-status.md).
 
-Module `ispf-plugin-blueprint` — **blueprint** system (object structure templates). One engine, three kinds in the tree and API.
+A **blueprint** (`BlueprintDefinition`) is a reusable template that defines the variables, events, functions, calculation rules (`@bindingRules`), SQL bindings, and alert rules for an object in the tree ([ADR-0011](decisions/0011-model-type-semantics.md)).
 
-## Three model kinds (`BlueprintType`)
+**Related guides:** [Object model](object-model.md) · [Application architecture rules](application-principles.md) · [Binding rules](bindings.md).
+
+---
+
+## 1. The Three Blueprint Kinds (`BlueprintType`)
 
 ![Instance Types blueprints catalog](../assets/ispf-blueprints.png)
 
-| Type | Catalog | Behavior |
-|-----|---------|-----------|
-| `MIXIN` | `root.platform.mixin-blueprints` | Optional mixins — variables/events/functions **merge into** existing object |
-| `INSTANCE` | `root.platform.instance-types` | **Object type** template — create instances via instantiate |
-| `SINGLETON` | `root.platform.singleton-blueprints` | Unique live node under the catalog (`root.platform.singleton-blueprints.*`) — blueprint **and** application logic on the same object |
+| Blueprint Kind | Tree Catalog | Purpose and Behavior |
+|----------------|--------------|----------------------|
+| **`SINGLETON`** | `root.platform.singleton-blueprints` | **Unique orchestrator / application hub** (1 per solution or station). The blueprint definition and its live instance live together at `root.platform.singleton-blueprints.<name>` |
+| **`INSTANCE`** | `root.platform.instance-types` | **Repeatable object type** (for example, a production line, pump unit, or tank twin). Instantiated N times into the tree via `POST /api/v1/blueprints/{id}/instantiate` |
+| **`MIXIN`** | `root.platform.mixin-blueprints` | **Composable trait / aspect** (for example, Haystack tags, Brick class, or extra KPI formulas) that merges variables, functions, and rules into an existing object |
 
-**Where application logic lives:**
+### Where Application Logic Must Live (`Logic != DEVICE`)
 
-| Role | Blueprint kind | Rule |
-|------|----------------|------|
-| Unique orchestrator (one per solution/cluster) | **SINGLETON** | Prefer `root.platform.singleton-blueprints.{name}` + `ensure_singleton_instance` |
-| Digital twin with per-twin logic (many) | **INSTANCE** | `instantiate_instance_type`; each instance holds twin logic |
-| Telemetry endpoint | — | **DEVICE** only |
+| Architectural Role | Blueprint Kind | Rule |
+|--------------------|----------------|------|
+| Solution orchestrator / BFF hub | **`SINGLETON`** | Create under `root.platform.singleton-blueprints.<name>` (`ensure_singleton_instance`) |
+| Repeatable digital twin with per-unit logic | **`INSTANCE`** | Instantiate with `targetObjectType: "CUSTOM"` (`instantiate_instance_type`) |
+| Field sensor / PLC telemetry | `INSTANCE` or `MIXIN` on `DEVICE` | **`DEVICE` nodes hold protocol drivers and raw telemetry only** — never attach application orchestration or BFF functions to `ObjectType.DEVICE` |
 
-**Hard rule:** the logic-bearing object must **not** be `ObjectType.DEVICE`. A cluster may place a non-DEVICE hub under the `devices` tree with DEVICE children — that **path layout is an implementation choice**; the hub’s **type** is not. See [application-principles](application-principles.md) § Logic objects vs DEVICE.
+---
 
-**Intrinsic schemas** (1:1 with `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) live in the registry for bootstrap but **do not appear** in the mixin-blueprints catalog and **are not used** in `appliedBlueprintIds`. Structure is embedded in the instance via `*ObjectService.ensureStructure()`.
+## 2. Applying `MIXIN` Blueprints and CEL Applicability
 
-See [0011-model-type-semantics](decisions/0011-model-type-semantics.md).
+A `MIXIN` can be attached to an object either **explicitly** (via `templateId`, `POST /api/v1/mixin-blueprints/{id}/apply`, or `appliedBlueprintIds` in a bundle) or **automatically** when an object is created (`autoApplyMixinBlueprints=true`).
 
-### Object linkage
+Automatic application runs only when **all** of the following hold ([ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md)):
+1. The blueprint has `type = "MIXIN"` and `targetObjectType` matches the new object's type.
+2. Its **Applicability condition (`suitabilityExpression`)** is **non-empty** and evaluates to `true` in Google CEL against the target object (`self.*`).
 
-- `templateId` — primary model (INSTANCE/SINGLETON)
-- `appliedBlueprintIds` — JSON array of all applied model ids (persisted)
-- On merge name collision: **last wins + warning** (not error)
+| `suitabilityExpression` | Auto-applies on `POST /objects`? | Explicit apply allowed? |
+|-------------------------|:--------------------------------:|:-----------------------:|
+| *(empty string)* | No | Yes |
+| `true` | Yes (to all matching `targetObjectType` nodes) | Yes |
+| `self.flag.value == true` | Only when the CEL expression is `true` | Yes (when `true`) |
 
-### Automatic MIXIN apply
+### Opt-in Mixin Re-evaluation and Detach ([ADR-0058](decisions/0058-mixin-reevaluation-and-detach.md))
 
-On `POST /objects` with `autoApplyMixinBlueprints=true` (default) `BlueprintEngine.applyMixinBlueprints()` runs.
+If a `MIXIN` enables `reevaluation.enabled: true` (triggers `OBJECT_CREATED`, `SERVER_READY`), the platform re-checks `suitabilityExpression` and automatically attaches or detaches the mixin's owned variables, events, functions, and rules (tracked in `blueprintContributions`). Manual endpoints: `POST /api/v1/mixin-blueprints/{id}/detach`, `.../reevaluate`, and `POST /api/v1/objects/by-path/reevaluate-mixins?path=`.
 
-**Auto-apply conditions** (all required):
+---
 
-1. `BlueprintType.MIXIN`, not system
-2. `targetObjectType` matches object type
-3. **`suitabilityExpression` (applicability condition, CEL) is not empty** and evaluates to `true`
-4. Model not already in `appliedBlueprintIds`
+## 3. Parameterized Blueprints (`sqlBindings` and `alertRules`)
 
-**Empty CEL** → model **never** auto-applies. For unconditional mixin use explicit apply: `templateId` on create, `POST /api/v1/mixin-blueprints/{id}/apply`, companion models in bundle.
-
-**Explicit apply** (template/API): only `targetObjectType`; CEL optional — if set, must be `true`.
-
-See [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
-
-### Opt-in reevaluation (ADR-0058)
-
-MIXIN may enable **reevaluation** (`reevaluation.enabled` + triggers). Default off → sticky ADR-0018 behavior.
-
-| Trigger (v1) | When |
-|--------------|------|
-| `OBJECT_CREATED` | New object appears (`ObjectChangeType.CREATED`) |
-| `SERVER_READY` | After tree + attachment restore on startup |
-
-On each pass: CEL true → **attach** (if not applied); CEL false → **detach** owned contributions (variables/events/functions/bindings this mixin still owns). Ownership is stored in `blueprintContributions` on the object. Detach without a contribution manifest (legacy apply) only clears attachment / `appliedBlueprintIds` — it does **not** hard-delete by model names.
-
-APIs: `POST /api/v1/mixin-blueprints/{id}/detach`, `.../reevaluate`, `POST /api/v1/objects/by-path/reevaluate-mixins?path=`.
-
-### Applicability condition (CEL)
-
-Field `suitabilityExpression` in `BlueprintDefinition` — in Web Console: *Applicability condition (CEL)*.
-
-| Value | Auto-apply | Explicit apply |
-|----------|------------|-------------|
-| empty | no | yes (by object type) |
-| `true` | to all `targetObjectType` objects | yes |
-| `self.flag.value == true` | only when true | yes, if CEL true |
-
-Expression evaluated via `ExpressionEngine` with `self` = target object variables.
-
-## Three-tier models
-
-| Tier | Source | When in registry |
-|---------|----------|------------------|
-| **System-intrinsic** | `ModelBootstrap` | Always; not in mixin-blueprints catalog |
-| **Platform built-in** | `ModelBootstrap` | Always (`dashboard-v1`, `alert-rule-v1`, …) |
-| **Fixtures** | `FixtureModelBootstrap` | Only `ispf.bootstrap.fixtures-enabled=true` |
-| **Solution** | `bundle.json` → `models[]` | On bundle deploy |
-
-**System intrinsic** (schema embedded in instance, no `appliedBlueprintIds`): `data-source-v1`, `schedule-v1`, `sql-binding-v1`, `migration-v1`, `alert-rule-v1`, `correlator-v1`, `dashboard-v1`, `report-v1`, `workflow-v1`.
-
-**Fixtures** (demo/lab, not core): `device-driver-v1`, `mqtt-gateway-v1`, `mqtt-sensor-v1`, `base-sensor-v1`, `vendor-sensor-ext-v1`, `snmp-agent-v1`. Config: `ispf.bootstrap.fixtures-enabled` (default `true`).
-
-See [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
-
-## API
-
-| Method | Path | Description |
-|--------|------|----------|
-| GET/POST/… | `/api/v1/mixin-blueprints` | MIXIN facades |
-| GET/POST/… | `/api/v1/instance-types` | INSTANCE facades (+ `?platformType=` for create dialog) |
-| GET/POST/… | `/api/v1/singleton-blueprints` | SINGLETON facades |
-| GET/POST/… | `/api/v1/blueprints` | Legacy unified API (compatibility) |
-
-## Model composition (`BlueprintDefinition`)
-
-- Variables (`ModelVariableDefinition`) — schema, default, group, readable/writable
-- Events (`EventDescriptor`)
-- Functions (`FunctionDescriptor`)
-- Binding rules (`ModelBindingRule`) — see [bindings](bindings.md)
-- **SQL binding templates** (`sqlBindings`) — materialized per instance (see below)
-- **Alert rule templates** (`alertRules`) — materialized under automation with absolute `targetObjectPath`
-- Metadata: name, description, `ObjectType`, `BlueprintType`
-
-## Parametrized SHAPE (`sqlBindings` / `alertRules`)
-
-INSTANCE/SINGLETON/MIXIN blueprints can contribute **parametrized** SQL bindings and alert rules. On apply / instantiate, `BlueprintParameterResolver` substitutes `${key}` in template strings.
-
-**Seeded keys** (always available when a target object exists):
-
-| Key | Value |
-|-----|--------|
-| `self.path` | Absolute object path |
-| `self.name` | Leaf name |
-| `self.displayName` | Display name |
-
-**Explicit parameters** come from:
-
-- blueprint `parameters` map
-- bundle `objects[].parameters` (passed on `templateId` apply)
-- API / agent `instantiate_instance_type` `parameters` argument
-
-Example (tank INSTANCE — one template, many tanks):
+Blueprints can include parameterized SQL bindings and alert rule templates using `${param}` placeholders. When the blueprint is applied or instantiated, `BlueprintParameterResolver` substitutes both built-in object keys (`${self.path}`, `${self.name}`, `${self.displayName}`) and custom parameters passed in `objects[].parameters`:
 
 ```json
 {
   "name": "oil-control-tank-v1",
   "type": "INSTANCE",
+  "targetObjectType": "CUSTOM",
   "sqlBindings": [
     {
       "variable": "levelCm",
@@ -149,7 +72,7 @@ Example (tank INSTANCE — one template, many tanks):
     {
       "name": "tank-${code}-high",
       "watchVariable": "levelCm",
-      "conditionExpr": "self.levelCm.value > 1000",
+      "conditionExpr": "self.levelCm.value > 1000.0",
       "eventName": "levelHigh",
       "enabled": true
     }
@@ -157,131 +80,36 @@ Example (tank INSTANCE — one template, many tanks):
 }
 ```
 
-Bundle object:
+Instantiating the template in `bundle.json`:
 
 ```json
 {
-  "parentPath": "root.platform.devices.oil-control.tanks",
+  "parentPath": "root.platform.instances.oil-control.tanks",
   "name": "rvs-1",
-  "type": "DEVICE",
+  "type": "CUSTOM",
   "templateId": "oil-control-tank-v1",
   "parameters": { "code": "RVS-1" }
 }
 ```
 
-Deploy order: `blueprints[]` before `objects[]`. Prefer blueprint `sqlBindings` over duplicated top-level `bindings[]` rows per instance.
+---
 
-## Engine
+## 4. Built-in Schemas vs Demo Fixture Blueprints
 
-| Class | Purpose |
-|-------|------------|
-| `ModelRegistry` | In-memory model catalog |
-| `BlueprintEngine` | CRUD, apply, instantiate, fromObject, `applyRelativeModels` (CEL-gated) |
-| `ModelBootstrap` | Platform built-in + system-intrinsic models |
-| `FixtureModelBootstrap` | Demo/lab fixture models (`fixtures-enabled`) |
-| `ModelPersistenceService` | Persist user models in `blueprint_definitions` (REQ-PF-07) |
+- **System-intrinsic schemas** (`dashboard-v1`, `workflow-v1`, `report-v1`, `alert-rule-v1`, `correlator-v1`, `data-source-v1`, `schedule-v1`) are automatically embedded into their corresponding `ObjectType` nodes on creation.
+- **Demo fixture blueprints** (`mqtt-sensor-v1`, `mqtt-gateway-v1`, `snmp-agent-v1`, `virtual-lab-v1`) are loaded only when `ispf.bootstrap.fixtures-enabled=true` (local dev and training stands; disabled on production servers).
 
-User models (non-`builtin`) load from DB on server start after `ensureBuiltInModels()`.
+---
 
-## API (unified)
+## 5. Blueprint REST API (`admin`)
 
-| Method | Path | Description |
-|--------|------|----------|
-| GET | `/api/v1/blueprints` | List |
-| GET | `/api/v1/blueprints/{id}` | By ID |
-| GET | `/api/v1/blueprints/by-name/{name}` | By name |
-| POST | `/api/v1/blueprints` | Create |
-| PUT | `/api/v1/blueprints/{id}` | Update |
-| DELETE | `/api/v1/blueprints/{id}` | Delete |
-| POST | `/api/v1/blueprints/{id}/apply?objectPath=` | Apply to object |
-| POST | `/api/v1/blueprints/{id}/instantiate` | Create instance |
-| POST | `/api/v1/blueprints/from-object` | Export model from object |
-| GET | `/api/v1/blueprints/attachments` | Model↔type attachments |
-
-Access: **admin**. See [api](api.md).
-
-## Built-in and fixture models
-
-### Platform built-in (always)
-
-| Model | Type | Purpose |
-|--------|-----|------------|
-| `dashboard-v1` | intrinsic MIXIN | Layout HMI |
-| `workflow-v1` | intrinsic MIXIN | BPMN workflow |
-| `report-v1` | intrinsic MIXIN | SQL report |
-| `alert-rule-v1` | intrinsic MIXIN | CEL alert rule |
-| `correlator-v1` | intrinsic MIXIN | Event correlator |
-| `data-source-v1`, `schedule-v1`, … | intrinsic MIXIN | System object type schemas |
-
-### Fixtures (`ispf.bootstrap.fixtures-enabled=true`)
-
-Demo/lab models **not** included in core `ModelBootstrap`. Registered by `FixtureModelBootstrap` on start (when fixtures enabled).
-
-#### mqtt-sensor-v1
-
-Demo MQTT temperature sensor. Applied to `demo-sensor-01` via `templateId`, not auto-apply (default CEL empty).
-
-| Variable | Group | Description |
-|------------|--------|----------|
-| `temperature` | telemetry | value, unit (history) |
-| `threshold` | config | Threshold |
-| `alarmActive`, `alarmAcknowledged` | status | Alarm state |
-| `temperaturePercent` | telemetry | Binding |
-
-Event: `thresholdExceeded`. Function: `acknowledgeAlarm`.
-
-#### mqtt-gateway-v1
-
-MQTT ingress gateway — one broker, routes `lastIngress` to child sensors via `dispatchTelemetry`. See [0017-telemetry-ingest-pipeline](decisions/0017-telemetry-ingest-pipeline.md).
-
-#### device-driver-v1
-
-MIXIN mixin with `driver` group variables — for demo/lab and explicit apply. **Not** used for auto-apply on DEVICE create.
-
-On production path driver schema is provisioned via `provisionDriver()` without relative mixin (see [drivers](drivers.md)).
-
-#### snmp-agent-v1
-
-SNMP device (MIB-II + HOST-RESOURCES). Demo: `root.platform.devices.snmp-localhost`.
-
-| Variable | OID | Description |
-|------------|-----|----------|
-| `sysName` | 1.3.6.1.2.1.1.5.0 | Host name |
-| `sysDescr` | 1.3.6.1.2.1.1.1.0 | System / OS description |
-| `sysUpTime` | 1.3.6.1.2.1.1.3.0 | Uptime (TimeTicks) |
-| `sysLocation` | 1.3.6.1.2.1.1.6.0 | Location |
-| `sysContact` | 1.3.6.1.2.1.1.4.0 | Contact |
-| `hrMemorySize` | 1.3.6.1.2.1.25.2.2.0 | RAM size (KB) |
-| `hrSystemProcesses` | 1.3.6.1.2.1.25.1.6.0 | Process count |
-| `hrSystemNumUsers` | 1.3.6.1.2.1.25.1.5.0 | User count |
-| `ifNumber` | 1.3.6.1.2.1.2.1.0 | Network interface count |
-| `ifInOctets` | 1.3.6.1.2.1.2.2.1.10.1 | Ingress octets (interface #1) |
-| `ifOutOctets` | 1.3.6.1.2.1.2.2.1.16.1 | Egress octets (interface #1) |
-| `hrProcessorLoad` | 1.3.6.1.2.1.25.3.3.1.2.1 | CPU load % (core #1) |
-
-Used by dashboard `root.platform.dashboards.snmp-host-monitoring`.
-
-#### base-sensor-v1 / vendor-sensor-ext-v1
-
-INSTANCE + MIXIN extension family for vendor model inheritance (see `ModelUpgradeApiTest`).
-
-## Example: create instance
-
-```http
-POST /api/v1/blueprints/{id}/instantiate
-Content-Type: application/json
-
-{
-  "parentPath": "root.platform.devices",
-  "name": "sensor-02",
-  "parameters": {}
-}
-```
-
-## Related documents
-
-- [object-model](object-model.md) — variables, DataRecord
-- [dashboards](dashboards.md) — dashboard-v1 layout
-- [workflows](workflows.md) — workflow-v1
-- [drivers](drivers.md) — driver variables, provisioning
-- [decisions/0018-fixture-models-and-cel-applicability.md](decisions/0018-fixture-models-and-cel-applicability.md) — fixtures + CEL auto-apply
+| HTTP Method & Path | Description |
+|--------------------|-------------|
+| `GET / POST / PUT / DELETE /api/v1/singleton-blueprints` | Manage `SINGLETON` blueprints and ensure their live hub instance (`GET .../{id}/instance`) |
+| `GET / POST / PUT / DELETE /api/v1/instance-types` | Manage `INSTANCE` blueprints |
+| `GET / POST / PUT / DELETE /api/v1/mixin-blueprints` | Manage `MIXIN` blueprints |
+| `GET / POST / PUT / DELETE /api/v1/blueprints` | Unified blueprint catalog API |
+| `POST /api/v1/blueprints/{id}/apply?objectPath=...` | Apply a blueprint to an existing object |
+| `POST /api/v1/blueprints/{id}/instantiate` | Create a new object instance from an `INSTANCE` blueprint |
+| `POST /api/v1/blueprints/from-object` | Export an existing object's structure as a reusable blueprint |
+| `GET /api/v1/blueprints/attachments` | List objects where a blueprint is currently applied |

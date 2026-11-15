@@ -1,29 +1,31 @@
 > **Language:** Canonical English. Russian edition: [ru/applications.md](../ru/applications.md).
 
-# Platform applications (REQ-PF)
+# Application Solutions: `bundle.json`, Functions, SQL Migrations, and BFF
 
-> **Status:** Stable — Bundles, BFF, scheduler. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — declarative solution packaging (`bundle.json`), isolated application SQL schemas, step-script functions, BFF gateway, schedules, and Git integration. Status tags: [doc-status.md](doc-status.md).
 
-Platform layer for deploying application solutions **without industry Java code in `ispf-server`**. Aligns with [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md) and REQ-PF requirements.
+ISPF lets you build and ship complete industrial and enterprise solutions (SCADA, MES, energy management, building automation) **as declarative `bundle.json` packages without adding domain Java code to `ispf-server`** ([ADR-0001](decisions/0001-app-platform-boundary.md)). For a step-by-step tutorial from scratch, see the **[Solution Developer Guide](solution-developer-guide.md)**.
 
-**Roadmap and REQ-PF status:** [roadmap](roadmap.md) (Part A).
+---
 
-## Overview
+## 1. Overview of Solution Mechanisms
 
 ![Applications catalog in Explorer](../assets/ispf-applications.png)
 
-| REQ-PF | Capability | API / component |
-|--------|------------|-----------------|
-| 01 | Application Function Runtime | `POST /api/v1/applications/{appId}/functions/deploy`, JSON script engine |
-| 02 | Application Data Layer | `POST /api/v1/applications/{appId}/data/migrate` |
-| 03 | Application Package Deploy | `POST /api/v1/applications/{appId}/deploy` (JSON body) |
-| 04 | BPMN `invoke_function` | `WorkflowActionType.INVOKE_FUNCTION` |
-| 05 | Platform Scheduler | `GET/POST /api/v1/schedules` |
-| 06 | BFF Wire Gateway | `POST /api/v1/bff/invoke` |
-| 07 | Model Registry Persistence | `model_definitions` + auto-save on model CRUD |
-| 10 | Workflow Cancel | `POST /api/v1/workflows/instances/{id}/cancel` |
+| Capability | API / Manifest Section |
+|------------|------------------------|
+| Application registration & SQL schema isolation | `POST /api/v1/applications` (`schemaName`, `tablePrefix`) |
+| Application SQL migrations | `POST /api/v1/applications/{appId}/data/migrate` (`migrations[]` in bundle) |
+| Declarative JSON step-script functions | `POST /api/v1/applications/{appId}/functions/deploy` (`functions[]` in bundle) |
+| One-request bundle deployment | `POST /api/v1/applications/{appId}/deploy` (`bundle.json`) |
+| Unified UI Backend-for-Frontend (BFF) gateway | `POST /api/v1/bff/invoke` (`wireProfile: "ispf-operator-v1"`) |
+| BPMN workflow function calls | `serviceTask` with `action="invoke_function"` |
+| Periodic schedules | `GET / POST /api/v1/schedules` (`schedules[]` in bundle) |
+| Git repository sync (pull release / push PR) | **Git** tab on `APPLICATION` node (`/api/v1/applications/{appId}/git/**`) |
 
-## Application registration
+---
+
+## 2. Registering an Application and Isolated SQL Migrations
 
 ```http
 POST /api/v1/applications
@@ -37,9 +39,9 @@ Content-Type: application/json
 }
 ```
 
-## Data migrations (REQ-PF-02)
+### Application Data Migrations (`migrations[]`)
 
-Application SQL scripts **do not** go into platform Flyway. Deploy via API into an **isolated schema** (`schemaName`, default `app_{appId}`):
+Application tables never go into platform Flyway. They are deployed into the application's own isolated database schema (`schemaName`, default `app_<appId>`):
 
 ```http
 POST /api/v1/applications/myapp/data/migrate
@@ -48,67 +50,47 @@ Content-Type: application/json
 {
   "version": "1.0.0",
   "scripts": [
-    { "id": "items", "sql": "CREATE TABLE IF NOT EXISTS demo_item (...);" }
+    { "id": "items", "sql": "CREATE TABLE IF NOT EXISTS myapp_item (id VARCHAR(64) PRIMARY KEY, title VARCHAR(255));" }
   ]
 }
 ```
 
-Repeat call with the same `version` + `id` is **idempotent** (script is skipped).
+- Repeated calls with the same `(version, id)` are **idempotent** and safely skipped.
+- DDL guards prevent application scripts from modifying system tables (`applications`, `object_nodes`, `workflow_*`, etc.). When `tablePrefix` is set, all created tables must start with that prefix.
+- Check migration status: `GET /api/v1/applications/myapp/data/status`.
 
-**Guard:** DDL cannot create platform tables (`applications`, `workflow_*`, …). With non-empty `tablePrefix`, table names should start with the prefix.
+---
 
-```http
-GET /api/v1/applications/myapp/data/status
-```
+## 3. Application Script Functions (`source.type = "script"`)
 
-### Seed (smoke)
+Application functions are attached to **`SINGLETON`** or **`INSTANCE`** logic nodes (never to `ObjectType.DEVICE`) and execute a sequence of JSON steps inside a single JDBC transaction:
 
-```http
-POST /api/v1/applications/myapp/data/seed
-Content-Type: application/json
+| Script Step | Purpose |
+|-------------|---------|
+| `selectOne` | Run SQL `SELECT` and store a single row (`Map`) in a script variable |
+| `selectMany` | Run SQL `SELECT` and store a list of rows (`List<Map>`) in a script variable |
+| `exec` | Execute parameterized SQL `INSERT` / `UPDATE` / `DELETE` |
+| `setVar` | Assign a literal or `${...}` expression to a script variable |
+| `buildRecord` | Assemble a `Map` from computed `fields` |
+| `map` | Transform a list variable (`source`) using `fields` and `${item.*}` |
+| `invoke_function` | Call another object function (up to 8 levels deep) |
+| `when` / `if` | Conditional branching (`then` / `else`) |
+| `readVariable` | Read a variable field from an object in the tree (`objectPath: "self"` or full path) |
+| `jsonParse` | Parse a JSON string into structured fields |
+| `setDriverTelemetry` | Push telemetry values to a device node |
+| `instantiateModelIfMissing` | Create an object instance from a blueprint if it does not yet exist |
+| `cancel_workflows` | Cancel active BPMN workflow instances |
+| `failIfNull` / `failIfNotEquals` | Abort and return a structured `error_code` and `error_message` |
+| `return` | Build the function output record from `fields` |
 
-{ "profile": "smoke-demo" }
-```
-
-Built-in profile `smoke-demo` — idempotent INSERTs into generic tables (`demo_category`, `demo_item`, `demo_metric`). Repeat call skips already applied seed blocks.
-
-```http
-GET /api/v1/applications/myapp/data/status
-```
-
-## Function deploy (REQ-PF-01)
-
-Functions are JSON **scripts** with steps:
-
-| Step | Purpose |
-|------|---------|
-| `selectOne` | One SQL row → var (`Map`) |
-| `selectMany` | List of SQL rows → var (`List<Map>`) |
-| `exec` | DML/DDL with `params` |
-| `setVar` | Assign literal or `${path}` |
-| `buildRecord` | Build `Map` in var from `fields` (field mapping) |
-| `map` | Transform list: `source` + `fields` with `${item.*}` context |
-| `invoke_function` | Call another deploy function; propagate `error_code` |
-| `when`, `if` | Branching (`then` / `else`) |
-| `readVariable` | Read object variable field (`objectPath: self`) |
-| `jsonParse` | Parse JSON string into fields |
-| `setDriverTelemetry` | Write driver telemetry |
-| `instantiateModelIfMissing` | Create object from model |
-| `cancel_workflows` | Cancel workflow instances |
-| `failIfNull` | Exit with `error_code` / `error_message` |
-| `failIfNotEquals` | Check var value |
-| `return` | Build output (`fields`); arrays via `${var}` |
-
-Full examples of script/java/built-in functions on tree objects: [object-functions](object-functions.md). The same steps run in `sourceType=script` on an object (Inspector) and in application deploy.
-
-One invoke = one JDBC transaction (rollback on unhandled exception). Nested `invoke_function` — up to 8 levels. Invalid script → **400** on deploy.
+Full examples of built-in, script, and sandboxed Java functions: **[Object functions (`object-functions.md`)](object-functions.md)**.
 
 ```http
 POST /api/v1/applications/myapp/functions/deploy
 Content-Type: application/json
 
 {
-  "objectPath": "root.platform.devices.demo-sensor-01",
+  "objectPath": "root.platform.singleton-blueprints.myapp-hub",
   "functionName": "myapp_ping",
   "version": "1",
   "descriptor": {
@@ -128,28 +110,18 @@ Content-Type: application/json
 }
 ```
 
-On first invoke the function descriptor is automatically added to the object.
+---
 
-SQL parameters: `"${input.orderId}"` or `"$input.orderId"`.
+<a id="bundle-deploy-req-pf-03"></a>
 
-## Bundle deploy (REQ-PF-03)
+## 4. Deploying a Complete Solution Bundle (`bundle.json`)
 
-### Semver and format contract (BL-97 / ADR-0064)
+A single `POST /api/v1/applications/{appId}/deploy` request registers the application, runs SQL migrations, registers blueprints, reconciles tree objects, deploys functions, alert rules, correlators, dashboards, workflows, reports, and schedules.
 
-`manifest.version` is **required** and must be strict semver `MAJOR.MINOR.PATCH` (e.g. `1.0.0`). Invalid values are rejected at parse, validate, and deploy.
-
-`manifest.formatVersion` is an optional **integer** for the JSON wire shape (not the solution semver). Omit ⇒ `1`. Unsupported values are rejected. Pull-from-tree writes `formatVersion: 1`. See [0064-release-compatibility-lts](decisions/0064-release-compatibility-lts.md) and the lab upgrade gate in [release-upgrade](release-upgrade.md) (not cluster N→N+1).
-
-Optional fields:
-
-- `changelog` — top-level string shown in the solution catalog
-- `metadata.changelog` — alternative location for the same text
-
-When upgrading an installed app, `POST …/bundle/validate` warns on **major** version bumps (`1.x.x` → `2.0.0`) so integrators review migrations and operator UI breaks.
-
-API: `GET /api/v1/solutions/catalog`. Reference demos (MES, Warehouse, Building HVAC) install from the marketplace (`POST /api/v1/solutions/marketplaces/{marketplaceId}/listings/{slug}/install`).
-
-One request — registration, metadata, migrations, functions, schedules:
+### SemVer and Format Contract ([ADR-0064](decisions/0064-release-compatibility-lts.md))
+- `version` is **required** and must follow strict SemVer `MAJOR.MINOR.PATCH` (for example, `"1.0.0"`).
+- `formatVersion` is an optional integer indicating the manifest wire format (defaults to `1`; unknown future format versions are rejected safely).
+- Optional `changelog` (or `metadata.changelog`) documents release changes for the Solutions catalog.
 
 ```http
 POST /api/v1/applications/myapp/deploy
@@ -158,40 +130,41 @@ Content-Type: application/json
 {
   "version": "1.0.0",
   "displayName": "My Application",
-  "tablePrefix": "",
+  "tablePrefix": "myapp_",
   "schemaName": "myapp",
+  "blueprints": [
+    {
+      "name": "myapp-hub-v1",
+      "description": "Application orchestrator hub",
+      "type": "SINGLETON",
+      "targetObjectType": "CUSTOM",
+      "variables": []
+    }
+  ],
   "objects": [
     {
-      "parentPath": "root.platform",
-      "name": "myapp",
+      "parentPath": "root.platform.singleton-blueprints",
+      "name": "myapp-hub",
       "type": "CUSTOM",
-      "displayName": "My Application"
+      "templateId": "myapp-hub-v1",
+      "displayName": "My Application Hub"
     }
   ],
   "dashboards": [
     {
-      "path": "root.platform.myapp.ops",
+      "path": "root.platform.dashboards.myapp-ops",
       "title": "Operator Board",
       "layoutJson": "{ \"columns\": 84, \"rowHeight\": 8, \"widgets\": [] }"
     }
   ],
   "workflows": [
     {
-      "path": "root.platform.myapp.workflows.main",
+      "path": "root.platform.workflows.myapp-main",
       "bpmnXml": "<definitions ...>...</definitions>",
       "status": "ACTIVE"
     }
   ],
-  "blueprints": [
-    {
-      "name": "my-device-v1",
-      "description": "Custom device template",
-      "type": "DEVICE",
-      "targetObjectType": "DEVICE",
-      "variables": []
-    }
-  ],
-  "migrations": [ { "id": "...", "sql": "..." } ],
+  "migrations": [ { "id": "001_init", "sql": "..." } ],
   "functions": [ ... ],
   "schedules": [
     {
@@ -200,7 +173,7 @@ Content-Type: application/json
       "intervalMs": 60000,
       "actionType": "invoke_function",
       "action": {
-        "objectPath": "root.platform.myapp.integration",
+        "objectPath": "root.platform.singleton-blueprints.myapp-hub",
         "functionName": "myapp_importRecords"
       }
     }
@@ -208,270 +181,99 @@ Content-Type: application/json
 }
 ```
 
-Response: `{ "status": "OK", "applied": [...], "skipped": [...], "errors": [] }`.
+### Validation Modes (`strict`), Rollback, and `pull-from-tree`
 
-## BFF (REQ-PF-06)
+```http
+GET  /api/v1/applications/{appId}/export
+POST /api/v1/applications/{appId}/bundle/validate?dryRun=true|false&strict=true|false
+POST /api/v1/applications/{appId}/deploy?strict=true|false&runTests=true|false
+GET  /api/v1/applications/{appId}/deploy/history
+POST /api/v1/applications/{appId}/deploy/rollback
+POST /api/v1/applications/{appId}/bundle/pull-from-tree
+```
 
-Universal gateway for Operator UI:
+- **Authoring vs Strict Ship Validation ([ADR-0060](decisions/0060-solution-authoring-constraints.md)):** by default (`strict=false`), placing logic on a `DEVICE` node (`LOGIC_HOST_DEVICE`) is reported as a `WARNING` so iterative prototyping is not blocked. With `strict=true` (or CLI `ispf validate --strict` / `ispf deploy --strict`), architecture violations return HTTP `400` (`deployed: false`).
+- **Transactional preflight:** before mutating the object tree, `deploy` validates all target paths and executes `migrations[]` in a database transaction. If a SQL statement fails, the batch rolls back and drops any tables created by that failed attempt.
+
+---
+
+<a id="bff-req-pf-06"></a>
+
+## 5. Backend-for-Frontend Gateway (`POST /api/v1/bff/invoke`)
+
+Operator dashboards and hosted React applications (`ui-pack`) call backend functions through a single gateway:
 
 ```http
 POST /api/v1/bff/invoke
 Content-Type: application/json
 
 {
-  "objectPath": "root.platform.devices.demo-sensor-01",
+  "objectPath": "root.platform.singleton-blueprints.myapp-hub",
   "functionName": "myapp_processRecord",
   "input": {
     "schema": { "name": "in", "fields": [{"name": "orderId", "type": "STRING"}] },
-    "rows": [{ "orderId": "..." }]
+    "rows": [{ "orderId": "ORD-101" }]
   },
   "wireProfile": "ispf-operator-v1"
 }
 ```
 
-### Wire profile `ispf-operator-v1`
+With `wireProfile: "ispf-operator-v1"`:
+- **Success:** returns `"error_code": "OK"`, `"error_message": ""`, `"result"` (an object for scalar output or an array of row objects for tabular output), and `"result_field_labels"`.
+- **Error:** returns the application error code in `"error_code"` and message in `"error_message"`.
 
-| Rule | Behavior |
-|------|----------|
-| Success | `error_code === "OK"`, `error_message === ""` |
-| Error | `result` absent |
-| Table | `result` = array of rows (unwrap `rows` field) |
-| Labels | `result_field_labels`: output schema field `description` → profile map `ispf-operator-v1` → field name |
+---
 
-Response (scalar): `{ "error_code": "OK", "error_message": "", "result": { ... }, "result_field_labels": {...}, "wireProfile": "ispf-operator-v1" }`.
+## 6. Declarative SQL Bindings (`sqlBinding`)
 
-Response (table): `{ "error_code": "OK", "result": [ {...}, ... ], "result_field_labels": {...} }`.
-
-## Schedules (REQ-PF-05)
-
-```http
-GET /api/v1/schedules
-POST /api/v1/schedules
-```
-
-Tick every 5 s; action `invoke_function` with JSON `{ objectPath, functionName, input? }`.
-
-## BPMN invoke_function (REQ-PF-04)
-
-In a BPMN service task:
-
-```xml
-<ispf:serviceTask action="invoke_function"
-  objectPath="root.platform.devices.demo-sensor-01"
-  functionName="myapp_acknowledge"
-  inputMap="deviceId=${workflow.deviceId}"
-  outputMap="ackResult=result" />
-```
-
-## Workflow cancel (REQ-PF-10)
-
-```http
-POST /api/v1/workflows/instances/{instanceId}/cancel
-Content-Type: application/json
-
-{
-  "reason": "incident",
-  "detailJson": "{\"incidentId\":\"...\"}",
-  "cancelledBy": "operator-1"
-}
-```
-
-## Models (REQ-PF-07)
-
-Custom models are persisted in `model_definitions` and restored at startup.
-
-## Access control
-
-| Endpoint | Role |
-|----------|------|
-| `/applications/**`, `/schedules/**` (POST/PUT) | `admin` |
-| `/applications/*/operator-ui`, `/applications/*/hmi-ui`, `/applications/*/operator-manifest` (GET) | `operator`, `admin` |
-| `/bff/invoke`, `/workflows/instances/*/cancel`, `/applications/*/reports/*/run` | `operator`, `admin` |
-
-## SQL bindings (REQ-PF-08)
-
-Declarative sync of object variable ← SQL in app schema:
+You can synchronize a variable on a logic node with a SQL query against the application schema:
 
 ```http
 POST /api/v1/applications/{appId}/bindings/deploy
+Content-Type: application/json
+
 {
-  "objectPath": "root.platform.devices.demo-sensor-01",
+  "objectPath": "root.platform.singleton-blueprints.myapp-hub",
   "variable": "readyCount",
-  "query": "SELECT COUNT(*) AS value FROM demo_item WHERE status = 'ready'",
+  "query": "SELECT COUNT(*) AS value FROM myapp_item WHERE status = 'ready'",
   "refresh": "on_schedule",
   "refreshIntervalMs": 30000,
   "valueField": "value"
 }
 ```
 
-| `refresh` | Behavior |
-|-----------|----------|
-| `on_schedule` | Periodic poll (`ApplicationSqlBindingScheduler`) |
-| `on_function_success` | After successful function invoke (optional `triggerObjectPath` / `triggerFunctionName`) |
-| `on_event` | After `EVENT_FIRED` on object (optional filter by `triggerObjectPath` / event) |
+Refresh modes: `on_schedule` (periodic poll), `on_function_success` (after a function commits), or `on_event` (when an object event fires). If a refresh query fails or returns no usable numeric value, the variable retains its last value marked with `quality=BAD` (counted in `ispf.sql_binding.refresh_failures.total{reason}`) rather than overwriting with a false `0`.
 
-**Variable-level binding:** on an object variable you can set `bindingExpression`:
+---
 
-```text
-sqlBinding('warehouse-app', 'readyCount')
-```
+<a id="application-git-adr-0063"></a>
 
-The platform runs the SQL binding from `application_sql_bindings` for that app and variable (see `ServerBindingEvaluator`).
+## 7. Application Git Integration ([ADR-0063](decisions/0063-application-git-lifecycle.md))
 
-Also deploy via bundle: `bindings[]` in manifest.
+The **Git** tab on an `APPLICATION` node connects the application's `bundle.json` to a GitHub or GitLab repository:
 
-```http
-GET  /api/v1/applications/{appId}/bindings
-POST /api/v1/applications/{appId}/bindings/refresh
-```
+| Operation | Endpoint | Behavior |
+|-----------|----------|----------|
+| Configure repository binding | `GET / PUT / DELETE /api/v1/applications/{appId}/git` | Stores HTTPS repository URL, provider (`github` \| `gitlab`), branch, path to `bundle.json`, and encrypted PAT in the credential vault |
+| Check sync status | `GET /api/v1/applications/{appId}/git/status` | Returns binding metadata and last synced commit SHA |
+| Pull release from Git | `POST /api/v1/applications/{appId}/git/pull` | Fetches `bundle.json` at the requested `ref`, validates, and deploys it |
+| Push live tree to a PR/MR | `POST /api/v1/applications/{appId}/git/push-pr` | Runs `pull-from-tree`, creates a branch `ispf/...`, and opens a Pull Request / Merge Request |
 
-## Function versions (REQ-PF-11)
+---
 
-```http
-GET  /api/v1/applications/{appId}/functions?objectPath=&functionName=
-POST /api/v1/applications/{appId}/functions/rollback
-{ "objectPath", "functionName", "version": "2" }
-```
+## 8. Operator Workspace Menu (`operatorUi`)
 
-Rollback raises `deployed_at` of the selected version — `findLatest` uses it again.
-
-## Bundle deploy history and rollback (PF-03b)
-
-Each `POST .../deploy` stores a manifest snapshot in `application_bundle_deployments`.
-
-```http
-GET  /api/v1/applications/{appId}/deploy/history
-POST /api/v1/applications/{appId}/deploy/rollback
-{ "version": "1.0.0" }
-```
-
-Rollback re-applies the stored manifest (migrations skipped, functions re-applied).
-
-## Bundle export and validate (round-trip)
-
-```http
-GET  /api/v1/applications/{appId}/export
-GET  /api/v1/applications/{appId}/export?version=1.0.0
-POST /api/v1/applications/{appId}/bundle/validate?dryRun=true|false&strict=true|false
-POST /api/v1/applications/{appId}/deploy?strict=true|false&runTests=true|false
-```
-
-Deploy always runs `BundleManifestValidator` before apply. A blank `displayName` or `schemaName` is filled with the same defaults `register()` uses (`appId` and `app_<appId>`), so an incremental deploy of an already registered app still applies. The license check stays on the raw JSON body. Structural **ERROR** (missing version, empty manifest, broken migrations) returns **400** with `deployed: false` and does not apply the bundle. Default `strict=false` keeps authoring behaviour (`LOGIC_HOST_DEVICE` is WARNING and does not block deploy). With `strict=true`, ship-canon codes are **ERROR**: deploy returns **400** with `shipCanon: true` / `deployed: false` ([0060](decisions/0060-solution-authoring-constraints.md)). CLI: `ispf validate --strict`, `ispf deploy --strict`.
-
-`runTests` defaults to **true**: manifest `tests[]` run after apply and a failure is recorded on the deploy result. Pass `runTests=false` to skip them.
-
-Before bundle objects are written, deploy dry-runs the object tree (required fields, known types, a parent that already exists or is created earlier in the same manifest, duplicate paths) and runs `migrations[]` on one database connection. A dry-run error leaves the live object tree unchanged (`treeMutated: false`) and does not execute SQL. A failed statement rolls that connection back and drops tables the failed batch itself created, so a later error cannot leave those tables behind. Registration still creates the application schema and data source so the statements have a schema to run in. DDL that has already committed cannot be undone if a later object write fails.
-
-`export` returns the active (or specified) snapshot manifest from `application_bundle_deployments`. Web Console: **Deploy** tab on `APPLICATION` node — JSON editor, validate, deploy, resource table (add/remove in manifest).
-
-```http
-POST /api/v1/applications/{appId}/bundle/pull-from-tree
-{
-  "sections": ["dashboards", "workflows"],
-  "paths": ["root.platform.dashboards.demo"],
-  "mergeActive": true
-}
-```
-
-Builds manifest from **live object tree** (visual groups + app stores). `paths` — optional, only listed nodes; without `paths` — all members of bundle visual groups. `displayName` / `tablePrefix` / `schemaName` are refreshed from the app registration; `operatorUi`, `metadata`, `license`, and `requires` are kept from the active snapshot (not reverse-engineered from the tree). `blueprints[]` are refreshed from the blueprint registry when names are known on the base manifest. `models[]` is not reverse-engineered (stays from base manifest).
-
-Object tree subtree (JSON, `formatVersion: 1`): `GET /api/v1/platform/backup/export?rootPath=root.platform.devices.demo-sensor-01` — **JSON export** tab in Inspector.
-
-## Application Git (ADR-0063)
-
-The APPLICATION **Git** tab (Deploy panel) connects the **same full bundle** to the team's git host. ISPF does not host `.git`; it stores a binding + credential.
-
-| Action | Status | Behaviour |
-|--------|--------|-----------|
-| Connect / Disconnect | **Shipped** | Remote URL (https, no embedded userinfo / private hosts), provider (`github` \| `gitlab`), default branch, path to `bundle.json`, PAT via credential vault |
-| Status | **Shipped** | Binding + deploy snapshot + credential present; drift/remote reachability reserved |
-| Pull release | **Shipped** | `POST …/git/pull` with optional `{ "ref" }` → fetch `bundle.json` → validate → deploy; history `source=git` + sha |
-| Push tree | **Shipped** | `POST …/git/push-pr` → full pull-from-tree → `ispf/…` feature branch (from `lastSyncedSha` when set) → **open PR/MR** (no force-push to default). PAT: GitHub Contents R/W + Pull requests; GitLab **`api`** scope only |
-
-See [0063-application-git-lifecycle](decisions/0063-application-git-lifecycle.md). API today: `GET/PUT/DELETE /api/v1/applications/{appId}/git`, `GET …/git/status`, `POST …/git/pull`, `POST …/git/push-pr`.
-
-## Reports (REQ-PF-12)
-
-SQL reports in app schema: deploy via bundle `reports[]` or `POST .../reports/deploy`, run `POST .../reports/{id}/run`, CSV export `GET .../reports/{id}/export`.
-
-Details: [reports](reports.md).
-
-## Operator UI (dashboards from tree)
-
-Unified operator shell: navigation over `DASHBOARD` objects from the tree, same widgets as Dashboard Builder (read-only).
-
-`operatorUi` contract:
+To expose an application in the Operator HMI launcher (`?mode=operator&app=myapp`), include `operatorUi` in `bundle.json`:
 
 ```json
 {
-  "appId": "platform",
-  "title": "Platform HMI",
-  "defaultDashboard": "root.platform.dashboards.snmp-host-monitoring",
+  "appId": "myapp",
+  "title": "Plant Operations",
+  "defaultDashboard": "root.platform.dashboards.myapp-ops",
   "dashboards": [
-    { "path": "root.platform.dashboards.snmp-host-monitoring", "title": "SNMP Host Monitoring" }
+    { "path": "root.platform.dashboards.myapp-ops", "title": "Overview" }
   ]
 }
 ```
 
-Sources (by priority):
-
-1. `GET /api/v1/operator-apps/{appId}/ui` — built-in and admin-configured apps (`operator_app_ui` table, tree node `root.platform.operator-apps`)
-2. `operatorUi` field in deploy bundle → `GET /api/v1/applications/{appId}/operator-ui`
-3. Auto-generation from `dashboards[]` in bundle (path + title)
-4. Legacy fallback: `public/operator-apps/{appId}.ui.json` (dev only)
-
-URL: `?mode=operator&app=platform&dashboard=<path>`.
-
-### Legacy: operator manifest
-
-Field `operatorManifest` in deploy bundle → `GET /api/v1/applications/{appId}/operator-manifest` — **deprecated** (tables/reports via BFF). For new apps use `operatorUi` + dashboards.
-
-Web Console: API first, fallback `public/operator-apps/<appId>.manifest.json` (legacy shell only).
-
-### Tree objects
-
-After register/deploy, application entities sync to `root.platform.applications.{appId}`:
-
-| Folder | Contents |
-|--------|----------|
-| `reports` | SQL reports (`ObjectType.REPORT`) |
-| `functions` | Deployed script functions |
-| `schedules` | `platform_schedules` |
-| `bindings` | SQL bindings |
-| `migrations` | Applied data migrations |
-| `screens` | Operator manifest screens (legacy) |
-
-Sync: on deploy/register/migrate and at server startup.
-
-**Example:** `appId=platform` configured in admin: tree → `root.platform.operator-apps`. Deploy apps — `operatorUi` in bundle.
-
-## Related documentation
-
-- [api](api.md) — endpoint table
-- [workflows](workflows.md) — BPMN `invoke_function`, instance cancel
-- [web-console](web-console.md) — BPMN editor and auto-layout
-- [roadmap](roadmap.md) — REQ-PF, sprint roadmap
-- [plugins](plugins.md) — core vs commercial plugin boundaries
-- [security](security.md) — RBAC matrix
-
-## Deprecation path (PF-03, Phase 5.5)
-
-Table `applications` and REST `/api/v1/applications/*` — **metadata and schema isolation only** (app registry, SQL migrations, deploy history). Not a parallel runtime.
-
-After `POST /api/v1/applications/{appId}/deploy`:
-
-- Functions are addressed via object tree: `{appId}.functions.{name}` on the application node path.
-- Objects, dashboards, workflows, models from bundle — tree nodes (`objects[]` reconcile, not create-only).
-- Invoke: `POST /api/v1/bff/invoke` or `POST /api/v1/objects/by-path/functions/invoke` by tree path.
-- SQL bindings: `bindingExpression: sqlBinding('appId','var')` on the node variable.
-
-**Legacy (deprecated, warn-only):** operator manifest `screens[]` in bundle — Phase 3.5; prefer `operatorUi` + dashboards in tree. Legacy manifest screen types: `table`/`report` (BFF), `dashboard` (embedded DASHBOARD path), `chart` (single-variable trend), `map` (child devices). See [solution-developer-guide](solution-developer-guide.md).
-
-## Next steps (backlog)
-
-Phase 17 and Phase 19 are closed. Current wave — **[roadmap.md § Phase 18](roadmap.md)**:
-
-- **18.1** Playwright admin e2e (Explorer, operator deep link) — Phase 3.4 tail
-- **18.2** Driver stub promotion (demand-driven)
-
-Sprint planning: [roadmap](roadmap.md).
+**Related guides:** [Solution developer guide](solution-developer-guide.md) · [Solution developer public API](solution-developer-public-api.md) · [External IDE & hosted React UI](external-ide.md) · [Reports](reports.md).

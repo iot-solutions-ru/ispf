@@ -1,51 +1,39 @@
 > **Язык:** русская версия. Английский оригинал: [en/license-compliance.md](../en/license-compliance.md).
 
-# Соответствие лицензии (инженерный контрольный список)
+# Лицензионная чистота и проверка сторонних зависимостей (SBOM)
 
-> **Статус:** Stable — Чеклист обязательств.
+> **Статус:** Stable — инженерный регламент проверки лицензий сторонних библиотек и генерации перечня компонентов (SBOM) перед выпуском релиза. Метки зрелости: [doc-status.md](doc-status.md).
 
-Инженерные процедуры для выпусков ISPF. **Не юридическая консультация**.
+Этот документ описывает порядок автоматической проверки лицензионной чистоты всех зависимостей сервера и веб-консоли перед сборкой дистрибутива ISPF.
 
-## Режимы лицензии платформы
+---
 
-| Режим | Когда | Обязательства |
-|------|------|-------------|
-| **Community (AGPL)** | Нет `platform-license.json` | Сетевое использование → AGPL source-offer для модификаций платформы |
-| **Enterprise** | Действительный `platform-license.json` | По [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md) |
+## 1. Профиль лицензионной чистоты промышленной поставки
 
-## Бинарный дистрибутив
+- **Протокольные драйверы (`permissive`):** все протокольные стеки в стандартной поставке (включая собственные реализации кодеков BACnet, DLMS/СПОДЭС, МЭК 60870-5-104, DNP3, IPMI, RADIUS, M-Bus) распространяются под разрешительной лицензией **`Apache-2.0`** (плюс открытый стек NIST SIP в общественном достоянии). Библиотеки с жёсткими copyleft-лицензиями (`GPL` / `AGPL`) или коммерческими ограничениями сторонних вендоров исключены из classpath.
+- **Генератор отчётов:** формирование документов XLSX, DOCX и HTML выполнено на базе **Apache POI** ([ADR-0053](decisions/0053-ispf-template-filler.md)) без использования библиотек с лицензией LGPL.
+- **Табличные формулы в браузере:** виджет `spreadsheet` использует собственный вычислитель `ispfSheetEval` без сторонних GPL-зависимостей.
 
-1. LICENSE (AGPL)
-2. NOTICE
-3. [third-party-notices](third-party-notices.md)
-4. CycloneDX SBOM (`node tools/license-audit/generate-sbom.mjs`)
-5. [sbom-legal-review](sbom-legal-review.md)
-6. На пакет драйвера: `LICENSE`, `THIRD_PARTY-NOTICE.txt`
+---
 
-## Профили пакетов драйверов
+## 2. Обязательный состав файлов при поставке бинарного дистрибутива
 
-| Профиль | Назначение |
-|---------|----------|
-| `permissive` (**по умолчанию**) | Apache-2.0 + NIST SIP |
-| `all` | Тот же набор (GPL/LGPL/MPL/StepFunc packs удалены из каталога) |
+В каждую сборку дистрибутива (архив или образ) включаются:
+1. Файл основной лицензии [LICENSE](../../LICENSE) (и [LICENSE-COMMERCIAL.md](../../LICENSE-COMMERCIAL.md) для поставок Enterprise).
+2. Файл уведомлений об авторских правах [NOTICE](../../NOTICE).
+3. Сводный реестр открытых компонентов [third-party-notices.md](third-party-notices.md).
+4. Машиночитаемые спецификации состава ПО в формате **CycloneDX SBOM** (`build/sbom/*.cdx.json`) и отчёт проверки ([sbom-legal-review.md](sbom-legal-review.md)).
+5. Индивидуальные файлы `LICENSE` и `THIRD_PARTY-NOTICE.txt` внутри каждого пакета драйвера в `build/driver-packs/`.
 
-Бывшие copyleft-пакеты (BACnet, DLMS, IEC-104, DNP3, IPMI, RADIUS, M-Bus) используют **собственные кодеки ISPF** с `licenseType: Apache-2.0`.
+---
 
-## Отчёты
+## 3. Команды автоматического аудита и сборки SBOM
 
-Шаблоны Band1 — только **Apache POI**. YARG / JasperReports / docx4j удалены из `ispf-server`.
-
-## Предрелизный аудит
+Перед выпуском релиза выполните из корня репозитория:
 
 ```bash
 node tools/license-audit/check-all.mjs
 node tools/license-audit/generate-sbom.mjs
 ```
 
-## Связанные документы
-
-- [license](license.md)
-- [third-party-notices](third-party-notices.md)
-- [sbom-legal-review](sbom-legal-review.md)
-- [licensed-driver-packs](licensed-driver-packs.md)
-- [commercial-licensing](commercial-licensing.md)
+**Связанные разделы:** [Лицензия и границы поставки (`license.md`)](license.md) · [Уведомления о стороннем ПО (`third-party-notices.md`)](third-party-notices.md) · [Отчёт проверки SBOM (`sbom-legal-review.md`)](sbom-legal-review.md).

@@ -179,7 +179,7 @@ Pack deliverable: `analytics-pack.json` + JAR + `META-INF/services/...AnalyticsF
 
 
 
-Подробности: [analytics-formulas-and-packs.md § Маркетплейс](../analytics-formulas-and-packs.md#покупка-tier-c-через-маркетплейс).
+Подробности: [analytics-formulas-and-packs.md § Уровень C](../analytics-formulas-and-packs.md#покупка-tier-c-через-маркетплейс).
 
 
 

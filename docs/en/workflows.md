@@ -1,360 +1,125 @@
 > **Language:** Canonical English. Russian edition: [ru/workflows.md](../ru/workflows.md).
 
-# Workflow & BPMN
+# Workflows and BPMN 2.0 Automation
 
-> **Status:** Beta — BPMN subset (not full 2.0). Hub: [doc-status.md](doc-status.md).
+> **Status:** Beta — pure-Java BPMN 2.0 subset engine, vector diagram editor, operator Work Queue tasks, timers, webhooks, and typed MCP/agent workflow tools. Status tags: [doc-status.md](doc-status.md).
 
-## Overview
+A **workflow** in ISPF is an object tree node of type `WORKFLOW` (model `workflow-v1` under `root.platform.workflows.*`). It executes multi-step operational procedures — combining automated server actions, CEL branching, timers, and human tasks in the operator **Work Queue** — using a lightweight pure-Java engine (`ispf-plugin-workflow`) without external Camunda or Flowable servers.
 
-A workflow is an object of type `WORKFLOW` with model `workflow-v1`. The engine is pure Java in `ispf-plugin-workflow` (no Camunda/Flowable).
+**Related guides:** [Automation: events, alerts, correlators](automation.md) · [Escalation workflow templates](reference-escalation-templates.md) · [Hands-on OT Automation tutorials](ot-automation-excellence-tutorials.md) · [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md) · [ADR-0049](decisions/0049-ot-automation-excellence.md) · [ADR-0052](decisions/0052-ispf-workflow-diagram-editor.md).
 
-Workflow object variables:
+---
 
-| Variable | Description |
-|----------|-------------|
-| `title` | Display name |
-| `status` | `DRAFT` / `ACTIVE` / `STOPPED` |
-| `bpmnXml` | BPMN 2.0 XML |
-| `triggerJson` | Variable-change or event trigger |
-| `operatorAppId` | Operator App for user tasks in the sidebar |
-| `instanceState` | JSON state of the last instance |
-| `lastRunAt` | Time of the last run |
-| `lastAction` | Last service task action |
-| `inputSchemaJson` | Tool input schema (ADR-0049) |
-| `outputSchemaJson` | Tool output projection schema |
-| `toolDescription` | Agent/MCP tool description |
-| `sideEffectClass` | `READ` / `WRITE` / `CONTROL` |
-| `retryMaxAttempts` | Max total attempts (incl. first). On FAILED, async `workflow_retry_schedule` until exhausted, then DLQ |
-| `retryBackoffSeconds` | Delay before each async retry (default 30) |
-| `retryBackoffSeconds` | Backoff hint |
-| `errorWorkflowPath` | Workflow started on failure |
-| `webhookSlug` | Inbound webhook slug |
-| `cronExpression` | e.g. `every:1m` |
+## 1. Workflow Object Variables and Lifecycle
 
-## Lifecycle
+| Variable on `WORKFLOW` | Description |
+|------------------------|-------------|
+| `title` | Display title of the process |
+| `status` | `DRAFT` (editable, manual run only), `ACTIVE` (responds to triggers, webhooks, cron, and tool calls), or `STOPPED` |
+| `bpmnXml` | BPMN 2.0 XML definition (with `bpmndi` layout coordinates and `ispf:*` attributes) |
+| `triggerJson` | Optional automatic start trigger on variable changes or events |
+| `operatorAppId` | Identifier of the Operator App whose sidebar **Work Queue** receives `userTask` items from this workflow |
+| `webhookSlug` | Inbound HTTP webhook slug (`POST /api/v1/webhooks/workflows/{slug}`) |
+| `cronExpression` | Periodic schedule expression (for example, `every:1m`, `every:15m`) when `status = "ACTIVE"` |
+| `inputSchemaJson`, `outputSchemaJson`, `toolDescription`, `sideEffectClass` | Typed tool contract ([ADR-0049](decisions/0049-ot-automation-excellence.md)) for invoking the workflow via `/invoke-tool`, AI agent `invoke_workflow_tool`, or MCP (`wf_<name>`) |
+| `retryMaxAttempts`, `retryBackoffSeconds`, `errorWorkflowPath` | Automatic retry policy on failure (`workflow_retry_schedule`) and dead-letter queue (`workflow_dead_letters`) fallback |
+| `instanceState`, `lastRunAt`, `lastAction` | Runtime snapshot of the most recent instance |
 
-**Workflow object:**
-- `DRAFT` — editing, manual run
-- `ACTIVE` — listens for triggers + manual run
-- `STOPPED` — does not start
+**Instance states (`InstanceStatus`):** `RUNNING` → `WAITING` (paused at a `userTask`, signal, message, or timer) → `COMPLETED` or `FAILED`.
 
-**Instance (`InstanceStatus`):**
-- `RUNNING` — executing
-- `WAITING` — waiting for user task, signal catch, or timer
-- `COMPLETED` — finished
-- `FAILED` — error
+---
 
-## Supported BPMN elements
+<a id="supported-bpmn-elements"></a>
 
-ISPF implements a **BPMN subset**, not full BPMN 2.0. Engine: pure Java in `ispf-plugin-workflow`. Decision record: [0047-custom-bpmn-subset-engine](decisions/0047-custom-bpmn-subset-engine.md) (**Accepted** 2026-07-18 — subset freeze).
+## 2. Supported BPMN 2.0 Elements ([ADR-0047](decisions/0047-custom-bpmn-subset-engine.md))
 
-| Element | Support |
-|---------|---------|
-| `startEvent` | Yes |
-| `endEvent` | Yes |
-| `serviceTask` | LOG, SET_VARIABLE, PUBLISH_NATS, **INVOKE_FUNCTION** |
-| `userTask` | Operator queue, claim/complete |
-| `intermediateCatchEvent` | Signal wait (`ispf:signal`), timer (`ispf:durationSeconds`), or message (`messageEventDefinition` / `ispf:message`) |
-| `boundaryEvent` | Timer on a user task (`attachedToRef`, `ispf:durationSeconds`, `cancelActivity`), or an error catch on an activity (`errorEventDefinition` / `ispf:errorCode`) |
-| `messageTask` | NATS publish (if enabled) |
-| `exclusiveGateway` | Conditional transitions (CEL) |
-| `parallelGateway` | Fork/join, execution tokens |
-| `subProcess` | Embedded subprocess — enter inner start, exit on inner end (nested embedded OK; not event subprocess) |
-| `callActivity` | Start another WORKFLOW and **wait** until it completes (`ispf:workflowPath` or `calledElement`; optional `ispf:objectPath`, `ispf:inputMap`). Child variables appear as `call.{id}.*`. Fire-and-forget remains `serviceTask` + `start_workflow`. |
-| `sequenceFlow` | `ispf:condition`, `ispf:default` |
-| Message catch / throw | Yes — catch waits until `deliverMessage`; throw is `intermediateThrowEvent` + `messageEventDefinition` (non-message throw rejected at parse) |
+ISPF implements a focused, deterministic subset of BPMN 2.0 (extension namespace `http://ispf.io/bpmn`, prefix `ispf:`):
 
-Extension namespace: `http://ispf.io/bpmn` (prefix `ispf:`).
+| BPMN Element | Behavior in ISPF |
+|--------------|------------------|
+| `startEvent`, `endEvent` | Process entry and completion nodes |
+| `serviceTask` | Automated server action (`log`, `set_variable`, `read_variable`, `invoke_function`, `fire_event`, `publish_nats`, `start_workflow`, `llm_complete`, `invoke_agent`) |
+| `userTask` | Human task placed into the operator **Work Queue** (`OPEN` → `CLAIMED` → `COMPLETED`) |
+| `exclusiveGateway` (`sequenceFlow`) | Conditional branching using boolean Google CEL expressions in `ispf:condition` (plus `ispf:default="true"`) |
+| `parallelGateway` | Parallel fork and join of execution tokens |
+| `intermediateCatchEvent` | Waits for a named signal (`ispf:signal`), a message (`messageEventDefinition` / `ispf:message`), or a timer (`ispf:durationSeconds`) |
+| `intermediateThrowEvent` | Publishes a named message event (`messageEventDefinition`) |
+| `boundaryEvent` | Interrupting SLA timer attached to a `userTask` (`ispf:durationSeconds`, `cancelActivity="true"`) or error-handling boundary on a task (`errorEventDefinition` / `ispf:errorCode`) |
+| `subProcess` | Embedded subprocess (`startEvent` → inner steps → `endEvent`) |
+| `callActivity` | Starts another `WORKFLOW` (`ispf:workflowPath`) and waits for it to complete |
+| `messageTask` | Publishes a message to a NATS subject |
 
-## Not supported (explicit non-goals)
+> **Unsupported BPMN 2.0 constructs (rejected at parse/save time):** multi-instance loops (`multiInstanceLoopCharacteristics`), `inclusiveGateway`, `eventBasedGateway`, compensation events, event subprocesses, and DMN tables. When importing external files via **Import BPMN**, the editor automatically normalizes or flags unsupported constructs.
 
-These are **out of the ISPF subset**. The parser **rejects** them with a clear error (ADR-0047 freeze); do not rely on silent ignore. WorkflowBuilder palette must not imply support.
+---
 
-| Element / feature | Status |
-|-------------------|--------|
-| Multi-instance (`multiInstanceLoopCharacteristics`) | Not supported |
-| `inclusiveGateway` | Not supported |
-| `eventBasedGateway` | Not supported |
-| Compensation / compensate events | Not supported |
-| Event subprocess | Not supported |
-| DMN / business rule task | Not supported |
-| Full BPMN 2.0 import from Camunda/Flowable models | Not a goal — design against this page |
+## 3. Configuring `serviceTask` and `userTask` Attributes
 
-Generic BPMN pasted from other tools will often fail or behave incorrectly until it is reduced to the supported table.
+### Automated Actions (`serviceTask`)
 
-## ISPF attributes
-
-### serviceTask
-
-```xml
-<serviceTask id="log1" name="Log alarm"
-             ispf:action="log"
-             ispf:message="Threshold exceeded"/>
-```
-
-| Action | Parameters |
-|--------|------------|
-| `log` | `ispf:message` |
+| `ispf:action` | Key XML Attributes |
+|---------------|--------------------|
+| `invoke_function` | `ispf:objectPath` (`SINGLETON` or `INSTANCE` logic node), `ispf:functionName`, `ispf:inputMap`, `ispf:outputMap` |
 | `set_variable` | `ispf:targetPath`, `ispf:variable`, `ispf:value` |
-| `publish_nats` | `ispf:subject`, `ispf:message`, `ispf:channel` |
-| `invoke_function` | `ispf:objectPath`, `ispf:functionName`, `ispf:inputMap`, `ispf:outputMap` |
+| `read_variable` | `ispf:objectPath`, `ispf:variable`, `ispf:contextKey` |
 | `fire_event` | `ispf:objectPath`, `ispf:eventName`, `ispf:payloadVariable` or `ispf:payloadJson` |
-| `read_variable` | `ispf:objectPath`, `ispf:variable` / `sourceVariable`, `ispf:contextKey` |
+| `publish_nats` | `ispf:subject`, `ispf:message`, `ispf:channel` |
 | `start_workflow` | `ispf:workflowPath`, `ispf:objectPath` |
-| `llm_complete` | `ispf:promptTemplate`, `ispf:outputVariable`, `ispf:outputFormat`, `ispf:modelRef`, `ispf:timeoutMs` |
-| `invoke_agent` | `ispf:goalTemplate`, `ispf:agentMode`, `ispf:toolAllowlist`, `ispf:maxSteps`, `ispf:outputVariable` |
+| `log` | `ispf:message` |
+| `llm_complete` | `ispf:promptTemplate` (supports `${var}`), `ispf:outputVariable`, `ispf:outputFormat`, `ispf:modelRef`, `ispf:timeoutMs` |
+| `invoke_agent` | `ispf:goalTemplate`, `ispf:agentMode`, `ispf:outputVariable` (single-step prompt mode; `toolAllowlist` must be empty and `maxSteps <= 1` per [ADR-0049](decisions/0049-ot-automation-excellence.md)) |
 
-The properties panel lists `functionName`, user-task `function`, `variable`, `payloadVariable`, and `eventName` from the target object's descriptor (`objectPath`, or `targetObject` when that is the only path). `inputMap` is `key=value` pairs or a JSON object of scalars. `payloadJson` is a JSON object of scalars and is used when `payloadVariable` is empty.
-
-`modelRef`: `platform-default` (platform AI settings), a model id, or a credentials vault path (`root...`) whose secret is the API key and optional metadata `baseUrl` / `model`.
-
-Tool contracts (ADR-0049): WORKFLOW variables `inputSchemaJson`, `outputSchemaJson`, `toolDescription`, `sideEffectClass`. Agent tool `invoke_workflow_tool` requires `ACTIVE`. ACTIVE workflows with non-blank `toolDescription` are also published on MCP as `wf_<name>` tools. Execution journal: `GET /api/v1/workflows/instances/{id}/steps`, `GET /api/v1/workflows/by-path/runs`. Webhook: `POST /api/v1/webhooks/workflows/{slug}` when `webhookSlug` is set. Cron: `cronExpression=every:1m`. AI palette entries in the BPMN editor create `llm_complete` / `invoke_agent` service tasks with defaults.
-
-Example `invoke_function` (application functions — [applications](applications.md)):
+Example `invoke_function` step:
 
 ```xml
-<serviceTask id="assign" name="Assign tank"
+<serviceTask id="assign" name="Acknowledge Order"
              ispf:action="invoke_function"
-             ispf:objectPath="root.platform.devices.demo-sensor-01"
+             ispf:objectPath="root.platform.singleton-blueprints.myapp-hub"
              ispf:functionName="myapp_acknowledge"
              ispf:inputMap="orderId=${workflow.orderId}"
-             ispf:outputMap="assignResult=result"/>
+             ispf:outputMap="ackResult=result"/>
 ```
 
-### userTask
+### Operator Tasks (`userTask`) and the Work Queue
 
 ```xml
-<userTask id="approve" name="Approve"
-          ispf:title="Confirm alarm"
-          ispf:instructions="Check the sensor"
+<userTask id="approve" name="Confirm Alarm"
+          ispf:title="Confirm high temperature alarm"
+          ispf:instructions="Inspect pump-01 and confirm"
           ispf:assigneeRole="operator"
-          ispf:targetObjectPath="root.platform.devices.demo-sensor-01"
+          ispf:targetObjectPath="root.platform.singleton-blueprints.myapp-hub"
           ispf:function="acknowledgeAlarm"/>
 ```
 
-### sequenceFlow
+When execution reaches a `userTask`:
+1. A task row is created in `workflow_user_tasks` with status `OPEN` (filtered in the operator sidebar by `operatorAppId`).
+2. The operator claims the task (`POST /api/v1/work-queue/claim?taskId=...&operatorId=...` → status `CLAIMED`).
+3. The operator completes the task (`POST /api/v1/work-queue/complete?taskId=...&operatorId=...`). If `ispf:function` is configured on the task, that function is invoked automatically before advancing the workflow.
 
-```xml
-<sequenceFlow sourceRef="gw" targetRef="approve" ispf:condition="needsApproval"/>
-<sequenceFlow sourceRef="gw" targetRef="end" ispf:default="true"/>
-```
+---
 
-The condition is a CEL expression evaluated in the context of workflow instance variables.
-
-### messageTask
-
-```xml
-<messageTask id="notify" name="Notify"
-             ispf:subject="ispf.ops.alarm"
-             ispf:message="Alarm fired"
-             ispf:channel="nats"/>
-```
-
-### intermediateCatchEvent (signal)
-
-```xml
-<intermediateCatchEvent id="waitIncident" name="Wait incident"
-                        ispf:signal="incidentRegistered"/>
-```
-
-The instance moves to `WAITING` until the signal is delivered. As an alternative to cancellation via the cancel API, an incident can "wake" the process and continue the handling branch.
-
-### intermediateCatchEvent (message)
-
-```xml
-<intermediateCatchEvent id="waitAck" name="Wait ERP ack">
-  <messageEventDefinition messageRef="erpAck"/>
-</intermediateCatchEvent>
-```
-
-Or `ispf:message="erpAck"` on the catch event. The instance waits until `deliverMessage` supplies the matching name.
-
-### intermediateThrowEvent (message)
-
-```xml
-<intermediateThrowEvent id="shipMsg" name="Ship order">
-  <messageEventDefinition messageRef="orderShipped"/>
-</intermediateThrowEvent>
-```
-
-Publishes via the message executor (`channel=bpmn-throw`, subject = message name). Non-message throw definitions are rejected at parse.
-
-### intermediateCatchEvent (timer)
-
-```xml
-<intermediateCatchEvent id="waitDelay" name="Wait delay"
-                        ispf:durationSeconds="300"/>
-```
-
-The instance waits until the deadline expires; continuation via the built-in due-timer scheduler
-(`ispf.workflow.timer-poll-ms`, default 2s) or `POST .../timer` (see below).
-
-### boundaryEvent (timer on user task)
-
-```xml
-<boundaryEvent id="ackTimeout" attachedToRef="operatorAck"
-               cancelActivity="true" ispf:durationSeconds="300"/>
-<sequenceFlow sourceRef="ackTimeout" targetRef="escalate"/>
-```
-
-While the user task is in `WAITING`, an SLA timer runs in parallel. When the timer fires, the escalation branch runs (interrupting). Template: [reference-escalation-templates](reference-escalation-templates.md).
-
-### boundaryEvent (error on an activity)
-
-```xml
-<error id="errLocked" errorCode="E_LOCKED"/>
-<boundaryEvent id="onLock" attachedToRef="assign">
-  <errorEventDefinition errorRef="errLocked"/>
-</boundaryEvent>
-<sequenceFlow sourceRef="onLock" targetRef="recover"/>
-```
-
-When a service task, message task, or call activity fails, a matching boundary follows its outgoing flow instead of failing the instance. `ispf:errorCode` on the boundary is the same match without an `error` element. A blank code catches every failure. A code matches when it occurs in the exception message; the longest code wins. The instance variables `errorCode` and `errorMessage` are set before that flow runs. The failed activity does not keep a second token.
-
-## Work queue
-
-User tasks appear in `GET /api/v1/work-queue`.
-
-### Operator App binding
-
-On the workflow object (model `workflow-v1`), set the **`operatorAppId`** variable — the identifier of the Operator App whose sidebar **Tasks** panel receives user tasks from this process.
-
-- Configuration: workflow editor → **Operator App** panel (or `PUT /api/v1/workflows/by-path/operator-app`)
-- When a user task is created, the value is copied to `workflow_user_tasks.operator_app_id`
-- Sidebar filter: `GET /api/v1/work-queue?operatorAppId=platform`
-
-If `operatorAppId` is empty, the task **does not appear** in the Operator Apps sidebar (the `work-queue` widget on a dashboard still shows all tasks).
-
-| Task status | Action |
-|-------------|--------|
-| `OPEN` | claim → `CLAIMED` |
-| `CLAIMED` | complete → workflow continues |
-
-```http
-POST /api/v1/work-queue/claim?taskId=...&operatorId=operator
-POST /api/v1/work-queue/complete?taskId=...&operatorId=operator
-```
-
-When `ispf:function` is set on a user task, the function is invoked on complete.
-If the call fails, complete is rejected and the task stays open.
-
-## Triggers
-
-`triggerJson` on the workflow object. `WorkflowTriggerListener` compares variable changes against conditions and starts an ACTIVE workflow.
-
-## Event correlators → workflow
-
-Correlator with action `RUN_WORKFLOW` and `actionTarget` = workflow path. See [automation](automation.md).
-
-## Demo workflow
-
-`root.platform.workflows.demo-alarm-handler` — BPMN with gateway, user task, service log.
-
-Definition: `WorkflowDefinitions.DEMO_ALARM_HANDLER`.
-
-## UI
+## 4. Visual BPMN Editor (`IspfBpmnEditor`)
 
 ![BPMN workflow editor — MES work-order dispatch](../assets/ispf-bpmn-workflow.png)
 
-- **WorkflowBuilder** — status, run, ISPF Workflow Diagram Editor; product status **Beta — BPMN subset** (see tables above)
-- **IspfBpmnEditor** / **IspfBpmnViewer** (ADR-0052) — first-party React+SVG editor (no bpmn.io / no watermark). Document model serializes to BPMN 2.0 + `bpmndi` + `ispf:*`. Properties panel configures tasks, events, and sequence flows; XML tab is for AI and edge cases. `ispf:targetObject` on `setVariable` and user tasks accepts a CUSTOM hub (SINGLETON or INSTANCE), a DEVICE, or an APPLICATION node. `start_workflow` stores the trigger on `ispf:objectPath`; when that attribute is empty the engine reads `ispf:targetObject`.
-- **Import** — foreign BPMN (Camunda/Flowable/…) via **Import BPMN**; `adaptForeignBpmn` rewrites/maps/stubs into the ISPF model and shows a warning report (same spirit as SVG normalize). Hard gate for unsupported constructs remains parser reject at save/run (ADR-0047).
-- Palette presets cover the supported subset (timer/signal/message catch, message throw, messageTask, built-in actions, AI tasks). Marketplace `bpmn-element-pack` (palette contributions) is the extension path for external “elements.”
+Double-clicking any `WORKFLOW` node in the Web Console opens the built-in vector BPMN editor ([ADR-0052](decisions/0052-ispf-workflow-diagram-editor.md)):
+- Drag-and-drop palette for all supported tasks, gateways, timers, signals, and AI steps.
+- Automatic graph layout (`ensureDiagram.ts`) when opening BPMN XML that lacks `bpmndi` coordinates.
+- Live **Execution timeline** showing step-by-step status and latency for each run (`GET /api/v1/workflows/instances/{instanceId}/steps`).
 
-### Diagram without layout (DI)
+---
 
-BPMN from the engine or scripts often contains only process logic, **without a `bpmndi` section**. The editor auto-places nodes when DI is missing; saving rewrites XML with `bpmndi`. The new-process template (`EMPTY_BPMN` in `constants.ts`) already includes minimal layout markup.
+## 5. Workflow REST API Summary
 
-If the diagram does not display: open the **Source** tab, ensure `bpmnXml` is not empty, or use **Import BPMN** for foreign files.
-
-## Instance cancellation
-
-```http
-POST /api/v1/workflows/instances/{instanceId}/cancel
-Content-Type: application/json
-
-{
-  "reason": "incident",
-  "detailJson": "{\"incidentId\":\"...\"}",
-  "cancelledBy": "operator-1"
-}
-```
-
-The instance moves to `FAILED`; a record is written to `workflow_cancel_journal`.  
-Roles: `operator`, `admin`.
-
-## Signal delivery
-
-```http
-POST /api/v1/workflows/instances/{instanceId}/signal
-Content-Type: application/json
-
-{"signal":"incidentRegistered","operatorId":"operator-1"}
-```
-
-Broadcast to all `WAITING` workflow instances waiting for this signal:
-
-```http
-POST /api/v1/workflows/signal
-Content-Type: application/json
-
-{
-  "workflowPath": "root.platform.workflows.signal-demo",
-  "signal": "incidentRegistered",
-  "operatorId": "operator-1"
-}
-```
-
-## Message delivery
-
-```http
-POST /api/v1/workflows/instances/{instanceId}/message
-Content-Type: application/json
-
-{"message":"erpAck","operatorId":"operator-1"}
-```
-
-Continues a `WAITING` instance that is at a message catch for the matching name. Wrong name → clear error.
-
-## Timer firing
-
-```http
-POST /api/v1/workflows/instances/{instanceId}/timer
-Content-Type: application/json
-
-{"operatorId":"operator-1"}
-```
-
-Continues the instance when a deadline boundary timer or intermediate timer catch has fired.
-The platform also polls waiting instances on a schedule and fires due timers automatically;
-this endpoint remains for tests and forced fire.
-
-## API
-
-```http
-GET  /api/v1/workflows/by-path?path=...
-PUT  /api/v1/workflows/by-path/bpmn?path=...
-PUT  /api/v1/workflows/by-path/status?path=...   body: { "status": "ACTIVE" }
-POST /api/v1/workflows/by-path/run?path=...     body: { "input": { ... } }
-POST /api/v1/workflows/by-path/invoke-tool?path=...
-GET  /api/v1/workflows/by-path/runs?path=...
-GET  /api/v1/workflows/instances/{instanceId}/steps
-POST /api/v1/workflows/instances/{instanceId}/cancel
-POST /api/v1/workflows/instances/{instanceId}/signal
-POST /api/v1/workflows/instances/{instanceId}/message
-POST /api/v1/workflows/instances/{instanceId}/timer
-POST /api/v1/workflows/signal
-POST /api/v1/webhooks/workflows/{slug}
-GET  /api/v1/workflows/by-path/dead-letters?path=...&unresolvedOnly=true
-POST /api/v1/workflows/dead-letters/{id}/resolve
-```
-
-## Persistence
-
-Tables: `workflow_instances`, `workflow_user_tasks`, `workflow_execution_steps`, `workflow_dead_letters` (ADR-0049 / Flyway V81).
-
-Related: [0047-custom-bpmn-subset-engine](decisions/0047-custom-bpmn-subset-engine.md), [0049-ot-automation-excellence](decisions/0049-ot-automation-excellence.md), hands-on [OT Automation tutorials](ot-automation-excellence-tutorials.md).
-
-## Tests
-
-`WorkflowEngineTest`, `WorkflowEngineV2Test`, `WorkflowEngineV3Test`, `WorkflowEngineSignalTest`, `WorkflowEngineTimerTest`, `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`, `EscalationTemplateSmokeTest`, `BpmnParserTest` (includes unsupported-element reject list), `WorkflowApiTest`, `WorkflowSignalApiTest`, `WorkQueueApiTest`, `WorkflowWebhookApiTest`, `WorkflowDeadLetterApiTest`, `WorkflowDeadLetterServiceTest`.
+| HTTP Method & Path | Description |
+|--------------------|-------------|
+| `GET /api/v1/workflows/by-path?path=...` | Read BPMN XML, status, and latest instance state |
+| `PUT /api/v1/workflows/by-path/bpmn?path=...` | Save updated BPMN XML |
+| `PUT /api/v1/workflows/by-path/status?path=...` | Set workflow status (`DRAFT`, `ACTIVE`, `STOPPED`) |
+| `POST /api/v1/workflows/by-path/run?path=...` | Start a new workflow instance (`{ "input": { ... } }`) |
+| `POST /api/v1/workflows/by-path/invoke-tool?path=...` | Synchronously invoke an `ACTIVE` workflow against its `inputSchemaJson` / `outputSchemaJson` |
+| `GET /api/v1/workflows/by-path/runs?path=...` | List recent execution instances |
+| `GET /api/v1/workflows/instances/{instanceId}/steps` | Step-by-step execution timeline for an instance |
+| `POST /api/v1/workflows/instances/{instanceId}/signal` (`/message`, `/timer`, `/cancel`) | Deliver a signal, message, timer trigger, or cancellation to a running instance |
+| `POST /api/v1/webhooks/workflows/{slug}` | Trigger an `ACTIVE` workflow via inbound HTTP webhook |
+| `GET /api/v1/workflows/by-path/dead-letters?path=...` | Inspect failed runs in the dead-letter queue (`POST /api/v1/workflows/dead-letters/{id}/resolve` to clear) |

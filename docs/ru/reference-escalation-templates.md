@@ -1,75 +1,63 @@
 > **Язык:** русская версия. Английский оригинал: [en/reference-escalation-templates.md](../en/reference-escalation-templates.md).
 
-# Шаблоны workflow эскалации (BL-123)
+# Шаблоны процессов эскалации тревог в BPMN
 
-Эталонные паттерны для цепочки **коррелятор событий → workflow → задача оператора → эскалация по тайм-ауту** в ISPF без custom Java.
+> **Статус:** Stable — готовые схемы автоматической эскалации: от повторяющегося превышения уставки и коррелятора событий до задачи дежурному оператору с контролем времени реакции (SLA). Метки зрелости: [doc-status.md](doc-status.md).
 
-Артефакты: [examples/escalation-templates/](../../examples/escalation-templates/).
+В каталоге [`examples/escalation-templates/`](../../examples/escalation-templates/) собраны типовые шаблоны связки **правило тревоги (`ALERT`) → коррелятор событий (`CORRELATOR`) → процесс BPMN (`WORKFLOW`) → очередь задач оператора (`Work Queue`)**.
 
-## Паттерн A — повторяющийся порог → workflow
+---
 
-| Шаг | Компонент | Конфигурация |
-|------|-----------|--------|
-| 1 | Alert rule (optional) | CEL по переменной → событие `thresholdExceeded` |
-| 2 | Event correlator | COUNT: N событий в окне → `RUN_WORKFLOW` |
-| 3 | Workflow | User task + параллельное уведомление (см. `demo-alarm-handler`) |
+## 1. Схема А — Запуск процесса при серии повторных тревог
 
-Шаблон JSON: `recurring-threshold-correlator.json`.
+Когда единичный выброс датчика не требует вмешательства, но 3 срабатывания подряд за короткое время означают реальную неисправность:
 
-Bootstrap (fixtures): коррелятор **Recurring threshold escalation** на `root.platform.devices.demo-sensor-01` → `root.platform.workflows.demo-alarm-handler`.
+| Шаг | Компонент ISPF | Как настроен |
+|-----|----------------|--------------|
+| 1 | Правило тревоги (`ALERT`) | Проверяет условие CEL на переменной и публикует событие `thresholdExceeded` |
+| 2 | Коррелятор событий (`CORRELATOR`) | Режим `COUNT`: если за заданное окно пришло `N` событий `thresholdExceeded`, выполняет действие `RUN_WORKFLOW` |
+| 3 | Процесс BPMN (`WORKFLOW`) | Ставит задачу «Подтвердите тревогу» в рабочую очередь оператора и параллельно отправляет уведомление |
 
-Приёмка: `EscalationChainAcceptanceTest` — 3× `thresholdExceeded` → элемент work queue «Подтвердите тревогу».
+Файл примера коррелятора: [`examples/escalation-templates/recurring-threshold-correlator.json`](../../examples/escalation-templates/recurring-threshold-correlator.json).
 
-## Паттерн B — тайм-аут подтверждения с boundary timer (BL-122)
+---
 
-Если оператор должен подтвердить тревогу в рамках SLA, прикрепите к user task **boundary timer**:
+## 2. Схема Б — Автоматическая эскалация, если оператор не принял тревогу вовремя (`boundaryEvent`)
+
+Если дежурный оператор обязан отреагировать на задачу в течение заданного времени (например, за 5 минут), к шагу `userTask` в диаграмме BPMN прикрепляется **граничный таймер (`boundaryEvent`)**:
 
 ```xml
-<userTask id="operatorAck" ispf:title="Подтвердите тревогу" .../>
+<userTask id="operatorAck" ispf:title="Подтвердите тревогу" />
 <boundaryEvent id="ackTimeout" attachedToRef="operatorAck"
                cancelActivity="true" ispf:durationSeconds="300"/>
 <sequenceFlow sourceRef="ackTimeout" targetRef="escalate"/>
 ```
 
-Полный BPMN: `examples/escalation-templates/ack-timeout-escalation.bpmn.xml`.
+Полный файл диаграммы: [`examples/escalation-templates/ack-timeout-escalation.bpmn.xml`](../../examples/escalation-templates/ack-timeout-escalation.bpmn.xml).
 
-| Фаза | Статус экземпляра | Действие |
-|-------|-----------------|--------|
-| После старта | `WAITING` @ user task | Оператор видит элемент work queue |
-| Оператор завершает вовремя | `COMPLETED` | Обычный путь закрытия |
-| Срабатывает таймер | `COMPLETED` | Путь эскалации (NATS + log) |
+| Сценарий | Что происходит с экземпляром процесса |
+|----------|---------------------------------------|
+| Процесс запущен | Экземпляр переходит в состояние `WAITING` на шаге `operatorAck`, задача появляется в очереди оператора |
+| Оператор закрыл задачу до истечения 300 с | Процесс завершается по штатной ветке (`COMPLETED`) |
+| Оператор не успел за 300 с | Срабатывает таймер `ackTimeout`, задача снимается и выполняется ветка эскалации `escalate` (отправка уведомления начальнику смены в NATS / вызов функции оповещения) |
 
-Запустите просроченный таймер вручную или из планировщика:
+---
 
-```http
-POST /api/v1/workflows/instances/{instanceId}/timer
-{"operatorId":"operator-1"}
-```
+## 3. Схема В — Ожидание внешнего сигнала о закрытии заявки в системе ТОиР (`signal`)
 
-## Паттерн C — пробуждение по signal (существующий)
-
-Для внешних систем (CMMS, тикетинг) используйте **signal catch** вместо таймера:
+Если процесс должен дождаться закрытия ремонтной заявки во внешней системе (например, 1С:ТОиР или ServiceDesk), используйте промежуточное событие ожидания сигнала (`intermediateCatchEvent`):
 
 ```xml
 <intermediateCatchEvent id="waitTicket" ispf:signal="ticketClosed"/>
 ```
 
+Когда внешняя система закрывает заявку, она отправляет сигнал экземпляру процесса по REST API:
+
 ```http
 POST /api/v1/workflows/instances/{instanceId}/signal
+Content-Type: application/json
+
 {"signal":"ticketClosed","operatorId":"operator-1"}
 ```
 
-## Комбинация паттернов
-
-Типичная production-цепочка:
-
-1. Коррелятор запускает workflow при повторных тревогах.
-2. Workflow логирует и уведомляет ops (parallel gateway).
-3. User task с **boundary timer** для SLA подтверждения.
-4. Ветка эскалации публикует в NATS / вызывает BFF-функцию для пейджинга супервизора.
-
-## CI
-
-`EscalationTemplateSmokeTest` разбирает `ack-timeout-escalation.bpmn.xml` и проверяет путь эскалации по boundary timer.
-
-См. также: [workflows](workflows.md), [automation](automation.md).
+**Связанные разделы:** [Процессы BPMN (`workflows.md`)](workflows.md) · [Правила тревог и корреляторы (`automation.md`)](automation.md).

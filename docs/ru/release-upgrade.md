@@ -1,33 +1,27 @@
-> **Язык:** русская версия. Канон: [en/release-upgrade.md](../en/release-upgrade.md).
+> **Язык:** русская версия. Английский оригинал: [en/release-upgrade.md](../en/release-upgrade.md).
 
-# Совместимость релизов / upgrade bundle
+# Совместимость версий и обновление прикладных пакетов (`bundle.json`)
 
-> **Статус:** Lab gate (ADR-0064 волна 2). Hub: [doc-status.md](doc-status.md).
+> **Статус:** Lab — правила версионирования манифестов `bundle.json` ([ADR-0064](decisions/0064-release-compatibility-lts.md)) и автоматические проверки обновления пакетов. Метки зрелости: [doc-status.md](doc-status.md).
 
-Что ISPF **доказывает** сегодня про upgrade решений и платформы — и чего **не** заявляет.
+Этот документ фиксирует правила совместимости при обновлении прикладных решений (`bundle.json`) и версий сервера ISPF.
 
-Политика: [0064-release-compatibility-lts](decisions/0064-release-compatibility-lts.md). Поле wire: `manifest.formatVersion` (нет поля ⇒ `1`). Semver продукта: `manifest.version` — [applications](applications.md).
+---
 
-## Доказано в CI / тестах (lab)
+## 1. Два поля версии в манифесте `bundle.json`
 
-| Гейт | Proof | Честность |
-|------|-------|-----------|
-| Accept current format | `BundleFormatVersionTest` | Только lab |
-| Reject unsupported format | `formatVersion: 99` → ERROR | Только lab |
-| Catalog pilot validate + redeploy | `BundleUpgradeCompatGateTest` (`marketplace-demo`) | Lab H2 / MockMvc — **не** production rolling upgrade |
+| Поле манифеста | Назначение | Правило проверки |
+|----------------|------------|------------------|
+| `version` | Версия самого прикладного решения в формате SemVer (`MAJOR.MINOR.PATCH`, например `"1.2.0"`) | Обязательное поле; при смене старшего номера (`1.x.x` → `2.0.0`) валидатор предупреждает инженера о необходимости проверить миграции и совместимость экранов |
+| `formatVersion` | Целочисленный номер версии структуры JSON-манифеста (по умолчанию `1`) | Неизвестные будущие версии формата (например, `formatVersion: 99`) безопасно отклоняются сервером до начала записи в БД |
 
-Evidence: [release-compat/2026-10-12-bundle-upgrade-lab-gate.md](../evidence/release-compat/2026-10-12-bundle-upgrade-lab-gate.md).
+---
 
-## Ещё не доказано
+## 2. Что проверяется автотестами при обновлении пакета
 
-| Разрыв | Почему |
-|--------|--------|
-| **Cluster image N → N+1** | Нужны два образа + shared DB + soak — follow-up ADR-0064 |
-| Plant upgrade journals | Field evidence |
-| `formatVersion: 2` dual-read | Бампа формата ещё нет |
+| Автоматический тест | Что гарантирует |
+|---------------------|-----------------|
+| `BundleFormatVersionTest` | Корректный приём текущего формата `formatVersion: 1` и гарантированный отказ при передаче неподдерживаемого номера формата |
+| `BundleUpgradeCompatGateTest` | Повторное развёртывание и обновление пакета поверх уже установленной версии без потери существующих узлов площадки и записей реестра миграций |
 
-Не заявлять Deploy/scale 10/10 или «zero-downtime upgrade» из этого lab gate.
-
-## Связанное
-
-- [0064](decisions/0064-release-compatibility-lts.md), [applications](applications.md), [deployment](deployment.md), [marketplace](marketplace.md)
+**Связанные разделы:** [Прикладные решения (`applications.md`)](applications.md) · [Развёртывание и конфигурация (`deployment.md`)](deployment.md) · [Витрина решений (`marketplace.md`)](marketplace.md) · [ADR-0064](decisions/0064-release-compatibility-lts.md).

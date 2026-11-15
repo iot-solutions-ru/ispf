@@ -1,40 +1,41 @@
 > **Язык:** русская версия. Английский оригинал: [en/ai-agent.md](../en/ai-agent.md).
 
-# Операции AI-агента (BL-177…181)
+# Работа с ИИ-агентом: генератор решений, метрики и проверка сценариев
 
-> **Статус:** Beta — Agent API; БЛ-178 live ≥95% **выполнен** (52/52 @100%). Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Beta — генерация решений по текстовому описанию (`POST /api/v1/ai/solutions/generate`), регрессионный набор из 52 сценариев и статистика выполнения инструментов. Метки зрелости: [doc-status.md](doc-status.md).
 
-Справочник для операторов и интеграторов по агенту ISPF Tree-First, набору регрессии, генератору решений и виджетам наблюдения.
+Этот документ описывает практическую работу с пошаговым ИИ-агентом ISPF, автоматический генератор каркаса решений и инструменты контроля качества работы агента.
 
-См. также [ai-development](ai-development.md), [agent-regression](agent-regression.md), [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md), [0005](../en/decisions/0005-tree-first-ai-agent.md) (progressive tool packs).
-
----
-
-## Progressive tool surface (скорость)
-
-Админ-агент AI Studio стартует с lean-набора (`core` + `discovery`) и расширяет пакеты mid-turn через `list_agent_tools` / `describe_agent_tool` / `enable_agent_tool_pack`. Неактивный инструмент → `ERROR` с подсказкой включить pack. Ask по-прежнему read-only. Промпты: индекс playbook вместо полных тел. Defaults: `agent-max-history-turns=24`, `agent-max-tokens=16384`, `briefing-every-turn=false`.
+**Связанные разделы:** [ИИ-студия и адаптер MCP](ai-development.md) · [Регрессионные сценарии агента](agent-regression.md) · [ADR-0005](decisions/0005-tree-first-ai-agent.md) · [ADR-0034](decisions/0034-agent-observability-and-session-knowledge.md).
 
 ---
 
-## Генератор решений (BL-179 / BL-180)
+## 1. Поэтапная подгрузка инструментов (`Progressive tool packs`)
 
-![Чат AI Studio](../assets/ispf-ai-studio.png)
+Чтобы не перегружать контекст языковой модели сотней схем на каждом шаге, агент в ИИ-студии стартует с компактного базового набора инструментов (`core` + `discovery`) и при необходимости сам подключает специализированные пакеты в ходе диалога через `list_agent_tools`, `describe_agent_tool` и `enable_agent_tool_pack`.
 
-Описание завода → черновик blueprint; опционально **live** apply (дерево + дашборды + alerts).
+Основные параметры по умолчанию:
+- глубина передаваемой истории диалога: `agent-max-history-turns = 24`;
+- лимит токенов ответа на один шаг: `agent-max-tokens = 16384`;
+- полная статическая сводка о платформе передаётся только на первом ходе (`briefing-every-turn = false`), а живой снимок дерева обновляется на каждом шаге.
 
-| Конечная точка | Цель |
-|----------|---------|
-| `POST /api/v1/ai/solutions/generate` | Prompt → draft; `apply:true` → live deploy (нужен LLM) |
+---
 
-Черновик:
+## 2. Генератор решений по текстовому описанию (`/api/v1/ai/solutions/generate`)
+
+![Чат ИИ-студии](../assets/ispf-ai-studio.png)
+
+Метод `POST /api/v1/ai/solutions/generate` строит по текстовому описанию объекта черновик структуры решения, а при передаче флага `"apply": true` сразу разворачивает в дереве объектов узел логики (`SINGLETON`), устройства, правила тревог и экран оператора.
+
+### Режим черновика (`apply: false`, работает даже без внешней LLM)
 
 ```json
 {
-  "prompt": "SCADA tank farm with 2 pumps and high pressure alert"
+  "prompt": "Резервуарный парк SCADA с двумя насосами и тревогой высокого давления"
 }
 ```
 
-Ответ (`mode: draft` keyword fallback, или `mode: llm` при классификации LLM):
+Ответ возвращает подобранную предметную область (`scada`, `mes` или `hvac`), базовый шаблон и ссылку на ближайший эталонный пакет в `examples/`:
 
 ```json
 {
@@ -47,155 +48,75 @@
     "id": "scada-tank-farm-with-2-pumps",
     "title": "SCADA facility overview",
     "domain": "scada",
-    "referenceBundle": { "appId": "simulator", "manifestPath": "examples/simulator-profiles/bundle.json" }
+    "referenceBundle": {
+      "appId": "simulator",
+      "manifestPath": "examples/simulator-profiles/bundle.json"
+    }
   }
 }
 ```
 
-Live apply (BL-180):
+### Режим автоматического развёртывания (`apply: true`, требуется подключённая LLM)
 
 ```json
 {
-  "prompt": "Building HVAC with one AHU, overview dashboard and status alert",
+  "prompt": "Приточная установка здания (AHU) с обзорным дашбордом и тревогой по температуре",
   "apply": true
 }
 ```
 
-Нужен LLM (`ISPF_AI_*`). Возвращает `mode: live` с `hubPath`, `dashboardPath`, `alertPath`. Хаб — экземпляр SINGLETON-чертежа `root.platform.singleton-blueprints.{slug}-hub`; оборудование остаётся DEVICE под `root.platform.devices`. Proof: `AiSolutionGeneratorLiveSmokeTest` (`ISPF_LLM_SMOKE=true`).
+В режиме `live` генератор создаёт:
+- центральный узел логики по шаблону `SINGLETON` в ветке `root.platform.singleton-blueprints.<имя>-hub` (в строгом соответствии с правилом: логика отдельно от `DEVICE`);
+- узлы телеметрии `DEVICE` в ветке `root.platform.devices`;
+- правило тревоги `ALERT` и экран оператора `DASHBOARD`.
 
-### BL-180 soft &lt;15 min + oneshot интегратора (field-soak ready)
+Ответ возвращает созданные пути `hubPath`, `dashboardPath` и `alertPath`. Если на сервере настроен закрытый ключ подписи (`ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM`), сгенерированный пакет автоматически подписывается.
 
-**Качественный путь:** долговечное доказательство длительности для **одного** домена — без выдуманных multi-domain pass counts. Lab oneshot ≠ многодневный field soak; та же честность, что [field-pilot-playbook](../en/field-pilot-playbook.md) (именованная задача до claim field Done). Канон EN: [ai-agent § BL-180 soft](../en/ai-agent.md#bl-180-soft-15-min--integrator-oneshot-field-soak-ready).
+### Определение предметной области по ключевым словам
 
-| Путь | Назначение |
-|------|------------|
-| `AiSolutionGeneratorLiveSmokeTest` | Live apply matrix; pin через `AGENT_LIVE_GENERATOR_DOMAIN` |
-| `tools/agent-regression/run-live-generator-oneshot.sh` | Oneshot по умолчанию **hvac** → results JSON |
-| `tools/agent-regression/validate-generator-evidence.mjs` | Schema + опционально `--enforce-soft` |
-| `build/agent-regression/live-generator-results.json` | Evidence: `elapsedMs`, `softBudgetMet`, paths |
-
-```bash
-export ISPF_LLM_SMOKE=true
-export ISPF_AI_PROVIDER=openai-compatible
-export ISPF_AI_BASE_URL=https://api.deepseek.com/v1   # пример
-export ISPF_AI_MODEL=deepseek-v4-flash
-export ISPF_AI_API_KEY=…                              # не коммитить
-
-export AGENT_LIVE_GENERATOR_DOMAIN=hvac
-# export AGENT_LIVE_GENERATOR_ENFORCE_SOFT=true
-
-bash tools/agent-regression/run-live-generator-oneshot.sh
-```
-
-**Чеклист подписи интегратора** (приложить датированный JSON + заметки):
-
-| Проверка | Доказательство |
-|----------|----------------|
-| Prompt / domain | `AGENT_LIVE_GENERATOR_DOMAIN` + prompt в матрице теста |
-| Model | `ISPF_AI_MODEL` / base URL (без secrets в тикете) |
-| Functional | `functionalOk: true`, operator UI 200, пути hub/dashboard/alert |
-| Soft &lt;15 min | `softBudgetMet: true` и `elapsedMs` ≤ 900000 |
-| Spot-check оператора | Открыть operator app по `appId` из JSON |
-
-Не заявлять pass-rate по трём доменам, пока нет трёх датированных реальных прогонов. Soft miss остаётся в JSON (`softBudgetMet: false`).
-
-**Remote demostand (VPS):** `tools/agent-regression/vps-generator-oneshot.ps1 -BaseUrl https://ispf.iot-solutions.ru -Domain hvac`.  
-**Bundle trust (prod):** live apply подписывает манифест при `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM`; иначе деплой как **platform-generated trusted unsigned** (как marketplace free install). В ответе `bundleTrust`: `signed` | `platform-generated-unsigned`. Ручной import unsigned по-прежнему запрещён при `REQUIRE_SIGNED_BUNDLES=true`.
-
-Ключевые слова для обнаружения домена:
-
-| Домен | Ключевые слова (примеры) |
-|--------|-------------------|
-| `mes` | mes, dispatch, oee, work order, manufacturing |
-| `hvac` | hvac, building, comfort, zone, ahu, chiller |
-| `scada` | scada, pump, tank, mimic, modbus, snmp, historian |
-
-Полный конвейер: [AgentSolutionGeneratorPlaybook](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java).
+| Область | Примеры ключевых слов в запросе |
+|---------|---------------------------------|
+| `scada` | `scada`, `pump`, `tank`, `mimic`, `modbus`, `snmp`, `historian`, насос, резервуар, мнемосхема |
+| `mes` | `mes`, `dispatch`, `oee`, `work order`, `manufacturing`, смена, заказ, брак |
+| `hvac` | `hvac`, `building`, `comfort`, `zone`, `ahu`, `chiller`, вентиляция, климат |
 
 ---
 
-## Пакет регрессии агентов (BL-178)
+## 3. Проверка генератора и регрессионный набор сценариев
 
-| Путь | Цель |
-|------|---------|
-| `tools/agent-regression/scenarios/*.json` | 50 curated scenarios (SCADA, MES, HVAC) |
-| `tools/agent-regression/validate-scenarios.mjs` | Schema + bundle + pass-rate (`--oneshot` для частичных live-результатов) |
-| `AgentRegressionCiTest` | Java CI gate (schema only, no LLM) |
-| `AgentLiveDeploySmokeTest` | Opt-in live LLM mes-platform deploy (`ISPF_LLM_SMOKE=true`) |
-| `tools/agent-regression/run-live-oneshot.sh` | BL-177 one-shot → results JSON + `--enforce-rate --oneshot` |
+Для проверки качества работы агента на реальных инженерных задачах в репозитории поддерживается набор из **52 сценариев** (SCADA, MES, вентиляция зданий) в каталоге `tools/agent-regression/scenarios/*.json`.
 
-### BL-177 live one-shot (вручную / nightly с secrets)
+| Скрипт / тест | Назначение |
+|---------------|------------|
+| `node tools/agent-regression/validate-scenarios.mjs` | Проверка JSON-схем всех сценариев и связанных с ними манифестов `bundle.json` (выполняется в CI на каждом PR) |
+| `bash tools/agent-regression/run-platform-gate.sh` | Прогон платформенных сценариев и установки всех эталонных пакетов без вызова внешней LLM |
+| `bash tools/agent-regression/run-live-oneshot.sh` | Сквозной прогон развёртывания решения с живой LLM (`ISPF_LLM_SMOKE=true`) |
+| `bash tools/agent-regression/run-live-generator-oneshot.sh` | Проверка генератора решений (`apply: true`) с замером времени выполнения и сохранением отчёта в `build/agent-regression/live-generator-results.json` |
+| `bash tools/agent-regression/run-live-suite.sh` | Полный прогон всех 52 сценариев с живой моделью (`AGENT_LIVE_SUITE_MODE=full`) |
+
+Пример запуска одиночной проверки с внешней моделью:
 
 ```bash
 export ISPF_LLM_SMOKE=true
 export ISPF_AI_PROVIDER=openai-compatible
-export ISPF_AI_BASE_URL=https://api.deepseek.com/v1   # пример OpenAI-совместимого LLM, НЕ Admin Console
-export ISPF_AI_MODEL=deepseek-v4-flash
-export ISPF_AI_API_KEY=…                              # не коммитить
+export ISPF_AI_BASE_URL=https://api.openai.com/v1
+export ISPF_AI_MODEL=gpt-4o-mini
+export ISPF_AI_API_KEY=<ваш-ключ>
 
 bash tools/agent-regression/run-live-oneshot.sh
-# или:
-./gradlew :packages:ispf-server:test --tests com.ispf.server.ai.agent.AgentLiveDeploySmokeTest
 ```
 
-PASS: operator UI `mes-platform` live и BFF `mes_platform_listLines` → `LINE-A01` без правок человека.
-Агент использует инструмент **`run_deploy_playbook`** с `{"appId":"mes-platform"}`.
-
-Подтвердите локально:
-
-```bash
-node tools/agent-regression/validate-scenarios.mjs
-```
-
-Отчёт pass rate (полный suite vs one-shot):
-
-```bash
-node tools/agent-regression/validate-scenarios.mjs --results nightly-results.json --enforce-rate
-node tools/agent-regression/validate-scenarios.mjs --results build/agent-regression/live-oneshot-results.json --enforce-rate --oneshot
-```
-
-Форма файла результатов:
-
-```json
-{
-  "scenarios": [
-    { "id": "mes-platform-cert", "status": "OK" },
-    { "id": "scada-tank-farm", "status": "ERROR" }
-  ]
-}
-```
-
-**БЛ-178 (выполнен):** полный live suite ≥95% — **52/52 @100%** через `AGENT_LIVE_SUITE_MODE=full` / `run-live-suite.sh` (`build/agent-regression/live-suite-results.json`, ~2026-07-18/19). Nightly CI по-прежнему **platform**. **БЛ-177 / БЛ-180 Готово** — multi-app / multi-domain live smoke harness в repo; live runs требуют `ISPF_LLM_SMOKE=true`. По [competitive-scorecard](competitive-scorecard.md) AI **~9.0 REAL**. `nightly-stub-results.json` **устарел** — не доказательство live ≥95%.
+Подробное устройство файлов сценариев описано в разделе **[Регрессионные сценарии агента](agent-regression.md)**.
 
 ---
 
-## Наблюдаемость агентов v2 (BL-181)
+## 4. Статистика работы агента и инструментов (`/api/v1/ai/agent/metrics`)
 
-Админ-наблюдаемость: агрегаты ходов и стоимость/задержка/надёжность по каждому tool.
+Администратор может отслеживать количество диалогов, расход токенов, среднюю задержку и частоту ошибок по каждому инструменту:
 
-| Конечная точка | Auth | Поля |
-|----------|------|--------|
-| `GET /api/v1/ai/agent/metrics?days=7` | admin | `turnsByStatus`, `avgStepsPerTurn`, `topFailingTools`, суммы токенов/latency, `toolLatencyBreakdown` |
-| `GET /api/v1/ai/agent/metrics/tools?days=7` | admin | `tools[]`: `tool`, `callCount`, `avgLatencyMs`, `maxLatencyMs`, `promptTokens`, `completionTokens`, `errorCount`, `errorRate` |
+| Метод и путь | Роль | Что возвращает |
+|--------------|------|----------------|
+| `GET /api/v1/ai/agent/metrics?days=7` | `admin` | Статистика ходов по статусам (`turnsByStatus`), среднее число шагов (`avgStepsPerTurn`), суммарный расход токенов и список инструментов с частыми ошибками (`topFailingTools`) |
+| `GET /api/v1/ai/agent/metrics/tools?days=7` | `admin` | Показатели по каждому инструменту: число вызовов `callCount`, средняя и максимальная задержка (`avgLatencyMs`, `maxLatencyMs`), расход токенов и доля ошибок `errorRate` |
 
-**AI Studio (REAL):** вкладка Status → `AgentMetricsPanel` загружает оба endpoint — карточки ходов и таблица **стоимость / задержка по tool** (`fetchAgentToolMetrics`).
-
-**Автоповтор при сбое (REAL):**
-- разбор JSON-действия LLM: `AgentLlmActionResolver` nudges + retry
-- транзиентные **исключения** tool (timeout / connection / 5xx / rate-limit): один автоматический retry в `TreeFirstAgentService` (`AgentToolTransientRetry`); в результате может быть `retried: true`. Бизнес-ответы `status: ERROR` не повторяются.
-
-### Опциональный дашборд / BFF
-
-Референсный layout и маппинг BFF — в `examples/agent-metrics-dashboard/`. Привязывайте chart-виджеты к `GET /api/v1/ai/agent/metrics/tools`, если нужны те же ряды на операторском дашборде (сетка **84×8** — [dashboards](dashboards.md)).
-
----
-
-## Связанное невыполненное задание
-
-| ID | Особенность | Док |
-|----|---------|-----|
-| BL-177 | Сквозное развёртывание агента | [AgentDeployPlaybook](../../packages/ispf-ai-agent/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) |
-| БЛ-178 | Пакет регрессионного агента | [agent-regression](agent-regression.md) |
-| БЛ-179 | Draft API генератора решений | Этот документ § Генератор решений |
-| БЛ-180 | Live apply генератора + виджет метрик | `AiSolutionGeneratorLiveSmokeTest`, playbook |
-| БЛ-181 | Наблюдаемость агентов v2 | `/agent/metrics/tools`, [0034-agent-observability-and-session-knowledge](decisions/0034-agent-observability-and-session-knowledge.md) |
+В веб-консоли эти таблицы отображаются во вкладке **ИИ-студия → Состояние** (`AgentMetricsPanel`). При временных сетевых сбоях или тайм-аутах во время вызова инструмента сервис `TreeFirstAgentService` автоматически выполняет одну повторную попытку (`AgentToolTransientRetry`).

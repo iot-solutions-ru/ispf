@@ -1,5 +1,7 @@
-# G-01 pen-test — черновик письма вендору
+> **Язык:** русская версия. Английский оригинал: [en/pen-test-vendor-outreach-draft.md](../en/pen-test-vendor-outreach-draft.md).
 
-Канон (EN): [pen-test-vendor-outreach-draft.md](../en/pen-test-vendor-outreach-draft.md).
+# Шаблон запроса в лабораторию на проведение тестирования на проникновение
 
-Пакет для вложения: [pen-test-vendor-pack.md](pen-test-vendor-pack.md). Письмо **не** закрывает G-01 — нужен датированный отчёт + retest.
+> **Статус:** Internal — заготовка сопроводительного письма для подрядчика ИБ. Метки зрелости: [doc-status.md](doc-status.md).
+
+Полный текст шаблона запроса на английском языке приведён в файле **[en/pen-test-vendor-outreach-draft.md](../en/pen-test-vendor-outreach-draft.md)**, а перечень прикладываемых технических документов — в разделе **[Комплект документов для подрядчика (`pen-test-vendor-pack.md`)](pen-test-vendor-pack.md)**.

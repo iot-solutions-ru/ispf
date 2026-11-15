@@ -1,9 +1,16 @@
-# ADR-0051: Poka-yoke — constraints вместо гвардов
+> **Язык:** русская версия. Английский оригинал: [en/decisions/0051-poka-yoke-constraints-over-guards.md](../../en/decisions/0051-poka-yoke-constraints-over-guards.md).
 
-Канонический текст: [../../en/decisions/0051-poka-yoke-constraints-over-guards.md](../../en/decisions/0051-poka-yoke-constraints-over-guards.md).
+# ADR-0051: Защита от ошибок на уровне схем и контрактов (принцип Poka-Yoke)
 
-**Кратко (Accepted 2026-07-19):** качество агента и конфигурации строится по Toyota *poka-yoke* — три уровня защиты (prevention → detection → correction). Эвристические гварды в `packages/ispf-ai-agent` (~3.7k LOC: Plan/GroundTruth/JSON salvage/Loop/…) — временные леса: в ревью каждый гвард обязан назвать level-1 constraint, который его заменит. Не демонтировать ACL/scope, mutate approval, bundle gates и CONTROL allowlist. Порядок внедрения: схемы инструментов → `bundle.schema.json` → structured errors → acceptance-вердикт → native FC → демонтаж scaffolding по inventory в ADR. Стек творения — [application-principles P7](../application-principles.md) (AUTHOR / SHAPE / SHIP / PROMOTE).
+> **Статус:** Принято (`Accepted`, 2026-07-19). Метки зрелости: [../doc-status.md](../doc-status.md).
 
-**Wave 1 (landed):** `AgentToolInputSchemas` на все platform tools; validate-before-execute; MCP `tools/list` отдаёт реальные `inputSchema` (заглушка `GENERIC_INPUT_SCHEMA` снята). Вложенный объект виджета в `add_dashboard_widget` закрыт (`additionalProperties: false`). Создание объекта — один инструмент на роль: симулятор `create_virtual_device`, алерт `configure_alert`, хаб `ensure_singleton_instance`.
+## Суть решения
 
-**Wave 1b (landed):** консоль передаёт `uiLocale` на каждый turn; system prompt требует отвечать на языке локали UI (en/ru/de/zh).
+Надёжность конфигурации платформы и работы ИИ-агента обеспечивается **строгими входными схемами и правилами валидации на уровне ядра** (принцип предотвращения ошибок *poka-yoke*), а не текстовыми уговорами в промптах или обходными эвристиками:
+
+1. **Точные JSON-схемы для каждого инструмента (`AgentToolInputSchemas`):** все инструменты платформы и адаптер MCP проверяют типы и обязательные поля аргументов до вызова обработчика; универсальная заглушка со свободными полями снята.
+2. **Один специализированный инструмент на каждую архитектурную роль:** создание виртуального датчика (`create_virtual_device`), создание центрального узла логики (`ensure_singleton_instance`), создание экземпляра цифрового двойника (`instantiate_instance_type`), настройка тревоги (`configure_alert`).
+3. **Строгая схема пакета решения (`schema/bundle.schema.json`) и формальная проверка выражений CEL ([ADR-0055](0055-cel-formal-verification-ai-gate.md)):** некорректные структуры и заведомо невыполнимые условия отсекаются на этапе проверки до записи в базу данных.
+4. **Сохранение обязательных рубежей безопасности:** проверки ролей и пообъектных прав (`ACL`), подтверждение изменяющих действий пользователем (`agent-require-approval-for-mutate`) и валидация манифестов при импорте никогда не отключаются.
+
+**Связанные разделы:** [Правила архитектуры приложений (`../application-principles.md`)](../application-principles.md) · [Частые ошибки проектирования (`../anti-patterns.md`)](../anti-patterns.md) · [ADR-0060](0060-solution-authoring-constraints.md).

@@ -30,24 +30,24 @@
 | `cwmp` | PRODUCTION | вне top-20; Inform + Get/SetParameterValues |
 | `dnp3` | PRODUCTION | Class poll и direct operate (CROB latch, аналоговый float). Входы и счётчики только на чтение |
 | `haystack`, `kafka`, `coap` | PRODUCTION | poll-only клиенты; loopback-тесты |
-| `ip-host`, `telnet`, `ssh`, `modem-at` | PRODUCTION | IT/remote-проверки; read-only |
-| `icmp` | BETA | проба `InetAddress.isReachable`, < 100 строк — ниже порога критерия; read-only |
-| `file`, `folder`, `application` | PRODUCTION | мониторинг локального хоста; read-only |
-| `imap`, `pop3`, `jms` | PRODUCTION | mail/messaging-клиенты; read-only |
-| `soap`, `web-transaction`, `http-server` | PRODUCTION | на базе HTTP; read-only |
-| `jdbc`, `graph-db` | PRODUCTION | только SELECT / query read; read-only |
-| `sip`, `asterisk`, `radius` | PRODUCTION | телеком-пробы; read-only |
-| `ldap`, `jmx`, `nmea`, `message-stream`, `dhcp` | PRODUCTION | IT/network-проверки; read-only |
-| `ingress-syslog`, `ingress-snmp-trap`, `ingress-sflow` | PRODUCTION | UDP-слушатели, raw capture; `observed_at` |
-| `iec104-server` | PRODUCTION | slave/server; write + quality; interop partner для `iec104` |
-| `omron-fins`, `mbus` | PRODUCTION | industrial read; loopback-тесты |
-| `smpp`, `xmpp` | PRODUCTION | messaging; `smpp` submit через маппинг; loopback-тесты |
-| `ipmi` | PRODUCTION | hardware-проба; loopback-тест RMCP/IPMI |
-| `wmi` | BETA | только Windows (PowerShell/CIM); тесты пропускаются на Linux CI — проверяемого peer нет |
-| `odbc` | PRODUCTION | SQL read; нужен внешний ODBC-JDBC bridge JAR |
-| `ethernet-ip` | PRODUCTION | UCMM CIP Read/Write Tag (атомарные типы); loopback CIP-эмулятор |
-| `smi-s`, `vmware` | PRODUCTION | парсинг CIM-XML / vSphere SOAP (Login + RetrieveProperties); loopback-тесты |
-| `opc-da`, `opc-bridge` | BETA | **Оболочка / тесты маппинга** — не полный DA-стек |
+| `ip-host`, `telnet`, `ssh`, `modem-at` | PRODUCTION | ИТ и удалённые проверки; только чтение |
+| `icmp` | BETA | проба `InetAddress.isReachable`, < 100 строк — ниже порога критерия; только чтение |
+| `file`, `folder`, `application` | PRODUCTION | мониторинг локального хоста; только чтение |
+| `imap`, `pop3`, `jms` | PRODUCTION | клиенты почты и очередей сообщений; только чтение |
+| `soap`, `web-transaction`, `http-server` | PRODUCTION | на базе HTTP; только чтение |
+| `jdbc`, `graph-db` | PRODUCTION | только запросы чтения (`SELECT`); только чтение |
+| `sip`, `asterisk`, `radius` | PRODUCTION | телеком-пробы; только чтение |
+| `ldap`, `jmx`, `nmea`, `message-stream`, `dhcp` | PRODUCTION | сетевые и ИТ-проверки; только чтение |
+| `ingress-syslog`, `ingress-snmp-trap`, `ingress-sflow` | PRODUCTION | UDP-слушатели, приём пакетов; `observed_at` |
+| `iec104-server` | PRODUCTION | ведомая станция (сервер); запись + качество; пара для проверки `iec104` |
+| `omron-fins`, `mbus` | PRODUCTION | чтение промышленных приборов; кольцевые тесты |
+| `smpp`, `xmpp` | PRODUCTION | обмен сообщениями; `smpp` отправка через привязку; кольцевые тесты |
+| `ipmi` | PRODUCTION | опрос датчиков серверного шасси; кольцевой тест RMCP/IPMI |
+| `wmi` | BETA | только Windows (PowerShell/CIM); на Linux-раннерах CI не запускается |
+| `odbc` | PRODUCTION | чтение SQL; нужен внешний JAR моста ODBC-JDBC |
+| `ethernet-ip` | PRODUCTION | чтение и запись тегов UCMM CIP (базовые типы); кольцевой CIP-эмулятор |
+| `smi-s`, `vmware` | PRODUCTION | разбор CIM-XML и vSphere SOAP (`Login` + `RetrieveProperties`); кольцевые тесты |
+| `opc-da`, `opc-bridge` | BETA | **Оболочка и разбор адресов** — для работы с DCOM нужен внешний мост |
 
 ### observedAt (source timestamps, BL-79)
 
@@ -127,7 +127,7 @@ Runtime считает отказы как `ispf.driver.errors.total{driver,op,k
 
 `DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` встраивает схему (`driverId`, `driverStatus`, `driverPollIntervalMs`, `driverConfigJson`, `driverPointMappingsJson`, `status`) из blueprint без записи в каталог моделей и без `appliedBlueprintIds`.
 
-Fixture MIXIN-модель `device-driver-v1` (при `fixtures-enabled`) — для demo/lab и явного apply; см. [0018-fixture-models-and-cel-applicability](decisions/0018-fixture-models-and-cel-applicability.md).
+Вспомогательная примесь `device-driver-v1` (при включённом `fixtures-enabled`) используется для демонстрационных стендов; см. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 
 | Переменная | Описание |
 |------------|----------|
@@ -250,7 +250,7 @@ GET  /api/v1/drivers/runtime/browse?devicePath=...&nodeId=<optional>
 
 Eclipse Paho `org.eclipse.paho.client.mqttv3` — только MQTT **3.1.1**.
 
-MQTT 5 (user properties, session expiry, reason codes, topic aliases, shared subscriptions) — **non-goal** этого драйвера, пока не выбран отдельный MQTT 5 клиент. Брокеры, которым нужны только возможности MQTT 5, не совместимы.
+Специфичные возможности протокола MQTT 5 (пользовательские свойства, истечение сессии, коды причин, псевдонимы тем и разделяемые подписки) **не входят в задачи** этого драйвера 3.1.1. Брокеры, требующие исключительно MQTT 5, этим пакетом не обслуживаются.
 
 Конфиг: `brokerUrl`, `topicPrefix`, `clientId`, credentials.
 

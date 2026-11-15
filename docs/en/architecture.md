@@ -2,37 +2,36 @@
 
 # ISPF Architecture
 
-> **Status:** Stable — Vision, layers, extensibility. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — server layers, execution engines, data flows, and extension points. Status tags: [doc-status.md](doc-status.md).
 
-**See also:** [object-model](object-model.md), [cluster](cluster.md), [application-principles](application-principles.md), [decisions/readme.md](decisions/readme.md).
+**Related guides:** [How ISPF works](learn.md) · [Object model](object-model.md) · [High-availability cluster](cluster.md) · [Application architecture rules](application-principles.md) · [Architecture Decision Records (ADRs)](decisions/readme.md).
 
-## Vision
+---
 
-**IoT Solutions Platform Framework (ISPF)** — middleware for IoT, industrial automation, and IT operations. A unified data model and API for devices, HMI dashboards, alerts, and BPMN automation.
+## 1. Overview
 
-## Core principle: business logic in platform mechanisms
+**ISPF (IoT Solutions Platform Framework)** is a self-hosted server platform for industrial automation, SCADA, IoT telemetry, and shop-floor manufacturing execution (MES). It provides a single hierarchical object model, unified access control, and REST/WebSocket APIs for field equipment, operator screens, alarms, time-series history, and BPMN workflows.
 
-Application business logic **lives on the platform** — in declarative **object tree** configuration, not in domain-specific Java in the server.
+<a id="core-principle-business-logic-in-platform-mechanisms"></a>
 
-| Mechanism | What it describes |
-|-----------|-------------------|
-| **Models** | Blueprint: variables, events, functions, bindings |
-| **Variables** | State, computations (CEL, platform bindings), historian |
-| **Events** | Event types; alert rules and correlators are tree nodes |
-| **Functions** | Callable logic on an object (script, `INVOKE_FUNCTION`) |
-| **Workflow** | BPMN processes, user tasks, escalation |
+## 2. Core Principle: Application Logic Lives in the Object Tree
 
-The **platform (framework)** implements **generic engines once**: CEL, bindings, historian, BPMN, script runtime, drivers, event bus.
+Plant and industry-specific logic is expressed as **declarative configuration in the object tree**, never by adding custom industry Java code to `ispf-server`:
 
-A **solution** fills those mechanisms with configuration: models, thresholds, processes, functions, dashboards.
+| Platform Mechanism | Responsibility |
+|--------------------|----------------|
+| **Blueprints (`SINGLETON`, `INSTANCE`, `MIXIN`)** | Reusable templates defining variables, events, functions, calculation rules, and alert templates |
+| **Variables (`DataRecord` / `DataSchema`)** | Current state, reactive and historical calculation rules (`@bindingRules`), and time-series recording |
+| **Events, Alerts, and Correlators (`ALERT`, `CORRELATOR`)** | Threshold evaluation with hysteresis/delay and multi-event sequence correlation |
+| **Object Functions (`FunctionDescriptor`)** | Callable operations on logic nodes (JSON step scripts, SQL queries, sandboxed Java, or built-in handlers) |
+| **Workflows (`WORKFLOW`)** | BPMN 2.0 processes, operator work-queue tasks, timers, and escalation paths |
 
-Bundle deploy ([applications](applications.md)) is **packaging and delivery** of configuration into the object tree and app schema — not a separate runtime outside the platform.
+- **The platform core (`main`)** implements universal runtime engines once: protocol polling, the object tree, Google CEL evaluation, the time-series historian, alarm evaluation, BPMN execution, and SQL script execution.
+- **An application solution (`bundle.json`)** packages configuration for those engines together with isolated application SQL tables (`schemaName`) and optional custom React operator UIs (`ui-pack` served at `/apps/<appId>/`). See [ADR-0001](decisions/0001-app-platform-boundary.md).
 
-**Forbidden in `main`:** domain Java in `ispf-server`, hardcoded BFF routes, duplicating logic outside the object tree. See [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md).
+---
 
-**Platform evolution:** richer object-tree mechanisms (Phase 5). See [roadmap.md § Phase 5](roadmap.md).
-
-## Core domain model
+## 3. Domain Model
 
 ```mermaid
 graph TB
@@ -40,140 +39,92 @@ graph TB
         ROOT[root]
         PLATFORM[platform]
         DEVICES[devices]
-        DEVICE[device instance]
+        DEVICE["Device Node (DEVICE)"]
         ROOT --> PLATFORM --> DEVICES --> DEVICE
     end
 
-    DEVICE --> VARS[Variables]
-    DEVICE --> FUNCS[Functions]
-    DEVICE --> EVENTS[Events]
-    VARS --> DR[DataRecord]
-    DR --> SCHEMA[DataSchema]
-    VARS --> CEL[CEL Bindings]
+    DEVICE --> VARS["Variables (DataRecord)"]
+    DEVICE --> FUNCS["Functions"]
+    DEVICE --> EVENTS["Events"]
+    VARS --> SCHEMA["DataSchema (typed fields)"]
+    VARS --> CEL["Calculation Rules (@bindingRules)"]
 ```
 
-Details: [object-model](object-model.md).
+- **Addressable tree nodes:** every entity has a dot-separated path such as `root.platform.devices.pump-01` or `root.platform.singleton-blueprints.station-hub`.
+- **Logic objects vs `DEVICE`:** orchestration, cross-device calculations, and BFF functions live on **`SINGLETON`** or **`INSTANCE`** nodes — never on `ObjectType.DEVICE` (`DEVICE` nodes are strictly for protocol drivers and raw I/O telemetry). See [Application architecture rules](application-principles.md#logic-objects-vs-device-mandatory).
 
-### Platform object
+---
 
-Addressable node: `root.platform.devices.pump-01`. Types: `DEVICE`, `DASHBOARD`, `WORKFLOW`, `ALERT`, `CORRELATOR`, `PLATFORM`, `ALERT_RULES`, … System catalogs use semantic `ObjectType`, not `CUSTOM`.
+## 4. Runtime Layers and Module Map
 
-### DataRecord
-
-- `DataSchema` — fields (`FieldType`)
-- `DataRecord` — rows with validation
-
-### Models (templates)
-
-`BlueprintDefinition` — blueprint: variables, events, functions, bindings.  
-See [blueprints](blueprints.md).
-
-### Expressions
-
-Google CEL for bindings, alert rules, workflow gateways. Object variables also support **platform bindings** (`counterRate`, `scale`, `clamp`, …) — see [bindings](bindings.md).
-
-```
-self.temperature.value > self.threshold.value
-counterRate(ifInOctets)
-```
-
-## Runtime layers
-
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │  Web Console (React 19 + Vite + TanStack Query)         │
-│  Admin │ Operator HMI │ Dashboard/Workflow builders     │
+│  Admin Explorer │ Operator HMI │ Dashboard/BPMN Editors │
 ├─────────────────────────────────────────────────────────┤
-│  API Layer (Spring Boot 4.0, Java 25)                   │
-│  REST / WebSocket / OAuth2 JWT / RBAC                   │
+│  HTTP & WebSocket API Layer (Spring Boot 4, Java 25)    │
+│  REST /api/v1/** │ WS /ws/objects │ OIDC JWT & RBAC     │
 ├─────────────────────────────────────────────────────────┤
-│  Domain Services                                        │
-│  ObjectManager │ EventService │ WorkflowService         │
-│  DashboardService │ AlertRuleService │ CorrelatorService│
-│  DriverRuntimeService │ BlueprintEngine                     │
-│  ApplicationPlatform (functions, data, BFF, scheduler)  │
+│  Core Domain Services                                   │
+│  ObjectManager │ BindingRuleEngine │ EventService       │
+│  AlertRuleService │ EventCorrelatorService              │
+│  WorkflowService │ DashboardService │ ReportService     │
+│  DriverRuntimeService │ BlueprintEngine                 │
 ├─────────────────────────────────────────────────────────┤
-│  Plugins & Libraries                                    │
-│  ispf-core │ ispf-expression │ ispf-plugin-blueprint         │
-│  ispf-plugin-workflow                                   │
+│  Modular Packages & SPIs                                │
+│  ispf-core │ ispf-expression │ ispf-plugin-blueprint    │
+│  ispf-plugin-workflow │ ispf-ai-agent │ ispf-driver-*   │
 ├─────────────────────────────────────────────────────────┤
-│  Driver SPI                                             │
-│  virtual │ mqtt │ modbus-tcp │ snmp                     │
-├─────────────────────────────────────────────────────────┤
-│  Persistence & Messaging                                │
-│  PostgreSQL/H2 │ Flyway │ NATS* │ MQTT*                 │
+│  Storage & Messaging                                    │
+│  PostgreSQL / TimescaleDB │ ClickHouse │ Redis │ NATS   │
 └─────────────────────────────────────────────────────────┘
 ```
 
-## Package map
+| Gradle Module | Role |
+|---------------|------|
+| `packages/ispf-core` | Core data structures: `PlatformObject`, `DataRecord`, `DataSchema`, binding cascade analysis |
+| `packages/ispf-expression` | Google CEL engine, formal Z3 verifier, and built-in signal functions (`counterRate`, `movingAvg`, `hysteresis`, …) |
+| `packages/ispf-plugin-blueprint` | Blueprint registry, parameter resolution, and `SINGLETON` / `INSTANCE` / `MIXIN` lifecycle |
+| `packages/ispf-plugin-workflow` | Pure-Java BPMN 2.0 subset parser and execution engine |
+| `packages/ispf-ai-agent` | Tree-first AI agent, `ContextPack` hybrid search, and MCP server adapter |
+| `packages/ispf-driver-*` | 160+ modular protocol driver packs (`modbus-tcp`, `opcua`, `s7`, `iec104`, `dnp3`, `mqtt`, `snmp`, …) |
+| `packages/ispf-server` | Spring Boot server, REST controllers, security, historian, and application bundle deployment |
 
-| Package | Role |
-|---------|------|
-| `ispf-core` | ObjectTree, PlatformObject, DataRecord |
-| `ispf-expression` | CEL engine, BindingExpressionEvaluator |
-| `ispf-driver-*` | Device protocol adapters |
-| `ispf-plugin-blueprint` | Model registry & engine |
-| `ispf-plugin-workflow` | BPMN parser & executor |
-| `ispf-server` | Spring Boot wiring, REST, JPA, security |
+---
 
-## Security model
+## 5. Runtime Data Flows
 
-OAuth2 JWT (Keycloak) or header-based RBAC (`local`).  
-Roles: `admin`, `operator`.  
-See [security](security.md).
-
-## Data flow: telemetry
-
-```
+### Telemetry and Calculation Pipeline
+```text
 DeviceDriver.readPoints()
   → DriverRuntimeService
-  → ObjectManager.setVariableValue() / setDriverTelemetryValue()
-  → BindingPropagationListener → BindingRuleEngine
-  → AlertRuleListener
-  → ObjectChangeEvent → WebSocket → Web Console
+  → ObjectManager.setDriverTelemetryValue() (in-memory RAM update + historian write)
+  → BindingPropagationListener → BindingRuleEngine (CEL & reactive functions)
+  → AlertRuleListener (threshold & hysteresis evaluation)
+  → ObjectChangeEvent → WebSocket (/ws/objects) → Operator browser
 ```
 
-## Data flow: automation
-
+### Event, Correlation, and Workflow Pipeline
+```text
+EventService.fire()
+  → event_history (PostgreSQL / TimescaleDB or ClickHouse)
+  → CorrelatorDispatchService (COUNT / SEQUENCE / EVENT_CHAIN / WINDOW)
+  → WorkflowService.run() (BPMN instance)
+  → userTask → Work Queue (/api/v1/work-queue) → Operator HMI
 ```
-Event fire → event_history
-  → EventCorrelatorListener → WorkflowService.run
-  → UserTask → WorkQueue → Operator HMI
-```
 
-## Deployment topology
+---
 
-**Development:** `docker compose` + Gradle bootRun + Vite dev server.
+## 6. Scaling: High-Availability Cluster vs Multi-Site Federation
 
-**Production (target):**
+- **Horizontal cluster ([cluster.md](cluster.md)):** multiple stateless `ispf-server` replicas share **one** PostgreSQL database and **one** `root.platform.*` tree. Device polling is partitioned across replicas via `platform_driver_locks`, and live variable values are mirrored in memory across replicas over NATS ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)).
+- **Multi-site federation ([federation.md](federation.md)):** separate ISPF instances at remote plants or edge gateways (including sites behind NAT) connect to a central Hub over outbound WebSocket tunnels while keeping their own local databases.
 
-- `ispf-server` — stateless replicas
-- Managed PostgreSQL, Redis, NATS
-- Keycloak / OIDC
-- Static web-console behind CDN/ingress
+---
 
-**Horizontal scale ≠ federation:** replicas share one DB and one `root.platform.*` tree. Multi-replica: driver ownership, NATS live mirror — see **[cluster](cluster.md)**. Multiple sites / edge agents — [federation](federation.md), [roadmap.md § Phase 4–8](roadmap.md).
+## 7. Supported Extension Points
 
-See [deployment](deployment.md).
-
-## Extension points
-
-1. **DeviceDriver** — new protocol ([drivers](drivers.md))
-2. **BlueprintDefinition** — device/process template ([blueprints](blueprints.md))
-3. **FunctionHandler** — business operations on objects
-4. **Dashboard widgets** — new types in web-console ([dashboards](dashboards.md))
-5. **REST / Webhook** — external integrations ([api](api.md))
-6. **NATS subjects** — messageTask in BPMN ([workflows](workflows.md))
-7. **Application bundle** — deploy functions and migrations **outside** core ([applications](applications.md), [plugins](plugins.md))
-
-Commercial and domain extensions **do not** belong in the AGPL community `main` tree (optional Enterprise dual-license — [license](license.md)).
-
-## Reference stands
-
-| Stand | Branch | Description |
-|-------|--------|-------------|
-| Demo sensor | `main` | virtual driver, alert, workflow |
-
-## Documentation index
-
-Full set: [docs/en/readme.md](readme.md).
+1. **Application bundles (`bundle.json`):** ship models, objects, SQL migrations, script functions, dashboards, workflows, and reports via `POST /api/v1/applications/{appId}/deploy` ([applications.md](applications.md)).
+2. **Hosted React UIs (`ui-pack`):** build custom React/Vite operator applications in an external IDE and host them at `/apps/<appId>/` ([external-ide.md](external-ide.md)).
+3. **Protocol driver packs (`DeviceDriver` SPI):** build drop-in protocol adapters using the [Driver DDK](driver-ddk.md).
+4. **Analytics function packs (`AnalyticsFunctionProvider` SPI):** add custom time-series evaluators ([analytics-formulas-and-packs.md](analytics-formulas-and-packs.md)).

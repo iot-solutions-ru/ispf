@@ -1,108 +1,38 @@
 > **Язык:** русская версия. Английский оригинал: [en/reference-mes-platform.md](../en/reference-mes-platform.md).
 
-# MES Platform walkthrough (BL-164 / BL-165 / BL-166 / BL-167 / BL-168 / BL-169 / BL-170)
+# Эталонное прикладное решение MES (`mes-platform`)
 
-> **Статус:** Beta — Marketplace MES; smoke ≠ завод. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Beta — демонстрационный и учебный пакет MES из каталога решений: диспетчеризация сменных заданий, расчёт OEE, статистический контроль качества (SPC), рецептурные партии (ISA-88) и генеалогия партий. Метки зрелости: [doc-status.md](doc-status.md).
 
-Сквозной путь сертификации: **установить MES-продукт из marketplace → deploy bundle → OEE KPI + work-order dispatch + quality SPC + ISA-88 batch + ERP outbox** без custom Java.
+Пакет **`mes-platform`** (и его расширенный вариант **`mes-platform-production`**) показывает, как на базе стандартных механизмов ISPF — без единой строчки отраслевого Java-кода в ядре сервера — собирается решение для цехового учёта (MES):
 
-**Поставка:** MES — **продукт marketplace IoT Solutions**, не часть базовой платформы ISPF. Чистая установка **не** создаёт `root.platform.mes` и MES INSTANCE-модели, пока не установлен бандл `mes-platform` / `mes-platform-production`. Опционально (legacy): `ispf.bootstrap.mes-catalog-enabled=true`.
+- учёт производственных линий и расчёт OEE за смену (`Доступность × Производительность × Качество`);
+- выдача и подтверждение производственных заказов через маршрут BPMN и рабочую очередь смены (`Work Queue`);
+- контроль качества и контрольные карты Шухарта (SPC);
+- проведение рецептурных партий по фазам (ISA-88);
+- прослеживаемость (генеалогия) партий сырья, заказов и паспортов качества;
+- таблица исходящих сообщений (`outbox`) для стыковки с внешними системами класса ERP (1С / SAP).
 
-Следующая волна manufacturing depth описана в [manufacturing-patterns](manufacturing-patterns.md): traceability DAG, BoM, operations graph, CTO, QMS lite, integration, documents и portal access остаются паттернами bundle/application.
+> **Как поставляется решение:** MES не зашит внутрь базового сервера `ispf-server`, а устанавливается как прикладной пакет `bundle.json` из каталога `examples/mes-platform/` или витрины решений.
 
-> **Честность vs [competitive-scorecard](competitive-scorecard.md):** измерение MES **~6.5 PARTIAL**. «Certified» / Wave 8 ниже = **smoke / walkthrough** (`MesPlatformGaSmokeTest`, lab ≤30 мин), **не** plant-ready MES и не live ERP. ERP outbox — stub/schedule.
-
-| Bundle | `appId` | Artifacts | Status |
-|--------|---------|-----------|--------|
-| Certification skeleton | `mes-platform` | [examples/mes-platform/](../../examples/mes-platform/), listing `mes-platform` (vendor **IoT Solutions**) | Product |
-| Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../../examples/mes-platform-production/), listing `mes-platform-production` | Smoke-certified (BL-170) |
-
-**См. также:** [isa95-catalog](isa95-catalog.md), [manufacturing-patterns](manufacturing-patterns.md), [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md), [marketplace](marketplace.md), [object-model](object-model.md).
+**Связанные разделы:** [Краткая памятка оператора MES](mes.md) · [Сопоставление со стандартом ISA-95](isa95-catalog.md) · [Производственные шаблоны проектирования](manufacturing-patterns.md) · [Разбор минимального примера OEE](reference-mes-oee-walkthrough.md).
 
 ---
 
-## Каталог MES (BL-164) — через marketplace-бандл
+## 1. Два варианта пакета в репозитории
 
-Создаётся при установке бандла **mes-platform** (или production) — **не** при старте «голого» сервера. v1.3.0 сеет typed instances:
+| Идентификатор `appId` | Каталог в репозитории | Назначение |
+|-----------------------|-----------------------|------------|
+| `mes-platform` | [`examples/mes-platform/`](../../examples/mes-platform/) | Базовый каркас MES с демонстрационными таблицами и функциями |
+| `mes-platform-production` | [`examples/mes-platform-production/`](../../examples/mes-platform-production/) | Полный комплект с включённым планировщиком обмена, экранами оператора и сквозным автотестом |
 
-| Path | ObjectType | Purpose |
-|------|------------|---------|
-| `root.platform.mes` | `CUSTOM` | Корневой каталог MES |
-| `...mes.work-orders.wo-line-a01-001` | `CUSTOM` | Seed WO (`work-order-v1`) |
-| `...mes.operations.op-assemble-a01` | `CUSTOM` | Seed routing step |
-| `...mes.lots.batch-line-a01-001` | `CUSTOM` | Seed ISA-88 batch (`batch-v1`) |
-| `...mes.shifts.shift-morning-a01` | `CUSTOM` | Seed shift |
-| `...mes.quality-records.qr-line-a01-001` | `CUSTOM` | Seed defect record |
-| `...mes.instances.plant-a…line-a01` | `DEVICE` | ISA-95 site/area/line |
-
-Тест: `MesCatalogObjectTypesIntegrationTest`. БЛ-169 (live ERP) остаётся **Отложено**.
-
----
-
-## Work order dispatch (BL-166)
-
-| Artifact | Path / config |
-|----------|----------------|
-| BPMN workflow | `root.platform.workflows.mes-work-order-dispatch` |
-| Correlator | `workOrderDispatched` → RUN_WORKFLOW (bundle, disabled) |
-| Operator UI | Dashboard `mes-platform-dispatch` с виджетом `work-queue` |
-| Instantiate example | [work-order-instantiate.example.json](../../examples/mes-platform/work-order-instantiate.example.json) |
-| BPMN source | [examples/mes-platform/bpmn/work-order-dispatch.bpmn.xml](../../examples/mes-platform/bpmn/work-order-dispatch.bpmn.xml) |
-
-Вызовите `workOrderDispatched` на hub (или включите correlator), чтобы создать задачу оператора в work queue.
-
----
-
-## Quality module / SPC (BL-167)
-
-| Artifact | Purpose |
-|----------|---------|
-| MIXIN `quality-record-v1` | `defectCode`, `severity`, `lotId` на узлах записи качества |
-| MIXIN `mes-platform-hub-v1` | `spcMeasurement` (history-enabled), `spcUcl`, `spcLcl`, `spcTarget` |
-| Dashboard `mes-platform-quality` | Виджет `chart` по `spcMeasurement` + value widgets UCL/LCL |
-| BFF `mes_quality_listSpcSamples` | Seed-строки из таблицы `mes_spc_sample` |
-
-Создайте узел `CUSTOM` под `root.platform.mes.quality-records` и примените `quality-record-v1` для трассировки брака.
-
----
-
-## ISA-88 batch lite (BL-168)
-
-| Artifact | Purpose |
-|----------|---------|
-| INSTANCE `batch-v1` | `batchId`, `recipe`, `phase` на `LOT` под `root.platform.mes.lots` |
-| Instantiate example | [batch-instantiate.example.json](../../examples/mes-platform/batch-instantiate.example.json) |
-| BFF `mes_batch_runPhase` | Переход фазы в реестре `mes_batch_run` |
-| BFF `mes_batch_getStatus` | Чтение batch path → phase |
-
----
-
-## ERP outbox pattern (BL-169)
-
-Идемпотентная заглушка синхронизации SAP / 1C — [erp-outbox.json](../../examples/mes-platform/erp-outbox.json)
-
-| Field | Purpose |
-|-------|---------|
-| `mes_erp_outbox` table | `pending` → `simulated` (stub connector — **не** live SAP/1C) |
-| `idempotency_key` | `${entityType}:${entityId}` |
-| `mes_erp_enqueueOutbox` | Insert-if-absent enqueue |
-| `mes_erp_pollOutbox` | Poll pending rows, mark `simulated` (без ERP HTTP) |
-| Schedule `mes-erp-outbox-poll` | `invoke_function` каждые 5 с — **enabled** в `mes-platform-production` (disabled в skeleton bundle) |
-
----
-
-## Production bundle (BL-170)
-
-Полный walkthrough: [examples/mes-platform-production/](../../examples/mes-platform-production/)
-
-**Deploy + smoke одной командой** (локально или VPS):
+Установка одной командой (локально или на стенде):
 
 ```bash
 bash deploy/tools/mes-platform-production-deploy.sh
-# or: bash deploy/tools/mes-platform-production-deploy.sh /path/to/bundle.json
 ```
 
-Ручной deploy:
+Либо прямым HTTP-запросом:
 
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/applications/mes-platform-production/deploy \
@@ -110,99 +40,56 @@ curl -s -X POST http://localhost:8080/api/v1/applications/mes-platform-productio
   --data-binary @examples/mes-platform-production/bundle.json
 ```
 
-Hub: `root.platform.devices.mes-platform-production-hub`  
-Operator UI: `?mode=operator&app=mes-platform-production`
-
-Dashboards: **Dispatch**, **OEE**, **Quality** (SPC chart reference).
+После установки пульт оператора открывается по адресу `?mode=operator&app=mes-platform-production` (вкладки **Диспетчеризация**, **OEE**, **Качество**, **Партии**, **Генеалогия**).
 
 ---
 
-## Wave 8 GA smoke (BL-164…BL-170)
+## 2. Структура узлов дерева в пакете `mes-platform`
 
-Один интеграционный тест деплоит production bundle и проверяет каждый модуль MES за один проход:
+При установке пакет создаёт ветку `root.platform.mes` и предзаполненные демонстрационные объекты:
 
-| BL | Module | Assertion |
-|----|--------|-----------|
-| BL-164 / BL-165 | MES catalog + OEE | `mes_platform_listLines`, `mes_oee_getKpi` > 80% |
-| BL-166 | Work-order dispatch | `mes_dispatch_confirmWorkOrder` |
-| BL-167 | Quality SPC | `mes_quality_listSpcSamples` (3 seed rows) |
-| BL-168 | ISA-88 batch | `mes_batch_runPhase` → `react` |
-| BL-169 | ERP outbox | enqueue + poll round-trip; schedule `mes-erp-outbox-poll` enabled |
-| BL-170 | Production bundle | full `mes-platform-production` deploy |
-| BL-193 | Genealogy lite | `mes_genealogy_queryByLot` + report `mes-genealogy` (seed lot) |
-
-Test class: `com.ispf.server.application.MesPlatformGaSmokeTest`
-
-Per-module hardening tests (Wave 5): `MesWorkOrderDispatchIntegrationTest`, `MesQualitySpcDashboardIntegrationTest`, `MesBatchPhaseRunnerIntegrationTest`.
+| Путь в дереве объектов | Тип узла | Назначение |
+|------------------------|----------|------------|
+| `root.platform.mes` | `CUSTOM` | Корневая папка цехового учёта |
+| `root.platform.mes.work-orders.wo-line-a01-001` | `CUSTOM` | Производственный заказ на линию `LINE-A01` (шаблон `work-order-v1`) |
+| `root.platform.mes.operations.op-assemble-a01` | `CUSTOM` | Технологическая операция сборки |
+| `root.platform.mes.lots.batch-line-a01-001` | `CUSTOM` | Партия продукции по стандарту ISA-88 (шаблон `batch-v1`) |
+| `root.platform.mes.shifts.shift-morning-a01` | `CUSTOM` | Утренняя смена линии `LINE-A01` |
+| `root.platform.mes.quality-records.qr-line-a01-001` | `CUSTOM` | Запись контроля качества и учёта брака |
+| `root.platform.mes.instances.plant-a...line-a01` | `DEVICE` | Иерархия оборудования по ISA-95 (площадка → участок → линия) |
 
 ---
 
-## Wave 5 hardening (BL-166 / BL-167 / BL-168)
+## 3. Основные функциональные модули пакета
 
-| BL | Hardening | Integration test |
-|----|-----------|------------------|
-| BL-166 | Work-order dispatch BPMN full cycle (run → work-queue → confirm → `COMPLETED`) | `MesWorkOrderDispatchIntegrationTest` |
-| BL-167 | SPC `chart` widget на dashboard `mes-platform-quality` + `mes_quality_listSpcSamples` | `MesQualitySpcDashboardIntegrationTest` |
-| BL-168 | Batch phase runner `charge` → `react` → `discharge` via `mes_batch_runPhase` / `mes_batch_getStatus` | `MesBatchPhaseRunnerIntegrationTest` |
-| BL-193 | Genealogy BFF + Operator dashboard/report с seed-графом | `MesGenealogyLiteIntegrationTest` |
+### Диспетчеризация заказов (`Work Order Dispatch`)
+- Процесс BPMN `root.platform.workflows.mes-work-order-dispatch` ([исходник XML](../../examples/mes-platform/bpmn/work-order-dispatch.bpmn.xml)) при запуске ставит задачу оператору в рабочую очередь смены (`Work Queue`).
+- На экране **Dispatch** оператор видит очередь задач и подтверждает выполнение заказа через функцию `mes_dispatch_confirmWorkOrder`.
 
-Операторский путь genealogy: [mes.md](mes.md).
+### Расчёт OEE по сменам
+На узле логики приложения (`SINGLETON`: `root.platform.singleton-blueprints.mes-platform-hub-v1` в базовом пакете и `root.platform.singleton-blueprints.mes-platform-production-hub-v1` в полном пакете) развёрнуты скриптовые функции:
+- `mes_platform_listLines` — список производственных линий (`LINE-A01`);
+- `mes_oee_listShifts` — список смен;
+- `mes_oee_getKpi` — расчёт `oeePct`, доступности, производительности и качества (на демонстрационной смене `dddddddd-dddd-dddd-dddd-dddddddddddd` возвращает OEE ≈ `85 %`);
+- `mes_oee_addDowntime` — регистрация простоя линии.
 
----
+### Статистический контроль качества (`Quality / SPC`)
+- Примесь `quality-record-v1` добавляет поля `defectCode`, `severity`, `lotId` на узлы записей о браке.
+- Экран **Quality** строит контрольный график по точкам измерения `spcMeasurement` относительно верхней и нижней границ допуска (`spcUcl`, `spcLcl`) и вызывает функцию `mes_quality_listSpcSamples`.
 
-## Scenario steps
+### Управление рецептурными партиями (`ISA-88 Batch Lite`)
+- Шаблон `batch-v1` описывает партию (`batchId`, `recipe`, текущая фаза `phase`).
+- Функции `mes_batch_runPhase` и `mes_batch_getStatus` переводят партию по технологическим фазам (`charge` → `react` → `discharge`).
 
-| # | Action | Path / API | Effect | Role |
-|---|--------|------------|--------|------|
-| 1 | Verify MES catalog | Object tree → `root.platform.mes` | Папки на месте | Admin |
-| 2 | Deploy bundle | `POST /api/v1/applications/mes-platform/deploy` or `.../mes-platform-production/deploy` | Schema + hub + BFF | Admin |
-| 3 | List lines | BFF `mes_platform_listLines` | ISA-95 line registry | Operator |
-| 4 | List shifts | BFF `mes_oee_listShifts` | Seed shift LINE-A01 / Morning | Operator |
-| 5 | OEE KPI | BFF `mes_oee_getKpi` + `shiftId` | A×P×Q composite | Dashboard |
-| 6 | Register downtime | BFF `mes_oee_addDowntime` | Updates shift row | Operator |
-| 7 | Instantiate WO | Blueprint `work-order-v1` → `root.platform.mes.work-orders` | Dispatch-ready WO | Planner |
-| 8 | Dispatch WO | Fire `workOrderDispatched` or enable correlator | User task in work-queue | Operator |
-| 9 | Quality SPC | Open Quality dashboard | Chart + sample list | Quality |
-| 10 | Instantiate batch | Blueprint `batch-v1` → `root.platform.mes.lots` | ISA-88 LOT | Planner |
-| 11 | Run batch phase | BFF `mes_batch_runPhase` | Phase advance | Operator |
-| 12 | ERP sync | BFF `mes_erp_enqueueOutbox` + `mes_erp_pollOutbox` | Outbox stub | Integration |
-| 13 | Genealogy | Dashboard **Genealogy** / BFF `mes_genealogy_queryByLot` | Lot–material–WO–quality | Operator |
+### Прослеживаемость и генеалогия партий (`Genealogy`)
+- Функция `mes_genealogy_queryByLot` и отчёт `mes-genealogy` строят граф связей между партией готовой продукции (`BATCH-LINE-A01-001`), использованным сырьём, производственным заказом и записями контроля качества.
+
+### Очередь исходящих сообщений в ERP (`ERP Outbox`)
+- Скрипт [`erp-outbox.json`](../../examples/mes-platform/erp-outbox.json) демонстрирует паттерн надёжной буферизации документов для 1С / SAP в таблице `mes_erp_outbox` с ключом идемпотентности `idempotency_key` (`${entityType}:${entityId}`) и функциями `mes_erp_enqueueOutbox` / `mes_erp_pollOutbox`.
 
 ---
 
-## OEE reference functions (BL-165)
-
-| Function | Hub object (`mes-platform`) |
-|----------|----------------------------|
-| `mes_oee_listShifts` | `root.platform.devices.mes-platform-hub` |
-| `mes_oee_getKpi` | same |
-| `mes_oee_addDowntime` | same |
-| `mes_platform_listLines` | same (mes-platform extension) |
-
-Production hub: `root.platform.devices.mes-platform-production-hub` (same function names).
-
-Seed shift UUID: `dddddddd-dddd-dddd-dddd-dddddddddddd` → OEE ≈ **85%** for demo data.
-
----
-
-## Certification checklist (≤ 30 min) — complete
-
-- [x] `root.platform.mes.*` visible in Explorer after server start
-- [x] Bundle deploy succeeds (`schemaName` = `app_mes_platform` or `app_mes_platform_production`)
-- [x] `mes_platform_listLines` returns `LINE-A01`
-- [x] `mes_oee_getKpi` returns `oeePct` > 80 for seed shift
-- [x] Operator UI opens with `?mode=operator&app=mes-platform` or `mes-platform-production`
-- [x] Work-queue widget visible on Dispatch dashboard (BL-166)
-- [x] SPC chart widget on Quality dashboard (BL-167)
-- [x] `batch-v1` visible under `root.platform.instance-types` (BL-168)
-- [x] `mes_batch_runPhase` advances seed batch phase
-- [x] `mes_erp_enqueueOutbox` + `mes_erp_pollOutbox` round-trip (BL-169)
-- [x] `mes-erp-outbox-poll` schedule enabled in production bundle (BL-169 harden)
-- [x] Genealogy dashboard + `mes_genealogy_queryByLot` returns seed lot graph (BL-193)
-
----
-
-## Smoke commands
+## 4. Запуск автотестов эталонного решения MES
 
 ```bash
 ./gradlew :packages:ispf-server:test \
@@ -211,18 +98,5 @@ Seed shift UUID: `dddddddd-dddd-dddd-dddd-dddddddddddd` → OEE ≈ **85%** for 
   --tests "com.ispf.server.application.reference.mes.MesQualitySpcDashboardIntegrationTest" \
   --tests "com.ispf.server.application.reference.mes.MesBatchPhaseRunnerIntegrationTest" \
   --tests "com.ispf.server.application.reference.mes.MesGenealogyLiteIntegrationTest" \
-  --tests "com.ispf.server.application.MesPlatformBundleSmokeTest" \
-  --tests "com.ispf.server.application.MesPlatformProductionBundleSmokeTest" \
   --tests "com.ispf.server.application.MesPlatformGaSmokeTest"
-
-bash deploy/tools/mes-platform-production-deploy.sh
 ```
-
----
-
-## Related documents
-
-- [mes.md](mes.md) — операторский путь genealogy (БЛ-193)
-- [reference-mes-oee-walkthrough](reference-mes-oee-walkthrough.md) — BL-121 minimal OEE
-- [reference-mes-walkthrough](reference-mes-walkthrough.md) — dispatch / tank reference
-- [historian-tiers](historian-tiers.md) — historian at scale (Phase 28)

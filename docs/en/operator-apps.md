@@ -1,49 +1,38 @@
 > **Language:** Canonical English. Russian edition: [ru/operator-apps.md](../ru/operator-apps.md).
 
-# Operator Apps
+# Operator Applications (`root.platform.operator-apps`)
 
-> **Status:** Stable — Operator shell configuration. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — operator workspace launcher, dashboard tab menus (`operatorUi`), and built-in starter apps. Status tags: [doc-status.md](doc-status.md).
 
-Operator applications are **dashboard-UI** configs (`operator_app_ui`) pointing at `DASHBOARD` objects on the tree. Legacy `*.manifest.json` is deprecated.
+An **Operator Application** defines a dedicated workspace in Operator HMI (`?mode=operator&app=<appId>`) with its own title, default dashboard, navigation tabs, and optional custom React SPA (`ui-pack`). Configurations are stored in `operator_app_ui` and represented as tree nodes under `root.platform.operator-apps.*`.
 
-## URLs
+---
+
+## 1. Operator Workspace URLs
 
 ![Operator Apps launcher](../assets/ispf-operator-apps-launcher.png)
 
-| App | URL |
-|-----|-----|
-| Launcher | `/?mode=operator` |
-| Alarm Console | `/?mode=operator&app=alarm-console` |
-| Work Queue | `/?mode=operator&app=work-queue` |
-| HMI Wall | `/?mode=operator&app=hmi-wall` |
-| Platform HMI (fixtures) | `/?mode=operator&app=platform` |
+| Workspace | URL | Purpose |
+|-----------|-----|---------|
+| **Application Launcher** | `/?mode=operator` | Grid of all installed operator applications |
+| **Platform HMI** | `/?mode=operator&app=platform` | Default monitoring workspace |
+| **Alarm Console** | `/?mode=operator&app=alarm-console` | Live event feed and active alarm bar (`root.platform.dashboards.alarm-console`) |
+| **Work Queue** | `/?mode=operator&app=work-queue` | Full-screen BPMN operator task queue (`root.platform.dashboards.work-queue`) |
+| **HMI Video Wall** | `/?mode=operator&app=hmi-wall` | 2×2 control-room mosaic (`root.platform.dashboards.hmi-wall`) |
 
-Tree: `root.platform.operator-apps.{appId}`.
+On a clean installation without demo fixtures, an administrator can install the three starter workspaces (`alarm-console`, `work-queue`, `hmi-wall`) directly from the Operator Launcher (**Install starter templates**) or via `POST /api/v1/operator-apps/starters/install`.
 
-## Starter templates (Wave 4)
+---
 
-| appId | Dashboard | Purpose |
-|-------|-----------|---------|
-| `alarm-console` | `root.platform.dashboards.alarm-console` | Event feed + alarm bar (`thresholdExceeded` / ack) |
-| `work-queue` | `root.platform.dashboards.work-queue` | Full-bleed work-queue widget |
-| `hmi-wall` | `root.platform.dashboards.hmi-wall` | `video-wall-2x2` mosaic host |
+## 2. REST API
 
-- **Fixtures on:** seeded at startup with Platform HMI.
-- **Clean install:** Operator launcher → **Install starter templates**, or `POST /api/v1/operator-apps/starters/install` (admin).
+| HTTP Method & Path | Description |
+|--------------------|-------------|
+| `GET /api/v1/operator-apps` | List all configured operator applications |
+| `GET /api/v1/operator-apps/{appId}/ui` | Read the `operatorUi` definition for an application |
+| `POST /api/v1/operator-apps/{appId}` | Register a new operator application |
+| `PUT /api/v1/operator-apps/{appId}/ui` | Update the dashboard tabs and navigation settings for an application |
+| `GET /api/v1/operator-apps/starters` | List built-in starter workspace templates |
+| `POST /api/v1/operator-apps/starters/install` | Install the starter workspaces (`admin` role) |
 
-## API
-
-| Method | Path |
-|--------|------|
-| `GET` | `/api/v1/operator-apps` |
-| `GET` | `/api/v1/operator-apps/{appId}/ui` |
-| `POST` | `/api/v1/operator-apps/{appId}` |
-| `PUT` | `/api/v1/operator-apps/{appId}/ui` |
-| `GET` | `/api/v1/operator-apps/starters` |
-| `POST` | `/api/v1/operator-apps/starters/install` |
-
-## Related
-
-- [web-console](web-console.md) — operator vs admin shell
-- [external-ide](external-ide.md) — hosted SPA / Open app UI from an external IDE
-- [release-dogfood](release-dogfood.md) — pre-tag gate
+**Related guides:** [Operator guide](operator-guide.md) · [Web Console](web-console.md) · [External IDE & hosted React UI (`ui-pack`)](external-ide.md) · [Application solutions (`applications.md`)](applications.md).

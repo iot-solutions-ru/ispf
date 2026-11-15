@@ -1,59 +1,37 @@
 > **Язык:** русская версия. Английский оригинал: [en/reference-mes-defect-walkthrough.md](../en/reference-mes-defect-walkthrough.md).
 
-# MES: walkthrough распределения брака
+# Разбор эталонного примера: маршрутизация и переработка брака (`mes-defect-demo`)
 
-Сквозной reference-сценарий ISPF: **событие брака с линии → привязка к ордеру → прогноз маршрута → подтверждение диспетчером → запись в MES**.
+> **Статус:** Lab — сквозной пример обработки производственного брака: сигнал с линии → расчёт рекомендуемого маршрута переработки → подтверждение диспетчером в очереди задач BPMN. Метки зрелости: [doc-status.md](doc-status.md).
 
-Все данные **вымышленные** (демо-линии, ордера `DEMO-*`, нейтральные коды маршрутов).
+Пакет **`mes-defect-demo`** ([`examples/mes-defect-demo/`](../../examples/mes-defect-demo/)) показывает, как совместить автоматический выбор маршрута переработки брака со ступенью обязательного подтверждения человеком в процессе BPMN (`root.platform.workflows.mes-defect-distribution`).
 
-Артефакты: [examples/mes-defect-demo/](../../examples/mes-defect-demo/), bundle `appId` = `mes-defect-demo`.
+---
 
-Референс BPMN (drawio): [docs/assets/mes-defect-bpmn.drawio.xml](assets/mes-defect-bpmn.drawio.xml).
+## 1. Сущности и правила выбора маршрута
 
-## Домен (упрощённый MES)
+| Таблица / узел | Назначение |
+|----------------|------------|
+| `mes_line` | Производственные линии типов `A`, `B` и `D` (`LINE-A01`, `LINE-B01`, `LINE-D01`) |
+| `mes_order` | Производственный заказ со статусом (`open`, `closing`, `closed`) и счётчиком накопленного брака |
+| `mes_defect_event` | Зарегистрированный объём несоответствующей продукции и признак особого вида отхода (`isSpecialScrap`) |
+| `mes_recommendation` | Рассчитанный маршрут движения брака: возврат на свою линию (`REWORK_A`), подача в очередь соседней линии (`FEED_QUEUE`), вывоз на центральный узел (`TRANSPORT_HUB`) или спецмаршрут (`SPECIAL_ROUTE`) |
+| **Узел логики (`SINGLETON`)** | `root.platform.singleton-blueprints.mes-defect-demo-hub-v1` — функции `mes_listLines`, `mes_simulateDefect`, `mes_calculateRoute`, `mes_confirmRoute`, `mes_finalizeDefect` |
 
-| Сущность | Описание |
-|----------|----------|
-| **Линия** (`mes_line`) | Тип A/B/D, демо-загрузки узлов |
-| **Ордер** (`mes_order`) | Мок ERP: статус `open` / `closing` / `closed`, накопленный брак |
-| **Событие брака** (`mes_defect_event`) | Объём, флаг особого типа, переходный остаток |
-| **Рекомендация** (`mes_recommendation`) | Маршрут: `REWORK_A` / `FEED_B` / `TRANSPORT_HUB` / `SPECIAL_ROUTE` |
-| **MES Hub** | `root.platform.devices.mes-hub-01` — BFF, bindings, журнал событий |
-| **Workflow** | `root.platform.workflows.mes-defect-distribution` |
+---
 
-## Типы линий
+## 2. Шаги выполнения процесса
 
-| Тип | Линия | Прогноз (демо) |
-|-----|-------|----------------|
-| A | LINE-A01 | Переработка на линии или перенос на соседнюю |
-| B | LINE-B01 | Подача или очередь |
-| D | LINE-D01 | Транспорт на хаб; особый тип → альтернативный маршрут |
+1. **Установка пакета:** `POST /api/v1/applications/mes-defect-demo/deploy` создаёт таблицы, функции, процесс BPMN и экраны оператора.
+2. **Регистрация события брака:** на экране имитатора (`mes-defect-simulator`) вызывается функция `mes_simulateDefect`, записывающая событие по выбранной линии.
+3. **Автоматический расчёт маршрута в BPMN:** процесс `mes-defect-distribution` вызывает функцию `mes_calculateRoute`, формирует рекомендацию в `mes_recommendation` и ставит задачу подтверждения в рабочую очередь смены (`Work Queue`).
+4. **Подтверждение диспетчером:** оператор открывает пульт `?mode=operator&app=mes-defect-demo`, проверяет предложенный маршрут (`mes_confirmRoute`) и завершает задачу.
+5. **Завершение:** процесс вызывает `mes_finalizeDefect` и публикует событие `mesDefectRouted`.
 
-## Шаги сценария
+Запуск автоматического теста сценария:
 
-| # | Действие | API / UI | Эффект |
-|---|----------|----------|--------|
-| 1 | Deploy bundle | `POST /api/v1/applications/mes-defect-demo/deploy` | schema, functions, workflow, dashboards |
-| 2 | Список линий | BFF `mes_listLines` @ `mes-hub-01` | 3 демо-линии |
-| 3 | Симуляция SCADA | Дашборд `mes-defect-simulator` → `mes_simulateDefect` | INSERT event |
-| 4 | Запуск BPMN | Кнопка «Запустить распределение» | workflow до user task |
-| 5 | Прогноз | `mes_calculateRoute` в BPMN | INSERT `mes_recommendation` |
-| 6 | Подтверждение | Work queue Operator App `mes-defect-demo` | `mes_confirmRoute` |
-| 7 | Финализация | `mes_finalizeDefect` + `mesDefectRouted` | status `routed` |
+```bash
+./gradlew :packages:ispf-server:test --tests "com.ispf.server.application.MesDefectDemoBundleSmokeTest"
+```
 
-## Демо-кейсы
-
-1. **LINE-A01**, 12 кг, `active` → `REWORK_A` → задача в work queue.
-2. **LINE-A01**, `orderScenario=closing`, объём > 10 кг → transitional remainder.
-3. **LINE-B01**, 8 кг → `FEED_QUEUE`.
-4. **LINE-D01**, обычный брак → `TRANSPORT_HUB`.
-5. **LINE-D01**, `isSpecialScrap=1` → `SPECIAL_ROUTE`.
-
-## CI
-
-`MesDefectDemoBundleSmokeTest` — deploy, list lines, simulate + workflow run + work queue, special scrap → `SPECIAL_ROUTE`.
-
-## Связанные документы
-
-- [workflows](workflows.md) — BPMN на ISPF
-- [applications](applications.md) — bundle deploy
+**Связанные разделы:** [Процессы BPMN (`workflows.md`)](workflows.md) · [Прикладные решения (`applications.md`)](applications.md).

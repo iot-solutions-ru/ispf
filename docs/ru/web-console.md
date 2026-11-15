@@ -191,11 +191,11 @@ npm run i18n:translate   # пересобрать ru/de/zh из en (tools/i18n/g
 
 **Развёртывание приложения (Инспектор → APPLICATION → Deploy):**
 
-| Панель | API |
-|--------|-----|
-| ApplicationBundlePanel | export, validate, deploy, pull-from-tree |
-| ApplicationDeployPanel | история deploy, rollback, каталог событий, версии функций, жизненный цикл объектов бандла |
-| ApplicationLifecyclePanel | `data/migrate`, `data/seed`, `data/status`, deploy/refresh привязок, deploy отчётов и функций |
+| Панель | Назначение |
+|--------|------------|
+| `ApplicationBundlePanel` | Выгрузка, проверка, установка манифеста и сборка из дерева (`pull-from-tree`) |
+| `ApplicationDeployPanel` | История установок, откат версий, каталог событий и версии функций |
+| `ApplicationLifecyclePanel` | Миграции и тестовые данные (`data/migrate`, `data/seed`, `data/status`), обновление SQL-привязок, отчётов и функций |
 
 **WorkflowBuilder:** отмена / сигнал активному экземпляру BPMN (`POST /workflows/instances/{id}/cancel|signal`).
 

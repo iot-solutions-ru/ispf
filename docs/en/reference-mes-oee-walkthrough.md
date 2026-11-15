@@ -11,8 +11,8 @@ Artifacts: [examples/mes-oee-reference/](../../examples/mes-oee-reference/), bun
 | Entity | Description |
 |----------|----------|
 | **Shift** (`mes_oee_shift`) | Line, shift label, planned/downtime (min), ideal cycle (s), output total/good |
-| **BFF hub** | Object path `root.platform.devices.demo-sensor-01` — functions and Operator UI event journal |
-| **Hub device** | `root.platform.devices.mes-oee-hub-01` — created from `objects[]` in bundle (optional) |
+| **BFF hub** | SINGLETON `root.platform.singleton-blueprints.mes-oee-reference-hub-v1` — BFF functions |
+| **Telemetry device** | `root.platform.devices.demo-sensor-01` — Operator UI event journal |
 
 ### OEE formulas (in SQL `mes_oee_getKpi`)
 
@@ -30,7 +30,7 @@ Demo seed **LINE-A01 / Morning**: planned 480 min, downtime 45, ideal 12 s, tota
 | # | Action | Object path / API | Effect | Operator |
 |---|----------|-------------------|--------|----------|
 | 1 | Deploy bundle | `POST /api/v1/applications/mes-oee-reference/deploy` | schema `app_mes_oee`, migration, functions | Admin |
-| 2 | List shifts | BFF `mes_oee_listShifts` @ `demo-sensor-01` | SQL read, 1 seed shift | Operator UI |
+| 2 | List shifts | BFF `mes_oee_listShifts` @ `mes-oee-reference-hub-v1` | SQL read, 1 seed shift | Operator UI |
 | 3 | KPI per shift | BFF `mes_oee_getKpi` + `shiftId` (UUID) | OEE and A/P/Q components | Dashboard / form |
 | 4 | Add downtime | BFF `mes_oee_addDowntime` + `minutes` | `downtime_minutes += minutes` (cap = planned) | Operator confirm |
 | 5 | Repeat KPI | `mes_oee_getKpi` | OEE drops after downtime | Trend / alarm |
@@ -40,7 +40,7 @@ Demo seed **LINE-A01 / Morning**: planned 480 min, downtime 45, ideal 12 s, tota
 | Mechanism | Usage in OEE reference |
 |----------|-------------------------------|
 | **PF-01** bundle deploy | `migrations`, `functions`, `operatorUi` |
-| **PF-05** objects[] | `mes-oee-hub-01` device |
+| **PF-05** objects[] | empty — hub is SINGLETON `mes-oee-reference-hub-v1` |
 | **PF-02** BFF invoke | `mes_oee_listShifts`, `mes_oee_getKpi`, `mes_oee_addDowntime` |
 | **Operator UI** | `appId` = `mes-oee-reference`, event journal @ `demo-sensor-01` |
 
@@ -67,11 +67,11 @@ curl -s -X POST http://localhost:8080/api/v1/applications/mes-oee-reference/depl
 
 curl -s -X POST http://localhost:8080/api/v1/bff/invoke \
   -H "Content-Type: application/json" \
-  -d '{"objectPath":"root.platform.devices.demo-sensor-01","functionName":"mes_oee_listShifts","input":{"schema":{"name":"in","fields":[]},"rows":[{}]}}'
+  -d '{"objectPath":"root.platform.singleton-blueprints.mes-oee-reference-hub-v1","functionName":"mes_oee_listShifts","input":{"schema":{"name":"in","fields":[]},"rows":[{}]}}'
 
 curl -s -X POST http://localhost:8080/api/v1/bff/invoke \
   -H "Content-Type: application/json" \
-  -d '{"objectPath":"root.platform.devices.demo-sensor-01","functionName":"mes_oee_getKpi","input":{"schema":{"name":"in","fields":[{"name":"shiftId","type":"STRING"}]},"rows":[{"shiftId":"dddddddd-dddd-dddd-dddd-dddddddddddd"}]}}'
+  -d '{"objectPath":"root.platform.singleton-blueprints.mes-oee-reference-hub-v1","functionName":"mes_oee_getKpi","input":{"schema":{"name":"in","fields":[{"name":"shiftId","type":"STRING"}]},"rows":[{"shiftId":"dddddddd-dddd-dddd-dddd-dddddddddddd"}]}}'
 ```
 
 ## Related documents

@@ -1,35 +1,24 @@
 > **Язык:** русская версия. Английский оригинал: [en/symbol-marketplace.md](../en/symbol-marketplace.md).
 
-# Symbol marketplace (BL-185)
+# Пакеты графических символов SCADA (`symbol-pack`)
 
-> **Статус:** Done (local GA). Метки зрелости: [doc-status.md](doc-status.md). Канон: [en/symbol-marketplace.md](../en/symbol-marketplace.md).
+> **Статус:** Stable — формат архивов графических символов P&ID и электросхем, локальная установка в `ISPF_SYMBOL_PACKS_DIR` и подключение к палитре редактора мнемосхем. Метки зрелости: [doc-status.md](doc-status.md).
 
-Каталог и распространение пакетов символов SCADA/HMI — примитивы P&ID, значки оборудования, анимированные состояния и привязки мнемосхем, совместимые с [scada](scada.md) и `diagramJson` v2.
+В дополнение к встроенной библиотеке символов P&ID (`ispf-pid-v1`) в ISPF можно устанавливать дополнительные тематические наборы векторных символов (**`symbol-pack`**) — например, элементы вентиляции и климата (ОВиК), электроснабжения, водоподготовки или нефтегазового оборудования.
 
-Связанные: [marketplace](marketplace.md), [scada-mimic](scada-mimic.md), [roadmap](roadmap.md) (BL-146, BL-185).
-
-**Статус:** **Готово (local GA)** — install в `ISPF_SYMBOL_PACKS_DIR`, `GET /api/v1/scada/symbol-packs`, palette грузит installed packs. Reference `ispf-pid-v1` остаётся bundled. Demo: `examples/marketplace-symbol-hvac-demo`.
+**Связанные разделы:** [Мнемосхемы SCADA (`scada.md`)](scada.md) · [Библиотека символов SCADA (`scada-symbol-library.md`)](scada-symbol-library.md) · [Формат мнемосхемы (`scada-mimic.md`)](scada-mimic.md) · [Витрина решений (`marketplace.md`)](marketplace.md).
 
 ---
 
-## Объем
+## 1. Формат паспорта пакета символов (`symbol-pack.json`)
 
-| В объеме | Вне области применения (v1) |
-|----------|-------------------|
-| Библиотеки символов SVG (резервуары, клапаны, насосы, трубы) | Полное хранилище 3D-активов |
-| Манифест пакета символов + метаданные лицензии | Процесс покупки в редакторе |
-| Установить через API маркетплейса платформы | Редактор пользовательских символов SaaS |
-| Подсказки по привязке для мнемовидных виджетов | Автоматический P&ID из импорта CAD |
-
----
-
-## Формат пакета символов
+Пример демонстрационного пакета в репозитории: [`examples/marketplace-symbol-hvac-demo/`](../../examples/marketplace-symbol-hvac-demo/).
 
 ```json
 {
   "packId": "ispf-symbols-pid-v2",
   "version": "2.0.0",
-  "displayName": "P&ID Symbol Library v2",
+  "displayName": "Библиотека символов P&ID v2",
   "license": "SYMBOL-PACK-PID",
   "symbols": [
     {
@@ -45,83 +34,27 @@
 }
 ```
 
-| Поле | Требуется | Описание |
-|-------|:--------:|-------------|
-| `packId` | ✓ | Stable identifier |
-| `version` | ✓ | Semver |
-| `license` | ✓ | SPDX or custom symbol license ref |
-| `symbols[].id` | ✓ | Unique within pack |
-| `symbols[].svgPath` | ✓ | Relative path inside pack archive |
-| `symbols[].bindingSlots` | — | Suggested variable bindings for mimic editor |
+| Поле | Обязательно | Описание |
+|------|:-----------:|----------|
+| `packId` | ✓ | Уникальный идентификатор набора символов |
+| `version` | ✓ | Версия пакета в формате SemVer (`MAJOR.MINOR.PATCH`) |
+| `license` | ✓ | Идентификатор лицензии (SPDX или ссылка на файл лицензии в архиве) |
+| `symbols[].id` | ✓ | Идентификатор символа внутри пакета |
+| `symbols[].svgPath` | ✓ | Относительный путь к файлу SVG внутри архива пакета |
+| `symbols[].bindingSlots` | — | Рекомендуемые точки привязки переменных для редактора мнемосхем (`fillLevel`, `alarmState` и др.) |
 
-Юридическая информация: см. [apps/web-console/public/legal/SYMBOL-PACK-PID-LICENSE.md](../../apps/web-console/public/legal/SYMBOL-PACK-PID-LICENSE.md).
+Требования к файлам SVG: чистая векторная разметка без встроенных тегов `<script>` и внешних сетевых зависимостей.
 
 ---
 
-## Распределение
-
-Пакеты символов поставляются по тому же контракту маркетплейса, что и пакеты приложений ([marketplace](marketplace.md)):
-
-| Шаг | Действие |
-|------|--------|
-| 1 | Vendor publishes listing with `artifactKind: symbol-pack` |
-| 2 | Platform downloads pack archive to `ISPF_SYMBOL_PACKS_DIR` |
-| 3 | Web Console mimic editor loads catalog from `GET /api/v1/scada/symbol-packs` |
-| 4 | Платные пакеты требуют активации прав (так же, как и пакеты приложений) |
-
-Конфигурация (планируется):
+## 2. Установка и использование в редакторе мнемосхем
 
 ```yaml
 ispf:
   scada:
     symbol-packs-dir: ${ISPF_SYMBOL_PACKS_DIR:/opt/ispf/symbol-packs}
-    marketplace-enabled: true
 ```
 
----
-
-## Интеграция с веб-консолью
-
-| Поверхность | Поведение |
-|---------|----------|
-| Палитра редактора мнемосхем | Просмотрите установленные пакеты символов по категориям |
-| Перетаскивание | Вставить символ размера по умолчанию + слоты для привязки |
-| Панель «Маркетплейс» | Просматривайте листинги символов; установка бесплатно / активация платно |
-| Agent `save_mimic_diagram` | May reference `symbolPackId` + `symbolId` in element metadata |
-
----
-
-## Требования к поставщику
-
-1. SVG оптимизирован для Интернета (без встроенных скриптов).
-2. Файл лицензии включен в корень пакета.
-3. Минимальный набор значков для категории (например, более 20 примитивов P&ID для тега `pid`).
-4. Тест взаимодействия: один эталонный образ, использующий символы пакета, проходит снимок CI.
-
----
-
-## Путь OEM-партнера
-
-Поставщики символов присоединяются к [Партнерской программе](partner-program.md) на уровне **OEM**:
-
-- Загрузка подписанного пакета
-- Обзор листинга на маркетплейсе
-- Доля дохода от платных пакетов символов
-
----
-
-## Дорожная карта
-
-| ID | Результат |
-|----|-------------|
-| БЛ-146 | Библиотека символов P&ID v2 (справочный пакет платформы) |
-| БЛ-183 | Marketplace readiness (совместный процесс установки/активации) |
-| БЛ-185 | Документы маркетплейса символов + договор о листинге (данный документ) |
-
----
-
-## Сопутствующие документы
-
-- [scada](scada.md) — архитектура mimic
-- [widgets](widgets.md) — `scada-mimic` widget
-- [marketplace](marketplace.md) — API каталога
+1. **Установка:** пакет с `artifactKind: "symbol-pack"` устанавливается через раздел **Система → Решения → Маркетплейс** или копированием архива в каталог `ISPF_SYMBOL_PACKS_DIR` (`POST /api/v1/marketplace/symbols/{id}/install`).
+2. **Палитра редактора:** при открытии редактора мнемосхемы консоль запрашивает `GET /api/v1/scada/symbol-packs` и добавляет все установленные категории и значки в левую палитру элементов.
+3. **Размещение на холсте:** при перетаскивании символа на схему подставляются его размер по умолчанию (`defaultSize`) и заготовки точек привязки (`bindingSlots`).

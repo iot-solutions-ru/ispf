@@ -1,65 +1,58 @@
 > **Language:** Canonical English. Russian edition: [ru/bindings.md](../ru/bindings.md).
 
-# Binding rules (calculation rules)
+# Binding Rules (Variable Calculation Rules)
 
-> **Status:** Stable — CEL and platform bindings. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — reactive and historical variable calculations in `@bindingRules`, `PlatformRef` addressing, and loop protection. Status tags: [doc-status.md](doc-status.md).
 
-A **binding rule** is a declarative rule for computing variable values on an object: **when** (activators) → **if** (condition, CEL) → **how** (expression) → **where** (target).
+A **binding rule (`BindingRule`)** is a declarative formula attached to an object that follows the pattern: **when triggered** (`activators`) → **if condition holds** (`condition` in CEL) → **compute expression** (`expression`) → **write result to target** (`target`).
 
-Rules are stored in system variable `@bindingRules` (JSON array, reserved). Runtime — **`BindingRuleEngine`** (unified binding engine since v0.8.0).
+Rules are stored in the object's system variable `@bindingRules` (JSON array) and executed by **`BindingRuleEngine`** (for reactive rules) or **`AnalyticsEngineService`** (for `kind: "historian"` rules).
 
-**Full language reference** (CEL literals/operators, all platform bindings, historian helpers, examples): **[expression-language](expression-language.md)**.
-
-See also: [object-model](object-model.md), [blueprints](blueprints.md), ADR [0010-binding-rules-only](decisions/0010-binding-rules-only.md), ADR [0043-unified-platform-ref](decisions/0043-unified-platform-ref.md).
-
----
-
-## PlatformRef (addresses)
-
-All references to variables, functions, events, and historian tags use one slash grammar (same as REST `path` + `name` + `field`):
-
-| Kind | Form | Example |
-|------|------|---------|
-| variable | `<object>/<name>[/<field>]` | `@/temperature`, `root.platform.devices.a/temperature/value` |
-| function | `<object>/fn/<name>` | `@/fn/calculate` |
-| event | `<object>/evt/<name>` | `@/evt/alarmRaised` |
-| tag | `<object>/tag/<ruleId>` | `root.platform.devices.a/tag/avg-temp-5m` |
-
-`@` = object where the rule runs.
-
-| Operation | Example | Purpose |
-|-----------|---------|---------|
-| `read(ref)` | `read("root.platform.devices.a/temperature")` or `read("…/coordinates/latitude")` | Live variable field; **quote** the slash ref (required when ref has a `/field` segment) |
-| `call(ref[, inputRef])` | `call(@/fn/ack, @/payload)` | Invoke function |
-| `fire(ref)` | `fire(@/evt/overload)` | Publish event |
-| Historian | `avg(root.../temperature, 5m)`, `live(@/temperature)` | Windowed aggregate / live sample |
-| Object Query | `queryScalar(@/downIfSpec, "count")`, `queryRows(@/downIfSpec)` | Cross-object table KPI / full rows (JSON) |
-| Writeback | `write(@/setpoint, 42)` | Remote variable field write |
-
-**Object Query (OQ):** specs live on object-query functions (`sourceType=object-query`); reference stored spec via `@/variable/value`. Reactive bindings use scalars only (`queryScalar`, `countScan`, `sumScan`); full tables via `queryRows` / `executeQuery` or function invoke. See ADR [0044-object-query](decisions/0044-object-query.md).
-
-**JSON configs** (activators, widgets, mimic, script steps): canonical field **`ref`** (slash string):
-
-```json
-{ "ref": "root.platform.devices.virt-cluster.dev-03/sineWave" }
-```
+**Full syntax and function catalog:** **[Expression language reference (`expression-language.md`)](expression-language.md)**.  
+**Related guides:** [Object model](object-model.md) · [Blueprints](blueprints.md) · [Common design mistakes (`anti-patterns.md`)](anti-patterns.md) · [ADR-0010](decisions/0010-binding-rules-only.md) · [ADR-0043](decisions/0043-unified-platform-ref.md).
 
 ---
 
-## `BindingRule` model
+<a id="platformref-addresses"></a>
+
+## 1. Unified Entity Addressing (`PlatformRef`)
+
+All references to variables, functions, events, and historian tags use a single slash-separated format (`path/name/field`):
+
+| Entity Kind | Format | Example |
+|-------------|--------|---------|
+| **Variable** | `<objectPath>/<variableName>[/<field>]` | `@/temperature`, `root.platform.devices.pump-01/temperature/value` |
+| **Function** | `<objectPath>/fn/<functionName>` | `@/fn/calculate` |
+| **Event** | `<objectPath>/evt/<eventName>` | `@/evt/alarmRaised` |
+| **Historian tag** | `<objectPath>/tag/<ruleId>` | `root.platform.devices.sensor-a/tag/avg-temp-5m` |
+
+The shorthand `@` refers to the object on which the rule is defined.
+
+| Built-in Operation | Example | Purpose |
+|--------------------|---------|---------|
+| `read("<ref>")` | `read("root.platform.devices.a/temperature")` | Read a live variable from another object (always quote the slash reference) |
+| `write(<ref>, <val>)` | `write(@/setpoint, 42)` | Write a variable field |
+| `call(<fnRef>[, <inRef>])` | `call(@/fn/ack, @/payload)` | Invoke an object function |
+| `fire(<evtRef>)` | `fire(@/evt/overload)` | Publish an event on an object |
+| `avg(<ref>, <window>)` | `avg(root.../temperature, 5m)` | Windowed historian aggregate (`kind: "historian"`) |
+| `queryScalar(<spec>, "<agg>")` | `queryScalar(@/downIfSpec, "count")` | Scalar aggregate from an Object Query specification ([ADR-0044](decisions/0044-object-query.md)) |
+
+---
+
+## 2. Structure of a `BindingRule`
+
+### Example: Reactive Cross-Object Rule on a Logic Hub
 
 ```json
 {
   "id": "member3-sine",
-  "name": "Member3 sine",
+  "name": "Mirror sensor 3 sine wave",
   "enabled": true,
   "order": 20,
   "activators": {
     "onStartup": false,
     "onVariableChange": [
-      {
-        "ref": "root.platform.devices.virt-cluster.dev-03/sineWave"
-      }
+      { "ref": "root.platform.devices.virt-cluster.dev-03/sineWave" }
     ],
     "onEventRef": null,
     "periodicMs": 0
@@ -70,153 +63,61 @@ All references to variables, functions, events, and historian tags use one slash
 }
 ```
 
-Cross-object write (rule on hub, result on remote device):
+### Rule Fields
 
-```json
-{
-  "id": "mirror-remote-sine",
-  "enabled": true,
-  "order": 20,
-  "activators": {
-    "onVariableChange": [{ "ref": "root.platform.devices.cluster.dev-03/sineWave" }]
-  },
-  "expression": "read(\"root.platform.devices.cluster.dev-03/sineWave\")",
-  "target": {
-    "kind": "variable",
-    "ref": "root.platform.devices.cluster.dev-03/mirroredSine"
-  }
-}
-```
-
-| Field | Purpose |
-|------|------------|
-| `activators.onStartup` | Recalculate on server start / model attach |
-| `activators.onVariableChange` | List of variable refs; `"ref": "@/*"` or legacy `"self"` + `"*"` = any local variable |
-| `activators.onEventRef` | Full event ref, e.g. `@/evt/alarmRaised` or cross-object `root.../evt/overload` |
-| `activators.periodicMs` | Periodic recalculation (0 = off); indexed in `platform_binding_periodic_rules`, wake by `next_run_at` |
-| `condition` | CEL; empty = always |
-| `expression` | CEL or single platform function |
-| `target` | Where to write result (see **Target kinds** below) |
-| `kind` | Optional: `reactive` (default) or `historian` — historian rules are evaluated by the analytics engine, not `BindingRuleEngine` ([0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md)) |
-| `windowBucket` | Historian only: aggregate window (`5m`, `1h`, `8h`, …) |
-| `rollupBuckets` | Historian only: optional materialized rollup windows |
-
-### Execution
-
-How ISPF avoids the “bindings queue, conditions already flipped” pain:
-
-| Guarantee | Behavior |
-|-----------|----------|
-| **Order** | Enabled reactive rules on one object run sorted by `order` ascending |
-| **Multi-pass** | After a pass that changed variables, the engine re-evaluates (manual trigger) until stable or **`MAX_PASSES=8`** |
-| **Depth** | Cross-object / nested activation depth capped at **`MAX_DEPTH=16`** |
-| **Async** | `activators.async=true` schedules that rule off the sync chain (independent side effects) |
-| **Stop-loss** | Truncation throws + error log + Micrometer `ispf.binding.truncations` / System → Metrics `bindingTruncationsTotal` (see `BindingRuleEngine`) |
-| **Static warn** | `BindingCascadeAnalyzer` logs write↔activate cycles and heavy expressions on save |
-
-**Authoring:** one owner per variable; put multi-step branching in hub functions (`call(@/fn/…)`), not in competing rules. Anti-patterns: [anti-patterns.md](anti-patterns.md).
-
-### Historian rules (`kind: historian`)
-
-Same `@bindingRules` array; multiple rules per device; arbitrary output variable names. Tag catalog path = `objectPath/tag/ruleId`.
-
-**Recipes (rolling avg, OEE, tag chains, CEL):** [analytics-historian-cookbook](analytics-historian-cookbook.md)
-
-```json
-{
-  "id": "shift-oee",
-  "kind": "historian",
-  "enabled": true,
-  "order": 10,
-  "activators": { "periodicMs": 300000, "onVariableChange": [] },
-  "expression": "oee('root.platform.devices.line-01', 'availabilityPct', 'performancePct', 'qualityPct', '8h')",
-  "windowBucket": "8h",
-  "target": { "kind": "variable", "variableName": "oeePct", "field": "value" }
-}
-```
-
-### Periodic execution
-
-Rules with `periodicMs > 0` are parsed into JDBC index `platform_binding_periodic_rules` when `@bindingRules` is saved. **`BindingPeriodicScheduler`** wakes the JVM once at the nearest `next_run_at` and runs only due hits — no per-second full-tree scan. If no periodic rules exist, background wake is a no-op.
-
-A run that throws is retried after one period, then after twice the previous delay, up to `max(periodicMs, 5 min)` (`ispf.binding.periodic.max-backoff-ms`). The rule stays enabled; the first success restores the normal period, and saving `@bindingRules` retries at once.
-
-### Target kinds (platform rule)
-
-Model extension — ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md). If `target.kind` is absent → **`variable`**. An unknown `kind` is **rejected** (not silently remapped to `variable`).
-
-| `kind` | Fields | Purpose |
-|--------|------|------------|
-| `variable` | `variableName` + `field` on `@`, or canonical **`ref`** (slash grammar) | Write to object variable (local or cross-object) |
-| `action` | — | Evaluate expression only; use `call()`, `write()`, `queryRows()` for side effects |
-| `context` | `path` (dot-notation) | Write to `@dashboardContext` on `DASHBOARD` object |
-| `event` | `eventName` on `@`, or **`ref`** (`…/evt/…`) | Publish platform event; payload from `expression` (local or cross-object) |
-
-Example dashboard rule (planned):
-
-```json
-{
-  "id": "alarm-mode",
-  "activators": { "onContextChange": true },
-  "condition": "context.selection.device != \"\"",
-  "expression": "\"alarm\"",
-  "target": { "kind": "context", "path": "params.mode" }
-}
-```
-
-Activator **`onContextChange`** — recalculate when `@dashboardContext` changes. Full spec: [platform-logic](platform-logic.md).
-
-**Cross-object:** activator with remote `ref` + `read(remote/ref)` in expression; **target** with remote `ref` writes the computed result to another object (orchestrator / singleton blueprint pattern). Side-effect-only rules use `target.kind=action` with `write(ref, …)` inside `expression`. On remote variable change `BindingPropagationListener` recalculates rules on consumer objects.
-
-**Default activators** (if not set): remote refs in expression → automatic remote activators; otherwise local `self:*`.
+| Field | Description |
+|-------|-------------|
+| `id`, `name`, `enabled`, `order` | Rule identifier, label, active flag, and ascending execution order on the object |
+| `kind` | `"reactive"` (default, immediate evaluation) or `"historian"` (windowed time-series calculation — see [Analytics historian cookbook](analytics-historian-cookbook.md)) |
+| `activators.onStartup` | Evaluate once when the server starts or a blueprint is attached |
+| `activators.onVariableChange` | Array of variable references (`{ "ref": "@/temperature" }` or `{ "ref": "@/*" }` for any local variable) |
+| `activators.onEventRef` | Trigger when a specific event fires (`@/evt/alarmRaised`) |
+| `activators.periodicMs` | Periodic timer in ms (`0` = disabled); indexed in `platform_binding_periodic_rules` and woken at `next_run_at` |
+| `condition` | Optional boolean Google CEL guard (empty = always run when activated) |
+| `expression` | Google CEL formula or a single built-in signal function (`movingAvg`, `counterRate`, `hysteresis`, `read`, …) |
+| `target` | Output destination (`variable`, `action`, `context`, or `event`) |
+| `windowBucket`, `rollupBuckets` | Used by `kind: "historian"` rules (`5m`, `1h`, `8h`, …) |
 
 ---
 
-## Expressions (`expression`)
+<a id="execution"></a>
 
-| Kind | Example |
-|-----|--------|
-| **CEL** | `self.temperature.value + 1.0` on the current object (prefer doubles) |
-| **Platform binding** (whole expression) | `counterRate(ifInOctets)`, `hysteresis(temperature, 80, 70)`, `read("root.../dev-03/sineWave")`, `queryScalar(@/oqSpec, "count")` |
-| **Function / event** | `call(@/fn/dispatch, @/lastIngress)`, `fire(root.../pump/evt/overload)` |
+## 3. Execution Guarantees and Loop Prevention
 
-> **Note:** `read(...)` is a **platform binding**, not a CEL function — it cannot be mixed with `+` in the same string. For local arithmetic use CEL `self.*`. Full tables: [expression-language](expression-language.md).
+To prevent race conditions and infinite recalculation loops when multiple rules depend on one another, `BindingRuleEngine` enforces strict execution rules:
 
-Validation: `POST /api/v1/expressions/validate` or Web Console **Validate**.
+| Mechanism | Guarantee |
+|-----------|-----------|
+| **Deterministic order** | Enabled rules on an object execute in ascending `order` |
+| **Multi-pass convergence (`MAX_PASSES = 8`)** | If a pass updates local variables, the engine re-evaluates dependent rules on the same object until values stabilize or `8` passes are reached |
+| **Cross-object depth / stop-loss (`MAX_DEPTH = 16`)** | Chains of cross-object activations stop at depth `16`; truncation throws, logs an error, and increments Micrometer `ispf.binding.truncations` (System → Metrics `bindingTruncationsTotal`) |
+| **Asynchronous side effects** | Setting `activators.async = true` runs independent side effects off the synchronous propagation path |
+| **Save-time cycle detection** | `BindingCascadeAnalyzer` warns on save when two rules form a write↔activate cycle or contain overly long expressions |
+| **Exponential backoff on periodic errors** | If a periodic rule (`periodicMs > 0`) throws an exception, it stays enabled and backs off up to `max(periodicMs, 5 min)` (`ispf.binding.periodic.max-backoff-ms`) until the next successful run |
 
-Stateful bindings (`counterRate`, `hysteresis`, …) — state in `@bindingState`.
+> **Best practice:** keep a **single writer rule per variable**, and place multi-step branching in a function on a `SINGLETON` or `INSTANCE` logic object (`call(@/fn/...)`).
 
 ---
 
-## REST API
+## 4. Target Kinds (`target.kind`)
+
+| `target.kind` | Required Fields | Behavior |
+|---------------|-----------------|----------|
+| `variable` *(default)* | `variableName` + `field` (or cross-object `ref`) | Writes the computed result to a variable on the current object or a remote object |
+| `action` | — | Evaluates `expression` for its side effects (`call(...)`, `write(...)`, `fire(...)`) without writing a target variable |
+| `context` | `path` | Writes to `@dashboardContext` on a `DASHBOARD` object ([Platform logic](platform-logic.md)) |
+| `event` | `eventName` (or `ref`) | Publishes a platform event with the evaluated payload |
+
+---
+
+## 5. REST API and Web Console
+
+In the Web Console, select an object → **Computations** tab to edit reactive and historian rules with the built-in **PlatformRef picker** and **Validate** button.
 
 ```http
-GET  /api/v1/objects/by-path/binding-rules?path={objectPath}
-PUT  /api/v1/objects/by-path/binding-rules?path={objectPath}
+GET    /api/v1/objects/by-path/binding-rules?path={objectPath}
+PUT    /api/v1/objects/by-path/binding-rules?path={objectPath}
 DELETE /api/v1/objects/by-path/binding-rules/{ruleId}?path={objectPath}
 ```
 
-Agent tool: `create_binding_rule` — use slash refs in expression and optional `ref` on activators. The target variable must already exist, and the expression is stored as sent.
-
----
-
-## Models
-
-In models — `ModelBindingRule` (full schema or `ModelBindingRule.of(id, target, expression)`). On apply/create, rules merge via `ModelBindingRulesMerger` **after** functions.
-
-`defaultBinding` on model variable **removed** (v0.8.0).
-
----
-
-## UI
-
-Web Console → Object inspector → **Computations** tab (reactive + historian rules). Expression editor includes **PlatformRef picker** and function catalog.
-
-For **variable** or **event** targets: choose **Effect type**, then either a local name on the current object or **target object path** + PlatformRef picker (`target.ref`) to write on another object (orchestrator / singleton blueprint pattern).
-
----
-
-## Not to be confused with
-
-- **SQL bindings** (`SqlBindingObjectService` / bundle `bindings[]`) — separate scheduler, not object binding rules. Prefer **blueprint `sqlBindings`** with `${code}` / `${self.path}` parameters when many instances share one query shape (see [blueprints](blueprints.md) § Parametrized SHAPE). A refresh with no usable value (no rows, SQL `NULL`, missing column, non-numeric value) keeps the last value marked `quality=BAD` instead of writing `0`; `ispf.sql_binding.refresh_failures.total{reason}` counts it. A query that fails in a scheduled, event, or after-function-commit refresh is handled the same way (`reason=query_failed`), and the other bindings still run: a scheduled refresh runs each binding outside a shared transaction and an event refresh gives each binding its own transaction, so one failure does not roll back the others. After a function commits, its bindings refresh on the object-change bus shortly after the call returns, outside the function's transaction, so their values are saved; one refresh per function runs at a time, and a commit during it makes it run once more. With `ispf.object-change.async-enabled=false` or a full automation queue, that refresh runs on the calling thread in the function's finished transaction and its values reach only the live tree, since a new transaction there could wait on the locks of a calling workflow step suspended on the same thread. Deploy and manual refresh of a single binding still return the query error; a refresh inside a workflow step runs in the step's transaction, so the error fails the step.
-- **Alert rules**, correlators, workflows — separate subsystems; blueprint `alertRules` templates materialize alert nodes with an absolute target object path.
+> **Difference from SQL bindings:** `@bindingRules` compute values from object tree variables and historian windows. Periodic SQL queries against application database tables (`sqlBinding('appId', 'var')`) are configured separately via `/api/v1/applications/{appId}/bindings` or blueprint `sqlBindings` — see [Applications](applications.md) and [Blueprints](blueprints.md).

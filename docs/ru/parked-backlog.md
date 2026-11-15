@@ -1,26 +1,20 @@
-# Доска отложенного бэклога (Post-S33)
+> **Язык:** русская версия. Английский оригинал: [en/parked-backlog.md](../en/parked-backlog.md).
 
-> **Политика:** [roadmap — качество вместо фич](roadmap.md#политика-исполнения--качество-вместо-фич).  
-> Отложенное остаётся отложенным, пока нет **именованной** полевой / интеграционной задачи.
+# Отложенные задачи и условия их запуска в работу
 
-| ID | Тема | Статус | Критерий снятия | Заметка |
-|----|------|--------|-----------------|---------|
-| P-ENT-L | Enterprise L (50k history + 1B CH + multi-tag SLO) | **Учтено** (scorecard 2026-09-09) | — | Сложено в Historian **9.5** — [competitive-scorecard](competitive-scorecard.md). Evidence: [`historian-scale/2026-09-05-…`](../evidence/historian-scale/2026-09-05-lab-192.168.100.10-enterprise-l.md) |
-| P-HMI-8H | HMI offline **8 h** (lab CDP) | **Учтено** (scorecard 2026-09-09) | — | Сложено в HMI **8.0**. Только CDP — **P-HMI-FIELD** для 9+. Evidence: [`hmi-offline/2026-09-05-…`](../evidence/hmi-offline/2026-09-05-ispf-vps-0.9.207-offline-8h.json) |
-| P-HMI-FIELD | Полевой планшет / airplane mode | **Отложено** | Площадка + journal | [hmi-offline-field-soak.md](../en/hmi-offline-field-soak.md) |
-| P-OT | Фаза 25 OT Trust (BL-140…) | **Учтено (lab)** — soak **остановлен** 2026-09-14 | Именованный plant soak + OT sign-off (только field) | Таймеры сняты; P1/P2/P3 JSON до 2026-09-14 — `pass: true`. [stop](../evidence/ot-trust/2026-09-14-bl140-lab-soak-stopped.md) · [pull](../evidence/ot-trust/2026-09-14-bl140-lab-soak-pull.md). **Не** field Done / **не** OT 10/10. |
-| P-ERP | Живой ERP (BL-169) | **Отложено** | Именованная интеграция 1C/SAP | Sandbox ≠ live |
-| P-BPMN | Глубина BPMN/DMN сверх ADR-0047 | **Отложено** | Blocker заказчика + ADR | Freeze |
-| P-WEBAUTHN | WebAuthn (BL-194) | **Parked** | Требование тендера / MFA | TOTP GA уже есть. ADR [0056](../en/decisions/0056-webauthn-idp-mfa.md) явно **Parked** (2026-11-15). |
-| P-PENTEST | Сторонний pen-test (G-01) | **Отложено** (vendor-pack готов) | Контракт + отчёт + retest | **Отправить:** [черновик письма](pen-test-vendor-outreach-draft.md) · [vendor-pack](pen-test-vendor-pack.md). Dogfood: [web-console-dogfood-checklist.md](web-console-dogfood-checklist.md). Docs ≠ cert. |
+> **Статус:** Charter — перечень направлений, которые сознательно не форсируются без конкретного промышленного заказчика или целевого проекта. Метки зрелости: [doc-status.md](doc-status.md).
 
-## Lab (операторы)
+В соответствии с правилом **«стабильность важнее новых функций»** перечисленные ниже задачи остаются в отложенном состоянии до появления конкретного проектного требования на объекте заказчика:
 
-| Роль | Адрес | Заметка |
-|------|-------|---------|
-| Jump | `84.42.21.226:5031` | Учётка вне git |
-| ISPF/DB | `192.168.100.10` | SSH без пароля **с jump** |
+| Код | Направление | Текущее состояние | Условие возобновления работ |
+|-----|-------------|-------------------|-----------------------------|
+| `P-ENT-L` | Enterprise L (50k history + 1B CH + multi-tag SLO) | **Учтено** в scorecard Historian **9.5** (2026-09-09) | — |
+| `P-HMI-8H` | HMI offline **8 h** (lab CDP) | **Учтено** в scorecard HMI **8.0**; для 9+ нужен `P-HMI-FIELD` | — |
+| `P-OT` | Полевая сертификация драйверов уровня `FIELD` на заводах | Лабораторные эмуляторы и стенды пройдены (`PRODUCTION`); полевой счётчик `FIELD = 0` | Конкретная площадка заказчика и 7-дневный прогон по [регламенту полевых испытаний](field-pilot-playbook.md) |
+| `P-ERP` | Прямой промышленный коннектор к живой базе 1С:ERP / SAP | В пакетах есть транзакционная очередь `outbox` (HTTP / NATS / Kafka) и учебный коннектор | Конкретный проект интеграции с утверждённой схемой документов 1С / SAP |
+| `P-HMI-FIELD` | Полевые испытания автономного режима PWA на планшетах в цеху | Автоматические тесты и 8-часовой прогон в лаборатории выполнены | Опытная эксплуатация на планшетах конкретной площадки ([hmi-offline-field-soak.md](hmi-offline-field-soak.md)) |
+| `P-BPMN` | Расширение палитры BPMN новыми конструкциями сверх базового ядра ([ADR-0047](decisions/0047-custom-bpmn-subset-engine.md)) | Текущего набора шагов достаточно для технологических регламентов и очередей смены | Подтверждённое требование заказчика и отдельное архитектурное решение (ADR) |
+| `P-WEBAUTHN` | Встроенная поддержка аппаратных ключей FIDO2 / WebAuthn внутри `ispf-server` | **Parked** (2026-11-15): TOTP GA в ядре; WebAuthn / IdP OTP — [ADR-0056](decisions/0056-webauthn-idp-mfa.md), [known-limitations](known-limitations.md) | Прямое требование тендера / именованный MFA-заказчик |
+| `P-PENTEST` | Внешний аудит защищённости (испытания на проникновение сторонней лабораторией) | Подготовлен полный пакет документации для аудиторов ([pen-test-vendor-pack.md](pen-test-vendor-pack.md)) | Заключение договора с внешней лабораторией по запросу заказчика |
 
-Пароли/токены **не** коммитить.
-
-EN: [parked-backlog.md](../en/parked-backlog.md)
+**Связанные разделы:** [Сравнительная оценка зрелости (`competitive-scorecard.md`)](competitive-scorecard.md) · [Дорожная карта (`roadmap.md`)](roadmap.md).

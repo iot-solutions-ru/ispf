@@ -1,8 +1,8 @@
 # Historian tiers (BL-159, BL-202)
 
-> **Status:** Done (BL-159) — turnkey env profiles + routing. Hub: [doc-status.md](doc-status.md).
+> **Status:** Done (BL-159) — ready-to-use env profiles and automatic tier routing. Hub: [doc-status.md](doc-status.md).
 
-Turnkey **hot → warm → cold** profile. Config: `ispf.historian.tiers` in `application.yml`; tier routing when warm is enabled (BL-202).
+Ready-to-use **hot → warm → cold** storage profile. Config: `ispf.historian.tiers` in `application.yml`; tier routing when warm is enabled (BL-202).
 
 **One-click profiles (git):** [examples/historian-tiers/](../../examples/historian-tiers/) — `three-tier.env` / `hot-only.env`. Helm: `ispf.historian.deployProfile` + `warmEnabled` in `deploy/helm/ispf/values.yaml`.
 

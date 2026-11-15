@@ -1,32 +1,20 @@
 > **Language:** Canonical English. Russian edition: [ru/platform-logic.md](../ru/platform-logic.md).
 
-# Unified platform logic (Platform Rule)
+# Unified Platform Rules (`WHEN → IF → THEN` & `@dashboardContext`)
 
-> **Status:** Beta — Rules; `@dashboardContext` readiness varies. Hub: [doc-status.md](doc-status.md).
+> **Status:** Beta — unified rule model across object variables, dashboard session state (`@dashboardContext`), and platform events ([ADR-0019](decisions/0019-platform-rule-unification.md)). Status tags: [doc-status.md](doc-status.md).
 
-One mechanism for variable bindings, dashboard logic, and event side effects.
+In ISPF, variable recalculations, dynamic dashboard behavior, and event triggers share a single declarative rule structure:
 
-**Status:** specification (ADR [0019-platform-rule-unification](decisions/0019-platform-rule-unification.md), **Proposed**). Runtime extensions — phases 1–3.
+```text
+WHEN activator fires  →  IF condition holds (CEL)  →  THEN write result to target
+```
 
 ---
 
-## Human model
+## 1. Three Rule Target Kinds (`target.kind`)
 
-```
-WHEN  →  IF (CEL)  →  THEN (write result)
-```
-
-Same pattern as [binding rules](bindings.md):
-
-- **Binding rule** on device → writes to a variable.
-- **Dashboard rule** on `DASHBOARD` object → writes to `@dashboardContext` or fires event.
-- **Alert rule** on `ALERT` → separate object, but condition = CEL (future UI unification — not in scope v1).
-
----
-
-## JSON: Platform Rule (= BindingRule)
-
-### Effect `variable` (today, default)
+### 1. Write to an Object Variable (`kind: "variable"`, default)
 
 ```json
 {
@@ -46,13 +34,9 @@ Same pattern as [binding rules](bindings.md):
 }
 ```
 
-Legacy without `kind`:
+### 2. Update Dashboard UI Context (`kind: "context"`)
 
-```json
-"target": { "variableName": "avgTemp", "field": "value" }
-```
-
-### Effect `context` (dashboard UI state)
+Defined on a `DASHBOARD` node to update `@dashboardContext` parameters or toggle widget visibility dynamically:
 
 ```json
 {
@@ -65,7 +49,7 @@ Legacy without `kind`:
     ],
     "onContextChange": true
   },
-  "condition": "context.selection.device != \"\" && read(context.selection.device + \"/temperature\") > 80",
+  "condition": "context.selection.device != \"\" && read(context.selection.device + \"/temperature\") > 80.0",
   "expression": "\"alarm\"",
   "target": {
     "kind": "context",
@@ -74,9 +58,7 @@ Legacy without `kind`:
 }
 ```
 
-`context.*` in CEL — snapshot of `@dashboardContext` at eval time (phase 1).
-
-### Effect `event` (journal / workflow)
+### 3. Publish a Platform Event (`kind: "event"`)
 
 ```json
 {
@@ -95,107 +77,41 @@ Legacy without `kind`:
 
 ---
 
-## Activators
+## 2. Rule Activators (`activators`)
 
-| Field | Status | Purpose |
-|-------|--------|---------|
-| `onStartup` | exists | start / model attach |
-| `onVariableChange` | exists | telemetry, variables |
-| `onEvent` | exists | platform event name |
-| `periodicMs` | exists | periodic recompute; index `platform_binding_periodic_rules`, wake by `next_run_at` ([bindings](bindings.md)) |
-| `onContextChange` | **planned** | `@dashboardContext` change |
+| Activator Field | When It Fires |
+|-----------------|---------------|
+| `onStartup` | Once at server startup or when a blueprint is attached |
+| `onVariableChange` | Whenever any referenced variable changes |
+| `onEvent` / `onEventRef` | Whenever the specified platform event fires |
+| `periodicMs` | On a recurring timer in milliseconds ([Binding rules](bindings.md)) |
+| `onContextChange` | Whenever `@dashboardContext` changes on a dashboard |
 
 ---
 
-## `@dashboardContext` (planned, phase 1)
+## 3. Dashboard Session Context (`@dashboardContext`)
 
-Reserved JSON variable on `DASHBOARD` object (model `dashboard-v1`).
+Every `DASHBOARD` object (`dashboard-v1`) includes the reserved JSON variable `@dashboardContext`:
 
 | Field | Type | Purpose |
 |-------|------|---------|
-| `selection` | `Record<string, string>` | selection slots (`device`, `order`, …) |
-| `params` | `Record<string, unknown>` | scalars, modes, report parameters |
-| `widgets` | `Record<string, { visible?: boolean }>` | runtime visibility by widget id |
-| `updatedAt` | ISO string | audit |
-| `updatedBy` | string | username |
+| `selection` | `Record<string, string>` | Active object selection slots (`device`, `order`, `line`, …) |
+| `params` | `Record<string, unknown>` | Filter parameters, screen modes, and report arguments |
+| `widgets` | `Record<string, { visible?: boolean }>` | Dynamic runtime visibility per widget ID |
+| `updatedAt`, `updatedBy` | `string` | Timestamp and username of the last context update |
 
-Web-console `DashboardSession` mirrors this structure.
-
-### Context publishers
-
-| Source | Action |
-|--------|--------|
-| object-table / card-grid / map | `selection.*` + `params.*` from row |
-| report widget | `rowParamsFromRowJson` → `params` |
-| function-form | `syncFieldsToSessionJson` → `params` |
-| dashboard-link | `contextSelectionJson` / `contextParamsJson` |
-| operator URL `?ctx=` | initial snapshot |
-
-All publishers (phase 1+) → **PUT `@dashboardContext`**, not only React state.
-
-### Consumers
-
-| Widget field | Reads from context |
-|--------------|-------------------|
-| `selectionKey` | `selection[key]` |
-| `paramKey` | `params[key]` |
-| `contextPathKey` | `params[key]` as object path |
-| visibility | `widgets[widgetId].visible` via rules + runtime merge |
+- **Context publishers:** `object-table`, `card-grid`, `map` (row click sets `selection.*` and `params.*`), `report` widget (`rowParamsFromRowJson`), `function-form` (`syncFieldsToSessionJson`), `dashboard-link` (`contextSelectionJson` / `contextParamsJson`), and URL query parameter `?ctx=`.
+- **Context consumers:** widgets bound via `selectionKey`, `paramKey`, `contextPathKey`, and dynamic visibility rules (`widgets.<widgetId>.visible`).
 
 ---
 
-## Legacy inventory → Platform Rule
+## 4. Example: Context-Driven Alarm Panel on an Operator Dashboard
 
-| Legacy | Where | Migration | Status |
-|--------|-------|-----------|--------|
-| `showWhenJson` | function-form field | CEL rule on form object or dashboard rule on `context.params.*` | runtime kept; UI migration — phase 3 |
-| `payloadFilterExpr` | event-feed | CEL `GET /events?expr=` when the expression mentions `payload`; mini-DSL still client-side | runtime kept |
-| `requireSessionParamsJson` | link, form | `condition` on non-empty keys in context | runtime kept; deprecation hint in editor |
-| Dashboard session only (sessionStorage) | operator | `@dashboardContext` + WS | phase 1 ✅ |
-| Per-widget `visible` boolean | layout | static default; runtime → rules → `widgets.*.visible` | phase 2 ✅ |
-| Spreadsheet session blob | `params[sheet:…]` | binding cells + `onContextChange`; optional export rules | planned |
-| Alert CEL | ALERT object | remains; same CEL editor | — |
+On dashboard `root.platform.dashboards.snmp-host-monitoring`, an `object-table` publishes the selected device path to `selectionKey: "device"`. Four rules on the dashboard object drive the screen without embedding logic inside individual widgets:
 
-**Do not add:** `behaviorJson`, `visibleWhen` on widget, separate dashboard DSL.
+1. When the selected device's temperature exceeds `80.0` → set `params.mode = "alarm"`.
+2. When `context.params.mode == "alarm"` → set `widgets.alarm-panel.visible = true`.
+3. When `context.params.mode == "normal"` → set `widgets.alarm-panel.visible = false`.
+4. When transitioning to `"alarm"` → fire event `hmi.dashboard.alarm`.
 
----
-
-## UI
-
-| Location | Component |
-|----------|-----------|
-| Object Inspector | `BindingRulesPanel` |
-| Dashboard Builder | `DashboardRulesPanel` + templates (phase 2) |
-| AI agent | `create_binding_rule` + dashboard templates |
-
----
-
-## REST / engine (planned)
-
-- Existing CRUD `/binding-rules` — URL unchanged.
-- `BindingRuleEngine.evaluateOnContextChange(dashboardPath, contextJson)` — phase 1.
-- CEL validate: `POST /api/v1/expressions/validate` (already exists).
-
----
-
-## Example: SNMP monitoring
-
-**Layout:** object-table `selectionKey: device` + value/chart with same key.
-
-**Rules on `root.platform.dashboards.snmp-host-monitoring`:**
-
-1. When temperature on selected device > 80 → `params.mode = "alarm"`.
-2. When `params.mode == "alarm"` → `widgets.alarm-panel.visible = true`.
-3. When `params.mode == "normal"` → `widgets.alarm-panel.visible = false`.
-4. When mode → alarm → fire `hmi.dashboard.alarm`.
-
-Widgets **without** conditional fields in JSON layout.
-
----
-
-## Related documents
-
-- [bindings](bindings.md) — binding rules, CEL, API
-- [expression-language](expression-language.md) — full function / literal / example reference
-- [dashboards](dashboards.md) — layout, widgets, context
-- [decisions/0019-platform-rule-unification.md](decisions/0019-platform-rule-unification.md)
+**Related guides:** [Binding rules (`bindings.md`)](bindings.md) · [Expression language (`expression-language.md`)](expression-language.md) · [Dashboards (`dashboards.md`)](dashboards.md) · [ADR-0019](decisions/0019-platform-rule-unification.md).

@@ -1,80 +1,52 @@
 > **Language:** Canonical English. Russian edition: [ru/solution-developer-public-api.md](../ru/solution-developer-public-api.md).
 
-# Solution Developer Public API
+# Solution Developer Public API (`bundle.json` & REST Contract)
 
-> **Status:** Stable — Stable platform ↔ bundle boundary. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — supported compatibility boundary between the ISPF platform core and application solution bundles. Status tags: [doc-status.md](doc-status.md).
 
-Stable boundary between **platform** (ISPF core) and **solution** (your bundle). Detailed workflow — [solution-developer-guide](solution-developer-guide.md). Architectural boundaries — [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md).
+This document defines which REST/WebSocket APIs and `bundle.json` sections form the stable public contract for application solutions, and which internal server mechanisms must not be modified by application projects. For a step-by-step authoring guide, see the **[Solution Developer Guide](solution-developer-guide.md)** and **[ADR-0001](decisions/0001-app-platform-boundary.md)**.
 
 ---
 
-## Allowed (stable contract)
+## 1. Supported Solution Contract
 
-| Area | API / artifact | Note |
-|------|----------------|------|
-| App registration | `POST /api/v1/applications` | `appId`, `schemaName`, `tablePrefix` |
-| App SQL schema | `POST .../data/migrate`, `.../data/seed` | Not platform Flyway |
-| Bundle deploy | `POST .../deploy`, `POST /api/v1/platform/packages/import` | Single manifest JSON |
-| Script functions | `POST .../functions/deploy`, tree path `{appId}.functions.*` | JSON script steps |
-| Invoke | `POST .../functions/invoke`, `POST /api/v1/bff/invoke` | Operator wire profile |
-| Object tree | `GET/POST/PATCH /api/v1/objects/**` | CRUD, variables, functions |
-| Blueprints | `POST /api/v1/blueprints`, apply to device | Blueprint |
-| Dashboards / workflows | Object tree + REST | Layout JSON, BPMN XML |
-| Automation | Alert rules, correlators in tree | CEL, correlator patterns |
-| Operator UI | `operatorUi` / `dashboards[]` in bundle | `GET .../operator-ui` |
-| Hosted SPA | `artifactKind: ui-pack`, `operatorUi.spaNav` / `uiPack` | Vite `base: '/apps/<appId>/'`; [external-ide](external-ide.md) |
-| Reports | Tree-first `root.platform.reports.*` | SQL + optional YARG |
-| WebSocket | `/ws/objects` — `subscribe`, `subscribe_events` | Token query param; see [messaging](messaging.md) |
-| Event catalog | `events[]` in bundle, `GET .../events` | Roles for WS subscribe (FW-31) |
-| Bundle dependencies | `requires[]` in bundle | minVersion of another appId (FW-12) |
-| Drivers | SPI `DeviceDriver` in separate JAR | [drivers](drivers.md) |
-| AI tools (platform admin) | `POST /api/v1/ai/tools/*`, Studio | [ai-development](ai-development.md) — does not change stable bundle contract |
+| Area | Public API / Manifest Section | Notes |
+|------|-------------------------------|-------|
+| Application registration | `POST /api/v1/applications` | Defines `appId`, isolated `schemaName`, and `tablePrefix` |
+| Application SQL schema | `POST .../data/migrate`, `.../data/seed`, `migrations[]` | Runs in the application's isolated schema (never in platform Flyway) |
+| Bundle deployment | `POST /api/v1/applications/{id}/deploy`, `POST /api/v1/platform/packages/import` | Single declarative `bundle.json` manifest |
+| Backend functions | `POST .../functions/deploy`, `functions[]` | JSON step scripts (`selectMany`, `exec`, `return`, …) on `SINGLETON` / `INSTANCE` logic hubs |
+| UI function invocation (BFF) | `POST /api/v1/bff/invoke`, `POST .../functions/invoke` | Standard wire profile `ispf-operator-v1` |
+| Object tree | `GET / POST / PATCH /api/v1/objects/**`, `objects[]` | Nodes, variables, events, and functions |
+| Blueprints | `/api/v1/singleton-blueprints`, `/api/v1/instance-types`, `/api/v1/mixin-blueprints`, `blueprints[]` | `SINGLETON`, `INSTANCE`, and `MIXIN` templates |
+| Dashboards & workflows | `dashboards[]`, `workflows[]`, tree nodes | `84×8` grid layouts and supported BPMN 2.0 XML subset |
+| Automation | `alertRules[]`, `correlators[]`, tree nodes | CEL threshold rules and event correlation patterns |
+| Operator menu | `operatorUi` in `bundle.json`, `/api/v1/operator-apps/**` | Operator workspace tabs and default dashboard |
+| Hosted React UI | `artifactKind: "ui-pack"`, `operatorUi.spaNav` / `uiPack` | Served at `/apps/<appId>/` ([External IDE guide](external-ide.md)) |
+| Reports | `root.platform.reports.*`, `reports[]` | Read-only `SELECT` queries + optional XLSX/DOCX/HTML templates |
+| Live WebSocket updates | `WS /ws/objects` (`subscribe`, `subscribe_events`) | Live variable values and event catalog stream ([Messaging](messaging.md)) |
+| Package dependencies | `requires[]` in `bundle.json` | Declares required `appId` and `minVersion` |
+| Protocol drivers | `DeviceDriver` SPI in a separate driver pack JAR | Loaded from `ISPF_DRIVER_PACKS_DIR` ([Driver DDK](driver-ddk.md)) |
 
-## Forbidden
+---
 
-| Action | Why |
-|--------|-----|
-| Java in `packages/ispf-server/` | [0001-app-platform-boundary](decisions/0001-app-platform-boundary.md) |
-| Industry React in `apps/web-console/` | Hosted ui-pack ([external-ide](external-ide.md), [0054](decisions/0054-hosted-ui-packs.md)) |
-| Platform Flyway for app tables | App schema only via migrate API |
-| Domain-specific BFF routes | Only `/api/v1/bff/invoke` |
-| Fork platform server for one customer | Bundle deploy + config |
+## 2. What Solution Projects Must Not Do
 
-## Bundle manifest (semver)
+| Prohibited Action | Why It Breaks Maintainability | Supported Alternative |
+|-------------------|-------------------------------|-----------------------|
+| Adding domain Java code to `packages/ispf-server/` | Turns the server into an un-upgradeable fork ([ADR-0001](decisions/0001-app-platform-boundary.md)) | Declarative `script` functions on logic hubs + `bundle.json` |
+| Adding industry-specific pages to `apps/web-console/` | Couples the platform admin console to one customer project | Separate React/Vite SPA packaged as a `ui-pack` ([ADR-0054](decisions/0054-hosted-ui-packs.md)) |
+| Putting application tables into platform Flyway migrations | Breaks schema isolation and platform upgrades | `migrations[]` inside the application's own `schemaName` |
+| Creating custom REST controllers `/api/v1/<app>/...` | Bypasses unified RBAC, ACL, and audit logging | Invoke functions via `POST /api/v1/bff/invoke` |
+| Attaching application logic or BFF functions to `ObjectType.DEVICE` | Taking a sensor offline breaks application logic (`LOGIC_HOST_DEVICE`) | Place orchestration and BFF functions on a `SINGLETON` or `INSTANCE` node |
 
-Manifest field `version` is **semver** (`MAJOR.MINOR.PATCH`). Comparison for `requires[].minVersion` and `license.minPlatformVersion` uses numeric semver (platform `GET /api/v1/info`).
+---
 
-| Change | Level | Example |
-|--------|-------|---------|
-| Remove/rename function, event, object | **MAJOR** | removed `mes_listOrders` |
-| Change input/output schema of existing function | **MAJOR** | new required input field |
-| Add optional events, objects, dashboards | **MINOR** | new `events[]` id |
-| Description fixes, seed data, non-breaking script | **PATCH** | operatorUi text |
+## 3. Semantic Versioning (`version`) for Solution Bundles
 
-| Field | Stability |
-|-------|-----------|
-| `version` | Semver bundle; deploy history |
-| `schemaName`, `migrations`, `functions` | Stable |
-| `objects`, `dashboards`, `workflows`, `models` | Stable (Phase 5 tree-first) |
-| `alertRules`, `correlators`, `operatorUi` | Stable |
-| `events[]` | Stable — id, roles, optional payloadSchema |
-| `requires[]` | Stable — appId, minVersion |
-| `license` | Optional; commercial — [commercial-licensing](commercial-licensing.md) |
+The `version` field in `bundle.json` must follow strict SemVer (`MAJOR.MINOR.PATCH`):
+- **MAJOR** (`1.x.x` → `2.0.0`): removing or renaming a function, event, or object path, or adding a required input field to an existing function.
+- **MINOR** (`1.1.0` → `1.2.0`): adding new backward-compatible objects, dashboards, functions, or events.
+- **PATCH** (`1.2.0` → `1.2.1`): bug fixes in script steps, labels, or seed data.
 
-## Platform version
-
-- `GET /api/v1/info` → `version` — for `minPlatformVersion` in license.
-- Compatibility: platform ≥ `minPlatformVersion` in commercial license.
-
-## Commercial bundle
-
-`license` section in manifest — see [0003-commercial-bundle-licensing](decisions/0003-commercial-bundle-licensing.md). Apache reference bundles (`warehouse`, `lab-training`, `mes-reference`) — no `license`.
-
-## Related documents
-
-- [applications](applications.md) — full deploy API
-- [messaging](messaging.md) — async vs sync, NATS subjects, WS events
-- [ai-development](ai-development.md) — AI layer (FW-40…43), admin tools
-- [external-ide](external-ide.md) — Cursor / hosted SPA / ui-pack
-- [api](api.md) — REST reference
-- [plugins](plugins.md) — `main` boundaries
+**Related guides:** [Application solutions (`applications.md`)](applications.md) · [Solution developer guide](solution-developer-guide.md) · [Commercial licensing](commercial-licensing.md) · [Plugins](plugins.md).

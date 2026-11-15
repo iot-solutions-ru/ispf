@@ -1,40 +1,37 @@
-# Building HVAC reference walkthrough
+> **Language:** Canonical English. Russian edition: [ru/reference-building-hvac-walkthrough.md](../ru/reference-building-hvac-walkthrough.md).
 
-Third reference application for solution developers: **office floor zones**, comfort setpoints, and Haystack-oriented metadata — without custom Java in `ispf-server`.
+# Reference Walkthrough: Building HVAC Comfort Zones (`building-hvac`)
 
-Artifacts: [examples/building-hvac-app/](../../examples/building-hvac-app/), bundle `appId` = `building-hvac`.
+> **Status:** Stable — compact reference bundle demonstrating floor climate zones, comfort setpoints, and Project Haystack semantic metadata. Status tags: [doc-status.md](doc-status.md).
 
-## Domain
+The **`building-hvac`** bundle ([`examples/building-hvac-app/`](../../examples/building-hvac-app/)) demonstrates a multi-zone building climate monitoring application built without custom Java in `ispf-server`.
+
+---
+
+## 1. Domain Overview
 
 ![Building HVAC operator HMI](../assets/ispf-operator-building-hvac.png)
 
-| Entity | Description |
-|--------|-------------|
-| **Zone** (`hvac_zone`) | Floor zone code, space temperature, setpoint, HVAC mode |
-| **BFF host** | `root.platform.devices.demo-sensor-01` — `hvac_listZones` |
-| **Operator shell** | `?mode=operator&app=building-hvac` |
+| Component | Description |
+|-----------|-------------|
+| **Climate Zone Table** (`hvac_zone`) | Floor zone code (`L1-OPEN-01`, `L2-MEET-02`), space temperature, comfort setpoint, and operating mode (`cool` / `heat`) |
+| **Application Logic Hub (`SINGLETON`)** | `root.platform.singleton-blueprints.building-hvac-app-hub-v1` — hosts BFF function `hvac_listZones` |
+| **Semantic Tags** (`metadata.haystackTags`) | Standard Project Haystack markers (`site`, `equip`, `ahu`, `zone`, `temp`) |
+| **Operator Workspace** | Opens at `/?mode=operator&app=building-hvac` |
 
-Seed zones: `L1-OPEN-01` (cool), `L2-MEET-02` (heat).
+---
 
-## Steps
+## 2. Deployment and Verification
 
-| # | Action | API / path |
-|---|--------|------------|
-| 1 | Deploy bundle | `POST /api/v1/applications/building-hvac/deploy` |
-| 2 | List zones | BFF `hvac_listZones` @ `demo-sensor-01` |
-| 3 | Solution catalog | System → Solutions → **Install** reference `building-hvac-app` |
-| 4 | Operator demo | `/?mode=operator&app=building-hvac` |
+Deploy the bundle via **System → Solutions** in the Web Console or via HTTP:
 
-## Haystack
+```bash
+curl -s -X POST http://localhost:8080/api/v1/applications/building-hvac/deploy \
+  -H "Content-Type: application/json" \
+  --data-binary @examples/building-hvac-app/bundle.json
+```
 
-Bundle `metadata.haystackTags` documents expected tag vocabulary (`site`, `equip`, `ahu`, `zone`, `temp`). Bind real devices via `haystack-metadata-v1` mixin model when extending the walkthrough.
-
-## CI
-
-- `BuildingHvacBundleSmokeTest` — deploy + `hvac_listZones` returns 2 rows
-- Optional: `examples/warehouse-app/.github/workflows/bundle-ci.yml` pattern for integrator CI
-
-## Commands
+Run the automated test:
 
 ```bash
 ./gradlew :packages:ispf-server:test --tests com.ispf.server.application.BuildingHvacBundleSmokeTest

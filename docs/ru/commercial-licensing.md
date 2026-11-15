@@ -1,20 +1,24 @@
 > **Язык:** русская версия. Английский оригинал: [en/commercial-licensing.md](../en/commercial-licensing.md).
 
-# Лицензирование коммерческого пакета
+# Лицензирование коммерческих пакетов и ротация ключей подписи
 
-> **Статус:** Stable — коммерческие пакеты и Enterprise-условия. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Stable — проверка цифровой подписи RSA у коммерческих пакетов `bundle.json`, файл лицензии предприятия и порядок плановой смены ключей. Метки зрелости: [doc-status.md](doc-status.md).
 
-Проверка RSA-лицензии коммерческого `bundle.json` в момент деплоя. Архитектурное решение: [ADR-0003](decisions/0003-commercial-bundle-licensing.md).
+В ISPF предусмотрена криптографическая проверка подлинности коммерческих пакетов решений (`bundle.json`) и пакетов драйверов (`driver-pack.json`) по алгоритму **RSA-SHA256** ([ADR-0003](decisions/0003-commercial-bundle-licensing.md)).
 
-## Принцип
+---
 
-| Слой | Лицензия |
-|------|----------|
-| Платформа (`ispf-server`, веб-консоль) | **GNU AGPL v3** (+ опциональный [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)) |
-| Пакет драйверов устройств | `licenseType` в упаковке — см. [licensed-driver-packs](licensed-driver-packs.md) |
-| Коммерческий bundle | Опциональная секция `license` в манифесте; проверка при deploy |
+## 1. Модели лицензирования по слоям
 
-## Конфигурация сервера
+| Слой системы | Лицензия |
+|--------------|----------|
+| **Ядро платформы** (`ispf-server`, `apps/web-console`) | Открытая лицензия **GNU AGPL v3** или коммерческая лицензия предприятия ([LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)) |
+| **Пакеты драйверов устройств** (`build/driver-packs/*`) | Собственная лицензия каждого пакета в поле `licenseType` ([Лицензируемые пакеты драйверов](licensed-driver-packs.md)) |
+| **Прикладные пакеты решений** (`bundle.json`) | Свободные или коммерческие пакеты с подписанным блоком `license` |
+
+---
+
+## 2. Настройка проверки лицензий на сервере (`application.yml`)
 
 ```yaml
 ispf:
@@ -22,99 +26,53 @@ ispf:
     data-dir: ${ISPF_DATA_DIR:./data}
     public-key-pem: ${ISPF_LICENSE_PUBLIC_KEY_PEM:}
     enforce: ${ISPF_LICENSE_ENFORCE:false}
+    require-signed-bundles: ${ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES:false}
 ```
 
-| Переменная | Назначение |
-|------------|------------|
-| `ISPF_DATA_DIR` | Каталог для `.ispf-installation-id` |
-| `ISPF_LICENSE_PUBLIC_KEY_PEM` | Поставщик публичного переключателя PEM RSA (возможно несколько подряд блоков PEM для ротации) |
-| `ISPF_LICENSE_ENFORCE` | `true` — недействительная лицензия на пакет/драйвер/платформу блокирует развертывание/загрузку пакета/**старт сервера** |
+| Переменная окружения | Назначение |
+|----------------------|------------|
+| `ISPF_DATA_DIR` | Каталог хранения идентификатора установки (`.ispf-installation-id`) и файла лицензии сервера (`platform-license.json`) |
+| `ISPF_LICENSE_PUBLIC_KEY_PEM` | Открытый ключ (или несколько ключей подряд в формате PEM) для проверки RSA-подписи пакетов |
+| `ISPF_LICENSE_ENFORCE` | При `true` недействительная подпись блокирует установку пакета, загрузку драйвера или запуск сервера |
+| `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES` | При `true` запрещает прямую установку манифестов `bundle.json`, не содержащих подписанного блока `license` |
 
-## Идентификатор установки
+### Уникальный идентификатор установки (`installationId`)
 
-Файл `{data-dir}/.ispf-installation-id` создаётся при первом старте.
+При первом запуске сервер создаёт файл `{data-dir}/.ispf-installation-id`. Узнать его можно запросом:
 
 ```http
 GET /api/v1/platform/installation-id
 ```
 
-Admin передаёт `installationId` поставщику для выпуска лицензии.
+Этот идентификатор передаётся поставщику решения для выпуска привязанной лицензии. Текущий статус лицензии сервера отображается в разделе **Система → Метрики** и возвращается методом `GET /api/v1/platform/license`.
 
-Статус лицензии (admin): `GET /api/v1/platform/license` — режим, уровень, действительность, принудительное исполнение, идентификатор установки. Карточка в веб-консоли: **Система → Метрики**.
+---
 
-## Platform license file (`platform-license.json`)
+## 3. Формат блока `license` внутри `bundle.json`
 
-Файл `{data-dir}/platform-license.json` — Освобождение предприятия от AGPL (см. [LICENSE-COMMERCIAL](../../LICENSE-COMMERCIAL.md)).
-
-| Условие | Результат |
-|---------|-----------|
-| Файл отсутствует | Сообщество (AGPL), начало решения |
-| Файл + действительный | Коммерческий уровень активен |
-| Файл + invalid + `enforce=false` | WARN в логе, старт разрешён |
-| Файл + invalid + `enforce=true` | **Сервер не стартует** (`IllegalStateException`) |
-
-## Формат `license` в bundle
+Утилита подписи для поставщиков находится в каталоге [`tools/license-builder/`](../../tools/license-builder/README.md).
 
 ```json
 "license": {
   "bundleId": "mes-reference",
   "minPlatformVersion": "0.7.0",
-  "installationId": "<hex>",
-  "contentSha256": "<sha256 canonical manifest without license>",
+  "installationId": "<идентификатор-установки>",
+  "contentSha256": "<sha256-канонического-манифеста-без-поля-license>",
   "expiresAt": "2027-12-31T23:59:59Z",
-  "signature": "<base64 RSA-SHA256 over canonical claims JSON>"
+  "signature": "<подпись-RSA-SHA256-в-base64>"
 }
 ```
 
-`contentSha256` — SHA-256 от manifest **без** поля `license` (canonical JSON, sorted keys).
+Поле `contentSha256` защищает содержимое манифеста от несанкционированного изменения до установки на целевой сервер (`installationId`). После установки администратор площадки сохраняет полный доступ к просмотру и сопровождению своего дерева объектов в соответствии с политикой [ADR-0036](decisions/0036-bundle-ip-balanced-protection.md).
 
-## Поставщик
+---
 
-CLI: [tools/license-builder/README.md](../../tools/license-builder/README.md).
+## 4. Плавная ротация ключей подписи без простоя
 
-## Поведение развертывания
+Если поставщику необходимо планово сменить пару RSA-ключей:
+1. Сгенерируйте новую ключевую пару с помощью `tools/license-builder/`, сохранив прежний закрытый ключ на переходный период.
+2. Поместите в переменную `ISPF_LICENSE_PUBLIC_KEY_PEM` на серверах **оба открытых ключа** (несколько блоков `-----BEGIN PUBLIC KEY-----` подряд) — сервер принимает подпись, если она подходит хотя бы к одному из доверенных ключей.
+3. Перевыпустите подписи коммерческих пакетов на новом ключе.
+4. После обновления пакетов на всех площадках удалите старый открытый ключ из `ISPF_LICENSE_PUBLIC_KEY_PEM`. Идентификатор установки `installationId` при этом не меняется.
 
-| Условие | Результат |
-|---------|-----------|
-| Нет `license` | Deploy как раньше (если `require-signed-bundles=false`) |
-| Нет `license` + `require-signed-bundles=true` | HTTP 403 ([roadmap](roadmap.md)) |
-| `license` + `enforce=false` + недействительно | ПРЕДУПРЕЖДАЕМ: если нужны, развертывание продолжается (кроме `require-signed-bundles=true` → 403) |
-| `license` + (`enforce=true` **или** `require-signed-bundles=true`) + invalid | HTTP 403 |
-
-Property: `ispf.license.require-signed-bundles` / env `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES`. См. [DEPLOYMENT.md § Bundle signing](deployment.md).
-
-## Защита IP после развертывания (сбалансированная политика)
-
-Лицензия RSA на **артефакт доставки** (манифест), не соблюдайте требования дерева после установки. Админ установки может видеть и дорабатывать пакет объектов; идея может изменить конфигурацию по частям.
-
-**Принятая политика (ADR [0036-bundle-ip-balanced-protection](decisions/0036-bundle-ip-balanced-protection.md)):**
-
-| Делаем | Не делать |
-|--------|-----------|
-| Привязка deploy к `installationId` | Блокировка export / pull-from-tree |
-| EULA, маркетплейс, активация | Шифрование JSON в дереве |
-| Ценность в обновлениях и поддержке | Запрет доработки под объект |
-| Пользовательский интерфейс: ID установки, подсказки при Нужны деньги | Жёсткий DRM для оператора/администратора |
-
-Копирование декларативной конфигурации on-prem **полностью не предотвращает** без нагрузки для кастомизации; контроль — договор + лицензия на доставку + периодическая стоимость.
-
-## Ротация производственного ключа (ops)
-
-Ротация RSA-ключей поставщика **без** смены ID установки:
-
-| Шаг | Действие |
-|-----|----------|
-| 1 | Сгенерировать новую пару ключей (`tools/license-builder/`); сохранить старый закрытый ключ до конца льготного периода |
-| 2 | На платформе: задеплоить **оба** открытый ключ в `ISPF_LICENSE_PUBLIC_KEY_PEM` (несколько `-----BEGIN PUBLIC KEY-----` блоков в одной переменной); подпись принимается, если совпала с любым ключом |
-| 3 | Перевыпустить коммерческий пакет / подписи пакетов драйверов для активных клиентов |
-| 4 | Льготный период (рекомендуется ≥30 дней): повторное подключение ещё допускается только в том случае, если открытый ключ не меняли; после замены ключей старых лицензий **невалидны** — планировать обслуживание окон |
-| 5 | `enforce=true` на staging до prod; мониторить WARN/403 в deploy logs |
-| 6 | Уничтожить старый закрытый ключ после подтверждения, что все установки на новых лицензиях |
-
-Идентификатор установки (`GET /api/v1/platform/installation-id`) при ротации **не меняется**. Пакеты лицензионных драйверов используют тот же `ispf.license.public-key-pem` — см. [licensed-driver-packs](licensed-driver-packs.md).
-
-## Связанные документы
-
-- [plugins](plugins.md)
-- [solution-developer-public-api](solution-developer-public-api.md)
-- [air-gap-deployment](air-gap-deployment.md) — автономная установка/обновление (BL-128)
+**Связанные разделы:** [Плагины и прикладные решения](plugins.md) · [Лицензируемые пакеты драйверов](licensed-driver-packs.md) · [Установка без интернета (air-gap)](air-gap-deployment.md).

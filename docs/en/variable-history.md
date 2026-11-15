@@ -1,87 +1,64 @@
 > **Language:** Canonical English. Russian edition: [ru/variable-history.md](../ru/variable-history.md).
 
-# Variable history — phases
+# Variable History (Time-Series Historian)
 
-> **Status:** Stable — Time-series, retention. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — time-series recording, retention policies, interval aggregation, export, and query SLOs. Status tags: [doc-status.md](doc-status.md).
 
-## Phase 1 — Storage and write (done)
+The variable history subsystem (*Historian*) records changes to selected object variables over time, serves raw samples and pre-computed bucket aggregates to dashboard charts and reports, and automatically prunes expired samples according to each variable's retention policy.
 
-- Table `variable_samples`, write on `VARIABLE_UPDATED` with debounce
-- Variable flags: `historyEnabled`, `historyRetentionDays`
-- REST: `GET/PATCH .../variables/history`
-- Scheduled cleanup respecting each variable's retention
+**Related guides:** [Object model](object-model.md) · [Historian storage tiers (PostgreSQL / ClickHouse / Parquet)](historian-tiers.md) · [Analytics calculation cookbook](analytics-historian-cookbook.md) · [ClickHouse production playbook](clickhouse-prod-playbook.md).
 
-## Phase 2 — UI configuration (done)
+---
 
-- Object editor, inspector, model editor
-- Variable settings dialog
+## 1. How Variable Recording Works
 
-## Phase 3 — History viewer (done)
+- **Storage table:** samples are written to `variable_samples` (PostgreSQL / TimescaleDB hypertable by default, or ClickHouse when configured).
+- **Per-variable flags:** recording is controlled on each variable by `historyEnabled` (`true` / `false`) and `historyRetentionDays` (number of days to keep samples; `null` uses the server default `ispf.variable-history.retention-days`).
+- **Sampling mode (`historySampleMode`):**
+  - `CHANGES_ONLY` (default) — records a new point when the value changes (respecting `min-interval-ms`);
+  - `ALL_VALUES` — records every incoming sample regardless of whether the value changed.
+- **Sample quality (`quality`, [ADR-0074](decisions/0074-historian-quality-persistence.md)):** each stored sample carries `GOOD`, `UNCERTAIN`, `BAD`, or `NULL` (unknown / legacy). Trend charts automatically break the line on `BAD` samples.
+- **Blueprint synchronization:** at server startup (`syncAllModelBackedVariableMetadata()`), history flags defined on blueprints are synchronized to all instances backed by those templates.
 
-- `VariableHistoryPanel` component with period selection (1 h … 7 d … all)
-- Object inspector: **Chart** button for variables with `historyEnabled`
-- `useVariableHistory` hook for custom screens
+### Enabling History via REST API or Web Console
 
-## Phase 4 — Dashboard integration (done)
+In the Web Console, open the object in the Inspector → **Variables** tab → click **History settings** on the variable. Via REST API:
 
-- `useTrendSeries` loads server history only if `historyEnabled`
-- Chart/sparkline widgets show a hint when history is disabled
-- API query returns empty array when history is off
+```http
+PATCH /api/v1/objects/by-path/variables/history?path=root.platform.devices.demo-sensor-01&name=temperature
+Content-Type: application/json
 
-## Phase 5 — Model sync (done)
+{
+  "historyEnabled": true,
+  "historyRetentionDays": 30,
+  "historySampleMode": "CHANGES_ONLY"
+}
+```
 
-- On start: `syncAllModelBackedVariableMetadata()` for all objects with `templateId`
-- History metadata pulled from model and persisted in DB
+---
 
-## Phase 6 — Export and schema field (done)
+## 2. Querying Raw Samples, Aggregations, and Exports
 
-- REST: `GET .../variables/history/export?format=csv|json` (up to 10,000 points, `Content-Disposition: attachment`)
-- `field` parameter — select variable schema field (same as query); use `field=$record` for full variable snapshot (DataRecord JSON in `text`)
-- In `VariableHistoryPanel`: field dropdown (if schema has multiple numeric fields) and **CSV** / **JSON** buttons; `$record` shows a scrollable JSON list instead of a chart
+| Operation | HTTP Endpoint | Description |
+|-----------|---------------|-------------|
+| **Raw samples** | `GET /api/v1/objects/by-path/variables/history?path=...&name=temperature&field=value&from=...&to=...&limit=500` | Returns raw points (up to `raw-query-max-points`, default `10000`) |
+| **Bucket aggregation** | `GET /api/v1/objects/by-path/variables/history/aggregate?path=...&name=temperature&bucket=1m\|5m\|15m\|30m\|1h\|6h\|1d&from=...&to=...` | Returns `{ buckets: [{ ts, avg, min, max, count }] }` |
+| **File export** | `GET /api/v1/objects/by-path/variables/history/export?path=...&name=temperature&format=csv\|json` | Downloads up to `10,000` points as a CSV or JSON attachment |
 
-## Phase 7 — Aggregations (done)
+- **Multi-field variables (`field` parameter):** pass the numeric schema field name (default `"value"`). Pass `field=$record` (when `record-snapshot-enabled: true`) to retrieve the full `DataRecord` JSON snapshot.
+- **Dashboard charts (`chart` and `sparkline` widgets):** set `historyRange` (`live`, `1h`, `6h`, `24h`, `7d`, `all`). Ranges up to `24h` load raw points; `7d` and `all` automatically query `1h` and `6h` bucket aggregates. Clicking the **History** button on a widget opens a modal with period selection, field selector, and CSV/JSON export.
 
-- REST: `GET .../variables/history/aggregate?bucket=1m|5m|15m|30m|1h|6h|1d`
-- Response: `{ buckets: [{ ts, avg, min, max, count }] }`
-- Period: `from` / `to` (if `from` omitted — from variable retention)
-- UI: for **7 d** and **All** ranges chart uses averages (`1h` and `6h` respectively)
+---
 
-## Phase 8 — Historian on dashboards (done)
-
-- **chart** and **sparkline** widgets: `historyRange` property (`live`, `1h` … `all`) in widget editor
-- `live` — last N points with live tail (as before)
-- Periods **1h–24h** — raw points from server; **7d** / **all** — avg/min/max aggregates
-- **History** button on widget → modal with full panel (chart, period, field, export)
-
-Historian is **complete** for current scope. Platform health monitoring — **System** tab in admin console (`GET /api/v1/platform/metrics`), not separate Prometheus historian metrics. Scraping `/actuator/prometheus` remains for external JVM/Spring monitoring.
-
-## Roadmap (outside historian)
-
-The following topics are **not** part of the variable history module — separate platform objects and services:
-
-| Topic | Note |
-|-------|------|
-| Threshold / trend alerts | `ALERT` nodes in tree; see [automation](automation.md) |
-| Event correlators | `CORRELATOR` nodes in tree; API `/api/v1/correlators` — see [automation](automation.md) |
-
-Historian only **stores and serves** time series; event generation and escalation are the automation layer.
-
-## Configuration
+## 3. Server Configuration (`application.yml`)
 
 ```yaml
 ispf:
   variable-history:
     enabled: true
     min-interval-ms: 5000
-    retention-days: 90   # default when variable retention = null
-    record-snapshot-enabled: true   # field $record — full DataRecord JSON in value_text
-    # quality column (ADR-0074): GOOD | UNCERTAIN | BAD, or NULL = unknown / pre-v2 (not GOOD)
-    # Flagship stores: jdbc and clickhouse. cassandra/scylla stay experimental and omit quality.
-    # Per-variable policy (PATCH .../variables/history):
-    #   historySampleMode: CHANGES_ONLY | ALL_VALUES
-    #   includePreviousValueInEvent: boolean  # opt-in previousValue on WS/automation (ADR-0061)
-    #   storageMode: PERSISTENT | TRANSIENT
-    # High-rate MQTT: keep object eventJournalEnabled=false (anti-patterns.md / ADR-0061)
+    retention-days: 90              # default when variable historyRetentionDays is null
+    record-snapshot-enabled: true   # enables field=$record full DataRecord snapshots
     # Disk spool (sole-store ClickHouse only; ignored unless store=clickhouse). Off by default.
     # store: clickhouse
     # spool:
@@ -104,6 +81,8 @@ ispf:
 
 Local store-and-forward in front of **`store=clickhouse`**. **Off by default.** Ignored for `jdbc` / dual-write (those use the JDBC primary + catch-up WAL). Quota is **fail-closed**: when `max-bytes` is hit, new accepts are rejected until replay frees space. With `async-enabled=true` (default), that rejection holds writer batches and applies blocking backpressure once the in-memory queue fills (no drop-oldest).
 
+When ClickHouse is the sole historian store, enable the spool so transient ClickHouse or network outages buffer samples on local disk and replay them once ClickHouse recovers. (In `jdbc` + dual-write mode, PostgreSQL is already the durable primary and `HistorianRangeCatchUpService` catches ClickHouse up after an outage.)
+
 | Key / env | Default | Notes |
 |-----------|---------|-------|
 | `ispf.variable-history.spool.enabled` / `ISPF_VARIABLE_HISTORY_SPOOL_ENABLED` | `false` | Enable only after CH cutover |
@@ -120,48 +99,18 @@ Local store-and-forward in front of **`store=clickhouse`**. **Off by default.** 
 
 **Still deferred (do not implement in passing):** second copy of the historian buffer on another ISPF node; ISPF-managed ClickHouse cluster. See [known-limitations](known-limitations.md).
 
-## Query SLO (BL-161)
+---
 
-Documented service-level objectives for historian REST queries. Defaults bind via `VariableHistorySloProperties` (`ispf.variable-history.slo`).
+## 4. Query and Analytics Service-Level Objectives (SLO)
 
-| Query | Scope | Target (p95) |
-|-------|-------|--------------|
-| **Aggregate** | ≤ 1M raw samples bucketed (`GET .../history/aggregate`) | **< 2 s** |
-| **Raw trend** | ≤ 10k points (`GET .../history`) | **< 500 ms** |
-| **Export** | ≤ 10k points (`GET .../history/export`) | best-effort; same point cap |
+| Query Type | Workload Scope | Target Latency (p95) |
+|------------|----------------|----------------------|
+| **Single-tag bucket aggregate** | Up to 1,000,000 raw samples (`GET .../history/aggregate`) | **< 2 s** |
+| **Raw trend query** | Up to 10,000 samples (`GET .../history`) | **< 500 ms** |
+| **Multi-tag aligned query** | 10 tags × 7 days × `1h` buckets (`POST /api/v1/platform/analytics/query`) | **< 3 s** |
+| **Rollup materializer lag** | Pre-computed rollup head vs live ingest | **< 5 min** |
 
-**CI / lab gates (BL-161 Done):**
-
-| Gate | Path | Target |
-|------|------|--------|
-| JVM aggregate | `HistorianAggregateQueryLoadTest` via `tools/historian-scale/historian-scale-benchmark.sh` | ≤1M points, **p95 &lt; 2 s** |
-| Nightly workflow | `.github/workflows/load-test.yml` | same JVM gate |
-| Combined analytics | `tools/historian-scale/analytics-scale-gate.sh` | aggregate + multi-tag; optional live CH/catalog |
-
-## Analytics SLO (BL-210)
-
-Documented service-level objectives for the **analytics platform** plane (multi-tag query, catalog scale, materializer lag). Defaults bind via `AnalyticsSloProperties` (`ispf.analytics.slo`).
-
-| Gate | Scope | Target |
-|------|-------|--------|
-| **Multi-tag query** | 10 tags × 7 calendar days × 1h buckets (`POST .../platform/analytics/query`) | **p95 < 3 s** (8 vCPU ClickHouse lab) |
-| **Catalog** | History-enabled tags under lab prefix | **≥ 50k** devices (Enterprise L) |
-| **ClickHouse samples** | `variable_samples` row count | **≥ 1B** rows (Enterprise L ingest replay) |
-| **Materializer lag** | Rollup head vs historian ingest | **< 5 min** behind wall clock |
-| **Single-tag aggregate** | ≤ 1M points (BL-161) | **p95 < 2 s** (unchanged) |
-
-Tracked scripts (prefer these over gitignored `deploy/local/tools/` copies):
-
-- `tools/historian-scale/analytics-scale-gate.sh` — multi-tag + aggregate JVM gates; optional catalog/CH
-- `tools/historian-scale/historian-scale-benchmark.sh` — BL-161 aggregate only
-- JVM CI: `AnalyticsMultiTagQueryLoadTest`, `HistorianAggregateQueryLoadTest` (`@Tag("load")`, `load-test.yml`)
-
-SLO targets API: `GET /api/v1/platform/analytics/analytics-slo`. Historian + analytics targets also appear under `analyticsSlo` in `GET .../historian-sla`.
-
-Walkthroughs: [examples/analytics-platform/site-m](../../examples/analytics-platform/site-m/), [enterprise-l](../../examples/analytics-platform/enterprise-l/). Gap register: [analytics-platform-gaps](analytics-platform-gaps.md).
-
-Dashboard reference: [examples/historian-sla-dashboard](../../examples/historian-sla-dashboard/) (BL-161 widget layout + BFF sketch).
-
-Multi-tier retention and deploy profiles: [historian-tiers](historian-tiers.md).
-
-See also [object-model](object-model.md), [api](api.md).
+Benchmark and verification scripts:
+- `bash tools/historian-scale/historian-scale-benchmark.sh` — single-tag aggregate benchmark;
+- `bash tools/historian-scale/analytics-scale-gate.sh` — combined multi-tag and aggregate gate;
+- Live SLO status API: `GET /api/v1/platform/analytics/historian-sla` and `GET /api/v1/platform/analytics/analytics-slo`.

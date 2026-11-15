@@ -1,77 +1,48 @@
 > **Язык:** русская версия. Английский оригинал: [en/analytics-tag-catalog.md](../en/analytics-tag-catalog.md).
 
-# Каталог analytics-тегов (BL-209 / ADR-0041)
+# Каталог аналитических тегов (`/api/v1/platform/analytics/tags`)
 
-> **Статус:** Stable — каталог развёрнутых аналитических тегов. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Stable — автоматический реестр исторических правил расчёта, граф зависимостей тегов и групповые запросы для графиков. Метки зрелости: [doc-status.md](doc-status.md).
 
-Развёрнутые **historian-вычисления** обнаруживаются из `@bindingRules` с `kind: historian` на объектах `DEVICE`. Одно правило = один тег каталога и одна live-переменная.
+Все активные правила расчёта с типом `kind: "historian"` из переменных `@bindingRules` автоматически собираются сервером в **единый каталог аналитических тегов**. Каждое такое правило образует отдельный аналитический тег со своим путём, выходной переменной и метаданными качества.
 
-**Cookbook (OEE, цепочки):** [analytics-historian-cookbook](analytics-historian-cookbook.md)
+**Связанные разделы:** [Рецепты исторических расчётов](analytics-historian-cookbook.md) · [Каталог аналитических формул](analytics-formulas-and-packs.md) · [ADR-0041](decisions/0041-multi-tag-historian-computations.md).
 
-## Идентичность тега
+---
+
+## 1. Адресация аналитического тега
 
 | Поле | Значение |
 |------|----------|
-| Путь тега | `objectPath/tag/ruleId` (составной ключ для DAG, каталога, schedules) |
-| Объект | Устройство с правилом и выходной переменной |
-| Выход | `target.variableName` (несколько правил на устройство — норма) |
-| Id правила | Стабильный id в `@bindingRules` |
+| **Полный путь тега** | `<путь_объекта>/tag/<id_правила>` (например, `root.platform.devices.sensor-a/tag/avg-temp-5m`) |
+| **Объект-владелец** | Узел дерева, на котором задано правило и создаётся выходная переменная |
+| **Выходная переменная** | `target.variableName` (на одном объекте может быть сколько угодно правил и выходных переменных) |
 
-Пример: правило `avg-temp-5m` на `root.platform.devices.sensor-a` → тег `root.platform.devices.sensor-a/tag/avg-temp-5m` → переменная `avgTemp5m`.
+---
 
-## Метаданные правила (`@historianRuleMeta`)
+## 2. Статус качества и времени расчёта (`@historianRuleMeta`)
 
-Системная переменная `@historianRuleMeta` (JSON по id правила):
+При каждом цикле вычисления аналитический движок записывает состояние правила в служебную переменную объекта `@historianRuleMeta` (по ключу `id` правила):
 
-| Ключ | Назначение |
-|------|------------|
-| `quality` | `ok`, `uncertain`, `error`, `disabled` |
-| `lastEvalAt` | Время последнего расчёта |
-| `lastEvalStatus` | `ok`, `error`, `skipped` |
+| Поле | Описание |
+|------|----------|
+| `quality` | Признак достоверности: `ok`, `uncertain`, `error` или `disabled` |
+| `lastEvalAt` | Штамп времени последнего расчёта (ISO-8601) |
+| `lastEvalStatus` | Статус последнего прогона: `ok`, `error` или `skipped` |
 
-Обновляется analytics engine при каждом tick. **Не** является входом для выражений — только диагностика и quality в каталоге.
+Эти сведения отображаются на вкладке **«Вычисления»** в инспекторе объекта и передаются в ответы каталога тегов.
 
-## Эталон на prod
+---
 
-Полная цепочка и дашборд: [cookbook, рецепт 5](analytics-historian-cookbook.md#рецепт-5--полный-пример-на-prod-analytics-demo) — `root.platform.devices.analytics-demo`, скрипты `deploy/local/tools/setup-historian-chain-*.py`.
+## 3. Методы REST API аналитического каталога
 
-## REST API
-
-| Метод | Путь | Описание |
-|-------|------|----------|
-| GET | `/api/v1/platform/analytics/tags?path=` | Список тегов |
-| GET | `/api/v1/platform/analytics/tags/by-path?path=` | Один тег; `path` = `objectPath/tag/ruleId` или путь устройства |
-| POST | `/api/v1/platform/analytics/tags/backfill` | Backfill окна |
-| POST | `/api/v1/platform/analytics/expression/validate` | Валидация CEL + `hist.*` |
-| POST | `/api/v1/platform/analytics/query` | Мультитеговый запрос |
-
-| GET | `/api/v1/platform/analytics/catalog` | Единый каталог функций Tier A/B/C (BL-212) |
-| GET | `/api/v1/platform/analytics/catalog/{functionId}` | Метаданные одной функции |
-| POST | `/api/v1/platform/analytics/catalog/validate` | Валидация выражения |
-| GET | `/api/v1/platform/analytics/formulas?scope=site` | Список формул Tier B площадки (BL-214) |
-| GET | `/api/v1/platform/analytics/formulas?scope=app&appId=` | Формулы приложения |
-| POST | `/api/v1/platform/analytics/formulas` | Создать формулу |
-| PUT | `/api/v1/platform/analytics/formulas/{id}` | Обновить; перепривязка `formulaRef` |
-| DELETE | `/api/v1/platform/analytics/formulas/{id}` | Удалить формулу |
-| POST | `/api/v1/platform/analytics/formulas/{id}/expand` | Развернуть шаблон `{{param}}` |
-| GET | `/api/v1/platform/analytics/tags/evaluate?path=` | Probe historian-тега (`objectPath/tag/ruleId`) |
-
-Поля ответа каталога, CEL-over-historian и propagation quality — см. [английскую версию](../en/analytics-tag-catalog.md).
-
-**Формулы и пакеты расширений (Tier B/C):** [analytics-formulas-and-packs](analytics-formulas-and-packs.md).
-
-## UI
-
-Вкладка **Вычисления**: единый список правил (reactive + historian), статус historian-тегов каталога, журнал audit. Пресеты — в каталоге функций модального редактора выражения, не отдельные кнопки на панели.
-
-## Устарело (ADR-0041)
-
-- Только `derivedValue` / `oeePct` как признак тега
-- `ANALYTICS_TEMPLATE` в `root.platform.analytics`
-- `templates/apply`
-
-## См. также
-
-- [0041-multi-tag-historian-computations](decisions/0041-multi-tag-historian-computations.md)
-- [analytics-historian-cookbook](analytics-historian-cookbook.md)
-- [analytics-formulas-and-packs](analytics-formulas-and-packs.md)
+| Метод и путь | Назначение |
+|--------------|------------|
+| `GET /api/v1/platform/analytics/tags?path=<префикс>` | Список всех развёрнутых аналитических тегов в выбранной ветке дерева |
+| `GET /api/v1/platform/analytics/tags/by-path?path=<путь_тега>` | Паспорт конкретного тега, включая входные и зависимые теги (`upstreamTagPaths`, `downstreamTagPaths`) |
+| `GET /api/v1/platform/analytics/tags/evaluate?path=<путь_тега>` | Пробный расчёт значения тега по запросу |
+| `POST /api/v1/platform/analytics/tags/backfill` | Пересчёт исторических значений тега за выбранный прошлый период |
+| `POST /api/v1/platform/analytics/query` | Выровненный по времени запрос нескольких тегов для многорядных графиков |
+| `POST /api/v1/platform/analytics/expression/validate` | Проверка корректности исторического выражения |
+| `GET /api/v1/platform/analytics/catalog` | Справочник всех доступных аналитических функций (уровни A, B, C) |
+| `GET / POST / PUT / DELETE /api/v1/platform/analytics/formulas` | Управление параметризованными шаблонами формул (уровень B) |

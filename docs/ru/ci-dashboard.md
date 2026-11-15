@@ -1,34 +1,27 @@
 > **Язык:** русская версия. Английский оригинал: [en/ci-dashboard.md](../en/ci-dashboard.md).
 
-# Панель управления CI
+# Сводка состояния конвейеров непрерывной интеграции (CI)
 
-Generated: `2026-09-08T08:14:35Z` · [Acceleration program](acceleration-program.md)
+> **Статус:** Internal — показатели скорости и стабильности автоматических проверок GitHub Actions. Метки зрелости: [doc-status.md](doc-status.md).
 
-> Auto-updated by `python tools/acceleration/ci-dashboard.py` (S20-06).
+Данные собираются скриптом `python tools/acceleration/ci-dashboard.py`.
 
-## Состояние рабочего процесса (последние 20 запусков)
+## Основные конвейеры GitHub Actions
 
-| Рабочий процесс | Роль | Успех | Средняя стена | Последний |
-| -------- | ---- | ------- | -------- | ---- |
-| `ci.yml` | PR pr-fast | 90.0% (20) | 7.1 min | success |
-| `nightly.yml` | Nightly full | 50.0% (20) | 5.2 min | success |
-| `load-test.yml` | Load gate | 80.0% (20) | 5.0 min | success |
-| `cluster-load-test.yml` | Cluster gate | 100.0% (7) | 3.5 min | success |
-| `e2e-live.yml` | E2E live | 38.9% (18) | 0.0 min | success |
-| `driver-interop.yml` | Driver interop | 95.0% (20) | 6.6 min | success |
+| Файл конвейера | Назначение | Целевой показатель |
+|----------------|------------|--------------------|
+| `ci.yml` | Быстрая проверка каждого Pull Request (`pr-fast`) | Время прогона ≤ 25 мин, успешность ≥ 95 % |
+| `nightly.yml` | Ночной полный прогон всех модулей и интеграционных тестов | Ежедневный успешный прогон |
+| `load-test.yml` | Регулярная проверка пропускной способности конвейера автоматизации | Без регрессии скорости |
+| `cluster-load-test.yml` | Проверка отказоустойчивости и масштабирования кластера | 100 % успешных прогонов |
+| `driver-interop.yml` | Кольцевые тесты 20 основных промышленных драйверов | ≥ 95 % успешных прогонов |
 
-## Цели (ускорение)
-
-| KPI | Target |
-| --- | ------ |
-| PR pr-fast wall | ≤25 min |
-| CI success rate (14d) | ≥95% |
-| Nightly full | green 7/7 days |
-
-## Commands
+## Команды обновления статистики
 
 ```bash
 python tools/acceleration/ci-dashboard.py
 python tools/acceleration/collect-baseline.py
 gh run list --workflow=ci.yml --limit 10
 ```
+
+**Связанные разделы:** [Тестирование платформы (`testing.md`)](testing.md) · [Разбор нестабильных тестов в CI (`ci-flaky-triage.md`)](ci-flaky-triage.md).

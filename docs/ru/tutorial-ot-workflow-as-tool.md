@@ -1,33 +1,27 @@
 > **Язык:** русская версия. Английский оригинал: [en/tutorial-ot-workflow-as-tool.md](../en/tutorial-ot-workflow-as-tool.md).
 
-# Туториал: workflow как типизированный tool
+# Урок 2: Вызов процесса BPMN как типизированного инструмента (`wf_*`)
 
-> **Статус:** Beta — ADR-0049 Wave 1 / 5. См. также: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
+> **Статус:** Beta — публикация активного процесса BPMN со строгой схемой входов и выходов для вызова из REST API, ИИ-агента и внешних клиентов MCP. См. также: [Все уроки серии](ot-automation-excellence-tutorials.md).
 
-## Цель
+## Цель урока
+Задать на узле `WORKFLOW` входную и выходную JSON-схемы, чтобы процесс можно было синхронно вызывать как проверенный инструмент (`invoke-tool`) из ИИ-студии или внешней IDE по протоколу MCP.
 
-Сделать ACTIVE workflow вызываемым tool для агента (`invoke_workflow_tool`) и опционально MCP-инструментом `wf_<name>`.
+---
 
-## Подготовка
+## Пошаговое выполнение
 
-[Хаб](ot-automation-excellence-tutorials.md#предварительные-требования). Сначала workflow без CONTROL side-effects.
+### Шаг 1. Заполните переменные описания инструмента на узле `WORKFLOW`
 
-## Шаги
+| Переменная узла | Пример значения | Назначение |
+|-----------------|-----------------|------------|
+| `inputSchemaJson` | `{"type":"object","required":["alarmId"],"properties":{"alarmId":{"type":"string"}}}` | JSON Schema обязательных входных параметров |
+| `outputSchemaJson` | `{"type":"object","properties":{"summary":{"type":"string"}}}` | Перечень переменных экземпляра процесса, которые вернутся в ответе |
+| `toolDescription` | `"Классификация тревоги по её коду"` | Понятное описание назначения инструмента для человека и ИИ-агента |
+| `sideEffectClass` | `"READ"` или `"WRITE"` | Класс воздействия (чтение данных или запись изменений) |
+| `status` | `"ACTIVE"` | Вызов инструмента разрешён только для активных процессов |
 
-### 1. Схемы на объекте WORKFLOW
-
-| Переменная | Пример |
-|------------|--------|
-| `inputSchemaJson` | `{"type":"object","required":["alarmId"],"properties":{"alarmId":{"type":"string"}}}` |
-| `outputSchemaJson` | проекция полей выхода (см. EN) |
-| `toolDescription` | непустая строка для агента/MCP |
-| `sideEffectClass` | `READ` / `WRITE` |
-| `status` | `ACTIVE` |
-
-`outputSchemaJson` проецирует **instance variables** (ключи `input`, AI `outputVariable`, `read_variable`→`contextKey`).  
-`set_variable` пишет в **дерево объектов**, не в instance vars.
-
-### 2. REST invoke-tool
+### Шаг 2. Вызовите процесс через REST API (`invoke-tool`)
 
 ```bash
 curl -s -X POST "$BASE/api/v1/workflows/by-path/invoke-tool?path=root.platform.workflows.alarm-tool" \
@@ -36,15 +30,12 @@ curl -s -X POST "$BASE/api/v1/workflows/by-path/invoke-tool?path=root.platform.w
   -d '{"input":{"alarmId":"A-100"}}' | jq .
 ```
 
-Ожидание: `status=OK` и `output` по схеме. Без обязательных полей — ошибка валидации.
+Сервер сначала проверит входные данные по `inputSchemaJson` (при отсутствии обязательного поля `alarmId` вернёт ошибку валидации `400`), выполнит процесс и вернёт отфильтрованный объект `output`.
 
-### 3. Агент
+### Шаг 3. Вызовите процесс из ИИ-агента или по протоколу MCP
 
-AI Studio → tool `invoke_workflow_tool` с `path` + `input`. Работает только для **ACTIVE**.
-
-### 4. MCP (опционально)
-
-Нужны `ispf.mcp.enabled=true`, ACTIVE + непустой `toolDescription`.
+- Внутри ИИ-студии агент вызывает такие процессы инструментом **`invoke_workflow_tool`**.
+- Если на сервере включён адаптер MCP (`ispf.mcp.enabled=true`), каждый активный процесс с непустым `toolDescription` автоматически публикуется в списке инструментов MCP под именем **`wf_<имя_узла>`**:
 
 ```bash
 curl -s -X POST "$BASE/api/v1/ai/mcp" \
@@ -54,18 +45,4 @@ curl -s -X POST "$BASE/api/v1/ai/mcp" \
   | jq '.result.tools[] | select(.name|startswith("wf_"))'
 ```
 
-Имя: `wf_<последний-сегмент-пути>`.
-
-## Проверка
-
-- [ ] Отсутствие `alarmId` отклоняется
-- [ ] Happy path возвращает `output`
-- [ ] (Опционально) `wf_*` в `tools/list`
-
-## Безопасность
-
-CONTROL — через `userTask` + `invoke_function` / `set_variable`, не в default operator allowlist.
-
-## Дальше
-
-[AI в BPMN](tutorial-ot-ai-bpmn.md) · [Credentials vault](tutorial-ot-credentials-vault.md)
+**Следующий урок:** [Урок 3 — Шаги обращения к языковой модели внутри BPMN](tutorial-ot-ai-bpmn.md).

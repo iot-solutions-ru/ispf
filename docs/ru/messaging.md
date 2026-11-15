@@ -1,37 +1,37 @@
 > **Язык:** русская версия. Английский оригинал: [en/messaging.md](../en/messaging.md).
 
-# Контракт обмена сообщениями (ISPF)
+# Шины сообщений и каналы обмена данными
 
-> **Статус:** Stable — контракт REST/BFF, WebSocket, журнала событий, NATS и MQTT. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Stable — назначение каналов REST/BFF, WebSocket, журнала событий, NATS и MQTT. Метки зрелости: [doc-status.md](doc-status.md).
 
-Какими каналами платформа и прикладное решение обмениваются данными (REQ-FW-32).
+В ISPF каждый канал связи решает свою задачу: синхронные команды и запросы идут через HTTP REST/BFF, живые обновления экранов — через WebSocket, а межсерверный обмен и очереди кластера — через NATS и Redis.
 
-## Принцип
+---
 
-| Канал | Семантика | Когда использовать |
-|-------|-----------|-------------------|
-| **Вызов REST/BFF** | Синхронный request/response | CRUD, функции приложения, развертывание, отчёты |
-| **WebSocket `/ws/objects`** | Push изменений дерева объектов | Live HMI, проводник, обновление переменных |
-| **Журнал событий (БД)** | Надежный асинхронный журнал | Лента событий оператора, аудит, корреляторы |
-| **NATS** | Асинхронная публикация/подписка между репликами | Разветвление реплики, побочные эффекты рабочего процесса |
+## 1. Какой канал когда использовать
 
-Не смешивайте sync RPC и async-шину в одном «универсальном» канале.
+| Канал | Характер обмена | Типичное применение |
+|-------|-----------------|---------------------|
+| **REST API и шлюз BFF** (`/api/v1/**`) | Синхронный запрос — ответ | Чтение и изменение дерева объектов, вызов прикладных функций из UI (`POST /api/v1/bff/invoke`), установка пакетов `bundle.json`, построение отчётов |
+| **WebSocket** (`/ws/objects`) | Серверная рассылка изменений в реальном времени | Живое обновление виджетов на экранах оператора, мнемосхем SCADA и дерева объектов в консоли |
+| **Журнал событий (БД)** | Долговременный архив с гарантированным сохранением | Лента событий и тревог оператора, расследование инцидентов, вход для корреляторов |
+| **Шина NATS** (`ispf.events.*`, `ispf.object.*`) | Асинхронная публикация и подписка между серверами | Синхронизация реплик кластера, интеграция с внешними системами, шаг `publish_nats` в процессах BPMN |
 
-## Дерево объектов WebSocket
+---
 
-| Конечная точка | Назначение |
-|----------|------------|
-| `GET /ws/objects` + `Sec-WebSocket-Protocol: ispf-bearer, <token>` | Subscribe paths, presence, **event catalog** |
+## 2. Подписка браузера по WebSocket (`/ws/objects`)
 
-### Сообщения клиента
+Подключение открывается по адресу `GET /ws/objects` с передачей токена в заголовке `Sec-WebSocket-Protocol: ispf-bearer, <токен>`.
+
+### Подписка на все переменные объекта
 
 ```json
 { "type": "subscribe", "paths": ["root.platform.devices.demo-sensor-01"] }
 ```
 
-Узкая подписка (для виджетов HMI) — только перечисленные переменные.
-Если для пути нет `variablesByPath`, подписка идёт на **все** переменные объекта.
-Пустой `paths` — подписки нет (сервер не рассылает всё дерево).
+### Выборочная подписка только на нужные переменные (рекомендуется для экранов HMI)
+
+Чтобы не пересылать в браузер лишние поля объекта, укажите конкретный список переменных в `variablesByPath`:
 
 ```json
 {
@@ -43,13 +43,18 @@
 }
 ```
 
+- Если для пути не указан список в `variablesByPath`, браузер получает уведомления по **всем** переменным этого узла.
+- Если передать пустой массив `paths: []`, подписка снимается (сервер никогда не рассылает изменения всего дерева без явного списка путей).
+
+### Подписка на прикладные события пакета (`subscribe_events`)
+
 ```json
 { "type": "subscribe_events", "appId": "mes-reference", "events": ["mesRackOverTemp"] }
 ```
 
-Ответ `subscribe_events_result`: `accepted[]`, `rejected[]` (роли из bundle `events[]` — FW-31).
+Сервер проверяет права текущего пользователя по секции `events[]` манифеста приложения и возвращает список подтверждённых и отклонённых событий в сообщении `subscribe_events_result` (`accepted[]`, `rejected[]`).
 
-### Отправка изменения объекта
+### Формат входящего уведомления об изменении переменной
 
 ```json
 {
@@ -60,58 +65,40 @@
 }
 ```
 
-## NATS subjects (production, `ispf.nats.enabled=true`)
+---
 
-| Subject pattern | Publisher | Consumer | Payload |
-|-----------------|-----------|----------|---------|
-| `ispf.object.{path}.{changeType}` | `NatsEventBridge` | внешние интеграторы | path, type, variableName, timestamp, source |
-| `ispf.events.{changeType}` | `NatsEventBridge` (replica fan-out) | `NatsObjectChangeSubscriber` | same |
-| `ispf.events.{changeType}` (JetStream) | `NatsEventBridge` когда `jet-stream-enabled` | durable consumer `NatsObjectChangeSubscriber` | та же payload в stream `ispf-automation` |
-| `ispf.workflow.{workflowPath}.{event}` | `WorkflowService` | external / analytics | workflowPath, event, payload |
-| BPMN `publish_nats` task | workflow engine | custom | task-defined subject + message |
+## 3. Темы (subjects) шины NATS (`ispf.nats.enabled=true`)
 
-Конфигурация: `ispf.nats.url`, `ispf.nats.replica-id`, `ispf.nats.replica-events-enabled`.
+| Шаблон темы NATS | Кто публикует | Кто читает | Содержимое сообщения |
+|------------------|---------------|------------|----------------------|
+| `ispf.object.<путь>.<тип_изменения>` | `NatsEventBridge` | Внешние системы интеграции | `path`, `type`, `variableName`, `timestamp`, `source` |
+| `ispf.events.<тип_изменения>` | `NatsEventBridge` | Соседние реплики кластера (`NatsObjectChangeSubscriber`) | Те же поля + при включённой синхронизации [ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md) снимок значения `value` |
+| `ispf.workflow.<путь_процесса>.<событие>` | `WorkflowService` | Внешние подписчики и аналитика | `workflowPath`, `event`, `payload` |
+| Произвольная тема из шага BPMN `publish_nats` | Движок процессов BPMN | Внешние сервисы | Тема и тело сообщения, заданные в процессе |
 
-### JetStream (необязательно, 0014)
+Основные параметры в `application.yml`: `ispf.nats.url`, `ispf.nats.replica-id`, `ispf.nats.replica-events-enabled`.
 
-Если `ispf.nats.jet-stream-enabled=true` (нужно также `ispf.nats.enabled=true`):
+### Гарантированная доставка между репликами через NATS JetStream
 
-| Настройка | Окружение | По умолчанию |
-|---------|-----|---------|
-| Stream name | `ISPF_NATS_JETSTREAM_STREAM` | `ispf-automation` |
-| Retention | `ISPF_NATS_JETSTREAM_MAX_AGE_HOURS` | `24` |
-| Consumer prefix | `ISPF_NATS_JETSTREAM_CONSUMER_PREFIX` | `ispf-replica-` |
+Если включён параметр `ispf.nats.jet-stream-enabled=true` (требует `ispf.nats.enabled=true`):
 
-Разветвление реплик использует публикацию/подписку JetStream вместо основного NATS для `ispf.events.>` субъектов. Надежные потребители для каждой реплики (`ispf-replica-{replicaId}`) позволяют наверстывать упущенное после перезапуска. Субъекты объектного уровня (41) остаются основными NATS для внешних интеграторов.
+| Параметр | Переменная окружения | По умолчанию |
+|----------|----------------------|--------------|
+| Имя потока (stream) | `ISPF_NATS_JETSTREAM_STREAM` | `ispf-automation` |
+| Срок хранения сообщений в потоке | `ISPF_NATS_JETSTREAM_MAX_AGE_HOURS` | `24` (часа) |
+| Префикс долговременного подписчика | `ISPF_NATS_JETSTREAM_CONSUMER_PREFIX` | `ispf-replica-` |
 
-**Операции:** текущий статус (соединение, потоковые сообщения/байты, ожидание потребителя, доступность `PUBLISH_NATS`) — **Система → Метрики** → Карта NATS и JetStream; API `GET /api/v1/platform/nats/health`.
+В этом режиме межрепликовые события `ispf.events.>` идут через поток JetStream, а каждая реплика создаёт долговременную подписку (`ispf-replica-<replicaId>`), что позволяет узлу дочитать пропущенные структурные изменения после кратковременного перезапуска. Проверить состояние соединения и очередей JetStream можно в разделе **Система → Метрики** (карточка NATS) или запросом `GET /api/v1/platform/nats/health`.
 
-### Окна коррелятора Redis (необязательно, 0014)
+### Хранение скользящих окон корреляторов в Redis
 
-Если `ispf.redis.enabled=true` и `ispf.redis.correlator-windows-enabled=true`:
+Если включены `ispf.redis.enabled=true` и `ispf.redis.correlator-windows-enabled=true` (`ISPF_REDIS_CORRELATOR_WINDOWS=true`), буферы скользящих окон корреляторов (`COUNT`, `SEQUENCE`, `EVENT_CHAIN`) хранятся в сортированных множествах Redis вместо таблиц PostgreSQL. Это ускоряет обработку высокочастотных цепочек событий и делает состояние окон общим для реплик кластера. Статус Redis доступен по адресу `GET /api/v1/platform/redis/health`.
 
-| Настройка | Окружение | По умолчанию |
-|---------|-----|---------|
-| Correlator windows | `ISPF_REDIS_CORRELATOR_WINDOWS` | `false` |
+---
 
-Состояние коррелятора скользящего окна (обращения COUNT / SEQUENCE / EVENT_CHAIN) хранится в отсортированных наборах Redis (48) вместо PostgreSQL 49. Включает общие окна для реплик; по умолчанию остается JDBC для развертываний с одним узлом.
+## 4. Каталог событий прикладного решения (`events[]` в `bundle.json`)
 
-**Операции:** текущий статус (соединение, серверная часть хранилища коррелятора, серверная часть кэша ACL, TTL, количество ключей) — **Система → Метрики** → Карта Redis; API `GET /api/v1/platform/redis/health`.
-
-## Синхронизация RPC (основной API)
-
-| API | Примеры |
-|-----|---------|
-| `POST /api/v1/applications/{appId}/deploy` | Bundle deploy |
-| `POST /api/v1/bff/invoke` | Application functions |
-| `POST /api/v1/objects/by-path/functions/invoke` | Tree functions |
-| Federation proxy | `GET /api/v1/federation/proxy/...` |
-
-Прокси федерации — синхронизация чтения через HTTP; не замена событийного автобуса.
-
-## Каталог событий в комплекте (FW-31)
-
-Секция `events[]` в manifest:
+В манифесте приложения можно объявить типизированный каталог прикладных событий и роли, которым разрешена подписка на них:
 
 ```json
 "events": [
@@ -120,33 +107,22 @@
 ]
 ```
 
-- Deploy загружает каталог в `application_event_catalog`
-- `GET /api/v1/applications/{appId}/events` — список для solution developers
-- WS `subscribe_events` проверяет роли (admin bypass)
-- `POST /api/v1/events/fire?appId={appId}` — дополнительная **проверка времени стрельбы** `payloadSchema` из каталога (FW-31); уровень объекта `EventDescriptor.payloadSchema` применяется всегда
+- При установке пакета список сохраняется в таблицу `application_event_catalog` (доступен через `GET /api/v1/applications/{appId}/events`).
+- При публикации события через `POST /api/v1/events/fire?appId={appId}` сервер проверяет соответствие полезной нагрузки схеме `payloadSchema`.
 
-## Внешние потребители NATS
+---
 
-Для интеграции внешних систем с event bus platform (при `ispf.nats.enabled=true`):
+## 5. Подключение внешних систем к шине NATS
 
-### Подключение
+Внешние сервисы могут подписываться на события дерева объектов напрямую в брокере NATS (`NATS_URL=nats://ispf-nats:4222`):
 
-```text
-NATS_URL=nats://ispf-nats:4222   # тот же кластер, что ispf.nats.url
-```
+| Шаблон подписки | Что получает подписчик |
+|-----------------|------------------------|
+| `ispf.object.>` | Все изменения объектов дерева (`VARIABLE_UPDATED`, создание/удаление узлов и др.) |
+| `ispf.object.root.platform.devices.*.VARIABLE_UPDATED` | Только обновления переменных устройств в папке `devices` |
+| `ispf.workflow.>` | События запуска и завершения процессов BPMN |
 
-Подписка — **core NATS** (не JetStream по умолчанию). Аутентификация NATS — на уровне сети/VPN; платформа не добавляет JWT в тему.
-
-### Рекомендуемые тематические шаблоны
-
-| Узор | Когда подписывать |
-|---------|---------------------|
-| `ispf.object.>` | Все object change (VARIABLE_UPDATED, …) |
-| `ispf.object.root.platform.devices.*.VARIABLE_UPDATED` | Узкий фильтр по устройствам |
-| `ispf.workflow.>` | BPMN lifecycle side-effects |
-| Custom из `publish_nats` task | Subject из workflow definition |
-
-### Полезная нагрузка (изменение объекта)
+Пример сообщения в теме `ispf.object.*`:
 
 ```json
 {
@@ -158,53 +134,11 @@ NATS_URL=nats://ispf-nats:4222   # тот же кластер, что ispf.nats.
 }
 ```
 
-Поля стабильны для `NatsEventBridge`; не полагаться на недокументированные ключи.
+При включённой синхронизации живых значений в кластере (`ispf.cluster.live-variable-sync-enabled=true`) в тему `ispf.events.variable_updated` также передаётся полное значение переменной `value` (`DataRecord` со схемой и строками).
 
-### Live variable replica sync (ADR-0029, `ispf.cluster.live-variable-sync-enabled=true`)
+**Рекомендации для внешних подписчиков:**
+1. Обрабатывайте сообщения идемпотентно по ключу `(path, variableName, timestamp)`.
+2. Для чтения полного состояния объекта после уведомления используйте `GET /api/v1/objects/by-path`.
+3. Быстрая проверка из командной строки: `nats sub 'ispf.object.>'`.
 
-Разветвление реплики `ispf.events.variable_updated` может включать полноценный снимок (объединенный по владельцу с `ispf.cluster.live-variable-sync-coalesce-ms`, по умолчанию 500 мс):
-
-```json
-{
-  "type": "VARIABLE_UPDATED",
-  "path": "root.platform.devices.snmp-router-01",
-  "variableName": "ifInOctets",
-  "timestamp": "2026-07-05T12:00:00Z",
-  "source": "replica-2",
-  "observedAt": "2026-07-05T12:00:00.123Z",
-  "value": {
-    "schema": { "name": "ifInOctets", "fields": [{ "name": "value", "type": "DOUBLE" }] },
-    "rows": [{ "value": 1234567890 }]
-  }
-}
-```
-
-Реплики подчиненных применяются `value` к локальной оперативной памяти (`ClusterVariableReplicaApplier`); сообщения без `value` сохраняют устаревшее поведение только для уведомлений.
-
-Интерес к пути WebSocket в масштабе всего кластера (Redis, `ispf.cluster.cluster-path-interest-enabled`) гарантирует, что владельцы драйверов будут публиковать, когда клиенты пользовательского интерфейса подписываются на любую реплику.
-
-### Практика потребительская
-
-1. Один устойчивый потребительский процесс на интеграцию; идемпотентная обработка по `(path, variableName, timestamp)`.
-2. Не блокировать платформу — тяжёлая обработка в очереди своей/рабочей.
-3. Чтение после записи для консистентности — `GET /api/v1/objects/by-path` (синхронизация), не ожидается полная фотография из NATS.
-4. Мероприятия Федерации не дублируются в хабе NATS автоматически — только локальные изменения инстанса.
-
-Пример (nats-cli): `nats sub 'ispf.object.>'`
-
-## Зависимости пакета (FW-12)
-
-```json
-"requires": [
-  { "appId": "warehouse", "minVersion": "1.0.0" }
-]
-```
-
-Затем разверните активную версию зависимого пакета и примените.
-
-## Связанные документы
-
-- [solution-developer-public-api](solution-developer-public-api.md)
-- [automation](automation.md)
-- [federation](federation.md)
-- [applications](applications.md)
+Связанные разделы: [Публичный контракт разработчика решений](solution-developer-public-api.md) · [Автоматизация](automation.md) · [Федерация серверов](federation.md) · [Приложения](applications.md).

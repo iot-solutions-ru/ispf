@@ -1,33 +1,33 @@
 > **Язык:** русская версия. Английский оригинал: [en/tutorial-ot-ai-bpmn.md](../en/tutorial-ot-ai-bpmn.md).
 
-# Туториал: AI service tasks в BPMN
+# Урок 3: Шаги обращения к языковой модели (ИИ) внутри схемы BPMN
 
-> **Статус:** Beta — ADR-0049 Wave 2. См. также: [OT Automation туториалы](ot-automation-excellence-tutorials.md).
+> **Статус:** Beta — использование блоков `llm_complete` и `invoke_agent` в визуальном редакторе процессов BPMN. См. также: [Все уроки серии](ot-automation-excellence-tutorials.md).
 
-## Цель
+## Цель урока
+Добавить на диаграмму BPMN шаг обращения к языковой модели (`llm_complete`) для подготовки краткой текстовой сводки по событию и проверить запись результата в переменную процесса.
 
-Добавить `llm_complete` / `invoke_agent` из палитры Workflow Builder, запустить и проверить redaction в журнале.
+---
 
-## Подготовка
+## Пошаговое выполнение
 
-- [Хаб](ot-automation-excellence-tutorials.md#предварительные-требования)
-- Настроенный AI или режим **noop**
-- Опционально: [credentials vault](tutorial-ot-credentials-vault.md)
+### Шаг 1. Добавьте блок ИИ из палитры редактора BPMN
 
-## Шаги
+В конструкторе процессов перетащите на холст элемент **«LLM Complete»** (или **«Invoke Agent»**) и настройте его свойства в правой панели:
 
-### 1. Палитра
+| Тип действия (`ispf:action`) | Основные атрибуты шага |
+|------------------------------|------------------------|
+| `llm_complete` | `promptTemplate` (шаблон запроса с подстановками `${имя_переменной}`), `outputVariable` (куда сохранить ответ), `outputFormat`, `modelRef`, `timeoutMs` |
+| `invoke_agent` | `goalTemplate` (цель задачи), `agentMode`, `outputVariable` (в текущей реализации шаг работает в одношаговом режиме запроса к модели: `toolAllowlist` должен оставаться пустым, а `maxSteps <= 1` — многошаговый цикл вызова инструментов внутри BPMN является открытой задачей в [ADR-0049](decisions/0049-ot-automation-excellence.md)) |
 
-В BPMN-редакторе перетащите **Create AI: LLM Complete** или **Create AI: Invoke Agent**. Дополнительно правьте атрибуты в панели ISPF.
+### Шаг 2. Выберите подключение к модели (`modelRef`)
 
-| Action | Ключевые атрибуты |
-|--------|-------------------|
-| `llm_complete` | `promptTemplate`, `outputVariable`, `outputFormat`, `modelRef`, `timeoutMs` |
-| `invoke_agent` | `goalTemplate`, `agentMode`, `toolAllowlist`, `maxSteps`, `outputVariable` |
+| Значение `modelRef` | Какие настройки используются |
+|---------------------|------------------------------|
+| `platform-default` | Общесерверные настройки `ISPF_AI_*` из `application.yml` |
+| `root.platform.credentials.<имя>` | Отдельный зашифрованный ключ и URL из [хранилища учётных данных](tutorial-ot-credentials-vault.md) |
 
-`${var}` подставляется из переменных instance / input запуска.
-
-### 2. Запуск с input
+### Шаг 3. Запустите процесс с входными параметрами
 
 ```bash
 curl -s -X POST "$BASE/api/v1/workflows/by-path/run?path=root.platform.workflows.ai-lab" \
@@ -36,26 +36,6 @@ curl -s -X POST "$BASE/api/v1/workflows/by-path/run?path=root.platform.workflows
   -d '{"input":{"alarmId":"A-42"}}' | jq .
 ```
 
-Проверьте `instanceState.variables.<outputVariable>`.
+Ответ модели сохраняется в переменной экземпляра `instanceState.variables.<outputVariable>`. При этом в журнале выполнения шагов (`GET .../steps`) в целях безопасности сохраняются только длина и контрольный хэш запроса (`promptChars`, `promptHash`), а не полный текст с чувствительными данными.
 
-### 3. `modelRef`
-
-| Значение | Смысл |
-|----------|--------|
-| `platform-default` | настройки `ISPF_AI_*` |
-| id модели | модель + platform API key |
-| `root.platform.credentials.…` | vault: secret = API key; metadata `baseUrl` / `model` |
-
-### 4. Журнал
-
-В timeline / `GET .../steps` для AI-шагов — `promptHash` / `promptChars`, **не** полный промпт.
-
-## Проверка
-
-- [ ] Палитра создаёт ServiceTask с нужным action
-- [ ] Результат в `outputVariable`
-- [ ] Полный промпт в journal не сохраняется
-
-## Дальше
-
-[Триггеры](tutorial-ot-workflow-triggers.md) · [Credentials](tutorial-ot-credentials-vault.md)
+**Следующий урок:** [Урок 4 — Запуск по вебхуку, расписанию и обработка сбоев](tutorial-ot-workflow-triggers.md).

@@ -1,51 +1,47 @@
 > **Язык:** русская версия. Английский оригинал: [en/vps-demostand.md](../en/vps-demostand.md).
 
-# Демостанд VPS (пример хоста)
+# Памятка по обслуживанию одноузлового демонстрационного сервера (VPS)
 
-> **Обобщённое руководство:** [demostands](demostands.md) — производство, пропускная способность, демо-простой, край.  
-> **Показ заказчику:** [customer-demo-playbook](customer-demo-playbook.md).
+> **Статус:** Lab — эксплуатационная памятка для одноузлового демонстрационного сервера с профилем `demo-idle`. Метки зрелости: [doc-status.md](doc-status.md).
 
-Эта страница — **операционные заметки** для одного из prod-примеров: одноузлового Docker для nginx. Используйте как шаблон; имена контейнеров и хостов замените на свои.
+Эта памятка дополняет общие руководства **[Профили развёртывания (`demostands.md`)](demostands.md)** и **[Развёртывание и конфигурация (`deployment.md`)](deployment.md)** для случая одноузлового демонстрационного сервера в Docker за обратным прокси `nginx`.
 
-## Профиль
+---
 
-**Демо/холостой** из [DEMOSTANDS.md § Демо/холостой](demostands.md). Берите именованный оверлей; собирать потировые worker-env вручную — устаревший escape hatch.
+## 1. Настройки экономного демонстрационного профиля (`demo-idle`)
 
-- `ISPF_CLUSTER_ENABLED=false`, unified role `all`
-- `ISPF_DEPLOY_PROFILE=demo-idle`
-- Overlay [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env)
-- 2 РАБОТАЮЩИХ драйвера (остальные ОСТАНОВЛЕНЫ): SNMP `TELEMETRY_ONLY`, один виртуальный `FULL` для демонстрационной автоматизации.
-- Проверка: `GET /api/v1/platform/effective-config` (роль чтения) → `profile.deployProfile` и `resolvedPools`
+На публичном демонстрационном стенде используется профиль `ISPF_DEPLOY_PROFILE=demo-idle` с файлом окружения [`deploy/ispf-server.prod-idle.env`](../../deploy/ispf-server.prod-idle.env):
+- одиночный сервер без кластера (`ISPF_CLUSTER_ENABLED=false`, `ISPF_REPLICA_ROLE=all`);
+- фиксированные малые пулы потоков без фонового раздувания очередей;
+- в работе оставлены только демонстрационные драйверы (`snmp-localhost` в режиме `TELEMETRY_ONLY` и `demo-sensor-01` в режиме `FULL`).
 
-## Типовая топология (одноузловой Docker)
+Проверить применённый профиль и размеры пулов на работающем сервере:
 
-```text
-Internet → nginx :8080
-              └→ ISPF JVM :8081 (host network)
-              PostgreSQL, Redis
+```http
+GET /api/v1/platform/effective-config
 ```
 
-Compose: [`deploy/docker-compose.vps-single.yml`](../../deploy/docker-compose.vps-single.yml).
+---
 
-## Операции
+## 2. Типовая схема контейнеров
 
-| Действие | Скрипт |
-|----------|--------|
-| Применить idle env + recreate | [`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh) |
-| Установить драйверы через API | [`deploy/vps-demostand-tune-drivers.sh`](../../deploy/vps-demostand-tune-drivers.sh) |
-| Полный rollout jar+UI | [`deploy/vps-single-rollout.sh`](../../deploy/vps-single-rollout.sh) |
-| Диагностика потоков | [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py) |
-| Сборка + SCP staging | [`deploy/vps-deploy-direct.ps1`](../../deploy/vps-deploy-direct.ps1) |
+```text
+Браузеры ──► nginx (:80 / :443) ──► контейнер ispf-server (:8081)
+                                    PostgreSQL + Redis
+```
 
-**Важно:** на Docker-стенде не используйте [`apply-platform-update.sh`](../../deploy/apply-platform-update.sh) — он для systemd. После смены env — воссоздать контейнер, а не `docker restart`.
+Файл Compose: [`deploy/docker-compose.vps-single.yml`](../../deploy/docker-compose.vps-single.yml).
 
-Миграция с multi-replica: `vps-single-rollout.sh`. Обратно на кластер: [cluster](cluster.md).
+---
 
-## Версии с исправлениями hot path
+## 3. Основные скрипты обслуживания
 
-| Версия | Исправление |
-|--------|-------------|
-| ≥ 0.9.100 | `AlarmShelfService` — read-only hot path |
-| ≥ 0.9.101 | `ScheduleObjectService.listEnabled()` — без write в read-only tx |
+| Задача | Скрипт |
+|--------|--------|
+| Собрать локально и отправить новую версию на сервер по SCP | [`deploy/vps-deploy-direct.ps1`](../../deploy/vps-deploy-direct.ps1) |
+| Выложить загруженный JAR и веб-консоль на одноузловом сервере | [`deploy/vps-single-rollout.sh`](../../deploy/vps-single-rollout.sh) |
+| Применить настройки `prod-idle.env` с пересозданием контейнера | [`deploy/vps-apply-prod-idle-env.sh`](../../deploy/vps-apply-prod-idle-env.sh) |
+| Перевести фоновые драйверы стенда в экономный режим опроса | [`deploy/vps-demostand-tune-drivers.sh`](../../deploy/vps-demostand-tune-drivers.sh) |
+| Снять профиль потоков JVM при анализе нагрузки на CPU | [`deploy/vps-idle-thread-sample.py`](../../deploy/vps-idle-thread-sample.py) |
 
-См. [0033-prod-idle-demostand-tuning](decisions/0033-prod-idle-demostand-tuning.md).
+> **Напоминание:** после любого изменения файла окружения `.env` обязательно пересоздавайте контейнер (`docker compose up -d --force-recreate`), так как обычный `docker restart` не подхватывает новые переменные окружения.

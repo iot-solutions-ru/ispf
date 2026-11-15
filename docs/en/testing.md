@@ -1,205 +1,75 @@
 > **Language:** Canonical English. Russian edition: [ru/testing.md](../ru/testing.md).
 
-# Testing
+# Platform Testing and Quality Gates
 
-> **Status:** Stable — Unit, integration. Hub: [doc-status.md](doc-status.md).
+> **Status:** Stable — unit, integration, golden-path regression, coverage floors, and static analysis gates. Status tags: [doc-status.md](doc-status.md).
 
-## Running tests
+This guide explains how to run automated tests and code quality checks when developing or verifying changes in the ISPF repository.
 
-```bash
-# All modules
-./gradlew test
+---
 
-# Server only
-./gradlew :packages:ispf-server:test
+## 1. Quick Test Commands
 
-# Single class
-./gradlew :packages:ispf-server:test --tests "com.ispf.server.api.DashboardApiTest"
-
-# Full platform logic regression suite (golden path across all core engines)
-./gradlew :packages:ispf-server:test --tests "com.ispf.server.regression.*"
-```
-
-JUnit 5, Java 25, Spring Boot 4.
-
-Backend tests use modular Boot 4 starters (`spring-boot-starter-webmvc-test`, `spring-boot-starter-security-test`, `spring-boot-starter-data-jpa-test`). JSON uses Jackson 3 (`tools.jackson`); `@JsonProperty` / `@JsonCreator` stay on `com.fasterxml.jackson.annotation`.
-
-## Test profile
-
-`application-test.yml`:
-
-- H2 in-memory
-- `ispf.security.rbac-enabled: false`
-- MQTT/NATS disabled
-- Flyway migrations applied
-
-## Test levels
-
-### Unit (packages)
-
-| Module | Examples |
-|--------|---------|
-| ispf-core | `ObjectTreeTest`, `DataRecordTest` |
-| ispf-expression | `BindingEvaluatorTest` (expression eval), `ExpressionEngineTest` |
-| ispf-plugin-blueprint | `BlueprintEngineTest` |
-| ispf-plugin-workflow | `BpmnParserTest`, `WorkflowEngineV2/V3Test` |
-| ispf-driver-modbus | `ModbusPointTest` |
-| ispf-driver-snmp | `SnmpPointTest` |
-
-### Integration (ispf-server)
-
-`@SpringBootTest` + `@AutoConfigureMockMvc` + `@ActiveProfiles("test")`:
-
-| Class | Area |
-|-------|---------|
-| `IspfServerApplicationTests` | Context load |
-| `MesPlatformApiTest` | Objects, variables, demo sensor |
-| `DashboardApiTest` | Dashboard CRUD |
-| `WorkflowApiTest` | BPMN save, run |
-| `WorkQueueApiTest` | Claim/complete |
-| `AlertRuleApiTest` | Alert rules CRUD |
-| `EventCorrelatorApiTest` | Correlators CRUD |
-| `BlueprintControllerTest` | Blueprints API |
-| `OperatorAccessTest` | RBAC operator vs admin |
-| `ApplicationPlatformApiTest` | REQ-PF: applications, bundle deploy, BFF invoke |
-| `FunctionTestRunnerTest` | W6 solution smoke tests (rollback transaction) |
-| `PlatformGoldenPathRegressionTest` | Unified end-to-end scenario across SHAPE (SINGLETON/INSTANCE/MIXIN/DEVICE), SHIP (strict bundle validate/dry-run/deploy/reconcile/W6 tests), BFF + `sqlBinding`, CEL + `@dashboardContext` rules, Historian + Analytics engine, and AlertRule → Correlator → BPMN → WorkQueue |
-| `PlatformChangeSetAndBackupRegressionTest` | Change-sets (`create` / `preview` / conflict 409 / `force` apply), edit leases (423) + config audit, and HTTP subtree backup export / dry-run / restore |
-| `PlatformWebSocketLiveRegressionTest` | Live `/ws/objects` subscription filtering, presence, and event catalog contract |
-
-### Solution tests (W6)
-
-Bundles may declare `tests[]` (`kind`: `function` | `telemetry`). Shape is validated on dry-run; runtime via:
-
-- `FunctionTestRunner` — fixture SQL + `invokeInCurrentTransaction` inside a rollback-only transaction
-- Agent tools: `test_function`, `simulate_telemetry` (setDriverTelemetry; journal retry), `assert_variable`, `run_bundle_tests`
-- Optional `deploy(..., runTests=true)` / agent `import_package` — returns `testResults`
-
-See [ai-development](ai-development.md).
-
-### Demo stand scenarios
-
-1. Virtual driver → temperature updates
-2. Binding `alarmActive` when temp > threshold
-3. `acknowledgeAlarm` function
-4. Alert rule → `thresholdExceeded` event
-5. Correlator → workflow run
-6. User task in work queue
-
-## Smoke (manual)
-
-After `bootRun --spring.profiles.active=local`:
+> **Tip for fast local verification:** run `testPrFast` (or `./tools/ci/pr-fast.sh` / `.\tools\ci\pr-fast.ps1`) before opening a PR rather than running `./gradlew test` across all 160+ driver modules at once.
 
 ```bash
-curl http://localhost:8080/api/v1/info
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin"}' | jq -r .token)
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/objects
-```
+# Fast pre-PR backend suite (same as CI pr-fast)
+./gradlew testPrFast \
+  -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev
 
-(`X-ISPF-Role` is **off by default**; do not use it in smoke unless `ispf.security.local-role-header-enabled=true`.)
+# Run a single test class
+./gradlew :packages:ispf-server:test --tests "com.ispf.server.api.DashboardApiTest" \
+  -Dispf.test.skipLoad=true
 
-Web Console: open `demo-sensor` dashboard, verify live values.
+# End-to-end golden-path regression suite across all core engines
+./gradlew :packages:ispf-server:test --tests "com.ispf.server.regression.*" \
+  -Dispf.test.skipLoad=true
 
-## Web Console
-
-```bash
+# Web Console unit tests and production TypeScript build
 cd apps/web-console
-npm test        # vitest (routing, driver maturity)
-npm run build   # tsc + vite build
+npm test
+npm run build
 ```
 
-TypeScript strict check in CI-equivalent locally.
+Backend test stack: **JUnit 5**, **Java 25**, **Spring Boot 4** (`spring-boot-starter-webmvc-test`, `spring-boot-starter-security-test`, `spring-boot-starter-data-jpa-test`), and Jackson 3 (`tools.jackson`). In the `test` profile (`application-test.yml`), tests run against an in-memory H2 database with Flyway migrations applied and external MQTT/NATS brokers disabled by default.
 
-## Load / throughput (prod VPS)
+---
 
-HTTP scenarios and internal automation load test, baseline metrics, and dashboard probe — **[load-testing](load-testing.md)**.
+## 2. Key Test Suites by Layer
 
-```bash
-python deploy/events-load-test.py --base-url ${ISPF_BASE_URL:-https://ispf.example.invalid}
-python deploy/events-internal-load-test.py --skip-monitor-setup --condition-expr-file deploy/loadtest-sinewave-condition.txt
-```
+| Layer / Module | Key Test Classes | What They Verify |
+|----------------|------------------|------------------|
+| `ispf-core` & `ispf-expression` | `ObjectTreeTest`, `DataRecordTest`, `ExpressionEngineTest`, `BindingEvaluatorTest` | Object tree invariants, CEL evaluation, formal Z3 verification, and built-in signal functions |
+| `ispf-plugin-blueprint` & `workflow` | `BlueprintEngineTest`, `BpmnParserTest`, `WorkflowEngineV2Test`, `WorkflowEngineV3Test` | Blueprint inheritance/parameterization and BPMN 2.0 subset execution |
+| `ispf-driver-*` | `*DeviceDriverTest` (see [Driver interop lab](driver-interop-lab.md)) | Loopback protocol read/write tests for all production drivers |
+| `ispf-server` Golden Path | `PlatformGoldenPathRegressionTest`, `PlatformChangeSetAndBackupRegressionTest`, `PlatformWebSocketLiveRegressionTest` | End-to-end verification of `SINGLETON`/`INSTANCE` blueprints, strict bundle deploy, BFF + `sqlBinding`, CEL + `@dashboardContext`, Historian + Analytics, and Alert → Correlator → BPMN → Work Queue |
+| Solution Bundle Tests | `FunctionTestRunnerTest`, `ExamplesBundleValidationTest` | Declarative `tests[]` inside `bundle.json` (executed in a rollback-only transaction on deploy) and strict validation of all reference bundles in `examples/` |
+| Documentation & Matrix Gates | `AdrHonestyGateTest`, `DriverProductionMatrixTest` | Verifies that ADR status tables and `docs/en/drivers.md` maturity counts match the actual codebase |
 
-## Cluster tests (BL-137/138 + Wave 6)
+---
 
-JDBC driver ownership and failover between replicas:
+## 3. Cluster, Coverage, Static Analysis, and Vulnerability Gates
 
+### Cluster Ownership and Failover
 ```bash
 ./gradlew :packages:ispf-server:test \
   --tests com.ispf.server.driver.DriverOwnershipServiceTest \
   --tests com.ispf.server.driver.ClusterFailoverIntegrationTest
 ```
 
-Multi-replica compose smoke (Docker):
-
+### Code Coverage Gate (JaCoCo)
+Minimum line and branch coverage floors are enforced per module in the root `build.gradle.kts` (`coverageFloors`):
 ```bash
-bash deploy/cluster-quickstart.sh          # build + up + smoke
-# Round-robin, failover, reclaim SLO, ADR-0030 config-sync, ADR-0029 live-var lag
-ISPF_CLUSTER_REQUIRE_DRIVER_LOCKS=1 \
-  bash deploy/cluster-smoke-test.sh --config-sync --live-var-lag
-python deploy/cluster-scale-load-test.py   # 1 vs 3 replica throughput (floor 1.8×)
+./gradlew coverageVerify
+./gradlew coverageReport
 ```
 
-CI: workflow [`.github/workflows/cluster-load-test.yml`](../../.github/workflows/cluster-load-test.yml) — JDBC ownership (weekly) + compose smoke/scale (`workflow_dispatch`).
+### Compile-Time Static Analysis (Error Prone)
+Every Java compilation runs [Error Prone](https://errorprone.info/) with bug patterns (`DefaultCharset`, `StreamResourceLeak`, `NonAtomicVolatileUpdate`, `OrphanedFormatString`, `MissingOverride`, etc.) promoted to compile-time `ERROR`. For a quick local run without Error Prone, pass `-Pispf.errorprone=false`.
 
-Chaos / soak under load (lab journal, REAL vs PARTIAL): **[cluster-chaos-soak-runbook](cluster-chaos-soak-runbook.md)**. CI does **not** prove multi-hour soak or kill-owner under sustained ingress.
-
-## Coverage gate (JaCoCo)
-
-The pr-fast backend job fails when a module drops below its coverage floor. Floors
-(LINE / BRANCH covered ratio) live in `coverageFloors` in the root `build.gradle.kts`
-and are ratcheted: raise a floor when coverage grows, never lower one silently.
-
+### Dependency Vulnerability Audit (CycloneDX + Trivy)
 ```bash
-./gradlew testPrFast -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev
-./gradlew coverageVerify   # gate
-./gradlew coverageReport   # HTML/XML in <module>/build/reports/jacoco/test/
+./gradlew cyclonedxBom -Pispf.errorprone=false
+trivy sbom build/reports/cyclonedx/bom.json
 ```
-
-Modules without a floor (drivers, analytics, AI providers) only get the report.
-## Static analysis (Error Prone)
-
-Every `javac` in the Gradle build runs [Error Prone](https://errorprone.info/) (`net.ltgt.errorprone`,
-`error_prone_core` — versions pinned in the root `build.gradle.kts`). Bug patterns at **ERROR** severity fail
-the compile, so there is no separate task: `./gradlew compileJava compileTestJava` (or any `test`) is the gate.
-
-- Promoted to ERROR after the 2026-09 sweep fixed every occurrence: `DefaultCharset`, `StreamResourceLeak`,
-  `NonAtomicVolatileUpdate`, `OrphanedFormatString`, `ArgumentSelectionDefectChecker`, `AlreadyChecked`,
-  `DuplicateBranches`, `MissingOverride`. Do not downgrade these — fix the code or add a targeted
-  `@SuppressWarnings("<Pattern>")` with a one-line reason next to it (see `JmxDeviceDriver.connect` /
-  `ApplicationSchemaSession` for the accepted form).
-- Repo-wide `disable(...)` is reserved for Javadoc-style checks (`MissingSummary`, `InvalidInlineTag`,
-  `EscapedEntity`) and `AddressSelection`; each entry carries a reason in `build.gradle.kts`.
-- Remaining WARNING-level findings are visible in the compile log; promote a pattern to ERROR only after
-  the sweep that fixes it lands in the same PR.
-- Local quick iteration without the checker: `./gradlew ... -Pispf.errorprone=false`. CI never sets it.
-
-## Dependency vulnerability gate (nightly)
-
-The `dependency-vulnerabilities` job in `.github/workflows/nightly.yml` builds one CycloneDX SBOM over the
-`runtimeClasspath` of every module (`./gradlew cyclonedxBom` → `build/reports/cyclonedx/bom.json`) and scans it
-with Trivy:
-
-- **CRITICAL / HIGH** with an available fix fail the night; **MEDIUM / LOW** are report-only.
-- The full table for all severities plus the SBOM are uploaded as the `dependency-vulnerabilities-<run>`
-  artifact (30 days).
-- A finding is closed by upgrading the direct dependency, or — when it is transitive and the owner lags —
-  by a `resolutionStrategy.force` / BOM override in `build.gradle.kts` **registered in the ADR-0059 pin
-  registry** with the CVE and the condition for removing the pin. Never suppress by `.trivyignore`.
-- Dependabot (`.github/dependabot.yml`) keeps direct versions moving; the nightly scan is the safety net for
-  what Dependabot does not see (transitive BOM members).
-
-Run locally: `./gradlew cyclonedxBom -Pispf.errorprone=false && trivy sbom build/reports/cyclonedx/bom.json`.
-
-## CI (recommended)
-
-```bash
-./gradlew test          # compiles with Error Prone; ERROR patterns fail here
-cd apps/web-console && npm ci && npm test && npm run build
-# nightly: ./gradlew cyclonedxBom + Trivy (CRITICAL/HIGH gate)
-```
-
-## App bundle smoke (outside `main`)
-
-E2E smoke for a specific application runs in the app bundle repository, not in framework `main`.
+Version pins and CVE remediation rules are tracked in [ADR-0059](decisions/0059-toolchain-version-policy.md).

@@ -1,279 +1,76 @@
 > **Язык:** русская версия. Английский оригинал: [en/lab-training.md](../en/lab-training.md).
 
-# Лабораторное обучение — 18 упражнений
+# Практический учебный курс: 18 лабораторных упражнений (`lab-training`)
 
-> **Статус:** Lab — Учебные packs. Метки зрелости: [doc-status.md](doc-status.md).
+> **Статус:** Lab — готовый учебный пакет с виртуальными устройствами, правилами тревог, корреляторами, отчётами и 18 тренировочными экранами. Метки зрелости: [doc-status.md](doc-status.md).
 
-Пакет **Лабораторное обучение** обеспечивает виртуальное устройство в стиле Ignition, автоматизацию, отчёты и дашборды ISPF. Все объекты импортируются из `examples/lab-training/bundle.json`.
+Пакет **`lab-training`** ([`examples/lab-training/bundle.json`](../../examples/lab-training/bundle.json)) предназначен для практического освоения возможностей ISPF: от пообъектных прав доступа и правил тревог с выдержкой времени до табличных формул, составных SVG-виджетов и сводных отчётов по дереву.
 
-## Быстрый старт
+---
 
-![Operator mimic UI Pump Station](../assets/ispf-operator-pump-station.png)
+## 1. Быстрый старт учебного стенда
 
-1. Запустите сервер и веб-консоль (профиль `local`).
-2. Импортируйте пакет в **Приложение** `lab-training` (`packageId` = `appId`):
+![Экран насосной станции в учебном пакете](../assets/ispf-operator-pump-station.png)
+
+1. Запустите сервер ISPF и веб-консоль в локальном профиле (`local`).
+2. Импортируйте учебный пакет одним запросом:
 
 ```http
 POST /api/v1/platform/packages/import?packageId=lab-training
 Content-Type: application/json
 
-<содержимое examples/lab-training/bundle.json>
+<содержимое файла examples/lab-training/bundle.json>
 ```
 
-Эквивалентный устаревший API:
+(Либо через `POST /api/v1/applications/lab-training/deploy`.)
 
-```http
-POST /api/v1/applications/lab-training/deploy
-Content-Type: application/json
+После импорта в дереве объектов появятся:
+- приложение `root.platform.applications.lab-training` и меню оператора `root.platform.operator-apps.lab-training`;
+- два учебных виртуальных устройства `root.platform.devices.lab-userA-01` и `lab-userB-01` (шаблон `virtual-lab-v1`, профиль драйвера `lab`);
+- правила тревог, корреляторы, отчёты и 18 тематических дашбордов `root.platform.dashboards.lab-*`.
 
-<тот же bundle.json>
-```
-
-Привозная платформа:
-
-| Шаг | Результат |
-|-----|-----------|
-| Регистрация | запись в реестре приложений (`applications`) |
-| Application в дереве | `root.platform.applications.lab-training` (модель `application-v1`) |
-| Data source | `root.platform.data-sources.lab-training` |
-| Operator HMI | `root.platform.operator-apps.lab-training` (из секции `operatorUi` bundle) |
-| Содержимое комплект | дашборды, отчёты, алерты, корреляторы → каталоги `root.platform.*` |
-
-Опционально можно **сначала** зарегистрировать пустое приложение:
-
-```http
-POST /api/v1/applications
-Content-Type: application/json
-
-{
-  "appId": "lab-training",
-  "displayName": "Lab Training",
-  "schemaName": "app_lab_training"
-}
-```
-
-Затем импорт с тем же `packageId` применит bundle к уже существующему Application.
-
-3. Откройте оператор-приложение: `?mode=operator&app=lab-training`
-4. Учётные записи (создаются при старте сервера):
-
-| Пользователь | Пароль | Роль |
-|--------------|--------|------|
-| `lab-user-a` | `lab-user-a` | operator |
-| `lab-user-b` | `lab-user-b` | operator |
-
-Устройства определения bootstrap-ом: `root.platform.devices.lab-userA-01`, `root.platform.devices.lab-userB-01` (модель `virtual-lab-v1`, профиль драйвера `lab`).
+3. Откройте пульт оператора учебного приложения: `http://localhost:8080/?mode=operator&app=lab-training`.
+4. Для проверки разграничения прав между пользователями создаются две тестовые учётные записи операторов:
+   - `lab-user-a` / пароль `lab-user-a`
+   - `lab-user-b` / пароль `lab-user-b`
 
 ---
 
-## Объекты дерева
+## 2. Переменные и функции учебного устройства (`virtual-lab-v1`)
 
-| Задание | Объект / дашборд |
-|---------|------------------|
-| — | Application `root.platform.applications.lab-training`, operator app `root.platform.operator-apps.lab-training` |
-| 1 | Пользователи + ACL на `lab-userB-01` |
-| 2–4 | Alert rules + correlators под `root.platform.alert-rules.*`, `root.platform.correlators.*` |
-| 5–18 | Дашборды `root.platform.dashboards.lab-*` |
-| 11 | Отчёт `root.platform.reports.lab-all-devices-table` |
-
----
-
-## Задания
-
-### 1. Два пользователя и доступ к пользователю A к устройству userB
-
-**Цель:** многопользовательская совместная работа с использованием ACL для каждого объекта.
-
-**Реализация:**
-- Пользователи `lab-user-a`, `lab-user-b` — `LabSecurityBootstrap`
-- ACL на `root.platform.devices.lab-userB-01`: owner `lab-user-b`, editor `lab-user-a`
-- ACL на `root.platform.devices.lab-userA-01`: owner `lab-user-a`, editor `lab-user-b`
-
-**Проверка:** войдите как `lab-user-a`, вход Редактор переменных (`lab-variable-editor`) — редактирование доступности на устройстве B доступно.
+| Переменная / элемент | Тип | Описание |
+|----------------------|-----|----------|
+| `sineWave`, `sawtoothWave` | `DOUBLE` | Непрерывно генерируемые синусоида и пилообразный сигнал |
+| `intValue`, `floatValue` | `INTEGER`, `DOUBLE` | Записываемые числовые переменные для ручного ввода с экрана |
+| `table` | `RECORD_LIST` | Многострочная табличная переменная с колонками `int` и `string` |
+| `sumWaves`, `sumIntFloat`, `tableIntSum` | расчётные переменные | Автоматически вычисляются правилами расчёта (`@bindingRules`) |
+| `alarmLatched`, `fanRunning` | `BOOLEAN` | Флаги состояния фиксации тревоги и работы вентилятора |
+| События `event1`, `event2` | события | Принимают полезную нагрузку `{ int, string }` |
+| Функции `calculate`, `fireEvent1`, `fireEvent2`, `appendTableRow` | функции объекта | Вызываются с кнопок и форм на учебных экранах |
 
 ---
 
-### 2. Тревога: Event1 → ON, Event2 (Int>20) → OFF
-
-**Цель:** latch через correlator + переменную `alarmLatched`.
-
-**Объекты:**
-- Correlator `root.platform.correlators.lab-event1-latch-on` → `SET_VARIABLE alarmLatched=true` на event1
-- Correlator `root.platform.correlators.lab-event2-unlatch` → `SET_VARIABLE alarmLatched=false` с `payloadFilterExpr: payload["int"] > 20`
-
-**Проверка:** приборная панель `lab-event-gen` или `lab-fan-composite` (индикатор «Тревога фиксируется»). Вызовите `fireEvent1`, затем `fireEvent2` с int=25.
-
----
-
-### 3. Тревога через 10 с после sum(Int+Float) ∈ [50, 100]
-
-**Цель:** правило оповещения с задержкой и поддержкой.
-
-**Объект:** `root.platform.alert-rules.lab-sum-range-sustained-alert`
-- `watchVariable`: `sumIntFloat`
-- `conditionExpr`: `self.sumIntFloat["value"] >= 50 && self.sumIntFloat["value"] <= 100`
-- `delaySeconds`: 10, `sustainWhileTrue`: true
-
-**Проверка:** в редакторе переменных задайте `intValue`+`floatValue` так, чтобы наконец было 75, подождите 10 с — событие `labSumRangeAlarm`.
-
----
-
-### 4. Тревога: sum(table.Int) > 100 + корректирующий отчет
-
-**Цель:** alert + correlator `OPEN_OPERATOR_REPORT`.
-
-**Объекты:**
-- Alert `root.platform.alert-rules.lab-table-sum-threshold` на `tableIntSum`
-- Correlator `root.platform.correlators.lab-open-corrective-report` → отчёт `root.platform.reports.lab-table-corrective`
-
-**Проверка:** добавьте строки в `table` через Form grid, пока `tableIntSum` > 100.
-
----
-
-### 5. Фильтр Event2: Int>10 ИЛИ строка содержит "abc"
-
-**Цель:** `payloadFilterExpr` в виджете `event-feed`.
-
-**Дашборд:** `root.platform.dashboards.lab-event-gen` — нижний feed «Event 2 log (filtered)» с выражением `int > 10 || string contains abc`.
-
-**Проверка:** события с int≤10 и без «abc» в строке, не указанной во втором канале.
-
----
-
-### 6. Макет сетки формы
-
-**Дашборд:** `root.platform.dashboards.lab-form-grid`
-
-**Документация:** пример макета в [dashboards](dashboards.md).
-
----
-
-### 7. Функция калькулятора → вычислить()
-
-**Модель:** функция `calculate(inputA, inputB)` на `virtual-lab-v1`.
-
-**Проверка:** вызов через API или дашборд Калькулятор (задание 9).
-
----
-
-### 8. Mixin-модель: сумма Синус + Пила
-
-**Модель:** `virtual-lab-waves-sum-v1` (MIXIN) с binding `sumWaves = sineWave + sawtoothWave`.
-
-**Проверка:** дашборд `lab-virtual-overview` — виджет Sum waves.
-
----
-
-### 9. Виджет сетки калькулятора
-
-**Дашборд:** `root.platform.dashboards.lab-calculator` — виджет `spreadsheet` в режиме **настроено** (шаблон с подписями и формулами в макете).
-
-**Что попробовать (оператор):**
-
-1. Откройте дашборд **Калькулятор** в приложении «Оператор лаборатории».
-2. В ячейках **A2** и **B2** измените числа (Tab — переход между полями).
-3. Убедитесь, что **C2** (Сумма) и **D2** (A×110%) пересчитаны.
-4. Обновите страницу (**F5**) — значения A2/B2 должны сохраниться (сохранение в переменную `sheetValues` на `lab-userA-01`).
-
-**Режим бесплатный (новые виджеты по умолчанию):** любая ячейка — значение или `=формула`; строковая формула, F2, Ctrl+Z, экспорт CSV. Подробнее: [spreadsheet-widget](spreadsheet-widget.md).
-
-**Проверка:** изменить A2 → пересчёт Sum и A×110%; F5 → значения в `sheetValues`.
-
----
-
-### 10. Запрос всех функций + редактирование
-
-**Дашборд:** `root.platform.dashboards.lab-variable-editor` — виджеты `variable-editor` для обоих lab devices.
-
----
-
-### 11. Отчёт tree-variables: таблица всех виртуальных устройств
-
-**Отчёт:** `root.platform.reports.lab-all-devices-table` (тип `tree-variables`, pattern `root.platform.devices.lab-*`, variable `table`).
-
-**Проверка:** `POST /api/v1/reports/by-path/run?path=root.platform.reports.lab-all-devices-table`
-
----
-
-### 12. Посекундный график Синус + Пила
-
-**Дашборд:** `root.platform.dashboards.lab-charts` — `refreshIntervalMs: 1000`, charts с `historyRange: live`.
-
-**Driver:** profile `lab`, `pollIntervalMs` в конфиге runtime.
-
----
-
-### 13. Круговая диаграмма по таблице
-
-**Дашборд:** `root.platform.dashboards.lab-pie` — виджет `pie-chart`, source `table`, поля `string` / `int`.
-
----
-
-### 14. Форма генерации событий + двойной лог
-
-**Дашборд:** `root.platform.dashboards.lab-event-gen` — две формы `fireEvent1`/`fireEvent2`, два `event-feed` с фильтром по имени событий.
-
----
-
-### 15. Кнопка открытия другого виджета (модально)
-
-**Дашборд:** `root.platform.dashboards.lab-modal` — `dashboard-link` с `openMode: modal` → `lab-charts`.
-
----
-
-### 16. История sine 5 мин:таблица + среднее
-
-**Дашборд:** `root.platform.dashboards.lab-history` — виджет `history-table` на `sineWave`.
-
----
-
-### 17. Кнопка SVG + вентилятор (композитный)
-
-**Дашборд:** `root.platform.dashboards.lab-fan-composite` — `composite-widget` с `svg-widget` (`/lab-assets/button.svg` toggle `fanRunning`, `/lab-assets/fan.svg`).
-
----
-
-### 18. Виртуальные устройства дашборды
-
-**Дашборд:** `root.platform.dashboards.lab-virtual-overview` — chart/value, event-feed, report table.
-
----
-
-## Устройство виртуальной лаборатории
-
-| Переменная | Тип | Описание |
-|----------|-----|----------|
-| `sineWave` | DOUBLE | `amplitude * sin(2π t / periodSec)` |
-| `sawtoothWave` | DOUBLE | пилообразный сигнал |
-| `intValue`, `floatValue` | INTEGER / DOUBLE | конфиг / ручная запись |
-| `table` | RECORD_LIST | rows `{int, string}` |
-| `sumWaves`, `sumIntFloat`, `tableIntSum` | bindings | вычисляемые |
-| `alarmLatched`, `fanRunning` | BOOLEAN | для automation / HMI |
-
-**Events:** `event1`, `event2` (payload `{int, string}`).
-
-**Functions:** `calculate`, `fireEvent1`, `fireEvent2`, `appendTableRow`.
-
----
-
-## Тесты
-
-| Тест | Назначение |
-|------|------------|
-| `VirtualLabProfileTest` | driver profile `lab` |
-| `LabAutomationTest` | delay alert, correlator payload, SET_VARIABLE |
-| `TreeVariablesReportTest` | report type `tree-variables` |
-| `LabTrainingBundleTest` | import bundle + key paths |
-| `LabSecurityBootstrapTest` | users + ACL |
-| `payloadFilter.test.ts` | event-feed OR/AND filter |
-
-Запуск: `./gradlew test` (server), `npm test` в `apps/web-console`.
-
----
-
-## Связанные документы
-
-- [dashboards](dashboards.md) — виджеты и Grid Layout
-- [automation](automation.md) — правила оповещений и корреляторы
-- [reports](reports.md) — отчёты по дереву
-- [security](security.md) — API ACL
+## 3. Описание 18 практических упражнений
+
+| № | Тема упражнения | Объекты и дашборды в дереве | Что проверяется |
+|---|-----------------|-----------------------------|-----------------|
+| **1** | Совместная работа и пообъектные права (`ACL`) | `lab-userA-01`, `lab-userB-01`, экран `lab-variable-editor` | Пользователь `lab-user-a` является владельцем (`OWNER`) устройства A и редактором (`EDITOR`) устройства B |
+| **2** | Защёлка тревоги по двум событиям (`Latch / Unlatch`) | Корреляторы `lab-event1-latch-on` и `lab-event2-unlatch`, экран `lab-event-gen` | Событие `event1` взводит переменную `alarmLatched = true`, а событие `event2` с параметром `int > 20` сбрасывает её в `false` |
+| **3** | Тревога с выдержкой времени 10 секунд (`delaySeconds`) | Правило тревоги `lab-sum-range-sustained-alert` на переменной `sumIntFloat` | Событие `labSumRangeAlarm` срабатывает только если сумма `intValue + floatValue` держится в диапазоне `[50, 100]` не менее 10 секунд подряд |
+| **4** | Тревога по сумме колонки таблицы с открытием отчёта | Правило `lab-table-sum-threshold`, коррелятор `lab-open-corrective-report`, отчёт `lab-table-corrective` | Когда сумма колонки `int` в табличной переменной превышает `100`, автоматически формируется корректирующий отчёт |
+| **5** | Фильтрация ленты событий по полям (`payloadFilterExpr`) | Экран `lab-event-gen` (виджет `event-feed`) | В нижней ленте отображаются только те события `event2`, у которых `int > 10` или строковое поле содержит `"abc"` |
+| **6** | Табличный ввод и редактирование строк (`Form Grid`) | Экран `root.platform.dashboards.lab-form-grid` | Добавление и редактирование записей табличной переменной с экрана оператора |
+| **7** | Вызов серверной функции с параметрами | Функция `calculate(inputA, inputB)` на устройстве | Передача аргументов с формы ввода и отображение результата расчёта |
+| **8** | Применение шаблона-примеси (`MIXIN`) | Шаблон `virtual-lab-waves-sum-v1`, экран `lab-virtual-overview` | Примесь добавляет переменную `sumWaves = sineWave + sawtoothWave` без смены основного типа устройства |
+| **9** | Электронная таблица с формулами (`spreadsheet`) | Экран `root.platform.dashboards.lab-calculator` | Ввод чисел в ячейки `A2` и `B2`, автоматический пересчёт формул суммы (`C2`) и коэффициента (`D2`) с сохранением в переменную `sheetValues` ([подробнее о виджете `spreadsheet`](spreadsheet-widget.md)) |
+| **10** | Универсальный редактор переменных на экране | Экран `root.platform.dashboards.lab-variable-editor` | Просмотр и изменение доступных переменных обоих устройств через виджет `variable-editor` |
+| **11** | Сводный отчёт по переменным группы устройств (`tree-variables`) | Отчёт `root.platform.reports.lab-all-devices-table` | Сбор значений одноимённой переменной по маске `root.platform.devices.lab-*` без написания SQL |
+| **12** | Быстрые графики реального времени (1 с) | Экран `root.platform.dashboards.lab-charts` | Одновременная отрисовка синусоиды и пилы в режиме `historyRange: "live"` |
+| **13** | Круговая диаграмма по строкам таблицы (`pie-chart`) | Экран `root.platform.dashboards.lab-pie` | Построение диаграммы распределения по колонкам `string` и `int` табличной переменной |
+| **14** | Генератор событий с двумя раздельными журналами | Экран `root.platform.dashboards.lab-event-gen` | Вызов `fireEvent1` и `fireEvent2` с раздельным отображением в двух лентах событий |
+| **15** | Открытие детального экрана в модальном окне | Экран `root.platform.dashboards.lab-modal` (виджет `dashboard-link`, `openMode: "modal"`) | Всплывающее открытие экрана графиков `lab-charts` поверх текущего дашборда |
+| **16** | Таблица истории и среднее за 5 минут (`history-table`) | Экран `root.platform.dashboards.lab-history` | Табличный просмотр архивных точек переменной `sineWave` |
+| **17** | Интерактивная векторная графика SVG (`svg-widget`) | Экран `root.platform.dashboards.lab-fan-composite` | Кнопка SVG переключает переменную `fanRunning`, а символ вентилятора анимируется по её значению |
+| **18** | Комплексный обзорный пульт участка | Экран `root.platform.dashboards.lab-virtual-overview` | Сочетание карточек значений, графиков, ленты событий и встроенного отчёта на одном экране |
+
+**Связанные разделы:** [Дашборды и виджеты](dashboards.md) · [Справочник виджетов](widgets.md) · [Правила тревог и корреляторы](automation.md) · [Отчёты](reports.md).
