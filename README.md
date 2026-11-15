@@ -129,6 +129,14 @@ Open http://localhost:8080 — login `admin` / `admin`. Operator HMI: http://loc
 
 The image ships the same evaluation drivers at `/opt/ispf/drivers`. The volume above is H2 data only and does not replace them.
 
+ISPF plus a broker and a Modbus TCP slave (no PostgreSQL, no Keycloak):
+
+```bash
+docker compose -f deploy/docker-compose.evaluate.yml up -d
+```
+
+Console http://127.0.0.1:8080, `admin` / `admin` on the `local` profile. From a container on that network the slave is `modbus:502` and an `mqtt` device uses `brokerUrl` `tcp://mosquitto:1883` (anonymous, no TLS, not a plant network). From the laptop: `127.0.0.1:1883` and `127.0.0.1:5502`. The root `docker compose up` does not start ISPF.
+
 ### From source (dev)
 
 **Requirements:** JDK **25**, Node.js 20+, Docker optional (Postgres/NATS/Keycloak for fuller stacks).

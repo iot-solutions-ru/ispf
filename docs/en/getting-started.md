@@ -49,6 +49,20 @@ The image defaults to the **`local`** Spring profile — `StartupSecurityGuard` 
 
 The image contains the same evaluation driver set at `/opt/ispf/drivers`. The volume above is only the H2 data directory. Mounting `-v ispf-data:/opt/ispf/data` does not replace the drivers. A full protocol catalog is not in the image.
 
+#### ISPF, Mosquitto, and a Modbus slave
+
+`deploy/docker-compose.evaluate.yml` starts the published image, a broker, and the lab Modbus TCP fixture. It does not start PostgreSQL or Keycloak. The root `docker compose up` does the opposite and does not start ISPF. Do not run both if port 1883 is already taken.
+
+```bash
+docker compose -f deploy/docker-compose.evaluate.yml up -d
+```
+
+Open **http://127.0.0.1:8080** and sign in with **`admin` / `admin`** (the image uses the `local` profile). Published ports are bound to `127.0.0.1`.
+
+From another container on this network the slave is `modbus:502`. An `mqtt` device uses `brokerUrl` `tcp://mosquitto:1883` (anonymous, no TLS, not a plant network). From the laptop those are `127.0.0.1:1883` and `127.0.0.1:5502`. Holding registers 0, 1, and 2 start as `0x1111`, `0x2222`, `0x3333`. A `modbus-tcp` device uses `host` `modbus`, `port` `502`, point `1:HOLDING:0`. Point format: [modbus-tcp](drivers.md#modbus-tcp-ispf-driver-modbus).
+
+`demo-sensor-01` is still the `virtual` driver. This compose does not start its poll.
+
 ### Option C — Run from source
 
 #### Prerequisites

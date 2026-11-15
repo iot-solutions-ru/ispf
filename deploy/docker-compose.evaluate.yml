@@ -1,0 +1,71 @@
+# Laptop evaluation: published ISPF image, Mosquitto, Modbus TCP fixture.
+# Does not start PostgreSQL or Keycloak. The root docker-compose.yml does, and does not start ISPF.
+# Do not run both if port 1883 is already taken.
+#
+#   docker compose -f deploy/docker-compose.evaluate.yml up -d
+#
+# Console: http://127.0.0.1:8080  admin / admin (local profile only)
+# From a container on this network: slave modbus:502.
+# mqtt driver brokerUrl: tcp://mosquitto:1883. From the laptop: 127.0.0.1:1883 and 127.0.0.1:5502.
+# Holding registers 0..2 are seeded 0x1111, 0x2222, 0x3333.
+# modbus-tcp device: host modbus, port 502, point 1:HOLDING:0.
+# Broker is anonymous with no TLS. Laptop evaluation only, not a plant network.
+# Ports are bound to 127.0.0.1.
+
+name: ispf-evaluate
+
+services:
+  ispf:
+    image: ghcr.io/iot-solutions-ru/ispf-server:latest
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ispf-data:/opt/ispf/data
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+      modbus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo >/dev/tcp/127.0.0.1/8080'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 25s
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "127.0.0.1:1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/broker/version' -C 1 -W 3 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
+
+  modbus:
+    image: python:3.12-alpine
+    working_dir: /app
+    volumes:
+      - ./driver-interop/modbus/server.py:/app/server.py:ro
+    command: ["python", "-u", "/app/server.py", "--host", "0.0.0.0", "--port", "502"]
+    ports:
+      - "127.0.0.1:5502:502"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import socket; s=socket.create_connection(('127.0.0.1',502),2); s.close()",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 2s
+
+volumes:
+  ispf-data:
