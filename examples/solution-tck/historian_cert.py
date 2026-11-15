@@ -7,7 +7,8 @@ Production containers are not stopped.
 
 The certified soak is one hour at the target rate, the agreed bound in place of
 a 72-hour run. The ClickHouse stop stays 10 minutes. A year rollup is measured
-honestly (warmup discarded; cold sample reported; warm p99 is the gate).
+honestly (warmup discarded; cold sample reported; warm p99 gates
+result["rollup"]["pass"] only — overall pass still covers peak/outage/crash/replica).
 
 Pass requires saved rows >= 100000/s, durable-accept p99 <= 50 ms, spool and
 queue empty after catch-up, loss=0, duplicate=0, a kill -9 replay, and a
@@ -688,7 +689,7 @@ def year_rollup(token):
     )
     if isinstance(rollup_existing, dict):
         return {"pass": False, "reason": rollup_existing["error"], "rows": YEAR_ROWS}
-    if rollup_existing == 0:
+    if not isinstance(rollup_existing, int) or rollup_existing < 365:
         materialize = (
             "INSERT INTO default.variable_rollups "
             "SELECT 'root.platform.devices.tck-year', 'temperature', 'value', "
@@ -746,7 +747,12 @@ def year_rollup(token):
     buckets = len((body or {}).get("buckets") or (body or {}).get("points") or [])
     data_source = (body or {}).get("dataSource") or (body or {}).get("source") or "unknown"
     return {
-        "pass": p99 <= ROLLUP_P99_MAX_MS and status == 200 and buckets >= 365,
+        "pass": (
+            p99 <= ROLLUP_P99_MAX_MS
+            and status == 200
+            and buckets >= 365
+            and data_source == "rollup"
+        ),
         "rows": YEAR_ROWS,
         "bucket": "1d",
         "query": "/api/v1/objects/by-path/variables/history/aggregate bucket=1d year=2025",
