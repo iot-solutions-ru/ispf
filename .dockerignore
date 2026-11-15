@@ -1,2 +1,4 @@
 **
 !ispf-server.jar
+!drivers/
+!drivers/**

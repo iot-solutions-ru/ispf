@@ -1,5 +1,6 @@
 # All-in-one ISPF server (embedded web console).
-# Build context must include a prebuilt bootJar (see .github/workflows/release.yml).
+# Build context must include a prebuilt bootJar and ./drivers
+# (evaluation packs from syncDevDriverPacks; see .github/workflows/release.yml).
 FROM eclipse-temurin:25-jre-jammy@sha256:b8ba5fca9d88b6ecc3a46c8e75b744f84aca9a9d08587901b5ab480baf641ab5
 
 LABEL org.opencontainers.image.title="ISPF"
@@ -16,11 +17,14 @@ RUN mkdir -p /opt/ispf/data \
   && chown -R ispf:ispf /opt/ispf
 
 COPY --chown=ispf:ispf ispf-server.jar /opt/ispf/ispf-server.jar
+# Evaluation packs live outside the data volume so resetting H2 does not drop them.
+COPY --chown=ispf:ispf drivers /opt/ispf/drivers
 
 USER ispf
 
 # local profile → embedded H2 at ${ISPF_DATA_DIR}/ispf-local.mv.db (no Postgres).
 ENV ISPF_DATA_DIR=/opt/ispf/data \
+    ISPF_DRIVER_PACKS_DIR=/opt/ispf/drivers \
     SPRING_PROFILES_ACTIVE=local \
     JAVA_OPTS="-XX:MaxRAMPercentage=75"
 

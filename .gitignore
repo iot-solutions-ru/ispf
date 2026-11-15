@@ -40,6 +40,8 @@ packages/ispf-server/data/
 
 # Release / local deploy artifacts
 ispf-server.jar
+/drivers/
+/driver-packs-dev.tar.gz
 deploy/debug-llm-*.py
 deploy/verify-agent-*.py
 deploy/verify-if-mib-followup.py
