@@ -8,6 +8,8 @@ ispf:
   security:
     local-role-header-enabled: false
     rbac-enabled: true
+    # Refuse boot if RBAC off / role header on / WS origins * (overrides via ISPF_SECURITY_STRICT_STARTUP).
+    strict-startup: ${ISPF_SECURITY_STRICT_STARTUP:true}
   federation:
     block-loopback-hosts: ${ISPF_FEDERATION_BLOCK_LOOPBACK:true}
   function:
