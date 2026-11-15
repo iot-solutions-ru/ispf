@@ -7,10 +7,12 @@ import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.config.AiProperties;
 import com.ispf.server.history.ClickHouseVariableHistoryStore;
 import com.ispf.server.history.HistorianDiskSpool;
+import com.ispf.server.history.HistorianRangeCatchUpService;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.event.EventHistoryRecordCounter;
 import com.ispf.server.event.EventJournalStore;
 import com.ispf.server.object.BindingRuleAsyncExecutor;
+import com.ispf.server.object.BindingRuleEngine;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -58,6 +60,7 @@ public class PlatformMetricsService {
     private final Optional<AgentMetricsPort> agentMetricsPort;
     private final AiProperties aiProperties;
     private final ObjectProvider<ClickHouseVariableHistoryStore> clickHouseHistory;
+    private final ObjectProvider<HistorianRangeCatchUpService> catchUp;
 
     public PlatformMetricsService(
             ObjectNodeRepository objectNodeRepository,
@@ -79,7 +82,8 @@ public class PlatformMetricsService {
             BindingRuleAsyncExecutor bindingRuleAsyncExecutor,
             Optional<AgentMetricsPort> agentMetricsPort,
             AiProperties aiProperties,
-            ObjectProvider<ClickHouseVariableHistoryStore> clickHouseHistory
+            ObjectProvider<ClickHouseVariableHistoryStore> clickHouseHistory,
+            ObjectProvider<HistorianRangeCatchUpService> catchUp
     ) {
         this.objectNodeRepository = objectNodeRepository;
         this.objectVariableRepository = objectVariableRepository;
@@ -101,6 +105,7 @@ public class PlatformMetricsService {
         this.agentMetricsPort = agentMetricsPort != null ? agentMetricsPort : Optional.empty();
         this.aiProperties = aiProperties;
         this.clickHouseHistory = clickHouseHistory;
+        this.catchUp = catchUp;
     }
 
     @Transactional(readOnly = true)
@@ -225,6 +230,16 @@ public class PlatformMetricsService {
             section.put("spoolWriteP99Ms", spool.writeP99Millis());
             section.put("spoolForceP99Ms", spool.forceP99Millis());
             section.put("spoolQuota", spool.quotaHit());
+            section.put("spoolErrors", spool.errors());
+            section.put("spoolReplayed", spool.replayedBatches());
+        }
+        if (variableHistoryProperties.isDualWriteEnabled()) {
+            HistorianRangeCatchUpService service = catchUp.getIfAvailable();
+            if (service != null) {
+                section.put("catchUpRanges", service.openRangeCount());
+                section.put("catchUpOldestAgeMs", service.oldestAgeMillis());
+                section.put("catchUpWalBytes", service.walBytes());
+            }
         }
         section.put("historizedVariables", historizedVariables);
         section.put("sampleCount", sampleCount);
@@ -252,6 +267,7 @@ public class PlatformMetricsService {
         section.putAll(automationMetricsRecorder.automationSnapshot());
         section.put("bindingAsyncRunners", bindingRuleAsyncExecutor.runnerCount());
         section.put("bindingAsyncDropsTotal", bindingRuleAsyncExecutor.droppedSubmissions());
+        section.put("bindingTruncationsTotal", BindingRuleEngine.truncationTotal());
         return section;
     }
 

@@ -1,4 +1,5 @@
-# Optional Prometheus alert rules for ISPF historian dual-write / catch-up (ADR-0035).
+# Optional Prometheus alert rules for ISPF historian dual-write / catch-up (ADR-0035),
+# sole-store ClickHouse spool, and binding cascade stop-loss.
 # Merge via rule_files in your prometheus.yml, e.g.:
 #   rule_files:
 #     - /etc/prometheus/prometheus-ispf-alerts.yml
@@ -29,3 +30,50 @@ groups:
           description: >-
             Oldest open catch-up range is older than 10m. Inspect WAL under
             {ISPF_DATA_DIR}/historian-catchup and ClickHouse connectivity.
+
+  - name: ispf-historian-spool
+    rules:
+      - alert: IspfHistorianSpoolQuota
+        expr: ispf_historian_spool_quota == 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: ISPF ClickHouse historian spool quota hit
+          description: >-
+            Spool max-bytes reached; new accepts are rejected until replay frees space.
+            Check ispf.variable-history.spool and ClickHouse connectivity.
+
+      - alert: IspfHistorianSpoolBacklog
+        expr: ispf_historian_spool_oldest_age_ms > 300000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: ISPF ClickHouse historian spool backlog over 5 minutes
+          description: >-
+            Oldest unacked spool record is older than 5m. Inspect spool replay and CH health.
+
+      - alert: IspfHistorianSpoolErrors
+        expr: delta(ispf_historian_spool_errors[10m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: ISPF ClickHouse historian spool errors increasing
+          description: >-
+            Spool error gauge rose in the last 10m (cumulative gauge, not a counter).
+            Check spool directory and ClickHouse replay/insert path.
+
+  - name: ispf-bindings
+    rules:
+      - alert: IspfBindingStopLoss
+        expr: increase(ispf_binding_truncations_total[10m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: ISPF binding cascade stop-loss hit
+          description: >-
+            BindingRuleEngine truncated a cascade (MAX_PASSES or MAX_DEPTH). Break
+            write/activate cycles or move logic to a hub function — docs/en/anti-patterns.md.
