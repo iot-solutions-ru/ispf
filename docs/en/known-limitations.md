@@ -15,7 +15,7 @@ Policy: [roadmap — quality over features](roadmap.md#execution-policy--quality
 | Topic | Reality |
 |-------|---------|
 | Default credentials | Demo / getting-started paths may use `admin` / `admin`. **Change before any network exposure** — [security](security.md), [deployment](deployment.md). |
-| Unsigned bundles / RBAC off / WS origins `*` | Startup may **warn** only unless you harden config — treat lab defaults as unsafe for production. |
+| Unsigned bundles / RBAC off / WS origins `*` | Non-`prod` profiles **warn** by default. `application-prod.yml` sets `ispf.security.strict-startup=true` (refuse boot on RBAC off / role header / WS `*`). Unsigned bundles still warn unless `require-signed-bundles=true`. Helm/`dev` entrypoints may not load `prod` — [security](security.md). |
 | Java functions | Keep `ISPF_FUNCTION_JAVA_ENABLED=false` unless you accept sandbox gaps ([ADR-0045](decisions/0045-java-function-sandbox.md)). |
 
 ---
@@ -67,8 +67,8 @@ Board: [parked-backlog](parked-backlog.md).
 
 | Claim | Status |
 |-------|--------|
-| DNP3 poll path | **PRODUCTION** poll-only |
-| DNP3 `writePoint` | **Not implemented** — [ADR-0057](decisions/0057-ot-trust-wave1-dnp3-poll-only.md) |
+| DNP3 | **PRODUCTION** `POLL` + `WRITE` — CROB latch `g12v1` + analog float `g41v3` (direct operate default; optional `commandMode=sbo`). Pulse / trip-close / full control profile **not** implemented; `BINARY_INPUT` / `ANALOG_INPUT` / `COUNTER` stay read-only — [ADR-0057](decisions/0057-ot-trust-wave1-dnp3-poll-only.md) update 2026-11-11 |
+| `opc-da` / `opc-bridge` | **BETA** shells |
 
 ---
 
@@ -86,7 +86,7 @@ Board: [parked-backlog](parked-backlog.md).
 
 | Topic | Reality |
 |-------|---------|
-| Backup / DR tiers | Documented in [ADR-0068](decisions/0068-backup-and-dr.md); restore-drill evidence may still be missing — do not oversell |
+| Backup / DR tiers | Documented in [ADR-0068](decisions/0068-backup-and-dr.md). Lab T2 dump/restore drill exists (`deploy/tools/dr-restore-drill.sh`, [evidence](../evidence/dr-restore/README.md)); site/customer DR + dated field transcripts are still what remain missing — do not oversell |
 | Cluster “no two owners” CI proof / federation 10+ peer load | Follow-ups in [ADR-0069](decisions/0069-cluster-consistency.md) / scorecard — lab ≠ field |
 
 ---

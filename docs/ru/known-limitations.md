@@ -15,7 +15,7 @@
 | Тема | Реальность |
 |------|------------|
 | Учётные данные по умолчанию | Demo / getting-started могут использовать `admin` / `admin`. **Смените до любой сетевой экспозиции** — [security](security.md), [deployment](deployment.md). |
-| Unsigned bundles / RBAC off / WS origins `*` | Старт может только **предупреждать** — lab-дефолты небезопасны для production. |
+| Unsigned bundles / RBAC off / WS origins `*` | Вне `prod` — обычно только **warn**. В `application-prod.yml` — `strict-startup=true` (отказ старта при RBAC off / role header / WS `*`). Unsigned bundles warn, пока не `require-signed-bundles=true`. Helm/`dev` могут не грузить `prod` — [security](security.md). |
 | Java-функции | Держите `ISPF_FUNCTION_JAVA_ENABLED=false`, пока не принимаете sandbox gaps ([ADR-0045](../en/decisions/0045-java-function-sandbox.md)). |
 
 ---
@@ -49,6 +49,10 @@
 ## Field и интеграции (parked)
 
 Снимать с паузы только с **именованной** площадкой / заказчиком / вендором — см. [parked-backlog](parked-backlog.md).
+
+## OT / драйверы (кратко)
+
+DNP3 — **PRODUCTION** `POLL`+`WRITE` (CROB latch + analog float; не полный control profile). `opc-da` / `opc-bridge` — **BETA**. Полная таблица: [en/known-limitations.md](../en/known-limitations.md) § OT / drivers.
 
 ---
 
