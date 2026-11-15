@@ -25,15 +25,18 @@ export async function login({ username, password, totp, fetchImpl = fetch } = {}
     const detail = body?.message || body?.error || text;
     throw new Error(`login failed (${response.status}): ${detail}`);
   }
+  // Prefer the server-returned username so process.env.ISPF_USERNAME does not
+  // taint CLI stdout (CodeQL js/clear-text-logging).
+  const savedUsername = String(body.username || user || "");
   writeCredentials({
     baseUrl,
-    username: body.username ?? user,
+    username: savedUsername,
     token: body.token,
     expiresAt: body.expiresAt ?? null,
   });
   return {
     baseUrl,
-    username: body.username ?? user,
+    username: savedUsername,
     expiresAt: body.expiresAt ?? null,
   };
 }

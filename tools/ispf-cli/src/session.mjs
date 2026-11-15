@@ -24,13 +24,21 @@ export function readCredentials() {
 
 export function writeCredentials(value) {
   const file = credentialsPath();
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  const dir = path.dirname(file);
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   try {
-    fs.chmodSync(file, 0o600);
+    fs.chmodSync(dir, 0o700);
   } catch {
     // Windows does not apply the Unix mode.
   }
+  const tmp = `${file}.${process.pid}.tmp`;
+  fs.writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  try {
+    fs.chmodSync(tmp, 0o600);
+  } catch {
+    // Windows does not apply the Unix mode.
+  }
+  fs.renameSync(tmp, file);
 }
 
 function sameBaseUrl(value) {

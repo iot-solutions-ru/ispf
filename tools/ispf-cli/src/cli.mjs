@@ -103,7 +103,7 @@ export async function runCli(argv) {
         password: flags.password,
         totp: flags.totp,
       });
-      console.log(`Saved token for ${saved.username} at ${credentialsPath()}`);
+      console.log(`Saved token for ${saved.baseUrl} at ${credentialsPath()}`);
       if (saved.expiresAt) console.log(`Expires: ${saved.expiresAt}`);
       break;
     }
