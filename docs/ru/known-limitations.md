@@ -2,7 +2,7 @@
 
 # Известные ограничения и non-claims
 
-> **Статус:** Stable — хаб честности. Теги: [doc-status](../en/doc-status.md).
+> **Статус:** Stable — хаб честности. Теги: [doc-status.md](doc-status.md).
 
 Краткая выжимка; полный перечень таблиц — в каноне [en/known-limitations.md](../en/known-limitations.md). Читать вместе с [competitive-scorecard](competitive-scorecard.md) и [parked-backlog](parked-backlog.md).
 
@@ -27,7 +27,7 @@
 | JDBC + dual-write catch-up + sole-store ClickHouse | **Отгружено** — [variable-history](variable-history.md), [ADR-0035](../en/decisions/0035-historian-dual-write.md) |
 | Локальный disk spool перед sole-store CH (`ispf.variable-history.spool`) | **Отгружено**, **выкл. по умолчанию** — [variable-history](variable-history.md) § Disk spool |
 | Dual-write catch-up gauges + lab Prometheus alert rules | **Отгружено** — `…catchup.ranges` / `.oldest_age_ms` (возраст open range по sample clock) / `.wal_bytes`; это не CH-vs-PG lag ([ADR-0035](../en/decisions/0035-historian-dual-write.md)) |
-| Настоящий метрик lag ClickHouse vs primary | **Открытый** — не трактовать `oldest_age_ms` как CH lag |
+| Настоящая метрика lag ClickHouse vs primary | **Открыта** — не трактовать `oldest_age_ms` как CH lag |
 | Вторая копия буфера историана на другом узле ISPF | **Отложено** — не делать без явной просьбы |
 | ISPF создаёт / управляет кластером ClickHouse | **Отложено** — репликацией CH владеет оператор |
 | Parquet / Cassandra-Scylla `quality` наравне с flagship | **Gap / experimental** — [ADR-0074](../en/decisions/0074-historian-quality-persistence.md) |
