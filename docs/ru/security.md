@@ -115,6 +115,8 @@ curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/objects
 
 При входе через `POST /api/v1/auth/login` одноразовый код передаётся в поле `totpCode`.
 
+TOTP (`BL-153`) поставлен. WebAuthn / passkeys / IdP OTP (`BL-194`) — **Parked** до именованного тендера ([ADR-0056](decisions/0056-webauthn-idp-mfa.md), [parked-backlog](parked-backlog.md) `P-WEBAUTHN`; non-claims: [known-limitations](known-limitations.md)).
+
 ---
 
 ## Шифрование учётных данных и ключевые настройки безопасности

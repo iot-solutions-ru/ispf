@@ -9,7 +9,7 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…225. **One file** �
 | | |
 | --- | --- |
 | **Baseline** | `main`, July 2026 |
-| **Updated** | 2026-07-19 (quality-over-features policy) |
+| **Updated** | 2026-11-15 (Known limitations; spool shipped honesty; ADR-0056 Parked) |
 | **Product direction** | Self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([architecture](architecture.md)) |
 
 ---
@@ -27,9 +27,11 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…225. **One file** �
 | Sprint S01–S30 | 30 | 30 | 0 | 0 | — |
 | Sprint S31–S46 | 16 | 0 | 16 | 0 | — |
 
-**Current focus:** **Quality over features** — harden what shipped; no new capability surface by default — [Execution policy](#execution-policy--quality-over-features). Residual AI field soak / soft &lt;15 min (BL-177…180 Done; live smoke opt-in `ISPF_LLM_SMOKE`) — see [Next 90 days](#next-90-days). **Deferred:** Phase 25 OT Trust; live ERP (BL-169); BPMN/DMN depth beyond [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md) freeze.
+**How to read Summary:** Phase 25–33 rows stay **Partial** until field/customer close-out ([parked-backlog](parked-backlog.md)). Many **BL inside those phases are Done in lab** — see [Phase 25–33 at a glance](#phase-2533-at-a-glance). Summary Done=0 for phases is **not** “no BL shipped”. BL counts above are a planning snapshot; prefer the registry and glance table for item-level truth. Non-claims: [known-limitations](known-limitations.md).
 
-**Closed:** BL-01…139 Done (BL-112 Cancelled); Phase 0–24 closed — [Phase 24](#phase-24--closed). **Active backlog:** BL-140…225 (OT + live ERP parked; new BL rows only for named customer blockers or honesty/hardening).
+**Current focus:** **Quality over features** — harden what shipped; no new capability surface by default — [Execution policy](#execution-policy--quality-over-features). Residual AI field soak / soft &lt;15 min (BL-177…180 Done; live smoke opt-in `ISPF_LLM_SMOKE`) — see [Next 90 days](#next-90-days). **Parked / deferred:** Phase 25 OT Trust field; live ERP (BL-169); BPMN/DMN depth beyond [ADR-0047](decisions/0047-custom-bpmn-subset-engine.md) freeze; WebAuthn (BL-194 / ADR-0056).
+
+**Closed:** BL-01…139 Done (BL-112 Cancelled); Phase 0–24 closed — [Phase 24](#phase-24--closed). **Active backlog:** BL-140…225 (OT + live ERP + WebAuthn parked; new BL rows only for named customer blockers or honesty/hardening).
 
 Acceleration program: [acceleration-program](acceleration-program.md).
 
@@ -69,7 +71,7 @@ This policy does **not** cancel the 10/10 Definition of Done; it changes **order
 | **Phase 0–22** | History | Core platform: object tree, drivers SPI, HMI, BPMN, REQ-PF/FW, OIDC, Timescale, NATS, federation foundations | **Closed — Done** |
 | **Phase 23 + S01–S26** | REQ-EX + acceleration | OT trust wave, operator HMI/PWA, AI production, semantic (Haystack/Brick), MES wave, multi-tenant, cluster | **Closed — Done** |
 | **Phase 24 / S27–S30** | 2026-07-07 | Federation hardening, historian dual-write VPS, HMI a11y/Lighthouse, RU registry techpack | **Closed — Done** |
-| **Phase 25–33** | Active | Phases 25–33: OT→HMI→Security→Historian→MES→Automation→AI→Ecosystem→Analytics | **Open — all Partial** |
+| **Phase 25–33** | Active | Phases 25–33: OT→HMI→Security→Historian→MES→Automation→AI→Ecosystem→Analytics | **Open — phases Partial** (many lab BL Done; field/parked residual — glance table) |
 
 ### Closed backlog (do not reopen)
 
@@ -98,7 +100,7 @@ Counts from [§ BL-140…225](#bl-140225--full-registry) — prefer this over th
 | ----- | ----- | --------------- | -------------------- |
 | **25** OT Trust | Drivers / edge | BL-141 interop lab; **BL-191 honesty Done**; **lab catalog 162/162** (Waves 1–11) | BL-140 field pilots / edge soak — [Pilot #1 lab day 1](../evidence/ot-trust/2026-09-06-bl140-pilot1-lab-day1.md) on `lab-ot-vlan-192.168.100` (soak days 2–7 open); TOP-20 docker fixtures (**14/20**) |
 | **26** HMI | Mimics / operator | BL-146…152 Done (CI FPS @55; LH≥95 ops stretch) | — |
-| **27** Security | MFA / tenancy | BL-153/154/155/156/157/158 Done; TOTP GA; SaaS tenant-admin | Optional hard schema table routing; WebAuthn → BL-194 |
+| **27** Security | MFA / tenancy | BL-153/154/155/156/157/158 Done; TOTP GA; SaaS tenant-admin | Optional hard schema table routing; WebAuthn → BL-194 **Parked** |
 | **28** Historian | Tiers / SLA | BL-159…163 **Done** | Enterprise L 1B CH optional (scorecard) |
 | **29** MES / ERP L4 | ISA-95 | **BL-164…168, BL-170, BL-193, BL-220…225 Done** on marketplace `mes-platform` / `mes-cto` / pattern packs | Field sites; **live ERP (BL-169) deferred** |
 | **30** Automation | CEP / BPMN | BL-171…175 **Done**; BL-176 Done | DMN / further BPMN depth **blocked** without named customer + ADR (subset freeze) |
@@ -1316,7 +1318,7 @@ New backlog from IoT/SCADA/MES/ERP gap audit (2026-07-09). Elevates honesty and 
 | **BL-191** | 25 | **OT PRODUCTION matrix honesty** | **Done** (honesty scope) | Shells `opc-da` / `opc-bridge` → **BETA**; CI stub-javadoc gate; **no false WRITE** on DNP3. **Not** “all four → BETA”: `dnp3` stays **PRODUCTION + POLL_ONLY**, `ethernet-ip` stays **PRODUCTION + WRITE** ([ADR-0057](decisions/0057-ot-trust-wave1-dnp3-poll-only.md)). Wave 1 residual: interop write smoke + Modbus lab pilot |
 | **BL-192** | 27 / 32 | **Compliance tender pack** | **Done** | IEC 62443 mapping lite + GAMP-lite checklist + gap register (pen-test, audit trail, hard tenancy) — [compliance-tender-pack](compliance-tender-pack.md); linked from DoD / scorecard. **Not** a product certification |
 | **BL-193** | 29 | **MES genealogy / traceability lite** | **Done** | Lot ↔ material ↔ work-order ↔ quality record graph query + operator report on `mes-platform` (BFF `mes_genealogy_*`, reports, Genealogy dashboard); seed lot `BATCH-LINE-A01-001`; test `MesGenealogyLiteIntegrationTest`; [mes.md](mes.md). Extends BL-167 beyond SPC. **Not** live ERP (BL-169) |
-| **BL-194** | 27 | **WebAuthn / IdP OTP MFA** | Planned | Passkeys / WebAuthn enrollment + login; Keycloak OTP as primary IdP MFA path. Split from BL-153 (TOTP GA **Done**) — [security](security.md) |
+| **BL-194** | 27 | **WebAuthn / IdP OTP MFA** | **Parked** | Passkeys / WebAuthn enrollment + login; Keycloak OTP as primary IdP MFA path. Split from BL-153 (TOTP GA **Done**) — [ADR-0056](decisions/0056-webauthn-idp-mfa.md) · [parked-backlog](parked-backlog.md) **P-WEBAUTHN** · [security](security.md) |
 
 ## BL-220…225 — Manufacturing pattern catalog
 

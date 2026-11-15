@@ -96,6 +96,8 @@ ISPF_HISTORIAN_COLD_ARCHIVE_LOCAL_ROOT=/var/lib/ispf/historian-cold
 
 **Cutover warm read (полный CH primary):** `ISPF_VARIABLE_HISTORY_STORE=clickhouse` только после dual-write soak и lab SLO gate — см. [variable-history](variable-history.md). При store=`clickhouse` маршрутизация уровней обходится.
 
+**Опциональный disk spool после cutover:** для sole-store ClickHouse включите `ISPF_VARIABLE_HISTORY_SPOOL_ENABLED=true` и укажите `ISPF_VARIABLE_HISTORY_SPOOL_DIRECTORY` на путь в data volume (Helm: `/opt/ispf/data/historian-spool`). Выкл. по умолчанию — [variable-history](variable-history.md) § Disk spool.
+
 ---
 
 ## Ops-чеклист
@@ -105,6 +107,7 @@ ISPF_HISTORIAN_COLD_ARCHIVE_LOCAL_ROOT=/var/lib/ispf/historian-cold
 3. Задать `ISPF_HISTORIAN_DEPLOY_PROFILE=three-tier` и env retention выше.
 4. Следить за ошибками append в CH в логах сервера (warm path на dual-write — best-effort).
 5. Включить `ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED=true`, когда нужен долгосрочный Parquet-архив; синхронизировать `local-root` с объектным хранилищем S3 или смонтировать бакет. Запросы напрямую по холодным файлам Parquet выполняются внешними аналитическими движками (Trino, DuckDB, ClickHouse S3), а сервер ISPF отвечает за их регулярную выгрузку.
+6. После cutover на sole-store ClickHouse при необходимости включить disk spool на persistent volume; следить за `ispf.historian.spool.*`.
 
 ---
 

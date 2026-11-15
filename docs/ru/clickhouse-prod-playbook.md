@@ -94,6 +94,18 @@ bash /opt/ispf/bin/vps-variable-history-clickhouse.sh
 
 Sets `ISPF_VARIABLE_HISTORY_STORE=clickhouse`. Reads and writes use CH only.
 
+### Вариант В — Disk spool (после варианта Б)
+
+Опциональный локальный store-and-forward, когда ClickHouse — **единственный** store историана. **Выкл. по умолчанию.** Не применяется к dual-write (вариант A).
+
+| Переменная | Рекомендация |
+|------------|--------------|
+| `ISPF_VARIABLE_HISTORY_SPOOL_ENABLED` | `true` |
+| `ISPF_VARIABLE_HISTORY_SPOOL_DIRECTORY` | `/opt/ispf/data/historian-spool` |
+| `ISPF_VARIABLE_HISTORY_SPOOL_MAX_BYTES` | размер, который выдержит volume (по умолчанию 8 GiB) |
+
+Метрики: `ispf.historian.spool.*`. Подробности: [variable-history](variable-history.md) § Disk spool. Non-claims: [known-limitations](known-limitations.md).
+
 ### Откат
 
 | От | Действие |

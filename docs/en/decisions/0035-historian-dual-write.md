@@ -25,7 +25,7 @@ Operators need a migration path: **OLTP-consistent reads from PostgreSQL**, anal
 | Dual-write flag + primary JDBC / secondary CH | **Done** | |
 | Hot path never blocked by CH failure | **Done** (by design) | |
 | Secondary append **failure** counter | **Done** | `ispf.historian.dual_write.secondary_failures` increments once per failed ClickHouse append after the JDBC primary succeeds. |
-| Catch-up **lag gauges** | **Done** | `ispf.historian.dual_write.catchup.ranges`, `.oldest_age_ms`, `.wal_bytes` (snapshot after failure/replay) |
+| Catch-up **gauges** | **Done** | `ispf.historian.dual_write.catchup.ranges`, `.oldest_age_ms` (sample-clock age of the oldest open catch-up range — not CH-vs-PG lag), `.wal_bytes` (snapshot after failure/replay) |
 | Optional Prometheus **alert rules** | **Done** (lab) | [`deploy/prometheus-ispf-alerts.yml`](../../../deploy/prometheus-ispf-alerts.yml) — operator must wire `rule_files` |
 | Automatic **catch-up / backfill** after CH outage | **Done** | Disk WAL under `{ISPF_DATA_DIR or ./data}/historian-catchup` (override `ispf.historian.catchup.dir`) plus `historian_catchup_ranges`; `HistorianRangeCatchUpService` replays to ClickHouse |
 | Query cutover to CH | **Partial** / separate BL | Reads stay JDBC until switched |
@@ -47,9 +47,9 @@ ispf:
 
 ## Consequences
 
-- Duplicate storage; monitor failure counter + catch-up lag gauges (and optional Prometheus rules).
+- Duplicate storage; monitor failure counter + catch-up gauges (and optional Prometheus rules).
 - Query migration — separate BL (optional read replica routing).
-- `store=clickhouse` without dual-write — still single-store mode (optional local disk spool is separate).
+- `store=clickhouse` without dual-write — still single-store mode; optional local [disk spool](../variable-history.md#disk-spool-sole-store-clickhouse) is separate (`ispf.variable-history.spool`, off by default).
 
 See [deployment](../deployment.md) § ClickHouse, [roadmap](../roadmap.md).
 

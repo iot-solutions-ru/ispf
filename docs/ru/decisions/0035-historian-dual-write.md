@@ -32,10 +32,22 @@ ispf:
       table: variable_samples
 ```
 
+## Честность — Done / Partial / Gap
+
+| Заявление | Статус | Заметки |
+|-----------|--------|---------|
+| Dual-write flag + primary JDBC / secondary CH | **Done** | |
+| Hot path не блокируется отказом CH | **Done** (by design) | |
+| Счётчик отказов secondary append | **Done** | `ispf.historian.dual_write.secondary_failures` |
+| Catch-up **gauges** | **Done** | `…catchup.ranges`, `.oldest_age_ms` (возраст open range по sample clock, не CH-vs-PG lag), `.wal_bytes` |
+| Опциональные Prometheus **alert rules** | **Done** (lab) | [`deploy/prometheus-ispf-alerts.yml`](../../../deploy/prometheus-ispf-alerts.yml) — оператор подключает `rule_files` |
+| Авто catch-up / backfill после outage CH | **Done** | Disk WAL + `historian_catchup_ranges` |
+| Query cutover на CH | **Partial** | Reads остаются на JDBC до явного switch |
+
 ## Последствия
 
-- Дублирование storage; мониторинг lag/failures на CH append.
+- Дублирование storage; мониторить failure counter + catch-up gauges (и optional Prometheus rules).
 - Query migration — отдельный BL (optional read replica routing).
-- `store=clickhouse` без dual-write — по-прежнему single-store mode.
+- `store=clickhouse` без dual-write — single-store; опциональный локальный [disk spool](../variable-history.md#disk-spool-sole-store-clickhouse) отдельно (`ispf.variable-history.spool`, выкл. по умолчанию).
 
-См. [DEPLOYMENT.md § ClickHouse](../deployment.md), [roadmap](../roadmap.md).
+См. [deployment](../deployment.md) § ClickHouse, [roadmap](../roadmap.md). Канон EN: [0035](../../en/decisions/0035-historian-dual-write.md).

@@ -31,7 +31,7 @@
 | [0053-ispf-template-filler](0053-ispf-template-filler.md) | ISPF Template Filler (POI) вместо YARG для spreadsheet — **Accepted** |
 | [0054-hosted-ui-packs](0054-hosted-ui-packs.md) | Hosted UI packs (`/apps/<appId>/`) для SPA из marketplace — **Accepted** |
 | [0055-cel-formal-verification-ai-gate](0055-cel-formal-verification-ai-gate.md) | Формальная верификация CEL как gate условий AI — **Accepted** |
-| [0056-webauthn-idp-mfa](0056-webauthn-idp-mfa.md) | WebAuthn / OTP IdP как продолжение MFA (BL-194) — **Proposed** |
+| [0056-webauthn-idp-mfa](0056-webauthn-idp-mfa.md) | WebAuthn / OTP IdP как продолжение MFA (BL-194) — **Parked** |
 | [0057-ot-trust-wave1-dnp3-poll-only](0057-ot-trust-wave1-dnp3-poll-only.md) | OT Trust Wave 1 — DNP3 остаётся PRODUCTION poll-only — **Accepted** |
 | [0058-mixin-reevaluation-and-detach](0058-mixin-reevaluation-and-detach.md) | Opt-in reevaluation MIXIN + ownership-aware detach — **Accepted** |
 | [0059-toolchain-version-policy](0059-toolchain-version-policy.md) | Политика версий тулчейна и зависимостей (N или N-1, пины с владельцами, тяжёлые зависимости в модулях) — **Accepted** |

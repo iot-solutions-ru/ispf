@@ -30,6 +30,12 @@ Do **not** recreate known field footguns. Canonical list: `docs/en/anti-patterns
 - MQTT / flood: leave `eventJournalEnabled` off; prefer last-value variables (ADR-0061).
 - Ship solutions as `ispf pack` / bundle, not hand-copied trees.
 
+## Stability before features
+
+Harden what shipped; do not widen the surface for scorecard claims. Non-claims and parked work: `docs/en/known-limitations.md`, `docs/en/parked-backlog.md`.
+
+Historian: local ClickHouse disk spool (`ispf.variable-history.spool`) is **shipped** (off by default) — document/operate, do not re-implement. Still deferred until explicitly asked: cross-node historian buffer copy; ISPF-managed ClickHouse cluster. Leave sole-store + JDBC dual-write catch-up alone.
+
 ## Teaching users
 
 Point humans to **`docs/en/learn.md`** (transparent entry): Path A first hour → Path B first solution → role tracks → certification. Do not dump the full doc catalog on newcomers.

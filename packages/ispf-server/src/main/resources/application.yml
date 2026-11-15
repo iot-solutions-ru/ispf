@@ -304,6 +304,16 @@ ispf:
     record-snapshot-enabled: ${ISPF_VARIABLE_HISTORY_RECORD_SNAPSHOT_ENABLED:true}
     retention-days: ${ISPF_VARIABLE_HISTORY_RETENTION_DAYS:90}
     store: ${ISPF_VARIABLE_HISTORY_STORE:jdbc}
+    # Disk store-and-forward for sole-store ClickHouse only (ignored unless store=clickhouse). Off by default.
+    # Containers: point directory at a persistent volume (Helm data PVC is /opt/ispf/data).
+    spool:
+      enabled: ${ISPF_VARIABLE_HISTORY_SPOOL_ENABLED:false}
+      directory: ${ISPF_VARIABLE_HISTORY_SPOOL_DIRECTORY:data/historian-spool}
+      max-bytes: ${ISPF_VARIABLE_HISTORY_SPOOL_MAX_BYTES:8589934592}
+      segment-bytes: ${ISPF_VARIABLE_HISTORY_SPOOL_SEGMENT_BYTES:67108864}
+      fsync: ${ISPF_VARIABLE_HISTORY_SPOOL_FSYNC:true}
+      replay-batch: ${ISPF_VARIABLE_HISTORY_SPOOL_REPLAY_BATCH:32}
+      replay-interval-ms: ${ISPF_VARIABLE_HISTORY_SPOOL_REPLAY_INTERVAL_MS:1000}
     dual-write-enabled: ${ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED:false}
     async-enabled: ${ISPF_VARIABLE_HISTORY_ASYNC_ENABLED:true}
     queue-capacity: ${ISPF_VARIABLE_HISTORY_QUEUE_CAPACITY:50000}

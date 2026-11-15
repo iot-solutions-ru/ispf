@@ -36,7 +36,7 @@
 | **Развернуть сервер в продакшене или закрытом контуре** | [Развёртывание и настройка](deployment.md) · [Установка без интернета (air-gap)](air-gap-deployment.md) · [Безопасность и права](security.md) · [Мониторинг и диагностика](observability.md) |
 | **Разрабатывать саму платформу ISPF** | [Локальная сборка и проверка](getting-started.md#контрибут-локальный-dev--qa) · [Тестирование](testing.md) · [Архитектура сервера](architecture.md) · [Архитектурные решения (ADR)](decisions/readme.md) |
 
-Метки готовности разделов (`Stable`, `Beta`, `Lab`, `Charter`, `Internal`) расшифрованы в [doc-status.md](doc-status.md). История изменений релизов: [changelog.md](changelog.md) (полный журнал — [CHANGELOG.md](../../CHANGELOG.md)).
+Метки готовности разделов (`Stable`, `Beta`, `Lab`, `Charter`, `Internal`) расшифрованы в [doc-status.md](doc-status.md). Что мы пока **не** заявляем: [Известные ограничения](known-limitations.md) · [Parked backlog](parked-backlog.md). История изменений релизов: [changelog.md](changelog.md) (полный журнал — [CHANGELOG.md](../../CHANGELOG.md)).
 
 ---
 
@@ -115,7 +115,7 @@
 | [Допуск драйверов к объекту](driver-promotion.md) | Stable | Чем лабораторный драйвер отличается от проверенного на реальном железе |
 | [Лаборатория совместимости драйверов](driver-interop-lab.md) | Lab | Стенд с эмуляторами ПЛК и брокерами для проверки протоколов |
 | [Регламент полевых испытаний](field-pilot-playbook.md) | Lab | Чеклист проверки связи на промышленной площадке |
-| [История переменных](variable-history.md) | Stable | Запись временных рядов, глубина хранения, агрегация и выгрузка в CSV/JSON |
+| [История переменных](variable-history.md) | Stable | Временные ряды, опциональный disk spool для sole-store ClickHouse, агрегация и выгрузка |
 | [Уровни хранения истории](historian-tiers.md) | Beta | Оперативное хранение в PostgreSQL/Timescale, длинные ряды в ClickHouse и холодный архив Parquet |
 | [Настройка ClickHouse в продакшене](clickhouse-prod-playbook.md) | Lab | Подключение и проверка ClickHouse при большом потоке телеметрии |
 | [Рецепты расчётов по истории](analytics-historian-cookbook.md) | Stable | Скользящие средние, сменный OEE, агрегаты по окнам времени |
@@ -173,6 +173,8 @@
 | [Каталог символов SCADA](symbol-marketplace.md) | Stable | Подключение дополнительных наборов графических символов |
 | [Обучение и сертификация](certification.md) | Stable | Программы подготовки инженеров и администраторов |
 | [Сравнение с аналогами](competitive-scorecard.md) | Stable | Честная сверка возможностей по коду с промышленными платформами |
+| [Известные ограничения](known-limitations.md) | Stable | Что мы не заявляем, parked и deferred |
+| [Parked backlog](parked-backlog.md) | Charter | Критерии снятия с паузы |
 | [Дорожная карта (Roadmap)](roadmap.md) | Charter | История этапов разработки и открытые задачи |
 | [Архитектурные решения (ADR)](decisions/readme.md) | Stable | Журнал принятых инженерных решений по архитектуре |
 | [Статусы документов](doc-status.md) | Stable | Что означают метки зрелости на страницах документации |
