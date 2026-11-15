@@ -45,6 +45,8 @@ docker run --rm -p 8080:8080 -v ispf-data:/opt/ispf/data ghcr.io/iot-solutions-r
 
 Open **http://localhost:8080** and sign in with **`admin` / `admin`**.
 
+The image defaults to the **`local`** Spring profile — `StartupSecurityGuard` is skipped there (even if `ISPF_SECURITY_STRICT_STARTUP=true`). Beyond a laptop lab, leave `local` for a `prod` deployment (PostgreSQL/OIDC) and change credentials — [deployment](deployment.md#shipped-entrypoints-and-profiles), [security](security.md).
+
 The image contains the same evaluation driver set at `/opt/ispf/drivers`. The volume above is only the H2 data directory. Mounting `-v ispf-data:/opt/ispf/data` does not replace the drivers. A full protocol catalog is not in the image.
 
 ### Option C — Run from source

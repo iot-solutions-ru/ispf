@@ -48,7 +48,22 @@ Artifact: `:packages:ispf-server:bootRun` or JAR from `build/libs/`.
 | default | application.yml | PostgreSQL + JWT |
 | local | application-local.yml | H2 file, Bearer after `POST /api/v1/auth/login` (`X-ISPF-Role` off by default) |
 | dev | application-dev.yml | Full stack + MQTT/NATS |
+| prod | application-prod.yml | `ispf.security.strict-startup=true` by default |
 | test | application-test.yml | H2 memory, tests |
+
+#### Shipped entrypoints and profiles
+
+Compose **dependency** stack (`docker compose up` at repo root) does not start ISPF. Which profile the **server** loads:
+
+| Entrypoint | Typical Spring profile | `strict-startup` |
+|------------|------------------------|------------------|
+| `docker run` GHCR image / `Dockerfile` | `local` | Off (guard skipped on `local`) |
+| `deploy/docker-compose.vps-single.yml`, `vps-cluster.yml`, `edge-arm.yml` | `local` | Off (guard skipped on `local`) |
+| Helm `deploy/helm/ispf` default values | `local` | Off (guard skipped on `local`) |
+| `deploy/docker-compose.cluster.yml`, `analytics.yml`, `prod-stack.yml` | `dev` | Off (warn only) |
+| `deploy/docker-compose.air-gap.yml` | `prod` | **On** |
+
+`StartupSecurityGuard` skips `local` and `test` entirely (no warn, env flag ignored). Before any network exposure, leave `local` for `--spring.profiles.active=prod`, or set `ISPF_SECURITY_STRICT_STARTUP=true` on a **non-`local`/`test`** profile — [security](security.md).
 
 ### Database
 

@@ -15,7 +15,7 @@ Policy: [roadmap — quality over features](roadmap.md#execution-policy--quality
 | Topic | Reality |
 |-------|---------|
 | Default credentials | Demo / getting-started paths may use `admin` / `admin`. **Change before any network exposure** — [security](security.md), [deployment](deployment.md). |
-| Unsigned bundles / RBAC off / WS origins `*` | Non-`prod` profiles **warn** by default. `application-prod.yml` sets `ispf.security.strict-startup=true` (refuse boot on RBAC off / role header / WS `*`). Unsigned bundles still warn unless `require-signed-bundles=true`. Helm/`dev` entrypoints may not load `prod` — [security](security.md). |
+| Unsigned bundles / RBAC off / WS origins `*` | `dev`/default **warn** by default; `application-prod.yml` sets `ispf.security.strict-startup=true` (refuse boot on RBAC off / role header / WS `*`). `local`/`test` skip `StartupSecurityGuard` entirely (no warn; env flag ignored) — Docker/Helm/`local` VPS paths must leave `local` (e.g. `prod`, or non-`local` + `ISPF_SECURITY_STRICT_STARTUP=true`) for strict to fire. Unsigned bundles still warn unless `require-signed-bundles=true`. Entrypoint table: [deployment](deployment.md#shipped-entrypoints-and-profiles). |
 | Java functions | Keep `ISPF_FUNCTION_JAVA_ENABLED=false` unless you accept sandbox gaps ([ADR-0045](decisions/0045-java-function-sandbox.md)). |
 
 ---
@@ -87,7 +87,7 @@ Board: [parked-backlog](parked-backlog.md).
 | Topic | Reality |
 |-------|---------|
 | Backup / DR tiers | Documented in [ADR-0068](decisions/0068-backup-and-dr.md). Lab T2 dump/restore drill exists (`deploy/tools/dr-restore-drill.sh`, [evidence](../evidence/dr-restore/README.md)); site/customer DR + dated field transcripts are still what remain missing — do not oversell |
-| Cluster “no two owners” CI proof / federation 10+ peer load | Follow-ups in [ADR-0069](decisions/0069-cluster-consistency.md) / scorecard — lab ≠ field |
+| Cluster dual-owner / federation load | JDBC lease exclusivity CI is the near-term assert ([ADR-0069](decisions/0069-cluster-consistency.md)); multi-node dual-I/O and federation 10+ peer load remain open — lab ≠ field |
 
 ---
 

@@ -6,6 +6,8 @@
 
 Every rule on this page addresses a concrete failure mode seen in real SCADA and IoT deployments — slow operator screens, runaway recalculation loops, bloated event tables, and unrepeatable manual configurations — and documents how ISPF prevents or flags it automatically.
 
+**Canonical list:** agent/rules summaries (`AGENTS.md`, `.cursor/rules`) mirror this page — do not invent a second catalogue.
+
 Related guides: [How ISPF works](learn.md) · [Application architecture rules](application-principles.md) · [Calculation rules (bindings)](bindings.md#execution) · [Variable history](variable-history.md) · [Solution developer guide](solution-developer-guide.md).
 
 ---
@@ -29,7 +31,7 @@ Related guides: [How ISPF works](learn.md) · [Application architecture rules](a
 - Set explicit `order` numbers on rules within an object so upstream values are calculated before downstream ones.
 - Use `activators.async = true` only for independent side effects (for example, logging or notifications), not for sequential math.
 
-**Platform check:** On rule save, `BindingCascadeAnalyzer` detects write-to-activator cycles and warns immediately. At runtime (`BindingRuleEngine`), per-object rules run in `order` across at most **`MAX_PASSES = 8`** stabilization passes, and cross-object propagation stops at **`MAX_DEPTH = 16`** with a warning in the server log. Details: [bindings.md § Execution](bindings.md#execution).
+**Platform check:** On rule save, `BindingCascadeAnalyzer` detects write-to-activator cycles and warns immediately. At runtime (`BindingRuleEngine`), per-object rules run in `order` across at most **`MAX_PASSES = 8`** stabilization passes, and cross-object propagation stops at **`MAX_DEPTH = 16`**. Crossing either limit throws `IllegalStateException`, logs an error, and increments the in-JVM truncation counter (`BindingRuleEngine.truncationTotal()`). Details: [bindings.md § Execution](bindings.md#execution).
 
 ---
 

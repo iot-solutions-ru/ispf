@@ -48,7 +48,22 @@ docker compose up -d
 | default | application.yml | PostgreSQL + JWT |
 | local | application-local.yml | Файл H2, Bearer после `POST /api/v1/auth/login` (`X-ISPF-Role` выключен по умолчанию) |
 | dev | application-dev.yml | Полный стек + MQTT/NATS |
+| prod | application-prod.yml | `ispf.security.strict-startup=true` по умолчанию |
 | test | application-test.yml | H2 в памяти, автотесты |
+
+#### Отгруженные entrypoint и профили
+
+Compose **зависимостей** (`docker compose up` в корне) ISPF не стартует. Какой профиль грузит **сервер**:
+
+| Entrypoint | Типичный Spring-профиль | `strict-startup` |
+|------------|-------------------------|------------------|
+| `docker run` GHCR / `Dockerfile` | `local` | Выкл. (guard пропущен в `local`) |
+| `deploy/docker-compose.vps-single.yml`, `vps-cluster.yml`, `edge-arm.yml` | `local` | Выкл. (guard пропущен в `local`) |
+| Helm `deploy/helm/ispf` defaults | `local` | Выкл. (guard пропущен в `local`) |
+| `deploy/docker-compose.cluster.yml`, `analytics.yml`, `prod-stack.yml` | `dev` | Выкл. (только warn) |
+| `deploy/docker-compose.air-gap.yml` | `prod` | **Вкл.** |
+
+`StartupSecurityGuard` полностью пропускает `local` и `test` (без warn, env-флаг игнорируется). Перед сетевой экспозицией уйдите с `local` на `--spring.profiles.active=prod`, либо задайте `ISPF_SECURITY_STRICT_STARTUP=true` на профиле **вне** `local`/`test` — [security](security.md).
 
 ### База данных
 
