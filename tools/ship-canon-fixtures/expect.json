@@ -1,0 +1,10 @@
+{
+  "ok-singleton-hub": {
+    "strictStatus": "OK",
+    "codes": []
+  },
+  "fail-logic-host-device": {
+    "strictStatus": "ERROR",
+    "codes": ["LOGIC_HOST_DEVICE"]
+  }
+}
