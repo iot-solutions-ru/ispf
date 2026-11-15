@@ -57,6 +57,7 @@ jobs:
               - 'examples/**'
             drivers:
               - 'packages/ispf-driver-*/**'
+              - 'gradle.properties'
               - 'packages/ispf-driver-api/**'
               - 'gradle/driver-packs.json'
               - 'buildSrc/src/main/kotlin/com/ispf/build/**'

@@ -17,9 +17,36 @@ class DriverDdkTemplateTest {
         assertTrue(Files.isDirectory(templateRoot), "template/ directory missing");
         assertTrue(Files.exists(templateRoot.resolve("driver-pack.json")));
         assertTrue(Files.exists(templateRoot.resolve("build.gradle.kts")));
+        assertTrue(Files.exists(templateRoot.resolve("settings.gradle.kts")));
+        assertTrue(Files.exists(templateRoot.resolve("gradle.properties")));
         assertTrue(Files.exists(templateRoot.resolve("README.md")));
         assertTrue(Files.exists(templateRoot.resolve("src/main/java/com/ispf/driver/template/TemplateDeviceDriver.java")));
         assertTrue(Files.exists(templateRoot.resolve("src/test/java/com/ispf/driver/template/TemplateDeviceDriverTest.java")));
+    }
+
+    @Test
+    void templateBuildDeclaresPublishedCoordinatesAndMatchesPlatformVersion() throws Exception {
+        String build = Files.readString(Path.of("template/build.gradle.kts"));
+        assertTrue(build.contains("mavenLocal()"));
+        assertTrue(build.contains("com.ispf:ispf-driver-api:"));
+        assertTrue(build.contains("com.ispf:ispf-core:"));
+        assertTrue(build.contains("junit-platform-launcher"));
+        assertEquals(false, build.contains("project(\":"));
+        String apiBuild = Files.readString(Path.of("../ispf-driver-api/build.gradle.kts"));
+        assertTrue(apiBuild.contains("api(project(\":packages:ispf-core\"))"));
+        String templateVersion = versionProperty(Path.of("template/gradle.properties"), "ispfVersion");
+        String platformVersion = versionProperty(Path.of("../../gradle.properties"), "version");
+        assertEquals(platformVersion, templateVersion);
+    }
+
+    private static String versionProperty(Path file, String key) throws Exception {
+        String prefix = key + "=";
+        return Files.readAllLines(file).stream()
+                .map(String::trim)
+                .filter(line -> line.startsWith(prefix))
+                .map(line -> line.substring(prefix.length()).trim())
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("missing " + prefix + " in " + file));
     }
 
     @Test

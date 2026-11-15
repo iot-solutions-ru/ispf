@@ -388,6 +388,12 @@ tasks.register("assembleDevDriverPacks") {
     dependsOn(devDriverPackProjects.map { it.path + ":assembleDriverPack" })
 }
 
+tasks.register("publishDdkApi") {
+    group = "driver packs"
+    description = "Publish ispf-core and ispf-driver-api to mavenLocal for a driver built outside this repository"
+    dependsOn(":packages:ispf-core:publishToMavenLocal", ":packages:ispf-driver-api:publishToMavenLocal")
+}
+
 tasks.register<Sync>("syncAllDriverPacks") {
     group = "driver packs"
     description = "Copy all assembled driver packs to build/driver-packs"
@@ -444,6 +450,7 @@ tasks.register("testDevDriverPacks") {
     description =
         "Unit-test the minimal/dev driver pack set (PR-fast driver-packs job); full protocol matrix is driver-interop"
     dependsOn(devDriverPackProjects.map { it.path + ":test" })
+    dependsOn(":packages:ispf-driver-ddk:test")
 }
 
 val prFastBackendTestTasks = listOf(

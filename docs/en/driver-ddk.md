@@ -24,21 +24,26 @@
 
 ## Workflow
 
-### 1. Create module
+### 1. Build outside this repository
+
+`packages/ispf-driver-ddk/template/` is its own Gradle build. `com.ispf:ispf-core` and `com.ispf:ispf-driver-api` are published by this repository into the local Maven repository.
+
+From an ISPF checkout:
 
 ```bash
-cp -r packages/ispf-driver-ddk/template packages/ispf-driver-acme-widget
+./gradlew publishDdkApi
 ```
 
-Edit `driverId`, package, `DriverMetadata`, point mapping parser.
+That writes both modules to `~/.m2` at the `version` in `gradle.properties`. Copy `template/` out. Set `ispfVersion` in the copy's `gradle.properties` to that same version. JDK 25, Gradle 9.9:
 
-Add to `settings.gradle.kts`:
-
-```kotlin
-"packages:ispf-driver-acme-widget",
+```bash
+gradle test
+gradle assembleDriverPack
 ```
 
-Module automatically receives plugin `ispf-driver-pack` (see root `build.gradle.kts`).
+The pack is `build/driver-pack/ispf-driver-acme-widget/` (`driver-pack.json` and `ispf-driver-acme-widget.jar`). When you rename the driver, change `packId` in `build.gradle.kts`, `rootProject.name` in `settings.gradle.kts`, and `packId`, `drivers[].driverId`, and `drivers[].driverClass` in `driver-pack.json`. `assembleDriverPack` names the jar `$packId.jar`. Set `jarFile` to that name. `driverClass` is the class the server loads.
+
+A module that lives in this repository is a new `packages/ispf-driver-<id>` project, a `project(":packages:ispf-driver-api")` dependency, and a row in `gradle/driver-packs.json`. The root build applies `ispf-driver-pack` only to those modules. Do not register `template/` in the root `settings.gradle.kts`.
 
 ### 2. Implement SPI
 
@@ -57,10 +62,15 @@ At least one JUnit test with stub server on `127.0.0.1` (see `TemplateDeviceDriv
 
 ### 4. Build pack
 
+Outside this repository, `gradle assembleDriverPack` writes `build/driver-pack/ispf-driver-acme-widget/`.
+
+Inside this repository, after the module is in `gradle/driver-packs.json`:
+
 ```bash
 ./gradlew :packages:ispf-driver-acme-widget:assembleDriverPack
-ls build/driver-packs/ispf-driver-acme-widget/
 ```
+
+The pack directory is `packages/ispf-driver-acme-widget/build/driver-pack/ispf-driver-acme-widget/`. `syncAllDriverPacks` copies every pack listed in `gradle/driver-packs.json` to the root `build/driver-packs/`. `syncDevDriverPacks` copies only the modules named in `devDriverPackProjectNames` in the root `build.gradle.kts`.
 
 ### 5. Deploy pack
 
