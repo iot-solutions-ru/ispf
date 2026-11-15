@@ -36,6 +36,7 @@ final class ClickHouseVariableHistoryReader {
         this.config = config;
         this.objectMapper = new ObjectMapper();
         this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
     }
@@ -218,14 +219,19 @@ final class ClickHouseVariableHistoryReader {
             url.append('&');
         }
         url.append("database=").append(encode(config.getDatabase()));
-        url.append("&query=").append(encode(query));
+        boolean queryInBody = body == null || body.isBlank();
+        String postBody = queryInBody ? query : body;
+        if (!queryInBody) {
+            url.append("&query=").append(encode(query));
+        }
         for (Map.Entry<String, String> param : params.entrySet()) {
             url.append("&param_").append(encode(param.getKey())).append('=').append(encode(param.getValue()));
         }
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url.toString()))
                 .timeout(Duration.ofSeconds(30))
-                .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
+                .header("Content-Type", "text/plain; charset=UTF-8")
+                .POST(HttpRequest.BodyPublishers.ofString(postBody, StandardCharsets.UTF_8));
         if (config.getPassword() != null && !config.getPassword().isBlank()) {
             String username = config.getUsername() != null && !config.getUsername().isBlank()
                     ? config.getUsername()
