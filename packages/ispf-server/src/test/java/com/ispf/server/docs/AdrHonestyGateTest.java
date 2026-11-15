@@ -137,10 +137,14 @@ class AdrHonestyGateTest {
         }
         String matrixSource = Files.readString(matrix);
         assertTrue(matrixEntryIsProduction(matrixSource, "dnp3"), "dnp3 must stay PRODUCTION in the matrix");
+        Matcher dnp3Capabilities = Pattern.compile(
+                "entry\\(\\s*\"dnp3\"\\s*,\\s*DriverMaturity\\.\\w+\\s*,\\s*(EnumSet\\.of\\([^)]*\\)|[A-Z_]+)"
+        ).matcher(matrixSource);
+        assertTrue(dnp3Capabilities.find(), "dnp3 matrix entry must be present");
+        String capabilities = dnp3Capabilities.group(1);
         assertTrue(
-                Pattern.compile("entry\\(\\s*\"dnp3\"[^;]*WRITE").matcher(matrixSource).find()
-                        || Pattern.compile("entry\\(\\s*\"dnp3\"[^;]*POLL_WRITE").matcher(matrixSource).find(),
-                "dnp3 matrix entry must advertise WRITE / POLL_WRITE"
+                capabilities.contains("WRITE"),
+                "dnp3 matrix capabilities must advertise WRITE / POLL_WRITE, got: " + capabilities
         );
         String writePoint = Files.readString(root.resolve(
                 "packages/ispf-driver-dnp3/src/main/java/com/ispf/driver/dnp3/Dnp3DeviceDriver.java"));
