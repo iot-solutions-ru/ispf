@@ -59,12 +59,13 @@ class ClickHouseHistorianRollupStoreTest {
     void ensureSchemaCreatesRollupTable() {
         store.ensureSchema();
 
-        assertTrue(queries.stream().anyMatch(q -> q.contains("CREATE+TABLE")));
-        assertTrue(queries.stream().anyMatch(q -> q.contains("variable_rollups")));
         assertTrue(
-                queries.stream().anyMatch(q ->
-                        q.contains("CREATE+DATABASE") && q.contains("database=default")),
+                queries.stream().anyMatch(q -> q != null && q.contains("database=default")),
                 "CREATE DATABASE must use database=default so empty ClickHouse can bootstrap"
+        );
+        assertTrue(
+                lastBody.get().contains("CREATE TABLE") && lastBody.get().contains("variable_rollups"),
+                "CREATE TABLE for variable_rollups must be posted as the ClickHouse HTTP body"
         );
     }
 

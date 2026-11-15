@@ -584,7 +584,11 @@ public class VariableHistoryService {
         return new VariableHistoryResponse(objectPath, variableName, field, samples);
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Aggregate reads stay outside a single ambient JDBC transaction: ClickHouse / rollup
+     * paths must not hold a Postgres connection open for the HTTP round-trip, and JDBC
+     * repositories still open their own short read-only transactions per call.
+     */
     public VariableHistoryAggregateResponse aggregate(
             String objectPath,
             String variableName,
@@ -594,10 +598,10 @@ public class VariableHistoryService {
             String bucketSpec,
             int maxBuckets
     ) {
-        objectManager.require(objectPath);
+        var object = objectManager.require(objectPath);
         String field = fieldName == null || fieldName.isBlank() ? "value" : fieldName;
         Duration bucket = parseBucket(bucketSpec);
-        if (objectManager.require(objectPath).getVariable(variableName).isEmpty()) {
+        if (object.getVariable(variableName).isEmpty()) {
             return new VariableHistoryAggregateResponse(
                     objectPath,
                     variableName,

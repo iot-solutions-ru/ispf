@@ -41,6 +41,7 @@ public class ClickHouseHistorianRollupStore {
     private final HttpClient httpClient;
     private final ClickHouseVariableHistoryReader rawReader;
     private final boolean configured;
+    private final VariableHistoryProperties.ClickHouse clickHouseConfig;
     private final String qualifiedRollupTable;
 
     public ClickHouseHistorianRollupStore(
@@ -50,12 +51,14 @@ public class ClickHouseHistorianRollupStore {
         this.historyProperties = historyProperties;
         this.tierProperties = tierProperties;
         this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
         Optional<VariableHistoryProperties.ClickHouse> clickhouse = resolveClickHouse();
         this.configured = clickhouse.isPresent();
         if (configured) {
             VariableHistoryProperties.ClickHouse config = clickhouse.orElseThrow();
+            this.clickHouseConfig = config;
             this.rawReader = new ClickHouseVariableHistoryReader(config);
             String database = ClickHouseSchemaBootstrap.requireValidIdentifier(config.getDatabase(), "database");
             String rollupTable = ClickHouseSchemaBootstrap.requireValidIdentifier(
@@ -66,6 +69,7 @@ public class ClickHouseHistorianRollupStore {
             );
             this.qualifiedRollupTable = database + "." + rollupTable;
         } else {
+            this.clickHouseConfig = null;
             this.rawReader = null;
             this.qualifiedRollupTable = "";
         }
@@ -80,7 +84,7 @@ public class ClickHouseHistorianRollupStore {
         if (!configured) {
             return;
         }
-        VariableHistoryProperties.ClickHouse config = resolveClickHouse().orElseThrow();
+        VariableHistoryProperties.ClickHouse config = requireClickHouse();
         String database = ClickHouseSchemaBootstrap.requireValidIdentifier(config.getDatabase(), "database");
         StorageStartupRetry.run("ClickHouse historian rollups", () -> {
             executeStatement("CREATE DATABASE IF NOT EXISTS " + database);
@@ -319,6 +323,11 @@ public class ClickHouseHistorianRollupStore {
         }
     }
 
+    private VariableHistoryProperties.ClickHouse requireClickHouse() {
+        requireConfigured();
+        return clickHouseConfig;
+    }
+
     private void executeStatement(String statement) {
         // CREATE DATABASE must run against default; target DB may not exist yet.
         post(statement, "", Map.of(), "default");
@@ -326,7 +335,7 @@ public class ClickHouseHistorianRollupStore {
 
     private String postQuery(String query, Map<String, String> params) {
         HttpResponse<String> response = send(buildRequest(
-                query, "", params, resolveClickHouse().orElseThrow().getDatabase()));
+                query, "", params, requireClickHouse().getDatabase()));
         if (response.statusCode() >= 400) {
             throw new IllegalStateException(
                     "ClickHouse rollup query failed (" + response.statusCode() + "): " + response.body()
@@ -340,7 +349,7 @@ public class ClickHouseHistorianRollupStore {
     }
 
     private void post(String query, String body, Map<String, String> params) {
-        post(query, body, params, resolveClickHouse().orElseThrow().getDatabase());
+        post(query, body, params, requireClickHouse().getDatabase());
     }
 
     private void post(String query, String body, Map<String, String> params, String database) {
@@ -364,7 +373,7 @@ public class ClickHouseHistorianRollupStore {
     }
 
     private HttpRequest buildRequest(String query, String body, Map<String, String> params, String database) {
-        VariableHistoryProperties.ClickHouse config = resolveClickHouse().orElseThrow();
+        VariableHistoryProperties.ClickHouse config = requireClickHouse();
         StringBuilder url = new StringBuilder(config.getUrl());
         if (!config.getUrl().contains("?")) {
             url.append('?');
@@ -372,14 +381,19 @@ public class ClickHouseHistorianRollupStore {
             url.append('&');
         }
         url.append("database=").append(encode(database));
-        url.append("&query=").append(encode(query));
+        boolean queryInBody = body == null || body.isBlank();
+        String postBody = queryInBody ? query : body;
+        if (!queryInBody) {
+            url.append("&query=").append(encode(query));
+        }
         for (Map.Entry<String, String> param : params.entrySet()) {
             url.append("&param_").append(encode(param.getKey())).append('=').append(encode(param.getValue()));
         }
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url.toString()))
                 .timeout(Duration.ofSeconds(30))
-                .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
+                .header("Content-Type", "text/plain; charset=UTF-8")
+                .POST(HttpRequest.BodyPublishers.ofString(postBody, StandardCharsets.UTF_8));
         if (config.getPassword() != null && !config.getPassword().isBlank()) {
             String username = config.getUsername() != null && !config.getUsername().isBlank()
                     ? config.getUsername()
