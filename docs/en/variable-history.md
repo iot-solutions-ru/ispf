@@ -116,7 +116,7 @@ Local store-and-forward in front of **`store=clickhouse`**. **Off by default.** 
 
 **Containers / Helm:** data PVC mounts at `/opt/ispf/data`. Set directory to `/opt/ispf/data/historian-spool` (or another path on that volume). A relative `data/…` path only survives restarts if the process cwd already lives on the PVC.
 
-**Metrics:** `ispf.historian.spool.bytes`, `.lag`, `.oldest_age_ms`, `.replayed`, `.errors`, `.quota` (also under platform metrics `spool*`). Dual-write secondary failures and catch-up lag gauges: `ispf.historian.dual_write.*` ([ADR-0035](decisions/0035-historian-dual-write.md)).
+**Metrics:** `ispf.historian.spool.bytes`, `.lag`, `.oldest_age_ms`, `.replayed`, `.errors`, `.quota` (also under platform metrics `spool*`). Dual-write secondary failures and catch-up gauges: `ispf.historian.dual_write.*` (`oldest_age_ms` = sample-clock age of the oldest open catch-up range, not CH-vs-PG lag — [ADR-0035](decisions/0035-historian-dual-write.md)).
 
 **Still deferred (do not implement in passing):** second copy of the historian buffer on another ISPF node; ISPF-managed ClickHouse cluster. See [known-limitations](known-limitations.md).
 

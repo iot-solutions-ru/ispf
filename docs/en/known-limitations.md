@@ -26,7 +26,8 @@ Policy: [roadmap — quality over features](roadmap.md#execution-policy--quality
 |-------|--------|
 | JDBC + dual-write catch-up + sole-store ClickHouse | **Shipped** — [variable-history](variable-history.md), [ADR-0035](decisions/0035-historian-dual-write.md) |
 | Local disk spool in front of sole-store CH (`ispf.variable-history.spool`) | **Shipped**, **off by default** — [variable-history](variable-history.md) § Disk spool |
-| Dual-write **lag** gauge + default alert on secondary failure counter | **Open** ops gap (failure counter exists) |
+| Dual-write catch-up gauges + lab Prometheus alert rules | **Shipped** — `…catchup.ranges` / `.oldest_age_ms` (sample-clock age of open range) / `.wal_bytes`; not a CH-vs-PG lag series ([ADR-0035](decisions/0035-historian-dual-write.md)) |
+| True ClickHouse-behind-primary lag metric | **Open** — do not treat `oldest_age_ms` as CH lag |
 | Second copy of historian buffer on another ISPF node before accept | **Deferred** — do not build without an explicit ask |
 | ISPF creating / managing a ClickHouse cluster | **Deferred** — operator owns CH replication |
 | Parquet / Cassandra-Scylla `quality` parity with flagship stores | **Gap / experimental** — [ADR-0074](decisions/0074-historian-quality-persistence.md) |
