@@ -36,6 +36,23 @@ trap cleanup EXIT
 mkdir -p "$OUT"
 echo "==> DR restore drill (T2 lab) → $OUT"
 
+# pg_isready can succeed before POSTGRES_DB exists; require a real SQL connection.
+wait_for_db() {
+  local name="$1"
+  local label="$2"
+  echo "==> Wait for $label ready ($name)"
+  for _ in $(seq 1 90); do
+    if docker exec "$name" pg_isready -U "$USER" -d "$DB" >/dev/null 2>&1 \
+      && docker exec "$name" psql -U "$USER" -d "$DB" -Atc 'SELECT 1' >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "Postgres $label ($name) did not become ready" >&2
+  docker logs "$name" 2>&1 | tail -n 40 >&2 || true
+  exit 1
+}
+
 docker network create "$NET_NAME" >/dev/null
 
 echo "==> Start source Postgres"
@@ -43,14 +60,7 @@ docker run -d --name "$SRC_NAME" --network "$NET_NAME" \
   -e POSTGRES_PASSWORD="$PASS" -e POSTGRES_USER="$USER" -e POSTGRES_DB="$DB" \
   "$IMAGE" >/dev/null
 
-echo "==> Wait for source ready"
-for _ in $(seq 1 60); do
-  if docker exec "$SRC_NAME" pg_isready -U "$USER" -d "$DB" >/dev/null 2>&1; then
-    break
-  fi
-  sleep 1
-done
-docker exec "$SRC_NAME" pg_isready -U "$USER" -d "$DB"
+wait_for_db "$SRC_NAME" "source"
 
 echo "==> Seed minimal schema"
 docker exec -i "$SRC_NAME" psql -U "$USER" -d "$DB" <<'SQL'
@@ -83,12 +93,7 @@ echo "==> Start empty destination + restore"
 docker run -d --name "$DST_NAME" --network "$NET_NAME" \
   -e POSTGRES_PASSWORD="$PASS" -e POSTGRES_USER="$USER" -e POSTGRES_DB="$DB" \
   "$IMAGE" >/dev/null
-for _ in $(seq 1 60); do
-  if docker exec "$DST_NAME" pg_isready -U "$USER" -d "$DB" >/dev/null 2>&1; then
-    break
-  fi
-  sleep 1
-done
+wait_for_db "$DST_NAME" "destination"
 docker cp "$OUT/ispf.dump" "$DST_NAME:/tmp/ispf.dump"
 docker exec "$DST_NAME" pg_restore -U "$USER" -d "$DB" --clean --if-exists /tmp/ispf.dump
 

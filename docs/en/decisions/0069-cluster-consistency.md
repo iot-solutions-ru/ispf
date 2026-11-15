@@ -38,7 +38,7 @@ Cluster behaviour is split across [0028](0028-horizontal-active-active-cluster.m
 ## Consequences
 
 - Amends reading of 0028–0032: this ADR is the tender-facing consistency summary.
-- Follow-up: optional CI assert “no dual owner”. Compose profiles set `ISPF_NATS_JETSTREAM_ENABLED=true` (NATS `-js`). Live mirror and path interest also require a Redis `PING`.
+- CI assert “no dual owner” (JDBC lease exclusivity): `DriverOwnershipServiceTest.noDualOwnerAcrossLifecycle` + `concurrentAcquireYieldsSingleOwner` — lease-level only, not multi-node dual-I/O proof. Compose profiles set `ISPF_NATS_JETSTREAM_ENABLED=true` (NATS `-js`). Live mirror and path interest also require a Redis `PING`.
 
 ## Related
 
